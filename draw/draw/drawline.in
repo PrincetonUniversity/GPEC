@@ -1,0 +1,23 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+line.bin
+line.bin.axis
+
+graph title:	Surface Quantities
+
+variable names
+0	r
+1	theta
+2	z
+3	xi_psi
+4	b_psi
+5	xi_rho
+6	b_rho
+7	jstep
+
+ix	iy	title
+0	3	"xi_psi
+0	4	"b_psi
+0	5	"xi_rho
+0	6	"b_rho

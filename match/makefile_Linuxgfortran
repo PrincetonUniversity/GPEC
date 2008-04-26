@@ -1,0 +1,48 @@
+# This is the makefile for MATCH on Linuxgfortran computers.
+
+FFLAGS = -I../equil -g
+F90 = gfortran4 $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+LIBDIR = \
+	-L../lib/Linuxgfortran \
+	-L/usr/pppl/lff95/6.20c/lapack-3.0
+
+LIBS = \
+	$(LIBDIR) \
+	-lequil \
+	-llsode \
+	-llapack \
+	-lblas
+
+OBJS = \
+	qsort.o \
+	gamma.o \
+	deltar.o \
+	root.o \
+	match_mod.o \
+	ideal.o \
+	debug.o \
+	matrix.o \
+	resist.o \
+	match.o
+
+match: $(OBJS)
+	$(F90) -o match $(OBJS) $(LIBS)
+
+# dependencies
+
+debug.o: ../equil/local_mod.mod
+gamma.o: ../equil/local_mod.mod
+deltar.o: gamma.o
+root.o: ../equil/local_mod.mod
+match_mod.o: deltar.o root.o ../equil/utils_mod.mod
+ideal.o: match_mod.o
+matrix.o: match_mod.o debug.o
+resist.o: matrix.o
+match.o: ideal.o resist.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin match

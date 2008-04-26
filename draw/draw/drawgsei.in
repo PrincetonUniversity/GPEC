@@ -1,0 +1,22 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+;results/time65v1h1a1/0.307/1.10/gsei.bin
+results/time65v1h1a1/0.256/1.10/gsei.bin
+
+graph title:	Grad-Shafranov Error
+
+variable names
+0	psi
+1	term1
+2	term2
+3	totali
+4	errori
+5	log10 errori
+
+ix	iy	title
+;0	1
+;0	2
+;0	3
+;0	4
+0	5

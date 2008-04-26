@@ -1,0 +1,48 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+kmat.bin
+
+graph title:	K Matrix
+
+variable names
+0	psi
+1	Log_10 psi
+2	Log_10 1-psi
+3	Log_10 kmat01
+4	Arg kmat01
+5	Log_10 kmat02
+6	Arg kmat02
+7	Log_10 kmat03
+8	Arg kmat03
+9	Log_10 kmat04
+10	Arg kmat04
+11	Log_10 kmat05
+12	Arg kmat05
+13	Log_10 kmat06
+14	Arg kmat06
+15	Log_10 kmat07
+16	Arg kmat07
+17	Log_10 kmat08
+18	Arg kmat08
+19	Log_10 kmat09
+20	Arg kmat09
+21	Log_10 kmat10
+22	Arg kmat10
+23	Log_10 kmat11
+24	Arg kmat11
+25	Log_10 kmat12
+26	Arg kmat12
+27	Log_10 kmat13
+28	Arg kmat13
+
+ix	iy	title
+0	3
+1	5
+1	7
+1	9
+1	11
+1	13
+1	15
+1	17
+1	19

@@ -1,0 +1,63 @@
+\magnification=\magstep2
+\nopagenumbers
+\input defs
+\hsize=7.0truein
+\hoffset=-0.25truein
+\def\v#1{\hbox{\bf #1}}
+
+\centerline {\bf Mercier Criterion}
+
+\bigskip
+$$ \v{B} = f \nabla \phi
+	+ {1 \over 2 \pi} \nabla \phi \times \nabla \chi, \quad
+\v{J} = \nabla \times \v{B}, \quad
+\v{J} \times \v{B} = \nabla P $$ 
+
+\bigskip
+\centerline {With $Z =$ any surface quantity:} 
+
+$$ \eqalign{ D_I
+=& - {1 \over 4} 
++ {2 \pi f P' V' \over  q' \chi'^3} \left< {1 \over |\nabla Z|^2} \right>
+	\left[ 1 - {2 \pi f P' V' \over q' \chi'^3}
+	\left< {1 \over |\nabla Z|^2} \right> \right] \cr
+&+ \left< {B^2 \over|\nabla Z|^2} \right> 
+	{P' V'^2 \over q'^2 \chi'^4}
+	\left\{ P' \left[ \left< {1 \over B^2} \right>
+	+ \left( {2 \pi f \over \chi'} \right)^2 
+	\left< {1 \over B^2 |\nabla Z|^2} \right> \right]
+	+ {\chi'' \over \chi'} - {V'' \over V'} \right\}
+} $$
+
+\bigskip
+\centerline {With $Z = V$:}
+
+$$ \eqalign{ D_I
+=& - {1 \over 4} 
++ {2 \pi f P' \over  q' \chi'^3} \left< {1 \over |\nabla V|^2} \right>
+	\left[1 - {2 \pi f P' \over q' \chi'^3}
+	\left< {1 \over |\nabla V|^2} \right> \right] \cr
+&+ \left< {B^2 \over|\nabla V|^2} \right> {P' \over q'^2 \chi'^4}
+	\left\{ P' \left[ \left< {1 \over B^2} \right>
+	+ \left( {2 \pi f \over \chi'} \right)^2 
+	\left< {1 \over B^2 |\nabla V|^2} \right> \right]
+	+ {\chi'' \over \chi'} \right\}
+} $$
+
+\bigskip
+\centerline {With $Z = \psi = \chi/2 \pi$:}
+
+$$ \eqalign{ D_I
+=& - {1 \over 4} 
++ {f P' V' \over  (2 \pi)^2 q'}
+	\left< {1 \over |\nabla \psi|^2} \right>
+	\left[ 1 - {f P' V' \over (2 \pi)^2 q'}
+	\left< {1 \over |\nabla \psi|^2} \right> \right] \cr
+&+ \left< {B^2 \over|\nabla \psi|^2} \right> 
+	{P' V'^2 \over (2 \pi)^4 q'^2}
+	\left\{ P' \left[ \left< {1 \over B^2} \right>
+	+ f^2 \left< {1 \over B^2 |\nabla \psi|^2} \right> \right]
+	- {V'' \over V'} \right\}
+} $$
+
+\end

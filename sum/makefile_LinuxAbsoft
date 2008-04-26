@@ -1,0 +1,28 @@
+# This is the makefile for SUM on Linux computers.
+
+FFLAGS = -O2
+F90 = f90 $(FFLAGS)
+
+.f.o: 
+	$(F90) -c $*.f
+
+LIBS = \
+     -lU77
+
+OBJS = \
+	io.o \
+	local.o \
+	utils.o \
+	sum.o
+
+sum: $(OBJS)
+	$(F90) -o sum $(OBJS) $(LIBS)
+
+# dependencies
+
+local.o: io.o
+utils.o: local.o
+sum.o: utils.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin sum

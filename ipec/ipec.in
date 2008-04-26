@@ -1,0 +1,20 @@
+&ipec_control
+
+	idconfile='euler.bin'
+	ivacuumfile='vacuum.bin'
+
+	power_flag=t
+	fft_flag=t
+
+	ripple_flag=f
+	mripple=1
+
+        iconsurf_flag=f
+
+	sfac0=1
+	mthsurf0=1
+	thetam=0.5
+
+
+/
+

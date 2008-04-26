@@ -1,0 +1,21 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+bal1.bin
+
+graph title:	Ballooning Equation Coefficients
+
+variable names
+0	theta
+1	dbdb0
+2	dbdb1
+3	dbdb2
+4	kapw0
+5	kapw1
+
+ix	iy	title
+0	1
+0	2
+0	3
+0	4
+0	5

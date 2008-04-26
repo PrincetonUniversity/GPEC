@@ -1,0 +1,23 @@
+Type (G=Graph, C=Contour):	M
+
+filename(s)
+contour.bin
+
+comment:	Contour Plot
+
+independent variable names
+t	time
+x	R
+y	Z
+
+dependent variable names
+1	xi_psi
+2	b_psi
+3	xi_norm
+4	b_norm
+
+iqty	Options	Title
+1	-a	"xi_psi
+2	-a	"b_psi
+;3	-a	"xi_norm
+;4	-a	"b_norm

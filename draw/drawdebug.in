@@ -1,0 +1,22 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+debug.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	psi
+1	theta
+2	r
+3	z
+4	xi_psi
+5	b_psi
+6	xi_norm
+7	b_norm
+
+ix	iy	title
+0	4	"xi_psi vs. psi
+0	5	"b_psi vs. psi
+0	6	"xi_norm vs. norm
+0	7	"b_norm vs. norm

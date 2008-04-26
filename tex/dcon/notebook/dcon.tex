@@ -1,0 +1,470 @@
+% This is Plain TeX file dcon_gen.tex.
+
+\magnification=\magstep2
+
+\font\bfbig=cmbx12
+\font\ssbf=cmssbx10
+\def\t#1{\hbox{\ssbf #1}}
+\def\v#1{\hbox{\bf #1}}
+
+\centerline{\bfbig Straight Fieldline Coordinate System}
+\medskip
+
+$$ {\cal J} \equiv (\nabla \psi \cdot \nabla \theta 
+	\times \nabla \zeta)^{-1}, \quad
+{\cal F}'(\psi, \theta, \zeta) 
+	\equiv {\partial {\cal F} \over \partial \psi}
+\eqno(1) $$
+
+$$ {\cal F}(\psi,\theta,\zeta) 
+= {\cal F}(\psi,\theta + 1,\zeta) 
+= {\cal F}(\psi,\theta,\zeta + 1) 
+\eqno(2) $$
+
+$$ |\nabla \phi|^2 = {1 \over R^2}, \quad
+\nabla \phi \cdot \nabla \psi = \nabla \theta \cdot \nabla \phi = 0
+\eqno(3) $$
+
+$$ \phi(\psi,\theta,\zeta) 
+	= 2 \pi \zeta + \nu(\psi,\theta), \quad
+\nu(\psi,\theta) = \nu(\psi,\theta+1)
+\eqno(4) $$
+
+\bigskip
+\centerline{\bfbig Axisymmetric Equilibrium Magnetic Field}
+\medskip
+
+$$ \v{B} \equiv f \nabla \phi
+	+ {\chi' \over 2 \pi} \nabla \phi \times \nabla \psi
+= \chi' \left[ \nabla \zeta
+	- q(\psi) \nabla \theta \right] \times \nabla \psi
+\eqno(5) $$ 
+
+$$ 
+B_\psi \equiv \v{B} \cdot \nabla \psi = 0, \quad
+B_\theta \equiv \v{B} \cdot \nabla \theta = {\chi'\over {\cal J}}, \quad
+B_\zeta \equiv \v{B} \cdot \nabla \zeta = q {\chi' \over {\cal J}}
+\eqno(6) $$
+
+$$ q(\psi) \equiv {\v{B} \cdot \nabla \zeta \over \v{B} \cdot \nabla \theta}
+= {f \over 2 \pi \chi'} \int_0^1 d\theta \ {{\cal J} \over R^2}, \quad
+\nu(\psi,\theta) = {f \over 2 \pi \chi'} \int d\theta 
+	{{\cal J} \over R^2} - 2 \pi q \theta
+\eqno(7) $$
+
+$$ \v{B} \cdot \nabla {\cal F} = \v{B} \cdot \nabla \theta
+	\left( {\partial \over \partial \theta} 
+	+ q {\partial \over \partial \zeta} \right) 
+{\cal F}(\psi,\theta,\zeta) \eqno(8) $$
+
+\bigskip
+\centerline{\bfbig Equilibrium Current and Pressure}
+\medskip
+
+$$ \v{J} = \nabla \times \v{B} \eqno(9) $$
+
+$$ \eqalign{
+J_\psi = {2 \pi \over {\cal J}} 
+	{\partial f \over \partial \theta} = 0, \quad 
+J_\theta = - {2 \pi \over {\cal J}} {\partial f \over \partial \psi}, \quad 
+J_\phi = {1 \over 2 \pi} \nabla \cdot 
+	\left( {1 \over R^2} \nabla \chi \right)
+} \eqno(10) $$
+
+$$ \v{J} \times \v{B} = \nabla P, \quad
+J_\zeta = q J_\theta - {P' \over \chi'}
+	= -{2\pi q f' \over {\cal J}} - {P' \over \chi'}
+\eqno(11) $$
+
+$$ \Delta^* \chi 
+	\equiv R^2 \nabla \cdot \left( {1 \over R^2} \nabla \chi \right)
+	= - {4 \pi^2 \over \chi'} (ff' + R^2 P')
+\eqno(12) $$
+
+\vfill\eject
+\centerline{\bfbig Perturbed Displacement and Magnetic Field}
+\medskip
+
+$$ \xi = {\cal J} \left( 
+	\xi_\psi \nabla \theta \times \nabla \zeta
+	+ \xi_\theta \nabla \zeta \times \nabla \psi
+	+ \xi_\zeta \nabla \psi \times \nabla \theta \right)
+\eqno(13) $$
+
+$$ \xi_s 
+\equiv {\cal J} \left( \xi \times \v{B} \right) 
+	\cdot \left( \nabla \theta \times \nabla \zeta \right)
+= \chi' (q \xi_\theta - \xi_\zeta)
+\eqno(14) $$
+
+$$ \eqalign{ \v{Q} 
+=& \nabla \times (\xi \times \v{B}) \cr
+=& {\cal J} \left( Q_\psi \nabla \theta \times \nabla \zeta
++ Q_\theta \nabla \zeta \times \nabla \psi
++ Q_\zeta \nabla \psi \times \nabla \theta \right)
+} \eqno(15) $$
+
+$$ \eqalign{
+Q_\psi &= {\chi' \over {\cal J}} \left( 
+	{\partial \over \partial \theta}
+	+ q {\partial \over \partial \zeta} \right) 
+	\xi_\psi \cr
+Q_\theta &= - {1 \over {\cal J}}
+	{\partial \over \partial \psi}
+	\left( \chi' \xi_\psi \right)
+	+ {1 \over {\cal J}} 
+	{\partial \xi_s \over \partial \zeta} \cr
+Q_\zeta &= - {1 \over {\cal J}}
+	{\partial \over \partial \psi}
+	\left( q \chi' \xi_\psi \right)
+	- {1 \over {\cal J}} 
+	{\partial \xi_s \over \partial \theta} 
+} \eqno(16) $$
+
+$$ \eqalign{\v{Q} 
+=& \nabla \xi_s \times  \nabla \psi
+	+ (\nabla \theta \times \nabla \zeta) 
+	{\cal J} \v{B} \cdot \nabla \xi_\psi - \v{B} \xi'_\psi \cr
+&- \left[ \chi'' \nabla \zeta \times \nabla \psi
+	+ (q \chi')' \nabla \psi \times \nabla \theta \right] \xi_\psi
+} \eqno(17) $$
+
+\bigskip
+\centerline{\bfbig Fourier Representation}
+\medskip
+
+$$ \eqalign{
+\xi_s(\psi,\theta,\zeta) 
+	&= \sum_{m=-\infty}^\infty \sum_{n=-\infty}^\infty
+	u_{m,n}(\psi) e^{i(m\theta-n\zeta)} \cr
+\xi_\psi(\psi,\theta,\zeta) 
+	&= \sum_{m=-\infty}^\infty \sum_{n=-\infty}^\infty
+	v_{m,n}(\psi) e^{i(m\theta-n\zeta)}
+} \eqno(18) $$
+
+$$ \eqalign{
+\xi_s(\psi,\theta,\zeta) &= \xi_s^*(\psi,\theta,\zeta) 
+\Rightarrow u_{-m,-n}(\psi) = u_{m,n}^*(\psi) \cr
+\xi_\psi(\psi,\theta,\zeta) &= \xi_\psi^*(\psi,\theta,\zeta) 
+\Rightarrow v_{-m,-n}(\psi) = v_{m,n}^*(\psi)
+} \eqno(19) $$
+
+$$ \eqalign{
+\Xi_s(\psi) \equiv \{ u_{m,n}(\psi)\ 
+	|\ m \in [m_{\rm min}, m_{\rm max}] \} \cr
+\Xi_\psi(\psi) \equiv \{ v_{m,n}(\psi)\ 
+	|\ m \in [m_{\rm min}, m_{\rm max}] \} \cr
+} \eqno(20) $$
+
+\vfill\eject
+\centerline{\bfbig Current and Pressure Terms}
+\medskip
+
+$$ \eqalign{{\cal I}_1
+\equiv& \v{J} \cdot \xi \times \v{Q} \cr
+=& {\cal J} \left[(J_\zeta Q_\theta - J_\theta Q_\zeta) \xi_\psi
+	+ (J_\theta \xi_\zeta - J_\zeta \xi_\theta) Q_\psi \right] \cr
+=& \left\{ J_\zeta \left[{\partial \xi_s \over \partial \zeta} 
+	- \left( \chi' \xi_\psi \right)' \right]
+	+ J_\theta \left[ {\partial \xi_s \over \partial \theta} 
+	+ \left( q \chi' \xi_\psi \right)' \right] \right\} \xi_\psi \cr
+&+ \left( J_\theta \xi_\zeta - J_\zeta \xi_\theta \right) 
+	\chi' \left( {\partial \over \partial \theta}
+	+ q {\partial \over \partial \zeta} \right) \xi_\psi \cr
+=& \xi_\psi \left( J_\theta {\partial \over \partial \theta}
+	+ J_\zeta {\partial \over \partial \zeta} \right) \xi_s
+	- \xi_s \left( J_\theta {\partial \over \partial \theta}
+	+ J_\zeta {\partial \over \partial \zeta} \right) \xi_\psi \cr
+&+ \left[ J_\theta (q \chi')' - J_\zeta \chi'' \right] \xi_\psi^2
+	+ P' \left( \xi_\psi {\partial \over \partial \psi}
+	+ \xi_\theta {\partial \over \partial \theta}
+	+ \xi_\zeta {\partial \over \partial \zeta} \right) \xi_\psi
+} \eqno(21) $$
+
+$$ {\cal I}_2 \equiv (\xi \cdot \nabla P) (\nabla \cdot \xi)
+= {\xi_\psi P' \over {\cal J}} \left[
+	{\partial \over \partial \psi} \left( {\cal J} \xi_\psi \right)
+	+ {\partial \over \partial \theta} \left( {\cal J} \xi_\theta \right)
+	+ {\partial \over \partial \zeta} \left( {\cal J} \xi_\zeta \right)
+	\right]
+\eqno(22) $$
+
+$$ \eqalign{ {\cal I}_1 + {\cal I}_2 
+=& \xi_\psi \v{J} \cdot \nabla \xi_s - \xi_s \v{J} \cdot \nabla \xi_\psi
+	+ \left[ J_\theta (q \chi')' - J_\zeta \chi'' \right] \xi_\psi^2 \cr
+&+ {P' \over {\cal J}} \left( {\cal J} \xi_\psi^2 \right)' 
+	+ {1 \over {\cal J}} {\partial \over \partial \theta} 
+	\left( {\cal J} P' \xi_\psi \xi_\theta \right)
+	+ {1 \over {\cal J}} {\partial \over \partial \zeta} 
+	\left( {\cal J} P' \xi_\psi \xi_\zeta \right)
+} \eqno(23) $$
+
+\vfill\eject
+\centerline{\bfbig Ideal MHD Stability}
+\medskip
+
+$$ \eqalign{ \delta W 
+=& \int d\v{x} \left[ Q^2 + \v{J} \cdot \xi \times \v{Q}
+	+ (\xi \cdot \nabla P) (\nabla \cdot \xi)
+	+ \gamma P (\nabla \cdot \xi)^2 \right] \cr
+=& \int d\psi d\theta d\zeta {\cal J} \biggl\{
+	\Bigl[ \nabla \xi_s \times  \nabla \psi
+	+ (\nabla \theta \times \nabla \zeta) 
+	{\cal J} \v{B} \cdot \nabla \xi_\psi - \v{B} \xi'_\psi \cr
+&\hskip1.0in - \left[ \chi'' \nabla \zeta \times \nabla \psi
+	+ (q \chi')' \nabla \psi \times \nabla \theta \right] 
+	\xi_\psi \Bigr]^2 \cr
+& \hskip0.4in 
+	+ \xi_\psi \v{J} \cdot \nabla \xi_s 
+	- \xi_s \v{J} \cdot \nabla \xi_\psi
+	+ \left[ J_\theta (q \chi')' - J_\zeta \chi'' \right] \xi_\psi^2
+	+ {P' \over {\cal J}} \left( {\cal J} \xi_\psi^2 \right)' \cr
+&\hskip0.4in
+	+ {1 \over {\cal J}} {\partial \over \partial \theta} 
+	\left( {\cal J} P' \xi_\psi \xi_\theta \right)
+	+ {1 \over {\cal J}} {\partial \over \partial \zeta} 
+	\left( {\cal J} P' \xi_\psi \xi_\zeta \right)
+	+ \gamma P (\nabla \cdot \xi)^2 \biggr\} \cr
+=& 4 \pi^2 \int d\psi \left[ \Xi_s^\dagger \t{A} \Xi_s 
+	+ \Xi_s^\dagger (\t{B} \Xi_\psi' + \t{C} \Xi_\psi)
+	+ (\Xi_\psi'^\dagger \t{B}^\dagger
+	+ \Xi_\psi^\dagger \t{C}^\dagger) \Xi_s \right. \cr
+&\hskip0.8in
+	+ \left. \Xi_\psi'^\dagger \t{D} \Xi_\psi'
+	+ \Xi_\psi'^\dagger \t{E} \Xi_\psi
+	+ \Xi_\psi^\dagger \t{E}^\dagger \Xi_\psi'
+	+ \Xi_\psi^\dagger \t{H} \Xi_\psi \right]
+} \eqno(24) $$
+
+$$ \eqalign{
+&\t{A} \Xi_s + \t{B} \Xi_\psi' + \t{C} \Xi_\psi = 0 \cr
+&\Xi_s = - \t{A}^{-1} (\t{B} \Xi_\psi' + \t{C} \Xi_\psi)
+} \eqno(25) $$
+
+$$ \eqalign{
+\t{F} &\equiv \t{D} - \t{B}^\dagger \t{A}^{-1} \t{B} = \t{F}^\dagger \cr
+\t{K} &\equiv \t{E} - \t{B}^\dagger \t{A}^{-1} \t{C} \ne \t{K}^\dagger \cr
+\t{G} &\equiv \t{H} - \t{C}^\dagger \t{A}^{-1} \t{C} = \t{G}^\dagger
+} \eqno(26) $$
+
+$$ \delta W = 4 \pi^2 \int d\psi \left[
+\Xi_\psi'^\dagger \t{F} \Xi_\psi'
++ \Xi_\psi'^\dagger \t{K} \Xi_\psi
++ \Xi_\psi^\dagger \t{K}^\dagger \Xi_\psi'
++ \Xi_\psi^\dagger \t{G} \Xi_\psi \right] 
+\eqno(27) $$
+
+$$ (\t{F} \Xi_\psi' + \t{K} \Xi_\psi)'
+- (\t{K}^\dagger \Xi_\psi' + \t{G} \Xi_\psi) = 0 \eqno(28) $$
+
+$$ \v{u} \equiv \left( \matrix{ \Xi_\psi \cr
+\t{F} \Xi_\psi' + \t{K} \Xi_\psi} \right), \quad
+\t{L} \equiv \left( \matrix{ 
+- \t{F}^{-1} \t{K} & \t{F}^{-1} \cr
+\t{G} - \t{K}^\dagger \t{F}^{-1} \t{K} & \t{K}^\dagger \t{F}^{-1}}
+\right), \quad
+\v{u}' = \t{L} \v{u} \eqno(29) $$
+
+\vfill\eject
+\centerline{\bfbig Coefficient Matrices}
+\medskip
+
+$$ \eqalign{
+g_{11} &\equiv |\nabla \theta \times \nabla \zeta|^2 \hskip0.25in
+g_{23} \equiv (\nabla \zeta \times \nabla \psi)
+	\cdot (\nabla \psi \times \nabla \theta) \cr
+g_{22} &\equiv |\nabla \zeta \times \nabla \psi|^2 \hskip0.25in
+g_{31} \equiv (\nabla \psi \times \nabla \theta)
+	\cdot (\nabla \theta \times \nabla \zeta) \cr
+g_{33} &\equiv |\nabla \psi \times \nabla \theta|^2 \hskip0.25in
+g_{12} \equiv (\nabla \theta \times \nabla \zeta)
+	\cdot (\nabla \zeta \times \nabla \psi)
+} \eqno(30) $$
+
+$$ <{\cal F}>_{mm'} \equiv \int_0^1 d\theta {{\cal J}}
+	\exp[2 \pi i (m'-m) \theta]  {\cal F}(\theta) 
+\eqno(31) $$
+
+$$ (G_{ij})_{mm'} \equiv <g_{ij}>_{mm'}
+\eqno(32) $$
+
+$$ J_{mm'} \equiv <1>_{mm'}, \quad
+J'_{mm'} \equiv <{\cal J}'/{\cal J}>_{mm'}
+\eqno(33) $$
+
+$$ M_{m,m'} \equiv m \delta_{m,m'}, \quad 
+Q_{m,m'} \equiv (m - n q) \delta_{m,m'} \eqno(34) $$
+
+$$ \eqalign{
+\t{A} =& (2 \pi)^2 \left[ n (n \t{G}_{22} + \t{G}_{23} \t{M}
+	+\t{M} (n \t{G}_{23} + \t{G}_{33} \t{M})  \right] \cr
+\t{B} =& -2 \pi i \chi' \left[ n (\t{G}_{22} + q \t{G}_{23} )
+	+ \t{M} (\t{G}_{23} + q \t{G}_{33})  \right] \cr
+\t{C} =& -2 \pi i \left[  \chi'' (n \t{G}_{22} + \t{M} \t{G}_{23})
+	+ (q \chi')' (n \t{G}_{23} + \t{M} \t{G}_{33})  \right] \cr
+	& - (2 \pi)^2 \chi' (n \t{G}_{12} + \t{M} \t{G}_{31}) \t{Q}
+	+ 2 \pi i (2 \pi f' \t{Q} - n P'/\chi' \t{J}) \cr
+\t{D} =& \chi'^2 \left[ (\t{G}_{22} + q \t{G}_{23})
+	+ q(\t{G}_{23} + q \t{G}_{33}) \right] \cr
+\t{E} =& \chi' \left[  \chi'' (\t{G}_{22} + q \t{G}_{23})
+	+ (q \chi')' (\t{G}_{23} + q \t{G}_{33}) \right] \cr
+	& - 2 \pi i \chi'^2 (\t{G}_{12} + q \t{G}_{31}) \t{Q}
+	+ P' \t{J} \cr
+\t{H} =& \chi''\left[ \chi'' \t{G}_{22} + (q \chi')' \t{G}_{23} \right]
+	+ (q \chi')'\left[ \chi'' \t{G}_{23} 
+	+ (q \chi')' \t{G}_{33} \right] \cr
+	& + 2 \pi i \chi' \left[ \chi'' (\t{M} \t{G}_{12} - \t{G}_{12} \t{M})
+	+ (q \chi')' (\t{M} \t{G}_{31} - \t{G}_{31} \t{M})  \right] \cr
+	& + (2 \pi \chi')^2 \t{Q} \t{G}_{11} \t{Q}
+	+ \left[ P' \left(  \t{J} \chi''/\chi' + \t{J}' \right) 
+	-2 \pi f' q' \chi' \t{I} \right]
+} \eqno(35) $$
+
+$$ \eqalign{ \t{F}
+\equiv& \t{D} - \t{B}^\dagger \t{A}^{-1} \t{B} \cr
+=& \t{Q} (\chi' / n)^2 \left[ \t{G}_{33}
+	- (n \t{G}_{23} + \t{G}_{33} \t{M}) (2 \pi)^2 \t{A}^{-1}
+	(n \t{G}_{23} +  \t{M} \t{G}_{33}) \right] \t{Q}
+} \eqno(36) $$
+
+\medskip
+$$ \eqalign{ \t{K}
+=& \t{E} - \t{B}^\dagger \t{A}^{-1} \t{C} \cr
+	=& \t{Q} (\chi'/n) \bigl\{ 2 \pi i 
+	(n \t{G}_{23} + \t{G}_{33} \t{M}) \t{A}^{-1} \t{C} \cr
+& - \left[  \chi'' \t{G}_{23} + (q \chi')' \t{G}_{33}
+	- 2 \pi i \chi' \t{G}_{31} \t{Q} + J_\theta \t{I} \right]
+\bigr\} } \eqno(37) $$
+
+\vfill\eject
+\centerline{\bfbig Change of Flux Coordinate, 1}
+\medskip
+
+$$ \eqalign{
+&{\cal D} \equiv {d \psi\over d \bar{\psi}}, \quad
+	{d \over d \psi} = {1 \over {\cal D}} {d \over d \bar{\psi}}, \quad
+	\Xi_s = {\bar{\Xi}_s \over {\cal D}}, \quad
+	\Xi_\psi = {\cal D} {\bar{\Xi}}_{\bar{\psi}} \cr
+&{d \Xi_\psi \over d \psi} 
+	= {1 \over {\cal D}} {d \over d \bar{\psi}}
+	\left( {\cal D} {\bar{\Xi}}_{\bar{\psi}} \right)
+	= {d {\bar{\Xi}}_{\bar{\psi}} \over d \bar{\psi}}
+	+ \left( {1 \over {\cal D}} 
+	{d {\cal D} \over d \bar{\psi}} \right)
+	{\bar{\Xi}}_{\bar{\psi}} 
+} \eqno(38) $$
+
+$$ \eqalign{ \delta W 
+= 4 \pi^2 \int d\psi & \left[ \Xi_s^\dagger \t{A} \Xi_s 
+	+ \Xi_s^\dagger (\t{B} \Xi_\psi' + \t{C} \Xi_\psi)
+	+ (\Xi_\psi'^\dagger \t{B}^\dagger
+	+ \Xi_\psi^\dagger \t{C}^\dagger) \Xi_s \right. \cr
+&+ \left. \Xi_\psi'^\dagger \t{D} \Xi_\psi'
+	+ \Xi_\psi'^\dagger \t{E} \Xi_\psi
+	+ \Xi_\psi^\dagger \t{E}^\dagger \Xi_\psi'
+	+ \Xi_\psi^\dagger \t{H} \Xi_\psi \right] \cr
+= 4 \pi^2 \int d\bar{\psi} & \left\{
+	\bar{\Xi}_s^\dagger \t{A} \bar{\Xi}_s / {\cal D}
+	+ \bar{\Xi}_s^\dagger \left[ 
+	\t{B} \bar{\Xi}_{\bar{\psi}}'
+	+ ( \t{B} {\cal D}' / {\cal D}
+	+ \t{C} {\cal D}) \bar{\Xi}_{\bar{\psi}} \right] \right. \cr
+&+ \left[ \bar{\Xi}_{\bar{\psi}}'^\dagger \t{B}^\dagger 
+	+ \bar{\Xi}_{\bar{\psi}}^\dagger
+	( \t{B}^\dagger {\cal D}' / {\cal D}
+	+ \t{C}^\dagger {\cal D} ) \right] \bar{\Xi}_s
+	+ \bar{\Xi}_{\bar{\psi}}'^\dagger \t{D} \bar{\Xi}_{\bar{\psi}}' 
+	{\cal D} \cr
+&+ \left[ \bar{\Xi}_{\bar{\psi}}'^\dagger 
+	(\t{D} {\cal D}' + \t{E} {\cal D}^2) \bar{\Xi}_{\bar{\psi}}
+	+ \bar{\Xi}_{\bar{\psi}}^\dagger 
+	(\t{D}^\dagger {\cal D}' + \t{E}^\dagger {\cal D}^2) 
+	\bar{\Xi}_{\bar{\psi}}'  \right] \cr
+&+ \left. \bar{\Xi}_{\bar{\psi}}^\dagger 
+	\left[ \t{D} {\cal D}'^2/{\cal D} 
+	+ (\t{E} + \t{E}^\dagger) {\cal D}' {\cal D}
+	+ \t{H} {\cal D}^3
+	\right] \bar{\Xi}_{\bar{\psi}} \right\} \cr
+= 4 \pi^2 \int d\bar{\psi} & \left[
+	\bar{\Xi}_s^\dagger \bar{\t{A}} \bar{\Xi}_s
+	+ \bar{\Xi}_s^\dagger (
+	\bar{\t{B}} \bar{\Xi}_{\bar{\psi}}'
+	+ \bar{\t{C}} \bar{\Xi}_{\bar{\psi}}
+	+ (\bar{\Xi}_{\bar{\psi}}'^\dagger \bar{\t{B}}^\dagger
+	+ \bar{\Xi}_{\bar{\psi}}^\dagger \bar{\t{C}}^\dagger
+	) \bar{\Xi}_s \right. \cr
+&+ \left. 
+	\bar{\Xi}_{\bar{\psi}}'^\dagger \bar{\t{D}} \bar{\Xi}_{\bar{\psi}}' 
+	+ \bar{\Xi}_{\bar{\psi}}'^\dagger \bar{\t{E}} \bar{\Xi}_{\bar{\psi}}
+	+ \bar{\Xi}_{\bar{\psi}}^\dagger \bar{\t{E}}^\dagger 
+	\bar{\Xi}_{\bar{\psi}}'
+	+ \bar{\Xi}_{\bar{\psi}}^\dagger \bar{\t{H}} \bar{\Xi}_{\bar{\psi}}
+	 \right]
+} \eqno(39) $$
+
+\bigskip
+$$ \eqalign{
+&\bar{\t{A}} = \t{A} / {\cal D}, \quad
+\bar{\t{B}} = \t{B}, \quad
+\bar{\t{C}} = \t{B} {\cal D}' / {\cal D} + \t{C} {\cal D} \cr
+&\bar{\t{D}} = \t{D} {\cal D}, \quad
+\bar{\t{E}} = \t{D} {\cal D}' + \t{E} {\cal D}^2 \cr
+&\bar{\t{H}} = \t{D} {\cal D}'^2/{\cal D} 
+	+ (\t{E} + \t{E}^\dagger) {\cal D}' {\cal D}
+	+ \t{H} {\cal D}^3
+} \eqno(40) $$
+
+\vfill\eject
+\centerline{\bfbig Change of Flux Coordinate, 2}
+\medskip
+
+$$ \eqalign{
+&{\cal D} \equiv {d \psi\over d \bar{\psi}}, \quad
+	{d \over d \psi} = {1 \over {\cal D}} {d \over d \bar{\psi}}, \quad
+	\Xi_\psi = {\cal D} {\bar{\Xi}}_{\bar{\psi}} \cr
+&{d \Xi_\psi \over d \psi} 
+	= {1 \over {\cal D}} {d \over d \bar{\psi}}
+	\left( {\cal D} {\bar{\Xi}}_{\bar{\psi}} \right)
+	= {d {\bar{\Xi}}_{\bar{\psi}} \over d \bar{\psi}}
+	+ \left( {1 \over {\cal D}} 
+	{d {\cal D} \over d \bar{\psi}} \right)
+	{\bar{\Xi}}_{\bar{\psi}} 
+} \eqno(41) $$
+
+$$ \eqalign{ \delta W 
+= 4 \pi^2 \int d\psi & \left[
+	\Xi_\psi'^\dagger \t{F} \Xi_\psi'
+	+ \Xi_\psi'^\dagger \t{K} \Xi_\psi
+	+ \Xi_\psi^\dagger \t{K}^\dagger \Xi_\psi'
+	+ \Xi_\psi^\dagger \t{G} \Xi_\psi \right] \cr
+= 4 \pi^2 \int d\bar{\psi} & \left\{
+	\bar{\Xi}_{\bar{\psi}}'^\dagger \t{F} \bar{\Xi}_{\bar{\psi}}' 
+	{\cal D} \right. \cr
+&+ \left[ \bar{\Xi}_{\bar{\psi}}'^\dagger 
+	(\t{F} {\cal D}' + \t{K} {\cal D}^2) \bar{\Xi}_{\bar{\psi}}
+	+ \bar{\Xi}_{\bar{\psi}}^\dagger 
+	(\t{F}^\dagger {\cal D}' + \t{K}^\dagger {\cal D}^2) 
+	\bar{\Xi}_{\bar{\psi}}'  \right] \cr
+&+ \left. \bar{\Xi}_{\bar{\psi}}^\dagger 
+	\left[ \t{F} {\cal D}'^2/{\cal D} 
+	+ (\t{K} + \t{K}^\dagger) {\cal D}' {\cal D}
+	+ \t{G} {\cal D}^3
+	\right] \bar{\Xi}_{\bar{\psi}} \right\} \cr
+= 4 \pi^2 \int d\bar{\psi} & \left[
+	\bar{\Xi}_{\bar{\psi}}'^\dagger \bar{\t{F}} \bar{\Xi}_{\bar{\psi}}' 
+	+ \bar{\Xi}_{\bar{\psi}}'^\dagger \bar{\t{K}} \bar{\Xi}_{\bar{\psi}}
+	+ \bar{\Xi}_{\bar{\psi}}^\dagger \bar{\t{K}}^\dagger 
+	\bar{\Xi}_{\bar{\psi}}'
+	+ \bar{\Xi}_{\bar{\psi}}^\dagger \bar{\t{G}} \bar{\Xi}_{\bar{\psi}}
+	 \right]
+} \eqno(42) $$
+
+$$ \eqalign{
+&\bar{\t{F}} = \t{F} {\cal D}, \quad
+\bar{\t{K}} = \t{F} {\cal D}' + \t{K} {\cal D}^2, \quad
+\bar{\t{G}} = \t{F} {\cal D}'^2/{\cal D} 
+	+ (\t{K} + \t{K}^\dagger) {\cal D}' {\cal D}
+	+ \t{G}\ {\cal D}^3
+} \eqno(43) $$
+
+\end

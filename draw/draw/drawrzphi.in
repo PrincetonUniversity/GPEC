@@ -1,0 +1,22 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+rzphi.bin
+
+graph title:	Metric Tensor Components
+
+variable names
+0	psi
+1	Log10 psi
+2	Log10 1-psi
+3	Log10 r2
+4	Arg r2
+5	Log10 eta
+6	Arg eta
+7	Log10 phi
+8	Arg phi
+
+ix	iy	title
+2	3
+2	5
+2	7

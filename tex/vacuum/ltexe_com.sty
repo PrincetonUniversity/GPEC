@@ -1,0 +1,310 @@
+ \newcommand{\bitem}{\begin{itemize}}
+ \newcommand{\eitem}{\end{itemize}}
+ \newcommand{\bvtm}{\begin{verbatim}}
+ \newcommand{\evtm}{\end{verbatim}}
+ \newcommand{\minpg}{\vspace{.2in}\noindent\begin{minipage}[t]{3.5in}}
+ \newcommand{\marnote}[1]{\marginpar{\raggedright\footnotesize\em #1}}
+ %
+ \newcommand{\beq}{\begin{eqnarray}}
+ \newcommand{\beqs}{\begin{eqnarray*}}
+ \newcommand{\eeq}{\end{eqnarray}}
+ \newcommand{\eeqs}{\end{eqnarray*}}
+ \newcommand{\insrt}[1]{\noalign{\vskip-1.ex\noindent{\rm #1}\vskip0.0ex}}
+ \newcommand{\insrtp}[1]{\noalign{\vskip2ex{\rm #1}\vskip2ex}}
+ %
+ \newcommand{\Br}{\left<}
+ \newcommand{\Kt}{\right>}
+ \newcommand{\Brkt}[1]{\Br #1 \Kt}
+ \newcommand\Bra[1]{\left<#1|\right.}
+ \newcommand\Ket[1]{\left.|#1\right>}
+ %\newcommand{\laeq}{\stackrel{<}{\sim}}
+ \newcommand{\laeq}{\raisebox{-.7ex}{$\stackrel{\textstyle<}{\sim}$}\ }
+ \newcommand{\gaeq}{\raisebox{-.7ex}{$\stackrel{\textstyle>}{\sim}$}\ }
+ \newcommand{\goas}[2]{\ \ \ \ 
+ \raisebox{-.7ex}{$\stackrel{-\hspace{-.2em}\longrightarrow}{{\scriptscriptstyle#1\rightarrow
+ #2}}$}\ \ \ \ }
+ \newcommand{\oover}[1]{\frac{1}{#1}}           % one over ...
+ \newcommand{\stacktwo}[2]{{\small\raisebox{-1.ex}{$\stackrel{\mbox{#1}}{\mbox{#2}}$}}}
+ \newcommand{\leftcontd}{\hspace{-\leftmargin} $\leftarrow cont'd$\hfill}
+ \newcommand{\rightcontd}{\hfill -- $cont'd \rightarrow$}
+ \newcommand{\curl}{\ensuremath{\nabla\times}}
+ \newcommand{\dotp}{\ensuremath{\!\!\cdot\!\!}}
+ \newcommand{\dotpb}{\!\cdot\!}
+ \newcommand{\Div}{\nabla\dotpb}
+ \newcommand{\delsq}{\ensuremath{\nabla^2}}
+ \newcommand{\bdotdel}{\ensuremath{\vect B\dotpb\nabla}}
+ \newcommand{\lineb}[1]{\rule[0.ex]{#1}{.005in}}
+ \newcommand{\linebb}[1]{\rule[-1.0ex]{#1}{.005in}}
+ \newcommand{\linec}[1]{\rule[.5ex]{#1}{.005in}}
+ \newlength{\bls}\setlength{\bls}{-\baselineskip}
+ \newcommand{\linev}[1]{\rule[-.25ex]{.005in}{#1}}
+ \newcommand{\linecztb}[1]{\vspace{.75\bls}\rule[.5ex]{#1}{.005in}\vspace{.75\bls}}
+ \newcommand{\lineczt}[1]{\rule[.5ex]{#1}{.005in}\vspace{.75\bls}}
+ \newcommand{\lineczb}[1]{\vspace{.75\bls}\rule[.5ex]{#1}{.005in}}
+ \newcommand{\linecxb}[1]{\\ \rule[.5ex]{#1}{.005in}}
+ \newcommand{\bslash}{\char '134}
+ \newcommand{\ctilde}{\char '176}
+ \newcommand{\ptilde}{\~{\mbox{ }}$\!\!$}
+ \newcommand{\mtilde}{$\tilde{\mbox{ }}$}
+ \newcommand{\vtilde}{\verb+~+}
+ \def\pdr{\partial}
+ \def\pd#1#2{
+     \mathchoice{\pdr#1\over\pdr#2}
+		{\pdr#1/\pdr#2}{\pdr#1/\pdr#2}{\pdr#1/\pdr#2} }
+ \def\pdd#1#2{ 
+     \mathchoice{\pdr^2#1\over\pdr#2^2}%
+		{\pdr^2#1/\pdr#2^2}{\pdr^2#1/\pdr#2^2}{\pdr^2#1/\pdr#2^2} }
+ %
+ \def\tdr{d}
+ \def\td#1#2{
+     \mathchoice{\tdr#1\over\tdr#2}
+		{\tdr#1/\tdr#2}{\tdr#1/\tdr#2}{\tdr#1/\tdr#2} }
+ \def\tdd#1#2{ 
+     \mathchoice{\tdr^2#1\over\tdr#2^2}%
+		{\tdr^2#1/\tdr#2^2}{\tdr^2#1/\tdr#2^2}{\tdr^2#1/\tdr#2^2} }
+ %
+ \newcommand{\bsfr}{\ensuremath{I_{bs}/I_p}}
+ \newcommand{\bta}{\ensuremath{\beta}}
+ \newcommand{\btap}{\ensuremath{\beta_p}}
+ \newcommand{\bulge}{\ensuremath{\mathcal{B}(a_b,\beta_b,\tau_b)}}
+ \newcommand{\ctroy}{\ensuremath{C_t}}
+ \newcommand{\delsubx}{\ensuremath{\delta_{\sf x}}}
+ \newcommand{\di}{\ensuremath{D_I}}
+ \newcommand{\epsbp}{\ensuremath{\epsilon\beta_{p}}}
+ \newcommand{\matrm}{\rm}                               % latex
+ \newcommand{\deltaw}{\ensuremath{\delta W}}
+ \newcommand{\deltawp}{\ensuremath{\delta W_{\matrm {p}}}}   % nlatex
+ \newcommand{\deltawv}{\ensuremath{\delta W_{\matrm {v}}}}   % nlatex
+ \newcommand{\deltaws}{\ensuremath{\delta W_{\matrm {s}}}}   % nlatex
+ \def\bgrpsps{\mathchoice{\bB\times\nabla\psi\over\grpssq}
+			 {\bB\times\nabla\psi/\grpssq}
+			 {\bB\times\nabla\psi/\grpssq}
+			 {\bB\times\nabla\psi/\grpssq} }  % mbox prev. dsplsty
+ \newcommand{\grcalZ}{\ensuremath{\nabla\mathcal{Z}}}
+ \newcommand{\grpcalZ}{\ensuremath{\nabla'\mathcal{Z}}}
+ \newcommand{\grchi}{\ensuremath{\nabla\chi}}
+ \newcommand{\grbchi}{\ensuremath{\nabla\bar\chi}}
+ \newcommand{\grpchi}{\ensuremath{\nabla'\chi}}
+ \newcommand{\grphi}{\ensuremath{\nabla\phi}}
+ \newcommand{\grpsth}{\ensuremath{\nabla\psi\dotpb\nabla\theta}}
+ \newcommand{\grpsi}{\ensuremath{\nabla\psi}}
+ \newcommand{\grpssq}{\ensuremath{|\nabla\psi|^2}}
+ \newcommand{\gralsq}{\ensuremath{|\nabla\alpha|^2}}
+ \newcommand{\gralps}{\ensuremath{\nabla\alpha\dotpb\nabla\psi}}
+ \newcommand{\grtheta}{\ensuremath{\nabla\theta}}
+ \newcommand{\grxipsi}{\ensuremath{\nabla\xi_\psi}}
+ \newcommand{\calA}{\ensuremath{\mathcal{A}}}
+ \newcommand{\calB}{\ensuremath{\mathcal{B}}}
+ \newcommand{\calC}{\ensuremath{\mathcal{C}}}
+ \newcommand{\calD}{\ensuremath{\mathcal{D}}}
+ \newcommand{\calG}{\ensuremath{\mathcal{G}}}
+ \newcommand{\calK}{\ensuremath{\mathcal{K}}}
+ \newcommand{\jcb}{\ensuremath{\mathcal{J}}}
+ \newcommand{\calP}{\ensuremath{\mathcal{P}}}
+ \newcommand{\calR}{\ensuremath{\mathcal{R}}}
+ \newcommand{\calZ}{\ensuremath{\mathcal{Z}}}
+ \newcommand{\Jbs}{\ensuremath{J_{bs}}}
+ %\newcommand{\kappaw}{\ensuremath{{\bB\times\nabla\alpha\over% doesn't work in
+ %B^2}\dotpb\bkappa}}                                   % displaystyle
+ %                                                       %  maybe no mbox?
+ \def\kappaw{\mathchoice
+ {\ensuremath{{\bB\times\nabla\alpha\over B^2}\dotpb\bkappa}} ensuremath prevents
+ {\ensuremath{{\bB\times\nabla\alpha/B^2}\dotpb\bkappa}}%     displaystyle
+ {\ensuremath{{\bB\times\nabla\alpha/B^2}\dotpb\bkappa}}%
+ {\ensuremath{{\bB\times\nabla\alpha/B^2}\dotpb\bkappa}}  }
+ %{{\bB\times\nabla\alpha\over B^2}\dotpb\bkappa}%
+ %{{\bB\times\nabla\alpha/B^2}\dotpb\bkappa}%
+ %{{\bb\times\nabla\alpha/B^2}\dotpb\bkappa}%
+ %{{\bB\times\nabla\alpha/B^2}\dotpb\bkappa}  } 
+ \def\totp{\mathchoice
+ {P + {{B^2}\over 2}}%
+ {P + B^2/2}%
+ {P + B^2/2}%
+ {P + B^2/2} }     %% total pressure
+ \newcommand{\kapbb}{\ensuremath{\vect{b}\dotpb\nabla\vect{b}}} %%       b.grad b
+ \newcommand{\kapsubx}{\ensuremath{\kappa_{\sf x}}}
+ \newcommand{\lsubi}{\ensuremath{l_i}}
+ \newcommand{\neqo}{\ensuremath{n=1}}
+ \newcommand{\neqt}{\ensuremath{n=2}}
+ \newcommand{\Omsq}{\ensuremath{\Omega^2}}
+ \newcommand{\omsq}{\ensuremath{\omega^2}}
+ \newcommand{\psisubx}{\psi_{\sf x}}
+ \newcommand{\qedge}{\ensuremath{q_{\rm edge}}}             % latex only
+ \newcommand{\qz}{\ensuremath{q_{0}}}
+ \newcommand{\qnf}{\ensuremath{q_{95}}}
+ \newcommand{\salpha}{\ensuremath{s$--$\alpha}}
+ \newcommand{\secnd}{\ensuremath{2^{\rm nd}}}               % for latex
+ %\newcommand{\secnd}{\ensuremath{2^{\matrm {nd}}}}          % nlatex only
+ %
+%\newmathalphabet{\vect}		                        % nlatex only
+%\addtoversion{normal}{\vect}{\rmdefault}{\bfdefault}{n} % nlatex only
+ \def\vect#1{{\bf #1}}		                        % latex only
+ %
+ \newcommand{\veca}{\vecsqg} %Note: argument [1] in definition \vecsqg.
+ \newcommand{\vecsqg}[1]{\raisebox{-1.ex}{$\stackrel
+	    {\displaystyle#1}{\scriptstyle\sim}$}}
+ %
+ \newcommand{\bA}{\vect A}
+ \newcommand{\bb}{\vect b}
+ \newcommand{\bB}{\vect B}
+ \newcommand{\be}{\vect e}
+ \newcommand{\bE}{\vect E}
+ \newcommand{\bJ}{\vect J}
+ \newcommand{\bj}{\vect j}
+ \newcommand{\bl}{\vect l}
+ \newcommand{\bn}{\vect n}
+ \newcommand{\bv}{\vect v}
+ \newcommand{\bV}{\vect V}
+ \newcommand{\bQ}{\vect Q}
+ \newcommand{\br}{\vect r}
+ \newcommand{\bS}{\vect S}
+ \newcommand{\vV}{\vec{V}}
+ \newcommand{\uJ}{\underline{J}}
+ \newcommand{\tPa}{\vec{\vec P}}
+ \newcommand{\tPb}{{\sf P}}
+ %
+ \def\mvect#1{{\ensuremath{\mathbf #1}}}                     % mathbold 
+ \newcommand{\balpha}{\mbox{\boldmath $\alpha$}}             % boldface alpha
+ \newcommand{\bdelta}{\mbox{\boldmath $\delta$}}             % boldface alpha
+ %\newcommand{\balpha}{\ensuremath{\mathbf \alpha}}          % boldface alpha
+ \newcommand{\bpsi}{\mbox{\boldmath $\psi$}}                 % boldface psi
+ %\newcommand{\bpsi}{\ensuremath{\mathbf \psi}}              % boldface psi
+ \newcommand{\brho}{\mbox{\boldmath $\rho$}}                 % boldface rho
+ %\newcommand{\brho}{\ensuremath{\mathbf \rho}}              % boldface rho
+ \newcommand{\bxi}{\mbox{\boldmath $\xi$}}                   % boldface xi
+ %\newcommand{\bxi}{\ensuremath{\mathbf \xi}}                % boldface xi
+ \newcommand{\bkappa}{\mbox{\boldmath $\kappa$}}             % boldface kappa
+ %\newcommand{\bkappa}{\ensuremath{\mathbf \kappa}}          % boldface kappa
+ %
+ \newcommand{\einffp}{\ensuremath{e^{i n(\phi-\phi')}}}
+ %
+ \newcommand{\adj}{{\sc adj}}
+ \newcommand{\aries}{{\sc aries}}
+ \newcommand{\ariesii}{{\sc aries-ii}}
+ \newcommand{\atf}{{\sc atf}}
+ \newcommand{\balloon}{{\sc balloon}}
+ \newcommand{\camino}{{\sc camino}}
+ \newcommand{\cdl}{{\sc cdl}}
+ \newcommand{\chck}{{\sc check}}
+ \newcommand{\cont}{{\sc cont}}
+ \newcommand{\ctss}{{\sc ctss}}
+ \newcommand{\dee}{{\sc dee}}
+ \newcommand{\degas}{{\sc degas}}
+ \newcommand{\diiid}{\mbox{\sc diii-d}}
+ \newcommand{\dcon}{{\sc dcon}}
+ \newcommand{\dmapx}{{\sc dmapx}}
+ \newcommand{\doe}{{\small DoE}}
+ \newcommand{\erato}{{\sc erato}}
+ \newcommand{\full}{{\sc full}}
+ \newcommand{\fom}{\textit{fom}}
+ \newcommand{\fwp}{{\sc fwp}}
+ \newcommand{\ga}{{\small GA}}
+ \newcommand{\gato}{{\sc gato}}
+ \newcommand{\fax}{{\sc fax}}
+ \newcommand{\fmap}{\mbox{\sc f-map}}
+ \newcommand{\hdf}{{\sc hdf}}
+ \newcommand{\ibw}{{\sc ibw}}
+ \newcommand{\iter}{{\sc iter}}
+ \newcommand{\jet}{{\sc jet}}
+ \newcommand{\jtsxty }{{\sc jt-60}}
+ \newcommand{\jslvr}{{\sc jsolver}}
+ \newcommand{\mhd}{{\sc mhd}}
+ \newcommand{\lhcd}{{\sc lhcd}}
+ \newcommand{\lsc}{{\sc lsc}}
+ \newcommand{\mrx}{{\sc mrx}}
+ \newcommand{\mse}{{\sc mse}}
+ \newcommand{\netcdf}{{net\sc cdf}}
+ \newcommand{\nova}{{\sc nova}}
+ \newcommand{\orbit}{{\sc orbit}}
+ \newcommand{\pbx}{\mbox{\sc pbx}}
+ \newcommand{\pbxm}{\mbox{\sc pbx-m}}
+ \newcommand{\pest}{{\sc pest}}
+ \newcommand{\pestt}{{\sc pest {\rm 2}}}
+ \newcommand{\pppl}{{\small PPPL}}
+ \newcommand{\postcam}{{\sc postcam}}
+ \newcommand{\tpppl}{The Princeton Plasma Physics Laboratory}
+ \newcommand{\pies}{{\sc pies}}
+ \newcommand{\riplos}{{\sc riplos}}
+ \newcommand{\spark}{{\sc spark}}
+ \newcommand{\ssat}{{\sc ssat}}
+ \newcommand{\start}{{\sc start}}
+ \newcommand{\tae}{{\sc tae}}
+ \newcommand{\toresupra}{{\sc tore-supra}}
+ \newcommand{\tftr}{{\sc tftr}}
+ \newcommand{\tsc}{{\sc tsc}}
+ \newcommand{\tss}{{\sc tss}}
+ \newcommand{\tpx}{{\sc tpx}}
+ \newcommand{\unicos}{{\sc unicos}}
+ \newcommand{\vacuum}{{\sc vacuum}}
+ \newcommand{\zio}{{\sc zio}}
+ %
+ \newcommand{\ssa}{$^a$}
+ \newcommand{\ssb}{$^b$}
+ \newcommand{\ssc}{$^c$}
+ \newcommand{\ssd}{$^d$}
+ %
+ \newcommand{\eqref}[1]{Eq.~(\ref{#1})}
+ \newcommand{\eqrefa}[2]{Eqs.~(\ref{#1}) and (\ref{#2})}
+ \newcommand{\eqrefo}[2]{Eq.~(\ref{#1}) or (\ref{#2})}
+ \newcommand{\eqreft}[2]{Eqs.~(\ref{#1}) to (\ref{#2})}
+ \newcommand{\figref}[1]{Fig.~\ref{#1}}
+ \newcommand{\secref}[1]{Sec.~\ref{#1}}
+ \newcommand{\secrefa}[2]{Secs.~(\ref{#1}) and (\ref{#2})}
+ \newcommand{\secrefo}[2]{Sec.~(\ref{#1}) or (\ref{#2})}
+ \newcommand{\secreft}[2]{Secs.~(\ref{#1}) to (\ref{#2})}
+ \newcommand{\tableref}[1]{Table~\ref{#1}}
+ %
+ \renewcommand{\thefootnote}{\fnsymbol{footnote}}
+%\renewcommand{\thesection}{\Roman{section}}
+%\renewcommand{\thesubsection}{\thesection.\Alph{subsection}}
+%\renewcommand{\thesubsubsection}{\thesubsection.\arabic{subsubsection}}
+% \renewcommand{\theequation}{\thesection-\arabic{equation}}% If sections
+%\def\thefigure{\thesection .\arabic{figure}}
+ \newcommand{\linespace}[1]{\renewcommand{\baselinestretch}{#1}\huge \normalsize}
+%
+%    Macros for centering textwidth and textheight.
+%         Adjust oddside- and top- margins.
+%
+\newlength{\@duml}
+\newcommand{\textw}[1]{\setlength{\@duml}{#1}%
+  \addtolength{\@duml}{-\textwidth}\addtolength{\textwidth}{\@duml}%
+  \addtolength{\oddsidemargin}{-.5\@duml}}
+\newcommand{\texth}[1]{\setlength{\@duml}{#1}%
+  \addtolength{\@duml}{-\textheight}\addtolength{\textheight}{\@duml}%
+  \addtolength{\topmargin}{-.5\@duml}}
+%
+%      landscape - add 2.5in to textwidth and -2.5in to height...
+%
+\newcommand{\textwl}[1]{\setlength{\@duml}{#1}% landscape
+  \addtolength{\@duml}{-\textwidth}\addtolength{\@duml}{-2.5in}%
+  \addtolength{\textwidth}{\@duml}\addtolength{\textwidth}{+2.5in}%
+  \addtolength{\oddsidemargin}{-.5\@duml}}
+\newcommand{\texthl}[1]{\setlength{\@duml}{#1}% landscape
+  \addtolength{\@duml}{-\textheight}\addtolength{\@duml}{+2.5in}%
+  \addtolength{\textheight}{\@duml}\addtolength{\textheight}{-2.5in}%
+  \addtolength{\topmargin}{-.5\@duml}}
+%
+\newcommand{\mystrut}[1]{\setlength{\@duml}{#1}\rule[-.5\@duml]{0cm}{\@duml}}
+%
+%
+%.....The following Time and Date macro from John Krommes:
+%
+\newcount\minutes
+\newcount\hours
+
+\hours=\time
+\divide\hours by 60
+\multiply\hours by 60
+\minutes=\time
+\advance\minutes by -\hours
+\divide\hours by 60
+
+\def\Time{\the\hours:\ifnum\minutes<10 0\fi\the\minutes}
+
+\def\Date{\ifcase\month\or
+	January\or February\or March\or April\or May\or June\or
+	July\or August\or September\or October\or November\or December\fi
+	\space\number\day, \number\year}
+%.............................................................
+\newcommand{\rfooter}[1]{\renewcommand{\@oddfoot}{\hfill{\sf #1}}}
+\newcommand{\rheader}[1]{\renewcommand{\@oddhead}{\hfill{ ---\small\textit{#1}}}}

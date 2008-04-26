@@ -1,0 +1,130 @@
+sunfire04:~/dcon/lsode% make
+pathf90 -O2 -m64 -c daxpy.f
+/tmp/ccs.rLNsMU.s: Assembler messages:
+/tmp/ccs.rLNsMU.s:41: Error: `0(%rdi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:42: Error: suffix or operands invalid for `movq'
+/tmp/ccs.rLNsMU.s:43: Error: `40(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:44: Error: `32(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:45: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:46: Error: bad register name `%r12'
+/tmp/ccs.rLNsMU.s:47: Error: bad register name `%r12'
+/tmp/ccs.rLNsMU.s:51: Error: `.rodata(%rip)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:52: Error: `0(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:60: Error: `0(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:62: Error: bad register name `%r9)'
+/tmp/ccs.rLNsMU.s:82: Error: bad register name `%r10'
+/tmp/ccs.rLNsMU.s:83: Error: `0(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:84: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:85: Error: `4(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:86: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:89: Error: `4(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:90: Error: `0(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:92: Error: bad register name `%r9'
+/tmp/ccs.rLNsMU.s:93: Error: bad register name `%r10'
+/tmp/ccs.rLNsMU.s:94: Error: bad register name `%r9'
+/tmp/ccs.rLNsMU.s:95: Error: suffix or operands invalid for `movslq'
+/tmp/ccs.rLNsMU.s:96: Error: suffix or operands invalid for `movslq'
+/tmp/ccs.rLNsMU.s:97: Error: `16(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:98: Error: bad register name `%r8,%rax,8)'
+/tmp/ccs.rLNsMU.s:99: Error: `24(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:100: Error: bad register name `%r12,%rsi,8)'
+/tmp/ccs.rLNsMU.s:101: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:107: Error: `24(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:108: Error: bad register name `%r12,%rdi,8)'
+/tmp/ccs.rLNsMU.s:109: Error: `16(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:110: Error: bad register name `%r8,%rdi,8)'
+/tmp/ccs.rLNsMU.s:114: Error: bad register name `%r9'
+/tmp/ccs.rLNsMU.s:116: Error: bad register name `%r10'
+/tmp/ccs.rLNsMU.s:119: Error: bad register name `%r8,%rdi,8)'
+/tmp/ccs.rLNsMU.s:123: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:124: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:125: Error: `-1(%rdx)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:127: Error: bad register name `%r10'
+/tmp/ccs.rLNsMU.s:129: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:131: Error: bad register name `%r9'
+/tmp/ccs.rLNsMU.s:132: Error: bad register name `%r8d'
+/tmp/ccs.rLNsMU.s:138: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:139: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:142: Error: bad register name `%r10'
+/tmp/ccs.rLNsMU.s:144: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:146: Error: bad register name `%r9'
+/tmp/ccs.rLNsMU.s:148: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:156: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:157: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:158: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:160: Error: bad register name `%r10,1)'
+/tmp/ccs.rLNsMU.s:161: Error: bad register name `%r9,1)'
+/tmp/ccs.rLNsMU.s:162: Error: bad register name `%r9,1)'
+/tmp/ccs.rLNsMU.s:164: Error: bad register name `%r10,2)'
+/tmp/ccs.rLNsMU.s:165: Error: bad register name `%r9,2)'
+/tmp/ccs.rLNsMU.s:167: Error: bad register name `%r10,2)'
+/tmp/ccs.rLNsMU.s:169: Error: bad register name `%r9,2)'
+/tmp/ccs.rLNsMU.s:171: Error: bad register name `%r8,%r10,1)'
+/tmp/ccs.rLNsMU.s:173: Error: bad register name `%r9,2)'
+/tmp/ccs.rLNsMU.s:175: Error: bad register name `%r9,1)'
+/tmp/ccs.rLNsMU.s:179: Error: bad register name `%r10,4)'
+/tmp/ccs.rLNsMU.s:181: Error: bad register name `%r9,4)'
+/tmp/ccs.rLNsMU.s:183: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:185: Error: bad register name `%r9,1)'
+/tmp/ccs.rLNsMU.s:191: Error: `40(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:192: Error: `32(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:193: Error: `48(%rsp)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:202: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:205: Error: bad register name `%r11,1)'
+/tmp/ccs.rLNsMU.s:214: Error: bad register name `%r12)'
+/tmp/ccs.rLNsMU.s:215: Error: bad register name `%r8)'
+/tmp/ccs.rLNsMU.s:216: Error: suffix or operands invalid for `movslq'
+/tmp/ccs.rLNsMU.s:217: Error: bad register name `%r9d'
+/tmp/ccs.rLNsMU.s:218: Error: bad register name `%r9d'
+/tmp/ccs.rLNsMU.s:219: Error: bad register name `%r8,%rdx,8)'
+/tmp/ccs.rLNsMU.s:225: Error: bad register name `%r12)'
+/tmp/ccs.rLNsMU.s:226: Error: bad register name `%r8)'
+/tmp/ccs.rLNsMU.s:227: Error: bad register name `%r9d'
+/tmp/ccs.rLNsMU.s:231: Error: bad register name `%r9d'
+/tmp/ccs.rLNsMU.s:233: Error: bad register name `%r8)'
+/tmp/ccs.rLNsMU.s:237: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:238: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:239: Error: bad register name `%r9)'
+/tmp/ccs.rLNsMU.s:245: Error: `-16(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:249: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:250: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:255: Error: `-16(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:257: Error: bad register name `%r9d'
+/tmp/ccs.rLNsMU.s:258: Error: bad register name `%r9d'
+/tmp/ccs.rLNsMU.s:259: Error: bad register name `%r9d'
+/tmp/ccs.rLNsMU.s:264: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:265: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:266: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:268: Error: `0(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:269: Error: `0(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:270: Error: `0(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:272: Error: `8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:273: Error: `8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:274: Error: `8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:276: Error: `16(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:277: Error: `16(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:283: Error: `-16(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:288: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:293: Error: `1(%rcx)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:294: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:297: Error: bad register name `%r9d'
+/tmp/ccs.rLNsMU.s:298: Error: bad register name `%r11d'
+/tmp/ccs.rLNsMU.s:299: Error: bad register name `%r8,%rdx,8)'
+/tmp/ccs.rLNsMU.s:300: Error: bad register name `%r12,%rsi,8)'
+/tmp/ccs.rLNsMU.s:301: Error: bad register name `%r8,%rsi,8)'
+/tmp/ccs.rLNsMU.s:305: Error: `-8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:306: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:307: Error: `-8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:310: Error: `0(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:311: Error: `0(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:312: Error: `0(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:315: Error: `8(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:316: Error: `8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:317: Error: `8(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:320: Error: `16(%rax)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:321: Error: `16(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:327: Error: `-16(%rsi)' is not a valid 32 bit base/index expression
+/tmp/ccs.rLNsMU.s:334: Error: bad register name `%r11)'
+/tmp/ccs.rLNsMU.s:341: Error: bad register name `%r11)'
+make: *** [daxpy.o] Error 1
+sunfire04:~/dcon/lsode% 

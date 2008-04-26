@@ -1,0 +1,16 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+frs.bin
+
+graph title:	Large Aspect Ratio Equilibrium
+
+variable names
+0	q0
+1	rs
+2	deltap
+
+ix	iy	title
+0	1	"rs vs. q0
+0	2	"deltap vs. q0
+1	2	"deltap vs. rs

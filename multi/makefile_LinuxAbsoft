@@ -1,0 +1,26 @@
+# This is the makefile for MULTI on Linux computers.
+
+FFLAGS = -O2
+F90 = f90 $(FFLAGS)
+
+.f.o: 
+	$(F90) -c $*.f
+
+LIBS = \
+     -lU77
+
+OBJS = \
+	io.o \
+	local.o \
+	multi.o
+
+multi: $(OBJS)
+	$(F90) -o multi $(OBJS) $(LIBS)
+
+# dependencies
+
+local.o: io.o
+multi.o: local.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin multi

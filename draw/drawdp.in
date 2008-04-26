@@ -1,0 +1,24 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+deltap.bin
+
+graph title:	Large Aspect Ratio Equilibrium
+
+variable names
+0	r
+1	q
+2	psi
+3	psi1
+4	u1
+5	u2
+6	log10 ca1
+7	log10 ca2
+8	log10 |z|
+
+ix	iy	title
+;0	2	"Psi
+;0	3	"Psi'
+;0	1	"Safety Factor
+8	6	"First Asymptotic Coefficient
+8	7	"Second Asymptotic Coefficient

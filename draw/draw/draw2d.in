@@ -1,0 +1,21 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+2d.bin
+
+graph title:	Revised DCON for NIMROD
+
+variable names
+0	theta
+1	r2
+2	deta
+3	eta
+4	dphi
+5	R
+6	Z
+7	jac
+
+ix	iy	title
+5	6	-a -s1 -f0	"Flux Surfaces
+;5	6	-a -f1 -s0	"Surfaces of Constant Theta
+0	1	-s1 -f0		"r2

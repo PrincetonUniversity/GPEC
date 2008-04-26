@@ -1,0 +1,13 @@
+&lar_input
+	ma=128
+	mtau=128
+
+	lar_r0=10
+	lar_a=1
+
+	beta0=1e-3
+	q0=1.5
+
+	p_pres=2
+	p_sig=1
+/

@@ -1,0 +1,56 @@
+%
+The \textsc{vacuum} code calculates the response to 
+%
+\beq
+\mathcal{B} & = & \mathcal{J}\nablav \chi\cdot\nablav\mathcal{Z},
+\eeq
+with
+\beq
+\mathcal{J} & = &
+(\nablav\mathcal{Z}\cdot\nablav\theta\times\nablav\phi)^{-1},
+\eeq
+%
+$\mathcal{Z}$ the radial coordinate and $\chi$ the magnetic
+scalar potential. 
+
+At the interface 
+%
+\beq
+\mathcal{B} & = & \mathcal{J}\mathbf{Q}\cdot\nablav\mathcal{Z} \\
+            & = & \mathcal{J}\nablav\mathcal{Z}\cdot\nablav \times
+(\mathbf{\bxi\times B}) \\
+            & = & \mathcal{J}\mathbf{B}\cdot\nablav
+(\mathbf{\bxi}\cdot\nablav\mathcal{Z}).
+\eeq
+
+Now the equilibrium field is 
+\beq
+\mathbf{B} & = & \nablav\phi\times\nablav\psi + Rg\nablav\phi\\
+       & = & \psi'\nablav\phi\times\nablav\mathcal{Z} + Rg\nablav\phi,
+\eeq
+where $\psi = \Psi/2\pi$, $\Psi$ being the poloidal flux. So
+\beq
+\mathbf{B}\cdot\nablav\theta & = & \mathcal{J}^{-1} \psi'
+\eeq
+where the prime denotes derivative with respect to $\mathcal{Z}$. Then
+we have
+\beq
+\mathcal{B} & = & \psi'(m-nq)\mathbf{\bxi}\cdot\nablav\mathcal{Z} \label{eqn:mnq}
+\eeq
+in a straight-field-line coordinate system.
+
+In the cylinder with $r$ as the radial coordinate,
+\beq 
+\psi' & = & R B_\theta\\
+      & = & \frac{r B_z }{q},
+\eeq
+%
+whereas if the radial coordinate is chosen to be $\psi$, then $\psi' =
+1$, and the ratio between these two cases is $r B_z/q$. This is equal
+to $1/q$ if $r=1$ and $B_z$ is unity.
+
+It should be noted that \textsc{vacuum} calculates the response to
+$\mathcal{B}$ but oftentimes outputs the vacuum matrix $V_{mm'}$ as
+the response to $\bxi$, in which case the factor of $(m-nq)(m'-nq)$
+arising from Eqn. \ref{eqn:mnq} is incorporated in $V_{mm'}$, where
+$m=m'$ in the circular cylinder.

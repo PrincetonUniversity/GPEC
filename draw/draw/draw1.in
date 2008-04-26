@@ -1,0 +1,20 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+sol01.bin
+
+comment:	Neighborhood of the Singular Surface
+
+variable names
+0	psifac
+1	log10 psifac
+2	log10 u1
+3	log10 u2
+4	log10 ca1
+5	log10 ca2
+
+ix	iy	options		 title
+;1	2	-f1 -s0		"Solution 1, First Variable
+;1	3	-f1 -s0		"Solution 1, Second Variable
+1	4	-f1 -s0		"Solution 1, First Coefficient
+1	5	-f1 -s0		"Solution 1, Second Coefficient

@@ -1,0 +1,44 @@
+# This is the makefile for ORBIT on LinuxPathscale computers.
+
+FFLAGS = -I../equil -O2
+F90 = pathf90 $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+LIBDIR = \
+	-L../lib/LinuxPathscale \
+	-L/usr/pppl/pathscale/2.2-pkgs/acml-2.7.0-x86_64/pathscale64/lib
+
+LIBS = \
+	$(LIBDIR) \
+	-lequil \
+	-llsode \
+	-lacml
+
+OBJS = \
+	orbit_mod.o \
+	restart.o \
+	field.o \
+	inner.o \
+	outer.o \
+	inner_gc.o \
+	outer_gc.o \
+	orbit.o
+
+orbit: $(OBJS)
+	$(F90) -o orbit $(OBJS) $(LIBS)
+
+# dependencies
+
+orbit_mod.o: ../equil/EQUIL_MOD.mod ../equil/EQUIL_OUT_MOD.mod
+restart.o: orbit_mod.o
+field.o: orbit_mod.o
+inner.o: field.o restart.o
+outer.o: field.o restart.o
+inner_gc.o: field.o restart.o
+outer_gc.o: field.o restart.o
+orbit.o: inner.o outer.o inner_gc.o outer_gc.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin orbit

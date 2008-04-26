@@ -1,0 +1,390 @@
+% This is Plain TeX file metric.tex.
+
+\magnification=\magstep2
+\parskip=4pt
+
+\font\bfbig=cmbx12
+\font\ssbf=cmssbx10
+\def\t#1{\hbox{\ssbf #1}}
+\def\v#1{\hbox{\bf #1}}
+\def\e#1{\hat {\bf e}_{#1}}
+
+\centerline {\bfbig General 3D Coordinate Transformation}
+
+$$ \t{J}[\v{x},\v{x}'] \equiv {\partial \over \partial \v{x}} \v{x}' 
+	= {\partial x_j' \over \partial x_i}
+= \left[ \matrix{
+\partial x'_1 / \partial x_1
+& \partial x'_2 / \partial x_1
+& \partial x'_3 / \partial x_1 \cr
+\partial x'_1 / \partial x_2
+& \partial x'_2 / \partial x_2
+& \partial x'_3 / \partial x_2 \cr
+\partial x'_1 / \partial x_3
+& \partial x'_2 / \partial x_3
+& \partial x'_3 / \partial x_3
+} \right]
+\eqno(1) $$
+
+$$ \t{J}[\v{x}',\v{x}] \equiv {\partial \over \partial \v{x}'} \v{x} 
+	= {\partial x_j \over \partial x_i'}
+= \left[ \matrix{
+\partial x_1 / \partial x'_1
+& \partial x_2 / \partial x'_1
+& \partial x_3 / \partial x'_1 \cr
+\partial x_1 / \partial x'_2
+& \partial x_2 / \partial x'_2
+& \partial x_3 / \partial x'_2 \cr
+\partial x_1 / \partial x'_3
+& \partial x_2 / \partial x'_3
+& \partial x_3 / \partial x'_3
+} \right]
+\eqno(2) $$
+
+$$ 
+{\cal J} \equiv \det \t{J}[\v{r},\v{x}], \quad
+{\cal J}' \equiv \det \t{J}[\v{r},\v{x}'], \quad
+\t{J}[\v{x}',\v{x}] = \t{J}^{-1}[\v{x},\v{x}']
+\eqno(3) $$
+
+\medskip
+$$ \eqalign{
+{{\cal J} \over {\cal J}'} {\partial x_1 \over \partial x'_1}
+	&= {\partial x'_2 \over \partial x_2}
+	  {\partial x'_3 \over \partial x_3}
+	- {\partial x'_3 \over \partial x_2}
+	  {\partial x'_2 \over \partial x_3} \cr
+{{\cal J} \over {\cal J}'} {\partial x_1 \over \partial x'_2}
+	&= {\partial x'_3 \over \partial x_2}
+	  {\partial x'_1 \over \partial x_3}
+	- {\partial x'_1 \over \partial x_2}
+	  {\partial x'_3 \over \partial x_3} \cr
+{{\cal J} \over {\cal J}'} {\partial x_1 \over \partial x'_3}
+	&= {\partial x'_1 \over \partial x_2}
+	  {\partial x'_2 \over \partial x_3}
+	- {\partial x'_2 \over \partial x_2}
+	  {\partial x'_1 \over \partial x_3} \cr\cr
+{{\cal J} \over {\cal J}'} {\partial x_2 \over \partial x'_1}
+	&= {\partial x'_2 \over \partial x_3}
+	  {\partial x'_3 \over \partial x_1}
+	- {\partial x'_3 \over \partial x_3}
+	  {\partial x'_2 \over \partial x_1} \cr
+{{\cal J} \over {\cal J}'} {\partial x_2 \over \partial x'_2}
+	&= {\partial x'_3 \over \partial x_3}
+	  {\partial x'_1 \over \partial x_1}
+	- {\partial x'_1 \over \partial x_3}
+	  {\partial x'_3 \over \partial x_1} \cr
+{{\cal J} \over {\cal J}'} {\partial x_2 \over \partial x'_3}
+	&= {\partial x'_1 \over \partial x_3}
+	  {\partial x'_2 \over \partial x_1}
+	- {\partial x'_2 \over \partial x_3}
+	  {\partial x'_1 \over \partial x_1} \cr\cr
+{{\cal J} \over {\cal J}'} {\partial x_3 \over \partial x'_1}
+	&= {\partial x'_2 \over \partial x_1}
+	  {\partial x'_3 \over \partial x_2}
+	- {\partial x'_3 \over \partial x_1}
+	  {\partial x'_2 \over \partial x_2} \cr
+{{\cal J} \over {\cal J}'} {\partial x_3 \over \partial x'_2}
+	&= {\partial x'_3 \over \partial x_1}
+	  {\partial x'_1 \over \partial x_2}
+	- {\partial x'_1 \over \partial x_1}
+	  {\partial x'_3 \over \partial x_2} \cr
+{{\cal J} \over {\cal J}'} {\partial x_3 \over \partial x'_3}
+	&= {\partial x'_1 \over \partial x_1}
+	  {\partial x'_2 \over \partial x_2}
+	- {\partial x'_2 \over \partial x_1}
+	  {\partial x'_1 \over \partial x_2} \cr
+} \eqno(4) $$
+
+\vfill\eject
+\centerline {\bfbig DCON Coordinate Transformation}
+
+$$ \eqalign{
+&x_1 = \psi \hskip0.25in x'_1 = r^2 \cr
+&x_2 = \theta \hskip0.25in x'_2 = \eta \cr
+&x_3 = \zeta \hskip0.25in x'_3 = \phi \cr
+} \eqno(5) $$
+
+$$ {\cal J}' = \pi R \eqno(6) $$
+
+$$ {\partial r^2 \over \partial \zeta} =
+{\partial \eta \over \partial \zeta} = 0, \quad
+{\partial \phi \over \partial \zeta} = 2 \pi
+\eqno(7) $$
+
+\medskip
+$$ \eqalign{
+{{\cal J} \over {\cal J}'} {\partial \psi \over \partial r^2}
+	&= {\partial \eta \over \partial \theta}
+	  {\partial \phi \over \partial \zeta}
+	- {\partial \phi \over \partial \theta}
+	  {\partial \eta \over \partial \zeta} 
+	= 2 \pi {\partial \eta \over \partial \theta} \cr
+{{\cal J} \over {\cal J}'} {\partial \psi \over \partial \eta}
+	&= {\partial \phi \over \partial \theta}
+	  {\partial r^2 \over \partial \zeta}
+	- {\partial r^2 \over \partial \theta}
+	  {\partial \phi \over \partial \zeta} 
+	= - 2 \pi {\partial r^2 \over \partial \theta} \cr
+{{\cal J} \over {\cal J}'} {\partial \psi \over \partial \phi}
+	&= {\partial r^2 \over \partial \theta}
+	  {\partial \eta \over \partial \zeta}
+	- {\partial \eta \over \partial \theta}
+	  {\partial r^2 \over \partial \zeta} = 0\cr\cr
+{{\cal J} \over {\cal J}'} {\partial \theta \over \partial r^2}
+	&= {\partial \eta \over \partial \zeta}
+	  {\partial \phi \over \partial \psi}
+	- {\partial \phi \over \partial \zeta}
+	  {\partial \eta \over \partial \psi} 
+	= - 2 \pi {\partial \eta \over \partial \psi} \cr
+{{\cal J} \over {\cal J}'} {\partial \theta \over \partial \eta}
+	&= {\partial \phi \over \partial \zeta}
+	  {\partial r^2 \over \partial \psi}
+	- {\partial r^2 \over \partial \zeta}
+	  {\partial \phi \over \partial \psi} 
+	= 2 \pi {\partial r^2 \over \partial \psi} \cr
+{{\cal J} \over {\cal J}'} {\partial \theta \over \partial \phi}
+	&= {\partial r^2 \over \partial \zeta}
+	  {\partial \eta \over \partial \psi}
+	- {\partial \eta \over \partial \zeta}
+	  {\partial r^2 \over \partial \psi} = 0 \cr\cr
+{{\cal J} \over {\cal J}'} {\partial \zeta \over \partial r^2}
+	&= {\partial \eta \over \partial \psi}
+	  {\partial \phi \over \partial \theta}
+	- {\partial \phi \over \partial \psi}
+	  {\partial \eta \over \partial \theta} \cr
+{{\cal J} \over {\cal J}'} {\partial \zeta \over \partial \eta}
+	&= {\partial \phi \over \partial \psi}
+	  {\partial r^2 \over \partial \theta}
+	- {\partial r^2 \over \partial \psi}
+	  {\partial \phi \over \partial \theta} \cr
+{{\cal J} \over {\cal J}'} {\partial \zeta \over \partial \phi}
+	&= {\partial r^2 \over \partial \psi}
+	  {\partial \eta \over \partial \theta}
+	- {\partial \eta \over \partial \psi}
+	  {\partial r^2 \over \partial \theta} 
+	= {1 \over 2 \pi} {{\cal J} \over {\cal J}'} \cr
+} \eqno(8) $$
+
+\vfill\eject
+\centerline {\bfbig Contravariant Basis Vectors}
+
+$$ \eqalign{
+&\nabla r^2 = 2 r \e{1}, \quad
+\nabla \eta = {\e{2} \over 2 \pi r}, \quad
+\nabla \phi = {\e{3} \over R} \cr
+&\e{i} \cdot \e{j} = \delta_{ij}, \quad
+\e{i} \cdot \e{j} \times \e{k} = \epsilon_{ijk}
+} \eqno(9) $$
+
+$$ \eqalign{
+&\v{v}_1 = \nabla \theta \times \nabla \zeta, \quad
+\v{v}_2 = \nabla \zeta \times \nabla \psi, \quad
+\v{v}_3 = \nabla \psi \times \nabla \theta \cr
+&\v{v}_i = v_{ij} \e{j}, \quad
+g_{ij} \equiv \v{v}_i \cdot \v{v}_j = v_{ik} v_{kj}
+} \eqno(10) $$
+
+$$ \eqalign{
+v_{11} =& \nabla \theta \times \nabla \zeta \cdot \e{1}
+	= {1 \over 2r {\cal J}'} \left(
+	{\partial \theta \over \partial \eta}
+	{\partial \zeta \over \partial \phi}
+	- {\partial \theta \over \partial \phi}
+	{\partial \zeta \over \partial \eta} \right)
+	= {1 \over 2r {\cal J}} 
+	{\partial r^2 \over \partial \psi} \cr 
+v_{12} =& \nabla \theta \times \nabla \zeta \cdot \e{2}
+	= {2\pi r \over {\cal J}'} \left(
+	{\partial \theta \over \partial \phi}
+	{\partial \zeta \over \partial r^2}
+	- {\partial \theta \over \partial r^2}
+	{\partial \zeta \over \partial \phi} \right)
+	= {2\pi r \over {\cal J}} 
+	{\partial \eta \over \partial \psi} \cr 
+v_{13} =& \nabla \theta \times \nabla \zeta \cdot \e{3}
+	= {R \over {\cal J}'} \left(
+	{\partial \theta \over \partial r^2}
+	{\partial \zeta \over \partial \eta}
+	- {\partial \theta \over \partial \eta}
+	{\partial \zeta \over \partial r^2} \right)
+	= {R \over {\cal J}}
+	{\partial \phi \over \partial \psi} \cr\cr
+v_{21} =& \nabla \zeta \times \nabla \psi \cdot \e{1}
+	= {1 \over 2r {\cal J}'} \left(
+	{\partial \zeta \over \partial \eta}
+	{\partial \psi \over \partial \phi}
+	- {\partial \zeta \over \partial \phi}
+	{\partial \psi \over \partial \eta} \right)
+	= {1 \over 2r {\cal J}}
+	{\partial r^2 \over \partial \theta} \cr 
+v_{22} =& \nabla \zeta \times \nabla \psi \cdot \e{2}
+	= {2\pi r \over {\cal J}'} \left(
+	{\partial \zeta \over \partial \phi}
+	{\partial \psi \over \partial r^2}
+	- {\partial \zeta \over \partial r^2}
+	{\partial \psi \over \partial \phi} \right)
+	= {2\pi r \over {\cal J}}
+	{\partial \eta \over \partial \theta} \cr 
+v_{23} =& \nabla \zeta \times \nabla \psi \cdot \e{3}
+	= {R \over {\cal J}'} \left(
+	{\partial \zeta \over \partial r^2}
+	{\partial \psi \over \partial \eta}
+	- {\partial \zeta \over \partial \eta}
+	{\partial \psi \over \partial r^2} \right)
+	= {R \over {\cal J}}
+	{\partial \phi \over \partial \theta} \cr\cr
+v_{31} =& \nabla \psi \times \nabla \theta \cdot \e{1}
+	= {1 \over 2r {\cal J}'} \left(
+	{\partial \psi \over \partial \eta}
+	{\partial \theta \over \partial \phi}
+	- {\partial \psi \over \partial \phi}
+	{\partial \theta \over \partial \eta} \right)
+	= 0 \cr
+v_{32} =& \nabla \psi \times \nabla \theta \cdot \e{2}
+	= {2\pi r \over {\cal J}'} \left(
+	{\partial \psi \over \partial \phi}
+	{\partial \theta \over \partial r^2}
+	- {\partial \psi \over \partial r^2}
+	{\partial \theta \over \partial \phi} \right)
+	= 0 \cr
+v_{33} =& \nabla \psi \times \nabla \theta \cdot \e{3}
+	= {R \over {\cal J}'} \left(
+	{\partial \psi \over \partial r^2}
+	{\partial \theta \over \partial \eta}
+	- {\partial \psi \over \partial \eta}
+	{\partial \theta \over \partial r^2} \right)
+	= {R \over {\cal J}}
+	{\partial \phi \over \partial \zeta} \cr\cr
+} \eqno(11) $$
+
+\vfill\eject
+\centerline {\bfbig Covariant Basis Vectors}
+
+$$ \eqalign{
+&\nabla r^2 = 2 r \e{1}, \quad
+\nabla \eta = {\e{2} \over 2 \pi r}, \quad
+\nabla \phi = {\e{3} \over R} \cr
+&\e{i} \cdot \e{j} = \delta_{ij}, \quad
+\e{i} \cdot \e{j} \times \e{k} = \epsilon_{ijk}
+} \eqno(12) $$
+
+$$ \eqalign{
+&\v{w}_1 = \nabla \psi, \quad
+\v{w}_2 = \nabla \theta, \quad
+\v{w}_3 = \nabla \zeta \cr
+&\v{w}_i = w_{ij} \e{j}, \quad
+{\cal J} \v{v}_i \cdot \v{w}_j = \delta_{ij}
+} \eqno(13) $$
+
+$$ \eqalign{
+w_{11} =& \nabla \psi \cdot \e{1}
+	= 2r {\partial \psi \over \partial r^2}
+	= {4 \pi^2 rR \over {\cal J}} 
+	{\partial \eta \over \partial \theta} \cr
+w_{12} =& \nabla \psi \cdot \e{2}
+	= {1 \over 2\pi r} {\partial \psi \over \partial \eta}
+	= - {\pi R \over r {\cal J}}
+	{\partial r^2 \over \partial \theta} \cr
+w_{13} =& \nabla \psi \cdot \e{3}
+	= {1 \over R} {\partial \psi \over \partial \phi}
+	= 0 \cr\cr
+w_{21} =& \nabla \theta \cdot \e{1}
+	= 2r {\partial \theta \over \partial r^2}
+	= - {4 \pi^2 rR \over {\cal J}}
+	{\partial \eta \over \partial \psi} \cr
+w_{22} =& \nabla \theta \cdot \e{2}
+	= {1 \over 2\pi r} {\partial \theta \over \partial \eta}
+	= {\pi R \over r {\cal J}}
+	{\partial r^2 \over \partial \psi} \cr
+w_{23} =& \nabla \theta \cdot \e{3}
+	= {1 \over R} {\partial \theta \over \partial \phi}
+	= 0 \cr\cr
+w_{31} =& \nabla \zeta \cdot \e{1}
+	= 2r {\partial \zeta \over \partial r^2}
+	= {2 \pi rR \over {\cal J}} \left(
+	{\partial \eta \over \partial \psi}
+	{\partial \phi \over \partial \theta}
+	- {\partial \phi \over \partial \psi}
+	{\partial \eta \over \partial \theta} \right) \cr
+w_{32} =& \nabla \zeta \cdot \e{2}
+	= {1 \over 2\pi r} {\partial \zeta \over \partial \eta}
+	= {R \over 2r {\cal J}} \left(
+	{\partial \phi \over \partial \psi}
+	{\partial r^2 \over \partial \theta}
+	- {\partial r^2 \over \partial \psi}
+	{\partial \phi \over \partial \theta} \right) \cr
+w_{33} =& \nabla \zeta \cdot \e{3}
+	= {1 \over R} {\partial \zeta \over \partial \phi}
+	= {1 \over 2\pi R}
+} \eqno(14) $$
+
+\vfill\eject
+\centerline {\bfbig Inverse Grad-Shafranov Equation}
+
+$$ \Delta^* \chi \equiv R^2 \nabla \cdot 
+	\left( {1 \over R^2} \nabla \chi \right)
+	= - {4 \pi^2 \over \chi'} (ff' + R^2 P')
+\eqno(15) $$
+
+$$ {\cal J} 
+	\equiv (\nabla \psi \cdot \nabla \theta \times \nabla \phi)^{-1}
+\eqno(16) $$
+
+$$ \eqalign{ {{\cal J} \over R^2} \Delta^* \chi
+=& {\cal J} \nabla \cdot \left( {1 \over R^2} \nabla \chi \right) \cr
+=& {\partial \over \partial \psi} \left( {\chi' {\cal J} \over R^2} 
+	|\nabla \psi|^2 \right)
+	+ {\partial \over \partial \theta} \left( {\chi' {\cal J} \over R^2} 
+	\nabla \psi \cdot \nabla \theta \right) \cr
+=& {\partial \over \partial \psi} \left\{ {\chi' {\cal J} \over R^2}
+	\left[ 4 r^2 \left({\partial \psi \over \partial r^2} \right)^2
+	+ {1 \over 4 \pi^2 r^2} \left( 
+	{\partial \psi \over \partial \eta} \right)^2 \right] \right\} \cr
+&+ {\partial \over \partial \theta} \left\{ {\chi' {\cal J} \over R^2}
+	\left[ 4 r^2 
+	{\partial \psi \over \partial r^2}
+	{\partial \theta \over \partial r^2}
+	+ {1 \over 4 \pi^2 r^2} 
+	{\partial \psi \over \partial \eta}
+	{\partial \theta \over \partial \eta}
+	\right] \right\} \cr
+=& {\partial \over \partial \psi} \left\{ 
+	{4 \pi^4 \chi' \over {\cal J}}
+	\left[ 4 r^2 
+	\left({\partial \eta \over \partial \theta} \right)^2
+	+ {1 \over 4 \pi^2 r^2} 
+	\left({\partial r^2 \over \partial \theta} \right)^2 
+	\right] \right\} \cr
+&- {\partial \over \partial \theta} \left\{ 
+	{4 \pi^4 \chi' \over {\cal J}}
+	\left[ 4 r^2 
+	{\partial \eta \over \partial \theta}
+	{\partial \eta \over \partial \psi}
+	+ {1 \over 4 \pi^2 r^2} 
+	{\partial r^2 \over \partial \theta}
+	{\partial r^2 \over \partial \psi}
+	\right] \right\} \cr
+} \eqno(17) $$
+
+$$ \eqalign{ 
+& {\partial \over \partial \psi} \left\{ 
+	{\chi' \over {\cal J}}
+	\left[ 4 r^2 
+	\left({\partial \eta \over \partial \theta} \right)^2
+	+ {1 \over 4 \pi^2 r^2} 
+	\left({\partial r^2 \over \partial \theta} \right)^2 
+	\right] \right\} \cr
+& \quad - {\partial \over \partial \theta} \left\{ 
+	{\chi' \over {\cal J}}
+	\left[ 4 r^2 
+	{\partial \eta \over \partial \theta}
+	{\partial \eta \over \partial \psi}
+	+ {1 \over 4 \pi^2 r^2} 
+	{\partial r^2 \over \partial \theta}
+	{\partial r^2 \over \partial \psi}
+	\right] \right\} \cr
+&\quad = - {1 \over \pi^2 R^2} {{\cal J} \over \chi'} (ff' + R^2 P')
+} \eqno(18) $$
+
+\end

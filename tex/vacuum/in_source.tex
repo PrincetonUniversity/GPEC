@@ -1,0 +1,54 @@
+%\setlength{\parskip}{1.ex}
+The magnetic field $\nablav\chi(\theta,\zeta)$ in the vacuum region is
+driven by the normal component of the perturbed magnetic field at the
+plasma-vacuum interface. It naturally enters the equations in the
+\textsc{vacuum} code in the form
+%
+\beq
+\mathcal{B}(\theta,\zeta) & = & \mathcal{J}\nablav \chi\cdot\nablav\mathcal{Z},\\
+            & = & - Z_\theta \frac{\partial\chi}{\partial X} +
+            X_\theta\frac{\partial \chi}{\partial Z},
+\eeq
+%
+so that, given the parametrization, $[X(\theta), Z(\theta)]$,
+$\mathcal{B}$ doesn't involve the Jacobian directly and the Neumann
+problem is independent of the coordinate used.
+
+Fourier analysis can be carried out in any $(\theta,\zeta)$ system:
+%
+\beq
+\mathcal{B}(\theta,\zeta) & = & \sum_l b_l e^{i(l\theta-n\zeta)} 
+\eeq
+%
+and $\chi$ is calculated as a response matrix to the vector containing
+$b_l$.
+
+If $\xi_\psi(\theta,\zeta)$ is supplied as the driving term, then in any
+$\theta$,
+%
+\beq
+\mathcal{B}(\theta,\zeta) & = & \mathcal{J} \mathbf{Q} \cdot\nablav\mathcal{Z} \\
+  & = & \mathcal{J}\mathbf{B}\cdot\nablav\xi_\psi(\theta,\zeta)\\ & = &
+  \mathcal{J}
+  \mathbf{B}\cdot\nablav\theta\left[\frac{\partial}{\partial \theta} -
+  i\frac{\mathbf{B}\cdot\nablav\zeta}{\mathbf{B}\cdot\nablav\theta} n
+  \right]\xi_\psi(\theta,\zeta),
+\eeq
+%
+so information about both $\mathbf{B}$ and $\mathcal{J}$ is needed.
+
+However, if the coordinates are such that the field lines are straight
+then the relation,
+%
+\beq 
+b_l & \sim & i(l-nq)\xi_l, \label{eqn:bl}
+\eeq
+%
+holds, and then the $\theta$ must be chosen to be the \textsc{pest}
+angle, $\theta_\mathrm{p}$ if the toroidal angle is $\phi$.
+
+Alternatively, for an arbitrary choice of $\theta$, we require the
+parametrization of $X(\theta), Z(\theta)$, and the coordinate
+transformation contained in $\nu(\theta)$, where $\zeta = \phi +
+\nu(\theta)$. Then the Fourier coefficients of $\mathcal{B}$ can be
+written as \eqref{eqn:bl}.

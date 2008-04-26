@@ -1,0 +1,36 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+orbit.bin
+
+graph title:	Particle Orbits
+
+variable names
+0	tau
+1	r
+2	z
+3	phi
+4	v_r
+5	v_z
+6	v_phi
+7	error
+8	bmod
+9	rl
+10	rlfac
+11	dmufac
+12	psi
+13	rho
+14	vpar
+15	x
+16	y
+
+ix	iy	title
+0	1	"Radial Position
+0	2	"Axial Position
+1	2	-a "Orbit in Poloidal Plane
+0	12	"Normalized Poloidal Flux
+0	13	"Parallel Velocity
+15	16	-a "Orbit Viewed Along Axis
+0	7	"Relative Change in Energy
+0	11	"Relative Change in Magnetic Moment
+0	10	"Larmor Radius / Radius of Curvature

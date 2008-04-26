@@ -1,0 +1,25 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+gse.bin
+
+graph title:	Grad-Shafranov Error
+
+variable names
+0	theta
+1	psi
+2	flux1
+3	flux2
+4	source
+5	total
+6	error
+7	log10 error
+
+ix	iy	title
+;0	2
+;0	3	
+;0	4
+;0	5	
+;0	6
+0	7
+1	7	-f1 -s0

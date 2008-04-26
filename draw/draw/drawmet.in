@@ -1,0 +1,31 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+metric.bin
+
+graph title:	Metric Tensor Components
+
+variable names
+0	psi
+1	Log10 psi
+2	Log10 1-psi
+3	Log10 ffco1
+4	Arg ffco1
+5	Log10 ffco2
+6	Arg ffco2
+7	Log10 ffco3
+8	Arg ffco3
+9	Log10 ffco4
+10	Arg ffco4
+11	Log10 ffco5
+12	Arg ffco5
+13	Log10 ffco6
+14	Arg ffco6
+
+ix	iy	title
+0	3	"g11
+0	5	"g22
+0	7	"g33
+0	9	"g23
+0	11	"g31
+0	13	"g12

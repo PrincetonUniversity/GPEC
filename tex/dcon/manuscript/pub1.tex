@@ -1,0 +1,1867 @@
+\documentclass[prb,twocolumn,showpacs,preprintnumbers,amsmath,amssymb]{revtex4}
+
+\usepackage[dvips]{graphicx}
+\usepackage{dcolumn}
+\usepackage{bm}
+
+\renewcommand*{\v}[1]{\hbox{\bfseries #1}}
+\renewcommand*{\t}[1]{\hbox{\sffamily\bfseries #1}}
+\newcommand{\vm}[1]{\mbox{\boldmath$#1$}}
+
+\begin{document}
+
+\title{The direct criterion of Newcomb for the \\ stability of an
+axisymmetric toroidal plasma} 
+
+\author{A. H. Glasser}
+\email{ahg@lanl.gov}
+\affiliation{Mail Stop K717, Los Alamos National Laboratory, 
+	P.O. Box 1663, Los Alamos, NM 87545}
+
+\date{\today}
+
+\begin{abstract}
+A new method is introduced for determining the magnetohydrodynamic
+stability of an axisymmetric toroidal plasma, based on a toroidal
+generalization of the method developed by Newcomb for cylindrical
+plasmas.  For toroidal mode number $n \ne 0$, the problem is reduced to
+the solution of a high-order complex system of ordinary differential
+equations, the Euler-Lagrange equation for minimizing the potential
+energy, and the evaluation of a real Critical Determinant whose poles
+indicate the presence of ideal instabilities.  Coupling to a vacuum
+region outside the plasma incorporates the effects of free-boundary
+instabilities.  The asymptotic behavior of the solutions in the
+neighborhood of singular surfaces provides the necessary information for
+coupling to singular layers incorporating resistivity, inertia, and
+rotation.  The method lends itself to efficient implementation using
+adaptive numerical integration.
+\end{abstract}
+
+\pacs{52.30.Cv, 52.55.Fa}
+
+\maketitle
+
+\section{\label{sec:intro}Introduction}
+
+A key step in understanding the behavior of tokamaks is the
+determination of the stability of the confined plasma to
+magnetohydrodynamic (MHD) perturbations.  Such instabilities are
+believed to set limits on the achievable current density and plasma
+pressure and to influence the onset of disruptions which can damage the
+device.  Stability studies constitute a major effort in interpretation
+of experiments and design studies for new tokamaks.
+
+Most existing MHD stability codes\cite{rcg76, rg81, wk76, lcb81, lmd84,
+rcg83} are based on a procedure in which the perturbed potential and
+kinetic energies are expanded in a set of 2-dimensional basis functions,
+reducing the numerical problem to the solution of a large matrix
+eigenvalue problem for the growth rates, frequencies, and eigenfunctions
+of the entire MHD spectrum.  These methods can suffer from poor
+convergence of the basis functions, especially for difficult equilibria
+with high $\beta$ (the ratio $2 \mu_0 P/ B^2$ of plasma pressure to
+magnetic field energy density), strong noncircularity, and poloidal
+divertors.  They require large expenditures of human and computer time.
+Much of the effort required by such methods goes into determining
+eigenvalues and eigenvectors which may not be needed when the real
+concern is simply the location of the stability boundary and perhaps the
+distance of a given equilibrium from that boundary.
+
+An alternative procedure was introduced by Newcomb for cylindrical
+plasmas.\cite{wan60} He found conditions for the existence of test
+functions which satisfy the boundary conditions and make the potential
+energy $\delta W$ negative, relying on the well-known result that the
+existence of such test functions implies the existence of exponentially
+growing perturbations.  His condition involves integrating a real
+2nd-order ordinary differential equation (ODE), the Euler-Lagrange
+equation for minimizing the potential energy, and determining whether
+the solution $\xi$ changes sign between successive singular points.
+This condition can be interpreted as determining whether there is a mode
+which fits into the ``box'' of the equilibrium.  We refer to it as the
+Direct Criterion of Newcomb, or \texttt{DCON}.
+
+The purpose of this paper is to generalize Newcomb's criterion to an
+axisymmetric toroidal plasma with toroidal mode number $n \ne 0$.  The
+key difference between a cylinder and a torus is that $\theta$, the
+poloidal angle which goes around the short way, is no longer a symmetry,
+as it is in a cylinder.  As a result, one can no longer treat individual
+Fourier components in this variable, because toroidicity and
+noncircularity couple different components and thus require that they be
+treated simultaneously.  The generalization of Newcomb's 2nd-order real
+Euler-Lagrange equation is a complex system of ODEs of order $2M$, where
+$M$ is the number of poloidal Fourier components retained in the
+treatment.  This system can be solved numerically with a very efficient
+adaptive ODE solver.
+
+In order to generalize Newcomb's sign-change criterion, it is necessary
+to identify a real scalar quantity whose sign change plays the same role
+in the toroidal case as that of Newcomb's displacement $\xi$ in the
+cylindrical case.  This quantity has been found as a critical
+determinants constructed from the Euler-Lagrange solutions with
+different initial conditions.  Its reality is a consequence of the
+Hamiltonian symmetry of the Euler-Lagrange equation, which is in turn a
+consequence of the well-known self-adjointness of the linearized ideal
+MHD equations.  Its role in the theory is demonstrated by a
+generalization of Newcomb's use of the Hilbert Invariant Integral.
+Another important difference between the cylindrical and toroidal cases
+is that in the former, successive intervals between singular surfaces
+can be treated independently, while in the latter they are coupled by
+nonresonant components which must be continuous across singular
+surfaces.
+
+Bineau\cite{mb61} attempted a treatment similar to ours but for general,
+non-axisymmetric toroidal plasmas.  His approach has many of the same
+features as this one, but it is more formal, it is not clear how to
+apply it as a practical stability program, and he does not obtain our
+key result, the Critical Determinant.  Section \ref{sec:conclude}
+discusses the difficulties of extending our treatment to nonaxisymmetric
+systems.  Connor {\it et al.}\cite{jwc88} and Fitzpatrick \textit{et
+al.}\cite{rf93} treat the equivalent of our Euler-Lagrange equation in
+the context of a large aspect ratio expansion.  Their interest is in
+toroidal resistive tearing modes; they do not discuss the symmetries of
+the equations or the generalization of Newcomb's criterion for ideal
+stability.  Dewar and Pletzer\cite{rld90, ap94} discuss a generalization
+of Newcomb's Euler-Lagrange equation to axisymmetric toroidal plasmas,
+but they do not express its properties as a coupled system of ODEs for
+the complex Fourier amplitudes, nor do they generalize Newcomb's
+criterion.  Their concern is with resistive stability, and their
+numerical treatment uses an expansion in finite elements in the radial
+direction.
+
+The remainder of this paper is organized as follows.  In Section
+\ref{sec:euler} we introduce a coordinate system and a vector
+representation used to evaluate and minimize the potential energy
+$\delta W$, derive the Euler-Lagrange equation, and discuss the
+symmetries of this equation.  In Section \ref{sec:sing} we discuss the
+behavior of the Euler-Lagrange equation in the neighborhood of its
+singular points at the resonant surfaces, the magnetic axis, and the
+separatrix.  In Section \ref{sec:fixed} we prove the toroidal
+generalization of Newcomb's criterion in terms of the the critical
+determinant.  In Section \ref{sec:free} we extend the treatment to
+include a vacuum region surrounding the plasma region, enabling us to
+treat external instabilities.  In Section \ref{sec:conclude}, we discuss
+our conclusions.  Appendix \ref{sec:coef} gives detailed expressions for
+the coefficient matrices which appear in the Euler-Lagrange equation.
+SI units are used.
+
+\section{\label{sec:euler}The Euler-Lagrange equation}
+
+In this section, we first describe the equilibrium and introduce a
+coordinate system and a representation for perturbed vectors.  We then
+use these to express the ideal MHD potential energy $\delta W$, and
+derive the Euler-Lagrange equation as the condition that $\delta W$ be
+stationary with respect to small changes in the perturbation.  We
+conclude with a discussion of the symmetry properties of this equation.
+
+We treat a stationary equilibrium\cite{mdk58} satisfying the pressure
+balance equation
+\[
+\v{J} \times \v{B} = \mu_0 \nabla P
+\]
+where \v{B} is the magnetic field, $\v{J} = \nabla \times \v{B}/\mu_0$
+is the plasma current, \v{B} and \v{J} are divergenceless, and $P$ is
+the plasma pressure.  We assume that the system is axisymmetric,
+\textit{i.e.}  all equilibrium scalars are independent of the azimuthal
+angle $\phi$.  With these assumptions, the magnetic field can be
+represented as
+\[
+\v{B} = f \nabla \phi + \frac{\chi'}{2 \pi} \nabla \phi \times \nabla \psi
+\]
+where $f = R B_T$, $R$ is the radius from the axis of symmetry, $B_T$ is
+the toroidal component of the magnetic field, and $\chi$ is the poloidal
+magnetic flux, and $P$, $\chi$, and $f$ are constant on a flux surface,
+{\it i.e.} a surface of constant $\psi$, with $\psi$ an arbitrary
+surface label.  The poloidal flux satisfies the Grad-Shafranov equation,
+\[
+\Delta^* \chi 
+	\equiv R^2 \nabla \cdot \left( \frac{1}{R^2} \nabla \chi \right)
+	= - \frac{4 \pi^2}{\chi'} (ff' + \mu_0 R^2 P')
+\]
+
+This static equilibrium does not allow for strong plasma rotation,
+velocities of order the sound or Alfv\'en velocities, for which inertial
+and anisotropic pressure effects can be important.  Such fast rotation
+can occur in the presence of strong neutral beam injection.  However, we
+do not exclude the case of diamagnetic rotation in which these effects
+are small and affect primarily the neighborhood of resonant surfaces.
+
+Location within the region of closed magnetic field lines is described
+in terms of straight-fieldline coordinates.  Each flux surface is
+labeled by an arbitrary coordinate $\psi$, which increases monitonically
+from the axis to the plasma edge.  It is commonly chosen to be linear in
+the poloidal flux and normalized to go from 0 at the axis to 1 at the
+edge.  Position on a flux surface is described in terms of the periodic
+variables $\theta$ and $\zeta$, which increase by 1 (not $2\pi$) after
+one turn around the torus the short way and the long way, respectively.
+Physical scalars must be single-valued, returning to their original
+values after $\theta$ or $\zeta$ increases by one.  The system has
+Jacobian
+\[
+{\cal J} \equiv (\nabla \psi \cdot \nabla \theta \times \nabla \zeta)^{-1}.
+\]
+The contravariant representation of the equilibrium magnetic field is
+given by
+\[
+\v{B} = \chi' (\nabla \zeta - q \nabla \theta) \times \nabla \psi,
+\]
+where $q$, the safety factor or winding number. is a function of $\psi$
+only.  Derivatives along the magnetic field, which play a key role in
+MHD stability theory, have the simple representation
+\[
+\v{B} \cdot \nabla {\cal F} = \frac{\chi'}{\cal J}
+	\left( \frac{\partial}{\partial \theta} 
+	+ q \frac{\partial}{\partial \zeta} \right) 
+	{\cal F}(\psi,\theta,\zeta)
+\]
+Here and subsequently, primes denote derivatives with respect to $\psi$.
+The poloidal and toroidal currents constant on a flux surface are given
+by
+\[
+\v{J} \cdot \nabla \theta = -\frac{2\pi f'}{\cal J}, \qquad 
+\v{J} \cdot \nabla \zeta = q \v{J} \cdot \nabla \theta
+	 - \frac{\mu_0 P'}{\chi'}
+\]
+while the normal current $\v{J} \cdot \nabla \psi$ vanishes.
+
+The perturbed displacement vector \vm{\xi} is described in terms of its
+contravariant representation,
+
+\begin{equation}
+\vm{\xi} = {\cal J} \left( \xi_\psi \nabla \theta \times \nabla
+	\zeta + \xi_\theta \nabla \zeta \times \nabla \psi + \xi_\zeta
+	\nabla \psi \times \nabla \theta \right)
+\label{eq:xi_vector}
+\end{equation}
+and a useful combination of these components, the surface displacement
+\begin{equation}
+\xi_s \equiv {\cal J} \left( \vm{\xi}
+	\times \v{B} \right)  
+	\cdot \left( \nabla \theta \times \nabla \zeta \right)
+= \chi' (q \xi_\theta - \xi_\zeta)
+\label{eq:xi_surface}
+\end{equation}
+Likewise, the perturbed magnetic field is expressed in terms of its
+contravariant components,
+\begin{eqnarray}
+\v{Q}=&&\nabla \times (\vm{\xi} \times \v{B})
+	= {\cal J} \left( Q_\psi \nabla \theta \times \nabla \zeta 
+	\right. \nonumber \\
++&& \left. Q_\theta \nabla \zeta \times \nabla \psi
+	+ Q_\zeta \nabla \psi \times \nabla \theta \right)
+\label{eq:q_vector}
+\end{eqnarray}
+These components are related to the components of \vm{\xi} by
+\begin{eqnarray}
+Q_\psi =&& \frac{\chi'}{\cal J} \left( 
+	\frac{\partial}{\partial \theta}
+	+ q \frac{\partial}{\partial \zeta} \right) 
+	\xi_\psi \nonumber \\
+Q_\theta =&& - \frac{1}{\cal J}
+	\frac{\partial}{\partial \psi}
+	\left( \chi' \xi_\psi \right)
+	+ \frac{1}{\cal J}
+	\frac{\partial \xi_s}{\partial \zeta} \nonumber \\
+Q_\zeta =&& - \frac{1}{\cal J}
+	\frac{\partial}{\partial \psi}
+	\left( q \chi' \xi_\psi \right)
+	- \frac{1}{\cal J}
+	\frac{\partial \xi_s}{\partial \theta} 
+\label{eq:q_components}
+\end{eqnarray}
+
+The ideal MHD perturbed potential energy is given by\cite{ibb58}
+\begin{eqnarray}
+\delta W =&& \frac{1}{2 \mu_0} \int d\v{x} 
+	\left[ Q^2 + \v{J} \cdot 
+	\vm{\xi} 
+	\times \v{B} \vm{\xi} 
+	\times \v{Q} \right. \nonumber \\
+&& \left. + \mu_0 (
+	\vm{\xi} 
+	\cdot \nabla P) (\nabla \cdot \vm{\xi})
+	+ \mu_0 \gamma P (\nabla \cdot 
+	\vm{\xi})^2 \right]
+\label{eq:dw1}
+\end{eqnarray}
+When Eqs. (\ref{eq:xi_vector}) - (\ref{eq:q_components}) are introduced
+into Eq. (\ref{eq:dw1}), we obtain
+\begin{widetext}
+\begin{eqnarray}
+\delta W = \frac{1}{2 \mu_0} \int d\psi d\theta d\zeta  {\cal J}
+	&&\left\{ 
+	\left[ \nabla \xi_s \times  \nabla \psi
+	+ (\nabla \theta \times \nabla \zeta) 
+	{\cal J} \v{B} \cdot \nabla \xi_\psi - \v{B} \xi'_\psi
+	- \left[ \chi'' \nabla \zeta \times \nabla \psi
+	+ (q \chi')' \nabla \psi \times \nabla \theta \right] 
+	\xi_\psi \right]^2 \right. \nonumber \\
+&&+ \xi_\psi \v{J} \cdot \nabla \xi_s 
+	- \xi_s \v{J} \cdot \nabla \xi_\psi
+	+ \left[ J_\theta (q \chi')' - J_\zeta \chi'' \right] \xi_\psi^2
+	+ \frac{\mu_0 P'}{\cal J} \left( {\cal J} \xi_\psi^2 \right)'
+	\nonumber \\
+&&\left. + \frac{1}{\cal J} \frac{\partial}{\partial \theta} 
+	\left( {\cal J} \mu_0 P' \xi_\psi \xi_\theta \right)
+	+ \frac{1}{\cal J} \frac{\partial}{\partial \zeta} 
+	\left( {\cal J} \mu_0 P' \xi_\psi \xi_\zeta \right)
+	+ \gamma \mu_0 P (\nabla \cdot 
+	\vm{\xi})^2 \right\}.
+\end{eqnarray}
+\end{widetext}
+
+The first two terms on the last line are perfect derivatives which
+vanish on integration over a flux surface.  The last term is
+positive-definite and is the only term containing $\xi_\theta$.
+Minimization with respect to $\xi_\theta$ eliminates this term for
+toroidal mode number $n \ne 0$.  The minimizing perturbations are thus
+divergenceless.  This will be assumed henceforth, and the compression
+term will be dropped.
+
+The remaining terms contain only the normal displacement $\xi_\psi$ and
+the surface displacement $\xi_s$.  While $\xi_\psi$ enters through its
+radial derivative $\xi_\psi'$ as well as angular derivatives with
+respect to $\theta$ and $\zeta$, $\xi_s$ enters only through its angular
+derivatives, which will permit us to eliminate it from the treatment and
+reduce $\delta W$ to a form involving only the radial displacement and
+its radial derivative, as in Newcomb's treatment of the cylindrical
+plasma.
+
+We now introduce Fourier series for the normal and surface
+displacements, 
+\begin{eqnarray}
+\left( \begin{matrix} \xi_s \\ \xi_\psi \end{matrix} \right)
+(\psi,\theta,\zeta) &&= \sum_{m=-\infty}^\infty \sum_{n=-\infty}^\infty
+\left. \left( \begin{matrix} \bar{\xi}_s \\ \bar{\xi}_\psi \end{matrix} 
+	\right) \right|_{m,n} (\psi) \nonumber \\
+&& \times \exp\left[ 2 \pi i \left( m \theta - n \zeta \right) \right]
+\label{eq:fourier}
+\end{eqnarray}
+In practice, the infinite sums in Eq. (\ref{eq:fourier}) are truncated to include a
+finite number $M$ of components.  The reality of the physical
+perturbations implies that the Fourier coefficients satisfy the reality
+conditions
+\begin{equation}
+\left( \begin{matrix} \xi_s \\ \xi_\psi \end{matrix} \right) 
+= \left( \begin{matrix} \xi_s \\ \xi_\psi \end{matrix} \right)^*
+\Rightarrow \left. \left( \begin{matrix} \bar{\xi}_s \\ \bar{\xi}_\psi 
+	\end{matrix} \right) \right|_{-m,-n}
+= \left. \left( \begin{matrix} \bar{\xi}_s \\ \bar{\xi}_\psi 
+	\end{matrix} \right) \right|_{m,n}^*
+\label{eq:define_xis}
+\end{equation}
+A useful, compact notation is to introduce the complex $M$-vectors of
+Fourier components of the radial and normal displacements.
+\begin{eqnarray}
+\left( \begin{matrix} \Xi_s \\ \Xi_\psi \end{matrix} \right) (\psi) 
+\equiv \left\{ \left. 
+	\left( \begin{matrix} \bar{\xi}_s \\ \bar{\xi}_\psi 
+	\end{matrix} \right) 
+	\right|_{m,n}(\psi),\ m_\textrm{low} \le m \le m_\textrm{high} 
+	\right\}. \nonumber \\
+\label{eq:Xi_vector}
+\end{eqnarray}
+
+With these definitions, the potential energy can be expressed as 
+\begin{widetext}
+\begin{equation}
+\delta W = \frac{1}{2 \mu_0} \int d\psi [
+	\Xi_s^\dagger \t{A} \Xi_s 
+	+ \Xi_s^\dagger (\t{B} \Xi_\psi' + \t{C} \Xi_\psi)
+	+ (\Xi_\psi'^\dagger \t{B}^\dagger
+	+ \Xi_\psi^\dagger \t{C}^\dagger) \Xi_s
+	+ \Xi_\psi'^\dagger \t{D} \Xi_\psi'
+	+ \Xi_\psi'^\dagger \t{E} \Xi_\psi
+	+ \Xi_\psi^\dagger \t{E}^\dagger \Xi_\psi'
+	+ \Xi_\psi^\dagger \t{H} \Xi_\psi ],
+\label{eq:dw3}
+\end{equation}
+\end{widetext}
+where \t{A}, \t{B}, \t{C}, \t{D}, \t{E}, and \t{H} are complex $M \times
+M$ matrices, dagger denotes Hermitian conjugate, and \t{A}, \t{D}, and
+\t{H} are self-adjoint.  Detailed expressions for these matrices are
+given in Eq. (\ref{eq:define_a-h}) of Appendix \ref{sec:coef}.
+
+Since $\Xi_s$ enters Eq. (\ref{eq:dw3}) only algebraically, and since
+\t{A} is found to be everywhere nonsingular, $\delta W$ can be minimized
+with respect to $\Xi$ simply by solving the matrix equation
+\begin{eqnarray}
+&&\t{A} \Xi_s + \t{B} \Xi_\psi' + \t{C} \Xi_\psi = 0, \nonumber \\
+&&\Xi_s = - \t{A}^{-1} (\t{B} \Xi_\psi' + \t{C} \Xi_\psi)
+\end{eqnarray}
+When this expression is substituted for $\Xi_s$ in Eq. (\ref{eq:dw3}),
+we obtain a form of $\delta W$ involving only $\Xi_\psi$ and its radial
+derivative,
+\begin{equation}
+\delta W = \int d\psi \left[
+\Xi_\psi'^\dagger \t{F} \Xi_\psi'
++ \Xi_\psi'^\dagger \t{K} \Xi_\psi
++ \Xi_\psi^\dagger \t{K}^\dagger \Xi_\psi'
++ \Xi_\psi^\dagger \t{G} \Xi_\psi \right]
+\label{eq:dw4}
+\end{equation}
+in terms of the composite matrices
+\begin{eqnarray}
+\t{F} &&\equiv \t{D} - \t{B}^\dagger \t{A}^{-1} \t{B} = \t{F}^\dagger, \nonumber \\
+\t{K} &&\equiv \t{E} - \t{B}^\dagger \t{A}^{-1} \t{C} \ne \t{K}^\dagger. \nonumber \\
+\t{G} &&\equiv \t{H} - \t{C}^\dagger \t{A}^{-1} \t{C} = \t{G}^\dagger, 
+\label{eq:define_fkg}
+\end{eqnarray}
+Simplified expressions for \t{F} and \t{K} are given in
+Eqs. (\ref{eq:simplify_f}) and (\ref{eq:simplify_k}) of Appendix
+\ref{sec:coef}.
+
+The Euler-Lagrange equation is the condition that $\delta W$ be
+stationary with respect to small changes in $\Xi_V(V)$,
+\begin{equation}
+\left( \t{F} \Xi_\psi' + \t{K} \Xi_\psi \right)' - \left( \t{K}^\dagger
+\Xi_\psi' + \t{G} \Xi_\psi \right) = 0
+\label{eq:euler1}
+\end{equation}
+a system of $M$ coupled 2nd-order ODEs.  This is a necessary but not
+sufficient condition that $\delta W$ be a minimum.  Whether the
+stationary point is a minimum depends on additional considerations
+discussed in Section IV.  However, these conditions are expressed in
+terms of the properties of the solutions to Eq. (\ref{eq:euler1}), which
+therefore plays a central role in the theory.
+
+The relationship to Newcomb's Euler-Lagrange equation is now
+straightforward.  For the cylindrical case, the Fourier components
+decouple.  The matrices \t{F}, \t{G}, and \t{K} become diagonal and can
+be regarded as real scalars.  In this case, the term $(\t{K} \Xi_\psi)'$
+can be expanded, the contribution from $\Xi'$ cancels the other term in
+the equation, and the contribution from $\t{K}'$ can be combined with
+\t{G} to give Newcomb's equation.  In the more general toroidal case,
+\t{K} is not self-adjoint, and no real simplification is obtained by
+this procedure.
+
+It is useful, for both analytical and numerical purposes, to express
+Eq. (\ref{eq:euler1}) as an equivalent system of $2M$ coupled 1st-order
+ODEs.  This can be done by introducing the complex $2M$-vector
+\begin{equation}
+\v{u} \equiv \left( \begin{matrix} \Xi_\psi \\ \t{F} \Xi_\psi' + \t{K}
+\Xi_\psi \end{matrix} \right)
+\label{eq:define_u}
+\end{equation}
+and the complex $2M \times 2M$ matrix
+\begin{equation}
+\t{L} \equiv \left( \begin{matrix}
+- \t{F}^{-1} \t{K} & \t{F}^{-1} \\
+\t{G} - \t{K}^\dagger \t{F}^{-1} \t{K} & \t{K}^\dagger \t{F}^{-1}
+\end{matrix} \right). 
+\label{eq:define_L}
+\end{equation}
+in terms of which Eq. (\ref{eq:euler1}) can be written
+\begin{equation}
+\v{u}' = \t{L} \v{u}.
+\label{eq:euler2}
+\end{equation}
+
+The matrix \t{L} has an important symmetry.  The off-diagonal blocks are
+self-adjoint, while the diagonal blocks are the negative of each other's
+adjoint.  More formally, in terms the unit symplectic matrix
+\[
+\t{J} \equiv \left( \begin{matrix}
+\t{0} & \t{I} \\ -\t{I} & \t{0} \end{matrix} \right)
+\]
+\t{L} has the Hamiltonian property, $\t{J} \t{L} \t{J} = \t{L}^\dagger$.
+In Hamiltonian terms, the second $M$ components of \v{u} in
+Eq. (\ref{eq:define_u}) can be regarded as the conjugate momenta of the
+first $M$ components, the displacements.  This is understood in abstract
+terms, since the independent variable $\psi$ is not time, and the
+variables are complex Fourier components.  The Hamiltonian symmetry of
+\t{L} may be thought of as a manifestation in this representation of the
+well-known self-adjointness of ideal MHD.
+
+Corresponding to the Hamiltonian symmetry of \t{L}, the fundamental
+matrix of solutions has the property of being symplectic.  Equation
+(\ref{eq:euler2}) is a $2M$th-order ODE and therefore has $2M$
+independent solutions, corresponding to different initial conditions.
+These $2M$ column vectors can be assembled into a $2M \times 2M$ matrix
+\t{U} which also satisfies Eq. (\ref{eq:euler2}), with \v{u} replaced by
+\t{U}.  \t{U} is a linear canonical transformation, the propagator of
+the system.  Using this equation and its Hermitian conjugate, it is
+simple to show that $\t{U}^\dagger \t{J} \t{U}$ is a conserved quantity;
+in fact, it is the Hamiltonian of the system.  If it is chosen initially
+to be the identity, then \t{U} everywhere satisfies the equation
+\begin{equation}
+\t{U}^\dagger \t{J} \t{U} = \t{J}
+\label{eq:symplectic1}
+\end{equation}
+We can express \t{U} in terms of $M \times M$ blocks,
+\begin{equation}
+\t{U} = \left( \begin{matrix} \t{U}_{11} & \t{U}_{12} \\
+\t{U}_{21} & \t{U}_{22} \end{matrix} \right)
+\label{eq:u_blocks}
+\end{equation}
+in which the upper blocks represent displacements, the lower blocks
+represent their conjugate momenta, and the left and right halves
+represent different sets of initial conditions.  In terms of these
+blocks, the symplectic property is equivalent to
+\begin{eqnarray}
+\t{U}_{11}^\dagger \t{U}_{21} = \t{U}_{21}^\dagger \t{U}_{11} \nonumber \\
+\t{U}_{12}^\dagger \t{U}_{22} = \t{U}_{22}^\dagger \t{U}_{12} \nonumber \\
+\t{U}_{11}^\dagger \t{U}_{22} - \t{U}_{21}^\dagger \t{U}_{12} = \t{I}
+\label{eq:symplectic2}
+\end{eqnarray}
+Similarly, one can show that if 
+\begin{equation}
+\t{U} \t{J} \t{U}^\dagger = \t{J}
+\label{eq:symplectic3}
+\end{equation}
+initially, then it retains this property, and from this we obtain the
+additional independent relations,
+\begin{eqnarray}
+\t{U}_{11} \t{U}_{12}^\dagger = \t{U}_{12} \t{U}_{11}^\dagger \nonumber \\
+\t{U}_{21} \t{U}_{22}^\dagger = \t{U}_{22} \t{U}_{21}^\dagger \nonumber \\
+\t{U}_{11} \t{U}_{22}^\dagger - \t{U}_{21} \t{U}_{12}^\dagger = \t{I}.
+\label{eq:symplectic4}
+\end{eqnarray}
+These symmetries play a central role in proving the theorems of Section
+\ref{sec:fixed}.
+
+\section{\label{sec:sing}Singular Surfaces}
+
+The Euler-Lagrange equation has regular singular points at the resonant
+surfaces where $q=m/n$, at the magnetic axis, and at a separatrix if one
+exists.  In this section we discuss the asymptotic behavior of the
+solutions in the neighborhood of each of these singular points.
+
+The form of the Euler-Lagrange equation, Eqs. (\ref{eq:define_L}) and
+(\ref{eq:euler2}), shows that the coefficient matrix \t{L} becomes
+singular wherever the determinant of \t{F} vanishes.  Using the forms of
+these matrices given in Eqs. (\ref{eq:simplify_f}) and
+(\ref{eq:simplify_k}) of Appendix \ref{sec:coef}, we can write
+\[
+\t{F} = \t{Q} \bar{\t{F}} \t{Q}, \qquad 
+\t{K} = \t{Q} \bar{\t{K}}, \qquad
+\t{G} = \bar{\t{G}},
+\]
+where $\bar{\t{F}}$, $\bar{\t{G}}$, and $\bar{\t{K}}$ are nonsingular at
+the resonant surfaces.  Since \t{Q} becomes singular at the resonant
+surfaces where $q=m/n$, these are singular points.  For an axisymmetric
+torus, as treated here, the toroidal mode number $n$ is a good quantum
+number, {\it i.e.} a fixed integer for each perturbation treated, and
+therefore the resonant surfaces are discrete.  In the presence of a
+magnetic separatrix, where $q \to \infty$ logarithmically, there is a
+point of accumulation of the resonant surfaces.  While we have not been
+able to prove it analytically, we find numerically that $\bar{\t{F}}$
+vanishes linearly with $\psi$ and $\bar{\t{G}}$ varies as $\psi^{-1}$ as
+$\psi \to 0$; this corresponds to the behavior of Newcomb's equation for
+the cylinder, making the axis a singular point.  In addition, we find
+numerically that $\det \bar{\t{F}}$ vanishes at a separatrix, making it
+another singular point.  In certain degenerate cases, {\it e.g.} if $q =
+m/n$ at the axis or at an extremum where $q'$ vanishes, two or more
+singular points can merge to form a singularity of higher rank.  We
+treat only the relatively simple cases for which this does not occur.
+
+In analyzing the asymptotic behavior of the solution in the neighborhood
+of a resonant surface, we must take account of the full matrix nature of
+the equations and the coupling between resonant and nonresonant
+components.  To accomplish this, we use a matrix form of the Frobenius
+analysis due to Turrittin.\cite{hlt55} Before treating the full case, we
+illustrate the procedure for Newcomb's cylindrical case, for which the
+Euler-Lagrange equation is
+\begin{equation}
+(f \xi')' - g \xi = 0,
+\label{eq:newcomb1}
+\end{equation}
+where primes denote derivatives with respect to $r$.  To express this in
+matrix form, let
+\[
+\v{u} = \left( \begin{matrix} \xi \\ f \xi' \end{matrix} \right), \qquad
+\t{L} = \left( \begin{matrix} 0 & 1/f \\ g & 0 \end{matrix} \right).
+\]
+Then Eq. (\ref{eq:newcomb1}) becomes $\v{u}' = \t{L} \v{u}.$ Let $r_s$
+be the position of the singular surface, let $z \equiv r - r_s$ for $r >
+r_s$, and reinterpret the primes to denote derivatives with respect to
+$z$.  The functions $f(r)$ and $g(r)$ can be Taylor expanded about the
+singular surface as $f = f_0 z^2 + \cdots$,$g = g_0 + \cdots.$ Then to
+lowest order,
+\[
+\t{L} = \left( \begin{matrix} 0 & 1/f_0 z^2 \\ g_0 & 0
+	\end{matrix} \right) + \cdots. 
+\]
+We now define a new dependent variable vector \v{v} by introducing the
+shearing transformation,
+\begin{equation}
+\v{u} = \t{R} \v{v}, \qquad 
+\t{R} \equiv \left( \begin{matrix} z^{-1/2} & 0 \\ 0 & z^{1/2}
+	\end{matrix} \right)
+\label{eq:shear_cyl}
+\end{equation}
+Then \v{v} satisfies the equation $z \v{v}' = \t{M} \v{v}$ in terms of
+the transformed matrix
+\[
+\t{M} = z \t{R}^{-1} (\t{L} \t{R} - \t{R}')
+= \left( \begin{matrix} 1/2 & 1/f_0 \\ g_0 & -1/2 \end{matrix} \right) +
+\cdots.
+\]
+If we now seek power-like solutions of the form $\v{v} = z^\alpha
+\v{v}^{(0)} + \cdots$, then to lowest order we obtain the matrix
+eigenvalue equation
+\begin{equation}
+(\t{M} - \alpha \t{I}) \v{v} = 0
+\label{eq:lowest_cyl}
+\end{equation}
+with eigenvalues satisfying the characteristic equation,
+\begin{eqnarray}
+&&\det (\t{M} - \alpha \t{I}) = 0, \qquad
+\alpha_\pm = \pm \sqrt{-D_I}, \nonumber \\
+&&D_I = - g_0/f_0 - 1/4,
+\label{eq:cyl_eigvals}
+\end{eqnarray}
+and eigenvectors
+\[
+\v{v}_\pm = \left( \begin{matrix} 1 \\ (\alpha_\pm - 1/2) f_0
+\end{matrix} \right). 
+\]
+Equation (\ref{eq:lowest_cyl}) thus plays the role of the indicial
+equation in the standard Frobenius analysis and also determines the form
+of the solution vectors.  Transforming these solutions back to the
+original vector of dependent variables \v{u} by means of
+Eq. (\ref{eq:shear_cyl}), we find that the general solution can be
+expressed as a linear combination of large and small solutions,
+\begin{eqnarray}
+\v{u}  =&& c_- z^{\alpha_-} 
+	\left( \begin{matrix} z^{-1/2} \\ 
+	z^{1/2} (\alpha_- - 1/2) f_0 \end{matrix} \right) \nonumber \\
+&&+ c_+ z^{\alpha_+} 
+	\left( \begin{matrix} z^{-1/2} \\ 
+	z^{1/2} (\alpha_+ - 1/2) f_0 \end{matrix} \right)
+\end{eqnarray}
+
+The shearing transformation introduced in Eq. (\ref{eq:shear_cyl}) is
+required in order to properly balance the components of the new
+dependent variable vector \v{v}, giving both components the same
+power-like behavior.  If we applied the same shearing transformation at
+an ordinary point of the equation, or to a nonresonant component of the
+solution at a resonant surface, then since the components of \v{u} are
+already in balance, both approaching a constant, the shearing
+transformation would unbalance them.  Thus, in treating the toroidal
+case, we must choose a shearing transformation which appropriately
+balances the resonant components without unbalancing the nonresonant
+components.  This introduces half-integral powers into the coupling
+between resonant and nonresonant components.
+
+In the neighborhood of a resonant surface of a toroidal plasma, let
+$q(\psi_R) = m/n$, $z \equiv \psi - \psi_R $ Then the dominant terms in
+\t{L}, Eq. (\ref{eq:define_L}), vary as
+\begin{eqnarray}
+&&\t{F}^{-1} \sim z^{-2}, \nonumber \\
+&&\t{F}^{-1} \t{K} \sim \t{K}^\dagger \t{F}^{-1} \sim z^{-1}, \nonumber \\
+&&\t{G} \sim \t{K}^\dagger \t{F}^{-1} \t{K} \sim 1
+\end{eqnarray}
+To balance the equations, we introduce the shearing transformation
+\begin{eqnarray}
+\v{u} &&= \v{R} \v{v}, \qquad R_{m,m'} = z^{r_m} \delta_{m,m'},
+	\nonumber \\
+r_m &&= -1/2, \qquad r_{m+M} = 1/2 \qquad {\rm for\ } \ m = n q,
+	\nonumber \\
+r_m &&= r_{m+M} = 0 \qquad {\rm for\ } \ m \ne n q,
+\label{eq:shear_tor}
+\end{eqnarray}
+where $M$ is the number of retained Fourier components.  Then the
+equation is transformed to
+\begin{equation}
+z \v{v}' = \t{M} \v{v}.
+\label{eq:transformed_eq_toroidal}
+\end{equation}
+The transformed matrix,
+\[
+\t{M} = z \t{R}^{-1} (\t{L} \t{R} - \t{R}' ),
+\]
+can be Taylor expanded about the resonant point as
+\begin{equation}
+\t{M} = \sum_{k=0}^\infty z^{k/2} \t{M}_k.
+\label{eq:expand_M_tor}
+\end{equation}
+We now seek power-like solutions of the form 
+\begin{equation}
+\v{v} = z^\alpha \sum_{k=0}^\infty z^{k/2} \v{v}^{(k)}.
+\label{eq:expand_v_tor}
+\end{equation}
+Introducing Eqs. (\ref{eq:expand_M_tor}) and (\ref{eq:expand_v_tor})
+into Eq. (\ref{eq:transformed_eq_toroidal}), we obtain, as the
+lowest-order terms, the matrix eigenvalue equation, $[\t{M}_0 - \alpha
+\t{I}] \v{v}^{(0)} = 0$.  The eigenvalues $\alpha$ are the solutions to
+the characteristic equation,
+\begin{equation}
+\det [\t{M}_0 - \alpha \t{I}] = 0.
+\label{eq:det_M}
+\end{equation}
+Higher-order terms in the power series solutions can be obtained
+iteratively from the higher-order equations,
+\[
+[\t{M}_0 - (\alpha + k/2) \t{I}] \v{v}^{(k)} 
+	= - \sum_{l=1}^k \t{M}_l \v{v}^{(k-l)}
+\]
+Since this is a regular singular point, the powers series solutions are
+convergent.
+
+The spectrum of Eq. (\ref{eq:det_M}) is simple.  Since
+$\t{M}_0$ is a $2M \times 2M$ matrix, there are $2M$ eigenvalues and
+eigenvectors.  Of these, two represent the resonant solutions
+corresponding to Eq. (\ref{eq:cyl_eigvals}) for the cylinder.  The other
+$2M-2$ eigenvalues are zero, corresponding to the nonresonant solutions.
+
+Determination of the resonant eigenvalues can be reduced to the solution
+of a $2 \times 2$ characteristic equation.  We take two basis vectors,
+each containing 1 for one of its resonant components and all other
+components zero.  Multiplication of these vectors by $\t{M}_0$
+annihilates all contributions from the null space.  The resonant
+components of the resulting vectors form a $2 \times 2$ matrix whose
+eigenvalues are
+\begin{equation}
+\alpha = \pm \sqrt{-D_I},
+\label{eq:define_alpha}
+\end{equation}
+where $D_I$ is the well-known expression for the Mercier criterion in
+axisymmetric toroidal geometry,\cite{jmg62,cm61,ahg75}
+\begin{widetext}
+\begin{eqnarray}
+D_I =&& - \frac{1}{4} 
++ \frac{2 \pi f P' V'}{q' \chi'^3} 
+	\left< \frac{1}{|\nabla \psi|^2} \right>
+	\left[ 1 - \frac{2 \pi f P' V'}{q' \chi'^3}
+	\left< \frac{1}{|\nabla \psi|^2} \right> \right] \nonumber \\
+&&+ \left< \frac{B^2}{|\nabla \psi|^2} \right> 
+	\frac{P' V'^2}{q'^2 \chi'^4}
+	\left\{P' \left[ \left< \frac{1}{B^2} \right>
+	+ \left( \frac{2 \pi f}{\chi'} \right)^2 
+	\left< \frac{1}{B^2 |\nabla \psi|^2} \right> \right]
+	+ \frac{\chi''}{\chi'} - \frac{V''}{V'} \right\}
+\label{eq:di}
+\end{eqnarray}
+\end{widetext}
+where $V$ is the volume inclosed within a flux surface.  While we have
+not been able to prove analytically that the solutions to
+Eq. (\ref{eq:det_M}) are in fact given by Eqs. (\ref{eq:define_alpha})
+and (\ref{eq:di}), we find numerically that they converge to these
+values as the number of retained Fourier components increases.
+Agreement between these two ways of computing $D_I$ can thus serve as a
+test for adequate Fourier convergence at a resonant surface.  The
+Mercier criterion, that $D_I \le 0$ is a necessary condition for
+stability, follows from that fact that if $D_I > 0$, then $\alpha$ is
+imaginary, the solution vector \v{v} in Eq. (\ref{eq:expand_v_tor}) is
+oscillatory, and the generalization of Newcomb's stability criterion,
+presented in the next section, is repeatedly violated.
+
+It would appear from Eqs. (\ref{eq:expand_M_tor}),
+(\ref{eq:expand_v_tor}), and (\ref{eq:det_M}) that the higher-order
+terms in the power-series solutions contain half-integral powers of $z$.
+This is deceptive, because the shearing transformation in
+Eq. (\ref{eq:shear_tor}) restores the half powers to integral powers for
+the original variables \t{u}.  The real significance of the half powers
+is that determination of higher order terms alternates between the
+resonant and nonresonant components.  For example, the zeroth-order
+resonant eigenvectors contain only resonant components, the first-order
+terms are all nonresonant, the second-order terms are resonant, etc.
+For the nonresonant eigenvectors, this order is reversed.  In principle,
+the power series solutions can be determined to arbitrarily high order;
+in practice, this is limited by the difficulty of evaluating the higher
+order terms in the Taylor expansion of \t{M},
+Eq. (\ref{eq:expand_M_tor}).
+
+Once all of the independent eigenvectors have been determined to some
+order, they can be assembled as the columns of a matrix which we denote
+$\t{V}(\psi)$.  We choose a particular order for these vectors, as close as
+possible to the identity.  The subspace of nonresonant eigenvectors,
+corresponding to the eigenvalues $\alpha=0$, is spanned by a basis in
+which each basis vector contains only one nonresonant component to
+lowest order.  We arrange these vectors so that the nonvanishing
+component appears on the diagonal and normalize them so that the
+diagonal element is 1.  We place the large resonant eigenvector in the
+resonant column of the left half of \t{V} and the small resonant
+eigenvector in the resonant column of the left half of \t{V}.  With a
+proper choice of normalization of the resonant solutions, \t{V} can be
+made symplectic.
+
+In principle, the convergent power series could be evaluated to all
+orders, and $\t{V}$ would then be an exact fundamental solution matrix.
+Any particular solution vector $\v{u}(\psi)$ of the exact Euler-Lagrange
+equation, such as one obtained by integrating the equations numerically,
+could then be expressed as a linear combination of these independent
+solutions, $\v{u}(\psi) = \t{V}(\psi)\v{c}$, where the constant vector
+$\v{c}$ consists of the expansion coeffients in a linear combination.
+In practice, it is often more convenient to truncate the power series
+after a few terms, in which case $\t{V}(\psi)$ is not an exact
+fundamental solution matrix.  We can still express an exact solution as
+a linear combination of the truncated power series solutions,
+\begin{equation}
+\v{u}(\psi) = \t{V}(\psi) \v{c}_A(\psi).
+\label{eq:define_ca}
+\end{equation}
+Then the vector $\v{c}_A(\psi)$ of expansion coefficients is no longer
+constant, but asymptotically approaches a limit as the resonant surface
+is approached, as long as the number of terms in the power series is
+sufficiently large.  We therefore denote the components of this vector
+asymptotic coefficients.
+
+As $\psi \to \psi_R$, $\v{c}_A$ can be obtained by solving
+Eq. (\ref{eq:define_ca}).  The matrix $\t{V}(\psi)$ is used in the
+following section in deriving the proofs of the basic stability
+theorems.  The components of $\v{c}_A(\psi)$ are also involved in the
+generalization of the quantity $\Delta'$ which appears in the study of
+singular modes.  This will be the subject of a later paper.
+
+The two resonant eigenvectors corresponding to the eigenvalues in
+Eq. (\ref{eq:define_alpha}) have powers differing by $2 \sqrt{-D_I}$.
+If accurate determination of the asymptotic coefficient of the small
+resonant solution is necessary, as in the treatment of singular modes,
+then enough terms in the series solution of the large solution must be
+retained so that its remaining error is smaller than the zeroth-order
+term in the small solution.  If $|D_I|$ is large, this can make the
+procedure numerically impractical.  This typically occurs in regions of
+very low shear $q'$, for example when $q$ has a turning point, or if
+$\beta$, the ratio of plasma pressure to magnetic energy density, is
+large.
+
+The axis is a singular point of the Euler-Lagrange equation, just at it
+is for Newcomb's cylindrical case.  For the latter, the solutions for $r
+\xi_r$ vary as $r^{\pm m}$ in the neighborhood of the axis.  Boundary
+conditions at the axis must exclude the $r^{-m}$ solutions and retain
+the $r^{m}$ solutions.  Similarly, one would expect that, in the
+toroidal case, solutions for $\xi \cdot \nabla \psi$ should vary as
+$\psi^{\pm \mu/2}$, with $\mu$ an integer.  Determination of the
+asymptotic behavior at the axis should be reducible to an analysis
+similar to that presented above for the resonant surfaces, based on a
+matrix eigenvalue equation of the form
+\begin{equation}
+\lim_{\psi \to 0} [ \psi \t{L} - \alpha \t{I} ] \t{u} = 0.
+\label{eq:axis}
+\end{equation}
+There are several complications which make this difficult.  The complex
+form of $\t{F}$ given in Eq. (\ref{eq:simplify_f}), especially coupling
+to the $m=0$ term, make it difficult to extract the asymptotic behavior
+of \t{L} analytically.  Since the eigenvalues differ by integers, there
+are further complications discussed by Turrittin.
+
+Equation (\ref{eq:axis}) can be treated numerically as the solution to a
+matrix eigenvalue problem.  Doing so, we find that the eigenvalues do
+indeed approach $\mu/2$, as expected.  The eigenvectors obtained by this
+means are used to initialize the integration near the axis.  In general,
+a pure eigenvector, corresponding to pure $\psi^{\mu/2}$ behavior,
+contains a mixture of all Fourier components $m$, due to toroidal ($\pm
+1$) and elliptic ($\pm 2$) coupling in the neighborhood of the axis.
+
+If a separatrix bounds the region of confined plasma, it has two effects
+on the distribution of singular surfaces.  First, it causes $q \to
+\infty$, introducing an accumulation point of singular surfaces due to
+the $\t{Q}$ factors in \t{F}, Eq. (\ref{eq:simplify_f}).  Second, we
+have found numerically that the remaining factors of \t{F} have a
+vanishing determinant at the axis.  If we treat a truncated Fourier
+series with some maximum value of $m$, then this additional singularity
+can be regarded to play a role similar to that of the singular point at
+the axis.  A full understanding of this behavior remains to be achieved.
+
+At each resonant point, one eigenvalue of \t{F} has a quadratic zero; it
+does not change sign.  The only other singularities of \t{F} are at the
+axis and the separatrix.  Thus, throughout the region of closed field
+lines between the axis and the separatrix, all eigenvalues of \t{F} are
+non-negative.  This property is used in the next section to generalize
+the proofs of the stability theorems.
+
+\section{\label{sec:fixed}Fixed-Boundary Modes}
+
+Our goal in this paper is to determine whether there exist test
+functions $\Xi_\psi(\psi)$ which make $\delta W$ negative while
+satisfying the boundary conditions.  In our analysis so far, we have
+derived the Euler-Lagrange equation which makes $\delta W$ stationary
+with respect to variations of $\Xi_\psi$, and we have studied its
+symmetry properties and its singular points.  Now we must understand the
+relationship between the solutions to this equation and the existence of
+test functions which make $\delta W$ negative.
+
+Here is an outline of the proofs in this section.  We first consider the
+case of a plasma bounded by flux surfaces $\psi_1$ and $\psi_2$ which
+are both ordinary points of the Euler-Lagrange equation, with no
+resonant points between them.  We study a 2-point boundary value problem
+on the interval $[\psi_1,\psi_2]$.  We use this to find the slope of the
+Euler-Lagrange solution passing through any point in the space of
+solutions.  This motivates the definition of the plasma response matrix
+$\t{W}_P(\psi)$ and the critical determinant $D_C(\psi) \equiv \det
+\t{W}_P(\psi)$.  If $D_C$ has no poles in $[\psi_1,\psi_2]$, we use the
+results of the 2-point boundary value problem to construct a Hilbert
+invariant integral and prove that it depends only on the boundary
+conditions and that it constitutes a lower bound on $\delta W$.  The
+lower bound is achieved if and only if $\Xi(\psi)$ is an Euler-Lagrange
+solution satisfying the boundary conditions.  If $\psi_1$ and $\psi_2$
+are perfect conductors, this lower bound is shown to vanish, proving
+that the absence of poles in $D_C$ is a sufficient condition for
+stability.  If $D_C$ has a pole in $[\psi_1,\psi_2]$, we prove by
+construction that there exists a test function $\Xi(\psi)$ which makes
+$\delta W < 0$, and thus that the absence of poles in $D_C$ is a
+necessary condition for stability.  Next we generalize the proofs to the
+case where the plasma is bounded by the axis, $\psi=0$; and by a
+resonant surface where $q(\psi_R)=m/n$.  Finally, we consider the case
+of one or more resonant points $\psi_R \in [\psi_1,\psi_2]$.  We show
+that if $D_C$ has no pole in $[\psi_1,\psi_R)$ or in $(\psi_R,\psi_2]$,
+then the lower bound on $\delta W$ is achieved if and only if
+$\Xi(\psi)$ is an Euler-Lagrange solution in each nonresonant
+subinterval, contains no large resonant solution at $\psi_R$, and has
+nonresonant contributions which are continuous with continuous
+derivatives.  Generalizations of the necessary and sufficient conditions
+then follow easily.  The case where the plasma is bounded by a vacuum
+region is considered in the next section.
+
+As a preliminary, we treat a 2-point boundary value problem.  Consider
+an interval $\psi_1 \le \psi \le \psi_2$ containing no singular points
+where $\det \t{F}=0$.  The solutions to the Euler-Lagrange equation in
+this interval constitute a $2M$-dimensional complex vector space.  A
+unique solution can be selected by imposing $2M$ boundary conditions.
+These could be imposed entirely at $\psi_1$, entirely at $\psi_2$, or
+any combination thereof.  We impose half of the conditions at $\psi_1$
+and half at $\psi_2$, with all conditions imposed on $\Xi$, the upper
+half of $\v{u}$ as defined in Eq. (\ref{eq:define_u}).  We define a
+fundamental matrix of solutions satisfying
+\begin{equation}
+\t{U}'(\psi) = \t{L}(\psi) \t{U}(\psi), \qquad \t{U}(\psi_1) = \t{I}.
+\label{eq:define_U}
+\end{equation}
+Any particular solution $\v{u}$ can be expressed as a linear combination
+of the columns of $\t{U}$,
+\begin{equation}
+\v{u}(\psi) = \t{U}(\psi) \v{c},
+\label{eq:define_c}
+\end{equation}
+where \v{c} is a constant vector of expansion coefficients.  Determining
+\v{u} is equivalent to determining \v{c}.  The boundary conditions are
+given by $\Xi(\psi_1) = \v{u}_1(\psi_1) = \Xi_1$, $\Xi(\psi_2) =
+\v{u}_1(\psi_2) = \Xi_2$, where $\v{u}_1$ refers to the upper half of
+\v{u} and the $\Xi$'s are constant $M$-vectors.  Using the decomposition
+of $\t{U}$ given in Eq. (\ref{eq:u_blocks}), we can express the boundary
+conditions in terms of \v{c} as $\v{c}_1 = \Xi_1$, $\t{U}_{11}(\psi_2)
+\v{c}_1 + \t{U}_{12}(\psi_2) \v{c}_2 = \Xi_2$, where $\v{c}_1$ and
+$\v{c}_2$ are the upper and lower halves of \v{c}.  Since the boundary
+conditions at $\psi_1$ determine $\v{c}_1$, the boundary conditions at
+$\psi_2$ must be satified by solving for $\v{c}_2$,
+\begin{equation}
+\v{c}_2 = \t{U}_{12}^{-1}(\psi_2) [\Xi_2 - \t{U}_{11}(\psi_2) \Xi_1]. 
+\label{eq:define_c2_1}
+\end{equation}
+From this it is clear that the existence of a solution to the boundary
+value problem depends on whether $\t{U}_{12}(\psi_2)$ is invertible,
+{\it i.e.} has a nonvanishing determinant.  If it does not, then the
+solution exists only if the quantity in brackets is orthogonal to the
+null space of $\t{U}_{12}^\dagger$, in which case the solutions are not
+unique, but there is a family of solutions passing through the same
+point.
+
+Following Newcomb, we wish to define a Hilbert invariant integral and
+determine when it exists and constitutes a lower bound on $\delta W$.
+For the cylindrical case, Newcomb defines the Hilbert invariant integral
+as a contour integral in a 2-dimensional real vector space whose axes
+are $\xi$ and $r$; we define our generalization as a contour integral in
+a space which is a cartesian product of one real dimension for $\psi$
+and an $M$-dimensional complex vector space of $\Xi$'s.  Newcomb covers
+his 2-space with Euler-Lagrange solutions which all satisfy a given left
+boundary condition $\xi(r_1) = \xi_1$; we cover our space with solutions
+which all satisfy a given left boundary condition $\Xi(\psi_1) = \Xi_1$.
+Newcomb defines his contour integral in terms of the slope of the
+Euler-Lagrange solution passing through a given point in $\xi$-$r$
+space.  In our space, this involves finding the Euler-Lagrange solution
+which passes through $\Xi_1$ at $\psi_1$ and through $\Xi$ at $\psi$,
+the solution to our the 2-point boundary value problem.  Its slope is
+given by
+\begin{eqnarray}
+\Xi^*(\psi,\Xi_1,\Xi) \equiv \t{F}^{-1} \left\{ 
+	[\t{U}_{21}(\psi) \Xi_1 - \t{K}(\psi)\Xi] \right. \nonumber \\
++\left. \t{U}_{22}(\psi) \t{U}_{12}^{-1}(\psi) 
+	[\Xi - \t{U}_{11}(\psi) \Xi_1] \right\}.
+\label{eq:define_xi*}
+\end{eqnarray}
+
+We define the plasma response matrix $\t{W}_P$ and the critical
+determinant $D_C$ as
+\begin{equation}
+\t{W}_P(\psi) \equiv \t{U}_{22}(\psi) \t{U}_{12}^{-1}(\psi), \quad
+D_C(\psi) \equiv \det \t{W}_P(\psi).
+\label{eq:define_dc}
+\end{equation}
+The plasma response matrix occurs in the expression for $\Xi^*$ in
+Eq. (\ref{eq:define_xi*}).  Since $\det \t{F}$ never vanishes in the
+interval $[\psi_1,\psi_2]$, the existence of $\Xi^*$ throughout the
+interval depends only on whether $\t{W}_P$ is well-behaved, {\it i.e.}
+whether its determinant $D_C$ has poles in the interval.  From the
+symplectic symmetry properties in Eqs. (\ref{eq:u_blocks}) and
+(\ref{eq:symplectic2}), we find that $\t{W}_P$ is self-adjoint and
+therefore $D_C$ is real.  We shall see that poles in $D_C$ constitute
+the appropriate generalization of Newcomb's criterion involving zeroes
+of his real scalar Euler-Lagrange solution $\xi(r)$.  We can also
+express our generalized criterion in a manner more similar to Newcomb's
+by noting that the smallest eigenvalue of $\t{W}_P^{-1}$ has a zero
+wherever $D_C$ has a pole.  In fact, this is a more useful numerical
+diagnostic.
+
+If $D_C$ has no poles in the interval $[\psi_1,\psi_2]$, we define our
+Hilbert invariant integral as a contour integral in $\Xi-\psi$ space,
+\begin{eqnarray}
+W^\dagger(C) \equiv&& \int_C  \Bigl\{
+	[\Xi^{*\dagger} (\t{F} \Xi^* + \t{K} \Xi)
+	+ \Xi^\dagger (\t{K}^\dagger \Xi^\star + \t{G} \Xi) ] d\psi 
+	\nonumber \\
+&&+ (d\Xi^\dagger - \Xi^{*\dagger} d\psi) 
+	(\t{F} \Xi^* + \t{K} \Xi) \nonumber \\
+&&+ (\Xi^{*\dagger} \t{F} + \Xi^\dagger \t{K}^\dagger) 
+	(d\Xi - \Xi^* d\psi) \Bigr\} \nonumber \\
+=&& \int_C \left[ w_\psi d\psi 
+	+ d\Xi^\dagger \v{w}_{\Xi^\dagger} 
+	+ \v{w}_\Xi d\Xi \right].
+\label{eq:define_w_dagger}
+\end{eqnarray}
+where $C$ is any contour connecting the boundary conditions in our
+$(M+1)$-dimensional $\Xi-\psi$ space and
+\begin{equation}
+w_\psi \equiv \Xi^\dagger \t{G} \Xi - \Xi^{* \dagger} \t{F} \Xi^*, \quad
+\v{w}_{\Xi^\dagger} = \v{w}_\Xi^\dagger = \t{F} \Xi^* + \t{K} \Xi.
+\label{eq:define_w_psi}
+\end{equation}
+
+To prove that $W^\dagger(C)$ is independent of the contour and depends
+only on the endpoints, we must prove that the integrand is curl-free in
+this multidimension space.  This follows from the conditions
+\[
+\frac{\partial w_\psi}{\partial \Xi^\dagger} 
+= \frac{\partial w_{\Xi^\dagger}}{\partial \psi}, \quad
+\frac{\partial w_{\Xi^\dagger}}{\partial \Xi}
+= \frac{\partial w_\Xi}{\partial \Xi^\dagger},
+\]
+which follow easily from Eq. (\ref{eq:define_w_psi}).  To prove that
+$W^\dagger(C)$ constitutes a lower bound for $\delta W$, we note that
+\[
+\delta W - W^\dagger(C) = \int_C d\psi (\Xi' - \Xi^*)^\dagger \t{F}
+	(\Xi' - \Xi^*) \ge 0,
+\]
+because \t{F} is non-negative, as discussed at the end of the previous
+section.  Equality holds if and only if $\Xi$ is an Euler-Lagrange
+solution.
+
+Having shown that $\delta W$ is minimized by the unique Euler-Lagrange
+solution satisfying the boundary condition if $D_C$ has no poles, we now
+find the value of that minimum.  Starting with Eq. (\ref{eq:dw4}), we
+first symmetrize the expression to obtain
+\begin{eqnarray}
+\delta W =&& \frac{1}{2} \int_{\psi_1}^{\psi_2} d\psi \big[ 
+	\Xi'^\dagger (\t{F} \Xi' + \t{K} \Xi) 
+	+ \Xi^\dagger (\t{K}^\dagger \Xi' + \t{G} \Xi) \nonumber \\
+&&+ ( \Xi'^\dagger \t{F} + \Xi^\dagger \t{K}^\dagger) \Xi'
+	+ ( \Xi'^\dagger \t{K} + \Xi^\dagger \t{G}) \Xi \big].
+\label{eq:dw_sym}
+\end{eqnarray}
+Next we use the Euler-Lagrange equation, Eq. (\ref{eq:euler1}), and its
+Hermitian conjugate, to eliminate terms in Eq. (\ref{eq:dw_sym})
+containing $\t{G}$ and obtain
+\begin{eqnarray}
+\delta W
+=&& \frac{1}{2} \int_{\psi_1}^{\psi_2} d\psi \left[ 
+	\Xi'^\dagger (\t{F} \Xi' + \t{K} \Xi) 
+	+ \Xi^\dagger (\t{F} \Xi' + \t{K} \Xi)' \right. \nonumber \\
+&&\left. + ( \Xi'^\dagger \t{F} + \Xi^\dagger \t{K}^\dagger) \Xi'
+	+ ( \Xi'^\dagger \t{F} + \Xi^\dagger \t{K}^\dagger)' 
+	\Xi \right] \nonumber \\
+=&& \frac{1}{2} \int_{\psi_1}^{\psi_2} d\psi \left[ 
+	\Xi^\dagger (\t{F} \Xi' + \t{K} \Xi) 
+	+ (\Xi'^\dagger \t{F} + \Xi^\dagger \t{K}^\dagger)
+	\Xi \right]' \nonumber \\
+=&& \left. \frac{1}{2} \left[ 
+	\Xi^\dagger (\t{F} \Xi' + \t{K} \Xi)
+	+ (\Xi'^\dagger \t{F} + \Xi^\dagger \t{K}^\dagger) \Xi
+	 \right] \right|_{\psi_1}^{\psi_2} \nonumber \\
+=&& \left. \frac{1}{2} \left( \t{u}_1^\dagger \t{u}_2 
+	+ \t{u}_2^\dagger \t{u}_1 \right) \right|_{\psi_1}^{\psi_2}
+\label{eq:dw_boundary}
+\end{eqnarray}
+
+	The unique Euler-Lagrange solution satisfying the boundary
+conditions is the solution to the 2-point boundary value problem above.
+If the plasma response matrix is nonsingular throughout the interval,
+then $\v{u}_2(\psi)$ is bounded everywhere.  If $\v{u}_1=\Xi$ vanishes
+at the boundaries, as it must at perfectly conducting walls, then this
+minimizing $\delta W$ vanishes, proving that there are no test functions
+which make $\delta W$ negative.  This proves the sufficient condition
+for stability, that in the absence of poles in $D_C$, the system is
+stable.  So far the proof applies only to the case where $\psi_1$ and
+$\psi_2$ are conducting walls.  This is further generalized below.
+
+Next we prove, for the same case, that the absence of poles in $D_C$ is
+a necessary condition for stability, by showing that if $D_C$ has a
+pole, we can construct a test function which makes $\delta W$ negative.
+If $\v{c}_1 = \Xi_1 = 0$, then $\v{u}_1(\psi) = \t{U}_{21}(\psi)
+\v{c}_2$, $\v{u}_2(\psi) = \t{U}_{22}(\psi) \v{c}_2 = \t{U}_{22}(\psi)
+\t{U}_{21}^{-1}(\psi) \v{u}_1(\psi) = \t{W}_P(\psi) \v{u}_1(\psi)$, and
+$\v{u}_1(\psi) = \t{W}_P(\psi)^{-1} \v{u}_2(\psi)$.  If $D_C(\psi)$ has
+a pole at $\psi=\psi_P$, then $\t{W}_P^{-1}(\psi_P)$ has a vanishing
+determinant and hence a nontrivial null space.  If we choose
+$\v{u}_2(\psi_P)$ to be in that null space, the corresponding
+$\v{u}_1(\psi_P)$ vanishes.  We may therefore construct a test function
+which is nonzero in $[\psi_1,\psi_P]$, for which $\v{u}_1(\psi)$
+vanishes at both $\psi_1$ and $\psi_P$, and therefore, by
+Eq. (\ref{eq:dw_boundary}), the contribution of this interval to $\delta
+W$ vanishes.  If we make the test function vanish identically on
+$[\psi_P, \psi_2]$, then the contribution from that interval also
+vanishes.  This test function is an Euler-Lagrange solution on each of
+the subintervals, but not on the whole interval $[\psi_1,\psi_2]$.  In
+particular, it is not an Euler-Lagrange solution on any subinterval
+containing $\psi_P$.  We may choose a small subinterval containing
+$\psi_P$ and connect the points on the original test function on either
+side of $\psi_P$ with an Euler-Lagrange solution between those points.
+This must give a lower contribution to $\delta W$ than the original test
+function.  Since $\delta W$ vanishes for the original test function, the
+new trial function makes $\delta W$ negative.  This completes the proof.
+
+To generalize the proofs to the case where $\psi_1 = 0$, the magnetic
+axis, we replace the initial conditions on \t{U}.  Rather than
+initialize to the identity, as in Eq. (\ref{eq:define_U}), we construct
+an initial \t{U} from the asymptotic solutions in the neighborhood of
+the axis, the solutions to Eq. (\ref{eq:axis}).  Let the left half of
+\t{U} contain the solutions which are asymptotically large at the axis
+and the right half contain those which are small.  Then the constant
+vector \v{c} defined in Eq. (\ref{eq:define_c}) constitutes the
+expansion coefficients of these asymptotic solutions, the top half
+$\v{c}_1$ the coefficients of the irregular solutions and the bottom
+half $\v{c}_2$ the coefficients of the regular solutions.  The boundary
+conditions at the axis require that $\v{c}_1 = 0$.  The rest of the
+proofs follow unchanged.
+
+To understand the behavior as $\psi_2$ approaches a resonant surface
+$\psi_R$, we first consider the behavior of the plasma response matrix
+$\t{W}_P$.  For the cylindrical case, with $M=1$, $\t{W}_P$ is a scalar,
+the ratio of the second to the first component of the 2-vector \v{u}
+which is small at the axis.  From the shearing transformation in
+Eq. (\ref{eq:shear_cyl}) or (\ref{eq:shear_tor}), we see that this
+vanishes, $\t{W}_P \sim z=\psi_R-\psi$ as $z \to 0$.  From
+Eq. (\ref{eq:dw_boundary}), with $\Xi_1=0$ because $\psi_1$ is either a
+conducting wall or the axis, we find
+\begin{equation}
+\delta W 
+= \left. \frac{1}{2} \left( 
+	\v{u}_1^\dagger \v{u}_2 + \v{u}_2^\dagger \v{u}_1
+	 \right) \right|_{\psi_1}^{\psi_2}
+= \left. \Xi^\dagger \t{W}_P \Xi \right|_{\psi_2}.
+\label{eq:define_wp}
+\end{equation}
+Thus, if $\Xi$ were bounded at the resonant surface, $\delta W$ would
+vanish.  To keep $\delta W$ bounded, it is overly restrictive to require
+that $\Xi$ bounded; it would be sufficient to let $\Xi \sim z^{-1/2}$.
+Since the minimizing test function is an Euler-Lagrange solution, we may
+take $\Xi$ to be a linear combination of the large and small resonant
+solutions, varying as $z^{-1/2 \pm \sqrt{-D_I}}$.  Since the large
+solution diverges more rapidly than $z^{-1/2}$, it would contribute a
+positive-definite infinite term to $\delta W$, precluding the
+determination of a minimum, and must therefore be excluded.  Then only
+the small resonant solution can be allowed, and its contribution to
+$\delta W$ vanishes.  For the general case $M > 1$, $\t{W}_P$ has one
+vanishing eigenvalue and $M-1$ eigenvalues approaching constants.  The
+contribution from the large resonant solution is required to vanish, as
+a boundary condition at the resonant surface.  In the cylindrical case,
+the only solution which is small at both the axis and the resonant
+surfaces is the trivial solution which is identically zero throughout
+the first interval.  In the general case, there may be an arbitrary
+linear combination of nonresonant terms, spanning a space of dimension
+$M-1$, which make finite contributions to $\delta W$, according to Eq.
+(\ref{eq:define_wp}).  The vector $\Xi$ may be bounded or may have an
+unbounded contribution from the small resonant solution, and is
+otherwise arbitrary.  Only the nonresonant terms make a finite
+contribution to $\delta W$.
+
+To treat the boundary conditions at a resonant surface $\psi_2 =
+\psi_R$, we note that a particular solution can be expressed in terms of
+two different bases, $\v{u}(\psi) = \t{U}(\psi) \v{c} = \t{V}(\psi)
+\v{d}$.  Here, \t{U} is the fundamental solution matrix defined above,
+initialized to the large and small solutions at the axis; \t{V} is the
+fundamental solution matrix defined in Section III above
+Eq. (\ref{eq:define_ca}), constructed from the full convergent power
+series solutions about the resonant surface; \v{c} is a constant vector
+whose upper and lower halves $\v{c}_1$ and $\v{c}_2$ contain the
+expansion coefficients of solutions which are large and small at the
+axis, respectively; and \v{d} is a constant vector whose upper half
+$\v{d}_1$ contains the components of the nonresonant displacements and
+the coefficient of the large resonant solution at the resonant surface,
+and whose lower half $\v{d}_2$ contains the second components of the
+nonresonant solutions and the coefficient of the small resonant solution
+at the resonant surface.  The boundary condition at the axis is
+$\v{c}_1=0$.  We wish to determine $\v{c}_2$ by imposing boundary
+conditions at the resonant surface, specifying $\v{d}_1$, imposing an
+arbitrary value for the nonresonant displacements and zero for the
+coefficient of the nonresonant solution.  This can be done by letting
+$\v{d} = \t{V}^{-1} \t{U}\v{c}$, letting $d_1 = \Xi_R$ with vanishing
+resonant component, using the symplectic property,
+Eq.(\ref{eq:symplectic1}), to write $\t{V}^{-1}=-\t{J} \t{V}^\dagger
+\t{J}$, and inverting to obtain
+\begin{equation}
+\v{c}_2 = (\t{V}_{22}^\dagger
+\t{U}_{12}-\t{V}_{12}^\dagger \t{U}_{22})^{-1} \Xi_R,
+\label{eq:define_c2_2}
+\end{equation}
+If the power series in \t{V} are truncated to some order, then $\v{c}_2$
+may be evaluated as the limit as $\psi \to \psi_R$.  Equation
+(\ref{eq:define_c2_2}) may be regarded as a generalization of
+Eq. (\ref{eq:define_c2_1}) to a resonant surface, with $\Xi_1=0$ and
+$\t{U}_{12}$ replaced by the appropriate limiting matrix.  The
+nonresonant case is recovered by replacing $\t{V}_{22}$ with $\t{I}$ and
+$\t{V}_{12}$ with $\t{0}$.  In the cylindrical case, the only solution
+is the trivial one, $\v{c}_2=\v{0}$.  In the toroidal case, the
+nonresonant components of $\Xi$ remain arbitrary, and thus $\v{c}_2$
+spans a space of dimension $M-1$.  Equation (\ref{eq:define_c2_2}) is a
+general result for any value of $\Xi_R$, including a nonzero resonant
+component.  With a vanishing resonant component, it can be further
+simplified to
+\begin{equation}
+\v{c}_2 = \lim_{\psi \to \psi_R} \t{U}_{12}^{-1}(\psi) \Xi_R,
+\label{eq:define_c2_3}
+\end{equation}
+the same form as for the nonresonant case.
+
+If $[\psi_1,\psi_2]$ contains one or more resonant surfaces, the above
+proof of the sufficient condition is no longer valid.  We can no longer
+construct $\Xi^*$, Eq. (\ref{eq:define_xi*}); or $W^\dagger$,
+Eq. (\ref{eq:define_w_dagger}); or the Euler-Lagrange solutions,
+Eq. (\ref{eq:define_U}); on the whole interval because $\t{F}^{-1}$
+diverges at each resonant point.  We consider first the case of one
+resonant point $\psi_R \in [\psi_1,\psi_2]$ and assume that $\Xi_1=0$
+because $\psi_1$ is either the axis or a conducting wall.  In order to
+determine the minimizing test function, we divide the interval into two
+subintervals $[\psi_1,\psi_R]$ and $[\psi_R,\psi_2]$.  The perturbation
+$\Xi(\psi_R) = \Xi_R$ may be bounded or it may have an unbounded
+contribution from the small resonant solution.  The nonresonant terms
+must be continuous across the singular surface in order to avoid
+positive infinite contributions to $\delta W$, but are otherwise
+arbitrary.  We compute the minimizing contributions to $\delta W$ from
+each subinterval as a function of $\Xi_R$.  We then perform a formal
+minimization with respect to $\Xi_R$ and show that the minimizing
+solution is the one for which the nonresonant solutions have continuous
+derivatives as well as values.  Since the contribution from the small
+resonant solution in the neighborhood of $\psi_R$ vanishes, it remains
+arbitrary, to be determined by boundary conditions for $\psi > \psi_R$.
+
+For simplicity, we first study the procedure for the case where $\psi_R$
+is an arbitrary reference point, an ordinary point, and then consider
+how it must be modified if $\psi_R$ is a resonant point.  We expect that
+for the ordinary point, the results should show that the solution is a
+single, continuous Euler-Lagrange solution, and this is indeed the case.
+
+In the subinterval $[\psi_1,\psi_R]$, we initialize the fundamental
+solution matrix $\t{U}(\psi)$ to the identity at $\psi_1$ if $\psi_1$ is
+a conductor; or to the asymptotic solutions in the neighborhood of the
+axis if $\psi_1=0$, with the large solutions in the left half and the
+small solutions in the right half.  In either case, $\v{c}_1=0$,
+$\v{u}_1(\psi) = \t{U}_{12}(\psi)\v{c}_2$, and $\v{u}_2(\psi) =
+\t{U}_{22}(\psi) \v{c}_2$.  The boundary conditions at $\psi_R$ then
+require that $\v{u}_1(\psi_R^-) = \Xi_R$, $\v{c}_2 =
+\t{U}_{12}^{-1}(\psi_R^-) \Xi_R$, and $\v{u}_2(\psi_R^-) =
+\t{U}_{22}(\psi_R^-)\t{U}_{12}^{-1}(\psi_R^-) \Xi_R$.  To simplify
+notation, we define $\t{S} \equiv \t{U}(\psi_R^-)$; thus
+$\v{u}_2(\psi_R^-) = \t{S}_{22} \t{S}_{12}^{-1} \Xi_R$.
+
+In the subinterval $[\psi_R,\psi_2]$, we initialize the fundamental
+solution matrix $\t{U}(\psi)$ to the identity at $\psi_R$.  The general
+solution in this subinterval is $\v{u}_1 = \t{U}_{11} \v{d}_1 +
+\t{U}_{12} \v{d}_2$, $\v{u}_2 = \t{U}_{21} \v{d}_1 + \t{U}_{22}
+\v{d}_2$.  The boundary condition at $\psi_R^+$ determines that $\v{d}_2
+= \Xi_R$, while that at $\psi_2$ determines that $\v{d}_2 =
+\t{U}_{12}^{-1}(\psi_2)(\Xi_2 - \t{U}_{11} \Xi_R)$.  Again to simplify
+notation, we define $\t{T} \equiv \t{U}(\psi_2)$.  Then
+$\v{u}_2(\psi_R^+) = \t{T}_{12}^{-1} (\Xi_2 - \t{T}_{11} \Xi_R)$ and
+$\v{u}_2(\psi_2) = \t{T}_{21}\Xi_R + \t{T}_{22} \t{T}_{12}^{-1}(\Xi_2 -
+\t{T}_{11}\Xi_R)$.
+
+Using the symplectic symmetry properties in Eqs. (\ref{eq:symplectic2})
+and (\ref{eq:symplectic4}), we can express the total potential energy in
+$[\psi_1,\psi_2]$ as
+\begin{widetext}
+\begin{eqnarray}
+\delta W 
+=&& \frac{1}{2} \big[ \v{u}_1^\dagger(\psi_R^-) \v{u}_2(\psi_R^-) 
+	+ \v{u}_2^\dagger(\psi_R^-) \v{u}_1(\psi_R^-)
+	- \v{u}_1^\dagger(\psi_R^+) \v{u}_2(\psi_R^+) 
+	- \v{u}_2^\dagger(\psi_R^+) \v{u}_1(\psi_R^+) \nonumber \\
+&& + \v{u}_1^\dagger(\psi_2) \v{u}_2(\psi_2) 
+	+ \v{u}_2^\dagger(\psi_2) \v{u}_1(\psi_2) \big] \nonumber \\
+=&& \Xi_R^\dagger \t{S}_{22} \t{S}_{12}^{-1} \Xi_R
+	- \frac{1}{2} \Xi_R^\dagger \t{T}_{12}^{-1}
+	(\Xi_2 - \t{T}_{11} \Xi_R)
+	- \frac{1}{2} 
+	(\Xi_2^\dagger - \Xi_R^\dagger \t{T}_{11}^\dagger )
+	\t{T}_{12}^{-1\dagger} \Xi_R \nonumber \\
+&& + \frac{1}{2} \Xi_2^\dagger [ \t{T}_{21} \Xi_R
+	+ \t{T}_{22} \t{T}_{12}^{-1}
+	(\Xi_2 - \t{T}_{11} \Xi_R) ]
+	+ \frac{1}{2} [ \Xi_R^\dagger \t{T}_{21}^\dagger
+	+ (\Xi_2^\dagger - \Xi_R^\dagger \t{T}_{11}^\dagger)
+	\t{T}_{12}^{-1\dagger} \t{T}_{22}^\dagger ] \Xi_2 \nonumber \\
+=&& \Xi_R^\dagger ( \t{S}_{22} \t{S}_{12}^{-1}
+	+ \t{T}_{12}^{-1} \t{T}_{11} ) \Xi_R
+	+ \Xi_2^\dagger \t{T}_{22} \t{T}_{12}^{-1} \Xi_2 \nonumber \\
+&& - \frac{1}{2} \Xi_R^\dagger (
+	\t{T}_{12}^{-1} - \t{T}_{21}^\dagger
+	+ \t{T}_{11}^\dagger \t{T}_{12}^{-1\dagger} \t{T}_{22}^\dagger
+	) \Xi_2
+	- \frac{1}{2} \Xi_2^\dagger (
+	\t{T}_{12}^{-1\dagger} - \t{T}_{21}
+	+ \t{T}_{22} \t{T}_{12}^{-1} \t{T}_{11}
+	) \Xi_R \nonumber \\
+=&& \Xi_R^\dagger (\t{S}_{22} \t{S}_{12}^{-1}
+	+ \t{T}_{12}^{-1} \t{T}_{11} ) \Xi_R
+	- \Xi_R^\dagger \t{T}_{12}^{-1} \Xi_2
+	- \Xi_2^\dagger \t{T}_{12}^{-1\dagger} \Xi_R
+	+ \Xi_2^\dagger \t{T}_{22} \t{T}_{12}^{-1} \Xi_2.
+\end{eqnarray}
+\end{widetext}
+Minimizing this with respect to $\Xi_R^\dagger$, we obtain
+\begin{equation}
+( \t{S}_{22} \t{S}_{12}^{-1}
+	+ \t{T}_{12}^{-1} \t{T}_{11} ) \Xi_R
+	= \t{T}_{12}^{-1} \Xi_2.
+\label{eq:define_xir}
+\end{equation}
+This is just the condition that $\v{u}_2(\psi_R^-) = \v{u}_2(\psi_R^+)$,
+{\it i.e.} that the whole solution be continuous at $\Xi_R$.  It is also
+the condition that $\t{u}(\psi)$ be the same Euler-Lagrange solution on
+both sides of the reference point.
+
+Substituting Eq. (\ref{eq:define_xir}) into Eq. (\ref{eq:define_c2_3}),
+we find
+\begin{eqnarray}
+\delta W =&& \Xi_2^\dagger \left[
+	\t{T}_{22} \t{T}_{12}^{-1}  \right. \nonumber \\
+&&\left. 
+	- \t{T}_{12}^{-1\dagger}
+	\left( \t{S}_{22} \t{S}_{12}^{-1}
+	+ \t{T}_{12}^{-1} \t{T}_{11} \right)^{-1}
+	\t{T}_{12}^{-1} \right] \Xi_2.
+\end{eqnarray}
+Again using the Eqs. (\ref{eq:symplectic2}) and (\ref{eq:symplectic2}),
+we obtain finally
+\begin{equation}
+\delta W = \Xi_2^\dagger 
+	\left( \t{T}_{21} \t{S}_{12} + \t{T}_{22} \t{S}_{22} \right)
+	\left( \t{T}_{11} \t{S}_{12} + \t{T}_{12} \t{S}_{22} \right)^{-1}
+	\Xi_2.
+\label{eq:define_dw}
+\end{equation}
+The matrix product in Eq. (\ref{eq:define_dw}) is just the
+plasma response matrix obtained by multiplying the fundamental solution
+matrices to the left and right sides of $\psi_R$.
+
+Now consider how this procedure may be adapted to the case where
+$\psi_R$ is a resonant point.  We use Eq. (\ref{eq:define_c2_3}) for the
+behavior to the left of the resonant point.  To the right, we initialize
+$\t{U}(\psi)$ to $\t{V}(\psi)$, the matrix of power series solutions to
+the right of the resonant point.  On both sides we take the resonant
+contribution of $\Xi_R$ to vanish.  The small resonant component on
+either side makes no contribution to $\delta W$.  Then the problem has
+the same form as for the nonresonant case except for the vanishing of
+the resonant component.  There are $M-1$ rather than $M$ components of
+$\Xi$ to determine by minimization of $\delta W$.  The result of this
+constrained minization procedure is the same as for the nonresonant
+case, that the minimizing value of $\Xi$ is the one that makes the
+derivatives of the nonresonant components continuous.  This allows us to
+continue the minimization procedure into the next interval by
+analytically continuing the nonresonant components of $\t{U}(\psi)$ and
+by restarting the small nonresonant component with an arbitrary initial
+value, to be determined by boundary conditions further to the right.
+The proof of the necessary condition for stability follows unmodified,
+using this continued matrix.  Continuation past successive singular
+surfaces follows the same procedure.
+
+An effective numerical procedure for implementing continuation past each
+singular surface is based on an adaptation of Gaussian elimination
+applied to the matrix of solutions.  Each independent solution vector is
+dominated by its admixture of the large resonant solution on approach to
+a resonant surface.  We choose one of these and subtract the multiple of
+it from each of the other solution vectors which eliminates its first
+resonant component.  This leaves all but the first solution vector
+effectively free of the large resonant solution.  The first solution
+vector is then reinitialized to the small resonant solution on the other
+side of the singular surface.  Since the coefficient of this small
+solution is arbitrary until it is determined by boundary conditions
+further to the right, there is no loss of generality in eliminating the
+second resonant component from each of the other vectors.  The
+nonresonant solution vectors are then continued unmodified on the other
+side of the singular surface.
+
+The results of this section show that the equilibrium is stable to
+internal modes if and only if the critical determinant $D_C$ has no
+poles.  In that case, the potential energy in the plasma region is given
+by
+\begin{equation}
+\delta W_P = \Xi^\dagger \t{W}_P \Xi,
+\label{eq:plasma_energy}
+\end{equation}
+evaluated at the plasma-vacuum interface.  This justifies the name of
+the plasma response matrix.  If the plasma is surrounded by a vacuum,
+there may still be external, or free-boundary, instabilities involving
+motion of the boundary.  In that case, the potential energy in the
+vacuum region may be similarly expressed in terms of a vacuum response
+matrix evaluated on the same surface.  The total potential energy is the
+sum of the two, and the existence of free boundary modes is determined
+by the lowest eigenvalue of the sum.  This is the topic of the next
+section.
+
+\section{\label{sec:free}Free-Boundary Modes}
+
+Section \ref{sec:fixed} describes a procedure for determining the
+stability of the plasma to internal modes.  If the critical determinant
+$D_C$ has poles in the plasma region, then the potential energy $\delta
+W$ is unbounded below and can therefore always be made negative.  If
+$D_C$ has no poles in the plasma region, then $\delta W$ is bounded
+below by the Hilbert invariant integral, or equivalently by the value of
+$\delta W$ for the Euler-Lagrange solution constructed in Section
+\ref{sec:fixed}.  If the plasma is bounded by a conducting wall, this
+lower bound is zero and the plasma is therefore stable.  This is the
+only case treated by Newcomb, extended to include a perfectly-conducting
+pressureless plasma but not a vacuum region outside the plasma.
+
+The purpose of this section is to extend the analysis to include
+free-boundary modes, in which the plasma region is bounded by a vacuum
+region rather than a conducting wall.  The plasma contribution to
+$\delta W$ is given by Eq. (\ref{eq:plasma_energy}) in terms of the
+plasma response matrix.  In this section we compute a vacuum response
+matrix.  The total perturbed potential energy is the sum of the two.  If
+a solution exists, satisfying the boundary conditions, for which the
+plasma energy is negative and exceeds the positive-definite vacuum
+energy, then $\delta W$ can be made negative and there is an unstable
+free-boundary mode.  Much of this section is based on an extension of
+the work of Chance.\cite{msc97}
+
+If the plasma region is bounded by a separatrix, then the vacuum region
+contains open field lines and cannot be treated by the methods of the
+previous sections, which rely on Hamada coordinates defined only on
+closed field lines.  We therefore require a treatment of the vacuum
+region which does not rely on such coordinates outside the plasma
+region.  However, we make use of Hamada coordinates at the plasma-vacuum
+interface.  If this interface is a separatrix, we take the boundary to
+be just inside the separatrix.
+
+We begin with a brief summary of the Green's function formalism.  The
+perturbed magnetic field \v{b} in the vacuum region, where $\nabla
+\times \v{b} = 0$, is expressed in terms of a scalar magnetic potential,
+$\v{b} = - \nabla \varphi$.  $\nabla \cdot \v{b} =0$ then implies that
+$\varphi(\v{x})$ satisfies Laplace's equation, $\nabla^2 \varphi = 0$.
+
+The scalar magnetic potential must in general be allowed to be
+non-single-valued.  This follows from the integral form of Amp\'ere's
+law,
+\[
+\oint \v{B} \cdot d\v{l} 
+	= - \int_0^L \frac{\partial \varphi}{\partial l} dl
+	= - \varphi \big |_0^L = \mu_0 I
+\]
+for any closed loop of length $L$, where $I$ is the current passing
+throught the closed loop.  For example, if the loop encircles the plasma
+the short way, then $I$ is the toroidal current through the plasma.
+However, we use the magnetic scalar potential only for the perturbed
+magnetic field \v{b} with toroidal mode number $n \ne 0$, and for this
+case, there is no contribution from the total current.\cite{rcg76} Thus,
+those perturbed scalar potential $\varphi$ is single-valued.
+
+The Green's function method is used to derive an integral equation for a
+solution $\varphi(\v{x})$ satisfying Laplace's equation and the boundary
+conditions.  The derivation is most easily done by starting with the
+more general Poisson equation,
+\[
+\nabla^2 \varphi(\v{x}) = -4 \pi \rho(\v{x})
+\]
+and then setting the source term $\rho(\v{x})$ to zero.  The Green's
+function is defined as the solution to Poisson's equation with a
+delta-function source,
+\begin{equation}
+\nabla^2 G(\v{x},\v{x}') 
+	= \nabla'^2 G(\v{x},\v{x}') 
+	= -4 \pi \delta(\v{x} - \v{x}'),
+\label{eq:green1}
+\end{equation}
+which vanishes at infinity.  We define the integral
+\begin{eqnarray}
+{\cal I} \equiv \int_V d\v{x}' G(\v{x},\v{x}') \rho(\v{x}') \nonumber \\
+= - \frac{1}{4 \pi} \int_V d\v{x}' G(\v{x},\v{x}') 
+	\nabla'^2 \varphi(\v{x}'),
+\end{eqnarray}
+where $V$ is the volume of the vacuum region.  We now perform
+two integrations by parts to transfer the derivates from $\varphi$ to
+$G$, obtaining
+\begin{eqnarray}
+{\cal I} =&& - \frac{1}{4 \pi} \int_V d\v{x}' \nabla'^2 G(\v{x},\v{x}')
+	\varphi(\v{x}') \nonumber \\
+&&+ \frac{1}{4 \pi} \int_S d\v{x}' \left[ 
+	\hat{\bf n} \cdot \nabla' G(\v{x},\v{x}') \varphi(\v{x}')
+	\right. \nonumber \\
+&&\left. - G(\v{x},\v{x}') \hat{\bf n} \cdot \nabla' \varphi(\v{x}') 
+	\right]
+\end{eqnarray}
+where $S$ is the boundary of the vacuum region and \v{n} is the unit
+outward normal to the vacuum region.  Now we use Eq. (\ref{eq:green1})
+to obtain
+\begin{eqnarray}
+- \frac{1}{4 \pi} \int_V d\v{x}' \nabla'^2 G(\v{x},\v{x}')
+	\varphi(\v{x}') \nonumber \\
+= \int_V d\v{x}' \delta(\v{x}-\v{x}') \varphi(\v{x}')
+= \Omega \varphi(\v{x}),
+\end{eqnarray}	
+where $\Omega = 1$ if \v{x} is in the vacuum region $V$, $\Omega = 1/2$
+if \v{x} is on the boundary $S$ of the vacuum region, and $\Omega = 0$
+if \v{x} is outside the vacuum region.  Finally, we let \v{x} be on the
+boundary, let $\rho(\v{x}') = 0$, and obtain an integral equation for
+$\varphi$ on the boundary,
+\begin{eqnarray}
+{\cal I} = \varphi(\v{x}) + \frac{1}{2 \pi} \int_S d\v{x}' \left[
+	\hat{\bf n} \cdot \nabla' G(\v{x},\v{x}') \varphi(\v{x}') 
+	\right. \nonumber \\
+\left. - G(\v{x},\v{x}') \hat{\bf n} \cdot \nabla' \varphi(\v{x}') 
+\right] = 0.
+\label{eq:green2}
+\end{eqnarray}
+
+Since $\varphi$ is the scalar magnetic potential, $\hat{\bf n} \cdot
+\nabla \varphi$ is the normal magnetic field and is known from boundary
+conditions.  Thus, Eq. (\ref{eq:green2}) may be regarded as an equation
+for $\varphi$, with the normal derivative as a known inhomogeneity.
+Since the vacuum energy is the integral of the perturbed magnetic energy
+density over the vacuum region, which can also be expressed as an
+integral over $S$,
+\begin{equation}
+\delta W_V = \int_V d\v{x} |\v{b}|^2 
+= \int_V d\v{x} |\nabla \varphi|^2 
+= \int_S d\v{x} \varphi \hat{\v{n}} \cdot \nabla \varphi,
+\label{eq:vacuum_energy}
+\end{equation}
+the whole vacuum problem can be expressed in terms of $\varphi$ and its
+normal derivative on $S$, with no further reference to $\varphi$ inside
+the vacuum region.
+
+The surface $S$ bounding the vacuum region may consist of various
+noncontiguous segments, including the vacuum-plasma interface, a
+conducting wall or the surface at infinity, and various internal
+metallic conductors such as passive stabilizers and active coils.  The
+variables \v{x} and $\v{x}'$ vary over all of these surfaces.  Since the
+normal magnetic field vanishes at the surface of a perfect conductor,
+the inhomogeneity vanishes there, as it does also at infinity.
+Likewise, the surface integral for $\delta W_V$ is nonvanishing only
+over the plasma-vacuum interface.  The role of the external conductors
+is to modify the homogeneous terms in Eq. (\ref{eq:green2}).  In the
+following discussion, we consider only the simplest case, with no
+external conductors and the vacuum region extending to infinity.
+Extension of the treatment to include external conductors is
+straightforward.
+
+At the plasma-vacuum interface, the normal magnetic field is known in
+terms of its Fourier components in Hamada coordinates.  We wish to
+express the integral equation and the vacuum energy,
+Eqs. (\ref{eq:green2}) and (\ref{eq:vacuum_energy}), in terms of these
+Fourier components.  We therefore write
+\[
+\varphi(\v{x}) = \sum_{m=-\infty}^\infty \sum_{n=-\infty}^\infty 
+\varphi_{m,n}(V) \exp[2 \pi i (m \theta - n \zeta)].
+\]
+As for the displacement vector in Eq. (\ref{eq:Xi_vector}), we define
+the complex vector
+\[
+\Phi(V) \equiv \{ \varphi_{m,n}(V),\ m_{min} \le m \le m_{max} \} 
+\]
+The surface integral can be expressed in Hamada coordinates as
+\[
+\int_S d\v{x}' = \int_0^1 d\theta \int_0^1 d\zeta |\nabla V|. 
+\]
+
+The boundary condition at the plasma-vacuum interface is that the normal
+components of the magnetic field \v{Q} in the plasma and the magnetic
+field \v{b} in the vacuum must match.  Noting that the outward normal to
+the vacuum is inward to the plasma, we can write $\hat{\v{n}} = -\nabla
+V/|\nabla V|$.  Then the boundary condition is given by $ \v{b} \cdot
+\nabla V =|\nabla V| \hat{\bf n} \cdot \nabla \varphi = \v{Q} \cdot
+\nabla V = \v{B} \cdot \nabla \xi_V$.
+
+We now multiply the integral equation in Eq. (\ref{eq:green2}) by
+$\exp[-2 \pi i (m \theta - n \zeta)]$ and integrate over $\theta$ and
+$\zeta$ to convert it to a matrix equation,
+\begin{equation}
+(\t{I} + \t{L}) \Phi
+	= 2 \pi i \chi' \t{R} \t{Q} \Xi
+\label{eq:int_equation}
+\end{equation}
+where the diagonal matrix \t{Q} is defined in Eq. (\ref{eq:define_mq})
+and
+\begin{widetext}
+\begin{eqnarray}
+L_{m,m'} &&= - \frac{1}{2 \pi} \int_0^1 d\theta \int_0^1 d\theta'
+	\int_0^1 d\zeta \int_0^1 d\zeta' 
+	\exp [ 2 \pi i (m' \theta' - m \theta)]
+	\nabla' V \cdot \nabla' 
+	G(V,\theta,\zeta;V,\theta',\zeta')
+	\exp[2 \pi n i (\zeta - \zeta')], \nonumber \\
+R_{m,m'} &&= - \frac{1}{2 \pi} \int_0^1 d\theta \int_0^1 d\theta'
+	\int_0^1 d\zeta \int_0^1 d\zeta' 
+	\exp [ 2 \pi i (m' \theta' - m \theta)]
+	G(V,\theta,\zeta;V,\theta',\zeta')
+	\exp[2 \pi n i (\zeta - \zeta')].
+\label{eq:define_lr}
+\end{eqnarray}
+\end{widetext}
+
+The toroidal straight-fieldline coordinate can be expressed as
+\[
+\zeta = \frac{\phi}{2\pi} + \nu(\theta,V),
+\]
+where $\nu(\theta,V)$ is a periodic function of $\theta$.  Using this,
+the $\zeta$ integrals over the Green's function $G$ can be expressed in
+terms of associated Legendre functions.  The solution to
+Eq. (\ref{eq:green1}) is
+\begin{eqnarray}
+&&G(\v{x},\v{x}') = |\v{x}-\v{x}'|^{-1} \nonumber \\
+&&= \left[ R^2 + R'^2 + (Z - Z')^2 - 2 R R' \cos \psi \right]^{-1/2}
+\end{eqnarray}
+where $(R,Z,\phi)$ are cylindrical coordinates and $ \psi = \phi - \phi'
+$.  We define
+\begin{eqnarray}
+&&{\cal G}^n(\v{x},\v{x}') 
+\equiv \frac{1}{2 \pi} \int_0^{2 \pi} d\psi 
+	e^{-in\psi} G(\v{x},\v{x}') \nonumber \\
+=&& \frac{1}{2 \pi} \int_0^{2 \pi} d\psi \cos n\psi \nonumber \\
+&&\times \left[ R^2 + R'^2 + (Z - Z')^2 - 2 R R' \cos \psi \right]^{-1/2}.
+\end{eqnarray}
+Defining the quantities $\alpha$ and $\eta$ by
+\begin{eqnarray}
+\alpha^2 \cosh \eta =&& R^2 + R'^2 + (Z - Z')^2, \nonumber \\
+\alpha^2 \sinh \eta =&& - 2 R R', \nonumber \\
+\alpha^4 =&& \left[ R^2 + R'^2 + (Z - Z')^2 \right]^2 
+	- \left( 2 R R' \right)^2 \nonumber \\
+=&& \left[ (R - R')^2 + (Z - Z')^2 \right] \nonumber \\
+&& \times \left[ (R + R')^2 + (Z - Z')^2 \right],
+\end{eqnarray}
+we can express the Green's function as$^{22}$
+\begin{eqnarray}
+ {\cal G}^n(\v{x},\v{x}') 
+&&= \frac{1}{2 \pi \alpha} \int_0^{2 \pi} d\psi \cos n \psi \nonumber \\
+&&\left[ \cosh \eta + \sinh \eta \cos \psi \right]^{-1/2} \nonumber \\
+&&= \frac{(-1)^n}{\alpha \sqrt \pi} \Gamma(1/2 - n) P_{-1/2}^n(\cosh \eta)
+	\nonumber \\
+\end{eqnarray}
+where $P_{-1/2}^n(\cosh \eta)$ is an associated Legendre function.
+Finally, this allows us to simplify Eq. (\ref{eq:define_lr}) to
+\begin{widetext}
+\begin{eqnarray}
+L_{m,m'} &&= - \frac{1}{2 \pi} \int_0^1 d\theta \int_0^1 d\theta'
+	\exp [ 2 \pi i (m' \theta' - m \theta)]
+	\exp \{ 2 \pi n i [\nu(\theta)- \nu(\theta')]\}
+	\nabla' V \cdot \nabla' 
+	{\cal G}^n (V,\theta;V,\theta'), \nonumber \\
+R_{m,m'} &&= - \frac{1}{2 \pi} \int_0^1 d\theta \int_0^1 d\theta'
+	\exp [ 2 \pi i (m' \theta' - m \theta)]
+	\exp \{ 2 \pi n i [\nu(\theta)- \nu(\theta')]\}
+	{\cal G}^n (V,\theta;V,\theta'). \nonumber
+\end{eqnarray}
+\end{widetext}
+The remaining integrals over $\theta$ and $\theta'$ depend on the shape
+of the outermost flux surface and must be performed numerically.
+
+Once \t{L} and \t{R} are evaluated, Eq. (\ref{eq:int_equation}) can be
+solved for $\Phi$ and used to evaluate $\delta W_V$,
+Eq. (\ref{eq:vacuum_energy}), as
+\begin{eqnarray}
+\delta W_V 
+&&= - \int_0^1 d\theta \int_0^1 d\zeta \varphi(V,\theta,\zeta)
+	\nabla V \cdot \nabla \varphi(V,\theta,\zeta) \nonumber \\
+&&= 2 \pi i \chi' \sum_{m=-\infty}^\infty (m-nq) \nonumber \\
+&&\qquad [\varphi^*_{m,n}(V) \xi_{m,n}(V) 
+	- \xi^*_{m,n}(V) \varphi_{m,n}(V) ] \nonumber \\
+&&= 2 \pi i \chi' 
+	(\Phi^\dagger \t{Q} \Xi - \Xi^\dagger \t{Q} \Phi).
+\end{eqnarray}
+Finally, using Eq. (\ref{eq:int_equation}), we can express this as $
+\delta W_V = \Xi^\dagger \t{W}_V \Xi$, with
+\[
+\t{W}_V = (2 \pi \chi')^2 \t{Q} 
+\left[(\t{I}+\t{L})^{-1} \t{R} 
++ \t{R}^\dagger (\t{I}+\t{L}^\dagger)^{-1}\right] \t{Q}.
+\]
+
+The total potential energy is given by
+\[
+\delta W = \delta W_P + \delta W_V 
+	= \Xi^\dagger (\t{W}_P + \t{W}_V) \Xi 
+	= \Xi^\dagger \t{W} \Xi.
+\]
+This is expressed in terms of a particular solution vector $\Xi$.  We
+must still determine whether any linear combination of the solutions for
+$\Xi$ satisfying the boundary conditions at the magnetic axis can make
+$\delta W$ negative.  This is the case if and only if the lowest
+eigenvalue of the total response matrix \t{W} is negative.  The
+eigenvectors corresponding to the unstable eigenvalues represent the
+spatial structure of the unstable modes.  This completes the
+determination of stability.
+
+\section{\label{sec:conclude}Discussion and Conclusions}
+
+We have introduced a new method for determining the ideal MHD stability
+of axisymmetric toroidal plasmas to nonaxisymmetric perturbations.  We
+have generalized the Direct Criterion of Newcomb for the stability of
+internal modes from his original cylindrical treatment to a full
+toroidal treatment.  We have further extended the treatment to apply to
+external, or free-boundary modes.
+
+The overall procedure involves a sequence of criteria.  First we test
+for Mercier stability, $D_I < 0$, Eq. (\ref{eq:di}), on all flux
+surfaces.  If this criterion is violated, the equilibrium is unstable.
+If it is satisfied, we then test for stability to perturbations of each
+toroidal mode number $n \ne 0$.  We integrate the Euler-Lagrange
+Equations from the axis to the plasma-vacuum interface, initializing it
+at the axis and crossing each resonant surface according to the
+procedures discussed in Section IV.  We monitor the critical determinant
+$D_C$, Eq. (\ref{eq:define_dc}).  If it has a pole in the plasma region,
+there is an ideal internal instability, regardless of conditions at or
+beyond the plasma-vacuum interface.  If there are no poles, we compute
+the plasma and vacuum contributions to the potential energy matrix
+described in Section V and determine whether it has any negative
+eigenvalues.  If so, there are external, or free-boundary, ideal
+instabilities.  Otherwise, the system is stable to all ideal MHD
+perturbations.
+
+If the system is stable to ideal modes, there may still be singular
+modes, involving more subtle effects such as plasma resistivity and
+diamagnetic rotation.\cite{ahg75, ahg91} The procedure presented here
+can be further extended to provide information about the behavior of the
+perturbations in the ideal regions.  The asymptotic coefficients defined
+in Eq. (\ref{eq:define_ca}) provide this information, generalizing the
+quantity $\Delta'$ used in the cylindrical case, which must be matched
+to the corresponding inner region information to determine the stablity
+to singular modes.  This will be the subject of a later publication.
+
+It would be difficult to attempt a further generalization of this
+approach to nonaxisymmetric toroidal systems such as stellarators and
+torsatrons, as attempted by Bineau.\cite{mb61} For an axisymmetric
+system, in which the toroidal mode number is a good quantum number, the
+resonant surfaces at $q=m/n$ are discrete and well-separated, except in
+unusual cases in which the axis is also a resonant surface or $q'$
+vanishes at a rational surface.  In a nonaxisymmetric system, since
+there are in principle infinitely many toroidal and poloidal harmonics,
+the singular surfaces would be dense everywhere, and this would appear
+to make the procedure impractical.  Perhaps it could be shown that
+convergence is achieved for a moderate number of toroidal harmonics.
+Even then, the situation would be further complicated by the existence
+of stochastic regions, especially in the neighborhood of low-order
+resonant surfaces, as occur in most nonaxisymmetric configurations,
+where flux surfaces, and hence flux coordinates, fail to exist.
+
+\begin{acknowledgments}
+The author acknowledges extensive discussions with Leonid Zakharov,
+Morrell Chance, and Alexander Popov.  He has also benefited from many
+useful suggestions from Dan Barnes, Steve Cowley, John Finn, Richard
+Fitzpatrick, Dick Gerwin, Sheryl Glasser, John Greene, Steve Jardin,
+Chuck Kessel, J. Manickam, Stefano Migliuolo, Bob Miller, Phil Morrison,
+Rick Nebel, Bill Newcomb, Don Pearlstein, Martin Peng, Jesus Ramos,
+Walter Sadowski, and Alan Turnbull.  This work was supported by a
+contract from the U. S.  Department of Energy, Office of Fusion Energy.
+\end{acknowledgments}
+
+\appendix
+
+\section{\label{sec:coef}Coefficient Matrices}
+
+In this appendix we give detailed expressions for the coefficient
+matrices \t{A}, \t{B}, \t{C}, \t{D}, \t{E}, \t{H}, \t{F}, \t{G}, and
+\t{K}.
+
+Before expressing these principal matrices, we define some more
+fundamental matrices in which are used in their definition.  We define
+the following scalar components of the metric tensor:
+\begin{eqnarray}
+g_{11} &&\equiv |\nabla \theta \times \nabla \zeta|^2, \nonumber \\
+g_{22} &&\equiv |\nabla \zeta \times \nabla \psi|^2, \nonumber \\
+g_{33} &&\equiv |\nabla \psi \times \nabla \theta|^2, \nonumber \\
+g_{23} &&\equiv (\nabla \zeta \times \nabla \psi)
+	\cdot (\nabla \psi \times \nabla \theta), \nonumber \\
+g_{31} &&\equiv (\nabla \psi \times \nabla \theta)
+	\cdot (\nabla \theta \times \nabla \zeta), \nonumber \\
+g_{12} &&\equiv (\nabla \theta \times \nabla \zeta)
+	\cdot (\nabla \zeta \times \nabla \psi).
+\end{eqnarray}
+For any scalar $f(\theta)$, we define an associated matrix $<f>$ as the
+matrix of Fourier coefficients,
+\[
+<{\cal F}>_{mm'} \equiv \int_0^1 d\theta {{\cal J}}
+	\exp[2 \pi i (m'-m) \theta]  {\cal F}(\theta) 
+\]
+Note that if $f$ is real, then $<f>$ is Hermitian.  The following
+quantities are required when the Jacobian is not uniform:
+\[
+J_{mm'} \equiv <1>_{mm'}, \qquad
+J'_{mm'} \equiv <{\cal J}'/{\cal J}>_{mm'}
+\]
+Next we define the matrices
+\[
+(G_{ij})_{mm'} \equiv <g_{ij}>_{mm'}
+\]
+Finally, we define the diagonal matrices \t{M} and \t{Q} in terms of
+their diagonal components,
+\begin{equation}
+M_{m,m'} \equiv m \delta_{m,m'}, \qquad 
+Q_{m,m'} \equiv (m - n q) \delta_{m,m'}.
+\label{eq:define_mq}
+\end{equation}
+
+In terms of these fundamental matrices, the coefficient matrices
+appearing in Eq. (\ref{eq:dw3}) are given by
+\begin{widetext}
+\begin{eqnarray}
+\t{A} =&& (2 \pi)^2 \left[ n (n \t{G}_{22} + \t{G}_{23} \t{M}
+	+\t{M} (n \t{G}_{23} + \t{G}_{33} \t{M})  \right] \nonumber \\
+\t{B} =&& -2 \pi i \chi' \left[ n (\t{G}_{22} + q \t{G}_{23} )
+	+ \t{M} (\t{G}_{23} + q \t{G}_{33})  \right] \nonumber \\
+\t{C} =&& -2 \pi i \left[  \chi'' (n \t{G}_{22} + \t{M} \t{G}_{23})
+	+ (q \chi')' (n \t{G}_{23} + \t{M} \t{G}_{33})  \right] \nonumber \\
+	&& - (2 \pi)^2 \chi' (n \t{G}_{12} + \t{M} \t{G}_{31}) \t{Q}
+	+ 2 \pi i (2 \pi f' \t{Q} - n P'/\chi' \t{J}) \nonumber \\
+\t{D} =&& \chi'^2 \left[ (\t{G}_{22} + q \t{G}_{23})
+	+ q(\t{G}_{23} + q \t{G}_{33}) \right] \nonumber \\
+\t{E} =&& \chi' \left[  \chi'' (\t{G}_{22} + q \t{G}_{23})
+	+ (q \chi')' (\t{G}_{23} + q \t{G}_{33}) \right] \nonumber \\
+	&& - 2 \pi i \chi'^2 (\t{G}_{12} + q \t{G}_{31}) \t{Q}
+	+ P' \t{J} \nonumber \\
+\t{H} =&& \chi''\left[ \chi'' \t{G}_{22} + (q \chi')' \t{G}_{23} \right]
+	+ (q \chi')'\left[ \chi'' \t{G}_{23} 
+	+ (q \chi')' \t{G}_{33} \right] \nonumber \\
+	&& + 2 \pi i \chi' \left[ \chi'' (\t{M} \t{G}_{12} - \t{G}_{12} \t{M})
+	+ (q \chi')' (\t{M} \t{G}_{31} - \t{G}_{31} \t{M})  \right] \nonumber \\
+	&& + (2 \pi \chi')^2 \t{Q} \t{G}_{11} \t{Q}
+	+ \left[ P' \left(  \t{J} \chi''/\chi' + \t{J}' \right) 
+	-2 \pi f' q' \chi' \t{I} \right].
+\label{eq:define_a-h}
+\end{eqnarray}
+\end{widetext}
+Note that all of the off-diagonal components of these matrices arise
+from the metric tensor quantities $\t{G}_{ij}$, which in turn arise from
+the stabilizing $Q^2$ term in Eq. (\ref{eq:dw1}), and thus all
+potentially destabilizing terms in $\delta W$ are diagonal.  This is a
+useful property of Hamada coordinates.  Note also that the matrices
+\t{A}, \t{D}, and \t{H}, which couple like quantities in
+Eq. (\ref{eq:dw3}), are Hermitian, while \t{B}, \t{C}, and \t{E}, which
+couple unlike quantities, are not.
+
+Two of the composite matrices defined in Eq. (\ref{eq:define_fkg})
+contain important cancellations.  Thus, we can express
+\begin{eqnarray}
+\t{F} \equiv&& \t{D} - \t{B}^\dagger \t{A}^{-1} \t{B} \nonumber \\
+=&& (\chi' / n)^2 \t{Q} \left[ \t{G}_{33} 
+	- (n \t{G}_{23} + \t{G}_{33} \t{M})  \right. \nonumber \\
+&&\left. \times
+	(2 \pi)^2 \t{A}^{-1}
+	(n \t{G}_{23} +  \t{M} \t{G}_{33}) \right] \t{Q}
+\label{eq:simplify_f}
+\end{eqnarray}
+Note the presence of the factor \t{Q} on either side of \t{F}.  This is
+responsible for the vanishing of $\det \t{F}$ at the resonant surfaces,
+discussed in detail in Section III.  Similarly, we can express
+\begin{eqnarray}
+\t{K} =&& \t{E} - \t{B}^\dagger \t{A}^{-1} \t{C} \nonumber \\
+	=&& \t{Q} (\chi'/n) \left\{ 2 \pi i 
+	(n \t{G}_{23} + \t{G}_{33} \t{M}) \t{A}^{-1} \t{C} 
+	\right. \nonumber \\
+&&\left. - [ \chi'' \t{G}_{23} + (q \chi')' \t{G}_{33}
+	- 2 \pi i \chi' \t{G}_{31} \t{Q} + J_\theta \t{I}]
+	\right\} \nonumber \\
+\label{eq:simplify_k}
+\end{eqnarray}
+No such simplification has been found for the remaining matrix \t{G}
+defined in Eq. (\ref{eq:define_fkg}).
+
+\bibliography{pub1}
+\end{document}

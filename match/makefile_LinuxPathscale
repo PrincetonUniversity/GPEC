@@ -1,0 +1,47 @@
+# This is the makefile for MATCH on LinuxPathscale computers.
+
+FFLAGS = -I../equil -O2 -m64
+F90 = pathf90 $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+LIBDIR = \
+	-L../lib/LinuxPathscale \
+	-L/usr/pppl/pathscale/2.2-pkgs/acml-2.7.0-x86_64/pathscale64/lib
+
+LIBS = \
+	$(LIBDIR) \
+	-lequil \
+	-llsode \
+	-lacml
+
+OBJS = \
+	qsort.o \
+	gamma.o \
+	deltar.o \
+	root.o \
+	match_mod.o \
+	ideal.o \
+	debug.o \
+	matrix.o \
+	resist.o \
+	match.o
+
+match: $(OBJS)
+	$(F90) -o match $(OBJS) $(LIBS)
+
+# dependencies
+
+debug.o: ../equil/LOCAL_MOD.mod
+gamma.o: ../equil/LOCAL_MOD.mod
+deltar.o: gamma.o
+root.o: ../equil/LOCAL_MOD.mod
+match_mod.o: deltar.o root.o ../equil/UTILS_MOD.mod
+ideal.o: match_mod.o
+matrix.o: match_mod.o debug.o
+resist.o: matrix.o
+match.o: ideal.o resist.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin match

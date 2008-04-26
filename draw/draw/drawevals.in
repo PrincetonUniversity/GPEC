@@ -1,0 +1,18 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+eval.bin
+
+graph title:	Eigenvalues
+
+variable names
+0	ipert
+1	psifac
+2	Log_10 psifac
+3	Log_10 (m - n q)
+4	Log_10 hu
+5	q
+6	eval
+
+ix	iy	options		title
+1	6	-f1 -s0		"Energy Eigenvalues

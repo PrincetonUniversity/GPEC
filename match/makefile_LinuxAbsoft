@@ -1,0 +1,50 @@
+# This is the makefile for MATCH on LinuxAbsoft computers.
+
+FFLAGS = -p../equil -O2
+F90 = f90 $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+LIBDIR = \
+	-L../lib/LinuxAbsoft \
+	-L/usr/local/lib \
+	-L$(HOME)/lib
+
+LIBS = \
+	$(LIBDIR) \
+	-lequil \
+	-llsode \
+	-llapack_Absoft \
+	-lblas_Absoft \
+	-lU77
+
+OBJS = \
+	qsort.o \
+	gamma.o \
+	deltar.o \
+	root.o \
+	match_mod.o \
+	ideal.o \
+	debug.o \
+	matrix.o \
+	resist.o \
+	match.o
+
+match: $(OBJS)
+	$(F90) -o match $(OBJS) $(LIBS)
+
+# dependencies
+
+debug.o: ../equil/LOCAL_MOD.mod
+gamma.o: ../equil/LOCAL_MOD.mod
+deltar.o: gamma.o
+root.o: ../equil/LOCAL_MOD.mod
+match_mod.o: deltar.o root.o ../equil/UTILS_MOD.mod
+ideal.o: match_mod.o
+matrix.o: match_mod.o debug.o
+resist.o: matrix.o
+match.o: ideal.o resist.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin match

@@ -1,0 +1,8 @@
+ IPOUT_SINGFLD: deltas, singular currents and normal fields
+     distance:     0.500E-03
+        rsing:             4
+       q           psi    abs(delta)   abs(delcur)   abs(corcur)  abs(singcur)  abs(sgpower)  abs(singbno)     singbnost    singmaxtor  islandhwidth      chirikov
+   1.000     0.159E+00     0.215E+00     0.299E+05     0.494E+00     0.299E+05     0.709E+10     0.155E-01     0.111E-01     0.142E+04     0.417E+00     0.137E+01
+   2.000     0.769E+00     0.468E-02     0.994E+03     0.293E+00     0.994E+03     0.197E+08     0.414E-03     0.287E-03     0.287E+01     0.452E-01     0.571E+00
+   3.000     0.927E+00     0.640E-02     0.681E+03     0.491E+00     0.680E+03     0.108E+08     0.394E-03     0.257E-03     0.192E+01     0.257E-01     0.955E+00
+   4.000     0.981E+00     0.113E-01     0.471E+03     0.311E+00     0.470E+03     0.549E+07     0.409E-03     0.240E-03     0.118E+01     0.139E-01     0.516E+00

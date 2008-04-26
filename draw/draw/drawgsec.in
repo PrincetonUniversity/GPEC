@@ -1,0 +1,28 @@
+Type (G=Graph, C=Contour):	M
+
+filename(s)
+results/time65v1h1a1/0.256/1.10/gsec.bin
+;gsec.bin
+
+comment:	Grad-Shafranov Error
+
+independent variable names
+t       time
+x       R
+y       Z
+
+dependent variable names
+1	flux1
+2	flux2
+3	source
+4	total
+5	error
+6	errlog
+
+iqty    options	title
+;1	-a	"flux1
+;2	-a	"flux2
+;3	-a	"source
+;4	-a	"total
+;5	-a	"error
+6	-a	"errlog

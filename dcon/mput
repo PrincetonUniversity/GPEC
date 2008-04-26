@@ -1,0 +1,23 @@
+#! /bin/ksh
+
+# mput
+# shell script for storing NIMROD results in directory $DIRNAME
+# usage: "mput subdirectory_name"
+
+# define directory name
+DIRNAME=results/$1
+echo storing files in $DIRNAME
+
+# remove subdirectory if it exists and create new
+rm -fr $DIRNAME 2> /dev/null
+mkdir -p $DIRNAME 2> /dev/null
+
+# copy input files to subdirectory
+cp equil.in $DIRNAME 2> /dev/null
+cp dcon.in $DIRNAME 2> /dev/null
+cp vac.in $DIRNAME 2> /dev/null
+
+# move output files to subdirectory
+mv *.out $DIRNAME 2> /dev/null
+mv *.bin $DIRNAME 2> /dev/null
+mv *.dat $DIRNAME 2> /dev/null

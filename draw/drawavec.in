@@ -1,0 +1,17 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+avec.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	psifac
+1	-Phi
+2	chi
+3	1/V1^2
+
+ix	iy	title
+0	1	"Toroidal Flux
+0	2	"Poloidal Flux
+0	3	"1/V'^2

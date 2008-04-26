@@ -1,0 +1,8 @@
+sunfire02:~/dcon/dcon% dcon
+
+lib-4324 : UNRECOVERABLE library error 
+' is unrecognized in namelist input.
+
+Encountered during a namelist READ from unit 1
+Fortran unit 1 is connected to a sequential formatted text file: "dcon.in"
+Abort (core dumped)

@@ -1,0 +1,15 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+root.bin
+
+graph title:	Resistive Root
+
+variable names
+0	log10 |s|
+1	re root
+2	im root
+
+ix	iy	title
+0	1	"Re Root
+0	2	"Im Root

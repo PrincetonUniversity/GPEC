@@ -1,0 +1,19 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+scan.bin
+
+graph title:	Matching Determinant vs. Log Growth Rate
+
+variable names
+0	asinh re s
+1	asinh im s
+2	re det
+3	im det
+4	asinh re det
+5	asinh im det
+
+ix	iy	title
+0	1	-a	"Contour in Complex s Plane
+2	3	-a	"Image Contour in Complex Det Plane
+4	5	-a	"Image Contour in Complex Asinh Det Plane

@@ -1,0 +1,41 @@
+
+
+
+                     SURFMN Analysis of Bn      
+ 
+ The run start date and time was:                      2007/10/10 01:32:06     
+ gfile:
+  gfiles/shot126006/kinetic/g126006.03600                                 
+ Equilibrium is LEFT HANDED.          I_plas(A) =     1518232
+ Minor axis coordinates, bgrj1, bgzj1, rmagaxis, zmagaxis(m):
+    1.7644  -0.0017   1.7644  -0.0017
+ First surface:
+  r_in (m)   r_in/a    psiNp  deltpsi     qpsi:
+    0.5066   0.9938   0.9900   0.3143   4.4202
+ Toroidal magnetic field:
+  Vacuum Btor(T), Total Btor(T), Ro(m), from g-file:
+   -1.8841  -1.9016   1.6955
+ 
+ Plasma B_pol field shifted  0.004400 m   toward   85.00 deg
+ Plasma B_pol field  tilted  0.001050 rad toward  110.00 deg
+ Plasma B_tor field shifted  0.004400 m   toward   85.00 deg
+ Plasma B_tor field  tilted  0.001050 rad toward  110.00 deg
+ 
+ B-coil B_tor field shifted  0.004400 m   toward   85.00 deg
+ B-coil B_tor field  tilted  0.001050 rad toward  110.00 deg
+ 
+ Analysis surface shifted    0.004400 m   toward   85.00 deg
+ Analysis surface  tilted    0.001050 rad toward  110.00 deg
+ 
+ E-coil current (A):       0.
+ 
+ PF-coil currents (A):
+    -2815.   -2303.     -16.     515.    2547.
+    -4548.   -4656.    1897.   -1556.
+    -2392.   -2200.   -2408.    2514.    1848.
+    -4031.   -6591.    3452.    -554.
+ 
+  nfpts = 32  n1pts = 66  methavg = 3
+ 
+ DIII-D Bus, New 210 FRD bus, Elements on-off (1,0):
+   1  1  1  1  1  1  1  0  0  0

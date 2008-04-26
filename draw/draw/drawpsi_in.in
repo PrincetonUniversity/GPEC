@@ -1,0 +1,17 @@
+Type (G=Graph, C=Contour):	M
+
+filename(s)
+psi_in.bin
+
+comment:	Contour Plot of Poloidal Flux
+
+independent variable names
+t       time
+x       R
+y       Z
+
+dependent variable names
+1	psi
+
+iqty    options	title
+1	-a -X0	"Contour Plot of Poloidal Flux

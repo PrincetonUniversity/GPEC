@@ -1,0 +1,25 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+metxy.bin
+
+graph title:	Metric Tensor Components
+
+variable names
+0	psi
+1	j11
+2	j12
+3	j13
+4	j21
+5	j22
+6	j23
+7	j33
+
+ix	iy	title
+0	1
+0	2
+0	3
+0	4
+0	5
+0	6
+0	7

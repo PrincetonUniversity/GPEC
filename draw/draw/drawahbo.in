@@ -1,0 +1,29 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+;results/trial/1.0/ahb.bin
+results/betaN_2/3.8/ahb.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	theta
+1       re bnorm
+2       im bnorm
+3       re xinorm
+4       im xinorm
+5       theta_hamada
+6       theta_pest
+7       theta_equal_arc
+8       theta_boozer
+
+ix	iy	title
+0	1       "b_normal vs. theta"
+5	1       "b_normal vs. theta_hamada
+;6	1       "b_normal vs. theta_pest
+;7	1       "b_normal vs. theta_equal_arc"
+;8	1       "b_normal vs. theta_boozer
+;0	5       "theta_hamada vs. theta
+;0	6       "theta_pest vs. theta
+;0	7       "theta_equal_arc vs. theta
+;0	8       "theta_boozer vs. theta

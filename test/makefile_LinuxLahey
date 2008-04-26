@@ -1,0 +1,25 @@
+FFLAGS = -I../equil -g
+F90 = lf95 $(FFLAGS)
+
+LIBDIR = \
+	-L../lib/LinuxLahey \
+	-L/usr/pppl/lff95/6.20c/lapack-3.0
+
+LIBS = \
+	$(LIBDIR) \
+	-lequil \
+	-llsode \
+	-llapack \
+	-lblas
+
+OBJS = \
+	ismath.o \
+	test_ismath.o \
+
+test:	
+	$(F90) -c *.f
+	$(F90) -o test_ismath $(OBJS) $(LIBS)
+
+# dependencies
+
+test_ismath.o : ismath.o

@@ -1,0 +1,29 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+fourfit.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	psi
+1	amat new
+2	bmat new
+3	cmat new
+4	dmat new
+5	emat new
+6	hmat new
+7	fmat new
+8	kmat new
+9	gmat new
+
+ix	iy	options	title
+0	1	-f1 -s0	"amat new
+0	2	-f1 -s0	"bmat new
+0	3	-f1 -s0	"cmat new
+0	4	-f1 -s0	"dmat new
+0	5	-f1 -s0	"emat new
+0	6	-f1 -s0	"hmat new
+0	7	-f1 -s0	"fmat new
+0	8	-f1 -s0	"kmat new
+0	9	-f1 -s0	"gmat new

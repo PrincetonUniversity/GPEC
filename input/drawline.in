@@ -1,0 +1,15 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+line.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	r
+1	xi
+2	b
+
+ix	iy	title
+0	1	xi
+0	2	b

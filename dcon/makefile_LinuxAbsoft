@@ -1,0 +1,53 @@
+# This is the makefile for DCON on LinuxAbsoft computers.
+
+FFLAGS = -p../equil -O2
+F90 = f90 $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+LIBDIR = \
+	-L../lib/LinuxAbsoft \
+	-L$(HOME)/lib
+
+LIBS = \
+	$(LIBDIR) \
+	-llsode \
+	-lequil \
+	-lvac \
+	-llapack_Absoft \
+	-lblas_Absoft \
+	-lU77
+
+OBJS = \
+	debug.o \
+	dcon_mod.o \
+	mercier.o \
+	bal.o \
+	fourfit.o \
+	sing.o \
+	ode_output.o \
+	ode.o \
+	free.o \
+	resist.o \
+	dcon.o
+
+dcon: $(OBJS)
+	$(F90) -o dcon $(OBJS) $(LIBS)
+
+# dependencies
+
+dcon_mod.o: ../equil/SPLINE_MOD.mod ../equil/GLOBAL_MOD.mod \
+	../equil/EQUIL_MOD.mod ../equil/EQUIL_OUT_MOD.mod
+mercier.o: dcon_mod.o
+bal.o: dcon_mod.o
+fourfit.o: ../equil/FSPLINE_MOD.mod dcon_mod.o
+sing.o: fourfit.o
+ode_output.o: sing.o debug.o
+ode.o: ode_output.o
+free.o: ode.o
+resist.o: dcon_mod.o
+dcon.o: bal.o mercier.o ode.o free.o resist.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff dcon

@@ -1,0 +1,538 @@
+\documentclass[10pt]{article}
+\usepackage{ltexe_com}
+\textw{7.0in}
+\texth{9.0in}
+%
+\newcommand{\styla}[1]{\textit{#1}}
+\newcommand{\stylb}[1]{\textbf{#1}}
+\newcommand{\stylc}[1]{\textsc{#1}}
+\newcommand{\styld}[1]{\textit{#1}}
+\newcommand{\style}[1]{\texttt{#1}}
+\newcommand{\nablav}{\mbox{\boldmath{$\nabla$}}}
+\newcommand{\notr}{\textsl{not relevant}}
+\renewcommand{\qedge}{q_\mathrm{edge}}
+\newcommand{\prad}{p_{\mathrm{rad}}}
+\newcommand{\xma}{X_{\text{cen}}}
+\newcommand{\zma}{Z_{\text{cen}}}
+\newcommand{\Xp}{X_{p_i}}
+\newcommand{\Xw}{X_{w_i}}
+\newcommand{\Zp}{Z_{p_i}}
+\newcommand{\Zw}{Z_{w_i}}
+%
+\setlength{\parskip}{1.ex}
+%
+\begin{document}
+%
+%\draft
+%
+%\Large
+\begin{center}
+{\large\textsf{DRAFT}}\\[1.ex]
+\textbf{Input Documentation for the {\small VACUUM} Code}\\
+%
+M. S. Chance\\
+
+\textit{Princeton University Plasma Physics Laboratory,\\
+P.O. Box 451, Princeton, NJ 08543, USA
+}\\
+%
+%\date{\today}
+Draft dated \today
+%
+\end{center}
+%
+%\maketitle
+%
+\section{Preliminaries}
+
+Because of historical reasons and the continual addition of features
+and refinements, the look and feel of the data may not seem polished
+and streamlined. It will someday. Thus, some variables are redundant
+and some of the control variables [logical and integers] may seem to
+overlap. In general, it's best to turn off switches which are not
+relevant to your case.
+
+The code has been used most extensively for up-down symmetric
+configurations and so most confidence in the results are for this
+symmetry. It has been used for simple applications for non up-down
+symmetric configurations but some of the ancillary applications (like
+those in the the diagnostic capabilities) have not been thoroughly
+checked out as of now.
+
+\begin{itemize}
+
+\item Radius means along the horizontal. 
+
+\item The following are excerpted from the published paper.  The
+latter contains more details about the various shell options and the
+Mirnov loop and eddy current diagnostic capabilities.
+
+\begin{itemize}
+
+   \item
+    Some definitions used here are the
+   plasma `radius', $\prad$ and the plasma center $(X_{\mathrm{cen}},
+   Z_{\mathrm{cen}})$, which are defined by:
+   %
+   \beq
+   \prad  & \equiv & \oover{2}( X_{\mathrm{max}} - X_{\mathrm{min}} ) \\
+     X_{\mathrm{cen}} & = & \oover{2} ( X_{\mathrm{max}} + X_{\mathrm{min}} )
+   \eeq
+   and
+\beq
+  Z_{\mathrm{cen}} & = & \oover{2} ( Z_{\mathrm{ min}} + Z_{\mathrm{max}} ),
+\eeq
+where $X_{\mathrm{min}}$ and $X_{\mathrm{max}}$ are respectively, the minimum
+and the maximum $X$-values of the plasma, etc.
+
+   \item There is an option in the code which numerically
+redistributes the grid along the shell so that the grid is equidistant
+between adjacent points. While this usually gives the best overall
+accuracy, this option should not be exercised when the wall is very
+close to the plasma since the plasma-wall points may not be aligned
+with respect the indexing. In this case, it is best to choose the
+equidistant-shell option, (\style{ishape} = 6), with the equal-arc
+option for the shell turned off, (\style{leqarcw} = 0).
+
+   \item The definitions of \textit{elongation} and
+\textit{triangularity} can be ascertained from the following
+description of the \textbf{Simple toroidal {\em D}-shaped shell}:
+
+This configuration where the shell is centered at $c_w$, has an
+elongation factor of $b_w$, a triangularity skewness $d_w$, and a
+radius in the equatorial plane of $a$, is given by the relation,
+\beq
+\Xw & = & c_w + a \cos ( \theta_i + d_w \sin \theta_i ) \\
+\Zw & = & \mbox{}- b_w a \sin \theta_i.
+\eeq
+This gives a free-standing shell independent of the plasma position or
+dimensions, and is useful if the shell is from the simulation of an
+actual device. 
+
+   \item An example of the parameterization of the shell which is
+scaled to the plasma is given by,
+%
+\beq
+\Xw  = && X_{\mathrm{cen}} + \prad c_w + \prad ( 1 + a - c_w ) 
+\cos(\theta_i + d_w \sin \theta_i) \\
+\Zw  = && \mbox{}- b_w \prad ( 1 + a - c_w ) \sin \theta_i.
+\eeq
+Here the center of the shell is offset by $\prad c_w$ in the equatorial
+plane and is still a distance $\prad a$ from the outer major radius
+side of the plasma. 
+
+\end{itemize}
+
+\end{itemize}
+
+      \section{Notes on the Normalization of $\delta W$ in {\small
+      VACUUM} }
+%
+\input{in_cylnrm}
+%
+      \section{Form of the Source Term}
+%
+\input{in_source}
+%
+	\section{Input data}
+\label{sec:inpdata}
+The control input file is called \stylb{modivmc}. [A variable input
+file on the command line can be added later].  The names of the input
+data files needed from the various stability codes and the output
+files are given in the tables. The notation used corresponds more or
+less to the coding.
+
+ In the first column of the tables is an explicit list of the input
+variables. The second column shows the equivalent variables used in
+expressions in the published paper, [\textit{Physics of Plasmas},
+\textbf{4}, June 1997, 2161]. The third column gives the type of
+variable and values while the fourth column gives a description of the
+variables. 
+ 
+The subsections describing the input variables are labeled like the
+namelist blocks of the input file. Again note that these names are not
+completely correlated with the kind of variables so the functionality
+of some of the variables may span the two or more blocks. This will be
+fixed soon.
+
+\newpage
+
+\subsection{modes}
+
+\begin{center}
+%\begin{table}[h]
+\begin{tabular}{|l|l|p{1.0in}|p{3.8in}|}
+\hline
+Variable & Paper  & Value or &  Definition \\ 
+         & equiv. &  type  & \\ \hline
+
+lzio     &  & 1 & Reads from ``mp0'' and ``mp1'' for \stylc{pest}-type
+inputs. \\
+         &   & 0 & Turns off references to ``mp0'' and ``mp1''\\
+
+mp0, mp1  &       &File names&  Plasma input from \stylc{pest}-type codes. \\
+
+mth & & Even integer &Number of grid points used for the
+                     calculation. The values of the needed quantities
+                     on these points are interpolated from the those
+                     gotten from the plasma information in `mp0',
+                     `mp1', \stylb{vacin}, \stylb{invacuum}, or
+                     equivalent.\\
+
+lmin, lmax &      & arrays & Range of Fourier harmonics. Usually the
+                    same as that used in the plasma calculation. Not
+                    relevant for \stylc{dcon}. In \stylc{gato}, and
+                    for the nonzero \style {lspark} options these are
+                    used for internal Fourier matrix operations.\\ 
+
+lnint, lxint&      & Integers & Range of the internal Fourier
+                     harmonics used for the \style{lspark} and
+                     \style{lgato = 2} options. Best if \style{lnint =
+                     -lxint}. \\
+
+mfel     &        & & Number of finite elements when the \style{lgato}
+                      option is turned on. \\
+
+lgaus    &        & integer & Needed for the \style{lgato = 3} option. The
+                    first digit[3, or 5] and second digit[4, or 6] is
+                    the order of the Gaussian integration over the
+                    observer and source elements respectively.\\
+
+m         &       & & \notr.\\
+
+mdiv      &       & & \notr.\\
+
+n         & $n$   & & The toroidal mode number. Overwritten by input from
+                      \stylc{dcon} or \stylc{gato} \\
+
+lsymz     &       & .true. & Symmetrizes the vacuum matrix\\
+
+lfunint   &       & logical & \notr. \\
+
+xiin      &  & array & Input Fourier modes of $\xi_l(edge)$. See
+                       \style{ieig} in Sec. \ref{sec:diags}\\
+
+leqarcw  &  & 1 & Turns on equal arcs distribution of the nodes on the
+                 shell. Best results unless the wall is very close to
+                 the plasma.  See \style{ishape = 6} option. \\
+
+ladj     &  & 1 & Read input \stylb{inadjv} from and interfaces to the
+                 \stylc{adj} code. Outputs \stylb{vacadj}\\
+         &  & 0 & Otherwise \\
+
+ldcon    &  &1 & Reads input from \stylc{dcon}'s \stylb{invacuum} and outputs
+\stylb{vacdcon} \\
+
+lgato    &  & $> 0$ & Calculates finite element representation of and
+outputs the vacuum matrix, \stylb{vacmat}?, for the \stylc{gato}\ code. \\
+         &  & 1 & Direct finite element representation with collocation. \\
+         &  & 2 & Transformation to finite elements from Fourier
+representation. \\
+         &  & 3 & Direct finite element representation without
+collocation. \\
+
+lrgato   &  & 1 & Reads file \stylb{vacin} for input for the
+\stylc{gato} code.\\
+
+lspark & & $> 0$ & \stylc{spark} and feedback type calculations. This
+                    is work in progress. Set it to 0.\\
+         &  & 1 &   \\
+         &  & 2 &   \\
+
+ismth    &  & 1 & Smooths some quantities  for plotting. \\
+
+lnova    &  & .true.  & Interfacing to the \stylc{nova} code. Takes
+\stylc{pest}-type input. Outputs \stylb{vacout}\\
+
+lpest1 & & .true.  & Interfacing to the \stylc{pest1} code\\ 
+
+       & & .false. & Interfacing to the \stylc{pest2} code (the
+         default) and all other codes but
+         \stylc{pest1}. \stylc{pest}-type outputs are in
+         \stylb{vacmat}\\ \hline
+\end{tabular}
+%\end{table}
+\end{center}
+
+\subsection{debugs}
+
+\begin{center}
+%\begin{table}[h]
+\begin{tabular}{|l|l|p{1.0in}|p{3.8in}|}
+\hline
+Variable & Paper  & Value or &  Definition \\ 
+         & equiv. &  type  & \\ \hline
+
+checkd & & logical & Switch to: write out matrix elements. Fourier
+                     analyze matrix elements and write out the
+                     Fourier matrix.  \\
+
+checke & & logical & Switch to turn on the calculation of and to write
+                      out the eigenvalues and eigenfunctions of
+                      selected matrices. Plots $\chi$ on the wall.\\
+
+check1 & & logical &  Turns on timer at selected points in code. It's
+                      functional only for the C-90.\\
+
+check2 & & logical & Turns on write statements for some quantities for
+                      debugging. $\delta(\theta)$, wall coordinates
+                      and their derivatives, \style{xpass, zpass, ell,
+                      thgr, xgrd, zgrd} and usually indices, sums
+                      etc.\\
+
+checks & & logical & Switches for checking quantities in the
+                     \textbf{spark} module.\\
+
+lkplt & & 1 & Turns on eddy current plots. Also plots plasma and wall
+               coordinates. \\
+
+wall  &  &.false.  &  Leave this .false. [Not used??]\\
+\hline
+\end{tabular}
+%\end{table}
+\end{center}
+
+\subsection{vacdat}
+
+\begin{center}
+%\begin{table}[h]
+\begin{tabular}{|l|l|p{1.0in}|p{3.8in}|}
+\hline
+
+Variable & Paper  & Value or &  Definition \\ 
+         & equiv. &  type  & \\ \hline
+
+ishape    &       & integer & Options for the wall shape. \\
+          & &$< 0$   & \textbf{Spherical topogy}. \\
+          & & $< 10 $  & \textbf{Closed toroidal topology}. \\
+          &   & Consult the paper for more  details:\\
+
+          & & 2 & Elliptical shell confocal to the plasma's
+          radius and height. The radius of the shell is \style{a}.\\
+
+          & & 4 & Modified dee-shaped wall independent of plasma
+          gerometry with triangularity, \style{dw}, squareness(?) and 2nd
+          harmonic of zwall in \style{aw} and \style{tw}. Centered at
+          \style{cw}, radius \style{a} and elongation \style{bw}.\\
+
+        &   & 5 & dee-shaped wall scaled to the radius and
+          geometric center of the plalsma. Offset of \style{cw}. Other
+          variables as option 4. \\
+
+          &       & 6  & Conforming shell at distance
+          \style{a}*$p_{rad}$. This is best option for a close fitting shell
+          since the plasma and shell nodes are aligned. \\
+
+          &   & 7 & Enclosing bean-shaped wall. Consult paper.\\
+
+          &   & 8 & Wall of \textsc{diii-d}. \\ 
+
+          & & $< 20$  & \textbf{Solid conductors not linking plasma}.\\
+
+          &  & 11  & dee-shaped conductor.\\
+
+          &  & 12  & Solid bean-shaped conductor on right.\\
+
+          &  & 13  & Solid bean-shaped conductor on left.\\
+
+          & & $< 30$ & Toroidal conductor with a toroidally symmetric
+          gap.  Geometry correlated to plasma position and geometry. \\
+
+          &       & 21 & shell scaled to plasma. Gap on the inner side.\\
+          &       & 24 & shell scaled to plasma. Gap on the outer  side.\\
+
+          & & $< 40$  & Toroidal conductor with a toroidally symmetric
+          gap.  Geometry independent of plasma. \\
+          
+          &       & 31 & shell independent of plasma. Gap on the inner
+side.\\
+          &       & 34 & shell independent of plasma. Gap on the outer
+side.\\
+
+aw        & $a_w$ &  & Half-thickness of the shell.\\
+
+bw        & $b_w$  & & Elongation of the shell.\\
+
+cw        & $c_w$   && Offset of the center of the shell from the major
+radius, $X_{\rm maj}$.\\
+
+dw        & $\delta_w$& & Triangularity of shell.\\
+
+tw        & $\tau_w$  && Sharpness of the corners of the shell. Try
+.05 as a good initial value.\\
+
+nsing & & & \notr \\
+
+epsq  & &  & \notr \\
+
+noutv & & & Number of grid points for the eddy current plots.\\
+
+delg &  &noninteger & Size of arrows for the eddy currnet
+plots. Integer part is length of shaft and decimal part is size of the
+head. \\
+
+idgt & & integer & \notr\ now. Used to be approx. number of digits
+accuracy in the Gaussian elimination used in the calculation. A value
+of idgt=6 is usually sufficient.\\
+
+delfac & & & Controls grid size to calculate derivatives in
+\stylb{spark} type calculations. \\
+
+idsk & & & \notr.\\
+
+cn0 & & & Constant added to the $\cal K$ matrix to make it nonsingular for
+$n=0$ modes. \\
+\hline
+\end{tabular}
+%\end{table}
+\end{center}
+
+\subsection{shape}
+
+\begin{center}
+%\begin{table}[h]
+\begin{tabular}{|l|l|p{1.0in}|p{3.8in}|}
+\hline
+
+Variable & Paper  & Value or &  Definition \\ 
+         & equiv. &  type  & \\ \hline
+
+ipshp    &  & 0 & Get the plasma boundary and safety factor,
+                 $\qedge$ etc. from input files.\\
+
+         & & 1 & Ignores input data files. Sets $\qedge = $
+         \style{qain}. Shape of plasma is dee-shaped centered at
+         \style{xpl}, radius \style{apl}, elongation \style{bpl} and
+         triangularity \style{dpl}. The straight-line coordinate
+         variable $\delta(\theta)$ is set equal to  zero. \\
+
+xpl    & & & \\
+apl    &&&   \\
+bpl    &&&   \\
+dpl    &&&   \\
+
+qain  & & & Input value for the $\qedge$ when \style{ipshp} = 1. \\ 
+
+r    &&& \notr \\
+
+a & $a$ & &Usually the distance of the shell from the plasma in units
+of the plasma radius $p_{\rm rad}$ at the outer side. See
+\style{ishape = 4} and \style{ishape = 2} for exceptions. If $a \ge
+10$, the wall is assumed to be at $\infty$.\\ \hline
+
+\multicolumn{4}{|c|}{\textbf{These variables are for shells with toroidal gaps}}\\
+
+b         & $\beta$   && For  Subtending half-angle of the shell in degrees.\\
+
+abulg     & $a_b$    & & The size of the bulge along the major radius
+in normalized to the mean plasma radius. \\
+
+bbulg     & $\beta_b$ & & Subtending half-angle of the extent of the
+
+bulge. \\
+
+tbulg     & $\tau_b$ & & Inverse roundedness of the bulge corners.  \\ \hline
+\end{tabular} \vspace{.3in}
+%\end{table}
+\end{center}
+
+
+\subsection{diags}
+\label{sec:diags}
+
+\begin{center}
+%\begin{table}[h]
+\begin{tabular}{|l|l|p{1.0in}|p{3.8in}|}
+\hline
+Variable & Paper  & Value or &  Definition \\ 
+         & equiv. &  type  & \\ \hline
+
+lkdis & & logical & Turns on the eddy current calculations. It calls
+                    \style{subroutine kdis}. \\
+
+ieig  & & integer & Options for getting the surface eigenfunctions $\xi(l)$. \\
+      & & 1 & From \stylc{pest-1}. Writes the $\omega^2$ and $\xi(l)$.\\
+
+      & & 4 & Reads from file \stylb{outdist}. \\
+
+      & & 5 & Gets $\xi(l)$ from the input \style{xiin} in namelist
+              \style{modes}. \\
+      & & 8 & $\Re[\xi(k)]$ and $\Im[\xi(k)]$ from input file
+              \stylb{vacin} for \stylc{gato}'s input. \\
+
+iloop & & integer & Turns on Mirnov coils calculation. \\
+     
+      & & 1 & Coils location given by dee-shaped geometry set by
+      parameters given below. \\
+      
+      & & 2 & \stylc{pbx}'s Mirnov coil positions. \\
+
+x,zloop & & & Input positions of Mirnov loops when \style{lpsub = 1} \\
+
+nloop & & & number of coils around the plasma. \\
+
+nloopr  & & & numner of radial loops.  \\
+
+lpsub & & integer & Uses subroutiones for coil positions. Otherwise
+uses namelist inputs \style{(xloop,zloop)}. \\
+
+nphil & & & number of $\phi$ positions for the loop calculations. \\
+
+nphse & & & number of $\phi$ positions for the eddy current plots. \\
+
+nph & & & number of such contours in $\phi$. \\
+
+mx, mz & & & Contour grid for $\chi$. \\
+
+xofsl & & & offset of the loop positions. \\
+aloop  & & & distance of the loop ``dee'' from plasma. \\
+bloop  & & & elongation of the loop ``dee''. \\
+dloop  & & & triangularity of the loop ``dee''. \\
+rloop  & & & \notr .\\
+ntloop & & & number of loop positions distributed along the shell. \\
+deloop & & & delta fraction of \style{plrad} to calculate
+             magnetic field from the derivative of $\chi$.\\
+
+\hline
+\end{tabular}
+%\end{table}
+\end{center}
+
+
+\subsection{sprk}
+
+\begin{center}
+%\begin{table}[h]
+\begin{tabular}{|l|l|p{1.0in}|p{3.8in}|}
+\hline
+Variable & Paper  & Value or &  Definition \\ 
+         & equiv. &  type  & \\ \hline
+
+\multicolumn{4}{|c|}{\textbf{Spark and Feedback type variables. Under Development}}\\
+
+\hline
+\end{tabular}
+%\end{table}
+\end{center}
+
+For the plasma-independent equivalent, substitute the followling
+definitions. The rest have the same meaning as above but not 
+scaled to the plasma.\vspace{.1in}
+
+\begin{center}
+%\begin{table}[h]
+\begin{tabular}{|l|l|p{1.0in}|p{3.8in}|}
+\hline
+
+Variable & Paper  & Value or &  Definition \\ 
+         & equiv. &  type  & \\ \hline
+
+cw       & $c_w$ & & Center of the shell.       \\
+
+a        & $a$   & & Inner radius of the shell. \\ \hline
+\end{tabular} \vspace{.1in}
+%\end{table}
+\end{center}
+%
+
+\end{document}

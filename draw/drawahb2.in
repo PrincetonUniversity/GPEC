@@ -1,0 +1,42 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+;results/time193/0.193/0.80/ahb.bin
+;results/time193/0.193/1.10/ahb.bin
+;results/time6565v2/0.195/1.10/ahb.bin
+;results/time6565v2/0.200/1.10/ahb.bin
+results/time129v2fixb/0.192/0.80/ahb.bin
+;results/time129v2fixb/0.192/1.10/ahb.bin
+;results/time129v2fixb/0.194/0.80/ahb.bin
+;results/time129v2fixb/0.194/1.10/ahb.bin
+
+
+graph title:	Surface Quantities
+
+variable names
+0	theta
+1	re bn
+2	re bp
+3	re bt
+4	im bn
+5	im bp
+6	im bt
+7	theta_hamada
+8	theta_pest
+9	theta_equal_arc
+10	theta_boozer
+11	dtheta_hamada
+12	dtheta_pest
+13	dtheta_equal_arc
+14	dtheta_boozer
+
+ix	iy	title
+9	1	"Real b_normal - equal arc
+9	2	"Real b_poloidal - equal arc
+9	3	"Real b_toroidal - equal arc
+9	4	"Imag b_normal
+9	5	"Imag b_poloidal
+9	6	"Imag b_toroidal
+;7	1	"Real b_normal
+;7	2	"Real b_poloidal
+;7	3	"Real b_toroidal

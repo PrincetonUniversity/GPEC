@@ -1,0 +1,22 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+ode.bin
+
+graph title:	Particle Orbits
+
+variable names
+0	t
+1	psi
+2	theta
+3	zeta
+4	p_psi
+5	p_theta
+6	p_zeta
+
+ix	iy	title
+0	1
+0	2
+0	3
+0	4
+0	5

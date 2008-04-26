@@ -1,0 +1,15 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+fixup.bin
+
+graph title:	log10 uratio
+
+variable names
+0	psifac
+1	log10 psifac
+2	log10 uration
+
+ix	iy	title
+0	2
+1	2

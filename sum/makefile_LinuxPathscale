@@ -1,0 +1,25 @@
+# This is the makefile for SUM on Linux/Pathscale computers.Linux/Pathscale
+
+FFLAGS = -O2 -m64
+F90 = pathf90 $(FFLAGS)
+
+.f.o: 
+	$(F90) -c $*.f
+
+OBJS = \
+	io.o \
+	local.o \
+	utils.o \
+	sum.o
+
+sum: $(OBJS)
+	$(F90) -o sum $(OBJS)
+
+# dependencies
+
+local.o: io.o
+utils.o: local.o
+sum.o: utils.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin sum

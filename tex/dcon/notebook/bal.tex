@@ -1,0 +1,251 @@
+% This is Plain TeX file dcon_gen.tex.
+
+\magnification=\magstep2
+
+\font\bfbig=cmbx12
+\font\ssbf=cmssbx10
+\def\t#1{\hbox{\ssbf #1}}
+\def\v#1{\hbox{\bf #1}}
+\def\b{\hat{\bf b}}
+
+\centerline{\bfbig Ballooning Representation}
+\medskip
+
+$$ \varphi(\psi,\theta,\beta) 
+	= \varphi(\psi,\theta,\beta+1) 
+	= \varphi(\psi,\theta+1,\beta-q) 
+\eqno(1) $$
+
+$$ \varphi(\psi,\theta,\beta)  = \sum_{l=-\infty}^\infty 
+	\hat{\varphi} (\psi,\theta-l)
+	\exp \left[ - 2 \pi i n 
+	\left( \beta + l q \right) \right] 
+\eqno(2) $$
+
+$$ \eqalign{
+\beta \equiv& \zeta - q \theta + \int q' \theta_0(\psi) d\psi \cr
+\nabla \beta =& \nabla \zeta - q \nabla \theta 
+	- q' (\theta - \theta_0) \nabla \psi \cr
+|\nabla \beta|^2 
+=& |\nabla \zeta - q \nabla \theta|^2 
+	+ q'^2 (\theta - \theta_0)^2 |\nabla \psi|^2 \cr
+&- 2 q' (\theta - \theta_0) 
+	(\nabla \zeta - q \nabla \theta ) \cdot \nabla \psi \cr
+} \eqno(3) $$
+
+\bigskip
+\centerline{\bfbig Ideal Marginal Ballooning Equation}
+\medskip
+
+$$ \v{B} \cdot \nabla \left( {|\nabla \beta|^2 \over B^2}
+	\v{B} \cdot \nabla \hat{\varphi} \right) 
+	+ 2 {P' \over \chi'} \kappa_w \hat{\varphi} = 0
+\eqno(4) $$
+
+$$ {\chi' \over {\cal J}} {\partial \over \partial \theta} 
+	\left( {|\nabla \beta|^2 \over B^2}
+	{\chi' \over {\cal J}} 
+	{\partial \hat{\varphi} \over \partial \theta} \right) 
+	+ 2 {P' \over \chi'} \kappa_w \hat{\varphi} = 0
+\eqno(5) $$
+
+$$ 
+{\partial \v{u} \over \partial \theta} = \t{L} \v{u}, \quad
+\v{u} \equiv \left( \matrix{ \hat{\varphi} \cr
+	{|\nabla \beta|^2 \over B^2} {\chi' \over {\cal J}} 
+	{\partial\hat{\varphi}  \over \partial \theta} 
+	} \right), \quad
+\t{L} \equiv {{\cal J} \over \chi'} \left( \matrix{ 0 
+	& {B^2 \over |\nabla \beta|^2} \cr
+	- 2 {P' \over \chi'} \kappa_w & 0 } \right)
+\eqno(6) $$
+
+\vfill\eject
+\centerline {\bfbig Curvature}
+\medskip
+
+$$ \kappa \equiv \b \cdot \nabla \b
+	= (\nabla \times \b) \times \b, \quad
+\b \equiv {\v{B} \over B}
+\eqno(7) $$
+
+$$ \eqalign{ \nabla P 
+=& \v{J} \times \v{B} = (\nabla \times \v{B}) \times \v{B} 
+	= \left[ \nabla \times (B \b) \right] \times \v{B} \cr
+=& \left( B \nabla \times \b + \nabla B \times \b \right) \times \v{B}
+	= B^2 \kappa - B \left( \t{I} - \b\b \right) \cdot \nabla B
+} \eqno(8) $$
+
+$$ B^2 \kappa = \nabla P + B \left( \t{I} - \b\b \right) \cdot \nabla B
+\eqno(9) $$
+
+$$ \eqalign{\kappa_s 
+\equiv& {\kappa \times \v{B} \over B^2} \cdot \nabla \psi 
+	= (\nabla \times \b) \times \b
+	\cdot {\v{B} \times \nabla \psi \over B^2}
+	= - {1 \over B} \nabla \cdot \left( 
+	{\v{B} \times \nabla \psi \over B} \right) \cr
+=& - {1 \over {\cal J} B} {\partial \over \partial \theta} \left( 
+	{\cal J} {\v{B} \cdot \nabla \psi \times \nabla \theta \over B} 
+	\right)
+	= - {\pi f \over {\cal J}} {\partial \over \partial \theta} 
+	\left( {1 \over B^2} \right)
+} \eqno(10) $$
+
+$$ \eqalign{ \kappa_w 
+\equiv& {\kappa \times \v{B} \over B^2} \cdot \nabla \beta \cr
+=& (\nabla \times \b) \times \b
+	\cdot {\v{B} \times \nabla \beta \over B^2}
+	= - {1 \over B} \nabla \cdot \left( 
+	{\v{B} \times \nabla \beta \over B} \right) \cr
+=& - {1 \over {\cal J} B} {\partial \over \partial \psi} \left( 
+	{\cal J} {\v{B} \cdot \nabla \beta \times \nabla \psi \over B} 
+	\right)
+	- {1 \over {\cal J} B} {\partial \over \partial \theta} \left( 
+	{\cal J} {\v{B} \cdot \nabla \beta \times \nabla \theta \over B} 
+	\right) \cr
+=& - {1 \over {\cal J} B} {\partial \over \partial \psi} \left( 
+	{{\cal J} B \over \chi'} \right)
+	+ {1 \over {\cal J} B} {\partial \over \partial \theta} \left(
+	{\cal J} {\v{B} \cdot \nabla \theta \times \nabla \zeta \over B}  
+	\right) + {2 \pi f q' \over B^2 {\cal J}} - q' \theta \kappa_s \cr
+=& \left[ \nabla P + B \left( \t{I} - \b\b \right) \cdot \nabla B \right] 
+	\cdot {\v{B} \times \nabla \beta \over B^4} \cr
+=& {1 \over \chi'} \left( {P' \over B^2} 
+	+ {1 \over B} {\partial B \over \partial \psi} \right)
+	- \left( {\v{B} \cdot \nabla \theta \times \nabla \zeta \over
+	B^3}  \right) {\partial B \over \partial \theta} - q' \theta \kappa_s
+} \eqno(11) $$
+
+$$ \eqalign{ 2 \kappa_w 
+=& {1 \over \chi'} \left( 
+	{P' \over B^2} + {\chi'' \over \chi'} 
+	- {{\cal J}' \over {\cal J}} \right)
+	+ {2\pi f q' \over B^2 {\cal J}}
++ {1 \over {\cal J}} {\partial \over \partial \theta} \left(
+	{\cal J} {\v{B} \cdot \nabla \theta \times \nabla \zeta \over B^2}  
+	\right)  - 2 q' \theta \kappa_s
+} \eqno(12) $$
+
+\vfill\eject
+\centerline{\bfbig Large $\theta$ Limit}
+\medskip
+
+$$ 
+{\partial \v{u} \over \partial \theta} = \t{L} \v{u}, \quad
+\t{L} \equiv {{\cal J} \over \chi'} \left( \matrix{ 0 
+	& B^2 / |\nabla \beta|^2 \cr
+	- 2 P' \kappa_w / \chi' & 0 } \right)
+\eqno(13) $$
+
+$$ \nabla \beta = |\nabla \zeta - q \nabla \theta|^2 
+	- 2 q' \theta (\nabla \zeta - q \nabla \theta ) 
+	\cdot \nabla \psi
+	+ q'^2 \theta^2 |\nabla \psi|^2 
+\eqno(14) $$
+
+$$ \kappa_w =\kappa_n - q' \theta \kappa_s, \quad
+\kappa_s = - {1 \over {\cal J}} {\partial \over \partial \theta} 
+	\left( {\pi f \over B^2} \right)
+\eqno(15) $$
+
+
+$$ \v{u} = \t{R} \v{v}, \quad
+\t{R} = \left( \matrix{ \theta^{-1/2} & 0 \cr 0 & \theta^{1/2} }
+	\right), \quad  
+{\partial \v{v} \over \partial \theta} = \t{M} \v{v}
+\eqno(16) $$
+
+$$ \eqalign{ \t{M} 
+=& \t{R}^{-1} \left( \t{L} \t{R} - \t{R}' \right) \cr
+=& {{\cal J} \over \chi'} \left( \matrix{ 1/2 \theta
+	& B^2 \theta / |\nabla \beta|^2 \cr
+	- 2 P' \kappa_w / \chi' \theta & -1/2 \theta } \right) \cr
+=& \t{M}_{-1} + \theta^{-1} \sum_{k=0}^{\infty} 
+	\theta^{-k} \t{M}_k (\theta), \quad
+\t{M}_k(\theta+1) = \t{M}_k(\theta)
+} \eqno(17) $$
+
+$$ \t{v} = \theta^\alpha \sum_{k=0}^{\infty} \theta^{-k} 
+	\v{v}^{(k)} (\theta),  \quad
+\v{v}^{(k)}(\theta+1) = \v{v}^{(k)}(\theta)
+\eqno(18) $$
+
+\bigskip
+\centerline {\bfbig Lowest Order}
+\medskip
+
+$$ \t{M}_{-1}
+= \left( \matrix{ 0 & 0 \cr 
+	2 {\cal J} P' q' \kappa_s / \chi'^2 
+	& 0 } \right)
+= - {\partial \over \partial \theta}
+\left( \matrix{ 0 & 0 \cr 2 \pi f P' q' / \chi'^2 B^2 & 0 } \right)
+\eqno(19) $$
+
+$$ \t{S} \equiv \left( \matrix{ 1 & 0 \cr 
+	- 2 \pi f P' q' / \chi'^2 B^2
+	& 1 } \right), \quad
+\t{S}^T \t{J} \t{S} = \t{J}
+\eqno(20) $$
+
+$$ \t{N}_{-1} \equiv \t{S}^{-1} \left( \t{M}_k \t{S} 
+	- {\partial \t{S} \over \partial \theta} \right) = 0
+\eqno(21) $$
+
+$$ {\partial \t{v}^{(0)} \over \partial \theta} - \t{M}_{-1} \v{v}^{(0)}
+	= 0, \quad
+\v{v}^{(0)} = \t{S} \v{w}^{(0)}, \quad
+{\partial \t{w}^{(0)} \over \partial \theta} = 0
+\eqno(22) $$
+
+\vfill\eject
+\centerline{\bfbig Higher Order, General Considerations}
+\medskip
+
+$$ {\partial \v{v}^{(k+1)} \over \partial \theta} 
+	- \t{M}_{-1} \v{v}^{(k+1)}
+	= \left[ \t{M}_0 -  \left( \alpha + k \right) 
+	\t{I} \right] \v{v}^{(k)}
+	+ \sum_{l=1}^k \t{M}_l \v{v}^{(k-l)}
+\eqno(23) $$
+
+$$ \v{v}^{(k)} = \t{S} \v{w}^{(k)}, \quad
+\t{N}_k \equiv \t{S}^{-1} \t{M}_k \t{S}, \quad k \ge 0
+\eqno(24) $$
+
+$$ {\partial \v{w}^{(k+1)} \over \partial \theta} 
+	= \left[ \t{N}_0 -  \left( \alpha + k \right) 
+	\t{I} \right] \v{w}^{(k)}
+	+ \sum_{l=1}^k \t{N}_l \v{w}^{(k-l)}
+\eqno(25) $$
+
+$$ \left< {\cal F} \right> \equiv \int_0^1 {\cal F} d\theta
+\eqno(26) $$
+
+$$ \left< \left[ \t{N}_0 -  \left( \alpha + k \right) 
+	\t{I} \right] \v{w}^{(k)}
+	+ \sum_{l=1}^k \t{N}_l \v{w}^{(k-l)} \right> = 0
+\eqno(27) $$
+
+\bigskip
+\centerline{\bfbig First Order}
+\medskip
+
+$$ \t{M}_0 = {{\cal J} \over \chi'} \left( \matrix{ 
+	1/2 & B^2 / q'^2 |\nabla \psi|^2 \cr
+	- 2 P' \kappa_n / \chi' & -1/2 } \right), \quad
+\t{N}_0 \equiv \t{S}^{-1} \t{M}_0 \t{S}
+\eqno(28) $$
+
+$$ \left[ \left<\t{N}_0\right> - \alpha \t{I} \right] \v{w}^{(0)} = 0,
+	\quad 
+\det \left[ \left<\t{N}_0\right> - \alpha \t{I} \right] = 0, \quad
+\alpha = \pm \left( - D_I \right)^{1/2}
+\eqno(29) $$
+
+$$ {\partial \v{w}^{(1)} \over \partial \theta} 
+	= \left( \t{N}_0 - \alpha \t{I} \right) \v{w}^{(0)}
+\eqno(30) $$
+
+\end

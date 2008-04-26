@@ -1,0 +1,4 @@
+cd ../equil
+make
+cd ../dcon
+make

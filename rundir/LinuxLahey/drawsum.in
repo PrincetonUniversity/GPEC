@@ -1,0 +1,43 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+sum.bin
+
+graph title:	Perturbed Potential Energy
+
+variable names
+0	outval
+1	inval
+2	psilow
+3	psihigh
+4	amean
+5	rmean
+6	aratio
+7	kappa
+8	delta1
+9	delta2
+10	li1
+11	li2
+12	li3
+13	ro
+14	zo
+15	psio
+16	betap1
+17	betap2
+18	betap3
+19	betat
+20	betan
+21	bt0
+22	q0
+23	qmin
+24	qmax
+25	qa
+26	crnt
+27	asinh plasma1
+28	asinh vacuum1
+29	asinh total1
+
+ix	iy	title
+0	27
+0	28
+0	29

@@ -1,0 +1,17 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+cyl.bin
+
+graph title:	Cylindrical Computation
+
+variable names
+0	beta0
+1	q0
+2	psis
+3	di
+4	deltap
+
+ix	iy	title
+2	1
+2	4	"Cylindrical Computation

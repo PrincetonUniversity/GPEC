@@ -1,0 +1,19 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+bal2.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	theta
+1	asinh y1
+2	asinh y2
+3	y2/dy1
+4	dy2/y1
+5	asinh ca1
+6	asinh ca2
+
+ix	iy	title
+0	5
+0	6

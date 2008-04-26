@@ -1,0 +1,19 @@
+Type (G=Graph, C=Contour):	M
+
+filename(s)
+contour.bin
+
+comment:	Contour Plot
+
+independent variable names
+t	time
+x	R
+y	Z
+
+dependent variable names
+1	xi
+2	b
+
+iqty	Options	Title
+1	-a	"Normal Displacement
+2	-a	"Normal Magnetic Field

@@ -1,0 +1,17 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+crit.bin
+
+graph title:	Eigenvalues
+
+variable names
+0	psifac
+1	Log_10 psifac
+2	Log_10 (m - n q)
+3	q
+4	crit
+
+ix	iy	title
+0	4	crit
+0	3	q Profile

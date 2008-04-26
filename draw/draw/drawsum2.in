@@ -1,0 +1,18 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+sum2.bin.22
+sum2.bin.04
+
+graph title:	Toroidal Computation
+
+variable names
+0	q0
+1	inval
+2	psifac
+3	di
+4	deltap
+
+ix	iy	title
+2	0
+2	4

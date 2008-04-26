@@ -1,0 +1,53 @@
+# This is the makefile for EQUIL on LinuxPathscale computers.
+
+FFLAGS = -O2 -m64
+
+F90 = pathf90 $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+OBJS = \
+	io.o \
+	local.o \
+	utils.o \
+	spline.o \
+	bicube.o \
+	cspline.o \
+	fft.o \
+	fspline.o \
+	global.o \
+	inverse.o \
+	direct.o \
+	read_eq.o \
+	lar.o \
+	gsec.o \
+	sol.o \
+	equil.o \
+	equil_out.o
+
+libequil: $(OBJS)
+	mkdir -p ../lib/LinuxPathscale
+	ar -r ../lib/LinuxPathscale/libequil.a *.o
+
+# dependencies
+
+local.o: io.o
+utils.o: local.o
+spline.o: local.o
+bicube.o: spline.o
+cspline.o: local.o
+fft.o: local.o
+fspline.o: local.o spline.o cspline.o utils.o fft.o
+global.o: bicube.o
+inverse.o: global.o
+direct.o: global.o
+read_eq.o: inverse.o direct.o
+lar.o: inverse.o
+gsec.o: inverse.o
+sol.o: direct.o
+equil.o: read_eq.o lar.o gsec.o sol.o
+equil_out.o: global.o
+
+clean:
+	rm -f *.o *.mod

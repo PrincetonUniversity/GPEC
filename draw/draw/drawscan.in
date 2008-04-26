@@ -1,0 +1,23 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+scan.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	scan
+1	re a
+2	re b
+3	re d
+4	im a
+5	im b
+6	im d
+
+ix	iy	title
+0	1	"re a
+0	2	"re b
+0	3	"re d
+;0	4	"im a
+;0	5	"im b
+;0	6	"im d

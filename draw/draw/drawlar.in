@@ -1,0 +1,26 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+lar.bin
+
+graph title:	Large Aspect Ratio Equilibrium
+
+variable names
+0	r
+1	bp
+2	bt
+3	pp
+4	sigma
+5	q
+6	p
+7	f
+8	psi
+
+ix	iy	title
+8	7	"f = R BT
+8	6	"Plasma Pressure
+8	5	"Safety Factor
+8	1	"Poloidal Field
+8	2	"Toroidal Field
+8	4	"Sigma
+8	0	"Radius

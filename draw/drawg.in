@@ -1,0 +1,48 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+gmat.bin
+
+graph title:	F Matrix
+
+variable names
+0	psi
+1	Log_10 psi
+2	Log_10 1-psi
+3	Log_10 gmat01
+4	Arg gmat01
+5	Log_10 gmat02
+6	Arg gmat02
+7	Log_10 gmat03
+8	Arg gmat03
+9	Log_10 gmat04
+10	Arg gmat04
+11	Log_10 gmat05
+12	Arg gmat05
+13	Log_10 gmat06
+14	Arg gmat06
+15	Log_10 gmat07
+16	Arg gmat07
+17	Log_10 gmat08
+18	Arg gmat08
+19	Log_10 gmat09
+20	Arg gmat09
+21	Log_10 gmat10
+22	Arg gmat10
+23	Log_10 gmat11
+24	Arg gmat11
+25	Log_10 gmat12
+26	Arg gmat12
+27	Log_10 gmat13
+28	Arg gmat13
+
+ix	iy	title
+2	3
+2	5
+2	7
+2	9
+2	11
+2	13
+2	15
+2	17
+2	19

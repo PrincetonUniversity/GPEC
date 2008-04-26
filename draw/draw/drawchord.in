@@ -1,0 +1,21 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+chord.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	r
+1	q
+2	xi_psi
+3	b_psi
+4	xi_norm
+5	b_norm
+
+ix	iy	title
+0	2	"xi psi
+0	3	"b_psi
+;0	1	"q
+;0	4	"xi_norm
+;0	5	"b_norm

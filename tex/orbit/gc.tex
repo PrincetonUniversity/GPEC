@@ -1,0 +1,451 @@
+% This is Plain TeX file dcon_gen.tex.
+
+\magnification=\magstep2
+
+\font\bfbig=cmbx12
+\font\ssbf=cmssbx10
+\def\t#1{\hbox{\ssbf #1}}
+\def\v#1{\hbox{\bf #1}}
+\def\e#1{\hat {\bf e}_{#1}}
+\def\a{\hat{\bf a}}
+\def\b{\hat{\bf b}}
+\def\c{\hat{\bf c}}
+
+\centerline{\bfbig Guiding Center Lagrangian}
+\bigskip
+
+$$ \v{B} = B \b, \quad
+\e{3} \equiv \b, \quad
+\e{i} \cdot \e{j} = \delta_{ij}, \quad
+\e{i} \cdot \e{j} \times \e{k} = \epsilon_{ijk}
+\eqno(1) $$
+
+$$ \c \equiv - \e{1} \sin \xi - \e{2} \cos \xi, \quad
+\a \equiv \b \times \c = \e{1} \cos \xi - \e{2} \sin \xi
+\eqno(2) $$
+
+$$ 
+\dot{\xi} \approx \Omega \equiv {q B \over m}, \quad
+{d\a \over dt} \approx \dot{\xi} \c, \quad
+\v{v} \equiv \dot{\v{x}} = v_\parallel \b + v_\perp \c
+\eqno(3) $$
+
+$$ L \equiv \left[ q \v{A}(\v{x},t) + m \v{v} \right] \cdot \dot{\v{x}} 
+	- H(\v{x},\v{v}), \quad
+H(\v{x},\v{v}) \equiv {m v^2 \over 2 } + q \Phi
+\eqno(4) $$ 
+
+$$ 
+\v{X} \equiv \v{x} - {v_\perp \over \Omega} \a, \quad
+\v{x} = \v{X} + {v_\perp \over \Omega} \a, \quad
+\dot{\v{x}} = \dot{\v{X}} + {d \over dt} 
+	\left( {v_\perp \over \Omega} \a \right)
+\eqno(5) $$
+
+$$ \eqalign{
+&\v{A}(\v{x},t) = \v{A}(\v{X},t) 
+	+ {v_\perp \over \Omega} \a \cdot \nabla \v{A}(\v{X},t), \quad
+{d \over dt} \v{A}(\v{X},t) = {\partial \v{A} \over \partial t}
+	+ \dot{\v{X}} \cdot \nabla \v{A}
+} \eqno(6) $$
+
+$$ \eqalign{ L 
+=& \left[ q \left( \v{A}
+	+ {v_\perp \over \Omega} \a \cdot \nabla \v{A} \right)
+	+ m(v_\parallel \b + v_\perp \c) \right]
+	\cdot \left[ \dot{\v{X}} + {d \over dt} 
+	\left( {v_\perp \over \Omega} \a \right) \right] 
+	- H \cr
+\approx& \left( q \v{A} + m v_\parallel \b \right) 
+	\cdot \dot{\v{X}} + m v_\perp^2 {\dot{\xi} \over \Omega}
+	- q {\partial \v{A} \over \partial t} 
+	\cdot \a {v_\perp \over \Omega} - H \cr
+&+ {q v_\perp \over \Omega^2}
+	\left( \a \cdot \nabla \right) \v{A} \cdot 
+	\left( \dot{v}_\perp \a + v_\perp \dot{\xi} \c \right)
+	+ {d \over dt} 
+	\left( q \v{A} \cdot \a {v_\perp \over \Omega} \right) \cr
+=& \left( q \v{A} + m v_\parallel \b \right) 
+	\cdot \dot{\v{X}} + {m v_\perp^2 \over 2} {\dot{\xi} \over \Omega}
+	- q {\partial \v{A} \over \partial t} 
+	\cdot \a {v_\perp \over \Omega} - H \cr
+&+ {d \over dt} 
+	\left( q \v{A} \cdot \a {v_\perp \over \Omega} 
+	+ {q v_\perp^2 \over 2 \Omega^2} 
+	\a \cdot \nabla \v{A} \cdot \a \right)
+} \eqno(7) $$
+
+$$ \bar{L} = \left( q \v{A} + m v_\parallel \b \right) 
+	\cdot \dot{\v{X}} + {m v_\perp^2 \over 2} {\dot{\xi} \over \Omega}
+	- H(v_\parallel,v_\perp,\v{X},t)
+\eqno(8) $$
+
+\vfill\eject
+\centerline {\bfbig Lagrangian Equations of Motion}
+\bigskip
+
+$$ \bar{L} = \left[ q \v{A}(\v{X},t) + m v_\parallel \b \right]
+	\cdot \dot{\v{X}} + {\mu B \dot{\xi} \over \Omega}
+	- \left( {m v_\parallel^2 \over 2} + \mu B + q \Phi \right)
+\eqno(9) $$
+
+$$ \v{Z} \equiv (\v{X},v_\parallel,\mu,\xi), \quad
+{d \over dt} \left( {\partial \bar{L} \over \partial \dot{Z}_i} \right)
+	- {\partial \bar{L} \over \partial Z_i} = 0
+\eqno(10) $$
+
+$$ {\partial \bar{L} \over \partial \dot{v}_\parallel} = 0, \quad
+{\partial \bar{L} \over \partial v_\parallel} 
+	= \b \cdot \dot{\v{X}} - v_\parallel = 0
+\eqno(11) $$
+
+$$ {\partial \bar{L} \over \partial \dot{\mu}} = 0, \quad
+{\partial \bar{L} \over \partial \mu} 
+	= B \left( {\dot{\xi} \over \Omega} - 1 \right) = 0
+\eqno(12) $$
+
+$$ {\partial \bar{L} \over \partial \xi} = 0, \quad
+{\partial \bar{L} \over \partial \dot{\xi}} = {\mu B \over \Omega}, \quad
+{d\mu \over dt} = 0
+\eqno(13) $$
+
+$$ \v{P} \equiv {\partial \bar{L} \over \partial \dot{\v{X}}}
+	= q \v{A}(\v{X},t) + m v_\parallel \b
+\eqno(14) $$
+
+$$ \eqalign{ {d\v{P} \over dt} 
+=& q \left( {\partial \v{A} \over \partial t}
+	+ \dot{\v{X}} \cdot \nabla \v{A} \right)
+	+ m v_\parallel \left( {\partial \b \over \partial t}
+	+ \dot{\v{X}} \cdot \nabla \b \right)
+	+ m \dot{v}_\parallel \b \cr
+=& \left( q \nabla \v{A} + m v_\parallel \nabla \b \right) 
+	\cdot \dot{\v{X}} - \mu \nabla B - q \nabla \Phi
+} \eqno(15) $$
+
+$$ \eqalign{
+\v{E}^* \equiv& - {\partial \v{A} \over \partial t} - \nabla \Phi
+	- {m v_\parallel \over q} {\partial \b \over \partial t} \cr
+\v{B}^* \equiv& \nabla \times \v{A} 
+	+ {m v_\parallel \over q} \nabla \times \b
+} \eqno(16) $$
+
+\bigskip
+$$ q \left( \v{E}^* + \dot{\v{X}} \times \v{B}^* \right) 
+	= m \dot{v}_\parallel \b + \mu \nabla B
+\eqno(17) $$
+
+$$ \eqalign{
+\dot{\v{X}} =& {1 \over q B_\parallel^*} 
+	\left[ q v_\parallel \v{B}^* + \b \times 
+	\left( \mu \nabla B - q \v{E}^* \right) \right] \cr
+\dot{v}_\parallel =& - {\v{B}^* \over m B_\parallel^*} \cdot
+	\left( \mu \nabla B - q \v{E}^* \right)
+} \eqno(18) $$
+
+\vfill\eject
+\centerline {\bfbig Straight-Fieldline Drift Equations}
+\bigskip
+
+$$ \eqalign{\dot{\v{X}} 
+=& {1 \over q B_\parallel^*} 
+	\left[ q v_\parallel \v{B}^* + \b \times 
+	\left( \mu \nabla B - q \v{E}^* \right) \right] \cr
+=& {1 \over q B_\parallel^*} 
+	\left[ v_\parallel \left( q \v{B} 
+	+ m v_\parallel \nabla \times \b \right)
+	+ \b \times \left( \mu \nabla B 
+	- m v_\parallel \partial \b/\partial t - q \v{E}
+	\right) \right] \cr
+=& {\cal J} \left( \dot{\psi} \nabla \theta \times \nabla \zeta
+	+ \dot{\theta} \nabla \zeta \times \nabla \psi
+	+ \dot{\zeta} \nabla \psi \times \nabla \theta \right)
+} \eqno(19) $$
+
+$$ \eqalign{\dot{\psi} 
+= {1 \over q B_\parallel^*} &
+	\left[ m v_\parallel^2 \nabla \times \b \cdot \nabla \psi 
+	\right. \cr
+&\left. 
+	+ \nabla \psi \cdot \b \times \left( \mu \nabla B 
+	- m v_\parallel \partial \b/\partial t - q \v{E}
+	\right) \right]
+} \eqno(20) $$
+
+$$ \eqalign{\dot{\theta} 
+= {1 \over q B_\parallel^*} &
+	\left[ v_\parallel \left( 
+	m v_\parallel \nabla \times \b \cdot \nabla \theta 
+	+ q \v{B} \cdot \nabla \theta \right) \right. \cr
+&\left. 
+	+ \nabla \theta \cdot \b \times \left( \mu \nabla B 
+	- m v_\parallel \partial \b/\partial t - q \v{E}
+	\right) \right] \cr
+} \eqno(21) $$
+
+$$ \eqalign{\dot{\zeta} 
+= {1 \over q B_\parallel^*} &
+	\left[ v_\parallel \left( 
+	m v_\parallel \nabla \times \b \cdot \nabla \zeta
+	+ q \v{B} \cdot \nabla \zeta \right) \right. \cr
+&\left. 
+	+ \nabla \zeta \cdot \b \times \left( \mu \nabla B 
+	- m v_\parallel \partial \b/\partial t - q \v{E}
+	\right) \right] \cr
+} \eqno(22) $$
+
+$$ \eqalign{ \dot{v}_\parallel =& - {1 \over m q B_\parallel^*} 
+	\left( q \v{B} + m v_\parallel \nabla \times \b \right) \cr
+& \cdot \left[ \mu \nabla B 
+	+ m v_\parallel {\partial \b \over \partial t}
+	+ q \left( \nabla \Phi +  {\partial A \over \partial t} \right)
+	\right] 
+} \eqno(23) $$
+
+$$ q B_\parallel^* = q B + m v_\parallel \b \cdot \nabla \times \b
+\eqno(24) $$
+
+\vfill\eject
+\centerline {\bfbig Straight-Fieldline Drift Terms}
+\bigskip
+
+$$ \eqalign{
+\nabla \times \b \cdot \nabla \psi
+	=& {1 \over {\cal J}} {\partial \over \partial \theta}
+	\left( {{\cal J} \v{B} \cdot \nabla \psi \times \nabla \theta \over B}
+	\right) \cr
+\nabla \times \b \cdot \nabla \theta
+	=& - {1 \over {\cal J}} {\partial \over \partial \psi}
+	\left( {{\cal J} \v{B} \cdot \nabla \psi \times \nabla \theta \over B}
+	\right) \cr
+\nabla \times \b \cdot \nabla \zeta
+	=& {1 \over {\cal J}} {\partial \over \partial \psi}
+	\left( {{\cal J} \v{B} \cdot \nabla \zeta \times \nabla \psi \over B} \right)
+	- {1 \over {\cal J}} {\partial \over \partial \theta}
+	\left( {{\cal J} \v{B} \cdot \nabla \theta \times \nabla \zeta \over B}
+	\right) \cr
+} \eqno(24) $$
+
+\bigskip
+$$ \eqalign{
+\b \times \nabla B \cdot \nabla \psi
+	=& - \left( {\v{B} \cdot \nabla \psi \times \nabla \theta 
+	\over B} \right) {\partial B \over \partial \theta} \cr
+\b \times \nabla B \cdot \nabla \theta
+	=& \left( {\v{B} \cdot \nabla \psi \times \nabla \theta 
+	\over B} \right) {\partial B \over \partial \psi} \cr
+\b \times \nabla B \cdot \nabla \zeta
+	=& \left( {\v{B} \cdot \nabla \theta \times \nabla \zeta
+	\over B} \right) {\partial B \over \partial \theta}
+	- \left( {\v{B} \cdot \nabla \zeta \times \nabla \psi
+	\over B} \right) {\partial B \over \partial \psi} \cr
+} \eqno(25) $$
+
+\bigskip
+$$ \eqalign{
+\v{B} \cdot \nabla B =& {\chi' \over {\cal J}}
+	{\partial B \over \partial \theta} \cr
+\nabla \times \b \cdot \nabla B 
+	=& \left( \nabla \times \b \cdot \nabla \psi \right)
+	{\partial B \over \partial \psi}
+	+ \left( \nabla \times \b \cdot \nabla \theta \right)
+	{\partial B \over \partial \theta}
+\cr
+} \eqno(26) $$
+
+\vfill\eject
+\centerline {\bfbig Straight-Fieldline Initial Conditions}
+\bigskip
+
+$$ \v{v} = \dot{r} \e{r} + \dot{z} \e{z} + r \dot{\phi} \e{\phi}
+\eqno(27) $$
+
+$$ \v{B} = \chi' (\nabla \zeta \times \nabla \psi 
+	+ q \nabla \psi \times \nabla \theta)
+\eqno(28) $$
+
+$$ \eqalign{ d\v{X} 
+\equiv& \v{X} - \v{x} 
+	= - {v_\perp \over \Omega} \a 
+	= {\v{v} \times \b \over \Omega} \cr
+=& {\cal J} \left( 
+	\delta \psi \nabla \theta \times \nabla \zeta
+	+ \delta \theta \nabla \zeta \times \nabla \psi
+	+ \delta \zeta \nabla \psi \times \nabla \theta \right) \cr
+} \eqno(29) $$
+
+$$ \eqalign{ 
+\delta \psi =& {\chi' \over \Omega B} \nabla \psi \cdot
+	\left( \dot{r} \e{r} + \dot{z} \e{z} 
+	+ r \dot{\phi} \e{\phi} \right)
+	\times (\nabla \zeta \times \nabla \psi 
+	+ q \nabla \psi \times \nabla \theta) \cr
+\delta \theta =& {\chi' \over \Omega B} \nabla \theta \cdot
+	\left( \dot{r} \e{r} + \dot{z} \e{z} 
+	+ r \dot{\phi} \e{\phi} \right)
+	\times (\nabla \zeta \times \nabla \psi 
+	+ q \nabla \psi \times \nabla \theta) \cr
+\delta \zeta =& {\chi' \over \Omega B} \nabla \zeta \cdot
+	\left( \dot{r} \e{r} + \dot{z} \e{z} 
+	+ r \dot{\phi} \e{\phi} \right)
+	\times (\nabla \zeta \times \nabla \psi 
+	+ q \nabla \psi \times \nabla \theta)
+} \eqno(30) $$
+
+$$ \eqalign{ v_\parallel 
+=& \v{v} \cdot \b = {\chi' \over B} 
+	\left( \dot{r} \e{r} + \dot{z} \e{z} 
+	+ r \dot{\phi} \e{\phi} \right)
+	\cdot (\nabla \zeta \times \nabla \psi 
+	+ q \nabla \psi \times \nabla \theta)
+} \eqno(31) $$
+
+\vfill\eject
+\centerline {\bfbig Cylindrical Drift Equations}
+\bigskip
+
+$$ \eqalign{\dot{\v{X}} 
+=& {1 \over q B_\parallel^*} 
+	\left[ q v_\parallel \v{B}^* + \b \times 
+	\left( \mu \nabla B - q \v{E}^* \right) \right] \cr
+=& {1 \over q B_\parallel^*} 
+	\left[ v_\parallel \left( q \v{B} 
+	+ m v_\parallel \nabla \times \b \right)
+	+ \b \times \left( \mu \nabla B 
+	- m v_\parallel \partial \b/\partial t - q \v{E}
+	\right) \right] \cr
+=& r \left( \dot{r} \nabla z \times \nabla \phi
+	+ \dot{z} \nabla \phi \times \nabla r
+	+ \dot{\phi} \nabla r \times \nabla z \right)
+} \eqno(32) $$
+
+$$ \eqalign{\dot{r} 
+= {1 \over q B_\parallel^*} &
+	\left[ v_\parallel \left( 
+	m v_\parallel \nabla \times \b \cdot \nabla r
+	+ q \v{B} \cdot \nabla r \right) \right. \cr
+&\left. 
+	+ \nabla r \cdot \b \times \left( \mu \nabla B 
+	- m v_\parallel \partial \b/\partial t - q \v{E}
+	\right) \right]
+} \eqno(33) $$
+
+$$ \eqalign{\dot{z} 
+= {1 \over q B_\parallel^*} &
+	\left[ v_\parallel \left( 
+	m v_\parallel \nabla \times \b \cdot \nabla z 
+	+ q \v{B} \cdot \nabla z \right) \right. \cr
+&\left. 
+	+ \nabla z \cdot \b \times \left( \mu \nabla B 
+	- m v_\parallel \partial \b/\partial t - q \v{E}
+	\right) \right] \cr
+} \eqno(34) $$
+
+$$ \eqalign{\dot{\phi} 
+= {1 \over q B_\parallel^*} &
+	\left[ v_\parallel \left( 
+	m v_\parallel \nabla \times \b \cdot \nabla \phi
+	+ q \v{B} \cdot \nabla \phi \right) \right. \cr
+&\left. 
+	+ \nabla \phi \cdot \b \times \left( \mu \nabla B 
+	- m v_\parallel \partial \b/\partial t - q \v{E}
+	\right) \right] \cr
+} \eqno(35) $$
+
+$$ \eqalign{ \dot{v}_\parallel =& - {1 \over m q B_\parallel^*} 
+	\left( q \v{B} + m v_\parallel \nabla \times \b \right) \cr
+& \cdot \left[ \mu \nabla B 
+	+ m v_\parallel {\partial \b \over \partial t}
+	+ q \left( \nabla \Phi +  {\partial A \over \partial t} \right)
+	\right] 
+} \eqno(36) $$
+
+$$ q B_\parallel^* = q B + m v_\parallel \b \cdot \nabla \times \b
+\eqno(37) $$
+
+\vfill\eject
+\centerline {\bfbig Cylindrical Drift Terms}
+\bigskip
+
+$$ \eqalign{
+\nabla \times \b \cdot \nabla r
+	=& {1 \over r} {\partial \over \partial z}
+	\left( {r \v{B} \cdot \nabla r \times \nabla z \over B}
+	\right) \cr
+\nabla \times \b \cdot \nabla z
+	=& - {1 \over r} {\partial \over \partial r}
+	\left( {r \v{B} \cdot \nabla r \times \nabla z \over B}
+	\right) \cr
+\nabla \times \b \cdot \nabla \phi
+	=& {1 \over r} {\partial \over \partial r}
+	\left( {r \v{B} \cdot \nabla \phi \times \nabla r \over B} \right)
+	- {1 \over r} {\partial \over \partial z}
+	\left( {r \v{B} \cdot \nabla z \times \nabla \phi \over B}
+	\right) \cr
+} \eqno(38) $$
+
+\bigskip
+$$ \eqalign{
+\b \times \nabla B \cdot \nabla r
+	=& - \left( {\v{B} \cdot \nabla r \times \nabla z \over B}
+	\right) {\partial B \over \partial z} \cr 
+\b \times \nabla B \cdot \nabla z
+	=& \left( {\v{B} \cdot \nabla r \times \nabla z \over B} \right)
+	{\partial B \over \partial r} \cr 
+\b \times \nabla B \cdot \nabla \phi
+	=& \left( {\v{B} \cdot \nabla z \times \nabla \phi \over B}
+\right) {\partial B \over \partial z}
+	- \left( {\v{B} \cdot \nabla \phi \times \nabla r \over B}
+\right) {\partial B \over \partial r} \cr 
+} \eqno(39) $$
+
+\bigskip
+$$ \eqalign{
+\v{B} \cdot \nabla B =& B_r {\partial B \over \partial z}
+	+ B_z {\partial B \over \partial z} \cr
+\nabla \times \b \cdot \nabla B 
+	=& \left( \nabla \times \b \cdot \nabla r \right)
+	{\partial B \over \partial r}
+	+ \left( \nabla \times \b \cdot \nabla z \right)
+	{\partial B \over \partial z}
+\cr
+} \eqno(40) $$
+
+\vfill\eject
+\centerline {\bfbig Cylindrical Initial Conditions}
+\bigskip
+
+$$ \v{v} = \dot{r} \e{r} + \dot{z} \e{z} + r \dot{\phi} \e{\phi}
+\eqno(41) $$
+
+$$ \v{B} = B_r \e{r} + B_z \e{z} + B_\phi \e{\phi}
+\eqno(42) $$
+
+$$ \eqalign{ d\v{X} 
+\equiv& \v{X} - \v{x} 
+	= - {v_\perp \over \Omega} \a 
+	= {\v{v} \times \b \over \Omega} \cr
+=& \delta r \e{r} + \delta z \e{z} + r \delta \phi \e{\phi}
+} \eqno(43) $$
+
+$$ \eqalign{ 
+\delta r =& {1 \over \Omega B} \left( 
+	\dot{r} \e{r} + \dot{z} \e{z} + r \dot{\phi} \e{\phi} \right)
+	\times (B_r \e{r} + B_z \e{z} + B_\phi \e{\phi}) \cdot \e{r} \cr
+=& {1 \over \Omega B} \left( \dot{z} B_\phi - r \dot{\phi} B_z \right) \cr
+\delta z =& {1 \over \Omega B} \left( 
+	\dot{r} \e{r} + \dot{z} \e{z} + r \dot{\phi} \e{\phi} \right)
+	\times (B_r \e{r} + B_z \e{z} + B_\phi \e{\phi}) \cdot \e{z} \cr
+=& {1 \over \Omega B} \left( r \dot{\phi} B_r - \dot{r} B_\phi \right) \cr
+\delta \phi =& {1 \over \Omega B r} \left( 
+	\dot{r} \e{r} + \dot{z} \e{z} + r \dot{\phi} \e{\phi} \right)
+	\times (B_r \e{r} + B_z \e{z} + B_\phi \e{\phi}) \cdot \e{\phi} \cr
+=& {1 \over \Omega B} \left( \dot{r} B_z - \dot{r} B_r \right) \cr
+} \eqno(44) $$
+
+$$ v_\parallel = \v{v} \cdot  \b
+	= {1 \over B} \left( \dot{r} B_r + \dot{z} B_z 
+	+ r \dot{\phi} B_\phi \right)
+\eqno(45) $$
+
+\end

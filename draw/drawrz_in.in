@@ -1,0 +1,16 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+rz_in.bin
+
+graph title:	Input Coordinates
+
+variable names
+0	theta
+1	R
+2	Z
+
+ix	iy	title
+1	2	-a
+0	1
+0	2

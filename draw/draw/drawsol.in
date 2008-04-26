@@ -1,0 +1,20 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+solutions.bin
+
+graph title:	Solutions
+
+variable names
+0	psifac
+1	rho
+2	q
+3	log10 u1
+4	log10 u2
+5	Real u1
+
+ix	iy	title
+0	5	"Real u1
+0	3	"Log10 u1
+0	4	"Log10 u2
+0	2	"q

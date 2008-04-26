@@ -1,0 +1,19 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+sq_in.bin
+;sq_out.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	psi
+1	f
+2	p
+3	q
+4	rho
+
+ix	iy	title
+0	1
+0	2
+0	3

@@ -1,0 +1,18 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+det.bin
+
+graph title:	"
+
+variable names
+0	de
+1	do
+2	det
+3	deta
+4	error
+
+ix	iy	options	title
+0	2	"det
+0	3	"deta
+0	4	"error

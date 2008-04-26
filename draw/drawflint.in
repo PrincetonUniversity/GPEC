@@ -1,0 +1,22 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+flint.bin
+
+graph title:	Ballooning Equation Coefficients
+
+variable names
+0	eta
+1	y1
+2	y2
+3	r
+4	z
+5	err
+
+ix	iy	title
+3	4	-a
+0	1
+0	2
+0	3
+0	4
+0	5

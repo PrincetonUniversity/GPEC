@@ -1,0 +1,52 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+;results/betaN/3.2/ahb.bin
+;results/mlow8mhigh32/6.3/ahb.bin
+;results/betaN_3/4.8/ahb.bin
+;results/betaN_3/6.3/ahb.bin
+;results/betaN_4/2.6/ahb.bin
+;results/betaN_eig2/3.0/ahb.bin
+;results/betaN_eig2_1002/3.0/ahb.bin
+;results/betaN_eig2_105/3.0/ahb.bin
+;results/sihi_bn30_eig2/3.0/0.9945/ahb.bin
+;results/sihi_bn30_eig2/3.0/0.9955/ahb.bin
+;results/sihi_bn30_eig2/3.0/0.9965/ahb.bin
+;results/sihi_bn30_eig2/3.0/0.9975/ahb.bin
+;results/sihi_bn30_eig2/3.0/0.9985/ahb.bin
+;results/betaN_eig_dmlim/3.0/0.80/ahb.bin
+;results/betaN_eig_dmlim/3.0/1.10/ahb.bin
+;results/betaN_dmlim_eig/4.0/0.80/ahb.bin
+;results/betaN_dmlim_eig/4.8/0.80/ahb.bin
+;results/betaN_dmlim_eig_test/4.8/0.80/ahb.bin
+results/betaN_dmlim_eig_test2/4.8/0.80/ahb.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	theta
+1	re bn
+2	re bp
+3	re bt
+4	im bn
+5	im bp
+6	im bt
+7	theta_hamada
+8	theta_pest
+9	theta_equal_arc
+10	theta_boozer
+11	dtheta_hamada
+12	dtheta_pest
+13	dtheta_equal_arc
+14	dtheta_boozer
+
+ix	iy	title
+9	1	"Real b_normal - equal arc
+9	2	"Real b_poloidal - equal arc
+9	3	"Real b_toroidal - equal arc
+9	4	"Imag b_normal
+9	5	"Imag b_poloidal
+9	6	"Imag b_toroidal
+;7	1	"Real b_normal
+;7	2	"Real b_poloidal
+;7	3	"Real b_toroidal
