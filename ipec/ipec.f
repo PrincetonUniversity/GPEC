@@ -128,7 +128,7 @@ c-----------------------------------------------------------------------
      $              poloout,toroout,resp,bnomn,xwpmn,label)
             ENDIF
             IF (singfld_flag) THEN
-               CALL ipout_singfld(0,xwpmn,dist,msing,label)
+               CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
             ENDIF
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
@@ -171,7 +171,7 @@ c-----------------------------------------------------------------------
      $           poloout,toroout,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
             IF (singfld_flag) THEN
-               CALL ipout_singfld(0,xwpmn,dist,msing,label)
+               CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
             ENDIF
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
@@ -227,7 +227,7 @@ c-----------------------------------------------------------------------
             CALL ipout_errfld(infile,errtype,fxmn,
      $           poloout,toroout,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
-            CALL ipout_singfld(0,xwpmn,dist,msing,label)
+            CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------

@@ -245,6 +245,10 @@ c-----------------------------------------------------------------------
             singflx_mn=MATMUL(fsurfindmats(ising,:,:),fkaxmn)
             singbno_mn=singflx_mn
             CALL ipeq_weight(respsi,singbno_mn,0)
+            ! change resonant field at desired coordinates
+            IF ((polo /= 1) .OR. (toro /= 1)) THEN
+               CALL ipeq_hatoco(respsi,singbno_mn,polo,toro)
+            ENDIF
             singbnoflds(ising,i)=singbno_mn(resnum)
             islandhwids(ising,i)=4*singflx_mn(resnum)/
      $           (twopi*shear*sq%f(4)*chi1)
@@ -645,11 +649,11 @@ c     __________________________________________________________________
 c     dist   : distance from each rational surface
 c     rsing  : number of rational surfaces from the lowest
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_singfld(egnum,xwpimn,dist,rsing,labl)
+      SUBROUTINE ipout_singfld(egnum,xwpimn,dist,polo,toro,labl)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,rsing,labl
+      INTEGER, INTENT(IN) :: egnum,polo,toro,labl
       REAL(r8), INTENT(IN) :: dist
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
 
@@ -659,44 +663,30 @@ c-----------------------------------------------------------------------
       CHARACTER(1) :: slabl
       CHARACTER(2) :: slabl2      
 
-      INTEGER, DIMENSION(rsing) :: resnum
-      REAL(r8), DIMENSION(rsing) :: j_c
+      INTEGER, DIMENSION(msing) :: resnum
+      REAL(r8), DIMENSION(msing) :: j_c
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun,
      $     tempcos,tempsin,tempfun
       COMPLEX(r8), DIMENSION(mpert) :: lcormn,rcormn,fkaxmn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,lcorfun,rcorfun
 
-      REAL(r8), DIMENSION(:), POINTER :: singpower,singbnofunst,
+      REAL(r8), DIMENSION(msing) :: singpower,singbnofunst,
      $     singmaxtor,island_hwidth,chirikov
-      REAL(r8), DIMENSION(:,:), POINTER :: ssingbnofun
-      COMPLEX(r8), DIMENSION(:), POINTER :: delta,delcur,corcur,singcur
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: singbno_mn,singflx_mn,
-     $     singbnofun
+      REAL(r8), DIMENSION(0:mthsurf,msing) :: ssingbnofun
+      COMPLEX(r8), DIMENSION(msing) :: delta,delcur,corcur,singcur
+      COMPLEX(r8), DIMENSION(mpert,msing) :: singbno_mn,singflx_mn
+      COMPLEX(r8), DIMENSION(0:mthsurf,msing) :: singbnofun
       
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
-      ALLOCATE(delta(rsing),delcur(rsing),corcur(rsing),singcur(rsing),
-     $     singpower(rsing),chirikov(rsing),
-     $     singbno_mn(mpert,rsing),singflx_mn(mpert,rsing),
-     $     singbnofun(0:mthsurf,rsing),ssingbnofun(0:mthsurf,rsing),
-     $     singbnofunst(rsing),singmaxtor(rsing),island_hwidth(rsing))
-      delta=0
-      delcur=0
-      corcur=0
-      singcur=0
-      singpower=0
-      singbno_mn=0
-      singflx_mn=0
-      island_hwidth=0
-
       WRITE(*,*)"computing delta,singular current and field"
       CALL ipeq_alloc
       CALL idcon_build(egnum,xwpimn)
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c-----------------------------------------------------------------------
-      DO ising=1,rsing
+      DO ising=1,msing
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          respsi=singtype(ising)%psifac
          CALL spline_eval(sq,respsi,1)
@@ -822,6 +812,12 @@ c     compute maximum torque by singular current.
 c-----------------------------------------------------------------------
          singmaxtor(ising)=nn*ABS(REAL(SUM(CONJG(fkaxmn)*
      $        singflx_mn(:,ising))))
+c-----------------------------------------------------------------------
+c     change resonant field to desired coordinates.
+c-----------------------------------------------------------------------
+         IF ((polo /= 1).OR.(toro /= 1)) THEN
+            CALL ipeq_hatoco(respsi,singbno_mn(:,ising),polo,toro)
+         ENDIF            
       ENDDO
       CALL ipeq_dealloc
 c-----------------------------------------------------------------------
@@ -839,12 +835,12 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"IPOUT_SINGFLD: "//
      $     "deltas, singular currents and normal fields"
       WRITE(out_unit,'(2x,a12,2x,e12.3)')"distance:",dist
-      WRITE(out_unit,'(2x,a12,2x,I12)')"rsing:",rsing
+      WRITE(out_unit,'(2x,a12,2x,I12)')"msing:",msing
       WRITE(out_unit,'(2x,a6,11(2x,a12))')"q","psi",
      $     "abs(delta)","abs(delcur)","abs(corcur)","abs(singcur)",
      $     "abs(sgpower)","abs(singbno)","singbnost","singmaxtor",
      $     "islandhwidth","chirikov"
-      DO ising=1,rsing
+      DO ising=1,msing
          WRITE(out_unit,'(2x,f6.3,11(2x,e12.3))')
      $        singtype(ising)%q,singtype(ising)%psifac,
      $        ABS(delta(ising)),ABS(delcur(ising)),ABS(corcur(ising)),
@@ -854,9 +850,6 @@ c-----------------------------------------------------------------------
      $        island_hwidth(ising),chirikov(ising)
       ENDDO
       CALL ascii_close(out_unit)
-      DEALLOCATE(delta,delcur,corcur,singcur,singpower,
-     $     singbno_mn,singbnofun,singflx_mn,chirikov,
-     $     ssingbnofun,singbnofunst,singmaxtor,island_hwidth)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
