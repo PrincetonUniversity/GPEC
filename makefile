@@ -1,4 +1,4 @@
-#Global makefile for the DCON suite of codes.
+#Global makefile for the DCON/IPEC suite of codes.
 
 .IGNORE:
 
@@ -48,8 +48,8 @@ rundir_x:
 	cp -f multi/multi rundir/`uname`$(FORTRAN)
 	cp -f sum/sum rundir/`uname`$(FORTRAN)
 	cp -f ipec/ipec rundir/`uname`$(FORTRAN)
-	cp input/*.in* rundir/`uname`$(FORTRAN)
-	cp input/mput rundir/`uname`$(FORTRAN)
+	cp -f input/*.in* rundir/`uname`$(FORTRAN)
+	cp -f input/mput rundir/`uname`$(FORTRAN)
 	cp draw/drawdcon.in rundir/`uname`$(FORTRAN)
 	cp draw/drawcrit.in rundir/`uname`$(FORTRAN)
 	cp draw/drawsum.in rundir/`uname`$(FORTRAN)
@@ -78,7 +78,7 @@ clean:
 	cd tex/vacuum; rm -f *.dvi *.log
 	cd tex/dcon/manuscript; rm -f *.dvi *.log
 	cd tex/dcon/notebook; rm -f *.dvi *.log
-	rm -fr lib/`uname`$(FORTRAN) rundir/`uname`$(FORTRAN) make.nohup
+	rm -rf lib/`uname`$(FORTRAN) rundir/`uname`$(FORTRAN) make.nohup
 
 realclean: clean
-	rm -fr lib rundir
+	rm -rf lib rundir
