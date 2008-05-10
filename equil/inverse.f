@@ -62,7 +62,19 @@ c-----------------------------------------------------------------------
       x=rz_in%fs(:,:,1)-ro
       y=rz_in%fs(:,:,2)-zo
       r2=x*x+y*y
-      deta=ATAN2(y,x)/twopi
+c-----------------------------------------------------------------------
+c     atan2 cannot take both zeros. <MODIFIED>
+c-----------------------------------------------------------------------
+      DO ipsi=0,rz_in%mx
+         DO itheta=0,rz_in%my
+            IF (r2(ipsi,itheta) == 0.0) THEN
+               deta(ipsi,itheta)=0.0
+            ELSE
+               deta(ipsi,itheta)=
+     $              ATAN2(y(ipsi,itheta),x(ipsi,itheta))/twopi
+            ENDIF
+         ENDDO
+      ENDDO
       DO ipsi=0,rz_in%mx
          DO itheta=1,rz_in%my
             IF(deta(ipsi,itheta)-deta(ipsi,itheta-1) > .5)

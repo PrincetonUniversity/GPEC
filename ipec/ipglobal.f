@@ -12,7 +12,7 @@ c-----------------------------------------------------------------------
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,nn,info,modelnum,
-     $     rstep,resp
+     $     rstep,resp,psixy
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,maxdbratio,
@@ -115,7 +115,6 @@ c-----------------------------------------------------------------------
 
       CALL spline_dealloc(sq)
       CALL spline_dealloc(ffun)
-      CALL bicube_dealloc(psi_in)
       CALL bicube_dealloc(eqfun)
       CALL bicube_dealloc(rzphi)
       CALL cspline_dealloc(u1)
@@ -128,6 +127,8 @@ c-----------------------------------------------------------------------
       DO ifix=1,mfix
          DEALLOCATE(fixtype(ifix)%fixfac,fixtype(ifix)%index)
       ENDDO
+
+      IF (psixy == 1) CALL bicube_dealloc(psi_in)
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------

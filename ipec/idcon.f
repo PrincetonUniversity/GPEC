@@ -31,8 +31,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_read
+      SUBROUTINE idcon_read(lpsixy)
 
+      INTEGER, INTENT(IN) :: lpsixy
       CHARACTER(128) :: message
       INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta
       REAL(r8) :: sfac0
@@ -68,14 +69,14 @@ c-----------------------------------------------------------------------
 c     only accept hamada coordinates.
 c-----------------------------------------------------------------------
       IF ((power_b /= 0 .or. power_r /= 0) .or. power_bp /= 0) THEN
-         WRITE(message,'(a)')"IPEC needs HAMADA coordinates"
+         WRITE(message,'(a)')"IPEC_v1 needs HAMADA coordinates"
          CALL ipec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     only accept mband=0.
 c-----------------------------------------------------------------------
       IF (mband /= (mpert-1)) THEN
-         WRITE(message,'(a)')"IPEC needs full band matrix"
+         WRITE(message,'(a)')"IPEC_v1 needs full band matrix"
          CALL ipec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
@@ -216,26 +217,28 @@ c     close data file.
 c-----------------------------------------------------------------------
       CALL bin_close(in_unit)
 c-----------------------------------------------------------------------
-c     read psi_in.bin.
+c     read psi_in.bin. <MODIFIED>
 c-----------------------------------------------------------------------
-      WRITE(*,*)"reading and allocating equilibrium solutions"
-      CALL bin_open(in_unit,ieqfile,"OLD","REWIND","none")
-      READ(in_unit)
-      READ(in_unit)mr,mz
-      CALL bicube_alloc(psi_in,mr,mz,1)
-      psi_in%name="equilibrium psi"
-      psi_in%xtitle="r"
-      psi_in%ytitle="z"
-      psi_in%title=" normalized psi "
-      ALLOCATE(rgarr(0:mr,0:mz),zgarr(0:mr,0:mz),psigarr(0:mr,0:mz))
-      READ(in_unit)rgarr,zgarr
-      psi_in%xs=rgarr(:,0)
-      psi_in%ys=zgarr(0,:)
-      READ(in_unit)psigarr
-      psi_in%fs(:,:,1)=1-psigarr/psio
-      CALL bin_close(in_unit)
-      DEALLOCATE(rgarr,zgarr,psigarr)
-      CALL bicube_fit(psi_in,"extrap","extrap")
+      IF (psixy == 1) THEN
+         WRITE(*,*)"reading and allocating equilibrium solutions"
+         CALL bin_open(in_unit,ieqfile,"OLD","REWIND","none")
+         READ(in_unit)
+         READ(in_unit)mr,mz
+         CALL bicube_alloc(psi_in,mr,mz,1)
+         psi_in%name="equilibrium psi"
+         psi_in%xtitle="r"
+         psi_in%ytitle="z"
+         psi_in%title=" normalized psi "
+         ALLOCATE(rgarr(0:mr,0:mz),zgarr(0:mr,0:mz),psigarr(0:mr,0:mz))
+         READ(in_unit)rgarr,zgarr
+         psi_in%xs=rgarr(:,0)
+         psi_in%ys=zgarr(0,:)
+         READ(in_unit)psigarr
+         psi_in%fs(:,:,1)=1-psigarr/psio
+         CALL bin_close(in_unit)
+         DEALLOCATE(rgarr,zgarr,psigarr)
+         CALL bicube_fit(psi_in,"extrap","extrap")
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -342,12 +345,6 @@ c-----------------------------------------------------------------------
       DO ifix=0,mfix
          temp1=MATMUL(fixtype(ifix)%transform,uedge)
          kfix=fixstep(ifix+1)
-c         DO ieq=1,2
-c            DO istep=jfix,kfix
-c            uu(:,ieq,istep)
-c     $              =MATMUL(soltype(istep)%u(:,1:mpert,ieq),temp1)
-c         ENDDO
-c      ENDDO
          DO istep=jfix,kfix
             u1%fs(istep,:)
      $           =MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)

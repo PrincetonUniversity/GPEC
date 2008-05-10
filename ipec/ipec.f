@@ -58,9 +58,8 @@ c     assign temporal values.
 c-----------------------------------------------------------------------
       lmlow=-errmmax
       lmhigh=errmmax
-      IF (response_flag) THEN
-         resp=1
-      ENDIF
+      IF (response_flag) resp=1
+      IF (xbrzphi_flag) psixy=1
 c-----------------------------------------------------------------------
 c     check time.
 c-----------------------------------------------------------------------
@@ -69,7 +68,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare for ideal solutions.
 c-----------------------------------------------------------------------
-      CALL idcon_read
+      CALL idcon_read(psixy)
       CALL idcon_transform
 c-----------------------------------------------------------------------
 c     reconstruct metric tensors.
@@ -93,10 +92,6 @@ c-----------------------------------------------------------------------
       ALLOCATE(bexmn(lmpert),bermn(lmpert),
      $     brrmn(mpert),bnomn(mpert),bpamn(mpert),
      $     fxmn(mpert),xwpmn(mpert))
-      IF (nrzeq_flag) THEN
-         nr=mr
-         nz=mz
-      ENDIF
 c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
@@ -140,6 +135,10 @@ c-----------------------------------------------------------------------
                CALL ipout_xbnorm(0,xwpmn,poloout,toroout,label)
             ENDIF
             IF (xbrzphi_flag) THEN
+               IF (nrzeq_flag) THEN
+                  nr=mr
+                  nz=mz
+               ENDIF
                CALL ipeq_rzpgrid(nr,nz)
                CALL ipout_xbrzphi(0,xwpmn,nr,nz,label)
             ENDIF
@@ -183,6 +182,10 @@ c-----------------------------------------------------------------------
                CALL ipout_xbnorm(0,xwpmn,poloout,toroout,label)
             ENDIF
             IF (xbrzphi_flag) THEN
+               IF (nrzeq_flag) THEN
+                  nr=mr
+                  nz=mz
+               ENDIF
                CALL ipeq_rzpgrid(nr,nz)
                CALL ipout_xbrzphi(0,xwpmn,nr,nz,label)
             ENDIF
