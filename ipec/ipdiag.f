@@ -262,11 +262,11 @@ c-----------------------------------------------------------------------
             w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
             delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
             dphi(itheta)=rzphi%f(3)
-            bpfac=chi1*delpsi(itheta)/r(itheta)
+            bpfac=psio*delpsi(itheta)/r(itheta)
             btfac=sq%f(1)/(twopi*r(itheta))
             bfac=SQRT(bpfac*bpfac+btfac*btfac)
             fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-            spl%fs(itheta,1)=fac*bpfac/rfac
+            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
             spl%fs(itheta,2)=fac                        
             spl%fs(itheta,3)=fac/r(itheta)**2
             spl%fs(itheta,4)=fac*bpfac
@@ -686,7 +686,7 @@ c-----------------------------------------------------------------------
          fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
          SELECT CASE(polo)
          CASE(0)
-            spl%fs(itheta,1)=fac*bpfac/rfac
+            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
          CASE(1)
             spl%fs(itheta,1)=fac
          CASE(2)
@@ -781,7 +781,7 @@ c-----------------------------------------------------------------------
          fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
          SELECT CASE(polo)
          CASE(0)
-            spl%fs(itheta,1)=fac*bpfac/rfac
+            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
          CASE(1)
             spl%fs(itheta,1)=fac
          CASE(2)

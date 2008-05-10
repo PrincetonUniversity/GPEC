@@ -27,7 +27,7 @@ c-----------------------------------------------------------------------
      $     singfld_flag,pmodb_flag,xbnorm_flag,xbrzphi_flag,
      $     nrzeq_flag,extp_flag,extt_flag,
      $     xbcontra_flag,energy_flag,respmat_flag,angles_flag,
-     $     m3d_flag,svdvec_flag,d3_flag
+     $     m3d_flag,test_flag,svdvec_flag,d3_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: bexmn,bermn,
      $     brrmn,bnomn,bpamn,fxmn,xwpmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: obextmn,ocextmn
@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
      $     poloout,toroout,labl,
      $     xbrzphi_flag,nrzeq_flag,nr,nz,extp_flag,extt_flag
       NAMELIST/ipec_diagnose/xbcontra_flag,energy_flag,respmat_flag,
-     $     angles_flag,m3d_flag
+     $     angles_flag,m3d_flag,test_flag
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -229,6 +229,26 @@ c-----------------------------------------------------------------------
             edge_flag=.TRUE.
             CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
          ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     only for test.
+c-----------------------------------------------------------------------
+      IF (test_flag) THEN
+         fxmn=0
+         fxmn(10-mlow+1)=1e-4
+         bnomn=fxmn
+         CALL ipeq_cotoha(psilim,bnomn,0,0)
+         CALL ipeq_hatoco(psilim,bnomn,0,0)
+         CALL ascii_open(out_unit,"iptest_coordtrans_n"//
+     $        sn//".out","UNKNOWN")
+         WRITE(out_unit,*)
+     $        "IPTEST_COORDTRANS: cotoha to hatoco, co(0,0)"
+         WRITE(out_unit,'(2(1x,a16))')"binmn","boutmn"
+         DO in=1,mpert
+            WRITE(out_unit,'(2(1x,e16.8))')
+     $           REAL(fxmn(in)),REAL(bnomn(in))
+         ENDDO
+         CALL ascii_close(out_unit)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

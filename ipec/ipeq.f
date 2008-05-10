@@ -564,7 +564,7 @@ c-----------------------------------------------------------------------
          fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
          SELECT CASE(polo)
          CASE(0)
-            spl%fs(itheta,1)=fac*bpfac/rfac
+            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
          CASE(1)
             spl%fs(itheta,1)=fac
          CASE(2)
@@ -659,7 +659,7 @@ c-----------------------------------------------------------------------
          fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
          SELECT CASE(polo)
          CASE(0)
-            spl%fs(itheta,1)=fac*bpfac/rfac
+            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
          CASE(1)
             spl%fs(itheta,1)=fac
          CASE(2)
