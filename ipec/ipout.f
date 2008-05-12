@@ -85,7 +85,6 @@ c     __________________________________________________________________
 c     dist     : measuring distance from rational surfaces
 c     polo     : poloidal angle coordinate
 c     toro     : toroidal angle coordinate
-c     svd_flag : option for svd analysis of resonant normal field
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_singcoup(dist,polo,toro)
 c-----------------------------------------------------------------------
@@ -234,10 +233,10 @@ c-----------------------------------------------------------------------
             ENDDO
             CALL iscdftf(mfac,mpert,rcorfun,mthsurf,rcormn)
             deltas(ising,i)=(rnbwp1mn-lnbwp1mn)/twopi
-            delcurs(ising,i)=-ifac/mfac(resnum)*deltas(ising,i)
-            corcurs(ising,i)=(rcormn(resnum)-lcormn(resnum))/twopi
-            singcurs(ising,i)=j_c(ising)*
-     $           (delcurs(ising,i)-corcurs(ising,i))
+            delcurs(ising,i)=j_c(ising)*
+     $           ifac/mfac(resnum)*deltas(ising,i)
+            corcurs(ising,i)=-j_c(ising)*(rcormn(resnum)-lcormn(resnum))
+            singcurs(ising,i)=delcurs(ising,i)-corcurs(ising,i)
             singpowers(ising,i)=w_c(ising)*singcurs(ising,i)
             fkaxmn=0
             fkaxmn(resnum)=-singcurs(ising,i)*chi1/(twopi*ifac*nn)
@@ -378,27 +377,20 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_singcoup
 c-----------------------------------------------------------------------
-c     subprogram 3. ipout_pmodcoup
-c     compute coupling between pmodbst and external field.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     subprogram 4. ipout_ipeccoup
-c     compute coupling between perturbed plasma and external field.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     subprogram 5. ipout_errfld
+c     subprogram 3. ipout_errfld
 c     error field response on the boundary.
 c     __________________________________________________________________
-c     infile   : input file name containing rawdata
-c     errtype  : input file format
-c     binmn    : given error field spectrum
-c     polo     : poloidal angle
-c     toro     : toroidal angle
-c     resp     : 0: actual perturbation
-c                1: external perturbation
+c     infile   : input file name containing rawdata when edge_flag
+c     rerrtype : input file format when edge_flag
+c     binmn    : given error field spectrum without edge_flag
+c     polo     : poloidal angle coordinates
+c     toro     : toroidal angle coordinates
+c     resp     : include plasma response
 c     __________________________________________________________________
-c     boutmn   : actual normal field in the used coordinate
-c     xwpomn   : contravariant normal xi in hamada
+c     boutmn   : normal field in coordinates
+c     xwpomn   : contravariant normal xi in hamada for idcon input
+c     __________________________________________________________________
+c     labl     : label for multiple run
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_errfld(rinfile,rerrtype,
      $     binmn,polo,toro,resp,boutmn,xwpomn,labl)
@@ -410,7 +402,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: binmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: boutmn,xwpomn
 
-      INTEGER :: i,j,mnum,nnum,ms,hfsurf
+      INTEGER :: i,j,ms,hfsurf
       INTEGER, DIMENSION(mpert) :: ipiv
       REAL(r8) :: htheta,sengy,pengy,maxtor,
      $     binfunst,boutfunst,bplafunst
@@ -433,16 +425,15 @@ c-----------------------------------------------------------------------
 c     read data from file given by d3d, Mike
 c-----------------------------------------------------------------------
          IF (rerrtype == "d3d") THEN
-            mnum=64
-            nnum=64
-            ALLOCATE(cosmn(-mnum:mnum,0:nnum),sinmn(-mnum:mnum,0:nnum),
-     $           rawmn(-mnum:mnum,0:nnum))
+            ALLOCATE(cosmn(-errmmax:errmmax,errnmin:errnmax),
+     $           sinmn(-errmmax:errmmax,errnmin:errnmax),
+     $           rawmn(-errmmax:errmmax,errnmin:errnmax))
             CALL ascii_open(in_unit,rinfile,"old")
  1000       FORMAT(1x,25f12.6)
 
-            DO i=-mnum,mnum
-               READ(in_unit,1000) (cosmn(-i,j),j=0,nnum)
-               READ(in_unit,1000) (sinmn(-i,j),j=0,nnum)
+            DO i=-errmmax,errmmax
+               READ(in_unit,1000) (cosmn(-i,j),j=errnmin,errnmax)
+               READ(in_unit,1000) (sinmn(-i,j),j=errnmin,errnmax)
             ENDDO
             CALL ascii_close(in_unit)
             rawmn=(cosmn+ifac*sinmn)*gauss
@@ -452,34 +443,32 @@ c-----------------------------------------------------------------------
 c     read data from file given by d3d, Ilon.
 c-----------------------------------------------------------------------
          ELSE IF (rerrtype == "d3d2") THEN
-            mnum=32
-            nnum=32
-            ALLOCATE(cosmn(-mnum:mnum,0:nnum),sinmn(-mnum:mnum,0:nnum),
-     $           rawmn(-mnum:mnum,0:nnum))
+            ALLOCATE(cosmn(-errmmax:errmmax,errnmin:errnmax),
+     $           sinmn(-errmmax:errmmax,errnmin:errnmax),
+     $           rawmn(-errmmax:errmmax,errnmin:errnmax))
             CALL ascii_open(in_unit,rinfile,"old")
  1001       FORMAT(1x,33f12.6)
 
-            DO i=-mnum,mnum
-               READ(in_unit,1001) (cosmn(-i,j),j=0,nnum)
-               READ(in_unit,1001) (sinmn(-i,j),j=0,nnum)
+            DO i=-errmmax,errmmax
+               READ(in_unit,1001) (cosmn(-i,j),j=errnmin,errnmax)
+               READ(in_unit,1001) (sinmn(-i,j),j=errnmin,errnmax)
             ENDDO
             CALL ascii_close(in_unit)
             rawmn=(cosmn+ifac*sinmn)*gauss
             binmn=rawmn(mlow:mhigh,nn)
             DEALLOCATE(cosmn,sinmn,rawmn)
 c-----------------------------------------------------------------------
-c     read data from file given by nstx.
+c     read data from file given by nstx, Jon
 c-----------------------------------------------------------------------
          ELSE IF (rerrtype == "nstx") THEN
-            mnum=60
-            nnum=3
-            ALLOCATE(cosmn(-mnum:mnum,nnum),sinmn(-mnum:mnum,nnum),
-     $           rawmn(-mnum:mnum,nnum))
+            ALLOCATE(cosmn(-errmmax:errmmax,errnmin:errnmax),
+     $           sinmn(-errmmax:errmmax,errnmin:errnmax),
+     $           rawmn(-errmmax:errmmax,errnmin:errnmax))
             CALL ascii_open(in_unit,rinfile,"old")
  1002       FORMAT(1x,I4,2(1x,e15.8))
 
-            DO i=1,nnum
-               DO j=-mnum,mnum
+            DO i=errnmin,errnmax
+               DO j=-errmmax,errmmax
                   READ(in_unit,1002)ms,cosmn(j,i),sinmn(j,i)
                ENDDO
             ENDDO
@@ -489,19 +478,18 @@ c-----------------------------------------------------------------------
             binmn=rawmn(mlow:mhigh,nn)
             DEALLOCATE(cosmn,sinmn,rawmn)
 c-----------------------------------------------------------------------
-c     read data from file given by nstx.
+c     read data from file given by nstx, general
 c-----------------------------------------------------------------------
          ELSE IF (rerrtype == "nstx2") THEN
-            mnum=60
-            nnum=3
-            ALLOCATE(cosmn(-mnum:mnum,nnum),sinmn(-mnum:mnum,nnum),
-     $           rawmn(-mnum:mnum,nnum))
+            ALLOCATE(cosmn(-errmmax:errmmax,errnmin:errnmax),
+     $           sinmn(-errmmax:errmmax,errnmin:errnmax),
+     $           rawmn(-errmmax:errmmax,errnmin:errnmax))
             CALL ascii_open(in_unit,rinfile,"old")
  1003       FORMAT(11(1x,e15.8))
 
-            DO i=-mnum,mnum
-               READ(in_unit,1003) (cosmn(i,j),j=1,nnum)
-               READ(in_unit,1003) (sinmn(i,j),j=1,nnum)
+            DO i=-errmmax,errmmax
+               READ(in_unit,1003) (cosmn(i,j),j=errnmin,errnmax)
+               READ(in_unit,1003) (sinmn(i,j),j=errnmin,errnmax)
             ENDDO
             CALL ascii_close(in_unit)
             rawmn=cosmn+ifac*sinmn
@@ -643,11 +631,16 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_errfld
 c-----------------------------------------------------------------------
-c     subprogram 6. ipout_singfld.
+c     subprogram 4. ipout_singfld.
 c     compute current and field on rational surfaces.
 c     __________________________________________________________________
+c     egnum  : eigenmode number without edge_flag
+c     xwpimn : edge deformation input when edge_flag
 c     dist   : distance from each rational surface
-c     rsing  : number of rational surfaces from the lowest
+c     polo   : poloidal angle coordinates for resonant field
+c     toro   : toroidal angle coordinates for resonant field
+c     __________________________________________________________________
+c     labl   : label for multiple runs     
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_singfld(egnum,xwpimn,dist,polo,toro,labl)
 c-----------------------------------------------------------------------
@@ -761,9 +754,9 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL iscdftf(mfac,mpert,rcorfun,mthsurf,rcormn)
          delta(ising)=(rnbwp1mn-lnbwp1mn)/twopi
-         delcur(ising)=-ifac/mfac(resnum(ising))*delta(ising)*j_c(ising)
-         corcur(ising)=(rcormn(resnum(ising))-lcormn(resnum(ising)))*
-     $        j_c(ising)/twopi
+         delcur(ising)=j_c(ising)*ifac/mfac(resnum(ising))*delta(ising)
+         corcur(ising)=-j_c(ising)*
+     $        (rcormn(resnum(ising))-lcormn(resnum(ising)))
          singcur(ising)=delcur(ising)-corcur(ising)
 
          fkaxmn=0
@@ -856,13 +849,15 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_singfld
 c-----------------------------------------------------------------------
-c     subprogram 7. ipout_pmodb.
+c     subprogram 5. ipout_pmodb.
 c     compute perturbed mod b.
 c     __________________________________________________________________
-c     egnum  : label of an eigenmode
-c     xwpimn : xipsi components on the control surface
-c     polo   : poloidal angle
-c     toro   : toroidal angle
+c     egnum  : eigenmode number without edge_flag
+c     xwpimn : edge deformation input when edge_flag
+c     polo   : poloidal angle coordinates for decomposition
+c     toro   : toroidal angle coordinates for decomposition
+c     __________________________________________________________________
+c     labl   : label for multiple runs   
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_pmodb(egnum,xwpimn,polo,toro,labl)
 c-----------------------------------------------------------------------
@@ -874,6 +869,7 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,ipert,ising,itheta,dsing,resmn
       REAL(r8) :: sdist,edist,limfac,maxdb
       CHARACTER(1) :: spolo,storo,slabl
+      CHARACTER(2) :: slabl2
 
       REAL(r8), DIMENSION(0:mthsurf) :: tempeqfun
       COMPLEX(r8), DIMENSION(mpert) :: xwptmn,xwttmn,bvttmn,bvztmn,
@@ -904,7 +900,6 @@ c-----------------------------------------------------------------------
       ENDIF
 
       CALL idcon_build(egnum,xwpimn)
-      
       
       CALL ipeq_alloc
       DO istep=1,rstep
@@ -973,10 +968,16 @@ c     write data.
 c-----------------------------------------------------------------------
       WRITE(UNIT=spolo, FMT='(I1)')polo
       WRITE(UNIT=storo, FMT='(I1)')toro
-      WRITE(UNIT=slabl, FMT='(I1)')labl
-      CALL ascii_open(out_unit,"ipout_pmodbmn_p"//spolo//"_t"
-     $     //storo//"_l"//slabl//"_n"
-     $     //sn//".out","UNKNOWN")
+      IF (labl < 10) THEN
+         WRITE(UNIT=slabl, FMT='(I1)')labl            
+         CALL ascii_open(out_unit,"ipout_pmodbmn_p"//spolo//"_t"
+     $        //storo//"_l"//slabl//"_n"//sn//".out","UNKNOWN")
+      ELSE
+         WRITE(UNIT=slabl2, FMT='(I2)')labl            
+         CALL ascii_open(out_unit,"ipout_pmodbmn_p"//spolo//"_t"
+     $        //storo//"_l"//slabl2//"_n"//sn//".out","UNKNOWN")
+      ENDIF      
+
       WRITE(out_unit,*)"IPOUT_PMODBMN: "//
      $     "components in perturbed mod b on flux surfaces"
       WRITE(out_unit,'(2x,a8,2x,I4)')"rstep:",rstep
@@ -1021,122 +1022,15 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_pmodb
 c-----------------------------------------------------------------------
-c     subprogram 8. ipout_xbnorm.
-c     compute normal perturbed quantities.
-c     __________________________________________________________________
-c     egnum  : label of an eigenmode
-c     xwpimn : xwp_mn components on the control surface
-c-----------------------------------------------------------------------
-      SUBROUTINE ipout_xbnorm(egnum,xwpimn,polo,toro,labl)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,polo,toro,labl
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
-
-      INTEGER :: i,istep,ipert,itheta,rstep
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xno_fun,bno_fun
-      CHARACTER(1) :: spolo,storo,slabl
-
-      REAL(r8), DIMENSION(:), POINTER :: psis
-      REAL(r8), DIMENSION(:,:), POINTER :: rs,zs
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: xnomns,bnomns,
-     $     xnofuns,bnofuns
-
-      rstep=100
-      ALLOCATE(psis(rstep),rs(rstep,0:mthsurf),zs(rstep,0:mthsurf),
-     $     xnomns(rstep,mpert),bnomns(rstep,mpert),
-     $     xnofuns(rstep,0:mthsurf),bnofuns(rstep,0:mthsurf))
-c-----------------------------------------------------------------------
-c     build solutions.
-c-----------------------------------------------------------------------
-      CALL idcon_build(egnum,xwpimn)
-c-----------------------------------------------------------------------
-c     if rstep=mstep, use original integration points.
-c-----------------------------------------------------------------------
-      IF (rstep == mstep) THEN
-         psis=psifac
-      ELSE
-         psis=(/(i,i=1,rstep+1)/)/REAL(rstep+1,r8)*psilim
-      ENDIF
-c-----------------------------------------------------------------------
-c     computation.
-c-----------------------------------------------------------------------
-      WRITE(*,*)"computing normal quantities"
-      CALL ipeq_alloc
-      DO istep=1,rstep
-         CALL ipeq_contra(psis(istep))
-         CALL ipeq_normal(psis(istep))
-         rs(istep,:)=r
-         zs(istep,:)=z
-         xnomns(istep,:)=xno_mn
-         bnomns(istep,:)=bno_mn
-         CALL ipeq_hatoco(psis(istep),xnomns(istep,:),polo,toro)
-         CALL ipeq_hatoco(psis(istep),bnomns(istep,:),polo,toro)
-         CALL ipeq_hatoco(psis(istep),xno_mn,1,0)
-         CALL ipeq_hatoco(psis(istep),bno_mn,1,0)
-         CALL iscdftb(mfac,mpert,xnofuns(istep,:),mthsurf,xno_mn)
-         CALL iscdftb(mfac,mpert,bnofuns(istep,:),mthsurf,bno_mn)
-      ENDDO
-      CALL ipeq_dealloc
-c-----------------------------------------------------------------------
-c     write results.
-c-----------------------------------------------------------------------
-      WRITE(UNIT=spolo, FMT='(I1)')polo
-      WRITE(UNIT=storo, FMT='(I1)')toro
-      WRITE(UNIT=slabl, FMT='(I1)')labl   
-      CALL ascii_open(out_unit,"ipout_xbnormmn_p"//spolo//"_t"//storo
-     $     //"_l"//slabl//"_n"//sn//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPOUT_XBNORMMN: "//
-     $     "components of normal perturbed quantities"
-      WRITE(out_unit,'(2x,a8,2x,I4)')"rstep:",rstep
-      WRITE(out_unit,'(2x,a8,2x,I4)')"mpert:",mpert
-      WRITE(out_unit,'(6(2x,a12))')"psi","mfac",
-     $     "real(xno)","imag(xno)","real(bno)","imag(bno)"
-      DO istep=1,rstep
-         DO ipert=1,mpert
-            WRITE(out_unit,'(2x,e12.3,2x,I12,4(2x,e12.3))')
-     $           psis(istep),mfac(ipert),
-     $           REAL(xnomns(istep,ipert)),
-     $           AIMAG(xnomns(istep,ipert)),
-     $           REAL(bnomns(istep,ipert)),
-     $           AIMAG(bnomns(istep,ipert))
-         ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
-      CALL ascii_open(out_unit,"ipout_xbnormrz_l"//slabl//"_n"
-     $     //sn//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPOUT_XBNORMRZ: "//
-     $     "normal perturbed quantities on a poloidal plane"
-      WRITE(out_unit,'(2x,a8,2x,I4)')"rstep:",rstep
-      WRITE(out_unit,'(2x,a8,2x,I4)')"mthsurf:",mthsurf
-      WRITE(out_unit,'(6(2x,a12))')"r","z","real(xno)","imag(xno)",
-     $     "real(bno)","imag(bno)"
-      DO istep=1,rstep
-         DO itheta=0,mthsurf
-            WRITE(out_unit,'(6(2x,e12.3))')
-     $           rs(istep,itheta),zs(istep,itheta),
-     $           REAL(xnofuns(istep,itheta)),
-     $           AIMAG(xnofuns(istep,itheta)),
-     $           REAL(bnofuns(istep,itheta)),
-     $           AIMAG(bnofuns(istep,itheta))
-         ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
-      DEALLOCATE(psis,rs,zs,xnomns,bnomns,xnofuns,bnofuns)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipout_xbnorm
-c-----------------------------------------------------------------------
-c     subprogram 9. ipout_xbrzphi.
+c     subprogram 6. ipout_xbrzphi.
 c     write perturbed rzphi components on rzphi grid.
 c     __________________________________________________________________
-c     egnum  : label of an eigenmode
-c     xwpimn : xwp_mn components on the control surface
+c     egnum  : eigenmode number without edge_flag
+c     xwpimn : edge deformation when edge_flag
 c     nr     : r grid number
 c     nz     : z grid number
+c     __________________________________________________________________
+c     labl   : label for multiple runs   
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_xbrzphi(egnum,xwpimn,nr,nz,labl)
 c-----------------------------------------------------------------------
@@ -1148,6 +1042,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,ipert
       REAL(r8) :: mid,bt0
       CHARACTER(1) :: slabl
+      CHARACTER(2) :: slabl2
 
       REAL(r8), DIMENSION(0:nr,0:nz) :: ebr,ebz,ebp
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: xrr,xrz,xrp,brr,brz,brp
@@ -1224,10 +1119,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      WRITE(UNIT=slabl, FMT='(I1)')labl
+      IF (labl < 10) THEN
+         WRITE(UNIT=slabl, FMT='(I1)')labl            
+         CALL ascii_open(out_unit,"ipout_eqbrzphi_l"//slabl//"_n"
+     $        //sn//".out","UNKNOWN")
+      ELSE
+         WRITE(UNIT=slabl2, FMT='(I2)')labl            
+         CALL ascii_open(out_unit,"ipout_eqbrzphi_l"//slabl2//"_n"
+     $        //sn//".out","UNKNOWN")
+      ENDIF    
 
-      CALL ascii_open(out_unit,"ipout_eqbrzphi_l"//slabl//"_n"
-     $     //sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPOUT_EQBRZPHI: eq b field in rzphi grid"
       WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z","re(eb_r)",
@@ -1241,9 +1142,15 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-   
-      CALL ascii_open(out_unit,"ipout_xrzphi_l"//slabl//"_n"
-     $     //sn//".out","UNKNOWN")
+
+      IF (labl < 10) THEN
+         CALL ascii_open(out_unit,"ipout_xrzphi_l"//slabl//"_n"
+     $        //sn//".out","UNKNOWN")
+      ELSE
+         CALL ascii_open(out_unit,"ipout_xrzphi_l"//slabl2//"_n"
+     $        //sn//".out","UNKNOWN")
+      ENDIF       
+
       WRITE(out_unit,*)"IPOUT_XRZPHI: displacements in rzphi grid"
       WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
       WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z","re(xi_r)","im(xi_r)",
@@ -1260,8 +1167,14 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
 
-      CALL ascii_open(out_unit,"ipout_brzphi_l"//slabl//"_n"
-     $     //sn//".out","UNKNOWN")
+      IF (labl < 10) THEN
+         CALL ascii_open(out_unit,"ipout_brzphi_l"//slabl//"_n"
+     $        //sn//".out","UNKNOWN")
+      ELSE
+         CALL ascii_open(out_unit,"ipout_brzphi_l"//slabl2//"_n"
+     $        //sn//".out","UNKNOWN")
+      ENDIF   
+
       WRITE(out_unit,*)"IPOUT_BRZPHI: perturbed field in rzphi grid"
       WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
       WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z","re(b_r)","im(b_r)",

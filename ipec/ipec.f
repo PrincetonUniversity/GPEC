@@ -18,19 +18,21 @@ c-----------------------------------------------------------------------
 
       INTEGER :: in,osing,rstep1,rstep2,resol,angnum,labl,infnum,
      $     mthnumb,meas,modem,label,nr,nz,modemin,modemax,
-     $     errnmin,errnmax,errmmax,poloin,toroin,poloout,toroout
+     $     poloin,toroin,poloout,toroout,lowmode,highmode,
+     $     m3low,m3high
       REAL(r8) :: majr,minr
-      REAL(r8) :: rdist,bigstep,smlstep,smallwidth,factor,
-     $     wegtfac1,wegtfac2,fp,normpsi,lportion,hportion
+      REAL(r8) :: rdist,smallwidth,factor,fp,normpsi
       CHARACTER(128) :: infile
       LOGICAL :: erdata_flag,mode_flag,response_flag,singcoup_flag,
-     $     singfld_flag,pmodb_flag,xbnorm_flag,xbrzphi_flag,
-     $     nrzeq_flag,extp_flag,extt_flag,
-     $     xbcontra_flag,energy_flag,respmat_flag,angles_flag,
-     $     m3d_flag,test_flag,svdvec_flag,d3_flag
+     $     singfld_flag,pmodb_flag,xbrzphi_flag,
+     $     nrzeq_flag,extp_flag,extt_flag,singcurs_flag,
+     $     xbcontra_flag,xbnormal_flag,xbnovc_flag,xbnobo_flag,
+     $     d3_flag,xbnorm_flag,pmodbst_flag,rzphibx_flag,
+     $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
+     $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
+     $     m3d_flag,test_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: bexmn,bermn,
      $     brrmn,bnomn,bpamn,fxmn,xwpmn
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: obextmn,ocextmn
 
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,
@@ -39,11 +41,15 @@ c-----------------------------------------------------------------------
       NAMELIST/ipec_control/response_flag,
      $     dist,bdist,maxdbratio,rstep,modelnum
       NAMELIST/ipec_output/singcoup_flag,
-     $     singfld_flag,pmodb_flag,xbnorm_flag,
-     $     poloout,toroout,labl,
-     $     xbrzphi_flag,nrzeq_flag,nr,nz,extp_flag,extt_flag
-      NAMELIST/ipec_diagnose/xbcontra_flag,energy_flag,respmat_flag,
-     $     angles_flag,m3d_flag,test_flag
+     $     singfld_flag,pmodb_flag,poloout,toroout,
+     $     xbrzphi_flag,nrzeq_flag,nr,nz,extt_flag,extp_flag,labl
+      NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,xbnormal_flag,
+     $     xbnovc_flag,xbnobo_flag,d3_flag,xbnorm_flag,
+     $     pmodbst_flag,rzphibx_flag,
+     $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
+     $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
+     $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3low,m3high,
+     $     test_flag
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -128,12 +134,6 @@ c-----------------------------------------------------------------------
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
             ENDIF
-c-----------------------------------------------------------------------
-c     additional information.
-c-----------------------------------------------------------------------
-            IF (xbnorm_flag) THEN
-               CALL ipout_xbnorm(0,xwpmn,poloout,toroout,label)
-            ENDIF
             IF (xbrzphi_flag) THEN
                IF (nrzeq_flag) THEN
                   nr=mr
@@ -151,8 +151,33 @@ c-----------------------------------------------------------------------
                CALL ipvacuum_bnormal(psilim,bpamn,
      $              poloout,toroout,nr,nz,'plasma',label)
             ENDIF
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+            IF (singcurs_flag) THEN
+               CALL ipdiag_singcurs(0,xwpmn,msing,resol,
+     $              smallwidth,label)
+            ENDIF
             IF (xbcontra_flag) THEN
                CALL ipdiag_xbcontra(0,xwpmn,label)
+            ENDIF
+            IF (xbnormal_flag) THEN
+               CALL ipdiag_xbnormal(0,xwpmn,label)
+            ENDIF
+            IF (xbnovc_flag) THEN
+               CALL ipdiag_xbnovc(0,xwpmn,label)
+            ENDIF
+            IF (xbnobo_flag) THEN
+               CALL ipdiag_xbnobo(0,xwpmn,d3_flag,label)
+            ENDIF
+            IF (xbnorm_flag) THEN
+               CALL ipdiag_xbnorm(0,xwpmn,poloout,toroout,label)
+            ENDIF
+            IF (pmodbst_flag) THEN
+               CALL ipdiag_pmodbst(0,xwpmn,label)
+            ENDIF
+            IF (rzphibx_flag) THEN
+               CALL ipdiag_rzphibx(0,xwpmn,label)
             ENDIF
          ENDDO
       ENDIF
@@ -175,12 +200,6 @@ c-----------------------------------------------------------------------
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
             ENDIF
-c-----------------------------------------------------------------------
-c     additional information.
-c-----------------------------------------------------------------------
-            IF (xbnorm_flag) THEN
-               CALL ipout_xbnorm(0,xwpmn,poloout,toroout,label)
-            ENDIF
             IF (xbrzphi_flag) THEN
                IF (nrzeq_flag) THEN
                   nr=mr
@@ -198,29 +217,69 @@ c-----------------------------------------------------------------------
                CALL ipvacuum_bnormal(psilim,bpamn,
      $              poloout,toroout,nr,nz,'plasma',label)
             ENDIF
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+            IF (singcurs_flag) THEN
+               CALL ipdiag_singcurs(0,xwpmn,msing,resol,
+     $              smallwidth,label)
+            ENDIF
             IF (xbcontra_flag) THEN
                CALL ipdiag_xbcontra(0,xwpmn,label)
+            ENDIF
+            IF (xbnormal_flag) THEN
+               CALL ipdiag_xbnormal(0,xwpmn,label)
+            ENDIF
+            IF (xbnovc_flag) THEN
+               CALL ipdiag_xbnovc(0,xwpmn,label)
+            ENDIF
+            IF (xbnobo_flag) THEN
+               CALL ipdiag_xbnobo(0,xwpmn,d3_flag,label)
+            ENDIF
+            IF (xbnorm_flag) THEN
+               CALL ipdiag_xbnorm(0,xwpmn,poloout,toroout,label)
+            ENDIF
+            IF (pmodbst_flag) THEN
+               CALL ipdiag_pmodbst(0,xwpmn,label)
+            ENDIF
+            IF (rzphibx_flag) THEN
+               CALL ipdiag_rzphibx(0,xwpmn,label)
             ENDIF
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------
-c     diagnose.
+c     diagnose without a given error field.
 c-----------------------------------------------------------------------
+      IF (eigen_flag) THEN
+         CALL ipdiag_eigen
+      ENDIF
+      IF (magpot_flag) THEN
+         CALL ipdiag_magpot
+      ENDIF
       IF (energy_flag) THEN
          CALL ipdiag_energy
       ENDIF
       IF (respmat_flag) THEN
          CALL ipdiag_respmat
       ENDIF
+      IF (arbsurf_flag) THEN
+         CALL ipdiag_arbsurf(majr,minr)
+      ENDIF         
       IF (angles_flag) THEN
          CALL ipdiag_angles
       ENDIF
+      IF (surfmode_flag) THEN
+         CALL ipdiag_surfmode(lowmode,highmode,poloout,toroout)
+      ENDIF
+      IF (rzpgrid_flag) THEN
+         CALL ipdiag_rzpgrid(nr,nz)
+      ENDIF
       IF (m3d_flag) THEN
-         normpsi=1.0/0.5
+         normpsi=1.0
          fp=1e-3
          
-         DO in=-10,10
-            label=in+10
+         DO in=m3low,m3high
+            label=in-m3low
             fxmn=0
             fxmn(in-mlow+1)=fp*normpsi
             CALL ipeq_cotoha(psilim,fxmn,0,0)
@@ -231,6 +290,7 @@ c-----------------------------------------------------------------------
      $           poloout,toroout,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
             CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
+            CALL ipdiag_xbnormal(0,xwpmn,label)
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------

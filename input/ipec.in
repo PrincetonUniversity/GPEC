@@ -1,59 +1,69 @@
 &ipec_input
-
-    ieqfile="psi_in.bin"	
-    idconfile="euler.bin"
-    ivacuumfile="vacuum.bin"
-
-    power_flag=t
-    fft_flag=f
-
-    mthsurf0=1
-
-    erdata_flag=f
-    errtype="d3d"
-    errnmin=0
-    errnmax=64
-    errmmax=64
-    poloin=1
-    toroin=1	
-    infnum=1
-    infiles(1)="d3d_ef.dat"
-
-    mode_flag=f
-    modemin=1
-    modemax=3
-
+	ieqfile="psi_in.bin"	
+	idconfile="euler.bin"
+	ivacuumfile="vacuum.bin"
+	power_flag=t
+	fft_flag=f
+	mthsurf0=1
+	erdata_flag=t
+	errtype="d3d2"
+	errnmin=0
+	errnmax=32
+	errmmax=32
+	poloin=2
+	toroin=0
+	infnum=1
+	infiles(1)="d3d2_ef.dat"
+	mode_flag=f
+	modemin=7
+	modemax=9
 /
-
 &ipec_control
-
-    response_flag=t
-    
-    dist=5e-4
-    bdist=1e-1
-    maxdbratio=1e-2
-    rstep=200
-
-    modelnum=3
-
+	response_flag=t
+	dist=5e-4
+	bdist=1e-1
+	maxdbratio=1e-2
+	rstep=200
+	modelnum=3
 /
-
 &ipec_output
-
-    singcoup_flag=f
-    xbnorm_flag=f
-    poloout=1
-    toroout=1
-
-    xbrzphi_flag=f
-
-    labl=0
-
+	singcoup_flag=f
+	singfld_flag=t
+	pmodb_flag=f
+	poloout=1
+	toroout=1
+	xbrzphi_flag=f
+	nrzeq_flag=f
+	nr=64
+	nz=64
+	extt_flag=f
+	extp_flag=f
+	labl=0
 /
-
 &ipec_diagnose
-
-    xbcontra_flag=f
-
+        singcurs_flag=f
+	resol=100
+	smallwidth=1e-6
+	xbcontra_flag=f
+	xbnormal_flag=f
+	xbnovc_flag=f
+	xbnobo_flag=f
+	d3_flag=t
+	xbnorm_flag=f
+	pmodbst_flag=f
+	rzphibx_flag=f
+	eigen_flag=f
+	magpot_flag=f
+	energy_flag=f
+	respmat_flag=f
+	arbsurf_flag=f
+	majr=2.0
+	minr=0.1
+	angles_flag=f
+	surfmode_flag=f
+	lowmode=1
+	highmode=10
+	rzpgrid_flag=f
+	m3d_flag=f
+	test_flag=f
 /
-texthere

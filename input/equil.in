@@ -1,34 +1,25 @@
 &equil_control
 	eq_type="efit"
-	eq_filename="../../equilibria/isolver/g115500.00400.BETAN50G1M2"
-
+	eq_filename="$EQUIL"
 	jac_type="hamada"
 	power_bp=0
 	power_b=0
 	power_r=0
-
 	grid_type="ldp"
 	psilow=1e-4
-	psihigh=.99
+	psihigh=0.95
 	mpsi=128
 	mtheta=256
-
 	newq0=0
-
 	input_only=f
 /
-
 &equil_output
 	gse_flag=t
-
 	out_eq_1d=f
 	bin_eq_1d=f
-
 	out_eq_2d=f
-	bin_eq_2d=f
-
+	bin_eq_2d=t
 	out_2d=f
 	bin_2d=t
-
 	dump_flag=f
 /

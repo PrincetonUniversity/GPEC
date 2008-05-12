@@ -12,7 +12,7 @@ c-----------------------------------------------------------------------
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,nn,info,modelnum,
-     $     rstep,resp,psixy
+     $     rstep,resp,psixy,errnmin,errnmax,errmmax
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,maxdbratio,
