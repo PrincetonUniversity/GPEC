@@ -15,7 +15,7 @@ c-----------------------------------------------------------------------
      $     rstep,resp,psixy,errnmin,errnmax,errmmax
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
-     $     qmin,qmax,seconds,rfac,eta,singfac_min,maxdbratio,
+     $     qmin,qmax,seconds,rfac,eta,singfac_min,
      $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,dist,bdist
 
       CHARACTER(1) :: sn

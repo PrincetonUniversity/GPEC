@@ -83,8 +83,10 @@ c     compute basic perturbed quantities.
 c-----------------------------------------------------------------------
       xvs_mn=-MATMUL(bmat,xwp1_mn)-MATMUL(cmat,xwp_mn)
       xwt_mn=-(nn*xvs_mn/chi1+jac1/(twopi*ifac*jac)
-     $     *xwp_mn+xwp1_mn/(twopi*ifac))/singfac
-      xwz_mn=sq%f(4)*xwt_mn-xvs_mn/chi1
+     $     *xwp_mn+xwp1_mn/(twopi*ifac))*
+     $     (singfac/(singfac**2+bdist**2))
+      xwz_mn=sq%f(4)*xwt_mn-xvs_mn/chi1*
+     $     (singfac**2/(singfac**2+bdist**2))
       bwp_mn=(chi1*singfac*twopi*ifac*xwp_mn)/jac
       bwt_mn=-(chi1*xwp1_mn+twopi*ifac*nn*xvs_mn)/jac
       bwz_mn=-(chi1*(sq%f1(4)*xwp_mn+sq%f(4)*xwp1_mn)+

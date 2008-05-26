@@ -16,7 +16,7 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: in,osing,rstep1,rstep2,resol,angnum,labl,infnum,
+      INTEGER :: in,osing,resol,angnum,labl,infnum,
      $     mthnumb,meas,modem,label,nr,nz,modemin,modemax,
      $     poloin,toroin,poloout,toroout,lowmode,highmode,
      $     m3low,m3high
@@ -27,7 +27,7 @@ c-----------------------------------------------------------------------
      $     singfld_flag,pmodb_flag,xbrzphi_flag,
      $     nrzeq_flag,extp_flag,extt_flag,singcurs_flag,
      $     xbcontra_flag,xbnormal_flag,xbnovc_flag,xbnobo_flag,
-     $     d3_flag,xbnorm_flag,pmodbst_flag,rzphibx_flag,
+     $     d3_flag,xbnorm_flag,pmodbst_flag,pmodbrz_flag,rzphibx_flag,
      $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     m3d_flag,test_flag
@@ -38,14 +38,13 @@ c-----------------------------------------------------------------------
      $     power_flag,fft_flag,mthsurf0,
      $     erdata_flag,errtype,errnmin,errnmax,errmmax,
      $     poloin,toroin,infnum,infiles,mode_flag,modemin,modemax
-      NAMELIST/ipec_control/response_flag,
-     $     dist,bdist,maxdbratio,rstep,modelnum
+      NAMELIST/ipec_control/response_flag,dist,bdist,modelnum
       NAMELIST/ipec_output/singcoup_flag,
-     $     singfld_flag,pmodb_flag,poloout,toroout,
+     $     singfld_flag,pmodb_flag,rstep,poloout,toroout,
      $     xbrzphi_flag,nrzeq_flag,nr,nz,extt_flag,extp_flag,labl
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,xbnormal_flag,
      $     xbnovc_flag,xbnobo_flag,d3_flag,xbnorm_flag,
-     $     pmodbst_flag,rzphibx_flag,
+     $     pmodbst_flag,pmodbrz_flag,rzphibx_flag,
      $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3low,m3high,
@@ -110,6 +109,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
 c-----------------------------------------------------------------------
+      IF (rstep .EQ. 0) rstep=mstep
       IF (erdata_flag) THEN
          DO in=1,infnum
             label=labl+in-1
@@ -176,6 +176,9 @@ c-----------------------------------------------------------------------
             IF (pmodbst_flag) THEN
                CALL ipdiag_pmodbst(0,xwpmn,label)
             ENDIF
+            IF (pmodbrz_flag) THEN
+               CALL ipdiag_pmodbrz(0,xwpmn,label)
+            ENDIF            
             IF (rzphibx_flag) THEN
                CALL ipdiag_rzphibx(0,xwpmn,label)
             ENDIF
@@ -241,6 +244,9 @@ c-----------------------------------------------------------------------
             ENDIF
             IF (pmodbst_flag) THEN
                CALL ipdiag_pmodbst(0,xwpmn,label)
+            ENDIF
+            IF (pmodbrz_flag) THEN
+               CALL ipdiag_pmodbrz(0,xwpmn,label)
             ENDIF
             IF (rzphibx_flag) THEN
                CALL ipdiag_rzphibx(0,xwpmn,label)

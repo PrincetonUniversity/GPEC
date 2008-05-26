@@ -866,30 +866,21 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,polo,toro,labl
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
 
-      INTEGER :: istep,ipert,ising,itheta,dsing,resmn
-      REAL(r8) :: sdist,edist,limfac,maxdb
+      INTEGER :: istep,ipert,itheta
       CHARACTER(1) :: spolo,storo,slabl
       CHARACTER(2) :: slabl2
 
-      REAL(r8), DIMENSION(0:mthsurf) :: tempeqfun
-      COMPLEX(r8), DIMENSION(mpert) :: xwptmn,xwttmn,bvttmn,bvztmn,
-     $     eulbpar,lagbpar
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwptfun,xwttfun,
-     $     bvttfun,bvztfun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,xwt_fun,
+     $     bvt_fun,bvz_fun
 
       REAL(r8), DIMENSION(:), POINTER :: psis
-      REAL(r8), DIMENSION(:,:), POINTER :: rs,zs
       COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbpar_mn,lagbpar_mn,
      $     eulbparfun,lagbparfun
-c-----------------------------------------------------------------------
-c     regularize things!!! important consideration!!!
-c-----------------------------------------------------------------------
-      maxdb=maxdbratio*eqfun%fs(0,0,1)
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"computing perturbed b field"
-      ALLOCATE(psis(rstep),rs(rstep,0:mthsurf),zs(rstep,0:mthsurf),
+      ALLOCATE(psis(rstep),
      $     eulbpar_mn(rstep,mpert),lagbpar_mn(rstep,mpert),
      $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf))
 
@@ -910,41 +901,21 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sq,psis(istep),1)
          CALL ipeq_contra(psis(istep))
          CALL ipeq_cova(psis(istep))
-         rs(istep,:)=r
-         zs(istep,:)=z
-         singfac=mfac-nn*sq%f(4)
-         
-         xwptmn=xwp_mn
-         bvttmn=bvt_mn
-         bvztmn=bvz_mn
-         DO ipert=1,mpert
-            limfac = 1.0
-            IF (ABS(singfac(ipert))<bdist) THEN
-               limfac = singfac(ipert)/SIGN(bdist,singfac(ipert))
-            ENDIF
-            xwttmn(ipert)=xwt_mn(ipert)*limfac
-         ENDDO
 c-----------------------------------------------------------------------
 c     compute mod b variations.
 c-----------------------------------------------------------------------
-         CALL iscdftb(mfac,mpert,xwptfun,mthsurf,xwptmn)
-         CALL iscdftb(mfac,mpert,xwttfun,mthsurf,xwttmn)
-         CALL iscdftb(mfac,mpert,bvttfun,mthsurf,bvttmn)
-         CALL iscdftb(mfac,mpert,bvztfun,mthsurf,bvztmn)
+         CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
+         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+         CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
+         CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
          DO itheta=0,mthsurf
             CALL bicube_eval(eqfun,psis(istep),theta(itheta),1)
             eulbparfun(istep,itheta)=
-     $           chi1*(bvttfun(itheta)+sq%f(4)*bvztfun(itheta))
+     $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
      $           /(ffun%f(1)*eqfun%f(1))
             lagbparfun(istep,itheta)=
      $           eulbparfun(istep,itheta)+
-     $           xwptfun(itheta)*eqfun%fx(1)+xwttfun(itheta)*eqfun%fy(1)
-            IF (abs(eulbparfun(istep,itheta)) > maxdb) 
-     $           eulbparfun(istep,itheta) = eulbparfun(istep,itheta)*
-     $           maxdb/abs(eulbparfun(istep,itheta))
-            IF (abs(lagbparfun(istep,itheta)) > maxdb) 
-     $           lagbparfun(istep,itheta) = lagbparfun(istep,itheta)*
-     $           maxdb/abs(lagbparfun(istep,itheta))           
+     $           xwp_fun(itheta)*eqfun%fx(1)+xwt_fun(itheta)*eqfun%fy(1)
          ENDDO
 c-----------------------------------------------------------------------
 c     decompose components on the given coordinates.
@@ -953,14 +924,10 @@ c-----------------------------------------------------------------------
      $        mthsurf,eulbpar_mn(istep,:))
          CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
      $        mthsurf,lagbpar_mn(istep,:))
-         eulbpar=eulbpar_mn(istep,:)
-         lagbpar=lagbpar_mn(istep,:)
-         CALL ipeq_hatoco(psis(istep),eulbpar_mn(istep,:),polo,toro)
-         CALL ipeq_hatoco(psis(istep),lagbpar_mn(istep,:),polo,toro)
-         CALL ipeq_hatoco(psis(istep),eulbpar,1,0)
-         CALL ipeq_hatoco(psis(istep),lagbpar,1,0)
-         CALL iscdftb(mfac,mpert,eulbparfun(istep,:),mthsurf,eulbpar)
-         CALL iscdftb(mfac,mpert,lagbparfun(istep,:),mthsurf,lagbpar)         
+         IF ((polo /= 1).OR.(toro /= 1)) THEN 
+            CALL ipeq_hatoco(psis(istep),eulbpar_mn(istep,:),polo,toro)
+            CALL ipeq_hatoco(psis(istep),lagbpar_mn(istep,:),polo,toro)
+         ENDIF
       ENDDO
       CALL ipeq_dealloc
 c-----------------------------------------------------------------------
@@ -995,27 +962,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-      CALL ascii_open(out_unit,"ipout_pmodbrz_l"//slabl//"_n"
-     $     //sn//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPOUT_PMODBRZ: "//
-     $     "perturbed mod b on a poloidal plane"
-      WRITE(out_unit,'(2x,a8,2x,I4)')"rstep:",rstep
-      WRITE(out_unit,'(2x,a8,2x,I4)')"mthsurf:",mthsurf
-      WRITE(out_unit,'(6(2x,a12))')"r","z",
-     $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)"
-      DO istep=1,rstep
-         DO itheta=0,mthsurf
-            WRITE(out_unit,'(6(2x,e12.3))')
-     $           rs(istep,itheta),zs(istep,itheta),
-     $           REAL(eulbparfun(istep,itheta)),
-     $           AIMAG(eulbparfun(istep,itheta)),
-     $           REAL(lagbparfun(istep,itheta)),
-     $           AIMAG(lagbparfun(istep,itheta))
-         ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
-      DEALLOCATE(psis,rs,zs,eulbpar_mn,lagbpar_mn,
-     $     eulbparfun,lagbparfun)
+      DEALLOCATE(psis,eulbpar_mn,lagbpar_mn,eulbparfun,lagbparfun)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
