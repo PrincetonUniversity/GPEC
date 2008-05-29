@@ -399,8 +399,7 @@ c-----------------------------------------------------------------------
      $     grre_real,grre_imag
 
       ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
-     $     kap_mn(4,mpert),kax_mn(mpert),flx_mn(mpert),
-     $     pjp_mn(2,mpert))
+     $     kap_mn(4,mpert),kax_mn(mpert),flx_mn(mpert))
 
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
      $     grre_real(nths2),grre_imag(nths2))
@@ -424,28 +423,8 @@ c-----------------------------------------------------------------------
          jac=rzphi%f(4)
          w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
          w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         w(2,1)=-rzphi%fx(2)*twopi**2*r(itheta)*rfac/jac
-         w(2,2)=rzphi%fx(1)*pi*r(itheta)/(rfac*jac)      
-         v(1,1)=rzphi%fx(1)/(2*rfac)
-         v(1,2)=rzphi%fx(2)*twopi*rfac
-         v(1,3)=rzphi%fx(3)*r(itheta)
-         v(2,1)=rzphi%fy(1)/(2*rfac)
-         v(2,2)=(1+rzphi%fy(2))*twopi*rfac
-         v(2,3)=rzphi%fy(3)*r(itheta)
-         v(3,3)=twopi*r(itheta)
          delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
          wgtfun(itheta)=1.0/(jac*delpsi(itheta))
-c-----------------------------------------------------------------------
-c     test the finite edge pressure effects.
-c-----------------------------------------------------------------------
-         pjp_fun(1,itheta)=xwp_fun(itheta)/bwp_fun(itheta)*
-     $        (xwp_fun(itheta)*sq%f1(2)+
-     $        eqfun%f(1)*(xwp_fun(itheta)*eqfun%fx(1)+
-     $        xwt_fun(itheta)*eqfun%fy(1)*
-     $        (w(1,1)*w(2,1)+w(1,2)*w(2,2))/delpsi(itheta)**2)+
-     $        chi1/jac*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta)))
-         pjp_fun(2,itheta)=xwp_fun(itheta)*chi1/jac*
-     $        (sq%f(4)*v(3,3)*v(1,3)+SUM(v(1,:)*v(2,:)))
       ENDDO
 c-----------------------------------------------------------------------
 c     reverse poloidal and torodial coordinates.
@@ -496,9 +475,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     fourier transform and compute necessary matrices.
 c-----------------------------------------------------------------------
-      DO j=1,2
-         CALL iscdftf(mfac,mpert,pjp_fun(j,:),mthsurf,pjp_mn(j,:))
-      ENDDO
       DO j=1,4
          CALL iscdftb(mfac,mpert,chp_fun(j,:),mthvac,chp_mn(j,:))
          kap_fun(j,:)=(chp_fun(j,:)-che_fun(:))/mu0
@@ -529,13 +505,14 @@ c           4: boozer
 c     toro: 0: polar toroidal angle
 c           1: magnetic toroidal angle
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_cotoha(psi,ftnmn,polo,toro)
+      SUBROUTINE ipeq_cotoha(psi,ftnmn,amfac,ampert,polo,toro)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: polo,toro
+      INTEGER, INTENT(IN) :: ampert,polo,toro
       REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: ftnmn
+      INTEGER, DIMENSION(ampert), INTENT(IN) :: amfac
+      COMPLEX(r8), DIMENSION(ampert), INTENT(INOUT) :: ftnmn
 
       INTEGER :: i,ising,itheta
       REAL(r8) :: thetai
@@ -592,9 +569,9 @@ c-----------------------------------------------------------------------
       ! compute given function in hamada angle
       DO itheta=0,mthsurf
          ftnfun(itheta)=0
-         DO i=1,mpert
+         DO i=1,ampert
             ftnfun(itheta)=ftnfun(itheta)+
-     $           ftnmn(i)*EXP(ifac*twopi*mfac(i)*thetas(itheta))
+     $           ftnmn(i)*EXP(ifac*twopi*amfac(i)*thetas(itheta))
          ENDDO
       ENDDO
       ! multiply toroidal factor in hamada angle
@@ -604,7 +581,7 @@ c-----------------------------------------------------------------------
          ftnfun(:)=ftnfun(:)*
      $        EXP(-twopi*ifac*nn*sq%f(4)*(thetas(:)-theta(:)))
       ENDIF
-      CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
+      CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -622,13 +599,14 @@ c           4: boozer
 c     toro: 0: polar toroidal angle
 c           1: magnetic toroidal angle
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_hatoco(psi,ftnmn,polo,toro)
+      SUBROUTINE ipeq_hatoco(psi,ftnmn,amfac,ampert,polo,toro)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: polo,toro
+      INTEGER, INTENT(IN) :: ampert,polo,toro
       REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: ftnmn
+      INTEGER, DIMENSION(ampert), INTENT(IN) :: amfac
+      COMPLEX(r8), DIMENSION(ampert), INTENT(INOUT) :: ftnmn
 
       INTEGER :: i,ising,itheta
       REAL(r8) :: thetai
@@ -680,7 +658,7 @@ c-----------------------------------------------------------------------
       ! coordinate angle at hamada angle
       thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
       CALL spline_dealloc(spl)
-      CALL iscdftb(mfac,mpert,ftnfun,mthsurf,ftnmn)
+      CALL iscdftb(amfac,ampert,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     convert coordinates.
 c-----------------------------------------------------------------------
@@ -688,23 +666,23 @@ c-----------------------------------------------------------------------
       IF (toro .EQ. 0) THEN
          ftnfun(:)=ftnfun(:)*EXP(ifac*nn*dphi(:))
       ENDIF
-      CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
+      CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
 
       ! compute given function in coordinate angle
       DO itheta=0,mthsurf
          ftnfun(itheta)=0
          ! hamada angle at coordinate angle
          thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
-         DO i=1,mpert
+         DO i=1,ampert
             ftnfun(itheta)=ftnfun(itheta)+
-     $           ftnmn(i)*EXP(ifac*twopi*(i+mlow-1)*thetai)
+     $           ftnmn(i)*EXP(ifac*twopi*(i+amfac(1)-1)*thetai)
          ENDDO
          IF (toro .NE. 0) THEN
             ftnfun(itheta)=ftnfun(itheta)*
      $           EXP(-twopi*ifac*nn*sq%f(4)*(thetai-theta(itheta)))
          ENDIF
       ENDDO
-      CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
+      CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -717,13 +695,14 @@ c     __________________________________________________________________
 c     wegt: 0: multiply weight factor
 c           1: divide weight factor
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_weight(psi,ftnmn,wegt)
+      SUBROUTINE ipeq_weight(psi,ftnmn,amfac,ampert,wegt)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: wegt
+      INTEGER, INTENT(IN) :: ampert,wegt
       REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: ftnmn
+      INTEGER, DIMENSION(ampert), INTENT(IN) :: amfac
+      COMPLEX(r8), DIMENSION(ampert), INTENT(INOUT) :: ftnmn
 
       INTEGER :: itheta
 
@@ -742,7 +721,7 @@ c-----------------------------------------------------------------------
          delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
          wgtfun(itheta)=1.0/(jac*delpsi(itheta))
       ENDDO
-      CALL iscdftb(mfac,mpert,ftnfun,mthsurf,ftnmn)
+      CALL iscdftb(amfac,ampert,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     weight function.
 c-----------------------------------------------------------------------
@@ -751,7 +730,7 @@ c-----------------------------------------------------------------------
       ELSE
          ftnfun(:)=ftnfun(:)/wgtfun(:)
       ENDIF
-      CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
+      CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

@@ -12,7 +12,7 @@ c-----------------------------------------------------------------------
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,nn,info,modelnum,
-     $     rstep,resp,psixy,errnmin,errnmax,errmmax
+     $     rstep,resp,psixy,errnmin,errnmax,errmmin,errmmax
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,
@@ -35,7 +35,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,surfee,surfei,
      $     surf_indev,vsurf_indev,fsurf_indev
-      REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,surfes,
+      REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
      $     chperr,plas_indev,reluctev,grri,grre,
      $     gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
@@ -50,13 +50,13 @@ c-----------------------------------------------------------------------
      $     chi_mn,che_mn,flx_mn,kax_mn,
      $     edge_mn,edge_fun
       COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,rt,
-     $     chp_mn,kap_mn,pjp_mn,permeabev,
+     $     chp_mn,kap_mn,permeabev,
      $     chimats,chemats,flxmats,kaxmats,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     amat,bmat,cmat,fmats,gmats,kmats
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,reluctmats,
-     $     plas_indevmats,permeabevmats,reluctevmats,pjpmats
+     $     plas_indevmats,permeabevmats,reluctevmats
 
       TYPE(spline_type) :: sq,ffun
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
@@ -104,11 +104,11 @@ c-----------------------------------------------------------------------
 c     deallocate.
 c-----------------------------------------------------------------------
       DEALLOCATE(sing_flag,fixstep,mfac,psifac,rhofac,qfac,singfac,
-     $     et,ep,ee,surfet,surfep,surfee,surfei,surfes,lmfac,r,z,theta,
+     $     et,ep,ee,surfet,surfep,surfee,surfei,lmfac,r,z,theta,
      $     surf_indev,plas_indev,permeabev,reluctev,edge_mn,edge_fun,
      $     chperr)
       DEALLOCATE(wt,rt,
-     $     chimats,chemats,chpmats,kapmats,kaxmats,flxmats,pjpmats,
+     $     chimats,chemats,chpmats,kapmats,kaxmats,flxmats,
      $     surf_indmats,surf_indevmats,
      $     plas_indmats,diff_indmats,permeabmats,reluctmats,
      $     plas_indevmats,permeabevmats,reluctevmats)

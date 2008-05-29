@@ -39,12 +39,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     build ideal solutions.
 c-----------------------------------------------------------------------
-      ALLOCATE(surfet(4,mpert),surfep(4,mpert),surfes(2,mpert),
+      ALLOCATE(surfet(4,mpert),surfep(4,mpert),
      $     surfee(mpert),surfei(mpert),chperr(2,mpert))
       ALLOCATE(chimats(mpert,mpert),chemats(mpert,mpert),
      $     kaxmats(mpert,mpert),flxmats(mpert,mpert),
-     $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert),
-     $     pjpmats(2,mpert,mpert))
+     $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert))
       WRITE(*,*)"constructing interfaces by using dcon eigenmodes"
       DO i=1,mpert
          edge_mn=0
@@ -66,7 +65,6 @@ c-----------------------------------------------------------------------
          kaxmats(:,i)=kax_mn
          chpmats(:,:,i)=chp_mn
          kapmats(:,:,i)=kap_mn
-         pjpmats(:,:,i)=pjp_mn
 c-----------------------------------------------------------------------
 c     estimate errors in magnetic scalar potentials.
 c-----------------------------------------------------------------------
@@ -76,8 +74,8 @@ c-----------------------------------------------------------------------
          chpdif(2,:)=chp_mn(3,:)-chp_mn(4,:)
          chpwif=chpdif
          DO j=1,2
-            CALL ipeq_weight(psilim,chpwmn(j,:),1)
-            CALL ipeq_weight(psilim,chpwif(j,:),1)
+            CALL ipeq_weight(psilim,chpwmn(j,:),mfac,mpert,1)
+            CALL ipeq_weight(psilim,chpwif(j,:),mfac,mpert,1)
             chptsq=SUM(REAL(CONJG(chpwmn(j,:))*chp_mn(2*j-1,:),r8))
             chpdsq=SUM(REAL(CONJG(chpwif(j,:))*chpdif(j,:),r8))
             chperr(j,i)=SQRT(chpdsq/chptsq)
@@ -89,10 +87,6 @@ c-----------------------------------------------------------------------
      $        flxmats(:,i),r8))
          surfee(i)=-0.5/mu0*SUM(REAL(CONJG(chemats(:,i))*
      $        flxmats(:,i),r8))
-         DO j=1,2
-            surfes(j,i)=0.5/mu0*SUM(REAL(CONJG(pjpmats(j,:,i))*
-     $           flxmats(:,i),r8))
-         ENDDO
          DO j=1,4
             surfep(j,i)=0.5/mu0*SUM(REAL(CONJG(chpmats(j,:,i))*
      $           flxmats(:,i),r8))
@@ -100,7 +94,7 @@ c-----------------------------------------------------------------------
          ENDDO
 
          CALL ipeq_dealloc
-         DEALLOCATE(chi_mn,che_mn,chp_mn,flx_mn,kap_mn,kax_mn,pjp_mn)
+         DEALLOCATE(chi_mn,che_mn,chp_mn,flx_mn,kap_mn,kax_mn)
       ENDDO
       DEALLOCATE(grri,grre)
 c-----------------------------------------------------------------------

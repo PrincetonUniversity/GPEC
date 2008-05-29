@@ -14,18 +14,15 @@ c      5. ipdiag_arbsurf
 c      6. ipdiag_angles
 c      7. ipdiag_surfmode
 c      8. ipdiag_extfld
-c      9. ipdiag_cotoha
-c     10. ipdiag_hatoco
-c     11. ipdiag_weight
-c     12. ipdiag_singcurs
-c     13. ipdiag_xbcontra
-c     14. ipdiag_xbnormal
-c     15. ipdiag_xbnovc
-c     16. ipdiag_xbnobo
-c     17. ipdiag_xbnorm
-c     18. ipdiag_pmodbst
-c     19. ipdiag_rzphibx
-c     20. ipdiag_rzpgrid
+c      9. ipdiag_singcurs
+c     10. ipdiag_xbcontra
+c     11. ipdiag_xbnormal
+c     12. ipdiag_xbnovc
+c     13. ipdiag_xbnobo
+c     14. ipdiag_xbnorm
+c     15. ipdiag_pmodbst
+c     16. ipdiag_rzphibx
+c     17. ipdiag_rzpgrid
 c-----------------------------------------------------------------------
 c     subprogram 0. ipdiag_mod.
 c     module declarations.
@@ -119,14 +116,12 @@ c-----------------------------------------------------------------------
      $     "comparison between energy from DCON eigenmodes and "//
      $     "IPEC surface eigenmodes"
       WRITE(out_unit,'(2x,a8,2x,I4)')"mpert:",mpert
-      WRITE(out_unit,'(2x,a4,9(2x,a12))')"mode","ee","surfee",
-     $     "ep","surfep1","surfep2","surfep3","surfep4",
-     $     "surfes1","surfes2"
+      WRITE(out_unit,'(2x,a4,7(2x,a12))')"mode","ee","surfee",
+     $     "ep","surfep1","surfep2","surfep3","surfep4"
 
       DO i=1,mpert
-         WRITE(out_unit,'(2x,I4,9(2x,e12.3))')i,ee(i),surfee(i),
-     $        ep(i),surfep(1,i),surfep(2,i),surfep(3,i),surfep(4,i),
-     $        surfes(1,i),surfes(2,i)
+         WRITE(out_unit,'(2x,I4,7(2x,e12.3))')i,ee(i),surfee(i),
+     $        ep(i),surfep(1,i),surfep(2,i),surfep(3,i),surfep(4,i)
       ENDDO
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
@@ -392,11 +387,11 @@ c-----------------------------------------------------------------------
          binmn(j,i-mlow+1)=1
          finmn(j,:)=binmn(j,:)
          CALL iscdftb(mfac,mpert,binfun(j,:),mthsurf,finmn(j,:))         
-         CALL ipeq_cotoha(psilim,finmn(j,:),polo,toro)
-         CALL ipeq_weight(psilim,finmn(j,:),1)         
+         CALL ipeq_cotoha(psilim,finmn(j,:),mfac,mpert,polo,toro)
+         CALL ipeq_weight(psilim,finmn(j,:),mfac,mpert,1)         
          boutmn(j,:)=MATMUL(permeabmats(3,:,:),finmn(j,:))
-         CALL ipeq_weight(psilim,finmn(j,:),0)  
-         CALL ipeq_hatoco(psilim,boutmn(j,:),polo,toro)
+         CALL ipeq_weight(psilim,finmn(j,:),mfac,mpert,0)  
+         CALL ipeq_hatoco(psilim,boutmn(j,:),mfac,mpert,polo,toro)
          CALL iscdftb(mfac,mpert,boutfun(j,:),mthsurf,boutmn(j,:))
       ENDDO
 c-----------------------------------------------------------------------
@@ -453,132 +448,92 @@ c     toroout  : output toroidal angle
 c     __________________________________________________________________
 c     boutmn   : new error field spectrum
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_extfld(rinfile,rerrtype,binmn,poloin,toroin,
-     $     poloout,toroout,boutmn,labl)
+      SUBROUTINE ipdiag_extfld(rinfile,formattype,left,scale,
+     $     binmn,poloin,toroin,poloout,toroout,boutmn,labl)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: poloin,toroin,poloout,toroout,labl
-      CHARACTER(128), INTENT(IN) :: rinfile,rerrtype
+      INTEGER, INTENT(IN) :: left,poloin,toroin,poloout,toroout,labl
+      REAL(r8), INTENT(IN) :: scale      
+      CHARACTER(128), INTENT(IN) :: rinfile,formattype
       COMPLEX(r8), DIMENSION(lmpert), INTENT(INOUT) :: binmn
       COMPLEX(r8), DIMENSION(lmpert), INTENT(OUT) :: boutmn
 
-      INTEGER :: i,j,ms,hfsurf
+      INTEGER :: i,j,i1,i2,i3,ms,hfsurf
       REAL(r8) :: htheta
       CHARACTER(1) :: spoloin,storoin,spoloout,storoout,slabl
+      CHARACTER(128) :: message
 
       COMPLEX(r8), DIMENSION(lmpert) :: ftnmn,finmn,foutmn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun
 
       REAL(r8), DIMENSION(:,:), POINTER :: cosmn,sinmn
+      COMPLEX(r8), DIMENSION(:), POINTER :: hawmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: rawmn
+c-----------------------------------------------------------------------
+c     check formattype
+c-----------------------------------------------------------------------
+ 1000 FORMAT(1x,25f12.6)         
+ 1001 FORMAT(1x,33f12.6)
+ 1010 FORMAT(11(1x,e15.8))
+ 1020 FORMAT(1x,I4,2(1x,e15.8))
 
       IF (edge_flag) THEN
-c-----------------------------------------------------------------------
-c     read data from file given by d3d, Mike.
-c-----------------------------------------------------------------------
-         IF (rerrtype == "d3d") THEN
-            ALLOCATE(cosmn(-errmmax:errmmax,errnmin:errnmax),
-     $           sinmn(-errmmax:errmmax,errnmin:errnmax),
-     $           rawmn(-errmmax:errmmax,errnmin:errnmax))
-            CALL ascii_open(in_unit,rinfile,"old")
- 1000       FORMAT(1x,25f12.6)
-
-            DO i=-errmmax,errmmax
-               READ(in_unit,1000) (cosmn(-i,j),j=errnmin,errnmax)
-               READ(in_unit,1000) (sinmn(-i,j),j=errnmin,errnmax)
-            ENDDO
-            CALL ascii_close(in_unit)
-            rawmn=(cosmn+ifac*sinmn)*gauss
-            binmn=rawmn(lmlow:lmhigh,nn)
-            DEALLOCATE(cosmn,sinmn,rawmn)
-c-----------------------------------------------------------------------
-c     read data from file given by d3d, Ilon.
-c-----------------------------------------------------------------------
-         ELSE IF (rerrtype == "d3d2") THEN
-            ALLOCATE(cosmn(-errmmax:errmmax,errnmin:errnmax),
-     $           sinmn(-errmmax:errmmax,errnmin:errnmax),
-     $           rawmn(-errmmax:errmmax,errnmin:errnmax))
-            CALL ascii_open(in_unit,rinfile,"old")
- 1001       FORMAT(1x,33f12.6)
-
-            DO i=-errmmax,errmmax
-               READ(in_unit,1001) (cosmn(-i,j),j=errnmin,errnmax)
-               READ(in_unit,1001) (sinmn(-i,j),j=errnmin,errnmax)
-            ENDDO
-            CALL ascii_close(in_unit)
-            rawmn=(cosmn+ifac*sinmn)*gauss
-            binmn=rawmn(lmlow:lmhigh,nn)
-            DEALLOCATE(cosmn,sinmn,rawmn)
-c-----------------------------------------------------------------------
-c     read data from file given by nstx.
-c-----------------------------------------------------------------------
-         ELSE IF (rerrtype == "nstx") THEN
-            ALLOCATE(cosmn(-errmmax:errmmax,errnmin:errnmax),
-     $           sinmn(-errmmax:errmmax,errnmin:errnmax),
-     $           rawmn(-errmmax:errmmax,errnmin:errnmax))
-            CALL ascii_open(in_unit,rinfile,"old")
- 1002       FORMAT(1x,I4,2(1x,e15.8))
-
-            DO i=errnmin,errnmax
-               DO j=-errmmax,errmmax
-                  READ(in_unit,1002)ms,cosmn(j,i),sinmn(j,i)
-               ENDDO
-            ENDDO
-            sinmn=sinmn
-            CALL ascii_close(in_unit)
-            rawmn=cosmn+ifac*sinmn
-            binmn=rawmn(lmlow:lmhigh,nn)
-            DEALLOCATE(cosmn,sinmn,rawmn)
-c-----------------------------------------------------------------------
-c     read data from file given by nstx.
-c-----------------------------------------------------------------------
-         ELSE IF (rerrtype == "nstx2") THEN
-            ALLOCATE(cosmn(-errmmax:errmmax,errnmin:errnmax),
-     $           sinmn(-errmmax:errmmax,errnmin:errnmax),
-     $           rawmn(-errmmax:errmmax,errnmin:errnmax))
-            CALL ascii_open(in_unit,rinfile,"old")
- 1003       FORMAT(11(1x,e15.8))
-
-            DO i=-errmmax,errmmax
-               READ(in_unit,1003) (cosmn(i,j),j=errnmin,errnmax)
-               READ(in_unit,1003) (sinmn(i,j),j=errnmin,errnmax)
-            ENDDO
-            CALL ascii_close(in_unit)
-            rawmn=cosmn+ifac*sinmn
-            binmn=rawmn(lmlow:lmhigh,nn)
-            DEALLOCATE(cosmn,sinmn,rawmn)
-c-----------------------------------------------------------------------
-c     read data from file given by optima.
-c-----------------------------------------------------------------------
-         ELSE IF (rerrtype == "optima") THEN
-            ALLOCATE(cosmn(lmpert,1),sinmn(lmpert,1),rawmn(lmpert,1))
-            CALL ascii_open(in_unit,rinfile,"old")
- 1004       FORMAT(1x,I4,2(1x,e15.8))
-            DO j=1,lmpert
-               READ(in_unit,1004)ms,cosmn(j,1),sinmn(j,1)
-               IF (ms/=lmfac(j)) WRITE(*,*)"different lmfac!"
-            ENDDO
-            CALL ascii_close(in_unit)
-            rawmn=cosmn+ifac*sinmn
-            binmn=rawmn(:,1)
-            DEALLOCATE(cosmn,sinmn,rawmn)
+         IF (left == 1) THEN
+            i1 = errmmax
+            i2 = errmmin
+            i3 = -1
+         ELSE
+            i1 = errmmin
+            i2 = errmmax
+            i3 = 1
          ENDIF
+c-----------------------------------------------------------------------
+c     read data.
+c-----------------------------------------------------------------------
+         ALLOCATE(cosmn(errmmin:errmmax,errnmin:errnmax),
+     $        sinmn(errmmin:errmmax,errnmin:errnmax),
+     $        rawmn(errmmin:errmmax,errnmin:errnmax),
+     $        hawmn(errmmax-errmmin+1))
+         CALL ascii_open(in_unit,rinfile,"old")
+            
+         DO i=i1,i2,i3
+            IF (formattype == '1x,25f12.6') THEN
+               READ(in_unit,1000) (cosmn(i,j),j=errnmin,errnmax)
+               READ(in_unit,1000) (sinmn(i,j),j=errnmin,errnmax)
+            ELSE IF (formattype == '1x,33f12.6') THEN
+               READ(in_unit,1001) (cosmn(i,j),j=errnmin,errnmax)
+               READ(in_unit,1001) (sinmn(i,j),j=errnmin,errnmax)
+            ELSE IF (formattype == '11(1x,e15.8)') THEN
+               READ(in_unit,1010) (cosmn(i,j),j=errnmin,errnmax)
+               READ(in_unit,1010) (sinmn(i,j),j=errnmin,errnmax)
+            ELSE IF (formattype == '1x,I4,2(1x,e15.8)') THEN
+               READ(in_unit,1020) ms,cosmn(i,1),sinmn(i,1)               
+            ELSE
+               WRITE(message,'(a)')"can't recognize input format"
+               CALL ipec_stop(message)
+            ENDIF            
+         ENDDO
+         CALL ascii_close(in_unit)
+         rawmn=cosmn+ifac*sinmn
+         binmn=rawmn(:,nn)
+         DEALLOCATE(cosmn,sinmn,rawmn,hawmn)
       ENDIF
 c-----------------------------------------------------------------------
 c     get the plasma response on the control surface.
 c-----------------------------------------------------------------------
+      IF (scale /= 0) binmn=binmn*scale
       ftnmn=binmn
       finmn=binmn
-      CALL ipdiag_cotoha(psilim,ftnmn,poloin,toroin)
-      CALL ipdiag_cotoha(psilim,finmn,poloin,toroin)
+      CALL ipeq_cotoha(psilim,ftnmn,lmfac,lmpert,poloin,toroin)
+      CALL ipeq_cotoha(psilim,finmn,lmfac,lmpert,poloin,toroin)
       foutmn=ftnmn
-      CALL ipdiag_hatoco(psilim,ftnmn,poloout,toroout)
+      CALL ipeq_hatoco(psilim,ftnmn,lmfac,lmpert,poloout,toroout)
 
-      CALL ipdiag_weight(psilim,finmn,1,poloin)
-      CALL ipdiag_weight(psilim,foutmn,1,poloout)
-      CALL ipdiag_hatoco(psilim,finmn,poloin,toroin)
-      CALL ipdiag_hatoco(psilim,foutmn,poloout,toroout)
+      CALL ipeq_weight(psilim,finmn,lmfac,lmpert,poloin)
+      CALL ipeq_weight(psilim,foutmn,lmfac,lmpert,poloout)
+      CALL ipeq_hatoco(psilim,finmn,lmfac,lmpert,poloin,toroin)
+      CALL ipeq_hatoco(psilim,foutmn,lmfac,lmpert,poloout,toroout)
       boutmn=ftnmn
 
       CALL iscdftb(lmfac,lmpert,binfun,mthsurf,binmn)
@@ -647,266 +602,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_extfld
 c-----------------------------------------------------------------------
-c     subprogram 9. ipdiag_cotoha.
-c     transform a coordinate to hamada. 
-c     __________________________________________________________________
-c     polo: poloidal angle coordinates
-c     toro: toroidal angle coordinates
-c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_cotoha(psi,ftnmn,polo,toro)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: polo,toro
-      REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(lmpert), INTENT(INOUT) :: ftnmn
-
-      INTEGER :: i,ising,itheta
-      REAL(r8) :: thetai
-
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
-
-      REAL(r8), DIMENSION(0:mthsurf) :: thetas
-
-      TYPE(spline_type) :: spl       
-      
-      CALL spline_alloc(spl,mthsurf,1)
-      spl%xs=theta
-
-      CALL spline_eval(sq,psi,0)
-      dphi=0
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         bpfac=psio*delpsi(itheta)/r(itheta)
-         btfac=sq%f(1)/(twopi*r(itheta))
-         bfac=SQRT(bpfac*bpfac+btfac*btfac)
-         fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-         SELECT CASE(polo)
-         CASE(0)
-            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
-         CASE(1)
-            spl%fs(itheta,1)=fac
-         CASE(2)
-            spl%fs(itheta,1)=fac/r(itheta)**2
-         CASE(3)
-            spl%fs(itheta,1)=fac*bpfac
-         CASE(4)
-            spl%fs(itheta,1)=fac*bfac**2
-         END SELECT
-         IF (toro .EQ. 0) THEN
-            dphi(itheta)=rzphi%f(3)
-         ENDIF
-      ENDDO      
-
-      CALL spline_fit(spl,"periodic")
-      CALL spline_int(spl)
-      ! coordinate angle at hamada angle
-      thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
-      CALL spline_dealloc(spl)
-c-----------------------------------------------------------------------
-c     convert coordinates.
-c-----------------------------------------------------------------------      
-      ! compute given function in hamada angle
-      DO itheta=0,mthsurf
-         ftnfun(itheta)=0
-         DO i=1,lmpert
-            ftnfun(itheta)=ftnfun(itheta)+
-     $           ftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))
-         ENDDO
-      ENDDO
-      ! multiply toroidal factor in hamada angle
-      IF (toro .EQ. 0) THEN
-         ftnfun(:)=ftnfun(:)*EXP(-ifac*nn*dphi(:))
-      ELSE
-         ftnfun(:)=ftnfun(:)*
-     $        EXP(-twopi*ifac*nn*sq%f(4)*(thetas(:)-theta(:)))
-      ENDIF
-      CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,ftnmn)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipdiag_cotoha
-c-----------------------------------------------------------------------
-c     subprogram 10. ipdiag_hatoco.
-c     transform a coordinate to other coordinates.
-c     __________________________________________________________________
-c     polo: poloidal angle coordinates
-c     toro: toroidal angle coordinates
-c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_hatoco(psi,ftnmn,polo,toro)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: polo,toro
-      REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(lmpert), INTENT(INOUT) :: ftnmn
-
-      INTEGER :: i,ising,itheta
-      REAL(r8) :: thetai
-
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
-
-      REAL(r8), DIMENSION(0:mthsurf) :: thetas
-
-      TYPE(spline_type) :: spl       
-      
-      CALL spline_alloc(spl,mthsurf,1)
-      spl%xs=theta
-
-      CALL spline_eval(sq,psi,0)
-      dphi=0
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         bpfac=psio*delpsi(itheta)/r(itheta)
-         btfac=sq%f(1)/(twopi*r(itheta))
-         bfac=SQRT(bpfac*bpfac+btfac*btfac)
-         fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-         SELECT CASE(polo)
-         CASE(0)
-            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
-         CASE(1)
-            spl%fs(itheta,1)=fac
-         CASE(2)
-            spl%fs(itheta,1)=fac/r(itheta)**2
-         CASE(3)
-            spl%fs(itheta,1)=fac*bpfac
-         CASE(4)
-            spl%fs(itheta,1)=fac*bfac**2
-         END SELECT
-         IF (toro .EQ. 0) THEN
-            dphi(itheta)=rzphi%f(3)
-         ENDIF
-      ENDDO
-      CALL spline_fit(spl,"periodic")
-      CALL spline_int(spl)
-      ! coordinate angle at hamada angle
-      thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
-      CALL spline_dealloc(spl)
-      CALL iscdftb(lmfac,lmpert,ftnfun,mthsurf,ftnmn)
-c-----------------------------------------------------------------------
-c     convert coordinates.
-c-----------------------------------------------------------------------
-      ! multiply toroidal factor in hamada angle
-      IF (toro .EQ. 0) THEN
-         ftnfun(:)=ftnfun(:)*EXP(ifac*nn*dphi(:))
-      ENDIF
-      CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,ftnmn)
-
-      ! compute given function in coordinate angle
-      DO itheta=0,mthsurf
-         ftnfun(itheta)=0
-         ! hamada angle at coordinate angle
-         thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
-         DO i=1,lmpert
-            ftnfun(itheta)=ftnfun(itheta)+
-     $           ftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetai)
-         ENDDO
-         IF (toro .NE. 0) THEN
-            ftnfun(itheta)=ftnfun(itheta)*
-     $           EXP(-twopi*ifac*nn*sq%f(4)*(thetai-theta(itheta)))
-         ENDIF
-      ENDDO
-      CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,ftnmn)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipdiag_hatoco
-c-----------------------------------------------------------------------
-c     subprogram 11. ipeq_weight.
-c     switch between a function and a weighted function
-c     __________________________________________________________________
-c     wegt: 0: multiply weight factor
-c           1: divide weight factor
-c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_weight(psi,ftnmn,wegt,polo)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: wegt,polo
-      REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(lmpert), INTENT(INOUT) :: ftnmn
-
-      INTEGER :: itheta
-
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,wgtfun,jacfun
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
-
-      TYPE(spline_type) :: spl       
-      
-      CALL spline_alloc(spl,mthsurf,1)
-      spl%xs=theta
-
-      CALL spline_eval(sq,psi,0)
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jacfun(itheta)=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jacfun(itheta)
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jacfun(itheta))
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         wgtfun(itheta)=1.0/(jacfun(itheta)*delpsi(itheta))
-         bpfac=psio*delpsi(itheta)/r(itheta)
-         btfac=sq%f(1)/(twopi*r(itheta))
-         bfac=SQRT(bpfac*bpfac+btfac*btfac)
-         fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-         SELECT CASE(polo)
-         CASE(0)
-            spl%fs(itheta,1)=fac*bpfac/rfac
-         CASE(1)
-            spl%fs(itheta,1)=fac
-         CASE(2)
-            spl%fs(itheta,1)=fac/r(itheta)**2
-         CASE(3)
-            spl%fs(itheta,1)=fac*bpfac
-         CASE(4)
-            spl%fs(itheta,1)=fac*bfac**2
-         END SELECT
-      ENDDO
-      CALL spline_fit(spl,"periodic")
-      CALL spline_int(spl)
-      !consider normalizing constant
-      jacfun=jacfun/spl%fs(:,1)*spl%fsi(mthsurf,1)
-      wgtfun=1.0/(jacfun*delpsi)      
-      CALL iscdftb(lmfac,lmpert,ftnfun,mthsurf,ftnmn)
-c-----------------------------------------------------------------------
-c     weight function.
-c-----------------------------------------------------------------------
-      IF (wegt .EQ. 0) THEN
-         ftnfun=ftnfun*wgtfun
-      ELSE
-         ftnfun=ftnfun/wgtfun
-      ENDIF
-      CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,ftnmn)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipdiag_weight
-c-----------------------------------------------------------------------
-c     subprogram 12. ipdiag_singcurs.
+c     subprogram 9. ipdiag_singcurs.
 c     diagnose asymtotic values of singular currents.
 c     __________________________________________________________________
 c     egnjm      : eigenmode number without edge_flag
@@ -1113,7 +809,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_singcurs
 c-----------------------------------------------------------------------
-c     subprogram 13. ipdiag_xbcontra.
+c     subprogram 10. ipdiag_xbcontra.
 c     write contravariant componets of xi.
 c     __________________________________________________________________
 c     osol   : label of an eigenmode
@@ -1172,7 +868,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_xbcontra
 c-----------------------------------------------------------------------
-c     subprogram 14. ipdiag_xbnormal.
+c     subprogram 11. ipdiag_xbnormal.
 c     write normal componets of xi and b.
 c     __________________________________________________________________
 c     osol   : label of an eigenmode
@@ -1224,7 +920,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_xbnormal
 c-----------------------------------------------------------------------
-c     subprogram 15. ipdiag_xbnovc.
+c     subprogram 12. ipdiag_xbnovc.
 c     write data for perturbed flux surfaces.
 c     __________________________________________________________________
 c     egnum   : label of an eigenmode
@@ -1341,8 +1037,8 @@ c-----------------------------------------------------------------------
          CALL ipeq_alloc
          CALL ipeq_contra(psis(istep))
          CALL ipeq_normal(psis(istep))
-         CALL ipeq_hatoco(psis(istep),xno_mn,1,0)
-         CALL ipeq_hatoco(psis(istep),bno_mn,1,0)
+         CALL ipeq_hatoco(psis(istep),xno_mn,mfac,mpert,1,0)
+         CALL ipeq_hatoco(psis(istep),bno_mn,mfac,mpert,1,0)
          CALL iscdftb(mfac,mpert,xno_fun,mthnum(istep),xno_mn)
          CALL iscdftb(mfac,mpert,bno_fun,mthnum(istep),bno_mn)
          CALL ipeq_dealloc
@@ -1373,7 +1069,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_xbnovc
 c-----------------------------------------------------------------------
-c     subprogram 16. ipdiag_xbnobo.
+c     subprogram 13. ipdiag_xbnobo.
 c     write normal perturbed quantities on the boundary.
 c     __________________________________________________________________
 c     egnum  : label of an eigenmode
@@ -1425,8 +1121,8 @@ c-----------------------------------------------------------------------
       CALL ipeq_alloc
       CALL ipeq_contra(psilim)
       CALL ipeq_normal(psilim)
-      CALL ipeq_hatoco(psilim,xno_mn,1,0)
-      CALL ipeq_hatoco(psilim,bno_mn,1,0)
+      CALL ipeq_hatoco(psilim,xno_mn,mfac,mpert,1,0)
+      CALL ipeq_hatoco(psilim,bno_mn,mfac,mpert,1,0)
       CALL iscdftb(mfac,mpert,xno_fun,mthnum,xno_mn)
       CALL iscdftb(mfac,mpert,bno_fun,mthnum,bno_mn)
       CALL ipeq_dealloc
@@ -1508,7 +1204,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_xbnobo
 c-----------------------------------------------------------------------
-c     subprogram 17. ipdiag_xbnorm.
+c     subprogram 14. ipdiag_xbnorm.
 c     compute normal perturbed quantities.
 c     __________________________________________________________________
 c     egnum  : label of an eigenmode
@@ -1558,10 +1254,12 @@ c-----------------------------------------------------------------------
          zs(istep,:)=z
          xnomns(istep,:)=xno_mn
          bnomns(istep,:)=bno_mn
-         CALL ipeq_hatoco(psis(istep),xnomns(istep,:),polo,toro)
-         CALL ipeq_hatoco(psis(istep),bnomns(istep,:),polo,toro)
-         CALL ipeq_hatoco(psis(istep),xno_mn,1,0)
-         CALL ipeq_hatoco(psis(istep),bno_mn,1,0)
+         CALL ipeq_hatoco(psis(istep),xnomns(istep,:),mfac,mpert,
+     $        polo,toro)
+         CALL ipeq_hatoco(psis(istep),bnomns(istep,:),mfac,mpert,
+     $        polo,toro)
+         CALL ipeq_hatoco(psis(istep),xno_mn,mfac,mpert,1,0)
+         CALL ipeq_hatoco(psis(istep),bno_mn,mfac,mpert,1,0)
          CALL iscdftb(mfac,mpert,xnofuns(istep,:),mthsurf,xno_mn)
          CALL iscdftb(mfac,mpert,bnofuns(istep,:),mthsurf,bno_mn)
       ENDDO
@@ -1617,7 +1315,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_xbnorm
 c-----------------------------------------------------------------------
-c     subprogram 18. ipdiag_pmodbst.
+c     subprogram 15. ipdiag_pmodbst.
 c     compute strength of perturbed mod b.
 c     __________________________________________________________________
 c     egnum  : label of an eigenmode
@@ -1746,7 +1444,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_pmodbst
 c-----------------------------------------------------------------------
-c     subprogram 19. ipdiag_pmodbrz.
+c     subprogram 16. ipdiag_pmodbrz.
 c     plot perturbed mod b at rz coordinates.
 c     __________________________________________________________________
 c     egnum  : eigenmode number without edge_flag
@@ -1822,8 +1520,8 @@ c-----------------------------------------------------------------------
      $        mthsurf,lagbpar_mn(istep,:))
          eulbpar=eulbpar_mn(istep,:)
          lagbpar=lagbpar_mn(istep,:)
-         CALL ipeq_hatoco(psis(istep),eulbpar,1,0)
-         CALL ipeq_hatoco(psis(istep),lagbpar,1,0)
+         CALL ipeq_hatoco(psis(istep),eulbpar,mfac,mpert,1,0)
+         CALL ipeq_hatoco(psis(istep),lagbpar,mfac,mpert,1,0)
          CALL iscdftb(mfac,mpert,eulbparfun(istep,:),mthsurf,eulbpar)
          CALL iscdftb(mfac,mpert,lagbparfun(istep,:),mthsurf,lagbpar)
          DO itheta=0,mthsurf
@@ -1838,6 +1536,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------
+      WRITE(UNIT=slabl, FMT='(I1)')labl 
       CALL ascii_open(out_unit,"ipdiag_pmodbrz_l"//slabl//"_n"
      $     //sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_PMODBRZ: "//
@@ -1864,7 +1563,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_pmodbrz
 c-----------------------------------------------------------------------
-c     subprogram 20. ipdiag_rzphibx.
+c     subprogram 17. ipdiag_rzphibx.
 c     write r,z,phi,b,x on hamada coordinates.
 c     __________________________________________________________________
 c     egnum  : label of an eigenmode
@@ -2007,7 +1706,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_rzphibx
 c-----------------------------------------------------------------------
-c     subprogram 20. ipdiag_rzpgrid.
+c     subprogram 18. ipdiag_rzpgrid.
 c     diagnose hamada coordinates inverted from rzphi.
 c-----------------------------------------------------------------------
       SUBROUTINE ipdiag_rzpgrid(nr,nz)

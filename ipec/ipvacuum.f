@@ -426,7 +426,7 @@ c-----------------------------------------------------------------------
 c     change and reverse poloidal and torodial coordinates in hamada.
 c-----------------------------------------------------------------------
       IF ((polo /= 1).OR.(toro /=1)) THEN
-         CALL ipeq_cotoha(psi,bnomn,polo,toro)
+         CALL ipeq_cotoha(psi,bnomn,mfac,mpert,polo,toro)
       ENDIF
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bnomn)
       bwp_fun=bwp_fun*delpsi*jacs/(twopi**2)

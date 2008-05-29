@@ -16,13 +16,12 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: in,osing,resol,angnum,labl,infnum,
+      INTEGER :: in,osing,resol,angnum,labl,infnum,left,
      $     mthnumb,meas,modem,label,nr,nz,modemin,modemax,
      $     poloin,toroin,poloout,toroout,lowmode,highmode,
      $     m3low,m3high
-      REAL(r8) :: majr,minr
-      REAL(r8) :: rdist,smallwidth,factor,fp,normpsi
-      CHARACTER(128) :: infile
+      REAL(r8) :: majr,minr,scale,rdist,smallwidth,factor,fp,normpsi
+      CHARACTER(128) :: infile,formattype
       LOGICAL :: erdata_flag,mode_flag,response_flag,singcoup_flag,
      $     singfld_flag,pmodb_flag,xbrzphi_flag,
      $     nrzeq_flag,extp_flag,extt_flag,singcurs_flag,
@@ -35,8 +34,8 @@ c-----------------------------------------------------------------------
      $     brrmn,bnomn,bpamn,fxmn,xwpmn
 
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
-     $     power_flag,fft_flag,mthsurf0,
-     $     erdata_flag,errtype,errnmin,errnmax,errmmax,
+     $     power_flag,fft_flag,mthsurf0,left,scale,
+     $     erdata_flag,formattype,errnmin,errnmax,errmmin,errmmax,
      $     poloin,toroin,infnum,infiles,mode_flag,modemin,modemax
       NAMELIST/ipec_control/response_flag,dist,bdist,modelnum
       NAMELIST/ipec_output/singcoup_flag,
@@ -61,7 +60,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     assign temporal values.
 c-----------------------------------------------------------------------
-      lmlow=-errmmax
+      lmlow=errmmin
       lmhigh=errmmax
       IF (response_flag) resp=1
       IF (xbrzphi_flag) psixy=1
@@ -101,7 +100,7 @@ c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
       IF (response_flag) THEN
-         CALL ipout_resp(10)
+         CALL ipout_resp
       ENDIF
       IF (singcoup_flag) THEN
          CALL ipout_singcoup(dist,poloout,toroout)
@@ -114,20 +113,9 @@ c-----------------------------------------------------------------------
          DO in=1,infnum
             label=labl+in-1
             infile=infiles(in)
-            IF ((poloin /= toroin).OR.(poloout /= toroout)) THEN
-               edge_flag=.TRUE.
-               CALL ipdiag_extfld(infile,errtype,bexmn,
-     $              poloin,toroin,poloout,toroout,bermn,label)
-               brrmn=bermn(mlow-lmlow+1:mhigh-lmlow+1)
-               edge_flag=.FALSE.
-               CALL ipout_errfld(infile,errtype,brrmn,
-     $              poloout,toroout,resp,bnomn,xwpmn,label)
-               edge_flag=.TRUE.
-            ELSE 
-               edge_flag=.TRUE.
-               CALL ipout_errfld(infile,errtype,brrmn,
-     $              poloout,toroout,resp,bnomn,xwpmn,label)
-            ENDIF
+            edge_flag=.TRUE.
+            CALL ipout_errfld(infile,formattype,left,scale,brrmn,
+     $           poloin,toroin,resp,bnomn,xwpmn,label)
             IF (singfld_flag) THEN
                CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
             ENDIF
@@ -194,8 +182,8 @@ c-----------------------------------------------------------------------
             edge_flag=.FALSE.
             brrmn=0
             brrmn(modemin+in-mlow)=1e-4
-            CALL ipout_errfld(infile,errtype,brrmn,
-     $           poloout,toroout,resp,bnomn,xwpmn,label)
+            CALL ipout_errfld(infile,errtype,left,scale,brrmn,
+     $           poloin,toroin,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
             IF (singfld_flag) THEN
                CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
@@ -288,11 +276,11 @@ c-----------------------------------------------------------------------
             label=in-m3low
             fxmn=0
             fxmn(in-mlow+1)=fp*normpsi
-            CALL ipeq_cotoha(psilim,fxmn,0,0)
+            CALL ipeq_cotoha(psilim,fxmn,mfac,mpert,0,0)
             fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
-            CALL ipeq_weight(psilim,fxmn,0)
+            CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
             edge_flag=.FALSE.
-            CALL ipout_errfld(infile,errtype,fxmn,
+            CALL ipout_errfld(infile,errtype,left,scale,fxmn,
      $           poloout,toroout,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
             CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
@@ -306,8 +294,8 @@ c-----------------------------------------------------------------------
          fxmn=0
          fxmn(10-mlow+1)=1e-4
          bnomn=fxmn
-         CALL ipeq_cotoha(psilim,bnomn,0,0)
-         CALL ipeq_hatoco(psilim,bnomn,0,0)
+         CALL ipeq_cotoha(psilim,bnomn,mfac,mpert,0,0)
+         CALL ipeq_hatoco(psilim,bnomn,mfac,mpert,0,0)
          CALL ascii_open(out_unit,"iptest_coordtrans_n"//
      $        sn//".out","UNKNOWN")
          WRITE(out_unit,*)
