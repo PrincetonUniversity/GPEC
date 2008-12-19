@@ -162,15 +162,16 @@ c-----------------------------------------------------------------------
 
       INTEGER :: itheta
       REAL(r8) :: issurfint,area
-      REAL(r8), DIMENSION(0:fs) :: delpsi
+      REAL(r8), DIMENSION(0:fs) :: thetas,delpsi
 
       issurfint = 0
       area = 0
+      thetas=(/(itheta,itheta=0,fs)/)/REAL(fs,r8)
 
       DO itheta=0,fs-1
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
+         CALL bicube_eval(rzphi,psi,thetas(itheta),1)
          rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
+         eta=twopi*(thetas(itheta)+rzphi%f(2))
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
          jac=rzphi%f(4)

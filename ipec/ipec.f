@@ -27,9 +27,9 @@ c-----------------------------------------------------------------------
      $     nrzeq_flag,extp_flag,extt_flag,singcurs_flag,
      $     xbcontra_flag,xbnormal_flag,xbnovc_flag,xbnobo_flag,
      $     d3_flag,xbnorm_flag,pmodbst_flag,pmodbrz_flag,rzphibx_flag,
-     $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
+     $     radvar_flag,eigen_flag,magpot_flag,energy_flag,respmat_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
-     $     m3d_flag,test_flag
+     $     m3d_flag,cas3d_flag,test_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: bexmn,bermn,
      $     brrmn,bnomn,bpamn,fxmn,xwpmn
 
@@ -43,11 +43,11 @@ c-----------------------------------------------------------------------
      $     xbrzphi_flag,nrzeq_flag,nr,nz,extt_flag,extp_flag,labl
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,xbnormal_flag,
      $     xbnovc_flag,xbnobo_flag,d3_flag,xbnorm_flag,
-     $     pmodbst_flag,pmodbrz_flag,rzphibx_flag,
+     $     pmodbst_flag,pmodbrz_flag,rzphibx_flag,radvar_flag,
      $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3low,m3high,
-     $     test_flag
+     $     cas3d_flag,test_flag
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -147,10 +147,10 @@ c-----------------------------------------------------------------------
      $              smallwidth,label)
             ENDIF
             IF (xbcontra_flag) THEN
-               CALL ipdiag_xbcontra(0,xwpmn,label)
+               CALL ipdiag_xbcontra(0,xwpmn,poloout,toroout,label)
             ENDIF
             IF (xbnormal_flag) THEN
-               CALL ipdiag_xbnormal(0,xwpmn,label)
+               CALL ipdiag_xbnormal(0,xwpmn,poloout,toroout,label)
             ENDIF
             IF (xbnovc_flag) THEN
                CALL ipdiag_xbnovc(0,xwpmn,label)
@@ -169,6 +169,9 @@ c-----------------------------------------------------------------------
             ENDIF            
             IF (rzphibx_flag) THEN
                CALL ipdiag_rzphibx(0,xwpmn,label)
+            ENDIF
+            IF (radvar_flag) THEN
+               CALL ipdiag_radvar
             ENDIF
          ENDDO
       ENDIF
@@ -216,10 +219,10 @@ c-----------------------------------------------------------------------
      $              smallwidth,label)
             ENDIF
             IF (xbcontra_flag) THEN
-               CALL ipdiag_xbcontra(0,xwpmn,label)
+               CALL ipdiag_xbcontra(0,xwpmn,poloout,toroout,label)
             ENDIF
             IF (xbnormal_flag) THEN
-               CALL ipdiag_xbnormal(0,xwpmn,label)
+               CALL ipdiag_xbnormal(0,xwpmn,poloout,toroout,label)
             ENDIF
             IF (xbnovc_flag) THEN
                CALL ipdiag_xbnovc(0,xwpmn,label)
@@ -238,6 +241,9 @@ c-----------------------------------------------------------------------
             ENDIF
             IF (rzphibx_flag) THEN
                CALL ipdiag_rzphibx(0,xwpmn,label)
+            ENDIF
+            IF (radvar_flag) THEN
+               CALL ipdiag_radvar
             ENDIF
          ENDDO
       ENDIF
@@ -284,7 +290,44 @@ c-----------------------------------------------------------------------
      $           poloout,toroout,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
             CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
-            CALL ipdiag_xbnormal(0,xwpmn,label)
+         ENDDO
+      ENDIF
+      IF (cas3d_flag) THEN
+c         fp=1e-4
+c         DO in=m3low,m3high
+c            label=in-m3low
+c            fxmn=0
+c            fxmn(in-mlow+1)=fp
+c            edge_flag=.FALSE.
+c            CALL ipout_errfld(infile,errtype,left,scale,fxmn,
+c     $           poloout,toroout,resp,bnomn,xwpmn,label)
+c            edge_flag=.TRUE.
+c            CALL ipout_singfld(0,xwpmn,dist,1,1,label)
+c            CALL ipdiag_xbcontra(0,xwpmn,1,1,label)
+c            CALL ipdiag_xbcontra(0,xwpmn,4,1,label)
+c            CALL ipdiag_xbnormal(0,xwpmn,1,1,label)
+c            CALL ipdiag_xbnormal(0,xwpmn,4,1,label)
+c            CALL ipdiag_xbnobo(0,xwpmn,d3_flag,label)
+c            CALL ipdiag_radvar
+c         ENDDO
+         fp = -1e-2
+         DO in=m3low,m3high
+            label=in-m3low
+            fxmn=0
+            fxmn(in-mlow+1)=fp
+            CALL ipeq_cotoha(psilim,fxmn,mfac,mpert,4,1)
+            CALL ipeq_xptobn(psilim,fxmn,brrmn)
+            edge_flag=.FALSE.
+            CALL ipout_errfld(infile,errtype,left,scale,brrmn,
+     $           poloout,toroout,resp,bnomn,xwpmn,label)
+            edge_flag=.TRUE.
+            CALL ipout_singfld(0,xwpmn,dist,1,1,label)
+            CALL ipdiag_xbcontra(0,xwpmn,1,1,label)
+            CALL ipdiag_xbcontra(0,xwpmn,4,1,label)
+            CALL ipdiag_xbnormal(0,xwpmn,1,1,label)
+            CALL ipdiag_xbnormal(0,xwpmn,4,1,label)
+            CALL ipdiag_xbnobo(0,xwpmn,d3_flag,label)
+            CALL ipdiag_radvar
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------

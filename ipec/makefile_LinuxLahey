@@ -13,7 +13,7 @@ LIBDIR = \
 LIBS = \
 	$(LIBDIR) \
 	-llsode \
-	-lequil \
+	-lequil \c
 	-lvac \
 	-llapack \
 	-lblas \

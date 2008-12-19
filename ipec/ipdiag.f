@@ -235,8 +235,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data for indicating used angles.
 c-----------------------------------------------------------------------
-      angnum=10
-      rstep=50
+      angnum=15
+      rstep=400
       WRITE(*,*)"diagnose magnetic angles"
       ALLOCATE(psi(1:rstep))
       ALLOCATE(thetai(0:angnum-1),angles(0:angnum-1))
@@ -815,25 +815,32 @@ c     __________________________________________________________________
 c     osol   : label of an eigenmode
 c     edgemn : xipsi components on the control surface
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbcontra(egnum,xwpimn,labl)
+      SUBROUTINE ipdiag_xbcontra(egnum,xwpimn,polo,toro,labl)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,labl
+      INTEGER, INTENT(IN) :: egnum,polo,toro,labl
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
 
-      INTEGER :: istep, ipert
-      CHARACTER(1) :: slabl
+      INTEGER :: istep,ipert
+      CHARACTER(1) :: spolo,storo,slabl
+      CHARACTER(2) :: slabl2
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xwpimn)
       WRITE(*,*)"calculate contravariant components in detail"
-      WRITE(UNIT=slabl, FMT='(I1)')labl    
-
-      CALL ascii_open(out_unit,"ipdiag_xbcontra_l"//slabl//
-     $     "_n"//sn//".out",
-     $     "UNKNOWN")
+      WRITE(UNIT=spolo, FMT='(I1)')polo
+      WRITE(UNIT=storo, FMT='(I1)')toro
+      IF (labl < 10) THEN
+         WRITE(UNIT=slabl, FMT='(I1)')labl            
+         CALL ascii_open(out_unit,"ipdiag_xbcontra_p"//spolo//"_t"//
+     $        storo//"_l"//slabl//"_n"//sn//".out","UNKNOWN")
+      ELSE
+         WRITE(UNIT=slabl2, FMT='(I2)')labl            
+         CALL ascii_open(out_unit,"ipdiag_xbcontra_p"//spolo//"_t"//
+     $        storo//"_l"//slabl2//"_n"//sn//".out","UNKNOWN")
+      ENDIF  
       WRITE(out_unit,*)"IPDIAG_XBCONTRA: "//
      $     "contravariant components of displacement and field"
       WRITE(out_unit,'(2x,a8,2x,I6)')"mstep:",mstep
@@ -851,6 +858,15 @@ c-----------------------------------------------------------------------
      $     "xvs(real)","xvs(imag)"
       DO istep=0,mstep
          CALL ipeq_contra(psifac(istep))
+         IF ((polo /= 1).OR.(toro /= 1)) THEN 
+            CALL ipeq_hatoco(psifac(istep),xwp_mn,mfac,mpert,polo,toro)
+            CALL ipeq_hatoco(psifac(istep),xwt_mn,mfac,mpert,polo,toro) 
+            CALL ipeq_hatoco(psifac(istep),xwz_mn,mfac,mpert,polo,toro)
+            CALL ipeq_hatoco(psifac(istep),bwp_mn,mfac,mpert,polo,toro)
+            CALL ipeq_hatoco(psifac(istep),bwt_mn,mfac,mpert,polo,toro) 
+            CALL ipeq_hatoco(psifac(istep),bwz_mn,mfac,mpert,polo,toro)
+            CALL ipeq_hatoco(psifac(istep),xvs_mn,mfac,mpert,polo,toro)
+         ENDIF
          DO ipert=1,mpert
             WRITE(out_unit,'(14(2x,e16.9))')
      $           REAL(xwp_mn(ipert)),AIMAG(xwp_mn(ipert)),
@@ -874,25 +890,32 @@ c     __________________________________________________________________
 c     osol   : label of an eigenmode
 c     edgemn : xipsi components on the control surface
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbnormal(egnum,xwpimn,labl)
+      SUBROUTINE ipdiag_xbnormal(egnum,xwpimn,polo,toro,labl)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,labl
+      INTEGER, INTENT(IN) :: egnum,polo,toro,labl
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
 
-      INTEGER :: istep, ipert
-      CHARACTER(1) :: slabl
+      INTEGER :: istep,ipert
+      CHARACTER(1) :: spolo,storo,slabl
+      CHARACTER(2) :: slabl2      
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xwpimn)
       WRITE(*,*)"calculate normal components in detail"
-      WRITE(UNIT=slabl, FMT='(I1)')labl    
-
-      CALL ascii_open(out_unit,"ipdiag_xbnormal_l"//slabl//
-     $     "_n"//sn//".out",
-     $     "UNKNOWN")
+      WRITE(UNIT=spolo, FMT='(I1)')polo
+      WRITE(UNIT=storo, FMT='(I1)')toro
+      IF (labl < 10) THEN
+         WRITE(UNIT=slabl, FMT='(I1)')labl            
+         CALL ascii_open(out_unit,"ipdiag_xbnormal_p"//spolo//"_t"//
+     $        storo//"_l"//slabl//"_n"//sn//".out","UNKNOWN")
+      ELSE
+         WRITE(UNIT=slabl2, FMT='(I2)')labl            
+         CALL ascii_open(out_unit,"ipdiag_xbnormal_p"//spolo//"_t"//
+     $        storo//"_l"//slabl2//"_n"//sn//".out","UNKNOWN")
+      ENDIF
       WRITE(out_unit,*)"IPDIAG_XBNROMAL: "//
      $     "normal components of displacement and field"
       WRITE(out_unit,'(2x,a8,2x,I6)')"mstep:",mstep
@@ -908,6 +931,10 @@ c-----------------------------------------------------------------------
       DO istep=0,mstep
          CALL ipeq_contra(psifac(istep))
          CALL ipeq_normal(psifac(istep))
+         IF ((polo /= 1).OR.(toro /= 1)) THEN 
+            CALL ipeq_hatoco(psifac(istep),xno_mn,mfac,mpert,polo,toro)
+            CALL ipeq_hatoco(psifac(istep),bno_mn,mfac,mpert,polo,toro)
+         ENDIF
          DO ipert=1,mpert
             WRITE(out_unit,'(4(2x,e16.9))')
      $           REAL(xno_mn(ipert)),AIMAG(xno_mn(ipert)),
@@ -1139,10 +1166,10 @@ c-----------------------------------------------------------------------
      $     //sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XNOBO: "//
      $     "perturbed normal displacement vectors on the boundary"      
-      WRITE(out_unit,'(6(2x,a12))')"r","z",
+      WRITE(out_unit,'(6(2x,a16))')"r","z",
      $     "real(xnor)","real(xnoz)","imag(xnor)","imag(xnoz)"
       DO ithnum=0,mthnum
-         WRITE(out_unit,'(6(2x,e12.3))')rs(ithnum),zs(ithnum),
+         WRITE(out_unit,'(6(2x,e16.9))')rs(ithnum),zs(ithnum),
      $        REAL(xnorvc(ithnum)),REAL(xnozvc(ithnum)),
      $        AIMAG(xnorvc(ithnum)),AIMAG(xnozvc(ithnum))
       ENDDO
@@ -1150,10 +1177,10 @@ c-----------------------------------------------------------------------
      $     //sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_BNOBO: "//
      $     "perturbed normal field vectors on the boundary"      
-      WRITE(out_unit,'(6(2x,a12))')"r","z",
+      WRITE(out_unit,'(6(2x,a16))')"r","z",
      $     "real(bnor)","real(bnoz)","imag(bnor)","imag(bnoz)"
       DO ithnum=0,mthnum
-         WRITE(out_unit,'(6(2x,e12.3))')rs(ithnum),zs(ithnum),
+         WRITE(out_unit,'(6(2x,e16.9))')rs(ithnum),zs(ithnum),
      $        REAL(bnorvc(ithnum)),REAL(bnozvc(ithnum)),
      $        AIMAG(bnorvc(ithnum)),AIMAG(bnozvc(ithnum))
       ENDDO
@@ -1803,5 +1830,45 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_rzpgrid
+c-----------------------------------------------------------------------
+c     subprogram 19. ipdiag_radvar.
+c     generate various radial variables.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipdiag_radvar
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: istep
+      REAL(r8) :: qintb
+      REAL(r8), DIMENSION(0:mstep) :: psitor,rhotor
+      TYPE(spline_type) :: qs
+
+
+      CALL spline_alloc(qs,mstep,1)      
+      qs%xs = psifac
+      qs%fs(:,1) = qfac
+      CALL spline_fit(qs,"extrap") 
+      CALL spline_int(qs)
+      qintb = qs%fsi(mstep,1)
+      psitor(:) = qs%fsi(:,1)/qintb
+      rhotor(:) = SQRT(psitor(:))
+      CALL spline_dealloc(qs)
+      CALL ascii_open(out_unit,"ipdiag_radvar_n"//sn//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPDIAG_RADVAR: "//
+     $     "various radial variables"
+      WRITE(out_unit,'(2x,a8,2x,I6)')"mstep:",mstep
+      WRITE(out_unit,'(2x,a8,2x,e16.9)')"qintb:",qintb
+      WRITE(out_unit,'(4(2x,a16))')"psi","rho","psitor","rhotor"
+      DO istep=0,mstep
+         WRITE(out_unit,'(4(2x,e16.9))')psifac(istep),rhofac(istep),
+     $        psitor(istep),rhotor(istep)
+      ENDDO
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipdiag_radvar
 
       END MODULE ipdiag_mod
+

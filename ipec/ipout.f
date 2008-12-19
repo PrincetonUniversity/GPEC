@@ -77,12 +77,11 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,3(a8,I4),2(a8,e16.8))')
      $     "mpert:",mpert,"mlow:",mlow,"mhigh:",mhigh,
      $     "psilim:",psilim,"qlim:",qlim
-      WRITE(out_unit,'(400(1x,e16.8))')(sts(i),i=1,mpert)
+      WRITE(out_unit,'(400(1x,e16.8))')(sts(i),s(i),i=1,mpert)
       DO j=1,mpert
          WRITE(out_unit,'(400(1x,e16.8))')
      $        (REAL(eigen(j,i)),AIMAG(eigen(j,i)),i=1,mpert)
       ENDDO
-      WRITE(out_unit,'(400(1x,e16.8))')(s(i),i=1,mpert)    
       DO j=1,mpert
          WRITE(out_unit,'(400(1x,e16.8))')
      $        (REAL(c(j,i)),AIMAG(c(j,i)),i=1,mpert)
@@ -157,7 +156,7 @@ c-----------------------------------------------------------------------
             sqreqb(itheta)=(sq%f(1)**2+chi1**2*delpsi(itheta)**2)
      $           /(twopi*r(itheta))**2
             jcfun(itheta)=sqreqb(itheta)/(delpsi(itheta)**3)
-            wcfun(itheta)=SQRT(jac/delpsi(itheta))
+            wcfun(itheta)=SQRT(jac*sqreqb(itheta))
          ENDDO
          j_c(ising)=1.0/issurfint(jcfun,mthsurf,respsi,0,0)*
      $        (chi1*sq%f(4))**2/mu0
@@ -362,6 +361,8 @@ c     write matrix.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipec_singcoup_matrix_p"//spolo//"_t"
      $     //storo//"_n"//sn//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPEC_SINGCOUP_MATRIX: coupling matrices"//
+     $     " between resonant field and external field"
       WRITE(out_unit,'(1x,4(a8,I4),2(a8,e16.8))')"msing:",msing,
      $     "mpert:",tmpert,"mlow:",tmlow,"mhigh:",tmhigh,
      $     "psilim:",psilim,"qlim:",qlim
@@ -474,7 +475,7 @@ c-----------------------------------------------------------------------
                READ(in_unit,1010) (cosmn(i,j),j=errnmin,errnmax)
                READ(in_unit,1010) (sinmn(i,j),j=errnmin,errnmax)
             ELSE IF (formattype == '1x,I4,2(1x,e15.8)') THEN
-               READ(in_unit,1020) ms,cosmn(i,1),sinmn(i,1)               
+               READ(in_unit,1020) ms,cosmn(i,nn),sinmn(i,nn)               
             ELSE
                WRITE(message,'(a)')"can't recognize input format"
                CALL ipec_stop(message)
@@ -484,7 +485,12 @@ c-----------------------------------------------------------------------
          rawmn=cosmn+ifac*sinmn
          hawmn=rawmn(:,nn)
          CALL ipeq_cotoha(psilim,hawmn,lmfac,lmpert,polo,toro)
-         binmn=hawmn(mlow-lmlow+1:mhigh-lmlow+1)
+         binmn=0
+         DO i=1,lmpert
+            IF ((lmlow-mlow+i>=1).AND.(lmlow-mlow+i<=mpert)) THEN
+               binmn(lmlow-mlow+i)=hawmn(i)
+            ENDIF
+         ENDDO
          DEALLOCATE(cosmn,sinmn,rawmn,hawmn)
       ENDIF
 c-----------------------------------------------------------------------
@@ -567,7 +573,6 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a24,1x,e16.8)')"perturbed penergy:",pengy
       WRITE(out_unit,'(1x,a24,1x,e16.8)')"perturbed inputst:",binfunst
       WRITE(out_unit,'(1x,a24,1x,e16.8)')"perturbed totalst:",boutfunst
-      WRITE(out_unit,*)"MODES"
       WRITE(out_unit,'(1x,a6,4(1x,a16))')"m","rebin","imbin",
      $     "rebout","imbout"
       DO i=1,mpert
@@ -604,7 +609,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,itheta,ising
       REAL(r8) :: respsi,lpsi,rpsi,sqrpsi,correc,shear,hdist
       COMPLEX(r8) :: lnbwp1mn,rnbwp1mn,lcorrec,rcorrec
-      CHARACTER(1) :: slabl
+      CHARACTER(1) :: spolo,storo,slabl
       CHARACTER(2) :: slabl2      
 
       INTEGER, DIMENSION(msing) :: resnum
@@ -748,7 +753,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute normalized power by singular current.
 c-----------------------------------------------------------------------
-         tempfun=jac*delpsi*
+         tempfun=jac*sqreqb*
      $        (REAL(singcur(ising))**2+AIMAG(singcur(ising))**2)
          singpower(ising)=issurfave(tempfun,mthsurf,respsi)
 c-----------------------------------------------------------------------
@@ -768,14 +773,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
+      WRITE(UNIT=spolo, FMT='(I1)')polo
+      WRITE(UNIT=storo, FMT='(I1)')toro
       IF (labl < 10) THEN
          WRITE(UNIT=slabl, FMT='(I1)')labl            
-         CALL ascii_open(out_unit,"ipec_singfld_l"//slabl//
-     $        "_n"//sn//".out","UNKNOWN")
+         CALL ascii_open(out_unit,"ipec_singfld_p"//spolo//"_t"//
+     $        storo//"_l"//slabl//"_n"//sn//".out","UNKNOWN")
       ELSE
          WRITE(UNIT=slabl2, FMT='(I2)')labl            
-         CALL ascii_open(out_unit,"ipec_singfld_l"//slabl2//
-     $        "_n"//sn//".out","UNKNOWN")
+         CALL ascii_open(out_unit,"ipec_singfld_p"//spolo//"_t"//
+     $        storo//"_l"//slabl2//"_n"//sn//".out","UNKNOWN")
       ENDIF
       WRITE(out_unit,*)"IPEC_SINGFLD: "//
      $     "deltas, singular currents and normal fields"
@@ -907,7 +914,7 @@ c-----------------------------------------------------------------------
      $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)"
       DO istep=1,rstep
          DO ipert=1,mpert
-            WRITE(out_unit,'(1x,e16.8,1x,I16,4(2x,e16.8))')
+            WRITE(out_unit,'(1x,e16.8,1x,I16,4(1x,e16.8))')
      $           psis(istep),mfac(ipert),
      $           REAL(eulbpar_mn(istep,ipert)),
      $           AIMAG(eulbpar_mn(istep,ipert)),
@@ -992,22 +999,22 @@ c-----------------------------------------------------------------------
                ENDDO
                xrr(i,j)=
      $              REAL(xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(xrr(i,j)*EXP(twopi*ifac*nn*(0.25-gdphi(i,j))))
+     $              REAL(xrr(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
                xrz(i,j)=
      $              REAL(xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(xrz(i,j)*EXP(twopi*ifac*nn*(0.25-gdphi(i,j))))
+     $              REAL(xrz(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
                xrp(i,j)=
      $              REAL(xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(xrp(i,j)*EXP(twopi*ifac*nn*(0.25-gdphi(i,j))))
+     $              REAL(xrp(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
                brr(i,j)=
      $              REAL(brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(brr(i,j)*EXP(twopi*ifac*nn*(0.25-gdphi(i,j))))
+     $              REAL(brr(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
                brz(i,j)=
      $              REAL(brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(brz(i,j)*EXP(twopi*ifac*nn*(0.25-gdphi(i,j))))
+     $              REAL(brz(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
                brp(i,j)=
      $              REAL(brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(brp(i,j)*EXP(twopi*ifac*nn*(0.25-gdphi(i,j))))
+     $              REAL(brp(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
 
                CALL spline_eval(sq,gdpsi(i,j),0)
                ebp(i,j) = abs(sq%f(1))/(twopi*gdr(i,j))
