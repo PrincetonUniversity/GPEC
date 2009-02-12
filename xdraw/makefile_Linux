@@ -7,7 +7,7 @@ CC = cc $(CFLAGS)
 	$(CC) -c $*.c
 
 LIBDIR= \
-	-L/usr/X11R6/lib
+	-L/usr/X11R6/lib64
 
 LIBS = \
 	$(LIBDIR) \

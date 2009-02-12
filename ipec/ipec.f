@@ -16,7 +16,7 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: in,osing,resol,angnum,labl,infnum,left,
+      INTEGER :: in,osing,resol,angnum,labl,infnum,left,wegt,
      $     mthnumb,meas,modem,label,nr,nz,modemin,modemax,
      $     poloin,toroin,poloout,toroout,lowmode,highmode,
      $     m3low,m3high
@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
      $     brrmn,bnomn,bpamn,fxmn,xwpmn
 
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
-     $     power_flag,fft_flag,mthsurf0,left,scale,
+     $     power_flag,fft_flag,mthsurf0,left,scale,wegt,
      $     erdata_flag,formattype,errnmin,errnmax,errmmin,errmmax,
      $     poloin,toroin,infnum,infiles,mode_flag,modemin,modemax
       NAMELIST/ipec_control/response_flag,dist,bdist,modelnum
@@ -47,7 +47,7 @@ c-----------------------------------------------------------------------
      $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3low,m3high,
-     $     cas3d_flag,test_flag
+     $     cas3d_flag,test_flag,resol,smallwidth
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -115,7 +115,7 @@ c-----------------------------------------------------------------------
             infile=infiles(in)
             edge_flag=.TRUE.
             CALL ipout_errfld(infile,formattype,left,scale,brrmn,
-     $           poloin,toroin,resp,bnomn,xwpmn,label)
+     $           poloin,toroin,wegt,resp,bnomn,xwpmn,label)
             IF (singfld_flag) THEN
                CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
             ENDIF
@@ -186,7 +186,7 @@ c-----------------------------------------------------------------------
             brrmn=0
             brrmn(modemin+in-mlow)=1e-4
             CALL ipout_errfld(infile,errtype,left,scale,brrmn,
-     $           poloin,toroin,resp,bnomn,xwpmn,label)
+     $           poloin,toroin,wegt,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
             IF (singfld_flag) THEN
                CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
@@ -287,7 +287,7 @@ c-----------------------------------------------------------------------
             CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
             edge_flag=.FALSE.
             CALL ipout_errfld(infile,errtype,left,scale,fxmn,
-     $           poloout,toroout,resp,bnomn,xwpmn,label)
+     $           poloout,toroout,wegt,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
             CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
          ENDDO
@@ -319,7 +319,7 @@ c         ENDDO
             CALL ipeq_xptobn(psilim,fxmn,brrmn)
             edge_flag=.FALSE.
             CALL ipout_errfld(infile,errtype,left,scale,brrmn,
-     $           poloout,toroout,resp,bnomn,xwpmn,label)
+     $           poloout,toroout,wegt,resp,bnomn,xwpmn,label)
             edge_flag=.TRUE.
             CALL ipout_singfld(0,xwpmn,dist,1,1,label)
             CALL ipdiag_xbcontra(0,xwpmn,1,1,label)

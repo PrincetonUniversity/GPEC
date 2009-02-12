@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
 
       REAL(8), DIMENSION(:,:), POINTER :: grdgre,arr,aii,ari,air
 c-----------------------------------------------------------------------
-c     interface block. <MODIFIED>
+c     interface block.
 c-----------------------------------------------------------------------
       INTERFACE
          SUBROUTINE kernel(xobs,zobs,xsce,zsce,grdgre,gren,

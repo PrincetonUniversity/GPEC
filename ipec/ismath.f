@@ -47,10 +47,9 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
-c     complete Fourier transfrom does not work!
+c     complete Fourier transfrom, but slow.
 c-----------------------------------------------------------------------
 c      TYPE(cspline_type) :: cspl
-
 c      DO i=1,ms
 c         CALL cspline_alloc(cspl,fs,1)
 c         cspl%xs=theta
@@ -189,6 +188,11 @@ c-----------------------------------------------------------------------
          DO itheta=0,fs-1
             issurfint = issurfint + 
      $           r(itheta)*jac*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE 
+         DO itheta=0,fs-1
+            issurfint = issurfint + 
+     $           jac*delpsi(itheta)*func(itheta)/r(itheta)/fs
          ENDDO
       ENDIF
 

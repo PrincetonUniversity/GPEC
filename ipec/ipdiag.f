@@ -520,7 +520,7 @@ c-----------------------------------------------------------------------
          DEALLOCATE(cosmn,sinmn,rawmn,hawmn)
       ENDIF
 c-----------------------------------------------------------------------
-c     get the plasma response on the control surface.
+c     get the plasma response on the control surface (CHECK!!!)
 c-----------------------------------------------------------------------
       IF (scale /= 0) binmn=binmn*scale
       ftnmn=binmn

@@ -93,6 +93,8 @@ c-----------------------------------------------------------------------
      $     twopi*ifac*mfac*xvs_mn)/jac
 c-----------------------------------------------------------------------
 c     compute first derivatives of b field.
+c     this is effectively jac*delpsi, but /(chi1*sq%f(4))
+c     that's why (chi1*sq%f(4)) is multiplied twice to j_c later on
 c-----------------------------------------------------------------------
       bwp1_mn=(twopi*ifac*chi1*singfac)/jac*xwp1_mn+
      $     twopi*ifac*chi1*nn*(-sq%f1(4)*jac+sq%f(4)*jac1)/(jac**2)*
@@ -727,8 +729,12 @@ c     weight function.
 c-----------------------------------------------------------------------
       IF (wegt .EQ. 0) THEN
          ftnfun(:)=ftnfun(:)*wgtfun(:)
-      ELSE
+      ELSE IF (wegt .EQ. 1) THEN
          ftnfun(:)=ftnfun(:)/wgtfun(:)
+      ELSE IF (wegt .EQ. 2) THEN
+         ftnfun(:)=ftnfun(:)/sqrt(wgtfun(:))
+      ELSE
+         ftnfun(:)=ftnfun(:)/sqrt(wgtfun(:)*r(:))
       ENDIF
       CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------

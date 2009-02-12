@@ -108,12 +108,12 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: dist
 
       INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,tmlow,tmhigh,tmpert
-      REAL(r8) :: respsi,lpsi,rpsi,sqrpsi,correc,shear
+      REAL(r8) :: respsi,lpsi,rpsi,sqrpsi,correc,shear,areab,lineb
       COMPLEX(r8) :: lnbwp1mn,rnbwp1mn,lcorrec,rcorrec
       CHARACTER(1) :: spolo,storo
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,rfacs,jcfun,wcfun,
-     $     dphi,thetas
+     $     dphi,thetas,units
 
       COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,lcormn,rcormn,
      $     fkaxmn,singflx_mn,singbno_mn,ftnmn
@@ -121,13 +121,15 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,lcorfun,rcorfun,
      $     ftnfun
 
-      REAL(r8), DIMENSION(msing) :: j_c,w_c
+      REAL(r8), DIMENSION(msing) :: area,j_c,w_c
 
       COMPLEX(r8), DIMENSION(msing,mpert) :: deltas,delcurs,corcurs,
-     $     singcurs,singpowers,singbnoflds,islandhwids
+     $     singcurs,singbnoflxs,singbnoflds,islandhwids
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: convmat
       COMPLEX(r8), DIMENSION(msing,mpert,mpert) :: fsurfindmats
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: t1mat,t2mat,t3mat,t4mat
+      COMPLEX(r8), DIMENSION(:), POINTER :: fldflxmn
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: t1mat,t2mat,t3mat,t4mat,
+     $     fldflxmat1,fldflxmat2
       TYPE(spline_type) :: spl 
 
 c-----------------------------------------------------------------------
@@ -142,6 +144,9 @@ c-----------------------------------------------------------------------
       DO ising=1,msing
          respsi=singtype(ising)%psifac
          CALL spline_eval(sq,respsi,0)
+         area(ising)=0
+         j_c(ising)=0
+         w_c(ising)=0
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,respsi,theta(itheta),1)
             rfac=SQRT(rzphi%f(1))
@@ -157,10 +162,12 @@ c-----------------------------------------------------------------------
      $           /(twopi*r(itheta))**2
             jcfun(itheta)=sqreqb(itheta)/(delpsi(itheta)**3)
             wcfun(itheta)=SQRT(jac*sqreqb(itheta))
+            area(ising)=area(ising)+jac*delpsi(itheta)/mthsurf
+            j_c(ising)=j_c(ising)+jac*delpsi(itheta)
+     $           *jcfun(itheta)/mthsurf
+            w_c(ising)=w_c(ising)+0.5*wcfun(itheta)/mthsurf
          ENDDO
-         j_c(ising)=1.0/issurfint(jcfun,mthsurf,respsi,0,0)*
-     $        (chi1*sq%f(4))**2/mu0
-         w_c(ising)=issurfave(wcfun,mthsurf,respsi)
+         j_c(ising)=1.0/j_c(ising)*(chi1*sq%f(4))**2/mu0
          
          CALL ipeq_alloc
          ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
@@ -251,11 +258,11 @@ c-----------------------------------------------------------------------
      $           ifac/mfac(resnum)*deltas(ising,i)
             corcurs(ising,i)=-j_c(ising)*(rcormn(resnum)-lcormn(resnum))
             singcurs(ising,i)=delcurs(ising,i)-corcurs(ising,i)
-            singpowers(ising,i)=w_c(ising)*singcurs(ising,i)
             fkaxmn=0
             fkaxmn(resnum)=-singcurs(ising,i)*chi1/(twopi*ifac*nn)
 
             singflx_mn=MATMUL(fsurfindmats(ising,:,:),fkaxmn)
+            singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
             singbno_mn=singflx_mn
             CALL ipeq_weight(respsi,singbno_mn,mfac,mpert,0)
             ! change resonant field at desired coordinates
@@ -292,6 +299,8 @@ c-----------------------------------------------------------------------
             btfac=sq%f(1)/(twopi*r(itheta))
             bfac=SQRT(bpfac*bpfac+btfac*btfac)
             fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
+            areab = areab + jac*delpsi(itheta)/mthsurf
+            lineb = lineb + jac*delpsi(itheta)/r(itheta)/mthsurf
             SELECT CASE(polo)
             CASE(0)
             spl%fs(itheta,1)=fac*bpfac/rfac
@@ -317,6 +326,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     convert coordinates.
 c-----------------------------------------------------------------------
+         ALLOCATE(fldflxmn(lmpert),
+     $        fldflxmat1(lmpert,lmpert),fldflxmat2(lmpert,lmpert))
          DO i=1,lmpert
             lftnmn=0
             lftnmn(i)=1.0
@@ -335,6 +346,12 @@ c-----------------------------------------------------------------------
             ENDIF
             CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
             convmat(:,i)=ftnmn
+            fldflxmn = lftnmn
+            CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,3)
+            fldflxmat1(:,i)=fldflxmn/sqrt(lineb)
+            fldflxmn = lftnmn
+            CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
+            fldflxmat2(:,i)=fldflxmn/sqrt(areab)
          ENDDO
          tmlow = lmlow
          tmhigh = lmhigh
@@ -342,19 +359,34 @@ c-----------------------------------------------------------------------
          ALLOCATE(t1mat(msing,tmpert),t2mat(msing,tmpert),
      $        t3mat(msing,tmpert),t4mat(msing,tmpert))
          t1mat = MATMUL(singbnoflds,convmat)
-         t2mat = MATMUL(islandhwids,convmat)
-         t3mat = MATMUL(singcurs,convmat)
-         t4mat = MATMUL(singpowers,convmat)
+         t2mat = MATMUL(singbnoflxs,convmat)
+         t3mat = MATMUL(islandhwids,convmat)
+         t4mat = MATMUL(singcurs,convmat)
       ELSE
+         units = (/(1.0,itheta=0,mthsurf)/)
+         areab = issurfint(units,mthsurf,psilim,0,0)
+         lineb = issurfint(units,mthsurf,psilim,2,0)
+         ALLOCATE(fldflxmn(mpert),
+     $        fldflxmat1(mpert,mpert),fldflxmat2(mpert,mpert))
+         DO i=1,mpert
+            ftnmn=0
+            ftnmn(i)=1.0
+            fldflxmn=ftnmn
+            CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,3)
+            fldflxmat1(:,i)=fldflxmn/sqrt(lineb)
+            fldflxmn=ftnmn
+            CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
+            fldflxmat2(:,i)=fldflxmn/sqrt(areab)            
+         ENDDO
          tmlow = mlow
          tmhigh = mhigh
          tmpert = mpert
          ALLOCATE(t1mat(msing,tmpert),t2mat(msing,tmpert),
      $        t3mat(msing,tmpert),t4mat(msing,tmpert))
          t1mat = singbnoflds
-         t2mat = islandhwids
-         t3mat = singcurs
-         t4mat = singpowers
+         t2mat = singbnoflxs
+         t3mat = islandhwids
+         t4mat = singcurs
       ENDIF
 c-----------------------------------------------------------------------
 c     write matrix.
@@ -384,8 +416,17 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,400(e16.8))')
      $        (REAL(t4mat(ising,i)),AIMAG(t4mat(ising,i)),ising=1,msing)
       ENDDO
+      DO i=1,tmpert
+         WRITE(out_unit,'(1x,400(e16.8))')
+     $        (REAL(fldflxmat1(j,i)),AIMAG(fldflxmat1(j,i)),j=1,tmpert)
+      ENDDO
+      DO i=1,tmpert
+         WRITE(out_unit,'(1x,400(e16.8))')
+     $        (REAL(fldflxmat2(j,i)),AIMAG(fldflxmat2(j,i)),j=1,tmpert)
+      ENDDO
       CALL ascii_close(out_unit)
-      DEALLOCATE(t1mat,t2mat,t3mat,t4mat)
+      DEALLOCATE(t1mat,t2mat,t3mat,t4mat,
+     $     fldflxmn,fldflxmat1,fldflxmat2)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -410,33 +451,37 @@ c     __________________________________________________________________
 c     labl       : label for multiple run
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_errfld(rinfile,formattype,left,scale,
-     $     binmn,polo,toro,resp,boutmn,xwpomn,labl)
+     $     binmn,polo,toro,wegt,resp,boutmn,xwpomn,labl)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: left,polo,toro,resp,labl
+      INTEGER, INTENT(IN) :: left,polo,toro,wegt,resp,labl
       REAL(r8), INTENT(IN) :: scale
       CHARACTER(128), INTENT(IN) :: rinfile,formattype
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: binmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: boutmn,xwpomn
 
-      INTEGER :: i,j,i1,i2,i3,ms
+      INTEGER :: i,j,i1,i2,i3,ms,itheta
       INTEGER, DIMENSION(mpert) :: ipiv
-      REAL(r8) :: vengy,sengy,pengy,binfunst,boutfunst
+      REAL(r8) :: vengy,sengy,pengy,binfunst,boutfunst,area,thetai
       COMPLEX(r8) :: vy,sy,py
       CHARACTER(1) :: spolo,storo,sresp,slabl
       CHARACTER(2) :: slabl2
       CHARACTER(128) :: message
 
-      REAL(r8), DIMENSION(0:mthsurf) :: sbinfun,sboutfun
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,thetas,areafac,
+     $     unitfun,sbinfun,sboutfun
 
       COMPLEX(r8), DIMENSION(mpert) :: ftnmn,foutmn
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: hawfun,binfun,boutfun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
 
       REAL(r8), DIMENSION(:,:), POINTER :: cosmn,sinmn
       COMPLEX(r8), DIMENSION(:), POINTER :: hawmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: rawmn
+
+      TYPE(spline_type) :: spl       
+c      TYPE(spline_type) :: areal
 c-----------------------------------------------------------------------
 c     check formattype
 c-----------------------------------------------------------------------
@@ -444,7 +489,7 @@ c-----------------------------------------------------------------------
  1001 FORMAT(1x,33f12.6)
  1010 FORMAT(11(1x,e15.8))
  1020 FORMAT(1x,I4,2(1x,e15.8))
-
+      unitfun = (/(1.0,itheta=0,mthsurf)/)
       IF (edge_flag) THEN
          IF (left == 1) THEN
             i1 = errmmax
@@ -484,17 +529,88 @@ c-----------------------------------------------------------------------
          CALL ascii_close(in_unit)
          rawmn=cosmn+ifac*sinmn
          hawmn=rawmn(:,nn)
-         CALL ipeq_cotoha(psilim,hawmn,lmfac,lmpert,polo,toro)
+
+c-----------------------------------------------------------------------
+c     special case for surfmn. generalization is required.
+c-----------------------------------------------------------------------
+         IF (wegt == 1) THEN
+            CALL spline_alloc(spl,mthsurf,1)
+c            CALL spline_alloc(areal,mthsurf,1)
+            spl%xs=theta
+c            areal%xs=theta
+            CALL spline_eval(sq,psilim,0)
+            DO itheta=0,mthsurf
+               CALL bicube_eval(rzphi,psilim,theta(itheta),1)
+               rfac=SQRT(rzphi%f(1))
+               eta=twopi*(theta(itheta)+rzphi%f(2))
+               r(itheta)=ro+rfac*COS(eta)
+               z(itheta)=zo+rfac*SIN(eta)
+               jac=rzphi%f(4)
+               w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+               w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+               delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+               bpfac=psio*delpsi(itheta)/r(itheta)
+               btfac=sq%f(1)/(twopi*r(itheta))
+               bfac=SQRT(bpfac*bpfac+btfac*btfac)
+               fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
+               ! use real jacobian (q/f)r^3bpfac
+               areafac(itheta)=sq%f(4)/sq%f(1)*twopi*
+     $              r(itheta)**3*bpfac*twopi**2
+               spl%fs(itheta,1)=fac/r(itheta)**2
+c               areal%fs(itheta,1)=areafac(itheta)
+            ENDDO     
+         
+            CALL spline_fit(spl,"periodic")
+            CALL spline_int(spl)
+            ! coordinate angle at hamada angle
+            thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
+            
+            ! diagnose
+c            CALL spline_fit(areal,"periodic")
+c            DO itheta=0,mthsurf
+c               hawfun(itheta)=0
+c               DO i=1,lmpert
+c                  hawfun(itheta)=hawfun(itheta)+
+c     $                 hawmn(i)*EXP(ifac*twopi*lmfac(i)*theta(itheta))
+c               ENDDO
+            ! hamada angle at coordinate angle
+c               thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
+            ! calculate area factor at coordinate angle
+c               CALL spline_eval(areal,thetai,0)
+c               hawfun(itheta)=hawfun(itheta)/areal%f(1)
+c            ENDDO
+c            CALL spline_dealloc(areal)
+
+            CALL spline_dealloc(spl)
+            ! compute given function in hamada angle
+            DO itheta=0,mthsurf
+               hawfun(itheta)=0
+               DO i=1,lmpert
+                  hawfun(itheta)=hawfun(itheta)+
+     $                 hawmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))
+               ENDDO
+               hawfun(itheta)=hawfun(itheta)/areafac(itheta)
+            ENDDO
+
+            CALL iscdftf(lmfac,lmpert,hawfun,mthsurf,hawmn)
+            CALL ipeq_cotoha(psilim,hawmn,lmfac,lmpert,1,0)
+c            CALL ipeq_cotoha(psilim,hawmn,lmfac,lmpert,2,0)
+            area=issurfint(unitfun,mthsurf,psilim,0,0)
+            hawmn = hawmn*area
+         ELSE
+            CALL ipeq_cotoha(psilim,hawmn,lmfac,lmpert,polo,toro)            
+         ENDIF
          binmn=0
          DO i=1,lmpert
             IF ((lmlow-mlow+i>=1).AND.(lmlow-mlow+i<=mpert)) THEN
                binmn(lmlow-mlow+i)=hawmn(i)
             ENDIF
          ENDDO
+                 
          DEALLOCATE(cosmn,sinmn,rawmn,hawmn)
       ENDIF
 c-----------------------------------------------------------------------
-c     get the plasma response on the control surface.
+c     get the plasma response at the control surface.
 c-----------------------------------------------------------------------
       IF (scale /= 0) binmn=binmn*scale
       ftnmn = binmn
@@ -613,19 +729,16 @@ c-----------------------------------------------------------------------
       CHARACTER(2) :: slabl2      
 
       INTEGER, DIMENSION(msing) :: resnum
-      REAL(r8), DIMENSION(msing) :: j_c
+      REAL(r8), DIMENSION(msing) :: area,j_c
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun,
      $     tempcos,tempsin,tempfun
       COMPLEX(r8), DIMENSION(mpert) :: lcormn,rcormn,fkaxmn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,lcorfun,rcorfun
 
-      REAL(r8), DIMENSION(msing) :: singpower,singbnofunst,
-     $     singmaxtor,island_hwidth,chirikov
-      REAL(r8), DIMENSION(0:mthsurf,msing) :: ssingbnofun
+      REAL(r8), DIMENSION(msing) :: singpower,singmaxtor,
+     $     island_hwidth,chirikov
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,corcur,singcur
       COMPLEX(r8), DIMENSION(mpert,msing) :: singbno_mn,singflx_mn
-      COMPLEX(r8), DIMENSION(0:mthsurf,msing) :: singbnofun
-      
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
@@ -639,6 +752,8 @@ c-----------------------------------------------------------------------
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          respsi=singtype(ising)%psifac
          CALL spline_eval(sq,respsi,1)
+         area(ising)=0
+         j_c(ising)=0
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,respsi,theta(itheta),1)
             rfac=SQRT(rzphi%f(1))
@@ -652,9 +767,11 @@ c-----------------------------------------------------------------------
             sqreqb(itheta)=(sq%f(1)**2+chi1**2*delpsi(itheta)**2)
      $           /(twopi*r(itheta))**2
             jcfun(itheta)=sqreqb(itheta)/(delpsi(itheta)**3)
+            area(ising)=area(ising)+jac*delpsi(itheta)/mthsurf
+            j_c(ising)=j_c(ising)+jac*delpsi(itheta)
+     $           *jcfun(itheta)/mthsurf
          ENDDO
-         j_c(ising)=1.0/issurfint(jcfun,mthsurf,respsi,0,0)*
-     $        (chi1*sq%f(4))**2/mu0
+         j_c(ising)=1.0/j_c(ising)*(chi1*sq%f(4))**2/mu0
          shear=mfac(resnum(ising))*sq%f1(4)/sq%f(4)**2
 
          lpsi=respsi-dist/(nn*ABS(singtype(ising)%q1))
@@ -725,19 +842,15 @@ c-----------------------------------------------------------------------
          CALL ipeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
          DEALLOCATE(fsurf_indmats,fsurf_indev)
 c-----------------------------------------------------------------------
-c     compute ideal amplification factor.
-c----------------------------------------------------------------------- 
-         CALL iscdftb(mfac,mpert,singbnofun(:,ising),mthsurf,
-     $        singbno_mn(:,ising))
-         ssingbnofun(:,ising)=ABS(singbnofun(:,ising))**2/2.0
-         singbnofunst(ising)=
-     $        SQRT(issurfint(ssingbnofun(:,ising),mthsurf,respsi,0,1))
-c-----------------------------------------------------------------------
 c     compute half-width of magnetic island.
 c-----------------------------------------------------------------------
          island_hwidth(ising)=
      $        SQRT(ABS(4*singflx_mn(resnum(ising),ising)/
      $        (twopi*shear*sq%f(4)*chi1)))
+c-----------------------------------------------------------------------
+c     compute coordinate-independent resonant field.
+c----------------------------------------------------------------------- 
+         singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)
 c-----------------------------------------------------------------------
 c     compute chirikov parameter.
 c-----------------------------------------------------------------------
@@ -790,7 +903,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a12,1x,I16)')"msing:",msing
       WRITE(out_unit,'(1x,a6,11(1x,a16))')"q","psi",
      $     "abs(delta)","abs(delcur)","abs(corcur)","abs(singcur)",
-     $     "abs(sgpower)","abs(singbno)","singbnost","singmaxtor",
+     $     "abs(sgpower)","abs(singbno)","abs(singflx)","singmaxtor",
      $     "islandhwidth","chirikov"
       DO ising=1,msing
          WRITE(out_unit,'(1x,f6.3,11(1x,e16.8))')
@@ -798,8 +911,8 @@ c-----------------------------------------------------------------------
      $        ABS(delta(ising)),ABS(delcur(ising)),ABS(corcur(ising)),
      $        ABS(singcur(ising)),singpower(ising),
      $        ABS(singbno_mn(resnum(ising),ising)),
-     $        singbnofunst(ising),singmaxtor(ising),
-     $        island_hwidth(ising),chirikov(ising)
+     $        ABS(singflx_mn(resnum(ising),ising)),
+     $        singmaxtor(ising),island_hwidth(ising),chirikov(ising)
       ENDDO
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
