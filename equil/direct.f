@@ -449,6 +449,7 @@ c-----------------------------------------------------------------------
       TYPE(direct_bfield_type) :: bf
 c-----------------------------------------------------------------------
 c     preliminary computations.
+c     here magnetic coordinates are defined
 c-----------------------------------------------------------------------
       cosfac=COS(eta)
       sinfac=SIN(eta)

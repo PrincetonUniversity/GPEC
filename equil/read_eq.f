@@ -5,16 +5,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. read_eq_mod.
-c     1. read_eq_get_flux.
-c     2. read_eq_fluxgrid.
-c     3. read_eq_miller.
-c     4. read_eq_miller4.
-c     5. read_eq_chease.
-c     6. read_eq_chease2.
-c     7 read_eq_chum.
-c     8. read_eq_galkin.
-c     9. read_eq_efit.
+c     0.  read_eq_mod.
+c     1.  read_eq_get_flux.
+c     2.  read_eq_fluxgrid.
+c     3.  read_eq_miller.
+c     4.  read_eq_miller4.
+c     5.  read_eq_chease.
+c     6.  read_eq_chease2.
+c     7   read_eq_chum.
+c     8.  read_eq_galkin.
+c     9.  read_eq_efit.
 c     10. read_eq_rsteq.
 c     11. read_eq_ldp_d.
 c     12. read_eq_ldp_i.

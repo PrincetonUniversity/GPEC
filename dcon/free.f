@@ -437,6 +437,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,0:mthsurf,3) :: bvec0,bvec
 c-----------------------------------------------------------------------
 c     compute Fourier components of magnetic field.
+c     wt = vector of xwp_mn = u
+c     xwp1_mn = xin
+c     xvs_mn = xis
 c-----------------------------------------------------------------------
       xin=MATMUL(nmat,wt)
       xis=MATMUL(smat,wt)

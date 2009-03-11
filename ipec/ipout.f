@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
          thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
          CALL spline_dealloc(spl)
 c-----------------------------------------------------------------------
-c     convert coordinates.
+c     convert coordinates. 
 c-----------------------------------------------------------------------
          ALLOCATE(fldflxmn(lmpert),
      $        fldflxmat1(lmpert,lmpert),fldflxmat2(lmpert,lmpert))
@@ -389,7 +389,7 @@ c-----------------------------------------------------------------------
          t4mat = singcurs
       ENDIF
 c-----------------------------------------------------------------------
-c     write matrix.
+c     write matrix (reversed order for row and column)
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipec_singcoup_matrix_p"//spolo//"_t"
      $     //storo//"_n"//sn//".out","UNKNOWN")
@@ -747,6 +747,9 @@ c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xwpimn)
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
+c     delta is delta*chi1*sq%f(4)
+c     j_c is j_c/(chi1*sq%f(4), and again *chi1 in real current units
+c     singcur is singcur*chi1 in real current units
 c-----------------------------------------------------------------------
       DO ising=1,msing
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
@@ -963,7 +966,6 @@ c-----------------------------------------------------------------------
       ENDIF
 
       CALL idcon_build(egnum,xwpimn)
-      
       CALL ipeq_alloc
       DO istep=1,rstep
 c-----------------------------------------------------------------------
@@ -974,7 +976,7 @@ c-----------------------------------------------------------------------
          CALL ipeq_contra(psis(istep))
          CALL ipeq_cova(psis(istep))
 c-----------------------------------------------------------------------
-c     compute mod b variations.
+c     compute mod b variations in hamada.
 c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
          CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
@@ -989,13 +991,13 @@ c-----------------------------------------------------------------------
      $           eulbparfun(istep,itheta)+
      $           xwp_fun(itheta)*eqfun%fx(1)+xwt_fun(itheta)*eqfun%fy(1)
          ENDDO
-c-----------------------------------------------------------------------
-c     decompose components on the given coordinates.
-c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
      $        mthsurf,eulbpar_mn(istep,:))
          CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
      $        mthsurf,lagbpar_mn(istep,:))
+c-----------------------------------------------------------------------
+c     decompose components on the given coordinates.
+c-----------------------------------------------------------------------
          IF ((polo /= 1).OR.(toro /= 1)) THEN 
             CALL ipeq_hatoco(psis(istep),eulbpar_mn(istep,:),mfac,mpert,
      $           polo,toro)
@@ -1078,7 +1080,6 @@ c-----------------------------------------------------------------------
       brz=0
       brp=0
       CALL idcon_build(egnum,xwpimn)
-
       ! evaluate f value for vacuum
       mid = 0.0
       CALL spline_eval(sq,mid,0)

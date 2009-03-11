@@ -40,7 +40,7 @@ c-----------------------------------------------------------------------
 c     build ideal solutions.
 c-----------------------------------------------------------------------
       ALLOCATE(surfet(4,mpert),surfep(4,mpert),
-     $     surfee(mpert),surfei(mpert),chperr(2,mpert))
+     $     surfee(mpert),surfei(mpert),chperr(2,mpert),chpsqr(4,mpert))
       ALLOCATE(chimats(mpert,mpert),chemats(mpert,mpert),
      $     kaxmats(mpert,mpert),flxmats(mpert,mpert),
      $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert))
@@ -79,6 +79,9 @@ c-----------------------------------------------------------------------
             chptsq=SUM(REAL(CONJG(chpwmn(j,:))*chp_mn(2*j-1,:),r8))
             chpdsq=SUM(REAL(CONJG(chpwif(j,:))*chpdif(j,:),r8))
             chperr(j,i)=SQRT(chpdsq/chptsq)
+         ENDDO
+         DO j=1,4
+            chpsqr(j,i)=SUM(REAL(CONJG(chp_mn(j,:))*chp_mn(j,:),r8))
          ENDDO
 c-----------------------------------------------------------------------
 c     compute surface energy.

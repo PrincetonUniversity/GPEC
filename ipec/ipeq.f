@@ -80,6 +80,7 @@ c-----------------------------------------------------------------------
       CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
 c-----------------------------------------------------------------------
 c     compute basic perturbed quantities.
+c     xvs_mn = -a^{-1}b*xwp1_mn - a^{-1}c*xwp_mn
 c-----------------------------------------------------------------------
       xvs_mn=-MATMUL(bmat,xwp1_mn)-MATMUL(cmat,xwp_mn)
       xwt_mn=-(nn*xvs_mn/chi1+jac1/(twopi*ifac*jac)
@@ -93,8 +94,9 @@ c-----------------------------------------------------------------------
      $     twopi*ifac*mfac*xvs_mn)/jac
 c-----------------------------------------------------------------------
 c     compute first derivatives of b field.
-c     this is effectively jac*delpsi, but /(chi1*sq%f(4))
+c     this is effectively jac*delpsi, but /(chi1*sq%f(4)) here
 c     that's why (chi1*sq%f(4)) is multiplied twice to j_c later on
+c     same at the rational surface, but not in other place
 c-----------------------------------------------------------------------
       bwp1_mn=(twopi*ifac*chi1*singfac)/jac*xwp1_mn+
      $     twopi*ifac*chi1*nn*(-sq%f1(4)*jac+sq%f(4)*jac1)/(jac**2)*

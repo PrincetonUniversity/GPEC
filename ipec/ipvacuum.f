@@ -306,6 +306,7 @@ c-----------------------------------------------------------------------
       CALL grrget(nfm2,nths2,vgrre)
 c-----------------------------------------------------------------------
 c     construct surface inductance matrix for specified boundary.
+c     what is the last point? check!!
 c-----------------------------------------------------------------------
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
      $     grre_real(nths2),grre_imag(nths2))

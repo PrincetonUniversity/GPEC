@@ -93,6 +93,12 @@ c-----------------------------------------------------------------------
       DO i=1,mpert
          WRITE(out_unit,'(2x,I4,2(2x,e12.3))')i,chperr(1,i),chperr(2,i)
       ENDDO
+      WRITE(out_unit,'(2x,a4,4(2x,a12))')
+     $     "mode","chpsqr1","chpsqr2","chpsqr3","chpsqr4"
+      DO i=1,mpert
+         WRITE(out_unit,'(2x,I4,4(2x,e12.3))')
+     $        i,chpsqr(1,i),chpsqr(2,i),chpsqr(3,i),chpsqr(4,i)
+      ENDDO
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -825,6 +831,7 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,ipert
       CHARACTER(1) :: spolo,storo,slabl
       CHARACTER(2) :: slabl2
+      COMPLEX(r8), DIMENSION(mpert) :: xwd_mn
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -851,13 +858,16 @@ c-----------------------------------------------------------------------
       DO istep=0,mstep
          WRITE(out_unit,'(2(2x,e16.9))')psifac(istep),qfac(istep)
       ENDDO
-      WRITE(out_unit,'(14(2x,a16))')
+      WRITE(out_unit,'(18(2x,a16))')
      $     "xwp(real)","xwp(imag)","xwt(real)","xwt(imag)",
      $     "xwz(real)","xwz(imag)","bwp(real)","bwp(imag)",
      $     "bwt(real)","bwt(imag)","bwz(real)","bwz(imag)",
-     $     "xvs(real)","xvs(imag)"
+     $     "xvs(real)","xvs(imag)","xwd(real)","xwd(imag)",
+     $     "xwp1(real)","xwp1(imag)"
       DO istep=0,mstep
          CALL ipeq_contra(psifac(istep))
+         CALL cspline_eval(u1,psifac(istep),1)
+         xwd_mn(:)=u1%f1(:)
          IF ((polo /= 1).OR.(toro /= 1)) THEN 
             CALL ipeq_hatoco(psifac(istep),xwp_mn,mfac,mpert,polo,toro)
             CALL ipeq_hatoco(psifac(istep),xwt_mn,mfac,mpert,polo,toro) 
@@ -866,16 +876,20 @@ c-----------------------------------------------------------------------
             CALL ipeq_hatoco(psifac(istep),bwt_mn,mfac,mpert,polo,toro) 
             CALL ipeq_hatoco(psifac(istep),bwz_mn,mfac,mpert,polo,toro)
             CALL ipeq_hatoco(psifac(istep),xvs_mn,mfac,mpert,polo,toro)
+            CALL ipeq_hatoco(psifac(istep),xwd_mn,mfac,mpert,polo,toro)
+            CALL ipeq_hatoco(psifac(istep),xwp1_mn,mfac,mpert,polo,toro)
          ENDIF
          DO ipert=1,mpert
-            WRITE(out_unit,'(14(2x,e16.9))')
+            WRITE(out_unit,'(18(2x,e16.9))')
      $           REAL(xwp_mn(ipert)),AIMAG(xwp_mn(ipert)),
      $           REAL(xwt_mn(ipert)),AIMAG(xwt_mn(ipert)),
      $           REAL(xwz_mn(ipert)),AIMAG(xwz_mn(ipert)),
      $           REAL(bwp_mn(ipert)),AIMAG(bwp_mn(ipert)),
      $           REAL(bwt_mn(ipert)),AIMAG(bwt_mn(ipert)),
      $           REAL(bwz_mn(ipert)),AIMAG(bwz_mn(ipert)),
-     $           REAL(xvs_mn(ipert)),AIMAG(xvs_mn(ipert))
+     $           REAL(xvs_mn(ipert)),AIMAG(xvs_mn(ipert)),
+     $           REAL(xwd_mn(ipert)),AIMAG(xwd_mn(ipert)),
+     $           REAL(xwp1_mn(ipert)),AIMAG(xwp1_mn(ipert))
          ENDDO
       ENDDO
       CALL ipeq_dealloc
@@ -1145,6 +1159,10 @@ c-----------------------------------------------------------------------
          norvec(ithnum)=(cos(eta)*w(1,1)-sin(eta)*w(1,2))/delpsi(ithnum)
          nozvec(ithnum)=(sin(eta)*w(1,1)+cos(eta)*w(1,2))/delpsi(ithnum)
       ENDDO
+c-----------------------------------------------------------------------
+c     build solutions.
+c-----------------------------------------------------------------------
+      CALL idcon_build(egnum,xwpimn)
       CALL ipeq_alloc
       CALL ipeq_contra(psilim)
       CALL ipeq_normal(psilim)
@@ -1494,16 +1512,20 @@ c-----------------------------------------------------------------------
      $     bvt_fun,bvz_fun
 
       REAL(r8), DIMENSION(:), POINTER :: psis
-      REAL(r8), DIMENSION(:,:), POINTER :: rs,zs
+      REAL(r8), DIMENSION(:,:), POINTER :: rs,zs,eqfunx,eqfuny,eqfuns
       COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbpar_mn,lagbpar_mn,
-     $     eulbparfun,lagbparfun
+     $     eulbparfun,lagbparfun,xwpfun,xwtfun,bvtfun,bvzfun
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"computing perturbed b field"
       ALLOCATE(psis(rstep),rs(rstep,0:mthsurf),zs(rstep,0:mthsurf),
      $     eulbpar_mn(rstep,mpert),lagbpar_mn(rstep,mpert),
-     $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf))
+     $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf),
+     $     xwpfun(rstep,0:mthsurf),xwtfun(rstep,0:mthsurf),
+     $     bvtfun(rstep,0:mthsurf),bvzfun(rstep,0:mthsurf),
+     $     eqfunx(rstep,0:mthsurf),eqfuny(rstep,0:mthsurf),
+     $     eqfuns(rstep,0:mthsurf))
 
       IF (rstep .EQ. mstep) THEN
          psis=psifac
@@ -1529,8 +1551,15 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+         xwpfun(istep,:)=xwp_fun
+         xwtfun(istep,:)=xwt_fun
+         bvtfun(istep,:)=bvt_fun
+         bvzfun(istep,:)=bvz_fun         
          DO itheta=0,mthsurf
             CALL bicube_eval(eqfun,psis(istep),theta(itheta),1)
+            eqfuns(istep,itheta)=eqfun%f(1)
+            eqfunx(istep,itheta)=eqfun%fx(1)
+            eqfuny(istep,itheta)=eqfun%fy(1)
             eulbparfun(istep,itheta)=
      $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
      $           /(ffun%f(1)*eqfun%f(1))
@@ -1541,16 +1570,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     decompose components on the given coordinates.
 c-----------------------------------------------------------------------
-         CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
-     $        mthsurf,eulbpar_mn(istep,:))
-         CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
-     $        mthsurf,lagbpar_mn(istep,:))
-         eulbpar=eulbpar_mn(istep,:)
-         lagbpar=lagbpar_mn(istep,:)
-         CALL ipeq_hatoco(psis(istep),eulbpar,mfac,mpert,1,0)
-         CALL ipeq_hatoco(psis(istep),lagbpar,mfac,mpert,1,0)
-         CALL iscdftb(mfac,mpert,eulbparfun(istep,:),mthsurf,eulbpar)
-         CALL iscdftb(mfac,mpert,lagbparfun(istep,:),mthsurf,lagbpar)
+c         CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
+c     $        mthsurf,eulbpar_mn(istep,:))
+c         CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
+c     $        mthsurf,lagbpar_mn(istep,:))
+c         eulbpar=eulbpar_mn(istep,:)
+c         lagbpar=lagbpar_mn(istep,:)
+c         CALL ipeq_hatoco(psis(istep),eulbpar,mfac,mpert,1,0)
+c         CALL ipeq_hatoco(psis(istep),lagbpar,mfac,mpert,1,0)
+c         CALL iscdftb(mfac,mpert,eulbparfun(istep,:),mthsurf,eulbpar)
+c         CALL iscdftb(mfac,mpert,lagbparfun(istep,:),mthsurf,lagbpar)
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psis(istep),theta(itheta),0)
             rfac=SQRT(rzphi%f(1))
@@ -1559,7 +1588,6 @@ c-----------------------------------------------------------------------
             zs(istep,itheta)=zo+rfac*SIN(eta) 
          ENDDO
       ENDDO
-      CALL ipeq_dealloc
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------
@@ -1570,20 +1598,36 @@ c-----------------------------------------------------------------------
      $     "perturbed mod b on a poloidal plane"
       WRITE(out_unit,'(2x,a8,2x,I4)')"rstep:",rstep
       WRITE(out_unit,'(2x,a8,2x,I4)')"mthsurf:",mthsurf
-      WRITE(out_unit,'(6(2x,a12))')"r","z",
-     $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)"
+      WRITE(out_unit,'(17(2x,a12))')"r","z",
+     $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
+     $     "real(xwp)","imag(xwp)","real(xwt)","imag(xwt)",
+     $     "real(bvt)","imag(bvt)","real(bvz)","imag(bvz)",
+     $     "eqfunx","eqfuny","eqfuns"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(6(2x,e12.3))')
+            WRITE(out_unit,'(17(2x,e12.3))')
      $           rs(istep,itheta),zs(istep,itheta),
      $           REAL(eulbparfun(istep,itheta)),
      $           AIMAG(eulbparfun(istep,itheta)),
      $           REAL(lagbparfun(istep,itheta)),
-     $           AIMAG(lagbparfun(istep,itheta))
+     $           AIMAG(lagbparfun(istep,itheta)),
+     $           REAL(xwpfun(istep,itheta)),
+     $           AIMAG(xwpfun(istep,itheta)),
+     $           REAL(xwtfun(istep,itheta)),
+     $           AIMAG(xwtfun(istep,itheta)),
+     $           REAL(bvtfun(istep,itheta)),
+     $           AIMAG(bvtfun(istep,itheta)),
+     $           REAL(bvzfun(istep,itheta)),
+     $           AIMAG(bvzfun(istep,itheta)),
+     $           eqfunx(istep,itheta),eqfuny(istep,itheta),
+     $           eqfuns(istep,itheta)
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-      DEALLOCATE(psis,rs,zs,eulbpar_mn,lagbpar_mn,eulbparfun,lagbparfun)
+      CALL ipeq_dealloc
+      DEALLOCATE(psis,rs,zs,eulbpar_mn,lagbpar_mn,
+     $     eulbparfun,lagbparfun,eqfunx,eqfuny,eqfuns,
+     $     xwpfun,xwtfun,bvtfun,bvzfun)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

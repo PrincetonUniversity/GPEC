@@ -222,8 +222,7 @@ c-----------------------------------------------------------------------
                dmat(ipert,jpert)=twopi*chi1*(g23(dm)+g33(dm)*m1/nn)
                emat(ipert,jpert)=-chi1/nn*(q1*chi1*g33(dm)
      $              -twopi*ifac*chi1*g31(dm)*singfac2
-     $              +jtheta*imat(dm)
-     $              )
+     $              +jtheta*imat(dm))
                hmat(ipert,jpert)=(q1*chi1)**2*g33(dm)
      $              +(twopi*chi1)**2*singfac1*singfac2*g11(dm)
      $              -twopi*ifac*chi1*dm*q1*chi1*g31(dm)

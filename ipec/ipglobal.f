@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
      $     r,z,theta,et,ep,ee,surfee,surfei,
      $     surf_indev,vsurf_indev,fsurf_indev
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
-     $     chperr,plas_indev,reluctev,grri,grre,
+     $     chperr,chpsqr,plas_indev,reluctev,grri,grre,
      $     gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
