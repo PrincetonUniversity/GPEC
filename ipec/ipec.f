@@ -23,7 +23,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: majr,minr,scale,rdist,smallwidth,factor,fp,normpsi
       CHARACTER(128) :: infile,formattype
       LOGICAL :: erdata_flag,mode_flag,response_flag,singcoup_flag,
-     $     singfld_flag,pmodb_flag,xbrzphi_flag,
+     $     singfld_flag,pmodb_flag,pmodb0_flag,xbrzphi_flag,
      $     nrzeq_flag,extp_flag,extt_flag,singcurs_flag,
      $     xbcontra_flag,xbnormal_flag,xbnovc_flag,xbnobo_flag,
      $     d3_flag,xbnorm_flag,pmodbst_flag,pmodbrz_flag,rzphibx_flag,
@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
      $     poloin,toroin,infnum,infiles,mode_flag,modemin,modemax
       NAMELIST/ipec_control/response_flag,dist,bdist,modelnum
       NAMELIST/ipec_output/singcoup_flag,
-     $     singfld_flag,pmodb_flag,rstep,poloout,toroout,
+     $     singfld_flag,pmodb_flag,pmodb0_flag,rstep,poloout,toroout,
      $     xbrzphi_flag,nrzeq_flag,nr,nz,extt_flag,extp_flag,labl
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,xbnormal_flag,
      $     xbnovc_flag,xbnobo_flag,d3_flag,xbnorm_flag,
@@ -122,6 +122,9 @@ c-----------------------------------------------------------------------
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
             ENDIF
+            IF (pmodb0_flag) THEN
+               CALL ipout_pmodb0(0,xwpmn,poloout,toroout,label)
+            ENDIF
             IF (xbrzphi_flag) THEN
                IF (nrzeq_flag) THEN
                   nr=mr
@@ -193,6 +196,9 @@ c-----------------------------------------------------------------------
             ENDIF
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
+            ENDIF
+            IF (pmodb0_flag) THEN
+               CALL ipout_pmodb0(0,xwpmn,poloout,toroout,label)
             ENDIF
             IF (xbrzphi_flag) THEN
                IF (nrzeq_flag) THEN

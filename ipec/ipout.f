@@ -925,7 +925,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE ipout_singfld
 c-----------------------------------------------------------------------
 c     subprogram 5. ipout_pmodb.
-c     compute perturbed mod b.
+c     compute real perturbed mod b.
 c     __________________________________________________________________
 c     egnum  : eigenmode number without edge_flag
 c     xwpimn : edge deformation input when edge_flag
@@ -1044,6 +1044,134 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_pmodb
+c-----------------------------------------------------------------------
+c     subprogram 5. ipout_pmodb0.
+c     compute model perturbed mod b.
+c     __________________________________________________________________
+c     egnum  : eigenmode number without edge_flag
+c     xwpimn : edge deformation input when edge_flag
+c     polo   : poloidal angle coordinates for decomposition
+c     toro   : toroidal angle coordinates for decomposition
+c     __________________________________________________________________
+c     labl   : label for multiple runs   
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_pmodb0(egnum,xwpimn,polo,toro,labl)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: egnum,polo,toro,labl
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
+
+      INTEGER :: istep,ipert,itheta
+      REAL(r8) :: mid,bt0
+      CHARACTER(1) :: spolo,storo,slabl
+      CHARACTER(2) :: slabl2
+
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,xwt_fun,
+     $     bvt_fun,bvz_fun
+
+      REAL(r8), DIMENSION(:), POINTER :: psis
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbpar_mn,lagbpar_mn,
+     $     eulbparfun,lagbparfun
+c-----------------------------------------------------------------------
+c     compute necessary components.
+c     resolve r0 and bt0 problems later.
+c-----------------------------------------------------------------------
+      WRITE(*,*)"computing perturbed b field"
+      ALLOCATE(psis(rstep),
+     $     eulbpar_mn(rstep,mpert),lagbpar_mn(rstep,mpert),
+     $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf))
+
+      IF (rstep .EQ. mstep) THEN
+         psis=psifac
+      ELSE
+         psis=(/(istep,istep=1,rstep)/)/REAL(rstep,r8)*(psilim-psilow)
+      ENDIF
+
+      mid = 0.0
+      CALL spline_eval(sq,mid,0)
+      bt0 = abs(sq%f(1))/(twopi*ro)
+
+      CALL idcon_build(egnum,xwpimn)
+      CALL ipeq_alloc
+      DO istep=1,rstep
+c-----------------------------------------------------------------------
+c     compute functions on magnetic surfaces with regulation.
+c-----------------------------------------------------------------------
+         CALL spline_eval(ffun,psis(istep),0)
+         CALL spline_eval(sq,psis(istep),1)
+         CALL ipeq_contra(psis(istep))
+         CALL ipeq_cova(psis(istep))
+c-----------------------------------------------------------------------
+c     compute mod b variations in hamada.
+c-----------------------------------------------------------------------
+         CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
+         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+         CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
+         CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+         DO itheta=0,mthsurf
+            CALL bicube_eval(eqfun,psis(istep),theta(itheta),1)
+            eulbparfun(istep,itheta)=
+     $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
+     $           /(ffun%f(1)*bt0)
+            lagbparfun(istep,itheta)=
+     $           eulbparfun(istep,itheta)+
+     $           (xwp_fun(itheta)*eqfun%fx(1)+
+     $           xwt_fun(itheta)*eqfun%fy(1))*(eqfun%f(1)/bt0)
+         ENDDO
+         CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
+     $        mthsurf,eulbpar_mn(istep,:))
+         CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
+     $        mthsurf,lagbpar_mn(istep,:))
+c-----------------------------------------------------------------------
+c     decompose components on the given coordinates.
+c-----------------------------------------------------------------------
+         IF ((polo /= 1).OR.(toro /= 1)) THEN 
+            CALL ipeq_hatoco(psis(istep),eulbpar_mn(istep,:),mfac,mpert,
+     $           polo,toro)
+            CALL ipeq_hatoco(psis(istep),lagbpar_mn(istep,:),mfac,mpert,
+     $           polo,toro)
+         ENDIF
+      ENDDO
+      CALL ipeq_dealloc
+c-----------------------------------------------------------------------
+c     write data.
+c-----------------------------------------------------------------------
+      WRITE(UNIT=spolo, FMT='(I1)')polo
+      WRITE(UNIT=storo, FMT='(I1)')toro
+      IF (labl < 10) THEN
+         WRITE(UNIT=slabl, FMT='(I1)')labl            
+         CALL ascii_open(out_unit,"ipec_pmodb0mn_p"//spolo//"_t"
+     $        //storo//"_l"//slabl//"_n"//sn//".out","UNKNOWN")
+      ELSE
+         WRITE(UNIT=slabl2, FMT='(I2)')labl            
+         CALL ascii_open(out_unit,"ipec_pmodb0mn_p"//spolo//"_t"
+     $        //storo//"_l"//slabl2//"_n"//sn//".out","UNKNOWN")
+      ENDIF      
+
+      WRITE(out_unit,*)"IPEC_PMODBMN0: "//
+     $     "components in perturbed mod b on flux surfaces"
+      WRITE(out_unit,'(1x,a8,1x,I6)')"rstep:",rstep
+      WRITE(out_unit,'(1x,a8,1x,I6)')"mpert:",mpert
+      WRITE(out_unit,'(6(1x,a12))')"psi","mfac",
+     $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)"
+      DO istep=1,rstep
+         DO ipert=1,mpert
+            WRITE(out_unit,'(1x,e16.8,1x,I16,4(1x,e16.8))')
+     $           psis(istep),mfac(ipert),
+     $           REAL(eulbpar_mn(istep,ipert)),
+     $           AIMAG(eulbpar_mn(istep,ipert)),
+     $           REAL(lagbpar_mn(istep,ipert)),
+     $           AIMAG(lagbpar_mn(istep,ipert))
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_unit)
+      DEALLOCATE(psis,eulbpar_mn,lagbpar_mn,eulbparfun,lagbparfun)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_pmodb0
 c-----------------------------------------------------------------------
 c     subprogram 6. ipout_xbrzphi.
 c     write perturbed rzphi components on rzphi grid.

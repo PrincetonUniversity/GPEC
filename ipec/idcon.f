@@ -426,6 +426,7 @@ c-----------------------------------------------------------------------
             delpsi=SQRT(w11**2+w12**2)
 c-----------------------------------------------------------------------
 c     compute (real) contravariant basis vectors.
+c     this is different from original dcon.
 c-----------------------------------------------------------------------
             v(1,1)=rzphi%fx(1)/(2*rfac)
             v(1,2)=rzphi%fx(2)*twopi*rfac
@@ -436,6 +437,7 @@ c-----------------------------------------------------------------------
             v(3,3)=twopi*rr
 c-----------------------------------------------------------------------
 c     compute metric tensor components.
+c     this is also different from original dcon
 c-----------------------------------------------------------------------
             metric%fs(ipsi,itheta,1)=SUM(v(1,:)**2)
             metric%fs(ipsi,itheta,2)=SUM(v(2,:)**2)
@@ -447,6 +449,7 @@ c-----------------------------------------------------------------------
             metric%fs(ipsi,itheta,8)=jac1
 c-----------------------------------------------------------------------
 c     compute equilibrium mod b.
+c     sq%f(1) = twopi*f
 c-----------------------------------------------------------------------
             eqfun%fs(ipsi,itheta,1)=SQRT(
      $           (sq%f(1)**2+chi1**2*delpsi**2)/(twopi*rr)**2)
@@ -578,7 +581,7 @@ c-----------------------------------------------------------------------
          CALL ipec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
-c     compute composite matrices fgk.
+c     compute composite matrices fgk, different from dcon notes.
 c     f = f - da^{-1}d
 c     k = e - ka^{-1}c
 c     g = h - ca^{-1}c

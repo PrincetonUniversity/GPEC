@@ -147,26 +147,23 @@ c-----------------------------------------------------------------------
          vbwp_mn(i)=1.0
          CALL iscdftb(vmfac,vmpert,vbwp_fun,vmtheta,vbwp_mn)
          vbwp_fun=vbwp_fun*jac
-         DO itheta=0,vmtheta-1
+         DO itheta=0,vmtheta
             rtheta=vmtheta-itheta
-            rbwp_fun(itheta+1)=CONJG(vbwp_fun(rtheta))
+            rbwp_fun(itheta)=CONJG(vbwp_fun(rtheta))
          ENDDO
-         rbwp_fun(0)=rbwp_fun(vmtheta)
          CALL iscdftf(vmfac,vmpert,rbwp_fun,vmtheta,rbwp_mn)
          grri_real=MATMUL(vgrri,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grri_imag=MATMUL(vgrri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
          grre_real=MATMUL(vgrre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/)) 
                   
-         DO itheta=0,vmtheta-1
+         DO itheta=0,vmtheta
             rtheta=vmtheta-itheta
-            chi_fun(itheta+1)=(grri_real(rtheta)-
-     $           ifac*grri_imag(rtheta))*EXP(-ifac*vn*dphi(itheta+1))
-            che_fun(itheta+1)=(grre_real(rtheta)-
-     $           ifac*grre_imag(rtheta))*EXP(-ifac*vn*dphi(itheta+1))
+            chi_fun(itheta)=(grri_real(rtheta)-
+     $           ifac*grri_imag(rtheta))*EXP(-ifac*vn*dphi(itheta))
+            che_fun(itheta)=(grre_real(rtheta)-
+     $           ifac*grre_imag(rtheta))*EXP(-ifac*vn*dphi(itheta))
          ENDDO
-         chi_fun(0)=chi_fun(vmtheta)
-         che_fun(0)=che_fun(vmtheta)
          chi_fun=chi_fun/(twopi**2)
          che_fun=-che_fun/(twopi**2)
          IF (vmfac(i) == 0) THEN
@@ -329,23 +326,22 @@ c-----------------------------------------------------------------------
          bwp_mn=0
          bwp_mn(i)=1.0
          CALL iscdftb(mfac,mpert,bwp_fun,mthvac,bwp_mn)
-         DO itheta=0,mthvac-1
+         DO itheta=0,mthvac
             rtheta=mthvac-itheta
-            rbwp_fun(itheta+1)=CONJG(bwp_fun(rtheta))
+            rbwp_fun(itheta)=CONJG(bwp_fun(rtheta))
          ENDDO
-         rbwp_fun(0)=rbwp_fun(mthvac)
          CALL iscdftf(mfac,mpert,rbwp_fun,mthvac,rbwp_mn)
          grri_real=MATMUL(vgrri,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grri_imag=MATMUL(vgrri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
          grre_real=MATMUL(vgrre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))            
          
-         DO itheta=0,mthvac-1
+         DO itheta=0,mthvac
             rtheta=mthvac-itheta
-            chi_fun(itheta+1)=(grri_real(rtheta)-
-     $           ifac*grri_imag(rtheta))*EXP(-ifac*nn*dphi(itheta+1))
-            che_fun(itheta+1)=(grre_real(rtheta)-
-     $           ifac*grre_imag(rtheta))*EXP(-ifac*nn*dphi(itheta+1))
+            chi_fun(itheta)=(grri_real(rtheta)-
+     $           ifac*grri_imag(rtheta))*EXP(-ifac*nn*dphi(itheta))
+            che_fun(itheta)=(grre_real(rtheta)-
+     $           ifac*grre_imag(rtheta))*EXP(-ifac*nn*dphi(itheta))
          ENDDO
          chi_fun(0)=chi_fun(mthvac)
          che_fun(0)=che_fun(mthvac)

@@ -458,6 +458,9 @@ c-----------------------------------------------------------------------
       ENDDO
 c-----------------------------------------------------------------------
 c     normalize chi functions of vacuum.
+c     since vacuum code takes input as jac*bwp_mn,
+c     but jacobian is different by two angles.
+c     only hamada coordinates work in this method.
 c-----------------------------------------------------------------------
       chi_fun=chi_fun*jac/(twopi**2)
       che_fun=-che_fun*jac/(twopi**2)
