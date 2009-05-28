@@ -1,0 +1,31 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+ahb.bin
+
+graph title:	ham
+
+variable names
+0	theta
+1	re bn
+2	re bp
+3	re bt
+4	im bn
+5	im bp
+6	im bt
+7	theta_hamada
+8	theta_pest
+9	theta_equal_arc
+10	theta_boozer
+11	dtheta_hamada
+12	dtheta_pest
+13	dtheta_equal_arc
+14	dtheta_boozer
+
+ix	iy	title
+7	1	"Real b_normal
+7	2	"Real b_poloidal
+7	3	"Real b_toroidal
+7	4	"Imag b_normal
+7	5	"Imag b_poloidal
+7	6	"Imag b_toroidal

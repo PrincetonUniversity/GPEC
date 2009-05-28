@@ -1,0 +1,22 @@
+&dir_input
+	indir="..\/equilibria\/jsolver\/run03"
+	outdir="results/run03/nn=2"
+/
+
+&outer_input
+	varname="eq_filename"
+	format="f4.0"
+	value0=0
+	dvalue=0
+	nvalue=0
+	type="dir"
+/
+
+&inner_input
+	varname="psihigh"
+	format="f6.2"
+	value0=.9
+	dvalue=.01
+	nvalue=2
+	type="none"
+/

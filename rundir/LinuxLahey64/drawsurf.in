@@ -1,0 +1,37 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+surface.bin
+
+graph title:	ham
+
+variable names
+0	theta
+1	re tn
+2	re tp
+3	re tt
+4	im tn
+5	im tp
+6	im tt
+7	re bn
+8	re bp
+9	re bt
+10	im bn
+11	im bp
+12	im bt
+13	theta_hamada
+14	theta_pest
+15	theta_equal_arc
+16	theta_boozer
+17	dtheta_hamada
+18	dtheta_pest
+19	dtheta_equal_arc
+20	dtheta_boozer
+
+ix	iy	title
+13	7	"Real b_normal
+13	8	"Real b_poloidal
+13	9	"Real b_toroidal
+13	10	"Imag b_normal
+13	11	"Imag b_poloidal
+13	12	"Imag b_toroidal

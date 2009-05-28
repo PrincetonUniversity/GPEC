@@ -1,0 +1,52 @@
+# This is the makefile for DCON on LinuxLahey computers.
+
+FFLAGS = -I../equil -g
+F90 = lfc $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+LIBDIR = \
+	-L../lib/LinuxLahey64 \
+	-L/usr/pppl/lff95/8.x86_64-pkgs/lapack-3.1.1.x86_64
+
+LIBS = \
+	$(LIBDIR) \
+	-llsode \
+	-lequil \
+	-lvac \
+	-llapack \
+	-lblas
+
+OBJS = \
+	debug.o \
+	dcon_mod.o \
+	mercier.o \
+	bal.o \
+	fourfit.o \
+	sing.o \
+	ode_output.o \
+	ode.o \
+	free.o \
+	resist.o \
+	dcon.o
+
+dcon: $(OBJS)
+	$(F90) -o dcon $(OBJS) $(LIBS)
+
+# dependencies
+
+dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
+	../equil/equil_mod.mod ../equil/equil_out_mod.mod
+mercier.o: dcon_mod.o
+bal.o: dcon_mod.o
+fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
+sing.o: fourfit.o
+ode_output.o: sing.o debug.o
+ode.o: ode_output.o
+free.o: ode.o
+resist.o: dcon_mod.o
+dcon.o: bal.o mercier.o ode.o free.o resist.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff dcon

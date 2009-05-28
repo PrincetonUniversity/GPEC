@@ -1,0 +1,23 @@
+Type (G=Graph, C=Contour):	G
+
+filename  
+diffw.bin
+
+graph title:	ham
+
+variable names
+0	m
+1	re diffw
+2	im diffw
+3	re bctheta
+4	im bctheta
+5	re bczeta
+6	im bczeta
+
+ix	iy	title
+0	1	"Real difference
+0	2	"Imag difference
+0	3	"Real bctheta
+0	4	"Imag bctheta
+0	5	"Real bczeta
+0	6	"Imag bczeta
