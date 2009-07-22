@@ -108,7 +108,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: dist
 
       INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,tmlow,tmhigh,tmpert
-      REAL(r8) :: respsi,lpsi,rpsi,sqrpsi,correc,shear,areab,lineb
+      REAL(r8) :: respsi,lpsi,rpsi,sqrpsi,correc,shear,areab
       COMPLEX(r8) :: lnbwp1mn,rnbwp1mn,lcorrec,rcorrec
       CHARACTER(1) :: spolo,storo
 
@@ -128,10 +128,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: convmat
       COMPLEX(r8), DIMENSION(msing,mpert,mpert) :: fsurfindmats
       COMPLEX(r8), DIMENSION(:), POINTER :: fldflxmn
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: t1mat,t2mat,t3mat,t4mat,
-     $     fldflxmat1,fldflxmat2
+      COMPLEX(r8), DIMENSION(:,:), POINTER ::  fldflxmat,
+     $     t1mat,t2mat,t3mat,t4mat
       TYPE(spline_type) :: spl 
-
 c-----------------------------------------------------------------------
 c     compute characteristic currents with normalization.
 c-----------------------------------------------------------------------
@@ -257,9 +256,11 @@ c-----------------------------------------------------------------------
             delcurs(ising,i)=j_c(ising)*
      $           ifac/mfac(resnum)*deltas(ising,i)
             corcurs(ising,i)=-j_c(ising)*(rcormn(resnum)-lcormn(resnum))
+            delcurs(ising,i)=-delcurs(ising,i)*chi1/(twopi*ifac*nn) 
+            corcurs(ising,i)=-corcurs(ising,i)*chi1/(twopi*ifac*nn) 
             singcurs(ising,i)=delcurs(ising,i)-corcurs(ising,i)
             fkaxmn=0
-            fkaxmn(resnum)=-singcurs(ising,i)*chi1/(twopi*ifac*nn)
+            fkaxmn(resnum)=singcurs(ising,i)
 
             singflx_mn=MATMUL(fsurfindmats(ising,:,:),fkaxmn)
             singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
@@ -300,7 +301,6 @@ c-----------------------------------------------------------------------
             bfac=SQRT(bpfac*bpfac+btfac*btfac)
             fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
             areab = areab + jac*delpsi(itheta)/mthsurf
-            lineb = lineb + jac*delpsi(itheta)/r(itheta)/mthsurf
             SELECT CASE(polo)
             CASE(0)
             spl%fs(itheta,1)=fac*bpfac/rfac
@@ -326,8 +326,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     convert coordinates. 
 c-----------------------------------------------------------------------
-         ALLOCATE(fldflxmn(lmpert),
-     $        fldflxmat1(lmpert,lmpert),fldflxmat2(lmpert,lmpert))
+         ALLOCATE(fldflxmn(lmpert),fldflxmat(lmpert,lmpert))
          DO i=1,lmpert
             lftnmn=0
             lftnmn(i)=1.0
@@ -347,11 +346,8 @@ c-----------------------------------------------------------------------
             CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
             convmat(:,i)=ftnmn
             fldflxmn = lftnmn
-            CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,3)
-            fldflxmat1(:,i)=fldflxmn/sqrt(lineb)
-            fldflxmn = lftnmn
             CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
-            fldflxmat2(:,i)=fldflxmn/sqrt(areab)
+            fldflxmat(:,i)=fldflxmn/sqrt(areab)
          ENDDO
          tmlow = lmlow
          tmhigh = lmhigh
@@ -365,18 +361,13 @@ c-----------------------------------------------------------------------
       ELSE
          units = (/(1.0,itheta=0,mthsurf)/)
          areab = issurfint(units,mthsurf,psilim,0,0)
-         lineb = issurfint(units,mthsurf,psilim,2,0)
-         ALLOCATE(fldflxmn(mpert),
-     $        fldflxmat1(mpert,mpert),fldflxmat2(mpert,mpert))
+         ALLOCATE(fldflxmn(mpert),fldflxmat(mpert,mpert))
          DO i=1,mpert
             ftnmn=0
             ftnmn(i)=1.0
             fldflxmn=ftnmn
-            CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,3)
-            fldflxmat1(:,i)=fldflxmn/sqrt(lineb)
-            fldflxmn=ftnmn
             CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
-            fldflxmat2(:,i)=fldflxmn/sqrt(areab)            
+            fldflxmat(:,i)=fldflxmn/sqrt(areab)            
          ENDDO
          tmlow = mlow
          tmhigh = mhigh
@@ -418,15 +409,10 @@ c-----------------------------------------------------------------------
       ENDDO
       DO i=1,tmpert
          WRITE(out_unit,'(1x,400(e16.8))')
-     $        (REAL(fldflxmat1(j,i)),AIMAG(fldflxmat1(j,i)),j=1,tmpert)
-      ENDDO
-      DO i=1,tmpert
-         WRITE(out_unit,'(1x,400(e16.8))')
-     $        (REAL(fldflxmat2(j,i)),AIMAG(fldflxmat2(j,i)),j=1,tmpert)
+     $        (REAL(fldflxmat(j,i)),AIMAG(fldflxmat(j,i)),j=1,tmpert)
       ENDDO
       CALL ascii_close(out_unit)
-      DEALLOCATE(t1mat,t2mat,t3mat,t4mat,
-     $     fldflxmn,fldflxmat1,fldflxmat2)
+      DEALLOCATE(t1mat,t2mat,t3mat,t4mat,fldflxmn,fldflxmat)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -481,7 +467,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: rawmn
 
       TYPE(spline_type) :: spl       
-c      TYPE(spline_type) :: areal
 c-----------------------------------------------------------------------
 c     check formattype
 c-----------------------------------------------------------------------
@@ -557,29 +542,12 @@ c            areal%xs=theta
                areafac(itheta)=sq%f(4)/sq%f(1)*twopi*
      $              r(itheta)**3*bpfac*twopi**2
                spl%fs(itheta,1)=fac/r(itheta)**2
-c               areal%fs(itheta,1)=areafac(itheta)
             ENDDO     
          
             CALL spline_fit(spl,"periodic")
             CALL spline_int(spl)
             ! coordinate angle at hamada angle
             thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
-            
-            ! diagnose
-c            CALL spline_fit(areal,"periodic")
-c            DO itheta=0,mthsurf
-c               hawfun(itheta)=0
-c               DO i=1,lmpert
-c                  hawfun(itheta)=hawfun(itheta)+
-c     $                 hawmn(i)*EXP(ifac*twopi*lmfac(i)*theta(itheta))
-c               ENDDO
-            ! hamada angle at coordinate angle
-c               thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
-            ! calculate area factor at coordinate angle
-c               CALL spline_eval(areal,thetai,0)
-c               hawfun(itheta)=hawfun(itheta)/areal%f(1)
-c            ENDDO
-c            CALL spline_dealloc(areal)
 
             CALL spline_dealloc(spl)
             ! compute given function in hamada angle
@@ -594,7 +562,6 @@ c            CALL spline_dealloc(areal)
 
             CALL iscdftf(lmfac,lmpert,hawfun,mthsurf,hawmn)
             CALL ipeq_cotoha(psilim,hawmn,lmfac,lmpert,1,0)
-c            CALL ipeq_cotoha(psilim,hawmn,lmfac,lmpert,2,0)
             area=issurfint(unitfun,mthsurf,psilim,0,0)
             hawmn = hawmn*area
          ELSE
@@ -742,14 +709,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing delta,singular current and field"
+      WRITE(*,*)"computing delta, singular current and field"
       CALL ipeq_alloc
       CALL idcon_build(egnum,xwpimn)
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
-c     delta is delta*chi1*sq%f(4)
-c     j_c is j_c/(chi1*sq%f(4), and again *chi1 in real current units
-c     singcur is singcur*chi1 in real current units
+c     delta is delta*chi1*sq%f(4) and j_c is j_c/(chi1*sq%f(4))
 c-----------------------------------------------------------------------
       DO ising=1,msing
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
@@ -833,10 +798,12 @@ c-----------------------------------------------------------------------
          delcur(ising)=j_c(ising)*ifac/mfac(resnum(ising))*delta(ising)
          corcur(ising)=-j_c(ising)*
      $        (rcormn(resnum(ising))-lcormn(resnum(ising)))
+         delcur(ising)=-delcur(ising)*chi1/(twopi*ifac*nn)
+         corcur(ising)=-corcur(ising)*chi1/(twopi*ifac*nn)
          singcur(ising)=delcur(ising)-corcur(ising)
 
          fkaxmn=0
-         fkaxmn(resnum(ising))=-singcur(ising)*chi1/(twopi*ifac*nn)
+         fkaxmn(resnum(ising))=singcur(ising)
          
          ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
          CALL ipvacuum_flxsurf(respsi)
@@ -855,7 +822,7 @@ c     compute coordinate-independent resonant field.
 c----------------------------------------------------------------------- 
          singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)
 c-----------------------------------------------------------------------
-c     compute chirikov parameter.
+c     compute pseudo-chirikov parameter.
 c-----------------------------------------------------------------------
          IF (ising==1) THEN 
             hdist=(singtype(ising+1)%psifac-respsi)/2.0
@@ -871,6 +838,7 @@ c     compute normalized power by singular current.
 c-----------------------------------------------------------------------
          tempfun=jac*sqreqb*
      $        (REAL(singcur(ising))**2+AIMAG(singcur(ising))**2)
+         tempfun=tempfun*(twopi*nn/chi1)**2
          singpower(ising)=issurfave(tempfun,mthsurf,respsi)
 c-----------------------------------------------------------------------
 c     compute maximum torque by singular current.
@@ -1340,11 +1308,10 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-
-      RETURN
-      END SUBROUTINE ipout_xbrzphi
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_xbrzphi
    
       END MODULE ipout_mod

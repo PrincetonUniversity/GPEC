@@ -116,7 +116,7 @@ c-----------------------------------------------------------------------
      $     itheta=vmtheta,0,-1)
       CALL ascii_close(bin_unit)
 c-----------------------------------------------------------------------
-c     get grri,grre matrices by calling mscvac function.
+c     get grri and grre matrices by calling mscvac function.
 c-----------------------------------------------------------------------
       ALLOCATE(vwv(vmpert,vmpert))
       kernelsignin=-1.0
@@ -289,7 +289,7 @@ c-----------------------------------------------------------------------
      $     itheta=mtheta,0,-1)
       CALL ascii_close(bin_unit)
 c-----------------------------------------------------------------------
-c     get grri,grre matrices from call mscvac functions.
+c     get grri and grre matrices by calling mscvac functions.
 c-----------------------------------------------------------------------
       kernelsignin=-1.0
       CALL mscvac(vwv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,

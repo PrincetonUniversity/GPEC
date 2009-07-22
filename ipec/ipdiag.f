@@ -1887,7 +1887,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mstep) :: psitor,rhotor
       TYPE(spline_type) :: qs
 
-
       CALL spline_alloc(qs,mstep,1)      
       qs%xs = psifac
       qs%fs(:,1) = qfac
@@ -1915,4 +1914,3 @@ c-----------------------------------------------------------------------
       END SUBROUTINE ipdiag_radvar
 
       END MODULE ipdiag_mod
-
