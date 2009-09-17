@@ -24,15 +24,14 @@ c-----------------------------------------------------------------------
       REAL(r8) :: majr,minr,scale,rdist,smallwidth,factor,fp,normpsi
       CHARACTER(128) :: infile,formattype
       LOGICAL :: erdata_flag,harmonic_flag,mode_flag,response_flag,
-     $     singcoup_flag,singfld_flag,pmodb_flag,pmodb0_flag,
-     $     xbrzphi_flag,nrzeq_flag,extp_flag,extt_flag,singcurs_flag,
+     $     singcoup_flag,singfld_flag,pmodb_flag,pmodb0_flag,nrzeq_flag,
      $     xbcontra_flag,xbnormal_flag,xbnovc_flag,xbnobo_flag,
      $     d3_flag,xbnorm_flag,pmodbst_flag,pmodbrz_flag,rzphibx_flag,
      $     radvar_flag,eigen_flag,magpot_flag,energy_flag,respmat_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
-     $     m3d_flag,cas3d_flag,test_flag
+     $     singcurs_flag,m3d_flag,cas3d_flag,test_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: bexmn,bermn,
-     $     brrmn,bnomn,bpamn,fxmn,xwpmn
+     $     brrmn,bnomn,fxmn,xwpmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
@@ -41,11 +40,12 @@ c-----------------------------------------------------------------------
      $     poloin,toroin,infnum,infiles,
      $     harmonic_flag,mode_flag,modemin,modemax
       NAMELIST/ipec_control/response_flag,dist,bdist,modelnum
-      NAMELIST/ipec_output/singcoup_flag,
+      NAMELIST/ipec_output/singcoup_flag,nrzeq_flag,nr,nz,labl,
      $     singfld_flag,pmodb_flag,pmodb0_flag,rstep,poloout,toroout,
-     $     xbrzphi_flag,nrzeq_flag,nr,nz,extt_flag,extp_flag,labl
+     $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,
+     $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,divzero_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,xbnormal_flag,
-     $     xbnovc_flag,xbnobo_flag,d3_flag,xbnorm_flag,
+     $     xbnovc_flag,xbnobo_flag,d3_flag,xbnorm_flag,div_flag,
      $     pmodbst_flag,pmodbrz_flag,rzphibx_flag,radvar_flag,
      $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
@@ -66,7 +66,8 @@ c-----------------------------------------------------------------------
       lmlow=errmmin
       lmhigh=errmmax
       IF (response_flag) resp=1
-      IF (xbrzphi_flag) psixy=1
+      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+     $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag) psixy=1
 c-----------------------------------------------------------------------
 c     check time.
 c-----------------------------------------------------------------------
@@ -92,13 +93,11 @@ c-----------------------------------------------------------------------
       CALL ipresp_pinduct
       CALL ipresp_sinduct
       CALL ipresp_permeab
-      CALL ipresp_reluct
 c-----------------------------------------------------------------------
 c     define variables and assign temporal values.
 c-----------------------------------------------------------------------
       ALLOCATE(bexmn(lmpert),bermn(lmpert),
-     $     brrmn(mpert),bnomn(mpert),bpamn(mpert),
-     $     fxmn(mpert),xwpmn(mpert))
+     $     brrmn(mpert),bnomn(mpert),fxmn(mpert),xwpmn(mpert))
 c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
@@ -128,22 +127,15 @@ c-----------------------------------------------------------------------
             IF (pmodb0_flag) THEN
                CALL ipout_pmodb0(0,xwpmn,poloout,toroout,label)
             ENDIF
-            IF (xbrzphi_flag) THEN
+            IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+     $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
+     $           THEN
                IF (nrzeq_flag) THEN
                   nr=mr
                   nz=mz
                ENDIF
                CALL ipeq_rzpgrid(nr,nz)
-               CALL ipout_xbrzphi(0,xwpmn,nr,nz,label)
-            ENDIF
-            IF (extt_flag) THEN
-               CALL ipvacuum_bnormal(psilim,bnomn,
-     $              poloout,toroout,nr,nz,'actual',label)
-            ENDIF
-            IF (extp_flag) THEN
-               bpamn=bnomn-brrmn
-               CALL ipvacuum_bnormal(psilim,bpamn,
-     $              poloout,toroout,nr,nz,'plasma',label)
+               CALL ipout_xbrzphi(0,xwpmn,nr,nz,brrmn,bnomn,label)
             ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.
@@ -200,22 +192,15 @@ c-----------------------------------------------------------------------
             IF (pmodb0_flag) THEN
                CALL ipout_pmodb0(0,xwpmn,poloout,toroout,label)
             ENDIF
-            IF (xbrzphi_flag) THEN
+            IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+     $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
+     $           THEN
                IF (nrzeq_flag) THEN
                   nr=mr
                   nz=mz
                ENDIF
                CALL ipeq_rzpgrid(nr,nz)
-               CALL ipout_xbrzphi(0,xwpmn,nr,nz,label)
-            ENDIF
-            IF (extt_flag) THEN
-               CALL ipvacuum_bnormal(psilim,bnomn,
-     $              poloout,toroout,nr,nz,'actual',label)
-            ENDIF
-            IF (extp_flag) THEN
-               bpamn=bnomn-brrmn
-               CALL ipvacuum_bnormal(psilim,bpamn,
-     $              poloout,toroout,nr,nz,'plasma',label)
+               CALL ipout_xbrzphi(0,xwpmn,nr,nz,brrmn,bnomn,label)
             ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.
@@ -267,24 +252,14 @@ c-----------------------------------------------------------------------
             IF (pmodb0_flag) THEN
                CALL ipout_pmodb0(in,xwpmn,poloout,toroout,label)
             ENDIF
-            IF (xbrzphi_flag) THEN
+            IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+     $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag) 
+     $           THEN
                IF (nrzeq_flag) THEN
                   nr=mr
                   nz=mz
                ENDIF
                CALL ipeq_rzpgrid(nr,nz)
-               CALL ipout_xbrzphi(in,xwpmn,nr,nz,label)
-            ENDIF
-            IF (extt_flag) THEN
-               CALL idcon_build(in,xwpmn)
-               CALL ipeq_alloc
-               CALL ipeq_contra(psilim)
-               CALL ipeq_xptobn(psilim,xwpmn,bnomn)
-               CALL ipeq_dealloc
-               CALL ipvacuum_bnormal(psilim,bnomn,
-     $              poloout,toroout,nr,nz,'actual',label)
-            ENDIF
-            IF (extp_flag) THEN
                ALLOCATE(ipiv(mpert),
      $              invmats(mpert,mpert),temp1(mpert,mpert))
                DO i=1,mpert
@@ -304,9 +279,7 @@ c-----------------------------------------------------------------------
                brrmn = MATMUL(invmats,bnomn)
                CALL ipeq_weight(psilim,bnomn,mfac,mpert,0)
                CALL ipeq_weight(psilim,brrmn,mfac,mpert,0)
-               bpamn=bnomn-brrmn
-               CALL ipvacuum_bnormal(psilim,bpamn,
-     $              poloout,toroout,nr,nz,'plasma',label)
+               CALL ipout_xbrzphi(in,xwpmn,nr,nz,brrmn,bnomn,label)
                DEALLOCATE(ipiv,invmats,temp1)
             ENDIF
 c-----------------------------------------------------------------------

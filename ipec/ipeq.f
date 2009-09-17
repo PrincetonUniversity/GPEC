@@ -19,8 +19,9 @@ c     10. ipeq_weight
 c     11. ipeq_bntoxp
 c     12. ipeq_xptobn
 c     13. ipeq_rzpgrid
-c     14. ipeq_alloc
-c     15. ipeq_dealloc
+c     14. ipeq_rzpdiv
+c     15. ipeq_alloc
+c     16. ipeq_dealloc
 c-----------------------------------------------------------------------
 c     subprogram 0. ipeq_mod.
 c     module declarations.
@@ -351,7 +352,7 @@ c-----------------------------------------------------------------------
          t12(itheta)=cos(eta)*v(2,1)-sin(eta)*v(2,2)
          t21(itheta)=sin(eta)*v(1,1)+cos(eta)*v(1,2)
          t22(itheta)=sin(eta)*v(2,1)+cos(eta)*v(2,2)
-         t33(itheta)=1.0/abs(v(3,3))
+         t33(itheta)=1.0/v(3,3)
       ENDDO
 c-----------------------------------------------------------------------
 c     three vector components.
@@ -853,7 +854,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     invert given rzphi to hamada coordinates.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"mapping rzpgrid to hamada coordinates"
+      WRITE(*,*)"Mapping rzpgrid to hamada coordinates"
       gdr=0
       gdz=0
       gdl=0
@@ -919,7 +920,74 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 14. ipeq_alloc.
+c     subprogram 14. ipeq_rzpdiv.
+c     make zero divergence of rzphi functions.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipeq_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: nr,nz
+      INTEGER, DIMENSION(0:nr,0:nz), INTENT(IN) :: lval
+      REAL(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: rval,zval
+      COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: fr,fz
+      COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(INOUT) :: fp
+ 
+      INTEGER :: i,j
+
+      TYPE(bicube_type) :: rfr,ifr,rfz,ifz
+
+      WRITE(*,*)"Modifying bphi to make zero divergence"
+
+      CALL bicube_alloc(rfr,nr,nz,1)
+      CALL bicube_alloc(ifr,nr,nz,1)
+      CALL bicube_alloc(rfz,nr,nz,1)
+      CALL bicube_alloc(ifz,nr,nz,1)
+
+      rfr%xs=rval(:,0)
+      ifr%xs=rval(:,0)
+      rfz%xs=rval(:,0)
+      ifz%xs=rval(:,0) 
+
+      rfr%ys=zval(0,:)
+      ifr%ys=zval(0,:)
+      rfz%ys=zval(0,:)
+      ifz%ys=zval(0,:) 
+
+      rfr%fs(:,:,1)=rval*REAL(fr)
+      ifr%fs(:,:,1)=rval*AIMAG(fr)
+      rfz%fs(:,:,1)=REAL(fz)
+      ifz%fs(:,:,1)=AIMAG(fz)
+
+      CALL bicube_fit(rfr,"extrap","extrap")
+      CALL bicube_fit(ifr,"extrap","extrap")
+      CALL bicube_fit(rfz,"extrap","extrap")
+      CALL bicube_fit(ifz,"extrap","extrap")      
+
+      DO i=0,nr
+         DO j=0,nz
+            CALL bicube_eval(rfr,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(ifr,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(rfz,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(ifz,rval(i,j),zval(i,j),1)
+
+            fp(i,j)=((ifr%fx(1)+ifz%fy(1)*rval(i,j))-
+     $          ifac*(rfr%fx(1)+rfz%fy(1)*rval(i,j)))/nn
+
+         ENDDO
+      ENDDO
+       
+      CALL bicube_dealloc(rfr)
+      CALL bicube_dealloc(ifr)
+      CALL bicube_dealloc(rfz)
+      CALL bicube_dealloc(ifz)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipeq_rzpdiv     
+c-----------------------------------------------------------------------
+c     subprogram 15. ipeq_alloc.
 c     allocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_alloc
@@ -939,7 +1007,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_alloc
 c-----------------------------------------------------------------------
-c     subprogram 15. ipeq_dealloc.
+c     subprogram 16. ipeq_dealloc.
 c     deallocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_dealloc

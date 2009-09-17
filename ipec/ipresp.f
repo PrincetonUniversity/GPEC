@@ -11,6 +11,7 @@ c      2. ipresp_pinduct
 c      3. ipresp_sinduct
 c      4. ipresp_permeab
 c      5. ipresp_reluct
+c      6. ipresp_indrel
 c-----------------------------------------------------------------------
 c     subprogram 0. ipresp_mod.
 c     module declarations.
@@ -44,7 +45,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(chimats(mpert,mpert),chemats(mpert,mpert),
      $     kaxmats(mpert,mpert),flxmats(mpert,mpert),
      $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert))
-      WRITE(*,*)"constructing interfaces by using dcon eigenmodes"
+      WRITE(*,*)"Constructing interfaces by using dcon eigenmodes"
       DO i=1,mpert
          edge_mn=0
          edge_flag=.FALSE.
@@ -222,7 +223,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j,lwork
-      INTEGER, DIMENSION(mpert):: ipiv,index
+      INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(2*mpert) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,vr,vl
@@ -253,7 +254,7 @@ c-----------------------------------------------------------------------
          DO i=1,mpert
             permeabindex(j,i)=i
          ENDDO
-         CALL isbubble(ABS(REAL(permeabev(j,:))),
+         CALL isbubble(REAL(permeabev(j,:)),
      $        permeabindex(j,:),1,mpert)
       ENDDO
 c-----------------------------------------------------------------------
@@ -262,7 +263,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipresp_permeab
 c-----------------------------------------------------------------------
-c     subprogram 4. ipresp_reluct.
+c     subprogram 5. ipresp_reluct.
 c     construct reluctance matrix.
 c-----------------------------------------------------------------------
       SUBROUTINE ipresp_reluct
@@ -309,5 +310,52 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipresp_reluct
+c-----------------------------------------------------------------------
+c     subprogram 6. ipresp_indrel.
+c     construct combined matrix with surface inductance and reluctance.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipresp_indrel
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,j,lwork
+      INTEGER, DIMENSION(mpert):: ipiv
+      REAL(r8), DIMENSION(3*mpert-2) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
+c-----------------------------------------------------------------------
+c     calculate reluctance matrix.
+c-----------------------------------------------------------------------
+      ALLOCATE(indrelev(0:4,mpert),indrelmats(0:4,mpert,mpert),
+     $     indrelevmats(0:4,mpert,mpert))
+      DO j=0,4
+         work=0
+         work2=0
+         rwork=0
+         temp1=0
+         DO i=1,mpert
+            temp1(i,i)=1
+         ENDDO
+         temp2=surf_indmats
+         CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
+         CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+         indrelmats(j,:,:)=MATMUL(temp1,
+     $        MATMUL(plas_indmats(j,:,:),temp1))
+         temp1=indrelmats(j,:,:)
+         lwork=2*mpert-1
+         CALL zheev('V','U',mpert,temp1,mpert,indrelev(j,:),work,
+     $        lwork,rwork,info)
+         temp2=0
+         DO i=1,mpert
+            temp2(i,i)=temp1(i,i)
+         ENDDO
+         temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
+         indrelevmats(j,:,:)=temp1
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipresp_indrel
 
       END MODULE ipresp_mod

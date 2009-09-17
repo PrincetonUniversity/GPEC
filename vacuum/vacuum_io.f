@@ -10,9 +10,10 @@ c     2. cardmo
 c     3. dskmd1
 c     4. readahg
 c     5. readvacin
-c     6. mdskrd0
-c     7. mdskrd1
-c     8. adjustm
+c     6. readvacin5
+c     7. mdskrd0
+c     8. mdskrd1
+c     9. adjustm
 c-----------------------------------------------------------------------
 c     subprogram 1. inglo.
 c     read data from inadjv.
@@ -34,6 +35,7 @@ c-----------------------------------------------------------------------
          return
       endif
       if ( ldcon .eq. 1 ) return
+      if ( lipec .eq. 1 ) return
       if ( lrgato .eq. 1 ) return
       if ( lzio .eq. 1 ) then
          call shellb
@@ -66,10 +68,11 @@ c-----------------------------------------------------------------------
      $     wall, lkplt
       namelist / vacdat / ishape,aw,bw,cw,dw,tw,nsing,epsq,noutv,delg,
      .     idgt, idot, delfac, idsk, cn0
-      namelist / diagns / lkdis, ieig, iloop, xloop, zloop,
+      namelist / diagns / lkdis, ieig, iloop,
      $     nloop,nloopr, 
      .     lpsub, nphil, nphse, mx, mz, nph, xofsl,
-     $     aloop, bloop, dloop, rloop, ntloop, deloop
+     $     aloop, bloop, dloop, rloop, ntloop, deloop,
+     $     nxlpin,nzlpin,epslp,xlpmin,xlpmax,zlpmin,zlpmax,linterior
       namelist / shape  / ipshp, xpl, apl,bpl, dpl,  a, b, r,
      $     abulg, bbulg, tbulg, qain
 c$$$      namelist / sprk / nminus, nplus, mphi, lwrt11,civ,
@@ -160,7 +163,7 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
 
-      dimension vecin(ntsin), xigr(ntsin), xigi(ntsin)
+      dimension vecin(ntsin), xigr_(ntsin), xigi_(ntsin)
       dimension zerov(nths), thgr(nths)
 c-----------------------------------------------------------------------
 c     format statements.
@@ -173,6 +176,8 @@ c-----------------------------------------------------------------------
  605  format ( 10e13.5 )
  702  format (/, 'mthin, lmin,lmax, ndcon, ga1, fa1, qa1 = ',/,
      $     4i5, 1p3e13.5, / )
+ 5702 format (/, 'mthin, lmin,lmax, n, qa1 = ',/,
+     $        3i5, 2e13.5, / )
  8011 format ( 5i4, 1p5e14.6 )
  8021 format ( 1p10e14.6 )
  9600 format ( /, 1x, " mp1, qa1, fa1, ga1 = ", a,1p3e12.5,/ )
@@ -204,13 +209,13 @@ c-----------------------------------------------------------------------
          lzio = 0
          dx0 = 0.5
          call readvacin ( mfel,rgato,ndum2,ngato,qa1,xinf,zinf,
-     $        delta, vecin, xigr,xigi, mth,mth1,mth2, ndfel,dx0,
+     $        delta, vecin, xigr_,xigi_, mth,mth1,mth2, ndfel,dx0,
      $        ieig, outmod, iotty )
-         call wrtout ( mfel, xigr, "xigr", 1, mfel )
+         call wrtout ( mfel, xigr_, "xigr", 1, mfel )
          l11 = lmin(1)
          l22 = lmax(1)
-         call fanal ( xigr, mfel, xirc, xirs, l11,l22, pye,-0.5_8 )
-         call fanal ( xigi, mfel, xiic, xiis, l11,l22, pye,-0.5_8 )
+         call fanal ( xigr_, mfel, xirc, xirs, l11,l22, pye,-0.5_8 )
+         call fanal ( xigi_, mfel, xiic, xiis, l11,l22, pye,-0.5_8 )
          llnn = l22 - l11 + 1
          call vecwrt ( llnn, xirc, "xirc(l)", 1, llnn, outmod,0 )
          call vecwrt ( llnn, xirs, "xirs(l)", 1, llnn, outmod,0 )
@@ -273,6 +278,28 @@ c-----------------------------------------------------------------------
          n = ndcon
          write ( iotty, 702 ) mthin,lmin(1),lmax(1),ndcon, ga1,fa1,qa1
          write ( outmod,702 ) mthin,lmin(1),lmax(1),ndcon, ga1,fa1,qa1
+         go to 1111
+      endif
+c-----------------------------------------------------------------------
+c     ipec inputs.
+c-----------------------------------------------------------------------
+      if ( lipec .eq. 1 ) then
+         lzio = 1
+         ieig = 0
+c
+         dx0 = 0.0
+         dx1 = 0.0
+
+         call readvacin5 ( nxlpin,nzlpin, xlpmin,xlpmax, zlpmin,zlpmax,
+     $        mthin, lmin(1),lmax(1),ntor, qa1,
+     $        xinf,zinf,delta, vecin, bnlr,bnli,
+     $        mth,dx0,dx1, ieig)
+         
+         mthin1 = mthin + 1
+         mthin2 = mthin1 + 1
+         n = ntor
+         write ( iotty, 5702 ) mthin,lmin(1),lmax(1),n, qa1
+         write ( outmod,5702 ) mthin,lmin(1),lmax(1),n, qa1
          go to 1111
       endif
 c-----------------------------------------------------------------------
@@ -414,6 +441,7 @@ c-----------------------------------------------------------------------
          zerov(i) = 0.0
          thgr(i) = (i-1)*dth
       enddo
+
       call arrays
 c-----------------------------------------------------------------------
 c     termination.
@@ -514,8 +542,80 @@ c-----------------------------------------------------------------------
       close(unit=3)
  2    return
       end
+c-----------------------------------------------------------------------
+c     subprogram 6. readvacin5.
+c     read vacin5 input.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      subroutine readvacin5 ( nlx,nlz, xll,xlr, zlb,zlt,
+     $     mthin, lmin,lmax,ntor, qa1,
+     $     xinf,zinf, delta, vecin, bnlr,bnli,
+     $     mth, dx0,dx1, ireig5)
+c-----------------------------------------------------------------------
+c     read input.
+c-----------------------------------------------------------------------
+      implicit real*8 (a-h,o-z)
+      INTEGER mthin, lmin, lmax, ntor, ith,jl, jmax1
+      DIMENSION xinf(*),zinf(*),delta(*), vecin(*),bnlr(*), bnli(*)
+c-----------------------------------------------------------------------
+c     read scalars.
+c-----------------------------------------------------------------------
+      OPEN ( UNIT=3, FILE='vacin5' )
+      READ(3,'(/)')
+      READ(3,*) nlx
+      READ(3,*) nlz
+      READ(3,*) xll
+      READ(3,*) xlr
+      READ(3,*) zlb
+      READ(3,*) zlt
+      READ(3,*) mthin
+      READ(3,*) lmin
+      READ(3,*) lmax
+      READ(3,*) ntor
+      READ(3,*) qa1
+
+      mthin1 = mthin + 1
+      jmax1 = lmax - lmin + 1
+c-----------------------------------------------------------------------
+c     read arrays.
+c-----------------------------------------------------------------------
+
+      READ(3,'(/)')
+      READ(3,*)(vecin(ith),ith=1,mthin1)
+      READ(3,'(/)')
+      READ(3,*)(vecin(ith),ith=1,mthin1)
+      READ(3,'(/)')
+      READ(3,*)(vecin(ith),ith=1,mthin1)
+      CALL transdxx ( vecin,mthin, xinf,mth, dx0,dx1)
+      READ(3,'(/)')
+      READ(3,*)(vecin(ith),ith=1,mthin1)
+      CALL transdxx ( vecin,mthin, zinf,mth, dx0,dx1)
+
+c$$$c.... Xwall
+c$$$      READ(3,*)(vecin(ith),ith=1,mthin1)
+c$$$      CALL transdxx ( vecin,mthin, xwin,mth, dx0,dx1 )
+
+c$$$c.... Zwall
+c$$$      READ(3,*)(vecin(ith),ith=1,mthin1)
+c$$$      CALL transdxx ( vecin,mthin, zwin,mth, dx0,dx1 )
+
+      READ(3,'(/)')
+      READ(3,*)(vecin(ith),ith=1,mthin1)
+      CALL transdxx ( vecin,mthin, delta,mth, dx0,dx1)
+      READ(3,'(/)')
+      READ(3,*)(bnlr(jl),jl=1,jmax1)
+      READ(3,'(/)')
+      READ(3,*)(bnli(jl),jl=1,jmax1)
+      CLOSE ( UNIT=3 )
+c-----------------------------------------------------------------------
+c     terminate routine.
+c-----------------------------------------------------------------------
+      RETURN
+      END
 c$$$c-----------------------------------------------------------------------
-c$$$c     subprogram 6. mdskrd0.
+c$$$c     subprogram 7. mdskrd0.
 c$$$c     read netcdf data.
 c$$$c-----------------------------------------------------------------------
 c$$$c-----------------------------------------------------------------------
@@ -834,7 +934,7 @@ c$$$c-----------------------------------------------------------------------
 c$$$      return
 c$$$      end
 c$$$c-----------------------------------------------------------------------
-c$$$c     subprogram 7. mdskrd1.
+c$$$c     subprogram 8. mdskrd1.
 c$$$c     read netcdf data.
 c$$$c-----------------------------------------------------------------------
 c$$$c-----------------------------------------------------------------------
@@ -932,7 +1032,7 @@ c$$$c-----------------------------------------------------------------------
 c$$$      return
 c$$$      end
 c-----------------------------------------------------------------------
-c     subprogram 8. adjustm.
+c     subprogram 9. adjustm.
 c     read netcdf data.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------

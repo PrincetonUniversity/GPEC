@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     open euler.bin and read header.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"reading and allocating dcon solutions"
+      WRITE(*,*)"Reading and allocating dcon solutions"
       CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
@@ -96,7 +96,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     count solutions in euler.bin. <MODIFIED>
 c-----------------------------------------------------------------------
-      WRITE(*,*)"count and read solutions"
+      WRITE(*,*)"Counting and reading solutions"
       DO
          READ(UNIT=in_unit,IOSTAT=ios)data_type
          IF(ios /= 0)EXIT
@@ -220,7 +220,7 @@ c-----------------------------------------------------------------------
 c     read psi_in.bin. <MODIFIED>
 c-----------------------------------------------------------------------
       IF (psixy == 1) THEN
-         WRITE(*,*)"reading and allocating equilibrium solutions"
+         WRITE(*,*)"Reading and allocating equilibrium solutions"
          CALL bin_open(in_unit,ieqfile,"OLD","REWIND","none")
          READ(in_unit)
          READ(in_unit)mr,mz
@@ -376,7 +376,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,itheta
       REAL(r8) :: rr,w11,w12,delpsi
 
-      WRITE(*,*)"evaluating functions and metric tensors"
+      WRITE(*,*)"Evaluating functions and metric tensors"
 c-----------------------------------------------------------------------
 c     set up spline-type for additional flux functions.
 c-----------------------------------------------------------------------
@@ -672,7 +672,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"reading twice VACUUM output"
+      WRITE(*,*)"Reading twice VACUUM output"
       CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
       READ(bin_unit)nths2,nfm2
       ALLOCATE(grri(nths2,nfm2))

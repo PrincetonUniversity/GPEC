@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
 c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     ISMATH: basic math routines
+c     ISMATH: simple math routines
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.

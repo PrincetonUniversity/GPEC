@@ -21,8 +21,11 @@ c     12. ipdiag_xbnovc
 c     13. ipdiag_xbnobo
 c     14. ipdiag_xbnorm
 c     15. ipdiag_pmodbst
-c     16. ipdiag_rzphibx
-c     17. ipdiag_rzpgrid
+c     16. ipdiag_pmodbrz
+c     17. ipdiag_rzphibx
+c     18. ipdiag_rzpgrid
+c     19. ipdiag_rzpdiv
+c     20. ipdiag_radvar
 c-----------------------------------------------------------------------
 c     subprogram 0. ipdiag_mod.
 c     module declarations.
@@ -145,6 +148,9 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j
 
+      CALL ipresp_reluct
+      CALL ipresp_indrel
+
       CALL ascii_open(out_unit,"ipdiag_respmat_n"//sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RESPMAT:"//
      $     "eigenvalues of inductances, permeability and "//
@@ -177,6 +183,15 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(2x,I4,5(2x,e12.3))')i,reluctev(0,i),
      $        reluctev(1,i),reluctev(2,i),reluctev(3,i),reluctev(4,i)
       ENDDO
+
+      WRITE(out_unit,*)"INDRELUCTANCE EIGENVALUES"     
+      WRITE(out_unit,'(2x,a4,5(2x,a12))')"mode","indrel0",
+     $     "indrel1","indrel2","indrel3","indrel4"
+      DO i=1,mpert
+         WRITE(out_unit,'(2x,I4,5(2x,e12.3))')i,indrelev(0,i),
+     $        indrelev(1,i),indrelev(2,i),indrelev(3,i),indrelev(4,i)
+      ENDDO
+
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -243,7 +258,7 @@ c     write data for indicating used angles.
 c-----------------------------------------------------------------------
       angnum=15
       rstep=400
-      WRITE(*,*)"diagnose magnetic angles"
+      WRITE(*,*)"Diagnosing magnetic angles"
       ALLOCATE(psi(1:rstep))
       ALLOCATE(thetai(0:angnum-1),angles(0:angnum-1))
       ALLOCATE(plerror(1:rstep,0:mthsurf),haerror(1:rstep,0:mthsurf))
@@ -395,7 +410,7 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,binfun(j,:),mthsurf,finmn(j,:))         
          CALL ipeq_cotoha(psilim,finmn(j,:),mfac,mpert,polo,toro)
          CALL ipeq_weight(psilim,finmn(j,:),mfac,mpert,1)         
-         boutmn(j,:)=MATMUL(permeabmats(3,:,:),finmn(j,:))
+         boutmn(j,:)=MATMUL(permeabmats(modelnum,:,:),finmn(j,:))
          CALL ipeq_weight(psilim,finmn(j,:),mfac,mpert,0)  
          CALL ipeq_hatoco(psilim,boutmn(j,:),mfac,mpert,polo,toro)
          CALL iscdftb(mfac,mpert,boutfun(j,:),mthsurf,boutmn(j,:))
@@ -652,7 +667,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute singular currents with logarithmic approach.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"diagnosing asymtotic values of singular currents"
+      WRITE(*,*)"Diagnosing asymtotic values of singular currents"
       DO ising=1,rsing
          resnum=NINT(singtype(ising)%q*nn)-mlow+1
          respsi=singtype(ising)%psifac
@@ -766,7 +781,7 @@ c-----------------------------------------------------------------------
             singcurs(ising,i)=delcurs(ising,i)-corcurs(ising,i)
          ENDDO
 
-         WRITE(*,*)"finish the analysis for the q=",singtype(ising)%q
+         WRITE(*,*)"Finished the analysis for the q =",singtype(ising)%q
       ENDDO
       CALL ipeq_dealloc
 c-----------------------------------------------------------------------
@@ -836,7 +851,7 @@ c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xwpimn)
-      WRITE(*,*)"calculate contravariant components in detail"
+      WRITE(*,*)"Computing contravariant components in detail"
       WRITE(UNIT=spolo, FMT='(I1)')polo
       WRITE(UNIT=storo, FMT='(I1)')toro
       IF (labl < 10) THEN
@@ -918,7 +933,7 @@ c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xwpimn)
-      WRITE(*,*)"calculate normal components in detail"
+      WRITE(*,*)"Computing normal components in detail"
       WRITE(UNIT=spolo, FMT='(I1)')polo
       WRITE(UNIT=storo, FMT='(I1)')toro
       IF (labl < 10) THEN
@@ -1136,7 +1151,7 @@ c-----------------------------------------------------------------------
      $     xnorvc,xnozvc,bnorvc,bnozvc
 
 
-      WRITE(*,*)"computing normal quantities on the boundary"
+      WRITE(*,*)"Computing normal quantities on the boundary"
       mthnum=1000
       ALLOCATE(rs(0:mthnum),zs(0:mthnum),
      $     mthang(0:mthnum),delpsi(0:mthnum),
@@ -1290,7 +1305,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     computation.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing normal quantities"
+      WRITE(*,*)"Computing normal quantities"
       CALL ipeq_alloc
       DO istep=1,rstep
          CALL ipeq_contra(psis(istep))
@@ -1391,7 +1406,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing perturbed b field strength"
+      WRITE(*,*)"Computing perturbed b field strength"
       ALLOCATE(psis(rstep),eulmodbst(rstep),
      $     eulbparst(rstep),xiwobbpst(rstep),xiwobbrst(rstep),
      $     xiwobbtst(rstep),lagbparst(rstep),invlagbst(rstep),
@@ -1518,7 +1533,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing perturbed b field"
+      WRITE(*,*)"Computing perturbed b field"
       ALLOCATE(psis(rstep),rs(rstep,0:mthsurf),zs(rstep,0:mthsurf),
      $     eulbpar_mn(rstep,mpert),lagbpar_mn(rstep,mpert),
      $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf),
@@ -1684,7 +1699,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     computation.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing rzphibx components"
+      WRITE(*,*)"Computing rzphibx components"
       CALL ipeq_alloc
       DO istep=1,rstep
          CALL spline_eval(sq,psis(istep),0)
@@ -1707,9 +1722,9 @@ c-----------------------------------------------------------------------
             v(3,3)=twopi*rs(istep,itheta)
             t11(itheta)=cos(eta)*v(1,1)-sin(eta)*v(1,2)
             t12(itheta)=cos(eta)*v(2,1)-sin(eta)*v(2,2)
-            t21(itheta)=cos(eta)*v(1,1)+sin(eta)*v(1,2)
-            t22(itheta)=cos(eta)*v(2,1)+sin(eta)*v(2,2)
-            t33(itheta)=1.0/abs(v(3,3))
+            t21(itheta)=sin(eta)*v(1,1)+cos(eta)*v(1,2)
+            t22(itheta)=sin(eta)*v(2,1)+cos(eta)*v(2,2)
+            t33(itheta)=1.0/v(3,3)
          ENDDO
 c-----------------------------------------------------------------------
 c     regulations.
@@ -1798,7 +1813,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     invert given rzphi to hamada coordinates.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"diagnose mapping procedure for rzpgrid"
+      WRITE(*,*)"Diagnosing mapping procedure for rzpgrid"
       gdr=0
       gdz=0
       gdl=0
@@ -1875,7 +1890,101 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 19. ipdiag_radvar.
+c     subprogram 19. ipdiag_rzpdiv.
+c     check divergence of rzphi functions.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp,labl)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: nr,nz,labl
+      INTEGER, DIMENSION(0:nr,0:nz), INTENT(IN) :: lval
+      REAL(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: rval,zval
+      COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: fr,fz,fp
+ 
+      INTEGER :: i,j
+      CHARACTER(1) :: slabl
+      CHARACTER(2) :: slabl2
+      COMPLEX(r8), DIMENSION(0:nr,0:nz) :: div
+
+      TYPE(bicube_type) :: rfr,ifr,rfz,ifz
+
+      WRITE(*,*)"Diagnosing divergence for brzphi"
+
+      CALL bicube_alloc(rfr,nr,nz,1)
+      CALL bicube_alloc(ifr,nr,nz,1)
+      CALL bicube_alloc(rfz,nr,nz,1)
+      CALL bicube_alloc(ifz,nr,nz,1)
+
+      rfr%xs=rval(:,0)
+      ifr%xs=rval(:,0)
+      rfz%xs=rval(:,0)
+      ifz%xs=rval(:,0) 
+
+      rfr%ys=zval(0,:)
+      ifr%ys=zval(0,:)
+      rfz%ys=zval(0,:)
+      ifz%ys=zval(0,:) 
+
+      rfr%fs(:,:,1)=rval*REAL(fr)
+      ifr%fs(:,:,1)=rval*AIMAG(fr)
+      rfz%fs(:,:,1)=REAL(fz)
+      ifz%fs(:,:,1)=AIMAG(fz)
+
+      CALL bicube_fit(rfr,"extrap","extrap")
+      CALL bicube_fit(ifr,"extrap","extrap")
+      CALL bicube_fit(rfz,"extrap","extrap")
+      CALL bicube_fit(ifz,"extrap","extrap")      
+
+      DO i=0,nr
+         DO j=0,nz
+            CALL bicube_eval(rfr,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(ifr,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(rfz,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(ifz,rval(i,j),zval(i,j),1)
+
+            div(i,j)=rfr%fx(1)/rval(i,j)+rfz%fy(1)+
+     $           nn*AIMAG(fp(i,j))/rval(i,j)+ifac*
+     $           (ifr%fx(1)/rval(i,j)+ifz%fy(1)-
+     $           nn*REAL(fp(i,j))/rval(i,j))
+
+         ENDDO
+      ENDDO
+       
+      CALL bicube_dealloc(rfr)
+      CALL bicube_dealloc(ifr)
+      CALL bicube_dealloc(rfz)
+      CALL bicube_dealloc(ifz)
+
+      IF (labl < 10) THEN
+         WRITE(UNIT=slabl, FMT='(I1)')labl    
+         CALL ascii_open(out_unit,"ipdiag_rzpdiv_l"//slabl//"_n"
+     $        //sn//".out","UNKNOWN")
+      ELSE
+         WRITE(UNIT=slabl2, FMT='(I2)')labl    
+         CALL ascii_open(out_unit,"ipdiag_rzpdiv_l"//slabl2//"_n"
+     $        //sn//".out","UNKNOWN")
+      ENDIF   
+      
+      WRITE(out_unit,*)"IPEC_RZPDIV: divergence in rzphi grid"
+      WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
+     $     "re(div)","im(div)","abs(div)"
+      
+      DO i=0,nr
+         DO j=0,nz
+            WRITE(out_unit,'(1x,I2,5(e16.8))')
+     $           lval(i,j),rval(i,j),zval(i,j),
+     $           REAL(div(i,j)),AIMAG(div(i,j)),ABS(div(i,j))
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_unit)   
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipdiag_rzpdiv     
+c-----------------------------------------------------------------------
+c     subprogram 20. ipdiag_radvar.
 c     generate various radial variables.
 c-----------------------------------------------------------------------
       SUBROUTINE ipdiag_radvar

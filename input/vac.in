@@ -1,7 +1,6 @@
 x    **** Running DCON's input ***
 
 &modes
-	ldcon=1
 	mth=480
 	xiin(1:9)=7*0 1 0
 	lsymz=t
@@ -61,13 +60,13 @@ x    **** Running DCON's input ***
 	iloop=0
 	lpsub=1
 	
-	nloop=16
-	nloopr=5
+	nloop=128
+	nloopr=0
 	nphil=3
 	nphse=1
 	xofsl=-0
-	ntloop=60
-	aloop=.17
+	ntloop=32
+	aloop=.01
 	bloop=1.6
 	dloop=0.5
 	rloop=1.0
@@ -75,8 +74,15 @@ x    **** Running DCON's input ***
 	mx=21
 	mz=21
 	nph=0
-	xloop=3*2.17 1.45 1.25 0.96 0.82 1.05 0.82 0.96 1.25 1.45 1.05 2.17 1.05 2.17
-	zloop=-0.26 0.0 0.26 3*.67 0.45 -0.025 -0.45 3*-0.67 -0.05 0.0 -0.05 0.0
+
+	nxlpin = 6
+	nzlpin = 11
+	epslp = 0.02
+	xlpmin = 0.7
+	xlpmax = 2.7
+	zlpmin = -1.5
+	zlpmax = 1.5
+	linterior = 2
 /
 	
 &sprk

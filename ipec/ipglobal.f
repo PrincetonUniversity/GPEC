@@ -8,7 +8,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      LOGICAL :: power_flag,fft_flag,edge_flag
+      LOGICAL :: power_flag,fft_flag,edge_flag,
+     $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
+     $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,nn,info,modelnum,
@@ -36,7 +38,7 @@ c-----------------------------------------------------------------------
      $     r,z,theta,et,ep,ee,surfee,surfei,
      $     surf_indev,vsurf_indev,fsurf_indev
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
-     $     chperr,chpsqr,plas_indev,reluctev,grri,grre,
+     $     chperr,chpsqr,plas_indev,reluctev,indrelev,grri,grre,
      $     gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
@@ -56,7 +58,8 @@ c-----------------------------------------------------------------------
      $     amat,bmat,cmat,fmats,gmats,kmats
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,reluctmats,
-     $     plas_indevmats,permeabevmats,reluctevmats
+     $     plas_indevmats,permeabevmats,reluctevmats,
+     $     indrelmats,indrelevmats
 
       TYPE(spline_type) :: sq,ffun
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
@@ -105,13 +108,12 @@ c     deallocate.
 c-----------------------------------------------------------------------
       DEALLOCATE(sing_flag,fixstep,mfac,psifac,rhofac,qfac,singfac,
      $     et,ep,ee,surfet,surfep,surfee,surfei,lmfac,r,z,theta,
-     $     surf_indev,plas_indev,permeabev,reluctev,edge_mn,edge_fun,
-     $     chperr)
+     $     surf_indev,plas_indev,permeabev,edge_mn,edge_fun,chperr)
       DEALLOCATE(wt,rt,
      $     chimats,chemats,chpmats,kapmats,kaxmats,flxmats,
      $     surf_indmats,surf_indevmats,
-     $     plas_indmats,diff_indmats,permeabmats,reluctmats,
-     $     plas_indevmats,permeabevmats,reluctevmats)
+     $     plas_indmats,permeabmats,
+     $     plas_indevmats,permeabevmats)
 
       CALL spline_dealloc(sq)
       CALL spline_dealloc(ffun)

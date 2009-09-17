@@ -373,15 +373,13 @@ c-----------------------------------------------------------------------
 c     subprogram 3. ipvacuum_bnormal.
 c     create bnormal input for vacuum code.  
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_bnormal(psi,bnomn,polo,toro,nr,nz,acpl,labl)
+      SUBROUTINE ipvacuum_bnormal(psi,bnomn,polo,toro,nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: polo,toro,nr,nz,labl
+      INTEGER, INTENT(IN) :: polo,toro,nr,nz
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnomn
-      CHARACTER(6) :: acpl
-      CHARACTER(1) :: slabl
 
       INTEGER :: ipert,itheta,rtheta,vn
       REAL(r8) :: qa
@@ -436,8 +434,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------
-      WRITE(UNIT=slabl,FMT='(I1)')labl
-      CALL ascii_open(bin_unit,'vacin_'//acpl//'_l'//slabl,"UNKNOWN")
+      CALL ascii_open(bin_unit,'vacin5',"UNKNOWN")
       WRITE(bin_unit,'(a/)')"scalars"
       WRITE(bin_unit,'(i4,a)')nr+1,tab//tab//"Number of x grid"
       WRITE(bin_unit,'(i4,a)')nz+1,tab//tab//"Number of z grid"

@@ -8,14 +8,11 @@ c-----------------------------------------------------------------------
 c      0. ipout_mod
 c      1. ipout_resp
 c      2. ipout_singcoup
-c      3. ipout_pmodcoup
-c      4. ipout_ipeccoup
-c      5. ipout_errfld
-c      6. ipout_singfld
-c      7. ipout_pmodb
-c      8. ipout_xbnobo
-c      9. ipout_xbnorm
-c     10. ipout_xbrzphi
+c      3. ipout_errfld
+c      4. ipout_singfld
+c      5. ipout_pmodb
+c      6. ipout_pmod0b
+c      7. ipout_xbrzphi
 c-----------------------------------------------------------------------
 c     subprogram 0. ipout_mod.
 c     module declarations.
@@ -26,6 +23,7 @@ c-----------------------------------------------------------------------
       MODULE ipout_mod
       USE ipresp_mod
       USE ipvacuum_mod
+      USE ipdiag_mod
 
       IMPLICIT NONE
 
@@ -134,12 +132,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute characteristic currents with normalization.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing singular coupling with external perturbation"
+      WRITE(*,*)"Computing singular coupling with external perturbation"
 
       WRITE(UNIT=spolo, FMT='(I1)')polo
       WRITE(UNIT=storo, FMT='(I1)')toro
       
-      WRITE(*,*)"computing surface currents and inductances"
+      WRITE(*,*)"Computing surface currents and inductances"
       DO ising=1,msing
          respsi=singtype(ising)%psifac
          CALL spline_eval(sq,respsi,0)
@@ -184,7 +182,7 @@ c-----------------------------------------------------------------------
       singcurs=0
       CALL ipeq_alloc
       DO i=1,mpert
-         WRITE(*,'(a12,I3,a24)')"computing m=",mfac(i),
+         WRITE(*,'(a14,I3,a24)')"Computing m =",mfac(i),
      $        "poloidal mode coupling"
          binmn=0
          binmn(i)=1.0
@@ -280,7 +278,7 @@ c-----------------------------------------------------------------------
 c     convert coordinates for matrix on the plasma boundary.
 c-----------------------------------------------------------------------
       IF ((polo /= 1) .OR. (toro /= 1)) THEN
-         WRITE(*,*)"convert coordinates"
+         WRITE(*,*)"Converting coordinates"
          CALL spline_alloc(spl,mthsurf,1)
          spl%xs=theta
 
@@ -709,7 +707,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing delta, singular current and field"
+      WRITE(*,*)"Computing delta, singular current and field"
       CALL ipeq_alloc
       CALL idcon_build(egnum,xwpimn)
 c-----------------------------------------------------------------------
@@ -922,7 +920,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing perturbed b field"
+      WRITE(*,*)"Computing perturbed b field"
       ALLOCATE(psis(rstep),
      $     eulbpar_mn(rstep,mpert),lagbpar_mn(rstep,mpert),
      $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf))
@@ -1013,7 +1011,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_pmodb
 c-----------------------------------------------------------------------
-c     subprogram 5. ipout_pmodb0.
+c     subprogram 6. ipout_pmodb0.
 c     compute model perturbed mod b.
 c     __________________________________________________________________
 c     egnum  : eigenmode number without edge_flag
@@ -1045,7 +1043,7 @@ c-----------------------------------------------------------------------
 c     compute necessary components.
 c     resolve r0 and bt0 problems later.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"computing perturbed b field"
+      WRITE(*,*)"Computing perturbed b field"
       ALLOCATE(psis(rstep),
      $     eulbpar_mn(rstep,mpert),lagbpar_mn(rstep,mpert),
      $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf))
@@ -1141,7 +1139,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_pmodb0
 c-----------------------------------------------------------------------
-c     subprogram 6. ipout_xbrzphi.
+c     subprogram 7. ipout_xbrzphi.
 c     write perturbed rzphi components on rzphi grid.
 c     __________________________________________________________________
 c     egnum  : eigenmode number without edge_flag
@@ -1151,163 +1149,388 @@ c     nz     : z grid number
 c     __________________________________________________________________
 c     labl   : label for multiple runs   
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_xbrzphi(egnum,xwpimn,nr,nz,labl)
+      SUBROUTINE ipout_xbrzphi(egnum,xwpimn,nr,nz,brrmn,bnomn,labl)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,nr,nz,labl
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: brrmn,bnomn
 
       INTEGER :: i,j,ipert
       REAL(r8) :: mid,bt0
       CHARACTER(1) :: slabl
       CHARACTER(2) :: slabl2
 
-      REAL(r8), DIMENSION(0:nr,0:nz) :: ebr,ebz,ebp
-      COMPLEX(r8), DIMENSION(0:nr,0:nz) :: xrr,xrz,xrp,brr,brz,brp
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.      
+
+      INTEGER, DIMENSION(0:nr,0:nz) :: vgdl
+      REAL(r8), DIMENSION(0:nr,0:nz) :: vgdr,vgdz,ebr,ebz,ebp
+      COMPLEX(r8), DIMENSION(0:nr,0:nz) :: xrr,xrz,xrp,brr,brz,brp,
+     $     bpr,bpz,bpp,vbr,vbz,vbp,vpbr,vpbz,vpbp,vvbr,vvbz,vvbp
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"mapping rzphi components on rzphi grid"
-      xrr=0
-      xrz=0
-      xrp=0
-      brr=0
-      brz=0
-      brp=0
       CALL idcon_build(egnum,xwpimn)
-      ! evaluate f value for vacuum
-      mid = 0.0
-      CALL spline_eval(sq,mid,0)
-      bt0 = abs(sq%f(1))/(twopi*ro)
-          
+
+      IF (eqbrzphi_flag) THEN
+         WRITE(*,*)"Computing equilibrium b field"
+         ! evaluate f value for vacuum
+         mid = 0.0
+         CALL spline_eval(sq,mid,0)
+         bt0 = abs(sq%f(1))/(twopi*ro)
+         DO i=0,nr
+            DO j=0,nz
+               CALL bicube_eval(psi_in,gdr(i,j),gdz(i,j),1)
+               ebr(i,j) = -psi_in%fy(1)/gdr(i,j)*psio
+               ebz(i,j) = psi_in%fx(1)/gdr(i,j)*psio
+               IF (gdl(i,j) == 1) THEN  
+                  CALL spline_eval(sq,gdpsi(i,j),0)
+                  ebp(i,j) = abs(sq%f(1))/(twopi*gdr(i,j))
+               ELSE
+                  ebp(i,j) = bt0*ro/gdr(i,j)  
+               ENDIF
+            ENDDO   
+         ENDDO
+      ENDIF
+      
       CALL ipeq_alloc
       DO i=0,nr
-         WRITE(*,*)"finish",i,"th radial mapping"
+         IF (brzphi_flag .OR. xrzphi_flag) THEN
+            WRITE(*,*)"Computing",i,"th radial mapping"
+         ENDIF
          DO j=0,nz
-            CALL bicube_eval(psi_in,gdr(i,j),gdz(i,j),1)
-            ebr(i,j) = -psi_in%fy(1)/gdr(i,j)*psio
-            ebz(i,j) = psi_in%fx(1)/gdr(i,j)*psio
-
             IF (gdl(i,j) == 1) THEN
-               CALL ipeq_contra(gdpsi(i,j))
-               CALL ipeq_cova(gdpsi(i,j))
-               CALL ipeq_rzphi(gdpsi(i,j))
-               DO ipert=1,mpert
-                  xrr(i,j)=xrr(i,j)+xrr_mn(ipert)*
-     $                 EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                  xrz(i,j)=xrz(i,j)+xrz_mn(ipert)*
-     $                 EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                  xrp(i,j)=xrp(i,j)+xrp_mn(ipert)*
-     $                 EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                  brr(i,j)=brr(i,j)+brr_mn(ipert)*
-     $                 EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                  brz(i,j)=brz(i,j)+brz_mn(ipert)*
-     $                 EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                  brp(i,j)=brp(i,j)+brp_mn(ipert)*
-     $                 EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-               ENDDO
-               xrr(i,j)=
-     $              REAL(xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(xrr(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
-               xrz(i,j)=
-     $              REAL(xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(xrz(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
-               xrp(i,j)=
-     $              REAL(xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(xrp(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
-               brr(i,j)=
-     $              REAL(brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(brr(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
-               brz(i,j)=
-     $              REAL(brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(brz(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
-               brp(i,j)=
-     $              REAL(brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+ifac*
-     $              REAL(brp(i,j)*EXP(-twopi*ifac*(0.25+nn*gdphi(i,j))))
-
-               CALL spline_eval(sq,gdpsi(i,j),0)
-               ebp(i,j) = abs(sq%f(1))/(twopi*gdr(i,j))
-
-            ELSE
-               ebp(i,j) = bt0*ro/gdr(i,j)
+               IF (brzphi_flag .OR. xrzphi_flag) THEN
+                  CALL ipeq_contra(gdpsi(i,j))
+                  CALL ipeq_cova(gdpsi(i,j))
+                  CALL ipeq_rzphi(gdpsi(i,j))
+                  DO ipert=1,mpert
+                     IF (brzphi_flag) THEN
+                        brr(i,j)=brr(i,j)+brr_mn(ipert)*
+     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
+                        brz(i,j)=brz(i,j)+brz_mn(ipert)*
+     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
+                        brp(i,j)=brp(i,j)+brp_mn(ipert)*
+     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
+                     ENDIF
+                     IF (xrzphi_flag) THEN
+                        xrr(i,j)=xrr(i,j)+xrr_mn(ipert)*
+     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
+                        xrz(i,j)=xrz(i,j)+xrz_mn(ipert)*
+     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
+                        xrp(i,j)=xrp(i,j)+xrp_mn(ipert)*
+     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
+                     ENDIF
+                  ENDDO
+                  IF (brzphi_flag) THEN
+                     brr(i,j)=
+     $                    REAL(brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+
+     $                    ifac*REAL(brr(i,j)*EXP(-twopi*ifac*
+     $                    (0.25+nn*gdphi(i,j))))
+                     brz(i,j)=
+     $                    REAL(brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+
+     $                    ifac*REAL(brz(i,j)*EXP(-twopi*ifac*
+     $                    (0.25+nn*gdphi(i,j))))
+                     brp(i,j)=
+     $                    REAL(brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+
+     $                    ifac*REAL(brp(i,j)*EXP(-twopi*ifac*
+     $                    (0.25+nn*gdphi(i,j))))
+                  ENDIF
+                  IF (xrzphi_flag) THEN
+                     xrr(i,j)=
+     $                    REAL(xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+
+     $                    ifac*REAL(xrr(i,j)*EXP(-twopi*ifac*
+     $                    (0.25+nn*gdphi(i,j))))
+                     xrz(i,j)=
+     $                    REAL(xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+
+     $                    ifac*REAL(xrz(i,j)*EXP(-twopi*ifac*
+     $                    (0.25+nn*gdphi(i,j))))
+                     xrp(i,j)=
+     $                    REAL(xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))+
+     $                    ifac*REAL(xrp(i,j)*EXP(-twopi*ifac*
+     $                    (0.25+nn*gdphi(i,j))))
+                  ENDIF
+               ENDIF
             ENDIF
          ENDDO
       ENDDO
+
+      IF (vbrzphi_flag) THEN
+         WRITE(*,*)"Computing vacuum field"
+         CALL ipvacuum_bnormal(psilim,bnomn,1,1,nr,nz)
+         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+     $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
+         IF (brzphi_flag) THEN
+            DO i=0,nr
+               DO j=0,nz
+       
+                  IF (gdl(i,j) /= 1) THEN
+                     gdl(i,j)=vgdl(i,j)
+                     brr(i,j)=vbr(i,j)
+                     brz(i,j)=vbz(i,j)
+                     brp(i,j)=vbp(i,j)
+                  ENDIF
+
+               ENDDO
+            ENDDO
+         ENDIF
+      ENDIF
+
+      IF (divzero_flag) THEN
+         CALL ipeq_rzpdiv(nr,nz,gdl,gdr,gdz,brr,brz,brp)
+      ENDIF
+      IF (div_flag) THEN
+         CALL ipdiag_rzpdiv(nr,nz,gdl,gdr,gdz,brr,brz,brp,labl)
+      ENDIF
+
+      IF (vpbrzphi_flag) THEN
+         WRITE(*,*)"Computing vacuum field by plasma response"
+         bnomn=bnomn-brrmn
+         CALL ipvacuum_bnormal(psilim,bnomn,1,1,nr,nz)
+         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+     $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
+         IF (brzphi_flag) THEN
+            DO i=0,nr
+               DO j=0,nz
+                  
+                  IF (gdl(i,j) /= 1) THEN
+                     gdl(i,j)=vgdl(i,j)
+                     bpr(i,j)=vpbr(i,j)
+                     bpz(i,j)=vpbz(i,j)
+                     bpp(i,j)=vpbp(i,j)
+                  ELSE
+                     bpr(i,j)=brr(i,j)
+                     bpz(i,j)=brz(i,j)
+                     bpp(i,j)=brp(i,j)
+                  ENDIF
+                  
+               ENDDO
+            ENDDO
+         ENDIF
+      ENDIF
+
+      IF (vvbrzphi_flag) THEN
+         WRITE(*,*)"Computing vacuum field without plasma response"
+         CALL ipvacuum_bnormal(psilim,brrmn,1,1,nr,nz)
+         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+     $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp)
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      IF (labl < 10) THEN
-         WRITE(UNIT=slabl, FMT='(I1)')labl            
-         CALL ascii_open(out_unit,"ipec_eqbrzphi_l"//slabl//"_n"
-     $        //sn//".out","UNKNOWN")
-      ELSE
-         WRITE(UNIT=slabl2, FMT='(I2)')labl            
-         CALL ascii_open(out_unit,"ipec_eqbrzphi_l"//slabl2//"_n"
-     $        //sn//".out","UNKNOWN")
-      ENDIF    
-
-      WRITE(out_unit,*)"IPEC_EQBRZPHI: eq b field in rzphi grid"
-      WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
-      WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z","re(eb_r)",
-     $     "re(eb_z)","re(eb_phi)"
+      IF (eqbrzphi_flag) THEN
+         IF (labl < 10) THEN
+            WRITE(UNIT=slabl, FMT='(I1)')labl            
+            CALL ascii_open(out_unit,"ipec_eqbrzphi_l"//slabl//"_n"
+     $           //sn//".out","UNKNOWN")
+         ELSE
+            WRITE(UNIT=slabl2, FMT='(I2)')labl            
+            CALL ascii_open(out_unit,"ipec_eqbrzphi_l"//slabl2//"_n"
+     $           //sn//".out","UNKNOWN")
+         ENDIF    
+         
+         WRITE(out_unit,*)"IPEC_EQBRZPHI: eq b field in rzphi grid"
+         WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
+         WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z","re(eb_r)",
+     $        "re(eb_z)","re(eb_phi)"
       
-      DO i=0,nr
-         DO j=0,nz
-            WRITE(out_unit,'(1x,I2,5(e16.8))')
-     $           gdl(i,j),gdr(i,j),gdz(i,j),
-     $           ebr(i,j),ebz(i,j),ebp(i,j)
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,5(e16.8))')
+     $              gdl(i,j),gdr(i,j),gdz(i,j),
+     $              ebr(i,j),ebz(i,j),ebp(i,j)
+            ENDDO
          ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
+         CALL ascii_close(out_unit)
+      ENDIF
 
-      IF (labl < 10) THEN
-         CALL ascii_open(out_unit,"ipec_xrzphi_l"//slabl//"_n"
-     $        //sn//".out","UNKNOWN")
-      ELSE
-         CALL ascii_open(out_unit,"ipec_xrzphi_l"//slabl2//"_n"
-     $        //sn//".out","UNKNOWN")
-      ENDIF       
+      IF (brzphi_flag) THEN
 
-      WRITE(out_unit,*)"IPEC_XRZPHI: displacements in rzphi grid"
-      WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
-      WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z","re(xi_r)","im(xi_r)",
-     $     "re(xi_z)","im(xi_z)","re(xi_phi)","im(xi_phi)"
-      
-      DO i=0,nr
-         DO j=0,nz
-            WRITE(out_unit,'(1x,I2,8(e16.8))')
-     $           gdl(i,j),gdr(i,j),gdz(i,j),
-     $           REAL(xrr(i,j)),AIMAG(xrr(i,j)),
-     $           REAL(xrz(i,j)),AIMAG(xrz(i,j)),
-     $           REAL(xrp(i,j)),AIMAG(xrp(i,j))
+         IF (labl < 10) THEN
+            WRITE(UNIT=slabl, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_brzphi_l"//slabl//"_n"
+     $           //sn//".out","UNKNOWN")
+         ELSE
+            WRITE(UNIT=slabl2, FMT='(I2)')labl    
+            CALL ascii_open(out_unit,"ipec_brzphi_l"//slabl2//"_n"
+     $           //sn//".out","UNKNOWN")
+         ENDIF   
+         
+         WRITE(out_unit,*)"IPEC_BRZPHI: perturbed field in rzphi grid"
+         WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
+         WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $        "re(b_r)","im(b_r)","re(b_z)","im(b_z)",
+     $        "re(b_phi)","im(b_phi)"
+         
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,8(e16.8))')
+     $              gdl(i,j),gdr(i,j),gdz(i,j),
+     $              REAL(brr(i,j)),AIMAG(brr(i,j)),
+     $              REAL(brz(i,j)),AIMAG(brz(i,j)),
+     $              REAL(brp(i,j)),AIMAG(brp(i,j))
+            ENDDO
          ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
+         CALL ascii_close(out_unit)
 
-      IF (labl < 10) THEN
-         CALL ascii_open(out_unit,"ipec_brzphi_l"//slabl//"_n"
-     $        //sn//".out","UNKNOWN")
-      ELSE
-         CALL ascii_open(out_unit,"ipec_brzphi_l"//slabl2//"_n"
-     $        //sn//".out","UNKNOWN")
-      ENDIF   
+      ENDIF
 
-      WRITE(out_unit,*)"IPEC_BRZPHI: perturbed field in rzphi grid"
-      WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
-      WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z","re(b_r)","im(b_r)",
-     $     "re(b_z)","im(b_z)","re(b_phi)","im(b_phi)"
-      
-      DO i=0,nr
-         DO j=0,nz
-            WRITE(out_unit,'(1x,I2,8(e16.8))')
-     $           gdl(i,j),gdr(i,j),gdz(i,j),
-     $           REAL(brr(i,j)),AIMAG(brr(i,j)),
-     $           REAL(brz(i,j)),AIMAG(brz(i,j)),
-     $           REAL(brp(i,j)),AIMAG(brp(i,j))
+      IF (brzphi_flag .AND. vpbrzphi_flag) THEN
+
+         IF (labl < 10) THEN
+            WRITE(UNIT=slabl, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_pbrzphi_l"//slabl//"_n"
+     $           //sn//".out","UNKNOWN")
+         ELSE
+            WRITE(UNIT=slabl2, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_pbrzphi_l"//slabl2//"_n"
+     $           //sn//".out","UNKNOWN")
+         ENDIF   
+         
+         WRITE(out_unit,*)"IPEC_PBRZPHI: perturbed field in rzphi grid"
+         WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
+         WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $        "re(b_r)","im(b_r)","re(b_z)","im(b_z)",
+     $        "re(b_phi)","im(b_phi)"
+         
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,8(e16.8))')
+     $              gdl(i,j),gdr(i,j),gdz(i,j),
+     $              REAL(bpr(i,j)),AIMAG(bpr(i,j)),
+     $              REAL(bpz(i,j)),AIMAG(bpz(i,j)),
+     $              REAL(bpp(i,j)),AIMAG(bpp(i,j))
+            ENDDO
          ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
+         CALL ascii_close(out_unit)
+
+      ENDIF
+
+      IF (xrzphi_flag) THEN
+
+         IF (labl < 10) THEN
+            WRITE(UNIT=slabl, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_xrzphi_l"//slabl//"_n"
+     $           //sn//".out","UNKNOWN")
+         ELSE
+            WRITE(UNIT=slabl2, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_xrzphi_l"//slabl2//"_n"
+     $           //sn//".out","UNKNOWN")
+         ENDIF       
+         WRITE(out_unit,*)"IPEC_XRZPHI: displacements in rzphi grid"
+         WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
+         WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $        "re(xi_r)","im(xi_r)","re(xi_z)","im(xi_z)",
+     $        "re(xi_phi)","im(xi_phi)"
+         
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,8(e16.8))')
+     $              gdl(i,j),gdr(i,j),gdz(i,j),
+     $              REAL(xrr(i,j)),AIMAG(xrr(i,j)),
+     $              REAL(xrz(i,j)),AIMAG(xrz(i,j)),
+     $              REAL(xrp(i,j)),AIMAG(xrp(i,j))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+
+      ENDIF
+
+      IF (vbrzphi_flag) THEN
+         
+         IF (labl < 10) THEN
+            WRITE(UNIT=slabl, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_vbrzphi_l"//slabl//"_n"
+     $           //sn//".out","UNKNOWN")
+         ELSE
+            WRITE(UNIT=slabl2, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_vbrzphi_l"//slabl2//"_n"
+     $           //sn//".out","UNKNOWN")
+         ENDIF   
+
+         WRITE(out_unit,*)"IPEC_VBRZPHI: vacuum field in rzphi grid"
+         WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
+         WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $        "re(vb_r)","im(vb_r)","re(vb_z)","im(vb_z)",
+     $        "re(vb_phi)","im(vb_phi)"
+         
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,8(e16.8))')
+     $              vgdl(i,j),vgdr(i,j),vgdz(i,j),
+     $              REAL(vbr(i,j)),AIMAG(vbr(i,j)),
+     $              REAL(vbz(i,j)),AIMAG(vbz(i,j)),
+     $              REAL(vbp(i,j)),AIMAG(vbp(i,j))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         
+      ENDIF
+
+      IF (vpbrzphi_flag) THEN
+         
+         IF (labl < 10) THEN
+            WRITE(UNIT=slabl, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_vpbrzphi_l"//slabl//"_n"
+     $           //sn//".out","UNKNOWN")
+         ELSE
+            WRITE(UNIT=slabl2, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_vpbrzphi_l"//slabl2//"_n"
+     $           //sn//".out","UNKNOWN")
+         ENDIF   
+
+         WRITE(out_unit,*)"IPEC_VPBRZPHI: vacuum field in rzphi grid"
+         WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
+         WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $        "re(vpb_r)","im(vpb_r)","re(vpb_z)","im(vpb_z)",
+     $        "re(vpb_phi)","im(vpb_phi)"
+         
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,8(e16.8))')
+     $              vgdl(i,j),vgdr(i,j),vgdz(i,j),
+     $              REAL(vpbr(i,j)),AIMAG(vpbr(i,j)),
+     $              REAL(vpbz(i,j)),AIMAG(vpbz(i,j)),
+     $              REAL(vpbp(i,j)),AIMAG(vpbp(i,j))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         
+      ENDIF
+
+      IF (vvbrzphi_flag) THEN
+         
+         IF (labl < 10) THEN
+            WRITE(UNIT=slabl, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_vvbrzphi_l"//slabl//"_n"
+     $           //sn//".out","UNKNOWN")
+         ELSE
+            WRITE(UNIT=slabl2, FMT='(I1)')labl    
+            CALL ascii_open(out_unit,"ipec_vvbrzphi_l"//slabl2//"_n"
+     $           //sn//".out","UNKNOWN")
+         ENDIF   
+
+         WRITE(out_unit,*)"IPEC_VVBRZPHI: vacuum field in rzphi grid"
+         WRITE(out_unit,'(1x,2(a4,I4))')"nr:",nr+1,"nz:",nz+1
+         WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $        "re(vvb_r)","im(vvb_r)","re(vvb_z)","im(vvb_z)",
+     $        "re(vvb_phi)","im(vvb_phi)"
+         
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,8(e16.8))')
+     $              vgdl(i,j),vgdr(i,j),vgdz(i,j),
+     $              REAL(vvbr(i,j)),AIMAG(vvbr(i,j)),
+     $              REAL(vvbz(i,j)),AIMAG(vvbz(i,j)),
+     $              REAL(vvbp(i,j)),AIMAG(vvbp(i,j))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
