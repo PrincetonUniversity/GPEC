@@ -78,7 +78,6 @@ clean:
 	cd tex/vacuum; rm -f *.dvi *.log
 	cd tex/dcon/manuscript; rm -f *.dvi *.log
 	cd tex/dcon/notebook; rm -f *.dvi *.log
-	rm -rf lib/`uname`$(FORTRAN) rundir/`uname`$(FORTRAN) make.nohup
 
 realclean: clean
 	rm -rf lib rundir

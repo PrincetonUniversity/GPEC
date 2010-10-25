@@ -1233,11 +1233,11 @@ c-----------------------------------------------------------------------
          filein="iptemp.txt"
          file1="ipidl_3dsurf_xnobo_l"//slabl//"_n"//sn//".out"
 
-         ddist=0.3
+         ddist=0.1
          mmtheta=mthnum
          nnn=nn
          np=144
-         nt=72*nnn
+         nt=144
          CALL ipidl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1)
 
          CALL ascii_open(out_unit,"iptemp.txt","UNKNOWN")
@@ -1250,11 +1250,11 @@ c-----------------------------------------------------------------------
          filein="iptemp.txt"
          file1="ipidl_3dsurf_bnobo_l"//slabl//"_n"//sn//".out"
 
-         ddist=0.3
+         ddist=0.1
          mmtheta=mthnum
          nnn=nn
          np=144
-         nt=72*nn
+         nt=144
          CALL ipidl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1) 
       ENDIF
       DEALLOCATE(rs,zs,xno_fun,bno_fun)

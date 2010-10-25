@@ -38,7 +38,7 @@ c-----------------------------------------------------------------------
      $     power_flag,fft_flag,mthsurf0,left,scale,wegt,
      $     erdata_flag,formattype,errnmin,errnmax,errmmin,errmmax,
      $     poloin,toroin,infnum,infiles,
-     $     harmonic_flag,mode_flag,modemin,modemax
+     $     harmonic_flag,mode_flag,modemin,modemax,eqoff_flag
       NAMELIST/ipec_control/response_flag,dist,bdist,modelnum
       NAMELIST/ipec_output/singcoup_flag,nrzeq_flag,nr,nz,labl,
      $     singfld_flag,pmodb_flag,pmodb0_flag,rstep,poloout,toroout,
@@ -68,6 +68,7 @@ c-----------------------------------------------------------------------
       IF (response_flag) resp=1
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag) psixy=1
+      IF (eqoff_flag) psixy=0
 c-----------------------------------------------------------------------
 c     check time.
 c-----------------------------------------------------------------------
@@ -134,7 +135,7 @@ c-----------------------------------------------------------------------
                   nr=mr
                   nz=mz
                ENDIF
-               CALL ipeq_rzpgrid(nr,nz)
+               IF (.NOT. eqoff_flag) CALL ipeq_rzpgrid(nr,nz)
                CALL ipout_xbrzphi(0,xwpmn,nr,nz,brrmn,bnomn,label)
             ENDIF
 c-----------------------------------------------------------------------
@@ -199,7 +200,7 @@ c-----------------------------------------------------------------------
                   nr=mr
                   nz=mz
                ENDIF
-               CALL ipeq_rzpgrid(nr,nz)
+               IF (.NOT. eqoff_flag) CALL ipeq_rzpgrid(nr,nz)
                CALL ipout_xbrzphi(0,xwpmn,nr,nz,brrmn,bnomn,label)
             ENDIF
 c-----------------------------------------------------------------------
@@ -259,7 +260,7 @@ c-----------------------------------------------------------------------
                   nr=mr
                   nz=mz
                ENDIF
-               CALL ipeq_rzpgrid(nr,nz)
+               IF (.NOT. eqoff_flag) CALL ipeq_rzpgrid(nr,nz)
                ALLOCATE(ipiv(mpert),
      $              invmats(mpert,mpert),temp1(mpert,mpert))
                DO i=1,mpert
@@ -343,7 +344,7 @@ c-----------------------------------------------------------------------
          CALL ipdiag_surfmode(lowmode,highmode,poloout,toroout)
       ENDIF
       IF (rzpgrid_flag) THEN
-         CALL ipdiag_rzpgrid(nr,nz)
+         IF (.NOT. eqoff_flag) CALL ipdiag_rzpgrid(nr,nz)
       ENDIF
       IF (m3d_flag) THEN
          normpsi=1.0

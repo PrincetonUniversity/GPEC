@@ -837,7 +837,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE READ_eq_ldp_i
+      END SUBROUTINE read_eq_ldp_i
 c-----------------------------------------------------------------------
 c     subprogram 13. read_eq_jsolver.
 c     reads data from Steve Jardin's JSOLVER inverse equilibrium.

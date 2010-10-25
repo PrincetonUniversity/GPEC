@@ -8,7 +8,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      LOGICAL :: power_flag,fft_flag,edge_flag,
+      LOGICAL :: power_flag,fft_flag,edge_flag,eqoff_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,

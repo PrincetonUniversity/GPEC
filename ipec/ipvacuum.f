@@ -382,7 +382,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnomn
 
       INTEGER :: ipert,itheta,rtheta,vn
-      REAL(r8) :: qa
+      REAL(r8) :: qa,x1,x2,z1,z2
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
 
       REAL(r8), DIMENSION(0:mthsurf) :: etas,dphi,delpsi,delte,jacs
@@ -406,6 +406,19 @@ c-----------------------------------------------------------------------
          delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
          jacs(itheta)=jac
       ENDDO
+
+      IF (eqoff_flag) THEN
+         x1 = MINVAL(r)*0.8
+         x2 = MAXVAL(r)*1.2
+         z1 = MINVAL(z)*1.2
+         z2 = -z1       
+      ELSE
+         x1 = psi_in%xs(0)
+         x2 = psi_in%xs(mr)
+         z1 = psi_in%ys(0)
+         z2 = psi_in%ys(mz)
+      ENDIF
+
       delte=-dphi/sq%f(4)
 c-----------------------------------------------------------------------
 c     invert values for vn < 0.
@@ -438,13 +451,13 @@ c-----------------------------------------------------------------------
       WRITE(bin_unit,'(a/)')"scalars"
       WRITE(bin_unit,'(i4,a)')nr+1,tab//tab//"Number of x grid"
       WRITE(bin_unit,'(i4,a)')nz+1,tab//tab//"Number of z grid"
-      WRITE(bin_unit,'(f18.10,a)')psi_in%xs(0),tab//tab//
+      WRITE(bin_unit,'(f18.10,a)')x1,tab//tab//
      $     "Left x position in rectangular grid"
-      WRITE(bin_unit,'(f18.10,a)')psi_in%xs(mr),tab//tab//
+      WRITE(bin_unit,'(f18.10,a)')x2,tab//tab//
      $     "Right x position in rectangular grid"
-      WRITE(bin_unit,'(f18.10,a)')psi_in%ys(0),tab//tab//
+      WRITE(bin_unit,'(f18.10,a)')z1,tab//tab//
      $     "Lower z position in rectangular grid"
-      WRITE(bin_unit,'(f18.10,a)')psi_in%ys(mz),tab//tab//
+      WRITE(bin_unit,'(f18.10,a)')z2,tab//tab//
      $     "Upper z position in rectangular grid"
       WRITE(bin_unit,'(i4,a)')mthsurf,tab//tab//"mthsurf"//tab//"mthin"
      $     //tab//"Number of poloidal nodes"

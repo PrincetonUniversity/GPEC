@@ -106,12 +106,12 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: dist
 
       INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,tmlow,tmhigh,tmpert
-      REAL(r8) :: respsi,lpsi,rpsi,sqrpsi,correc,shear,areab
+      REAL(r8) :: respsi,lpsi,rpsi,sqrpsi,correc,shear,larea,thetai
       COMPLEX(r8) :: lnbwp1mn,rnbwp1mn,lcorrec,rcorrec
       CHARACTER(1) :: spolo,storo
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,rfacs,jcfun,wcfun,
-     $     dphi,thetas,units
+     $     dphi,thetas,units,lwgtfun
 
       COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,lcormn,rcormn,
      $     fkaxmn,singflx_mn,singbno_mn,ftnmn
@@ -279,11 +279,11 @@ c     convert coordinates for matrix on the plasma boundary.
 c-----------------------------------------------------------------------
       IF ((polo /= 1) .OR. (toro /= 1)) THEN
          WRITE(*,*)"Converting coordinates"
-         CALL spline_alloc(spl,mthsurf,1)
-         spl%xs=theta
-
          CALL spline_eval(sq,psilim,0)
          dphi=0
+         
+         CALL spline_alloc(spl,mthsurf,1)
+         spl%xs=theta
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psilim,theta(itheta),1)
             rfac=SQRT(rzphi%f(1))
@@ -294,14 +294,13 @@ c-----------------------------------------------------------------------
             w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
             w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
             delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-            bpfac=chi1*delpsi(itheta)/r(itheta)
+            bpfac=psio*delpsi(itheta)/r(itheta)
             btfac=sq%f(1)/(twopi*r(itheta))
             bfac=SQRT(bpfac*bpfac+btfac*btfac)
             fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-            areab = areab + jac*delpsi(itheta)/mthsurf
             SELECT CASE(polo)
             CASE(0)
-            spl%fs(itheta,1)=fac*bpfac/rfac
+            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
             CASE(1)
             spl%fs(itheta,1)=fac
             CASE(2)
@@ -318,8 +317,28 @@ c-----------------------------------------------------------------------
 
          CALL spline_fit(spl,"periodic")
          CALL spline_int(spl)
-         ! coordinate angle at hamada
+         ! coordinate angle at hamada angle
          thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
+         lwgtfun(:)=spl%fs(:,1)
+         CALL spline_dealloc(spl)
+
+         CALL spline_alloc(spl,mthsurf,1)
+         spl%xs=theta         
+         spl%fs(:,1)=jac*delpsi(:)/lwgtfun(:)
+         CALL spline_fit(spl,"periodic")
+         DO itheta=0,mthsurf
+            thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
+            CALL spline_eval(spl,thetai,0)
+            lwgtfun(itheta)=spl%f(1)
+         ENDDO
+         CALL spline_dealloc(spl)
+
+         CALL spline_alloc(spl,mthsurf,1)
+         spl%xs=theta                 
+         spl%fs(:,1)=lwgtfun(:)
+         CALL spline_fit(spl,"periodic")
+         CALL spline_int(spl)       
+         lwgtfun(:)=spl%fs(:,1)/spl%fsi(mthsurf,1)
          CALL spline_dealloc(spl)
 c-----------------------------------------------------------------------
 c     convert coordinates. 
@@ -332,20 +351,22 @@ c-----------------------------------------------------------------------
             DO itheta=0,mthsurf
                ftnfun(itheta)=0
                ftnfun(itheta)=
-     $              lftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))               
+     $              lftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))  
             ENDDO
          ! multiply toroidal factor in hamada angle
             IF (toro .EQ. 0) THEN
                ftnfun(:)=ftnfun(:)*EXP(-ifac*nn*dphi(:))
             ELSE
                ftnfun(:)=ftnfun(:)*
-     $              EXP(twopi*ifac*nn*sq%f(4)*(thetas(:)-theta(:)))
+     $              EXP(-twopi*ifac*nn*sq%f(4)*(thetas(:)-theta(:)))
             ENDIF
             CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
             convmat(:,i)=ftnmn
-            fldflxmn = lftnmn
-            CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
-            fldflxmat(:,i)=fldflxmn/sqrt(areab)
+
+            CALL iscdftb(lmfac,lmpert,ftnfun,mthsurf,lftnmn)
+            ftnfun(:)=ftnfun(:)*sqrt(lwgtfun(:))
+            CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,fldflxmn)            
+            fldflxmat(:,i)=fldflxmn
          ENDDO
          tmlow = lmlow
          tmhigh = lmhigh
@@ -358,14 +379,14 @@ c-----------------------------------------------------------------------
          t4mat = MATMUL(singcurs,convmat)
       ELSE
          units = (/(1.0,itheta=0,mthsurf)/)
-         areab = issurfint(units,mthsurf,psilim,0,0)
+         larea = issurfint(units,mthsurf,psilim,0,0)
          ALLOCATE(fldflxmn(mpert),fldflxmat(mpert,mpert))
          DO i=1,mpert
             ftnmn=0
             ftnmn(i)=1.0
             fldflxmn=ftnmn
             CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
-            fldflxmat(:,i)=fldflxmn/sqrt(areab)            
+            fldflxmat(:,i)=fldflxmn/sqrt(larea)            
          ENDDO
          tmlow = mlow
          tmhigh = mhigh
@@ -536,7 +557,7 @@ c            areal%xs=theta
                btfac=sq%f(1)/(twopi*r(itheta))
                bfac=SQRT(bpfac*bpfac+btfac*btfac)
                fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-               ! use real jacobian (q/f)r^3bpfac
+               ! use real jacobian (q/f)r^3(bpfac)
                areafac(itheta)=sq%f(4)/sq%f(1)*twopi*
      $              r(itheta)**3*bpfac*twopi**2
                spl%fs(itheta,1)=fac/r(itheta)**2
@@ -872,16 +893,19 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a12,1x,I16)')"msing:",msing
       WRITE(out_unit,'(1x,a6,11(1x,a16))')"q","psi",
      $     "abs(delta)","abs(delcur)","abs(corcur)","abs(singcur)",
-     $     "abs(sgpower)","abs(singbno)","abs(singflx)","singmaxtor",
+     $     "real(singbno)","imag(singbno)",
+     $     "real(singflx)","imag(singflx)",
      $     "islandhwidth","chirikov"
       DO ising=1,msing
          WRITE(out_unit,'(1x,f6.3,11(1x,e16.8))')
      $        singtype(ising)%q,singtype(ising)%psifac,
      $        ABS(delta(ising)),ABS(delcur(ising)),ABS(corcur(ising)),
-     $        ABS(singcur(ising)),singpower(ising),
-     $        ABS(singbno_mn(resnum(ising),ising)),
-     $        ABS(singflx_mn(resnum(ising),ising)),
-     $        singmaxtor(ising),island_hwidth(ising),chirikov(ising)
+     $        ABS(singcur(ising)),
+     $        REAL(singbno_mn(resnum(ising),ising)),
+     $        AIMAG(singbno_mn(resnum(ising),ising)),
+     $        REAL(singflx_mn(resnum(ising),ising)),
+     $        AIMAG(singflx_mn(resnum(ising),ising)),
+     $        island_hwidth(ising),chirikov(ising)
       ENDDO
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
@@ -1172,6 +1196,29 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
+      ! initialization
+      ebr = 0
+      ebz = 0
+      ebp = 0
+      xrr = 0
+      xrz = 0
+      xrp = 0
+      brr = 0
+      brz = 0
+      brp = 0
+      bpr = 0
+      bpz = 0
+      bpp = 0
+      vbr = 0
+      vbz = 0
+      vbp = 0
+      vpbr = 0
+      vpbz = 0
+      vpbp = 0
+      vvbr = 0
+      vvbz = 0
+      vvbp = 0
+
       CALL idcon_build(egnum,xwpimn)
 
       IF (eqbrzphi_flag) THEN
@@ -1196,13 +1243,12 @@ c-----------------------------------------------------------------------
       ENDIF
       
       CALL ipeq_alloc
-      DO i=0,nr
-         IF (brzphi_flag .OR. xrzphi_flag) THEN
+
+      IF (brzphi_flag .OR. xrzphi_flag) THEN
+         DO i=0,nr
             WRITE(*,*)"Computing",i,"th radial mapping"
-         ENDIF
-         DO j=0,nz
-            IF (gdl(i,j) == 1) THEN
-               IF (brzphi_flag .OR. xrzphi_flag) THEN
+            DO j=0,nz
+               IF (gdl(i,j) == 1) THEN
                   CALL ipeq_contra(gdpsi(i,j))
                   CALL ipeq_cova(gdpsi(i,j))
                   CALL ipeq_rzphi(gdpsi(i,j))
@@ -1253,9 +1299,11 @@ c-----------------------------------------------------------------------
      $                    (0.25+nn*gdphi(i,j))))
                   ENDIF
                ENDIF
-            ENDIF
+            ENDDO
          ENDDO
-      ENDDO
+      ENDIF
+
+      CALL ipeq_dealloc
 
       IF (vbrzphi_flag) THEN
          WRITE(*,*)"Computing vacuum field"

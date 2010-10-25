@@ -196,6 +196,10 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%taur
          END SELECT
       ENDDO
+      IF (psifac(mstep)<psilim-(1e-4)) THEN
+         WRITE(message,'(a)')"Terminated by zero crossing"
+         CALL ipec_stop(message)
+      ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
 c     normalize plasma/vacuum eigenenergy and eigenfunctions.

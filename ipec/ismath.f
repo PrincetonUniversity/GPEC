@@ -10,7 +10,7 @@ c     1. iscdftf
 c     2. iscdftb
 c     3. issect
 c     4. issurfint
-c     5. is3dsurf
+c     5. ipidl_3dsurf
 c-----------------------------------------------------------------------
 c     subprogram 0. ismath_mod.
 c     module declarations.
