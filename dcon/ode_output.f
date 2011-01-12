@@ -34,6 +34,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u,u_old,u_save,du,
      $     ca,ca_old
 
+      LOGICAL :: termbycross_flag=.FALSE.
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. ode_output_open
@@ -355,6 +357,9 @@ c-----------------------------------------------------------------------
             WRITE(crit_bin_unit)REAL(psi_med,4),REAL(logpsi1_med,4),
      $           REAL(logpsi2_med,4),REAL(q_med,4),REAL(crit_med,4)
             nzero=nzero+1
+         ENDIF
+         IF (termbycross_flag) THEN
+            CALL program_stop("Terminated by zero crossing.")
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------

@@ -1853,6 +1853,7 @@ c-----------------------------------------------------------------------
                gdpsi(i,j)=psi_in%f(1)
             ENDIF
 
+            IF (gdpsi(i,j)<psilow) gdpsi(i,j)=psilow
             ttheta=ATAN2((gdz(i,j)-zo),(gdr(i,j)-ro))
             IF (ttheta >= 0) THEN 
                ptheta=ttheta/twopi

@@ -639,6 +639,8 @@ c-----------------------------------------------------------------------
       rmax=rgrid+xdim
       zmin=-zdim/2
       zmax=zdim/2
+      ro=rmaxis
+      zo=zmaxis
       psio=ssibry1-ssimag1
       sq_in%xs=(/(ia,ia=0,ma)/)/dfloat(ma)
       sq_in%fs(:,1)=ABS(sq_in%fs(:,1))
