@@ -438,6 +438,353 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_singcoup
 c-----------------------------------------------------------------------
+c     subprogram 2. ipout_pmodbcoup.
+c     compute coupling between pmodb and external fields.
+c     __________________________________________________________________
+c     dist     : measuring distance from rational surfaces
+c     polo     : poloidal angle coordinate for output
+c     toro     : toroidal angle coordinate for output
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_pmodbcoup(dist,polo,toro)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: polo,toro
+      REAL(r8), INTENT(IN) :: dist
+
+      INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,tmlow,tmhigh,tmpert
+      REAL(r8) :: respsi,lpsi,rpsi,sqrpsi,correc,shear,larea,thetai
+      COMPLEX(r8) :: lnbwp1mn,rnbwp1mn,lcorrec,rcorrec
+      CHARACTER(1) :: spolo,storo
+
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,rfacs,jcfun,wcfun,
+     $     dphi,thetas,units,lwgtfun
+
+      COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,lcormn,rcormn,
+     $     fkaxmn,singflx_mn,singbno_mn,ftnmn
+      COMPLEX(r8), DIMENSION(lmpert) :: lftnmn
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,lcorfun,rcorfun,
+     $     ftnfun
+
+      REAL(r8), DIMENSION(msing) :: area,j_c,w_c
+
+      COMPLEX(r8), DIMENSION(msing,mpert) :: deltas,delcurs,corcurs,
+     $     singcurs,singbnoflxs,singbnoflds,islandhwids
+      COMPLEX(r8), DIMENSION(mpert,lmpert) :: convmat
+      COMPLEX(r8), DIMENSION(msing,mpert,mpert) :: fsurfindmats
+      COMPLEX(r8), DIMENSION(:), POINTER :: fldflxmn
+      COMPLEX(r8), DIMENSION(:,:), POINTER ::  fldflxmat,
+     $     t1mat,t2mat,t3mat,t4mat
+      TYPE(spline_type) :: spl 
+c-----------------------------------------------------------------------
+c     compute characteristic currents with normalization.
+c-----------------------------------------------------------------------
+      WRITE(*,*)"Computing singular coupling with external perturbation"
+
+      WRITE(UNIT=spolo, FMT='(I1)')polo
+      WRITE(UNIT=storo, FMT='(I1)')toro
+      
+      WRITE(*,*)"Computing surface currents and inductances"
+      DO ising=1,msing
+         respsi=singtype(ising)%psifac
+         CALL spline_eval(sq,respsi,0)
+         area(ising)=0
+         j_c(ising)=0
+         w_c(ising)=0
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,respsi,theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            rfacs(itheta)=rfac
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+            sqreqb(itheta)=(sq%f(1)**2+chi1**2*delpsi(itheta)**2)
+     $           /(twopi*r(itheta))**2
+            jcfun(itheta)=sqreqb(itheta)/(delpsi(itheta)**3)
+            wcfun(itheta)=SQRT(jac*sqreqb(itheta))
+            area(ising)=area(ising)+jac*delpsi(itheta)/mthsurf
+            j_c(ising)=j_c(ising)+jac*delpsi(itheta)
+     $           *jcfun(itheta)/mthsurf
+            w_c(ising)=w_c(ising)+0.5*wcfun(itheta)/mthsurf
+         ENDDO
+         j_c(ising)=1.0/j_c(ising)*(chi1*sq%f(4))**2/mu0
+         
+         CALL ipeq_alloc
+         ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
+         CALL ipvacuum_flxsurf(respsi)
+         fsurfindmats(ising,:,:)=fsurf_indmats
+         DEALLOCATE(fsurf_indev,fsurf_indmats)
+         CALL ipeq_dealloc
+      ENDDO
+c-----------------------------------------------------------------------
+c     solve equation from the given poloidal perturbation.
+c-----------------------------------------------------------------------
+      deltas=0
+      delcurs=0
+      corcurs=0
+      singcurs=0
+      CALL ipeq_alloc
+      DO i=1,mpert
+         WRITE(*,'(a14,I3,a24)')"Computing m =",mfac(i),
+     $        "poloidal mode coupling"
+         binmn=0
+         binmn(i)=1.0
+         CALL ipeq_weight(psilim,binmn,mfac,mpert,1)
+         boutmn=MATMUL(permeabmats(modelnum,:,:),binmn)
+         CALL ipeq_weight(psilim,boutmn,mfac,mpert,0)
+         CALL ipeq_bntoxp(psilim,boutmn,edge_mn)
+         edge_flag=.TRUE.
+         CALL idcon_build(0,edge_mn)
+c-----------------------------------------------------------------------
+c     evaluate delta/singular current/normal field/islands.
+c-----------------------------------------------------------------------
+         DO ising=1,msing
+            resnum=NINT(singtype(ising)%q*nn)-mlow+1
+            respsi=singtype(ising)%psifac
+            lpsi=respsi-dist/(nn*ABS(singtype(ising)%q1))
+            CALL ipeq_contra(lpsi)
+            lnbwp1mn=nbwp1_mn(resnum)
+            CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
+            CALL spline_eval(sq,lpsi,0)
+            shear=mfac(resnum)*sq%f1(4)/sq%f(4)**2
+            DO itheta=0,mthsurf
+               CALL bicube_eval(rzphi,lpsi,theta(itheta),1)
+               rfac=SQRT(rzphi%f(1))
+               eta=twopi*(theta(itheta)+rzphi%f(2))
+               r(itheta)=ro+rfac*COS(eta)
+               z(itheta)=zo+rfac*SIN(eta)
+               jac=rzphi%f(4)
+               w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+               w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+               w(2,1)=-rzphi%fx(2)*twopi**2*r(itheta)*rfac/jac
+               w(2,2)=rzphi%fx(1)*pi*r(itheta)/(rfac*jac)
+               w(3,1)=rzphi%fx(3)*2*rfac
+               w(3,2)=rzphi%fy(3)/(twopi*rfac)
+               sqrpsi=w(1,1)**2+w(1,2)**2
+               correc=jac*(w(1,1)*w(2,1)+w(1,2)*w(2,2)-
+     $              (w(1,1)*w(3,1)+w(1,2)*w(3,2))/sq%f(4))/
+     $              (sqrpsi*sq%f(4)*chi1)
+               lcorfun(itheta)=bwp_fun(itheta)*correc
+            ENDDO
+            CALL iscdftf(mfac,mpert,lcorfun,mthsurf,lcormn)
+            
+            rpsi=respsi+dist/(nn*ABS(singtype(ising)%q1)) 
+            CALL ipeq_contra(rpsi)
+            rnbwp1mn=nbwp1_mn(resnum)
+            CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
+            CALL spline_eval(sq,rpsi,0)
+            DO itheta=0,mthsurf
+               CALL bicube_eval(rzphi,rpsi,theta(itheta),1)
+               rfac=SQRT(rzphi%f(1))
+               eta=twopi*(theta(itheta)+rzphi%f(2))
+               r(itheta)=ro+rfac*COS(eta)
+               z(itheta)=zo+rfac*SIN(eta)
+               jac=rzphi%f(4)
+               w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+               w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+               w(2,1)=-rzphi%fx(2)*twopi**2*r(itheta)*rfac/jac
+               w(2,2)=rzphi%fx(1)*pi*r(itheta)/(rfac*jac)
+               w(3,1)=rzphi%fx(3)*2*rfac
+               w(3,2)=rzphi%fy(3)/(twopi*rfac)
+               sqrpsi=w(1,1)**2+w(1,2)**2
+               correc=jac*(w(1,1)*w(2,1)+w(1,2)*w(2,2)-
+     $              (w(1,1)*w(3,1)+w(1,2)*w(3,2))/sq%f(4))/
+     $              (sqrpsi*sq%f(4)*chi1)
+               rcorfun(itheta)=bwp_fun(itheta)*correc
+            ENDDO
+            CALL iscdftf(mfac,mpert,rcorfun,mthsurf,rcormn)
+            deltas(ising,i)=(rnbwp1mn-lnbwp1mn)/twopi
+            delcurs(ising,i)=j_c(ising)*
+     $           ifac/mfac(resnum)*deltas(ising,i)
+            corcurs(ising,i)=-j_c(ising)*(rcormn(resnum)-lcormn(resnum))
+            delcurs(ising,i)=-delcurs(ising,i)*chi1/(twopi*ifac*nn) 
+            corcurs(ising,i)=-corcurs(ising,i)*chi1/(twopi*ifac*nn) 
+            singcurs(ising,i)=delcurs(ising,i)-corcurs(ising,i)
+            fkaxmn=0
+            fkaxmn(resnum)=singcurs(ising,i)
+
+            singflx_mn=MATMUL(fsurfindmats(ising,:,:),fkaxmn)
+            singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
+            singbno_mn=singflx_mn
+            CALL ipeq_weight(respsi,singbno_mn,mfac,mpert,0)
+            ! change resonant field at desired coordinates
+            IF ((polo /= 1) .OR. (toro /= 1)) THEN
+               CALL ipeq_hatoco(respsi,singbno_mn,mfac,mpert,polo,toro)
+            ENDIF
+            singbnoflds(ising,i)=singbno_mn(resnum)
+            islandhwids(ising,i)=4*singflx_mn(resnum)/
+     $           (twopi*shear*sq%f(4)*chi1)
+         ENDDO
+      ENDDO
+      CALL ipeq_dealloc
+c-----------------------------------------------------------------------
+c     convert coordinates for matrix on the plasma boundary.
+c-----------------------------------------------------------------------
+      IF ((polo /= 1) .OR. (toro /= 1)) THEN
+         WRITE(*,*)"Converting coordinates"
+         CALL spline_eval(sq,psilim,0)
+         dphi=0
+         
+         CALL spline_alloc(spl,mthsurf,1)
+         spl%xs=theta
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psilim,theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+            bpfac=psio*delpsi(itheta)/r(itheta)
+            btfac=sq%f(1)/(twopi*r(itheta))
+            bfac=SQRT(bpfac*bpfac+btfac*btfac)
+            fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
+            SELECT CASE(polo)
+            CASE(0)
+            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
+            CASE(1)
+            spl%fs(itheta,1)=fac
+            CASE(2)
+            spl%fs(itheta,1)=fac/r(itheta)**2
+            CASE(3)
+            spl%fs(itheta,1)=fac*bpfac
+            CASE(4)
+            spl%fs(itheta,1)=fac*bfac**2
+            END SELECT
+            IF (toro .EQ. 0) THEN
+               dphi(itheta)=rzphi%f(3)
+            ENDIF
+         ENDDO      
+
+         CALL spline_fit(spl,"periodic")
+         CALL spline_int(spl)
+         ! coordinate angle at hamada angle
+         thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
+         lwgtfun(:)=spl%fs(:,1)
+         CALL spline_dealloc(spl)
+
+         CALL spline_alloc(spl,mthsurf,1)
+         spl%xs=theta         
+         spl%fs(:,1)=jac*delpsi(:)/lwgtfun(:)
+         CALL spline_fit(spl,"periodic")
+         DO itheta=0,mthsurf
+            thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
+            CALL spline_eval(spl,thetai,0)
+            lwgtfun(itheta)=spl%f(1)
+         ENDDO
+         CALL spline_dealloc(spl)
+
+         CALL spline_alloc(spl,mthsurf,1)
+         spl%xs=theta                 
+         spl%fs(:,1)=lwgtfun(:)
+         CALL spline_fit(spl,"periodic")
+         CALL spline_int(spl)       
+         lwgtfun(:)=spl%fs(:,1)/spl%fsi(mthsurf,1)
+         CALL spline_dealloc(spl)
+c-----------------------------------------------------------------------
+c     convert coordinates. 
+c-----------------------------------------------------------------------
+         ALLOCATE(fldflxmn(lmpert),fldflxmat(lmpert,lmpert))
+         DO i=1,lmpert
+            lftnmn=0
+            lftnmn(i)=1.0
+         ! compute given function in hamada angle
+            DO itheta=0,mthsurf
+               ftnfun(itheta)=0
+               ftnfun(itheta)=
+     $              lftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))  
+            ENDDO
+         ! multiply toroidal factor in hamada angle
+            IF (toro .EQ. 0) THEN
+               ftnfun(:)=ftnfun(:)*EXP(-ifac*nn*dphi(:))
+            ELSE
+               ftnfun(:)=ftnfun(:)*
+     $              EXP(-twopi*ifac*nn*sq%f(4)*(thetas(:)-theta(:)))
+            ENDIF
+            CALL iscdftf(mfac,mpert,ftnfun,mthsurf,ftnmn)
+            convmat(:,i)=ftnmn
+
+            CALL iscdftb(lmfac,lmpert,ftnfun,mthsurf,lftnmn)
+            ftnfun(:)=ftnfun(:)*sqrt(lwgtfun(:))
+            CALL iscdftf(lmfac,lmpert,ftnfun,mthsurf,fldflxmn)            
+            fldflxmat(:,i)=fldflxmn
+         ENDDO
+         tmlow = lmlow
+         tmhigh = lmhigh
+         tmpert = lmpert
+         ALLOCATE(t1mat(msing,tmpert),t2mat(msing,tmpert),
+     $        t3mat(msing,tmpert),t4mat(msing,tmpert))
+         t1mat = MATMUL(singbnoflds,convmat)
+         t2mat = MATMUL(singbnoflxs,convmat)
+         t3mat = MATMUL(islandhwids,convmat)
+         t4mat = MATMUL(singcurs,convmat)
+      ELSE
+         units = (/(1.0,itheta=0,mthsurf)/)
+         larea = issurfint(units,mthsurf,psilim,0,0)
+         ALLOCATE(fldflxmn(mpert),fldflxmat(mpert,mpert))
+         DO i=1,mpert
+            ftnmn=0
+            ftnmn(i)=1.0
+            fldflxmn=ftnmn
+            CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
+            fldflxmat(:,i)=fldflxmn/sqrt(larea)            
+         ENDDO
+         tmlow = mlow
+         tmhigh = mhigh
+         tmpert = mpert
+         ALLOCATE(t1mat(msing,tmpert),t2mat(msing,tmpert),
+     $        t3mat(msing,tmpert),t4mat(msing,tmpert))
+         t1mat = singbnoflds
+         t2mat = singbnoflxs
+         t3mat = islandhwids
+         t4mat = singcurs
+      ENDIF
+c-----------------------------------------------------------------------
+c     write matrix (reversed order for row and column)
+c-----------------------------------------------------------------------
+      CALL ascii_open(out_unit,"ipec_singcoup_matrix_p"//spolo//"_t"
+     $     //storo//"_n"//sn//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPEC_SINGCOUP_MATRIX: coupling matrices"//
+     $     " between resonant field and external field"
+      WRITE(out_unit,'(1x,4(a8,I4),2(a8,e16.8))')"msing:",msing,
+     $     "mpert:",tmpert,"mlow:",tmlow,"mhigh:",tmhigh,
+     $     "psilim:",psilim,"qlim:",qlim
+      WRITE(out_unit,'(1x,400(e16.8))')
+     $     (singtype(ising)%psifac,singtype(ising)%q,ising=1,msing)
+      DO i=1,tmpert
+         WRITE(out_unit,'(1x,400(e16.8))')
+     $        (REAL(t1mat(ising,i)),AIMAG(t1mat(ising,i)),ising=1,msing)
+      ENDDO
+      DO i=1,tmpert
+         WRITE(out_unit,'(1x,400(e16.8))')
+     $        (REAL(t2mat(ising,i)),AIMAG(t2mat(ising,i)),ising=1,msing)
+      ENDDO
+      DO i=1,tmpert
+         WRITE(out_unit,'(1x,400(e16.8))')
+     $        (REAL(t3mat(ising,i)),AIMAG(t3mat(ising,i)),ising=1,msing)
+      ENDDO
+      DO i=1,tmpert
+         WRITE(out_unit,'(1x,400(e16.8))')
+     $        (REAL(t4mat(ising,i)),AIMAG(t4mat(ising,i)),ising=1,msing)
+      ENDDO
+      DO i=1,tmpert
+         WRITE(out_unit,'(1x,400(e16.8))')
+     $        (REAL(fldflxmat(j,i)),AIMAG(fldflxmat(j,i)),j=1,tmpert)
+      ENDDO
+      CALL ascii_close(out_unit)
+      DEALLOCATE(t1mat,t2mat,t3mat,t4mat,fldflxmn,fldflxmat)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_pmodbcoup
+c-----------------------------------------------------------------------
 c     subprogram 3. ipout_errfld
 c     error field response on the boundary.
 c     __________________________________________________________________
@@ -935,7 +1282,7 @@ c-----------------------------------------------------------------------
       CHARACTER(1) :: spolo,storo,slabl
       CHARACTER(2) :: slabl2
 
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,xwt_fun,
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,xws_fun,
      $     bvt_fun,bvz_fun
 
       REAL(r8), DIMENSION(:), POINTER :: psis
@@ -969,7 +1316,7 @@ c-----------------------------------------------------------------------
 c     compute mod b variations in hamada.
 c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
-         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+         CALL iscdftb(mfac,mpert,xws_fun,mthsurf,xws_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
          DO itheta=0,mthsurf
@@ -979,7 +1326,7 @@ c-----------------------------------------------------------------------
      $           /(ffun%f(1)*eqfun%f(1))
             lagbparfun(istep,itheta)=
      $           eulbparfun(istep,itheta)+
-     $           xwp_fun(itheta)*eqfun%fx(1)+xwt_fun(itheta)*eqfun%fy(1)
+     $           xwp_fun(itheta)*eqfun%fx(1)+xws_fun(itheta)*eqfun%fy(1)
          ENDDO
          CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
      $        mthsurf,eulbpar_mn(istep,:))
@@ -1057,7 +1404,7 @@ c-----------------------------------------------------------------------
       CHARACTER(1) :: spolo,storo,slabl
       CHARACTER(2) :: slabl2
 
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,xwt_fun,
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,xws_fun,
      $     bvt_fun,bvz_fun
 
       REAL(r8), DIMENSION(:), POINTER :: psis
@@ -1096,7 +1443,7 @@ c-----------------------------------------------------------------------
 c     compute mod b variations in hamada.
 c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
-         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+         CALL iscdftb(mfac,mpert,xws_fun,mthsurf,xws_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
          DO itheta=0,mthsurf
@@ -1107,7 +1454,7 @@ c-----------------------------------------------------------------------
             lagbparfun(istep,itheta)=
      $           eulbparfun(istep,itheta)+
      $           (xwp_fun(itheta)*eqfun%fx(1)+
-     $           xwt_fun(itheta)*eqfun%fy(1))*(eqfun%f(1)/bt0)
+     $           xws_fun(itheta)*eqfun%fy(1))*(eqfun%f(1)/bt0)
          ENDDO
          CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
      $        mthsurf,eulbpar_mn(istep,:))

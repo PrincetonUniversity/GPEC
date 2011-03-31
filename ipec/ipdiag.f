@@ -1233,7 +1233,7 @@ c-----------------------------------------------------------------------
          filein="iptemp.txt"
          file1="ipidl_3dsurf_xnobo_l"//slabl//"_n"//sn//".out"
 
-         ddist=0.1
+         ddist=0.2
          mmtheta=mthnum
          nnn=nn
          np=144
@@ -1250,7 +1250,7 @@ c-----------------------------------------------------------------------
          filein="iptemp.txt"
          file1="ipidl_3dsurf_bnobo_l"//slabl//"_n"//sn//".out"
 
-         ddist=0.1
+         ddist=0.2
          mmtheta=mthnum
          nnn=nn
          np=144
@@ -1396,7 +1396,7 @@ c-----------------------------------------------------------------------
      $     sxiwobbp,sxiwobbr,sxiwobbt,slagbpar
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: eulmodb,eulbpar,
-     $     xiwobbp,xiwobbr,xiwobbt,lagbpar,xwp_fun,xwt_fun,
+     $     xiwobbp,xiwobbr,xiwobbt,lagbpar,xwp_fun,xws_fun,
      $     bwp_fun,bwt_fun,bwz_fun,bvp_fun,bvt_fun,bvz_fun
 
       REAL(r8), DIMENSION(:), POINTER :: psis,
@@ -1432,7 +1432,7 @@ c-----------------------------------------------------------------------
          CALL ipeq_cova(psis(istep))
 
          CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
-         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+         CALL iscdftb(mfac,mpert,xws_fun,mthsurf,xws_mn)
          CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
          CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
          CALL iscdftb(mfac,mpert,bwz_fun,mthsurf,bwz_mn)
@@ -1448,7 +1448,7 @@ c-----------------------------------------------------------------------
      $           /(ffun%f(1)*eqfun%f(1))
             xiwobbp(itheta)=xwp_fun(itheta)*sq%f1(2)/eqfun%f(1)
             xiwobbr(itheta)=xwp_fun(itheta)*eqfun%fx(1)
-            xiwobbt(itheta)=xwt_fun(itheta)*eqfun%fy(1)
+            xiwobbt(itheta)=xws_fun(itheta)*eqfun%fy(1)
          ENDDO
          lagbpar=eulbpar+xiwobbr+xiwobbt
 c-----------------------------------------------------------------------
@@ -1523,13 +1523,13 @@ c-----------------------------------------------------------------------
       CHARACTER(1) :: slabl
 
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar,lagbpar
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,xwt_fun,
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,xws_fun,
      $     bvt_fun,bvz_fun
 
       REAL(r8), DIMENSION(:), POINTER :: psis
       REAL(r8), DIMENSION(:,:), POINTER :: rs,zs,eqfunx,eqfuny,eqfuns
       COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbpar_mn,lagbpar_mn,
-     $     eulbparfun,lagbparfun,xwpfun,xwtfun,bvtfun,bvzfun
+     $     eulbparfun,lagbparfun,xwpfun,xwsfun,bvtfun,bvzfun
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -1537,7 +1537,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(psis(rstep),rs(rstep,0:mthsurf),zs(rstep,0:mthsurf),
      $     eulbpar_mn(rstep,mpert),lagbpar_mn(rstep,mpert),
      $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf),
-     $     xwpfun(rstep,0:mthsurf),xwtfun(rstep,0:mthsurf),
+     $     xwpfun(rstep,0:mthsurf),xwsfun(rstep,0:mthsurf),
      $     bvtfun(rstep,0:mthsurf),bvzfun(rstep,0:mthsurf),
      $     eqfunx(rstep,0:mthsurf),eqfuny(rstep,0:mthsurf),
      $     eqfuns(rstep,0:mthsurf))
@@ -1563,11 +1563,11 @@ c-----------------------------------------------------------------------
 c     compute mod b variations.
 c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
-         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+         CALL iscdftb(mfac,mpert,xws_fun,mthsurf,xws_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
          xwpfun(istep,:)=xwp_fun
-         xwtfun(istep,:)=xwt_fun
+         xwsfun(istep,:)=xws_fun
          bvtfun(istep,:)=bvt_fun
          bvzfun(istep,:)=bvz_fun         
          DO itheta=0,mthsurf
@@ -1580,21 +1580,11 @@ c-----------------------------------------------------------------------
      $           /(ffun%f(1)*eqfun%f(1))
             lagbparfun(istep,itheta)=
      $           eulbparfun(istep,itheta)+
-     $           xwp_fun(itheta)*eqfun%fx(1)+xwt_fun(itheta)*eqfun%fy(1)
+     $           xwp_fun(itheta)*eqfun%fx(1)+xws_fun(itheta)*eqfun%fy(1)
          ENDDO
 c-----------------------------------------------------------------------
 c     decompose components on the given coordinates.
 c-----------------------------------------------------------------------
-c         CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
-c     $        mthsurf,eulbpar_mn(istep,:))
-c         CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
-c     $        mthsurf,lagbpar_mn(istep,:))
-c         eulbpar=eulbpar_mn(istep,:)
-c         lagbpar=lagbpar_mn(istep,:)
-c         CALL ipeq_hatoco(psis(istep),eulbpar,mfac,mpert,1,0)
-c         CALL ipeq_hatoco(psis(istep),lagbpar,mfac,mpert,1,0)
-c         CALL iscdftb(mfac,mpert,eulbparfun(istep,:),mthsurf,eulbpar)
-c         CALL iscdftb(mfac,mpert,lagbparfun(istep,:),mthsurf,lagbpar)
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psis(istep),theta(itheta),0)
             rfac=SQRT(rzphi%f(1))
@@ -1628,8 +1618,8 @@ c-----------------------------------------------------------------------
      $           AIMAG(lagbparfun(istep,itheta)),
      $           REAL(xwpfun(istep,itheta)),
      $           AIMAG(xwpfun(istep,itheta)),
-     $           REAL(xwtfun(istep,itheta)),
-     $           AIMAG(xwtfun(istep,itheta)),
+     $           REAL(xwsfun(istep,itheta)),
+     $           AIMAG(xwsfun(istep,itheta)),
      $           REAL(bvtfun(istep,itheta)),
      $           AIMAG(bvtfun(istep,itheta)),
      $           REAL(bvzfun(istep,itheta)),
@@ -1642,7 +1632,7 @@ c-----------------------------------------------------------------------
       CALL ipeq_dealloc
       DEALLOCATE(psis,rs,zs,eulbpar_mn,lagbpar_mn,
      $     eulbparfun,lagbparfun,eqfunx,eqfuny,eqfuns,
-     $     xwpfun,xwtfun,bvtfun,bvzfun)
+     $     xwpfun,xwsfun,bvtfun,bvzfun)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

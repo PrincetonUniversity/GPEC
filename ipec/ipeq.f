@@ -85,11 +85,12 @@ c     xvs_mn = -a^{-1}b*xwp1_mn - a^{-1}c*xwp_mn.
 c     xwp1_mn is the source of the singularity.
 c-----------------------------------------------------------------------
       xvs_mn=-MATMUL(bmat,xwp1_mn)-MATMUL(cmat,xwp_mn)
-      xwt_mn=xvs_mn/(sq%f(4)*chi1)*(singfac**2/(singfac**2+bdist**2))
-      xwz_mn=-(nn*xvs_mn/chi1+jac1/(twopi*ifac*jac)*xwp_mn+
-     $     xwp1_mn/(twopi*ifac))*
-     $     sq%f(4)*(singfac/(singfac**2+bdist**2))-
-     $     xvs_mn/chi1*(singfac**2/(singfac**2+bdist**2))
+      xws_mn=xvs_mn/(sq%f(4)*chi1)*(singfac**2/(singfac**2+bdist**2))
+      xwt_mn=-(nn*xvs_mn/chi1+jac1/(twopi*ifac*jac)
+     $     *xwp_mn+xwp1_mn/(twopi*ifac))*
+     $     (singfac/(singfac**2+bdist**2))
+      xwz_mn=sq%f(4)*xwt_mn-xvs_mn/chi1*
+     $     (singfac**2/(singfac**2+bdist**2))
       bwp_mn=(chi1*singfac*twopi*ifac*xwp_mn)/jac
       bwt_mn=-(chi1*xwp1_mn+twopi*ifac*nn*xvs_mn)/jac
       bwz_mn=-(chi1*(sq%f1(4)*xwp_mn+sq%f(4)*xwp1_mn)+
@@ -469,16 +470,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute plasma magnetic potential on the surface.
 c-----------------------------------------------------------------------
-      chp_mn(1,:)=bvz_mn/(-twopi*ifac*nn)
-      chp_mn(3,:)=(bvz_mn+sq%f1(1)*xwp_mn)/(-twopi*ifac*nn)
+      chp_mn(1,:)=(bvz_mn+sq%f1(1)*xwp_mn)/(-twopi*ifac*nn)
+      chp_mn(3,:)=bvz_mn/(-twopi*ifac*nn)
       DO i=1,mpert
          IF ((i+mlow-1).EQ.0) THEN
             chp_mn(2,i)=chp_mn(1,i)
             chp_mn(4,i)=chp_mn(3,i)
          ELSE
-            chp_mn(2,i)=bvt_mn(i)/(twopi*ifac*mfac(i))
-            chp_mn(4,i)=(bvt_mn(i)-(sq%f1(1)*sq%f(4)+jac*sq%f1(2)/chi1)*
+            chp_mn(2,i)=(bvt_mn(i)-(sq%f1(1)*sq%f(4)+jac*sq%f1(2)/chi1)*
      $           xwp_mn(i))/(twopi*ifac*mfac(i))
+            chp_mn(4,i)=bvt_mn(i)/(twopi*ifac*mfac(i))
          ENDIF
       ENDDO
 c-----------------------------------------------------------------------
@@ -995,7 +996,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE ipeq_alloc
 
       ALLOCATE(xwp_mn(mpert),xwt_mn(mpert),xwz_mn(mpert),
-     $     bwp_mn(mpert),bwt_mn(mpert),bwz_mn(mpert),
+     $     bwp_mn(mpert),bwt_mn(mpert),bwz_mn(mpert),xws_mn(mpert),
      $     xvs_mn(mpert),xwp1_mn(mpert),bwp1_mn(mpert),nbwp1_mn(mpert))
       ALLOCATE(xvp_mn(mpert),xvt_mn(mpert),xvz_mn(mpert),
      $     bvp_mn(mpert),bvt_mn(mpert),bvz_mn(mpert))
@@ -1015,7 +1016,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE ipeq_dealloc
 
       DEALLOCATE(xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,
-     $     xvs_mn,xwp1_mn,bwp1_mn,nbwp1_mn,
+     $     xvs_mn,xws_mn,xwp1_mn,bwp1_mn,nbwp1_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn)
