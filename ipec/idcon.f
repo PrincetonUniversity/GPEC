@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     open euler.bin and read header.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Reading and allocating dcon solutions"
+      WRITE(*,*)"Reading dcon eigenfuctions"
       CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
@@ -69,14 +69,14 @@ c-----------------------------------------------------------------------
 c     only accept hamada coordinates.
 c-----------------------------------------------------------------------
       IF ((power_b /= 0 .or. power_r /= 0) .or. power_bp /= 0) THEN
-         WRITE(message,'(a)')"IPEC_v1 needs HAMADA coordinates"
+         WRITE(message,'(a)')"This ipec needs hamada coordinates"
          CALL ipec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     only accept mband=0.
 c-----------------------------------------------------------------------
       IF (mband /= (mpert-1)) THEN
-         WRITE(message,'(a)')"IPEC_v1 needs full band matrix"
+         WRITE(message,'(a)')"This ipec needs full band matrix"
          CALL ipec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
@@ -94,9 +94,9 @@ c-----------------------------------------------------------------------
       mfix=0
       msing=0
 c-----------------------------------------------------------------------
-c     count solutions in euler.bin. <MODIFIED>
+c     count solutions in euler.bin.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Counting and reading solutions"
+      WRITE(*,*)"Counting and reading dcon solutions"
       DO
          READ(UNIT=in_unit,IOSTAT=ios)data_type
          IF(ios /= 0)EXIT
@@ -130,7 +130,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh," mpert = ",mpert
+      WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
       WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
@@ -221,10 +221,10 @@ c     close data file.
 c-----------------------------------------------------------------------
       CALL bin_close(in_unit)
 c-----------------------------------------------------------------------
-c     read psi_in.bin. <MODIFIED>
+c     read psi_in.bin.
 c-----------------------------------------------------------------------
       IF (psixy == 1) THEN
-         WRITE(*,*)"Reading and allocating equilibrium solutions"
+         WRITE(*,*)"Reading axisymmetric equilibrium solutions"
          CALL bin_open(in_unit,ieqfile,"OLD","REWIND","none")
          READ(in_unit)
          READ(in_unit)mr,mz
@@ -242,6 +242,7 @@ c-----------------------------------------------------------------------
          CALL bin_close(in_unit)
          DEALLOCATE(rgarr,zgarr,psigarr)
          CALL bicube_fit(psi_in,"extrap","extrap")
+         WRITE(*,*)"mr = ",mr,", mz = ",mz
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -380,7 +381,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,itheta
       REAL(r8) :: rr,w11,w12,delpsi
 
-      WRITE(*,*)"Evaluating functions and metric tensors"
+      WRITE(*,*)"Recontructing flux functions and metric tensors"
 c-----------------------------------------------------------------------
 c     set up spline-type for additional flux functions.
 c-----------------------------------------------------------------------
@@ -676,7 +677,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Reading twice VACUUM output"
+      WRITE(*,*)"Reading vacuum energy matrices"
       CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
       READ(bin_unit)nths2,nfm2
       ALLOCATE(grri(nths2,nfm2))

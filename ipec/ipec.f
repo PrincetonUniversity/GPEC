@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: majr,minr,scale,rdist,smallwidth,factor,fp,normpsi
       CHARACTER(128) :: infile,formattype
       LOGICAL :: erdata_flag,harmonic_flag,mode_flag,response_flag,
-     $     singcoup_flag,singfld_flag,pmodb_flag,pmodb0_flag,nrzeq_flag,
+     $     singcoup_flag,singfld_flag,pmodb_flag,nrzeq_flag,
      $     xbcontra_flag,xbnormal_flag,xbnovc_flag,xbnobo_flag,
      $     d3_flag,xbnorm_flag,pmodbst_flag,pmodbrz_flag,rzphibx_flag,
      $     radvar_flag,eigen_flag,magpot_flag,energy_flag,respmat_flag,
@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
      $     harmonic_flag,mode_flag,modemin,modemax,eqoff_flag
       NAMELIST/ipec_control/response_flag,dist,bdist,modelnum
       NAMELIST/ipec_output/singcoup_flag,nrzeq_flag,nr,nz,labl,
-     $     singfld_flag,pmodb_flag,pmodb0_flag,rstep,poloout,toroout,
+     $     singfld_flag,pmodb_flag,rstep,poloout,toroout,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,divzero_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,xbnormal_flag,
@@ -54,6 +54,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
+      WRITE(*,*)"Starting ipec calculations - v1.0"
       CALL ascii_open(in_unit,"ipec.in","OLD")
       READ(in_unit,NML=ipec_input)
       READ(in_unit,NML=ipec_control)  
@@ -125,9 +126,6 @@ c-----------------------------------------------------------------------
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
             ENDIF
-            IF (pmodb0_flag) THEN
-               CALL ipout_pmodb0(0,xwpmn,poloout,toroout,label)
-            ENDIF
             IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
      $           THEN
@@ -190,9 +188,6 @@ c-----------------------------------------------------------------------
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
             ENDIF
-            IF (pmodb0_flag) THEN
-               CALL ipout_pmodb0(0,xwpmn,poloout,toroout,label)
-            ENDIF
             IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
      $           THEN
@@ -249,9 +244,6 @@ c-----------------------------------------------------------------------
             ENDIF
             IF (pmodb_flag) THEN
                CALL ipout_pmodb(in,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (pmodb0_flag) THEN
-               CALL ipout_pmodb0(in,xwpmn,poloout,toroout,label)
             ENDIF
             IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag) 

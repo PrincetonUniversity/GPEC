@@ -45,7 +45,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(chimats(mpert,mpert),chemats(mpert,mpert),
      $     kaxmats(mpert,mpert),flxmats(mpert,mpert),
      $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert))
-      WRITE(*,*)"Constructing interfaces by using dcon eigenmodes"
+      WRITE(*,*)"Building free boundary solutions"
       DO i=1,mpert
          edge_mn=0
          edge_flag=.FALSE.
@@ -96,7 +96,8 @@ c-----------------------------------------------------------------------
      $           flxmats(:,i),r8))
             surfet(j,i)=surfep(j,i)+surfee(i)
          ENDDO
-
+         WRITE(*,'(1x,a12,i3,a7,es10.3)')"eigenmode = ",i,
+     $        ", dw = ",surfet(modelnum,i)     
          CALL ipeq_dealloc
          DEALLOCATE(chi_mn,che_mn,chp_mn,flx_mn,kap_mn,kax_mn)
       ENDDO
@@ -122,6 +123,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate plasma inductance matrix by surface consideration.
 c-----------------------------------------------------------------------
+      WRITE(*,*)"Calculating inductrances and permeability"
       ALLOCATE(plas_indev(0:4,mpert),plas_indmats(0:4,mpert,mpert),
      $     plas_indevmats(0:4,mpert,mpert))
       DO j=1,4
@@ -257,6 +259,8 @@ c-----------------------------------------------------------------------
          CALL isbubble(REAL(permeabev(j,:)),
      $        permeabindex(j,:),1,mpert)
       ENDDO
+      WRITE(*,'(1x,a,es10.3)')"single-mode permeability = ",
+     $     MAXVAL(ABS(permeabev(modelnum,:)))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
