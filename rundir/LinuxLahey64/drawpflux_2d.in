@@ -1,0 +1,22 @@
+Type (G=Graph, C=Contour):	M
+
+filename(s)
+pflux_2d.bin
+
+comment:	Contour Plot of perturbed flux
+
+independent variable names
+t       time
+x       R
+y       Z
+
+dependent variable names
+1	Re perturbed flux
+2	Im perturbed flux
+
+iqty    options	title
+1	-a	"Contour Plot of Re perturbed flux
+2	-a	"Contour Plot of Im perturbed flux
+
+
+

@@ -1,0 +1,21 @@
+Type (G=Graph, C=Contour):	M
+
+filename(s)
+xbnormal_2d.bin
+
+comment:	Contour Plot of xi and b normal
+
+independent variable names
+t       time
+x       R
+y       Z
+
+dependent variable names
+1	Re xi normal
+2	Im xi normal
+
+iqty    options	title
+1	-a	"Contour Plot of Re xi normal
+2	-a	"Contour Plot of Im xi normal
+
+

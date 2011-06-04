@@ -1,0 +1,20 @@
+Type (G=Graph, C=Contour):	M
+
+filename(s)
+pmodb_2d.bin
+
+comment:	Contour Plot of Perturbed mod b
+
+independent variable names
+t       time
+x       R
+y       Z
+
+dependent variable names
+3	Lagrangian Re mod b
+4	Lagrangian Im mod b
+
+iqty    options	title
+3	-a	"Contour Plot of Lagrangian Re mod b
+4	-a	"Contour Plot of Lagrangian Re mod b
+

@@ -1,0 +1,25 @@
+Type (G=Graph, C=Contour):	M
+
+filename(s)
+bnormal_spectrum.bin
+
+comment:	Contour Plot of xi and b normal
+
+independent variable names
+t       time
+x       poloidal harmonics
+y       psi
+
+dependent variable names
+1	jac.b.delpsi
+
+
+iqty    options	title
+1	-a	"Spectrum of jac.b.delpsi
+
+
+
+
+
+
+

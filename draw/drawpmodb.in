@@ -1,0 +1,17 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+pmodb.bin
+
+graph title:	Pertubed mod b
+
+variable names
+0	psifac
+1	Real Eulerian
+2	Imag Eulerian
+3	Real Lagrangian
+4	Imag Lagrangian
+
+ix	iy	title
+0	3	"Lagrangian Re mod b
+0	4	"Lagrangian Im mod b
