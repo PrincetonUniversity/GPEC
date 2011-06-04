@@ -1,6 +1,6 @@
-# This is the makefile for ipec on LinuxLahey computers.
+# This is the makefile for IPEC on LinuxLahey computers.
 
-FFLAGS = -I../equil -g
+FFLAGS = -I../equil -O2
 F90 = lfc $(FFLAGS)
 
 .f.o:
@@ -39,7 +39,6 @@ idcon.o: ismath.o
 ipeq.o: idcon.o ismath.o
 ipresp.o: ipeq.o
 ipvacuum.o : ipeq.o
-
 ipdiag.o: ipresp.o ipvacuum.o
 ipout.o: ipresp.o ipvacuum.o
 ipec.o: ipdiag.o ipout.o

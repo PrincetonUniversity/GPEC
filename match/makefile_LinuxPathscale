@@ -33,11 +33,8 @@ match: $(OBJS)
 
 # dependencies
 
-debug.o: ../equil/LOCAL_MOD.mod
-gamma.o: ../equil/LOCAL_MOD.mod
 deltar.o: gamma.o
-root.o: ../equil/LOCAL_MOD.mod
-match_mod.o: deltar.o root.o ../equil/UTILS_MOD.mod
+match_mod.o: deltar.o root.o
 ideal.o: match_mod.o
 matrix.o: match_mod.o debug.o
 resist.o: matrix.o

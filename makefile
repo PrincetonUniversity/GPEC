@@ -61,7 +61,13 @@ rundir_x:
 	cp draw/drawsol.in rundir/`uname`$(FORTRAN)
 	cp draw/drawcon.in rundir/`uname`$(FORTRAN)
 	cp draw/drawsurf.in rundir/`uname`$(FORTRAN)
-	cp draw/drawdiffw.in rundir/`uname`$(FORTRAN)
+	cp draw/drawpmodb.in rundir/`uname`$(FORTRAN)
+	cp draw/drawpmodb_2d.in rundir/`uname`$(FORTRAN)
+	cp draw/drawxbnormal.in rundir/`uname`$(FORTRAN)
+	cp draw/drawxbnormal_2d.in rundir/`uname`$(FORTRAN)
+	cp draw/drawpflux_re_2d.in rundir/`uname`$(FORTRAN)
+	cp draw/drawpflux_im_2d.in rundir/`uname`$(FORTRAN)
+	cp draw/drawbnormal_spectrum.in rundir/`uname`$(FORTRAN)
 
 clean:
 	cd xdraw; make -f makefile_`uname` clean

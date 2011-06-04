@@ -144,12 +144,7 @@ c-----------------------------------------------------------------------
       END FUNCTION issect
 c-----------------------------------------------------------------------
 c     subprogram 4. issurfint.
-c     surface integration by simple method in hamada.
-c     __________________________________________________________________
-c     wegt     : 0: no weight
-c                1: weighted by r, that is, torque
-c     ave      : 0: no average
-c                1: average
+c     surface integration by simple method.
 c-----------------------------------------------------------------------
       FUNCTION issurfint(func,fs,psi,wegt,ave)
 c-----------------------------------------------------------------------
@@ -161,7 +156,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: itheta
       REAL(r8) :: issurfint,area
-      REAL(r8), DIMENSION(0:fs) :: thetas,delpsi
+      REAL(r8), DIMENSION(0:fs) :: thetas,delpsi,jacs
 
       issurfint = 0
       area = 0
@@ -174,6 +169,7 @@ c-----------------------------------------------------------------------
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
          jac=rzphi%f(4)
+         jacs(itheta)=jac
          w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
          w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
          delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
@@ -182,23 +178,23 @@ c-----------------------------------------------------------------------
       IF (wegt==0) THEN
          DO itheta=0,fs-1
             issurfint = issurfint + 
-     $           jac*delpsi(itheta)*func(itheta)/fs
+     $           jacs(itheta)*delpsi(itheta)*func(itheta)/fs
          ENDDO
       ELSE IF (wegt==1) THEN
          DO itheta=0,fs-1
             issurfint = issurfint + 
-     $           r(itheta)*jac*delpsi(itheta)*func(itheta)/fs
+     $           r(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
          ENDDO
       ELSE 
          DO itheta=0,fs-1
             issurfint = issurfint + 
-     $           jac*delpsi(itheta)*func(itheta)/r(itheta)/fs
+     $           jacs(itheta)*delpsi(itheta)*func(itheta)/r(itheta)/fs
          ENDDO
       ENDIF
 
       IF (ave==1) THEN
          DO itheta=0,fs-1
-            area = area + jac*delpsi(itheta)/fs
+            area = area + jacs(itheta)*delpsi(itheta)/fs
          ENDDO
          issurfint = issurfint/area
       ENDIF
@@ -209,7 +205,7 @@ c-----------------------------------------------------------------------
       END FUNCTION issurfint
 c-----------------------------------------------------------------------
 c     subprogram 5. issurfave.
-c     surface average by simple method in hamada.
+c     surface average by simple method.
 c-----------------------------------------------------------------------
       FUNCTION issurfave(func,fs,psi)
 c-----------------------------------------------------------------------
@@ -317,172 +313,26 @@ C
       PIE = 2.*ASIN(1.)
       DTR = 180./PIE
       IFIELD = 0                !   DEFAULT SETTING ( NOT FOUND )
-C     
-C      WRITE ( 6,6000)
-C 6000 FORMAT(1X,'ENTER NAME OF INPUT FILE')
-C      READ ( 5,5000) FILEIN
-C 5000 FORMAT(A32)
 
       OPEN ( 10,FILE=FILEIN,STATUS='OLD')
-C     
-C      READ ( 10,1999) DATALINE
-C 1999 FORMAT(////A72)
-C      WRITE ( 6,1999) DATALINE
-C      IF ( DATALINE(1:6) .EQ. 'mtheta' ) THEN
-C         READ ( DATALINE,1001) MMTHETA,MSOL,NNN,QSURF
-C 1001    FORMAT(9X,I4,9x,I4,7x,I4,10X,E16.8)
-C      ELSEIF ( DATALINE(1:7) .EQ. 'mthsurf' ) THEN
-C         READ ( DATALINE,1011) MMTHETA,MSOL,NNN,QSURF
-C 1011    FORMAT(10X,I4,9x,I4,7x,I4,10X,E16.8)
-C      ELSE
-C         WRITE ( 6,6010) DATALINE
-C 6010    FORMAT(1X,A72,/1X,'CONFUSED    STOP ASAP')
-C         STOP
-C      ENDIF
-
-C      WRITE ( 6,1001) MMTHETA,MSOL,NNN,QSURF
-
-C      IF ( MMTHETA .GT. MT .OR. MSOL .GT. MS ) THEN
-C         WRITE ( 6,6009) MMTHETA,MT, MSOL,MS
-C 6009    FORMAT(1X,'**** SIZE PROBLEM  CHECK PARAMETERS',
-C     >        //1X,'MMTHETA,MT = ',2I5,
-C     >        /1X,'MSOL,MS   = ',2I5,
-C     >        //1X,'CODE STOPS ASAP')
-C         STOP
-C      ENDIF
 
       AN = REAL ( NNN )
       MTHETAP = MMTHETA + 0
-C     
-C     TRY GLASSER LOGIC
-C     
-C      READ ( 10,1000) DUMC
-C      READ ( 10,1000) DUMC
-C      READ ( 10,1000) DUMC
-C 1000 FORMAT(A8)
 
       READ ( 10,1002) ( RR(I),I=MMTHETA,1,-1),DUM
  1002 FORMAT(5E16.8)
 
-C      write (6,*) ' RR(I) read in '
-C     
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-
       READ ( 10,1002) ( ZZ(I),I=MMTHETA,1,-1),DUM
 
-C      write ( 6,*) ' ZZ(I) read in '
-C     
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-C      READ ( 10,1002) ( ET(I),I=1,MSOL) ! was MSOL
-C      write ( 6,*) ' ET(I) read in '
-C      write ( 6,1002) ( ET(I),I=1,MSOL)
-C     
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-
       READ ( 10,1002) ( BNCOS(I),I=MMTHETA,1,-1),DUM
-C     
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
+
       READ ( 10,1002) ( BNSIN(I),I=MMTHETA,1,-1),DUM
-C     
-C      WRITE ( 6,6015)  1,MSOL
-C 6015 FORMAT(1X,'MODES FROM',I3,' TO ',I5,' ENTER A VALID #')
-C      READ ( 5,*) IMODE
 
       IMODE=1
-C      IF ( IMODE .LT. 1 .OR. IMODE .GT. MSOL ) THEN
-C         WRITE ( 6,6016) IMODE
-C 6016    FORMAT(1X,' MODE # = ',I5,'   IS INVALID   CODE STOPS ASAP')
-C         STOP
-C      ENDIF
-C     
-C      IF ( IMODE .NE. 1 ) THEN  !  IMODE OK  NEED TO READ IN
-C         DO  K = 2,IMODE
-C            READ ( 10,1000) DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1002) ( BNCOS(I),I=MMTHETA,1,-1),DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1002) ( BNSIN(I),I=MMTHETA,1,-1),DUM
-C         ENDDO
-C      ENDIF
-C     NOW LOOK FOR START OF POLOIDAL & TOROIDAL FIELD INFO
 
-C      DO  I = 1,100000
-C         READ ( 10,1000,END=999 ) DUMC
-C         IF ( DUMC .EQ. 'poloidal' ) GO TO 10
-C      ENDDO
-C     FALL THROUGH A PROBLEM
-C      WRITE ( 6,6030)
-C 6030 FORMAT(1X,'PROBLEM  FAILED TO FIND POL FIELD DATA')
-C      GO TO 11
-C 999  WRITE ( 6,6031)
-C 6031 FORMAT(1X,'PROBLEM  FOUND END OF FILE  NO FIELD DATA')
-C      GO TO 11
-C     
-C     FIRST PIECE OF POL FIELD DATA FOUND
-C     
-C 10   IFIELD = 1                !   THIS MEANS DATA HAS BEEN FOUND
-C      READ ( 10,1000) DUM
-C      READ ( 10,1002) ( BPCOS(I),I=MMTHETA,1,-1),DUM
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-C      READ ( 10,1000) DUM
-C      READ ( 10,1002) ( BPSIN(I),I=MMTHETA,1,-1),DUM
-C      IF ( IMODE .NE. 1 ) THEN
-C         DO  K = 2,IMODE
-C            READ ( 10,1000) DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1002) ( BPCOS(I),I=MMTHETA,1,-1),DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1000) DUM
-C            READ ( 10,1002) ( BPSIN(I),I=MMTHETA,1,-1),DUM
-C         ENDDO
-C      ENDIF
-C     
-C      DO I = 1,100000
-C         READ  ( 10,1000) DUMC
-C         IF ( DUMC .EQ. 'toroidal' ) GO TO 12
-C      ENDDO
-C      WRITE ( 6,6032)
-C 6032 FORMAT(1X,'PROBLEM  FOUND POL DATA FAILED TO FIND TOR DATA')
-C      STOP
-C 12   READ ( 10,1000) DUMC
-C      READ ( 10,1002) ( BTCOS(I),I=MMTHETA,1,-1),DUM
-C      READ ( 10,1000) DUMC
-C      READ ( 10,1000) DUMC
-C      READ ( 10,1000) DUMC
-C      READ ( 10,1002) ( BTSIN(I),I=MMTHETA,1,-1),DUM
-C     
-C      IF ( IMODE .NE. 1 ) THEN
-C         DO  K = 2,IMODE
-C            READ ( 10,1000) DUMC
-C            READ ( 10,1000) DUMC
-C            READ ( 10,1000) DUMC
-C            READ ( 10,1002) ( BTCOS(I),I=MMTHETA,1,-1),DUM
-C            READ ( 10,1000) DUMC
-C            READ ( 10,1000) DUMC
-C            READ ( 10,1000) DUMC
-C            READ ( 10,1002) ( BTSIN(I),I=MMTHETA,1,-1),DUM
-C         ENDDO
-C      ENDIF
 C     
  11   CLOSE ( 10 )
-C     
-C      WRITE ( 6,6001) IMODE,ET(IMODE)
-C 6001 FORMAT(/1X,'ENERGY IN MODE# ',I5,' = ',E16.8)
-C     
+
       DO  I=1,MTHETAP
          IF ( I .EQ. 1 ) THEN
             ARCLEN(1) = 0.
@@ -492,33 +342,6 @@ C
             ARCLEN(I) = ARCLEN(I-1) + SQRT(D2)
          ENDIF
       ENDDO
-
-C      WRITE ( 6,6033) IFIELD
-C 6033 FORMAT(1X,'IFIELD = ',I5)
-C     
-C 1    WRITE ( 6,6002)
-C 6002 FORMAT(1X,'STOP ?  ENTER 1/0')
-C      READ ( 5,*) IGOTO
-C      IF ( IGOTO .NE. 1 ) THEN
-C         WRITE ( 6,6003)
-C 6003    FORMAT(1X,'MAKE A CHOICE ( ENTER 1 NUMBER )',
-C     >        /5X,'ENTER 1  - LIST ALL R & Z',
-C     >        /5X,'ENTER 2  - LIST ALL BNCOS & BNSIN',
-C     >        /5X,'ENTER 3  - LIST B-NORMAL AT GIVEN PHI',
-C     >        /5X,'ENTER 4  - LIST ALL BPCOS & BPSIN',
-C     >        /5X,'ENTER 5  - LIST B-POLOIDAL AT GIVEN PHI',
-C     >        /5X,'ENTER 6  - LIST ALL BTCOS & BTSIN',
-C     >        /5X,'ENTER 7  - LIST B-TOROIDAL AT GIVEN PHI',
-C     >        /5X,'ENTER 8  - LIST ARC-LENGTH',
-C     >        /5X,'ENTER 9  - GENERATE-INPUT-TO-CUGD & STOP',
-C     >        /5X,'             NEED DELTA PHI  ',
-C     >        /5X,'ENTER 10 - GENERATE-CONFORMAL WALL & STOP',
-C     >        /5X,'ENTER 12 - Bn AS NEW R & Z AT A PHI',
-C     >        /5X,'ENTER 21 - GENERATE-FILES FOR 3-D IDL CONTOUR PLOTS',
-C     >        /5X,'ENTER 22 - GENERATE-FILES FOR UNWRAPPED',
-C     >        ' IDL CONTOUR PLOTS')
-C         READ ( 5,*) IGOTO
-C      ENDIF
 
  5001 FORMAT(A32)
  6011 FORMAT(I6,F16.8)
@@ -530,20 +353,6 @@ C      ENDIF
  6024 FORMAT(2F12.6 )
  1105 FORMAT(I6,'     numnp')
  1110 FORMAT(5I6,F12.6)
-
-C
-C      WRITE ( 6,6028)
-C 6028 FORMAT(1X,'CODE TO GEN IDL INPUT FOR COUNTOUR PLOTS',
-C     >     /1X,'ENTER NEW FILENAME FOR THIS DATA')
-C      READ ( 5,5001) FILE1
-      
-C      WRITE ( 6,6029)
-C 6029 FORMAT(1X,'ENTER NPOL NTOR  MAX SURFACE DISPLACEMENT',
-C     >     ' & ROTATION[DEG]')
-C      READ ( 5,*) NP,NT,DIST,PHASED
-C      NP=72
-C      NT=72
-C      DIST=0.0
 
       PHASED=0.0
       PHASER = PHASED / DTR
@@ -565,17 +374,7 @@ C
       CALL SPLINE ( ARCLEN, BNCOS,MTHETAP,BIG,BIG, BNC2)
 C     
       CALL SPLINE ( ARCLEN, BNSIN,MTHETAP,BIG,BIG, BNS2)
-C     
-C     CALL SPLINE ( ARCLEN, BPCOS,MTHETAP,BIG,BIG, BPC2)
-C     
-C     CALL SPLINE ( ARCLEN, BPSIN,MTHETAP,BIG,BIG, BPS2)
-C     
-C     CALL SPLINE ( ARCLEN, BTCOS,MTHETAP,BIG,BIG, BTC2)
-C     
-C     CALL SPLINE ( ARCLEN, BTSIN,MTHETAP,BIG,BIG, BTS2)
-C     
-C      WRITE ( 6,*) ' SPLINE FITS COMPLETE '
-C     
+
       DPHI = 2.*PIE / REAL(NT)
 
 C     FIND MAX B-NORMAL
@@ -586,43 +385,17 @@ C     FIND MAX B-NORMAL
          IF ( ABS(BNSIN(I)) .GT. BNMAX ) BNMAX = ABS(BNSIN(I))
       ENDDO
 
-C      WRITE ( 6,*) ' BNMAX = ', BNMAX
-C     
-C      IF ( NP .GT. 0 ) THEN
-
       DARC = ARCLEN(MTHETAP) / REAL(NP)
       ARC = -DARC
       DO  I=1,NP
          ARC = ARC + DARC
          ARCPOS(I) = ARC
-C         WRITE ( 6,6011) I,ARCPOS(I)
       ENDDO
 
-C      ELSEIF ( NP .LT. 0 )  THEN
-C         NP = -NP               ! CHANGE NP TO A POS. NUMBER
-C         WRITE ( 6,6012)
-C         READ ( 5,5001) FILE2
-C         OPEN ( 12,FILE=FILE2,STATUS='OLD')
-C         DO  I=1,NP
-C            READ ( 12,*) ARCPOS(I)
-C            WRITE ( 6,6011) I,ARCPOS(I)
-C         ENDDO
-C         CLOSE ( 12 )
-C     CHECK LAST ARCPOS() < ARCLEN(MTHETAP)
-C         IF ( ARCPOS(NP) .GE. ARCLEN(MTHETAP) ) THEN
-C            WRITE ( 6,6013) ARCPOS(NP),ARCLEN(MTHETAP)
-C            STOP
-C         ENDIF
-C      ELSE                      !  IF
-C         WRITE ( 6,6014) NP
-C         STOP
-C      ENDIF
-C     
       DO  I = 1,NP
          ARC = ARCPOS(I)
          CALL SPLINT ( ARCLEN,RR,R2,MTHETAP, ARC,ANSR)
          CALL SPLINT ( ARCLEN,ZZ,Z2,MTHETAP, ARC,ANSZ)
-C         WRITE ( 6,6024 ) ANSR,ANSZ
          CALL SPLINTD ( ARCLEN,RR,R2,MTHETAP, ARC,DR )
          CALL SPLINTD ( ARCLEN,ZZ,Z2,MTHETAP, ARC,DZ )
 C     
@@ -640,11 +413,6 @@ C
 C     
       ENDDO
 
-C     WRITE ( 6,6025)
-C     DO  I = 1,NP
-C     WRITE ( 6,6024) RS(I),ZS(I)
-C     ENDDO
-C     
       NNN = 0
       PPHI = -DPHI
       DO  IS = 1,NT
@@ -659,10 +427,6 @@ C
             CALL SPLINT ( ARCLEN, RR,R2,MTHETAP, ARC, ANSR)
             CALL SPLINT ( ARCLEN, ZZ,Z2,MTHETAP, ARC, ANSZ)
 
-C     XYZ(1,NNN) = ANSR * CC
-C     XYZ(2,NNN) = ANSR * SS
-C     XYZ(3,NNN) = ANSZ
-
             CALL SPLINT ( ARCLEN, BNCOS, BNC2, MTHETAP, ARC, ANSBNC )
             CALL SPLINT ( ARCLEN, BNSIN, BNS2, MTHETAP, ARC, ANSBNS )
             BN(NNN) = ANSBNC*CCC + ANSBNS*SSS
@@ -675,8 +439,6 @@ C     MOVE SURFACE IF DIST .NE. 0.
          ENDDO
       ENDDO
 
-C      WRITE ( 6,*) ' NNN = ',NNN
-C     
       NE = 0
       DO  IS = 1,NT
          DO  I = 1,NP-1
@@ -705,22 +467,6 @@ C
          ENDIF
       ENDDO
 
-C     NOW DO TOROIDAL STRIP AT + PIE
-C     DO  IS = 1,NT-1
-C     NE = NE + 1
-C     IELE(1,NE) = (IS-1)*NP + NP
-C     IELE(2,NE) = IELE(1,NE) + NP
-C     IELE(3,NE) =  IS   *NP  + 1
-C     IELE(4,NE) = (IS-1)*NP  + 1
-C     ENDDO     !  BELOW IS THE LAST ELEMENT
-C     NE = NE + 1
-C     IELE(1,NE) = NP * NT
-C     IELE(2,NE) = NP
-C     IELE(3,NE) = 1
-C     IELE(4,NE) = NP*NT - NP + 1
-C     
-C      WRITE ( 6,*) ' NE = ',NE
-C     
       OPEN ( 11,FILE=FILE1,STATUS='UNKNOWN')
       I0 = 0
       I1 = 1                    !    CONVIENENT CONSTANTS LATER ON
@@ -744,10 +490,7 @@ C
       ENDDO
 C     
       CLOSE ( 11 )
-C     
-C      STOP
-C     
-C     
+
       RETURN
       END SUBROUTINE ipidl_3dsurf
 
@@ -765,7 +508,6 @@ C
 C     CHECK ADEQUACY ON NMAX
 C     
       IF ( NMAX .LT. N ) THEN
-C         WRITE ( 6,6001) NMAX,N
  6001    FORMAT(1X,'IN SPLINE  NMAX < N  STOP ASAP',
      >        /1X,'NMAX N = ',2I5 )
          STOP
@@ -857,11 +599,9 @@ C
       ENDIF
       a = (xa(khi)-x)/h
       b = (x-xa(klo))/h
-C     y = a*ya(klo)+b*ya(khi)+((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**
-C     *2)/6.
-C     
+
       YD  =  YA(KHI)/H - YA(KLO)/H +
-     >     H*((3.*B*B-1.)*Y2A(KHI) - (3.*A*A-1.)*Y2A(KLO))/6. !  JMB99
+     >     H*((3.*B*B-1.)*Y2A(KHI) - (3.*A*A-1.)*Y2A(KLO))/6.
 C     
       return
       END SUBROUTINE SPLINTD

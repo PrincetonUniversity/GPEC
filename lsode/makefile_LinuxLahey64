@@ -1,6 +1,6 @@
 # This is the makefile for LSODE on LinuxLahey computers.
 
-FFLAGS = -g
+FFLAGS = -O2
 F90 = lfc $(FFLAGS)
 
 .f.o: 

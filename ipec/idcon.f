@@ -48,6 +48,19 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      IF ((power_b==0).AND.(power_bp==0).AND.(power_r==0)) THEN
+         jac_type="hamada"
+      ELSE IF ((power_b==0).AND.(power_bp==0).AND.(power_r==2)) THEN
+         jac_type="pest"
+      ELSE IF ((power_b==0).AND.(power_bp==1).AND.(power_r==0)) THEN
+         jac_type="equal_arc"
+      ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN  
+         jac_type="boozer"
+      ELSE 
+         jac_type="other"
+      ENDIF
+      IF (jac_in=="") jac_in=jac_type
+      IF (jac_out=="") jac_out=jac_type
       chi1=twopi*psio
       mpert=mhigh-mlow+1
       lmpert=lmhigh-lmlow+1
@@ -66,17 +79,10 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=sn,FMT='(I2)')nn
       ENDIF
 c-----------------------------------------------------------------------
-c     only accept hamada coordinates.
-c-----------------------------------------------------------------------
-      IF ((power_b /= 0 .or. power_r /= 0) .or. power_bp /= 0) THEN
-         WRITE(message,'(a)')"This ipec needs hamada coordinates"
-         CALL ipec_stop(message)
-      ENDIF
-c-----------------------------------------------------------------------
 c     only accept mband=0.
 c-----------------------------------------------------------------------
       IF (mband /= (mpert-1)) THEN
-         WRITE(message,'(a)')"This ipec needs full band matrix"
+         WRITE(message,'(a)')"IPEC needs full band matrix"
          CALL ipec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
@@ -113,9 +119,10 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
-            READ(UNIT=in_unit)
          CASE(4)
             msing=msing+1
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
@@ -135,12 +142,14 @@ c-----------------------------------------------------------------------
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
-      ALLOCATE(et(mpert),ep(mpert),ee(mpert))
-      ALLOCATE(wt(mpert,mpert),rt(mpert,mpert))
+      ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn
+      READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
+     $     singfac_min
+      READ(in_unit)power_b,power_r,power_bp
       istep=-1
       ifix=0
       ising=0
@@ -166,10 +175,9 @@ c-----------------------------------------------------------------------
             ALLOCATE(fixtype(ifix)%index(fixtype(ifix)%msol))
             READ(UNIT=in_unit)fixtype(ifix)%fixfac,fixtype(ifix)%index
          CASE(3)
+            READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
-            READ(UNIT=in_unit)ep
-            READ(UNIT=in_unit)rt
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix
@@ -181,8 +189,12 @@ c     information required for resistive MHD computations.
 c-----------------------------------------------------------------------
             READ(UNIT=in_unit)msol
             singtype(ising)%msol_l=msol
+            ALLOCATE(singtype(ising)%ca_l(mpert,msol,2))
+            READ(UNIT=in_unit)singtype(ising)%ca_l
             READ(UNIT=in_unit)msol
             singtype(ising)%msol_r=msol
+            ALLOCATE(singtype(ising)%ca_r(mpert,msol,2))
+            READ(UNIT=in_unit)singtype(ising)%ca_r
             READ(UNIT=in_unit)
      $           singtype(ising)%restype%e,
      $           singtype(ising)%restype%f,
@@ -208,7 +220,6 @@ c-----------------------------------------------------------------------
       ep=ep/(mu0*2.0)*psio**2*(chi1*mili)**2
       ee=et-ep
       wt=wt*chi1*mili
-      rt=rt*chi1*mili
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
 c-----------------------------------------------------------------------
@@ -383,13 +394,6 @@ c-----------------------------------------------------------------------
 
       WRITE(*,*)"Recontructing flux functions and metric tensors"
 c-----------------------------------------------------------------------
-c     set up spline-type for additional flux functions.
-c-----------------------------------------------------------------------
-      CALL spline_alloc(ffun,mpsi,1)
-      ffun%xs=sq%xs
-      ffun%name="flux funs"
-      ffun%title=" jacobian "
-c-----------------------------------------------------------------------
 c     set up fourier-spline type for metric tensors.
 c-----------------------------------------------------------------------
       CALL fspline_alloc(metric,mpsi,mtheta,mband,8)
@@ -415,8 +419,6 @@ c     begin loop over nodes.
 c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          CALL spline_eval(sq,sq%xs(ipsi),1)
-         ffun%fs(ipsi,1)=0
-         ffun%fs1(ipsi,1)=0
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
             rfac=SQRT(rzphi%f(1))
@@ -424,14 +426,11 @@ c-----------------------------------------------------------------------
             rr=ro+rfac*COS(eta)
             jac=rzphi%f(4)
             jac1=rzphi%fx(4)
-            ffun%fs(ipsi,1)=ffun%fs(ipsi,1)+jac
-            ffun%fs1(ipsi,1)=ffun%fs1(ipsi,1)+jac1
             w11=(1+rzphi%fy(2))*twopi**2*rfac*rr/jac
             w12=-rzphi%fy(1)*pi*rr/(rfac*jac)
             delpsi=SQRT(w11**2+w12**2)
 c-----------------------------------------------------------------------
-c     compute (real) contravariant basis vectors.
-c     this is different from original dcon.
+c     compute contravariant basis vectors.
 c-----------------------------------------------------------------------
             v(1,1)=rzphi%fx(1)/(2*rfac)
             v(1,2)=rzphi%fx(2)*twopi*rfac
@@ -442,14 +441,13 @@ c-----------------------------------------------------------------------
             v(3,3)=twopi*rr
 c-----------------------------------------------------------------------
 c     compute metric tensor components.
-c     this is also different from original dcon
 c-----------------------------------------------------------------------
-            metric%fs(ipsi,itheta,1)=SUM(v(1,:)**2)
-            metric%fs(ipsi,itheta,2)=SUM(v(2,:)**2)
-            metric%fs(ipsi,itheta,3)=v(3,3)*v(3,3)
-            metric%fs(ipsi,itheta,4)=v(2,3)*v(3,3)
-            metric%fs(ipsi,itheta,5)=v(3,3)*v(1,3)
-            metric%fs(ipsi,itheta,6)=SUM(v(1,:)*v(2,:))
+            metric%fs(ipsi,itheta,1)=SUM(v(1,:)**2)/jac
+            metric%fs(ipsi,itheta,2)=SUM(v(2,:)**2)/jac
+            metric%fs(ipsi,itheta,3)=v(3,3)*v(3,3)/jac
+            metric%fs(ipsi,itheta,4)=v(2,3)*v(3,3)/jac
+            metric%fs(ipsi,itheta,5)=v(3,3)*v(1,3)/jac
+            metric%fs(ipsi,itheta,6)=SUM(v(1,:)*v(2,:))/jac
             metric%fs(ipsi,itheta,7)=jac
             metric%fs(ipsi,itheta,8)=jac1
 c-----------------------------------------------------------------------
@@ -459,8 +457,6 @@ c-----------------------------------------------------------------------
             eqfun%fs(ipsi,itheta,1)=SQRT(
      $           (sq%f(1)**2+chi1**2*delpsi**2)/(twopi*rr)**2)
          ENDDO
-         ffun%fs(ipsi,1)=ffun%fs(ipsi,1)/REAL(mtheta,r8)
-         ffun%fs1(ipsi,1)=ffun%fs1(ipsi,1)/REAL(mtheta,r8)
       ENDDO
 c-----------------------------------------------------------------------
 c     fit spline types.
@@ -507,12 +503,10 @@ c-----------------------------------------------------------------------
       imat=0
       imat(0)=1
       CALL spline_eval(sq,psi,1)
-      CALL spline_eval(ffun,psi,0)
       CALL cspline_eval(metric%cs,psi,0)
       p1=sq%f1(2)
       q=sq%f(4)
       q1=sq%f1(4)
-      jac=ffun%f(1)
       nq=nn*q
       jtheta=-sq%f1(1)
 c-----------------------------------------------------------------------
@@ -550,28 +544,26 @@ c-----------------------------------------------------------------------
             jpert=ipert+dm
 c-----------------------------------------------------------------------
 c     construct primitive matrices by using metric tensors.
-c     all the g-components must be divided by jac
 c-----------------------------------------------------------------------
             amat(ipert,jpert)=twopi**2*(nn*nn*g22(dm)
-     $           +nn*(m1+m2)*g23(dm)+m1*m2*g33(dm))/jac
+     $           +nn*(m1+m2)*g23(dm)+m1*m2*g33(dm))
             bmat(ipert,jpert)=-twopi*ifac*chi1
-     $           *(nn*g22(dm)+(m1+nq)*g23(dm)+m1*q*g33(dm))/jac
+     $           *(nn*g22(dm)+(m1+nq)*g23(dm)+m1*q*g33(dm))
             cmat(ipert,jpert)=twopi*ifac*(
      $           twopi*ifac*chi1*singfac2*(nn*g12(dm)+m1*g31(dm))
-     $           -q1*chi1*(nn*g23(dm)+m1*g33(dm)))/jac
+     $           -q1*chi1*(nn*g23(dm)+m1*g33(dm)))
      $           -twopi*ifac*(jtheta*singfac1*imat(dm)
      $           +nn*p1/chi1*jmat(dm))
-            dmat(ipert,jpert)=twopi*chi1*(g23(dm)+g33(dm)*m1/nn)/jac
-            emat(ipert,jpert)=-chi1/nn*((q1*chi1*g33(dm)
-     $           -twopi*ifac*chi1*g31(dm)*singfac2)/jac
+            dmat(ipert,jpert)=twopi*chi1*(g23(dm)+g33(dm)*m1/nn)
+            emat(ipert,jpert)=-chi1/nn*(q1*chi1*g33(dm)
+     $           -twopi*ifac*chi1*g31(dm)*singfac2
      $           +jtheta*imat(dm))
-            hmat(ipert,jpert)=((q1*chi1)**2*g33(dm)
+            hmat(ipert,jpert)=(q1*chi1)**2*g33(dm)
      $           +(twopi*chi1)**2*singfac1*singfac2*g11(dm)
-     $           -twopi*ifac*chi1*dm*q1*chi1*g31(dm))/jac
+     $           -twopi*ifac*chi1*dm*q1*chi1*g31(dm)
      $           +jtheta*q1*chi1*imat(dm)+p1*jmat1(dm)
-            fmat(ipert,jpert)=(chi1/nn)**2*g33(dm)/jac
-            kmat(ipert,jpert)=twopi*ifac*chi1*
-     $           (g23(dm)+g33(dm)*m1/nn)/jac
+            fmat(ipert,jpert)=(chi1/nn)**2*g33(dm)
+            kmat(ipert,jpert)=twopi*ifac*chi1*(g23(dm)+g33(dm)*m1/nn)
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -587,9 +579,6 @@ c-----------------------------------------------------------------------
       ENDIF
 c-----------------------------------------------------------------------
 c     compute composite matrices fgk, different from dcon notes.
-c     f = f - da^{-1}d
-c     k = e - ka^{-1}c
-c     g = h - ca^{-1}c
 c-----------------------------------------------------------------------
       temp2=dmat
       temp3=cmat

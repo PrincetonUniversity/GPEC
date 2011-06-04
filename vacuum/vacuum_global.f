@@ -13,7 +13,7 @@ c     subprogram 0. vglobal_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     declarations.(MODIFIED)
+c     declarations.
 c-----------------------------------------------------------------------
       MODULE vglobal_mod
       IMPLICIT NONE

@@ -2,12 +2,9 @@
 	eq_type="efit"
 	eq_filename="$EQUIL"
 	jac_type="hamada"
-	power_bp=0
-	power_b=0
-	power_r=0
 	grid_type="ldp"
 	psilow=1e-4
-	psihigh=0.95
+	psihigh=0.98
 	mpsi=128
 	mtheta=256
 	newq0=0

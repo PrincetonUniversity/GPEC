@@ -49,12 +49,19 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: message
       INTEGER :: data_type,ifix,ios,msol,istep,ising
 
+      INTEGER :: i1,i2,i3,i4,i5,i6
+      REAL(r8) :: r1,r2,r3,r4,r5
+      REAL(r8), DIMENSION(:), POINTER :: ep
+
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
 c-----------------------------------------------------------------------
 c     open data file and read header.
 c-----------------------------------------------------------------------
       CALL bin_open(in_unit,filename,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
+      READ(in_unit)i1,i2,i3,r1,r2,r3,r4,r5
+      READ(in_unit)i4,i5,i6
+
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
       rzphi%periodic(2)=.TRUE.
@@ -84,6 +91,7 @@ c-----------------------------------------------------------------------
          CASE(3)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE(4)
             msing=msing+1
             READ(UNIT=in_unit)
@@ -93,7 +101,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
          CASE DEFAULT
-            WRITE(message,'(a,i1,a,i4)')"Cannot regognize data_type = ",
+            WRITE(message,'(a,i1,a,i4)')"Cannot recognize data_type = ",
      $           data_type,", at istep = ",istep
             CALL program_stop(message)
          END SELECT
@@ -108,11 +116,13 @@ c-----------------------------------------------------------------------
       ALLOCATE(psifac(0:mstep),rho(0:mstep),q(0:mstep),
      $     soltype(0:mstep),v(mpert,2,0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
-      ALLOCATE(et(mpert),wt(mpert,mpert))
+      ALLOCATE(ep(mpert),et(mpert),wt(mpert,mpert))
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       CALL bin_open(in_unit,filename,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn
+      READ(in_unit)i1,i2,i3,r1,r2,r3,r4,r5
+      READ(in_unit)i4,i5,i6
       istep=-1
       ifix=0
       ising=0
@@ -139,6 +149,7 @@ c-----------------------------------------------------------------------
             ALLOCATE(fixtype(ifix)%index(fixtype(ifix)%msol))
             READ(UNIT=in_unit)fixtype(ifix)%fixfac,fixtype(ifix)%index
          CASE(3)
+            READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
          CASE(4)

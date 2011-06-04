@@ -1,6 +1,6 @@
 # This is the makefile for DCON on LinuxLahey computers.
 
-FFLAGS = -I../equil -g
+FFLAGS = -I../equil -O2
 F90 = lfc $(FFLAGS)
 
 .f.o:

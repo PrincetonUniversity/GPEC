@@ -70,7 +70,6 @@ c-----------------------------------------------------------------------
       ENDIF
       flag_count=0
       CALL ode_output_open
-c     CALL bin_open(bin_bal1_unit,"fixup.bin","UNKNOWN","REWIND","none")
       IF(diagnose_ca)CALL ascii_open(ca_unit,"ca.out","UNKNOWN")
 c-----------------------------------------------------------------------
 c     integrate.
@@ -101,7 +100,6 @@ c-----------------------------------------------------------------------
 c     finalize.
 c-----------------------------------------------------------------------
       CALL ode_output_close
-c     CALL bin_close(bin_bal1_unit)
       DEALLOCATE(rwork,atol,unorm0,unorm,index,fixfac)
       IF(diagnose_ca)CALL ascii_close(ca_unit)
 c-----------------------------------------------------------------------
@@ -380,7 +378,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------
-c     write asymptotic coefficients before reinit. <MODIFIED>
+c     write asymptotic coefficients before reinit.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
          CALL sing_get_ca(ising,psifac,u,ca)
@@ -388,7 +386,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)sing(ising)%psifac,sing(ising)%q,
      $        sing(ising)%q1
          WRITE(euler_bin_unit)msol
-c         WRITE(euler_bin_unit)ca
+         WRITE(euler_bin_unit)ca
       ENDIF
 c-----------------------------------------------------------------------
 c     re-initialize.
@@ -421,12 +419,12 @@ c-----------------------------------------------------------------------
          CALL program_stop("Termination by ode_ideal_cross.")
       ENDIF
 c-----------------------------------------------------------------------
-c     write asymptotic coefficients after reinit. <MODIFIED>
+c     write asymptotic coefficients after reinit.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
          CALL sing_get_ca(ising,psifac,u,ca)
          WRITE(euler_bin_unit)msol
-c         WRITE(euler_bin_unit)ca
+         WRITE(euler_bin_unit)ca
          WRITE(euler_bin_unit)
      $        sing(ising)%restype%e,sing(ising)%restype%f,
      $        sing(ising)%restype%h,sing(ising)%restype%m,
@@ -485,7 +483,6 @@ c-----------------------------------------------------------------------
       SUBROUTINE ode_resist_cross
 
       LOGICAL, PARAMETER :: sing_flag=.TRUE.,diagnose=.FALSE.
-c$$$      CHARACTER(16) :: message
       INTEGER :: ipert0,msol_old,jsol,ipert
       REAL(r8) :: dpsi
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua
@@ -568,10 +565,6 @@ c-----------------------------------------------------------------------
      $        sing(ising)%q1
          WRITE(euler_bin_unit)msol
          WRITE(euler_bin_unit)ca
-c$$$         IF(diagnose_ca)THEN
-c$$$            WRITE(message,'(a,i2.2)')"ca_l_",ising
-c$$$            CALL debug1(ca,message,ca_unit)
-c$$$         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     reallocate.
@@ -614,10 +607,6 @@ c-----------------------------------------------------------------------
          CALL sing_get_ca(ising,psifac,u,ca)
          WRITE(euler_bin_unit)msol
          WRITE(euler_bin_unit)ca
-c$$$         IF(diagnose_ca)THEN
-c$$$            WRITE(message,'(a,i2.2)')"ca_r_",ising
-c$$$            CALL debug1(ca,message,ca_unit)
-c$$$         ENDIF
          WRITE(euler_bin_unit)
      $        sing(ising)%restype%e,sing(ising)%restype%f,
      $        sing(ising)%restype%h,sing(ising)%restype%m,
@@ -716,7 +705,6 @@ c     compute absolute tolerances.
 c-----------------------------------------------------------------------
       DO ieq=1,2
          DO isol=1,msol
-c            atol0=MAXVAL(ABS(u(:,isol,ieq)))*tol*tol
             atol0=MAXVAL(ABS(u(:,isol,ieq)))*tol
             IF(atol0 == 0)atol0=HUGE(atol0)
             atol(:,isol,ieq)=DCMPLX(atol0,atol0)
@@ -742,7 +730,6 @@ c-----------------------------------------------------------------------
       istep=istep+1
       CALL lsode(sing_der,neq,u,psifac,psiout,itol,rtol,atol,
      $     itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
-c      WRITE(*,*)istep,psifac,psiout
 c-----------------------------------------------------------------------
 c     diagnose error.
 c-----------------------------------------------------------------------

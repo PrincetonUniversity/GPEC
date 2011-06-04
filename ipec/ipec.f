@@ -16,41 +16,78 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: i,in,osing,resol,angnum,labl,infnum,left,wegt,
-     $     mthnumb,meas,modem,label,nr,nz,modemin,modemax,
-     $     poloin,toroin,poloout,toroout,lowmode,highmode,
-     $     m3low,m3high
+      INTEGER :: i,in,osing,resol,angnum,
+     $     mthnumb,meas,mode,nr,nz,m3mode,lowmode,highmode
       INTEGER, DIMENSION(:), POINTER :: ipiv
-      REAL(r8) :: majr,minr,scale,rdist,smallwidth,factor,fp,normpsi
-      CHARACTER(128) :: infile,formattype
-      LOGICAL :: erdata_flag,harmonic_flag,mode_flag,response_flag,
-     $     singcoup_flag,singfld_flag,pmodb_flag,nrzeq_flag,
-     $     xbcontra_flag,xbnormal_flag,xbnovc_flag,xbnobo_flag,
-     $     d3_flag,xbnorm_flag,pmodbst_flag,pmodbrz_flag,rzphibx_flag,
-     $     radvar_flag,eigen_flag,magpot_flag,energy_flag,respmat_flag,
+      REAL(r8) :: majr,minr,rdist,smallwidth,factor,fp,normpsi
+      CHARACTER(128) :: infile
+      LOGICAL :: singcoup_flag,singfld_flag,pmodb_flag,
+     $     xbcontra_flag,xbnormal_flag,xbnobo_flag,
+     $     d3_flag,pmodbst_flag,pmodbrz_flag,rzphibx_flag,
+     $     radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
-     $     singcurs_flag,m3d_flag,cas3d_flag,test_flag
-      COMPLEX(r8), DIMENSION(:), POINTER :: bexmn,bermn,
-     $     brrmn,bnomn,fxmn,xwpmn
+     $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag
+      COMPLEX(r8), DIMENSION(:), POINTER :: brrmn,bnomn,fxmn,xwpmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
-     $     power_flag,fft_flag,mthsurf0,left,scale,wegt,
-     $     erdata_flag,formattype,errnmin,errnmax,errmmin,errmmax,
-     $     poloin,toroin,infnum,infiles,
-     $     harmonic_flag,mode_flag,modemin,modemax,eqoff_flag
-      NAMELIST/ipec_control/response_flag,dist,bdist,modelnum
-      NAMELIST/ipec_output/singcoup_flag,nrzeq_flag,nr,nz,labl,
-     $     singfld_flag,pmodb_flag,rstep,poloout,toroout,
-     $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,
-     $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,divzero_flag
-      NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,xbnormal_flag,
-     $     xbnovc_flag,xbnobo_flag,d3_flag,xbnorm_flag,div_flag,
-     $     pmodbst_flag,pmodbrz_flag,rzphibx_flag,radvar_flag,
-     $     eigen_flag,magpot_flag,energy_flag,respmat_flag,
+     $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
+     $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
+     $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
+     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,eqoff_flag
+      NAMELIST/ipec_control/resp_index,sing_spot,reg_spot
+      NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
+     $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
+     $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
+     $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
+     $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,divzero_flag,
+     $     bin_flag,bin_2d_flag
+      NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
+     $     xbnobo_flag,d3_flag,div_flag,pmodbst_flag,pmodbrz_flag,
+     $     rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
-     $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3low,m3high,
+     $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
      $     cas3d_flag,test_flag,resol,smallwidth
+c-----------------------------------------------------------------------
+c     set initial values.
+c-----------------------------------------------------------------------
+      sinmn=0
+      cosmn=0
+      jsurf_in=0
+      tmag_in=1
+      jac_in=""
+      ieqfile="psi_in.bin"
+      idconfile="euler.bin"
+      ivacuumfile="vacuum.bin"
+      power_flag=.TRUE.
+      fft_flag=.FALSE.
+      fixed_boundary_flag=.FALSE.
+      mthsurf0=1
+
+      resp_index=0
+      sing_spot=5e-4
+      reg_spot=5e-2
+
+      jsurf_out=0
+      tmag_out=1
+      jac_out=""
+      resp_flag=.TRUE.
+      singcoup_flag=.FALSE.
+      singfld_flag=.TRUE.
+      pmodb_flag=.TRUE.
+      xbnormal_flag=.TRUE.
+      rstep=0
+      nrzeq_flag=.FALSE.
+      nr=64
+      nz=64
+      eqbrzphi_flag=.TRUE.
+      brzphi_flag=.TRUE.
+      xrzphi_flag=.TRUE.
+      vbrzphi_flag=.FALSE.
+      vpbrzphi_flag=.FALSE.
+      vvbrzphi_flag=.FALSE.
+      bin_flag=.FALSE.
+      bin_2d_flag=.FALSE.
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -62,11 +99,72 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=ipec_diagnose)
       CALL ascii_close(in_unit)
 c-----------------------------------------------------------------------
-c     assign temporal values.
+c     define coordinates.
 c-----------------------------------------------------------------------
-      lmlow=errmmin
-      lmhigh=errmmax
-      IF (response_flag) resp=1
+      SELECT CASE(jac_in)
+      CASE("hamada")
+         power_bin=0
+         power_bpin=0
+         power_rin=0
+         power_rcin=0
+      CASE("pest")
+         power_bin=0
+         power_bpin=0
+         power_rin=2
+         power_rcin=0
+      CASE("equal_arc")
+         power_bin=0
+         power_bpin=1
+         power_rin=0
+         power_rcin=0
+      CASE("boozer")
+         power_bin=2
+         power_bpin=0
+         power_rin=0
+         power_rcin=0
+      CASE("polar")
+         power_bin=0
+         power_bpin=1
+         power_rin=0
+         power_rcin=1         
+      CASE("other")
+      CASE DEFAULT
+      END SELECT
+
+      SELECT CASE(jac_out)
+      CASE("hamada")
+         power_bout=0
+         power_bpout=0
+         power_rout=0
+         power_rcout=0
+      CASE("pest")
+         power_bout=0
+         power_bpout=0
+         power_rout=2
+         power_rcout=0
+      CASE("equal_arc")
+         power_bout=0
+         power_bpout=1
+         power_rout=0
+         power_rcout=0
+      CASE("boozer")
+         power_bout=2
+         power_bpout=0
+         power_rout=0
+         power_rcout=0
+      CASE("polar")
+         power_bout=0
+         power_bpout=1
+         power_rout=0
+         power_rcout=1         
+      CASE("other")
+      CASE DEFAULT
+      END SELECT
+c-----------------------------------------------------------------------
+c     set parameters from inputs.
+c-----------------------------------------------------------------------
+      lmlow=mmin
+      lmhigh=mmax
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag) psixy=1
       IF (eqoff_flag) psixy=0
@@ -80,6 +178,7 @@ c     prepare for ideal solutions.
 c-----------------------------------------------------------------------
       CALL idcon_read(psixy)
       CALL idcon_transform
+      IF (rstep==0) rstep=mstep
 c-----------------------------------------------------------------------
 c     reconstruct metric tensors.
 c-----------------------------------------------------------------------
@@ -95,218 +194,102 @@ c-----------------------------------------------------------------------
       CALL ipresp_pinduct
       CALL ipresp_sinduct
       CALL ipresp_permeab
+      CALL ipresp_reluct
 c-----------------------------------------------------------------------
-c     define variables and assign temporal values.
+c     set parameters from dcon.
 c-----------------------------------------------------------------------
-      ALLOCATE(bexmn(lmpert),bermn(lmpert),
-     $     brrmn(mpert),bnomn(mpert),fxmn(mpert),xwpmn(mpert))
+      ALLOCATE(brrmn(mpert),bnomn(mpert),xwpmn(mpert),fxmn(mpert))
 c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
-      IF (response_flag) THEN
-         CALL ipout_resp
+      IF (resp_flag) THEN
+         CALL ipout_response
       ENDIF
       IF (singcoup_flag) THEN
-         CALL ipout_singcoup(dist,poloout,toroout)
+         CALL ipout_singcoup(sing_spot,power_rout,
+     $        power_bpout,power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
-      IF (rstep .EQ. 0) rstep=mstep
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
 c-----------------------------------------------------------------------
-      IF (erdata_flag) THEN
-         DO in=1,infnum
-            label=labl+in-1
-            infile=infiles(in)
-            edge_flag=.TRUE.
-            CALL ipout_errfld(infile,formattype,left,scale,brrmn,
-     $           poloin,toroin,wegt,resp,bnomn,xwpmn,label)
-            IF (singfld_flag) THEN
-               CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
-            ENDIF
-            IF (pmodb_flag) THEN
-               CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
-     $           THEN
-               IF (nrzeq_flag) THEN
-                  nr=mr
-                  nz=mz
-               ENDIF
-               IF (.NOT. eqoff_flag) CALL ipeq_rzpgrid(nr,nz)
-               CALL ipout_xbrzphi(0,xwpmn,nr,nz,brrmn,bnomn,label)
-            ENDIF
-c-----------------------------------------------------------------------
-c     diagnose.
-c-----------------------------------------------------------------------
-            IF (singcurs_flag) THEN
-               CALL ipdiag_singcurs(0,xwpmn,msing,resol,
-     $              smallwidth,label)
-            ENDIF
-            IF (xbcontra_flag) THEN
-               CALL ipdiag_xbcontra(0,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (xbnormal_flag) THEN
-               CALL ipdiag_xbnormal(0,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (xbnovc_flag) THEN
-               CALL ipdiag_xbnovc(0,xwpmn,label)
-            ENDIF
-            IF (xbnobo_flag) THEN
-               CALL ipdiag_xbnobo(0,xwpmn,d3_flag,label)
-            ENDIF
-            IF (xbnorm_flag) THEN
-               CALL ipdiag_xbnorm(0,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (pmodbst_flag) THEN
-               CALL ipdiag_pmodbst(0,xwpmn,label)
-            ENDIF
-            IF (pmodbrz_flag) THEN
-               CALL ipdiag_pmodbrz(0,xwpmn,label)
-            ENDIF            
-            IF (rzphibx_flag) THEN
-               CALL ipdiag_rzphibx(0,xwpmn,label)
-            ENDIF
-         ENDDO
+      IF ((data_flag) .OR. (harmonic_flag)) THEN
+         CALL ipout_control(infile,brrmn,bnomn,xwpmn,
+     $        power_rin,power_bpin,power_bin,power_rcin,
+     $        tmag_in,jsurf_in,power_rout,power_bpout,
+     $        power_bout,power_rcout,tmag_out,jsurf_out)
+         edge_flag=.TRUE.
+      ELSE IF (mode_flag) THEN
+         edge_flag=.FALSE.
+      ENDIF
+
+      IF (singfld_flag) THEN
+         CALL ipout_singfld(mode,xwpmn,sing_spot,power_rout,
+     $        power_bpout,power_bout,power_rcout,1,0,singcoup_flag)
+      ENDIF
+      IF (pmodb_flag) THEN
+         CALL ipout_pmodb(mode,xwpmn,power_rout,
+     $        power_bpout,power_bout,power_rcout,1,0)
+      ENDIF
+      IF (xbnormal_flag) THEN
+         CALL ipout_xbnormal(mode,xwpmn,power_rout,
+     $        power_bpout,power_bout,power_rcout,1,0)
+      ENDIF
+      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+     $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
+     $     THEN
+         IF (nrzeq_flag) THEN
+            nr=mr
+            nz=mz
+         ENDIF
+         IF (.NOT. eqoff_flag) CALL ipeq_rzpgrid(nr,nz)
+         IF (.NOT. mode_flag) THEN
+            CALL ipout_xbrzphi(mode,xwpmn,nr,nz,brrmn,bnomn)
+         ELSE
+            ALLOCATE(ipiv(mpert),
+     $           invmats(mpert,mpert),temp1(mpert,mpert))
+            DO i=1,mpert
+               invmats(i,i)=1.0
+            ENDDO
+            temp1=TRANSPOSE(permeabmats(resp_index,:,:))
+            CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
+            CALL zgetrs('N',mpert,mpert,temp1,mpert,
+     $           ipiv,invmats,mpert,info)
+            invmats=TRANSPOSE(invmats)
+            CALL idcon_build(mode,xwpmn)
+            CALL ipeq_alloc
+            CALL ipeq_sol(psilim)
+            CALL ipeq_contra(psilim)
+            CALL ipeq_xptobn(psilim,xwpmn,bnomn)
+            CALL ipeq_dealloc
+            CALL ipeq_weight(psilim,bnomn,mfac,mpert,1)
+            brrmn = MATMUL(invmats,bnomn)
+            CALL ipeq_weight(psilim,bnomn,mfac,mpert,0)
+            CALL ipeq_weight(psilim,brrmn,mfac,mpert,0)
+            CALL ipout_xbrzphi(mode,xwpmn,nr,nz,brrmn,bnomn)
+            DEALLOCATE(ipiv,invmats,temp1)
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
-c     perturbed equilibria with a given equilibrium and mode field.
-c-----------------------------------------------------------------------
-      IF (harmonic_flag) THEN
-         infnum=modemax-modemin+1
-         DO in=1,infnum
-            label=labl+in-1
-            edge_flag=.FALSE.
-            brrmn=0
-            brrmn(modemin+in-mlow)=1e-4
-            CALL ipout_errfld(infile,errtype,left,scale,brrmn,
-     $           poloin,toroin,wegt,resp,bnomn,xwpmn,label)
-            edge_flag=.TRUE.
-            IF (singfld_flag) THEN
-               CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
-            ENDIF
-            IF (pmodb_flag) THEN
-               CALL ipout_pmodb(0,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
-     $           THEN
-               IF (nrzeq_flag) THEN
-                  nr=mr
-                  nz=mz
-               ENDIF
-               IF (.NOT. eqoff_flag) CALL ipeq_rzpgrid(nr,nz)
-               CALL ipout_xbrzphi(0,xwpmn,nr,nz,brrmn,bnomn,label)
-            ENDIF
-c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
-            IF (singcurs_flag) THEN
-               CALL ipdiag_singcurs(0,xwpmn,msing,resol,
-     $              smallwidth,label)
-            ENDIF
-            IF (xbcontra_flag) THEN
-               CALL ipdiag_xbcontra(0,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (xbnormal_flag) THEN
-               CALL ipdiag_xbnormal(0,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (xbnovc_flag) THEN
-               CALL ipdiag_xbnovc(0,xwpmn,label)
-            ENDIF
-            IF (xbnobo_flag) THEN
-               CALL ipdiag_xbnobo(0,xwpmn,d3_flag,label)
-            ENDIF
-            IF (xbnorm_flag) THEN
-               CALL ipdiag_xbnorm(0,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (pmodbst_flag) THEN
-               CALL ipdiag_pmodbst(0,xwpmn,label)
-            ENDIF
-            IF (pmodbrz_flag) THEN
-               CALL ipdiag_pmodbrz(0,xwpmn,label)
-            ENDIF
-            IF (rzphibx_flag) THEN
-               CALL ipdiag_rzphibx(0,xwpmn,label)
-            ENDIF
-         ENDDO
+      IF (singcurs_flag) THEN
+         CALL ipdiag_singcurs(mode,xwpmn,msing,resol,smallwidth)
       ENDIF
-c-----------------------------------------------------------------------
-c     perturbed equilibria with an eigenmode.
-c-----------------------------------------------------------------------
-      IF (mode_flag) THEN
-         infnum=modemax-modemin+1
-         DO in=1,infnum
-            label=labl+in-1
-            edge_flag=.FALSE.
-            IF (singfld_flag) THEN
-               CALL ipout_singfld(in,xwpmn,dist,poloout,toroout,label)
-            ENDIF
-            IF (pmodb_flag) THEN
-               CALL ipout_pmodb(in,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $           vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag) 
-     $           THEN
-               IF (nrzeq_flag) THEN
-                  nr=mr
-                  nz=mz
-               ENDIF
-               IF (.NOT. eqoff_flag) CALL ipeq_rzpgrid(nr,nz)
-               ALLOCATE(ipiv(mpert),
-     $              invmats(mpert,mpert),temp1(mpert,mpert))
-               DO i=1,mpert
-                  invmats(i,i)=1.0
-               ENDDO
-               temp1=TRANSPOSE(permeabmats(modelnum,:,:))
-               CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
-               CALL zgetrs('N',mpert,mpert,temp1,mpert,
-     $              ipiv,invmats,mpert,info)
-               invmats=TRANSPOSE(invmats)
-               CALL idcon_build(in,xwpmn)
-               CALL ipeq_alloc
-               CALL ipeq_contra(psilim)
-               CALL ipeq_xptobn(psilim,xwpmn,bnomn)
-               CALL ipeq_dealloc
-               CALL ipeq_weight(psilim,bnomn,mfac,mpert,1)
-               brrmn = MATMUL(invmats,bnomn)
-               CALL ipeq_weight(psilim,bnomn,mfac,mpert,0)
-               CALL ipeq_weight(psilim,brrmn,mfac,mpert,0)
-               CALL ipout_xbrzphi(in,xwpmn,nr,nz,brrmn,bnomn,label)
-               DEALLOCATE(ipiv,invmats,temp1)
-            ENDIF
-c-----------------------------------------------------------------------
-c     diagnose.
-c-----------------------------------------------------------------------
-            IF (singcurs_flag) THEN
-               CALL ipdiag_singcurs(in,xwpmn,msing,resol,
-     $              smallwidth,label)
-            ENDIF
-            IF (xbcontra_flag) THEN
-               CALL ipdiag_xbcontra(in,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (xbnormal_flag) THEN
-               CALL ipdiag_xbnormal(in,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (xbnovc_flag) THEN
-               CALL ipdiag_xbnovc(in,xwpmn,label)
-            ENDIF
-            IF (xbnobo_flag) THEN
-               CALL ipdiag_xbnobo(in,xwpmn,d3_flag,label)
-            ENDIF
-            IF (xbnorm_flag) THEN
-               CALL ipdiag_xbnorm(in,xwpmn,poloout,toroout,label)
-            ENDIF
-            IF (pmodbst_flag) THEN
-               CALL ipdiag_pmodbst(in,xwpmn,label)
-            ENDIF
-            IF (pmodbrz_flag) THEN
-               CALL ipdiag_pmodbrz(in,xwpmn,label)
-            ENDIF
-            IF (rzphibx_flag) THEN
-               CALL ipdiag_rzphibx(in,xwpmn,label)
-            ENDIF
-         ENDDO
+      IF (xbcontra_flag) THEN
+         CALL ipdiag_xbcontra(mode,xwpmn,power_rout,
+     $        power_bpout,power_bout,power_rcout,tmag_out)
+      ENDIF
+      IF (xbnobo_flag) THEN
+         CALL ipdiag_xbnobo(mode,xwpmn,d3_flag)
+      ENDIF
+      IF (pmodbst_flag) THEN
+         CALL ipdiag_pmodbst(mode,xwpmn)
+      ENDIF
+      IF (pmodbrz_flag) THEN
+         CALL ipdiag_pmodbrz(mode,xwpmn)
+      ENDIF            
+      IF (rzphibx_flag) THEN
+         CALL ipdiag_rzphibx(mode,xwpmn)
       ENDIF
 c-----------------------------------------------------------------------
 c     diagnose without a given error field.
@@ -320,12 +303,6 @@ c-----------------------------------------------------------------------
       IF (magpot_flag) THEN
          CALL ipdiag_magpot
       ENDIF
-      IF (energy_flag) THEN
-         CALL ipdiag_energy
-      ENDIF
-      IF (respmat_flag) THEN
-         CALL ipdiag_respmat
-      ENDIF
       IF (arbsurf_flag) THEN
          CALL ipdiag_arbsurf(majr,minr)
       ENDIF         
@@ -333,66 +310,49 @@ c-----------------------------------------------------------------------
          CALL ipdiag_angles
       ENDIF
       IF (surfmode_flag) THEN
-         CALL ipdiag_surfmode(lowmode,highmode,poloout,toroout)
+         CALL ipdiag_surfmode(lowmode,highmode,power_rout,power_bpout,
+     $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
       IF (rzpgrid_flag) THEN
          IF (.NOT. eqoff_flag) CALL ipdiag_rzpgrid(nr,nz)
       ENDIF
+      
       IF (m3d_flag) THEN
          normpsi=1.0
          fp=1e-3
          
-         DO in=m3low,m3high
-            label=in-m3low
-            fxmn=0
-            fxmn(in-mlow+1)=fp*normpsi
-            CALL ipeq_cotoha(psilim,fxmn,mfac,mpert,0,0)
-            fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
-            CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
-            edge_flag=.FALSE.
-            CALL ipout_errfld(infile,errtype,left,scale,fxmn,
-     $           poloout,toroout,wegt,resp,bnomn,xwpmn,label)
-            edge_flag=.TRUE.
-            CALL ipout_singfld(0,xwpmn,dist,poloout,toroout,label)
-         ENDDO
+         fxmn=0
+         fxmn(m3mode-mlow+1)=fp*normpsi
+         CALL ipeq_fcoords(psilim,fxmn,mfac,mpert,0,1,0,1,0,0)
+         fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
+         CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
+         CALL ipout_control(infile,fxmn,bnomn,xwpmn,
+     $        0,0,0,0,1,0,0,0,0,0,1,0)
+         edge_flag=.TRUE.
+         CALL ipout_singfld(mode,xwpmn,sing_spot,power_rout,
+     $        power_bpout,power_bout,power_rcout,tmag_out,jsurf_out,
+     $        .FALSE.)
       ENDIF
+
       IF (cas3d_flag) THEN
-c         fp=1e-4
-c         DO in=m3low,m3high
-c            label=in-m3low
-c            fxmn=0
-c            fxmn(in-mlow+1)=fp
-c            edge_flag=.FALSE.
-c            CALL ipout_errfld(infile,errtype,left,scale,fxmn,
-c     $           poloout,toroout,resp,bnomn,xwpmn,label)
-c            edge_flag=.TRUE.
-c            CALL ipout_singfld(0,xwpmn,dist,1,1,label)
-c            CALL ipdiag_xbcontra(0,xwpmn,1,1,label)
-c            CALL ipdiag_xbcontra(0,xwpmn,4,1,label)
-c            CALL ipdiag_xbnormal(0,xwpmn,1,1,label)
-c            CALL ipdiag_xbnormal(0,xwpmn,4,1,label)
-c            CALL ipdiag_xbnobo(0,xwpmn,d3_flag,label)
-c            CALL ipdiag_radvar
-c         ENDDO
          fp = -1e-2
-         DO in=m3low,m3high
-            label=in-m3low
-            fxmn=0
-            fxmn(in-mlow+1)=fp
-            CALL ipeq_cotoha(psilim,fxmn,mfac,mpert,4,1)
-            CALL ipeq_xptobn(psilim,fxmn,brrmn)
-            edge_flag=.FALSE.
-            CALL ipout_errfld(infile,errtype,left,scale,brrmn,
-     $           poloout,toroout,wegt,resp,bnomn,xwpmn,label)
-            edge_flag=.TRUE.
-            CALL ipout_singfld(0,xwpmn,dist,1,1,label)
-            CALL ipdiag_xbcontra(0,xwpmn,1,1,label)
-            CALL ipdiag_xbcontra(0,xwpmn,4,1,label)
-            CALL ipdiag_xbnormal(0,xwpmn,1,1,label)
-            CALL ipdiag_xbnormal(0,xwpmn,4,1,label)
-            CALL ipdiag_xbnobo(0,xwpmn,d3_flag,label)
-            CALL ipdiag_radvar
-         ENDDO
+         
+         fxmn=0
+         fxmn(m3mode-mlow+1)=fp
+         CALL ipeq_fcoords(psilim,fxmn,mfac,mpert,0,0,2,0,1,0)
+         CALL ipeq_xptobn(psilim,fxmn,brrmn)
+         CALL ipout_control(infile,brrmn,bnomn,xwpmn,power_rin,
+     $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
+     $        power_rout,power_bpout,power_bout,power_rcout,
+     $        tmag_out,jsurf_out)
+         edge_flag=.TRUE.
+         CALL ipout_singfld(mode,xwpmn,sing_spot,0,0,0,0,1,0,.FALSE.)
+         CALL ipdiag_xbcontra(mode,xwpmn,0,0,0,0,1)
+         CALL ipdiag_xbcontra(mode,xwpmn,0,0,2,0,1)
+         CALL ipout_xbnormal(mode,xwpmn,0,0,0,0,1,0)
+         CALL ipout_xbnormal(mode,xwpmn,0,0,2,0,1,0)
+         CALL ipdiag_xbnobo(mode,xwpmn,d3_flag)
+         CALL ipdiag_radvar
       ENDIF
 c-----------------------------------------------------------------------
 c     only for test.
@@ -401,8 +361,8 @@ c-----------------------------------------------------------------------
          fxmn=0
          fxmn(10-mlow+1)=1e-4
          bnomn=fxmn
-         CALL ipeq_cotoha(psilim,bnomn,mfac,mpert,0,0)
-         CALL ipeq_hatoco(psilim,bnomn,mfac,mpert,0,0)
+         CALL ipeq_fcoords(psilim,bnomn,mfac,mpert,0,1,0,1,0,0)
+         CALL ipeq_bcoords(psilim,bnomn,mfac,mpert,0,1,0,1,0,0)
          CALL ascii_open(out_unit,"iptest_coordtrans_n"//
      $        sn//".out","UNKNOWN")
          WRITE(out_unit,*)

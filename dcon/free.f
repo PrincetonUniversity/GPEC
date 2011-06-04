@@ -27,9 +27,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: theta,dphi,r,z
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
-c-----------------------------------------------------------------------
-c     <MODIFIED>
-c-----------------------------------------------------------------------
       INTEGER :: nfm2,nths2
       REAL(8), DIMENSION(:,:), pointer :: grri
 c-----------------------------------------------------------------------
@@ -40,7 +37,7 @@ c     subprogram 1. free_run.
 c     computes plasma, vacuum, and total potential energies.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     declarations. <MODIFIED>
+c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE free_run(plasma1,vacuum1,total1,nzero)
 
@@ -57,7 +54,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8) :: phase,norm
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,rt,temp,wpt,wvt
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,temp,wpt,wvt
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
@@ -98,7 +95,7 @@ c-----------------------------------------------------------------------
       v1=sq%f(3)
       CALL dcon_dealloc
 c-----------------------------------------------------------------------
-c     compute vacuum response matrix.<MODIFIED>
+c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
       vac_unit=4
       kernelsignin=-1.0
@@ -127,10 +124,9 @@ c-----------------------------------------------------------------------
          wv(:,ipert)=wv(:,ipert)*singfac
       ENDDO
 c-----------------------------------------------------------------------
-c     compute energy eigenvalues.<MODIFIED>
+c     compute energy eigenvalues.
 c-----------------------------------------------------------------------
       wt=wp+wv
-      rt=wt
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,wt,mpert,et,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
@@ -177,14 +173,13 @@ c-----------------------------------------------------------------------
          DEALLOCATE(r,z,theta,dphi,thetas,project)
       ENDIF
 c-----------------------------------------------------------------------
-c     save eigenvalues and eigenvectors to file. <MODIFIED>
+c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
          WRITE(euler_bin_unit)3
+         WRITE(euler_bin_unit)ep
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
-         WRITE(euler_bin_unit)ep
-         WRITE(euler_bin_unit)rt
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
@@ -197,7 +192,6 @@ c-----------------------------------------------------------------------
 c     write eigenvalues to file.
 c-----------------------------------------------------------------------
       message=""
-c$$$      message(1:nzero)="  internal instability"
       WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
       WRITE(out_unit,20)
       WRITE(out_unit,30)(isol,ep(isol),ev(isol),et(isol),
@@ -218,11 +212,9 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,60)
       ENDDO
 c-----------------------------------------------------------------------
-c     write the plasma matrix. (MODIFIED)
+c     write the plasma matrix.
 c-----------------------------------------------------------------------
       WRITE(out_unit,'(/1x,a/)')"Plasma Energy Matrix:"
-c-----Temporalily changed
-c      DO isol=1,mpert
       DO isol=1,2
          WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,", m = ",m(isol)
          WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
@@ -231,14 +223,10 @@ c      DO isol=1,mpert
          WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
       ENDDO
 c-----------------------------------------------------------------------
-c     compute and print separate plasma and vacuum eigenvalues. (MOD)
+c     compute and print separate plasma and vacuum eigenvalues.
 c-----------------------------------------------------------------------
       CALL zheev('V','U',mpert,wp,mpert,ep,work,lwork,rwork,info)
       CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
-c      WRITE(out_unit,*)"Separate Energy Eigenvalues:"
-c      WRITE(out_unit,80)
-c      WRITE(out_unit,90)(isol,ep(isol),ev(isol),isol=1,mpert)
-c      WRITE(out_unit,80)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

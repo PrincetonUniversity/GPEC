@@ -195,7 +195,6 @@ c-----------------------------------------------------------------------
          g12(1:mband)=CONJG(g12(-1:-mband:-1))
          jmat(1:mband)=CONJG(jmat(-1:-mband:-1))
          jmat1(1:mband)=CONJG(jmat1(-1:-mband:-1))
-c     CALL fourfit_diagnose_1(g11,g22,g33,g23,g31,g12)
 c-----------------------------------------------------------------------
 c     begin loops over perturbed fourier components.
 c-----------------------------------------------------------------------

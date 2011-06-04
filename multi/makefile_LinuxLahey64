@@ -1,6 +1,6 @@
 # This is the makefile for MULTI on LinuxLahey computers.Linux
 
-FFLAGS = -g
+FFLAGS = -O2
 F90 = lfc $(FFLAGS)
 
 .f.o:

@@ -31,7 +31,6 @@ orbit: $(OBJS)
 
 # dependencies
 
-orbit_mod.o: ../equil/EQUIL_MOD.mod ../equil/EQUIL_OUT_MOD.mod
 restart.o: orbit_mod.o
 field.o: orbit_mod.o
 inner.o: field.o restart.o

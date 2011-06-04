@@ -203,7 +203,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 2. ipvacuum_flxsurf.
 c     compute flux surface inductances.
-c     need to use ipeq_alloc and dealloc routines externally. 
 c-----------------------------------------------------------------------
       SUBROUTINE ipvacuum_flxsurf(psi)
 c-----------------------------------------------------------------------
@@ -222,11 +221,11 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(0:mtheta) :: vtheta,vrfac,veta,vr,vz,
      $     vdphi,delte
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,wgtfun
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi
       
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,rbwp_fun,chi_fun,
-     $     che_fun,flx_fun,kax_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,rbwp_fun,
+     $     chi_fun,che_fun,kax_fun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: fflxmats,fkaxmats,
      $     temp1,temp2,vwv
 
@@ -303,7 +302,6 @@ c-----------------------------------------------------------------------
       CALL grrget(nfm2,nths2,vgrre)
 c-----------------------------------------------------------------------
 c     construct surface inductance matrix for specified boundary.
-c     what is the last point? check!!
 c-----------------------------------------------------------------------
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
      $     grre_real(nths2),grre_imag(nths2))
@@ -315,11 +313,6 @@ c-----------------------------------------------------------------------
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
          dphi(itheta)=rzphi%f(3)
-         jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         wgtfun(itheta)=1.0/(jac*delpsi(itheta))
       ENDDO
 
       DO i=1,mpert
@@ -345,11 +338,10 @@ c-----------------------------------------------------------------------
          ENDDO
          chi_fun(0)=chi_fun(mthvac)
          che_fun(0)=che_fun(mthvac)
-         chi_fun=chi_fun*jac/(twopi**2)
-         che_fun=-che_fun*jac/(twopi**2)         
-         flx_fun=bwp_fun*jac
+         chi_fun=chi_fun/(twopi**2)
+         che_fun=-che_fun/(twopi**2)         
          kax_fun=(chi_fun-che_fun)/mu0
-         CALL iscdftf(mfac,mpert,flx_fun,mthsurf,fflxmats(:,i))   
+         CALL iscdftf(mfac,mpert,bwp_fun,mthsurf,fflxmats(:,i))   
          CALL iscdftf(mfac,mpert,kax_fun,mthsurf,fkaxmats(:,i)) 
       ENDDO
       temp1=TRANSPOSE(fkaxmats)
@@ -373,15 +365,15 @@ c-----------------------------------------------------------------------
 c     subprogram 3. ipvacuum_bnormal.
 c     create bnormal input for vacuum code.  
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_bnormal(psi,bnomn,polo,toro,nr,nz)
+      SUBROUTINE ipvacuum_bnormal(psi,bnomn,nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: polo,toro,nr,nz
+      INTEGER, INTENT(IN) :: nr,nz
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnomn
 
-      INTEGER :: ipert,itheta,rtheta,vn
+      INTEGER :: ipert,itheta,rtheta,vn,vac_unit
       REAL(r8) :: qa,x1,x2,z1,z2
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
 
@@ -390,7 +382,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,rbwp_fun
 c-----------------------------------------------------------------------
-c     specify flux surface in hamada given by equilibrium file.
+c     specify flux surface given by equilibrium file.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,0)
       DO itheta=0,mthsurf
@@ -400,11 +392,11 @@ c-----------------------------------------------------------------------
          r(itheta)=ro+rfac*COS(etas(itheta))
          z(itheta)=zo+rfac*SIN(etas(itheta))
          jac=rzphi%f(4)
+         jacs(itheta)=jac
          w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
          w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
          dphi(itheta)=rzphi%f(3)
          delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         jacs(itheta)=jac
       ENDDO
 
       IF (eqoff_flag) THEN
@@ -431,11 +423,8 @@ c-----------------------------------------------------------------------
          vn=-vn
       ENDIF
 c-----------------------------------------------------------------------
-c     change and reverse poloidal and torodial coordinates in hamada.
+c     change and reverse poloidal and torodial coordinates.
 c-----------------------------------------------------------------------
-      IF ((polo /= 1).OR.(toro /=1)) THEN
-         CALL ipeq_cotoha(psi,bnomn,mfac,mpert,polo,toro)
-      ENDIF
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bnomn)
       bwp_fun=bwp_fun*delpsi*jacs/(twopi**2)
       DO itheta=0,mthvac-1
@@ -447,51 +436,52 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------
-      CALL ascii_open(bin_unit,'vacin5',"UNKNOWN")
-      WRITE(bin_unit,'(a/)')"scalars"
-      WRITE(bin_unit,'(i4,a)')nr+1,tab//tab//"Number of x grid"
-      WRITE(bin_unit,'(i4,a)')nz+1,tab//tab//"Number of z grid"
-      WRITE(bin_unit,'(f18.10,a)')x1,tab//tab//
+      vac_unit=7
+      CALL ascii_open(vac_unit,'vacin5',"UNKNOWN")
+      WRITE(vac_unit,'(a/)')"scalars"
+      WRITE(vac_unit,'(i4,a)')nr+1,tab//tab//"Number of x grid"
+      WRITE(vac_unit,'(i4,a)')nz+1,tab//tab//"Number of z grid"
+      WRITE(vac_unit,'(f18.10,a)')x1,tab//tab//
      $     "Left x position in rectangular grid"
-      WRITE(bin_unit,'(f18.10,a)')x2,tab//tab//
+      WRITE(vac_unit,'(f18.10,a)')x2,tab//tab//
      $     "Right x position in rectangular grid"
-      WRITE(bin_unit,'(f18.10,a)')z1,tab//tab//
+      WRITE(vac_unit,'(f18.10,a)')z1,tab//tab//
      $     "Lower z position in rectangular grid"
-      WRITE(bin_unit,'(f18.10,a)')z2,tab//tab//
+      WRITE(vac_unit,'(f18.10,a)')z2,tab//tab//
      $     "Upper z position in rectangular grid"
-      WRITE(bin_unit,'(i4,a)')mthsurf,tab//tab//"mthsurf"//tab//"mthin"
+      WRITE(vac_unit,'(i4,a)')mthsurf,tab//tab//"mthsurf"//tab//"mthin"
      $     //tab//"Number of poloidal nodes"
-      WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
+      WRITE(vac_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
      $     //"Lowest poloidal harmonic"
-      WRITE(bin_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
+      WRITE(vac_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
      $     //tab//"Highest poloidal harmonic"
-      WRITE(bin_unit,'(i4,a)')vn,tab//tab//"nn"//tab//tab//"ntor"//tab
+      WRITE(vac_unit,'(i4,a)')vn,tab//tab//"nn"//tab//tab//"ntor"//tab
      $     //"Toroidal harmonic"
-      WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
+      WRITE(vac_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
      $     //"Safety factor at plasma edge"
 c-----------------------------------------------------------------------
 c     write arrays.
 c-----------------------------------------------------------------------
-      WRITE(bin_unit,'(a/)')"Poloidal Coordinate Theta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
+      WRITE(vac_unit,'(a/)')"Poloidal Coordinate Theta:"
+      WRITE(vac_unit,'(1p,4e18.10)')(1-theta(itheta),
      $     itheta=mthsurf,0,-1)
-      WRITE(bin_unit,'(a/)')"Polar Angle Eta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(twopi-etas(itheta),
+      WRITE(vac_unit,'(a/)')"Polar Angle Eta:"
+      WRITE(vac_unit,'(1p,4e18.10)')(twopi-etas(itheta),
      $     itheta=mthsurf,0,-1)
-      WRITE(bin_unit,'(a/)')"Radial Coordinate X:"
-      WRITE(bin_unit,'(1p,4e18.10)')(r(itheta),itheta=mthsurf,0,-1)
-      WRITE(bin_unit,'(a/)')"Axial Coordinate Z:"
-      WRITE(bin_unit,'(1p,4e18.10)')(z(itheta),itheta=mthsurf,0,-1)
-      WRITE(bin_unit,'(a/)')"Toroidal Angle Difference Delte:"
-      WRITE(bin_unit,'(1p,4e18.10)')(delte(itheta),
+      WRITE(vac_unit,'(a/)')"Radial Coordinate X:"
+      WRITE(vac_unit,'(1p,4e18.10)')(r(itheta),itheta=mthsurf,0,-1)
+      WRITE(vac_unit,'(a/)')"Axial Coordinate Z:"
+      WRITE(vac_unit,'(1p,4e18.10)')(z(itheta),itheta=mthsurf,0,-1)
+      WRITE(vac_unit,'(a/)')"Toroidal Angle Difference Delte:"
+      WRITE(vac_unit,'(1p,4e18.10)')(delte(itheta),
      $     itheta=mthsurf,0,-1)
-      WRITE(bin_unit,'(a/)')"Real component of normal b field:"
-      WRITE(bin_unit,'(1p,4e18.10)')(REAL(rbwp_mn(ipert)),
+      WRITE(vac_unit,'(a/)')"Real component of normal b field:"
+      WRITE(vac_unit,'(1p,4e18.10)')(REAL(rbwp_mn(ipert)),
      $     ipert=1,mpert)
-      WRITE(bin_unit,'(a/)')"Imaginary component of normal b field:"
-      WRITE(bin_unit,'(1p,4e18.10)')(AIMAG(rbwp_mn(ipert)),
+      WRITE(vac_unit,'(a/)')"Imaginary component of normal b field:"
+      WRITE(vac_unit,'(1p,4e18.10)')(AIMAG(rbwp_mn(ipert)),
      $     ipert=1,mpert)
-      CALL ascii_close(bin_unit)
+      CALL ascii_close(vac_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

@@ -131,6 +131,9 @@ c     termination.
 c-----------------------------------------------------------------------
       call msctimer ( outmod, "end of main" )
       close(iotty)
+      close(outpest)
+      close(inmode)
+      close(outmod)
       call global_dealloc
       call cleanup
       return
@@ -187,6 +190,7 @@ c-----------------------------------------------------------------------
       call defglo
       ldcon = 0
       lipec = 1
+      ieig = 0
       open (iotty,file='mscvac.out',status='unknown')
       open (outpest,file='pestotv',status='unknown',form='formatted')
       open (inmode,file='vac.in',status='old', form='formatted' )
@@ -219,7 +223,6 @@ c-----------------------------------------------------------------------
          mflag=1
          do while(mflag .ne. 0)
             read ( 60,20 ) mflag
-c            if ( mflag .eq. 0 )exit
          enddo
          read ( 60,30 ) omsq, ( xi(l),l = 1,jmax1 )
       elseif(ieig .eq. 5)then
@@ -244,7 +247,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     copy vacuum response matrix to output.
 c-----------------------------------------------------------------------
- 99   continue
       IF(complex_flag)THEN
          wv=vacmat+ifac*vacmtiu
       ELSE
@@ -253,6 +255,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute b field.
 c-----------------------------------------------------------------------
+ 99   continue
       call make_bltobp
       call diaplt
       call pickup(bnlr,bnli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
@@ -261,6 +264,9 @@ c     termination.
 c-----------------------------------------------------------------------
       call msctimer ( outmod, "end of main" )
       close(iotty)
+      close(outpest)
+      close(inmode)
+      close(outmod)
       call global_dealloc
       call cleanup
       return
@@ -351,8 +357,6 @@ c-----------------------------------------------------------------------
       enddo
       nout(1) = 6
       nout(2) = outmod
-c      mp0 = 'mapdsk'
-c      mp1 = 'mpout1'
 c-----------------------------------------------------------------------
 c     define logicals.
 c-----------------------------------------------------------------------
@@ -515,9 +519,6 @@ c-----------------------------------------------------------------------
          xigr(i) = zgr
          xigi(i) = zgi
       END DO
-c     
-c... Construct bnk(theta):
-c
 
       DO i = 1, mth1
          zgr = 0.0
@@ -588,9 +589,6 @@ c-----------------------------------------------------------------------
       chipr(mth1) = chipr(1)
       chipi(mth1) = chipi(1)
 
-c
-c.....Calculate B theta on the plasma ...
-c     
       DO i = 1, mth1
          CALL lagp ( slngth,chipr, mth1,5, slngth(i), f,zorkpr(i), 1,1 )
          CALL lagp ( slngth,chipi, mth1,5, slngth(i), f,zorkpi(i), 1,1 )
@@ -663,8 +661,7 @@ c-----------------------------------------------------------------------
      
       if ( lfarw .gt. 0 ) go to 20
      
-      call bounds(xwal,zwal,1,mw,xmnw,xmxw,zmnw,zmxw)
-     
+      call bounds(xwal,zwal,1,mw,xmnw,xmxw,zmnw,zmxw)     
       xmin = amin1(xmnp,xmnw)
       xmax = amax1(xmxp,xmxw)
       zmin = amin1(zmnp,zmnw)
@@ -710,13 +707,13 @@ c-----------------------------------------------------------------------
          IF ( fintjj > 0.1 ) THEN ! interior
             igdl(i) = 1
             rgdl(i) = -1.0
-c..   Neglect points interior to the plasma, if exterior solution required:
+
             IF ( linterior == 0 ) GO TO 239 
          END IF
          IF ( fintjj < 0.1 ) THEN ! exterior
             igdl(i) = 0
             rgdl(i) = 1.0
-c..   Neglect points exterior to the plasma, if interior solution required:
+
             IF ( linterior == 1 ) GO TO 239
          END IF
          rwall(i) = -1.0
@@ -769,31 +766,31 @@ c..   Neglect points exterior to the plasma, if interior solution required:
             go to ( 51, 52, 53, 54, 55), nsew
             
  51         continue
-c......north
+
             xobp(i) = xloop(i)
             zobp(i) = zloop(i) + delz
             go to 90
             
  52         continue
-c.....south
+
             xobp(i) = xloop(i)
             zobp(i) = zloop(i) - delz
             go to 90
             
  53         continue
-c.....east
+
             xobp(i) = xloop(i) + delx
             zobp(i) = zloop(i)
             go to 90
             
  54         continue
-c.....west
+
             xobp(i) = xloop(i) - delx
             zobp(i) = zloop(i)
             GO TO 90
             
  55         CONTINUE
-c.....center
+
             xobp(i) = xloop(i) 
             zobp(i) = zloop(i)
             

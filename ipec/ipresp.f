@@ -54,13 +54,14 @@ c-----------------------------------------------------------------------
 c     compute the perturbed quantities and contruct hermitian matrices.
 c-----------------------------------------------------------------------
          CALL ipeq_alloc
+         CALL ipeq_sol(psilim)
          CALL ipeq_contra(psilim)
          CALL ipeq_cova(psilim)
          CALL ipeq_surface(psilim)
 c-----------------------------------------------------------------------
 c     compute each fourier component.
 c-----------------------------------------------------------------------
-         flxmats(:,i)=flx_mn
+         flxmats(:,i)=bwp_mn
          chimats(:,i)=chi_mn
          chemats(:,i)=che_mn
          kaxmats(:,i)=kax_mn
@@ -97,9 +98,9 @@ c-----------------------------------------------------------------------
             surfet(j,i)=surfep(j,i)+surfee(i)
          ENDDO
          WRITE(*,'(1x,a12,i3,a7,es10.3)')"eigenmode = ",i,
-     $        ", dw = ",surfet(modelnum,i)     
+     $        ", dw = ",surfet(resp_index,i)     
          CALL ipeq_dealloc
-         DEALLOCATE(chi_mn,che_mn,chp_mn,flx_mn,kap_mn,kax_mn)
+         DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
       ENDDO
       DEALLOCATE(grri,grre)
 c-----------------------------------------------------------------------
@@ -260,7 +261,7 @@ c-----------------------------------------------------------------------
      $        permeabindex(j,:),1,mpert)
       ENDDO
       WRITE(*,'(1x,a,es10.3)')"single-mode permeability = ",
-     $     MAXVAL(ABS(permeabev(modelnum,:)))
+     $     MAXVAL(ABS(permeabev(resp_index,:)))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

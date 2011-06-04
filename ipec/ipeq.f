@@ -6,22 +6,23 @@ c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
 c      0. ipeq_mod
-c      1. ipeq_contra
-c      2. ipeq_cova
-c      3. ipeq_normal
-c      4. ipeq_tangent
-c      5. ipeq_parallel
-c      6. ipeq_rzphi
-c      7. ipeq_surface
-c      8. ipeq_cotoha
-c      9. ipeq_hatoco
-c     10. ipeq_weight
+c      1. ipeq_sol
+c      2. ipeq_contra
+c      3. ipeq_cova
+c      4. ipeq_normal
+c      5. ipeq_tangent
+c      6. ipeq_parallel
+c      7. ipeq_rzphi
+c      8. ipeq_surface
+c      9. ipeq_fcoords
+c     10. ipeq_bcoords
 c     11. ipeq_bntoxp
 c     12. ipeq_xptobn
-c     13. ipeq_rzpgrid
-c     14. ipeq_rzpdiv
-c     15. ipeq_alloc
-c     16. ipeq_dealloc
+c     13. ipeq_weight
+c     14. ipeq_rzpgrid
+c     15. ipeq_rzpdiv
+c     16. ipeq_alloc
+c     17. ipeq_dealloc
 c-----------------------------------------------------------------------
 c     subprogram 0. ipeq_mod.
 c     module declarations.
@@ -36,10 +37,10 @@ c-----------------------------------------------------------------------
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipeq_contra.
-c     compute contravariant component of perturbed quantities in hamada.
+c     subprogram 1. ipeq_sol.
+c     obtain solutions of perturbed quantities.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_contra(psi)
+      SUBROUTINE ipeq_sol(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -50,72 +51,124 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert) :: ipiva
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
 
-      COMPLEX(r8), DIMENSION(mpert) :: xwpfac
+      COMPLEX(r8), DIMENSION(mpert) :: xspfac
 c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,1)
-      CALL spline_eval(ffun,psi,1)
       CALL cspline_eval(u1,psi,0)
       CALL cspline_eval(u2,psi,0)
+
+      q=sq%f(4)
+      q1=sq%f1(4)
+      singfac=mfac-nn*q
 
       ALLOCATE(amat(mpert,mpert),bmat(mpert,mpert),cmat(mpert,mpert))
       ALLOCATE(fmats(mband+1,mpert),gmats(mband+1,mpert))
       ALLOCATE(kmats(2*mband+1,mpert))
       CALL idcon_matrix(psi)
-
-      singfac=mfac-nn*sq%f(4)
-      jac=ffun%f(1)
-      jac1=ffun%f1(1)
 c-----------------------------------------------------------------------
 c     compute preliminary quantities.
 c-----------------------------------------------------------------------
-      xwp_mn=u1%f
-      xwpfac=u2%f/singfac
+      xsp_mn=u1%f
+      xspfac=u2%f/singfac
       CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
-     $     2*mband+1,u1%f,1,ione,xwpfac,1)
-      CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xwpfac,mpert,info)
-      xwp1_mn=xwpfac/singfac
+     $     2*mband+1,u1%f,1,ione,xspfac,1)
+      CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
+      xsp1_mn=xspfac/singfac
       CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
       CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
       CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
+      xss_mn=-MATMUL(bmat,xsp1_mn)-MATMUL(cmat,xsp_mn)
 c-----------------------------------------------------------------------
-c     compute basic perturbed quantities.
-c     xvs_mn = -a^{-1}b*xwp1_mn - a^{-1}c*xwp_mn.
-c     xwp1_mn is the source of the singularity.
+c     compute contravariant b fields.
 c-----------------------------------------------------------------------
-      xvs_mn=-MATMUL(bmat,xwp1_mn)-MATMUL(cmat,xwp_mn)
-      xws_mn=xvs_mn/(sq%f(4)*chi1)*(singfac**2/(singfac**2+bdist**2))
-      xwt_mn=-(nn*xvs_mn/chi1+jac1/(twopi*ifac*jac)
-     $     *xwp_mn+xwp1_mn/(twopi*ifac))*
-     $     (singfac/(singfac**2+bdist**2))
-      xwz_mn=sq%f(4)*xwt_mn-xvs_mn/chi1*
-     $     (singfac**2/(singfac**2+bdist**2))
-      bwp_mn=(chi1*singfac*twopi*ifac*xwp_mn)/jac
-      bwt_mn=-(chi1*xwp1_mn+twopi*ifac*nn*xvs_mn)/jac
-      bwz_mn=-(chi1*(sq%f1(4)*xwp_mn+sq%f(4)*xwp1_mn)+
-     $     twopi*ifac*mfac*xvs_mn)/jac
+      bwp_mn=(chi1*singfac*twopi*ifac*xsp_mn)
+      bwt_mn=-(chi1*xsp1_mn+twopi*ifac*nn*xss_mn)
+      bwz_mn=-(chi1*(q1*xsp_mn+sq%f(4)*xsp1_mn)+twopi*ifac*mfac*xss_mn)
 c-----------------------------------------------------------------------
-c     compute first derivatives of b field.
-c     this is effectively jac*delpsi, but /(chi1*sq%f(4)) here.
-c     that's why (chi1*sq%f(4)) is multiplied twice to j_c later on
-c     same at the rational surface, but not in other place.
+c     compute derivative of b fields.
 c-----------------------------------------------------------------------
-      bwp1_mn=(twopi*ifac*chi1*singfac)/jac*xwp1_mn+
-     $     twopi*ifac*chi1*nn*(-sq%f1(4)*jac+sq%f(4)*jac1)/(jac**2)*
-     $     xwp_mn
-      nbwp1_mn=(twopi*ifac*singfac)/sq%f(4)*xwp1_mn+
-     $     twopi*ifac*(-mfac*sq%f1(4))/(sq%f(4)**2)*xwp_mn
+      bwp1_mn=(twopi*ifac*chi1*singfac)*xsp1_mn-
+     $     twopi*ifac*chi1*nn*q1*xsp_mn
+      nbwp1_mn=(twopi*ifac*singfac)/q*xsp1_mn+
+     $     twopi*ifac*(-mfac*q1)/(q**2)*xsp_mn
+c-----------------------------------------------------------------------
+c     compute modified quantities.
+c-----------------------------------------------------------------------
+      xms_mn=xss_mn*(singfac**2/(singfac**2+reg_spot**2))
+      bmt_mn=bwt_mn*(singfac**2/(singfac**2+reg_spot**2))
 
       DEALLOCATE(amat,bmat,cmat,fmats,gmats,kmats)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
+      END SUBROUTINE ipeq_sol
+c-----------------------------------------------------------------------
+c     subprogram 2. ipeq_contra.
+c     compute contravariant components of perturbed quantities.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipeq_contra(psi)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      REAL(r8), INTENT(IN) :: psi
+      
+      INTEGER :: ipert,jpert,m1,m2,dm
+      COMPLEX(r8), DIMENSION(-mband:mband) ::jmat,jmat1
+
+      CALL spline_eval(sq,psi,1)
+      CALL cspline_eval(metric%cs,psi,0)
+
+      q=sq%f(4)
+      q1=sq%f1(4)
+      singfac=mfac-nn*q
+c-----------------------------------------------------------------------
+c     compute lower half of matrices.
+c-----------------------------------------------------------------------
+      jmat(0:-mband:-1)=metric%cs%f(6*mband+7:7*mband+7)
+      jmat1(0:-mband:-1)=metric%cs%f(7*mband+8:8*mband+8)
+c-----------------------------------------------------------------------
+c     compute upper half of matrices.
+c-----------------------------------------------------------------------
+      jmat(1:mband)=CONJG(jmat(-1:-mband:-1))
+      jmat1(1:mband)=CONJG(jmat1(-1:-mband:-1))
+c-----------------------------------------------------------------------
+c     compute contravariant quantities.
+c-----------------------------------------------------------------------
+      ipert=0
+      xwp_mn=0
+      xwt_mn=0
+      xwz_mn=0
+      DO m1=mlow,mhigh
+         ipert=ipert+1
+         DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
+            m2=m1+dm
+            jpert=ipert+dm
+            xwp_mn(ipert)=xwp_mn(ipert)+jmat(dm)*xsp_mn(jpert)
+            xwt_mn(ipert)=xwt_mn(ipert)-(jmat(dm)*xsp1_mn(jpert)+
+     $           jmat1(dm)*xsp_mn(jpert)+
+     $           twopi*ifac*nn/chi1*jmat(dm)*xss_mn(jpert))/
+     $           (twopi*ifac*(m1-nn*q))
+            xwz_mn(ipert)=xwz_mn(ipert)-(q*jmat(dm)*xsp1_mn(jpert)+
+     $           q*jmat1(dm)*xsp_mn(jpert)+
+     $           twopi*ifac*m1/chi1*jmat(dm)*xss_mn(jpert))/
+     $           (twopi*ifac*(m1-nn*q))
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     compute modified quantities.
+c-----------------------------------------------------------------------
+      xmt_mn=xwt_mn*(singfac**2/(singfac**2+reg_spot**2))
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
       END SUBROUTINE ipeq_contra
 c-----------------------------------------------------------------------
-c     subprogram 2. ipeq_cova.
-c     compute covariant components in hamada. need ipeq_contra.
+c     subprogram 3. ipeq_cova.
+c     compute covariant components.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_cova(psi)
 c-----------------------------------------------------------------------
@@ -126,7 +179,10 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,m1,m2,dm
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
 
+      CALL spline_eval(sq,psi,1)
       CALL cspline_eval(metric%cs,psi,0)
+      q=sq%f(4)
+      singfac=mfac-nn*q
 c-----------------------------------------------------------------------
 c     compute lower half of matrices.
 c-----------------------------------------------------------------------
@@ -174,13 +230,18 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
+c     compute modified quantities.
+c-----------------------------------------------------------------------
+      xmz_mn=xvz_mn*(singfac**2/(singfac**2+reg_spot**2))
+      bmz_mn=bvz_mn*(singfac**2/(singfac**2+reg_spot**2))
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_cova
 c-----------------------------------------------------------------------
-c     subprogram 3. ipeq_normal.
-c     compute normal components for xi and b. need ipeq_contra.
+c     subprogram 4. ipeq_normal.
+c     compute normal components.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_normal(psi)
 c-----------------------------------------------------------------------
@@ -190,7 +251,7 @@ c-----------------------------------------------------------------------
    
       INTEGER :: itheta
 
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
      $     xno_fun,bno_fun
 c-----------------------------------------------------------------------
@@ -203,6 +264,7 @@ c-----------------------------------------------------------------------
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
          jac=rzphi%f(4)
+         jacs(itheta)=jac
          w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
          w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
          delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
@@ -212,8 +274,8 @@ c     normal and two tangent components to flux surface.
 c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
-      xno_fun=xwp_fun/delpsi
-      bno_fun=bwp_fun/delpsi
+      xno_fun=xwp_fun/(jacs*delpsi)
+      bno_fun=bwp_fun/(jacs*delpsi)
       CALL iscdftf(mfac,mpert,xno_fun,mthsurf,xno_mn)
       CALL iscdftf(mfac,mpert,bno_fun,mthsurf,bno_mn)
 c-----------------------------------------------------------------------
@@ -222,8 +284,8 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_normal
 c-----------------------------------------------------------------------
-c     subprogram 4. ipeq_tangent.
-c     compute tangential components for xi and b. need ipeq_contra.
+c     subprogram 5. ipeq_tangent.
+c     compute tangential components.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_tangent(psi)
 c-----------------------------------------------------------------------
@@ -233,13 +295,15 @@ c-----------------------------------------------------------------------
    
       INTEGER :: itheta
 
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqrpsi,psithe,psiphi,eqb
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqrpsi,
+     $     psithe,psiphi,eqb,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,xwt_fun,
      $     bwt_fun,xwz_fun,bwz_fun,xta_fun,bta_fun
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,0)
+      q=sq%f(4)
       DO itheta=0,mthsurf
          CALL bicube_eval(rzphi,psi,theta(itheta),1)
          rfac=SQRT(rzphi%f(1))
@@ -247,6 +311,7 @@ c-----------------------------------------------------------------------
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
          jac=rzphi%f(4)
+         jacs(itheta)=jac
          w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
          w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
          w(2,1)=-rzphi%fx(2)*twopi**2*r(itheta)*rfac/jac
@@ -269,10 +334,10 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
       CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
       CALL iscdftb(mfac,mpert,bwz_fun,mthsurf,bwz_mn)
-      xta_fun=chi1*((sq%f(4)*xwt_fun-xwz_fun)*sqrpsi-xwp_fun*(
-     $     sq%f(4)*psithe-psiphi))/(eqb*delpsi)
-      bta_fun=chi1*((sq%f(4)*bwt_fun-bwz_fun)*sqrpsi-bwp_fun*(
-     $     sq%f(4)*psithe-psiphi))/(eqb*delpsi)
+      xta_fun=chi1*((q*xwt_fun-xwz_fun)*sqrpsi-xwp_fun*(
+     $     q*psithe-psiphi))/(eqb*jacs*delpsi)
+      bta_fun=chi1*((q*bwt_fun-bwz_fun)*sqrpsi-bwp_fun*(
+     $     q*psithe-psiphi))/(eqb*jacs*delpsi)
       CALL iscdftf(mfac,mpert,xta_fun,mthsurf,xta_mn)
       CALL iscdftf(mfac,mpert,bta_fun,mthsurf,bta_mn)
 c-----------------------------------------------------------------------
@@ -281,8 +346,8 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_tangent
 c-----------------------------------------------------------------------
-c     subprogram 5. ipeq_parallel.
-c     compute parallel components for xi and b. need ipeq_cova.
+c     subprogram 6. ipeq_parallel.
+c     compute parallel components for xi and b.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_parallel(psi)
 c-----------------------------------------------------------------------
@@ -299,7 +364,7 @@ c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,0)
-      CALL spline_eval(ffun,psi,0)
+      q=sq%f(4)
       DO itheta=0,mthsurf
          CALL bicube_eval(eqfun,psi,theta(itheta),0)
          eqb(itheta)=eqfun%f(1)
@@ -311,8 +376,8 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
       CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
       CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
-      xpa_fun=(xvt_fun+sq%f(4)*xvz_fun)/(ffun%f(1)*eqb)
-      bpa_fun=(bvt_fun+sq%f(4)*bvz_fun)/(ffun%f(1)*eqb)
+      xpa_fun=(xvt_fun+q*xvz_fun)/eqb
+      bpa_fun=(bvt_fun+q*bvz_fun)/eqb
       CALL iscdftf(mfac,mpert,xpa_fun,mthsurf,xpa_mn)
       CALL iscdftf(mfac,mpert,bpa_fun,mthsurf,bpa_mn)
 c-----------------------------------------------------------------------
@@ -321,8 +386,8 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_parallel
 c-----------------------------------------------------------------------
-c     subprogram 6. ipeq_rzphi.
-c     compute rzphi components of xi and b. need ipeq_cova.
+c     subprogram 7. ipeq_rzphi.
+c     compute rzphi components.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_rzphi(psi)
 c-----------------------------------------------------------------------
@@ -332,7 +397,7 @@ c-----------------------------------------------------------------------
    
       INTEGER :: itheta
 
-      REAL(r8), DIMENSION(0:mthsurf) :: t11,t12,t21,t22,t33
+      REAL(r8), DIMENSION(0:mthsurf) :: t11,t12,t21,t22,t33,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
      $     xwt_fun,bwt_fun,xvz_fun,bvz_fun,xrr_fun,brr_fun,
      $     xrz_fun,brz_fun,xrp_fun,brp_fun
@@ -345,6 +410,8 @@ c-----------------------------------------------------------------------
          eta=twopi*(theta(itheta)+rzphi%f(2))
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
+         jac=rzphi%f(4)
+         jacs(itheta)=jac
          v(1,1)=rzphi%fx(1)/(2*rfac)
          v(1,2)=rzphi%fx(2)*twopi*rfac
          v(2,1)=rzphi%fy(1)/(2*rfac)
@@ -365,10 +432,10 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
       CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
       CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
-      xrr_fun=t11*xwp_fun+t12*xwt_fun
-      brr_fun=t11*bwp_fun+t12*bwt_fun
-      xrz_fun=t21*xwp_fun+t22*xwt_fun
-      brz_fun=t21*bwp_fun+t22*bwt_fun
+      xrr_fun=(t11*xwp_fun+t12*xwt_fun)/jacs
+      brr_fun=(t11*bwp_fun+t12*bwt_fun)/jacs
+      xrz_fun=(t21*xwp_fun+t22*xwt_fun)/jacs
+      brz_fun=(t21*bwp_fun+t22*bwt_fun)/jacs
       xrp_fun=t33*xvz_fun
       brp_fun=t33*bvz_fun
       CALL iscdftf(mfac,mpert,xrr_fun,mthsurf,xrr_mn)
@@ -383,30 +450,29 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_rzphi
 c-----------------------------------------------------------------------
-c     subprogram 7. ipeq_surface.
-c     compute surface currents, potentials. need ipeq_cova.
+c     subprogram 8. ipeq_surface.
+c     compute surface currents and potentials.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_surface(psilim)
+      SUBROUTINE ipeq_surface(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      REAL(r8), INTENT(IN) :: psilim
+      REAL(r8), INTENT(IN) :: psi
 
       INTEGER :: i,j,itheta,rtheta
 
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,wgtfun
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: rbwp_fun,bwp_fun,
-     $     chi_fun,che_fun,kax_fun,flx_fun,xwp_fun,xwt_fun,
+     $     chi_fun,che_fun,kax_fun,xwp_fun,xwt_fun,
      $     bvt_fun,bvz_fun
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
-      COMPLEX(r8), DIMENSION(2,0:mthsurf) :: pjp_fun
       COMPLEX(r8), DIMENSION(4,0:mthsurf) :: chp_fun,kap_fun
 
       REAL(r8), DIMENSION(:), POINTER :: grri_real,grri_imag,
      $     grre_real,grre_imag
 
       ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
-     $     kap_mn(4,mpert),kax_mn(mpert),flx_mn(mpert))
+     $     kap_mn(4,mpert),kax_mn(mpert))
 
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
      $     grre_real(nths2),grre_imag(nths2))
@@ -415,27 +481,22 @@ c     take into account reverse-theta in vacuum code.
 c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
       CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+      CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
       CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
       CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)      
-      CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
-      CALL spline_eval(sq,psilim,1)
+      CALL spline_eval(sq,psi,1)
       DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psilim,theta(itheta),1)
-         CALL bicube_eval(eqfun,psilim,theta(itheta),1)
+         CALL bicube_eval(rzphi,psi,theta(itheta),1)
          rfac=SQRT(rzphi%f(1))
          eta=twopi*(theta(itheta)+rzphi%f(2))
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
          dphi(itheta)=rzphi%f(3)
          jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         wgtfun(itheta)=1.0/(jac*delpsi(itheta))
+         jacs(itheta)=jac
       ENDDO
 c-----------------------------------------------------------------------
 c     reverse poloidal and torodial coordinates.
-c     grri matrix internally takes care of delphi!
 c-----------------------------------------------------------------------
       DO itheta=0,mthvac
          rtheta=mthvac-itheta
@@ -450,7 +511,7 @@ c-----------------------------------------------------------------------
       grre_real=MATMUL(grre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
       grre_imag=MATMUL(grre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
 c-----------------------------------------------------------------------
-c     return into original hamada coordinates.
+c     return into original coordinates.
 c-----------------------------------------------------------------------
       DO itheta=0,mthvac
          rtheta=mthvac-itheta
@@ -461,40 +522,41 @@ c-----------------------------------------------------------------------
       ENDDO
 c-----------------------------------------------------------------------
 c     normalize chi functions of vacuum.
-c     since vacuum code takes input as jac*bwp_mn,
-c     but jacobian is different by two angles.
-c     only hamada coordinates work in this method.
 c-----------------------------------------------------------------------
-      chi_fun=chi_fun*jac/(twopi**2)
-      che_fun=-che_fun*jac/(twopi**2)
+      chi_fun=chi_fun/twopi**2
+      che_fun=-che_fun/twopi**2
+      CALL iscdftf(mfac,mpert,chi_fun,mthsurf,chi_mn)
+      CALL iscdftf(mfac,mpert,che_fun,mthsurf,che_mn)
 c-----------------------------------------------------------------------
 c     compute plasma magnetic potential on the surface.
 c-----------------------------------------------------------------------
-      chp_mn(1,:)=(bvz_mn+sq%f1(1)*xwp_mn)/(-twopi*ifac*nn)
-      chp_mn(3,:)=bvz_mn/(-twopi*ifac*nn)
+      chp_fun(3,:)=-bvz_fun/(twopi*ifac*nn)
+      chp_fun(1,:)=chp_fun(3,:)-sq%f1(1)*xwp_fun/(twopi*ifac*nn*jacs)
+      chp_fun(4,:)=bvt_fun
+      chp_fun(2,:)=chp_fun(4,:)-(sq%f1(1)*sq%f(4)+jacs*sq%f1(2)/chi1)*
+     $           xwp_fun/jacs
+      DO j=1,4
+         CALL iscdftf(mfac,mpert,chp_fun(j,:),mthsurf,chp_mn(j,:))
+      ENDDO
       DO i=1,mpert
          IF ((i+mlow-1).EQ.0) THEN
             chp_mn(2,i)=chp_mn(1,i)
             chp_mn(4,i)=chp_mn(3,i)
          ELSE
-            chp_mn(2,i)=(bvt_mn(i)-(sq%f1(1)*sq%f(4)+jac*sq%f1(2)/chi1)*
-     $           xwp_mn(i))/(twopi*ifac*mfac(i))
-            chp_mn(4,i)=bvt_mn(i)/(twopi*ifac*mfac(i))
+            chp_mn(2,i)=chp_mn(2,i)/(twopi*ifac*mfac(i))
+            chp_mn(4,i)=chp_mn(4,i)/(twopi*ifac*mfac(i))
          ENDIF
       ENDDO
 c-----------------------------------------------------------------------
 c     fourier transform and compute necessary matrices.
 c-----------------------------------------------------------------------
+      CALL iscdftb(mfac,mpert,chp_fun(2,:),mthvac,chp_mn(2,:))
+      CALL iscdftb(mfac,mpert,chp_fun(4,:),mthvac,chp_mn(4,:))
       DO j=1,4
-         CALL iscdftb(mfac,mpert,chp_fun(j,:),mthvac,chp_mn(j,:))
          kap_fun(j,:)=(chp_fun(j,:)-che_fun(:))/mu0
          CALL iscdftf(mfac,mpert,kap_fun(j,:),mthsurf,kap_mn(j,:))
       ENDDO
-      flx_fun=bwp_fun*jac
       kax_fun=(chi_fun-che_fun)/mu0
-      CALL iscdftf(mfac,mpert,flx_fun,mthsurf,flx_mn)
-      CALL iscdftf(mfac,mpert,chi_fun,mthsurf,chi_mn)
-      CALL iscdftf(mfac,mpert,che_fun,mthsurf,che_mn)
       CALL iscdftf(mfac,mpert,kax_fun,mthsurf,kax_mn)
      
       DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag)
@@ -504,35 +566,27 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_surface
 c-----------------------------------------------------------------------
-c     subprogram 8. ipeq_cotoha.
-c     transform a coordinate to hamada. 
-c     __________________________________________________________________
-c     polo: 0: polar
-c           1: hamada
-c           2: pest
-c           3: equalarc
-c           4: boozer
-c     toro: 0: polar toroidal angle
-c           1: magnetic toroidal angle
+c     subprogram 9. ipeq_fcoords.
+c     transform coordinates to dcon coordinates. 
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_cotoha(psi,ftnmn,amfac,ampert,polo,toro)
+      SUBROUTINE ipeq_fcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: ampert,polo,toro
+      INTEGER, INTENT(IN) :: amp,ri,bpi,bi,rci,ti,ji
       REAL(r8), INTENT(IN) :: psi
-      INTEGER, DIMENSION(ampert), INTENT(IN) :: amfac
-      COMPLEX(r8), DIMENSION(ampert), INTENT(INOUT) :: ftnmn
+      INTEGER, DIMENSION(amp), INTENT(IN) :: amf
+      COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
       INTEGER :: i,ising,itheta
-      REAL(r8) :: thetai
+      REAL(r8) :: thetai,jarea
 
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,thetas
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,thetas,jacfac
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
       TYPE(spline_type) :: spl       
       
-      CALL spline_alloc(spl,mthsurf,1)
+      CALL spline_alloc(spl,mthsurf,2)
       spl%xs=theta
 
       CALL spline_eval(sq,psi,0)
@@ -551,84 +605,86 @@ c-----------------------------------------------------------------------
          btfac=sq%f(1)/(twopi*r(itheta))
          bfac=SQRT(bpfac*bpfac+btfac*btfac)
          fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-         SELECT CASE(polo)
-         CASE(0)
-            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
-         CASE(1)
-            spl%fs(itheta,1)=fac
-         CASE(2)
-            spl%fs(itheta,1)=fac/r(itheta)**2
-         CASE(3)
-            spl%fs(itheta,1)=fac*bpfac
-         CASE(4)
-            spl%fs(itheta,1)=fac*bfac**2
-         END SELECT
-         IF (toro .EQ. 0) THEN
+         spl%fs(itheta,1)=fac/(r(itheta)**ri*rfac**rci)*
+     $        bpfac**bpi*bfac**bi
+         ! jacobian for coordinate angle at dcon angle
+         spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
+     $        (bpfac**bpi*bfac**bi)  
+         IF (ti .EQ. 0) THEN
             dphi(itheta)=rzphi%f(3)
          ENDIF
       ENDDO      
 
       CALL spline_fit(spl,"periodic")
       CALL spline_int(spl)
-      ! coordinate angle at hamada angle
+
+      ! coordinate angle at dcon angle
       thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
-      CALL spline_dealloc(spl)
+      IF (ji .EQ. 1) THEN
+         DO itheta=0,mthsurf
+            ! jacobian at coordinate angle
+            thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
+            CALL spline_eval(spl,thetai,0)
+            jacfac(itheta)=spl%f(2)
+         ENDDO
+         jarea=0
+         DO itheta=0,mthsurf-1
+            jarea=jarea+jacfac(itheta)/mthsurf
+         ENDDO
+         CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
+         ftnfun=ftnfun/jacfac*jarea
+         CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
+      ENDIF         
 c-----------------------------------------------------------------------
 c     convert coordinates.
 c-----------------------------------------------------------------------      
-      ! compute given function in hamada angle
+      ! compute given function in dcon angle
       DO itheta=0,mthsurf
          ftnfun(itheta)=0
-         DO i=1,ampert
+         DO i=1,amp
             ftnfun(itheta)=ftnfun(itheta)+
-     $           ftnmn(i)*EXP(ifac*twopi*amfac(i)*thetas(itheta))
+     $           ftnmn(i)*EXP(ifac*twopi*amf(i)*thetas(itheta))
          ENDDO
       ENDDO
-      ! multiply toroidal factor in hamada angle
-      IF (toro .EQ. 0) THEN
+
+      ! multiply toroidal factor for dcon angle
+      IF (ti .EQ. 0) THEN
          ftnfun(:)=ftnfun(:)*EXP(-ifac*nn*dphi(:))
       ELSE
          ftnfun(:)=ftnfun(:)*
      $        EXP(-twopi*ifac*nn*sq%f(4)*(thetas(:)-theta(:)))
       ENDIF
-      CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
+
+      CALL spline_dealloc(spl)
+
+      CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_cotoha
+      END SUBROUTINE ipeq_fcoords
 c-----------------------------------------------------------------------
-c     subprogram 9. ipeq_hatoco.
-c     transform a coordinate to other coordinates.
-c     __________________________________________________________________
-c     polo: 0: polar
-c           1: hamada
-c           2: pest
-c           3: equalarc
-c           4: boozer
-c     toro: 0: polar toroidal angle
-c           1: magnetic toroidal angle
+c     subprogram 10. ipeq_bcoords.
+c     transform dcon coordinates to other coordinates.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_hatoco(psi,ftnmn,amfac,ampert,polo,toro)
+      SUBROUTINE ipeq_bcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: ampert,polo,toro
+      INTEGER, INTENT(IN) :: amp,ri,bpi,bi,rci,ti,ji
       REAL(r8), INTENT(IN) :: psi
-      INTEGER, DIMENSION(ampert), INTENT(IN) :: amfac
-      COMPLEX(r8), DIMENSION(ampert), INTENT(INOUT) :: ftnmn
+      INTEGER, DIMENSION(amp), INTENT(IN) :: amf
+      COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
       INTEGER :: i,ising,itheta
-      REAL(r8) :: thetai
+      REAL(r8) :: thetai,jarea
 
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,thetas,jacfac
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
-
-      REAL(r8), DIMENSION(0:mthsurf) :: thetas
 
       TYPE(spline_type) :: spl       
       
-      CALL spline_alloc(spl,mthsurf,1)
+      CALL spline_alloc(spl,mthsurf,2)
       spl%xs=theta
 
       CALL spline_eval(sq,psi,0)
@@ -647,72 +703,165 @@ c-----------------------------------------------------------------------
          btfac=sq%f(1)/(twopi*r(itheta))
          bfac=SQRT(bpfac*bpfac+btfac*btfac)
          fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-         SELECT CASE(polo)
-         CASE(0)
-            spl%fs(itheta,1)=fac*twopi*bpfac/rfac
-         CASE(1)
-            spl%fs(itheta,1)=fac
-         CASE(2)
-            spl%fs(itheta,1)=fac/r(itheta)**2
-         CASE(3)
-            spl%fs(itheta,1)=fac*bpfac
-         CASE(4)
-            spl%fs(itheta,1)=fac*bfac**2
-         END SELECT
-         IF (toro .EQ. 0) THEN
+         spl%fs(itheta,1)=fac/(r(itheta)**ri*rfac**rci)*
+     $        bpfac**bpi*bfac**bi
+         spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
+     $        (bpfac**bpi*bfac**bi)
+         IF (ti .EQ. 0) THEN
             dphi(itheta)=rzphi%f(3)
          ENDIF
       ENDDO
+
+      CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
+
       CALL spline_fit(spl,"periodic")
       CALL spline_int(spl)
-      ! coordinate angle at hamada angle
+
+      ! coordinate angle at dcon angle
       thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
-      CALL spline_dealloc(spl)
-      CALL iscdftb(amfac,ampert,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     convert coordinates.
 c-----------------------------------------------------------------------
-      ! multiply toroidal factor in hamada angle
-      IF (toro .EQ. 0) THEN
-         ftnfun(:)=ftnfun(:)*EXP(ifac*nn*dphi(:))
+      ! take toroidal factor from dcon angle
+      IF (ti .EQ. 0) THEN
+         ftnfun=ftnfun*EXP(ifac*nn*dphi)
       ENDIF
-      CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
+      CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
 
       ! compute given function in coordinate angle
       DO itheta=0,mthsurf
          ftnfun(itheta)=0
-         ! hamada angle at coordinate angle
+         ! dcon angle at coordinate angle
          thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
-         DO i=1,ampert
+         DO i=1,amp
             ftnfun(itheta)=ftnfun(itheta)+
-     $           ftnmn(i)*EXP(ifac*twopi*(i+amfac(1)-1)*thetai)
+     $           ftnmn(i)*EXP(ifac*twopi*(i+amf(1)-1)*thetai)
          ENDDO
-         IF (toro .NE. 0) THEN
+
+         ! take toroidal factor back for coordinate angle
+         IF (ti .NE. 0) THEN
             ftnfun(itheta)=ftnfun(itheta)*
      $           EXP(-twopi*ifac*nn*sq%f(4)*(thetai-theta(itheta)))
          ENDIF
+
+         ! jacobian at coordinate angle
+         CALL spline_eval(spl,thetai,0)
+         jacfac(itheta)=spl%f(2)
       ENDDO
-      CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
+         
+      IF (ji .EQ. 1) THEN
+         jarea=0
+         DO itheta=0,mthsurf-1
+            jarea=jarea+jacfac(itheta)/mthsurf
+         ENDDO
+         ftnfun=ftnfun*jacfac/jarea
+      ENDIF
+   
+      CALL spline_dealloc(spl)
+      CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_hatoco
+      END SUBROUTINE ipeq_bcoords
 c-----------------------------------------------------------------------
-c     subprogram 10. ipeq_weight.
-c     switch between a function and a weighted function
-c     __________________________________________________________________
-c     wegt: 0: multiply weight factor
-c           1: divide weight factor
+c     subprogram 11. ipeq_bntoxp.
+c     transform b normal to xi normal solution.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_weight(psi,ftnmn,amfac,ampert,wegt)
+      SUBROUTINE ipeq_bntoxp(psi,finmn,foutmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: ampert,wegt
       REAL(r8), INTENT(IN) :: psi
-      INTEGER, DIMENSION(ampert), INTENT(IN) :: amfac
-      COMPLEX(r8), DIMENSION(ampert), INTENT(INOUT) :: ftnmn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: finmn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn
+
+      INTEGER :: itheta
+
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
+
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: finfun,foutfun
+
+      CALL spline_eval(sq,psi,0)
+      singfac=mfac-nn*sq%f(4)
+      DO itheta=0,mthsurf
+         CALL bicube_eval(rzphi,psi,theta(itheta),1)
+         rfac=SQRT(rzphi%f(1))
+         eta=twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta)=ro+rfac*COS(eta)
+         z(itheta)=zo+rfac*SIN(eta)
+         jac=rzphi%f(4)
+         jacs(itheta)=jac
+         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+      ENDDO
+
+      CALL iscdftb(mfac,mpert,finfun,mthsurf,finmn)      
+      foutfun=finfun*jacs*delpsi
+      CALL iscdftf(mfac,mpert,foutfun,mthsurf,foutmn)
+  
+      foutmn=foutmn/(chi1*singfac*twopi*ifac)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipeq_bntoxp
+c-----------------------------------------------------------------------
+c     subprogram 12. ipeq_xptobn.
+c     transforms xi normal solution to b normal.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipeq_xptobn(psi,finmn,foutmn)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      REAL(r8), INTENT(IN) :: psi
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: finmn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn      
+
+      INTEGER :: itheta
+
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
+
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: finfun,foutfun
+
+      CALL spline_eval(sq,psi,0)
+      singfac=mfac-nn*sq%f(4)
+      DO itheta=0,mthsurf
+         CALL bicube_eval(rzphi,psi,theta(itheta),1)
+         rfac=SQRT(rzphi%f(1))
+         eta=twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta)=ro+rfac*COS(eta)
+         z(itheta)=zo+rfac*SIN(eta)
+         jac=rzphi%f(4)
+         jacs(itheta)=jac
+         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+      ENDDO
+
+      foutmn=finmn*chi1*singfac*twopi*ifac
+
+      CALL iscdftb(mfac,mpert,foutfun,mthsurf,foutmn)      
+      foutfun=foutfun/(jacs*delpsi)
+      CALL iscdftf(mfac,mpert,foutfun,mthsurf,foutmn)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipeq_xptobn
+c-----------------------------------------------------------------------
+c     subprogram 13. ipeq_weight.
+c     switch between a function and a weighted function.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipeq_weight(psi,ftnmn,amf,amp,wegt)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: amp,wegt
+      REAL(r8), INTENT(IN) :: psi
+      INTEGER, DIMENSION(amp), INTENT(IN) :: amf
+      COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
       INTEGER :: itheta
 
@@ -731,112 +880,29 @@ c-----------------------------------------------------------------------
          delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
          wgtfun(itheta)=1.0/(jac*delpsi(itheta))
       ENDDO
-      CALL iscdftb(amfac,ampert,ftnfun,mthsurf,ftnmn)
+      CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     weight function.
 c-----------------------------------------------------------------------
-      IF (wegt .EQ. 0) THEN
-         ftnfun(:)=ftnfun(:)*wgtfun(:)
-      ELSE IF (wegt .EQ. 1) THEN
-         ftnfun(:)=ftnfun(:)/wgtfun(:)
-      ELSE IF (wegt .EQ. 2) THEN
-         ftnfun(:)=ftnfun(:)/sqrt(wgtfun(:))
-      ELSE
-         ftnfun(:)=ftnfun(:)/sqrt(wgtfun(:)*r(:))
-      ENDIF
-      CALL iscdftf(amfac,ampert,ftnfun,mthsurf,ftnmn)
+      SELECT CASE(wegt)
+      CASE(0)
+         ftnfun=ftnfun*wgtfun
+      CASE(1)
+         ftnfun=ftnfun/wgtfun
+      CASE(2)
+         ftnfun=ftnfun/sqrt(wgtfun)
+      CASE(3)
+         ftnfun=ftnfun/sqrt(wgtfun*r)
+      END SELECT
+      CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_weight
 c-----------------------------------------------------------------------
-c     subprogram 11. ipeq_bntoxp.
-c     transform bno_mn to xwp_mn in hamada coordinates.
-c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_bntoxp(psi,finmn,foutmn)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: finmn
-      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn
-
-      INTEGER :: itheta
-
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi
-
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: finfun,foutfun
-
-      CALL spline_eval(sq,psi,0)
-      singfac=mfac-nn*sq%f(4)
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-      ENDDO
-
-      CALL iscdftb(mfac,mpert,finfun,mthsurf,finmn)      
-      foutfun(:)=finfun(:)*delpsi(:)
-      CALL iscdftf(mfac,mpert,foutfun,mthsurf,foutmn)
-  
-      foutmn=foutmn*jac/(chi1*singfac*twopi*ifac)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipeq_bntoxp
-c-----------------------------------------------------------------------
-c     subprogram 12. ipeq_xptobn.
-c     transforms xwp_mn to bno_mn in hamada coordinates.
-c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_xptobn(psi,finmn,foutmn)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: finmn
-      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn      
-
-      INTEGER :: itheta
-
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi
-
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: finfun,foutfun
-
-      CALL spline_eval(sq,psi,0)
-      singfac=mfac-nn*sq%f(4)
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-      ENDDO
-
-      foutmn=finmn*chi1*singfac*twopi*ifac/jac
-
-      CALL iscdftb(mfac,mpert,foutfun,mthsurf,foutmn)      
-      foutfun(:)=foutfun(:)/delpsi(:)
-      CALL iscdftf(mfac,mpert,foutfun,mthsurf,foutmn)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipeq_xptobn
-c-----------------------------------------------------------------------
-c     subprogram 13. ipeq_rzpgrid.
-c     find magnetic coordinates corresponding to rzphi grid.
+c     subprogram 14. ipeq_rzpgrid.
+c     find magnetic coordinates for given rz coords.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_rzpgrid(nr,nz)
 c-----------------------------------------------------------------------
@@ -854,7 +920,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(gdr(0:nr,0:nz),gdz(0:nr,0:nz),gdl(0:nr,0:nz),
      $     gdpsi(0:nr,0:nz),gdthe(0:nr,0:nz),gdphi(0:nr,0:nz))
 c-----------------------------------------------------------------------
-c     invert given rzphi to hamada coordinates.
+c     invert given rzphi to magnetic coordinates.
 c-----------------------------------------------------------------------
       gdr=0
       gdz=0
@@ -922,7 +988,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 14. ipeq_rzpdiv.
+c     subprogram 15. ipeq_rzpdiv.
 c     make zero divergence of rzphi functions.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
@@ -989,19 +1055,20 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_rzpdiv     
 c-----------------------------------------------------------------------
-c     subprogram 15. ipeq_alloc.
+c     subprogram 16. ipeq_alloc.
 c     allocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_alloc
 
-      ALLOCATE(xwp_mn(mpert),xwt_mn(mpert),xwz_mn(mpert),
-     $     bwp_mn(mpert),bwt_mn(mpert),bwz_mn(mpert),xws_mn(mpert),
-     $     xvs_mn(mpert),xwp1_mn(mpert),bwp1_mn(mpert),nbwp1_mn(mpert))
-      ALLOCATE(xvp_mn(mpert),xvt_mn(mpert),xvz_mn(mpert),
-     $     bvp_mn(mpert),bvt_mn(mpert),bvz_mn(mpert))
-      ALLOCATE(xno_mn(mpert),xta_mn(mpert),xpa_mn(mpert),
-     $     bno_mn(mpert),bta_mn(mpert),bpa_mn(mpert))
-      ALLOCATE(xrr_mn(mpert),xrz_mn(mpert),xrp_mn(mpert),
+      ALLOCATE(xsp_mn(mpert),xsp1_mn(mpert),xss_mn(mpert),xms_mn(mpert),
+     $     xwp_mn(mpert),xwt_mn(mpert),xwz_mn(mpert),xmt_mn(mpert),
+     $     bwp_mn(mpert),bwt_mn(mpert),bwz_mn(mpert),bmt_mn(mpert),
+     $     bwp1_mn(mpert),nbwp1_mn(mpert),
+     $     xvp_mn(mpert),xvt_mn(mpert),xvz_mn(mpert),xmz_mn(mpert),
+     $     bvp_mn(mpert),bvt_mn(mpert),bvz_mn(mpert),bmz_mn(mpert),
+     $     xno_mn(mpert),xta_mn(mpert),xpa_mn(mpert),
+     $     bno_mn(mpert),bta_mn(mpert),bpa_mn(mpert),
+     $     xrr_mn(mpert),xrz_mn(mpert),xrp_mn(mpert),
      $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert))
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1009,14 +1076,14 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_alloc
 c-----------------------------------------------------------------------
-c     subprogram 16. ipeq_dealloc.
+c     subprogram 17. ipeq_dealloc.
 c     deallocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_dealloc
 
-      DEALLOCATE(xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,
-     $     xvs_mn,xws_mn,xwp1_mn,bwp1_mn,nbwp1_mn,
-     $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,
+      DEALLOCATE(xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,nbwp1_mn,
+     $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
+     $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn)
 c-----------------------------------------------------------------------

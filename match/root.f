@@ -56,7 +56,6 @@ c-----------------------------------------------------------------------
       DO
          it=it+1
          err=ABS(dz/z)
-c         WRITE(*,10)"it = ",it,", err = ",err,", z = ",z
          IF(err < tol)EXIT
          IF(it > itmax)
      $        CALL program_stop("droot_newton can't find root.")

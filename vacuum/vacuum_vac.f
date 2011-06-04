@@ -266,18 +266,14 @@ c-----------------------------------------------------------------------
          enddo
       endif
       ier = 0
-c-----------------------------------------------------------------------
-c     <MODIFIED>
-c-----------------------------------------------------------------------
+
       IF (kernelsign < 0) THEN
          grdgre=kernelsign*grdgre
          DO i=1,nths2
             grdgre(i,i)=grdgre(i,i)+2.0
          ENDDO
       ENDIF      
-c-----------------------------------------------------------------------
-c     <END>
-c-----------------------------------------------------------------------
+
       call gelimb (grdgre,nths2,dummy,nths2,mth12,lmax2,
      $        grri,nths2,work1,ier )
       deallocate(grdgre)
@@ -487,8 +483,7 @@ c-----------------------------------------------------------------------
             do j2 = 1, jmax1
                l2 = j2 + lmin(1) - 1
                alnq2 = l2 - nq
-c     vacmat(j1,j2) = alnq1*alnq2 * vacmat(j1,j2)
-c     vacmti(j1,j2) = alnq1*alnq2 * vacmti(j1,j2)
+
                vacmatu(j1,j2) = vacmat(j1,j2)
                vacmtiu(j1,j2) = vacmti(j1,j2)
             enddo
@@ -525,9 +520,7 @@ c     vacmti(j1,j2) = alnq1*alnq2 * vacmti(j1,j2)
          endif
       endif
       IF ( lsymz ) THEN
-c
-c.....symmetrize.
-c
+
          do 601 l1 = 1, jmax1
             do 600 l2 = l1, jmax1
                vacmat(l1,l2) = 0.5 * ( vacmat(l1,l2)+vacmat(l2,l1) )
@@ -553,7 +546,7 @@ c
             write ( 60, 555 )  ( vacmat(j1,j2), j2=1,jmax1 )
          enddo
          close ( 60 )
-      elseif ( ldcon .eq. 1 ) then
+      elseif ( (ldcon .eq. 1).or.(lipec .eq. 1)) then
          open ( 62, file='vacdcon', status='unknown', form='formatted'
      .        ,recl=160)
          ndcon = n + 0.001
@@ -742,17 +735,7 @@ c-----------------------------------------------------------------------
 
          istart=4-iend
          mths=mth-(istart+iend-1)
-c-----------------------------------------------------------------------
-c     <MODIFIED?>
-c-----------------------------------------------------------------------         
-c         IF (kernelsign < 0) THEN
-c            j1=2
-c            j2=2
-c            isgn=-isgn
-c         ENDIF
-c-----------------------------------------------------------------------
-c     <END>
-c-----------------------------------------------------------------------
+
          DO i=1,mths
             ic=j+i+istart-1
             IF(ic >= mth1)ic=ic-mth
@@ -859,17 +842,6 @@ c-----------------------------------------------------------------------
 
  175     CONTINUE
          IF((xs < zero).AND.(j2 == 2)) work(j)=1.0
-c-----------------------------------------------------------------------
-c     <MODIFIED?>
-c-----------------------------------------------------------------------         
-c         IF (kernelsign < 0) THEN
-c            j1=1
-c            j2=1
-c            isgn=-isgn
-c         ENDIF
-c-----------------------------------------------------------------------
-c     <END>
-c-----------------------------------------------------------------------
          DO ic=1,mth
             grdgre((j1-1)*mth+j,(j2-1)*mth+ic)=work(ic)
             gren(j,ic)=gren(j,ic)/twopi
@@ -1136,20 +1108,7 @@ c-----------------------------------------------------------------------
       go to 2000
    10 continue
       xshift = a
-c$$$      go to 20
-c$$$      if( .not. lfix) go to 15
-c$$$      if( bw .gt. 1.0 ) go to 20
-c$$$      write(iotty,1000)bw
-c$$$      write(outpest,1000)bw
-c$$$      write(outmod,1000)bw
-c$$$      call errmes(outpest,'vacdat')
-c$$$   15 continue
-c$$$      if( b .ge. 0.0) go to 20
-c$$$      write(iotty,1100)b
-c$$$      write(outpest,1100)b
-c$$$      write(outmod,1100)b
-c$$$      call errmes(outpest,'vacdat')
-c$$$   20 continue
+
       mthalf = mth2 / 2
       zmin = 3.4e38
       zmax = -3.4e38
@@ -1176,7 +1135,7 @@ c$$$   20 continue
       zah = a / zh                            
       zph = plrad / zh
       zmup = 0.5*dlog ((zrad+plrad)/(zrad-plrad))  ! mu-plas
-      zmuw = dlog( zah + sqrt(zah**2 + 1) )  ! mu-wall
+      zmuw = dlog( zah + sqrt(zah**2 + 1) )   ! mu-wall
       zxmup = exp(zmup)
       zxmuw = exp(zmuw)
       zbwal = zh * cosh ( zmuw )              ! Major radius of wall
@@ -1431,11 +1390,7 @@ c$$$   20 continue
  1800 continue
       xmx = xma + xshift
       go to 145
-c$$$      iop(1) = 4
-c$$$      iop(2) = 4
-c$$$      do 110 il=mthalf+1,mth1
-c$$$      ilm = mth1 - il + 1
-c$$$      thet(il) = twopi - thet(ilm)
+
   110 continue
       call spl1d1(mth1,thet,xwal1,xpp,iop,1,ww1,ww2,ww3)
       call spl1d1(mth1,thet,zwal1,zpp,iop,1,ww1,ww2,ww3)
@@ -2130,30 +2085,7 @@ c-----------------------------------------------------------------------
       iops = 2
       call tmat ( coslt, wrkrt, iopc )
       call tmat ( sinlt, wrkit, iops )
-c$$$      go to 8881
-c$$$      write ( outmod, '(/,5x,"Sum over the finite els. for each  L:")')
-c$$$      do irow = 1, jmax1
-c$$$         ll = lmin(1) - 1 + irow
-c$$$         sumcol = 0.0
-c$$$         do icol = 1, mfel
-c$$$            sumcol = sumcol + wrkrt(icol,irow)
-c$$$         enddo
-c$$$         write ( outmod, '(2x,"L  = ", i4, " Sum = ", e11.4)' )
-c$$$     $        ll, sumcol
-c$$$      enddo
-c$$$ 8881 continue
-c$$$      go to 8882
-c$$$      write ( outmod, '(/,5x,"Sum over the finite els. for each  L:")')
-c$$$      do irow = 1, jmax1
-c$$$         ll = lmin(1) - 1 + irow
-c$$$         sumcol = 0.0
-c$$$         do icol = 1, mfel
-c$$$            sumcol = sumcol + wrkit(icol,irow)
-c$$$         enddo
-c$$$         write ( outmod, '(2x,"L  = ", i4, " Sum = ", e11.4)' )
-c$$$     $        ll, sumcol
-c$$$      enddo
-c$$$ 8882 continue
+
       do i = 1, mfel
          do m = 1, jmax1
             wrkr(i,m) = wrkrt(i,m)

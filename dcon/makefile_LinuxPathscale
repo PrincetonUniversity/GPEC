@@ -35,11 +35,9 @@ dcon: $(OBJS)
 
 # dependencies
 
-dcon_mod.o: ../equil/SPLINE_MOD.mod ../equil/GLOBAL_MOD.mod \
-	../equil/EQUIL_MOD.mod ../equil/EQUIL_OUT_MOD.mod
 mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
-fourfit.o: ../equil/FSPLINE_MOD.mod dcon_mod.o
+fourfit.o: dcon_mod.o
 sing.o: fourfit.o
 ode_output.o: sing.o debug.o
 ode.o: ode_output.o

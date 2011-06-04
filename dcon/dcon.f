@@ -162,7 +162,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute free boundary energies.
 c-----------------------------------------------------------------------
-c$$$      IF(vac_flag .AND. nzero == 0 .AND. .NOT.
       IF(vac_flag .AND. .NOT.
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          WRITE(*,*)"Computing free boundary energies"
@@ -236,7 +235,6 @@ c-----------------------------------------------------------------------
             DEALLOCATE(sing(ising)%mmat)
             DEALLOCATE(sing(ising)%n1)
             DEALLOCATE(sing(ising)%n2)
-c            DEALLOCATE(sing(ising)%power)
          ENDDO
          DEALLOCATE(sing)
       ENDIF

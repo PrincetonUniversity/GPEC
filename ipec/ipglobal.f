@@ -10,23 +10,31 @@ c     declarations.
 c-----------------------------------------------------------------------
       LOGICAL :: power_flag,fft_flag,edge_flag,eqoff_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
-     $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag
+     $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag,
+     $     data_flag,harmonic_flag,mode_flag,resp_flag,
+     $     bin_flag,bin_2d_flag,fixed_boundary_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
-     $     power_b,power_r,power_bp,nn,info,modelnum,
-     $     rstep,resp,psixy,errnmin,errnmax,errmmin,errmmax
+     $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
+     $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
+     $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
+     $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,
-     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,dist,bdist
+     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,sing_spot,reg_spot
 
       CHARACTER(1) :: sn
       CHARACTER(10) :: date,time,zone
-      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,errtype
-      CHARACTER(128), DIMENSION(10) :: infiles
+      CHARACTER(16) :: jac_type,jac_in,jac_out,data_type
+      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile
 
+      INTEGER, PARAMETER :: hmnum=64
       REAL(r8), PARAMETER :: mili=0.001,gauss=0.0001
       COMPLEX(r8), PARAMETER :: ione=1
+
+      REAL(r8), DIMENSION(-hmnum:hmnum) :: sinmn
+      REAL(r8), DIMENSION(-hmnum:hmnum) :: cosmn
 
       INTEGER, DIMENSION(8) :: values
 
@@ -36,7 +44,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,surfee,surfei,
-     $     surf_indev,vsurf_indev,fsurf_indev
+     $     surf_indev,vsurf_indev,fsurf_indev,s1,s2,s3
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
      $     chperr,chpsqr,plas_indev,reluctev,indrelev,grri,grre,
      $     gdr,gdz,gdpsi,gdthe,gdphi
@@ -44,24 +52,23 @@ c-----------------------------------------------------------------------
 
 
       COMPLEX(r8), DIMENSION(:), POINTER ::
-     $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,
-     $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,
-     $     xvs_mn,xws_mn,xwp1_mn,bwp1_mn,nbwp1_mn,
+     $     xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,nbwp1_mn,
+     $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
+     $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
-     $     chi_mn,che_mn,flx_mn,kax_mn,
+     $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,rt,
-     $     chp_mn,kap_mn,permeabev,
-     $     chimats,chemats,flxmats,kaxmats,
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
+     $     permeabev,chimats,chemats,flxmats,kaxmats,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
-     $     amat,bmat,cmat,fmats,gmats,kmats
+     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,reluctmats,
      $     plas_indevmats,permeabevmats,reluctevmats,
      $     indrelmats,indrelevmats
 
-      TYPE(spline_type) :: sq,ffun
+      TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
       TYPE(cspline_type) :: u1,u2
       TYPE(fspline_type) :: metric
@@ -84,7 +91,7 @@ c-----------------------------------------------------------------------
       TYPE :: sing_type
       INTEGER :: msol_l,msol_r,jfix,jpert
       REAL(r8) :: psifac,q,q1
-
+      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: ca_l,ca_r
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
@@ -109,14 +116,11 @@ c-----------------------------------------------------------------------
       DEALLOCATE(sing_flag,fixstep,mfac,psifac,rhofac,qfac,singfac,
      $     et,ep,ee,surfet,surfep,surfee,surfei,lmfac,r,z,theta,
      $     surf_indev,plas_indev,permeabev,edge_mn,edge_fun,chperr)
-      DEALLOCATE(wt,rt,
-     $     chimats,chemats,chpmats,kapmats,kaxmats,flxmats,
-     $     surf_indmats,surf_indevmats,
-     $     plas_indmats,permeabmats,
+      DEALLOCATE(wt,chimats,chemats,chpmats,kapmats,kaxmats,flxmats,
+     $     surf_indmats,surf_indevmats,plas_indmats,permeabmats,
      $     plas_indevmats,permeabevmats)
 
       CALL spline_dealloc(sq)
-      CALL spline_dealloc(ffun)
       CALL bicube_dealloc(eqfun)
       CALL bicube_dealloc(rzphi)
       CALL cspline_dealloc(u1)

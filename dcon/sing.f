@@ -180,7 +180,7 @@ c-----------------------------------------------------------------------
          qlim=qlim-1._r8/nn
       ENDDO
 c-----------------------------------------------------------------------
-c     use newton iteration to find psilim. <MODIFIED>
+c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
       jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
       IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
