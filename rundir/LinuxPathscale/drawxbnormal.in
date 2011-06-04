@@ -11,7 +11,11 @@ variable names
 2	Imag xi
 3	Real b
 4	Imag b
+5	Real jac.b.delpsi
+6	Imag jac.b.delpsi
 
 ix	iy	title
 0	1	"Normal displacement Re xi
-0	3	"Normal magnetic field Re b
+0	5	"Normal magnetic field Re jac.b.delpsi
+
+

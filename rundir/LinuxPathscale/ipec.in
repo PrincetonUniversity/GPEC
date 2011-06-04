@@ -1,69 +1,69 @@
 &ipec_input
-	ieqfile="psi_in.bin"	
-	idconfile="euler.bin"
-	ivacuumfile="vacuum.bin"
-	power_flag=t
-	fft_flag=f
-	mthsurf0=1
-	erdata_flag=t
-	errtype="d3d2"
-	errnmin=0
-	errnmax=32
-	errmmax=32
-	poloin=2
-	toroin=0
-	infnum=1
-	infiles(1)="d3d2_ef.dat"
-	mode_flag=f
-	modemin=7
-	modemax=9
+	jac_in="hamada"
+	jsurf_in=0
+	tmag_in=0
+
+	data_flag=t
+	data_type="vac3d1"
+        infile="../../errorfield/external_field_rwm_g132633.00608_nstx_lrdfit9_nmin1_nmax1_m60_ha_p975.dat"
+	nmin=1
+	nmax=1
+	mmin=-60
+	mmax=60
+
+        harmonic_flag=f
+
+	cosmn(3)=-3.131e-5
+	cosmn(4)=-6.927e-5
+	cosmn(5)=1.1177e-4
+	cosmn(6)=1.2324e-4
+	cosmn(7)=1.2765e-4
+	cosmn(8)=2.2563e-4
+	cosmn(9)=3.1944e-4
+	cosmn(10)=2.1247e-4
+	cosmn(11)=1.9247e-4
+	cosmn(12)=4.222e-5
+	
+	sinmn(3)=-1.209e-5
+	sinmn(4)=-1.242e-5
+	sinmn(5)=-1.184e-5
+	sinmn(6)=-1.744e-4
+	sinmn(7)=1.4875e-4
+	sinmn(8)=2.1404e-4
+	sinmn(9)=4.1800e-4
+	sinmn(10)=2.225e-4
+	sinmn(11)=1.9273e-4
+	sinmn(12)=4.109e-5
+
+      	fixed_boundary_flag=f
 /
 &ipec_control
-	response_flag=t
-	dist=5e-4
-	bdist=1e-1
-	maxdbratio=1e-2
-	rstep=200
-	modelnum=3
+	resp_index=0
+	sing_spot=5e-4
+	reg_spot=5e-2
 /
 &ipec_output
+	jac_out="hamada"
+	jsurf_out=0
+	tmag_out=1
+
+	resp_flag=t
 	singcoup_flag=f
+
 	singfld_flag=t
-	pmodb_flag=f
-	poloout=1
-	toroout=1
-	xbrzphi_flag=f
-	nrzeq_flag=f
-	nr=64
-	nz=64
-	extt_flag=f
-	extp_flag=f
-	labl=0
+	pmodb_flag=t
+	xbnormal_flag=t
+
+	eqbrzphi_flag=t
+	brzphi_flag=t
+	xrzphi_flag=t
+	vbrzphi_flag=f
+	vpbrzphi_flag=f
+	vvbrzphi_flag=f
+
+	bin_flag=t
+	bin_2d_flag=t
 /
 &ipec_diagnose
-        singcurs_flag=f
-	resol=100
-	smallwidth=1e-6
-	xbcontra_flag=f
-	xbnormal_flag=f
-	xbnovc_flag=f
-	xbnobo_flag=f
-	d3_flag=t
-	xbnorm_flag=f
-	pmodbst_flag=f
-	rzphibx_flag=f
-	eigen_flag=f
-	magpot_flag=f
-	energy_flag=f
-	respmat_flag=f
-	arbsurf_flag=f
-	majr=2.0
-	minr=0.1
-	angles_flag=f
-	surfmode_flag=f
-	lowmode=1
-	highmode=10
-	rzpgrid_flag=f
-	m3d_flag=f
-	test_flag=f
+	div_flag=f
 /

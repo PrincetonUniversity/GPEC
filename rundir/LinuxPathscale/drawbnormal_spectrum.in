@@ -11,11 +11,12 @@ x       poloidal harmonics
 y       psi
 
 dependent variable names
-1	b normal
+1	jac.b.delpsi
 
 
 iqty    options	title
-1	-a	"Spectrum of b normal
+1	-a	"Spectrum of jac.b.delpsi
+
 
 
 

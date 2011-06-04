@@ -1,6 +1,6 @@
 &equil_control
 	eq_type="efit"
-	eq_filename="$EQUIL"
+	eq_filename="../../equilibria/g132633.00608_nstx_lrdfit9"
 	jac_type="hamada"
 	grid_type="ldp"
 	psilow=1e-4

@@ -1510,6 +1510,8 @@ c-----------------------------------------------------------------------
      $        "UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)1,0
          WRITE(bin_2d_unit)rstep-9,mpert-1
+         WRITE(bin_2d_unit)REAL(xmns(9:rstep,:),4),
+     $        REAL(ymns(9:rstep,:),4)
          WRITE(bin_2d_unit)REAL(ABS(bwpmns(9:rstep,:)),4)
          CALL bin_close(bin_2d_unit)
       ENDIF
