@@ -260,7 +260,7 @@ c-----------------------------------------------------------------------
          CALL isbubble(REAL(permeabev(j,:)),
      $        permeabindex(j,:),1,mpert)
       ENDDO
-      WRITE(*,'(1x,a,es10.3)')"single-mode permeability = ",
+      WRITE(*,'(1x,a,es10.3)')"single mode permeability = ",
      $     MAXVAL(ABS(permeabev(resp_index,:)))
 c-----------------------------------------------------------------------
 c     terminate.

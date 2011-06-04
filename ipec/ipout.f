@@ -856,7 +856,7 @@ c-----------------------------------------------------------------------
      $     sengy
       WRITE(*,'(1x,a,es10.3)')"required energy to perturb plasma = ",
      $     pengy
-      WRITE(*,'(1x,a,es10.3)')"single mode amplification factor = ",
+      WRITE(*,'(1x,a,es10.3)')"amplification factor = ",
      $     sengy/pengy
 c-----------------------------------------------------------------------
 c     write results.
@@ -1364,7 +1364,7 @@ c-----------------------------------------------------------------------
          iindex = FLOOR(REAL(istep,8)/FLOOR(rstep/10.0))*10
          ileft = REAL(istep,8)/FLOOR(rstep/10.0)*10-iindex
          IF ((istep-1 /= 0) .AND. (ileft == 0))
-     $        WRITE(*,'(1x,a9,i3,a24)')
+     $        WRITE(*,'(1x,a9,i3,a23)')
      $        "volume = ",iindex,"% xi and b computations"
          CALL ipeq_sol(psis(istep))
          CALL ipeq_contra(psis(istep))
@@ -1474,7 +1474,7 @@ c-----------------------------------------------------------------------
          rmax=SQRT(rzphi%f(1))
          xnofuns=xnofuns/ximax*rmax/6.0
 
-         WRITE(*,'(1x,a,es10.3)')"maximum displacements = ",ximax
+         WRITE(*,'(1x,a,es10.3)')"maximum displacement = ",ximax
          WRITE(*,'(1x,a,es10.3)')"scale factor for 2d plots = ",
      $        rmax/(ximax*6.0)
 
