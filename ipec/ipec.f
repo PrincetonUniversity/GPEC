@@ -62,7 +62,13 @@ c-----------------------------------------------------------------------
       power_flag=.TRUE.
       fft_flag=.FALSE.
       fixed_boundary_flag=.FALSE.
+      data_flag=.FALSE.
+      harmonic_flag=.FALSE.
       mthsurf0=1
+      nmin=1
+      nmax=1
+      mmin=-128
+      mmax=128
 
       resp_index=0
       sing_spot=5e-4
@@ -72,22 +78,22 @@ c-----------------------------------------------------------------------
       tmag_out=1
       jac_out=""
       resp_flag=.TRUE.
-      singcoup_flag=.FALSE.
+      singcoup_flag=.TRUE.
       singfld_flag=.TRUE.
-      pmodb_flag=.TRUE.
+      pmodb_flag=.FALSE.
       xbnormal_flag=.TRUE.
       rstep=0
       nrzeq_flag=.FALSE.
       nr=64
       nz=64
-      eqbrzphi_flag=.TRUE.
-      brzphi_flag=.TRUE.
-      xrzphi_flag=.TRUE.
+      eqbrzphi_flag=.FALSE.
+      brzphi_flag=.FALSE.
+      xrzphi_flag=.FALSE.
       vbrzphi_flag=.FALSE.
       vpbrzphi_flag=.FALSE.
       vvbrzphi_flag=.FALSE.
-      bin_flag=.FALSE.
-      bin_2d_flag=.FALSE.
+      bin_flag=.TRUE.
+      bin_2d_flag=.TRUE.
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -216,15 +222,15 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,brrmn,bnomn,xwpmn,
      $        power_rin,power_bpin,power_bin,power_rcin,
      $        tmag_in,jsurf_in,power_rout,power_bpout,
-     $        power_bout,power_rcout,tmag_out,jsurf_out)
+     $        power_bout,power_rcout,tmag_out,0,singcoup_flag)
          edge_flag=.TRUE.
       ELSE IF (mode_flag) THEN
          edge_flag=.FALSE.
       ENDIF
 
       IF (singfld_flag) THEN
-         CALL ipout_singfld(mode,xwpmn,sing_spot,power_rout,
-     $        power_bpout,power_bout,power_rcout,1,0,singcoup_flag)
+         CALL ipout_singfld(mode,xwpmn,sing_spot,power_rout,power_bpout,
+     $        power_bout,power_rcout,tmag_out,0,singcoup_flag)
       ENDIF
       IF (pmodb_flag) THEN
          CALL ipout_pmodb(mode,xwpmn,power_rout,
@@ -327,7 +333,7 @@ c-----------------------------------------------------------------------
          fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
          CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
          CALL ipout_control(infile,fxmn,bnomn,xwpmn,
-     $        0,0,0,0,1,0,0,0,0,0,1,0)
+     $        0,0,0,0,1,0,0,0,0,0,1,0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xwpmn,sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out,jsurf_out,
@@ -344,7 +350,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,brrmn,bnomn,xwpmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
-     $        tmag_out,jsurf_out)
+     $        tmag_out,jsurf_out,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xwpmn,sing_spot,0,0,0,0,1,0,.FALSE.)
          CALL ipdiag_xbcontra(mode,xwpmn,0,0,0,0,1)

@@ -63,7 +63,7 @@ c-----------------------------------------------------------------------
             xinmn=xrmn+ifac*ximn
 
             potengy(i,j)=SUM(CONJG(xinmn)*MATMUL(wt,xinmn))
-            WRITE(out_unit,'(2(1x,I3),1x,es12.3)')
+            WRITE(out_unit,'(2(1x,I3),1x,e12.3)')
      $           mfac(i),mfac(j),potengy(i,j)
          ENDDO
       ENDDO
@@ -88,12 +88,12 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a8,1x,I4)')"mpert=",mpert
       WRITE(out_unit,'(1x,a4,2(1x,a12))')"mode","chperr1","chperr2"
       DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,2(1x,e12.3))')i,chperr(1,i),chperr(2,i)
+         WRITE(out_unit,'(1x,I4,2(1x,es12.3))')i,chperr(1,i),chperr(2,i)
       ENDDO
       WRITE(out_unit,'(1x,a4,4(1x,a12))')
      $     "mode","chpsqr1","chpsqr2","chpsqr3","chpsqr4"
       DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,4(1x,e12.3))')
+         WRITE(out_unit,'(1x,I4,4(1x,es12.3))')
      $        i,chpsqr(1,i),chpsqr(2,i),chpsqr(3,i),chpsqr(4,i)
       ENDDO
       CALL ascii_close(out_unit)
@@ -244,7 +244,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(3(1x,a12))')"psi","plerror","haerror"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(3(1x,e12.3))')
+            WRITE(out_unit,'(3(1x,es12.3))')
      $           psi(istep),plerror(istep,itheta),haerror(istep,itheta)
          ENDDO
       ENDDO
@@ -254,7 +254,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(3(1x,a12))')"r","z","angles"
          DO inum=0,angnum-1
             DO istep=1,rstep
-               WRITE(out_unit,'(3(1x,e12.3))')
+               WRITE(out_unit,'(3(1x,es12.3))')
      $              rs(istep,inum,iqty),zs(istep,inum,iqty),angles(inum)
             ENDDO
          ENDDO
@@ -264,7 +264,7 @@ c-----------------------------------------------------------------------
      $     "pest","equalarc","boozer"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(7(1x,e12.3))')
+            WRITE(out_unit,'(7(1x,es12.3))')
      $           psi(istep),theta(itheta),omega(istep,itheta,0),
      $           omega(istep,itheta,1),omega(istep,itheta,2),
      $           omega(istep,itheta,3),omega(istep,itheta,4)
@@ -525,7 +525,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a2,1x,f6.3)')"q=",singtype(ising)%q
          WRITE(out_unit,'(1x,a12,1x,I6)')"logsteps=",logsteps(ising)
          DO i=1,logsteps(ising)
-            WRITE(out_unit,'(3(1x,e16.9))')spot(ising,i),
+            WRITE(out_unit,'(3(1x,es16.9))')spot(ising,i),
      $           REAL(deltas(ising,i)),AIMAG(deltas(ising,i))
          ENDDO
       ENDDO
@@ -543,7 +543,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a2,1x,f6.3)')"q=",singtype(ising)%q
          WRITE(out_unit,'(1x,a12,1x,I6)')"logsteps=",logsteps(ising)
          DO i=1,logsteps(ising)
-            WRITE(out_unit,'(7(1x,e16.9))')spot(ising,i),
+            WRITE(out_unit,'(7(1x,es16.9))')spot(ising,i),
      $           REAL(delcurs(ising,i)),AIMAG(delcurs(ising,i)),
      $           REAL(corcurs(ising,i)),AIMAG(corcurs(ising,i)),
      $           REAL(singcurs(ising,i)),AIMAG(singcurs(ising,i))
@@ -583,7 +583,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(2(1x,a16))')"psifac","qfac"
       CALL ipeq_alloc
       DO istep=0,mstep
-         WRITE(out_unit,'(2(1x,e16.9))')psifac(istep),qfac(istep)
+         WRITE(out_unit,'(2(1x,es16.9))')psifac(istep),qfac(istep)
       ENDDO
       WRITE(out_unit,'(18(1x,a16))')
      $     "xwp(real)","xwp(imag)","xwt(real)","xwt(imag)",
@@ -617,7 +617,7 @@ c-----------------------------------------------------------------------
      $           rin,bpin,bin,rcin,tin,0)
          ENDIF
          DO ipert=1,mpert
-            WRITE(out_unit,'(18(1x,e16.9))')
+            WRITE(out_unit,'(18(1x,es16.9))')
      $           REAL(xwp_mn(ipert)),AIMAG(xwp_mn(ipert)),
      $           REAL(xwt_mn(ipert)),AIMAG(xwt_mn(ipert)),
      $           REAL(xwz_mn(ipert)),AIMAG(xwz_mn(ipert)),
@@ -709,7 +709,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(xnor)","real(xnoz)","imag(xnor)","imag(xnoz)"
       DO ithnum=0,mthnum
-         WRITE(out_unit,'(6(1x,e16.9))')rs(ithnum),zs(ithnum),
+         WRITE(out_unit,'(6(1x,es16.9))')rs(ithnum),zs(ithnum),
      $        REAL(xnorvc(ithnum)),REAL(xnozvc(ithnum)),
      $        AIMAG(xnorvc(ithnum)),AIMAG(xnozvc(ithnum))
       ENDDO
@@ -719,7 +719,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(bnor)","real(bnoz)","imag(bnor)","imag(bnoz)"
       DO ithnum=0,mthnum
-         WRITE(out_unit,'(6(1x,e16.9))')rs(ithnum),zs(ithnum),
+         WRITE(out_unit,'(6(1x,es16.9))')rs(ithnum),zs(ithnum),
      $        REAL(bnorvc(ithnum)),REAL(bnozvc(ithnum)),
      $        AIMAG(bnorvc(ithnum)),AIMAG(bnozvc(ithnum))
       ENDDO
@@ -730,10 +730,10 @@ c     write data for 3d surface plot.
 c-----------------------------------------------------------------------
       IF (d3_flag) THEN
          CALL ascii_open(out_unit,"iptemp.txt","UNKNOWN")
-         WRITE(out_unit,'(1p,5e16.8)')rs
-         WRITE(out_unit,'(1p,5e16.8)')zs
-         WRITE(out_unit,'(1p,5e16.8)')REAL(xno_fun)
-         WRITE(out_unit,'(1p,5e16.8)')AIMAG(xno_fun)      
+         WRITE(out_unit,'(1p,5es16.8)')rs
+         WRITE(out_unit,'(1p,5es16.8)')zs
+         WRITE(out_unit,'(1p,5es16.8)')REAL(xno_fun)
+         WRITE(out_unit,'(1p,5es16.8)')AIMAG(xno_fun)      
          CALL ascii_close(out_unit)
          
          filein="iptemp.txt"
@@ -747,10 +747,10 @@ c-----------------------------------------------------------------------
          CALL ipidl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1)
 
          CALL ascii_open(out_unit,"iptemp.txt","UNKNOWN")
-         WRITE(out_unit,'(1p,5e16.8)')rs
-         WRITE(out_unit,'(1p,5e16.8)')zs
-         WRITE(out_unit,'(1p,5e16.8)')REAL(bno_fun)
-         WRITE(out_unit,'(1p,5e16.8)')AIMAG(bno_fun)      
+         WRITE(out_unit,'(1p,5es16.8)')rs
+         WRITE(out_unit,'(1p,5es16.8)')zs
+         WRITE(out_unit,'(1p,5es16.8)')REAL(bno_fun)
+         WRITE(out_unit,'(1p,5es16.8)')AIMAG(bno_fun)      
          CALL ascii_close(out_unit)
          
          filein="iptemp.txt"
@@ -878,7 +878,7 @@ c-----------------------------------------------------------------------
      $     "ntveulbst","xiwobbpst","xiwobbrst","xiwobbtst",
      $     "lagbparst","invlagbst","ntvlagbst"
       DO istep=1,rstep
-         WRITE(out_unit,'(10(1x,e12.3))')psis(istep),
+         WRITE(out_unit,'(10(1x,es12.3))')psis(istep),
      $        eulmodbst(istep),eulbparst(istep),ntv_eulbparst(istep),
      $        xiwobbpst(istep),xiwobbrst(istep),xiwobbtst(istep),
      $        lagbparst(istep),invlagbst(istep),ntv_lagbparst(istep)
@@ -993,7 +993,7 @@ c-----------------------------------------------------------------------
      $     "eqfunx","eqfuny","eqfuns"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(17(1x,e12.3))')
+            WRITE(out_unit,'(17(1x,es12.3))')
      $           rs(istep,itheta),zs(istep,itheta),
      $           REAL(eulbparfun(istep,itheta)),
      $           AIMAG(eulbparfun(istep,itheta)),
@@ -1143,7 +1143,7 @@ c-----------------------------------------------------------------------
      $     "real(xp)","imag(xp)"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(17(1x,e12.3))')
+            WRITE(out_unit,'(17(1x,es12.3))')
      $           psis(istep),theta(itheta),
      $           rs(istep,itheta),zs(istep,itheta),phs(istep,itheta),
      $           REAL(brs(istep,itheta)),AIMAG(brs(istep,itheta)),
@@ -1246,7 +1246,7 @@ c-----------------------------------------------------------------------
                ENDIF
             ENDIF
             
-            WRITE(out_unit,'(6(1x,e12.3))')gdr(i,j),gdz(i,j),gdl(i,j),
+            WRITE(out_unit,'(6(1x,es12.3))')gdr(i,j),gdz(i,j),gdl(i,j),
      $           gdpsi(i,j),gdthe(i,j),gdphi(i,j)
             
          ENDDO
@@ -1333,7 +1333,7 @@ c-----------------------------------------------------------------------
       
       DO i=0,nr
          DO j=0,nz
-            WRITE(out_unit,'(1x,I2,5(e16.8))')
+            WRITE(out_unit,'(1x,I2,5(es16.8))')
      $           lval(i,j),rval(i,j),zval(i,j),
      $           REAL(div(i,j)),AIMAG(div(i,j)),ABS(div(i,j))
          ENDDO
@@ -1370,10 +1370,10 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"IPDIAG_RADVAR: "//
      $     "various radial variables"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep
-      WRITE(out_unit,'(1x,a8,1x,e16.9)')"qintb=",qintb
+      WRITE(out_unit,'(1x,a8,1x,es16.9)')"qintb=",qintb
       WRITE(out_unit,'(4(1x,a16))')"psi","rho","psitor","rhotor"
       DO istep=0,mstep
-         WRITE(out_unit,'(4(1x,e16.9))')psifac(istep),rhofac(istep),
+         WRITE(out_unit,'(4(1x,es16.9))')psifac(istep),rhofac(istep),
      $        psitor(istep),rhotor(istep)
       ENDDO
       CALL ascii_close(out_unit)

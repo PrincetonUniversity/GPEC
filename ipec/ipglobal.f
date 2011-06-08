@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
       CHARACTER(16) :: jac_type,jac_in,jac_out,data_type
       CHARACTER(128) :: ieqfile,idconfile,ivacuumfile
 
-      INTEGER, PARAMETER :: hmnum=64
+      INTEGER, PARAMETER :: hmnum=128
       REAL(r8), PARAMETER :: mili=0.001,gauss=0.0001
       COMPLEX(r8), PARAMETER :: ione=1
 
@@ -62,7 +62,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
-     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v
+     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,fldflxmat
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,reluctmats,
      $     plas_indevmats,permeabevmats,reluctevmats,
