@@ -1,21 +1,20 @@
 # This is the makefile for MATCH on Linuxgfortran computers.
 
 FFLAGS = -I../equil -g
-F90 = gfortran4 $(FFLAGS)
+F90 = gfortran $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
 LIBDIR = \
 	-L../lib/Linuxgfortran \
-	-L/usr/pppl/lff95/6.20c/lapack-3.0
+	-L/usr/pppl/gcc/4.4-pkgs/acml/4.4.0/gfortran64/lib
 
 LIBS = \
 	$(LIBDIR) \
 	-lequil \
 	-llsode \
-	-llapack \
-	-lblas
+	-lacml
 
 OBJS = \
 	qsort.o \

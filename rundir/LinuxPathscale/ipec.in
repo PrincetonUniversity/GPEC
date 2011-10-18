@@ -48,15 +48,15 @@
 	tmag_out=1
 
 	resp_flag=t
-	singcoup_flag=f
+	singcoup_flag=t
 
 	singfld_flag=t
-	pmodb_flag=t
+	pmodb_flag=f
 	xbnormal_flag=t
 
-	eqbrzphi_flag=t
-	brzphi_flag=t
-	xrzphi_flag=t
+	eqbrzphi_flag=f
+	brzphi_flag=f
+	xrzphi_flag=f
 	vbrzphi_flag=f
 	vpbrzphi_flag=f
 	vvbrzphi_flag=f

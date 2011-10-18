@@ -1,7 +1,7 @@
 # This is the makefile for VACUUM on LinuxPathscale computers.
 
-CFLAGS = -O2 -m64
-FFLAGS = -O2 -m64
+CFLAGS = -g -m64
+FFLAGS = -g -m64
 F90 = pathf90 $(FFLAGS)
 
 .f.o: 

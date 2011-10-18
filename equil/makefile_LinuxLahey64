@@ -1,6 +1,6 @@
 # This is the makefile for EQUIL on LinuxLahey computers.
 
-FFLAGS = -O2
+FFLAGS = -g
 
 F90 = lfc $(FFLAGS)
 

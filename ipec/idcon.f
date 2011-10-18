@@ -334,10 +334,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_build(egnum,xwpimn)
+      SUBROUTINE idcon_build(egnum,xspimn)
 
       INTEGER, INTENT(IN) :: egnum
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspimn
 
       INTEGER :: istep,ifix,jfix,kfix,ieq,info
       INTEGER, DIMENSION(mpert) :: ipiv
@@ -347,7 +347,7 @@ c-----------------------------------------------------------------------
 c     construct uedge.
 c-----------------------------------------------------------------------
       IF(edge_flag)THEN
-         uedge=xwpimn
+         uedge=xspimn
       ELSE
          uedge=wt(:,egnum)
       ENDIF

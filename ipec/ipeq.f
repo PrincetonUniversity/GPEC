@@ -893,6 +893,8 @@ c-----------------------------------------------------------------------
          ftnfun=ftnfun/sqrt(wgtfun)
       CASE(3)
          ftnfun=ftnfun/sqrt(wgtfun*r)
+      CASE(4)
+         ftnfun=ftnfun/delpsi
       END SELECT
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------

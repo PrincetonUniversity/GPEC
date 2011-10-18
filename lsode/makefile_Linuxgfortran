@@ -1,7 +1,7 @@
 # This is the makefile for LSODE on Linuxgfortran computers.
 
-FFLAGS = -g
-F90 = gfortran4 $(FFLAGS)
+FFLAGS = -g 
+F90 = gfortran $(FFLAGS)
 
 .f.o: 
 	$(F90) -c $*.f

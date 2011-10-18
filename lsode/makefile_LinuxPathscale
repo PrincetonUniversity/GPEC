@@ -1,6 +1,6 @@
 # This is the makefile for LSODE on LinuxPathscale computers.
 
-FFLAGS = -O2 -m64
+FFLAGS = -g -m64
 F90 = pathf90 $(FFLAGS)
 
 .f.o: 

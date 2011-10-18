@@ -1,6 +1,6 @@
 # This is the makefile for MULTI on LinuxPathscale computers.Linux
 
-FFLAGS = -O2 -m64
+FFLAGS = -g -m64
 F90 = pathf90 $(FFLAGS)
 
 .f.o: 

@@ -1,6 +1,6 @@
 # This is the makefile for IPEC on LinuxPathscale computers.
 
-FFLAGS = -I../equil -O2 -m64
+FFLAGS = -I../equil -g -m64
 F90 = pathf90 $(FFLAGS)
 
 .f.o:
@@ -8,15 +8,14 @@ F90 = pathf90 $(FFLAGS)
 
 LIBDIR = \
 	-L../lib/LinuxPathscale \
-	-L/usr/pppl/pathscale/2.2-pkgs/acml-2.7.0-x86_64/pathscale64/lib
+	-L/usr/pppl/pathscale/3.2-pkgs/acml-4.2.0/pathscale64/lib
 
 LIBS = \
 	$(LIBDIR) \
 	-llsode \
 	-lequil \
 	-lvac \
-	-llapack \
-	-lblas \
+	-lacml \
 
 OBJS = \
 	ipglobal.o \

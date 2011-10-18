@@ -97,7 +97,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Starting ipec calculations - v1.0"
+      WRITE(*,*)"Starting ipec calculations - v1.00"
       CALL ascii_open(in_unit,"ipec.in","OLD")
       READ(in_unit,NML=ipec_input)
       READ(in_unit,NML=ipec_control)  
@@ -213,7 +213,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (singcoup_flag) THEN
          CALL ipout_singcoup(sing_spot,power_rout,
-     $        power_bpout,power_bout,power_rcout,tmag_out,jsurf_out)
+     $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
@@ -222,7 +222,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,brrmn,bnomn,xwpmn,
      $        power_rin,power_bpin,power_bin,power_rcin,
      $        tmag_in,jsurf_in,power_rout,power_bpout,
-     $        power_bout,power_rcout,tmag_out,0,singcoup_flag)
+     $        power_bout,power_rcout,tmag_out,singcoup_flag)
          edge_flag=.TRUE.
       ELSE IF (mode_flag) THEN
          edge_flag=.FALSE.
@@ -230,15 +230,15 @@ c-----------------------------------------------------------------------
 
       IF (singfld_flag) THEN
          CALL ipout_singfld(mode,xwpmn,sing_spot,power_rout,power_bpout,
-     $        power_bout,power_rcout,tmag_out,0,singcoup_flag)
+     $        power_bout,power_rcout,tmag_out,singcoup_flag)
       ENDIF
       IF (pmodb_flag) THEN
          CALL ipout_pmodb(mode,xwpmn,power_rout,
-     $        power_bpout,power_bout,power_rcout,1,0)
+     $        power_bpout,power_bout,power_rcout)
       ENDIF
       IF (xbnormal_flag) THEN
          CALL ipout_xbnormal(mode,xwpmn,power_rout,
-     $        power_bpout,power_bout,power_rcout,1,0)
+     $        power_bpout,power_bout,power_rcout)
       ENDIF
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
@@ -333,11 +333,10 @@ c-----------------------------------------------------------------------
          fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
          CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
          CALL ipout_control(infile,fxmn,bnomn,xwpmn,
-     $        0,0,0,0,1,0,0,0,0,0,1,0,.FALSE.)
+     $        0,0,0,0,1,0,0,0,0,0,1,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xwpmn,sing_spot,power_rout,
-     $        power_bpout,power_bout,power_rcout,tmag_out,jsurf_out,
-     $        .FALSE.)
+     $        power_bpout,power_bout,power_rcout,tmag_out,.FALSE.)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -350,13 +349,13 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,brrmn,bnomn,xwpmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
-     $        tmag_out,jsurf_out,.FALSE.)
+     $        tmag_out,.FALSE.)
          edge_flag=.TRUE.
-         CALL ipout_singfld(mode,xwpmn,sing_spot,0,0,0,0,1,0,.FALSE.)
+         CALL ipout_singfld(mode,xwpmn,sing_spot,0,0,0,0,1,.FALSE.)
          CALL ipdiag_xbcontra(mode,xwpmn,0,0,0,0,1)
          CALL ipdiag_xbcontra(mode,xwpmn,0,0,2,0,1)
-         CALL ipout_xbnormal(mode,xwpmn,0,0,0,0,1,0)
-         CALL ipout_xbnormal(mode,xwpmn,0,0,2,0,1,0)
+         CALL ipout_xbnormal(mode,xwpmn,0,0,0,0)
+         CALL ipout_xbnormal(mode,xwpmn,0,0,2,0)
          CALL ipdiag_xbnobo(mode,xwpmn,d3_flag)
          CALL ipdiag_radvar
       ENDIF

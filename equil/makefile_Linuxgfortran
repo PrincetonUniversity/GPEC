@@ -2,7 +2,7 @@
 
 FFLAGS = -g
 
-F90 = gfortran4 $(FFLAGS)
+F90 = gfortran $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f

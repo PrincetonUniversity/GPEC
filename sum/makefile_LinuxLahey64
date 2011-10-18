@@ -1,4 +1,4 @@
-# This is the makefile for SUM on LinuxLahey computers.Linux/Pathscale
+# This is the makefile for SUM on LinuxLahey computers. Linux/Pathscale
 
 FFLAGS = -g
 F90 = lfc $(FFLAGS)

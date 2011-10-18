@@ -51,8 +51,8 @@ c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_eigen.out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_EIGEN: "//
-     $     "diagnose DCON eigenvalues for eigenvectors"
-      WRITE(out_unit,'(2(1x,a3),1x,a12)')"m","m","pot energy"
+     $     "Diagnose DCON eigenvalues for eigenvectors"
+      WRITE(out_unit,'(2(1x,a3),1x,a16)')"m","m","pot energy"
 
       DO i=1,mpert
          DO j=1,mpert
@@ -63,7 +63,7 @@ c-----------------------------------------------------------------------
             xinmn=xrmn+ifac*ximn
 
             potengy(i,j)=SUM(CONJG(xinmn)*MATMUL(wt,xinmn))
-            WRITE(out_unit,'(2(1x,I3),1x,e12.3)')
+            WRITE(out_unit,'(2(1x,I3),1x,es16.8)')
      $           mfac(i),mfac(j),potengy(i,j)
          ENDDO
       ENDDO
@@ -84,16 +84,16 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j
 
       CALL ascii_open(out_unit,"ipdiag_magpot_n"//sn//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_MAGPOT: magnetic potential errors"
+      WRITE(out_unit,*)"IPDIAG_MAGPOT: Magnetic potential errors"
       WRITE(out_unit,'(1x,a8,1x,I4)')"mpert=",mpert
-      WRITE(out_unit,'(1x,a4,2(1x,a12))')"mode","chperr1","chperr2"
+      WRITE(out_unit,'(1x,a4,2(1x,a16))')"mode","chperr1","chperr2"
       DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,2(1x,es12.3))')i,chperr(1,i),chperr(2,i)
+         WRITE(out_unit,'(1x,I4,2(1x,es16.8))')i,chperr(1,i),chperr(2,i)
       ENDDO
-      WRITE(out_unit,'(1x,a4,4(1x,a12))')
+      WRITE(out_unit,'(1x,a4,4(1x,a16))')
      $     "mode","chpsqr1","chpsqr2","chpsqr3","chpsqr4"
       DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,4(1x,es12.3))')
+         WRITE(out_unit,'(1x,I4,4(1x,es16.8))')
      $        i,chpsqr(1,i),chpsqr(2,i),chpsqr(3,i),chpsqr(4,i)
       ENDDO
       CALL ascii_close(out_unit)
@@ -124,10 +124,10 @@ c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_arbsurf_R"//smajr//"_r"//sminr//
      $     ".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_VACUUM: "//
-     $     "diagnose surface inductances for arbitrary shape"
-      WRITE(out_unit,'(1x,a4,1x,a12)')"mode","surf_ind"
+     $     "Diagnose surface inductances for arbitrary shape"
+      WRITE(out_unit,'(1x,a4,1x,a16)')"mode","surf_ind"
       DO i=1,vmpert
-         WRITE(out_unit,'(1x,I4,1x,es12.3)')i,vsurf_indev(i)
+         WRITE(out_unit,'(1x,I4,1x,es16.8)')i,vsurf_indev(i)
       ENDDO      
       CALL ascii_close(out_unit)
       DEALLOCATE(vsurf_indmats,vsurf_indev)
@@ -237,34 +237,34 @@ c     write data.
 c-----------------------------------------------------------------------      
       CALL ascii_open(out_unit,"ipdiag_angles.out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_ANGLES: "//
-     $     "diagnose and visualize magnetic angles"
+     $     "Diagnose and visualize magnetic angles"
       WRITE(out_unit,'(1x,a8,1x,I6)')"angnum=",angnum
       WRITE(out_unit,'(1x,a8,1x,I6)')"rstep=",rstep
       WRITE(out_unit,'(1x,a8,1x,I6)')"mthsurf=",mthsurf
-      WRITE(out_unit,'(3(1x,a12))')"psi","plerror","haerror"
+      WRITE(out_unit,'(3(1x,a16))')"psi","plerror","haerror"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(3(1x,es12.3))')
+            WRITE(out_unit,'(3(1x,es16.8))')
      $           psi(istep),plerror(istep,itheta),haerror(istep,itheta)
          ENDDO
       ENDDO
       
       DO iqty=1,5
          WRITE(out_unit,'(1x,a8,1x,I2)')"iqty=",iqty
-         WRITE(out_unit,'(3(1x,a12))')"r","z","angles"
+         WRITE(out_unit,'(3(1x,a16))')"r","z","angles"
          DO inum=0,angnum-1
             DO istep=1,rstep
-               WRITE(out_unit,'(3(1x,es12.3))')
+               WRITE(out_unit,'(3(1x,es16.8))')
      $              rs(istep,inum,iqty),zs(istep,inum,iqty),angles(inum)
             ENDDO
          ENDDO
       ENDDO
 
-      WRITE(out_unit,'(7(1x,a12))')"psi","theta","polar","hamada",
+      WRITE(out_unit,'(7(1x,a16))')"psi","theta","polar","hamada",
      $     "pest","equalarc","boozer"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(7(1x,es12.3))')
+            WRITE(out_unit,'(7(1x,es16.8))')
      $           psi(istep),theta(itheta),omega(istep,itheta,0),
      $           omega(istep,itheta,1),omega(istep,itheta,2),
      $           omega(istep,itheta,3),omega(istep,itheta,4)
@@ -321,26 +321,26 @@ c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_surfmode.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_SURFMODE: plasma response for the fourier 
-     $modes on the control surface"
+      WRITE(out_unit,*)"IPDIAG_SURFMODE: Plasma response for the "//
+     $     "fourier modes on the control surface"
       WRITE(out_unit,*)"MODES"
-      WRITE(out_unit,'(5(1x,a12))')"m",
+      WRITE(out_unit,'(1x,a4,4(1x,a16))')"m",
      $     "rebin","imbin","rebout","imbout"
       DO j=1,mnum
          WRITE(out_unit,'(1x,a6,i3)')"mode=",j-1+lowmode
          DO i=1,mpert
-            WRITE(out_unit,'(1x,I12,4(1x,es12.3))')mfac(i),
+            WRITE(out_unit,'(1x,I4,4(1x,es16.8))')mfac(i),
      $           REAL(binmn(j,i)),AIMAG(binmn(j,i)),
      $           REAL(boutmn(j,i)),AIMAG(boutmn(j,i))
          ENDDO
       ENDDO
       WRITE(out_unit,*)"FUNCTIONS"
-      WRITE(out_unit,'(5(1x,a12))')"theta",
+      WRITE(out_unit,'(5(1x,a16))')"theta",
      $     "rebin","imbin","rebout","imbout"
       DO j=1,mnum
          WRITE(out_unit,'(1x,a6,i3)')"mode=",j-1+lowmode
          DO i=0,mthsurf
-            WRITE(out_unit,'(5(1x,es12.3))')theta(i),
+            WRITE(out_unit,'(5(1x,es16.8))')theta(i),
      $           REAL(binfun(j,i)),AIMAG(binfun(j,i)),
      $           REAL(boutfun(j,i)),AIMAG(boutfun(j,i))
          ENDDO
@@ -517,7 +517,7 @@ c     write the results.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_deltas_n"//sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_DELTAS: "//
-     $     "asymtotic analysis for deltas at rational surfaces"
+     $     "Asymtotic analysis for deltas at rational surfaces"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rsing=",rsing
       WRITE(out_unit,'(1x,a8,1x,I6)')"resol=",resol
       WRITE(out_unit,'(3(1x,a16))')"distance","re(delta)","im(delta)"
@@ -525,7 +525,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a2,1x,f6.3)')"q=",singtype(ising)%q
          WRITE(out_unit,'(1x,a12,1x,I6)')"logsteps=",logsteps(ising)
          DO i=1,logsteps(ising)
-            WRITE(out_unit,'(3(1x,es16.9))')spot(ising,i),
+            WRITE(out_unit,'(3(1x,es16.8))')spot(ising,i),
      $           REAL(deltas(ising,i)),AIMAG(deltas(ising,i))
          ENDDO
       ENDDO
@@ -543,7 +543,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a2,1x,f6.3)')"q=",singtype(ising)%q
          WRITE(out_unit,'(1x,a12,1x,I6)')"logsteps=",logsteps(ising)
          DO i=1,logsteps(ising)
-            WRITE(out_unit,'(7(1x,es16.9))')spot(ising,i),
+            WRITE(out_unit,'(7(1x,es16.8))')spot(ising,i),
      $           REAL(delcurs(ising,i)),AIMAG(delcurs(ising,i)),
      $           REAL(corcurs(ising,i)),AIMAG(corcurs(ising,i)),
      $           REAL(singcurs(ising,i)),AIMAG(singcurs(ising,i))
@@ -576,14 +576,14 @@ c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_xbcontra_n"//
      $        sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XBCONTRA: "//
-     $     "contravariant components of displacement and field"
+     $     "Contravariant components of displacement and field"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep
       WRITE(out_unit,'(1x,a8,1x,I6)')"mlow=",mlow
       WRITE(out_unit,'(1x,a8,1x,I6)')"mhigh=",mhigh
       WRITE(out_unit,'(2(1x,a16))')"psifac","qfac"
       CALL ipeq_alloc
       DO istep=0,mstep
-         WRITE(out_unit,'(2(1x,es16.9))')psifac(istep),qfac(istep)
+         WRITE(out_unit,'(2(1x,es16.8))')psifac(istep),qfac(istep)
       ENDDO
       WRITE(out_unit,'(18(1x,a16))')
      $     "xwp(real)","xwp(imag)","xwt(real)","xwt(imag)",
@@ -617,7 +617,7 @@ c-----------------------------------------------------------------------
      $           rin,bpin,bin,rcin,tin,0)
          ENDIF
          DO ipert=1,mpert
-            WRITE(out_unit,'(18(1x,es16.9))')
+            WRITE(out_unit,'(18(1x,es16.8))')
      $           REAL(xwp_mn(ipert)),AIMAG(xwp_mn(ipert)),
      $           REAL(xwt_mn(ipert)),AIMAG(xwt_mn(ipert)),
      $           REAL(xwz_mn(ipert)),AIMAG(xwz_mn(ipert)),
@@ -705,11 +705,11 @@ c     write results.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_xnobo_n"//sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XNOBO: "//
-     $     "perturbed normal displacement vectors on the boundary"      
+     $     "Perturbed normal displacement vectors on the boundary"      
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(xnor)","real(xnoz)","imag(xnor)","imag(xnoz)"
       DO ithnum=0,mthnum
-         WRITE(out_unit,'(6(1x,es16.9))')rs(ithnum),zs(ithnum),
+         WRITE(out_unit,'(6(1x,es16.8))')rs(ithnum),zs(ithnum),
      $        REAL(xnorvc(ithnum)),REAL(xnozvc(ithnum)),
      $        AIMAG(xnorvc(ithnum)),AIMAG(xnozvc(ithnum))
       ENDDO
@@ -719,7 +719,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(bnor)","real(bnoz)","imag(bnor)","imag(bnoz)"
       DO ithnum=0,mthnum
-         WRITE(out_unit,'(6(1x,es16.9))')rs(ithnum),zs(ithnum),
+         WRITE(out_unit,'(6(1x,es16.8))')rs(ithnum),zs(ithnum),
      $        REAL(bnorvc(ithnum)),REAL(bnozvc(ithnum)),
      $        AIMAG(bnorvc(ithnum)),AIMAG(bnozvc(ithnum))
       ENDDO
@@ -873,12 +873,12 @@ c     write data.
 c-----------------------------------------------------------------------      
       CALL ascii_open(out_unit,"ipdiag_pmodbst_n"//sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_PMODBST: "//
-     $     "perturbed mod b strength on flux surfaces"
-      WRITE(out_unit,'(10(1x,a12))')"psi","eulmodbst","eulbparst",
+     $     "Perturbed mod b strength on flux surfaces"
+      WRITE(out_unit,'(10(1x,a16))')"psi","eulmodbst","eulbparst",
      $     "ntveulbst","xiwobbpst","xiwobbrst","xiwobbtst",
      $     "lagbparst","invlagbst","ntvlagbst"
       DO istep=1,rstep
-         WRITE(out_unit,'(10(1x,es12.3))')psis(istep),
+         WRITE(out_unit,'(10(1x,es16.8))')psis(istep),
      $        eulmodbst(istep),eulbparst(istep),ntv_eulbparst(istep),
      $        xiwobbpst(istep),xiwobbrst(istep),xiwobbtst(istep),
      $        lagbparst(istep),invlagbst(istep),ntv_lagbparst(istep)
@@ -983,17 +983,17 @@ c     write data.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_pmodbrz_n"//sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_PMODBRZ: "//
-     $     "perturbed mod b on a poloidal plane"
+     $     "Perturbed mod b on a poloidal plane"
       WRITE(out_unit,'(1x,a8,1x,I4)')"rstep=",rstep
       WRITE(out_unit,'(1x,a8,1x,I4)')"mthsurf=",mthsurf
-      WRITE(out_unit,'(17(1x,a12))')"r","z",
+      WRITE(out_unit,'(17(1x,a16))')"r","z",
      $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
      $     "real(xwp)","imag(xwp)","real(xwt)","imag(xwt)",
      $     "real(bvt)","imag(bvt)","real(bvz)","imag(bvz)",
      $     "eqfunx","eqfuny","eqfuns"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(17(1x,es12.3))')
+            WRITE(out_unit,'(17(1x,es16.8))')
      $           rs(istep,itheta),zs(istep,itheta),
      $           REAL(eulbparfun(istep,itheta)),
      $           AIMAG(eulbparfun(istep,itheta)),
@@ -1133,17 +1133,17 @@ c     write results.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_rzphibx_n"//sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RZPHIBX: "//
-     $     "write down rzphibx informations in hamada coordinates"
+     $     "Give rzphibx information in hamada coordinates"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rstep=",rstep
       WRITE(out_unit,'(1x,a8,1x,I6)')"mthsurf=",mthsurf
-      WRITE(out_unit,'(17(1x,a12))')"psi","theta","r","z","phi",
+      WRITE(out_unit,'(17(1x,a16))')"psi","theta","r","z","phi",
      $     "real(br)","imag(br)","real(bz)","imag(bz)",
      $     "real(bp)","imag(bp)",
      $     "real(xr)","imag(xr)","real(xz)","imag(xz)",
      $     "real(xp)","imag(xp)"
       DO istep=1,rstep
          DO itheta=0,mthsurf
-            WRITE(out_unit,'(17(1x,es12.3))')
+            WRITE(out_unit,'(17(1x,es16.8))')
      $           psis(istep),theta(itheta),
      $           rs(istep,itheta),zs(istep,itheta),phs(istep,itheta),
      $           REAL(brs(istep,itheta)),AIMAG(brs(istep,itheta)),
@@ -1196,7 +1196,7 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"ipdiag_rzpgrid.out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RZPGRID: "//
-     $     "hamada coordinates as functions of rzphi"
+     $     "Give hamada coordinates as functions of rzphi"
       WRITE(out_unit,'(6(1x,a12))')"r","z","limit","psi","theta","phi"
 
       ! information of plasma boundary
@@ -1327,7 +1327,7 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"ipdiag_rzpdiv_n"//sn//".out","UNKNOWN")
       
-      WRITE(out_unit,*)"IPEC_RZPDIV: divergence in rzphi grid"
+      WRITE(out_unit,*)"IPEC_RZPDIV: Divergence in rzphi grid"
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
      $     "re(div)","im(div)","abs(div)"
       
@@ -1368,12 +1368,12 @@ c-----------------------------------------------------------------------
       CALL spline_dealloc(qs)
       CALL ascii_open(out_unit,"ipdiag_radvar_n"//sn//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RADVAR: "//
-     $     "various radial variables"
+     $     "Various radial variables"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep
-      WRITE(out_unit,'(1x,a8,1x,es16.9)')"qintb=",qintb
+      WRITE(out_unit,'(1x,a8,1x,es16.8)')"qintb=",qintb
       WRITE(out_unit,'(4(1x,a16))')"psi","rho","psitor","rhotor"
       DO istep=0,mstep
-         WRITE(out_unit,'(4(1x,es16.9))')psifac(istep),rhofac(istep),
+         WRITE(out_unit,'(4(1x,es16.8))')psifac(istep),rhofac(istep),
      $        psitor(istep),rhotor(istep)
       ENDDO
       CALL ascii_close(out_unit)

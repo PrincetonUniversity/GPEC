@@ -1,7 +1,7 @@
 # This is the makefile for MULTI on Linuxgfortran computers.Linux
 
 FFLAGS = -g
-F90 = gfortran4 $(FFLAGS)
+F90 = gfortran $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
