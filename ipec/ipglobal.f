@@ -44,7 +44,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,surfee,surfei,
-     $     surf_indev,vsurf_indev,fsurf_indev,s1,s2,s3
+     $     surf_indev,vsurf_indev,fsurf_indev
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
      $     chperr,chpsqr,plas_indev,reluctev,indrelev,grri,grre,
      $     gdr,gdz,gdpsi,gdthe,gdphi

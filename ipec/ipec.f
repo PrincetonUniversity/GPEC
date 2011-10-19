@@ -64,6 +64,7 @@ c-----------------------------------------------------------------------
       fixed_boundary_flag=.FALSE.
       data_flag=.FALSE.
       harmonic_flag=.FALSE.
+      mode_flag=.FALSE.
       mthsurf0=1
       nmin=1
       nmax=1

@@ -235,7 +235,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
       REAL(r8), INTENT(IN) :: spot
 
-      REAL(r8), DIMENSION(msing) :: s
+      REAL(r8), DIMENSION(msing) :: s,s1,s2,s3
       COMPLEX(r8), DIMENSION(msing,msing) :: u
 
       INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,
@@ -304,12 +304,10 @@ c-----------------------------------------------------------------------
          ENDDO
          j_c(ising)=1.0/j_c(ising)*(chi1*sq%f(4))**2/mu0
          
-         CALL ipeq_alloc
          ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
          CALL ipvacuum_flxsurf(respsi)
          fsurfindmats(ising,:,:)=fsurf_indmats
          DEALLOCATE(fsurf_indev,fsurf_indmats)
-         CALL ipeq_dealloc
       ENDDO
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
@@ -524,9 +522,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     svd analysis.
 c-----------------------------------------------------------------------
-      lwork=4*tmpert
-      ALLOCATE(ipiv(tmpert),rwork(5*tmpert),work(lwork),
-     $     s1(msing),s2(msing),s3(msing),
+      lwork=3*tmpert
+      ALLOCATE(ipiv(tmpert),rwork(5*msing),work(lwork),
      $     a(msing,tmpert),vt(msing,tmpert),
      $     t1v(tmpert,msing),t2v(tmpert,msing),t3v(tmpert,msing),
      $     temp1(tmpert,tmpert),temp2(tmpert,tmpert))
@@ -584,7 +581,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(4(1x,a12,I4))')
      $     "msing =",msing,"mpert =",tmpert,
      $     "mlow =",tmlow,"mhigh =",tmhigh
-      WRITE(out_unit,'(2(1x,a12,e16.8))')
+      WRITE(out_unit,'(2(1x,a12,es16.8))')
      $     "psilim =",psilim,"qlim =",qlim
       WRITE(out_unit,*)
 
@@ -641,7 +638,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(4(1x,a12,I4))')
      $     "msing =",msing,"mpert =",tmpert,
      $     "mlow =",tmlow,"mhigh =",tmhigh
-      WRITE(out_unit,'(2(1x,a12,e16.8))')
+      WRITE(out_unit,'(2(1x,a12,es16.8))')
      $     "psilim =",psilim,"qlim =",qlim
       WRITE(out_unit,*)
 
@@ -688,8 +685,8 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
 
-      DEALLOCATE(t1mat,t2mat,t3mat,fldflxmn)
-      DEALLOCATE(ipiv,rwork,work,a,vt,temp1,temp2,s1,s2,s3)
+      DEALLOCATE(tmfac,t1mat,t2mat,t3mat,fldflxmn)
+      DEALLOCATE(ipiv,rwork,work,a,vt,temp1,temp2)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -865,9 +862,9 @@ c-----------------------------------------------------------------------
      $     "control surface"
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a12,I4)')"mpert =",mpert
-      WRITE(out_unit,'(1x,a16,1x,e16.8)')"vacuum energy =",vengy
-      WRITE(out_unit,'(1x,a16,1x,e16.8)')"surface energy =",sengy
-      WRITE(out_unit,'(1x,a16,1x,e16.8)')"plasma energy =",pengy
+      WRITE(out_unit,'(1x,a16,1x,es16.8)')"vacuum energy =",vengy
+      WRITE(out_unit,'(1x,a16,1x,es16.8)')"surface energy =",sengy
+      WRITE(out_unit,'(1x,a16,1x,es16.8)')"plasma energy =",pengy
       WRITE(out_unit,*)
 
       WRITE(out_unit,*)"jac_type = "//jac_type
@@ -1020,7 +1017,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(msing) :: resnum
       REAL(r8), DIMENSION(msing) :: area,j_c
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
-      COMPLEX(r8), DIMENSION(mpert) :: lcormn,rcormn,fkaxmn,sbnomn
+      COMPLEX(r8), DIMENSION(mpert) :: lcormn,rcormn,fkaxmn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,lcorfun,rcorfun
 
       REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,
