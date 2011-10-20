@@ -1,15 +1,15 @@
 &ipec_input
-	jac_in="hamada"
-	jsurf_in=0
+	jac_in="pest"
+	jsurf_in=1
 	tmag_in=0
 
 	data_flag=t
-	data_type="vac3d1"
-        infile="../../errorfield/external_field_rwm_g132633.00608_nstx_lrdfit9_nmin1_nmax1_m60_ha_p975.dat"
-	nmin=1
-	nmax=1
-	mmin=-60
-	mmax=60
+	data_type="surfmn1"
+        infile="/u/jpark/data/errorfield/d3d/surfmn.out.cs.124995.02502.errfield"
+	nmin=0
+	nmax=64
+	mmin=-64
+	mmax=64
 
         harmonic_flag=f
 
@@ -48,22 +48,22 @@
 	tmag_out=1
 
 	resp_flag=t
-	singcoup_flag=t
+	singcoup_flag=f
 
 	singfld_flag=t
-	pmodb_flag=f
+	pmodb_flag=t
 	xbnormal_flag=t
 
-	eqbrzphi_flag=f
-	brzphi_flag=f
+	eqbrzphi_flag=t
+	brzphi_flag=t
 	xrzphi_flag=f
 	vbrzphi_flag=f
-	vpbrzphi_flag=f
+	vpbrzphi_flag=t
 	vvbrzphi_flag=f
 
 	bin_flag=t
 	bin_2d_flag=t
 /
 &ipec_diagnose
-	div_flag=f
+	div_flag=t
 /

@@ -157,13 +157,16 @@ c-----------------------------------------------------------------------
          grre_real=MATMUL(vgrre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/)) 
                   
-         DO itheta=0,vmtheta
+         DO itheta=0,vmtheta-1
             rtheta=vmtheta-itheta
-            chi_fun(itheta)=(grri_real(rtheta)-
+            chi_fun(itheta+1)=(grri_real(rtheta)-
      $           ifac*grri_imag(rtheta))*EXP(-ifac*vn*dphi(itheta))
-            che_fun(itheta)=(grre_real(rtheta)-
+            che_fun(itheta+1)=(grre_real(rtheta)-
      $           ifac*grre_imag(rtheta))*EXP(-ifac*vn*dphi(itheta))
          ENDDO
+         chi_fun(0)=chi_fun(vmtheta)
+         che_fun(0)=che_fun(vmtheta)
+
          chi_fun=chi_fun/(twopi**2)
          che_fun=-che_fun/(twopi**2)
          IF (vmfac(i) == 0) THEN
@@ -329,11 +332,11 @@ c-----------------------------------------------------------------------
          grre_real=MATMUL(vgrre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))            
          
-         DO itheta=0,mthvac
+         DO itheta=0,mthvac-1
             rtheta=mthvac-itheta
-            chi_fun(itheta)=(grri_real(rtheta)-
+            chi_fun(itheta+1)=(grri_real(rtheta)-
      $           ifac*grri_imag(rtheta))*EXP(-ifac*nn*dphi(itheta))
-            che_fun(itheta)=(grre_real(rtheta)-
+            che_fun(itheta+1)=(grre_real(rtheta)-
      $           ifac*grre_imag(rtheta))*EXP(-ifac*nn*dphi(itheta))
          ENDDO
          chi_fun(0)=chi_fun(mthvac)

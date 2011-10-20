@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: a,b,u,vt
 
       REAL(r8), DIMENSION(5*mpert) :: rwork
-      COMPLEX(r8), DIMENSION(4*mpert) :: work
+      COMPLEX(r8), DIMENSION(3*mpert) :: work
 c-----------------------------------------------------------------------
 c     svd analysis for permeability matrix.
 c-----------------------------------------------------------------------
@@ -53,7 +53,7 @@ c-----------------------------------------------------------------------
       s=0
       u=0
       vt=0
-      lwork=4*mpert
+      lwork=3*mpert
       CALL zgesvd('S','S',mpert,mpert,a,mpert,s,u,mpert,vt,mpert,
      $     work,lwork,rwork,info)
       DO i=1,mpert 

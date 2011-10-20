@@ -53,6 +53,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute the perturbed quantities and contruct hermitian matrices.
 c-----------------------------------------------------------------------
+         ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
+     $        kap_mn(4,mpert),kax_mn(mpert))
          CALL ipeq_alloc
          CALL ipeq_sol(psilim)
          CALL ipeq_contra(psilim)

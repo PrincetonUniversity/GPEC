@@ -471,9 +471,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER :: grri_real,grri_imag,
      $     grre_real,grre_imag
 
-      ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
-     $     kap_mn(4,mpert),kax_mn(mpert))
-
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
      $     grre_real(nths2),grre_imag(nths2))
 c-----------------------------------------------------------------------
@@ -513,13 +510,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     return into original coordinates.
 c-----------------------------------------------------------------------
-      DO itheta=0,mthvac
+      DO itheta=0,mthvac-1
          rtheta=mthvac-itheta
-         chi_fun(itheta)=(grri_real(rtheta)-ifac*grri_imag(rtheta))
+         chi_fun(itheta+1)=(grri_real(rtheta)-ifac*grri_imag(rtheta))
      $        *EXP(-ifac*nn*dphi(itheta))
-         che_fun(itheta)=(grre_real(rtheta)-ifac*grre_imag(rtheta))
+         che_fun(itheta+1)=(grre_real(rtheta)-ifac*grre_imag(rtheta))
      $        *EXP(-ifac*nn*dphi(itheta))
       ENDDO
+      chi_fun(0)=chi_fun(mthvac)
+      che_fun(0)=che_fun(mthvac)
 c-----------------------------------------------------------------------
 c     normalize chi functions of vacuum.
 c-----------------------------------------------------------------------

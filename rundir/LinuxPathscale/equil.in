@@ -1,10 +1,10 @@
 &equil_control
 	eq_type="efit"
-	eq_filename="../../equilibria/g132633.00608_nstx_lrdfit9"
+	eq_filename="/u/jpark/data/equilibria/efit/g124995.02502_d3d"
 	jac_type="hamada"
 	grid_type="ldp"
 	psilow=1e-4
-	psihigh=0.98
+	psihigh=0.99
 	mpsi=128
 	mtheta=256
 	newq0=0
