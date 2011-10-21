@@ -95,6 +95,33 @@ c-----------------------------------------------------------------------
       vvbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
+
+      singcurs_flag=.FALSE.
+      xbcontra_flag=.FALSE.
+      xbnobo_flag=.FALSE.
+      d3_flag=.FALSE.
+      div_flag=.FALSE.
+      pmodbst_flag=.FALSE.
+      pmodbrz_flag=.FALSE.
+      rzphibx_flag=.FALSE.
+      radvar_flag=.FALSE.
+      eigen_flag=.FALSE.
+      magpot_flag=.FALSE.
+      arbsurf_flag=.FALSE.
+      angles_flag=.FALSE.
+      surfmode_flag=.FALSE.
+      rzpgrid_flag=.FALSE.
+      m3d_flag=.FALSE.
+      cas3d_flag=.FALSE.
+      test_flag=.FALSE.
+
+      majr=10.0
+      minr=1.0
+      lowmode=-10
+      highmode=10
+      m3mode=2
+      resol=1e4
+      smallwidth=1e-6
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------

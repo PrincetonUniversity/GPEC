@@ -513,9 +513,9 @@ c-----------------------------------------------------------------------
       DO itheta=0,mthvac-1
          rtheta=mthvac-itheta
          chi_fun(itheta+1)=(grri_real(rtheta)-ifac*grri_imag(rtheta))
-     $        *EXP(-ifac*nn*dphi(itheta))
+     $        *EXP(-ifac*nn*dphi(itheta+1))
          che_fun(itheta+1)=(grre_real(rtheta)-ifac*grre_imag(rtheta))
-     $        *EXP(-ifac*nn*dphi(itheta))
+     $        *EXP(-ifac*nn*dphi(itheta+1))
       ENDDO
       chi_fun(0)=chi_fun(mthvac)
       che_fun(0)=che_fun(mthvac)

@@ -160,9 +160,9 @@ c-----------------------------------------------------------------------
          DO itheta=0,vmtheta-1
             rtheta=vmtheta-itheta
             chi_fun(itheta+1)=(grri_real(rtheta)-
-     $           ifac*grri_imag(rtheta))*EXP(-ifac*vn*dphi(itheta))
+     $           ifac*grri_imag(rtheta))*EXP(-ifac*vn*dphi(itheta+1))
             che_fun(itheta+1)=(grre_real(rtheta)-
-     $           ifac*grre_imag(rtheta))*EXP(-ifac*vn*dphi(itheta))
+     $           ifac*grre_imag(rtheta))*EXP(-ifac*vn*dphi(itheta+1))
          ENDDO
          chi_fun(0)=chi_fun(vmtheta)
          che_fun(0)=che_fun(vmtheta)
@@ -335,9 +335,9 @@ c-----------------------------------------------------------------------
          DO itheta=0,mthvac-1
             rtheta=mthvac-itheta
             chi_fun(itheta+1)=(grri_real(rtheta)-
-     $           ifac*grri_imag(rtheta))*EXP(-ifac*nn*dphi(itheta))
+     $           ifac*grri_imag(rtheta))*EXP(-ifac*nn*dphi(itheta+1))
             che_fun(itheta+1)=(grre_real(rtheta)-
-     $           ifac*grre_imag(rtheta))*EXP(-ifac*nn*dphi(itheta))
+     $           ifac*grre_imag(rtheta))*EXP(-ifac*nn*dphi(itheta+1))
          ENDDO
          chi_fun(0)=chi_fun(mthvac)
          che_fun(0)=che_fun(mthvac)
@@ -430,11 +430,10 @@ c     change and reverse poloidal and torodial coordinates.
 c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bnomn)
       bwp_fun=bwp_fun*delpsi*jacs/(twopi**2)
-      DO itheta=0,mthvac-1
+      DO itheta=0,mthvac
          rtheta=mthvac-itheta
-         rbwp_fun(itheta+1)=CONJG(bwp_fun(rtheta))
+         rbwp_fun(itheta)=CONJG(bwp_fun(rtheta))
       ENDDO
-      rbwp_fun(0)=rbwp_fun(mthvac)
       CALL iscdftf(mfac,mpert,rbwp_fun,mthvac,rbwp_mn)
 c-----------------------------------------------------------------------
 c     write scalars.
