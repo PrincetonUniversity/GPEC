@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
       lmfac=(/(m,m=lmlow,lmhigh)/)
       IF (nn<10) THEN
          WRITE(UNIT=sn,FMT='(I1)')nn
-         sn=TRIM(ADJUSTR(sn))
+         sn=ADJUSTL(sn)
       ELSE
          WRITE(UNIT=sn,FMT='(I2)')nn
       ENDIF

@@ -27,6 +27,7 @@ c-----------------------------------------------------------------------
      $     radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag
+      LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: brrmn,bnomn,fxmn,xwpmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
@@ -41,7 +42,7 @@ c-----------------------------------------------------------------------
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,divzero_flag,
-     $     bin_flag,bin_2d_flag,fun_flag,flux_flag
+     $     bin_flag,bin_2d_flag,fun_flag,flux_flag,sbrzphi_flag,ss_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,pmodbst_flag,pmodbrz_flag,
      $     rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -98,6 +99,10 @@ c-----------------------------------------------------------------------
       bin_2d_flag=.TRUE.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
+      sbrzphi_flag=.FALSE.
+      DO i=1,100 
+         ss_flag(i)=.FALSE.
+      ENDDO
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.
@@ -203,7 +208,8 @@ c-----------------------------------------------------------------------
       lmlow=mmin
       lmhigh=mmax
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag) psixy=1
+     $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag .OR. 
+     $     sbrzphi_flag) psixy=1
       IF (eqoff_flag) psixy=0
 c-----------------------------------------------------------------------
 c     check time.
@@ -305,6 +311,15 @@ c-----------------------------------------------------------------------
             CALL ipout_xbrzphi(mode,xwpmn,nr,nz,brrmn,bnomn)
             DEALLOCATE(ipiv,invmats,temp1)
          ENDIF
+      ENDIF
+      IF (singfld_flag .AND. sbrzphi_flag) THEN
+         IF (nrzeq_flag) THEN
+            nr=mr
+            nz=mz
+         ENDIF
+         DO i=1,msing
+            IF (ss_flag(i)) CALL ipout_sbrzphi(i,nr,nz)
+         ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.

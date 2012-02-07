@@ -4,7 +4,7 @@
 	ode_flag=t
 	vac_flag=t
 	sas_flag=t
-	nn=1
+	nn=3
 	delta_mlow=8
 	delta_mhigh=10
 	delta_mband=0
@@ -13,7 +13,7 @@
 	mthvac=960
 	thmax0=1
 	tol_nr=1e-6
-	tol_r=1e-6
+	tol_r=1e-7
 	crossover=1e-2
 	singfac_min=1e-5
 	ucrit=1e4

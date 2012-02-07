@@ -13,6 +13,7 @@ c      4. ipout_singfld
 c      5. ipout_pmodb
 c      6. ipout_xbnormal
 c      7. ipout_xbrzphi
+c      8. ipout_sbrzphi
 c-----------------------------------------------------------------------
 c     subprogram 0. ipout_mod.
 c     module declarations.
@@ -62,7 +63,8 @@ c-----------------------------------------------------------------------
          s(i)=-1/s(i)
       ENDDO
 
-      CALL ascii_open(out_unit,"ipec_response_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipec_response_n"//
+     $	   TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_RESPONSE: Response parameters"
       WRITE(out_unit,*)
       WRITE(out_unit,'(3(1x,a12,I4))')
@@ -573,7 +575,7 @@ c-----------------------------------------------------------------------
 c     write matrix.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipec_singcoup_matrix_n"//
-     $     sn//".out","UNKNOWN")
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_SINGCOUP_MATRIX: Coupling matrices"//
      $     " between resonant field and external field"
       WRITE(out_unit,*)
@@ -630,7 +632,7 @@ c-----------------------------------------------------------------------
       CALL ascii_close(out_unit)
       
       CALL ascii_open(out_unit,"ipec_singcoup_svd_n"//
-     $     sn//".out","UNKNOWN")
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_SINGCOUP_SVD: SVD analysis"//
      $     " for coupling matrices"
       WRITE(out_unit,*)
@@ -766,23 +768,23 @@ c-----------------------------------------------------------------------
                CALL ipec_stop(message)
             ENDIF            
          ENDDO
-
+         
          CALL ascii_close(in_unit)
          rawmn=dcosmn+ifac*dsinmn
          hawmn=rawmn(:,nn)
-
+         
          DEALLOCATE(dcosmn,dsinmn,rawmn)
          
       ELSE IF (harmonic_flag) THEN
-
+         
          DO i=-hmnum,hmnum
             IF ((-mmin+i>=1).AND.(-mmin+i<=lmpert)) THEN
                hawmn(-mmin+i+1)=cosmn(i)+ifac*sinmn(i)
             ENDIF
          ENDDO
-
+         
       ENDIF
-
+      
  1000 FORMAT(1x,25f12.6)         
  1001 FORMAT(1x,33f12.6)
  1010 FORMAT(11(1x,e15.8))
@@ -857,7 +859,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipec_control_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipec_control_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_CONTROL: "//
      $     "Plasma response for an external perturbation on the "//
      $     "control surface"
@@ -963,8 +966,8 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,binfun,mthsurf,bninmn)     
          CALL iscdftb(mfac,mpert,boutfun,mthsurf,bnoutmn)    
          
-         CALL ascii_open(out_unit,"ipec_control_fun_n"//sn//
-     $     ".out","UNKNOWN")
+         CALL ascii_open(out_unit,"ipec_control_fun_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
      $        "Plasma response for an external perturbation on the "//
      $        "control surface in functions"
@@ -1035,6 +1038,7 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"Computing total resonant fields"
       CALL ipeq_alloc
       CALL idcon_build(egnum,xspimn)
+      IF (sbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c     delta is delta*chi1*sq%f(4) and j_c is j_c/(chi1*sq%f(4))
@@ -1140,6 +1144,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute coordinate-independent resonant field.
 c----------------------------------------------------------------------- 
+         IF (sbrzphi_flag) THEN
+            singbno_mn(:,ising)=-singflx_mn(:,ising)
+            CALL ipeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
+         ENDIF
          singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)
 c-----------------------------------------------------------------------
 c     compute pseudo-chirikov parameter.
@@ -1153,17 +1161,18 @@ c-----------------------------------------------------------------------
      $           respsi-singtype(ising-1)%psifac)/2.0
          ENDIF
          chirikov(ising)=island_hwidth(ising)/hdist
-         WRITE(*,'(1x,a6,es10.3,a6,f6.3,a26,es10.3)')
+         WRITE(*,'(1x,a6,es10.3,a6,f6.3,a25,es10.3)')
      $        "psi = ",singtype(ising)%psifac,
      $        ", q = ",singtype(ising)%q,
-     $        ", total resonant fields = ",
+     $        ", total resonant field = ",
      $        ABS(singflx_mn(resnum(ising),ising))
       ENDDO
       CALL ipeq_dealloc
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipec_singfld_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipec_singfld_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_SINGFLD: "//
      $     "Resonant fields, singular currents, and islands"
       WRITE(out_unit,*)       
@@ -1314,8 +1323,8 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ipeq_dealloc
 
-      CALL ascii_open(out_unit,"ipec_pmodb_n"//sn//".out","UNKNOWN")
-  
+      CALL ascii_open(out_unit,"ipec_pmodb_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_PMODB: "//
      $     "Components in perturbed mod b"
       WRITE(out_unit,*)     
@@ -1339,9 +1348,8 @@ c-----------------------------------------------------------------------
       CALL ascii_close(out_unit)
 
       IF (fun_flag) THEN
-         CALL ascii_open(out_unit,"ipec_pmodb_fun_n"//sn//
-     $        ".out","UNKNOWN")
-  
+         CALL ascii_open(out_unit,"ipec_pmodb_fun_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_PMODB_FUN: "//
      $        "Components in perturbed mod b in functions"
          WRITE(out_unit,*)     
@@ -1498,8 +1506,7 @@ c-----------------------------------------------------------------------
       ENDDO
 
       CALL ascii_open(out_unit,"ipec_xbnormal_n"//
-     $     sn//".out","UNKNOWN")
-
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPOUT_XBNROMAL: "//
      $     "Normal components of displacement and field"
       WRITE(out_unit,*)     
@@ -1523,8 +1530,7 @@ c-----------------------------------------------------------------------
 
       IF (fun_flag) THEN
          CALL ascii_open(out_unit,"ipec_xbnormal_fun_n"//
-     $        sn//".out","UNKNOWN")
-         
+     $        TRIM(sn)//".out","UNKNOWN")         
          WRITE(out_unit,*)"IPOUT_XBNROMAL_FUN: "//
      $        "Normal components of displacement and field in functions"
          WRITE(out_unit,*)     
@@ -1551,8 +1557,7 @@ c-----------------------------------------------------------------------
 
       IF (flux_flag) THEN
          CALL ascii_open(out_unit,"ipec_xbnormal_flux_n"//
-     $        sn//".out","UNKNOWN")
-         
+     $        TRIM(sn)//".out","UNKNOWN")         
          WRITE(out_unit,*)"IPOUT_XBNROMAL_FLUX: "//
      $        "Perturbed flux surfaces"
          WRITE(out_unit,*)     
@@ -1834,8 +1839,7 @@ c-----------------------------------------------------------------------
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (brzphi_flag) THEN
             DO i=0,nr
-               DO j=0,nz
-                  
+               DO j=0,nz                  
                   IF (gdl(i,j) /= 1) THEN
                      gdl(i,j)=vgdl(i,j)
                      bpr(i,j)=vpbr(i,j)
@@ -1863,7 +1867,7 @@ c     write results.
 c-----------------------------------------------------------------------
       IF (eqbrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_eqbrzphi_n"//
-     $        sn//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_EQBRZPHI: Eq. b field in rzphi grid"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -1883,7 +1887,7 @@ c-----------------------------------------------------------------------
 
       IF (brzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_brzphi_n"//
-     $        sn//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_BRZPHI: Perturbed field in rzphi grid"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -1907,7 +1911,7 @@ c-----------------------------------------------------------------------
 
       IF (brzphi_flag .AND. vpbrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_pbrzphi_n"//
-     $        sn//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_PBRZPHI: Perturbed field in rzphi grid"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -1931,7 +1935,7 @@ c-----------------------------------------------------------------------
 
       IF (xrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_xrzphi_n"//
-     $        sn//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_XRZPHI: Displacements in rzphi grid"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -1955,8 +1959,7 @@ c-----------------------------------------------------------------------
 
       IF (vbrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_vbrzphi_n"//
-     $        sn//".out","UNKNOWN")
-
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_VBRZPHI: Vacuum field in rzphi grid"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -1980,7 +1983,7 @@ c-----------------------------------------------------------------------
 
       IF (vpbrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_vpbrzphi_n"//
-     $        sn//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_VPBRZPHI: Vacuum field in rzphi grid"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -2004,7 +2007,7 @@ c-----------------------------------------------------------------------
 
       IF (vvbrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_vvbrzphi_n"//
-     $        sn//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_VVBRZPHI: Vacuum field in rzphi grid"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -2032,5 +2035,74 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_xbrzphi
+c-----------------------------------------------------------------------
+c     subprogram 8. ipout_sbrzphi.
+c     write brzphi components restored by removing shielding currents.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_sbrzphi(snum,nr,nz)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: snum,nr,nz
+
+      INTEGER :: i,j,ipert,iindex
+      REAL(r8) :: mid,bt0,ileft
+
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.      
+
+      INTEGER, DIMENSION(0:nr,0:nz) :: vgdl
+      REAL(r8), DIMENSION(0:nr,0:nz) :: vgdr,vgdz
+      COMPLEX(r8), DIMENSION(0:nr,0:nz) :: vbr,vbz,vbp
+c-----------------------------------------------------------------------
+c     build solutions.
+c-----------------------------------------------------------------------
+      ! initialization
+      vbr = 0
+      vbz = 0
+      vbp = 0
+
+      IF (snum<10) THEN
+         WRITE(UNIT=ss,FMT='(I1)')snum
+         ss=TRIM(ADJUSTL(ss))
+      ELSE
+         WRITE(UNIT=ss,FMT='(I2)')snum
+      ENDIF
+
+      WRITE(*,*)"Computing vacuum fields by "//
+     $     TRIM(ss)//"th resonant field"
+      CALL ipvacuum_bnormal(singtype(snum)%psifac,
+     $     singbno_mn(:,snum),nr,nz)
+      CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+     $     nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
+c-----------------------------------------------------------------------
+c     write results.
+c-----------------------------------------------------------------------
+      CALL ascii_open(out_unit,"ipec_vsbrzphi_n"//
+     $     TRIM(sn)//"_s"//TRIM(ss)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPEC_VSBRZPHI: Vacuum field in rzphi grid by "//
+     $     TRIM(ss)//"th resonant field"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $     "real(vsb_r)","imag(vsb_r)","real(vsb_z)","imag(vsb_z)",
+     $     "real(vsb_phi)","imag(vsb_phi)"
+      
+      DO i=0,nr
+         DO j=0,nz
+            WRITE(out_unit,'(1x,I2,8(es16.8))')
+     $           vgdl(i,j),vgdr(i,j),vgdz(i,j),
+     $           REAL(vbr(i,j)),AIMAG(vbr(i,j)),
+     $           REAL(vbz(i,j)),AIMAG(vbz(i,j)),
+     $           REAL(vbp(i,j)),AIMAG(vbp(i,j))
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_sbrzphi
    
       END MODULE ipout_mod

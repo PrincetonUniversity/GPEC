@@ -83,7 +83,8 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j
 
-      CALL ascii_open(out_unit,"ipdiag_magpot_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_magpot_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_MAGPOT: Magnetic potential errors"
       WRITE(out_unit,'(1x,a8,1x,I4)')"mpert=",mpert
       WRITE(out_unit,'(1x,a4,2(1x,a16))')"mode","chperr1","chperr2"
@@ -515,7 +516,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write the results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_deltas_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_deltas_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_DELTAS: "//
      $     "Asymtotic analysis for deltas at rational surfaces"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rsing=",rsing
@@ -531,7 +533,7 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
       CALL ascii_open(out_unit,"ipdiag_singcurs_n"//
-     $     sn//".out","UNKNOWN")
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_SINGCURS: "//
      $     "asymtotic analysis for singular currents at "//
      $     "rational surfaces"
@@ -574,7 +576,7 @@ c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xwpimn)
       WRITE(*,*)"Computing contravariant components in detail"
       CALL ascii_open(out_unit,"ipdiag_xbcontra_n"//
-     $        sn//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XBCONTRA: "//
      $     "Contravariant components of displacement and field"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep
@@ -703,7 +705,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_xnobo_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_xnobo_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XNOBO: "//
      $     "Perturbed normal displacement vectors on the boundary"      
       WRITE(out_unit,'(6(1x,a16))')"r","z",
@@ -713,7 +716,8 @@ c-----------------------------------------------------------------------
      $        REAL(xnorvc(ithnum)),REAL(xnozvc(ithnum)),
      $        AIMAG(xnorvc(ithnum)),AIMAG(xnozvc(ithnum))
       ENDDO
-      CALL ascii_open(out_unit,"ipdiag_bnobo_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_bnobo_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_BNOBO: "//
      $     "perturbed normal field vectors on the boundary"      
       WRITE(out_unit,'(6(1x,a16))')"r","z",
@@ -737,7 +741,7 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
          
          filein="iptemp.txt"
-         file1="ipidl_3dsurf_xnobo_n"//sn//".out"
+         file1="ipidl_3dsurf_xnobo_n"//TRIM(sn)//".out"
 
          ddist=0.2
          mmtheta=mthnum
@@ -754,7 +758,7 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
          
          filein="iptemp.txt"
-         file1="ipidl_3dsurf_bnobo_n"//sn//".out"
+         file1="ipidl_3dsurf_bnobo_n"//TRIM(sn)//".out"
 
          ddist=0.2
          mmtheta=mthnum
@@ -871,7 +875,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------      
-      CALL ascii_open(out_unit,"ipdiag_pmodbst_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_pmodbst_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_PMODBST: "//
      $     "Perturbed mod b strength on flux surfaces"
       WRITE(out_unit,'(10(1x,a16))')"psi","eulmodbst","eulbparst",
@@ -981,7 +986,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_pmodbrz_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_pmodbrz_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_PMODBRZ: "//
      $     "Perturbed mod b on a poloidal plane"
       WRITE(out_unit,'(1x,a8,1x,I4)')"rstep=",rstep
@@ -1131,7 +1137,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_rzphibx_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_rzphibx_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RZPHIBX: "//
      $     "Give rzphibx information in hamada coordinates"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rstep=",rstep
@@ -1325,7 +1332,8 @@ c-----------------------------------------------------------------------
       CALL bicube_dealloc(rfz)
       CALL bicube_dealloc(ifz)
 
-      CALL ascii_open(out_unit,"ipdiag_rzpdiv_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_rzpdiv_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       
       WRITE(out_unit,*)"IPEC_RZPDIV: Divergence in rzphi grid"
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
@@ -1366,7 +1374,8 @@ c-----------------------------------------------------------------------
       psitor(:) = qs%fsi(:,1)/qintb
       rhotor(:) = SQRT(psitor(:))
       CALL spline_dealloc(qs)
-      CALL ascii_open(out_unit,"ipdiag_radvar_n"//sn//".out","UNKNOWN")
+      CALL ascii_open(out_unit,"ipdiag_radvar_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RADVAR: "//
      $     "Various radial variables"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep

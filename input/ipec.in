@@ -12,7 +12,6 @@
 	mmax=64
 
         harmonic_flag=f
-
 	cosmn(3)=-3.131e-5
 	cosmn(4)=-6.927e-5
 	cosmn(5)=1.1177e-4
@@ -23,7 +22,6 @@
 	cosmn(10)=2.1247e-4
 	cosmn(11)=1.9247e-4
 	cosmn(12)=4.222e-5
-	
 	sinmn(3)=-1.209e-5
 	sinmn(4)=-1.242e-5
 	sinmn(5)=-1.184e-5
@@ -46,24 +44,24 @@
 	jac_out="hamada"
 	jsurf_out=0
 	tmag_out=1
-
 	resp_flag=t
 	singcoup_flag=f
-
 	singfld_flag=t
-	pmodb_flag=t
-	xbnormal_flag=t
-
+	pmodb_flag=f
+	xbnormal_flag=f
 	eqbrzphi_flag=t
 	brzphi_flag=t
 	xrzphi_flag=f
 	vbrzphi_flag=f
 	vpbrzphi_flag=t
 	vvbrzphi_flag=f
-
 	bin_flag=t
 	bin_2d_flag=t
+
+	sbrzphi_flag=t
+	ss_flag(7)=t
+	ss_flag(8)=t
 /
 &ipec_diagnose
-	div_flag=t
+	div_flag=f
 /

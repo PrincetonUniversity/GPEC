@@ -99,7 +99,7 @@ c-----------------------------------------------------------------------
      $           flxmats(:,i),r8))
             surfet(j,i)=surfep(j,i)+surfee(i)
          ENDDO
-         WRITE(*,'(1x,a12,i3,a7,es10.3,a11,es10.3)')"eigenmode = ",i,
+         WRITE(*,'(1x,a12,i3,a7,es10.3,a10,es10.3)')"eigenmode = ",i,
      $        ", dw = ",surfet(1,i),
      $        ", error = ",ABS(1-surfet(2,i)/surfet(1,i))   
          CALL ipeq_dealloc

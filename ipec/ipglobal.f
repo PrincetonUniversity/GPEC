@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
-     $     fun_flag,flux_flag
+     $     fun_flag,flux_flag,sbrzphi_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
@@ -25,7 +25,7 @@ c-----------------------------------------------------------------------
      $     qmin,qmax,seconds,rfac,eta,singfac_min,
      $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,sing_spot,reg_spot
 
-      CHARACTER(1) :: sn
+      CHARACTER(2) :: sn,ss
       CHARACTER(10) :: date,time,zone
       CHARACTER(16) :: jac_type,jac_in,jac_out,data_type
       CHARACTER(128) :: ieqfile,idconfile,ivacuumfile
@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
      $     edge_mn,edge_fun
       COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
-     $     permeabev,chimats,chemats,flxmats,kaxmats,
+     $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,fldflxmat
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
