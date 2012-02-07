@@ -12,7 +12,8 @@ c-----------------------------------------------------------------------
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
-     $     bin_flag,bin_2d_flag,fixed_boundary_flag
+     $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
+     $     fun_flag,flux_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
@@ -52,7 +53,7 @@ c-----------------------------------------------------------------------
 
 
       COMPLEX(r8), DIMENSION(:), POINTER ::
-     $     xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,nbwp1_mn,
+     $     xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,

@@ -91,8 +91,6 @@ c     compute derivative of b fields.
 c-----------------------------------------------------------------------
       bwp1_mn=(twopi*ifac*chi1*singfac)*xsp1_mn-
      $     twopi*ifac*chi1*nn*q1*xsp_mn
-      nbwp1_mn=(twopi*ifac*singfac)/q*xsp1_mn+
-     $     twopi*ifac*(-mfac*q1)/(q**2)*xsp_mn
 c-----------------------------------------------------------------------
 c     compute modified quantities.
 c-----------------------------------------------------------------------
@@ -428,10 +426,17 @@ c     three vector components.
 c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
-      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
-      CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
-      CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
-      CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+      IF (reg_flag) THEN
+         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
+         CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
+         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xmz_mn)
+         CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bmz_mn)
+      ELSE
+         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+         CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
+         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
+         CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+      ENDIF
       xrr_fun=(t11*xwp_fun+t12*xwt_fun)/jacs
       brr_fun=(t11*bwp_fun+t12*bwt_fun)/jacs
       xrz_fun=(t21*xwp_fun+t22*xwt_fun)/jacs
@@ -1064,7 +1069,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(xsp_mn(mpert),xsp1_mn(mpert),xss_mn(mpert),xms_mn(mpert),
      $     xwp_mn(mpert),xwt_mn(mpert),xwz_mn(mpert),xmt_mn(mpert),
      $     bwp_mn(mpert),bwt_mn(mpert),bwz_mn(mpert),bmt_mn(mpert),
-     $     bwp1_mn(mpert),nbwp1_mn(mpert),
+     $     bwp1_mn(mpert),
      $     xvp_mn(mpert),xvt_mn(mpert),xvz_mn(mpert),xmz_mn(mpert),
      $     bvp_mn(mpert),bvt_mn(mpert),bvz_mn(mpert),bmz_mn(mpert),
      $     xno_mn(mpert),xta_mn(mpert),xpa_mn(mpert),
@@ -1082,7 +1087,7 @@ c     deallocate essential vectors in fourier space
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_dealloc
 
-      DEALLOCATE(xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,nbwp1_mn,
+      DEALLOCATE(xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,

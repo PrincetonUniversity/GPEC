@@ -373,7 +373,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ising,i,itheta,resnum
       REAL(r8) :: respsi,rrespsi,lrespsi,bigwidth,astep,lpsi,rpsi,
      $     sqrpsi,correc,lq1,rq1
-      COMPLEX(r8) :: lnbwp1mn,rnbwp1mn
+      COMPLEX(r8) :: lbwp1mn,rbwp1mn
 
       INTEGER, DIMENSION(rsing) :: logsteps
       REAL(r8), DIMENSION(rsing) :: j_c
@@ -437,7 +437,7 @@ c-----------------------------------------------------------------------
             jcfun(itheta)=sqreqb(itheta)/(delpsi(itheta)**3)
          ENDDO
          j_c(ising)=1.0/issurfint(jcfun,mthsurf,respsi,0,0)*
-     $        (chi1*sq%f(4))**2/mu0
+     $        chi1**2*sq%f(4)/mu0
 c-----------------------------------------------------------------------
 c     main loop for surface current on the rational surfaces.
 c-----------------------------------------------------------------------
@@ -449,7 +449,7 @@ c-----------------------------------------------------------------------
 c     calculate delta and correction term at lpsi.
 c-----------------------------------------------------------------------
             CALL ipeq_sol(lpsi)
-            lnbwp1mn=nbwp1_mn(resnum)
+            lbwp1mn=bwp1_mn(resnum)
             CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
             CALL spline_eval(sq,lpsi,0)
             DO itheta=0,mthsurf
@@ -467,8 +467,7 @@ c-----------------------------------------------------------------------
                w(3,2)=rzphi%fy(3)/(twopi*rfac)
                sqrpsi=w(1,1)**2+w(1,2)**2
                correc=(w(1,1)*w(2,1)+w(1,2)*w(2,2)-
-     $              (w(1,1)*w(3,1)+w(1,2)*w(3,2))/sq%f(4))/
-     $              (sqrpsi*sq%f(4)*chi1)
+     $              (w(1,1)*w(3,1)+w(1,2)*w(3,2))/sq%f(4))/sqrpsi
                lcorfun(itheta)=bwp_fun(itheta)*correc
             ENDDO
             CALL iscdftf(mfac,mpert,lcorfun,mthsurf,lcormn)
@@ -476,7 +475,7 @@ c-----------------------------------------------------------------------
 c     calculate delta and correction term at rpsi.
 c-----------------------------------------------------------------------
             CALL ipeq_sol(rpsi)
-            rnbwp1mn=nbwp1_mn(resnum)
+            rbwp1mn=bwp1_mn(resnum)
             CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
             CALL spline_eval(sq,rpsi,0)
             DO itheta=0,mthsurf
@@ -494,18 +493,19 @@ c-----------------------------------------------------------------------
                w(3,2)=rzphi%fy(3)/(twopi*rfac)
                sqrpsi=w(1,1)**2+w(1,2)**2
                correc=(w(1,1)*w(2,1)+w(1,2)*w(2,2)-
-     $              (w(1,1)*w(3,1)+w(1,2)*w(3,2))/sq%f(4))/
-     $              (sqrpsi*sq%f(4)*chi1)
+     $              (w(1,1)*w(3,1)+w(1,2)*w(3,2))/sq%f(4))/sqrpsi
                rcorfun(itheta)=bwp_fun(itheta)*correc
             ENDDO
             CALL iscdftf(mfac,mpert,rcorfun,mthsurf,rcormn)
-
             spot(ising,i)=astep/(nn*ABS(singtype(ising)%q1))
-            deltas(ising,i)=(rnbwp1mn-lnbwp1mn)/twopi
-            delcurs(ising,i)=j_c(ising)*
-     $           ifac/mfac(resnum)*deltas(ising,i)
+
+            deltas(ising,i)=rbwp1mn-lbwp1mn
+            delcurs(ising,i)=j_c(ising)*ifac/(twopi*mfac(resnum))*
+     $           deltas(ising,i)
             corcurs(ising,i)=-j_c(ising)*
      $           (rcormn(resnum)-lcormn(resnum))
+            delcurs(ising,i)=-delcurs(ising,i)/(twopi*ifac*nn)
+            corcurs(ising,i)=-corcurs(ising,i)/(twopi*ifac*nn)
             singcurs(ising,i)=delcurs(ising,i)-corcurs(ising,i)
          ENDDO
 

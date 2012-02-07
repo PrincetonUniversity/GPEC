@@ -35,13 +35,13 @@ c-----------------------------------------------------------------------
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,eqoff_flag
-      NAMELIST/ipec_control/resp_index,sing_spot,reg_spot
+      NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,divzero_flag,
-     $     bin_flag,bin_2d_flag
+     $     bin_flag,bin_2d_flag,fun_flag,flux_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,pmodbst_flag,pmodbrz_flag,
      $     rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -73,6 +73,7 @@ c-----------------------------------------------------------------------
 
       resp_index=0
       sing_spot=5e-4
+      reg_flag=.FALSE.
       reg_spot=5e-2
 
       jsurf_out=0
@@ -95,6 +96,8 @@ c-----------------------------------------------------------------------
       vvbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
+      fun_flag=.FALSE.
+      flux_flag=.FALSE.
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.
