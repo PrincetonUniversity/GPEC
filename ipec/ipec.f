@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,divzero_flag,
-     $     bin_flag,bin_2d_flag,fun_flag,flux_flag,sbrzphi_flag,ss_flag
+     $     bin_flag,bin_2d_flag,fun_flag,flux_flag,vsbrzphi_flag,ss_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,pmodbst_flag,pmodbrz_flag,
      $     rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -99,7 +99,7 @@ c-----------------------------------------------------------------------
       bin_2d_flag=.TRUE.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
-      sbrzphi_flag=.FALSE.
+      vsbrzphi_flag=.FALSE.
       DO i=1,100 
          ss_flag(i)=.FALSE.
       ENDDO
@@ -209,7 +209,7 @@ c-----------------------------------------------------------------------
       lmhigh=mmax
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag .OR. 
-     $     sbrzphi_flag) psixy=1
+     $     vsbrzphi_flag) psixy=1
       IF (eqoff_flag) psixy=0
 c-----------------------------------------------------------------------
 c     check time.
@@ -312,13 +312,13 @@ c-----------------------------------------------------------------------
             DEALLOCATE(ipiv,invmats,temp1)
          ENDIF
       ENDIF
-      IF (singfld_flag .AND. sbrzphi_flag) THEN
+      IF (singfld_flag .AND. vsbrzphi_flag) THEN
          IF (nrzeq_flag) THEN
             nr=mr
             nz=mz
          ENDIF
          DO i=1,msing
-            IF (ss_flag(i)) CALL ipout_sbrzphi(i,nr,nz)
+            IF (ss_flag(i)) CALL ipout_vsbrzphi(i,nr,nz)
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------

@@ -58,7 +58,7 @@
 	bin_flag=t
 	bin_2d_flag=t
 
-	sbrzphi_flag=t
+	vsbrzphi_flag=t
 	ss_flag(7)=t
 	ss_flag(8)=t
 /

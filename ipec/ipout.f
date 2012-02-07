@@ -13,7 +13,7 @@ c      4. ipout_singfld
 c      5. ipout_pmodb
 c      6. ipout_xbnormal
 c      7. ipout_xbrzphi
-c      8. ipout_sbrzphi
+c      8. ipout_vsbrzphi
 c-----------------------------------------------------------------------
 c     subprogram 0. ipout_mod.
 c     module declarations.
@@ -1038,7 +1038,7 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"Computing total resonant fields"
       CALL ipeq_alloc
       CALL idcon_build(egnum,xspimn)
-      IF (sbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
+      IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c     delta is delta*chi1*sq%f(4) and j_c is j_c/(chi1*sq%f(4))
@@ -1144,7 +1144,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute coordinate-independent resonant field.
 c----------------------------------------------------------------------- 
-         IF (sbrzphi_flag) THEN
+         IF (vsbrzphi_flag) THEN
             singbno_mn(:,ising)=-singflx_mn(:,ising)
             CALL ipeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
          ENDIF
@@ -2036,10 +2036,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_xbrzphi
 c-----------------------------------------------------------------------
-c     subprogram 8. ipout_sbrzphi.
+c     subprogram 8. ipout_vsbrzphi.
 c     write brzphi components restored by removing shielding currents.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_sbrzphi(snum,nr,nz)
+      SUBROUTINE ipout_vsbrzphi(snum,nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -2103,6 +2103,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipout_sbrzphi
+      END SUBROUTINE ipout_vsbrzphi
    
       END MODULE ipout_mod

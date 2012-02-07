@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
-     $     fun_flag,flux_flag,sbrzphi_flag
+     $     fun_flag,flux_flag,vsbrzphi_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
