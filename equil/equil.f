@@ -141,6 +141,8 @@ c-----------------------------------------------------------------------
          CALL read_eq_wdn
       CASE("dump")
          CALL read_eq_dump
+      CASE("lez2")
+         CALL read_eq_lez_2
       CASE DEFAULT
          CALL program_stop("Cannot recognize eq_type "//TRIM(eq_type))
       END SELECT

@@ -69,6 +69,7 @@ c-----------------------------------------------------------------------
       veta=twopi*vtheta
       vr=majr+vrfac*COS(veta)
       vz=0.0+vrfac*SIN(veta)
+      !surface jacobian with delpsi.
       jac=vrfac*vr
       dphi=0
       delpsi=1.0
@@ -341,6 +342,7 @@ c-----------------------------------------------------------------------
          ENDDO
          chi_fun(0)=chi_fun(mthvac)
          che_fun(0)=che_fun(mthvac)
+         !jacobian with twopi angles.
          chi_fun=chi_fun/(twopi**2)
          che_fun=-che_fun/(twopi**2)         
          kax_fun=(chi_fun-che_fun)/mu0

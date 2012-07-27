@@ -94,8 +94,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute modified quantities.
 c-----------------------------------------------------------------------
-      xms_mn=xss_mn*(singfac**2/(singfac**2+reg_spot**2))
-      bmt_mn=bwt_mn*(singfac**2/(singfac**2+reg_spot**2))
+      IF (reg_flag) THEN
+         xms_mn=xss_mn*(singfac**2/(singfac**2+reg_spot**2))
+         bmt_mn=bwt_mn*(singfac**2/(singfac**2+reg_spot**2))
+      ELSE
+         xms_mn=xss_mn
+         bmt_mn=bwt_mn
+      ENDIF
 
       DEALLOCATE(amat,bmat,cmat,fmats,gmats,kmats)
 c-----------------------------------------------------------------------
@@ -142,7 +147,6 @@ c-----------------------------------------------------------------------
       DO m1=mlow,mhigh
          ipert=ipert+1
          DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
-            m2=m1+dm
             jpert=ipert+dm
             xwp_mn(ipert)=xwp_mn(ipert)+jmat(dm)*xsp_mn(jpert)
             xwt_mn(ipert)=xwt_mn(ipert)-(jmat(dm)*xsp1_mn(jpert)+
@@ -158,7 +162,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute modified quantities.
 c-----------------------------------------------------------------------
-      xmt_mn=xwt_mn*(singfac**2/(singfac**2+reg_spot**2))
+      IF (reg_flag) THEN
+         xmt_mn=xwt_mn*(singfac**2/(singfac**2+reg_spot**2))
+         xmz_mn=xwz_mn*(singfac**2/(singfac**2+reg_spot**2))
+      ELSE
+         xmt_mn=xwt_mn
+         xmz_mn=xwz_mn
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -214,11 +224,11 @@ c-----------------------------------------------------------------------
          DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
             jpert=ipert+dm
             xvp_mn(ipert)=xvp_mn(ipert)+g11(dm)*xwp_mn(jpert)+
-     $           g12(dm)*xwt_mn(jpert)+g31(dm)*xwz_mn(jpert)
+     $           g12(dm)*xmt_mn(jpert)+g31(dm)*xmz_mn(jpert)
             xvt_mn(ipert)=xvt_mn(ipert)+g12(dm)*xwp_mn(jpert)+
-     $           g22(dm)*xwt_mn(jpert)+g23(dm)*xwz_mn(jpert)
+     $           g22(dm)*xmt_mn(jpert)+g23(dm)*xmz_mn(jpert)
             xvz_mn(ipert)=xvz_mn(ipert)+g31(dm)*xwp_mn(jpert)+
-     $           g23(dm)*xwt_mn(jpert)+g33(dm)*xwz_mn(jpert)
+     $           g23(dm)*xmt_mn(jpert)+g33(dm)*xmz_mn(jpert)
             bvp_mn(ipert)=bvp_mn(ipert)+g11(dm)*bwp_mn(jpert)+
      $           g12(dm)*bwt_mn(jpert)+g31(dm)*bwz_mn(jpert)
             bvt_mn(ipert)=bvt_mn(ipert)+g12(dm)*bwp_mn(jpert)+
@@ -227,11 +237,6 @@ c-----------------------------------------------------------------------
      $           g23(dm)*bwt_mn(jpert)+g33(dm)*bwz_mn(jpert)
          ENDDO
       ENDDO
-c-----------------------------------------------------------------------
-c     compute modified quantities.
-c-----------------------------------------------------------------------
-      xmz_mn=xvz_mn*(singfac**2/(singfac**2+reg_spot**2))
-      bmz_mn=bvz_mn*(singfac**2/(singfac**2+reg_spot**2))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -332,10 +337,10 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
       CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
       CALL iscdftb(mfac,mpert,bwz_fun,mthsurf,bwz_mn)
-      xta_fun=chi1*((q*xwt_fun-xwz_fun)*sqrpsi-xwp_fun*(
-     $     q*psithe-psiphi))/(eqb*jacs*delpsi)
-      bta_fun=chi1*((q*bwt_fun-bwz_fun)*sqrpsi-bwp_fun*(
-     $     q*psithe-psiphi))/(eqb*jacs*delpsi)
+      xta_fun=chi1*((q*xwt_fun-xwz_fun)*sqrpsi-
+     $     xwp_fun*(q*psithe-psiphi))/(eqb*jacs*delpsi)
+      bta_fun=chi1*((q*bwt_fun-bwz_fun)*sqrpsi-
+     $     bwp_fun*(q*psithe-psiphi))/(eqb*jacs*delpsi)
       CALL iscdftf(mfac,mpert,xta_fun,mthsurf,xta_mn)
       CALL iscdftf(mfac,mpert,bta_fun,mthsurf,bta_mn)
 c-----------------------------------------------------------------------
@@ -419,24 +424,17 @@ c-----------------------------------------------------------------------
          t12(itheta)=cos(eta)*v(2,1)-sin(eta)*v(2,2)
          t21(itheta)=sin(eta)*v(1,1)+cos(eta)*v(1,2)
          t22(itheta)=sin(eta)*v(2,1)+cos(eta)*v(2,2)
-         t33(itheta)=1.0/v(3,3)
+         t33(itheta)=-1.0/v(3,3)
       ENDDO
 c-----------------------------------------------------------------------
 c     three vector components.
 c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
-      IF (reg_flag) THEN
-         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
-         CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
-         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xmz_mn)
-         CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bmz_mn)
-      ELSE
-         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
-         CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
-         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
-         CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
-      ENDIF
+      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+      CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
+      CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
+      CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
       xrr_fun=(t11*xwp_fun+t12*xwt_fun)/jacs
       brr_fun=(t11*bwp_fun+t12*bwt_fun)/jacs
       xrz_fun=(t21*xwp_fun+t22*xwt_fun)/jacs
@@ -899,6 +897,8 @@ c-----------------------------------------------------------------------
          ftnfun=ftnfun/sqrt(wgtfun*r)
       CASE(4)
          ftnfun=ftnfun/delpsi
+      CASE(5)
+         ftnfun=ftnfun*delpsi
       END SELECT
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------

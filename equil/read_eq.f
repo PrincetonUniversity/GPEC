@@ -5,16 +5,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0.  read_eq_mod.
-c     1.  read_eq_get_flux.
-c     2.  read_eq_fluxgrid.
-c     3.  read_eq_miller.
-c     4.  read_eq_miller4.
-c     5.  read_eq_chease.
-c     6.  read_eq_chease2.
-c     7   read_eq_chum.
-c     8.  read_eq_galkin.
-c     9.  read_eq_efit.
+c     0. read_eq_mod.
+c     1. read_eq_get_flux.
+c     2. read_eq_fluxgrid.
+c     3. read_eq_miller.
+c     4. read_eq_miller4.
+c     5. read_eq_chease.
+c     6. read_eq_chease2.
+c     7 read_eq_chum.
+c     8. read_eq_galkin.
+c     9. read_eq_efit.
 c     10. read_eq_rsteq.
 c     11. read_eq_ldp_d.
 c     12. read_eq_ldp_i.
@@ -28,6 +28,7 @@ c     19. read_eq_popov2.
 c     20. read_eq_rtaylor.
 c     21. read_eq_dump.
 c     22. read_eq_wdn.
+c     23. read_eq_lez_2
 c-----------------------------------------------------------------------
 c     subprogram 0. read_eq_mod.
 c     module declarations.
@@ -639,8 +640,6 @@ c-----------------------------------------------------------------------
       rmax=rgrid+xdim
       zmin=-zdim/2
       zmax=zdim/2
-      ro=rmaxis
-      zo=zmaxis
       psio=ssibry1-ssimag1
       sq_in%xs=(/(ia,ia=0,ma)/)/dfloat(ma)
       sq_in%fs(:,1)=ABS(sq_in%fs(:,1))
@@ -839,7 +838,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE read_eq_ldp_i
+      END SUBROUTINE READ_eq_ldp_i
 c-----------------------------------------------------------------------
 c     subprogram 13. read_eq_jsolver.
 c     reads data from Steve Jardin's JSOLVER inverse equilibrium.
@@ -887,6 +886,7 @@ c-----------------------------------------------------------------------
       READ(in_unit,10)x
       READ(in_unit,10)z
       READ(in_unit,10)aj3
+c      READ(in_unit,10)aj
       CALL ascii_close(in_unit)
 c-----------------------------------------------------------------------
 c     copy 1D arrays.
@@ -1570,4 +1570,83 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE read_eq_wdn
+c-----------------------------------------------------------------------
+c     subprogram 23. read_eq_lez_2.
+c     reads data from Leonid E. Zakharov's equilibrium code (by kkim).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_lez_2
+
+      LOGICAL :: file_stat
+      INTEGER :: ia,ja,ma,mtau
+      REAL(r4), DIMENSION(:), POINTER :: psis,qs,fs,ps
+      REAL(r4), DIMENSION(:,:), POINTER :: rg,zg
+c-----------------------------------------------------------------------
+c     open equilibrium file.
+c-----------------------------------------------------------------------
+      INQUIRE(FILE=TRIM(eq_filename),EXIST=file_stat)
+      IF (.NOT.file_stat) CALL program_stop
+     $     ("Can't open input file "//TRIM(eq_filename))
+      CALL ascii_open(in_unit,TRIM(eq_filename),"OLD")
+c-----------------------------------------------------------------------
+c     read sizes and allocate input arrays.
+c-----------------------------------------------------------------------
+      READ(in_unit,*)ma
+      ma=ma-1
+      READ(in_unit,*)mtau
+      mtau=mtau-1
+c-----------------------------------------------------------------------
+c     allocate arrays.
+c-----------------------------------------------------------------------
+      ALLOCATE(psis(0:ma),qs(0:ma),fs(0:ma),ps(0:ma),
+     $     rg(0:ma,0:mtau),zg(0:ma,0:mtau))
+      CALL spline_alloc(sq_in,ma,4)
+      CALL bicube_alloc(rz_in,ma,mtau,2)
+c-----------------------------------------------------------------------
+c     read 2d data.
+c-----------------------------------------------------------------------
+      DO ia=0,mtau
+         DO ja=0,ma
+           READ(in_unit,*)rg(ja,ia)
+        ENDDO
+      ENDDO
+      DO ia=0,mtau
+         DO ja=0,ma
+           READ(in_unit,*)zg(ja,ia)
+        ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     read 1d data.
+c-----------------------------------------------------------------------
+      DO ja=0,ma
+         READ(in_unit,*)psis(ja),qs(ja),fs(ja),ps(ja)
+      ENDDO
+      CALL ascii_close(in_unit)
+c-----------------------------------------------------------------------
+c     revise 1D data.
+c-----------------------------------------------------------------------
+      psio=psis(ma)
+      sq_in%xs=psis/psio
+      sq_in%fs(:,1)=fs
+      sq_in%fs(:,2)=ps
+      sq_in%fs(:,3)=qs
+c-----------------------------------------------------------------------
+c     revise 2D profiles.
+c-----------------------------------------------------------------------
+      ro=rg(0,0)
+      zo=zg(0,0)
+      rz_in%fs(:,:,1)=rg
+      rz_in%fs(:,:,2)=zg
+c-----------------------------------------------------------------------
+c     deallocate local arrays and process inverse equilibrium.
+c-----------------------------------------------------------------------
+      DEALLOCATE(psis,qs,fs,ps,rg,zg)
+      CALL inverse_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_lez_2
       END MODULE read_eq_mod

@@ -83,7 +83,7 @@ c-----------------------------------------------------------------------
      $        psilow,psilim,qlim,singfac_min
          WRITE(euler_bin_unit)power_b,power_r,power_bp
 c-----------------------------------------------------------------------
-         WRITE(euler_bin_unit)sq%xs,sq%fs,sq%fs1
+         WRITE(euler_bin_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
          WRITE(euler_bin_unit)rzphi%xs,rzphi%ys,
      $        rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $        rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower

@@ -13,13 +13,14 @@ c-----------------------------------------------------------------------
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
-     $     fun_flag,flux_flag,vsbrzphi_flag
+     $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
+     $     chebyshev_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
-     $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax
+     $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,nche
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,
@@ -31,7 +32,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: ieqfile,idconfile,ivacuumfile
 
       INTEGER, PARAMETER :: hmnum=128
-      REAL(r8), PARAMETER :: mili=0.001,gauss=0.0001
+      REAL(r8), PARAMETER :: gauss=0.0001
       COMPLEX(r8), PARAMETER :: ione=1
 
       REAL(r8), DIMENSION(-hmnum:hmnum) :: sinmn

@@ -484,7 +484,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: rfac,eta,psi0
       
       REAL(r8) :: dpsi,cosfac,sinfac,drfac,r,z
-      REAL(r8), PARAMETER :: eps=1.e-12
+      REAL(r8), PARAMETER :: eps=1e-12
       TYPE(direct_bfield_type) :: bf
 c-----------------------------------------------------------------------
 c     initialize iteration.

@@ -14,6 +14,8 @@ c      5. ipout_pmodb
 c      6. ipout_xbnormal
 c      7. ipout_xbrzphi
 c      8. ipout_vsbrzphi
+c      9. ipout_arzphifun
+c     10. ipout_xbrzphifun
 c-----------------------------------------------------------------------
 c     subprogram 0. ipout_mod.
 c     module declarations.
@@ -305,8 +307,12 @@ c-----------------------------------------------------------------------
      $           *jcfun(itheta)/mthsurf
             w_c(ising)=w_c(ising)+0.5*wcfun(itheta)/mthsurf
          ENDDO
-         j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0
-         
+         area(ising)=area(ising)-jac*delpsi(mthsurf)/mthsurf
+         j_c(ising)=j_c(ising)-jac*delpsi(mthsurf)*
+     $        jcfun(mthsurf)/mthsurf
+         w_c(ising)=w_c(ising)-0.5*wcfun(mthsurf)/mthsurf
+
+         j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0  
          ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
          CALL ipvacuum_flxsurf(respsi)
          fsurfindmats(ising,:,:)=fsurf_indmats
@@ -771,6 +777,7 @@ c-----------------------------------------------------------------------
          
          CALL ascii_close(in_unit)
          rawmn=dcosmn+ifac*dsinmn
+         
          hawmn=rawmn(:,nn)
          
          DEALLOCATE(dcosmn,dsinmn,rawmn)
@@ -801,7 +808,15 @@ c-----------------------------------------------------------------------
                binmn(lmlow-mlow+i)=hawmn(i)
             ENDIF
          ENDDO                 
-      ENDIF         
+      ENDIF    
+c-----------------------------------------------------------------------
+c     convert to field if displacement is given.
+c-----------------------------------------------------------------------
+      IF (displacement_flag) THEN
+         CALL ipeq_weight(psilim,binmn,mfac,mpert,5)
+         binmn=twopi*ifac*chi1*(mfac-nn*qlim)*binmn
+         CALL ipeq_weight(psilim,binmn,mfac,mpert,0)
+      ENDIF     
 c-----------------------------------------------------------------------
 c     get the plasma response at the control surface.
 c-----------------------------------------------------------------------
@@ -835,8 +850,8 @@ c-----------------------------------------------------------------------
       CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
       CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
 
-      vy = 0.5*SUM(CONJG(finmn)*MATMUL(temp1,finmn))
-      sy = 0.5*SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))
+      vy = SUM(CONJG(finmn)*MATMUL(temp1,finmn))/4.0
+      sy = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/4.0
       vengy = REAL(vy)
       sengy = REAL(sy)
 
@@ -848,7 +863,7 @@ c-----------------------------------------------------------------------
       temp2 = plas_indmats(resp_index,:,:)
       CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
       CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
-      py = 0.5*SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))
+      py = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/4.0
       pengy = REAL(py)
       WRITE(*,'(1x,a,es10.3)')"required energy to perturb vacuum = ",
      $     sengy
@@ -1066,6 +1081,10 @@ c-----------------------------------------------------------------------
             j_c(ising)=j_c(ising)+jac*delpsi(itheta)
      $           *jcfun(itheta)/mthsurf
          ENDDO
+         area(ising)=area(ising)-jac*delpsi(mthsurf)/mthsurf
+         j_c(ising)=j_c(ising)-jac*delpsi(mthsurf)*
+     $        jcfun(mthsurf)/mthsurf
+
          j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0
          shear=mfac(resnum(ising))*sq%f1(4)/sq%f(4)**2
 
@@ -1198,11 +1217,11 @@ c-----------------------------------------------------------------------
  
       IF (svd_flag) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
-     $        sbno_fun(1:mthsurf)))/mthsurf)
+     $        sbno_fun(1:mthsurf)))/mthsurf/2.0)
          DO ising=1,msing
-            ovf(ising)=DOT_PRODUCT(t1v(:,ising),sbno_mn(:))
-            ovs(ising)=DOT_PRODUCT(t2v(:,ising),sbno_mn(:))
-            ovi(ising)=DOT_PRODUCT(t3v(:,ising),sbno_mn(:))
+            ovf(ising)=DOT_PRODUCT(t1v(:,ising),sbno_mn(:))/SQRT(2.0)
+            ovs(ising)=DOT_PRODUCT(t2v(:,ising),sbno_mn(:))/SQRT(2.0)
+            ovi(ising)=DOT_PRODUCT(t3v(:,ising),sbno_mn(:))/SQRT(2.0)
          ENDDO
          DO ising=1,msing
             novf(ising)=ABS(ovf(ising))/sbnosurf*1e2
@@ -1243,43 +1262,41 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspimn
 
-      INTEGER :: istep,ipert,itheta,iindex
-      REAL(r8) :: ileft
+      INTEGER :: i,istep,ipert,itheta,iindex,cstep
+      REAL(r8) :: ileft,jac
 
-      REAL(r8), DIMENSION(rstep) :: psis
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
-      REAL(r8), DIMENSION(rstep,0:mthsurf) :: rs,zs
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     bvt_fun,bvz_fun
-      COMPLEX(r8), DIMENSION(rstep,mpert) :: eulbparmns,lagbparmns
-      COMPLEX(r8), DIMENSION(rstep,0:mthsurf) :: eulbparfuns,lagbparfuns
+     $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: eulbparmns,lagbparmns
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: eulbparfuns,lagbparfuns
+
+      REAL(r8), DIMENSION(:), POINTER :: psis,ches,chex
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: chea,chelagbmns
+
+      TYPE(cspline_type) :: chespl 
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing total |b| fields"
 
-      IF (rstep .EQ. mstep) THEN
-         psis=psifac
-      ELSE
-         psis=(/(istep,istep=1,rstep)/)/REAL(rstep,r8)*(psilim-psilow)
-      ENDIF
       CALL idcon_build(egnum,xspimn)
-
       CALL ipeq_alloc
-      DO istep=1,rstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(rstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(rstep/10.0)*10-iindex
+      DO istep=1,mstep
+         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
          IF ((istep-1 /= 0) .AND. (ileft == 0))
      $        WRITE(*,'(1x,a9,i3,a18)')
      $        "volume = ",iindex,"% |b| computations"
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces with regulation.
 c-----------------------------------------------------------------------
-         CALL spline_eval(sq,psis(istep),1)
-         CALL ipeq_sol(psis(istep))
-         CALL ipeq_contra(psis(istep))         
-         CALL ipeq_cova(psis(istep))
+         CALL spline_eval(sq,psifac(istep),1)
+         CALL ipeq_sol(psifac(istep))
+         CALL ipeq_contra(psifac(istep))         
+         CALL ipeq_cova(psifac(istep))
 c-----------------------------------------------------------------------
 c     compute mod b variations in hamada.
 c-----------------------------------------------------------------------
@@ -1287,20 +1304,27 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
+         CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
+         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)  
          DO itheta=0,mthsurf
-            CALL bicube_eval(eqfun,psis(istep),theta(itheta),1)
-            CALL bicube_eval(rzphi,psis(istep),theta(itheta),0)
+            CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
+            CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
             rfac=SQRT(rzphi%f(1))
             eta=twopi*(theta(itheta)+rzphi%f(2))
             rs(istep,itheta)=ro+rfac*COS(eta)
             zs(istep,itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
             eulbparfuns(istep,itheta)=
      $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
      $           /(rzphi%f(4)*eqfun%f(1))
             lagbparfuns(istep,itheta)=
      $           eulbparfuns(istep,itheta)+
-     $           xsp_fun(itheta)*eqfun%fx(1)+
-     $           xms_fun(itheta)/(chi1*sq%f(4))*eqfun%fy(1)
+     $           eqfun%fx(1)*xsp_fun(itheta)+eqfun%fy(1)*
+     $           (xms_fun(itheta)/(chi1*sq%f(4))+
+     $           xmz_fun(itheta)/(jac*sq%f(4))-
+     $           (chi1/(jac*eqfun%f(1)))**2*
+     $           (sq%f(4)*xvz_fun(itheta)+xvt_fun(itheta)))
             dphi(itheta)=rzphi%f(3)
          ENDDO
          CALL iscdftf(mfac,mpert,eulbparfuns(istep,:),
@@ -1311,9 +1335,9 @@ c-----------------------------------------------------------------------
 c     decompose components on the given coordinates.
 c-----------------------------------------------------------------------
          IF ((jac_out /= jac_type)) THEN
-            CALL ipeq_bcoords(psis(istep),eulbpar_mn,
+            CALL ipeq_bcoords(psifac(istep),eulbpar_mn,
      $           mfac,mpert,rout,bpout,bout,rcout,1,0)
-            CALL ipeq_bcoords(psis(istep),lagbpar_mn,
+            CALL ipeq_bcoords(psifac(istep),lagbpar_mn,
      $           mfac,mpert,rout,bpout,bout,rcout,1,0)
          ENDIF
          eulbparmns(istep,:)=eulbpar_mn
@@ -1330,15 +1354,15 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "rstep =",rstep,"mpert =",mpert,"mthsurf =",mthsurf
+     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
 
       WRITE(out_unit,'(1x,a16,1x,a4,4(1x,a16))')"psi","m",
      $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)"
-      DO istep=1,rstep
+      DO istep=1,mstep
          DO ipert=1,mpert
             WRITE(out_unit,'(1x,es16.8,1x,I4,4(1x,es16.8))')
-     $           psis(istep),mfac(ipert),
+     $           psifac(istep),mfac(ipert),
      $           REAL(eulbparmns(istep,ipert)),
      $           AIMAG(eulbparmns(istep,ipert)),
      $           REAL(lagbparmns(istep,ipert)),
@@ -1346,6 +1370,84 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
+
+      IF (chebyshev_flag) THEN
+         ALLOCATE(chea(mpert,0:nche),chex(mstep))
+         CALL cspline_alloc(chespl,mstep,1)
+         chespl%xs=psifac
+         chex=2.0*(psifac-0.5)
+         DO ipert=1,mpert
+            DO i=0,nche
+               chespl%fs(:,1)=cos(REAL(i,r8)*acos(chex))/
+     $              sqrt(1.0-chex**2.0)*lagbparmns(:,ipert)*4.0/pi
+               CALL cspline_fit(chespl,"extrap")
+               CALL cspline_int(chespl)
+               chea(ipert,i)=chespl%fsi(mstep,1)
+            ENDDO
+         ENDDO
+         chea(:,0)=chea(:,0)/2.0
+
+         CALL ascii_open(out_unit,"ipec_pmodb_chebyshev_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_PMODB_CHEBYSHEV: "//
+     $        "Chebyshev coefficients for perturbed mod b"
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(2(1x,a12,I4))')
+     $        "nche =",nche,"mpert =",mpert
+         WRITE(out_unit,*)     
+         
+         DO ipert=1,mpert
+            WRITE(out_unit,'(1x,a6,1x,I4)')"mfac =",mfac(ipert)
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a6,2(1x,a16))')"chea",
+     $           "real(chea)","imag(chea)"
+            DO i=0,nche
+               WRITE(out_unit,'(1x,I6,2(1x,es16.8))')i,
+     $              REAL(chea(ipert,i)),AIMAG(chea(ipert,i))
+            ENDDO
+            WRITE(out_unit,*)
+         ENDDO
+         CALL ascii_close(out_unit)
+
+         cstep=200
+         ALLOCATE(psis(cstep),ches(cstep))
+         ALLOCATE(chelagbmns(cstep,mpert))
+         chelagbmns=0
+         psis=(/(istep,istep=0,cstep-1)/)/REAL(cstep-1,r8)*
+     $        (psilim-psilow)+psilow
+         ches=2.0*(psis-0.5)
+         
+         DO ipert=1,mpert
+            DO i=0,nche
+               chelagbmns(:,ipert)=chelagbmns(:,ipert)+
+     $              chea(ipert,i)*cos(REAL(i,r8)*acos(ches))
+            ENDDO
+         ENDDO
+
+         CALL ascii_open(out_unit,"ipec_pmodb_chetest_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_PMODB_CHETEST: "//
+     $        "Reconstructed perturbed mod b by chebyshev"
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $        "cstep =",cstep,"mpert =",mpert,"mthsurf =",mthsurf
+         WRITE(out_unit,*)     
+         
+         WRITE(out_unit,'(1x,a16,1x,a4,2(1x,a16))')"psi","m",
+     $        "real(lagb)","imag(lagb)"
+         DO istep=1,cstep
+            DO ipert=1,mpert
+               WRITE(out_unit,'(1x,es16.8,1x,I4,2(1x,es16.8))')
+     $              psis(istep),mfac(ipert),
+     $              REAL(chelagbmns(istep,ipert)),
+     $              AIMAG(chelagbmns(istep,ipert))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+
+         CALL cspline_dealloc(chespl)
+      ENDIF
 
       IF (fun_flag) THEN
          CALL ascii_open(out_unit,"ipec_pmodb_fun_n"//
@@ -1355,12 +1457,12 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $        "rstep =",rstep,"mpert =",mpert,"mthsurf =",mthsurf
+     $        "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          
          WRITE(out_unit,'(6(1x,a16))')"r","z",
      $        "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)"
-         DO istep=1,rstep
+         DO istep=1,mstep
             DO itheta=0,mthsurf
                WRITE(out_unit,'(6(1x,es16.8))')
      $              rs(istep,itheta),zs(istep,itheta),
@@ -1377,8 +1479,8 @@ c-----------------------------------------------------------------------
          CALL bin_open(bin_unit,
      $        "pmodb.bin","UNKNOWN","REWIND","none")
          DO ipert=1,mpert
-            DO istep=1,rstep
-               WRITE(bin_unit)REAL(psis(istep),4),
+            DO istep=1,mstep
+               WRITE(bin_unit)REAL(psifac(istep),4),
      $              REAL(REAL(eulbparmns(istep,ipert)),4),
      $              REAL(AIMAG(eulbparmns(istep,ipert)),4),
      $              REAL(REAL(lagbparmns(istep,ipert)),4),
@@ -1393,13 +1495,13 @@ c-----------------------------------------------------------------------
          CALL bin_open(bin_2d_unit,"pmodb_2d.bin","UNKNOWN","REWIND",
      $        "none")
          WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)rstep-9,mthsurf
-         WRITE(bin_2d_unit)REAL(rs(9:rstep,0:mthsurf),4),
-     $        REAL(zs(9:rstep,0:mthsurf),4)
-         WRITE(bin_2d_unit)REAL(REAL(eulbparfuns(9:rstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(eulbparfuns(9:rstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(REAL(lagbparfuns(9:rstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(lagbparfuns(9:rstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)mstep-9,mthsurf-1
+         WRITE(bin_2d_unit)REAL(rs(9:mstep,1:mthsurf),4),
+     $        REAL(zs(9:mstep,1:mthsurf),4)
+         WRITE(bin_2d_unit)REAL(REAL(eulbparfuns(9:mstep,1:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(AIMAG(eulbparfuns(9:mstep,1:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(REAL(lagbparfuns(9:mstep,1:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(AIMAG(lagbparfuns(9:mstep,1:mthsurf)),4)
 
          CALL bin_close(bin_2d_unit)
       ENDIF
@@ -1419,46 +1521,35 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspimn
 
       INTEGER :: istep,ipert,iindex,itheta
-      REAL(r8) :: ileft,ximax,rmax
+      REAL(r8) :: ileft,ximax,rmax,area
 
-      REAL(r8), DIMENSION(rstep) :: psis,qs
-      REAL(r8), DIMENSION(rstep,0:mthsurf) :: rs,zs,psiss,rvecs,zvecs
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,rvecs,zvecs
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
-      COMPLEX(r8), DIMENSION(rstep,mpert) :: xmns,ymns,
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: xmns,ymns,
      $     xnomns,bnomns,bwpmns
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
-      COMPLEX(r8), DIMENSION(rstep,0:mthsurf) :: rss,zss,
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
      $     xnofuns,bnofuns
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing x and b normal components"
 
-      IF (rstep .EQ. mstep) THEN
-         psis=psifac
-         qs=qfac
-      ELSE
-         psis=(/(istep,istep=1,rstep)/)/REAL(rstep,r8)*(psilim-psilow)
-      ENDIF
       CALL idcon_build(egnum,xspimn)
 
       CALL ipeq_alloc
-      DO istep=1,rstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(rstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(rstep/10.0)*10-iindex
+      DO istep=1,mstep
+         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
          IF ((istep-1 /= 0) .AND. (ileft == 0))
      $        WRITE(*,'(1x,a9,i3,a23)')
      $        "volume = ",iindex,"% xi and b computations"
-         CALL ipeq_sol(psis(istep))
-         CALL ipeq_contra(psis(istep))
+         CALL ipeq_sol(psifac(istep))
+         CALL ipeq_contra(psifac(istep))
 
-         IF (rstep .NE. mstep) THEN
-            CALL spline_eval(sq,psis(istep),0)
-            qs(istep)=sq%f(4)
-         ENDIF
-
+         area=0
          DO itheta=0,mthsurf
-            CALL bicube_eval(rzphi,psis(istep),theta(itheta),1)
+            CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
             rfac=SQRT(rzphi%f(1))
             eta=twopi*(theta(itheta)+rzphi%f(2))
             rs(istep,itheta)=ro+rfac*COS(eta)
@@ -1473,7 +1564,9 @@ c-----------------------------------------------------------------------
      $           (cos(eta)*w(1,1)-sin(eta)*w(1,2))/delpsi(itheta)
             zvecs(istep,itheta)=
      $           (sin(eta)*w(1,1)+cos(eta)*w(1,2))/delpsi(itheta)
+            area=area+jac*delpsi(itheta)/mthsurf
          ENDDO
+         area=area-jac*delpsi(mthsurf)/mthsurf
 c-----------------------------------------------------------------------
 c     normal and two tangent components to flux surface.
 c-----------------------------------------------------------------------
@@ -1483,12 +1576,13 @@ c-----------------------------------------------------------------------
          bnofuns(istep,:)=bwp_fun/(jacs*delpsi)
          CALL iscdftf(mfac,mpert,xnofuns(istep,:),mthsurf,xno_mn)
          CALL iscdftf(mfac,mpert,bnofuns(istep,:),mthsurf,bno_mn)
+         bwp_mn=bwp_mn/area
          IF ((jac_out /= jac_type)) THEN
-            CALL ipeq_bcoords(psis(istep),xno_mn,mfac,mpert,
+            CALL ipeq_bcoords(psifac(istep),xno_mn,mfac,mpert,
      $           rout,bpout,bout,rcout,1,0)
-            CALL ipeq_bcoords(psis(istep),bno_mn,mfac,mpert,
+            CALL ipeq_bcoords(psifac(istep),bno_mn,mfac,mpert,
      $           rout,bpout,bout,rcout,1,0)
-            CALL ipeq_bcoords(psis(istep),bwp_mn,mfac,mpert,
+            CALL ipeq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
      $           rout,bpout,bout,rcout,1,0)            
          ENDIF
          xnomns(istep,:)=xno_mn
@@ -1499,12 +1593,6 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ipeq_dealloc
 
-      rss=CMPLX(rs,rs)+xnofuns*rvecs
-      zss=CMPLX(zs,zs)+xnofuns*zvecs
-      DO itheta=0,mthsurf
-         psiss(:,itheta)=psis(:)
-      ENDDO
-
       CALL ascii_open(out_unit,"ipec_xbnormal_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPOUT_XBNROMAL: "//
@@ -1512,16 +1600,16 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "rstep =",rstep,"mpert =",mpert,"mthsurf =",mthsurf
+     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
       WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
      $     "real(xno)","imag(xno)","real(bno)","imag(bno)",
      $     "real(bwp)","imag(bwp)"
 
-      DO istep=1,rstep
+      DO istep=1,mstep
          DO ipert=1,mpert
             WRITE(out_unit,'(2(1x,es16.8),1x,I4,6(1x,es16.8))')
-     $           psis(istep),qs(istep),mfac(ipert),
+     $           psifac(istep),qfac(istep),mfac(ipert),
      $           REAL(xnomns(istep,ipert)),AIMAG(xnomns(istep,ipert)),
      $           REAL(bnomns(istep,ipert)),AIMAG(bnomns(istep,ipert)),
      $           REAL(bwpmns(istep,ipert)),AIMAG(bwpmns(istep,ipert))        
@@ -1536,12 +1624,12 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
          WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
-     $        "rstep =",rstep,"mthsurf =",mthsurf
+     $        "mstep =",mstep,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          WRITE(out_unit,'(8(1x,a16))')"r","z","rvec","zvec",
      $        "real(xno)","imag(xno)","real(bno)","imag(bno)"
          
-         DO istep=1,rstep
+         DO istep=1,mstep
             DO itheta=0,mthsurf
                WRITE(out_unit,'(8(1x,es16.8))')
      $              rs(istep,itheta),zs(istep,itheta),
@@ -1555,37 +1643,12 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
       ENDIF
 
-      IF (flux_flag) THEN
-         CALL ascii_open(out_unit,"ipec_xbnormal_flux_n"//
-     $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"IPOUT_XBNROMAL_FLUX: "//
-     $        "Perturbed flux surfaces"
-         WRITE(out_unit,*)     
-         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
-     $        "rstep =",rstep,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
-         WRITE(out_unit,'(3(1x,a16))')"real(r)","imag(r)",
-     $        "real(z)","imag(z)","psi"
-         
-         DO istep=1,rstep
-            DO itheta=0,mthsurf
-               WRITE(out_unit,'(5(1x,es16.8))')
-     $              REAL(rss(istep,itheta)),AIMAG(rss(istep,itheta)),
-     $              REAL(zss(istep,itheta)),AIMAG(zss(istep,itheta)),
-     $              psiss(istep,itheta)
-            ENDDO
-         ENDDO
-         
-         CALL ascii_close(out_unit)
-      ENDIF
-
       IF (bin_flag) THEN
          CALL bin_open(bin_unit,
      $        "xbnormal.bin","UNKNOWN","REWIND","none")
          DO ipert=1,mpert
-            DO istep=1,rstep
-               WRITE(bin_unit)REAL(psis(istep),4),
+            DO istep=1,mstep
+               WRITE(bin_unit)REAL(psifac(istep),4),
      $              REAL(REAL(xnomns(istep,ipert)),4),
      $              REAL(AIMAG(xnomns(istep,ipert)),4),
      $              REAL(REAL(bnomns(istep,ipert)),4),
@@ -1597,66 +1660,106 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL bin_close(bin_unit)
       ENDIF
-  
+
       IF (bin_2d_flag) THEN
          CALL bin_open(bin_2d_unit,"xbnormal_2d.bin","UNKNOWN","REWIND",
      $        "none")
          WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)rstep-9,mthsurf
-         WRITE(bin_2d_unit)REAL(rs(9:rstep,0:mthsurf),4),
-     $        REAL(zs(9:rstep,0:mthsurf),4)
-         WRITE(bin_2d_unit)REAL(REAL(xnofuns(9:rstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(xnofuns(9:rstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(REAL(bnofuns(9:rstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(bnofuns(9:rstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)mstep-9,mthsurf
+         WRITE(bin_2d_unit)REAL(rs(9:mstep,0:mthsurf),4),
+     $        REAL(zs(9:mstep,0:mthsurf),4)
+         WRITE(bin_2d_unit)REAL(REAL(xnofuns(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(AIMAG(xnofuns(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(REAL(bnofuns(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(AIMAG(bnofuns(9:mstep,0:mthsurf)),4)
          CALL bin_close(bin_2d_unit)
-
+         
          ximax=MAXVAL(ABS(xnofuns))
          CALL bicube_eval(rzphi,psilim,theta(0),0)
          rmax=SQRT(rzphi%f(1))
          xnofuns=xnofuns/ximax*rmax/6.0
-         
+
          WRITE(*,'(1x,a,es10.3)')"maximum displacement = ",ximax
          WRITE(*,'(1x,a,es10.3)')"scale factor for 2d plots = ",
      $        rmax/(ximax*6.0)
-      
+
          rss=CMPLX(rs,rs)+xnofuns*rvecs
          zss=CMPLX(zs,zs)+xnofuns*zvecs
          DO itheta=0,mthsurf
-            psiss(:,itheta)=psis(:)
+            psis(:,itheta)=psifac(:)
          ENDDO
 
          CALL bin_open(bin_2d_unit,
      $        "pflux_re_2d.bin","UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)rstep-9,mthsurf
-         WRITE(bin_2d_unit)REAL(REAL(rss(9:rstep,0:mthsurf)),4),
-     $        REAL(REAL(zss(9:rstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(psiss(9:rstep,0:mthsurf),4)
+         WRITE(bin_2d_unit)mstep-9,mthsurf
+         WRITE(bin_2d_unit)REAL(REAL(rss(9:mstep,0:mthsurf)),4),
+     $        REAL(REAL(zss(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(psis(9:mstep,0:mthsurf),4)
          CALL bin_close(bin_2d_unit)
 
          CALL bin_open(bin_2d_unit,
      $        "pflux_im_2d.bin","UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)rstep-9,mthsurf
-         WRITE(bin_2d_unit)REAL(AIMAG(rss(9:rstep,0:mthsurf)),4),
-     $        REAL(AIMAG(zss(9:rstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(psiss(9:rstep,0:mthsurf),4)
+         WRITE(bin_2d_unit)mstep-9,mthsurf
+         WRITE(bin_2d_unit)REAL(AIMAG(rss(9:mstep,0:mthsurf)),4),
+     $        REAL(AIMAG(zss(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(psis(9:mstep,0:mthsurf),4)
          CALL bin_close(bin_2d_unit)
 
          DO istep=1,mstep
             xmns(istep,:)=mfac
-            ymns(istep,:)=psis(istep)
+            ymns(istep,:)=psifac(istep)
          ENDDO
          CALL bin_open(bin_2d_unit,"bnormal_spectrum.bin",
      $        "UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)rstep-9,mpert-1
-         WRITE(bin_2d_unit)REAL(xmns(9:rstep,:),4),
-     $        REAL(ymns(9:rstep,:),4)
-         WRITE(bin_2d_unit)REAL(ABS(bwpmns(9:rstep,:)),4)
+         WRITE(bin_2d_unit)mstep-9,mpert-1
+         WRITE(bin_2d_unit)REAL(xmns(9:mstep,:),4),
+     $        REAL(ymns(9:mstep,:),4)
+         WRITE(bin_2d_unit)REAL(ABS(bwpmns(9:mstep,:)),4)
          CALL bin_close(bin_2d_unit)
       ENDIF
+
+      IF (flux_flag) THEN
+         IF (.NOT. bin_2d_flag) THEN
+            ximax=MAXVAL(ABS(xnofuns))
+            CALL bicube_eval(rzphi,psilim,theta(0),0)
+            rmax=SQRT(rzphi%f(1))
+            xnofuns=xnofuns/ximax*rmax/6.0
+         ENDIF
+            
+         rss=xnofuns*rvecs
+         zss=xnofuns*zvecs
+         DO itheta=0,mthsurf
+            psis(:,itheta)=psifac(:)
+         ENDDO
+         
+         CALL ascii_open(out_unit,"ipec_xbnormal_flux_n"//
+     $        TRIM(sn)//".out","UNKNOWN")         
+         WRITE(out_unit,*)"IPOUT_XBNROMAL_FLUX: "//
+     $        "Perturbed flux surfaces"
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+         WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
+     $        "mstep =",mstep,"mthsurf =",mthsurf
+         WRITE(out_unit,'(1x,a12,1x,es16.8)')"scale =",rmax/(ximax*6.0)
+         WRITE(out_unit,*)  
+         WRITE(out_unit,'(7(1x,a16))')"r","z","real(r)","imag(r)",
+     $        "real(z)","imag(z)","psi"   
+         
+         DO istep=1,mstep
+            DO itheta=0,mthsurf
+               WRITE(out_unit,'(7(1x,es16.8))')
+     $              rs(istep,itheta),zs(istep,itheta),
+     $              REAL(rss(istep,itheta)),AIMAG(rss(istep,itheta)),
+     $              REAL(zss(istep,itheta)),AIMAG(zss(istep,itheta)),
+     $              psis(istep,itheta)
+            ENDDO
+         ENDDO
+         
+         CALL ascii_close(out_unit)
+      ENDIF         
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -2057,7 +2160,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
-      ! initialization
       vbr = 0
       vbz = 0
       vbp = 0
@@ -2104,5 +2206,255 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_vsbrzphi
+c-----------------------------------------------------------------------
+c     subprogram 9. ipout_arzphifun
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_arzphifun(egnum,xspimn)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: egnum
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspimn
+
+      INTEGER :: istep,ipert,iindex,itheta
+      REAL(r8) :: ileft,ximax,rmax
+
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xss_fun,
+     $     ear,eat,eap,arr,art,arp
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: ear_fun,eaz_fun,
+     $     eap_fun,arr_fun,arz_fun,arp_fun
+c-----------------------------------------------------------------------
+c     compute solutions and contravariant/additional components.
+c-----------------------------------------------------------------------
+      WRITE(*,*)"Computing vector potential rzphi functions"
+
+      CALL idcon_build(egnum,xspimn)
+
+      CALL ipeq_alloc
+      DO istep=1,mstep
+         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
+         IF ((istep-1 /= 0) .AND. (ileft == 0))
+     $        WRITE(*,'(1x,a9,i3,a37)')
+     $        "volume = ",iindex,"% vector potential rzphi computations"
+         CALL ipeq_sol(psifac(istep))
+c-----------------------------------------------------------------------
+c     normal and two tangent components to flux surface.
+c-----------------------------------------------------------------------
+         CALL iscdftb(mfac,mpert,xsp_fun,mthsurf,xsp_mn)
+         CALL iscdftb(mfac,mpert,xss_fun,mthsurf,xss_mn)
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            rs(istep,itheta)=ro+rfac*COS(eta)
+            zs(istep,itheta)=zo+rfac*SIN(eta)
+            dphi(itheta)=rzphi%f(3)
+            jac=rzphi%f(4)
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*rs(istep,itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*rs(istep,itheta)/(rfac*jac)
+            w(2,1)=-rzphi%fx(2)*twopi**2*rs(istep,itheta)*rfac/jac
+            w(2,2)=rzphi%fx(1)*pi*rs(istep,itheta)/(rfac*jac)
+            w(3,1)=rzphi%fx(3)*2*rfac
+            w(3,2)=rzphi%fy(3)/(twopi*rfac)
+            w(3,3)=1.0/(twopi*rs(istep,itheta))
+            ear(itheta)=chi1*psifac(istep)*(qfac(istep)*w(2,1)-w(3,1))
+            eat(itheta)=chi1*psifac(istep)*(qfac(istep)*w(2,2)-w(3,2))
+            eap(itheta)=-chi1*psifac(istep)*w(3,3)
+            ear_fun(istep,itheta)=ear(itheta)*cos(eta)-
+     $           eat(itheta)*sin(eta)
+            eaz_fun(istep,itheta)=ear(itheta)*sin(eta)+
+     $           eat(itheta)*cos(eta)
+            eap_fun(istep,itheta)=-eap(itheta)            
+            arr(itheta)=xss_fun(itheta)*w(1,1)-chi1*(qfac(istep)*
+     $           xsp_fun(itheta)*w(2,1)+xsp_fun(itheta)*w(3,1))
+            art(itheta)=xss_fun(itheta)*w(1,2)-chi1*(qfac(istep)*
+     $           xsp_fun(itheta)*w(2,2)+xsp_fun(itheta)*w(3,2))
+            arp(itheta)=chi1*xsp_fun(itheta)*w(3,3)
+            arr_fun(istep,itheta)=arr(itheta)*cos(eta)-
+     $           art(itheta)*sin(eta)
+            arz_fun(istep,itheta)=arr(itheta)*sin(eta)+
+     $           art(itheta)*cos(eta)
+            arp_fun(istep,itheta)=-arp(itheta)
+         ENDDO
+         ear_fun(istep,:)=ear_fun(istep,:)*EXP(ifac*nn*dphi)
+         eaz_fun(istep,:)=eaz_fun(istep,:)*EXP(ifac*nn*dphi)
+         eap_fun(istep,:)=eap_fun(istep,:)*EXP(ifac*nn*dphi)
+         arr_fun(istep,:)=arr_fun(istep,:)*EXP(ifac*nn*dphi)
+         arz_fun(istep,:)=arz_fun(istep,:)*EXP(ifac*nn*dphi)
+         arp_fun(istep,:)=arp_fun(istep,:)*EXP(ifac*nn*dphi)
+      ENDDO
+
+      CALL ipeq_dealloc
+
+      CALL ascii_open(out_unit,"ipec_arzphi_fun_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPOUT_ARZPHI_FUN: "//
+     $     "Rzphi components of vector potential in functions"
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+      WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
+     $     "mstep =",mstep,"mthsurf =",mthsurf
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(14(1x,a16))')"r","z",
+     $     "real(ear)","imag(ear)","real(eaz)","imag(eaz)",
+     $     "real(eap)","imag(eap)","real(arr)","imag(arr)",
+     $     "real(arz)","imag(arz)","real(arp)","imag(arp)"
+
+      DO istep=1,mstep
+         DO itheta=0,mthsurf
+            WRITE(out_unit,'(14(1x,es16.8))')
+     $           rs(istep,itheta),zs(istep,itheta),
+     $           REAL(ear_fun(istep,itheta)),
+     $           AIMAG(ear_fun(istep,itheta)),
+     $           REAL(eaz_fun(istep,itheta)),
+     $           AIMAG(eaz_fun(istep,itheta)),
+     $           REAL(eap_fun(istep,itheta)),
+     $           AIMAG(eap_fun(istep,itheta)),
+     $           REAL(arr_fun(istep,itheta)),
+     $           AIMAG(arr_fun(istep,itheta)),
+     $           REAL(arz_fun(istep,itheta)),
+     $           AIMAG(arz_fun(istep,itheta)),
+     $           REAL(arp_fun(istep,itheta)),
+     $           AIMAG(arp_fun(istep,itheta))
+         ENDDO
+      ENDDO
+      
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_arzphifun
+c-----------------------------------------------------------------------
+c     subprogram 10. ipout_xbrzphifun
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_xbrzphifun(egnum,xspimn)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: egnum
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspimn
+
+      INTEGER :: istep,ipert,iindex,itheta
+      REAL(r8) :: ileft
+
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs
+      REAL(r8), DIMENSION(0:mthsurf) :: jacs,dphi,t11,t12,t21,t22,t33
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
+     $     xwt_fun,bwt_fun,xvz_fun,bvz_fun
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: xrr_fun,brr_fun,
+     $     xrz_fun,brz_fun,xrp_fun,brp_fun
+c-----------------------------------------------------------------------
+c     compute solutions and contravariant/additional components.
+c-----------------------------------------------------------------------
+      WRITE(*,*)"Computing x and b rzphi functions"
+
+      CALL idcon_build(egnum,xspimn)
+
+      CALL ipeq_alloc
+      DO istep=1,mstep
+         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
+         IF ((istep-1 /= 0) .AND. (ileft == 0))
+     $        WRITE(*,'(1x,a9,i3,a29)')
+     $        "volume = ",iindex,"% xi and b rzphi computations"
+         CALL ipeq_sol(psifac(istep))
+         CALL ipeq_contra(psifac(istep))
+         CALL ipeq_cova(psifac(istep))
+c-----------------------------------------------------------------------
+c     normal and two tangent components to flux surface.
+c-----------------------------------------------------------------------
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            rs(istep,itheta)=ro+rfac*COS(eta)
+            zs(istep,itheta)=zo+rfac*SIN(eta)
+            dphi(itheta)=rzphi%f(3)
+            jac=rzphi%f(4)
+            jacs(itheta)=jac
+            v(1,1)=rzphi%fx(1)/(2*rfac)
+            v(1,2)=rzphi%fx(2)*twopi*rfac
+            v(2,1)=rzphi%fy(1)/(2*rfac)
+            v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+            v(3,3)=twopi*rs(istep,itheta)
+            t11(itheta)=cos(eta)*v(1,1)-sin(eta)*v(1,2)
+            t12(itheta)=cos(eta)*v(2,1)-sin(eta)*v(2,2)
+            t21(itheta)=sin(eta)*v(1,1)+cos(eta)*v(1,2)
+            t22(itheta)=sin(eta)*v(2,1)+cos(eta)*v(2,2)
+            t33(itheta)=-1.0/v(3,3)
+         ENDDO
+         CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
+         CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
+         IF (reg_flag) THEN
+            CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
+            CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
+            CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xmz_mn)
+            CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bmz_mn)
+         ELSE
+            CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+            CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
+            CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
+            CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+         ENDIF
+         xrr_fun(istep,:)=(t11*xwp_fun+t12*xwt_fun)/jacs
+         brr_fun(istep,:)=(t11*bwp_fun+t12*bwt_fun)/jacs
+         xrz_fun(istep,:)=(t21*xwp_fun+t22*xwt_fun)/jacs
+         brz_fun(istep,:)=(t21*bwp_fun+t22*bwt_fun)/jacs
+         xrp_fun(istep,:)=t33*xvz_fun
+         brp_fun(istep,:)=t33*bvz_fun
+
+         xrr_fun(istep,:)=xrr_fun(istep,:)*EXP(ifac*nn*dphi)
+         brr_fun(istep,:)=brr_fun(istep,:)*EXP(ifac*nn*dphi)
+         xrz_fun(istep,:)=xrz_fun(istep,:)*EXP(ifac*nn*dphi)
+         brz_fun(istep,:)=brz_fun(istep,:)*EXP(ifac*nn*dphi)
+         xrp_fun(istep,:)=xrp_fun(istep,:)*EXP(ifac*nn*dphi)
+         brp_fun(istep,:)=brp_fun(istep,:)*EXP(ifac*nn*dphi)
+      ENDDO
+
+      CALL ipeq_dealloc
+
+      CALL ascii_open(out_unit,"ipec_xbrzphi_fun_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPOUT_XBRZPHI_FUN: "//
+     $     "Rzphi components of displacement and field in functions"
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+      WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
+     $     "mstep =",mstep,"mthsurf =",mthsurf
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(14(1x,a16))')"r","z",
+     $     "real(xr)","imag(xr)","real(xz)","imag(xz)",
+     $     "real(xp)","imag(xp)","real(br)","imag(br)",
+     $     "real(bz)","imag(bz)","real(bp)","imag(bp)"
+
+      DO istep=1,mstep
+         DO itheta=0,mthsurf
+            WRITE(out_unit,'(14(1x,es16.8))')
+     $           rs(istep,itheta),zs(istep,itheta),
+     $           REAL(xrr_fun(istep,itheta)),
+     $           AIMAG(xrr_fun(istep,itheta)),
+     $           REAL(xrz_fun(istep,itheta)),
+     $           AIMAG(xrz_fun(istep,itheta)),
+     $           REAL(xrp_fun(istep,itheta)),
+     $           AIMAG(xrp_fun(istep,itheta)),
+     $           REAL(brr_fun(istep,itheta)),
+     $           AIMAG(brr_fun(istep,itheta)),
+     $           REAL(brz_fun(istep,itheta)),
+     $           AIMAG(brz_fun(istep,itheta)),
+     $           REAL(brp_fun(istep,itheta)),
+     $           AIMAG(brp_fun(istep,itheta))
+         ENDDO
+      ENDDO
+      
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_xbrzphifun
    
       END MODULE ipout_mod

@@ -63,6 +63,10 @@ c-----------------------------------------------------------------------
       IF (jac_out=="") jac_out=jac_type
       chi1=twopi*psio
       mpert=mhigh-mlow+1
+      lmlow=mmin
+      lmhigh=mmax
+      IF (mlow<mmin) lmlow=mlow 
+      IF (mhigh>mmax) lmhigh=mhigh
       lmpert=lmhigh-lmlow+1
       mthsurf=mthvac
       ALLOCATE(r(0:mthsurf),z(0:mthsurf),theta(0:mthsurf))
@@ -92,7 +96,7 @@ c-----------------------------------------------------------------------
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
 
       rzphi%periodic(2)=.TRUE.
-      READ(in_unit)sq%xs,sq%fs,sq%fs1
+      READ(in_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
       READ(in_unit)rzphi%xs,rzphi%ys,
      $     rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $     rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
@@ -216,10 +220,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     normalize plasma/vacuum eigenenergy and eigenfunctions.
 c-----------------------------------------------------------------------
-      et=et/(mu0*2.0)*psio**2*(chi1*mili)**2
-      ep=ep/(mu0*2.0)*psio**2*(chi1*mili)**2
+      et=et/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+      ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
-      wt=wt*chi1*mili
+      wt=wt*(chi1*1e-3)
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
 c-----------------------------------------------------------------------

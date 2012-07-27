@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
       funcm=0
       DO i=1,ms
          DO j=0,fs-1
-            funcm(i) = funcm(i)+(1.0/fs)*
+            funcm(i)=funcm(i)+(1.0/fs)*
      $           func(j)*EXP(-(twopi*ifac*m(i)*j)/fs)
          ENDDO
       ENDDO
@@ -81,7 +81,7 @@ c-----------------------------------------------------------------------
 
       DO i=0,fs-1
          DO j=1,ms
-            func(i) = func(i)+funcm(j)*
+            func(i)=func(i)+funcm(j)*
      $           EXP((twopi*ifac*m(j)*i)/fs)
          ENDDO
       ENDDO
@@ -158,8 +158,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: issurfint,area
       REAL(r8), DIMENSION(0:fs) :: thetas,delpsi,jacs
 
-      issurfint = 0
-      area = 0
+      issurfint=0
+      area=0
       thetas=(/(itheta,itheta=0,fs)/)/REAL(fs,r8)
 
       DO itheta=0,fs-1
@@ -177,26 +177,26 @@ c-----------------------------------------------------------------------
 
       IF (wegt==0) THEN
          DO itheta=0,fs-1
-            issurfint = issurfint + 
+            issurfint=issurfint+
      $           jacs(itheta)*delpsi(itheta)*func(itheta)/fs
          ENDDO
       ELSE IF (wegt==1) THEN
          DO itheta=0,fs-1
-            issurfint = issurfint + 
+            issurfint=issurfint+
      $           r(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
          ENDDO
       ELSE 
          DO itheta=0,fs-1
-            issurfint = issurfint + 
+            issurfint=issurfint+
      $           jacs(itheta)*delpsi(itheta)*func(itheta)/r(itheta)/fs
          ENDDO
       ENDIF
 
       IF (ave==1) THEN
          DO itheta=0,fs-1
-            area = area + jacs(itheta)*delpsi(itheta)/fs
+            area=area+jacs(itheta)*delpsi(itheta)/fs
          ENDDO
-         issurfint = issurfint/area
+         issurfint=issurfint/area
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -218,10 +218,10 @@ c-----------------------------------------------------------------------
       INTEGER :: itheta
       REAL(r8) :: issurfave
 
-      issurfave = 0
+      issurfave=0
 
       DO itheta=0,fs-1
-         issurfave = issurfave + 0.5*func(itheta)/fs
+         issurfave=issurfave+0.5*func(itheta)/fs
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.

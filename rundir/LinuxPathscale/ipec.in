@@ -12,7 +12,6 @@
 	mmax=64
 
         harmonic_flag=f
-
 	cosmn(3)=-3.131e-5
 	cosmn(4)=-6.927e-5
 	cosmn(5)=1.1177e-4
@@ -23,7 +22,6 @@
 	cosmn(10)=2.1247e-4
 	cosmn(11)=1.9247e-4
 	cosmn(12)=4.222e-5
-	
 	sinmn(3)=-1.209e-5
 	sinmn(4)=-1.242e-5
 	sinmn(5)=-1.184e-5
@@ -35,35 +33,41 @@
 	sinmn(11)=1.9273e-4
 	sinmn(12)=4.109e-5
 
-      	fixed_boundary_flag=f
+	displacement_flag=f
+	fixed_boundary_flag=f
 /
 &ipec_control
 	resp_index=0
 	sing_spot=5e-4
+	reg_flag=t
 	reg_spot=5e-2
 /
 &ipec_output
 	jac_out="hamada"
 	jsurf_out=0
 	tmag_out=1
-
 	resp_flag=t
 	singcoup_flag=f
-
 	singfld_flag=t
-	pmodb_flag=t
-	xbnormal_flag=t
-
-	eqbrzphi_flag=t
-	brzphi_flag=t
+	pmodb_flag=f
+	xbnormal_flag=f
+	eqbrzphi_flag=f
+	brzphi_flag=f
 	xrzphi_flag=f
 	vbrzphi_flag=f
-	vpbrzphi_flag=t
+	vpbrzphi_flag=f
 	vvbrzphi_flag=f
-
 	bin_flag=t
 	bin_2d_flag=t
+	fun_flag=f
+	flux_flag=f
+	arzphifun_flag=f
+	xbrzphifun_flag=f	
+
+	vsbrzphi_flag=f
+	ss_flag(7)=f
+	ss_flag(8)=f
 /
 &ipec_diagnose
-	div_flag=t
+	div_flag=f
 /

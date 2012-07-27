@@ -23,10 +23,11 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,xbnobo_flag,
-     $     d3_flag,pmodbst_flag,pmodbrz_flag,rzphibx_flag,
+     $     d3_flag,xbst_flag,pmodbrz_flag,rzphibx_flag,
      $     radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
-     $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag
+     $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
+     $     arzphifun_flag,xbrzphifun_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: brrmn,bnomn,fxmn,xwpmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
@@ -35,16 +36,19 @@ c-----------------------------------------------------------------------
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
-     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,eqoff_flag
-      NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot
+     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,eqoff_flag,
+     $     displacement_flag
+      NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
+     $     chebyshev_flag,nche
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,divzero_flag,
-     $     bin_flag,bin_2d_flag,fun_flag,flux_flag,vsbrzphi_flag,ss_flag
+     $     bin_flag,bin_2d_flag,fun_flag,flux_flag,
+     $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
-     $     xbnobo_flag,d3_flag,div_flag,pmodbst_flag,pmodbrz_flag,
+     $     xbnobo_flag,d3_flag,div_flag,xbst_flag,pmodbrz_flag,
      $     rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
@@ -66,6 +70,7 @@ c-----------------------------------------------------------------------
       data_flag=.FALSE.
       harmonic_flag=.FALSE.
       mode_flag=.FALSE.
+      displacement_flag=.FALSE.
       mthsurf0=1
       nmin=1
       nmax=1
@@ -74,14 +79,14 @@ c-----------------------------------------------------------------------
 
       resp_index=0
       sing_spot=5e-4
-      reg_flag=.FALSE.
+      reg_flag=.TRUE.
       reg_spot=5e-2
 
       jsurf_out=0
       tmag_out=1
       jac_out=""
       resp_flag=.TRUE.
-      singcoup_flag=.TRUE.
+      singcoup_flag=.FALSE.
       singfld_flag=.TRUE.
       pmodb_flag=.FALSE.
       xbnormal_flag=.TRUE.
@@ -103,16 +108,18 @@ c-----------------------------------------------------------------------
       DO i=1,100 
          ss_flag(i)=.FALSE.
       ENDDO
+      arzphifun_flag=.FALSE.
+      xbrzphifun_flag=.FALSE.
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.
       xbnobo_flag=.FALSE.
       d3_flag=.FALSE.
       div_flag=.FALSE.
-      pmodbst_flag=.FALSE.
+      xbst_flag=.FALSE.
       pmodbrz_flag=.FALSE.
       rzphibx_flag=.FALSE.
-      radvar_flag=.FALSE.
+      radvar_flag=.TRUE.
       eigen_flag=.FALSE.
       magpot_flag=.FALSE.
       arbsurf_flag=.FALSE.
@@ -205,8 +212,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set parameters from inputs.
 c-----------------------------------------------------------------------
-      lmlow=mmin
-      lmhigh=mmax
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag .OR. 
      $     vsbrzphi_flag) psixy=1
@@ -321,6 +326,12 @@ c-----------------------------------------------------------------------
             IF (ss_flag(i)) CALL ipout_vsbrzphi(i,nr,nz)
          ENDDO
       ENDIF
+      IF (arzphifun_flag) THEN
+         CALL ipout_arzphifun(mode,xwpmn)
+      ENDIF
+      IF (xbrzphifun_flag) THEN
+         CALL ipout_xbrzphifun(mode,xwpmn)
+      ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
@@ -334,8 +345,8 @@ c-----------------------------------------------------------------------
       IF (xbnobo_flag) THEN
          CALL ipdiag_xbnobo(mode,xwpmn,d3_flag)
       ENDIF
-      IF (pmodbst_flag) THEN
-         CALL ipdiag_pmodbst(mode,xwpmn)
+      IF (xbst_flag) THEN
+         CALL ipdiag_xbst(mode,xwpmn)
       ENDIF
       IF (pmodbrz_flag) THEN
          CALL ipdiag_pmodbrz(mode,xwpmn)
@@ -410,18 +421,21 @@ c     only for test.
 c-----------------------------------------------------------------------
       IF (test_flag) THEN
          fxmn=0
-         fxmn(10-mlow+1)=1e-4
-         bnomn=fxmn
-         CALL ipeq_fcoords(psilim,bnomn,mfac,mpert,0,1,0,1,0,0)
-         CALL ipeq_bcoords(psilim,bnomn,mfac,mpert,0,1,0,1,0,0)
-         CALL ascii_open(out_unit,"iptest_coordtrans_n"//
-     $        sn//".out","UNKNOWN")
+         fxmn(7-mlow+1)=1.0
+         CALL ascii_open(out_unit,"iptest_coordtrans_n3.out","UNKNOWN")
          WRITE(out_unit,*)
      $        "IPTEST_COORDTRANS: cotoha to hatoco, co(0,0)"
-         WRITE(out_unit,'(2(1x,a16))')"binmn","boutmn"
-         DO in=1,mpert
-            WRITE(out_unit,'(2(1x,e16.8))')
-     $           REAL(fxmn(in)),REAL(bnomn(in))
+         WRITE(out_unit,'(5(1x,a16))')"normpsi","mfac","fxmn",
+     $        "real","imag"
+         DO i=1,100
+            bnomn=fxmn 
+            normpsi = REAL(i)/100.0
+            CALL ipeq_bcoords(normpsi,bnomn,mfac,mpert,0,0,0,0,1,0)
+            DO in=1,mpert
+               WRITE(out_unit,'(5(1x,es16.8))')
+     $              REAL(normpsi),REAL(mfac(in)),
+     $              REAL(fxmn(in)),REAL(bnomn(in)),AIMAG(bnomn(in))
+            ENDDO            
          ENDDO
          CALL ascii_close(out_unit)
       ENDIF

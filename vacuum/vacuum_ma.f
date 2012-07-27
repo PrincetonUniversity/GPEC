@@ -303,10 +303,10 @@ c-----------------------------------------------------------------------
       m       = 2
       mp     = 3
       minc   = 10
-      mth    = 128
+      mth    = mthvac
       mth1   = mth + 1
       mth2   = mth1 + 1
-      mthin  = 128
+      mthin  = mthvac
       mthin1 = mthin + 1
       mthin2 = mthin + 2
       mdiv   = 2

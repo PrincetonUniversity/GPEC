@@ -14,7 +14,7 @@ c      5. ipdiag_surfmode
 c      6. ipdiag_singcurs
 c      7. ipdiag_xbcontra
 c      8. ipdiag_xbnobo
-c      9. ipdiag_pmodbst
+c      9. ipdiag_xbst
 c     10. ipdiag_pmodbrz
 c     11. ipdiag_rzphibx
 c     12. ipdiag_rzpgrid
@@ -774,129 +774,116 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_xbnobo
 c-----------------------------------------------------------------------
-c     subprogram 9. ipdiag_pmodbst.
-c     compute strength of perturbed mod b.
+c     subprogram 9. ipdiag_xbst.
+c     diagnose strength of x and b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_pmodbst(egnum,xwpimn)
+      SUBROUTINE ipdiag_xbst(egnum,xwpimn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
 
-      INTEGER :: istep,itheta
+      INTEGER :: istep,itheta,ipert
 
-      REAL(r8), DIMENSION(0:mthsurf) :: seulmodb,seulbpar,
-     $     sxiwobbp,sxiwobbr,sxiwobbt,slagbpar
-      COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: eulmodb,eulbpar,
-     $     xiwobbp,xiwobbr,xiwobbt,lagbpar,xsp_fun,xms_fun,
-     $     bwp_fun,bwt_fun,bwz_fun,bvp_fun,bvt_fun,bvz_fun
+      REAL(r8), DIMENSION(0:mthsurf) :: jacs
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,bwt_fun,bwz_fun,
+     $     bvp_fun,bvt_fun,bvz_fun,brr_fun,brz_fun,brp_fun,
+     $     xwp_fun,xwt_fun,xwz_fun,
+     $     xvp_fun,xvt_fun,xvz_fun,xrr_fun,xrz_fun,xrp_fun
 
-      REAL(r8), DIMENSION(:), POINTER :: psis,
-     $     eulmodbst,eulbparst,xiwobbpst,xiwobbrst,xiwobbtst,lagbparst,
-     $     invlagbst,ntv_eulbparst,ntv_lagbparst
-
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: x1,x2,b1,b2
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: x1mns,x2mns,b1mns,b2mns
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Computing perturbed b field strength"
-      ALLOCATE(psis(rstep),eulmodbst(rstep),
-     $     eulbparst(rstep),xiwobbpst(rstep),xiwobbrst(rstep),
-     $     xiwobbtst(rstep),lagbparst(rstep),invlagbst(rstep),
-     $     ntv_eulbparst(rstep),ntv_lagbparst(rstep))
-
-      IF (rstep .EQ. mstep) THEN
-         psis=psifac
-      ELSE
-         psis=(/(istep,istep=1,rstep)/)/REAL(rstep,r8)*
-     $        (psilim-reg_spot/singtype(msing)%q)
-      ENDIF
+      WRITE(*,*)"Computing x and b field strength"
 
       CALL idcon_build(egnum,xwpimn)
       
       CALL ipeq_alloc
-      DO istep=1,rstep
+      DO istep=1,mstep
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces.
 c-----------------------------------------------------------------------
-         CALL spline_eval(sq,psis(istep),1)
-         CALL ipeq_sol(psis(istep))
-         CALL ipeq_contra(psis(istep))
-         CALL ipeq_cova(psis(istep))
+         CALL ipeq_sol(psifac(istep))
+         CALL ipeq_contra(psifac(istep))
+         CALL ipeq_cova(psifac(istep))
+         CALL ipeq_rzphi(psifac(istep))
 
-         CALL iscdftb(mfac,mpert,xsp_fun,mthsurf,xsp_mn)
-         CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
          CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
          CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
          CALL iscdftb(mfac,mpert,bwz_fun,mthsurf,bwz_mn)
          CALL iscdftb(mfac,mpert,bvp_fun,mthsurf,bvp_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+         CALL iscdftb(mfac,mpert,brr_fun,mthsurf,brr_mn)
+         CALL iscdftb(mfac,mpert,brz_fun,mthsurf,brz_mn)
+         CALL iscdftb(mfac,mpert,brp_fun,mthsurf,brp_mn)
 
-         eulmodb=SQRT(ABS(REAL(CONJG(bwp_fun)*bvp_fun+
-     $        CONJG(bwt_fun)*bvt_fun+CONJG(bwz_fun)*bvz_fun)))
+         CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
+         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+         CALL iscdftb(mfac,mpert,xwz_fun,mthsurf,xwz_mn)
+         CALL iscdftb(mfac,mpert,xvp_fun,mthsurf,xvp_mn)
+         CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
+         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
+         CALL iscdftb(mfac,mpert,xrr_fun,mthsurf,xrr_mn)
+         CALL iscdftb(mfac,mpert,xrz_fun,mthsurf,xrz_mn)
+         CALL iscdftb(mfac,mpert,xrp_fun,mthsurf,xrp_mn)
+
          DO itheta=0,mthsurf
-            CALL bicube_eval(eqfun,psis(istep),theta(itheta),1)
-            CALL bicube_eval(rzphi,psis(istep),theta(itheta),0)
-            eulbpar(itheta)=(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
-     $           /(rzphi%f(4)*eqfun%f(1))
-            xiwobbp(itheta)=xsp_fun(itheta)*sq%f1(2)/eqfun%f(1)
-            xiwobbr(itheta)=xsp_fun(itheta)*eqfun%fx(1)
-            xiwobbt(itheta)=xms_fun(itheta)/(chi1*sq%f(4)*eqfun%fy(1))
+            CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
+            jacs(itheta)=rzphi%f(4)
          ENDDO
-         lagbpar=eulbpar+xiwobbr+xiwobbt
-c-----------------------------------------------------------------------
-c     compute the ntv strength terms in hamada.
-c-----------------------------------------------------------------------
-         CALL iscdftf(mfac,mpert,eulbpar,mthsurf,eulbpar_mn)
-         CALL iscdftf(mfac,mpert,lagbpar,mthsurf,lagbpar_mn)
-         ntv_eulbparst(istep)=nn**2*SUM(ABS(eulbpar_mn)**2)
-         ntv_lagbparst(istep)=nn**2*SUM(ABS(lagbpar_mn)**2)
-c-----------------------------------------------------------------------
-c     compute each strength.
-c-----------------------------------------------------------------------
-         seulmodb=ABS(eulmodb)**2
-         seulbpar=ABS(eulbpar)**2
-         sxiwobbp=ABS(xiwobbp)**2
-         sxiwobbr=ABS(xiwobbr)**2
-         sxiwobbt=ABS(xiwobbt)**2       
-         slagbpar=ABS(lagbpar)**2
-         eulmodbst(istep)=issurfint(seulmodb,mthsurf,psis(istep),0,1)
-         eulbparst(istep)=issurfint(seulbpar,mthsurf,psis(istep),0,1)
-         xiwobbpst(istep)=issurfint(sxiwobbp,mthsurf,psis(istep),0,1)  
-         xiwobbrst(istep)=issurfint(sxiwobbr,mthsurf,psis(istep),0,1) 
-         xiwobbtst(istep)=issurfint(sxiwobbt,mthsurf,psis(istep),0,1)
-         lagbparst(istep)=issurfint(slagbpar,mthsurf,psis(istep),0,1)
-         invlagbst(istep)=1.0/
-     $        issurfint(1.0/slagbpar,mthsurf,psis(istep),0,1)
+         x1(istep,:)=(CONJG(xwp_fun)*xvp_fun+CONJG(xwt_fun)*xvt_fun+
+     $        CONJG(xwz_fun)*xvz_fun)/jacs
+         x2(istep,:)=CONJG(xrr_fun)*xrr_fun+CONJG(xrz_fun)*xrz_fun+
+     $        CONJG(xrp_fun)*xrp_fun
+         b1(istep,:)=(CONJG(bwp_fun)*bvp_fun+CONJG(bwt_fun)*bvt_fun+
+     $        CONJG(bwz_fun)*bvz_fun)/jacs
+         b2(istep,:)=CONJG(brr_fun)*brr_fun+CONJG(brz_fun)*brz_fun+
+     $        CONJG(brp_fun)*brp_fun
+         CALL iscdftf(mfac,mpert,x1(istep,:),mthsurf,x1mns(istep,:))
+         CALL iscdftf(mfac,mpert,x2(istep,:),mthsurf,x2mns(istep,:))
+         CALL iscdftf(mfac,mpert,b1(istep,:),mthsurf,b1mns(istep,:))
+         CALL iscdftf(mfac,mpert,b2(istep,:),mthsurf,b2mns(istep,:))
       ENDDO
       CALL ipeq_dealloc
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------      
-      CALL ascii_open(out_unit,"ipdiag_pmodbst_n"//
+      CALL ascii_open(out_unit,"ipdiag_xbst_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_PMODBST: "//
-     $     "Perturbed mod b strength on flux surfaces"
-      WRITE(out_unit,'(10(1x,a16))')"psi","eulmodbst","eulbparst",
-     $     "ntveulbst","xiwobbpst","xiwobbrst","xiwobbtst",
-     $     "lagbparst","invlagbst","ntvlagbst"
-      DO istep=1,rstep
-         WRITE(out_unit,'(10(1x,es16.8))')psis(istep),
-     $        eulmodbst(istep),eulbparst(istep),ntv_eulbparst(istep),
-     $        xiwobbpst(istep),xiwobbrst(istep),xiwobbtst(istep),
-     $        lagbparst(istep),invlagbst(istep),ntv_lagbparst(istep)
+      WRITE(out_unit,*)"IPDIAG_XBST: "//
+     $     "Perturbed x and b strength on flux surfaces"
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+      WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(1x,a16,1x,a4,8(1x,a16))')"psi","m",
+     $     "real(x1)","imag(x1)","real(x2)","imag(x2)",
+     $     "real(b1)","imag(b2)","real(b2)","imag(b2)"
+      DO istep=1,mstep
+         DO ipert=1,mpert
+            WRITE(out_unit,'(1x,es16.8,1x,I4,8(1x,es16.8))')
+     $           psifac(istep),mfac(ipert),
+     $           REAL(x1(istep,ipert)),
+     $           AIMAG(x1(istep,ipert)),
+     $           REAL(x2(istep,ipert)),
+     $           AIMAG(x2(istep,ipert)),
+     $           REAL(b1(istep,ipert)),
+     $           AIMAG(b1(istep,ipert)),
+     $           REAL(b2(istep,ipert)),
+     $           AIMAG(b2(istep,ipert))
+         ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-
-      DEALLOCATE(psis,eulmodbst,eulbparst,xiwobbpst,xiwobbrst,
-     $     xiwobbtst,lagbparst,invlagbst,ntv_eulbparst,ntv_lagbparst)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_pmodbst
+      END SUBROUTINE ipdiag_xbst
 c-----------------------------------------------------------------------
 c     subprogram 10. ipdiag_pmodbrz.
 c     plot perturbed mod b at rz coordinates.
@@ -910,43 +897,39 @@ c-----------------------------------------------------------------------
 
       INTEGER :: istep,ipert,itheta
 
-      COMPLEX(r8), DIMENSION(mpert) :: eulbpar,lagbpar
+      COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,llagbpar_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     bvt_fun,bvz_fun
+     $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun
 
-      REAL(r8), DIMENSION(:), POINTER :: psis
       REAL(r8), DIMENSION(:,:), POINTER :: rs,zs,eqfunx,eqfuny,eqfuns
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbpar_mn,lagbpar_mn,
-     $     eulbparfun,lagbparfun,xspfun,xmsfun,bvtfun,bvzfun
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbparmns,lagbparmns,
+     $     eulbparfun,lagbparfun,llagbparmns,llagbparfun,
+     $     xspfun,xmsfun,bvtfun,bvzfun,xmzfun,xvtfun,xvzfun
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing perturbed b field"
-      ALLOCATE(psis(rstep),rs(rstep,0:mthsurf),zs(rstep,0:mthsurf),
-     $     eulbpar_mn(rstep,mpert),lagbpar_mn(rstep,mpert),
-     $     eulbparfun(rstep,0:mthsurf),lagbparfun(rstep,0:mthsurf),
-     $     xspfun(rstep,0:mthsurf),xmsfun(rstep,0:mthsurf),
-     $     bvtfun(rstep,0:mthsurf),bvzfun(rstep,0:mthsurf),
-     $     eqfunx(rstep,0:mthsurf),eqfuny(rstep,0:mthsurf),
-     $     eqfuns(rstep,0:mthsurf))
-
-      IF (rstep .EQ. mstep) THEN
-         psis=psifac
-      ELSE
-         psis=(/(istep,istep=1,rstep)/)/REAL(rstep,r8)*(psilim-psilow)
-      ENDIF
+      ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf),
+     $     eulbparmns(mstep,mpert),lagbparmns(mstep,mpert),
+     $     eulbparfun(mstep,0:mthsurf),lagbparfun(mstep,0:mthsurf),
+     $     llagbparmns(mstep,mpert),llagbparfun(mstep,0:mthsurf))
+      ALLOCATE(xspfun(mstep,0:mthsurf),xmsfun(mstep,0:mthsurf),
+     $     bvtfun(mstep,0:mthsurf),bvzfun(mstep,0:mthsurf),
+     $     xmzfun(mstep,0:mthsurf),xvtfun(mstep,0:mthsurf),
+     $     xvzfun(mstep,0:mthsurf),
+     $     eqfunx(mstep,0:mthsurf),eqfuny(mstep,0:mthsurf),
+     $     eqfuns(mstep,0:mthsurf))
 
       CALL idcon_build(egnum,xwpimn)
-      
       CALL ipeq_alloc
-      DO istep=1,rstep
+      DO istep=1,mstep
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces with regulation.
 c-----------------------------------------------------------------------
-         CALL spline_eval(sq,psis(istep),1)
-         CALL ipeq_sol(psis(istep))
-         CALL ipeq_contra(psis(istep))
-         CALL ipeq_cova(psis(istep))
+         CALL spline_eval(sq,psifac(istep),1)
+         CALL ipeq_sol(psifac(istep))
+         CALL ipeq_contra(psifac(istep))
+         CALL ipeq_cova(psifac(istep))
 c-----------------------------------------------------------------------
 c     compute mod b variations.
 c-----------------------------------------------------------------------
@@ -954,16 +937,32 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
          CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
          CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
+         CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
+         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)  
+
          xspfun(istep,:)=xsp_fun
          xmsfun(istep,:)=xms_fun
          bvtfun(istep,:)=bvt_fun
-         bvzfun(istep,:)=bvz_fun         
+         bvzfun(istep,:)=bvz_fun
+         xmzfun(istep,:)=xmz_fun
+         xvtfun(istep,:)=xvt_fun
+         xvzfun(istep,:)=xvz_fun
+         
+         CALL spline_eval(sq,psifac(istep),0)
          DO itheta=0,mthsurf
-            CALL bicube_eval(eqfun,psis(istep),theta(itheta),1)
-            CALL bicube_eval(rzphi,psis(istep),theta(itheta),0)
+            CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
+            CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            rs(istep,itheta)=ro+rfac*COS(eta)
+            zs(istep,itheta)=zo+rfac*SIN(eta) 
+
             eqfuns(istep,itheta)=eqfun%f(1)
             eqfunx(istep,itheta)=eqfun%fx(1)
             eqfuny(istep,itheta)=eqfun%fy(1)
+
+            jac=rzphi%f(4)
             eulbparfun(istep,itheta)=
      $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
      $           /(rzphi%f(4)*eqfun%f(1))
@@ -971,40 +970,69 @@ c-----------------------------------------------------------------------
      $           eulbparfun(istep,itheta)+
      $           xsp_fun(itheta)*eqfun%fx(1)+
      $           xms_fun(itheta)/(chi1*sq%f(4))*eqfun%fy(1)
+            llagbparfun(istep,itheta)=
+     $           lagbparfun(istep,itheta)+eqfun%fy(1)*
+     $           (xmzfun(istep,itheta)/(jac*sq%f(4))-
+     $           (chi1/(jac*eqfun%f(1)))**2*
+     $           (sq%f(4)*xvzfun(istep,itheta)+xvtfun(istep,itheta)))
+
          ENDDO
-c-----------------------------------------------------------------------
-c     decompose components on the given coordinates.
-c-----------------------------------------------------------------------
-         DO itheta=0,mthsurf
-            CALL bicube_eval(rzphi,psis(istep),theta(itheta),0)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta(itheta)+rzphi%f(2))
-            rs(istep,itheta)=ro+rfac*COS(eta)
-            zs(istep,itheta)=zo+rfac*SIN(eta) 
-         ENDDO
+         CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
+     $        mthsurf,eulbpar_mn)
+         CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
+     $        mthsurf,lagbpar_mn)
+         CALL iscdftf(mfac,mpert,llagbparfun(istep,:),
+     $        mthsurf,llagbpar_mn)
+         eulbparmns(istep,:)=eulbpar_mn
+         lagbparmns(istep,:)=lagbpar_mn
+         llagbparmns(istep,:)=llagbpar_mn
       ENDDO
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------
+      CALL ascii_open(out_unit,"ipdiag_pmodb_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IDIAG_PMODB: "//
+     $     "Components in perturbed mod b"
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+      WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
+      WRITE(out_unit,*)     
+
+      WRITE(out_unit,'(1x,a16,1x,a4,4(1x,a16))')"psi","m",
+     $     "real(lagb)","imag(lagb)","real(llagb)","imag(llagb)"
+      DO istep=1,mstep
+         DO ipert=1,mpert
+            WRITE(out_unit,'(1x,es16.8,1x,I4,4(1x,es16.8))')
+     $           psifac(istep),mfac(ipert),
+     $           REAL(lagbparmns(istep,ipert)),
+     $           AIMAG(lagbparmns(istep,ipert)),
+     $           REAL(llagbparmns(istep,ipert)),
+     $           AIMAG(llagbparmns(istep,ipert))
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_unit)
+
       CALL ascii_open(out_unit,"ipdiag_pmodbrz_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_PMODBRZ: "//
      $     "Perturbed mod b on a poloidal plane"
-      WRITE(out_unit,'(1x,a8,1x,I4)')"rstep=",rstep
+      WRITE(out_unit,'(1x,a8,1x,I4)')"mstep=",mstep
       WRITE(out_unit,'(1x,a8,1x,I4)')"mthsurf=",mthsurf
       WRITE(out_unit,'(17(1x,a16))')"r","z",
      $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
      $     "real(xwp)","imag(xwp)","real(xwt)","imag(xwt)",
      $     "real(bvt)","imag(bvt)","real(bvz)","imag(bvz)",
      $     "eqfunx","eqfuny","eqfuns"
-      DO istep=1,rstep
+      DO istep=1,mstep
          DO itheta=0,mthsurf
             WRITE(out_unit,'(17(1x,es16.8))')
      $           rs(istep,itheta),zs(istep,itheta),
      $           REAL(eulbparfun(istep,itheta)),
      $           AIMAG(eulbparfun(istep,itheta)),
-     $           REAL(lagbparfun(istep,itheta)),
-     $           AIMAG(lagbparfun(istep,itheta)),
+     $           REAL(llagbparfun(istep,itheta)),
+     $           AIMAG(llagbparfun(istep,itheta)),
      $           REAL(xspfun(istep,itheta)),
      $           AIMAG(xspfun(istep,itheta)),
      $           REAL(xmsfun(istep,itheta)),
@@ -1019,9 +1047,9 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
       CALL ipeq_dealloc
-      DEALLOCATE(psis,rs,zs,eulbpar_mn,lagbpar_mn,
-     $     eulbparfun,lagbparfun,eqfunx,eqfuny,eqfuns,
-     $     xspfun,xmsfun,bvtfun,bvzfun)
+      DEALLOCATE(rs,zs,eulbparmns,lagbparmns,llagbparmns,
+     $     eulbparfun,lagbparfun,llagbparfun,eqfunx,eqfuny,eqfuns,
+     $     xspfun,xmsfun,bvtfun,bvzfun,xmzfun,xvtfun,xvzfun)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
