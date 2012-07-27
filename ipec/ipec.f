@@ -140,7 +140,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Starting ipec calculations - v1.00"
+      WRITE(*,*)"Starting ipec calculations - v1.20"
       CALL ascii_open(in_unit,"ipec.in","OLD")
       READ(in_unit,NML=ipec_input)
       READ(in_unit,NML=ipec_control)  
