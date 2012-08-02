@@ -372,7 +372,8 @@ c-----------------------------------------------------------------------
          spl%fs(itheta,1)=fac
          spl%fs(itheta,2)=fac/r(itheta)**2
          spl%fs(itheta,3)=fac*bpfac
-         spl%fs(itheta,4)=fac*bpfac**2
+         !modified for boozer coordinates.
+         spl%fs(itheta,4)=fac*bfac**2
       ENDDO
 c-----------------------------------------------------------------------
 c     compute alternative poloidal coordinates.

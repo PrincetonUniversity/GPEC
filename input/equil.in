@@ -1,6 +1,6 @@
 &equil_control
 	eq_type="efit"
-	eq_filename="/u/jpark/data/equilibria/efit/g124995.02502_d3d"
+	eq_filename="/p/gpec/users/jpark/data/equilibria/efit/g144182.03750.qo105_d3d"
 	jac_type="hamada"
 	grid_type="ldp"
 	psilow=1e-4

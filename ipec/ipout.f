@@ -1255,11 +1255,11 @@ c-----------------------------------------------------------------------
 c     subprogram 5. ipout_pmodb.
 c     compute perturbed mod b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_pmodb(egnum,xspimn,rout,bpout,bout,rcout)
+      SUBROUTINE ipout_pmodb(egnum,xspimn,rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout
+      INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspimn
 
       INTEGER :: i,istep,ipert,itheta,iindex,cstep
@@ -1336,9 +1336,9 @@ c     decompose components on the given coordinates.
 c-----------------------------------------------------------------------
          IF ((jac_out /= jac_type)) THEN
             CALL ipeq_bcoords(psifac(istep),eulbpar_mn,
-     $           mfac,mpert,rout,bpout,bout,rcout,1,0)
+     $           mfac,mpert,rout,bpout,bout,rcout,tout,0)
             CALL ipeq_bcoords(psifac(istep),lagbpar_mn,
-     $           mfac,mpert,rout,bpout,bout,rcout,1,0)
+     $           mfac,mpert,rout,bpout,bout,rcout,tout,0)
          ENDIF
          eulbparmns(istep,:)=eulbpar_mn
          lagbparmns(istep,:)=lagbpar_mn
@@ -1513,11 +1513,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 6. ipout_xbnormal.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_xbnormal(egnum,xspimn,rout,bpout,bout,rcout)
+      SUBROUTINE ipout_xbnormal(egnum,xspimn,rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout
+      INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspimn
 
       INTEGER :: istep,ipert,iindex,itheta
@@ -1579,9 +1579,9 @@ c-----------------------------------------------------------------------
          bwp_mn=bwp_mn/area
          IF ((jac_out /= jac_type)) THEN
             CALL ipeq_bcoords(psifac(istep),xno_mn,mfac,mpert,
-     $           rout,bpout,bout,rcout,1,0)
+     $           rout,bpout,bout,rcout,tout,0)
             CALL ipeq_bcoords(psifac(istep),bno_mn,mfac,mpert,
-     $           rout,bpout,bout,rcout,1,0)
+     $           rout,bpout,bout,rcout,tout,0)
             CALL ipeq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
      $           rout,bpout,bout,rcout,1,0)            
          ENDIF

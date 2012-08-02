@@ -6,7 +6,7 @@
 	sas_flag=t
 	nn=1
 	delta_mlow=8
-	delta_mhigh=10
+	delta_mhigh=8
 	delta_mband=0
 	sing_start=0
 	dmlim=0.2

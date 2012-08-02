@@ -1394,13 +1394,13 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: qs
 
       CALL spline_alloc(qs,mstep,1)      
-      qs%xs = psifac
-      qs%fs(:,1) = qfac
+      qs%xs=psifac
+      qs%fs(:,1)=qfac
       CALL spline_fit(qs,"extrap") 
       CALL spline_int(qs)
-      qintb = qs%fsi(mstep,1)
-      psitor(:) = qs%fsi(:,1)/qintb
-      rhotor(:) = SQRT(psitor(:))
+      qintb=qs%fsi(mstep,1)
+      psitor(:)=qs%fsi(:,1)/qintb
+      rhotor(:)=SQRT(psitor(:))
       CALL spline_dealloc(qs)
       CALL ascii_open(out_unit,"ipdiag_radvar_n"//
      $     TRIM(sn)//".out","UNKNOWN")
@@ -1409,7 +1409,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep
       WRITE(out_unit,'(1x,a8,1x,es16.8)')"qintb=",qintb
       WRITE(out_unit,'(4(1x,a16))')"psi","rho","psitor","rhotor"
-      DO istep=0,mstep
+      DO istep=1,mstep
          WRITE(out_unit,'(4(1x,es16.8))')psifac(istep),rhofac(istep),
      $        psitor(istep),rhotor(istep)
       ENDDO

@@ -459,7 +459,7 @@ c     compute equilibrium mod b.
 c     sq%f(1) = twopi*f
 c-----------------------------------------------------------------------
             eqfun%fs(ipsi,itheta,1)=SQRT(
-     $           (sq%f(1)**2+chi1**2*delpsi**2)/(twopi*rr)**2)
+     $           (chi1**2*delpsi**2+sq%f(1)**2)/(twopi*rr)**2)
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------

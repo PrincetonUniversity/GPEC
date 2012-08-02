@@ -4,10 +4,10 @@
 	tmag_in=0
 
 	data_flag=t
-	data_type="surfmn1"
-        infile="/u/jpark/data/errorfield/d3d/surfmn.out.cs.124995.02502.errfield"
-	nmin=0
-	nmax=64
+	data_type="vac3d1"
+        infile="/p/gpec/users/jpark/data/3d_field/d3d/external_field_I-coil+ProxyEquiv_g144182.03750.qo105_d3d_nmin1_nmax1_m64_pt_s990.dat"
+	nmin=1
+	nmax=1
 	mmin=-64
 	mmax=64
 
@@ -41,6 +41,8 @@
 	sing_spot=5e-4
 	reg_flag=t
 	reg_spot=5e-2
+	chebyshev_flag=t
+	nche=20
 /
 &ipec_output
 	jac_out="hamada"
@@ -49,8 +51,8 @@
 	resp_flag=t
 	singcoup_flag=f
 	singfld_flag=t
-	pmodb_flag=f
-	xbnormal_flag=f
+	pmodb_flag=t
+	xbnormal_flag=t
 	eqbrzphi_flag=f
 	brzphi_flag=f
 	xrzphi_flag=f
@@ -59,8 +61,8 @@
 	vvbrzphi_flag=f
 	bin_flag=t
 	bin_2d_flag=t
-	fun_flag=f
-	flux_flag=f
+	fun_flag=t
+	flux_flag=t
 	arzphifun_flag=f
 	xbrzphifun_flag=f	
 
@@ -70,4 +72,5 @@
 /
 &ipec_diagnose
 	div_flag=f
+	radvar_flag=t
 /

@@ -276,11 +276,11 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (pmodb_flag) THEN
          CALL ipout_pmodb(mode,xwpmn,power_rout,
-     $        power_bpout,power_bout,power_rcout)
+     $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
       IF (xbnormal_flag) THEN
          CALL ipout_xbnormal(mode,xwpmn,power_rout,
-     $        power_bpout,power_bout,power_rcout)
+     $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vpbrzphi_flag .OR. vvbrzphi_flag)
@@ -411,8 +411,8 @@ c-----------------------------------------------------------------------
          CALL ipout_singfld(mode,xwpmn,sing_spot,0,0,0,0,1,.FALSE.)
          CALL ipdiag_xbcontra(mode,xwpmn,0,0,0,0,1)
          CALL ipdiag_xbcontra(mode,xwpmn,0,0,2,0,1)
-         CALL ipout_xbnormal(mode,xwpmn,0,0,0,0)
-         CALL ipout_xbnormal(mode,xwpmn,0,0,2,0)
+         CALL ipout_xbnormal(mode,xwpmn,0,0,0,0,1)
+         CALL ipout_xbnormal(mode,xwpmn,0,0,2,0,1)
          CALL ipdiag_xbnobo(mode,xwpmn,d3_flag)
          CALL ipdiag_radvar
       ENDIF
