@@ -1,7 +1,7 @@
 &ipec_input
 	jac_in="pest"
-	jsurf_in=1
-	tmag_in=0
+	jsurf_in=0
+	tmag_in=1
 
 	data_flag=t
 	data_type="vac3d1"

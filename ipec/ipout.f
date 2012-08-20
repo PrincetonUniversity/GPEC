@@ -1317,7 +1317,7 @@ c-----------------------------------------------------------------------
             jac=rzphi%f(4)
             eulbparfuns(istep,itheta)=
      $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
-     $           /(rzphi%f(4)*eqfun%f(1))
+     $           /(jac*eqfun%f(1))
             lagbparfuns(istep,itheta)=
      $           eulbparfuns(istep,itheta)+
      $           eqfun%fx(1)*xsp_fun(itheta)+eqfun%fy(1)*
@@ -1334,7 +1334,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     decompose components on the given coordinates.
 c-----------------------------------------------------------------------
-         IF ((jac_out /= jac_type)) THEN
+         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             CALL ipeq_bcoords(psifac(istep),eulbpar_mn,
      $           mfac,mpert,rout,bpout,bout,rcout,tout,0)
             CALL ipeq_bcoords(psifac(istep),lagbpar_mn,
@@ -1372,7 +1372,7 @@ c-----------------------------------------------------------------------
       CALL ascii_close(out_unit)
 
       IF (chebyshev_flag) THEN
-         ALLOCATE(chea(mpert,0:nche),chex(mstep))
+         ALLOCATE(chea(mpert,0:nche),chex(0:mstep))
          CALL cspline_alloc(chespl,mstep,1)
          chespl%xs=psifac
          chex=2.0*(psifac-0.5)
@@ -1577,13 +1577,14 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,xnofuns(istep,:),mthsurf,xno_mn)
          CALL iscdftf(mfac,mpert,bnofuns(istep,:),mthsurf,bno_mn)
          bwp_mn=bwp_mn/area
-         IF ((jac_out /= jac_type)) THEN
+         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+            bwp_mn=bno_mn
             CALL ipeq_bcoords(psifac(istep),xno_mn,mfac,mpert,
      $           rout,bpout,bout,rcout,tout,0)
             CALL ipeq_bcoords(psifac(istep),bno_mn,mfac,mpert,
      $           rout,bpout,bout,rcout,tout,0)
             CALL ipeq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
-     $           rout,bpout,bout,rcout,1,0)            
+     $           rout,bpout,bout,rcout,tout,1)            
          ENDIF
          xnomns(istep,:)=xno_mn
          bnomns(istep,:)=bno_mn

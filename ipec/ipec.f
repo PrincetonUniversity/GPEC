@@ -29,7 +29,8 @@ c-----------------------------------------------------------------------
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag
       LOGICAL, DIMENSION(100) :: ss_flag
-      COMPLEX(r8), DIMENSION(:), POINTER :: brrmn,bnomn,fxmn,xwpmn
+      COMPLEX(r8), DIMENSION(:), POINTER :: brrmn,bnomn,xwpmn,
+     $     fxmn,fxfun
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
@@ -37,7 +38,7 @@ c-----------------------------------------------------------------------
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,eqoff_flag,
-     $     displacement_flag
+     $     displacement_flag,mode
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
@@ -132,6 +133,7 @@ c-----------------------------------------------------------------------
 
       majr=10.0
       minr=1.0
+      mode=1
       lowmode=-10
       highmode=10
       m3mode=2
@@ -246,7 +248,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set parameters from dcon.
 c-----------------------------------------------------------------------
-      ALLOCATE(brrmn(mpert),bnomn(mpert),xwpmn(mpert),fxmn(mpert))
+      ALLOCATE(brrmn(mpert),bnomn(mpert),xwpmn(mpert),
+     $     fxmn(mpert),fxfun(mthsurf))
 c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
@@ -417,7 +420,7 @@ c-----------------------------------------------------------------------
          CALL ipdiag_radvar
       ENDIF
 c-----------------------------------------------------------------------
-c     only for test.
+c     various simple test.
 c-----------------------------------------------------------------------
       IF (test_flag) THEN
          fxmn=0
@@ -438,6 +441,11 @@ c-----------------------------------------------------------------------
             ENDDO            
          ENDDO
          CALL ascii_close(out_unit)
+        
+         fxfun=cos(twopi*3*theta)
+         CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
+         CALL iscdftb(mfac,mpert,fxfun,mthsurf,fxmn)
+         CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

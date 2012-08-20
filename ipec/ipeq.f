@@ -138,34 +138,50 @@ c-----------------------------------------------------------------------
       jmat(1:mband)=CONJG(jmat(-1:-mband:-1))
       jmat1(1:mband)=CONJG(jmat1(-1:-mband:-1))
 c-----------------------------------------------------------------------
-c     compute contravariant quantities.
-c-----------------------------------------------------------------------
-      ipert=0
-      xwp_mn=0
-      xwt_mn=0
-      xwz_mn=0
-      DO m1=mlow,mhigh
-         ipert=ipert+1
-         DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
-            jpert=ipert+dm
-            xwp_mn(ipert)=xwp_mn(ipert)+jmat(dm)*xsp_mn(jpert)
-            xwt_mn(ipert)=xwt_mn(ipert)-(jmat(dm)*xsp1_mn(jpert)+
-     $           jmat1(dm)*xsp_mn(jpert)+
-     $           twopi*ifac*nn/chi1*jmat(dm)*xss_mn(jpert))/
-     $           (twopi*ifac*(m1-nn*q))
-            xwz_mn(ipert)=xwz_mn(ipert)-(q*jmat(dm)*xsp1_mn(jpert)+
-     $           q*jmat1(dm)*xsp_mn(jpert)+
-     $           twopi*ifac*m1/chi1*jmat(dm)*xss_mn(jpert))/
-     $           (twopi*ifac*(m1-nn*q))
-         ENDDO
-      ENDDO
-c-----------------------------------------------------------------------
-c     compute modified quantities.
+c     compute contravariant and modified quantities.
 c-----------------------------------------------------------------------
       IF (reg_flag) THEN
+         ipert=0
+         xwp_mn=0
+         xwt_mn=0
+         xwz_mn=0
+         DO m1=mlow,mhigh
+            ipert=ipert+1
+            DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
+               jpert=ipert+dm
+               xwp_mn(ipert)=xwp_mn(ipert)+jmat(dm)*xsp_mn(jpert)
+               xwt_mn(ipert)=xwt_mn(ipert)-(jmat(dm)*xsp1_mn(jpert)+
+     $              jmat1(dm)*xsp_mn(jpert)+
+     $              twopi*ifac*nn/chi1*jmat(dm)*xms_mn(jpert))/
+     $              (twopi*ifac*(m1-nn*q))
+               xwz_mn(ipert)=xwz_mn(ipert)-(q*jmat(dm)*xsp1_mn(jpert)+
+     $              q*jmat1(dm)*xsp_mn(jpert)+
+     $              twopi*ifac*m1/chi1*jmat(dm)*xms_mn(jpert))/
+     $              (twopi*ifac*(m1-nn*q))
+            ENDDO
+         ENDDO
          xmt_mn=xwt_mn*(singfac**2/(singfac**2+reg_spot**2))
          xmz_mn=xwz_mn*(singfac**2/(singfac**2+reg_spot**2))
       ELSE
+         ipert=0
+         xwp_mn=0
+         xwt_mn=0
+         xwz_mn=0
+         DO m1=mlow,mhigh
+            ipert=ipert+1
+            DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
+               jpert=ipert+dm
+               xwp_mn(ipert)=xwp_mn(ipert)+jmat(dm)*xsp_mn(jpert)
+               xwt_mn(ipert)=xwt_mn(ipert)-(jmat(dm)*xsp1_mn(jpert)+
+     $              jmat1(dm)*xsp_mn(jpert)+
+     $              twopi*ifac*nn/chi1*jmat(dm)*xss_mn(jpert))/
+     $              (twopi*ifac*(m1-nn*q))
+               xwz_mn(ipert)=xwz_mn(ipert)-(q*jmat(dm)*xsp1_mn(jpert)+
+     $              q*jmat1(dm)*xsp_mn(jpert)+
+     $              twopi*ifac*m1/chi1*jmat(dm)*xss_mn(jpert))/
+     $              (twopi*ifac*(m1-nn*q))
+            ENDDO
+         ENDDO
          xmt_mn=xwt_mn
          xmz_mn=xwz_mn
       ENDIF
@@ -737,7 +753,7 @@ c-----------------------------------------------------------------------
          thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
          DO i=1,amp
             ftnfun(itheta)=ftnfun(itheta)+
-     $           ftnmn(i)*EXP(ifac*twopi*(i+amf(1)-1)*thetai)
+     $           ftnmn(i)*EXP(ifac*twopi*amf(i)*thetai)
          ENDDO
 
          ! take toroidal factor back for coordinate angle
@@ -768,7 +784,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE ipeq_bcoords
 c-----------------------------------------------------------------------
 c     subprogram 11. ipeq_bntoxp.
-c     transform b normal to xi normal solution.
+c     transform b normal to xipsi normal solution.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_bntoxp(psi,finmn,foutmn)
 c-----------------------------------------------------------------------
@@ -811,7 +827,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE ipeq_bntoxp
 c-----------------------------------------------------------------------
 c     subprogram 12. ipeq_xptobn.
-c     transforms xi normal solution to b normal.
+c     transforms xipsi normal solution to b normal.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_xptobn(psi,finmn,foutmn)
 c-----------------------------------------------------------------------
