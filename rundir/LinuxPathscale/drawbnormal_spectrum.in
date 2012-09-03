@@ -3,7 +3,7 @@ Type (G=Graph, C=Contour):	M
 filename(s)
 bnormal_spectrum.bin
 
-comment:	Contour Plot of xi and b normal
+comment:	Contour Plot of b normal
 
 independent variable names
 t       time

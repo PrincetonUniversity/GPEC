@@ -16,9 +16,9 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-llapack \
-	-lblas \
 	-lcoil \
+	-llapack \
+	-lblas
 
 OBJS = \
 	ipglobal.o \

@@ -1,0 +1,23 @@
+# This is the makefile for COIL on LinuxLahey computers.
+
+FFLAGS = -I../equil -g -m64
+
+F90 = pathf90 $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+OBJS = \
+	coil.o \
+	field.o 
+
+libcoil: $(OBJS)
+	mkdir -p ../lib/LinuxPathscale
+	ar -r ../lib/LinuxPathscale/libcoil.a *.o
+
+# dependencies
+
+field.o: coil.o
+
+clean:
+	rm -f *.o *.mod
