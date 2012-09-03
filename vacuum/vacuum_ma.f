@@ -866,9 +866,9 @@ c-----------------------------------------------------------------------
             vgdl(i-1,j-1) = igdl(indxl)
             vgdx(i-1,j-1) = xloops(indxl)
             vgdz(i-1,j-1) = zloops(indxl)
-            vbx(i-1,j-1) = bxr(indxl)-ifac*bxi(indxl)
-            vbz(i-1,j-1) = bzr(indxl)-ifac*bzi(indxl)
-            vbp(i-1,j-1) = bphir(indxl)-ifac*bphii(indxl)
+            vbx(i-1,j-1) = bxr(indxl)+ifac*bxi(indxl)
+            vbz(i-1,j-1) = bzr(indxl)+ifac*bzi(indxl)
+            vbp(i-1,j-1) = bphir(indxl)+ifac*bphii(indxl)
          END DO
       END DO
 c-----------------------------------------------------------------------

@@ -15,7 +15,7 @@
 	tol_nr=1e-6
 	tol_r=1e-7
 	crossover=1e-2
-	singfac_min=1e-5
+	singfac_min=1e-4
 	ucrit=1e4
 /
 &dcon_output

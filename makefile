@@ -3,7 +3,7 @@
 .IGNORE:
 
 all_x: lsode_x equil_x orbit_x vacuum_x dcon_x match_x multi_x sum_x \
-	xdraw_x ipec_x rundir_x
+	xdraw_x coil_x ipec_x rundir_x
 
 all: all_x
 
@@ -36,6 +36,9 @@ multi_x:
 sum_x:
 	cd sum; make -f makefile_`uname`$(FORTRAN)
 
+coil_x:
+	cd coil; make -f makefile_`uname`$(FORTRAN)
+
 ipec_x: 
 	cd ipec; make -f makefile_`uname`$(FORTRAN)
 
@@ -64,11 +67,13 @@ rundir_x:
 	cp draw/drawpmodb.in rundir/`uname`$(FORTRAN)
 	cp draw/drawpmodb_2d.in rundir/`uname`$(FORTRAN)
 	cp draw/drawxbnormal.in rundir/`uname`$(FORTRAN)
+	cp draw/drawvbnormal.in rundir/`uname`$(FORTRAN)
 	cp draw/drawxbnormal_2d.in rundir/`uname`$(FORTRAN)
 	cp draw/drawpflux_re_2d.in rundir/`uname`$(FORTRAN)
 	cp draw/drawpflux_im_2d.in rundir/`uname`$(FORTRAN)
 	cp draw/drawbnormal_spectrum.in rundir/`uname`$(FORTRAN)
-
+	cp draw/drawvbnormal_spectrum.in rundir/`uname`$(FORTRAN)
+	cp coil/*.dat rundir/`uname`$(FORTRAN)
 clean:
 	cd xdraw; make -f makefile_`uname` clean
 	cd lsode; make -f makefile_`uname`$(FORTRAN) clean

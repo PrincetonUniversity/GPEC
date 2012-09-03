@@ -1,6 +1,7 @@
 # This is the makefile for IPEC on LinuxLahey computers.
 
-FFLAGS = -I../equil -g
+FFLAGS = -I../equil -I../coil -g
+
 F90 = lfc $(FFLAGS)
 
 .f.o:
@@ -17,6 +18,7 @@ LIBS = \
 	-lvac \
 	-llapack \
 	-lblas \
+	-lcoil \
 
 OBJS = \
 	ipglobal.o \
@@ -41,7 +43,7 @@ ipresp.o: ipeq.o
 ipvacuum.o : ipeq.o
 ipdiag.o: ipresp.o ipvacuum.o
 ipout.o: ipresp.o ipvacuum.o
-ipec.o: ipdiag.o ipout.o
+ipec.o: ipdiag.o ipout.o ../coil/field.o ../coil/coil.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin ipec

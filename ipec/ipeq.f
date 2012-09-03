@@ -16,13 +16,11 @@ c      7. ipeq_rzphi
 c      8. ipeq_surface
 c      9. ipeq_fcoords
 c     10. ipeq_bcoords
-c     11. ipeq_bntoxp
-c     12. ipeq_xptobn
-c     13. ipeq_weight
-c     14. ipeq_rzpgrid
-c     15. ipeq_rzpdiv
-c     16. ipeq_alloc
-c     17. ipeq_dealloc
+c     11. ipeq_weight
+c     12. ipeq_rzpgrid
+c     13. ipeq_rzpdiv
+c     14. ipeq_alloc
+c     15. ipeq_dealloc
 c-----------------------------------------------------------------------
 c     subprogram 0. ipeq_mod.
 c     module declarations.
@@ -783,93 +781,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_bcoords
 c-----------------------------------------------------------------------
-c     subprogram 11. ipeq_bntoxp.
-c     transform b normal to xipsi normal solution.
-c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_bntoxp(psi,finmn,foutmn)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: finmn
-      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn
-
-      INTEGER :: itheta
-
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
-
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: finfun,foutfun
-
-      CALL spline_eval(sq,psi,0)
-      singfac=mfac-nn*sq%f(4)
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         jacs(itheta)=jac
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-      ENDDO
-
-      CALL iscdftb(mfac,mpert,finfun,mthsurf,finmn)      
-      foutfun=finfun*jacs*delpsi
-      CALL iscdftf(mfac,mpert,foutfun,mthsurf,foutmn)
-  
-      foutmn=foutmn/(chi1*singfac*twopi*ifac)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipeq_bntoxp
-c-----------------------------------------------------------------------
-c     subprogram 12. ipeq_xptobn.
-c     transforms xipsi normal solution to b normal.
-c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_xptobn(psi,finmn,foutmn)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: finmn
-      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn      
-
-      INTEGER :: itheta
-
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
-
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: finfun,foutfun
-
-      CALL spline_eval(sq,psi,0)
-      singfac=mfac-nn*sq%f(4)
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         jacs(itheta)=jac
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-      ENDDO
-
-      foutmn=finmn*chi1*singfac*twopi*ifac
-
-      CALL iscdftb(mfac,mpert,foutfun,mthsurf,foutmn)      
-      foutfun=foutfun/(jacs*delpsi)
-      CALL iscdftf(mfac,mpert,foutfun,mthsurf,foutmn)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipeq_xptobn
-c-----------------------------------------------------------------------
-c     subprogram 13. ipeq_weight.
+c     subprogram 11. ipeq_weight.
 c     switch between a function and a weighted function.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_weight(psi,ftnmn,amf,amp,wegt)
@@ -923,7 +835,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_weight
 c-----------------------------------------------------------------------
-c     subprogram 14. ipeq_rzpgrid.
+c     subprogram 12. ipeq_rzpgrid.
 c     find magnetic coordinates for given rz coords.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_rzpgrid(nr,nz)
@@ -1010,7 +922,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 15. ipeq_rzpdiv.
+c     subprogram 13. ipeq_rzpdiv.
 c     make zero divergence of rzphi functions.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
@@ -1077,7 +989,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_rzpdiv     
 c-----------------------------------------------------------------------
-c     subprogram 16. ipeq_alloc.
+c     subprogram 14. ipeq_alloc.
 c     allocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_alloc
@@ -1098,7 +1010,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_alloc
 c-----------------------------------------------------------------------
-c     subprogram 17. ipeq_dealloc.
+c     subprogram 15. ipeq_dealloc.
 c     deallocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_dealloc

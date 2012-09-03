@@ -51,7 +51,7 @@ c-----------------------------------------------------------------------
 c     specify whatever boundary here with normal polar angles.
 c-----------------------------------------------------------------------
       vmtheta=256
-      vmlow=-10
+      vmlow=0
       vmhigh=10
       vmpert=vmhigh-vmlow+1
       nn=1
@@ -191,8 +191,6 @@ c-----------------------------------------------------------------------
       lwork=2*vmpert-1
       CALL zheev('V','U',vmpert,temp1,vmpert,vsurf_indev,work,
      $     lwork,rwork,info)
-      WRITE(*,*)vsurf_indev(1),vsurf_indev(2),
-     $     vsurf_indev(2)/vsurf_indev(1)
       DEALLOCATE(vmfac,vtheta,vrfac,veta,vr,vz,jac,dphi,delte,
      $     delpsi,wgtfun)
       DEALLOCATE(vbwp_mn,rbwp_mn,vbwp_fun,rbwp_fun,chi_fun,che_fun,
@@ -370,13 +368,13 @@ c-----------------------------------------------------------------------
 c     subprogram 3. ipvacuum_bnormal.
 c     create bnormal input for vacuum code.  
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_bnormal(psi,bnomn,nr,nz)
+      SUBROUTINE ipvacuum_bnormal(psi,finmn,nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: nr,nz
       REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnomn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
 
       INTEGER :: ipert,itheta,rtheta,vn,vac_unit
       REAL(r8) :: qa,x1,x2,z1,z2
@@ -391,19 +389,10 @@ c     specify flux surface given by equilibrium file.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,0)
       DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
+         CALL bicube_eval(rzphi,psi,theta(itheta),0)
          etas(itheta)=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(etas(itheta))
-         z(itheta)=zo+rfac*SIN(etas(itheta))
-         jac=rzphi%f(4)
-         jacs(itheta)=jac
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
          dphi(itheta)=rzphi%f(3)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
       ENDDO
-
       IF (eqoff_flag) THEN
          x1 = MINVAL(r)*0.8
          x2 = MAXVAL(r)*1.2
@@ -430,8 +419,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     change and reverse poloidal and torodial coordinates.
 c-----------------------------------------------------------------------
-      CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bnomn)
-      bwp_fun=bwp_fun*delpsi*jacs/(twopi**2)
+      CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,finmn)
+      bwp_fun=bwp_fun/(twopi**2)
       DO itheta=0,mthvac
          rtheta=mthvac-itheta
          rbwp_fun(itheta)=CONJG(bwp_fun(rtheta))

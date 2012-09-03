@@ -1,6 +1,7 @@
 # This is the makefile for VACUUM on LinuxLahey computers.
 
 FFLAGS = -g
+
 F90 = lfc $(FFLAGS)
 
 .f.o: 

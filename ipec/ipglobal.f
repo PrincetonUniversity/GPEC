@@ -10,11 +10,11 @@ c     declarations.
 c-----------------------------------------------------------------------
       LOGICAL :: power_flag,fft_flag,edge_flag,eqoff_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
-     $     vbrzphi_flag,vpbrzphi_flag,vvbrzphi_flag,div_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,div_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
-     $     chebyshev_flag
+     $     chebyshev_flag,coil_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,

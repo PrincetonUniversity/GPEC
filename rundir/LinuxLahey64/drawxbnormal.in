@@ -16,6 +16,8 @@ variable names
 
 ix	iy	title
 0	1	"Normal displacement Re xi
+0	2	"Normal displacement Im xi
 0	5	"Normal magnetic field Re jac.b.delpsi
+0	6	"Normal magnetic field Im jac.b.delpsi
 
 

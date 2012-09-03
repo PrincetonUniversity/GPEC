@@ -338,8 +338,9 @@ c-----------------------------------------------------------------------
 
       LOGICAL, PARAMETER :: diagnose=.FALSE.
       INTEGER :: ipert0,jsol,ipert
-      REAL(r8) :: dpsi
+      REAL(r8) :: dpsi,psi_old
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua
+      COMPLEX(r8), DIMENSION(mpert,mpert,2) :: du1,du2
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -391,13 +392,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     re-initialize.
 c-----------------------------------------------------------------------
+      psi_old=psifac
       ipert0=NINT(nn*sing(ising)%q)-mlow+1
       dpsi=sing(ising)%psifac-psifac
       psifac=sing(ising)%psifac+dpsi
       CALL sing_get_ua(ising,psifac,ua)
       u(ipert0,:,:)=0
-      CALL sing_der(neq,psifac,u,du)
-      u=u+du*2*dpsi
+      CALL sing_der(neq,psi_old,u,du1)
+      CALL sing_der(neq,psifac,u,du2)
+      u=u+(du1+du2)*dpsi
       u(ipert0,:,:)=0
       u(:,index(1),:)=ua(:,ipert0+mpert,:)
 c-----------------------------------------------------------------------

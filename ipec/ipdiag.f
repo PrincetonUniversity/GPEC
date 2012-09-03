@@ -357,19 +357,19 @@ c-----------------------------------------------------------------------
 c     subprogram 6. ipdiag_singcurs.
 c     diagnose asymtotic values of singular currents.
 c     __________________________________________________________________
-c     egnjm      : eigenmode number without edge_flag
-c     xwpimn     : edge deformation input when edge_flag
+c     egnum      : eigenmode number without edge_flag
+c     xspmn      : edge deformation input when edge_flag
 c     rsing      : number of rational surfaces
 c     resol      : resolution by number of grid points
 c     smallwidth : closest point to approach
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_singcurs(egnum,xwpimn,rsing,resol,smallwidth)
+      SUBROUTINE ipdiag_singcurs(egnum,xspmn,rsing,resol,smallwidth)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,resol,rsing
       REAL(r8), INTENT(IN) :: smallwidth
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: ising,i,itheta,resnum
       REAL(r8) :: respsi,rrespsi,lrespsi,bigwidth,astep,lpsi,rpsi,
@@ -392,7 +392,7 @@ c-----------------------------------------------------------------------
       corcurs=0
       singcurs=0
       CALL ipeq_alloc
-      CALL idcon_build(egnum,xwpimn)
+      CALL idcon_build(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     compute singular currents with logarithmic approach.
 c-----------------------------------------------------------------------
@@ -561,12 +561,12 @@ c-----------------------------------------------------------------------
 c     subprogram 7. ipdiag_xbcontra.
 c     diagnose various components of xi and b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbcontra(egnum,xwpimn,rin,bpin,bin,rcin,tin)    
+      SUBROUTINE ipdiag_xbcontra(egnum,xspmn,rin,bpin,bin,rcin,tin)    
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rin,bpin,bin,rcin,tin
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: istep,ipert
       COMPLEX(r8), DIMENSION(mpert) :: xwd_mn,bwd_mn
@@ -575,7 +575,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
-      CALL idcon_build(egnum,xwpimn)
+      CALL idcon_build(egnum,xspmn)
 
       WRITE(*,*)"Computing contravariant components in detail"
       CALL ascii_open(out_unit,"ipdiag_xbcontra_n"//
@@ -663,12 +663,12 @@ c-----------------------------------------------------------------------
 c     subprogram 8. ipdiag_xbnobo.
 c     write normal perturbed quantities on the boundary.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbnobo(egnum,xwpimn,d3_flag)
+      SUBROUTINE ipdiag_xbnobo(egnum,xspmn,d3_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) ::xwpimn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) ::xspmn
       LOGICAL, INTENT(IN) :: d3_flag
 
       INTEGER :: i,ithnum,mthnum
@@ -708,7 +708,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
-      CALL idcon_build(egnum,xwpimn)
+      CALL idcon_build(egnum,xspmn)
       CALL ipeq_alloc
       CALL ipeq_sol(psilim)
       CALL ipeq_contra(psilim)
@@ -800,12 +800,12 @@ c-----------------------------------------------------------------------
 c     subprogram 9. ipdiag_xbst.
 c     diagnose strength of x and b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbst(egnum,xwpimn)
+      SUBROUTINE ipdiag_xbst(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: istep,itheta,ipert
 
@@ -822,7 +822,7 @@ c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing x and b field strength"
 
-      CALL idcon_build(egnum,xwpimn)
+      CALL idcon_build(egnum,xspmn)
       
       CALL ipeq_alloc
       DO istep=1,mstep
@@ -911,12 +911,12 @@ c-----------------------------------------------------------------------
 c     subprogram 10. ipdiag_pmodbrz.
 c     plot perturbed mod b at rz coordinates.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_pmodbrz(egnum,xwpimn)
+      SUBROUTINE ipdiag_pmodbrz(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: istep,ipert,itheta
 
@@ -954,7 +954,7 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(cspl,mthsurf,2)
       cspl%xs=theta
 
-      CALL idcon_build(egnum,xwpimn)
+      CALL idcon_build(egnum,xspmn)
       CALL ipeq_alloc
       DO istep=1,mstep
 c-----------------------------------------------------------------------
@@ -1145,12 +1145,12 @@ c-----------------------------------------------------------------------
 c     subprogram 11. ipdiag_rzphibx.
 c     write r,z,phi,b,x on hamada coordinates.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_rzphibx(egnum,xwpimn)
+      SUBROUTINE ipdiag_rzphibx(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xwpimn
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i,istep,itheta,ipert,rstep
 
@@ -1179,7 +1179,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
-      CALL idcon_build(egnum,xwpimn)
+      CALL idcon_build(egnum,xspmn)
       IF (rstep == mstep) THEN
          psis=psifac
       ELSE
