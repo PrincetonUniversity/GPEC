@@ -1156,11 +1156,12 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
 
       INTEGER :: ipert,ising,i
-      REAL(r8) :: hdist,shear
+      REAL(r8) :: hdist,shear,area
       REAL(r8), DIMENSION(msing) :: resnum,visland_hwidth,vchirikov
       COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
 
       COMPLEX(r8), DIMENSION(msing) :: vflxmn
+      REAL(r8), DIMENSION(0:mthsurf) :: unitfun
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -1180,8 +1181,10 @@ c     compute half-width of magnetic island.
 c-----------------------------------------------------------------------
          shear=mfac(resnum(ising))*
      $        singtype(ising)%q1/singtype(ising)%q**2
+         unitfun=1.0
+         area=issurfint(unitfun,mthsurf,singtype(ising)%psifac,0,0)
          visland_hwidth(ising)=
-     $        SQRT(ABS(4*vflxmn(ising)/
+     $        SQRT(ABS(4*vflxmn(ising)*area/
      $        (twopi*shear*singtype(ising)%q*chi1)))
          IF (ising==1) THEN 
             hdist=(singtype(ising+1)%psifac-singtype(ising)%psifac)/2.0
