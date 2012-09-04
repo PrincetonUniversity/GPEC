@@ -20,11 +20,11 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: coil_unit=31,cmlow=-64,cmhigh=64
-      INTEGER :: cnn,cpsi,ctheta,cmpsi,cmtheta,cmzeta,cmpert,coil_num
+      INTEGER :: coil_unit=31,cmlow,cmhigh
+      INTEGER :: cnn,cmpsi,cmtheta,cmzeta,cmpert,coil_num
       CHARACTER(24) :: machine,ceq_type,ip_direction,bt_direction
       CHARACTER(24), DIMENSION(10) :: coil_name
-      REAL(r8), DIMENSION(10,36) :: coil_cur=0
+      REAL(r8), DIMENSION(10,36) :: coil_cur
       REAL(r8) :: cro,czo,cpsio,cpsilow,cpsilim,cqlim,
      $     ipd,btd,helicity
 
@@ -53,15 +53,18 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE coil_read
 
-      NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,
+      NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
      $     machine,ip_direction,bt_direction,coil_num,coil_name,coil_cur
       NAMELIST/coil_output/ipec_interface
 
-      INTEGER :: ci,cj,ck,cl,cm,ci1,ci2
+      INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4
       REAL(r8) :: cr1
 c-----------------------------------------------------------------------
-c     read input data.
+c     initialize and read input data.
 c-----------------------------------------------------------------------
+      cmlow=-64
+      cmhigh=64
+      coil_cur=0
       CALL ascii_open(in_unit,"coil.in","OLD")
       READ(UNIT=in_unit,NML=coil_control)
       READ(UNIT=in_unit,NML=coil_output)
@@ -95,15 +98,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read equilibrium information.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Reading equilibrium information"
       cdconfile="euler.bin"
       CALL bin_open(in_unit,cdconfile,"OLD","REWIND","none")
-      READ(in_unit)ci1,ci2,cnn,cpsi,ctheta,cro,czo
+      READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
       READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim
       READ(in_unit)
 
-      CALL spline_alloc(csq,cpsi,4)
-      CALL bicube_alloc(crzphi,cpsi,ctheta,4)
+      CALL spline_alloc(csq,ci3,4)
+      CALL bicube_alloc(crzphi,ci3,ci4,4)
       crzphi%periodic(2)=.TRUE.
       READ(in_unit)csq%xs,csq%fs,csq%fs1,csq%xpower
       READ(in_unit)crzphi%xs,crzphi%ys,
@@ -113,8 +115,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     initialize variables.
 c-----------------------------------------------------------------------
-      cmpsi=cpsi
-      cmtheta=ctheta
+      cmpsi=ci3
+      cmtheta=ci4
       cmzeta=cnn*16
       cmpert=cmhigh-cmlow+1
       ALLOCATE(cmfac(cmpert))
