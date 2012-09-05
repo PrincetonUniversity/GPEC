@@ -34,7 +34,8 @@ c-----------------------------------------------------------------------
 
       TYPE :: coil_type
       CHARACTER(24) :: coil_name
-      INTEGER :: ncoil,s,nsec,nw
+      INTEGER :: ncoil,s,nsec
+      REAL(r8) :: nw
       REAL(r8), DIMENSION(:), POINTER :: cur 
       REAL(r8), DIMENSION(:,:,:), POINTER :: x,y,z
       END TYPE coil_type      
@@ -81,7 +82,7 @@ c-----------------------------------------------------------------------
          cfile=TRIM(machine)//"_"//TRIM(coil_name(ci))//".dat"
          CALL ascii_open(coil_unit,cfile,"old")
          coil(ci)%coil_name=TRIM(coil_name(ci))
-         READ(coil_unit,'(4(1x,I4))')
+         READ(coil_unit,'(3(1x,I4),1x,f7.2)')
      $        coil(ci)%ncoil,coil(ci)%s,coil(ci)%nsec,coil(ci)%nw
          ALLOCATE(coil(ci)%cur(coil(ci)%ncoil))
          ALLOCATE(coil(ci)%x(coil(ci)%ncoil,coil(ci)%s,coil(ci)%nsec),
