@@ -246,7 +246,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read coil data.
 c-----------------------------------------------------------------------
+      cmlow=mlow
+      cmhigh=mhigh
+      cmpert=mpert
       finmn=0
+      ipd=1.0
+      btd=1.0
+      helicity=ipd*btd
       IF (coil_flag) THEN
          WRITE(*,*)"Calculating field on the boundary from coils"
          CALL coil_read

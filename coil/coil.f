@@ -126,7 +126,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(cmfac(cmpert))
       cmfac=(/(cm,cm=cmlow,cmhigh)/)
       ipd=1.0
-      btd=1.0   
+      btd=1.0
       IF(ip_direction=="negative")ipd=-1.0
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
