@@ -2034,10 +2034,13 @@ c-----------------------------------------------------------------------
             vpbz=CONJG(vpbz)
             vpbp=CONJG(vpbp)
          ENDIF
-         WRITE(*,*)"Computing vacuum fields by coils"
-         np=nn*16
-         CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp)
 
+         IF (coil_flag) THEN
+            WRITE(*,*)"Computing vacuum fields by coils"
+            np=nn*16
+            CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp)
+         ENDIF
+         
          DO i=0,nr
             DO j=0,nz                  
                IF (gdl(i,j)/=1) THEN
@@ -2138,26 +2141,29 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL ascii_close(out_unit)
 
-         CALL ascii_open(out_unit,"ipec_cbrzphi_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_PBRZPHI: External field by coils"
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
-     $        "real(b_r)","imag(b_r)","real(b_z)","imag(b_z)",
-     $        "real(b_phi)","imag(b_phi)"
-         
-         DO i=0,nr
-            DO j=0,nz
-               WRITE(out_unit,'(1x,I2,8(es16.8))')
-     $              gdl(i,j),gdr(i,j),gdz(i,j),
-     $              REAL(vcbr(i,j)),AIMAG(vcbr(i,j)),
-     $              REAL(vcbz(i,j)),AIMAG(vcbz(i,j)),
-     $              REAL(vcbp(i,j)),AIMAG(vcbp(i,j))
+         IF (coil_flag) THEN
+            CALL ascii_open(out_unit,"ipec_cbrzphi_n"//
+     $           TRIM(sn)//".out","UNKNOWN")
+            WRITE(out_unit,*)"IPEC_PBRZPHI: External field by coils"
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $           "real(b_r)","imag(b_r)","real(b_z)","imag(b_z)",
+     $           "real(b_phi)","imag(b_phi)"
+            
+            DO i=0,nr
+               DO j=0,nz
+                  WRITE(out_unit,'(1x,I2,8(es16.8))')
+     $                 gdl(i,j),gdr(i,j),gdz(i,j),
+     $                 REAL(vcbr(i,j)),AIMAG(vcbr(i,j)),
+     $                 REAL(vcbz(i,j)),AIMAG(vcbz(i,j)),
+     $                 REAL(vcbp(i,j)),AIMAG(vcbp(i,j))
+               ENDDO
             ENDDO
-         ENDDO
-         CALL ascii_close(out_unit)
+            CALL ascii_close(out_unit)
+         ENDIF
+
       ENDIF
 
       IF (brzphi_flag .AND. vbrzphi_flag) THEN

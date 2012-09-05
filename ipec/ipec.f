@@ -246,6 +246,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read coil data.
 c-----------------------------------------------------------------------
+      finmn=0
       IF (coil_flag) THEN
          WRITE(*,*)"Calculating field on the boundary from coils"
          CALL coil_read
@@ -293,7 +294,7 @@ c-----------------------------------------------------------------------
          CALL ipout_singfld(mode,xspmn,sing_spot,power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,singcoup_flag)
       ENDIF
-      IF (vsingfld_flag) THEN
+      IF (coil_flag .AND. vsingfld_flag) THEN
          CALL ipout_vsingfld(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out)
       ENDIF
@@ -305,7 +306,7 @@ c-----------------------------------------------------------------------
          CALL ipout_xbnormal(mode,xspmn,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
-      IF (vbnormal_flag) THEN
+      IF (coil_flag .AND. vbnormal_flag) THEN
          CALL ipout_vbnormal(power_rout,power_bpout,power_bout,
      $        power_rcout,tmag_out)
       ENDIF
