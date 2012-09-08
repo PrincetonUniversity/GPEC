@@ -226,8 +226,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
       
       COMPLEX(r8), DIMENSION(mpert) :: vbwp_mn,rbwp_mn
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: vbwp_fun,rbwp_fun,
-     $     chi_fun,che_fun,kax_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: chi_fun,che_fun,kax_fun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: fflxmats,fkaxmats,
      $     temp1,temp2,vwv
 
@@ -320,12 +319,7 @@ c-----------------------------------------------------------------------
       DO i=1,mpert
          vbwp_mn=0
          vbwp_mn(i)=1.0
-         CALL iscdftb(mfac,mpert,vbwp_fun,mthvac,vbwp_mn)
-         DO itheta=0,mthvac
-            rtheta=mthvac-itheta
-            rbwp_fun(itheta)=CONJG(vbwp_fun(rtheta))
-         ENDDO
-         CALL iscdftf(mfac,mpert,rbwp_fun,mthvac,rbwp_mn)
+         rbwp_mn=CONJG(vbwp_mn)
          grri_real=MATMUL(vgrri,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grri_imag=MATMUL(vgrri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
          grre_real=MATMUL(vgrre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
@@ -344,7 +338,8 @@ c-----------------------------------------------------------------------
          chi_fun=chi_fun/(twopi**2)
          che_fun=-che_fun/(twopi**2)         
          kax_fun=(chi_fun-che_fun)/mu0
-         CALL iscdftf(mfac,mpert,vbwp_fun,mthsurf,fflxmats(:,i))   
+
+         fflxmats(:,i)=vbwp_mn   
          CALL iscdftf(mfac,mpert,kax_fun,mthsurf,fkaxmats(:,i)) 
       ENDDO
       temp1=TRANSPOSE(fkaxmats)
@@ -383,7 +378,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: etas,dphi,delpsi,delte,jacs
 
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: bwp_fun,rbwp_fun
 c-----------------------------------------------------------------------
 c     specify flux surface given by equilibrium file.
 c-----------------------------------------------------------------------
@@ -417,15 +411,9 @@ c-----------------------------------------------------------------------
          vn=-vn
       ENDIF
 c-----------------------------------------------------------------------
-c     change and reverse poloidal and torodial coordinates.
+c     reverse poloidal and torodial coordinates and normalize.
 c-----------------------------------------------------------------------
-      CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,finmn)
-      bwp_fun=bwp_fun/(twopi**2)
-      DO itheta=0,mthvac
-         rtheta=mthvac-itheta
-         rbwp_fun(itheta)=CONJG(bwp_fun(rtheta))
-      ENDDO
-      CALL iscdftf(mfac,mpert,rbwp_fun,mthvac,rbwp_mn)
+      rbwp_mn=CONJG(finmn)/(twopi**2)
 c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------

@@ -54,7 +54,7 @@ c-----------------------------------------------------------------------
 
 
       COMPLEX(r8), DIMENSION(:), POINTER ::
-     $     xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,
+     $     xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,xmp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,

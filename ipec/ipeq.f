@@ -93,9 +93,11 @@ c-----------------------------------------------------------------------
 c     compute modified quantities.
 c-----------------------------------------------------------------------
       IF (reg_flag) THEN
-         xms_mn=xss_mn*(singfac**2/(singfac**2+reg_spot**2))
+         xmp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
+         xms_mn=-MATMUL(bmat,xmp1_mn)-MATMUL(cmat,xsp_mn)
          bmt_mn=bwt_mn*(singfac**2/(singfac**2+reg_spot**2))
       ELSE
+         xmp1_mn=xsp1_mn
          xms_mn=xss_mn
          bmt_mn=bwt_mn
       ENDIF
@@ -148,11 +150,11 @@ c-----------------------------------------------------------------------
             DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
                jpert=ipert+dm
                xwp_mn(ipert)=xwp_mn(ipert)+jmat(dm)*xsp_mn(jpert)
-               xwt_mn(ipert)=xwt_mn(ipert)-(jmat(dm)*xsp1_mn(jpert)+
+               xwt_mn(ipert)=xwt_mn(ipert)-(jmat(dm)*xmp1_mn(jpert)+
      $              jmat1(dm)*xsp_mn(jpert)+
      $              twopi*ifac*nn/chi1*jmat(dm)*xms_mn(jpert))/
      $              (twopi*ifac*(m1-nn*q))
-               xwz_mn(ipert)=xwz_mn(ipert)-(q*jmat(dm)*xsp1_mn(jpert)+
+               xwz_mn(ipert)=xwz_mn(ipert)-(q*jmat(dm)*xmp1_mn(jpert)+
      $              q*jmat1(dm)*xsp_mn(jpert)+
      $              twopi*ifac*m1/chi1*jmat(dm)*xms_mn(jpert))/
      $              (twopi*ifac*(m1-nn*q))
@@ -479,9 +481,8 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,itheta,rtheta
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi,jacs
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: rbwp_fun,bwp_fun,
-     $     chi_fun,che_fun,kax_fun,xwp_fun,xwt_fun,
-     $     bvt_fun,bvz_fun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: chi_fun,che_fun,kax_fun,
+     $     xwp_fun,xwt_fun,bvt_fun,bvz_fun,bwp_fun
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
       COMPLEX(r8), DIMENSION(4,0:mthsurf) :: chp_fun,kap_fun
 
@@ -510,16 +511,9 @@ c-----------------------------------------------------------------------
          jacs(itheta)=jac
       ENDDO
 c-----------------------------------------------------------------------
-c     reverse poloidal and torodial coordinates.
-c-----------------------------------------------------------------------
-      DO itheta=0,mthvac
-         rtheta=mthvac-itheta
-         rbwp_fun(itheta)=CONJG(bwp_fun(rtheta))
-      ENDDO
-      CALL iscdftf(mfac,mpert,rbwp_fun,mthvac,rbwp_mn)
-c-----------------------------------------------------------------------
 c     compute vacuum magnetic potentials with reverse normal vector.
 c-----------------------------------------------------------------------
+      rbwp_mn=CONJG(bwp_mn)
       grri_real=MATMUL(grri,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
       grri_imag=MATMUL(grri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
       grre_real=MATMUL(grre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
@@ -997,7 +991,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(xsp_mn(mpert),xsp1_mn(mpert),xss_mn(mpert),xms_mn(mpert),
      $     xwp_mn(mpert),xwt_mn(mpert),xwz_mn(mpert),xmt_mn(mpert),
      $     bwp_mn(mpert),bwt_mn(mpert),bwz_mn(mpert),bmt_mn(mpert),
-     $     bwp1_mn(mpert),
+     $     bwp1_mn(mpert),xmp1_mn(mpert),
      $     xvp_mn(mpert),xvt_mn(mpert),xvz_mn(mpert),xmz_mn(mpert),
      $     bvp_mn(mpert),bvt_mn(mpert),bvz_mn(mpert),bmz_mn(mpert),
      $     xno_mn(mpert),xta_mn(mpert),xpa_mn(mpert),
@@ -1015,7 +1009,7 @@ c     deallocate essential vectors in fourier space
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_dealloc
 
-      DEALLOCATE(xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,
+      DEALLOCATE(xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,xmp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,

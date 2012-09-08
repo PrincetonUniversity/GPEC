@@ -9,8 +9,9 @@ c     0. idcon_mod.
 c     1. idcon_read.
 c     2. idcon_transform
 c     3. idcon_build
-c     4. idcon_matrices
-c     5. idcon_vacuum
+c     4. idcon_metric
+c     5. idcon_matrix
+c     6. idcon_vacuum
 c-----------------------------------------------------------------------
 c     subprogram 0. idcon_mod.
 c     module declarations.
@@ -386,7 +387,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_build
 c-----------------------------------------------------------------------
-c     subprogram 4. idcon_matrices.
+c     subprogram 4. idcon_matric.
 c     reconstructs metric tensors from dcon.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_metric
