@@ -84,6 +84,7 @@ clean:
 	cd match; make -f makefile_`uname`$(FORTRAN) clean
 	cd multi; make -f makefile_`uname`$(FORTRAN) clean
 	cd sum; make -f makefile_`uname`$(FORTRAN) clean
+	cd coil; make -f makefile_`uname`$(FORTRAN) clean
 	cd ipec; make -f makefile_`uname`$(FORTRAN) clean
 	cd tex/orbit; rm -f *.dvi *.log
 	cd tex/vacuum; rm -f *.dvi *.log

@@ -90,10 +90,10 @@ c-----------------------------------------------------------------------
       resp_flag=.TRUE.
       singcoup_flag=.FALSE.
       singfld_flag=.TRUE.
-      vsingfld_flag=.TRUE.
+      vsingfld_flag=.FALSE.
       pmodb_flag=.FALSE.
       xbnormal_flag=.TRUE.
-      vbnormal_flag=.TRUE.
+      vbnormal_flag=.FALSE.
       rstep=0
       nrzeq_flag=.FALSE.
       nr=64

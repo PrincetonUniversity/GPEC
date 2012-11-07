@@ -329,7 +329,6 @@ c-----------------------------------------------------------------------
       deltas=0
       delcurs=0
       singcurs=0
-      singfac=mfac-nn*qlim
       CALL ipeq_alloc
       DO i=1,mpert
          finmn=0
@@ -340,6 +339,7 @@ c-----------------------------------------------------------------------
          ELSE
             foutmn=MATMUL(permeabmats(resp_index,:,:),finmn)
          ENDIF
+         singfac=mfac-nn*qlim
          edge_mn=foutmn/(chi1*singfac*twopi*ifac)
          edge_flag=.TRUE.
          CALL idcon_build(0,edge_mn)
@@ -1157,7 +1157,8 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ipert,ising,i
       REAL(r8) :: hdist,shear,area
-      REAL(r8), DIMENSION(msing) :: resnum,visland_hwidth,vchirikov
+      INTEGER, DIMENSION(msing) :: resnum
+      REAL(r8), DIMENSION(msing) :: visland_hwidth,vchirikov
       COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
 
       COMPLEX(r8), DIMENSION(msing) :: vflxmn
@@ -2380,6 +2381,7 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
          CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
+
          IF (reg_flag) THEN
             CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
             CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
@@ -2391,6 +2393,7 @@ c-----------------------------------------------------------------------
             CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
             CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
          ENDIF
+
          xrr_fun(istep,:)=(t11*xwp_fun+t12*xwt_fun)/jacs
          brr_fun(istep,:)=(t11*bwp_fun+t12*bwt_fun)/jacs
          xrz_fun(istep,:)=(t21*xwp_fun+t22*xwt_fun)/jacs

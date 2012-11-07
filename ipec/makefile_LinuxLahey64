@@ -42,8 +42,8 @@ ipeq.o: idcon.o ismath.o
 ipresp.o: ipeq.o
 ipvacuum.o : ipeq.o
 ipdiag.o: ipresp.o ipvacuum.o
-ipout.o: ipresp.o ipvacuum.o
-ipec.o: ipdiag.o ipout.o ../coil/field.o ../coil/coil.o
+ipout.o: ipresp.o ipvacuum.o ../coil/field.o ../coil/coil.o
+ipec.o: ipdiag.o ipout.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin ipec
