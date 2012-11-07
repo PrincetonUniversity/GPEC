@@ -1757,21 +1757,22 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
       
       INTEGER :: ipsi,ipert,i
-      REAL(r8), DIMENSION(mpsi) :: psi
+      REAL(r8), DIMENSION(0:cmpsi) :: psi
       COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
 
       COMPLEX(r8), DIMENSION(mpert) :: vwpmn
-      REAL(r8), DIMENSION(mpsi,mpert) :: xmns,ymns
-      COMPLEX(r8), DIMENSION(mpsi,mpert) :: vmn
+      REAL(r8), DIMENSION(cmpsi,mpert) :: xmns,ymns
+      COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vmn
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing b normal components from coils"
 
-      psi=sq%xs
+      psi=(/(ipsi,ipsi=0,cmpsi)/)/REAL(cmpsi,r8)
+      psi=psilow+(psilim-psilow)*SIN(psi*pi/2)**2
       ALLOCATE(vcmn(cmpert))
 
-      DO ipsi=1,mpsi
+      DO ipsi=1,cmpsi
          CALL field_bs_psi(psi(ipsi),vcmn,2)
          DO i=1,cmpert
             IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
@@ -1795,12 +1796,12 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "mpsi =",mpsi,"mpert =",mpert,"mthsurf =",mthsurf
+     $     "mpsi =",cmpsi,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
       WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
      $     "real(vb)","imag(vb)"
 
-      DO ipsi=1,mpsi
+      DO ipsi=1,cmpsi
          DO ipert=1,mpert
             WRITE(out_unit,'(2(1x,es16.8),1x,I4,2(1x,es16.8))')
      $           psi(ipsi),sq%fs(ipsi,4),mfac(ipert),
@@ -1812,7 +1813,7 @@ c-----------------------------------------------------------------------
          CALL bin_open(bin_unit,
      $        "vbnormal.bin","UNKNOWN","REWIND","none")
          DO ipert=1,mpert
-            DO ipsi=1,mpsi
+            DO ipsi=1,cmpsi
                WRITE(bin_unit)REAL(psi(ipsi),4),
      $              REAL(REAL(vmn(ipsi,ipert)),4),
      $              REAL(AIMAG(vmn(ipsi,ipert)),4)
@@ -1822,17 +1823,17 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL bin_close(bin_unit)
 
-         DO ipsi=1,mpsi
+         DO ipsi=1,cmpsi
             xmns(ipsi,:)=mfac
             ymns(ipsi,:)=psi(ipsi)
          ENDDO
          CALL bin_open(bin_2d_unit,"vbnormal_spectrum.bin",
      $        "UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)mpsi-1,mpert-1
-         WRITE(bin_2d_unit)REAL(xmns(1:mpsi,:),4),
-     $        REAL(ymns(1:mpsi,:),4)
-         WRITE(bin_2d_unit)REAL(ABS(vmn(1:mpsi,:)),4)
+         WRITE(bin_2d_unit)cmpsi-1,mpert-1
+         WRITE(bin_2d_unit)REAL(xmns(1:cmpsi,:),4),
+     $        REAL(ymns(1:cmpsi,:),4)
+         WRITE(bin_2d_unit)REAL(ABS(vmn(1:cmpsi,:)),4)
          CALL bin_close(bin_2d_unit)
       ENDIF
 c-----------------------------------------------------------------------
