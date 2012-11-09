@@ -39,7 +39,7 @@ sum_x:
 coil_x:
 	cd coil; make -f makefile_`uname`$(FORTRAN)
 
-ipec_x: 
+ipec_x:  
 	cd ipec; make -f makefile_`uname`$(FORTRAN)
 
 rundir_x:

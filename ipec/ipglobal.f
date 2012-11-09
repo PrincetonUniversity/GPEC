@@ -101,6 +101,11 @@ c-----------------------------------------------------------------------
       TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
 
+      TYPE(bicube_type) :: pertfuns, pertchebs 
+      TYPE(spline_type) :: intv, entv, idw, edw
+      REAL(r8), PARAMETER :: emass = 9.109e-31, echarge = -1.602e-19,
+     $     pmass = 1.673e-27
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. ipec_dealloc.

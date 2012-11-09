@@ -1,0 +1,18 @@
+&ntv_input
+
+    kinetic_file="/p/gpec/users/nlogan/data/a10/kinetics/kinetic_a10_MARSbenchmark.dat"
+    imass = 2
+    icharge = 1
+    zimp = 6
+    zmass = 12
+
+    npsi = 200
+    ntheta = 60
+    nlmda = 100
+    nx = 4000
+    nl = 8
+    
+    passing_flag=f
+    pertfile_flag=f
+    pertfile="pertfile.dat"
+/
