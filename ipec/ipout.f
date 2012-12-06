@@ -1247,7 +1247,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: ileft,jac
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,bs,etas,dphis
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
      $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun
@@ -1293,20 +1293,23 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
             rfac=SQRT(rzphi%f(1))
             eta=twopi*(theta(itheta)+rzphi%f(2))
+            etas(istep,itheta)=eta
             rs(istep,itheta)=ro+rfac*COS(eta)
             zs(istep,itheta)=zo+rfac*SIN(eta)
+            bs(istep,itheta)=eqfun%f(1)
             jac=rzphi%f(4)
             eulbparfuns(istep,itheta)=
      $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
-     $           /(jac*eqfun%f(1))
+     $           /(jac*bs(istep,itheta))
             lagbparfuns(istep,itheta)=
      $           eulbparfuns(istep,itheta)+
      $           eqfun%fx(1)*xsp_fun(itheta)+eqfun%fy(1)*
      $           (xms_fun(itheta)/(chi1*sq%f(4))+
      $           xmz_fun(itheta)/(jac*sq%f(4))-
-     $           (chi1/(jac*eqfun%f(1)))**2*
+     $           (chi1/(jac*bs(istep,itheta)))**2*
      $           (sq%f(4)*xvz_fun(itheta)+xvt_fun(itheta)))
             dphi(itheta)=rzphi%f(3)
+            dphis(istep,itheta)=dphi(itheta)
          ENDDO
          CALL iscdftf(mfac,mpert,eulbparfuns(istep,:),
      $        mthsurf,eulbpar_mn)
@@ -1353,6 +1356,7 @@ c-----------------------------------------------------------------------
       CALL ascii_close(out_unit)
 
       IF (chebyshev_flag) THEN
+         WRITE(*,*)"Computing chebyshev for pmodb"
          ALLOCATE(chea(mpert,0:nche),chex(0:mstep))
          CALL cspline_alloc(chespl,mstep,1)
          chespl%xs=psifac
@@ -1405,9 +1409,9 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
 
-         CALL ascii_open(out_unit,"ipec_pmodb_chetest_n"//
+         CALL ascii_open(out_unit,"ipec_chepmodb_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_PMODB_CHETEST: "//
+         WRITE(out_unit,*)"IPEC_CHEPMODB: "//
      $        "Reconstructed perturbed mod b by chebyshev"
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -1441,12 +1445,14 @@ c-----------------------------------------------------------------------
      $        "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          
-         WRITE(out_unit,'(6(1x,a16))')"r","z",
+         WRITE(out_unit,'(10(1x,a16))')"psi","r","z","b0","dthe","dphi",
      $        "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)"
          DO istep=1,mstep
             DO itheta=0,mthsurf
-               WRITE(out_unit,'(6(1x,es16.8))')
+               WRITE(out_unit,'(10(1x,es16.8))')psifac(istep),
      $              rs(istep,itheta),zs(istep,itheta),
+     $              bs(istep,itheta),
+     $              etas(istep,itheta),dphis(istep,itheta),
      $              REAL(eulbparfuns(istep,itheta)),
      $              AIMAG(eulbparfuns(istep,itheta)),
      $              REAL(lagbparfuns(istep,itheta)),
@@ -1773,6 +1779,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(vcmn(cmpert))
 
       DO ipsi=1,cmpsi
+         CALL spline_eval(sq,psi(ipsi),0)
          CALL field_bs_psi(psi(ipsi),vcmn,2)
          DO i=1,cmpert
             IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
@@ -1804,7 +1811,7 @@ c-----------------------------------------------------------------------
       DO ipsi=1,cmpsi
          DO ipert=1,mpert
             WRITE(out_unit,'(2(1x,es16.8),1x,I4,2(1x,es16.8))')
-     $           psi(ipsi),sq%fs(ipsi,4),mfac(ipert),
+     $           psi(ipsi),sq%f(4),mfac(ipert),
      $           REAL(vmn(ipsi,ipert)),AIMAG(vmn(ipsi,ipert))        
          ENDDO
       ENDDO
@@ -1853,8 +1860,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnimn,bnomn
 
-      INTEGER :: i,j,ipert,iindex,np
-      REAL(r8) :: mid,bt0,ileft
+      INTEGER :: i,j,k,l,ipert,iindex,np
+      REAL(r8) :: mid,bt0,ileft,delr,delz,cha,chb,chc,chd
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
@@ -1863,7 +1870,11 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:nr,0:nz) :: vgdr,vgdz,ebr,ebz,ebp
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: xrr,xrz,xrp,brr,brz,brp,
      $     bpr,bpz,bpp,vbr,vbz,vbp,vpbr,vpbz,vpbp,vvbr,vvbz,vvbp,
-     $     btr,btz,btp,vcbr,vcbz,vcbp
+     $     btr,btz,btp,vcbr,vcbz,vcbp,xcr,xcz,xcp,bcr,bcz,bcp
+
+      REAL(r8), DIMENSION(:), POINTER :: chex,chey
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: chear,cheaz,
+     $     chxar,chxaz
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
@@ -1874,12 +1885,18 @@ c-----------------------------------------------------------------------
       xrr = 0
       xrz = 0
       xrp = 0
+      xcr = 0
+      xcz = 0
+      xcp = 0
       brr = 0
       brz = 0
       brp = 0
       btr = 0
       btz = 0
       btp = 0
+      bcr = 0
+      bcz = 0
+      bcp = 0
       bpr = 0
       bpz = 0
       bpp = 0
@@ -2066,6 +2083,150 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDIF
 
+      IF (chebyshev_flag) THEN
+         WRITE(*,*)"Computing chebyshev for xbrzphi"
+         ALLOCATE(chex(0:nr),chey(0:nz),
+     $        chear(0:nchr,0:nchz),cheaz(0:nchr,0:nchz),
+     $        chxar(0:nchr,0:nchz),chxaz(0:nchr,0:nchz))
+         delr = gdr(1,0)-gdr(0,0)
+         delz = gdz(0,1)-gdz(0,0)
+         cha = (gdr(nr,0)-gdr(0,0))/2.0+delr
+         chb = (gdr(nr,0)+gdr(0,0))/2.0
+         chc = (gdz(0,nz)-gdz(0,0))/2.0+delz
+         chd = (gdz(0,nz)+gdz(0,0))/2.0
+         chex = (gdr(:,0)-chb)/cha
+         chey = (gdz(0,:)-chd)/chc
+         chear=0
+         cheaz=0
+         chxar=0
+         chxaz=0
+
+         DO i=0,nchr
+            DO j=0,nchz
+               DO k=0,nr
+                  DO l=0,nz
+                     chear(i,j)=chear(i,j)+btr(k,l)*
+     $                    cos(REAL(i,r8)*acos(chex(k)))*
+     $                    cos(REAL(j,r8)*acos(chey(l)))/
+     $                    sqrt((1.0-chex(k)**2.0)*(1.0-chey(l)**2.0))
+                     cheaz(i,j)=cheaz(i,j)+btz(k,l)*
+     $                    cos(REAL(i,r8)*acos(chex(k)))*
+     $                    cos(REAL(j,r8)*acos(chey(l)))/
+     $                    sqrt((1.0-chex(k)**2.0)*(1.0-chey(l)**2.0))                    
+                     chxar(i,j)=chxar(i,j)+xrr(k,l)*
+     $                    cos(REAL(i,r8)*acos(chex(k)))*
+     $                    cos(REAL(j,r8)*acos(chey(l)))/
+     $                    sqrt((1.0-chex(k)**2.0)*(1.0-chey(l)**2.0))
+                     chxaz(i,j)=chxaz(i,j)+xrz(k,l)*
+     $                    cos(REAL(i,r8)*acos(chex(k)))*
+     $                    cos(REAL(j,r8)*acos(chey(l)))/
+     $                    sqrt((1.0-chex(k)**2.0)*(1.0-chey(l)**2.0))                    
+                  ENDDO
+               ENDDO
+               chear(i,j)=chear(i,j)*4*delr*delz/(cha*chc*pi**2.0)
+               cheaz(i,j)=cheaz(i,j)*4*delr*delz/(cha*chc*pi**2.0)
+               chxar(i,j)=chxar(i,j)*4*delr*delz/(cha*chc*pi**2.0)
+               chxaz(i,j)=chxaz(i,j)*4*delr*delz/(cha*chc*pi**2.0)
+            ENDDO
+         ENDDO
+         chear(0,0)=chear(0,0)/4.0
+         cheaz(0,0)=cheaz(0,0)/4.0
+         chear(0,:)=chear(0,:)/2.0
+         cheaz(0,:)=cheaz(0,:)/2.0        
+         chear(:,0)=chear(:,0)/2.0
+         cheaz(:,0)=cheaz(:,0)/2.0  
+         chxar(0,0)=chxar(0,0)/4.0
+         chxaz(0,0)=chxaz(0,0)/4.0
+         chxar(0,:)=chxar(0,:)/2.0
+         chxaz(0,:)=chxaz(0,:)/2.0        
+         chxar(:,0)=chxar(:,0)/2.0
+         chxaz(:,0)=chxaz(:,0)/2.0   
+
+         CALL ascii_open(out_unit,"ipec_brzphi_chebyshev_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_BRZPHI_CHEBYSHEV: "//
+     $        "Chebyshev coefficients for brzphi field"
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(2(1x,a12,I4))')
+     $        "nchr =",nchr,"nchz =",nchz
+         WRITE(out_unit,'(4(1x,a4,f12.3))')
+     $        "a =",cha,"b =",chb,"c =",chc,"d =",chd
+         WRITE(out_unit,*)   
+         WRITE(out_unit,'(2(1x,a6),4(1x,a16))')"chear","cheaz",
+     $        "real(chear)","imag(chear)","real(cheaz)","imag(cheaz)"         
+         DO i=0,nchr
+            DO j=0,nchz
+               WRITE(out_unit,'(2(1x,I6),4(1x,es16.8))')i,j,
+     $              REAL(chear(i,j)),AIMAG(chear(i,j)),
+     $              REAL(cheaz(i,j)),AIMAG(cheaz(i,j))
+            ENDDO
+          ENDDO
+         CALL ascii_close(out_unit)
+
+         CALL ascii_open(out_unit,"ipec_xrzphi_chebyshev_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_XRZPHI_CHEBYSHEV: "//
+     $        "Chebyshev coefficients for displacement"
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(2(1x,a12,I4))')
+     $        "nchr =",nchr,"nchz =",nchz
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(2(1x,a6),4(1x,a16))')"chxar","chxaz",
+     $        "real(chxar)","imag(chxar)","real(chxaz)","imag(chxaz)"         
+         DO i=0,nchr
+            DO j=0,nchz
+               WRITE(out_unit,'(2(1x,I6),4(1x,es16.8))')i,j,
+     $              REAL(chxar(i,j)),AIMAG(chxar(i,j)),
+     $              REAL(chxaz(i,j)),AIMAG(chxaz(i,j))
+            ENDDO
+          ENDDO
+         CALL ascii_close(out_unit)
+
+         WRITE(*,*)"Recontructing xbrzphi by chebyshev"
+
+         DO i=0,nr
+            DO j=0,nz
+               DO k=0,nchr
+                  DO l=0,nchz
+                     bcr(i,j)=bcr(i,j)+chear(k,l)*
+     $                    cos(REAL(k,r8)*acos(chex(i)))*
+     $                    cos(REAL(l,r8)*acos(chey(j)))
+                     bcz(i,j)=bcz(i,j)+cheaz(k,l)*
+     $                    cos(REAL(k,r8)*acos(chex(i)))*
+     $                    cos(REAL(l,r8)*acos(chey(j)))
+                     bcp(i,j)=bcp(i,j)+chear(k,l)*
+     $                    gdr(i,j)/cha/sqrt(1.0-chex(i)**2.0)*
+     $                    sin(REAL(k,r8)*acos(chex(i)))*
+     $                    cos(REAL(l,r8)*acos(chey(j)))+cheaz(k,l)*
+     $                    gdr(i,j)/chc/sqrt(1.0-chey(i)**2.0)*
+     $                    cos(REAL(k,r8)*acos(chex(i)))*
+     $                    sin(REAL(l,r8)*acos(chey(j)))
+                     xcr(i,j)=xcr(i,j)+chxar(k,l)*
+     $                    cos(REAL(k,r8)*acos(chex(i)))*
+     $                    cos(REAL(l,r8)*acos(chey(j)))
+                     xcz(i,j)=xcz(i,j)+chxaz(k,l)*
+     $                    cos(REAL(k,r8)*acos(chex(i)))*
+     $                    cos(REAL(l,r8)*acos(chey(j)))
+                     xcp(i,j)=xcp(i,j)+chxar(k,l)*
+     $                    gdr(i,j)/cha/sqrt(1.0-chex(i)**2.0)*
+     $                    sin(REAL(k,r8)*acos(chex(i)))*
+     $                    cos(REAL(l,r8)*acos(chey(j)))+chxaz(k,l)*
+     $                    gdr(i,j)/chc/sqrt(1.0-chey(i)**2.0)*
+     $                    cos(REAL(k,r8)*acos(chex(i)))*
+     $                    sin(REAL(l,r8)*acos(chey(j)))
+                  ENDDO
+               ENDDO
+               bcp(i,j)=bcp(i,j)+bcr(i,j)
+               xcp(i,j)=xcp(i,j)+xcr(i,j)
+            ENDDO
+         ENDDO
+         bcp=bcp*(-ifac/nn)
+         xcp=xcp*(-ifac/nn)
+
+         DEALLOCATE(chex,chey,chear,cheaz,chxar,chxaz)
+
+      ENDIF
+
       IF (vvbrzphi_flag) THEN
          WRITE(*,*)"Computing vacuum fields without plasma response"
          CALL ipvacuum_bnormal(psilim,bnimn,nr,nz)
@@ -2122,6 +2283,29 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL ascii_close(out_unit)
 
+         IF (chebyshev_flag) THEN
+            CALL ascii_open(out_unit,"ipec_chebrzphi_n"//
+     $           TRIM(sn)//".out","UNKNOWN")
+            WRITE(out_unit,*)"IPEC_CEHBRZPHI: Total perturbed field"
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $           "real(b_r)","imag(b_r)","real(b_z)","imag(b_z)",
+     $           "real(b_phi)","imag(b_phi)"
+            
+            DO i=0,nr
+               DO j=0,nz
+                  WRITE(out_unit,'(1x,I2,8(es16.8))')
+     $                 gdl(i,j),gdr(i,j),gdz(i,j),
+     $                 REAL(bcr(i,j)),AIMAG(bcr(i,j)),
+     $                 REAL(bcz(i,j)),AIMAG(bcz(i,j)),
+     $                 REAL(bcp(i,j)),AIMAG(bcp(i,j))
+               ENDDO
+            ENDDO
+            CALL ascii_close(out_unit)
+         ENDIF
+
          CALL ascii_open(out_unit,"ipec_pbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_PBRZPHI: Perturbed field by plasma"
@@ -2146,7 +2330,7 @@ c-----------------------------------------------------------------------
          IF (coil_flag) THEN
             CALL ascii_open(out_unit,"ipec_cbrzphi_n"//
      $           TRIM(sn)//".out","UNKNOWN")
-            WRITE(out_unit,*)"IPEC_PBRZPHI: External field by coils"
+            WRITE(out_unit,*)"IPEC_CBRZPHI: External field by coils"
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
             WRITE(out_unit,*)
@@ -2171,7 +2355,7 @@ c-----------------------------------------------------------------------
       IF (brzphi_flag .AND. vbrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_vbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_PBRZPHI: Total perturbed field "//
+         WRITE(out_unit,*)"IPEC_VBRZPHI: Total perturbed field "//
      $        "by surface currents"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -2214,6 +2398,29 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
+
+         IF (chebyshev_flag) THEN
+            CALL ascii_open(out_unit,"ipec_chexrzphi_n"//
+     $           TRIM(sn)//".out","UNKNOWN")
+            WRITE(out_unit,*)"IPEC_CEHXRZPHI: Displacement"
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $           "real(x_r)","imag(x_r)","real(x_z)","imag(x_z)",
+     $           "real(x_phi)","imag(x_phi)"
+            
+            DO i=0,nr
+               DO j=0,nz
+                  WRITE(out_unit,'(1x,I2,8(es16.8))')
+     $                 gdl(i,j),gdr(i,j),gdz(i,j),
+     $                 REAL(xcr(i,j)),AIMAG(xcr(i,j)),
+     $                 REAL(xcz(i,j)),AIMAG(xcz(i,j)),
+     $                 REAL(xcp(i,j)),AIMAG(xcp(i,j))
+               ENDDO
+            ENDDO
+            CALL ascii_close(out_unit)
+         ENDIF
 
       ENDIF
 
@@ -2380,20 +2587,13 @@ c-----------------------------------------------------------------------
             t22(itheta)=sin(eta)*v(2,1)+cos(eta)*v(2,2)
             t33(itheta)=-1.0/v(3,3)
          ENDDO
+
          CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
          CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
-
-         IF (reg_flag) THEN
-            CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
-            CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
-            CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xmz_mn)
-            CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bmz_mn)
-         ELSE
-            CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
-            CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
-            CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
-            CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
-         ENDIF
+         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
+         CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
+         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
+         CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
 
          xrr_fun(istep,:)=(t11*xwp_fun+t12*xwt_fun)/jacs
          brr_fun(istep,:)=(t11*bwp_fun+t12*bwt_fun)/jacs

@@ -95,11 +95,14 @@ c-----------------------------------------------------------------------
       IF (reg_flag) THEN
          xmp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
          xms_mn=-MATMUL(bmat,xmp1_mn)-MATMUL(cmat,xsp_mn)
-         bmt_mn=bwt_mn*(singfac**2/(singfac**2+reg_spot**2))
+         bmt_mn=-(chi1*xmp1_mn+twopi*ifac*nn*xms_mn)
+         bmz_mn=-(chi1*(q1*xsp_mn+sq%f(4)*xmp1_mn)+
+     $        twopi*ifac*mfac*xms_mn)
       ELSE
          xmp1_mn=xsp1_mn
          xms_mn=xss_mn
          bmt_mn=bwt_mn
+         bmz_mn=bwz_mn
       ENDIF
 
       DEALLOCATE(amat,bmat,cmat,fmats,gmats,kmats)
@@ -246,11 +249,11 @@ c-----------------------------------------------------------------------
             xvz_mn(ipert)=xvz_mn(ipert)+g31(dm)*xwp_mn(jpert)+
      $           g23(dm)*xmt_mn(jpert)+g33(dm)*xmz_mn(jpert)
             bvp_mn(ipert)=bvp_mn(ipert)+g11(dm)*bwp_mn(jpert)+
-     $           g12(dm)*bwt_mn(jpert)+g31(dm)*bwz_mn(jpert)
+     $           g12(dm)*bmt_mn(jpert)+g31(dm)*bmz_mn(jpert)
             bvt_mn(ipert)=bvt_mn(ipert)+g12(dm)*bwp_mn(jpert)+
-     $           g22(dm)*bwt_mn(jpert)+g23(dm)*bwz_mn(jpert)
+     $           g22(dm)*bmt_mn(jpert)+g23(dm)*bmz_mn(jpert)
             bvz_mn(ipert)=bvz_mn(ipert)+g31(dm)*bwp_mn(jpert)+
-     $           g23(dm)*bwt_mn(jpert)+g33(dm)*bwz_mn(jpert)
+     $           g23(dm)*bmt_mn(jpert)+g33(dm)*bmz_mn(jpert)
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -447,8 +450,8 @@ c     three vector components.
 c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
-      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
-      CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
+      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
+      CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
       CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
       CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
       xrr_fun=(t11*xwp_fun+t12*xwt_fun)/jacs

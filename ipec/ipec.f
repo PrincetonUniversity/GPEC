@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,eqoff_flag,
      $     displacement_flag,mode,coil_flag
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
-     $     chebyshev_flag,nche
+     $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
@@ -89,6 +89,10 @@ c-----------------------------------------------------------------------
       sing_spot=5e-4
       reg_flag=.TRUE.
       reg_spot=5e-2
+      chebyshev_flag=.TRUE.
+      nche=20
+      nchr=20
+      nchz=20
 
       jsurf_out=0
       tmag_out=1
@@ -161,7 +165,6 @@ c-----------------------------------------------------------------------
       nl=0
       passing_flag=.FALSE.
       pertfile_flag=.FALSE.
-
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -249,17 +252,19 @@ c-----------------------------------------------------------------------
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vvbrzphi_flag .OR. vsbrzphi_flag) psixy=1
       IF (eqoff_flag) psixy=0
+      IF (rstep==0) rstep=mstep
+      IF (nchr==20) nchr=nche
+      IF (nchz==20) nchz=nche
 c-----------------------------------------------------------------------
 c     check time.
 c-----------------------------------------------------------------------
       CALL DATE_AND_TIME(date,time,zone,values)
       seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
 c-----------------------------------------------------------------------
-c     prepare for ideal solutions.
+c     prepare ideal solutions.
 c-----------------------------------------------------------------------
       CALL idcon_read(psixy)
       CALL idcon_transform
-      IF (rstep==0) rstep=mstep
 c-----------------------------------------------------------------------
 c     reconstruct metric tensors.
 c-----------------------------------------------------------------------

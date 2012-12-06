@@ -20,7 +20,8 @@ c-----------------------------------------------------------------------
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
-     $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,nche
+     $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
+     $     nche,nchr,nchz
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,
