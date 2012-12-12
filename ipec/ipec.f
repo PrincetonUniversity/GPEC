@@ -376,7 +376,6 @@ c-----------------------------------------------------------------------
             CALL ipeq_alloc
             CALL ipeq_sol(psilim)
             CALL ipeq_contra(psilim)
-c            CALL ipeq_xptobn(psilim,xspmn,foutmn)
             CALL ipeq_dealloc
             CALL ipeq_weight(psilim,foutmn,mfac,mpert,1)
             finmn = MATMUL(invmats,foutmn)

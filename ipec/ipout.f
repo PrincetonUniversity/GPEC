@@ -1767,6 +1767,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
 
       COMPLEX(r8), DIMENSION(mpert) :: vwpmn
+      REAL(r8), DIMENSION(cmpsi) :: qs
       REAL(r8), DIMENSION(cmpsi,mpert) :: xmns,ymns
       COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vmn
 c-----------------------------------------------------------------------
@@ -1780,6 +1781,7 @@ c-----------------------------------------------------------------------
 
       DO ipsi=1,cmpsi
          CALL spline_eval(sq,psi(ipsi),0)
+         qs(ipsi)=sq%f(4)
          CALL field_bs_psi(psi(ipsi),vcmn,2)
          DO i=1,cmpert
             IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
@@ -1811,7 +1813,7 @@ c-----------------------------------------------------------------------
       DO ipsi=1,cmpsi
          DO ipert=1,mpert
             WRITE(out_unit,'(2(1x,es16.8),1x,I4,2(1x,es16.8))')
-     $           psi(ipsi),sq%f(4),mfac(ipert),
+     $           psi(ipsi),qs(ipsi),mfac(ipert),
      $           REAL(vmn(ipsi,ipert)),AIMAG(vmn(ipsi,ipert))        
          ENDDO
       ENDDO
@@ -2129,14 +2131,10 @@ c-----------------------------------------------------------------------
                chxaz(i,j)=chxaz(i,j)*4*delr*delz/(cha*chc*pi**2.0)
             ENDDO
          ENDDO
-         chear(0,0)=chear(0,0)/4.0
-         cheaz(0,0)=cheaz(0,0)/4.0
          chear(0,:)=chear(0,:)/2.0
          cheaz(0,:)=cheaz(0,:)/2.0        
          chear(:,0)=chear(:,0)/2.0
          cheaz(:,0)=cheaz(:,0)/2.0  
-         chxar(0,0)=chxar(0,0)/4.0
-         chxaz(0,0)=chxaz(0,0)/4.0
          chxar(0,:)=chxar(0,:)/2.0
          chxaz(0,:)=chxaz(0,:)/2.0        
          chxar(:,0)=chxar(:,0)/2.0
