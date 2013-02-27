@@ -259,7 +259,18 @@ c-----------------------------------------------------------------------
          DEALLOCATE(rgarr,zgarr,psigarr)
          CALL bicube_fit(psi_in,"extrap","extrap")
          WRITE(*,*)"mr = ",mr,", mz = ",mz
-      ENDIF
+      ELSE
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psilim,theta(itheta),0)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+         ENDDO  
+         rmin=0.8*MINVAL(r)
+         rmax=1.2*MAXVAL(r)
+         zlim=1.2*MAXVAL(z)
+      ENDIF      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -395,7 +406,12 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       INTEGER :: ipsi,itheta
-      REAL(r8) :: rr,w11,w12,delpsi
+      REAL(r8) :: w11,w12,delpsi,qintb,val1,val2
+
+      REAL(r8), DIMENSION(0:mpsi) :: psitor
+      REAL(r8), DIMENSION(0:mpsi,0:mtheta) :: rs,zs,jacb2
+
+      TYPE(spline_type) :: qs
 
       WRITE(*,*)"Recontructing flux functions and metric tensors"
 c-----------------------------------------------------------------------
@@ -423,27 +439,28 @@ c-----------------------------------------------------------------------
 c     begin loop over nodes.
 c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
-         CALL spline_eval(sq,sq%xs(ipsi),1)
+         CALL spline_eval(sq,sq%xs(ipsi),0)
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
             rfac=SQRT(rzphi%f(1))
             eta=twopi*(itheta/REAL(mtheta,r8)+rzphi%f(2))
-            rr=ro+rfac*COS(eta)
+            rs(ipsi,itheta)=ro+rfac*COS(eta)
+            zs(ipsi,itheta)=zo+rfac*SIN(eta)
             jac=rzphi%f(4)
             jac1=rzphi%fx(4)
-            w11=(1+rzphi%fy(2))*twopi**2*rfac*rr/jac
-            w12=-rzphi%fy(1)*pi*rr/(rfac*jac)
+            w11=(1+rzphi%fy(2))*twopi**2*rfac*rs(ipsi,itheta)/jac
+            w12=-rzphi%fy(1)*pi*rs(ipsi,itheta)/(rfac*jac)
             delpsi=SQRT(w11**2+w12**2)
 c-----------------------------------------------------------------------
 c     compute contravariant basis vectors.
 c-----------------------------------------------------------------------
             v(1,1)=rzphi%fx(1)/(2*rfac)
             v(1,2)=rzphi%fx(2)*twopi*rfac
-            v(1,3)=rzphi%fx(3)*rr
+            v(1,3)=rzphi%fx(3)*rs(ipsi,itheta)
             v(2,1)=rzphi%fy(1)/(2*rfac)
             v(2,2)=(1+rzphi%fy(2))*twopi*rfac
-            v(2,3)=rzphi%fy(3)*rr
-            v(3,3)=twopi*rr
+            v(2,3)=rzphi%fy(3)*rs(ipsi,itheta)
+            v(3,3)=twopi*rs(ipsi,itheta)
 c-----------------------------------------------------------------------
 c     compute metric tensor components.
 c-----------------------------------------------------------------------
@@ -457,10 +474,10 @@ c-----------------------------------------------------------------------
             metric%fs(ipsi,itheta,8)=jac1
 c-----------------------------------------------------------------------
 c     compute equilibrium mod b.
-c     sq%f(1) = twopi*f
 c-----------------------------------------------------------------------
-            eqfun%fs(ipsi,itheta,1)=SQRT(
-     $           (chi1**2*delpsi**2+sq%f(1)**2)/(twopi*rr)**2)
+            eqfun%fs(ipsi,itheta,1)=SQRT((chi1**2*delpsi**2+
+     $           sq%f(1)**2)/(twopi*rs(ipsi,itheta))**2)
+            jacb2(ipsi,itheta)=jac*eqfun%fs(ipsi,itheta,1)**2
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -475,6 +492,66 @@ c-----------------------------------------------------------------------
 c     fit bicube types.
 c-----------------------------------------------------------------------
       CALL bicube_fit(eqfun,"extrap","periodic")
+c-----------------------------------------------------------------------
+c     write equilibrium quantities.
+c-----------------------------------------------------------------------
+      val1=0.0
+      val2=1.0
+      CALL spline_alloc(qs,mpsi+2,1)
+      qs%xs(0)=val1
+      qs%xs(1:mpsi+1)=sq%xs
+      qs%xs(mpsi+2)=val2
+      CALL spline_eval(sq,val1,0)
+      qs%fs(0,1)=sq%f(4)
+      qs%fs(1:mpsi+1,1)=sq%fs(:,4)
+      CALL spline_eval(sq,val2,0)
+      qs%fs(mpsi+2,1)=sq%f(4)
+      CALL spline_fit(qs,"extrap") 
+      CALL spline_int(qs)
+      qintb=qs%fsi(mpsi+2,1)
+      psitor(:)=qs%fsi(1:mpsi+1,1)/qintb
+      CALL spline_dealloc(qs)
+
+      CALL ascii_open(out_unit,"idcon_equil.out","UNKNOWN")
+      WRITE(out_unit,*)"IDCON_EQUIL: "//
+     $     "Various equilibrium quantities"
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(1x,a13,a8)')"jac_type = ",jac_type
+      WRITE(out_unit,'(2(1x,a8,1x,I6))')"mpsi =",mpsi,"mtheta =",mtheta
+      WRITE(out_unit,'(2(1x,a14,1x,es16.8))')"psi_edge =",psio,
+     $     "psitor_edge =",qintb*psio
+      WRITE(out_unit,*)     
+      WRITE(out_unit,*)" Flux functions:"
+      WRITE(out_unit,*) 
+      WRITE(out_unit,'(6(1x,a16))')"psi","psitor","p","q","g","I"
+      DO ipsi=0,mpsi
+         CALL spline_eval(sq,sq%xs(ipsi),0)
+         CALL spline_alloc(qs,mtheta,1)
+         qs%xs=rzphi%ys
+         qs%fs(:,1)=jacb2(ipsi,:)
+         CALL spline_fit(qs,"periodic") 
+         CALL spline_int(qs)          
+         WRITE(out_unit,'(6(1x,es16.8))')sq%xs(ipsi),psitor(ipsi),
+     $        sq%f(2)/mu0,sq%f(4),sq%f(1)/(twopi*mu0),
+     $        (qs%fsi(mtheta,1)/(twopi*chi1)-sq%f(4)*sq%f(1)/twopi)/mu0
+         CALL spline_dealloc(qs)
+      ENDDO
+      WRITE(out_unit,*)     
+      WRITE(out_unit,*)" 2D functions:"
+      WRITE(out_unit,*)  
+      WRITE(out_unit,'(8(1x,a16))')"psi","theta","r","z",
+     $     "eta","dphi","jac","b0"
+      DO ipsi=0,mpsi
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),0)
+            CALL bicube_eval(eqfun,eqfun%xs(ipsi),eqfun%ys(itheta),0)
+            WRITE(out_unit,'(8(1x,es16.8))')rzphi%xs(ipsi),
+     $           rzphi%ys(itheta)*twopi,rs(ipsi,itheta),zs(ipsi,itheta),
+     $           rzphi%f(2)*twopi,rzphi%f(3)*twopi,
+     $           rzphi%f(4)/(twopi*sq%f(4)*chi1),eqfun%f(1)
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

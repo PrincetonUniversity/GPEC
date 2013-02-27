@@ -40,7 +40,7 @@ c-----------------------------------------------------------------------
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
-     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,eqoff_flag,
+     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
      $     displacement_flag,mode,coil_flag
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz
@@ -249,9 +249,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set parameters from inputs.
 c-----------------------------------------------------------------------
-      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $     vbrzphi_flag .OR. vvbrzphi_flag .OR. vsbrzphi_flag) psixy=1
-      IF (eqoff_flag) psixy=0
+      IF (eqbrzphi_flag) psixy=1
       IF (rstep==0) rstep=mstep
       IF (nchr==20) nchr=nche
       IF (nchz==20) nchz=nche
@@ -358,7 +356,7 @@ c-----------------------------------------------------------------------
             nr=mr
             nz=mz
          ENDIF
-         IF (.NOT.eqoff_flag) CALL ipeq_rzpgrid(nr,nz)
+         CALL ipeq_rzpgrid(nr,nz)
          IF (.NOT.mode_flag) THEN
             CALL ipout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
          ELSE
@@ -455,7 +453,7 @@ c-----------------------------------------------------------------------
      $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
       IF (rzpgrid_flag) THEN
-         IF (.NOT. eqoff_flag) CALL ipdiag_rzpgrid(nr,nz)
+         CALL ipdiag_rzpgrid(nr,nz)
       ENDIF
       
       IF (m3d_flag) THEN
@@ -480,7 +478,6 @@ c-----------------------------------------------------------------------
          fxmn=0
          fxmn(m3mode-mlow+1)=fp
          CALL ipeq_fcoords(psilim,fxmn,mfac,mpert,0,0,2,0,1,0)
-c         CALL ipeq_xptobn(psilim,fxmn,finmn)
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,

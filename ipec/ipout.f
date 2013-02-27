@@ -360,10 +360,10 @@ c-----------------------------------------------------------------------
             deltas(ising,i)=rbwp1mn-lbwp1mn
             delcurs(ising,i)=j_c(ising)*deltas(ising,i)*ifac/
      $           (twopi*mfac(resnum))
-            singcurs(ising,i)=-delcurs(ising,i)/(twopi*ifac*nn)
+            singcurs(ising,i)=-delcurs(ising,i)/ifac
 
             fkaxmn=0
-            fkaxmn(resnum)=singcurs(ising,i)
+            fkaxmn(resnum)=singcurs(ising,i)/(twopi*nn)
 
             singflx_mn=MATMUL(fsurfindmats(ising,:,:),fkaxmn)
             singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
@@ -462,7 +462,7 @@ c-----------------------------------------------------------------------
          tmpert = lmpert
          tmfac= lmfac
          t1mat = MATMUL(singbnoflxs,convmat)
-         t2mat = MATMUL(singcurs,convmat)*twopi*nn
+         t2mat = MATMUL(singcurs,convmat)
          t3mat = MATMUL(islandhwids,convmat)
       ELSE
          ALLOCATE(fldflxmn(mpert),fldflxmat(mpert,mpert),
@@ -511,7 +511,7 @@ c-----------------------------------------------------------------------
       CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $     work,lwork,rwork,info)    
       s1=s
-      t1v=MATMUL(fldflxmat,CONJG(TRANSPOSE(vt)))
+      t1v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
 
       work=0
       rwork=0
@@ -522,7 +522,7 @@ c-----------------------------------------------------------------------
       CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $     work,lwork,rwork,info)    
       s2=s
-      t2v=MATMUL(fldflxmat,CONJG(TRANSPOSE(vt)))
+      t2v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
 
       work=0
       rwork=0
@@ -533,7 +533,7 @@ c-----------------------------------------------------------------------
       CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $     work,lwork,rwork,info)    
       s3=s
-      t3v=MATMUL(fldflxmat,CONJG(TRANSPOSE(vt)))  
+      t3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))  
 c-----------------------------------------------------------------------
 c     write matrix.
 c-----------------------------------------------------------------------
@@ -1041,10 +1041,10 @@ c-----------------------------------------------------------------------
          delta(ising)=rbwp1mn-lbwp1mn
          delcur(ising)=j_c(ising)*delta(ising)*ifac/
      $        (twopi*mfac(resnum(ising)))
-         singcur(ising)=-delcur(ising)/(twopi*ifac*nn)
+         singcur(ising)=-delcur(ising)/ifac
 
          fkaxmn=0
-         fkaxmn(resnum(ising))=singcur(ising)
+         fkaxmn(resnum(ising))=singcur(ising)/(twopi*nn)
          
          ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
          CALL ipvacuum_flxsurf(respsi)
@@ -1105,8 +1105,7 @@ c-----------------------------------------------------------------------
      $        singtype(ising)%q,singtype(ising)%psifac,
      $        REAL(singflx_mn(resnum(ising),ising)),
      $        AIMAG(singflx_mn(resnum(ising),ising)),
-     $        REAL(singcur(ising))*twopi*nn,
-     $        AIMAG(singcur(ising))*twopi*nn,
+     $        REAL(singcur(ising)),AIMAG(singcur(ising)),
      $        island_hwidth(ising),chirikov(ising)
       ENDDO
       WRITE(out_unit,*)
@@ -1247,7 +1246,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: ileft,jac
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,bs,etas,dphis
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
      $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun
@@ -1293,23 +1292,20 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
             rfac=SQRT(rzphi%f(1))
             eta=twopi*(theta(itheta)+rzphi%f(2))
-            etas(istep,itheta)=eta
             rs(istep,itheta)=ro+rfac*COS(eta)
             zs(istep,itheta)=zo+rfac*SIN(eta)
-            bs(istep,itheta)=eqfun%f(1)
             jac=rzphi%f(4)
             eulbparfuns(istep,itheta)=
      $           chi1*(bvt_fun(itheta)+sq%f(4)*bvz_fun(itheta))
-     $           /(jac*bs(istep,itheta))
+     $           /(jac*eqfun%f(1))
             lagbparfuns(istep,itheta)=
      $           eulbparfuns(istep,itheta)+
      $           eqfun%fx(1)*xsp_fun(itheta)+eqfun%fy(1)*
      $           (xms_fun(itheta)/(chi1*sq%f(4))+
      $           xmz_fun(itheta)/(jac*sq%f(4))-
-     $           (chi1/(jac*bs(istep,itheta)))**2*
+     $           (chi1/(jac*eqfun%f(1)))**2*
      $           (sq%f(4)*xvz_fun(itheta)+xvt_fun(itheta)))
             dphi(itheta)=rzphi%f(3)
-            dphis(istep,itheta)=dphi(itheta)
          ENDDO
          CALL iscdftf(mfac,mpert,eulbparfuns(istep,:),
      $        mthsurf,eulbpar_mn)
@@ -1445,14 +1441,12 @@ c-----------------------------------------------------------------------
      $        "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          
-         WRITE(out_unit,'(10(1x,a16))')"psi","r","z","b0","dthe","dphi",
+         WRITE(out_unit,'(6(1x,a16))')"r","z",
      $        "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)"
          DO istep=1,mstep
             DO itheta=0,mthsurf
-               WRITE(out_unit,'(10(1x,es16.8))')psifac(istep),
+               WRITE(out_unit,'(6(1x,es16.8))')
      $              rs(istep,itheta),zs(istep,itheta),
-     $              bs(istep,itheta),
-     $              etas(istep,itheta),dphis(istep,itheta),
      $              REAL(eulbparfuns(istep,itheta)),
      $              AIMAG(eulbparfuns(istep,itheta)),
      $              REAL(lagbparfuns(istep,itheta)),

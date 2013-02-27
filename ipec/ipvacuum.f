@@ -387,16 +387,16 @@ c-----------------------------------------------------------------------
          etas(itheta)=twopi*(theta(itheta)+rzphi%f(2))
          dphi(itheta)=rzphi%f(3)
       ENDDO
-      IF (eqoff_flag) THEN
-         x1 = MINVAL(r)*0.8
-         x2 = MAXVAL(r)*1.2
-         z1 = MINVAL(z)*1.2
-         z2 = -z1       
-      ELSE
+      IF (eqbrzphi_flag) THEN
          x1 = psi_in%xs(0)
          x2 = psi_in%xs(mr)
          z1 = psi_in%ys(0)
          z2 = psi_in%ys(mz)
+      ELSE
+         x1 = rmin
+         x2 = rmax
+         z1 = -zlim
+         z2 = zlim      
       ENDIF
 
       delte=-dphi/sq%f(4)

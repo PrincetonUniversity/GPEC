@@ -8,7 +8,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      LOGICAL :: power_flag,fft_flag,edge_flag,eqoff_flag,
+      LOGICAL :: power_flag,fft_flag,edge_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
      $     vbrzphi_flag,vvbrzphi_flag,div_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
      $     nche,nchr,nchz
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
-     $     qmin,qmax,seconds,rfac,eta,singfac_min,
+     $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
      $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,sing_spot,reg_spot
 
       CHARACTER(2) :: sn,ss

@@ -505,9 +505,7 @@ c-----------------------------------------------------------------------
      $           deltas(ising,i)
             corcurs(ising,i)=-j_c(ising)*
      $           (rcormn(resnum)-lcormn(resnum))
-            delcurs(ising,i)=-delcurs(ising,i)/(twopi*ifac*nn)
-            corcurs(ising,i)=-corcurs(ising,i)/(twopi*ifac*nn)
-            singcurs(ising,i)=delcurs(ising,i)-corcurs(ising,i)
+            singcurs(ising,i)=-(delcurs(ising,i)-corcurs(ising,i))/ifac
          ENDDO
 
          WRITE(*,*)"Finished the analysis for the q =",singtype(ising)%q
@@ -1293,7 +1291,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: nr,nz
 
       INTEGER :: i,j,itheta
-      REAL(r8) :: xint,zint,ttheta,ptheta
+      REAL(r8) :: xint,zint,ttheta,ptheta,x1,x2,z1,z2
 
       REAL(r8), DIMENSION(0:mthsurf) :: thetas,rbarr,etarr
 
@@ -1312,8 +1310,20 @@ c-----------------------------------------------------------------------
       gdthe=0
       gdphi=0
 
-      xint=(psi_in%xs(mr)-psi_in%xs(0))/nr
-      zint=(psi_in%ys(mz)-psi_in%ys(0))/nz
+      IF (eqbrzphi_flag) THEN
+         x1 = psi_in%xs(0)
+         x2 = psi_in%xs(mr)
+         z1 = psi_in%ys(0)
+         z2 = psi_in%ys(mz)
+      ELSE
+         x1 = rmin
+         x2 = rmax
+         z1 = -zlim
+         z2 = zlim      
+      ENDIF     
+
+      xint=(x2-x1)/nr
+      zint=(z2-z1)/nz
 
       CALL ascii_open(out_unit,"ipdiag_rzpgrid.out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RZPGRID: "//
@@ -1333,8 +1343,8 @@ c-----------------------------------------------------------------------
 
       DO i=0,nr 
          DO j=0,nz
-            gdr(i,j)=psi_in%xs(0)+i*xint
-            gdz(i,j)=psi_in%ys(0)+j*zint
+            gdr(i,j)=x1+i*xint
+            gdz(i,j)=z1+j*zint
 
             ! compare grid with equilibrium input
             IF ((nr==mr) .AND. (nz==mz)) THEN
@@ -1344,7 +1354,6 @@ c-----------------------------------------------------------------------
                gdpsi(i,j)=psi_in%f(1)
             ENDIF
 
-            IF (gdpsi(i,j)<psilow) gdpsi(i,j)=psilow
             ttheta=ATAN2((gdz(i,j)-zo),(gdr(i,j)-ro))
             IF (ttheta >= 0) THEN 
                ptheta=ttheta/twopi
@@ -1357,6 +1366,7 @@ c-----------------------------------------------------------------------
                IF (SQRT((gdr(i,j)-ro)**2+(gdz(i,j)-zo)**2)<rbeta%f(1))
      $              THEN
                   gdl(i,j)=1
+                  IF (gdpsi(i,j)<psilow) gdpsi(i,j)=psilow
                   DO itheta=0,mthsurf
                      CALL bicube_eval(rzphi,gdpsi(i,j),theta(itheta),0)
                      thetas(itheta)=(theta(itheta)+rzphi%f(2))
