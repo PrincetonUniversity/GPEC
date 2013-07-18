@@ -1,0 +1,243 @@
+Totorial for data visualization and 
+postprocessing with the pypec package.
+
+	@package pypec
+	@author NC Logan
+	@email nlogan@pppl.gov
+
+
+#GETTING SET-UP
+To set up python on portal at PPPL, insert the 
+following lines into your .bashrc* file:
+export PYTHONPATH=$PYTHONPATH:/p/gpec/users/nlogan/ipec_3.00/nlogan
+module load python/2.7.2
+
+*Obviously for tcsh shell users replace export with setenv syntax
+and insert in .cshrc
+**Replace /p/gpec/users/nlogan/ipec_3.00/nlogan with the top level
+directory for your own branch of ipec if you have one.
+
+To put the changes into effect
+>source ~/.bashrc
+
+
+#SETTING YOUR PERSONAL DEFAULTS
+To set personal defualts for runs, edit the _defaults_.py file in
+this directory. Some of these (like email) should be obvious, others
+you may not understand until becoming more familiar with the package.
+Do not worry if these are confusing, and feel free to skip them for now.
+
+
+#USING THE BEST ENVIRONMENT
+The ipython (interactive) environment if recomended for commandline
+data analysis. To start, it is easiest to auto-import a number of 
+basic mathematic and visualization modules and use an enhanced 
+interactivity for displaying figures. To do this enter*
+>ipython --pylab
+
+*look into online tutorial on numpy and matplotlib. Advanced users 
+are recomended to edit ~/.matplotlib/matplotlibrc and 
+~/.ipython/profile_default/startup/autoimports.ipy files.
+
+Now in the ipython envirnment, type
+In [1]: from pypec import *
+/usr/pppl/python/2.7.2/lib/python2.7/site-packages/matplotlib/rcsetup.py:117: UserWarning: figure.autolayout is not currently supported
+  warnings.warn("figure.autolayout is not currently supported")
+WARNING: Mayavi not in python path
+WARNING: USING PORTAL - "use -w 24:00:00 -l mem=8gb" recomended for heavy computation
+#this will import two modules: gpec, and data
+#there may be a few warnings/hints... ignore them for now.
+
+
+
+
+
+############################ THE DATA MODULE
+
+First,lets explore the data module by typing 'data.' and hitting tab
+
+In [2]: data.
+data.DataBase              data.capitalize            data.join
+data.LinearNDInterpolator  data.copy                  data.mlab
+data.MethodType            data.count                 data.np
+data.SensorBase            data.gplot                 data.read
+data.StringIO              data.interp1d
+data.SurfaceBase           data.interp2d
+#for information on any particular object in the module, use the '?' syntax
+In [3]: data.read?
+Type:       function
+Base Class: <type 'function'>
+String Form:<function read at 0xa81f7d0>
+Namespace:  Interactive
+File:       /p/gpec/users/nlogan/ipec_3.00/nlogan/pypec/data.py
+Definition: data.read(fname, squeeze=False)
+Docstring:
+Get the data from any ipec output as a list of python class-type objects using numpy.genfromtxt.
+args    - fname   : str. Path of ipec output file.
+kwargs  - squeeze : bool. (False) Sets all attributes to single data object
+returns         : list. Class objects for each block of data in the file.
+
+#You will see that it has a lot of metadata on this function,
+#but the important things to look at for now are the args ('arguments')
+#and kwargs ('key word arguments'). These are passed to the function
+#as shown in the Definition line... you can either pass a single string,
+#or a string and specification for squeeze. If this confuses you, consult 
+#any of the many great python tutorials online.
+
+#lets use it!
+In [4]: cd /p/gpec/users/nlogan/data/d3d/ipecout/145117/ico3_n3/
+In [5]: ntv = data.read('nat3_n3.out')
+Casting table 1 into Data object.
+Casting table 2 into Data object.
+Casting table 3 into Data object.
+Casting table 4 into Data object.
+Casting table 5 into Data object.
+Casting table 6 into Data object.
+Casting table 7 into Data object.
+Casting table 8 into Data object.
+Casting table 9 into Data object.
+Casting table 10 into Data object.
+
+#As we can see, this output file contained 10 seperate tables,
+#that have now been converted to pypec data objects.
+#Lets limit ourselves to one object for now
+In [6]: ntv = ntv[0]
+#explore the object using the tab!
+In [7]: ntv.
+ntv.axes    ntv.nd      ntv.plot1d  ntv.pts     ntv.slice   ntv.ydata
+ntv.interp  ntv.params  ntv.plot2d  ntv.shape   ntv.xnames
+#these attributes should be fairly self explanitory
+#you can explore by simply entering a attribute
+In [8]: ntv.xnames
+Out[8]: ['psi']
+#but this might get ugly for ntv.pts (a list of all points in x)
+#you can also use the builtin type function
+In [9]: type(ntv.ydata)
+Out[9]: dict
+#dictionaries have built in attributes/instances. To display the 
+#names of the dependent data, use keys()
+In [10]: ntv.ydata.keys()
+Out[10]: ['integraltorq', 'dvdpsi', 'dw2n', 'torq', 'integraldw2n']
+#you would axcess the data using ntv.ydata['torq'] for example
+
+#OK. You've got the idea of how to explore now. If confused,
+#use type() and consult online documentation. This tutorial is going
+#to speed up.
+
+#Lets check out the data objects built in functions!
+In [11]: allfig = ntv.plot1d()
+In [11]: tfig = ntv.plot1d('torq')
+#Navigate and zoom using the toolbar below plots (notice x-axes are linked!).
+#Now to edit plots by individual axis objects...
+In [12]: x = linspace(0.02,0.98,100)
+In [13]: ax,ax4 = tfig.get_axes()[0],allfig.get_axes()[-1]
+In [14]: ax.plot(x,ntv.interp(x,'torq')[0],'o')
+Forming new interpolation function for torq.
+Interpolating values.
+In [15]: ax4.plot(x,ntv.interp(x,'torq')[0],'o')
+Interpolating values.
+#Note that it initialized the interpolation function on the first call,
+#and saved it internally for the second.
+#Interpolation can be done for any number of y values at once.
+In [14]: griddata = ntv.interp(x,['dw2n','torq','dvdpsi'])
+Forming new interpolation function for dw2n.
+Interpolating values.
+Interpolating values.
+Forming new interpolation function for dvdpsi.
+Interpolating values.
+In [15]: shape(griddata)
+Out[15]: (3, 100)
+
+
+Thats it for the data module. Feel free to suggest additional functionality
+or improvement. Most of all, enjoy your new power with the pypec data object.
+
+
+
+############################ THE GPEC MODULE
+
+This module is for more advanced operators who want to control/run 
+the fortran package for DCON, IPEC, and NAT3. To get started, lets
+explore the package
+
+In [16]: gpec.
+gpec.InputSet       gpec.join           gpec.optimize       gpec.run
+gpec.bashjob        gpec.namelist       gpec.optntv         gpec.subprocess
+gpec.data           gpec.np             gpec.os             gpec.sys
+gpec.default        gpec.ntv_dominantm  gpec.packagedir     gpec.time
+#many of these are simply standard python modules imported by gpec
+#lets submit a full run in just 4 lines:
+
+#steal the settings from a previous run (leaving run director as deafult)
+In [17]: new_inputs = gpec.InputSet(indir='/p/gpec/users/nlogan/data/d3d/ipecout/145117/ico3_n3/')
+#change what we want to
+In [18]: new_inputs['dcon']['DCON_CONTROL']['nn']=2
+In [19]: new_dir = new_inputs.indir[:-2]+'2'
+#DOUBLE CHECK THAT ALL IPUTS ARE WHAT YOU EXPECT (not shown here)
+#submit the job to the cluster
+In [19]: gpec.run(loc=new_dir,**new_inputs.infiles)
+
+Running the package using this module will 
+(1) Create the new location (if not already existing), and cd to it
+(2) rm all .out, .dat, and .bin files already in the directory
+      *not dcon ones if rundcon=False, not nat3 ones for runnat3=False, etc.
+(2) cp all .dat and .in files from the run directoy to the new location
+(3) Write all namelists supplied in **kwargs to file (overwriting)
+(4) a) Write a unique bash script for the run, and submit it or
+    b) Run each fortran routine from the commandline
+(5) Remove all .dat and xdraw files from the directory
+
+You will not that there is significant oportunity for overwriting files,
+and the user must be responsible for double checking that all inputs 
+are correct and will not result in life crushing disaster for themselves
+or a friend when that super special file gets over-written.
+
+
+
+############################ ADVANCED TOPICS
+
+In this section, we will assume you have a pretty good hold on both python
+and the basic ploting functions of these modules. 
+
+Now that you use this module regularly, save yourself some time by placing
+the "from pypec import *" line into your autoimport file located at
+~/.ipython/profile_default/startup/autoimports.ipy
+
+Right, now for the cool stuff:
+
+#One common need is to look at spectra. For this we want to utilize the full
+#functionality of the data instances' plot1d function.
+In [1]: pspec, = data.read('ipec_pmodb_n1.out')
+#We knew it was one table, so we used the "," to automatically unpack returned list
+In [2]: pspec.plot1d('lagb','psi',(0,8))
+#We were so familiar with the args and kwargs of this function we did not bother
+#typing the names. If you do this, be sure you get the order consistent with the
+#order given in the documentation "Definition" line (watch out for inconsistent 
+#"Docstring" listings).
+
+#Lets look through a huge file of first order perterbations
+#we want to define some new data from the raw outputs, plot it,
+#and save the results in a table
+In [1]: pmodb, = data.read('ipec_pmodb_fun_n1.out')
+In [2]: pmodb.y['cyltheta'] = arctan2(pmodb.y['z'],pmodb.y['r']-pmodb.params['R0'])
+#Thats right, we just added data!
+In [3]: pmodb.y['kxprp/B'] = pmodb.y['kxprp']/pmodb.y['equilb']
+In [4]: fig=pmodb.plot1d(['cyltheta','kxprp/B'],'theta',x2rng=0.16)
+In [5]: fig.printlines('newdataslice.dat',squeeze=True)
+#Thats it! Read the table with your favorit editor. It will probably need a little
+#cleaning at the top since it tries to use the lengthy legend labels as column headers.
+
+#Lets look at some 2d data
+In [1]: pb2, = data.read('ipec_pbrzphi_n1.out')
+In [2]: pb2.plot2d('b_r')
+# well that looks ugly! Lets stop the coils from dominating...
+In [3]: pb2.plot2d('b_r',vmin=-1e4,vmax=1e4)
+#If you are thinking "But those weren't listed as keyword arguments!" then you have
+#been glossing over the **kwargs documentation. Most all pypec calls accept
+#key word arguments for their root functions (in this case, pyplot.pcolormesh).
+#Finally, we want to make sure the aspect ratio is right
+In [4]: pb2.plot2d('b_r',aspect='equal',vmin=-1e4,vmax=1e4)
+#There. That looks better.
+
+
+

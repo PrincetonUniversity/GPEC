@@ -1,0 +1,18 @@
+Log for developement of nat3 fortran package.
+
+	@package ipec_3.00
+	@author NC Logan
+	@email nlogan@pppl.gov
+
+
+################################ KNOWN ISSUES & BUGS
+
+ - Unstable for l=0, in the limit that omega_E->0 if 
+omega_D has zero crossing.
+
+
+################################ LOG
+
+## 2013-04-05
+- natorq gen calculation theta loop now includes test for 
+local magnetic wells (cases of max(B[bounce1:bounce2])>B_bounce).

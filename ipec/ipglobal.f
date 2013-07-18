@@ -14,7 +14,7 @@ c-----------------------------------------------------------------------
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
-     $     chebyshev_flag,coil_flag
+     $     chebyshev_flag,coil_flag,ntv_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
@@ -101,11 +101,6 @@ c-----------------------------------------------------------------------
       TYPE(solution_type), DIMENSION(:), POINTER :: soltype
       TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
-
-      TYPE(bicube_type) :: pertfuns, pertchebs 
-      TYPE(spline_type) :: intv, entv, idw, edw
-      REAL(r8), PARAMETER :: emass = 9.109e-31, echarge = -1.602e-19,
-     $     pmass = 1.673e-27
 
       CONTAINS
 c-----------------------------------------------------------------------

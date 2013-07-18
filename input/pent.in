@@ -1,0 +1,44 @@
+&PENT_INPUT
+    kinetic_file="/p/gpec/users/nlogan/data/a10/kinetics/kinetic_a10_MARSbenchmark.dat"
+    o1fun_file = "ipec_order1_fun_n1.bin"
+    o1mn_file = "ipec_order1_n1.bin"
+    o1native  = .T.
+    imass = 2
+    icharge = 1
+    zimp = 6
+    zmass = 12
+    nl = 0
+    collision = "harmonic"
+/
+&PENT_CONTROL
+   wefac = 1 
+   wdfac = 1
+   kolim_flag = .TRUE.
+   neorot_flag = .FALSE.
+   divxprp_flag = .TRUE.
+   xlsode_flag = .FALSE.
+   xmax = 48
+   ximag = 1e-6
+   maskpsi = 4
+   nx = 200
+   nt = 101
+   nlmda = 101
+/
+&PENT_OUTPUT    
+    gen_flag = .T.
+    lar_flag = .F.
+    kinetic_flag = .F.
+    bounce_flag = .F.
+    pitch_flag = .F.
+    energy_flag = .F.
+    passing_flag = .F.
+
+    psiout(1) = 0.0
+    psiout(2) = 0.2
+    psiout(3:10) = 0.8 0.8 0.8 0.8 0.8 0.8 0.8 0.8
+
+ /
+&PENT_ADMIN
+    fmnl_flag = .F.
+    diag_flag = .F.
+/

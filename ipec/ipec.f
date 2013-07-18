@@ -13,24 +13,22 @@ c-----------------------------------------------------------------------
       PROGRAM ipec_main
       USE ipdiag_mod
       USE ipout_mod
-      USE ipntv_mod
+
 
       IMPLICIT NONE
 
       INTEGER :: i,in,osing,resol,angnum,
-     $     mthnumb,meas,mode,nr,nz,m3mode,lowmode,highmode,
-     $     imass,icharge,zimp,zmass,npsi,ntheta,nlmda,nx,nl
+     $     mthnumb,meas,mode,nr,nz,m3mode,lowmode,highmode
       INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8) :: majr,minr,rdist,smallwidth,factor,fp,normpsi
-      CHARACTER(128) :: infile,kinetic_file,pertfile
+      CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
      $     d3_flag,xbst_flag,pmodbrz_flag,rzphibx_flag,
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
-     $     arzphifun_flag,xbrzphifun_flag,ntv_flag,passing_flag,
-     $     pertfile_flag
+     $     arzphifun_flag,xbrzphifun_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -58,9 +56,6 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
      $     cas3d_flag,test_flag,resol,smallwidth
-      NAMELIST/ntv_input/kinetic_file,imass,icharge,zimp,zmass,
-     $     npsi,ntheta,nlmda,nx,nl,passing_flag,
-     $     pertfile_flag,pertfile
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -154,18 +149,6 @@ c-----------------------------------------------------------------------
       resol=1e4
       smallwidth=1e-6
 
-      kinetic_file="kin.in"
-      imass=2
-      icharge=1
-      zimp=6
-      zmass=12
-      npsi=100
-      ntheta=100
-      nlmda=100
-      nx=10000
-      nl=0
-      passing_flag=.FALSE.
-      pertfile_flag=.FALSE.
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -176,15 +159,6 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=ipec_output)
       READ(in_unit,NML=ipec_diagnose)
       CALL ascii_close(in_unit)
-c-----------------------------------------------------------------------
-c     read ntv.in.
-c-----------------------------------------------------------------------
-      IF(ntv_flag) THEN
-         pmodb_flag = .FALSE.
-         CALL ascii_open(in_unit,"ntv.in","OLD")
-         READ(in_unit,NML=ntv_input)
-         CALL ascii_close(in_unit)
-      ENDIF
 c-----------------------------------------------------------------------
 c     define coordinates.
 c-----------------------------------------------------------------------
@@ -338,7 +312,7 @@ c-----------------------------------------------------------------------
          CALL ipout_vsingfld(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out)
       ENDIF
-      IF (pmodb_flag) THEN
+      IF (pmodb_flag .OR. ntv_flag) THEN
          CALL ipout_pmodb(mode,xspmn,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
@@ -397,21 +371,12 @@ c-----------------------------------------------------------------------
             IF (ss_flag(i)) CALL ipout_vsbrzphi(i,nr,nz)
          ENDDO
       ENDIF
+
       IF (xbrzphifun_flag) THEN
          CALL ipout_xbrzphifun(mode,xspmn)
       ENDIF
       IF (arzphifun_flag) THEN
          CALL ipout_arzphifun(mode,xspmn)
-      ENDIF
-      IF(ntv_flag) THEN
-         IF(pertfile_flag) THEN
-            CALL ipntv_readpertfuns(pertfile)
-         ELSE
-            CALL ipntv_perts(mode,xspmn,power_rout,power_bpout,
-     $           power_bout,power_rcout,tmag_out,256,256)
-         ENDIF
-         CALL ipntv_ntv(kinetic_file,npsi,ntheta,nx,nlmda,nl,
-     $        imass,icharge,zimp,zmass,passing_flag)
       ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.
@@ -453,6 +418,7 @@ c-----------------------------------------------------------------------
       IF (angles_flag) THEN
          CALL ipdiag_angles
       ENDIF
+
       IF (surfmode_flag) THEN
          CALL ipdiag_surfmode(lowmode,highmode,power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,jsurf_out)
@@ -463,8 +429,7 @@ c-----------------------------------------------------------------------
       
       IF (m3d_flag) THEN
          normpsi=1.0
-         fp=1e-3
-         
+         fp=1e-3         
          fxmn=0
          fxmn(m3mode-mlow+1)=fp*normpsi
          CALL ipeq_fcoords(psilim,fxmn,mfac,mpert,0,1,0,1,0,0)

@@ -3,7 +3,7 @@
 .IGNORE:
 
 all_x: lsode_x equil_x orbit_x vacuum_x dcon_x match_x multi_x sum_x \
-	xdraw_x coil_x ipec_x rundir_x
+	xdraw_x coil_x ipec_x pent_x rundir_x
 
 all: all_x
 
@@ -42,6 +42,9 @@ coil_x:
 ipec_x:  
 	cd ipec; make -f makefile_`uname`$(FORTRAN)
 
+pent_x:  
+	cd pent; make -f makefile_`uname`$(FORTRAN)
+
 rundir_x:
 	mkdir -p rundir/`uname`$(FORTRAN)
 	cp -f orbit/orbit rundir/`uname`$(FORTRAN)
@@ -51,6 +54,8 @@ rundir_x:
 	cp -f multi/multi rundir/`uname`$(FORTRAN)
 	cp -f sum/sum rundir/`uname`$(FORTRAN)
 	cp -f ipec/ipec rundir/`uname`$(FORTRAN)
+	cp -f pent/pent rundir/`uname`$(FORTRAN)
+	cp -f pent/*.dat rundir/`uname`$(FORTRAN)
 	cp -f input/*.in* rundir/`uname`$(FORTRAN)
 	cp -f input/mput rundir/`uname`$(FORTRAN)
 	cp -f draw/drawdcon.in rundir/`uname`$(FORTRAN)
@@ -87,6 +92,7 @@ clean:
 	cd sum; make -f makefile_`uname`$(FORTRAN) clean
 	cd coil; make -f makefile_`uname`$(FORTRAN) clean
 	cd ipec; make -f makefile_`uname`$(FORTRAN) clean
+	cd pent; make -f makefile_`uname`$(FORTRAN) clean
 	cd tex/orbit; rm -f *.dvi *.log
 	cd tex/vacuum; rm -f *.dvi *.log
 	cd tex/dcon/manuscript; rm -f *.dvi *.log

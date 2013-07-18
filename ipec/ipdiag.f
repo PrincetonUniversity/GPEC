@@ -580,21 +580,23 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XBCONTRA: "//
      $     "Contravariant components of displacement and field"
-      WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep
-      WRITE(out_unit,'(1x,a8,1x,I6)')"mlow=",mlow
-      WRITE(out_unit,'(1x,a8,1x,I6)')"mhigh=",mhigh
+      WRITE(out_unit,'(1x,a8,1x,I6)')"mstep = ",mstep
+      WRITE(out_unit,'(1x,a8,1x,I6)')"mlow = ",mlow
+      WRITE(out_unit,'(1x,a8,1x,I6,1/)')"mhigh = ",mhigh
       WRITE(out_unit,'(2(1x,a16))')"psifac","qfac"
       CALL ipeq_alloc
       DO istep=0,mstep
          WRITE(out_unit,'(2(1x,es16.8))')psifac(istep),qfac(istep)
       ENDDO
-      WRITE(out_unit,'(22(1x,a16))')
+
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(24(1x,a16))')
      $     "xwp(real)","xwp(imag)","xwt(real)","xwt(imag)",
      $     "xwz(real)","xwz(imag)","bwp(real)","bwp(imag)",
      $     "bwt(real)","bwt(imag)","bwz(real)","bwz(imag)",
      $     "xvs(real)","xvs(imag)","xwd(real)","xwd(imag)",
      $     "xwp1(real)","xwp1(imag)","bwd(real)","bwd(imag)",
-     $     "bwp1(real)","bwp1(imag)"
+     $     "bwp1(real)","bwp1(imag)","xsp(real)","xsp(imag)"
 
       CALL cspline_alloc(u3,mstep,mpert)
       u3%xs=psifac
@@ -618,6 +620,8 @@ c-----------------------------------------------------------------------
      $           rin,bpin,bin,rcin,tin,0)
             CALL ipeq_bcoords(psifac(istep),xwz_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
+            CALL ipeq_bcoords(psifac(istep),xsp_mn,mfac,mpert,
+     $           rin,bpin,bin,rcin,tin,0)
             CALL ipeq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
             CALL ipeq_bcoords(psifac(istep),bwt_mn,mfac,mpert,
@@ -636,7 +640,7 @@ c-----------------------------------------------------------------------
      $           rin,bpin,bin,rcin,tin,0)
          ENDIF
          DO ipert=1,mpert
-            WRITE(out_unit,'(22(1x,es16.8))')
+            WRITE(out_unit,'(24(1x,es16.8))')
      $           REAL(xwp_mn(ipert)),AIMAG(xwp_mn(ipert)),
      $           REAL(xwt_mn(ipert)),AIMAG(xwt_mn(ipert)),
      $           REAL(xwz_mn(ipert)),AIMAG(xwz_mn(ipert)),
@@ -647,7 +651,8 @@ c-----------------------------------------------------------------------
      $           REAL(xwd_mn(ipert)),AIMAG(xwd_mn(ipert)),
      $           REAL(xsp1_mn(ipert)),AIMAG(xsp1_mn(ipert)),
      $           REAL(bwd_mn(ipert)),AIMAG(bwd_mn(ipert)),
-     $           REAL(bwp1_mn(ipert)),AIMAG(bwp1_mn(ipert))
+     $           REAL(bwp1_mn(ipert)),AIMAG(bwp1_mn(ipert)),
+     $           REAL(xsp_mn(ipert)),AIMAG(xsp_mn(ipert))          
          ENDDO
       ENDDO
 
@@ -1099,6 +1104,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
+
 
       CALL ipeq_dealloc
       DEALLOCATE(rs,zs,eulbparmns,lagbparmns,llagbparmns,cdeltamns,

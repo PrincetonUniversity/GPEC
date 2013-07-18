@@ -1,0 +1,43 @@
+Log for developement of pypec python package.
+ - See the tutorial for operating instructions
+
+	@package pypec
+	@author NC Logan
+	@email nlogan@pppl.gov
+
+
+################################ KNOWN ISSUES & BUGS
+
+ - As a hack, "q" is not accepted as an x-axis (necessary to get correct
+dimensionality when output besides psi). "Lambda" is always accepted as
+an axis is available.
+
+ - Should add a stop to run if DCON dW is negative.
+
+ - gpec.run qsub currently only suports bash environment
+
+ - leaves trail of .oe files... should add option to clean these up.
+
+################################ LOG
+
+## 2013-04-17
+- data.read hack to include lambda and x in axes for nat3 pitch/energy outputs
+- nat3 outputs changed to use T_phi label instead of torq
+
+## 2013-03-28
+- data.read hack to exclude "q" from x axes
+- plot2d now working
+- figures now have printlines method that prints all lines to text file
+- data objects now have "y" instead of "ydata" (got tired of typing data)
+- gprec.run now uses abspath for loc so user can specify relative path.
+
+## 2013-03-27
+- namelists use OrderedDict type (replaces manual '_order' convention.
+- namelists extended to support fortran logical, array, and complex syntax.
+- namelist bug that caused ValueError reading .in files with empty lines fixed.
+- namelist written files now start with empty line, for vac.in quirk.
+- gpec.run email keyword arguments add.
+- 
+
+## 2013-03-26
+-Module is operational to the level of the basic tutorial.

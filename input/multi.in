@@ -1,6 +1,6 @@
 &dir_input
-	indir="..\/equilibria\/jsolver\/run03"
-	outdir="results/run03/nn=2"
+	indir="../equilibria/jsolver/run03"
+	outdir="results/run03/nn2"
 /
 
 &outer_input
