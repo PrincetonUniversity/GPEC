@@ -3,8 +3,7 @@
 	mat_flag=t
 	ode_flag=t
 	vac_flag=t
-	sas_flag=t
-	nn=1
+
 	delta_mlow=8
 	delta_mhigh=8
 	delta_mband=0
@@ -12,10 +11,10 @@
 	dmlim=0.2
 	mthvac=960
 	thmax0=1
-	tol_nr=1e-6
-	tol_r=1e-7
+	tol_nr=1e-5
+	tol_r=1e-6
 	crossover=1e-2
-	singfac_min=1e-5
+	singfac_min=1e-4
 	ucrit=1e4
 /
 &dcon_output

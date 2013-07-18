@@ -921,33 +921,34 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
      $     llagbpar_mn,divx_mn,curv_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     bvt_fun,bvz_fun,xmt_fun,xmz_fun,xvt_fun,xvz_fun,xsp1_fun
+     $     bvt_fun,bvz_fun,xmt_fun,xmz_fun,xvt_fun,xvz_fun,xmp1_fun
 
       REAL(r8), DIMENSION(:,:), POINTER :: rs,zs,eqfunx,eqfuny,eqfuns
       COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbparmns,lagbparmns,
-     $     eulbparfun,lagbparfun,llagbparmns,llagbparfun,
-     $     xspfun,xmsfun,bvtfun,bvzfun,xmtfun,xmzfun,xvtfun,xvzfun,
+     $     eulbparfun,lagbparfun,llagbparmns,llagbparfun,xmp1mns,
+     $     xspmns,xmsmns,bvtmns,bvzmns,xmtmns,xmzmns,xvtmns,xvzmns,
      $     divxfun,curvfun,divxmns,curvmns,lllagbparmns,cdeltamns
 
       TYPE(cspline_type) :: cspl       
-
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing perturbed b field"
-      ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf),
-     $     eulbparmns(mstep,mpert),lagbparmns(mstep,mpert),
-     $     eulbparfun(mstep,0:mthsurf),lagbparfun(mstep,0:mthsurf),
-     $     llagbparmns(mstep,mpert),llagbparfun(mstep,0:mthsurf),
+
+      ALLOCATE(eulbparmns(mstep,mpert),
+     $     lagbparmns(mstep,mpert),llagbparmns(mstep,mpert),
      $     divxmns(mstep,mpert),curvmns(mstep,mpert),
-     $     lllagbparmns(mstep,mpert),cdeltamns(mstep,mpert))
-      ALLOCATE(xspfun(mstep,0:mthsurf),xmsfun(mstep,0:mthsurf),
-     $     bvtfun(mstep,0:mthsurf),bvzfun(mstep,0:mthsurf),
-     $     xmzfun(mstep,0:mthsurf),xvtfun(mstep,0:mthsurf),
-     $     xmtfun(mstep,0:mthsurf),xvzfun(mstep,0:mthsurf),
+     $     lllagbparmns(mstep,mpert),cdeltamns(mstep,mpert),
+     $     xspmns(mstep,mpert),xmsmns(mstep,mpert),
+     $     bvtmns(mstep,mpert),bvzmns(mstep,mpert),
+     $     xmzmns(mstep,mpert),xvtmns(mstep,mpert),
+     $     xmtmns(mstep,mpert),xvzmns(mstep,mpert),
+     $     xmp1mns(mstep,mpert))
+      ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf),
      $     eqfunx(mstep,0:mthsurf),eqfuny(mstep,0:mthsurf),
-     $     eqfuns(mstep,0:mthsurf),
-     $     divxfun(mstep,0:mthsurf),curvfun(mstep,0:mthsurf))
+     $     eqfuns(mstep,0:mthsurf),divxfun(mstep,0:mthsurf),
+     $     curvfun(mstep,0:mthsurf),eulbparfun(mstep,0:mthsurf),
+     $     lagbparfun(mstep,0:mthsurf),llagbparfun(mstep,0:mthsurf))
 
       CALL cspline_alloc(cspl,mthsurf,2)
       cspl%xs=theta
@@ -973,21 +974,19 @@ c-----------------------------------------------------------------------
          CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
          CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
          CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
+         CALL iscdftb(mfac,mpert,xmp1_fun,mthsurf,xmp1_mn)
 
-         xspfun(istep,:)=xsp_fun
-         xmsfun(istep,:)=xms_fun
-         bvtfun(istep,:)=bvt_fun
-         bvzfun(istep,:)=bvz_fun
-         xmtfun(istep,:)=xmt_fun
-         xmzfun(istep,:)=xmz_fun
-         xvtfun(istep,:)=xvt_fun
-         xvzfun(istep,:)=xvz_fun
+         xspmns(istep,:)=xsp_mn
+         xmsmns(istep,:)=xms_mn
+         bvtmns(istep,:)=bvt_mn
+         bvzmns(istep,:)=bvz_mn
+         xmtmns(istep,:)=xmt_mn
+         xmzmns(istep,:)=xmz_mn
+         xvtmns(istep,:)=xvt_mn
+         xvzmns(istep,:)=xvz_mn
+         xmp1mns(istep,:)=xmp1_mn
 
          CALL spline_eval(sq,psifac(istep),1)
-
-         singfac=mfac-nn*sq%f(4)
-         xsp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
-         CALL iscdftb(mfac,mpert,xsp1_fun,mthsurf,xsp1_mn)
 
          DO itheta=0,mthsurf
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
@@ -1031,7 +1030,7 @@ c-----------------------------------------------------------------------
      $           (xmz_fun(itheta)/(jac*sq%f(4))-
      $           (chi1/(jac*eqfun%f(1)))**2*
      $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta)))
-            divxfun(istep,itheta)=xsp1_fun(itheta)+
+            divxfun(istep,itheta)=xmp1_fun(itheta)+
      $           (jac1/jac)*xsp_fun(itheta)+
      $           cspl%f1(1)/jac-(twopi*ifac*nn)*cspl%f(2)/jac
             divxfun(istep,itheta)=-eqfun%f(1)*divxfun(istep,itheta)
@@ -1076,13 +1075,14 @@ c-----------------------------------------------------------------------
      $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
 
-      WRITE(out_unit,'(1x,a16,1x,a4,10(1x,a16))')"psi","m",
+      WRITE(out_unit,'(1x,a16,1x,a4,12(1x,a16))')"psi","m",
      $     "real(lagb)","imag(lagb)","real(llagb)","imag(llagb)",
      $     "real(lllagb)","imag(lllagb)","real(divx)","imag(divx)",
-     $     "real(cdelta)","imag(cdelta)"
+     $     "real(cdelta)","imag(cdelta)",
+     $     "real(xmp1mns)","imag(xmp1mns)"
       DO istep=1,mstep
          DO ipert=1,mpert
-            WRITE(out_unit,'(1x,es16.8,1x,I4,10(1x,es16.8))')
+            WRITE(out_unit,'(1x,es16.8,1x,I4,12(1x,es16.8))')
      $           psifac(istep),mfac(ipert),
      $           REAL(lagbparmns(istep,ipert)),
      $           AIMAG(lagbparmns(istep,ipert)),
@@ -1093,47 +1093,17 @@ c-----------------------------------------------------------------------
      $           REAL(divxmns(istep,ipert)),
      $           AIMAG(divxmns(istep,ipert)),
      $           REAL(cdeltamns(istep,ipert)),
-     $           AIMAG(cdeltamns(istep,ipert))
+     $           AIMAG(cdeltamns(istep,ipert)),
+     $           REAL(xmp1mns(istep,ipert)),
+     $           AIMAG(xmp1mns(istep,ipert))
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
 
-      CALL ascii_open(out_unit,"ipdiag_pmodbrz_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_PMODBRZ: "//
-     $     "Perturbed mod b on a poloidal plane"
-      WRITE(out_unit,'(1x,a8,1x,I4)')"mstep=",mstep
-      WRITE(out_unit,'(1x,a8,1x,I4)')"mthsurf=",mthsurf
-      WRITE(out_unit,'(17(1x,a16))')"r","z",
-     $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
-     $     "real(xwp)","imag(xwp)","real(xwt)","imag(xwt)",
-     $     "real(bvt)","imag(bvt)","real(bvz)","imag(bvz)",
-     $     "eqfunx","eqfuny","eqfuns"
-      DO istep=1,mstep
-         DO itheta=0,mthsurf
-            WRITE(out_unit,'(17(1x,es16.8))')
-     $           rs(istep,itheta),zs(istep,itheta),
-     $           REAL(eulbparfun(istep,itheta)),
-     $           AIMAG(eulbparfun(istep,itheta)),
-     $           REAL(llagbparfun(istep,itheta)),
-     $           AIMAG(llagbparfun(istep,itheta)),
-     $           REAL(xspfun(istep,itheta)),
-     $           AIMAG(xspfun(istep,itheta)),
-     $           REAL(xmsfun(istep,itheta)),
-     $           AIMAG(xmsfun(istep,itheta)),
-     $           REAL(bvtfun(istep,itheta)),
-     $           AIMAG(bvtfun(istep,itheta)),
-     $           REAL(bvzfun(istep,itheta)),
-     $           AIMAG(bvzfun(istep,itheta)),
-     $           eqfunx(istep,itheta),eqfuny(istep,itheta),
-     $           eqfuns(istep,itheta)
-         ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
       CALL ipeq_dealloc
       DEALLOCATE(rs,zs,eulbparmns,lagbparmns,llagbparmns,cdeltamns,
      $     eulbparfun,lagbparfun,llagbparfun,eqfunx,eqfuny,eqfuns,
-     $     xspfun,xmsfun,bvtfun,bvzfun,xmzfun,xvtfun,xvzfun)
+     $     xspmns,xmsmns,bvtmns,bvzmns,xmzmns,xvtmns,xvzmns,xmp1mns)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

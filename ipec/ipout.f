@@ -14,10 +14,11 @@ c      5. ipout_vsingfld
 c      6. ipout_pmodb
 c      7. ipout_xbnormal
 c      8. ipout_vbnormal
-c      9. ipout_xbrzphi
-c     10. ipout_vsbrzphi
-c     11. ipout_xbrzphifun
-c     12. ipout_arzphifun
+c      9. ipout_xtangent
+c     10. ipout_xbrzphi
+c     11. ipout_vsbrzphi
+c     12. ipout_xbrzphifun
+c     13. ipout_arzphifun
 c-----------------------------------------------------------------------
 c     subprogram 0. ipout_mod.
 c     module declarations.
@@ -1776,17 +1777,24 @@ c-----------------------------------------------------------------------
       DO ipsi=1,cmpsi
          CALL spline_eval(sq,psi(ipsi),0)
          qs(ipsi)=sq%f(4)
-         CALL field_bs_psi(psi(ipsi),vcmn,2)
-         DO i=1,cmpert
-            IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-               vmn(ipsi,cmlow-mlow+i)=vcmn(i)
-            ENDIF
-         ENDDO
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+            CALL field_bs_psi(psi(ipsi),vcmn,0)
+            DO i=1,cmpert
+               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
+                  vmn(ipsi,cmlow-mlow+i)=vcmn(i)
+               ENDIF
+            ENDDO
             vwpmn=vmn(ipsi,:)
             CALL ipeq_bcoords(psi(ipsi),vwpmn,mfac,mpert,
      $           rout,bpout,bout,rcout,tout,1)  
             vmn(ipsi,:)=vwpmn         
+         ELSE
+            CALL field_bs_psi(psi(ipsi),vcmn,2)
+            DO i=1,cmpert
+               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
+                  vmn(ipsi,cmlow-mlow+i)=vcmn(i)
+               ENDIF
+            ENDDO
          ENDIF
       ENDDO
 
@@ -1845,7 +1853,176 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_vbnormal
 c-----------------------------------------------------------------------
-c     subprogram 9. ipout_xbrzphi.
+c     subprogram 9. ipout_xbtangent.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_xbtangent(egnum,xspmn,rout,bpout,bout,rcout,tout)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
+
+      INTEGER :: istep,ipert,iindex,itheta
+      REAL(r8) :: ileft,ximax,rmax
+
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,
+     $     rvecs,zvecs,vecs
+      REAL(r8), DIMENSION(0:mthsurf) :: jacs,bs,dphi
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: xmns,ymns,xtamns,btamns
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwt_fun,xvt_fun,xvz_fun,
+     $     bwt_fun,bvt_fun,bvz_fun,xta_fun,bta_fun
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
+     $     xtafuns,btafuns
+c-----------------------------------------------------------------------
+c     compute solutions and contravariant/additional components.
+c-----------------------------------------------------------------------
+      WRITE(*,*)"Computing x and b tangential components"
+
+      CALL idcon_build(egnum,xspmn)
+
+      CALL ipeq_alloc
+      DO istep=1,mstep
+         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
+         IF ((istep-1 /= 0) .AND. (ileft == 0))
+     $        WRITE(*,'(1x,a9,i3,a23)')
+     $        "volume = ",iindex,"% xi and b computations"
+         CALL ipeq_sol(psifac(istep))
+         CALL ipeq_contra(psifac(istep))
+         CALL ipeq_cova(psifac(istep))
+
+         DO itheta=0,mthsurf
+            CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
+            CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            rs(istep,itheta)=ro+rfac*COS(eta)
+            zs(istep,itheta)=zo+rfac*SIN(eta)
+            dphi(itheta)=rzphi%f(3)
+            jacs(itheta)=rzphi%f(4)
+            bs(itheta)=eqfun%f(1)
+            v(2,1)=rzphi%fy(1)/(2*rfac)
+            v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+            rvecs(istep,itheta)=v(2,1)*cos(eta)-v(2,2)*sin(eta)
+            zvecs(istep,itheta)=v(2,1)*sin(eta)+v(2,2)*cos(eta)
+         ENDDO
+         vecs(istep,:)=sqrt(rvecs(istep,:)**2+zvecs(istep,:)**2)
+         rvecs(istep,:)=rvecs(istep,:)/vecs(istep,:)
+         zvecs(istep,:)=zvecs(istep,:)/vecs(istep,:)
+c-----------------------------------------------------------------------
+c     normal and two tangent components to flux surface.
+c-----------------------------------------------------------------------
+         CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
+         CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
+         CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
+         CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
+         CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
+         CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+         xta_fun=xwt_fun/jacs-(chi1/(jacs*bs))**2*(xvt_fun+q*xvz_fun)
+         bta_fun=bwt_fun/jacs-(chi1/(jacs*bs))**2*(bvt_fun+q*bvz_fun)
+         xtafuns(istep,:)=xta_fun*vecs(istep,:)
+         btafuns(istep,:)=bta_fun*vecs(istep,:)
+         CALL iscdftf(mfac,mpert,xtafuns(istep,:),mthsurf,xta_mn)
+         CALL iscdftf(mfac,mpert,btafuns(istep,:),mthsurf,bta_mn)
+
+         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+            CALL ipeq_bcoords(psifac(istep),xta_mn,mfac,mpert,
+     $           rout,bpout,bout,rcout,tout,0)
+            CALL ipeq_bcoords(psifac(istep),bta_mn,mfac,mpert,
+     $           rout,bpout,bout,rcout,tout,0)
+         ENDIF
+         xtamns(istep,:)=xta_mn
+         btamns(istep,:)=bta_mn
+         xtafuns(istep,:)=xtafuns(istep,:)*EXP(ifac*nn*dphi)
+         btafuns(istep,:)=btafuns(istep,:)*EXP(ifac*nn*dphi)
+      ENDDO
+      CALL ipeq_dealloc
+
+      CALL ascii_open(out_unit,"ipec_xbtangent_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPOUT_XBNROMAL: "//
+     $     "Tangential components of displacement and field"
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+      WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
+     $     "real(xta)","imag(xta)","real(bta)","imag(bta)"
+
+      DO istep=1,mstep
+         DO ipert=1,mpert
+            WRITE(out_unit,'(2(1x,es16.8),1x,I4,4(1x,es16.8))')
+     $           psifac(istep),qfac(istep),mfac(ipert),
+     $           REAL(xtamns(istep,ipert)),AIMAG(xtamns(istep,ipert)),
+     $           REAL(btamns(istep,ipert)),AIMAG(btamns(istep,ipert))
+         ENDDO
+      ENDDO
+
+      IF (fun_flag) THEN
+         CALL ascii_open(out_unit,"ipec_xbtangent_fun_n"//
+     $        TRIM(sn)//".out","UNKNOWN")         
+         WRITE(out_unit,*)"IPOUT_XBTANGENT_FUN: "//
+     $        "Tangential components of displacement "//
+     $        "and field in functions"
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+         WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
+     $        "mstep =",mstep,"mthsurf =",mthsurf
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(8(1x,a16))')"r","z","rvec","zvec",
+     $        "real(xta)","imag(xta)","real(bta)","imag(bta)"
+         
+         DO istep=1,mstep
+            DO itheta=0,mthsurf
+               WRITE(out_unit,'(8(1x,es16.8))')
+     $              rs(istep,itheta),zs(istep,itheta),
+     $              rvecs(istep,itheta),zvecs(istep,itheta),
+     $              REAL(xtafuns(istep,itheta)),
+     $              AIMAG(xtafuns(istep,itheta)),
+     $              REAL(btafuns(istep,itheta)),
+     $              AIMAG(btafuns(istep,itheta))        
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
+
+      IF (bin_flag) THEN
+         CALL bin_open(bin_unit,
+     $        "xbtangent.bin","UNKNOWN","REWIND","none")
+         DO ipert=1,mpert
+            DO istep=1,mstep
+               WRITE(bin_unit)REAL(psifac(istep),4),
+     $              REAL(REAL(xtamns(istep,ipert)),4),
+     $              REAL(AIMAG(xtamns(istep,ipert)),4),
+     $              REAL(REAL(btamns(istep,ipert)),4),
+     $              REAL(AIMAG(btamns(istep,ipert)),4)
+            ENDDO
+            WRITE(bin_unit)
+         ENDDO
+         CALL bin_close(bin_unit)
+      ENDIF
+
+      IF (bin_2d_flag) THEN
+         CALL bin_open(bin_2d_unit,"xbtangent_2d.bin",
+     $        "UNKNOWN","REWIND","none")
+         WRITE(bin_2d_unit)1,0
+         WRITE(bin_2d_unit)mstep-9,mthsurf
+         WRITE(bin_2d_unit)REAL(rs(9:mstep,0:mthsurf),4),
+     $        REAL(zs(9:mstep,0:mthsurf),4)
+         WRITE(bin_2d_unit)REAL(REAL(xtafuns(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(AIMAG(xtafuns(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(REAL(btafuns(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)REAL(AIMAG(btafuns(9:mstep,0:mthsurf)),4)
+         CALL bin_close(bin_2d_unit)
+      ENDIF         
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_xbtangent
+c-----------------------------------------------------------------------
+c     subprogram 10. ipout_xbrzphi.
 c     write perturbed rzphi components on rzphi grid.
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_xbrzphi(egnum,xspmn,nr,nz,bnimn,bnomn)

@@ -307,7 +307,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE ipeq_normal
 c-----------------------------------------------------------------------
 c     subprogram 5. ipeq_tangent.
-c     compute tangential components.
+c     compute tangent components.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_tangent(psi)
 c-----------------------------------------------------------------------
@@ -317,49 +317,41 @@ c-----------------------------------------------------------------------
    
       INTEGER :: itheta
 
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqrpsi,
-     $     psithe,psiphi,eqb,jacs
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,xwt_fun,
-     $     bwt_fun,xwz_fun,bwz_fun,xta_fun,bta_fun
+      REAL(r8), DIMENSION(0:mthsurf) :: jacs,bs,rfun,zfun
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwt_fun,xvt_fun,xvz_fun,
+     $     bwt_fun,bvt_fun,bvz_fun,xta_fun,bta_fun
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,0)
       q=sq%f(4)
       DO itheta=0,mthsurf
+         CALL bicube_eval(eqfun,psi,theta(itheta),0)
          CALL bicube_eval(rzphi,psi,theta(itheta),1)
          rfac=SQRT(rzphi%f(1))
          eta=twopi*(theta(itheta)+rzphi%f(2))
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         jacs(itheta)=jac
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         w(2,1)=-rzphi%fx(2)*twopi**2*r(itheta)*rfac/jac
-         w(2,2)=rzphi%fx(1)*pi*r(itheta)/(rfac*jac)
-         w(3,1)=rzphi%fx(3)*2*rfac
-         w(3,2)=rzphi%fy(3)/(twopi*rfac)
-         sqrpsi(itheta)=w(1,1)**2+w(1,2)**2
-         delpsi(itheta)=SQRT(sqrpsi(itheta))
-         psithe(itheta)=w(1,1)*w(2,1)+w(1,2)*w(2,2)
-         psiphi(itheta)=w(1,1)*w(3,1)+w(1,2)*w(3,2)
-         eqb(itheta)=SQRT((sq%f(1)**2+chi1**2*delpsi(itheta)**2)
-     $           /(twopi*rfac)**2)
+         jacs(itheta)=rzphi%f(4)
+         bs(itheta)=eqfun%f(1)
+         v(2,1)=rzphi%fy(1)/(2*rfac)
+         v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+         rfun=v(2,1)*cos(eta)-v(2,2)*sin(eta)
+         zfun=v(2,1)*sin(eta)+v(2,2)*cos(eta)
       ENDDO
 c-----------------------------------------------------------------------
 c     compute tangential components, b times delpsi.
 c-----------------------------------------------------------------------
-      CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
-      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
-      CALL iscdftb(mfac,mpert,xwz_fun,mthsurf,xwz_mn)
-      CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
-      CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
-      CALL iscdftb(mfac,mpert,bwz_fun,mthsurf,bwz_mn)
-      xta_fun=chi1*((q*xwt_fun-xwz_fun)*sqrpsi-
-     $     xwp_fun*(q*psithe-psiphi))/(eqb*jacs*delpsi)
-      bta_fun=chi1*((q*bwt_fun-bwz_fun)*sqrpsi-
-     $     bwp_fun*(q*psithe-psiphi))/(eqb*jacs*delpsi)
+      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xmt_mn)
+      CALL iscdftb(mfac,mpert,xvt_fun,mthsurf,xvt_mn)
+      CALL iscdftb(mfac,mpert,xvz_fun,mthsurf,xvz_mn)
+      CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bmt_mn)
+      CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
+      CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+      xta_fun=xwt_fun/jacs-(chi1/(jacs*bs))**2*(xvt_fun+q*xvz_fun)
+      bta_fun=bwt_fun/jacs-(chi1/(jacs*bs))**2*(bvt_fun+q*bvz_fun)
+      xta_fun=xta_fun*sqrt(rfun**2+zfun**2)
+      bta_fun=bta_fun*sqrt(rfun**2+zfun**2)
       CALL iscdftf(mfac,mpert,xta_fun,mthsurf,xta_mn)
       CALL iscdftf(mfac,mpert,bta_fun,mthsurf,bta_mn)
 c-----------------------------------------------------------------------

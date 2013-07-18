@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
      $     d3_flag,xbst_flag,pmodbrz_flag,rzphibx_flag,
-     $     radvar_flag,eigen_flag,magpot_flag,
+     $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,ntv_flag,passing_flag,
@@ -51,7 +51,7 @@ c-----------------------------------------------------------------------
      $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
-     $     vsingfld_flag,vbnormal_flag,ntv_flag
+     $     vsingfld_flag,vbnormal_flag,ntv_flag,xbtangent_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,pmodbrz_flag,
      $     rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -104,6 +104,7 @@ c-----------------------------------------------------------------------
       pmodb_flag=.FALSE.
       xbnormal_flag=.TRUE.
       vbnormal_flag=.FALSE.
+      xbtangent_flag=.FALSE.
       rstep=0
       nrzeq_flag=.FALSE.
       nr=64
@@ -343,6 +344,10 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (xbnormal_flag) THEN
          CALL ipout_xbnormal(mode,xspmn,power_rout,
+     $        power_bpout,power_bout,power_rcout,tmag_out)
+      ENDIF
+      IF (xbtangent_flag) THEN
+         CALL ipout_xbtangent(mode,xspmn,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
       IF (coil_flag .AND. vbnormal_flag) THEN
