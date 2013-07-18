@@ -1,0 +1,21 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+xbtangent.bin
+
+graph title:	Tangent xi and b
+
+variable names
+0	psifac
+1	Real xi
+2	Imag xi
+3	Real b
+4	Imag b
+
+ix	iy	title
+0	1	"Tangential displacement Re xi
+0	2	"Tangential displacement Im xi
+0	3	"Tangential magnetic field Re b
+0	4	"Tangential magnetic field Im b
+
+
