@@ -8,8 +8,8 @@ bashjob="""#!/bin/bash
 # --- emailhere
   
 #PBS -l nodes=1
-#PBS -l mem=16gb
-#PBS -l walltime=40:00:00
+#PBS -l mem=8gb
+#PBS -l walltime=20:00:00
 #PBS -r n
 
 # --- export all my environment variables to the job

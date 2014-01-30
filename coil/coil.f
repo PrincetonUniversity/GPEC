@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
      $     ipd,btd,helicity
 
       LOGICAL :: ipec_interface
-      CHARACTER(128) :: cfile,cdconfile
+      CHARACTER(128) :: cfile
       INTEGER, DIMENSION(:), POINTER :: cmfac
 
       TYPE :: coil_type
@@ -52,7 +52,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE coil_read
+      SUBROUTINE coil_read(cdconfile)
+      
+      CHARACTER(128), INTENT(IN) :: cdconfile
 
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
      $     machine,ip_direction,bt_direction,coil_num,coil_name,coil_cur
@@ -102,7 +104,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read equilibrium information.
 c-----------------------------------------------------------------------
-      cdconfile="euler.bin"
       CALL bin_open(in_unit,cdconfile,"OLD","REWIND","none")
       READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
       READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim

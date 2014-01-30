@@ -19,15 +19,23 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
 
 # standard python modules
+import sys
 import numpy as np                      # math
 import copy
 from scipy.interpolate import interp1d  # math
 from types import MethodType            # to modify instances
 
-pyplot = matplotlib.pyplot
-show = pyplot.show
-draw = pyplot.draw
-
+# Want seperate ID pyplot module for my hacks
+# so this module does not change global matplotlib,pyplot,pylab,etc.
+# Issue is import matplotlib imports many modules... all intertwined.
+# METHOD 1
+#import imp #built in method for assigning IDs
+#mfile,mpath,mdesc = imp.find_module('matplotlib')
+#pyplot = imp.load_module('modpyplot', *imp.find_module('pyplot',[mpath]))
+# Method 2
+#save = sys.modules.pop('matplotlib.pyplot', None) 
+#import matplotlib.pyplot as pyplot
+#sys.modules['matplotlib.pyplot'] = save
 
 #override user preferences from ~/.matplotlib/matplotlibrc file.
 #really should define new functions
@@ -35,8 +43,10 @@ matplotlib.rcParams['figure.autolayout']=True # Necessary for tight_layout
 matplotlib.rcParams['legend.frameon']=False
 matplotlib.rcParams['legend.loc']='best'
 
+pyplot = matplotlib.pyplot
 linestyles = [ '-' , '--' , '-.' , ':' , 'None' , ' ' ,'' ]
-
+show = pyplot.show
+draw = pyplot.draw
 
 ########################################### modified pyplot functions
 
@@ -99,9 +109,12 @@ def _figure_show(self,*args):
     self.tight_layout()
     self._orig_show(*args)
 _figure_show.__doc__ = pyplot.show.__doc__
-#pppl Figure base doesn't have show from nomachine for some reason
+#pppl Figure base doesn't have show from nomachine or 2.7.2 for some reason
 if not hasattr(pyplot.Figure,"_orig_show"): #prevent recursion when reloaded
-    pyplot.Figure._orig_show = copy.deepcopy(pyplot.Figure.show)#pyplot.show)#pyplot.Figure.show)
+	if sys.version_info<(2,7,3):
+		pyplot.Figure._orig_show = copy.deepcopy(pyplot.show)
+	else:
+		pyplot.Figure._orig_show = copy.deepcopy(pyplot.Figure.show)
 pyplot.Figure.show = _figure_show
 
 #colorbars are axes (for tight_layout)
@@ -116,29 +129,52 @@ pyplot.Figure.colorbar = _figure_colorbar
 # new method to print text file of lines in figure
 def printlines(self,filename,squeeze=False):
 	"""
-	Print all data in line plots to text file.
-	The x values will be taken from the first line 
-	in each axis, and other lines are interpolated
-	if their x values do not match. Column lables 
-	are the line labels and xlabel.
+	Print all data in line plot(s) to text file.The x values 
+	will be taken from the line with the greatest number of
+	points in the (first) axis, and other lines are interpolated
+	if their x values do not match. Column lables are the
+	line labels and xlabel.
 	args   - filename : str. File to print to. 
+	returns           : bool. True.
 	"""
 	with open(filename,'w') as f:
 		data=[]
+
+		# Try to avoid clutter in squeeze
+		samettle = True
+		sameylbl = True
+		if squeeze:
+			ylbl = self.get_axes()[0].get_ylabel()
+			ttle = self.get_axes()[0].get_title()
+			for a in self.get_axes():
+				if a.get_ylabel() != ylbl:
+					sameylbl = False
+				if a.get_title() != ttle:
+					samettle = False
+			if samettle:
+				f.write(ttle+'\n\n')
+			if sameylbl:
+				f.write('  ylabel = '+ylbl.translate(None,' \${}')+'\n\n')
+
 		for a in self.get_axes():
 			if not squeeze: 
 				data = []
-				f.write(a.get_title()+'\n\n')
+				f.write('\n'+a.get_title()+'\n\n')
 				f.write('  ylabel = '+a.get_ylabel().translate(None,' \${}')+'\n\n')
-			for line in a.get_lines():
-				x,y = line.get_xdata(),line.get_ydata()
-				if not data: #get x-axis
-					data.append(x)
-					f.write('{0:>25s}'.format(a.get_xlabel().translate(None,' \${}')))
-				label = line.get_label().translate(None,' \${}')
-				if squeeze: label = a.get_ylabel().translate(None,' \${}')+label
+			# use x-axis from line with greatest number of pts
+			xs = [l.get_xdata() for l in a.lines]
+			longest = np.array([len(x) for x in xs]).argmax()
+			if not data: 
+				data.append(xs[longest])
+				f.write('{0:>25s}'.format(a.get_xlabel().translate(None,' \${}')))
+			# label and extrapolate each line
+			for line in a.lines:
+				label = line.get_label().translate(None,' \${}') 
+				if squeeze and not sameylbl: 
+					label = a.get_ylabel().translate(None,' \${}')+label
 				f.write('{0:>25s}'.format(label))
 				# standard axis
+				x,y = line.get_xdata(),line.get_ydata()
 				if np.any(x!=data[0]):
 					fit = interp1d(x,y,bounds_error=False,fill_value=np.nan)
 					data.append(fit(data[0]))
@@ -334,6 +370,8 @@ def onkey(event):
 		f = pyplot.gcf()
 		f.tight_layout()
 		f.show()
+	if event.key=='c':
+		event.inaxes._center_axis()
 	return
 
 

@@ -22,6 +22,11 @@ c-----------------------------------------------------------------------
 
       INTEGER :: lar_out_unit=13
       INTEGER :: lar_bin_unit=14
+      
+      INTEGER :: bounce_unit=15
+      INTEGER :: pitch_unit =16
+      INTEGER :: energy_unit=17
+      INTEGER :: ienergy_unit=18
 
       INTEGER :: debug_unit=99
 

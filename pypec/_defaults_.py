@@ -17,7 +17,7 @@ rundir   = 'LinuxLahey64'
 # starting inputs taken from
 inputdir = "."
 # inputs used
-inputs   = ['equil','dcon','ipec','coil','nat3']
+inputs   = ['equil','dcon','ipec','coil','pent']
 # temp file location for brute editing (this is the temp dir in this dir)
 import os
 from string import join

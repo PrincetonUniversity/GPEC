@@ -13,6 +13,13 @@ omega_D has zero crossing.
 
 ################################ LOG
 
+## 2013-09-13
+- Found elliptic integrals from python inconsistent with k^2 convention
+in NTV formulae. Need to use k^2 in all arguments.
+
+- Changed IPEC xsp1_mn in ipeq.f to be direct integral of xsp, as poorly
+conditioned ITER matrices where causing waves in direct calc.
+
 ## 2013-04-05
 - natorq gen calculation theta loop now includes test for 
 local magnetic wells (cases of max(B[bounce1:bounce2])>B_bounce).

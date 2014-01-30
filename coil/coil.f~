@@ -29,12 +29,13 @@ c-----------------------------------------------------------------------
      $     ipd,btd,helicity
 
       LOGICAL :: ipec_interface
-      CHARACTER(128) :: cfile,cdconfile
+      CHARACTER(128) :: cfile
       INTEGER, DIMENSION(:), POINTER :: cmfac
 
       TYPE :: coil_type
       CHARACTER(24) :: coil_name
-      INTEGER :: ncoil,s,nsec,nw
+      INTEGER :: ncoil,s,nsec
+      REAL(r8) :: nw
       REAL(r8), DIMENSION(:), POINTER :: cur 
       REAL(r8), DIMENSION(:,:,:), POINTER :: x,y,z
       END TYPE coil_type      
@@ -51,7 +52,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE coil_read
+      SUBROUTINE coil_read(cdconfile)
+      
+      CHARACTER(128), INTENT(IN) :: cdconfile
 
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
      $     machine,ip_direction,bt_direction,coil_num,coil_name,coil_cur
@@ -81,7 +84,7 @@ c-----------------------------------------------------------------------
          cfile=TRIM(machine)//"_"//TRIM(coil_name(ci))//".dat"
          CALL ascii_open(coil_unit,cfile,"old")
          coil(ci)%coil_name=TRIM(coil_name(ci))
-         READ(coil_unit,'(4(1x,I4))')
+         READ(coil_unit,'(3(1x,I4),1x,f7.2)')
      $        coil(ci)%ncoil,coil(ci)%s,coil(ci)%nsec,coil(ci)%nw
          ALLOCATE(coil(ci)%cur(coil(ci)%ncoil))
          ALLOCATE(coil(ci)%x(coil(ci)%ncoil,coil(ci)%s,coil(ci)%nsec),
@@ -101,7 +104,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read equilibrium information.
 c-----------------------------------------------------------------------
-      cdconfile="euler.bin"
       CALL bin_open(in_unit,cdconfile,"OLD","REWIND","none")
       READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
       READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim
@@ -120,12 +122,12 @@ c     initialize variables.
 c-----------------------------------------------------------------------
       cmpsi=MAXVAL((/64,cmpsi/))
       cmtheta=MAXVAL((/400,cmtheta/))
-      cmzeta=cnn*MAXVAL((/40,cmzeta/))
+      cmzeta=cnn*MAXVAL((/128,cmzeta/))
       cmpert=cmhigh-cmlow+1
       ALLOCATE(cmfac(cmpert))
       cmfac=(/(cm,cm=cmlow,cmhigh)/)
       ipd=1.0
-      btd=1.0   
+      btd=1.0
       IF(ip_direction=="negative")ipd=-1.0
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd

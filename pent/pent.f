@@ -17,21 +17,23 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      LOGICAL :: lar_flag,gen_flag,o1native,fmnl_flag,diag_flag
-      INTEGER :: nl,maskpsi,status,i
-      REAL(r8) :: ptfac,ximag,xmax,wefac,wdfac
+      LOGICAL :: gen_flag,rlar_flag,clar_flag,o1native,fmnl_flag,
+     $     diag_flag
+      INTEGER :: maskpsi,status,i
+      REAL(r8) :: ptfac,ximag,xmax,wefac,wdfac,diag_psi
       REAL(r8), DIMENSION(10) :: psiout
-      CHARACTER(16)  :: collision 
       CHARACTER(128) :: kinetic_file,o1fun_file,o1mn_file,buffer
       
       NAMELIST/pent_input/kinetic_file,o1fun_file,o1mn_file,o1native,
-     $     imass,icharge,zimp,zmass,nl,
+     $     idconfile,imass,icharge,zimp,zmass,nl,
      $     collision
       NAMELIST/pent_control/maskpsi,wefac,wdfac,
-     $     neorot_flag,divxprp_flag,kolim_flag,xlsode_flag,
-     $     ximag,xmax,nx,nt,nlmda,ptfac
+     $     neorot_flag,divxprp_flag,mdc2_flag,kolim_flag,xlsode_flag,
+     $     lmdalsode_flag,lsode_rtol,lsode_atol,ximag,xmax,nx,nt,nlmda,
+     $     ptfac,treg_flag
       NAMELIST/pent_output/kinetic_flag,pitch_flag,bounce_flag,
-     $     energy_flag,passing_flag,lar_flag,gen_flag,offset_flag,psiout
+     $     energy_flag,passing_flag,rlar_flag,gen_flag,clar_flag,
+     $     offset_flag,psiout
       NAMELIST/pent_admin/fmnl_flag,diag_flag
 c-----------------------------------------------------------------------
 c     set initial values.
@@ -70,14 +72,19 @@ c-----------------------------------------------------------------------
       maskpsi=1
       collision = "harmonic"
 
+      mdc2_flag = .FALSE.
+      treg_flag = .FALSE.
       kolim_flag = .FALSE.
       neorot_flag = .FALSE.
       divxprp_flag = .TRUE.
       xlsode_flag = .FALSE.
+      lmdalsode_flag = .FALSE.
+      lsode_rtol = 1e-9
+      lsode_atol = 1e-12
       wefac = 1
       wdfac = 1
       ptfac = 1e-3
-      ximag = 1e-6
+      ximag = 0
       xmax = 36
       nx = 200
       nt = 101
@@ -88,14 +95,18 @@ c-----------------------------------------------------------------------
       pitch_flag=.FALSE.
       energy_flag=.FALSE.
       passing_flag=.FALSE.
-      lar_flag = .FALSE.
+      rlar_flag = .FALSE.
+      clar_flag = .FALSE.
       gen_flag = .TRUE.
-      psiout = 0
       psiout(:) = (/0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/)
       
       fmnl_flag = .FALSE.
       diag_flag = .FALSE.
 
+c-----------------------------------------------------------------------
+c     read pent.in.
+c-----------------------------------------------------------------------
+      PRINT *,"PENT START=> v1.00"
 c-----------------------------------------------------------------------
 c     read pent.in.
 c-----------------------------------------------------------------------
@@ -122,8 +133,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
-      CALL idcon_vacuum
+c      CALL idcon_vacuum
 
+
+c-----------------------------------------------------------------------
+c     Some intial consistency checks.
+c-----------------------------------------------------------------------
+      IF(collision=="zero" .AND. ximag==0) CALL pentio_stop("Must use "
+     $     //"complex energy contour (xiamg/=0) when collisionless.")
 c-----------------------------------------------------------------------
 c     Set some global standards.
 c-----------------------------------------------------------------------
@@ -132,26 +149,40 @@ c-----------------------------------------------------------------------
       tnorm =(/(i*1.0/nx,i=0,nt)/)
       lnorm =(/(i*1.0/nx,i=0,nlmda)/)
 c-----------------------------------------------------------------------
+c     Initial io.
+c-----------------------------------------------------------------------
+      CALL pentio_cleardir
+      CALL pentio_headers(nl,ximag,gen_flag,rlar_flag,clar_flag)
+c-----------------------------------------------------------------------
 c     Computer Non-ambipolar transport toroidal torque.
 c-----------------------------------------------------------------------
-      CALL pentio_read_profile(kinetic_file)
       IF(.NOT. diag_flag)THEN
          IF(gen_flag)THEN
             ALLOCATE(bpar(mstep,0:mthsurf),xprp(mstep,0:mthsurf))
             CALL pentio_read_order1_funs(bpar,xprp,o1fun_file,o1native)
+            CALL pentio_read_profile(kinetic_file)
             CALL profile_gen(bpar,xprp,nl,maskpsi,ptfac,ximag,xmax,
-     $           wefac,wdfac,collision,psiout)
-            DEALLOCATE(bpar,xprp)
+     $           wefac,wdfac,collision,psiout,.FALSE.)
+            CALL pentg_dealloc
          ENDIF
-         IF(lar_flag)THEN         
+         IF(clar_flag)THEN
+            ALLOCATE(bpar(mstep,0:mthsurf),xprp(mstep,0:mthsurf))
+            CALL pentio_read_order1_funs(bpar,xprp,o1fun_file,o1native)
+            CALL pentio_read_profile(kinetic_file)
+            CALL pentio_read_special_functions
+            CALL profile_gen(bpar,xprp,nl,maskpsi,ptfac,ximag,xmax,
+     $           wefac,wdfac,collision,psiout,.TRUE.)
+            CALL pentg_dealloc
+         ENDIF
+         IF(rlar_flag)THEN         
             ALLOCATE(bpar(mstep,mpert),xprp(mstep,mpert))
             CALL pentio_read_order1_mns(bpar,xprp,o1mn_file,o1native)
+            CALL pentio_read_profile(kinetic_file)
             CALL pentio_read_special_functions
-            CALL profile_lar(bpar,xprp,nl,maskpsi,ximag,xmax,wefac,
+            CALL profile_rlar(bpar,xprp,nl,maskpsi,ximag,xmax,wefac,
      $           wdfac,collision,psiout)
-            DEALLOCATE(bpar,xprp)
+            CALL pentg_dealloc
          ENDIF
-         CALL pentg_dealloc(gen_flag,lar_flag)
       ENDIF
 
 c-----------------------------------------------------------------------
@@ -159,14 +190,18 @@ c     Administrative setup/diagnostics/debugging.
 c-----------------------------------------------------------------------
       IF(fmnl_flag) CALL pentg_fmnl
       IF(diag_flag)THEN
+         CALL diag_complexpow
+         CALL diag_elliptics
 c         i = diag_outer(1)
-         CALL diag_unpack
          CALL diag_grid
+         i = 1
+         call diag_sub1(i)
 c         CALL diag_lsode_example
-c         CALL diag_lsode_custom
+         CALL diag_lsode_custom
          ALLOCATE(bpar(mstep,0:mthsurf),xprp(mstep,0:mthsurf))
          CALL pentio_read_order1_funs(bpar,xprp,o1fun_file,o1native)
-         CALL diag_lsode_gen(bpar,xprp,nl,maskpsi,ptfac,ximag,xmax,
+         diag_psi = 0.95
+         CALL diag_singlesurf(bpar,xprp,nl,diag_psi,ptfac,ximag,xmax,
      $           wefac,wdfac,collision,psiout)
          DEALLOCATE(bpar,xprp)
       ENDIF

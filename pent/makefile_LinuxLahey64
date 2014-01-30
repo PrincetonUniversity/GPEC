@@ -24,6 +24,8 @@ LIBS = \
 OBJS = \
 	pentglobal.o \
 	collision.o \
+	lsode1.o \
+	lsode2.o \
 	pentio.o \
 	grid.o \
 	profile.o \
@@ -41,14 +43,16 @@ pent: $(OBJS)
 # dependencies
 
 local.o: io.o
+lsode1.o:
+lsode2.o:
 pentglobal.o: local.o
 pentio.o : pentglobal.o
 collision.o : pentglobal.o
 grid : pentio.o
-energy.o: pentglobal.o collision.o grid.o
+energy.o: pentglobal.o collision.o grid.o lsode1.o lsode2.o
 profile.o: pentio.o grid.o energy.o
 diagnostic.o: profile.o energy.o
 pent.o: profile.o  diagnostic.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin pent nat3
+	rm -f *.o *.mod *.out *.bin pent

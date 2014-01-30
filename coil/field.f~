@@ -31,8 +31,8 @@ c-----------------------------------------------------------------------
       SUBROUTINE field_bs_psi(psi,bmn,wegt)
 
       REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(cmpert), INTENT(OUT) :: bmn
       INTEGER, INTENT(IN) :: wegt
+      COMPLEX(r8), DIMENSION(cmpert) :: bmn
 
       INTEGER :: i,j,k,isec,iseg,itheta,izeta,ipsi,ipert,nseg
 
@@ -47,8 +47,6 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
-
-      WRITE(*,*)"Calculating field on the boundary from coils"
 
       tbx=0
       tby=0
@@ -65,6 +63,7 @@ c-----------------------------------------------------------------------
       area=1.0
       
       DO i=1,coil_num
+         
          nseg=coil(i)%nsec-1
 
          ALLOCATE(xa(coil(i)%ncoil,coil(i)%s,nseg),
@@ -175,9 +174,6 @@ c-----------------------------------------------------------------------
          area=aspl%fsi(cmtheta,1)
       ENDIF
             
-      CALL ascii_open(out_unit,"bmn.out","UNKNOWN")
-      WRITE(out_unit,'(1x,a5,2(1x,a16))')"m","real","imag"
-
       DO ipert=1,cmpert
          DO izeta=1,cmzeta
             DO itheta=1,cmtheta
@@ -194,11 +190,8 @@ c-----------------------------------------------------------------------
          CALL cspline_fit(bnzspl,"periodic")
          CALL cspline_int(bnzspl)
          bmn(ipert)=2.0*bnzspl%fsi(cmzeta,1)/area
-         WRITE(out_unit,'(1x,I5,2(1x,es16.8))')cmfac(ipert),
-     $        REAL(bmn(ipert)),AIMAG(bmn(ipert))
+
       ENDDO
-      
-      CALL ascii_close(out_unit)
 
       CALL spline_dealloc(aspl)
       CALL cspline_dealloc(bnzspl)
@@ -232,7 +225,7 @@ c-----------------------------------------------------------------------
 
       TYPE(cspline_type) :: bspl
 
-      dlmin=3e-2*cro
+      dlmin=2e-3*cro
       
       DO i=1,coil_num
          nseg=coil(i)%nsec-1

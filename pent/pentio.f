@@ -13,9 +13,8 @@ c     4. pentio_read_fperz
 c     5. pentio_specialfunctions
 c     6. pentio_write_bxpflag
 c     7. pentio_write_profile
-c     8. pentio_xheader
-c     9. pentio_lmdaheader
-c    10. pentio_stop
+c     8. pentio_headers
+c     9. pentio_stop
 c-----------------------------------------------------------------------
 c     subprogram 0. pentio_mod.
 c     module declarations.
@@ -50,16 +49,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read file
 c-----------------------------------------------------------------------
-      WRITE(*,*) "Reading pmodb and divxprp input file: "//TRIM(infile)
+      PRINT *, "Reading pmodb and divxprp input file: "
+      PRINT *, TRIM(infile)
 
       IF(native)THEN
-         CALL bin_open(in_unit,infile,"OLD","REWIND","none")
-         READ(in_unit)ms,mt
+         CALL bin_open(bin_unit,infile,"OLD","REWIND","none")
+         READ(bin_unit)ms,mt
          IF((ms .NE. mstep) .OR. (mt .NE. mthsurf)) CALL
      $        pentio_stop("Input perturbations don't match equilibrium")
-         READ(in_unit)lagbpar
-         READ(in_unit)divxprp
-         CALL bin_close(in_unit)
+         READ(bin_unit)lagbpar
+         READ(bin_unit)divxprp
+         CALL bin_close(bin_unit)
       ELSE
          CALL ascii_open(in_unit,infile,"OLD")
          READ(in_unit,*) ms,mt
@@ -73,7 +73,7 @@ c-----------------------------------------------------------------------
          CALL ascii_close(in_unit)
          CALL bicube_fit(o1spl,"extrap","periodic")
          
-         WRITE(*,*) "Extrapolating to DCON/IPEC/PENT (psi,theta)"
+         PRINT *, "Extrapolating to DCON/IPEC/PENT (psi,theta)"
          DO istep=1,mstep
             DO itheta=0,mthsurf
                CALL bicube_eval(o1spl,psifac(istep),theta(itheta),0)
@@ -107,7 +107,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read file
 c-----------------------------------------------------------------------
-      WRITE(*,*) "Reading pmodb and divxprp input file: "//TRIM(infile)
+      PRINT *, "Reading pmodb and divxprp input file: "
+      PRINT *, TRIM(infile)
 
       IF(native)THEN
          CALL bin_open(bin_unit,infile,"OLD","REWIND","none")
@@ -133,7 +134,7 @@ c-----------------------------------------------------------------------
          CALL spline_fit(o1bspl,"extrap")
          CALL spline_fit(o1xspl,"extrap")
          
-         WRITE(*,*) "Extrapolating to DCON/IPEC/PENT (psi,m)"
+         PRINT *, "Extrapolating to DCON/IPEC/PENT (psi,m)"
          DO istep=1,mstep
             CALL spline_eval(o1bspl,psifac(istep),0)
             CALL spline_eval(o1xspl,psifac(istep),0)
@@ -170,14 +171,14 @@ c-----------------------------------------------------------------------
       CHARACTER(*), INTENT(IN) :: kfile
 
       INTEGER :: nlines,istep
-      REAL(r8) :: psi,epsa
+      REAL(r8) :: psi,epsa,bo
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zeff,zpitch
 
 c-----------------------------------------------------------------------
 c     read kinetic inputs
 c-----------------------------------------------------------------------
-      WRITE(*,*) "Reading kinetic input file: "
-      WRITE(*,*) TRIM(kfile)
+      PRINT *, "Reading kinetic input file: "
+      PRINT *, TRIM(kfile)
 
       nlines=0
       CALL ascii_open(in_unit,kfile,"OLD")
@@ -190,7 +191,7 @@ c-----------------------------------------------------------------------
       
       CALL spline_alloc(kin,nlines-1,9)
       kin%title = (/"idens ","edens ","itemp ","etemp ","wexb  ",
-     $     "loglam","  nuii","  nuei","  epsr"/)
+     $     "loglam","   nui","   nue","  epsr"/)
       READ(in_unit,*)
       DO istep=0,nlines-1
          READ(in_unit,*) kin%xs(istep),kin%fs(istep,1:5)
@@ -202,7 +203,7 @@ c-----------------------------------------------------------------------
          WRITE(*,'(a40,F6.4)') "Warning: Forced kinetic input psi 0 to "
      $        ,kin%xs(0)
       ENDIF
-      WRITE(*,'(a26,F6.4,a4,F6.4)') "Kinetic profiles from psi ",
+      WRITE(*,'(a27,F6.4,a4,F6.4)') "Kinetic profiles from psi ",
      $     kin%xs(0)," to ",kin%xs(kin%mx)
 
       ALLOCATE(zeff(0:nlines-1),zpitch(0:nlines-1))
@@ -221,11 +222,12 @@ c-----------------------------------------------------------------------
       kin%fs(:,7) = (zpitch/3.5E17)*kin%fs(:,1)*kin%fs(:,6)
      $     /(SQRT(1.0*imass)*(kin%fs(:,3)/1.602e-16)**1.5)
       kin%fs(:,8) = (zpitch/3.5E17)*kin%fs(:,2)*kin%fs(:,6)
-     $     /(SQRT(emass/pmass)*(kin%fs(:,4)/1.602e-16)**1.5)
+     $     /(SQRT(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
       kin%fs(:,9) = epsa*SQRT(kin%xs(:))
 
       CALL spline_fit(kin,"extrap")
-      
+      CALL bicube_eval(eqfun,0.0_r8,0.0_r8,0)
+      bo = eqfun%f(1) 
 c-----------------------------------------------------------------------
 c     Outputs if desired.
 c-----------------------------------------------------------------------
@@ -233,9 +235,10 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"pent_kinetics.out","UNKNOWN")
          WRITE(out_unit,*)"PROFILES USED IN PENT CALCULATION:"
          WRITE(out_unit,'(1/,a8,I4,2(a10,es16.8E3))') " npsi = ",1000,
-     $        " charge = ",-echarge*icharge,"   mass = ",imass*pmass
+     $        " charge = ",e*icharge,"   mass = ",imass*mp
+         WRITE(out_unit,*)"R0 = ",ro," B0 = ",bo," chi1 = ",chi1
          WRITE(out_unit,'(1/,1x,15(1x,a16))') "psi","eps_r","n_i","n_e",
-     $        "T_i","T_e","omega_EXB","logLambda","nu_ii","nu_ei","q",
+     $        "T_i","T_e","omega_E","logLambda","nu_i","nu_e","q",
      $        "dconPmu_0","dvdpsi","omega_*n","omega_*t"
          DO istep=1,1000
             psi = istep/1000.0
@@ -244,8 +247,8 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(rzphi,psi,0.0_r8,0)
             WRITE(out_unit,'(1x,15(1x,es16.8E3))') psi,
      $           kin%f(9),kin%f(1:8),sq%f(4),sq%f(2),sq%f(3),-twopi*
-     $           kin%f(3)*kin%f1(1)/(-echarge*icharge*chi1*kin%f(1)),
-     $           -twopi*kin%f1(3)/(-echarge*icharge*chi1)
+     $           kin%f(3)*kin%f1(1)/(e*icharge*chi1*kin%f(1)),
+     $           -twopi*kin%f1(3)/(e*icharge*chi1)
          ENDDO
          CALL ascii_close(out_unit)
       ENDIF
@@ -289,12 +292,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER :: nek,nfk,nft
+      INTEGER :: nek,nee,nfk,nft
 
 c-----------------------------------------------------------------------
 c     Complete elliptic Integral of the 1st kind from 0 to 1.
 c-----------------------------------------------------------------------
-      WRITE(*,*) "Reading elliptic integral from file: ellipk01.dat"
+      PRINT *, "Reading elliptic integral from file: ellipk01.dat"
       CALL ascii_open(in_unit,"ellipk01.dat","OLD")
       READ(in_unit,*) nek
       CALL spline_alloc(ellipk,nek-1,1)
@@ -304,9 +307,21 @@ c-----------------------------------------------------------------------
       CALL spline_fit(ellipk,'extrap')
 
 c-----------------------------------------------------------------------
+c     Complete elliptic Integral of the 2nd kind from 0 to 1.
+c-----------------------------------------------------------------------
+      PRINT *, "Reading elliptic integral from file: ellipe01.dat"
+      CALL ascii_open(in_unit,"ellipe01.dat","OLD")
+      READ(in_unit,*) nee
+      CALL spline_alloc(ellipe,nee-1,1)
+      READ(in_unit,*) ellipe%xs(:)
+      READ(in_unit,*) ellipe%fs(:,1)
+      CALL ascii_close(in_unit)
+      CALL spline_fit(ellipe,'extrap')
+
+c-----------------------------------------------------------------------
 c     Integral Bounce Average function.
 c-----------------------------------------------------------------------
-      WRITE(*,*) "Reading F^-1/2_mnl from file: fkmnql.dat"
+      PRINT *, "Reading F^-1/2_mnl from file: fkmnql.dat"
       CALL bin_open(in_unit,"fkmnl.dat","OLD","REWIND","none")
       READ(in_unit) nfk,nft
       CALL bicube_alloc(fmnl,nfk,nft,1)
@@ -346,7 +361,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Writing.
 c-----------------------------------------------------------------------
-      WRITE(*,*) "Writing file "//TRIM(name)//".out"
+      !PRINT *, "Writing file "//TRIM(name)//".out"
       CALL ascii_open(out_unit,TRIM(name)//".out","UNKNOWN")
       WRITE(out_unit,*)"NON-AMBIPOLAR TRANSPORT and TOROIDAL TORQUE: "//
      $     TRIM(title)
@@ -422,7 +437,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Writing.
 c-----------------------------------------------------------------------
-      WRITE(*,*) "Writing file "//TRIM(name)//".out"
+      PRINT *, "Writing file "//TRIM(name)//".out"
       CALL ascii_open(out_unit,TRIM(name)//".out","UNKNOWN")
       WRITE(out_unit,*)"NON-AMBIPOLAR TRANSPORT and TOROIDAL TORQUE: "//
      $     TRIM(title)
@@ -469,14 +484,16 @@ c-----------------------------------------------------------------------
       END SUBROUTINE pentio_write_profile
 
 c-----------------------------------------------------------------------
-c     subprogram 8. pentio_xheader.
+c     subprogram 8. pentio_headers.
 c     open/clear energy file and write header info.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE pentio_xheader()
-      REAL(r8) :: bo
+      SUBROUTINE pentio_headers(nl,ximag,gen_flag,rlar_flag,clar_flag)
+      LOGICAL :: gen_flag,rlar_flag,clar_flag
+      INTEGER :: nl,ll,i
+      REAL(r8) :: bo,ximag
       CHARACTER(2), PARAMETER :: newl = CHAR(13)//CHAR(10)
 c-----------------------------------------------------------------------
 c     Get on-axis field for reference.
@@ -484,78 +501,224 @@ c-----------------------------------------------------------------------
       CALL bicube_eval(eqfun,0.0_r8,0.0_r8,0)
       bo = eqfun%f(1)
 c-----------------------------------------------------------------------
-c     Writing.
+c     Open new files for optional outputs and write their headers.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"pent_energy_n"//TRIM(sn)//".out",
-     $     "UNKNOWN")
-      WRITE(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT:"
-      WRITE(out_unit,*) "Energy integrand"//newl//
-     $     "Normalizations are as follows:"//newl//
-     $     "Lambda: m*v_perp^2/(2B)"//newl//"x: E/T"//newl//
-     $     "T_phi: T_phi/(-2n^2TN*chi'/sqrt(pi))"//newl//
-     $     "2ndeltaW: 2*n*deltaW /(-2n^2TN*chi'/sqrt(pi))"
-      WRITE(out_unit,*)
-      WRITE(out_unit,*)"R0 = ",ro," B0 = ",bo," chi1 = ",chi1," n = ",nn
-      WRITE(out_unit,'(7(1x,a16))') "psi","Lambda","x","T_phi",
-     $        "2ndeltaW","int(T_phi)","int(2ndeltaW)"
-      CALL ascii_close(out_unit)
+      DO ll = -nl,nl
+         WRITE(UNIT=sl,FMT='(I2)') ll
+         sl = ADJUSTL(sl)
+
+         IF(bounce_flag .AND. gen_flag)THEN
+            CALL ascii_open(out_unit,"pent_bounce_n"//TRIM(sn)//
+     $           "_l"//TRIM(sl)//".out","UNKNOWN")
+            WRITE(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR "
+     $           //"TRANSPORT: Bounce average integrands"
+            WRITE(out_unit,*)
+            WRITE(out_unit,*) "Normalizations:"
+            WRITE(out_unit,*) "omega_b:    omega_b/sqrt(2E/M)"
+            WRITE(out_unit,*) "omega_D:    omega_D/(E/Ze)"
+            WRITE(out_unit,*) "|deltaJ|^2: |deltaJ|^2/(2EM)"
+            WRITE(out_unit,*) "T_phi,2ndeltaW: "//
+     $           "T_phi,2ndeltaW/(-2n^2TN*chi'/sqrt(pi))"
+            WRITE(out_unit,*)
+            WRITE(out_unit,*) "R0 = ",ro," B0 = ",bo,
+     $           " chi1 = ",chi1," n = ",nn
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(15(1x,a16))') "psi","Lambda","theta_n",
+     $        "vartheta","dvartheta/dtheta_n",
+     $        "real(deltaJ)","imag(deltaJ)","realint(deltaJ)",
+     $        "imagint(deltaJ)","omega_b","omega_D","int(omega_b)",
+     $        "int(omega_D)","h_E","h_B"
+            CALL ascii_close(out_unit)
+         ENDIF
+
+         IF(energy_flag)THEN
+            DO i=1,3
+               IF(i==1 .AND. gen_flag)THEN
+                  CALL ascii_open(out_unit,"pent_energy_n"//TRIM(sn)//
+     $                 "_l"//TRIM(sl)//".out","UNKNOWN")
+               ELSEIF(i==2 .AND. rlar_flag)THEN
+                  CALL ascii_open(out_unit,"pent_rlar_energy_n"//
+     $                 TRIM(sn)//"_l"//TRIM(sl)//".out","UNKNOWN")
+               ELSEIF(i==3 .AND. clar_flag)THEN
+                  CALL ascii_open(out_unit,"pent_clar_energy_n"//
+     $                 TRIM(sn)//"_l"//TRIM(sl)//".out","UNKNOWN")
+               ELSE
+                  CYCLE
+               ENDIF
+               WRITE(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR "
+     $              //"TRANSPORT: Energy integrand"
+               WRITE(out_unit,*)
+               WRITE(out_unit,*) "Variables are:   "//
+     $              "Lambda =  m*v_perp^2/(2B),  x = E/T"
+               WRITE(out_unit,*) "Normalization is: "//
+     $              "1/(-2n^2TN*chi'/sqrt(pi))"
+               WRITE(out_unit,*)
+               WRITE(out_unit,*) "R0 = ",ro," B0 = ",bo,
+     $              " chi1 = ",chi1," n = ",nn
+               WRITE(out_unit,*)
+               WRITE(out_unit,'(7(1x,a16))') "psi","Lambda","x","T_phi",
+     $              "2ndeltaW","int(T_phi)","int(2ndeltaW)"
+               CALL ascii_close(out_unit)
+            ENDDO
+
+            IF(ximag/=0.0)THEN
+               DO i=1,3
+                  IF(i==1 .AND. gen_flag)THEN
+                     CALL ascii_open(out_unit,"pent_ienergy_n"//
+     $                    TRIM(sn)//"_l"//TRIM(sl)//".out","UNKNOWN")
+                  ELSEIF(i==2 .AND. rlar_flag)THEN
+                     CALL ascii_open(out_unit,"pent_rlar_ienergy_n"//
+     $                    TRIM(sn)//"_l"//TRIM(sl)//".out","UNKNOWN")
+                  ELSEIF(i==3 .AND. clar_flag)THEN
+                     CALL ascii_open(out_unit,"pent_clar_ienergy_n"//
+     $                    TRIM(sn)//"_l"//TRIM(sl)//".out","UNKNOWN")
+                  ELSE
+                     CYCLE
+                  ENDIF
+                  WRITE(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR"
+     $                 //" TRANSPORT: Energy integrand (imaginary axis)"
+                  WRITE(out_unit,*)
+                  WRITE(out_unit,*) "Variables are:   "//
+     $                 "Lambda =  m*v_perp^2/(2B),  x = E/T"
+                  WRITE(out_unit,*) "Normalization is: "//
+     $                 "1/(-2n^2TN*chi'/sqrt(pi))"
+                  WRITE(out_unit,*)
+                  WRITE(out_unit,*) "R0 = ",ro," B0 = ",bo,
+     $                 " chi1 = ",chi1," n = ",nn
+                  WRITE(out_unit,*)
+                  WRITE(out_unit,'(7(1x,a16))') "psi","Lambda","x",
+     $                 "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
+                  CALL ascii_close(out_unit)
+               ENDDO
+            ENDIF
+         ENDIF
+
+         IF(pitch_flag)THEN
+            DO i=1,3
+               IF(i==1 .AND. gen_flag)THEN
+                  CALL ascii_open(out_unit,"pent_pitch_n"//TRIM(sn)//
+     $                 "_l"//TRIM(sl)//".out","UNKNOWN")
+               ELSEIF(i==2 .AND. rlar_flag)THEN
+                  CYCLE         ! Different pitch treatment
+               ELSEIF(i==3 .AND. clar_flag)THEN
+                  CALL ascii_open(out_unit,"pent_clar_pitch_n"//
+     $                 TRIM(sn)//"_l"//TRIM(sl)//".out","UNKNOWN")
+               ELSE
+                  CYCLE
+               ENDIF
+               WRITE(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR "
+     $              //"TRANSPORT: Pitch angle integrand and functions"
+               WRITE(out_unit,*)
+               WRITE(out_unit,*) "Normalizations:"
+               WRITE(out_unit,*) "omega_b:    omega_b/sqrt(2E/M)"
+               WRITE(out_unit,*) "omega_D:    omega_D/(E/Ze)"
+               WRITE(out_unit,*) "|deltaJ|^2: |deltaJ|^2/(2EM)"
+               WRITE(out_unit,*) "T_phi,2ndeltaW: "//
+     $              "T_phi,2ndeltaW/(-2n^2TN*chi'/sqrt(pi))"
+               WRITE(out_unit,*)
+               WRITE(out_unit,*)"Usefull relations:"
+               WRITE(out_unit,*)"Hamiltonian (Energy norm): "//
+     $              "|<H/x>| = omega_b*sqrt(|deltaJ|^2)"
+               WRITE(out_unit,*)"Energy Integral: "//
+     $              "I_x = T_phi/(omega_b*|deltaJ|^2)"
+               WRITE(out_unit,*)
+               WRITE(out_unit,*)"R0 = ",ro," B0 = ",bo,
+     $              " chi1 = ",chi1," n = ",nn
+               WRITE(out_unit,*)         
+               WRITE(out_unit,'(9(1x,a16))') "psi","Lambda","T_phi",
+     $              "2ndeltaW","int(T_phi)","int(2ndeltaW)","omega_b",
+     $              "omega_D","|deltaJ|^2"
+               CALL ascii_close(out_unit)
+            ENDDO
+         ENDIF
+      ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      END SUBROUTINE pentio_xheader
-      
+      END SUBROUTINE pentio_headers
+
 c-----------------------------------------------------------------------
-c     subprogram 8. pentio_lmdaheader.
-c     open/clear pitch file and write header info.
+c     subprogram 9. pentio_cleardird.
+c     clear working directory of pent output type files.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE pentio_lmdaheader()
-      REAL(r8) :: bo
-      CHARACTER(2), PARAMETER :: newl = CHAR(13)//CHAR(10)
+      SUBROUTINE pentio_cleardir()
+      IMPLICIT NONE
+ 
 c-----------------------------------------------------------------------
-c     Get on-axis field for reference.
+c     clear directory.
 c-----------------------------------------------------------------------
-      CALL bicube_eval(eqfun,0.0_r8,0.0_r8,0)
-      bo = eqfun%f(1)
+      PRINT *, "Clearing working directory"
+      CALL SYSTEM ('rm pent_*n'//TRIM(sn)//'.out')
 c-----------------------------------------------------------------------
-c     Writing.
+c     termination.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"pent_pitch_n"//TRIM(sn)//".out",
-     $     "UNKNOWN")
-      WRITE(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT:"
-      WRITE(out_unit,*) "Pitch angle integrand and functions"
-     $        //newl//"Normalizations are as follows:"//newl//
-     $     "omega_D: omega_D/(E/Ze)"//newl//
-     $     "T_phi,2ndeltaW: T_phi,2ndeltaW/(-2n^2TN*chi'/sqrt(pi))"
-      WRITE(out_unit,*)
-      WRITE(out_unit,*)"R0 = ",ro," B0 = ",bo," chi1 = ",chi1," n = ",nn
-      WRITE(outlbls,'(9(1x,a16))') "psi","Lambda","T_phi","2ndeltaW",
-     $     "int(T_phi)","int(2ndeltaW)","omega_b","omega_D","|deltaJ|^2"
-      CALL ascii_close(out_unit)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      END SUBROUTINE pentio_lmdaheader
+      RETURN
+      END SUBROUTINE pentio_cleardir
 
 c-----------------------------------------------------------------------
-c     subprogram 10. pentio_stop.
+c     subprogram 9. pentio_stop.
 c     terminates program with message, calls timer, closes output file.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE pentio_stop(message)
+      IMPLICIT NONE
 
       CHARACTER(*), INTENT(IN) :: message
-      CHARACTER(10) :: date,time,zone
-      REAL(r8) :: seconds     
+      !CHARACTER(10) :: date,time,zone
+      !INTEGER, DIMENSION(8) :: values
+      REAL(r8), SAVE :: seconds     
 c-----------------------------------------------------------------------
 c     write  message and stop program.
 c-----------------------------------------------------------------------
-      CALL program_stop("PENT: "//message)
+      CALL DATE_AND_TIME(date,time,zone,values)
+      seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+     $     -seconds
+      PRINT *, "Total cpu time for ipec=",seconds,"seconds"
+      WRITE(*,'(1x,2a)')'PENT STOP=>',TRIM(message)
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      STOP
       END SUBROUTINE pentio_stop
+
+c-----------------------------------------------------------------------
+c     subprogram 10. pentio_progress.
+c     Print progress bar to terminal.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE pentio_progress(j)
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: j
+
+      INTEGER :: k
+      CHARACTER(35) :: bar
+      bar = "|----------| ???% surfaces complete"
+c-----------------------------------------------------------------------
+c     write  message to terminal.
+c-----------------------------------------------------------------------
+      IF(j<11 .AND. j>-1)THEN
+         WRITE(unit=bar(14:16),fmt="(i3)") 10*j
+         DO k=1, j
+            bar(1+k:1+k)="o"
+         ENDDO  
+         PRINT *,bar
+         !WRITE(*,fmt="(a1,a35,$)") char(13),bar
+         !WRITE(*,fmt="(a35,a1)",advance='no') bar,char(13)
+         !IF(j==10) WRITE(*,*)
+      ENDIF
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE pentio_progress
       
 
 

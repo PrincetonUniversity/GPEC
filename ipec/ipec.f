@@ -263,7 +263,7 @@ c-----------------------------------------------------------------------
       helicity=ipd*btd
       IF (coil_flag) THEN
          WRITE(*,*)"Calculating field on the boundary from coils"
-         CALL coil_read
+         CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert))
          coilmn=0
          CALL field_bs_psi(psilim,coilmn,1)

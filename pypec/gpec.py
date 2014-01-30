@@ -56,7 +56,7 @@ class InputSet:
 
 		self.infiles ={}
 		for f in os.listdir(self.indir):
-			if f.endswith('.in'):
+			if f.endswith('.in') and not f.startswith('draw'):
 				try:
 					self.infiles[f[:-3]]=namelist.read(self.indir+f)
 				except:
@@ -90,44 +90,58 @@ def _newloc(loc):
 		
 
 
-def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rundcon=True,runipec=True,runpent=True,mailon=_defaults_.mailon,email=_defaults_.email,**kwargs):
+def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rundcon=True,runipec=True,runpent=True,fill_inputs=True,mailon=_defaults_.mailon,email=_defaults_.email,**kwargs):
 	"""
 	Python wrapper for running ipec package.
 	
-	kwargs  - loc      : str. Directory location for run.
-		  rundir   : str. IPEC package directory with executables and *.dat's.
-	          qsub     : bool. Submit job to cluster.
-		  return_on_complete : bool. Return only after job is finished on cluster (irrelevant if qsub=False).
-		  rundcon  : bool. Run dcon.
-		  runipec  : bool. Run ipec.
-		  runpent  : bool. Run pent.
-		  mailon   : str. Any combination of 'a','b','e' for on interruption
-		                  execution, and termination respectively.
-		  email    : str. Email address.
-		  **kwargs : dict. "namelist" instance(s) written to <kwarg>.in file(s).
-		            -NOTE: Namelists taken from (in order of priority): 
-			           1) **kwargs 
-				   2) *.in files from loc
-				   3) *.in files from rundir
+	kwargs
+	------
+	- loc      : str. Directory location for run.
+	- rundir   : str. IPEC package directory with executables and *.dat's.
+	- qsub     : bool. Submit job to cluster.
+	- return_on_complete : bool. Return only after job is finished on 
+	                       cluster (irrelevant if qsub=False).
+	- rundcon  : bool. Run dcon.
+	- runipec  : bool. Run ipec.
+	- runpent  : bool. Run pent.
+	- fill_inputs : bool. Use inputs from rundir (see **kwargs).
+	- mailon   : str. Any combination of 'a','b','e' for on interruption
+	                  execution, and termination respectively.
+    - email    : str. Email address.
+	
+	**kwargs   : dict. "namelist" instance(s) written to <kwarg>.in file(s).
+		         NOTE: Namelists taken from (in order of priority): 
+				 1) **kwargs 
+				 2) *.in files from loc
+				 3) *.in files from rundir
 
-	returns -          : bool. True
+	returns
+	-------
+	-          : bool. True.
 	"""
 	# housekeeping
 	loc = os.path.abspath(loc)
-	rundir = os.path.abspath(rundir)
-       
+	rundir = os.path.abspath(rundir)       
 	print('Running IPEC in '+loc)
 	_newloc(loc)
+	locfiles = os.listdir('.')
 	if rundcon:
-		os.system('rm *.out')
-		os.system('rm *.dat')
-		os.system('rm *.bin')
+		if np.any([f.endswith('.out') for f in locfiles]):
+			os.system('rm *.out')
+		if np.any([f.endswith('.dat') for f in locfiles]):
+			os.system('rm *.dat')
+		if np.any([f.endswith('.bin') for f in locfiles]):
+			os.system('rm *.bin')
 	elif runipec:
-		os.system('rm ipec_*')
-		os.system('rm pent_*')
-		os.system('rm ipdiag_*')
+		if np.any([f.startswith('ipec_') for f in locfiles]):
+			os.system('rm ipec_*')
+		if np.any([f.startswith('ipdiag_') for f in locfiles]):
+			os.system('rm ipdiag_*')
+		if np.any([f.startswith('pent_') for f in locfiles]):
+			os.system('rm pent_*')
 	elif runpent:
-		os.system('rm pent_*')
+		if np.any([f.startswith('pent_') for f in locfiles]):
+			os.system('rm pent_*')
 
 	# set up run
 	for key in kwargs:
@@ -136,15 +150,17 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rundcon
 	
 	print('Using base package '+rundir)
 	if rundir != loc:
+		# get all supporting data files
 		os.system('cp '+packagedir+'coil/*.dat .')
 		os.system('cp '+packagedir+'pent/*.dat .')
-		localins=[f for f in os.listdir('.') if f[-3:]=='.in' and f[:4]!='draw']
-		rundirins=[f for f in os.listdir(rundir) if f[-3:]=='.in' and f[:4]!='draw']
-		for infile in [f for f in rundirins if f not in localins]:
-			if rundcon==False and runipec==False and f!='pent.in':
-				continue # allows clean torque scan loops
-			print('Copying '+infile+' from rundir.')
-			os.system('cp '+rundir+'/'+infile+' .')
+		# fill missing input files 
+		if fill_inputs:
+			localins=[f for f in os.listdir('.') if f[-3:]=='.in' and f[:4]!='draw']
+			rundirins=[f for f in os.listdir(rundir) if f[-3:]=='.in' and f[:4]!='draw']
+			missedins=[f for f in rundirins if f not in localins]
+			for infile in missedins:
+				print('Copying '+infile+' from rundir.')
+				os.system('cp '+rundir+'/'+infile+' .')
 
 	# actual run
 	if qsub:
@@ -169,14 +185,12 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rundcon
 				time.sleep(1)	
 			# clean up
 			os.system('rm *.dat')
-			os.system('rm draw*')
 	else:
 		if rundcon: os.system(rundir+'/dcon')
 		if runipec: os.system(rundir+'/ipec')
 		if runpent: os.system(rundir+'/pent')    
 		# clean up
 		os.system('rm *.dat')
-		os.system('rm draw*')
 
 	return True
 
@@ -254,33 +268,30 @@ def optntv(mlist,maxiter=50,loc='.',rundir=default.rundir,**kwargs):
 	
 
 
-def wescan(base='.',scale=np.linspace(-2,2,20),**kwargs):
+def wescan(base='.',scale=np.linspace(-2,2,20),pentfile='pent.in',qsub=True,**kwargs):
 	"""
 	Run pent for series of scaled omegaE values. 
-	The function then waits  for jobs to complete and cleans the
-	copied .bin files from the subdirectories of the scan.
+	User must specify full path to all files named in pent.in input file
+	located in the base directory.
 
 	kwargs - base : str. Top level directory containing dcon and ipec runs.
-	                -- Must contain euler.bin and ipec_order1 files.
+	                -- Must contain euler.bin and vacuum.bin file.
 	         scale: ndarray. The scale factors iterated over.
 	returns -     : True.
 	"""
 	base = os.path.abspath(base)+'/'
-	pent = namelist.read(base+'pent.in')
+	pent = namelist.read(pentfile)
+	scale = map(float,scale)
+	for k in ['kinetic_file','o1fun_file','o1mn_file','idconfile']:
+		if k in pent['PENT_INPUT']:
+			pent['PENT_INPUT'][k] = os.path.abspath(pent['PENT_INPUT'][k])
+
 	for s in scale:
 		name = 'we{0:.5}'.format(s)
 		_newloc(base+name)
-		os.system('cp '+base+'euler.bin .')
-		os.system('cp '+base+'vacuum.bin .')
-		os.system('cp '+base+'ipec_*.bin .')
-		pent['PENT_INPUT']['ipd'] = s
-		run(rundcon=False,runipec=False,mailon='',pent=pent)
-
-	#while not os.path.isfile('../'+name+'.oe'):
-	#	time.sleep(5)
-	#for s in scale:
-	#	name = 'we{0:.5}'.format(s)
-	#	os.system('rm '+base+name+'/*.bin')
+		pent['PENT_CONTROL']['wefac'] = s
+		run(rundcon=False,runipec=False,mailon='',qsub=qsub,
+			fill_inputs=False,pent=pent,**kwargs)
 		
 	return True
 

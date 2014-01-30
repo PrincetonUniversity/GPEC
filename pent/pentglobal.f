@@ -6,34 +6,62 @@ c-----------------------------------------------------------------------
       USE spline_mod
       USE bicube_mod
       USE cspline_mod
-      USE local_mod
       USE ipglobal_mod
 c-----------------------------------------------------------------------
-c     declarations.
+c     module declarations.
 c-----------------------------------------------------------------------
+      IMPLICIT NONE
+
+!     This overrides io_mod values from equil/dcon/ipec
+c      INTEGER, PARAMETER ::
+c     $     in_unit=1,
+c     $     out_unit=2,
+c     $     bin_unit=3,
+c     $     bin_2d_unit=4,
+c     $     bounce_unit=5,
+c     $     pitch_unit =6,
+c     $     energy_unit=7,
+
+c     !ALREADY IN equil's local_mod used by spline modules     
+c      INTEGER, PARAMETER ::
+c     $     r4=SELECTED_REAL_KIND(6,37), ! already in spline_mod->local_mod
+c     $     r8=SELECTED_REAL_KIND(13,307)
+c      REAL(r8), PARAMETER :: 
+c     $     mp=1.672614e-27,
+c     $     me=9.1091e-31,
+c     $     e=1.6021917e-19,
+c     $     ev=e
+c      REAL(r8), PARAMETER :: 
+c     $     pi=3.1415926535897932385_r8,
+c     $     twopi=2*pi,pisq=pi*pi,
+c     $     mu0=4e-7_r8*pi,
+c     $     rtod=180/pi,dtor=pi/180,
+c     $     alog10=2.302585093_r8
+c      COMPLEX(r8), PARAMETER :: ifac=(0,1)    
+  
+
       LOGICAL :: kinetic_flag,bounce_flag,energy_flag,pitch_flag,
      $     passing_flag,kolim_flag,neorot_flag,divxprp_flag,
-     $     offset_flag,xlsode_flag
+     $     offset_flag,xlsode_flag,lmdalsode_flag,mdc2_flag,
+     $     treg_flag
 
-      INTEGER :: imass,icharge,zimp,zmass
+      INTEGER :: imass,icharge,zimp,zmass,nl
+
+      REAL(r8) :: lsode_atol,lsode_rtol
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: bpar,xprp
-      REAL(r8), PARAMETER :: emass = 9.109e-31, echarge = -1.602e-19,
-     $     pmass = 1.673e-27
 
-c$$$      INTEGER, PARAMETER :: nx = 200, nt = 101, nlmda = 101
-c$$$      REAL(r8), DIMENSION(0:nx) :: xnorm =(/(i*1.0/nx,i=0,nx)/)
-c$$$      REAL(r8), DIMENSION(0:nt) :: tnorm =(/(i*1.0/nt,i=0,nt)/)
-c$$$      REAL(r8), DIMENSION(0:nlmda) :: lnorm =(/(i*1.0/nlmda,i=0,nlmda)/)
       INTEGER :: nx, nt, nlmda
       REAL(r8), DIMENSION(:), ALLOCATABLE :: xnorm,tnorm,lnorm
 
+      CHARACTER(2) :: sl
+      CHARACTER(32)  :: collision 
       CHARACTER(128) :: outfile,infile,kfile
       CHARACTER(512) :: outtext,outlbls
 
-      TYPE(spline_type)  :: kin,ellipk
-      TYPE(cspline_type) :: ntv,ntvp,lar,larp
+      TYPE(spline_type)  :: kin,ellipk,ellipe
       TYPE(bicube_type)  :: fmnl
+      TYPE(cspline_type) :: ntv,ntvp
 
       CONTAINS
 
@@ -133,26 +161,20 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE pentg_dealloc(gen_flag,lar_flag)
-      LOGICAL, INTENT(IN) :: gen_flag,lar_flag
-      INTEGER :: istep,ifix,ising
+      SUBROUTINE pentg_dealloc
 c-----------------------------------------------------------------------
 c     deallocate.
 c-----------------------------------------------------------------------
-      IF(gen_flag)THEN
-         CALL cspline_dealloc(ntv)
-         CALL cspline_dealloc(ntvp)
-      ENDIF
-      IF(lar_flag)THEN
-         CALL cspline_dealloc(lar)
-         CALL cspline_dealloc(larp)
-         CALL spline_dealloc(ellipk)
-         CALL bicube_dealloc(fmnl)
-      ENDIF
+      IF(ASSOCIATED(ntv%xs)) CALL cspline_dealloc(ntv)
+      IF(ASSOCIATED(ntvp%xs)) CALL cspline_dealloc(ntvp)
+
+      IF(ASSOCIATED(kin%xs)) CALL spline_dealloc(kin)
+      IF(ASSOCIATED(ellipk%xs)) CALL spline_dealloc(ellipk)
+      IF(ASSOCIATED(ellipe%xs)) CALL spline_dealloc(ellipe)
+      IF(ASSOCIATED(fmnl%xs)) CALL bicube_dealloc(fmnl)
 
       IF(ALLOCATED(bpar)) DEALLOCATE(bpar)
       IF(ALLOCATED(xprp)) DEALLOCATE(xprp)
-      CALL spline_dealloc(kin)
             
 c-----------------------------------------------------------------------
 c     termination.

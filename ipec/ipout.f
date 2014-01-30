@@ -1402,7 +1402,7 @@ c-----------------------------------------------------------------------
      $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
 
-      WRITE(out_unit,'(1x,a16,1x,a4,8(1x,a16))')"psi","m",
+      WRITE(out_unit,'(1x,a16,1x,a4,10(1x,a16))')"psi","m",
      $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
      $     "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
      $     "imag(Bkxprp)"
@@ -1514,13 +1514,19 @@ c-----------------------------------------------------------------------
      $        "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          
-         WRITE(out_unit,'(13(1x,a16))')"psi","theta","r","z",
+         WRITE(out_unit,'(17(1x,a16))')"psi","theta","r","z",
      $        "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
      $        "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
-     $        "imag(Bkxprp)","equilb"
+     $        "imag(Bkxprp)","equilb","dequilbdpsi","dequilbdtheta",
+     $        "real(xms)","imag(xms)"
          DO istep=1,mstep
+            CALL ipeq_sol(psifac(istep))
+            CALL ipeq_contra(psifac(istep))         
+            CALL ipeq_cova(psifac(istep))
+            CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
             DO itheta=0,mthsurf
-               WRITE(out_unit,'(13(1x,es16.8))')
+               CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
+               WRITE(out_unit,'(17(1x,es16.8))')
      $              psifac(istep),theta(itheta),
      $              rs(istep,itheta),zs(istep,itheta),
      $              REAL(eulbparfout(istep,itheta)),
@@ -1531,7 +1537,9 @@ c-----------------------------------------------------------------------
      $              AIMAG(-divxprpfout(istep,itheta)),
      $              REAL(-curvfout(istep,itheta)),
      $              AIMAG(-curvfout(istep,itheta)),
-     $              equilbfun(istep,itheta)
+     $              equilbfun(istep,itheta),
+     $              eqfun%fx(1),eqfun%fy(1),
+     $              REAL(xms_fun(itheta)),AIMAG(xms_fun(itheta))
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
@@ -1709,12 +1717,13 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
      $        "mstep =",mstep,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
-         WRITE(out_unit,'(8(1x,a16))')"r","z","rvec","zvec",
-     $        "real(xno)","imag(xno)","real(bno)","imag(bno)"
+         WRITE(out_unit,'(10(1x,a16))')"psi","theta","r","z","rvec",
+     $        "zvec","real(xno)","imag(xno)","real(bno)","imag(bno)"
          
          DO istep=1,mstep
             DO itheta=0,mthsurf
-               WRITE(out_unit,'(8(1x,es16.8))')
+               WRITE(out_unit,'(10(1x,es16.8))')
+     $              psifac(istep),theta(itheta),
      $              rs(istep,itheta),zs(istep,itheta),
      $              rvecs(istep,itheta),zvecs(istep,itheta),
      $              REAL(xnofuns(istep,itheta)),
