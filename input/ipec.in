@@ -3,7 +3,7 @@
 	jsurf_in=1
 	tmag_in=0
 
-	data_flag=t
+	data_flag=f
 	data_type="surfmn"
         infile="/p/gpec/users/jpark/data/3d_field/d3d/surfmn.out.cossin.144182.03750_Intrins"
 	nmin=0
@@ -12,7 +12,10 @@
 	mmax=64
 
         harmonic_flag=f
-	cosmn(3)=1e-4
+	cosmn(10)=1e-4
+
+	mode_flag=f
+	mode=1
 
 	displacement_flag=f
 	fixed_boundary_flag=f
@@ -25,7 +28,7 @@
 	sing_spot=5e-4
 	reg_flag=t
 	reg_spot=5e-2
-	chebyshev_flag=t
+	chebyshev_flag=f
 	nche=20
 /
 &ipec_output
@@ -50,6 +53,7 @@
 	xrzphi_flag=f
 	vbrzphi_flag=f
 	vvbrzphi_flag=f
+	pbrzphi_flag=t
 
 	bin_flag=t
 	bin_2d_flag=t
@@ -60,10 +64,11 @@
 	xbrzphifun_flag=f
 	arzphifun_flag=f
 
-	ntv_flag=t
+	ntv_flag=f
 
 /
 &ipec_diagnose
 	div_flag=f
-	radvar_flag=t
+	radvar_flag=f
+	pmodbrz_flag=f
 /

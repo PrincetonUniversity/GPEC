@@ -177,7 +177,11 @@ c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
          WRITE(euler_bin_unit)3
+c-----------------------------------------------------------------------
+c     <MODIFIED>
+c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)ep
+c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
       ENDIF

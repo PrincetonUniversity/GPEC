@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: lpsixy
       CHARACTER(128) :: message
-      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta
+      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,ipert
       REAL(r8) :: sfac0
 
       REAL(r4), DIMENSION(:,:), POINTER :: rgarr,zgarr,psigarr
@@ -82,13 +82,6 @@ c-----------------------------------------------------------------------
          sn=ADJUSTL(sn)
       ELSE
          WRITE(UNIT=sn,FMT='(I2)')nn
-      ENDIF
-c-----------------------------------------------------------------------
-c     only accept mband=0.
-c-----------------------------------------------------------------------
-      IF (mband /= (mpert-1)) THEN
-         WRITE(message,'(a)')"IPEC needs full band matrix"
-         CALL ipec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     read equilibrium on flux coordinates.
@@ -428,18 +421,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set up bicube type for equilibrium mod b.
 c-----------------------------------------------------------------------
-      CALL bicube_alloc(eqfun,mpsi,mtheta,1)
+      CALL bicube_alloc(eqfun,mpsi,mtheta,3)
       eqfun%xs=rzphi%xs
       eqfun%ys=rzphi%ys
       eqfun%name="equilibrium funs"
       eqfun%xtitle="psi"
       eqfun%ytitle="theta"
-      eqfun%title=" modb "      
+      eqfun%title=(/" modb  "," divx1 "," divx2 "/)      
 c-----------------------------------------------------------------------
 c     begin loop over nodes.
 c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          CALL spline_eval(sq,sq%xs(ipsi),0)
+         q=sq%f(4)
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
             rfac=SQRT(rzphi%f(1))
@@ -477,6 +471,10 @@ c     compute equilibrium mod b.
 c-----------------------------------------------------------------------
             eqfun%fs(ipsi,itheta,1)=SQRT((chi1**2*delpsi**2+
      $           sq%f(1)**2)/(twopi*rs(ipsi,itheta))**2)
+            eqfun%fs(ipsi,itheta,2)=(SUM(v(1,:)*v(2,:))+q*v(3,3)*v(1,3))
+     $           /(jac*eqfun%fs(ipsi,itheta,1)**2)
+            eqfun%fs(ipsi,itheta,3)=(v(2,3)*v(3,3)+q*v(3,3)*v(3,3))
+     $           /(jac*eqfun%fs(ipsi,itheta,1)**2)
             jacb2(ipsi,itheta)=jac*eqfun%fs(ipsi,itheta,1)**2
          ENDDO
       ENDDO

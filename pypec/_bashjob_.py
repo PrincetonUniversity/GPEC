@@ -8,7 +8,7 @@ bashjob="""#!/bin/bash
 # --- emailhere
   
 #PBS -l nodes=1
-#PBS -l mem=8gb
+#PBS -l mem=6gb
 #PBS -l walltime=20:00:00
 #PBS -r n
 

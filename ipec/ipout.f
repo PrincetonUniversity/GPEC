@@ -910,53 +910,51 @@ c-----------------------------------------------------------------------
       ENDIF
       CALL ascii_close(out_unit)
 
-      IF (fun_flag) THEN
-         CALL ipeq_bcoords(psilim,binmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,boutmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,xinmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,xoutmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-
-         CALL iscdftb(mfac,mpert,binfun,mthsurf,binmn)     
-         CALL iscdftb(mfac,mpert,boutfun,mthsurf,boutmn)    
-         CALL iscdftb(mfac,mpert,xinfun,mthsurf,xinmn)    
-         CALL iscdftb(mfac,mpert,xoutfun,mthsurf,xoutmn)     
-         
-         CALL ascii_open(out_unit,"ipec_control_fun_n"//
+      CALL ipeq_bcoords(psilim,binmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,boutmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,xinmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,xoutmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      
+      CALL iscdftb(mfac,mpert,binfun,mthsurf,binmn)     
+      CALL iscdftb(mfac,mpert,boutfun,mthsurf,boutmn)    
+      CALL iscdftb(mfac,mpert,xinfun,mthsurf,xinmn)    
+      CALL iscdftb(mfac,mpert,xoutfun,mthsurf,xoutmn)     
+      
+      CALL ascii_open(out_unit,"ipec_control_fun_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
-     $        "Plasma response for an external perturbation on the "//
-     $        "control surface in functions"
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a12,I4)')"mthsurf =",mthsurf
-         WRITE(out_unit,'(1x,a16,1x,es16.8)')"vacuum energy =",vengy
-         WRITE(out_unit,'(1x,a16,1x,es16.8)')"surface energy =",sengy
-         WRITE(out_unit,'(1x,a16,1x,es16.8)')"plasma energy =",pengy
-         WRITE(out_unit,*)
-         
-         WRITE(out_unit,*)"jac_type = "//jac_type
-         WRITE(out_unit,*)
-         
-         WRITE(out_unit,'(10(1x,a16))')"r","z",
-     $        "real(xin)","imag(xin)","real(xout)","imag(xout)",
-     $        "real(bin)","imag(bin)","real(bout)","imag(bout)"
-         DO itheta=0,mthsurf
-            CALL bicube_eval(rzphi,psilim,theta(itheta),0)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta(itheta)+rzphi%f(2))
-            r(itheta)=ro+rfac*COS(eta)
-            z(itheta)=zo+rfac*SIN(eta)         
-            WRITE(out_unit,'(10(1x,es16.8))')r(itheta),z(itheta),
-     $           REAL(xinfun(itheta)),AIMAG(xinfun(itheta)),
-     $           REAL(xoutfun(itheta)),AIMAG(xoutfun(itheta)),
-     $           REAL(binfun(itheta)),AIMAG(binfun(itheta)),
-     $           REAL(boutfun(itheta)),AIMAG(boutfun(itheta))
-         ENDDO
-         CALL ascii_close(out_unit)  
-      ENDIF
+      WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
+     $     "Plasma response for an external perturbation on the "//
+     $     "control surface in functions"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a12,I4)')"mthsurf =",mthsurf
+      WRITE(out_unit,'(1x,a16,1x,es16.8)')"vacuum energy =",vengy
+      WRITE(out_unit,'(1x,a16,1x,es16.8)')"surface energy =",sengy
+      WRITE(out_unit,'(1x,a16,1x,es16.8)')"plasma energy =",pengy
+      WRITE(out_unit,*)
+      
+      WRITE(out_unit,*)"jac_type = "//jac_type
+      WRITE(out_unit,*)
+      
+      WRITE(out_unit,'(10(1x,a16))')"r","z",
+     $     "real(xin)","imag(xin)","real(xout)","imag(xout)",
+     $     "real(bin)","imag(bin)","real(bout)","imag(bout)"
+      DO itheta=0,mthsurf
+         CALL bicube_eval(rzphi,psilim,theta(itheta),0)
+         rfac=SQRT(rzphi%f(1))
+         eta=twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta)=ro+rfac*COS(eta)
+         z(itheta)=zo+rfac*SIN(eta)         
+         WRITE(out_unit,'(10(1x,es16.8))')r(itheta),z(itheta),
+     $        REAL(xinfun(itheta)),AIMAG(xinfun(itheta)),
+     $        REAL(xoutfun(itheta)),AIMAG(xoutfun(itheta)),
+     $        REAL(binfun(itheta)),AIMAG(binfun(itheta)),
+     $        REAL(boutfun(itheta)),AIMAG(boutfun(itheta))
+      ENDDO
+      CALL ascii_close(out_unit) 
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1925,7 +1923,7 @@ c-----------------------------------------------------------------------
          DO ipert=1,mpert
             WRITE(out_unit,'(2(1x,es16.8),1x,I4,2(1x,es16.8))')
      $           psi(ipsi),qs(ipsi),mfac(ipert),
-     $           REAL(vmn(ipsi,ipert)),AIMAG(vmn(ipsi,ipert))        
+     $           REAL(vmn(ipsi,ipert)),AIMAG(vmn(ipsi,ipert)) 
          ENDDO
       ENDDO
 
@@ -2143,7 +2141,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnimn,bnomn
 
       INTEGER :: i,j,k,l,ipert,iindex,np
-      REAL(r8) :: mid,bt0,ileft,delr,delz,cha,chb,chc,chd
+      REAL(r8) :: mid,btlim,rlim,ileft,delr,delz,cha,chb,chc,chd
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
@@ -2201,8 +2199,12 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"Computing equilibrium magnetic fields"
          ! evaluate f value for vacuum
          mid = 0.0
-         CALL spline_eval(sq,mid,0)
-         bt0 = abs(sq%f(1))/(twopi*ro)
+         CALL spline_eval(sq,psilim,0)
+         CALL bicube_eval(rzphi,psilim,mid,0)
+         rfac=SQRT(rzphi%f(1))
+         eta=twopi*rzphi%f(2)
+         rlim=ro+rfac*COS(eta)
+         btlim = abs(sq%f(1))/(twopi*rlim)
          DO i=0,nr
             DO j=0,nz
                CALL bicube_eval(psi_in,gdr(i,j),gdz(i,j),1)
@@ -2212,17 +2214,17 @@ c-----------------------------------------------------------------------
                   CALL spline_eval(sq,gdpsi(i,j),0)
                   ebp(i,j) = abs(sq%f(1))/(twopi*gdr(i,j))
                ELSE
-                  ebp(i,j) = bt0*ro/gdr(i,j)  
+                  ebp(i,j) = btlim*rlim/gdr(i,j)  
                ENDIF
             ENDDO   
          ENDDO
-      ENDIF
-      
+
       IF(ipd>0)THEN
          ebr=-ebr
          ebz=-ebz
       ENDIF
       IF(btd<0)ebp=-ebp
+      ENDIF
 
       CALL ipeq_alloc
 
@@ -2505,6 +2507,19 @@ c-----------------------------------------------------------------------
 
       ENDIF
 
+      IF (pbrzphi_flag) THEN
+         WRITE(*,*)"Computing total perturbed fields"
+         bnomn=bnomn-bnimn
+         CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
+         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+     $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
+         IF (helicity<0) THEN
+            vpbr=CONJG(vpbr)
+            vpbz=CONJG(vpbz)
+            vpbp=CONJG(vpbp)
+         ENDIF
+      ENDIF
+
       IF (vvbrzphi_flag) THEN
          WRITE(*,*)"Computing vacuum fields without plasma response"
          CALL ipvacuum_bnormal(psilim,bnimn,nr,nz)
@@ -2702,6 +2717,31 @@ c-----------------------------------------------------------------------
 
       ENDIF
 
+      IF (pbrzphi_flag) THEN
+         CALL ascii_open(out_unit,"ipec_pbrzphi_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_PBRZPHI: Vacuum field by "//
+     $        "surface currents"
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a2,8(a16))')"l","r","z",
+     $        "real(b_r)","imag(b_r)","real(b_z)","imag(b_z)",
+     $        "real(b_phi)","imag(b_phi)"
+         
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,8(es16.8))')
+     $              vgdl(i,j),vgdr(i,j),vgdz(i,j),
+     $              REAL(vpbr(i,j)),AIMAG(vpbr(i,j)),
+     $              REAL(vpbz(i,j)),AIMAG(vpbz(i,j)),
+     $              REAL(vpbp(i,j)),AIMAG(vpbp(i,j))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         
+      ENDIF
+
       IF (vvbrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_vvbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
@@ -2727,7 +2767,8 @@ c-----------------------------------------------------------------------
          
       ENDIF
 
-      DEALLOCATE(gdr,gdz,gdl,gdpsi,gdthe,gdphi)
+      IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+     $     vbrzphi_flag) DEALLOCATE(gdr,gdz,gdl,gdpsi,gdthe,gdphi)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

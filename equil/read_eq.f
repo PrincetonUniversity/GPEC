@@ -1649,4 +1649,76 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE read_eq_lez_2
+c-----------------------------------------------------------------------
+c     subprogram 24. read_eq_chease3.
+c     reads inverse equilibrium from CHEASE equilibrium code.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_chease3
+
+      INTEGER :: npsi,ipsi,nchi
+      REAL(r8) :: b0exp,r0exp,rmag,zmag,tpsio
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: norpsi,psi,t,mu0p,q
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq
+c-----------------------------------------------------------------------
+c     open file and read sizes.
+c-----------------------------------------------------------------------
+      CALL bin_open(in_unit,TRIM(eq_filename),"OLD","REWIND",
+     $     convert_type)
+      READ(in_unit)npsi,nchi,r0exp,b0exp,rmag,zmag,tpsio
+c-----------------------------------------------------------------------
+c     allocate local arrays.
+c-----------------------------------------------------------------------
+      ALLOCATE(norpsi(npsi),psi(npsi),t(npsi),mu0p(npsi),q(npsi))
+      ALLOCATE(req(npsi,nchi),zeq(npsi,nchi))
+c-----------------------------------------------------------------------
+c     read local arrays and close file.
+c-----------------------------------------------------------------------
+      DO ipsi=1,npsi
+         READ(in_unit)norpsi(ipsi),psi(ipsi),t(ipsi),mu0p(ipsi),q(ipsi)
+         READ(in_unit)req(ipsi,:)
+         READ(in_unit)zeq(ipsi,:)
+      ENDDO
+      CALL ascii_close(in_unit)
+      WRITE(*,*) "finish read"
+c-----------------------------------------------------------------------
+c     copy variables.
+c-----------------------------------------------------------------------
+      ro=rmag
+      zo=zmag
+      psio=abs(tpsio)
+c-----------------------------------------------------------------------
+c     copy 1D arrays.
+c-----------------------------------------------------------------------      
+      CALL spline_alloc(sq_in,npsi-1,4)
+      sq_in%xs=norpsi
+      sq_in%fs(:,1)=t
+      sq_in%fs(:,2)=mu0p
+      sq_in%fs(:,3)=q
+c      WRITE(*,*) sq_in%fs(:,3)
+      CALL spline_fit(sq_in,"extrap")
+c-----------------------------------------------------------------------
+c     copy 2D arrays.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,npsi-1,nchi-1,2)
+      rz_in%fs(:,:,1)=req
+      rz_in%fs(:,:,2)=zeq
+c      WRITE(*,*) "rz_in2",rz_in%fs(:,:,2)
+c-----------------------------------------------------------------------
+c     deallocate local arrays and process inverse equilibrium.
+c-----------------------------------------------------------------------
+      DEALLOCATE(norpsi,psi,t,mu0p,q)
+      DEALLOCATE(req,zeq)
+      CALL bicube_fit(rz_in,"extrap","periodic")
+c      WRITE(*,*) "finish bispline"
+      CALL inverse_run
+      WRITE(*,*) "finish inverse"
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_chease3
+
       END MODULE read_eq_mod

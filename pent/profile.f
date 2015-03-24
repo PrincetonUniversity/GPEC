@@ -552,7 +552,8 @@ c     Energy integration
 c-----------------------------------------------------------------------
                IF(xlsode_flag)THEN
                   xint = lsode_x(wdian,wdiat,welec,wdhat,wbhat,ls,
-     $                 ximag,xmax,collision,s,sigma,.FALSE.,outsurf,
+     $                 ximag,xmax,collision,s,sigma,.FALSE.,
+     $                 (outsurf .AND. energy_flag),
      $                 lbl)
                   IF(offset_flag) oint = lsode_x(wdian,wdiat,welec,
      $                 wdhat,wbhat,ls,ximag,xmax,collision,s,sigma,

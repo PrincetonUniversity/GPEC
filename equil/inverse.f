@@ -38,12 +38,15 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: me=3
       REAL(r8) :: psifac,theta,f0,f0fac,ffac,r,rfac,jacfac,w11,w12,bp,
      $     bt,b
-      REAL(r8), DIMENSION(0:rz_in%mx,0:rz_in%my) :: x,y,r2,deta
+c      REAL(r8), DIMENSION(0:rz_in%mx,0:rz_in%my) :: x,y,r2,deta
+      REAL(r8),DIMENSION(:,:),ALLOCATABLE :: x,y,r2,deta
       REAL(r8), DIMENSION(:), POINTER :: power,pmax,pmin
       TYPE(spline_type) :: spl
 c-----------------------------------------------------------------------
 c     fit input to cubic splines and diagnose.
 c-----------------------------------------------------------------------
+      ALLOCATE(x(0:rz_in%mx,0:rz_in%my),y(0:rz_in%mx,0:rz_in%my))
+      ALLOCATE(r2(0:rz_in%mx,0:rz_in%my),deta(0:rz_in%mx,0:rz_in%my))
       direct_flag=.FALSE.
       sq_in%fs(:,4)=SQRT(sq_in%xs)
       sq_in%name="  sq  "
@@ -281,6 +284,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      DEALLOCATE(x,y,r2,deta)
       RETURN
       END SUBROUTINE inverse_run
 c-----------------------------------------------------------------------

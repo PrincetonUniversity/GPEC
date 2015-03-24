@@ -103,6 +103,8 @@ c-----------------------------------------------------------------------
          CALL read_eq_chease
       CASE("chease2")
          CALL read_eq_chease2
+      CASE("chease3")
+         CALL read_eq_chease3
       CASE("chum")
          CALL read_eq_chum
       CASE("efit")

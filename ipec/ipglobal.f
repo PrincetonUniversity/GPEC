@@ -8,7 +8,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      LOGICAL :: power_flag,fft_flag,edge_flag,
+      LOGICAL :: power_flag,fft_flag,edge_flag,pbrzphi_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
      $     vbrzphi_flag,vvbrzphi_flag,div_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
@@ -21,7 +21,7 @@ c-----------------------------------------------------------------------
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
-     $     nche,nchr,nchz
+     $     nche,nchr,nchz,rsing,rnqty,rnx
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
@@ -30,7 +30,7 @@ c-----------------------------------------------------------------------
       CHARACTER(2) :: sn,ss
       CHARACTER(10) :: date,time,zone
       CHARACTER(16) :: jac_type,jac_in,jac_out,data_type
-      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile
+      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,rdconfile
 
       INTEGER, PARAMETER :: hmnum=128
       REAL(r8), PARAMETER :: gauss=0.0001
@@ -46,7 +46,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:,:), POINTER :: permeabindex,gdl
 
       REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
-     $     r,z,theta,et,ep,ee,surfee,surfei,
+     $     r,z,theta,et,ep,ee,surfee,surfei,rpsifac,
      $     surf_indev,vsurf_indev,fsurf_indev
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
      $     chperr,chpsqr,plas_indev,reluctev,indrelev,grri,grre,
@@ -98,7 +98,7 @@ c-----------------------------------------------------------------------
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
-      TYPE(solution_type), DIMENSION(:), POINTER :: soltype
+      TYPE(solution_type), DIMENSION(:), POINTER :: soltype,rsoltype
       TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
 

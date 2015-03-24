@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
       PROGRAM ipec_main
       USE ipdiag_mod
       USE ipout_mod
-
+      USE rdcon_mod
 
       IMPLICIT NONE
 
@@ -39,14 +39,14 @@ c-----------------------------------------------------------------------
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
-     $     displacement_flag,mode,coil_flag
+     $     displacement_flag,mode,coil_flag,rdconfile
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
-     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,pbrzphi_flag,divzero_flag,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,ntv_flag,xbtangent_flag
@@ -67,6 +67,7 @@ c-----------------------------------------------------------------------
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
       ivacuumfile="vacuum.bin"
+      rdconfile="gal_solution.bin"
       power_flag=.TRUE.
       fft_flag=.FALSE.
       fixed_boundary_flag=.FALSE.
@@ -108,6 +109,7 @@ c-----------------------------------------------------------------------
       brzphi_flag=.FALSE.
       xrzphi_flag=.FALSE.
       vbrzphi_flag=.FALSE.
+      pbrzphi_flag=.FALSE.      
       vvbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
@@ -148,7 +150,6 @@ c-----------------------------------------------------------------------
       m3mode=2
       resol=1e4
       smallwidth=1e-6
-
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -282,6 +283,10 @@ c-----------------------------------------------------------------------
       CALL ipresp_permeab
       CALL ipresp_reluct
 c-----------------------------------------------------------------------
+c     run and test rdcon.
+c-----------------------------------------------------------------------
+c      CALL rdcon_read
+c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
       IF (resp_flag) THEN
@@ -329,13 +334,14 @@ c-----------------------------------------------------------------------
      $        power_rcout,tmag_out)
       ENDIF
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $     vbrzphi_flag .OR. vvbrzphi_flag)
+     $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag)
      $     THEN
          IF (nrzeq_flag) THEN
             nr=mr
             nz=mz
          ENDIF
-         CALL ipeq_rzpgrid(nr,nz)
+         IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
+     $     vbrzphi_flag) CALL ipeq_rzpgrid(nr,nz)
          IF (.NOT.mode_flag) THEN
             CALL ipout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
          ELSE
@@ -396,6 +402,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (pmodbrz_flag) THEN
          CALL ipdiag_pmodbrz(mode,xspmn)
+         CALL ipdiag_pmodbmn(mode,xspmn)
       ENDIF            
       IF (rzphibx_flag) THEN
          CALL ipdiag_rzphibx(mode,xspmn)

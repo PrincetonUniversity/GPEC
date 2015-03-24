@@ -922,9 +922,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: istep,ipert,itheta
+      REAL(r8) :: g12,g22,g13,g23,g33
 
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
-     $     llagbpar_mn,divx_mn,curv_mn
+     $     llagbpar_mn,divx_mn,curv_mn,divx2_mn,curv2_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
      $     bvt_fun,bvz_fun,xmt_fun,xmz_fun,xvt_fun,xvz_fun,xmp1_fun
 
@@ -932,7 +933,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: eulbparmns,lagbparmns,
      $     eulbparfun,lagbparfun,llagbparmns,llagbparfun,xmp1mns,
      $     xspmns,xmsmns,bvtmns,bvzmns,xmtmns,xmzmns,xvtmns,xvzmns,
-     $     divxfun,curvfun,divxmns,curvmns,lllagbparmns,cdeltamns
+     $     divxfun,curvfun,divxmns,curvmns,
+     $     divx2fun,curv2fun,divx2mns,curv2mns,lllagbparmns,cdeltamns
 
       TYPE(cspline_type) :: cspl       
 c-----------------------------------------------------------------------
@@ -943,6 +945,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(eulbparmns(mstep,mpert),
      $     lagbparmns(mstep,mpert),llagbparmns(mstep,mpert),
      $     divxmns(mstep,mpert),curvmns(mstep,mpert),
+     $     divx2mns(mstep,mpert),curv2mns(mstep,mpert),
      $     lllagbparmns(mstep,mpert),cdeltamns(mstep,mpert),
      $     xspmns(mstep,mpert),xmsmns(mstep,mpert),
      $     bvtmns(mstep,mpert),bvzmns(mstep,mpert),
@@ -952,10 +955,11 @@ c-----------------------------------------------------------------------
       ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf),
      $     eqfunx(mstep,0:mthsurf),eqfuny(mstep,0:mthsurf),
      $     eqfuns(mstep,0:mthsurf),divxfun(mstep,0:mthsurf),
-     $     curvfun(mstep,0:mthsurf),eulbparfun(mstep,0:mthsurf),
+     $     curvfun(mstep,0:mthsurf),divx2fun(mstep,0:mthsurf),
+     $     curv2fun(mstep,0:mthsurf),eulbparfun(mstep,0:mthsurf),
      $     lagbparfun(mstep,0:mthsurf),llagbparfun(mstep,0:mthsurf))
 
-      CALL cspline_alloc(cspl,mthsurf,2)
+      CALL cspline_alloc(cspl,mthsurf,3)
       cspl%xs=theta
 
       CALL idcon_build(egnum,xspmn)
@@ -991,12 +995,10 @@ c-----------------------------------------------------------------------
          xvzmns(istep,:)=xvz_mn
          xmp1mns(istep,:)=xmp1_mn
 
-         CALL spline_eval(sq,psifac(istep),1)
-
          DO itheta=0,mthsurf
+
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),0)
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
-            jac=rzphi%f(4)
 
             cspl%fs(itheta,1)=xmt_fun(itheta)-
      $           (chi1/eqfun%f(1))**2/jac*
@@ -1004,20 +1006,37 @@ c-----------------------------------------------------------------------
             cspl%fs(itheta,2)=xmz_fun(itheta)-
      $           sq%f(4)*(chi1/eqfun%f(1))**2/jac*
      $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))
+            cspl%fs(itheta,3)=xmt_fun(itheta)
          ENDDO
 
          CALL cspline_fit(cspl,"periodic")
 
          DO itheta=0,mthsurf
+
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
             CALL cspline_eval(cspl,theta(itheta),1)
+ 
             rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta(itheta)+rzphi%f(2))
+            eta=twopi*(itheta/REAL(mthsurf,r8)+rzphi%f(2))
             rs(istep,itheta)=ro+rfac*COS(eta)
             zs(istep,itheta)=zo+rfac*SIN(eta)
             jac=rzphi%f(4)
             jac1=rzphi%fx(4)
+ 
+            v(1,1)=rzphi%fx(1)/(2*rfac)
+            v(1,2)=rzphi%fx(2)*twopi*rfac
+            v(1,3)=rzphi%fx(3)*rs(istep,itheta)
+            v(2,1)=rzphi%fy(1)/(2*rfac)
+            v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+            v(2,3)=rzphi%fy(3)*rs(istep,itheta)
+            v(3,3)=twopi*rs(istep,itheta)
+
+            g33=v(3,3)*v(3,3)
+            g23=v(2,3)*v(3,3)
+            g22=SUM(v(2,:)**2)
+            g12=SUM(v(1,:)*v(2,:))
+            g13=v(3,3)*v(1,3)
 
             eqfuns(istep,itheta)=eqfun%f(1)
             eqfunx(istep,itheta)=eqfun%fx(1)
@@ -1035,17 +1054,23 @@ c-----------------------------------------------------------------------
      $           (xmz_fun(itheta)/(jac*sq%f(4))-
      $           (chi1/(jac*eqfun%f(1)))**2*
      $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta)))
+
             divxfun(istep,itheta)=xmp1_fun(itheta)+
      $           (jac1/jac)*xsp_fun(itheta)+
      $           cspl%f1(1)/jac-(twopi*ifac*nn)*cspl%f(2)/jac
             divxfun(istep,itheta)=-eqfun%f(1)*divxfun(istep,itheta)
+
+            divx2fun(istep,itheta)=-jac*eqfun%f(1)*divxfun(istep,itheta)
+
             curvfun(istep,itheta)=-xsp_fun(itheta)/eqfun%f(1)*sq%f1(2)-
-     $           (xsp_fun(itheta)*eqfun%fx(1)+eqfun%fy(1)*
+     $           xsp_fun(itheta)*eqfun%fx(1)-eqfun%fy(1)*
      $           (xms_fun(itheta)/(chi1*sq%f(4))+
      $           xmz_fun(itheta)/(jac*sq%f(4))-
      $           (chi1/(jac*eqfun%f(1)))**2*
-     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta))))
+     $           (xvt_fun(itheta)+sq%f(4)*xvz_fun(itheta)))
+            curv2fun(istep,itheta)=-jac*eqfun%f(1)*curvfun(istep,itheta)
          ENDDO
+
          CALL iscdftf(mfac,mpert,eulbparfun(istep,:),
      $        mthsurf,eulbpar_mn)
          CALL iscdftf(mfac,mpert,lagbparfun(istep,:),
@@ -1056,12 +1081,18 @@ c-----------------------------------------------------------------------
      $        mthsurf,divx_mn)
          CALL iscdftf(mfac,mpert,curvfun(istep,:),
      $        mthsurf,curv_mn)
+         CALL iscdftf(mfac,mpert,divx2fun(istep,:),
+     $        mthsurf,divx2_mn)
+         CALL iscdftf(mfac,mpert,curv2fun(istep,:),
+     $        mthsurf,curv2_mn)
 
-         eulbparmns(istep,:)=eulbpar_mn
+         eulbparmns(istep,:)=eulbpar_mn !p'xsp_mn+bxcdeltamn
          lagbparmns(istep,:)=lagbpar_mn
          llagbparmns(istep,:)=llagbpar_mn
          divxmns(istep,:)=divx_mn
          curvmns(istep,:)=curv_mn
+         divx2mns(istep,:)=divx2_mn
+         curv2mns(istep,:)=curv2_mn
          lllagbparmns(istep,:)=divx_mn+curv_mn
          cdeltamns(istep,:)=divx_mn+2*curv_mn
       ENDDO
@@ -1080,14 +1111,14 @@ c-----------------------------------------------------------------------
      $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
 
-      WRITE(out_unit,'(1x,a16,1x,a4,12(1x,a16))')"psi","m",
+      WRITE(out_unit,'(1x,a16,1x,a4,14(1x,a16))')"psi","m",
      $     "real(lagb)","imag(lagb)","real(llagb)","imag(llagb)",
      $     "real(lllagb)","imag(lllagb)","real(divx)","imag(divx)",
-     $     "real(cdelta)","imag(cdelta)",
-     $     "real(xmp1mns)","imag(xmp1mns)"
+     $     "real(divx2)","imag(divx2)","real(curv)","imag(curv)",
+     $     "real(curv2)","imag(curv2)"
       DO istep=1,mstep
          DO ipert=1,mpert
-            WRITE(out_unit,'(1x,es16.8,1x,I4,12(1x,es16.8))')
+            WRITE(out_unit,'(1x,es16.8,1x,I4,14(1x,es16.8))')
      $           psifac(istep),mfac(ipert),
      $           REAL(lagbparmns(istep,ipert)),
      $           AIMAG(lagbparmns(istep,ipert)),
@@ -1097,14 +1128,15 @@ c-----------------------------------------------------------------------
      $           AIMAG(lllagbparmns(istep,ipert)),
      $           REAL(divxmns(istep,ipert)),
      $           AIMAG(divxmns(istep,ipert)),
-     $           REAL(cdeltamns(istep,ipert)),
-     $           AIMAG(cdeltamns(istep,ipert)),
-     $           REAL(xmp1mns(istep,ipert)),
-     $           AIMAG(xmp1mns(istep,ipert))
-         ENDDO
+     $           REAL(divx2mns(istep,ipert)),
+     $           AIMAG(divx2mns(istep,ipert)),
+     $           REAL(curvmns(istep,ipert)),
+     $           AIMAG(curvmns(istep,ipert)),
+     $           REAL(curv2mns(istep,ipert)),
+     $           AIMAG(curv2mns(istep,ipert))
+          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-
 
       CALL ipeq_dealloc
       DEALLOCATE(rs,zs,eulbparmns,lagbparmns,llagbparmns,cdeltamns,
@@ -1115,6 +1147,225 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_pmodbrz
+c-----------------------------------------------------------------------
+c     subprogram 10. ipdiag_pmodbmn.
+c     test and plot perturbed mod b for gpec.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipdiag_pmodbmn(egnum,xspmn)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: egnum
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
+
+      INTEGER :: ipsi,istep,ipert,jpert,itheta,dm,m1,m2
+      REAL(r8) :: psi,angle,rs,
+     $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht
+
+      COMPLEX(r8), DIMENSION(-mband:mband) :: 
+     $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
+      COMPLEX(r8), DIMENSION(mpert) :: curv_mn,divx_mn
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: divxmns,curvmns
+
+      TYPE(fspline_type) :: fmodb
+      TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
+c-----------------------------------------------------------------------
+c     compute necessary components.
+c-----------------------------------------------------------------------
+      WRITE(*,*)"Computing perturbed b field for gpec"
+
+      CALL idcon_build(egnum,xspmn)
+      CALL ipeq_alloc
+c-----------------------------------------------------------------------
+c     set up fourier-spline type.
+c-----------------------------------------------------------------------
+      CALL cspline_alloc(smats,mpsi,mpert**2)
+      CALL cspline_alloc(tmats,mpsi,mpert**2)
+      CALL cspline_alloc(xmats,mpsi,mpert**2)
+      CALL cspline_alloc(ymats,mpsi,mpert**2)
+      CALL cspline_alloc(zmats,mpsi,mpert**2)
+      smats%xs=sq%xs
+      tmats%xs=sq%xs
+      xmats%xs=sq%xs
+      ymats%xs=sq%xs
+      zmats%xs=sq%xs
+
+      CALL fspline_alloc(fmodb,mpsi,mtheta,mband,8)
+      fmodb%xs=rzphi%xs
+      fmodb%ys=rzphi%ys*twopi
+      fmodb%name="fmodb"
+      fmodb%xtitle=" psi  "
+      fmodb%ytitle="theta "
+      fmodb%title=(/" smat  "," tmat  "," xmat  ",
+     $     " ymat1 "," ymat2 "," zmat1 ", " zmat2 "," zmat3 "/)
+c-----------------------------------------------------------------------
+c     computes fourier series of geometric tensors.
+c-----------------------------------------------------------------------
+      DO ipsi=0,mpsi
+         psi=sq%xs(ipsi)
+         p1=sq%fs1(ipsi,2)
+         q=sq%fs(ipsi,4)
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            CALL bicube_eval(eqfun,psi,rzphi%ys(itheta),1)
+            angle=rzphi%ys(itheta)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(angle+rzphi%f(2))
+            rs=ro+rfac*cos(eta)
+            jac=rzphi%f(4)
+            jac1=rzphi%fx(4)
+            b2h=eqfun%f(1)**2/2
+            b2hp=eqfun%f(1)*eqfun%fx(1)
+            b2ht=eqfun%f(1)*eqfun%fy(1)
+c-----------------------------------------------------------------------
+c     compute contravariant basis vectors.
+c-----------------------------------------------------------------------
+            v(1,1)=rzphi%fx(1)/(2*rfac)
+            v(1,2)=rzphi%fx(2)*twopi*rfac
+            v(1,3)=rzphi%fx(3)*rs
+            v(2,1)=rzphi%fy(1)/(2*rfac)
+            v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+            v(2,3)=rzphi%fy(3)*rs
+            v(3,3)=twopi*rs
+
+            g12=SUM(v(1,:)*v(2,:))
+            g13=v(3,3)*v(1,3)
+            g22=SUM(v(2,:)**2)
+            g23=v(2,3)*v(3,3)
+            g33=v(3,3)*v(3,3)
+            
+            fmodb%fs(ipsi,itheta,1)=jac*(p1+b2hp)
+     $           -chi1**2*b2ht*(g12+q*g13)/(jac*b2h*2)
+            fmodb%fs(ipsi,itheta,2)=
+     $           chi1**2*b2ht*(g23+q*g33)/(jac*b2h*2)
+            fmodb%fs(ipsi,itheta,3)=jac*b2h*2
+            fmodb%fs(ipsi,itheta,4)=jac1*b2h*2-chi1**2*b2h*2*eqfun%fy(2)
+            fmodb%fs(ipsi,itheta,5)=-twopi*chi1**2/jac*(g12+q*g13)
+            fmodb%fs(ipsi,itheta,6)=chi1**2*b2h*2*eqfun%fy(3)
+            fmodb%fs(ipsi,itheta,7)=twopi*chi1**2/jac*(g23+q*g33)
+            fmodb%fs(ipsi,itheta,8)=twopi*chi1**2/jac*(g22+q*g23)
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     fit Fourier-spline type.
+c-----------------------------------------------------------------------
+      IF(fft_flag)THEN
+         CALL fspline_fit_2(fmodb,"extrap",.FALSE.)
+      ELSE
+         CALL fspline_fit_1(fmodb,"extrap",.FALSE.)
+      ENDIF
+
+      DO ipsi=0,mpsi
+         
+         q=sq%fs(ipsi,4)
+         sband(0:-mband:-1)=fmodb%cs%fs(ipsi,1:mband+1)
+         tband(0:-mband:-1)=fmodb%cs%fs(ipsi,mband+2:2*mband+2)
+         xband(0:-mband:-1)=fmodb%cs%fs(ipsi,2*mband+3:3*mband+3)
+         yband1(0:-mband:-1)=fmodb%cs%fs(ipsi,3*mband+4:4*mband+4)
+         yband2(0:-mband:-1)=fmodb%cs%fs(ipsi,4*mband+5:5*mband+5)
+         zband1(0:-mband:-1)=fmodb%cs%fs(ipsi,5*mband+6:6*mband+6)
+         zband2(0:-mband:-1)=fmodb%cs%fs(ipsi,6*mband+7:7*mband+7)
+         zband3(0:-mband:-1)=fmodb%cs%fs(ipsi,7*mband+8:8*mband+8)
+
+         sband(1:mband)=CONJG(sband(-1:-mband:-1))
+         tband(1:mband)=CONJG(tband(-1:-mband:-1))
+         xband(1:mband)=CONJG(xband(-1:-mband:-1))
+         yband1(1:mband)=CONJG(yband1(-1:-mband:-1))
+         yband2(1:mband)=CONJG(yband2(-1:-mband:-1))
+         zband1(1:mband)=CONJG(zband1(-1:-mband:-1))
+         zband2(1:mband)=CONJG(zband2(-1:-mband:-1))
+         zband3(1:mband)=CONJG(zband3(-1:-mband:-1))
+
+         ipert=0
+         DO m1=mlow,mhigh
+            ipert=ipert+1
+            DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
+               m2=m1+dm
+               singfac2=m2-nn*q
+               jpert=ipert+dm
+c-----------------------------------------------------------------------
+c     construct primitive matrices.
+c-----------------------------------------------------------------------
+               smat(ipert,jpert)=sband(dm)
+               tmat(ipert,jpert)=tband(dm)
+               xmat(ipert,jpert)=xband(dm)
+               ymat(ipert,jpert)=yband1(dm)+ifac*singfac2*yband2(dm)
+               zmat(ipert,jpert)=zband1(dm)+
+     $              ifac*(m2*zband2(dm)+nn*zband3(dm))
+            ENDDO
+         ENDDO
+
+         smats%fs(ipsi,:)=RESHAPE(smat,(/mpert**2/))
+         tmats%fs(ipsi,:)=RESHAPE(tmat,(/mpert**2/))
+         xmats%fs(ipsi,:)=RESHAPE(xmat,(/mpert**2/))
+         ymats%fs(ipsi,:)=RESHAPE(ymat,(/mpert**2/))
+         zmats%fs(ipsi,:)=RESHAPE(zmat,(/mpert**2/))
+
+      ENDDO
+
+      CALL cspline_fit(smats,"extrap")
+      CALL cspline_fit(tmats,"extrap")
+      CALL cspline_fit(xmats,"extrap")
+      CALL cspline_fit(ymats,"extrap")
+      CALL cspline_fit(zmats,"extrap")
+
+      DO istep=1,mstep
+c-----------------------------------------------------------------------
+c     compute functions on magnetic surfaces with regulation.
+c-----------------------------------------------------------------------
+         CALL ipeq_sol(psifac(istep))
+         CALL cspline_eval(smats,psifac(istep),0)
+         CALL cspline_eval(tmats,psifac(istep),0)
+         CALL cspline_eval(xmats,psifac(istep),0)
+         CALL cspline_eval(ymats,psifac(istep),0)
+         CALL cspline_eval(zmats,psifac(istep),0)
+         smat=RESHAPE(smats%f,(/mpert,mpert/))
+         tmat=RESHAPE(tmats%f,(/mpert,mpert/))
+         xmat=RESHAPE(xmats%f,(/mpert,mpert/))
+         ymat=RESHAPE(ymats%f,(/mpert,mpert/))
+         zmat=RESHAPE(zmats%f,(/mpert,mpert/))
+c-----------------------------------------------------------------------
+c     compute mod b variations.
+c-----------------------------------------------------------------------
+         curvmns(istep,:)=MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1
+         divxmns(istep,:)=MATMUL(xmat,xmp1_mn)+
+     $        MATMUL(ymat,xsp_mn)+MATMUL(zmat,xms_mn)/chi1            
+      ENDDO
+c-----------------------------------------------------------------------
+c     write data.
+c-----------------------------------------------------------------------
+      CALL ascii_open(out_unit,"ipdiag_pmodbmn_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IDIAG_PMODBMN: "//
+     $     "Components in perturbed mod b"
+      WRITE(out_unit,*)     
+      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+      WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
+      WRITE(out_unit,*)     
+
+      WRITE(out_unit,'(1x,a16,1x,a4,4(1x,a16))')"psi","m",
+     $     "real(curv)","imag(curv)","real(divx)","imag(divx)"
+      DO istep=1,mstep
+         DO ipert=1,mpert
+            WRITE(out_unit,'(1x,es16.8,1x,I4,4(1x,es16.8))')
+     $           psifac(istep),mfac(ipert),
+     $           REAL(curvmns(istep,ipert)),
+     $           AIMAG(curvmns(istep,ipert)),
+     $           REAL(divxmns(istep,ipert)),
+     $           AIMAG(divxmns(istep,ipert))
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_unit)
+
+      CALL ipeq_dealloc
+      CALL fspline_dealloc(fmodb)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipdiag_pmodbmn
 c-----------------------------------------------------------------------
 c     subprogram 11. ipdiag_rzphibx.
 c     write r,z,phi,b,x on hamada coordinates.
