@@ -1,15 +1,36 @@
 #!/usr/local/env python
 """
-MODULE
+:mod:`pypec.modplot` -- matplotlib Customizations
+=================================================
 
-Collection of modified matplotlib functions 
-and objects.
+Collection of modified matplotlib functions and objects.
 
-"""
-"""
-	@package nikplotlib
-	@author Nikolas Logan
-    @email nlogan@princeton.edu
+Examples
+--------
+
+Plot complex arguments.
+
+>>> f,ax = subplots()
+>>> lines = ax.plot(np.arange(10)*(1+0.5j),label='test')
+>>> pyplot.show()
+
+Automatically resize plots to fit labels.
+
+>>> xlbl = ax.set_xlabel('X AXIS')
+
+Plot huge data sets quickly.
+
+>>> x = np.linspace(0,9,1e5)
+>>> data = np.arange(1e5)/1.5e4+(np.random.rand(1e5)-0.5)
+>>> newline = ax.plot(x,data,label='large data set')
+
+This plots a line capped at 1000-pts by default. The maximum number 
+of points is maintained as you manipulate the axis, so zooming
+in will provide you with new points and increased detail until the
+window samples fewer than that many points in the orginal data. The
+first two lines, for instance, contain only their original 10 points
+(not 1000 interpolated points). 
+
 """
 
 #standard matplotlib modules
@@ -48,23 +69,35 @@ linestyles = [ '-' , '--' , '-.' , ':' , 'None' , ' ' ,'' ]
 show = pyplot.show
 draw = pyplot.draw
 
+
+########################################### some figure sizes (journal defualts)
+
+rcp_size = np.array(matplotlib.rcParams['figure.figsize'])
+pop_size = np.array([3.346,3.346]) #single column. Do *2 for double
+
 ########################################### modified pyplot functions
 
 def subplots(nrows=1, ncols=1, sharex=True, sharey=False, squeeze=True, subplot_kw=None, powerlim=(-3,3),useOffset=False,**fig_kw):
 	"""
 	Matplotlib subplots with default sharex=True. 
-	Additional kwargs-  powlim    : tuple. (-3,3) Axis labels use scientific notion above 10^power.
-                    useOffset : bool. (False) Axis labels use offset if range<<average.
-        Accepts standargs args and kwargs for pyplot.subplots.
-        -
-        """
+
+	Additional Key Word Arguments:
+	  powlim    : tuple. 
+	    Axis labels use scientific notion above 10^power.
+	  useOffset : bool. 
+	    Axis labels use offset if range<<average.
+        
+	Accepts standargs args and kwargs for pyplot.subplots.
+    
+
+    """
 	f,ax = pyplot.subplots(nrows=nrows,ncols=ncols,sharex=sharex,sharey=sharey,squeeze=squeeze,subplot_kw=subplot_kw,**fig_kw)
 	# customize axes and figure
 	#for a in np.array(ax).ravel():
 	#   a = modaxes(a,useOffset=useOffset)
 	f = _modfigure(f)
 	return f,ax
-subplots.__doc__ = pyplot.subplots.__doc__
+subplots.__doc__ += 'ORIGINAL DOCUMENTATION \n\n'+pyplot.subplots.__doc__
 
 def figure(num=None, figsize=None, dpi=None, facecolor=None, edgecolor=None, frameon=True, FigureClass=matplotlib.figure.Figure, **kwargs):
 	f = pyplot.figure(num=num, figsize=figsize, dpi=dpi, facecolor=facecolor, edgecolor=edgecolor, frameon=frameon, FigureClass=FigureClass, **kwargs)
@@ -72,8 +105,13 @@ def figure(num=None, figsize=None, dpi=None, facecolor=None, edgecolor=None, fra
 	return f
 
 def colorbar(mappable=None, cax=None, ax=None, use_gridspec=True,**kw):
-    pyplot.colorbar(mappable=mappable, cax=cax, ax=ax, use_gridspec=use_gridspec,**kw)
-colorbar.__doc__='Modified for default use_gridspec=True. \n - \n'+pyplot.colorbar.__doc__
+	"""
+	Modified pyplot colorbar for default use_gridspec=True.
+	
+	"""
+	cb = pyplot.colorbar(mappable=mappable, cax=cax, ax=ax, use_gridspec=use_gridspec,**kw)
+	return cb
+colorbar.__doc__+='ORIGINAL DOCUMENTATION \n\n'+pyplot.colorbar.__doc__
 
 
 
@@ -86,7 +124,10 @@ def _modfigure(f):
 	"""
 	Modplot figure object modifications. These include:
 	    1) canvas connection to modplot.key_press event funtion
-	args   - f : obj. Figure object.
+
+	Arguments:
+	  f : Figure object.
+
 	"""
 	f.canvas.mpl_connect('key_press_event',onkey) #custom hotkeys
 	#pppl Figure base doesn't have show from nomachine for some reason
@@ -118,8 +159,10 @@ if not hasattr(pyplot.Figure,"_orig_show"): #prevent recursion when reloaded
 pyplot.Figure.show = _figure_show
 
 #colorbars are axes (for tight_layout)
-def _figure_colorbar(self, mappable, cax=None, ax=None, use_gridspec=True,**kw): 
-    self._orig_colorbar(mappable, cax=cax, ax=ax, use_gridspec=use_gridspec,**kw)
+def _figure_colorbar(self, mappable, cax=None, ax=None, use_gridspec=True,**kw):
+	cb = self._orig_colorbar(mappable, cax=cax, ax=ax,
+							 use_gridspec=use_gridspec,**kw)
+	return cb
 _figure_colorbar.__doc__='Modified default use_gridspec=True. \n - \n'+pyplot.colorbar.__doc__
 if not hasattr(pyplot.Figure,"_orig_colorbar"): #prevent recursion when reloaded
     pyplot.Figure._orig_colorbar = copy.deepcopy(pyplot.Figure.colorbar)
@@ -134,8 +177,15 @@ def printlines(self,filename,squeeze=False):
 	points in the (first) axis, and other lines are interpolated
 	if their x values do not match. Column lables are the
 	line labels and xlabel.
-	args   - filename : str. File to print to. 
-	returns           : bool. True.
+
+	Arguments:
+	  filename : str. 
+	    Path to print to.
+ 
+	returns
+	  bool. 
+	    True.
+
 	"""
 	with open(filename,'w') as f:
 		data=[]
@@ -154,24 +204,25 @@ def printlines(self,filename,squeeze=False):
 			if samettle:
 				f.write(ttle+'\n\n')
 			if sameylbl:
-				f.write('  ylabel = '+ylbl.translate(None,' \${}')+'\n\n')
+				f.write('  ylabel = '+ylbl.encode().translate(None,' \${}')+'\n\n')
 
 		for a in self.get_axes():
+			if not a.lines: continue
 			if not squeeze: 
 				data = []
 				f.write('\n'+a.get_title()+'\n\n')
-				f.write('  ylabel = '+a.get_ylabel().translate(None,' \${}')+'\n\n')
+				f.write('  ylabel = '+a.get_ylabel().encode().translate(None,' \${}')+'\n\n')
 			# use x-axis from line with greatest number of pts
 			xs = [l.get_xdata() for l in a.lines]
 			longest = np.array([len(x) for x in xs]).argmax()
 			if not data: 
 				data.append(xs[longest])
-				f.write('{0:>25s}'.format(a.get_xlabel().translate(None,' \${}')))
+				f.write('{0:>25s}'.format(a.get_xlabel().encode().translate(None,' \${}')))
 			# label and extrapolate each line
 			for line in a.lines:
-				label = line.get_label().translate(None,' \${}') 
+				label = line.get_label().encode().translate(None,' \${}') 
 				if squeeze and not sameylbl: 
-					label = a.get_ylabel().translate(None,' \${}')+label
+					label = a.get_ylabel().encode().translate(None,' \${}')+label
 				f.write('{0:>25s}'.format(label))
 				# standard axis
 				x,y = line.get_xdata(),line.get_ydata()
@@ -182,14 +233,18 @@ def printlines(self,filename,squeeze=False):
 					data.append(y)
 			if not squeeze:
 				f.write('\n ')
-				data=np.array(data).T
+				if np.any(np.iscomplex(data)):
+					print("WARNING: Complex data may be lost.")
+				data=np.array(data).real.T
 				for row in data:
 					row.tofile(f,sep=' ',format='%24.9E')
 					f.write('\n ')
 				f.write('\n')
 		if squeeze:
 			f.write('\n ')
-			data=np.array(data).T
+			if np.any(np.iscomplex(data)):
+				print("WARNING: Complex data may be lost.")
+			data=np.array(data).real.T
 			for row in data:
 				row.tofile(f,sep=' ',format='%24.9E')
 				f.write('\n ')
@@ -211,8 +266,16 @@ def _modaxes(ax,useOffset=False):
 	    3) New downsample instance, connected to x-axis rescale
 	    4) New plot instance with complex arg handling
 	    
-	args   - ax        : obj. Axes object.
-	kwargs - useOffset : bool. Offset axis zero.
+	Arguments:   
+	  ax        : obj. 
+	    Axes object.
+	Key Word Arguments:
+	  useOffset : bool. 
+	    Offset axis zero.
+
+	returns
+	  Axis object.
+
 	"""
 	afmt = matplotlib.ticker.ScalarFormatter(useOffset=useOffset)
 	afmt.set_powerlimits((-3,3))
@@ -226,8 +289,14 @@ def _axes_downsample(self,ax,npts=1000):
 	"""
 	Attempt to down sample original data in
 	each Line2D object in lines.
-	args -   ax   : obj. Initialized Axes object containing lines
-	kwargs - npts : int. Number of points plotted in each line
+
+	Arguments: 
+	  ax   : obj. 
+	    Initialized Axes object containing lines
+	Key Word Arguments: 
+	  npts : int. 
+	    Number of points plotted in each line
+
 	"""
 	for l in ax.lines:
 		try:
@@ -243,17 +312,15 @@ def _axes_plot(self, *args, **kwargs):
 	Modified axes line plotting, with suport for complex plotting.
 	Original matplotlib Axes plot method now located at _orig_plot.
 	All original plot args and kwargs accepted.
-	-
+	
 	"""
 	linestyles = matplotlib.lines.lineStyles.keys()
-	newargs = map(np.real,args)
+	newargs = map(_real_arg,args)
 	lines1=self._orig_plot(*newargs,**kwargs)
 	lines2 = []
 	if any([any(np.ravel(np.iscomplex(arg))) for arg in args]):
-		if len(args)==1:
-			newargs = np.imag(args)
-		else:
-			newargs[1]=np.imag(args[1])
+		newargs = [args[0]]
+		if len(args)>1: newargs+=map(_imag_arg,args[1:])
 		lines2=self._orig_plot(*newargs,**kwargs)
 		for l1,l2 in zip(lines1,lines2): 
 			l2.set_color(l1.get_color())
@@ -269,6 +336,23 @@ if not hasattr(pyplot.Axes,"_orig_plot"): #prevent recursion when reloaded
     pyplot.Axes._orig_plot = copy.deepcopy(pyplot.Axes.plot)
 pyplot.Axes.plot = _axes_plot
 
+def _imag_arg(arg):
+	#if type(arg)==str:
+	#	return arg
+	#else:
+	if np.any(np.iscomplex(arg)):
+		return np.imag(arg)
+	else:
+		return arg
+
+def _real_arg(arg):
+	#if type(arg)==str:
+	#	return arg
+	#else:
+	if np.any(np.iscomplex(arg)):
+		return np.real(arg)
+	else:
+		return arg
 
 def _center_axes(ax):
 	ax.spines['left'].set_position('center')
@@ -288,10 +372,13 @@ pyplot.Axes.center_axes = _center_axes
 
 # downsample data from the full set used to initialize the line
 def line_downsample(line,npts=1000):
-        """
-        Downsample line data for increased plotting speed.
-        kwargs - npts : int. Number of data points within axes xlims.
-        """
+	"""
+	Downsample line data for increased plotting speed.
+
+	Key Word Arguments: 
+	  npts : int. 
+	    Number of data points within axes xlims.
+	"""
 	lims = line.axes.get_xlim()
 	if not hasattr(line,'_xinit'):
 		line._xinit = line.get_xdata()
@@ -317,10 +404,19 @@ def plot_axes(ax, fig=None, geometry=(1,1,1)):
 	Re-create a given axis in a new figure. This allows, for instance,
 	a subplot to be moved to its own figure where it can be manipulated
 	and/or saved independent of the original.
-	args   - ax : obj. An initialized Axes object  
-	kwargs - fig: obj. A figure in which to re-create the axis
-  	       - geometry : tuple. Axes geometry of re-created axis
-    returns           : figure.
+
+	Arguments:   
+	  ax : obj. 
+	    An initialized Axes object  
+	Key Word Arguments: 
+	  fig: obj. 
+	    A figure in which to re-create the axis
+	  geometry : tuple. 
+	    Axes geometry of re-created axis
+    
+    returns    
+	  Figure.
+
 	"""
 	if fig is None:
 		fig = figure()
@@ -346,6 +442,7 @@ def onkey(event):
     to custom functions.
 
     Matplotlib defaults (may be changed in matplotlibrc):
+
     keymap.fullscreen : f               # toggling
     keymap.home : h, r, home            # home or reset mnemonic
     keymap.back : left, c, backspace    # forward / backward keys to enable
@@ -360,8 +457,10 @@ def onkey(event):
     keymap.all_axes : a                 # enable all axes
 
     My custom function mapping:
+
     popaxes : n                         #Creates new figure with current axes
     tighten : t                         #Call tight_layout bound method for figure
+
 	"""
 	if event.key=='n':
 		if event.inaxes:

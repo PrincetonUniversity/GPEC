@@ -6,7 +6,7 @@ Edit this file to set the defaults for your pypec package.
 """
 
 ######################### gpec run default keyword arguments
-email    = 'jpark@pppl.gov'
+email    = 'nlogan@pppl.gov'
 mailon   = 'ae'
 rundir   = 'LinuxLahey64'
 

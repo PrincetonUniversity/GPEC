@@ -949,10 +949,10 @@ c-----------------------------------------------------------------------
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)         
          WRITE(out_unit,'(10(1x,es16.8))')r(itheta),z(itheta),
-     $        REAL(xinfun(itheta)),AIMAG(xinfun(itheta)),
-     $        REAL(xoutfun(itheta)),AIMAG(xoutfun(itheta)),
-     $        REAL(binfun(itheta)),AIMAG(binfun(itheta)),
-     $        REAL(boutfun(itheta)),AIMAG(boutfun(itheta))
+     $        REAL(xinfun(itheta)),-helicity*AIMAG(xinfun(itheta)),
+     $        REAL(xoutfun(itheta)),-helicity*AIMAG(xoutfun(itheta)),
+     $        REAL(binfun(itheta)),-helicity*AIMAG(binfun(itheta)),
+     $        REAL(boutfun(itheta)),-helicity*AIMAG(boutfun(itheta))
       ENDDO
       CALL ascii_close(out_unit) 
 c-----------------------------------------------------------------------
@@ -1436,7 +1436,7 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
 	 
-	          chea(:,0)=chea(:,0)/2.0
+	 chea(:,0)=chea(:,0)/2.0
 
          CALL ascii_open(out_unit,"ipec_pmodb_chebyshev_n"//
      $     TRIM(sn)//".out","UNKNOWN")
@@ -1528,16 +1528,17 @@ c-----------------------------------------------------------------------
      $              psifac(istep),theta(itheta),
      $              rs(istep,itheta),zs(istep,itheta),
      $              REAL(eulbparfout(istep,itheta)),
-     $              AIMAG(eulbparfout(istep,itheta)),
+     $              -helicity*AIMAG(eulbparfout(istep,itheta)),
      $              REAL(lagbparfout(istep,itheta)),
-     $              AIMAG(lagbparfout(istep,itheta)),
+     $              -helicity*AIMAG(lagbparfout(istep,itheta)),
      $              REAL(-divxprpfout(istep,itheta)),
-     $              AIMAG(-divxprpfout(istep,itheta)),
+     $              -helicity*AIMAG(-divxprpfout(istep,itheta)),
      $              REAL(-curvfout(istep,itheta)),
-     $              AIMAG(-curvfout(istep,itheta)),
+     $              -helicity*AIMAG(-curvfout(istep,itheta)),
      $              equilbfun(istep,itheta),
      $              eqfun%fx(1),eqfun%fy(1),
-     $              REAL(xms_fun(itheta)),AIMAG(xms_fun(itheta))
+     $              REAL(xms_fun(itheta)),
+     $              -helicity*AIMAG(xms_fun(itheta))
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
@@ -1567,9 +1568,11 @@ c-----------------------------------------------------------------------
          WRITE(bin_2d_unit)REAL(rs(9:mstep,1:mthsurf),4),
      $        REAL(zs(9:mstep,1:mthsurf),4)
          WRITE(bin_2d_unit)REAL(REAL(eulbparfout(9:mstep,1:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(eulbparfout(9:mstep,1:mthsurf)),4)
+         WRITE(bin_2d_unit)
+     $        REAL(-helicity*AIMAG(eulbparfout(9:mstep,1:mthsurf)),4)
          WRITE(bin_2d_unit)REAL(REAL(lagbparfout(9:mstep,1:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(lagbparfout(9:mstep,1:mthsurf)),4)
+         WRITE(bin_2d_unit)
+     $        REAL(-helicity*AIMAG(lagbparfout(9:mstep,1:mthsurf)),4)
          CALL bin_close(bin_2d_unit)
       ENDIF
 
@@ -1725,9 +1728,9 @@ c-----------------------------------------------------------------------
      $              rs(istep,itheta),zs(istep,itheta),
      $              rvecs(istep,itheta),zvecs(istep,itheta),
      $              REAL(xnofuns(istep,itheta)),
-     $              AIMAG(xnofuns(istep,itheta)),
+     $              -helicity*AIMAG(xnofuns(istep,itheta)),
      $              REAL(bnofuns(istep,itheta)),
-     $              AIMAG(bnofuns(istep,itheta))        
+     $              -helicity*AIMAG(bnofuns(istep,itheta))        
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
@@ -1759,9 +1762,11 @@ c-----------------------------------------------------------------------
          WRITE(bin_2d_unit)REAL(rs(9:mstep,0:mthsurf),4),
      $        REAL(zs(9:mstep,0:mthsurf),4)
          WRITE(bin_2d_unit)REAL(REAL(xnofuns(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(xnofuns(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)
+     $        REAL(-helicity*AIMAG(xnofuns(9:mstep,0:mthsurf)),4)
          WRITE(bin_2d_unit)REAL(REAL(bnofuns(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(bnofuns(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)
+     $        REAL(-helicity*AIMAG(bnofuns(9:mstep,0:mthsurf)),4)
          CALL bin_close(bin_2d_unit)
          
          ximax=MAXVAL(ABS(xnofuns))
@@ -1792,8 +1797,9 @@ c-----------------------------------------------------------------------
      $        "pflux_im_2d.bin","UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)1,0
          WRITE(bin_2d_unit)mstep-9,mthsurf
-         WRITE(bin_2d_unit)REAL(AIMAG(rss(9:mstep,0:mthsurf)),4),
-     $        REAL(AIMAG(zss(9:mstep,0:mthsurf)),4)
+         WRITE(bin_2d_unit)
+     $        REAL(-helicity*AIMAG(rss(9:mstep,0:mthsurf)),4),
+     $        REAL(-helicity*AIMAG(zss(9:mstep,0:mthsurf)),4)
          WRITE(bin_2d_unit)REAL(psis(9:mstep,0:mthsurf),4)
          CALL bin_close(bin_2d_unit)
 

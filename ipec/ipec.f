@@ -39,7 +39,8 @@ c-----------------------------------------------------------------------
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
-     $     displacement_flag,mode,coil_flag,rdconfile
+     $     displacement_flag,mode,coil_flag,rdconfile,
+     $     ip_direction,bt_direction
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
@@ -261,6 +262,8 @@ c-----------------------------------------------------------------------
       finmn=0
       ipd=1.0
       btd=1.0
+      IF(ip_direction=="negative")ipd=-1.0
+      IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
       IF (coil_flag) THEN
          WRITE(*,*)"Calculating field on the boundary from coils"
