@@ -48,7 +48,7 @@ c-----------------------------------------------------------------------
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vvbrzphi_flag,pbrzphi_flag,divzero_flag,
-     $     bin_flag,bin_2d_flag,fun_flag,flux_flag,
+     $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,ntv_flag,xbtangent_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
@@ -142,6 +142,7 @@ c-----------------------------------------------------------------------
       cas3d_flag=.FALSE.
       test_flag=.FALSE.
       ntv_flag=.FALSE.
+      bwp_pest_flag=.FALSE.
 
       majr=10.0
       minr=1.0

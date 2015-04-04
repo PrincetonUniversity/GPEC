@@ -1581,7 +1581,6 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".bin","UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)mstep,mthsurf
          WRITE(bin_2d_unit)lagbparfun/equilbfun
-         !WRITE(bin_2d_unit)-divxprpfun/equilbfun !large near rat surf
          WRITE(bin_2d_unit)-(lagbparfun-curvfun)/equilbfun
          CALL bin_close(bin_2d_unit)
 
@@ -1590,7 +1589,6 @@ c-----------------------------------------------------------------------
      $        "UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)mstep,mpert
          WRITE(bin_2d_unit)lagbparmns/eqfun%f(1)
-         !WRITE(bin_2d_unit)divxprpmns/eqfun%f(1) !large near rat surf
          WRITE(bin_2d_unit)-(lagbparmns-curvmns)/eqfun%f(1)
          CALL bin_close(bin_2d_unit)
       ENDIF
@@ -1611,14 +1609,18 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ipert,iindex,itheta
+      INTEGER :: i,istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax,area
 
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,rvecs,zvecs
+
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
+
       COMPLEX(r8), DIMENSION(mstep,mpert) :: xmns,ymns,
      $     xnomns,bnomns,bwpmns
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
+      COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
+      COMPLEX(r8), DIMENSION(mstep,lmpert) :: pwpmns
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,rvecs,zvecs
       COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
      $     xnofuns,bnofuns
 c-----------------------------------------------------------------------
@@ -1668,6 +1670,19 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,xnofuns(istep,:),mthsurf,xno_mn)
          CALL iscdftf(mfac,mpert,bnofuns(istep,:),mthsurf,bno_mn)
          bwp_mn=bwp_mn/area
+
+         IF (bwp_pest_flag) THEN
+            pwpmn=0
+            DO i=1,mpert
+               IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+                  pwpmn(mlow-lmlow+i)=bwp_mn(i)
+               ENDIF
+            ENDDO
+            CALL ipeq_bcoords(psifac(istep),pwpmn,lmfac,lmpert,
+     $           2,0,0,0,0,1)
+            pwpmns(istep,:)=pwpmn
+         ENDIF            
+
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             bwp_mn=bno_mn
             CALL ipeq_bcoords(psifac(istep),xno_mn,mfac,mpert,
@@ -1687,7 +1702,7 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"ipec_xbnormal_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPOUT_XBNROMAL: "//
+      WRITE(out_unit,*)"IPEC_XBNROMAL: "//
      $     "Normal components of displacement and field"
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -1708,10 +1723,32 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 
+      IF (bwp_pest_flag) THEN
+         CALL ascii_open(out_unit,"ipec_bnormal_pest_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_BNORMAL_PEST: "//
+     $        "Normal components of field in pest coordinates"
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
+         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $        "mstep =",mstep,"mpert =",lmpert,"mthsurf =",mthsurf
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
+     $        "real(bwp)","imag(bwp)"
+         
+         DO istep=1,mstep
+            DO ipert=1,lmpert
+               WRITE(out_unit,'(2(1x,es16.8),1x,I4,6(1x,es16.8))')
+     $              psifac(istep),qfac(istep),lmfac(ipert),
+     $              REAL(pwpmns(istep,ipert)),AIMAG(pwpmns(istep,ipert))        
+            ENDDO
+         ENDDO
+      ENDIF
+
       IF (fun_flag) THEN
          CALL ascii_open(out_unit,"ipec_xbnormal_fun_n"//
      $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"IPOUT_XBNROMAL_FUN: "//
+         WRITE(out_unit,*)"IPEC_XBNROMAL_FUN: "//
      $        "Normal components of displacement and field in functions"
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -1833,7 +1870,7 @@ c-----------------------------------------------------------------------
          
          CALL ascii_open(out_unit,"ipec_xbnormal_flux_n"//
      $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"IPOUT_XBNROMAL_FLUX: "//
+         WRITE(out_unit,*)"IPEC_XBNROMAL_FLUX: "//
      $        "Perturbed flux surfaces"
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -1875,9 +1912,11 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
 
       COMPLEX(r8), DIMENSION(mpert) :: vwpmn
+      COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
       REAL(r8), DIMENSION(cmpsi) :: qs
       REAL(r8), DIMENSION(cmpsi,mpert) :: xmns,ymns
       COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vmn
+      COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: pmn
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -1886,10 +1925,27 @@ c-----------------------------------------------------------------------
       psi=(/(ipsi,ipsi=0,cmpsi)/)/REAL(cmpsi,r8)
       psi=psilow+(psilim-psilow)*SIN(psi*pi/2)**2
       ALLOCATE(vcmn(cmpert))
+      vmn=0
+      pmn=0
 
       DO ipsi=1,cmpsi
          CALL spline_eval(sq,psi(ipsi),0)
          qs(ipsi)=sq%f(4)
+
+         IF (bwp_pest_flag) THEN
+            CALL field_bs_psi(psi(ipsi),vcmn,0)
+            DO i=1,cmpert
+               IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
+                  pmn(ipsi,cmlow-lmlow+i)=vcmn(i)
+               ENDIF
+            ENDDO
+            pwpmn=0
+            pwpmn=pmn(ipsi,:)
+            CALL ipeq_bcoords(psi(ipsi),pwpmn,lmfac,lmpert,
+     $           2,0,0,0,0,1)             
+            pmn(ipsi,:)=pwpmn            
+         ENDIF
+         
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
@@ -1897,6 +1953,7 @@ c-----------------------------------------------------------------------
                   vmn(ipsi,cmlow-mlow+i)=vcmn(i)
                ENDIF
             ENDDO
+            vwpmn=0
             vwpmn=vmn(ipsi,:)
             CALL ipeq_bcoords(psi(ipsi),vwpmn,mfac,mpert,
      $           rout,bpout,bout,rcout,tout,1)  
@@ -1915,7 +1972,7 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"ipec_vbnormal_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPOUT_VBNROMAL: "//
+      WRITE(out_unit,*)"IPEC_VBNROMAL: "//
      $     "Normal components of coil field"
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -1932,6 +1989,28 @@ c-----------------------------------------------------------------------
      $           REAL(vmn(ipsi,ipert)),AIMAG(vmn(ipsi,ipert)) 
          ENDDO
       ENDDO
+
+      IF (bwp_pest_flag) THEN
+         CALL ascii_open(out_unit,"ipec_vbnormal_pest_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_VBNROMAL_PEST: "//
+     $        "Normal components of coil field in pest coordinates"
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
+         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $        "mpsi =",cmpsi,"mpert =",lmpert,"mthsurf =",mthsurf
+         WRITE(out_unit,*)     
+         WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
+     $        "real(vb)","imag(vb)"
+         
+         DO ipsi=1,cmpsi
+            DO ipert=1,lmpert
+               WRITE(out_unit,'(2(1x,es16.8),1x,I4,2(1x,es16.8))')
+     $              psi(ipsi),qs(ipsi),lmfac(ipert),
+     $              REAL(pmn(ipsi,ipert)),AIMAG(pmn(ipsi,ipert)) 
+            ENDDO
+         ENDDO
+      ENDIF
 
       IF (bin_flag) THEN
          CALL bin_open(bin_unit,
@@ -2053,7 +2132,7 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"ipec_xbtangent_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPOUT_XBNROMAL: "//
+      WRITE(out_unit,*)"IPEC_XBNROMAL: "//
      $     "Tangential components of displacement and field"
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -2075,7 +2154,7 @@ c-----------------------------------------------------------------------
       IF (fun_flag) THEN
          CALL ascii_open(out_unit,"ipec_xbtangent_fun_n"//
      $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"IPOUT_XBTANGENT_FUN: "//
+         WRITE(out_unit,*)"IPEC_XBTANGENT_FUN: "//
      $        "Tangential components of displacement "//
      $        "and field in functions"
          WRITE(out_unit,*)     
@@ -2949,7 +3028,7 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"ipec_xbrzphi_fun_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPOUT_XBRZPHI_FUN: "//
+      WRITE(out_unit,*)"IPEC_XBRZPHI_FUN: "//
      $     "Rzphi components of displacement and field in functions"
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -3080,7 +3159,7 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"ipec_arzphi_fun_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPOUT_ARZPHI_FUN: "//
+      WRITE(out_unit,*)"IPEC_ARZPHI_FUN: "//
      $     "Rzphi components of vector potential in functions"
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out

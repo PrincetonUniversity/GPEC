@@ -1,24 +1,27 @@
+&equil_control
+	eq_type="efit"
+   	eq_filename = "/p/gpec/users/jpark/data/equilibria/efit/142301_C94/EQDSK.OUT.CHEASE.NSTX_142301_C94_7800_7950.06"
+	eq_filename="/p/gpec/users/jpark/data/equilibria/efit/g144182.03750.qo105_d3d"
+	jac_type="hamada"
+	power_bp=0
+	power_b=0
+	power_r=0
 
-&EQUIL_CONTROL
-   eq_type = "soloviev"
-   eq_filename = "sol.in"
-   jac_type = "pest"
-   grid_type = "ldp"
-   psilow = 0.0001
-   psihigh = 0.99999
-   mpsi = 128
-   mtheta = 256
-   newq0 = 0
-   input_only = .FALSE.
+	grid_type="ldp"
+	psilow=1e-3
+	psihigh=0.99
+	mpsi=128
+	mtheta=256
+	newq0=0
+	input_only=f
 /
-&EQUIL_OUTPUT
-   gse_flag = .TRUE.
-   out_eq_1d = .FALSE.
-   bin_eq_1d = .FALSE.
-   out_eq_2d = .FALSE.
-   bin_eq_2d = .TRUE.
-   out_2d = .FALSE.
-   bin_2d = .TRUE.
-   dump_flag = .FALSE.
+&equil_output
+	gse_flag=t
+	out_eq_1d=f
+	bin_eq_1d=f
+	out_eq_2d=f
+	bin_eq_2d=t
+	out_2d=f
+	bin_2d=t
+	dump_flag=f
 /
-

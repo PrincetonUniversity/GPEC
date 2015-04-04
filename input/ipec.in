@@ -36,15 +36,16 @@
 	jsurf_out=0
 	tmag_out=1
 
-	resp_flag=f
+	resp_flag=t
 	singcoup_flag=f
 
-	singfld_flag=f
-	vsingfld_flag=f
-	pmodb_flag=f
-	xbnormal_flag=f
-	vbnormal_flag=f
+	singfld_flag=t
+	vsingfld_flag=t
+	pmodb_flag=t
+	xbnormal_flag=t
+	vbnormal_flag=t
 
+	bwp_pest_flag=t
 	fun_flag=f
 	flux_flag=f
 
@@ -53,7 +54,7 @@
 	xrzphi_flag=f
 	vbrzphi_flag=f
 	vvbrzphi_flag=f
-	pbrzphi_flag=t
+	pbrzphi_flag=f
 
 	bin_flag=t
 	bin_2d_flag=t
@@ -64,7 +65,7 @@
 	xbrzphifun_flag=f
 	arzphifun_flag=f
 
-	ntv_flag=f
+	ntv_flag=t
 
 /
 &ipec_diagnose
