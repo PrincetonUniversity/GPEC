@@ -1675,7 +1675,7 @@ c-----------------------------------------------------------------------
             pwpmn=0
             DO i=1,mpert
                IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-                  pwpmn(mlow-lmlow+i)=bwp_mn(i)
+                  pwpmn(mlow-lmlow+i)=bno_mn(i)
                ENDIF
             ENDDO
             CALL ipeq_bcoords(psifac(istep),pwpmn,lmfac,lmpert,
