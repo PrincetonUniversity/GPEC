@@ -213,7 +213,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*) 
       ENDDO
 
-      b=a
+      b=permeabmats(resp_index,:,:)
       WRITE(out_unit,*)"Permeability matrix"
       WRITE(out_unit,*) 
       DO i=1,mpert

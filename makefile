@@ -56,7 +56,7 @@ rundir_x:
 	cp -f ipec/ipec rundir/`uname`$(FORTRAN)
 	cp -f pent/pent rundir/`uname`$(FORTRAN)
 	cp -f pent/*.dat rundir/`uname`$(FORTRAN)
-	cp -f input/*.in* rundir/`uname`$(FORTRAN)
+#	cp -f input/*.in* rundir/`uname`$(FORTRAN)
 	cp -f input/mput rundir/`uname`$(FORTRAN)
 	cp -f draw/drawdcon.in rundir/`uname`$(FORTRAN)
 	cp -f draw/drawcrit.in rundir/`uname`$(FORTRAN)

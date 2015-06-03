@@ -490,7 +490,7 @@ c-----------------------------------------------------------------------
 c     take into account reverse-theta in vacuum code.
 c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
-      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
+      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn) !!
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
       CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
       CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)      
@@ -528,8 +528,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     normalize chi functions of vacuum.
 c-----------------------------------------------------------------------
-      chi_fun=chi_fun/twopi**2
-      che_fun=-che_fun/twopi**2
+      chi_fun=chi_fun/(twopi**2)
+      che_fun=-che_fun/(twopi**2)
       CALL iscdftf(mfac,mpert,chi_fun,mthsurf,chi_mn)
       CALL iscdftf(mfac,mpert,che_fun,mthsurf,che_mn)
 c-----------------------------------------------------------------------
