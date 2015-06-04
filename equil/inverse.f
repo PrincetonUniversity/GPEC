@@ -134,7 +134,7 @@ c-----------------------------------------------------------------------
       IF(grid_type == "original")mpsi=sq_in%mx
       CALL spline_alloc(sq,mpsi,4)
       sq%name="  sq  "
-      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "," rho  "/)
+      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
 c     set up radial grid
 c-----------------------------------------------------------------------

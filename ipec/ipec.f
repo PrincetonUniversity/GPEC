@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
-     $     arzphifun_flag,xbrzphifun_flag
+     $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -38,22 +38,24 @@ c-----------------------------------------------------------------------
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
-     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
-     $     displacement_flag,mode,coil_flag,rdconfile,
-     $     ip_direction,bt_direction
+     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,svd_flag,svdfac,
+     $     displacement_flag,mode,coil_flag,
+     $     ip_direction,bt_direction,rdconfile,
+     $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode ! LOGAN
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
-     $     vbrzphi_flag,vvbrzphi_flag,pbrzphi_flag,divzero_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
-     $     vsingfld_flag,vbnormal_flag,ntv_flag,xbtangent_flag
+     $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
+     $     xclebsch_flag,pbrzphi_flag,verbose
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,pmodbrz_flag,
-     $     rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
+     $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
      $     cas3d_flag,test_flag,resol,smallwidth
@@ -75,12 +77,22 @@ c-----------------------------------------------------------------------
       data_flag=.FALSE.
       harmonic_flag=.FALSE.
       mode_flag=.FALSE.
+      svd_flag=.FALSE.
+      svdfac(0) = 1
+      svdfac(1:) = 0
       displacement_flag=.FALSE.
       mthsurf0=1
       nmin=1
       nmax=1
       mmin=-128
       mmax=128
+      pmode =0
+      p1mode =0
+      rmode =0
+      smode =0
+      fmode =0
+      dmode =0
+      d1mode=0
 
       resp_index=0
       sing_spot=5e-4
@@ -102,6 +114,7 @@ c-----------------------------------------------------------------------
       xbnormal_flag=.TRUE.
       vbnormal_flag=.FALSE.
       xbtangent_flag=.FALSE.
+      xclebsch_flag=.FALSE.
       rstep=0
       nrzeq_flag=.FALSE.
       nr=64
@@ -112,6 +125,7 @@ c-----------------------------------------------------------------------
       vbrzphi_flag=.FALSE.
       pbrzphi_flag=.FALSE.      
       vvbrzphi_flag=.FALSE.
+      pbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
       fun_flag=.FALSE.
@@ -122,6 +136,8 @@ c-----------------------------------------------------------------------
       ENDDO
       arzphifun_flag=.FALSE.
       xbrzphifun_flag=.FALSE.
+      bwp_pest_flag=.FALSE.
+      verbose = .TRUE.
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.
@@ -130,6 +146,7 @@ c-----------------------------------------------------------------------
       div_flag=.FALSE.
       xbst_flag=.FALSE.
       pmodbrz_flag=.FALSE.
+      pmodbmn_flag=.FALSE.
       rzphibx_flag=.FALSE.
       radvar_flag=.TRUE.
       eigen_flag=.FALSE.
@@ -141,7 +158,7 @@ c-----------------------------------------------------------------------
       m3d_flag=.FALSE.
       cas3d_flag=.FALSE.
       test_flag=.FALSE.
-      ntv_flag=.FALSE.
+      eigm_flag=.FALSE.
       bwp_pest_flag=.FALSE.
 
       majr=10.0
@@ -155,7 +172,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Starting ipec calculations - v3.00"
+      IF(verbose) WRITE(*,*)"Starting ipec calculations - v3.00"
       CALL ascii_open(in_unit,"ipec.in","OLD")
       READ(in_unit,NML=ipec_input)
       READ(in_unit,NML=ipec_control)  
@@ -227,7 +244,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set parameters from inputs.
 c-----------------------------------------------------------------------
-      IF (eqbrzphi_flag) psixy=1
+      IF (brzphi_flag .OR. vbrzphi_flag .OR. eqbrzphi_flag) psixy=1
+      IF (xrzphi_flag) psixy=1
       IF (rstep==0) rstep=mstep
       IF (nchr==20) nchr=nche
       IF (nchz==20) nchz=nche
@@ -267,7 +285,8 @@ c-----------------------------------------------------------------------
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
       IF (coil_flag) THEN
-         WRITE(*,*)"Calculating field on the boundary from coils"
+         IF(verbose) WRITE(*,*)
+     $     "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert))
          coilmn=0
@@ -296,14 +315,14 @@ c-----------------------------------------------------------------------
       IF (resp_flag) THEN
          CALL ipout_response
       ENDIF
-      IF (singcoup_flag) THEN
+      IF (singcoup_flag .OR. svd_flag) THEN
          CALL ipout_singcoup(sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
 c-----------------------------------------------------------------------
-      IF (data_flag .OR. harmonic_flag .OR. coil_flag) THEN
+      IF (data_flag.OR.harmonic_flag.OR.coil_flag.OR.svd_flag)THEN
          edge_flag=.TRUE.
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
@@ -321,7 +340,10 @@ c-----------------------------------------------------------------------
          CALL ipout_vsingfld(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out)
       ENDIF
-      IF (pmodb_flag .OR. ntv_flag) THEN
+      IF (xclebsch_flag) THEN
+         CALL ipout_xclebsch(mode,xspmn)
+      ENDIF
+      IF (pmodb_flag) THEN
          CALL ipout_pmodb(mode,xspmn,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF

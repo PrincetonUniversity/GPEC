@@ -141,7 +141,7 @@ c     print initial point of integration.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psifac,0)
       q=sq%f(4)
-      WRITE(*,40)"psi = ",psifac,", q = ",q
+      IF(verbose) WRITE(*,40)"psi = ",psifac,", q = ",q
 c-----------------------------------------------------------------------
 c     open file for error output.
 c-----------------------------------------------------------------------

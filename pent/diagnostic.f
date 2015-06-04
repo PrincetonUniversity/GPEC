@@ -834,18 +834,18 @@ c-----------------------------------------------------------------------
          DO ll=-nl,nl
             IF(lmdalsode_flag)THEN
                lmdaint(ll) =lsode_lambda(wdian,wdiat,welec,bhat,dhat,
-     $              omegabar,djdjbar,ll,ximag,xmax,collision,s,sigma,
-     $              .FALSE.,outsurf,'diag_')
+     $              omegabar,djdjbar,ll,ximag,xmax,collision,0.0_r8,s,
+     $              sigma,.FALSE.,outsurf,'diag_')
                IF(offset_flag) lmdaoff(ll) =lsode_lambda(wdian,
-     $              wdiat,welec,bhat,dhat,omegabar,djdjbar,ll,
-     $              ximag,xmax,collision,s,sigma,.TRUE.,outsurf,'diag_')
+     $             wdiat,welec,bhat,dhat,omegabar,djdjbar,ll,ximag,xmax,
+     $             collision,0.0_r8,s,sigma,.TRUE.,outsurf,'diag_')
             ELSE
                lmdaint(ll)=intspl_lambda(wdian,wdiat,welec,bhat,dhat,
-     $              omegabar,djdjbar,ll,ximag,xmax,collision,s,sigma,
-     $              .FALSE.,outsurf,'diag_')
+     $              omegabar,djdjbar,ll,ximag,xmax,collision,0.0_r8,s,
+     $              sigma,.FALSE.,outsurf,'diag_')
                IF(offset_flag) lmdaoff(ll) =lsode_lambda(wdian,
-     $              wdiat,welec,bhat,dhat,omegabar,djdjbar,ll,
-     $              ximag,xmax,collision,s,sigma,.TRUE.,outsurf,'diag_')
+     $             wdiat,welec,bhat,dhat,omegabar,djdjbar,ll,ximag,xmax,
+     $             collision,0.0_r8,s,sigma,.TRUE.,outsurf,'diag_')
             ENDIF
          ENDDO               
 c-----------------------------------------------------------------------

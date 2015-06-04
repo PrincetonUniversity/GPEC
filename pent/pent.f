@@ -17,23 +17,23 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      LOGICAL :: gen_flag,rlar_flag,clar_flag,o1native,fmnl_flag,
-     $     diag_flag
+      LOGICAL :: gen_flag,rlar_flag,clar_flag,cgl_flag,o1native,
+     $     fmnl_flag,diag_flag
       INTEGER :: maskpsi,status,i
-      REAL(r8) :: ptfac,ximag,xmax,wefac,wdfac,diag_psi
+      REAL(r8) :: ptfac,ximag,xmax,wefac,wdfac,wpfac,diag_psi,gafac
       REAL(r8), DIMENSION(10) :: psiout
       CHARACTER(128) :: kinetic_file,o1fun_file,o1mn_file,buffer
       
       NAMELIST/pent_input/kinetic_file,o1fun_file,o1mn_file,o1native,
      $     idconfile,imass,icharge,zimp,zmass,nl,
      $     collision
-      NAMELIST/pent_control/maskpsi,wefac,wdfac,
+      NAMELIST/pent_control/maskpsi,wefac,wdfac,wpfac,
      $     neorot_flag,divxprp_flag,mdc2_flag,kolim_flag,xlsode_flag,
      $     lmdalsode_flag,lsode_rtol,lsode_atol,ximag,xmax,nx,nt,nlmda,
-     $     ptfac,treg_flag
+     $     ptfac,treg_flag,gafac
       NAMELIST/pent_output/kinetic_flag,pitch_flag,bounce_flag,
      $     energy_flag,passing_flag,rlar_flag,gen_flag,clar_flag,
-     $     offset_flag,psiout
+     $     cgl_flag,offset_flag,psiout
       NAMELIST/pent_admin/fmnl_flag,diag_flag
 c-----------------------------------------------------------------------
 c     set initial values.
@@ -83,6 +83,8 @@ c-----------------------------------------------------------------------
       lsode_atol = 1e-12
       wefac = 1
       wdfac = 1
+      wpfac = 1
+      gafac = 0
       ptfac = 1e-3
       ximag = 0
       xmax = 36
@@ -97,6 +99,7 @@ c-----------------------------------------------------------------------
       passing_flag=.FALSE.
       rlar_flag = .FALSE.
       clar_flag = .FALSE.
+      cgl_flag = .FALSE.
       gen_flag = .TRUE.
       psiout(:) = (/0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/)
       
@@ -160,27 +163,34 @@ c-----------------------------------------------------------------------
          IF(gen_flag)THEN
             ALLOCATE(bpar(mstep,0:mthsurf),xprp(mstep,0:mthsurf))
             CALL pentio_read_order1_funs(bpar,xprp,o1fun_file,o1native)
-            CALL pentio_read_profile(kinetic_file)
+            CALL pentio_read_profile(kinetic_file,wefac,wpfac)
             CALL profile_gen(bpar,xprp,nl,maskpsi,ptfac,ximag,xmax,
-     $           wefac,wdfac,collision,psiout,.FALSE.)
+     $           wefac,wdfac,wpfac,gafac,collision,psiout,.FALSE.)
             CALL pentg_dealloc
          ENDIF
          IF(clar_flag)THEN
             ALLOCATE(bpar(mstep,0:mthsurf),xprp(mstep,0:mthsurf))
             CALL pentio_read_order1_funs(bpar,xprp,o1fun_file,o1native)
-            CALL pentio_read_profile(kinetic_file)
+            CALL pentio_read_profile(kinetic_file,wefac,wpfac)
             CALL pentio_read_special_functions
             CALL profile_gen(bpar,xprp,nl,maskpsi,ptfac,ximag,xmax,
-     $           wefac,wdfac,collision,psiout,.TRUE.)
+     $           wefac,wdfac,wpfac,gafac,collision,psiout,.TRUE.)
             CALL pentg_dealloc
          ENDIF
          IF(rlar_flag)THEN         
             ALLOCATE(bpar(mstep,mpert),xprp(mstep,mpert))
             CALL pentio_read_order1_mns(bpar,xprp,o1mn_file,o1native)
-            CALL pentio_read_profile(kinetic_file)
+            CALL pentio_read_profile(kinetic_file,wefac,wpfac)
             CALL pentio_read_special_functions
             CALL profile_rlar(bpar,xprp,nl,maskpsi,ximag,xmax,wefac,
-     $           wdfac,collision,psiout)
+     $           wdfac,wpfac,gafac,collision,psiout)
+            CALL pentg_dealloc
+         ENDIF
+         IF(cgl_flag)THEN         
+            ALLOCATE(bpar(mstep,0:mthsurf),xprp(mstep,0:mthsurf))
+            CALL pentio_read_order1_funs(bpar,xprp,o1fun_file,o1native)
+            CALL pentio_read_profile(kinetic_file,wefac,wpfac)
+            CALL profile_cgl(bpar,xprp,maskpsi)
             CALL pentg_dealloc
          ENDIF
       ENDIF

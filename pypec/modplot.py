@@ -336,6 +336,7 @@ if not hasattr(pyplot.Axes,"_orig_plot"): #prevent recursion when reloaded
     pyplot.Axes._orig_plot = copy.deepcopy(pyplot.Axes.plot)
 pyplot.Axes.plot = _axes_plot
 
+
 def _imag_arg(arg):
 	#if type(arg)==str:
 	#	return arg
@@ -434,6 +435,34 @@ def plot_axes(ax, fig=None, geometry=(1,1,1)):
 #	draw()
 	fig.show()
 	return fig
+
+def xyaxes(axes,x=True,y=True,**kwargs):
+	"""
+	Plot hline and vline through (0,0).
+	
+	**Arguments:**
+		- axes : obj. Matplotlib Axes object.
+		
+	**key Word Arguments:**
+		- x : bool. Draw hline
+		- y : bool. Draw vline
+	
+	**Returns:**
+		- bool.
+		
+	All other kwargs passed to hlines and vlines functions.
+	
+	"""
+	if y:
+		ylim = axes.get_ylim()
+		axes.vlines(0,*ylim,**kwargs)
+		axes.set_ylim(*ylim)
+	if x:
+		xlim = axes.get_xlim()
+		axes.hlines(0,*xlim,**kwargs)
+		axes.set_xlim(*xlim)
+	return True
+
 
 
 def onkey(event):

@@ -234,6 +234,15 @@ for c in '^|<>/':
 
 default_quiet = False
 
+######################################################## Change default keywords
+
+def interp1d_unbound(x, y, kind='linear', axis=-1, copy=True, bounds_error=False,
+                     fill_value=np.nan, assume_sorted=False):
+    return interp1d(x, y, kind=kind, axis=axis, copy=copy, bounds_error=bounds_error,
+                     fill_value=fill_value, assume_sorted=assume_sorted)
+interp1d_unbound.__doc__ = interp1d.__doc__
+
+
 ######################################################## IO FOR DATA OBJECTs
 
 def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_quiet):
@@ -321,6 +330,14 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_q
                                 break # end of numbers
                         # Throw out single lines of numbers
                         if j==1:
+                            # but include them as preamble (DCON one-liners)
+                            vals = lines[top]
+                            keys = lines[top-1]
+                            if not keys.translate(None,' \n\t'): #empty line
+                                keys = lines[top-2]
+                            if '=' not in keys and len(keys.split())==len(vals.split()):
+                                for k,v in zip(keys.split(),vals.split()):
+                                    preamble+='{:} = {:}\n'.format(k,v)
                             raise ValueError
                         else:
                             bot = top+j+1
@@ -584,7 +601,9 @@ class DataBase(object):
         l = len(fromtxt)
         potxnames = names[:3]
         # Set independent/dependent variables (max 3D,min 3pt grid)
-        if forcex:
+        if not np.all([name in names for name in forcex]):
+            print('WARNING: Requested axes not available. Using default left column(s).')
+        if forcex and np.all([name in names for name in forcex]):
             nd = len(forcex)
             potxnames = forcex
         elif len(names)==2:
@@ -689,7 +708,7 @@ class DataBase(object):
         #debug start_time = time.time()
 
         #scipy interpolation function for ND (stored so user can override)
-        self._interpfunc=[interp1d,interp2d,LinearNDInterpolator][self.nd-1]
+        self._interpfunc=[interp1d_unbound,interp2d,LinearNDInterpolator][self.nd-1]
         self._interpdict={}
 
         # Set any variables from preamble
@@ -759,7 +778,11 @@ class DataBase(object):
         #housekeeping
         if not ynames: ynames=np.sort(self.y.keys()).tolist()
         if not type(ynames) in (list,tuple): ynames=(ynames,)
-        if not type(x) in (list,tuple): x=(x,)
+        if not type(x) in [list,tuple,np.ndarray]: x=[x,]
+        NewData = copy.deepcopy(self)
+        NewData.x = list(x)
+        NewData.shape = list(np.shape(NewData.x))
+        NewData.pts = np.array(np.meshgrid(*x)).T.reshape(-1,len(NewData.shape))
         
         #function to form interpolator if needed
         def new_interp(name):
@@ -790,7 +813,8 @@ class DataBase(object):
                 args[-1] = np.imag(args[-1])
                 fimag = self._interpfunc(*args,**kwargs)
                 def fcmplx(*xy):
-                    return freal(*xy)+1j*fimag(*xy)
+                    #return freal(*xy)+1j*fimag(*xy)
+                    return freal(xy[0],xy[1])+1j*fimag(xy[0],xy[1])
                 atts = ['y','z','values']
                 att = atts[self.nd-1]
                 setattr(fcmplx,att,getattr(freal,att)+1j*getattr(fimag,att))
@@ -811,8 +835,9 @@ class DataBase(object):
             else:
                 self._interpdict[name] = new_interp(name)
             if not quiet: print("Interpolating values for "+name+".")
-            values[name]=self._interpdict[name](*x)
-        return values
+            values[name]=np.array(self._interpdict[name](*x)).T.ravel()
+        NewData.y = values
+        return NewData
         
     
     # Built-in visualizations
@@ -1079,7 +1104,8 @@ class DataBase(object):
         f.show()
         return f
 
-    def plot3d(self,ynames=None,filter={'psi':1},plot_type='',**kwargs):
+    def plot3d(self,ynames=None,filter={'psi':1},cbar=False,size=(600,600),
+               plot_type='',**kwargs):
         """
         Three dimensional plots. Data with xnames r,z will be plotted
         with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).
@@ -1095,6 +1121,10 @@ class DataBase(object):
             Strings specifying dependent data displayed.
           filter   : dict. 
             Filter points as only those closest to this y value.
+          cbar : bool.
+            Display a vertical colorbar in the Mayavi Scene.
+          size : tuple.
+            Size of figure in pixels.
           plot_type : str. 
             Valid mayavi.mlab function name. 
             Overrides default function choices (plot3d,mesh,quiver3d).
@@ -1130,7 +1160,17 @@ class DataBase(object):
 
         # the correct 3d plotting function
         plotfunc = getattr(mmlab,['plot3d','mesh','quiver3d'][self.nd-1])
-        if plot_type: plotfunc = getattr(mmlab,plot_type)
+        if plot_type:
+            if plot_type=='volume':
+                def plotfunc(x,y,z,s,name='',**kwargs):
+                    mmlab.pipeline.sc
+                    src = mmlab.pipeline.scalar_field(xx,yy,zz,S,name=name)
+                    mmlab.pipeline.volume(src,**kwargs)
+                    mmlab.pipeline.scalar_cut_plane(thr,plane_orientation='x_axes')
+                    mmlab.pipeline.scalar_cut_plane(thr,plane_orientation='y_axes')
+            else:
+                plotfunc = getattr(mmlab,plot_type)
+                
 
         # filter data by other y variable
         fltr = self.y[ynames[0]]==self.y[ynames[0]]
@@ -1143,14 +1183,14 @@ class DataBase(object):
         if self.nd==1: X += np.zeros_like(X.ravel())
         # Extra work to convert the cylindrical axes
         if self.xnames==['r','z']:
-            r,z,p = self.pts[:,0][fltr],self.pts[:,1][fltr],np.linspace(0,2*np.pi,60)
+            r,z,p = self.pts[:,0][fltr],self.pts[:,1][fltr],np.linspace(0,2*np.pi,180)
             XY = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
             Z = z.reshape(-1,1)*np.ones_like(XY.real)
             X = [XY.real,XY.imag,Z]
         
         # display data
         for name in ynames:
-            if 'figure' not in kwargs: f = mmlab.figure()#bgcolor=(1,1,1))
+            if 'figure' not in kwargs: f = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=size)
             S = self.y[name][fltr]
             if self.xnames==['r','z']:
                 S = np.real((S.reshape(-1,1)*np.exp(-self.params['n']*1j*p.reshape(1,-1))))
@@ -1159,10 +1199,12 @@ class DataBase(object):
                 kwargs['scalars'] = S
             else:
                 XYZ = X+np.real(S).tolist()
-            print(np.array(XYZ).shape)
+            #print(np.array(XYZ).shape)
             plotfunc(*XYZ,name=name,**kwargs)
+            if cbar: mmlab.colorbar(title=name,orientation='vertical')
             f = mmlab.gcf()
         return f #X,S
+    
 
     def scatter(self,ynames=None,xname=None,x1=None,x2=None,x3=None,**kwargs):
         """
@@ -1396,9 +1438,17 @@ def _data_op(self,other,fun,op,quiet=default_quiet):
             raise ArithmeticError('Two data objects do not have same dependent variables.')
         if not np.all(self.pts==other.pts):#[np.all(sx==ox) for sx,ox in zip(self.x,other.x)]):
             if not quiet: print('interpolating to same axes.')
-            otherinterp = other.interp(NewData.pts)#NewData.x)
+            if NewData.x:
+                otherinterp = other.interp(NewData.x).y # interp2D auto-grids
+            else:
+                otherinterp = other.interp(NewData.pts).y
         else:
             otherinterp = other.y
+        # problem from unbound interpolation?? Fixed when switched to returning objects.
+        #if self.nd==1:
+        #    for k in otherinterp:
+        #        otherinterp[k] = otherinterp[k].ravel()
+            
     
         for key in other.y:
             if key in NewData.y:
@@ -1550,3 +1600,151 @@ def _factors(n):
                       ([i, n//i] for i in range(1, int(n**0.5) + 1) 
                        if n % i == 0)))))
 
+def _plot3dvolume(self,ynames=None,npts=124,cbar=True,plot_type='',**kwargs):
+    """
+    Under construction volume plotting.
+    """
+    
+    # general multidimensional axes
+    X = np.array(self.pts).T.tolist()
+    if self.nd==1: X += np.zeros_like(X.ravel())
+    # Extra work to convert the cylindrical axes
+    if self.xnames==['r','z']:
+        # regularly spaced grid in x,y,z
+        rlim = self.pts[:,0].max()
+        zlim = np.abs(self.pts[:,1]).max()
+        xx,yy,zz = np.mgrid[-rlim:rlim:npts*1j,-rlim:rlim:npts*1j,-zlim:zlim:npts*1j]
+        rr 	 = np.sqrt(xx**2.0+xx**2.0)
+        pp = np.arctan2(yy,xx)
+        X = [xx,yy,zz]
+    
+        # To index coordinates
+        cordpts = [(npts-1)*(rr-rlim)/(2*rlim),(npts-1)*(zz-zlim)/(2*zlim)]
+    
+    # display data
+    for name in ynames:
+        if 'figure' not in kwargs: f = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=size)
+        S = self.y[name]
+        if self.xnames==['r','z']:
+            
+            # 2D interpolation
+            print('interpolating real component...')
+            S = griddata(self.pts,np.real(self.y[name]),(rr,zz),method='linear')
+            print('interpolating imag component...')
+            S+= griddata(self.pts,np.imag(self.y[name]),(rr,zz),method='linear')*1j
+            S = np.real(S*np.exp(-self.params['n']*1j*pp))
+            print(np.shape(S),np.shape(rr))
+            # Take out wedge for better view
+            wedge = (xx>=0.0)*(yy>=0.0)
+            #m[wedge==False] = 0.0
+            S[wedge==False] = -1e99
+            S[(S==S)==False]= -1e99
+            src = mmlab.pipeline.scalar_field(xx,yy,zz,S)
+            thr = mmlab.pipeline.threshold(src,low=-1e98)
+            #mmlab.pipeline.volume(src)
+            mmlab.pipeline.scalar_cut_plane(src,plane_orientation='x_axes')
+            mmlab.pipeline.scalar_cut_plane(src,plane_orientation='y_axes')
+            if cbar: mmlab.colorbar(title=name,orientation='vertical')
+        
+    f = mmlab.gcf()
+    return xx,yy,zz,S
+
+def _plot3d_dev(self,ynames=None,filter={'psi':1},cbar=False,plot_type='',**kwargs):
+    """
+    Three dimensional plots. Data with xnames r,z will be plotted
+    with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).
+
+        1D data > lines in a plane in 3-space.
+        2D data > z axis becomes y value
+        3D data > chosen display type
+
+    Must have mayavi.mlab module available in pythonpath.
+    
+    *Key Word Arguments:*
+      ynames   : list. 
+        Strings specifying dependent data displayed.
+      filter   : dict. 
+        Filter points as only those closest to this y value.
+      plot_type : str. 
+        Valid mayavi.mlab function name. 
+        Overrides default function choices (plot3d,mesh,quiver3d).
+
+    *Returns:*
+      figure.
+      
+      
+    *Example:*
+    
+    >>> xb, = data.read('ipec_xbnormal_fun_n1.out',forcex=['r','z'])
+    >>> xb.plot3d('bno')
+    
+    ..note: I think what we usually want out of IPEC is
+    the 3D surface perturbation. If we run with fun_flag
+    xn, = data.read('ipec_xbnormal_fun_n2.out')
+    psi = 1.0
+    n = 2
+    fltr= xb.y['psi']==xb.y['psi'][np.abs(xb.y['psi']-psi).argmin()]
+    r,z,p = xb.pts[:,0][fltr],xb.pts[:,1][fltr],np.linspace(0,2*np.pi,60)
+    s = xb.y['bno'][fltr]
+    cx = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
+    X,Y = cx.real,cx.imag
+    Z = z.reshape(-1,1)*np.ones_like(X)
+    S = (s.reshape(-1,1)*np.exp(-n*1j*p.reshape(1,-1))).real
+    mmlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1))
+    mmlab.mesh(X, Y, Z, scalars=S) #, colormap='YlGnBu'
+    
+    """
+    if not ynames: ynames=np.sort(self.y.keys()).tolist()
+    if not type(ynames) in (list,tuple): ynames=[ynames]
+    if not mmlab: raise ImportError("Unable to import mayavi.mlab.")
+
+    # the correct 3d plotting function
+    plotfunc = getattr(mmlab,['plot3d','mesh','quiver3d'][self.nd-1])
+    if plot_type:
+        if plot_type=='volume':
+            def plotfunc(X,Y,Z,S,name='',**kwargs):
+                src = mmlab.pipeline.scalar_field(X,Y,Z,S,name=name)
+                thr = mmlab.pipeline.threshold(src,low=1e-9)
+                mmlab.pipeline.volume(src,**kwargs)
+                mmlab.pipeline.scalar_cut_plane(thr,plane_orientation='x_axes')
+                mmlab.pipeline.scalar_cut_plane(thr,plane_orientation='y_axes')
+        else:
+            plotfunc = getattr(mmlab,plot_type)
+            
+
+    # filter data by other y variable
+    fltr = self.y[ynames[0]]==self.y[ynames[0]]
+    for k in filter:
+        if k in self.y.keys():
+            fltr*= self.y[k]==self.y[k][np.abs(self.y[k]-filter[k]).argmin()]
+    
+    # general multidimensional axes
+    X = np.array(self.pts[fltr,:]).T.tolist()
+    if self.nd==1: X += np.zeros_like(X.ravel())
+    # Extra work to convert the cylindrical axes
+    if self.xnames==['r','z']:
+        r,z,p = self.pts[:,0][fltr],self.pts[:,1][fltr],np.linspace(0,2*np.pi,180)
+        XY = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
+        Z = z.reshape(-1,1)*np.ones_like(XY.real)
+        X = [XY.real,XY.imag,Z]
+        if plot_type=='volume':
+            X = np.meshgrid(XY.real,XY.imag,Z)
+            x = [x[0],X[1],X[2]]
+            p = np.arctan2(X[1],X[0])
+    
+    # display data
+    for name in ynames:
+        if 'figure' not in kwargs: f = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=size)
+        S = self.y[name][fltr]
+        if self.xnames==['r','z']:
+            S = np.real((S.reshape(-1,1)*np.exp(-self.params['n']*1j*p.reshape(1,-1))))
+        if plotfunc in [mmlab.mesh,mmlab.points3d]:
+            XYZ = X
+            kwargs['scalars'] = S
+        else:
+            XYZ = X+[np.real(S)]
+        #print(np.array(XYZ).shape)
+        plotfunc(*XYZ,name=name,**kwargs)
+        if cbar: mmlab.colorbar(title=name,orientation='vertical')
+        f = mmlab.gcf()
+    return XYZ

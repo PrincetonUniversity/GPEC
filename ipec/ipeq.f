@@ -54,7 +54,7 @@ c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,1)
-      CALL cspline_eval(u1,psi,0)
+      CALL cspline_eval(u1,psi,1)
       CALL cspline_eval(u2,psi,0)
 
       q=sq%f(4)
@@ -74,6 +74,7 @@ c-----------------------------------------------------------------------
      $     2*mband+1,u1%f,1,ione,xspfac,1)
       CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
       xsp1_mn=xspfac/singfac
+      !xsp1_mn=u1%f1
       CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
       CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
       CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
@@ -804,17 +805,17 @@ c-----------------------------------------------------------------------
 c     weight function.
 c-----------------------------------------------------------------------
       SELECT CASE(wegt)
-      CASE(0)
+      CASE(0) ! flux to field
          ftnfun=ftnfun*wgtfun
-      CASE(1)
+      CASE(1) ! field to flux
          ftnfun=ftnfun/wgtfun
-      CASE(2)
+      CASE(2) ! field to sqrt(A)b
          ftnfun=ftnfun/sqrt(wgtfun)
       CASE(3)
          ftnfun=ftnfun/sqrt(wgtfun*r)
-      CASE(4)
+      CASE(4) ! x^psi to x^norm
          ftnfun=ftnfun/delpsi
-      CASE(5)
+      CASE(5) ! x^norm to x^psi
          ftnfun=ftnfun*delpsi
       END SELECT
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
@@ -928,7 +929,7 @@ c-----------------------------------------------------------------------
 
       TYPE(bicube_type) :: rfr,ifr,rfz,ifz
 
-      WRITE(*,*)"Modifying bphi to make zero divergence"
+      IF(verbose) WRITE(*,*)"Modifying bphi to make zero divergence"
 
       CALL bicube_alloc(rfr,nr,nz,1)
       CALL bicube_alloc(ifr,nr,nz,1)

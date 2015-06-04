@@ -2,8 +2,9 @@
     kinetic_file="/p/gpec/users/nlogan/data/a10/kinetics/kinetic_a10_MARSbenchmark.dat"
     o1fun_file = "ipec_order1_fun_n1.bin"
     o1mn_file = "ipec_order1_n1.bin"
-    o1native  = .TRUE.
     idconfile = "euler.bin"
+    o1native  = .TRUE.
+
     imass = 2
     icharge = 1
     zimp = 6
@@ -12,30 +13,36 @@
     collision = "harmonic"
 /
 &PENT_CONTROL
-   wefac = 1 
+   wefac = 1
    wdfac = 1
+   wpfac = 1
+   ptfac = 1e-3
    kolim_flag = .FALSE.
    neorot_flag = .FALSE.
    divxprp_flag = .TRUE.
+
    xlsode_flag = .TRUE.
    lmdalsode_flag = .TRUE.
+   lsode_rtol = 1e-9
+   lsode_atol = 1e-12
    xmax = 72
    ximag = 0
-   maskpsi = 2
-   nx = 200
-   nt = 101
+   nx = 128
+   nt = 128
    nlmda = 128
-   ptfac = 1e-3
+   maskpsi = 2
 /
 &PENT_OUTPUT    
-    gen_flag = .TRUE.
+    passing_flag = .FALSE.
+    gen_flag  = .TRUE.
     rlar_flag = .TRUE.
-    clar_flag = .TRUE.	
+    clar_flag = .FALSE.
+    cgl_flag  = .FALSE.
+    
     kinetic_flag = .FALSE.
     bounce_flag = .FALSE.
     pitch_flag = .FALSE.
     energy_flag = .FALSE.
-    passing_flag = .FALSE.
 
     psiout(1) = 0.1
     psiout(10) = 1.0

@@ -38,7 +38,7 @@ c-----------------------------------------------------------------------
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
      $     power_b,jac_method,convert_type,power_flag
       NAMELIST/equil_output/bin_2d,bin_eq_1d,bin_eq_2d,out_2d,out_eq_1d,
-     $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag
+     $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=equil_control)
       READ(UNIT=in_unit,NML=equil_output)
       CALL ascii_close(in_unit)
-      WRITE(*,'(1x,a,1p,e9.3)')"psihigh = ",psihigh
+      IF(verbose) WRITE(*,'(1x,a,1p,e9.3)')"psihigh = ",psihigh
       psihigh=MIN(psihigh,1._r8)
 c-----------------------------------------------------------------------
 c     define Jacobian.
@@ -79,7 +79,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write equilibrium and jacobian data.
 c-----------------------------------------------------------------------
-      WRITE(*,'(1x,4a/1x,2a,3(a,i1))')
+      IF(verbose) WRITE(*,'(1x,4a/1x,2a,3(a,i1))')
      $     "Equilibrium: ",TRIM(eq_filename),", Type: ",TRIM(eq_type),
      $     "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
      $     ", power_b = ",power_b,", power_r = ",power_r

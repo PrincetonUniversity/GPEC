@@ -225,7 +225,7 @@ c-----------------------------------------------------------------------
 
       TYPE(cspline_type) :: bspl
 
-      dlmin=3e-2*cro
+      dlmin=2e-3*cro
       
       DO i=1,coil_num
          nseg=coil(i)%nsec-1

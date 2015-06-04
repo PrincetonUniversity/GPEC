@@ -26,6 +26,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: gse_flag=.FALSE.
       LOGICAL :: power_flag=.TRUE.
       LOGICAL :: dump_flag=.FALSE.
+      LOGICAL :: verbose=.TRUE.
 
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6

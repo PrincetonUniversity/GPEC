@@ -56,8 +56,8 @@ c      COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       CHARACTER(2) :: sl
       CHARACTER(32)  :: collision 
-      CHARACTER(128) :: outfile,infile,kfile
-      CHARACTER(512) :: outtext,outlbls
+!      CHARACTER(128) :: outfile,infile,kfile
+!      CHARACTER(512) :: outtext,outlbls
 
       TYPE(spline_type)  :: kin,ellipk,ellipe
       TYPE(bicube_type)  :: fmnl

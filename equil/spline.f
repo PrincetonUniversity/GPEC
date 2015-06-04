@@ -585,7 +585,7 @@ c-----------------------------------------------------------------------
             IF(out)WRITE(iua,format2)i,x,spl%f
             IF(bin)WRITE(iub)REAL(x,4),REAL(spl%f,4)
          ENDDO
-         IF(out)WRITE(iua,'(1x)')
+c         IF(out)WRITE(iua,'(1x)')
       ENDDO
 c-----------------------------------------------------------------------
 c     print final interpolated values.

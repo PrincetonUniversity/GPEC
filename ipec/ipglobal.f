@@ -10,18 +10,19 @@ c     declarations.
 c-----------------------------------------------------------------------
       LOGICAL :: power_flag,fft_flag,edge_flag,pbrzphi_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
-     $     vbrzphi_flag,vvbrzphi_flag,div_flag,
-     $     data_flag,harmonic_flag,mode_flag,resp_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,pbrzphi_flag,div_flag,
+     $     data_flag,harmonic_flag,mode_flag,svd_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
-     $     chebyshev_flag,coil_flag,ntv_flag,bwp_pest_flag
+     $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
-     $     nche,nchr,nchz,rsing,rnqty,rnx
+     $     nche,nchr,nchz,rsing,rnqty,rnx,
+     $     pmode,p1mode,rmode,dmode,d1mode,fmode,smode ! LOGAN
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
@@ -38,6 +39,8 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(-hmnum:hmnum) :: sinmn
       REAL(r8), DIMENSION(-hmnum:hmnum) :: cosmn
+      REAL(r8), DIMENSION(0:2*hmnum) :: svdfac = 0
+      
 
       INTEGER, DIMENSION(8) :: values
 
@@ -48,6 +51,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,surfee,surfei,rpsifac,
      $     surf_indev,vsurf_indev,fsurf_indev
+     $     ,eft,efp,perms ! LOGAN
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
      $     chperr,chpsqr,plas_indev,reluctev,indrelev,grri,grre,
      $     gdr,gdz,gdpsi,gdthe,gdphi
@@ -65,7 +69,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
-     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,fldflxmat
+     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,w1v,fldflxmat
+     $     ,wft,permv ! LOGAN
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,reluctmats,
      $     plas_indevmats,permeabevmats,reluctevmats,
@@ -74,6 +79,7 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
       TYPE(cspline_type) :: u1,u2
+      TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
 
       TYPE :: resist_type
@@ -156,8 +162,8 @@ c-----------------------------------------------------------------------
       CALL DATE_AND_TIME(date,time,zone,values)
       seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
      $     -seconds
-      WRITE(*,*)"Total cpu time for ipec=",seconds,"seconds"
-      WRITE(*,'(1x,2a)')'IPEC_STOP=>',TRIM(message)
+      IF(verbose) WRITE(*,*)"Total cpu time for ipec=",seconds,"seconds"
+      IF(verbose) WRITE(*,'(1x,2a)')'IPEC_STOP=>',TRIM(message)
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------

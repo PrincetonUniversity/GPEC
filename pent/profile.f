@@ -8,6 +8,7 @@ c-----------------------------------------------------------------------
 c     0. profile_mod
 c     1. profile_gen
 c     2. profile_rlar
+c     3. profile_cgl
 c-----------------------------------------------------------------------
 c     subprogram 0. profile_mod.
 c     module declarations.
@@ -32,11 +33,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE profile_gen(lagbpar,divxprp,nl,maskpsi,ptfac,ximag,
-     $     xmax,wefac,wdfac,collision,outsurfs,clar)
+     $     xmax,wefac,wdfac,wpfac,gafac,collision,outsurfs,clar)
 
       LOGICAL, INTENT(IN) :: clar
       INTEGER, INTENT(IN) :: nl,maskpsi
-      REAL(r8), INTENT(IN) :: ptfac,ximag,xmax,wefac,wdfac
+      REAL(r8), INTENT(IN) :: ptfac,ximag,xmax,wefac,wdfac,wpfac,gafac
       REAL(r8), DIMENSION(10), INTENT(IN) :: outsurfs
       COMPLEX(r8), DIMENSION(mstep,0:mthsurf), INTENT(IN) :: 
      $     lagbpar,divxprp
@@ -44,9 +45,10 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: outsurf
       INTEGER :: istep,ilast,inext,itheta,i,ilmda,ll,sigma,ibmax,
-     $     iters,iter,indx,s,iout,ix,pass,xsigma
+     $     iters,iter,indx,s,iout,ix,pass,xsigma,ii
       REAL(r8):: chrg,mass,epsa,epsr,lmda,welec,wdian,wdiat,bhat,dhat,
-     $     wbbar,wdbar,bo,ls,dpsi,bmax,bmin,dt,kk,k,lmdamin,lmdamax,dq
+     $     wbbar,wdbar,bo,ls,dpsi,bmax,bmin,dt,kk,k,lmdamin,lmdamax,dq,
+     $     t1,t2,vtest,wpefac,wa0,gamma_damp
       REAL(r8), DIMENSION(:), ALLOCATABLE :: bpts
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: htheta,tdt,ldl
       COMPLEX(r8) :: totals
@@ -90,8 +92,12 @@ c-----------------------------------------------------------------------
 
       CALL bicube_eval(eqfun,0.0_r8,0.0_r8,0)
       bo = eqfun%f(1)
-
+      
       epsa = SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
+      
+      call spline_eval(kin,0.0_r8,0)
+      wa0 = bo/(ro*SQRT(mu0*mass*kin%f(s)))
+      gamma_damp = gafac*wa0
 
       iters = (mstep-1)/maskpsi +1
       CALL cspline_alloc(ntv,iters-1,2*nl+1)
@@ -147,9 +153,11 @@ c-----------------------------------------------------------------------
          CALL spline_eval(kin,psifac(istep),1)
          epsr = epsa*SQRT(psifac(istep))
          !Rotation frequencies: electric and density and temp gradient
-         welec = wefac*kin%f(5)
+         welec = kin%f(5)!*wefac ! direct manipulation of omegaE (moved to pentio)
          wdian =-twopi*kin%f(s+2)*kin%f1(s)/(chrg*chi1*kin%f(s))
          wdiat =-twopi*kin%f1(s+2)/(chrg*chi1)
+         !wpefac = (wpfac*(welec+wdian+wdiat) - (wdian+wdiat))/welec
+         !welec = wpefac*welec   ! indirect manipulation of rotation (moved to pentio)
          rot%fs(iter-1,1) = welec+wdian+wdiat
          rotp%fs(iter-1,1) = welec+wdian+wdiat
          
@@ -200,19 +208,24 @@ c-----------------------------------------------------------------------
                IF(sigma==0)THEN
                   CALL spl_roots(bpts,vpar,1)
                   CALL spline_eval(vpar,SUM(bpts(1:2))/2,0)
-                  ! the usual case with bpts centered around 0 requires shift
-                  IF(vpar%f(1)<=0.0 .AND. sigma==0) 
-     $                 bpts(1:2)=(/bpts(2)-1.0,bpts(1)/)
-                  ! Debugger
-                  IF(bpts(1)>=bpts(2) .AND. sigma==0)THEN
-                     PRINT *," Error at (psi,lmda) = ",psifac(istep),
-     $                    lmda/ldl(0,nlmda)
-                     PRINT *,"Bounce pts = ",bpts
-                     CALL pentio_stop("Bounce point crossing."
-     $                    //" Check if repeated zeros in spl_roots.")
-                  ENDIF
-                  ! was bpts(1-sigma,2-sigma) before IF
-                  CALL powergrid(tnorm,tdt,bpts(1:2),4,"both")
+                  ! find deepest magnetic well ** NOT PRECISE **
+                  IF(SIZE(bpts)>2 .AND. ilmda==0) 
+     $                 PRINT *, "WARNING: Using only deepest of "//
+     $                 "multiple magnetic wells at psi ",psifac(istep)
+                  ! usual case with bpts centered around 0
+                  t1 = bpts(SIZE(bpts))-1.0
+                  t2 = bpts(1)
+                  CALL spline_eval(vpar,MODULO((t1+t2)/2,1.0),0)
+                  vtest = vpar%f(1)
+                  DO i=1,SIZE(bpts)-1
+                     CALL spline_eval(vpar,SUM(bpts(i:i+1))/2,0)
+                     IF(vpar%f(1)>vtest)THEN
+                        t1 = bpts(i)
+                        t2 = bpts(i+1)
+                        vtest = vpar%f(1)
+                     ENDIF
+                  ENDDO
+                  CALL powergrid(tnorm,tdt,(/t1,t2/),4,"both")
                   DEALLOCATE(bpts)
                ELSE
                   ALLOCATE(bpts(2))
@@ -231,9 +244,21 @@ c-----------------------------------------------------------------------
                act0(:) = 0.0
                DO itheta=1,nt-1
                   dt = tdt(1,itheta)
-                  CALL spline_eval(tspl,MOD(tdt(0,itheta)+1,1.0),0)
-                  CALL cspline_eval(o1spl,MOD(tdt(0,itheta)+1,1.0),0)
-                  CALL spline_eval(vpar,MOD(tdt(0,itheta)+1,1.0),0)
+                  CALL spline_eval(tspl,MODULO(tdt(0,itheta),1.0),0)
+                  CALL cspline_eval(o1spl,MODULO(tdt(0,itheta),1.0),0)
+                  CALL spline_eval(vpar,MODULO(tdt(0,itheta),1.0),0)
+                  ! error occurs if spline <= 0 between 2 positive xs
+                  IF(vpar%f(1)<=0)THEN
+                     PRINT *, "WARNING: vpar zero crossing internal to"
+     $                    //" magnetic well at psi ",psifac(istep)
+                     PRINT *, t1," <= theta = ",tdt(0,itheta)," <= ",t2
+                     PRINT *, " > Consider changing mtheta in equil.in"
+                     ! temp fix. may miss majority of particles
+                     omega%fs(:itheta,1) = 0
+                     omega%fs(:itheta,2) = 0
+                     act0(:itheta) = 0
+                     CYCLE
+                  ENDIF
                   omega%fs(itheta,1) = dt*tspl%f(4)*tspl%f(1)
      $                 /SQRT(vpar%f(1))
                   omega%fs(itheta,2) = dt*tspl%f(4)*tspl%f(2)*
@@ -332,18 +357,20 @@ c-----------------------------------------------------------------------
                ENDIF
                IF(lmdalsode_flag)THEN
                   lmdaint(ll) =lsode_lambda(wdian,wdiat,welec,bhat,dhat,
-     $                 omegabar,djdjbar,ll,ximag,xmax,collision,s,sigma,
-     $                 .FALSE.,outsurf,lbl)
+     $                 omegabar,djdjbar,ll,ximag,xmax,collision,
+     $                 gamma_damp,s,sigma,.FALSE.,outsurf,lbl)
                   IF(offset_flag) lmdaoff(ll) =lsode_lambda(wdian,
      $                 wdiat,welec,bhat,dhat,omegabar,djdjbar,ll,
-     $                 ximag,xmax,collision,s,sigma,.TRUE.,outsurf,lbl)
+     $                 ximag,xmax,collision,gamma_damp,s,sigma,.TRUE.,
+     $                 outsurf,lbl)
                ELSE
                   lmdaint(ll)=intspl_lambda(wdian,wdiat,welec,bhat,dhat,
-     $                 omegabar,djdjbar,ll,ximag,xmax,collision,s,sigma,
-     $                 .FALSE.,outsurf,lbl)
+     $                 omegabar,djdjbar,ll,ximag,xmax,collision,
+     $                 gamma_damp,s,sigma,.FALSE.,outsurf,lbl)
                   IF(offset_flag) lmdaoff(ll) =lsode_lambda(wdian,
      $                 wdiat,welec,bhat,dhat,omegabar,djdjbar,ll,
-     $                 ximag,xmax,collision,s,sigma,.TRUE.,outsurf,lbl)
+     $                 ximag,xmax,collision,gamma_damp,s,sigma,.TRUE.,
+     $                 outsurf,lbl)
                ENDIF
             ENDDO               
 c-----------------------------------------------------------------------
@@ -436,10 +463,10 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE profile_rlar(lagbpar,divxprp,nl,maskpsi,ximag,xmax,
-     $     wefac,wdfac,collision,outsurfs)
+     $     wefac,wdfac,wpfac,gafac,collision,outsurfs)
       
       INTEGER, INTENT(IN) :: nl,maskpsi
-      REAL(r8), INTENT(IN) :: ximag,xmax,wefac,wdfac
+      REAL(r8), INTENT(IN) :: ximag,xmax,wefac,wdfac,wpfac,gafac
       REAL(r8), DIMENSION(10), INTENT(IN) :: outsurfs
       COMPLEX(r8), DIMENSION(mstep,mpert), INTENT(IN) :: lagbpar,divxprp
       CHARACTER(32), INTENT(IN) :: collision
@@ -449,7 +476,7 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,k,i,ipert,jpert,ll,sigma,
      $     pass,iters,iter,indx,s,nsplt,iout,ix
       REAL(r8) :: chrg,mass,kappa,wbhat,wdhat,welec,wdian,wdiat,
-     $     epsa,epsr,wt,wg,bo,ls,dpsi
+     $     epsa,epsr,wt,wg,bo,ls,dpsi,wpefac,gamma_damp,wa0
       REAL(r8), DIMENSION(mpert,2):: fm
       COMPLEX(r8) :: totals,xint,oint
 
@@ -491,6 +518,10 @@ c-----------------------------------------------------------------------
       b_out = 0
 
       epsa = SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
+      
+      call spline_eval(kin,0.0_r8,0)
+      wa0 = bo/(ro*SQRT(mu0*mass*kin%f(s)))
+      gamma_damp = gafac*wa0
 
       iters = (mstep-1)/maskpsi +1
       CALL cspline_alloc(ntv,iters-1,2*nl+1)
@@ -525,9 +556,11 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sq,psifac(istep),1)
          CALL spline_eval(kin,psifac(istep),1)
          !Rotation frequencies: electric and density and temp gradient
-         welec = wefac*kin%f(5)
+         welec = kin%f(5)!*wefac ! direct manipulation of omegaE (moved to pentio)
          wdian =-twopi*kin%f(s+2)*kin%f1(s)/(chrg*chi1*kin%f(s))
          wdiat =-twopi*kin%f1(s+2)/(chrg*chi1)
+         !wpefac = (wpfac*(welec+wdian+wdiat) - (wdian+wdiat))/welec
+         !welec = wpefac*welec ! indirect manipulation of rotation (moved to pentio)
          ! Bounce and precession frequencies
          q     = sq%f(4)
          epsr  = epsa*SQRT(psifac(istep)) 
@@ -552,19 +585,18 @@ c     Energy integration
 c-----------------------------------------------------------------------
                IF(xlsode_flag)THEN
                   xint = lsode_x(wdian,wdiat,welec,wdhat,wbhat,ls,
-     $                 ximag,xmax,collision,s,sigma,.FALSE.,
-     $                 (outsurf .AND. energy_flag),
-     $                 lbl)
+     $                 ximag,xmax,collision,gamma_damp,s,sigma,
+     $                 .FALSE.,(outsurf .AND. energy_flag),lbl)
                   IF(offset_flag) oint = lsode_x(wdian,wdiat,welec,
-     $                 wdhat,wbhat,ls,ximag,xmax,collision,s,sigma,
-     $                 .TRUE.,.FALSE.,'')
+     $                 wdhat,wbhat,ls,ximag,xmax,collision,gamma_damp,
+     $                 s,sigma,.TRUE.,.FALSE.,'')
                ELSE
                   xint = intspl_x(wdian,wdiat,welec,wdhat,wbhat,ls,
-     $                 ximag,xmax,collision,s,sigma,.FALSE.,outsurf,
-     $                 lbl)
+     $                 ximag,xmax,collision,gamma_damp,s,sigma,
+     $                 .FALSE.,(outsurf .AND. energy_flag),lbl)
                   IF(offset_flag) oint = intspl_x(wdian,wdiat,welec,
-     $                 wdhat,wbhat,ls,ximag,xmax,collision,s,sigma,
-     $                 .TRUE.,.FALSE.,'')
+     $                 wdhat,wbhat,ls,ximag,xmax,collision,gamma_damp,
+     $                 s,sigma,.TRUE.,.FALSE.,'')
                ENDIF   
 c               IF(offset_flag) oxspl  = xintegral(wdian,wdiat,welec,
 c     $              wdhat,wbhat,ls,collision,s,ximag,xmax,.TRUE.)
@@ -705,6 +737,127 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE profile_rlar
+
+
+
+
+
+
+c-----------------------------------------------------------------------
+c     subprogram 1. profile_cgl.
+c     Calculate NTV on a magnetic surface using a direct analytic
+c     Chew-Goldberger-Low solution in the limit omega_E -> inf 
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE profile_cgl(lagbpar,divxprp,maskpsi)
+
+      INTEGER, INTENT(IN) :: maskpsi
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf), INTENT(IN) :: 
+     $     lagbpar,divxprp
+
+      INTEGER :: istep,itheta,iters,iter,s
+      REAL(r8):: pres,chrg
+      COMPLEX(r8) :: totals,db,divx,kx,jac
+
+      CHARACTER(32) :: outfile
+      CHARACTER(512) :: outtext
+      
+      TYPE(spline_type) :: tspl
+      TYPE(cspline_type) :: cgl
+
+c-----------------------------------------------------------------------
+c     Set species.
+c-----------------------------------------------------------------------
+      chrg = e*icharge
+      IF(chrg >= 0)THEN
+         s = 1
+      ELSE IF(icharge == -1)THEN
+         s = 2
+      ELSE
+         CALL pentio_stop('Negative charge must be electrons (-1).')
+      ENDIF
+c-----------------------------------------------------------------------
+c     Calculations.
+c----------------------------------------------------------------------- 
+      PRINT *, "PENT - fluid CGL calculation v1.0"
+
+      iters = (mstep-1)/maskpsi +1
+      CALL cspline_alloc(cgl,iters-1,1)
+
+      CALL spline_alloc(tspl,mthsurf,2)
+      tspl%xs(:) = theta(:)
+
+      DO istep=1,mstep,maskpsi
+         iter = (istep-1)/maskpsi+1
+         ! print status updates
+         IF (MOD(iter,iters/10)==0 .OR. iter==1)THEN 
+            CALL pentio_progress(iter/(iters/10))
+         ENDIF
+         cgl%xs(iter-1) = psifac(istep)
+c-----------------------------------------------------------------------
+c     theta integration.
+c-----------------------------------------------------------------------
+         CALL spline_eval(sq,psifac(istep),1)
+         CALL spline_eval(kin,psifac(istep),1)
+         ! Total Pressure
+         pres = kin%f(s)*kin%f(s+2)
+         ! Poloidal functions (with jacobian!)
+         DO itheta=0,mthsurf
+            CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
+            CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
+            db = lagbpar(istep,itheta)*eqfun%f(1)
+            divx = divxprp(istep,itheta)
+            kx = -0.5*( lagbpar(istep,itheta) + divx)
+            jac = rzphi%f(4)                          ! note, already in psi_n coords
+            tspl%fs(itheta,1)= jac*divx*CONJG(divx)
+            tspl%fs(itheta,2)= jac*(divx+3.0*kx)*CONJG(divx+3.0*kx)
+         ENDDO
+         CALL spline_fit(tspl,"periodic")
+         CALL spline_int(tspl)
+c-----------------------------------------------------------------------
+c     Final profile.
+c-----------------------------------------------------------------------
+         cgl%fs(iter-1,1) = 2.0*nn*ifac*                    ! T = 2nidW
+     $                      1.0*(                           ! phi integral 0 to 1
+     $                       0.5*(5.0/3.0)*pres*tspl%fsi(tspl%mx,1)
+     $                      +0.5*(1.0/3.0)*pres*tspl%fsi(tspl%mx,2))
+      ENDDO
+      
+      CALL cspline_fit(cgl,"extrap")
+      CALL cspline_int(cgl)
+      
+      totals = SUM(cgl%fsi(cgl%mx,:))
+      PRINT *, "-----------------------------------"
+      PRINT "(a24,es11.3E3)", "Total torque = ",
+     $     REAL(totals)
+      PRINT "(a24,es11.3E3)", "Total Kinetic Energy = ",
+     $     AIMAG(totals)/(2*nn)
+      PRINT "(a24,es11.3E3)", "alpha/s  = ",
+     $     REAL(totals)/(-1*AIMAG(totals))
+      PRINT *, "-----------------------------------"
+c-----------------------------------------------------------------------
+c     Write output files
+c-----------------------------------------------------------------------
+      outfile ="pent_cgl_n"//TRIM(sn)
+      outtext ="Chew-Goldberger-Low solution "//
+     $     "torque (Nm) and energy (J)"
+      CALL pentio_write_profile(outfile,outtext,cgl)
+      CALL cspline_dealloc(cgl)
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE profile_cgl
+
+
+
+
+
+
+
 
 
 

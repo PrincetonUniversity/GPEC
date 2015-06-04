@@ -164,16 +164,18 @@ c-----------------------------------------------------------------------
 c     subprogram 3. pentio_read_profile.
 c     read kinetic input file.
 c-----------------------------------------------------------------------
-      SUBROUTINE pentio_read_profile(kfile)
+      SUBROUTINE pentio_read_profile(kfile,wefac,wpfac)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       CHARACTER(*), INTENT(IN) :: kfile
+      REAL(r8), INTENT(IN) :: wefac,wpfac
 
       INTEGER :: nlines,istep
-      REAL(r8) :: psi,epsa,bo
+      REAL(r8) :: psi,epsa,bo,welec,wdian,wdiat,wpefac
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zeff,zpitch
 
+      TYPE(spline_type) :: tmp
 c-----------------------------------------------------------------------
 c     read kinetic inputs
 c-----------------------------------------------------------------------
@@ -189,33 +191,40 @@ c-----------------------------------------------------------------------
       ENDDO
  999  REWIND(in_unit)
       
-      CALL spline_alloc(kin,nlines-1,9)
-      kin%title = (/"idens ","edens ","itemp ","etemp ","wexb  ",
-     $     "loglam","   nui","   nue","  epsr"/)
+      CALL spline_alloc(tmp,nlines-1,5)
       READ(in_unit,*)
-      DO istep=0,nlines-1
-         READ(in_unit,*) kin%xs(istep),kin%fs(istep,1:5)
+      DO istep=0,tmp%mx
+         READ(in_unit,*) tmp%xs(istep),tmp%fs(istep,1:5)
       ENDDO
       CALL ascii_close(in_unit)
      
-      IF(kin%xs(0)==0.0) THEN
-         kin%xs(0) = kin%xs(1)/10.0
-         WRITE(*,'(a40,F6.4)') "Warning: Forced kinetic input psi 0 to "
-     $        ,kin%xs(0)
-      ENDIF
       WRITE(*,'(a27,F6.4,a4,F6.4)') "Kinetic profiles from psi ",
-     $     kin%xs(0)," to ",kin%xs(kin%mx)
+     $     tmp%xs(0)," to ",tmp%xs(tmp%mx)
+      CALL spline_fit(tmp,'extrap')
 
-      ALLOCATE(zeff(0:nlines-1),zpitch(0:nlines-1))
-      zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*icharge
-     $     *(zimp-icharge)
-      zpitch = 1.0+(1.0+zmass)/(2.0*zmass)*zimp
-     $     *(zeff-1.0)/(zimp-zeff)
-      epsa = SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
-
+      ! Redistributed to regular grid with relatively few points
+      ! to get smooth derivatives (experimental profiles had many
+      ! points near core, and derivative got spikey for some reason)
+      CALL spline_alloc(kin,100,9)
+      kin%title = (/"idens ","edens ","itemp ","etemp ","wexb  ",
+     $     "loglam","   nui","   nue","  epsr"/)
+      DO istep=0,kin%mx
+            psi = (1.0*istep)/kin%mx
+            CALL spline_eval(tmp,psi,0)
+            kin%xs(istep) = psi
+            kin%fs(istep,1:5) = tmp%f(1:5)
+      ENDDO
+      
 c-----------------------------------------------------------------------
 c     in SI units.
 c-----------------------------------------------------------------------
+      ALLOCATE(zeff(0:kin%mx),zpitch(0:kin%mx))
+      zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*abs(icharge)
+     $     *(zimp-abs(icharge))
+      zpitch = 1.0+(1.0+zmass)/(2.0*zmass)*zimp
+     $     *(zeff-1.0)/(zimp-zeff)
+      epsa = SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
+      
       kin%fs(:,3:4) = kin%fs(:,3:4)*1.602E-19
       kin%fs(:,6) = 17.3-0.5*LOG(kin%fs(:,2)/1.0e20)
      $     +1.5*LOG(kin%fs(:,4)/1.602e-16)
@@ -223,14 +232,31 @@ c-----------------------------------------------------------------------
      $     /(SQRT(1.0*imass)*(kin%fs(:,3)/1.602e-16)**1.5)
       kin%fs(:,8) = (zpitch/3.5E17)*kin%fs(:,2)*kin%fs(:,6)
      $     /(SQRT(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
-      kin%fs(:,9) = epsa*SQRT(kin%xs(:))
-
+      IF(kin%xs(0)==0)THEN
+          kin%fs(0,9) = 0.0
+          kin%fs(1:kin%mx,9) = epsa*SQRT(kin%xs(1:kin%mx))
+      ELSE
+          kin%fs(:,9) = epsa*SQRT(kin%xs(:))
+      ENDIF
       CALL spline_fit(kin,"extrap")
-      CALL bicube_eval(eqfun,0.0_r8,0.0_r8,0)
-      bo = eqfun%f(1) 
+c-----------------------------------------------------------------------
+c     Manipulation of the rotation.
+c-----------------------------------------------------------------------
+      DO istep=0,kin%mx
+         CALL spline_eval(kin,kin%xs(istep),1)
+         welec = wefac*kin%f(5) ! direct manipulation of omegaE
+         wdian =-twopi*kin%f(3)*kin%f1(1)/(e*abs(icharge)*chi1*kin%f(1))
+         wdiat =-twopi*kin%f1(3)/(e*abs(icharge)*chi1)
+         wpefac = (wpfac*(welec+wdian+wdiat) - (wdian+wdiat))/welec
+         welec = wpefac*welec   ! indirect manipulation of rotation
+         kin%fs(istep,5) = welec
+      ENDDO
+      CALL spline_fit(kin,"extrap")
 c-----------------------------------------------------------------------
 c     Outputs if desired.
 c-----------------------------------------------------------------------
+      CALL bicube_eval(eqfun,0.0_r8,0.0_r8,0)
+      bo = eqfun%f(1) 
       IF(kinetic_flag) THEN
          CALL ascii_open(out_unit,"pent_kinetics.out","UNKNOWN")
          WRITE(out_unit,*)"PROFILES USED IN PENT CALCULATION:"
@@ -239,16 +265,16 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)"R0 = ",ro," B0 = ",bo," chi1 = ",chi1
          WRITE(out_unit,'(1/,1x,15(1x,a16))') "psi","eps_r","n_i","n_e",
      $        "T_i","T_e","omega_E","logLambda","nu_i","nu_e","q",
-     $        "dconPmu_0","dvdpsi","omega_*n","omega_*t"
+     $        "dconPmu_0","dvdpsi","omega_N","omega_T"
          DO istep=1,1000
             psi = istep/1000.0
             CALL spline_eval(sq,psi,0)
             CALL spline_eval(kin,psi,1)
             CALL bicube_eval(rzphi,psi,0.0_r8,0)
             WRITE(out_unit,'(1x,15(1x,es16.8E3))') psi,
-     $           kin%f(9),kin%f(1:8),sq%f(4),sq%f(2),sq%f(3),-twopi*
-     $           kin%f(3)*kin%f1(1)/(e*icharge*chi1*kin%f(1)),
-     $           -twopi*kin%f1(3)/(e*icharge*chi1)
+     $           kin%f(9),kin%f(1:8),sq%f(4),sq%f(2),sq%f(3),
+     $         -twopi*kin%f(3)*kin%f1(1)/(e*abs(icharge)*chi1*kin%f(1)),
+     $         -twopi*kin%f1(3)/(e*abs(icharge)*chi1)
          ENDDO
          CALL ascii_close(out_unit)
       ENDIF

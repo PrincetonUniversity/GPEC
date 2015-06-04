@@ -8,9 +8,10 @@ bashjob="""#!/bin/bash
 # --- emailhere
   
 #PBS -l nodes=1
-#PBS -l mem=6gb
-#PBS -l walltime=20:00:00
+#PBS -l mem=memheremb
+#PBS -l walltime=40:00:00
 #PBS -r n
+#PBS -q mque
 
 # --- export all my environment variables to the job
 #PBS -V

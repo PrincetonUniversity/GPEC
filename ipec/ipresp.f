@@ -45,7 +45,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(chimats(mpert,mpert),chemats(mpert,mpert),
      $     kaxmats(mpert,mpert),flxmats(mpert,mpert),
      $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert))
-      WRITE(*,*)"Building free boundary solutions"
+      IF(verbose) WRITE(*,*)"Building free boundary solutions"
       DO i=1,mpert
          edge_mn=0
          edge_flag=.FALSE.
@@ -99,8 +99,8 @@ c-----------------------------------------------------------------------
      $           flxmats(:,i),r8))
             surfet(j,i)=surfep(j,i)+surfee(i)
          ENDDO
-         WRITE(*,'(1x,a12,i3,a7,es10.3,a10,es10.3)')"eigenmode = ",i,
-     $        ", dw = ",surfet(1,i),
+         IF(verbose) WRITE(*,'(1x,a12,i3,a7,es10.3,a10,es10.3)')
+     $        "eigenmode = ",i,", dw = ",surfet(1,i),
      $        ", error = ",ABS(1-surfet(2,i)/surfet(1,i))   
          CALL ipeq_dealloc
          DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
@@ -127,7 +127,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate plasma inductance matrix by surface consideration.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Calculating inductrances and permeability"
+      IF(verbose) WRITE(*,*)"Calculating inductrances and permeability"
       ALLOCATE(plas_indev(0:4,mpert),plas_indmats(0:4,mpert,mpert),
      $     plas_indevmats(0:4,mpert,mpert))
       DO j=1,4
@@ -233,6 +233,10 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(2*mpert) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,vr,vl
+      ! LOGAN variables
+      REAL(r8), DIMENSION(5*mpert) :: rworks
+      COMPLEX(r8), DIMENSION(3*mpert) :: works
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: ctp,a,permu
 c-----------------------------------------------------------------------
 c     calculate permeability matrix.
 c-----------------------------------------------------------------------
@@ -254,6 +258,49 @@ c-----------------------------------------------------------------------
          permeabevmats(j,:,:)=vr
       ENDDO
 c-----------------------------------------------------------------------
+c     LOGAN - Hermitian eigenvectors for orthonormal basis.
+c-----------------------------------------------------------------------
+c     ALLOCATE(permeabhev(0:4,mpert),permeabhevmats(0:4,mpert,mpert))
+c     !ctp = CONJG(TRANSPOSE(permeabmats(resp_index,:,:)))
+c     !IF (ALL(permeabmats(resp_index,:,:) .EQ. ctp)) THEN
+c     IF (ALL(ABS(AIMAG(permeabev(resp_index,:))
+c    $        /REAL(permeabev(resp_index,:))) .LT. 1e-9)) THEN
+c       PRINT *, "Permeability ~ Hermitian"
+c       phermitian = .FALSE.
+c       DO j=0,4
+c         work=0
+c         rwork=0
+c         lwork=2*mpert-1
+c         permeabhevmats(j,:,:) = permeabmats(j,:,:)
+c         CALL zheev('V','U',mpert,permeabhevmats(j,:,:),mpert,
+c    $      permeabhev(j,:),work,lwork,rwork,info)
+c       ENDDO
+c     ELSE
+c       PRINT *, "Permeability not Hermitian"
+c       phermitian = .FALSE.
+c       permeabhev = permeabev
+c       permeabhevmats = permeabevmats
+c     ENDIF
+c-----------------------------------------------------------------------
+c     LOGAN - SVD permeability matrix for orthonormal basis.
+c-----------------------------------------------------------------------
+      ALLOCATE(perms(mpert),permv(mpert,mpert))
+      lwork=3*mpert
+      works=0
+      rworks=0
+      perms=0
+      permu=0
+      permv=0
+      a = 0
+      DO i=1,mpert
+        a(i,i) = 1 !identitiy
+      ENDDO
+      ! sudo permeability: plasma response operator (Phi^p = a Phi^x)
+      a=permeabmats(resp_index,:,:) - a
+      CALL zgesvd('S','S',mpert,mpert,a,mpert,perms,permu,mpert,permv,
+     $     mpert,works,lwork,rworks,info)
+      permv=CONJG(TRANSPOSE(permv))
+c-----------------------------------------------------------------------
 c     sort by amplitudes.
 c-----------------------------------------------------------------------
       DO j=0,4
@@ -263,7 +310,7 @@ c-----------------------------------------------------------------------
          CALL isbubble(REAL(permeabev(j,:)),
      $        permeabindex(j,:),1,mpert)
       ENDDO
-      WRITE(*,'(1x,a,es10.3)')"Single mode permeability = ",
+      IF(verbose) WRITE(*,'(1x,a,es10.3)')"Single mode permeability = ",
      $     MAXVAL(ABS(permeabev(resp_index,:)))
 c-----------------------------------------------------------------------
 c     terminate.

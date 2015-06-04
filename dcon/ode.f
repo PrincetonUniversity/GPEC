@@ -357,7 +357,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     fixup solution at singular surface.
 c-----------------------------------------------------------------------
-      WRITE(*,10)"psi = ",sing(ising)%psifac,", q = ",sing(ising)%q
+      IF(verbose) WRITE(*,10)
+     $  "psi = ",sing(ising)%psifac,", q = ",sing(ising)%q
       CALL ode_unorm(.TRUE.)
 c-----------------------------------------------------------------------
 c     diagnose solution before reinitialization.
@@ -516,7 +517,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write to crit.out.
 c-----------------------------------------------------------------------
-      WRITE(*,10)"psi = ",sing(ising)%psifac,", q = ",sing(ising)%q
+      IF(verbose)
+     $  WRITE(*,10)"psi = ",sing(ising)%psifac,", q = ",sing(ising)%q
       WRITE(crit_out_unit,'(/1x,a,i6,a,1p,e9.3,0p,a,f6.3,a,i2)')
      $     "Gaussian Reduction at istep = ",istep,
      $     ", psi = ",sing(ising)%psifac,", q = ",sing(ising)%q,

@@ -69,20 +69,20 @@ c          - offset : >0 to calculate offset rotation
 c          - out    : integrate step by step, recording as you go
 c-----------------------------------------------------------------------
       FUNCTION lsode_lambda(wn,wt,we,bhat,dhat,wbar,jbar,ll,ximag,xmax,
-     $     nutype,s,sigma,off,out,lbl)
+     $     nutype,gamma,s,sigma,off,out,lbl)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       COMPLEX(r8) :: lsode_lambda
-      REAL(r8), INTENT(IN) :: wn,wt,we,bhat,dhat,ximag,xmax
+      REAL(r8), INTENT(IN) :: wn,wt,we,bhat,dhat,ximag,xmax,gamma
       INTEGER, INTENT(IN) :: s,sigma,ll
       LOGICAL, INTENT(IN) :: off,out
       CHARACTER(32), INTENT(IN) :: nutype,lbl
 
       TYPE(spline_type), INTENT(INOUT) :: wbar,jbar
 
-      REAL*8  RBLOCK(7)
+      REAL*8  RBLOCK(8)
       INTEGER IBLOCK(3)
       CHARACTER(32) CBLOCK1,CBLOCK2
       LOGICAL LBLOCK(2)
@@ -119,7 +119,7 @@ c      MF = 22                   ! stiff with unknown J
 c-----------------------------------------------------------------------
 c     Share all the relavent variables in a common block with integrand.
 c-----------------------------------------------------------------------
-      RBLOCK = (/ wn,wt,we,bhat,dhat,ximag,xmax /)
+      RBLOCK = (/ wn,wt,we,bhat,dhat,ximag,xmax,gamma /)
       IBLOCK = (/ ll,s,sigma /)
       CBLOCK1 = nutype
       CBLOCK2 = lbl
@@ -201,14 +201,14 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(218) :: RSAV
 
       COMPLEX(r8) :: xint,test
-      REAL(r8) :: wn,wt,we,bhat,dhat,wd,wb,ls,ximag,xmax,djdj
+      REAL(r8) :: wn,wt,we,bhat,dhat,wd,wb,ls,ximag,xmax,djdj,gamma
       INTEGER :: s,ll,sigma
       LOGICAL :: off,out
       CHARACTER(32) :: nutype,lbl
       type(cspline_type) :: xspl
 
       COMMON /lmda_block/ 
-     $     wn,wt,we,bhat,dhat,ximag,xmax, ! 7 reals
+     $     wn,wt,we,bhat,dhat,ximag,xmax,gamma, ! 8 reals
      $     ll,s,sigma,          ! 3 integers
      $     off,out,             ! 2 logicals
      $     nutype,lbl           ! 2 32 character
@@ -225,17 +225,17 @@ c-----------------------------------------------------------------------
 c     Evaluate Energy integral (possible wd~0 resonance)
 c-----------------------------------------------------------------------
       IF(xlsode_flag)THEN
-         xint = lsode_x(wn,wt,we,wd,wb,ls,ximag,xmax,nutype,s,sigma,
-     $        off,out,lbl)
+         xint = lsode_x(wn,wt,we,wd,wb,ls,ximag,xmax,nutype,gamma,s,
+     $        sigma,off,out,lbl)
          IF(sigma/=0) xint = xint 
-     $        + lsode_x(wn,wt,we,wd,-wb,ls,ximag,xmax,nutype,s,sigma,
-     $        off,out,lbl)
+     $        +lsode_x(wn,wt,we,wd,-wb,ls,ximag,xmax,nutype,gamma,s,
+     $        sigma,off,out,lbl)
       ELSE
-         xint = intspl_x(wn,wt,we,wd,wb,ls,ximag,xmax,nutype,s,sigma,
-     $        off,out,lbl)
+         xint = intspl_x(wn,wt,we,wd,wb,ls,ximag,xmax,nutype,gamma,s,
+     $        sigma,off,out,lbl)
          IF(sigma/=0) xint = xint 
-     $        +intspl_x(wn,wt,we,wd,-wb,ls,ximag,xmax,nutype,s,sigma,
-     $        off,out,lbl)
+     $        +intspl_x(wn,wt,we,wd,-wb,ls,ximag,xmax,nutype,gamma,s,
+     $        sigma,off,out,lbl)
       ENDIF
 c-----------------------------------------------------------------------
 c     Convert to 2 real space solutions
@@ -278,14 +278,14 @@ c     assume peak is when BHR in energy integrand peak, which is
 c     1.5<~x<~2.5 for nu=0. Not exact -> low power concentration
 c-----------------------------------------------------------------------
       FUNCTION intspl_lambda(wn,wt,we,bhat,dhat,wbar,jbar,ll,ximag,xmax,
-     $     nutype,s,sigma,off,out,lbl)
+     $     nutype,gamma,s,sigma,off,out,lbl)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       COMPLEX(r8) :: intspl_lambda
       INTEGER, INTENT(IN) :: s,ll,sigma
-      REAL(r8), INTENT(IN) :: wn,wt,we,bhat,dhat,ximag,xmax
+      REAL(r8), INTENT(IN) :: wn,wt,we,bhat,dhat,ximag,xmax,gamma
       LOGICAL, INTENT(IN) :: off,out
       CHARACTER(32), INTENT(IN) :: nutype,lbl
       type(spline_type) :: wbar,jbar,resspl
@@ -295,7 +295,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: xout = .FALSE.
       INTEGER :: ilmda,i
       REAL(r8) :: wbhat,wdhat,lmda,ls
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: wd0
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: wd0,gridpts
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: ldl
       COMPLEX(r8) :: xint
 
@@ -315,8 +315,12 @@ c-----------------------------------------------------------------------
       resspl%fs(:,1) = 2.5*dhat*wbar_spline%fs(:,2)+we
       CALL spline_fit(resspl,'extrap')
       CALL spl_roots(wd0,resspl,1)
-      CALL powergrid(lnorm,ldl,wd0,2,"both") !includes ends
-      DEALLOCATE(wd0)
+      ALLOCATE(gridpts(0:SIZE(wd0+1)))
+      gridpts(1:SIZE(wd0)) = wd0(:)
+      gridpts(0) = wbar_spline%xs(0)
+      gridpts(SIZE(wd0)+1) = wbar_spline%xs(nlmda)
+      CALL powergrid(lnorm,ldl,gridpts,2,"both") !includes ends
+      DEALLOCATE(wd0,gridpts)
       CALL spline_dealloc(resspl)
 c-----------------------------------------------------------------------
 c     form lamda spline on new grid.
@@ -334,16 +338,16 @@ c     Evaluate Energy integral (possible wd~0 resonance)
 c-----------------------------------------------------------------------
          IF(xlsode_flag)THEN
             xint = lsode_x(wn,wt,we,wdhat,wbhat,ls,ximag,xmax,
-     $           nutype,s,sigma,off,xout,lbl)
+     $           nutype,gamma,s,sigma,off,xout,lbl)
             IF(sigma/=0) xint = xint 
      $           + lsode_x(wn,wt,we,wdhat,-wbhat,ls,ximag,xmax,
-     $           nutype,s,sigma,off,xout,lbl)
+     $           nutype,gamma,s,sigma,off,xout,lbl)
          ELSE
             xint = intspl_x(wn,wt,we,wdhat,wbhat,ls,ximag,xmax,
-     $           nutype,s,sigma,off,xout,lbl)
+     $           nutype,gamma,s,sigma,off,xout,lbl)
             IF(sigma/=0) xint = xint 
      $           + intspl_x(wn,wt,we,wdhat,-wbhat,ls,ximag,xmax,
-     $           nutype,s,sigma,off,xout,lbl)
+     $           nutype,gamma,s,sigma,off,xout,lbl)
          ENDIF    
          lspl%xs(ilmda) = lmda
          lspl%fs(ilmda,1) = wbar_spline%f(1)*jbar_spline%f(nl+ll+1)*xint
@@ -380,16 +384,16 @@ c-----------------------------------------------------------------------
      $           0.25*FLOAT(i)*(wbar_spline%xs(nlmda)-wbar_spline%xs(0))
             IF(xlsode_flag)THEN
                xint = lsode_x(wn,wt,we,wdhat,wbhat,ls,ximag,xmax,
-     $              nutype,s,sigma,off,xout,lbl)
+     $              nutype,gamma,s,sigma,off,xout,lbl)
                IF(sigma/=0) xint = xint 
      $              + lsode_x(wn,wt,we,wdhat,-wbhat,ls,ximag,xmax,
-     $              nutype,s,sigma,off,xout,lbl)
+     $              nutype,gamma,s,sigma,off,xout,lbl)
             ELSE
                xint = intspl_x(wn,wt,we,wdhat,wbhat,ls,ximag,xmax,
-     $              nutype,s,sigma,off,xout,lbl)
+     $              nutype,gamma,s,sigma,off,xout,lbl)
                IF(sigma/=0) xint = xint 
      $              + intspl_x(wn,wt,we,wdhat,-wbhat,ls,ximag,xmax,
-     $              nutype,s,sigma,off,xout,lbl)
+     $              nutype,gamma,s,sigma,off,xout,lbl)
             ENDIF
          ENDDO
       ENDIF
@@ -433,19 +437,19 @@ c          - s      : species (1 for ions 2 for electrons)
 c          - offset : >0 to calculate offset rotation 
 c          - out    : integrate step by step, recording as you go
 c-----------------------------------------------------------------------
-      FUNCTION lsode_x(wn,wt,we,wd,wb,l,ximag,xmax,nutype,s,sigma,off,
-     $     out,lbl)
+      FUNCTION lsode_x(wn,wt,we,wd,wb,l,ximag,xmax,nutype,gamma,
+     $     s,sigma,off,out,lbl)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       COMPLEX(r8) :: lsode_x
-      REAL(r8), INTENT(IN) :: wn,wt,we,wd,wb,l,ximag,xmax
+      REAL(r8), INTENT(IN) :: wn,wt,we,wd,wb,l,ximag,xmax,gamma
       INTEGER, INTENT(IN) ::s,sigma
       LOGICAL, INTENT(IN) :: off,out
       CHARACTER(32), INTENT(IN) :: nutype,lbl
 
-      REAL*8  RBLOCK(7)
+      REAL*8  RBLOCK(8)
       INTEGER IBLOCK(2)
       LOGICAL LBLOCK(2)
       CHARACTER(32) CBLOCK
@@ -480,7 +484,7 @@ c      MF = 22                   ! stiff with unknown J
 c-----------------------------------------------------------------------
 c     Share all the relavent variables in a common block with integrand.
 c-----------------------------------------------------------------------
-      RBLOCK = (/ wn,wt,we,wd,wb,l,ximag /)
+      RBLOCK = (/ wn,wt,we,wd,wb,l,ximag,gamma /)
       IBLOCK = (/ s,sigma /)
       LBLOCK = (/ off,.FALSE. /)
       CBLOCK = nutype
@@ -600,13 +604,13 @@ c-----------------------------------------------------------------------
       REAL*8 X, Y(NEQ), YDOT(NEQ)
 
       COMPLEX(r8) :: fx,gx,cx,nux
-      REAL(r8) :: wn,wt,we,wd,wb,l,ximag,neo
+      REAL(r8) :: wn,wt,we,wd,wb,l,ximag,neo,gamma
       INTEGER :: s,sigma
       LOGICAL :: offset,imaxis
       CHARACTER(32) :: nutype
 
       COMMON /x_block/
-     $     wn,wt,we,wd,wb,l,ximag, ! 7 reals
+     $     wn,wt,we,wd,wb,l,ximag,gamma, ! 8 reals
      $     s,sigma,             ! 2 integers
      $     offset,imaxis,       ! 2 logicals
      $     nutype               ! 1 16 character
@@ -639,7 +643,7 @@ c-----------------------------------------------------------------------
          ELSE
             fx = (we+wn+wt*((1-neo)*(cx-1.5)+neo*2))*cx**2.5*EXP(-cx)
          ENDIF
-         gx = ifac*(l*wb*SQRT(cx)+nn*(we+wd*cx))-nux
+         gx = ifac*(l*wb*SQRT(cx)+nn*(we+wd*cx))-nux-gamma
       ENDIF
 c-----------------------------------------------------------------------
 c     Convert to 2 real space solutions
@@ -662,14 +666,14 @@ c-----------------------------------------------------------------------
 c     FUNCTION 4A. intspl_x
 c     Energy integral spline formation
 c-----------------------------------------------------------------------
-      FUNCTION intspl_x(wn,wt,we,wd,wb,l,ximag,xmax,nutype,s,sigma,off,
-     $     out,lbl)
+      FUNCTION intspl_x(wn,wt,we,wd,wb,l,ximag,xmax,nutype,gamma,
+     $     s,sigma,off,out,lbl)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       IMPLICIT NONE
       COMPLEX(r8) intspl_x
-      REAL(r8), INTENT(IN) :: wn,wt,we,wd,wb,l,ximag,xmax
+      REAL(r8), INTENT(IN) :: wn,wt,we,wd,wb,l,ximag,xmax,gamma
       INTEGER, INTENT(IN) :: s,sigma
       LOGICAL, INTENT(IN) :: off,out
       CHARACTER(32), INTENT(IN) :: nutype,lbl
@@ -739,7 +743,7 @@ c-----------------------------------------------------------------------
          ELSE
             fx = (we+wn+wt*((1-neo)*(cx-1.5)+neo*2))*cx**2.5*EXP(-cx)
          ENDIF
-         gx = ifac*(l*wb*SQRT(cx)+nn*(we+wd*cx))-nux
+         gx = ifac*(l*wb*SQRT(cx)+nn*(we+wd*cx))-nux-gamma
       ENDIF
       xspl%fs(:,1) = xdx(1,:)*fx/gx
       CALL cspline_fit(xspl,"extrap")
@@ -776,7 +780,7 @@ c-----------------------------------------------------------------------
          ELSE
             fx = (we+wn+wt*((1-neo)*(cx-1.5)+neo*2))*cx**2.5*EXP(-cx)
          ENDIF
-         gx = ifac*(l*wb*SQRT(cx)+nn*(we+wd*cx))-nux
+         gx = ifac*(l*wb*SQRT(cx)+nn*(we+wd*cx))-nux-gamma
          xspl%fs(:,1) = xdx(1,:)*fx/gx
          CALL cspline_fit(xspl,"extrap")
          CALL cspline_int(xspl)
@@ -850,20 +854,25 @@ c-----------------------------------------------------------------------
          !zeros counted twice
          IF(spl%fs(ix,iqty)==0.0 .AND. ix<spl%mx) nroots=nroots-1 
       ENDDO
-      IF(spl%fs(0,iqty)==0) nroots=nroots-1
-      IF(spl%fs(spl%mx,iqty)==0) nroots=nroots-1
+c      IF(spl%fs(0,iqty)==0) nroots=nroots-1
+      IF(spl%periodic .AND. spl%fs(spl%mx,iqty)==0) nroots=nroots-1
       IF(ALLOCATED(roots)) DEALLOCATE(roots)
-      ALLOCATE(roots(0:nroots+1))
-      roots(0) = spl%xs(0)
-      roots(nroots+1) = spl%xs(spl%mx)
+      ALLOCATE(roots(1:nroots))
+c      ALLOCATE(roots(0:nroots+1))
+c      roots(0) = spl%xs(0)
+c      roots(nroots+1) = spl%xs(spl%mx)
 c-----------------------------------------------------------------------
 c     find all zero passings, intialize at larger gradient.
 c-----------------------------------------------------------------------
       DO ix=1,spl%mx
-         IF(spl%fs(ix,iqty)==0.0 .AND. ix<spl%mx) CYCLE !don't do zeros twice
+         ! dont calculate exact zeros twice
+         IF(spl%fs(ix,iqty)==0.0 .AND. ix<spl%mx) CYCLE
+         IF(spl%fs(ix,iqty)==0.0 .AND. spl%periodic) CYCLE
+         ! find crossing window
          IF (spl%fs(ix,iqty)*spl%fs(ix-1,iqty) .LE. 0.0) THEN
-            x=spl%xs(ix-1)-spl%fs(ix-1,iqty)*(spl%xs(ix)
-     $           -spl%xs(ix-1))/(spl%fs(ix,iqty)-spl%fs(ix-1,iqty))
+c            x=spl%xs(ix-1)-spl%fs(ix-1,iqty)*(spl%xs(ix)
+c     $           -spl%xs(ix-1))/(spl%fs(ix,iqty)-spl%fs(ix-1,iqty))
+            x = SUM(spl%xs(ix-1:ix))/2.0
             f=HUGE(f)
             dx=lx
             it=0

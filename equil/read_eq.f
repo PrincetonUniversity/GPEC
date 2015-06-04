@@ -29,6 +29,7 @@ c     20. read_eq_rtaylor.
 c     21. read_eq_dump.
 c     22. read_eq_wdn.
 c     23. read_eq_lez_2
+c     24. read_eq_chease3
 c-----------------------------------------------------------------------
 c     subprogram 0. read_eq_mod.
 c     module declarations.
@@ -1665,8 +1666,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     open file and read sizes.
 c-----------------------------------------------------------------------
-      CALL bin_open(in_unit,TRIM(eq_filename),"OLD","REWIND",
-     $     convert_type)
+      OPEN(UNIT=in_unit,FILE=TRIM(eq_filename),STATUS="OLD",
+     $     FORM="UNFORMATTED")
       READ(in_unit)npsi,nchi,r0exp,b0exp,rmag,zmag,tpsio
 c-----------------------------------------------------------------------
 c     allocate local arrays.
@@ -1682,7 +1683,6 @@ c-----------------------------------------------------------------------
          READ(in_unit)zeq(ipsi,:)
       ENDDO
       CALL ascii_close(in_unit)
-      WRITE(*,*) "finish read"
 c-----------------------------------------------------------------------
 c     copy variables.
 c-----------------------------------------------------------------------
@@ -1697,7 +1697,6 @@ c-----------------------------------------------------------------------
       sq_in%fs(:,1)=t
       sq_in%fs(:,2)=mu0p
       sq_in%fs(:,3)=q
-c      WRITE(*,*) sq_in%fs(:,3)
       CALL spline_fit(sq_in,"extrap")
 c-----------------------------------------------------------------------
 c     copy 2D arrays.
@@ -1705,20 +1704,17 @@ c-----------------------------------------------------------------------
       CALL bicube_alloc(rz_in,npsi-1,nchi-1,2)
       rz_in%fs(:,:,1)=req
       rz_in%fs(:,:,2)=zeq
-c      WRITE(*,*) "rz_in2",rz_in%fs(:,:,2)
 c-----------------------------------------------------------------------
 c     deallocate local arrays and process inverse equilibrium.
-c-----------------------------------------------------------------------
+c----------------------------------------------------------------------- 
       DEALLOCATE(norpsi,psi,t,mu0p,q)
       DEALLOCATE(req,zeq)
-      CALL bicube_fit(rz_in,"extrap","periodic")
-c      WRITE(*,*) "finish bispline"
       CALL inverse_run
-      WRITE(*,*) "finish inverse"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE read_eq_chease3
-
+      END SUBROUTINE read_eq_chease3      
+      
+      
       END MODULE read_eq_mod

@@ -3,7 +3,7 @@
 	jsurf_in=1
 	tmag_in=0
 
-	data_flag=f
+	data_flag=t
 	data_type="surfmn"
         infile="/p/gpec/users/jpark/data/3d_field/d3d/surfmn.out.cossin.144182.03750_Intrins"
 	nmin=0
@@ -12,10 +12,7 @@
 	mmax=64
 
         harmonic_flag=f
-	cosmn(10)=1e-4
-
-	mode_flag=f
-	mode=1
+	cosmn(3)=1e-4
 
 	displacement_flag=f
 	fixed_boundary_flag=f
@@ -28,33 +25,30 @@
 	sing_spot=5e-4
 	reg_flag=t
 	reg_spot=5e-2
-	chebyshev_flag=f
+	chebyshev_flag=t
 	nche=20
 /
 &ipec_output
-	jac_out="hamada"
-	jsurf_out=0
-	tmag_out=1
+	jac_out="hamada"	! coordinates of select outputs
+	jsurf_out=0			! 1 for area weighted outputs
+	tmag_out=1			! 1 for magnetic toroidal angle outputs
 
-	resp_flag=t
-	singcoup_flag=f
+	resp_flag=f
+	singcoup_flag=f		! Calculate coupling of each m to resonant surfaces
+	singfld_flag=f		! Output of resonant surface quantities (flux,current,etc.)
+	vsingfld_flag=f		! Output of vacuum resonant surface quantities
+	pmodb_flag=f		! Outputs delta-B_Lagrangian
+	xbnormal_flag=f		! Outputs normal displacement and field in plasma
+	vbnormal_flag=f		! Outputs vacuum normal displacement and field in plasma
 
-	singfld_flag=t
-	vsingfld_flag=t
-	pmodb_flag=t
-	xbnormal_flag=t
-	vbnormal_flag=t
-
-	bwp_pest_flag=t
-	fun_flag=f
+	fun_flag=f			! Maps outputs to (r,z) 
 	flux_flag=f
 
-	eqbrzphi_flag=f
-	brzphi_flag=f
-	xrzphi_flag=f
-	vbrzphi_flag=f
+	eqbrzphi_flag=f		! Outputs equilibrium field on regular (r,z) grid
+	brzphi_flag=f		! Outputs perturbed field on regular (r,z) grid
+	xrzphi_flag=f		! Outputs displacement on regular (r,z) grid
+	vbrzphi_flag=f		! Outputs vacuum perturbed field on regular (r,z) grid
 	vvbrzphi_flag=f
-	pbrzphi_flag=f
 
 	bin_flag=t
 	bin_2d_flag=t
@@ -65,11 +59,10 @@
 	xbrzphifun_flag=f
 	arzphifun_flag=f
 
-	ntv_flag=t
+	eigm_flag=f			! Outputs DCON eigmode displacement on control surface
 
 /
 &ipec_diagnose
 	div_flag=f
-	radvar_flag=f
-	pmodbrz_flag=f
+	radvar_flag=t
 /

@@ -171,8 +171,8 @@ c-----------------------------------------------------------------------
          chi_fun=chi_fun/(twopi**2)
          che_fun=-che_fun/(twopi**2)
          IF (vmfac(i) == 0) THEN
-            WRITE(*,*) chi_fun(0)
-            WRITE(*,*) che_fun(0)
+            IF(verbose) WRITE(*,*) chi_fun(0)
+            IF(verbose) WRITE(*,*) che_fun(0)
          ENDIF
          flx_fun=vbwp_fun
          kax_fun=(chi_fun-che_fun)/mu0

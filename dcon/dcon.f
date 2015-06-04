@@ -76,10 +76,10 @@ c-----------------------------------------------------------------------
       locstab%fs=0
       locstab%name="locstb"
       locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
-      WRITE(*,*)"Evaluating Mercier criterion"
+      IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
       CALL mercier_scan
       IF(bal_flag)THEN
-         WRITE(*,*)"Evaluating ballooning criterion"
+         IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
          CALL bal_scan
       ENDIF
       CALL spline_fit(locstab,"extrap")
@@ -133,17 +133,19 @@ c-----------------------------------------------------------------------
 c     fit equilibrium quantities to Fourier-spline functions.
 c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag)THEN
-         WRITE(*,'(1x,a)')"Fourier analysis of metric tensor components"
-         WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,", qmin = ",qmin,
-     $        ", qmax = ",qmax,", q95 = ",q95
-         WRITE(*,'(1x,a,l1,1p,3(a,e10.3))')"sas_flag = ",sas_flag,
-     $        ", dmlim = ",dmlim,", qlim = ",qlim,", psilim = ",psilim
-         WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
+         IF(verbose) WRITE(*,'(1x,a)')
+     $        "Fourier analysis of metric tensor components"
+         IF(verbose) WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,
+     $        ", qmin = ",qmin,", qmax = ",qmax,", q95 = ",q95
+         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,e10.3))')
+     $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
+     $        ", qlim = ",qlim,", psilim = ",psilim
+         IF(verbose) WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betap1 = ",betap1
-         WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
+         IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
          CALL fourfit_make_metric
-         WRITE(*,*)"Computing F, G, and K Matrices"
+         IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
          CALL fourfit_make_matrix
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
@@ -156,7 +158,7 @@ c-----------------------------------------------------------------------
 c     integrate main ODE's.
 c-----------------------------------------------------------------------
       IF(ode_flag)THEN
-         WRITE(*,*)"Starting integration of ODE's"
+         IF(verbose) WRITE(*,*)"Starting integration of ODE's"
          CALL ode_run
       ENDIF
 c-----------------------------------------------------------------------
@@ -164,7 +166,7 @@ c     compute free boundary energies.
 c-----------------------------------------------------------------------
       IF(vac_flag .AND. .NOT.
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
-         WRITE(*,*)"Computing free boundary energies"
+         IF(verbose) WRITE(*,*)"Computing free boundary energies"
          CALL free_run(plasma1,vacuum1,total1,nzero)
       ELSE
          plasma1=0
@@ -178,16 +180,16 @@ c-----------------------------------------------------------------------
 c     the bottom line.
 c-----------------------------------------------------------------------
       IF(nzero /= 0)THEN
-         WRITE(*,'(1x,a,i2,".")')
+         IF(verbose) WRITE(*,'(1x,a,i2,".")')
      $        "Fixed-boundary mode unstable for nn = ",nn
       ENDIF
       IF(vac_flag .AND. .NOT.
      $        (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          IF(total1 < 0)THEN
-            WRITE(*,'(1x,a,i2,".")')
+            IF(verbose) WRITE(*,'(1x,a,i2,".")')
      $           "Free-boundary mode unstable for nn = ",nn
          ELSE
-            WRITE(*,'(1x,a,i2,".")')
+            IF(verbose) WRITE(*,'(1x,a,i2,".")')
      $           "All free-boundary modes stable for nn = ",nn
          ENDIF
       ENDIF

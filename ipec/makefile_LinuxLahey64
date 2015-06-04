@@ -1,6 +1,6 @@
 # This is the makefile for IPEC on LinuxLahey computers.
 
-FFLAGS = -I../equil -I../coil -g
+FFLAGS = -I../equil -I../coil
 
 F90 = lfc $(FFLAGS)
 

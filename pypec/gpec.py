@@ -1,22 +1,64 @@
 #!/usr/local/env python
 """
-MODULE
+:mod:`pypec.gpec` -- Python Wrappers for FORTRAN Codes
+======================================================
 
-Collection of wrapper functions for running DCON, IPEC, and PENT.
+This is a collection of wrapper functions for running DCON, IPEC, and PENT.
 
-""" 
+If run from the command line, this module will call an associated GUI.
+
+This module is for more advanced operators who want to control/run 
+the fortran package for DCON, IPEC, and PENT. To get started, lets
+explore the package
+
+>>> gpec.
+gpec.InputSet       gpec.join           gpec.optimize       gpec.run
+gpec.bashjob        gpec.namelist       gpec.optntv         gpec.subprocess
+gpec.data           gpec.np             gpec.os             gpec.sys
+gpec.default        gpec.ntv_dominantm  gpec.packagedir     gpec.time
+
+many of these are simply standard python modules imported by gpec
+lets submit a full run in just 4 lines:
+steal the settings from a previous run (leaving run director as deafult)
+
+>>> new_inputs = gpec.InputSet(indir='/p/gpec/users/nlogan/data/d3d/ipecout/145117/ico3_n3/')
+
+change what we want to
+
+>>> new_inputs['dcon']['DCON_CONTROL']['nn']=2
+>>> new_dir = new_inputs.indir[:-2]+'2'
+
+DOUBLE CHECK THAT ALL IPUTS ARE WHAT YOU EXPECT (not shown here)
+and submit the job to the cluster.
+
+>>> gpec.run(loc=new_dir,**new_inputs.infiles)
+
+Running the package using this module will 
+
+1. Create the new location (if not already existing), and cd to it
+2. rm all .out, .dat, and .bin files already in the directory (not dcon ones if rundcon=False, not pent ones for runpent=False, etc).
+3. cp all .dat and .in files from the run directoy to the new location
+4. Write all namelists supplied in kwargs to file (overwriting)
+5. Write a unique bash script for the run, and submit it OR run each fortran routine from the commandline.
+6. Remove all .dat and xdraw files from the directory
+
+You will not that there is significant oportunity for overwriting files,
+and the user must be responsible for double checking that all inputs 
+are correct and will not result in life crushing disaster for themselves
+or a friend when that super special file gets over-written.
+
 """
-	@package pypec
-	@author NC Logan
-	@email nlogan@pppl.gov
+"""
+    @package pypec
+    @author NC Logan
+    @email nlogan@pppl.gov
 """
 
 #basics
 import os                               # operating system commands
-import sys
+import sys,copy
+import time,pickle
 import subprocess
-import time
-import pickle
 import numpy as np                      # math
 from scipy import optimize
 from string import join                 # string manipulation
@@ -26,9 +68,13 @@ import data                             # read/write .out files
 import _defaults_
 import namelist                         # read/write fortran namelist .in files
 from _bashjob_ import bashjob            # bash script skeleton
-
+try:
+    import gui
+except ImportError: # not supported at GA
+    print('Failed to import gui - must have enthought.traits')
+    
 if os.getenv('HOST').startswith('sunfire'):
-	print 'WARNING: USING PORTAL - "use -w 24:00:00 -l mem=8gb" recomended for heavy computation'
+    print 'WARNING: USING PORTAL - "use -w 24:00:00 -l mem=8gb" recomended for heavy computation'
 
 # make sure package is in path
 packagedir = join(os.path.abspath(__file__).split('/')[:-2],'/')+'/' # one directory up
@@ -36,33 +82,47 @@ sys.path.insert(0,packagedir+'pypec')
 sys.path.insert(0,packagedir+'rundir/'+_defaults_.rundir)
 
 
+np.norm = np.linalg.norm
+iteration =1
+
 ##################################################### DEFAULTS
 
 class InputSet:
-	"""
-	Class designed to hold the standard inputs for a run.
-	attr  - rundir : str. location of executables, .dat files, and extra .in files.
-	        indir  : str. location of .in files read in and stored here
-	        infiles: dict. tree like storage of namelist objects.
-	"""
-	def __init__(self,rundir=packagedir+'rundir/'+_defaults_.rundir,indir=packagedir+'input'):
-		"""
-		Initializes the intance.
-		kwargs - rundir : str. location of IPEC package rundirectory.
-		         indir  : str. location of .in namelist files to read.
-		"""
-		self.rundir = rundir
-		self.indir = indir.rstrip('/')+'/' # want ending /
+    """
+    Class designed to hold the standard inputs for a run.
 
-		self.infiles ={}
-		for f in os.listdir(self.indir):
-			if f.endswith('.in') and not f.startswith('draw'):
-				try:
-					self.infiles[f[:-3]]=namelist.read(self.indir+f)
-				except:
-					print('Failed to read '+f)
-					pass
-			
+    Attributes:
+      rundir : str. 
+        Location of executables, .dat files, and extra .in files.
+      indir  : str. 
+        Location of .in files read in and stored here
+      infiles: dict. 
+        Tree like storage of namelist objects.
+
+    """
+    def __init__(self,rundir=packagedir+'rundir/'+_defaults_.rundir,indir=packagedir+'input'):
+        """
+        Initializes the intance.
+
+        Key Word Arguments: 
+          rundir : str. 
+            Location of IPEC package rundirectory.
+          indir  : str. 
+            Location of .in namelist files to read.
+
+        """
+        self.rundir = rundir
+        self.indir = indir.rstrip('/')+'/' # want ending /
+
+        self.infiles ={}
+        for f in os.listdir(self.indir):
+            if f.endswith('.in') and not f.startswith('draw'):
+                try:
+                    self.infiles[f[:-3]]=namelist.read(self.indir+f)
+                except:
+                    print('Failed to read '+f)
+                    pass
+            
 
 default = InputSet()
 
@@ -70,129 +130,190 @@ default = InputSet()
 ##################################################### WRAPPER
 
 def _newloc(loc):
-	"""
-	Utility function for making and moving to a new location.
-	Note: First 2 directories counted pre-/ must exist already.
-	
-	args - loc : str. Directory to make and/or move to.
-	"""
-	dirs = os.path.abspath(loc).split('/')
-	for i in range(2,len(dirs)+1):
-		tmp = join(dirs[0:i],'/')
-		if not os.path.exists(tmp):
-			try:
-				os.system('mkdir '+tmp)
-			except:
-				print('Could not make directory '+tmp)
-				raise
-	os.chdir(loc)
-	return
-		
+    """
+    Utility function for making and moving to a new location.
+    Note: First 2 directories counted pre-/ must exist already.
+    
+    Arguments: 
+      loc : str. 
+        Directory to make and/or move to.
+    """
+    dirs = os.path.abspath(loc).split('/')
+    for i in range(2,len(dirs)+1):
+        tmp = join(dirs[0:i],'/')
+        if not os.path.exists(tmp):
+            try:
+                os.system('mkdir '+tmp)
+            except:
+                print('Could not make directory '+tmp)
+                raise
+    os.chdir(loc)
+    return
+        
 
 
-def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rundcon=True,runipec=True,runpent=True,fill_inputs=True,mailon=_defaults_.mailon,email=_defaults_.email,**kwargs):
-	"""
-	Python wrapper for running ipec package.
-	
-	kwargs
-	------
-	- loc      : str. Directory location for run.
-	- rundir   : str. IPEC package directory with executables and *.dat's.
-	- qsub     : bool. Submit job to cluster.
-	- return_on_complete : bool. Return only after job is finished on 
-	                       cluster (irrelevant if qsub=False).
-	- rundcon  : bool. Run dcon.
-	- runipec  : bool. Run ipec.
-	- runpent  : bool. Run pent.
-	- fill_inputs : bool. Use inputs from rundir (see **kwargs).
-	- mailon   : str. Any combination of 'a','b','e' for on interruption
-	                  execution, and termination respectively.
-    - email    : str. Email address.
-	
-	**kwargs   : dict. "namelist" instance(s) written to <kwarg>.in file(s).
-		         NOTE: Namelists taken from (in order of priority): 
-				 1) **kwargs 
-				 2) *.in files from loc
-				 3) *.in files from rundir
+def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=False,
+        rundcon=True,runipec=True,runpent=True,runpentrc=False,fill_inputs=False,
+        mailon=_defaults_.mailon,email=_defaults_.email,mem=1e4,optpentrc=False,
+        pent_tol=0,**kwargs):
+    """
+    Python wrapper for running ipec package.
+    
+    Key Word Arguments:
+      loc      : str. 
+        Directory location for run.
+      rundir   : str. 
+        IPEC package directory with executables and .dat files.
+      qsub     : bool. 
+        Submit job to cluster.
+      return_on_complete : bool. 
+        Return only after job is finished on cluster (irrelevant if qsub=False).
+      rerun : bool.
+        Does not delete existing .out files.
+      rundcon  : bool. 
+        Run dcon.
+      runipec  : bool. 
+        Run ipec.
+      runpent  : bool. 
+        Run pent.
+      runpentrc : bool.
+        Run pentrc.
+      fill_inputs : bool. 
+        Use inputs from rundir (see kwargs).
+      mailon   : str. 
+        Any combination of a,b,e for on interruption
+        execution, and termination respectively.
+      email    : str. 
+        Email address.
+      mem : float
+        Memory request of q-submission in megabytes (converted to integer).
+    
+    Deprecated Arguments:
+      optpentrc : bool.
+        Run OPENTRC executable pentrc optimization (under construction).
+      pent_tol : float. 
+        Acceptable torque error. pent_tol>0 tries maskpsi of 32,16,4,2,1 
+        until convergence or 1. Forced to 0 when qsub is true.
+    
+      kwargs   : dict. 
+        namelist instance(s) written to <kwarg>.in file(s).
+        
+    .. note:: 
+      Namelists taken from (in order of priority): 
+      1) Key word arguments 
+      2) .in files from loc
+      3) .in files from rundir
 
-	returns
-	-------
-	-          : bool. True.
-	"""
-	# housekeeping
-	loc = os.path.abspath(loc)
-	rundir = os.path.abspath(rundir)       
-	print('Running IPEC in '+loc)
-	_newloc(loc)
-	locfiles = os.listdir('.')
-	if rundcon:
-		if np.any([f.endswith('.out') for f in locfiles]):
-			os.system('rm *.out')
-		if np.any([f.endswith('.dat') for f in locfiles]):
-			os.system('rm *.dat')
-		if np.any([f.endswith('.bin') for f in locfiles]):
-			os.system('rm *.bin')
-	elif runipec:
-		if np.any([f.startswith('ipec_') for f in locfiles]):
-			os.system('rm ipec_*')
-		if np.any([f.startswith('ipdiag_') for f in locfiles]):
-			os.system('rm ipdiag_*')
-		if np.any([f.startswith('pent_') for f in locfiles]):
-			os.system('rm pent_*')
-	elif runpent:
-		if np.any([f.startswith('pent_') for f in locfiles]):
-			os.system('rm pent_*')
+    Returns:
+      bool. 
+        True.
 
-	# set up run
-	for key in kwargs:
-		print('Writting '+key+'.in from keyword argument.')
-		namelist.write(kwargs[key],key+'.in') #over-write if exists
-	
-	print('Using base package '+rundir)
-	if rundir != loc:
-		# get all supporting data files
-		os.system('cp '+packagedir+'coil/*.dat .')
-		os.system('cp '+packagedir+'pent/*.dat .')
-		# fill missing input files 
-		if fill_inputs:
-			localins=[f for f in os.listdir('.') if f[-3:]=='.in' and f[:4]!='draw']
-			rundirins=[f for f in os.listdir(rundir) if f[-3:]=='.in' and f[:4]!='draw']
-			missedins=[f for f in rundirins if f not in localins]
-			for infile in missedins:
-				print('Copying '+infile+' from rundir.')
-				os.system('cp '+rundir+'/'+infile+' .')
+    """
+    # housekeeping
+    loc = os.path.abspath(loc)
+    rundir = os.path.abspath(rundir)       
+    print('Running Purturbed Equilibrium Package in '+loc)
+    _newloc(loc)
+    locfiles = os.listdir('.')
+    if not rerun:
+        print('Cleaning old run out, dat, and bin files')
+        if rundcon:
+            if np.any([f.endswith('.out') for f in locfiles]):
+                os.system('rm *.out')
+            if np.any([f.endswith('.dat') for f in locfiles]):
+                os.system('rm *.dat')
+            if np.any([f.endswith('.bin') for f in locfiles]):
+                os.system('rm *.bin')
+        elif runipec:
+            if np.any([f.startswith('ipec_') for f in locfiles]):
+                os.system('rm ipec_*')
+            if np.any([f.startswith('ipdiag_') for f in locfiles]):
+                os.system('rm ipdiag_*')
+            if np.any([f.startswith('pent_') for f in locfiles]):
+                os.system('rm pent_*')
+        elif runpent:
+            if np.any([f.startswith('pent_') for f in locfiles]):
+                os.system('rm pent_*')
 
-	# actual run
-	if qsub:
-		os.system('rm *.sh')
-		jobname=os.path.abspath(loc).split('/')[-1]
-		os.system('rm ../'+jobname+'.o*')
-		exelist=''
-		if rundcon: exelist+=rundir+'/dcon \n'
-		if runipec: exelist+=rundir+'/ipec \n'
-		if runpent: exelist+=rundir+'/pent \n'
-		jobstr = bashjob.replace('jobnamehere',jobname)
-		if mailon: jobstr = jobstr.replace('# --- emailoptionhere','#PBS -m '+mailon)
-		if email:  jobstr = jobstr.replace('# --- emailhere','#PBS -M '+email)
-		jobstr = jobstr.replace('runlochere',loc)
-		jobstr = jobstr.replace('exelisthere',exelist)
-		with open(jobname+'.sh','w') as f:
-			f.write(jobstr)
-		os.system('qsub '+jobname+'.sh')
-		#wait for job completion to return
-		if return_on_complete:
-			while not os.path.exists('../'+jobname+'.oe'):
-				time.sleep(1)	
-			# clean up
-			os.system('rm *.dat')
-	else:
-		if rundcon: os.system(rundir+'/dcon')
-		if runipec: os.system(rundir+'/ipec')
-		if runpent: os.system(rundir+'/pent')    
-		# clean up
-		os.system('rm *.dat')
+    # set up run
+    for key in kwargs:
+        print('Writting '+key+'.in from keyword argument.')
+        namelist.write(kwargs[key],key+'.in') #over-write if exists
+    
+    print('Using base package '+rundir)
+    if rundir != loc:
+        # get all supporting data files
+        os.system('cp '+packagedir+'coil/*.dat .')
+        os.system('cp '+packagedir+'pent/*.dat .')
+        # fill missing input files 
+        if fill_inputs:
+            localins=[f for f in os.listdir('.') if f[-3:]=='.in' and f[:4]!='draw']
+            rundirins=[f for f in os.listdir(rundir) if f[-3:]=='.in' and f[:4]!='draw']
+            missedins=[f for f in rundirins if f not in localins]
+            for infile in missedins:
+                print('Copying '+infile+' from rundir.')
+                os.system('cp '+rundir+'/'+infile+' .')
 
-	return True
+    
+    # actual run
+    if qsub:
+        os.system('rm *.sh')
+        jobname=data.getshot(loc)+'_'+os.path.abspath(loc).split('/')[-1]
+        os.system('rm ../'+jobname+'.o*')
+        exelist=''
+        if rundcon: exelist+=rundir+'/dcon \n'
+        if runipec: exelist+=rundir+'/ipec \n'
+        if runpent: exelist+=rundir+'/pent \n'
+        if runpentrc: exelist+=rundir+'/pentrc \n'
+        if optpentrc: exelist+=rundir+'/OPENTRC \n'
+        jobstr = bashjob.replace('jobnamehere',jobname)
+        if mailon: jobstr = jobstr.replace('# --- emailoptionhere','#PBS -m '+mailon)
+        if email:  jobstr = jobstr.replace('# --- emailhere','#PBS -M '+email)
+        jobstr = jobstr.replace('runlochere',loc)
+        jobstr = jobstr.replace('exelisthere',exelist)
+        jobstr = jobstr.replace('memhere',str(int(mem)))
+        if mem<=3e3: jobstr = jobstr.replace('#PBS -q mque','')
+        with open(jobname+'.sh','w') as f:
+            f.write(jobstr)
+        os.system('qsub '+jobname+'.sh')
+        #wait for job completion to return
+        if return_on_complete:
+            print('Waiting for job to complete...')
+            while not os.path.exists('../'+jobname+'.oe'):
+                time.sleep(60)    
+            # clean up
+            os.system('rm *.dat')
+    else:
+        print(rundir+'/dcon')
+        if rundcon: os.system(rundir+'/dcon')
+        if runipec: os.system(rundir+'/ipec')
+        if runpent:
+            # pent tolerance tests
+            if pent_tol>0:
+                old_tphi,new_tphi = 0,0
+                err = 1.0
+                nn = namelist.read('dcon.in')['DCON_CONTROL']['nn']
+                if not 'pent' in kwargs: 
+                    kwargs['pent'] = namelist.read('pent.in')
+                if kwargs['pent']['PENT_CONTROL']['maskpsi'] < 32:
+                    kwargs['pent']['PENT_CONTROL']['maskpsi'] = 32
+                while err>tol and kwargs['pent']['PENT_CONTROL']['maskpsi']>0:
+                    print('Rewritting pent.in with maskpsi = '+
+                          str(kwargs['pent']['PENT_CONTROL']['maskpsi']))
+                    namelist.write(kwargs[key],key+'.in') #over-write
+                    os.system(rundir+'/pent')
+                    pentdata = data.read('pent_n{}.out'.format(nn),quiet=True)
+                    new_tphi = pentdata[0].params['total(T_phi)']
+                    err = np.abs((old_tphi-new_tphi)/new_tphi)
+                    kwargs['pent']['PENT_CONTROL']['maskpsi']/=2
+            else:
+                os.system(rundir+'/pent')
+        if runpentrc: os.system(rundir+'/pentrc')
+        if optpentrc: os.system(rundir+'/OPENTRC')
+        # clean up
+        os.system('rm *.dat')
+
+    return True
 
 
 
@@ -202,98 +323,521 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rundcon
 
 
 def optntv(mlist,maxiter=50,loc='.',rundir=default.rundir,**kwargs):
-	"""
-	Python wrapper for running ipec package.
-	args    - mlist    : list. Integer poloidal modes included on plasma surface.
-	kwargs  - loc      : str. Directory location for run.
-	         rundir   : str. IPEC package directory with executables and *.dat's.
-		  **kwargs : dict. "namelist" instance(s) written to <kwarg>.in file(s).
-		            -NOTE: Namelists taken from (in order of priority): 
-			           1) **kwargs 
-				   2) *.in files from loc
-				   3) *.in files from rundir
+    """
+    Python wrapper for running ipec package multiple times in
+    a search for the normalized spectrum that maximizes NTV.
+    
+    Arguments:      
+      mlist    : list. 
+        Integer poloidal modes included on plasma surface.
+    
+    Key Word Arguments:    
+      maxiter  : int.
+        Maximum number of iterations.
+      loc      : str. 
+        Directory location for run.
+      rundir   : str. 
+        IPEC package directory with executables and .dat files.
+      kwargs : dict. 
+        namelist instance(s) written to <kwarg>.in file(s).
+        
+     .. note::
+       Namelists taken from (in order of priority):
+       1) Key word arguments 
+       2) .in files from loc
+       3) .in files from rundir
 
-	returns -          : bool. True
-	"""
-	mlist = map(int,mlist)
-	mlist.sort()
-	loc=os.path.abspath(loc)
-		
-	# Clean ipec.in of any error fields
-	if 'ipec' not in kwargs:
-		print('WARNING: No ipec.in specidied. Using copy from run directory')
-		kwargs['ipec']=namelist.read(rundir+'/ipec.in',combine_arrays=0)
-	kwargs['ipec']['IPEC_INPUT']['coil_flag']=False
-	kwargs['ipec']['IPEC_INPUT']['data_flag']=False
-	kwargs['ipec']['IPEC_INPUT']['harmonic_flag']=True
-	kwargs['ipec']['IPEC_OUTPUT']['ntv_flag']=True
-	for key in kwargs['ipec']['IPEC_INPUT'].keys():
-		if key.startswith('cos') or key.startswith('sin'):
-			del kwargs['ipec']['IPEC_INPUT'][key]
+    Returns:
+      bool. 
+        True.
 
-	# Include each m errorfield namelist variable in ipec input
-	for m in mlist:
-		for cs in ['cosmn','sinmn']:
-			kwargs['ipec']['IPEC_INPUT'][cs+'('+str(m)+')'] = 1e-4
+    """
+    mlist = map(int,mlist)
+    mlist.sort()
+    loc=os.path.abspath(loc)
+        
+    # Clean ipec.in of any error fields
+    if 'ipec' not in kwargs:
+        print('WARNING: No ipec.in specidied. Using copy from run directory')
+        kwargs['ipec']=namelist.read(rundir+'/ipec.in',combine_arrays=0)
+    kwargs['ipec']['IPEC_INPUT']['coil_flag']=False
+    kwargs['ipec']['IPEC_INPUT']['data_flag']=False
+    kwargs['ipec']['IPEC_INPUT']['harmonic_flag']=True
+    kwargs['ipec']['IPEC_OUTPUT']['ntv_flag']=True
+    for key in kwargs['ipec']['IPEC_INPUT'].keys():
+        if key.startswith('cos') or key.startswith('sin'):
+            del kwargs['ipec']['IPEC_INPUT'][key]
 
-	# Set up base for run
-	run(loc=loc,rundir=rundir,qsub=False,
-		rundcon=True,runipec=False,runpent=False,**kwargs)
-	inputs = InputSet(indir='.').infiles
-	nn = inputs['dcon']['DCON_CONTROL']['nn']
+    # Include each m errorfield namelist variable in ipec input
+    for m in mlist:
+        for cs in ['cosmn','sinmn']:
+            kwargs['ipec']['IPEC_INPUT'][cs+'('+str(m)+')'] = 1e-4
 
-	def totntv(cs,mlist=mlist):
-		"""
-		Returns total ntv torque given a list of the cosine coefficients 
-		and sine coefficients each ordered largest m to lowest.
-		"""
-		cs = np.array(cs)
-		cs = cs.reshape(2,-1)
-		for m,c,s in zip(mlist,cs[0,:],cs[1,:]):
-			kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m)+')'] = c
-			kwargs['ipec']['IPEC_INPUT']['sinmn('+str(m)+')'] = s
-		run(loc=loc,rundcon=False,qsub=False,**kwargs)
-		ntv = data.read('pent_n'+str(nn)+'.out')
-		tot = ntv[0].params['total(T_phi)']
-		return tot
+    # Set up base for run
+    run(loc=loc,rundir=rundir,qsub=False,
+        rundcon=True,runipec=False,runpent=False,**kwargs)
+    inputs = InputSet(indir='.').infiles
+    nn = inputs['dcon']['DCON_CONTROL']['nn']
 
-	norm = len(mlist)*(1e-4)**2.0
-	def sumsqr(x,norm=norm):
-		return sum(np.array(x)**2.)-norm
-	x0 = np.array([1e-4]*(len(mlist)*2))
-	opt = optimize.fmin_slsqp(totntv,x0,iter=maxiter,eqcons=[sumsqr],full_output=1)
-	with open('optimization.pkl','wb') as f:
-		pickle.dump(opt,f)
-	return opt
-	
+    def totntv(cs,mlist=mlist):
+        """
+        Returns total ntv torque given a list of the cosine coefficients 
+        and sine coefficients each ordered largest m to lowest.
+
+        """
+        cs = np.array(cs)
+        cs = cs.reshape(2,-1)
+        for m,c,s in zip(mlist,cs[0,:],cs[1,:]):
+            kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m)+')'] = c
+            kwargs['ipec']['IPEC_INPUT']['sinmn('+str(m)+')'] = s
+        run(loc=loc,rundcon=False,qsub=False,**kwargs)
+        ntv = data.read('pent_n'+str(nn)+'.out')
+        tot = ntv[0].params['total(T_phi)']
+        return tot
+
+    norm = len(mlist)*(1e-4)**2.0
+    def sumsqr(x,norm=norm):
+        return sum(np.array(x)**2.)-norm
+    x0 = np.array([1e-4]*(len(mlist)*2))
+    opt = optimize.fmin_slsqp(totntv,x0,iter=maxiter,eqcons=[sumsqr],full_output=1)
+    with open('optimization.pkl','wb') as f:
+        pickle.dump(opt,f)
+    return opt
+
+def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=True,
+              method='Powell',maxiter=1000,loc='.',rundir=default.rundir,**kwargs):
+    """
+    Python wrapper for running gpec packages multiple times in
+    a search for the normalized spectrum that maximizes NTV.
+    
+    Approach is as follows:
+    1) Run DCON and IPEC in base directory with singcoup_flag True
+    2) Run IPEC twice for each m, creating new subdirectories cosmn* and sinmn*
+    3) Optimize a functional wrapper for PENTRC using optimize.fmin_slsqp
+      - Spectra constrained to have 1 Gm^2 norm
+      - wrapper uses data package to linearly combine ipec_xclebsch outputs
+      - Initial guess is the first singcoup_svd mode from IPEC
+    
+    Arguments:      
+      ms    : list. 
+        Integer poloidal modes included on plasma surface.
+    
+    Key Word Arguments:
+      ms    : list. 
+        Integer poloidal modes included on plasma surface.
+      ttype : str.
+        PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).
+      tfac : int.
+        Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.
+      perp1 : bool.
+        Optimizes in space perpendicular to 1st IPEC SVD mode.
+      norm : float.
+        Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).
+      qsub : bool.
+        Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.
+      method : str.
+        Method used in scipy.optimize.minimize.
+      maxiter  : int.
+        Maximum number of iterations.
+      loc      : str. 
+        Directory location for run.
+      rundir   : str. 
+        IPEC package directory with executables and .dat files.
+      kwargs : dict. 
+        namelist instance(s) written to <kwarg>.in file(s).
+        
+     .. note::
+       Namelists taken from (in order of priority):
+       1) Key word arguments 
+       2) .in files from loc
+       3) .in files from rundir
+
+    Returns:
+      bool. 
+        True.
+
+    """
+    global iteration
+    iteration=1
+    # setup
+    ms = map(int,ms)
+    ms.sort()
+    loc=os.path.abspath(loc)+'/'
+    rundir=os.path.abspath(rundir)+'/'
+    
+    # get ipec.in
+    if 'ipec' not in kwargs:
+        if os.path.isfile(loc+'ipec.in'):
+            kwargs['ipec']=namelist.read(loc+'ipec.in')
+        else:
+            print('WARNING: No ipec.in specified. Using copy from run directory')
+            kwargs['ipec']=namelist.read(rundir+'ipec.in')
+    if 'coil_flag' in kwargs['ipec']['IPEC_INPUT']:
+        if kwargs['ipec']['IPEC_INPUT']['coil_flag']:
+            print('WARNING: Includes additional field from coils as background.')
+    if 'data_flag' in kwargs['ipec']['IPEC_INPUT']:
+        if kwargs['ipec']['IPEC_INPUT']['data_flag']:
+            print('WARNING: Includes additional field from data file as background.')
+    # assert necessary flags
+    kwargs['ipec']['IPEC_INPUT']['jsurf_in']=1
+    kwargs['ipec']['IPEC_INPUT']['harmonic_flag']=True
+    kwargs['ipec']['IPEC_OUTPUT']['xclebsch_flag']=True
+    kwargs['ipec']['IPEC_OUTPUT']['singcoup_flag']=True
+    kwargs['ipec']['IPEC_OUTPUT']['resp_flag']=True
+    # remove any previous spectra
+    for key in kwargs['ipec']['IPEC_INPUT'].keys():
+        if key.startswith('cos') or key.startswith('sin'):
+            del kwargs['ipec']['IPEC_INPUT'][key]
+    # include flat cosine and sine component for each m
+    for m in ms:
+        for cs in ['cosmn','sinmn']:
+            kwargs['ipec']['IPEC_INPUT'][cs+'('+str(m)+')'] = norm/np.sqrt(2.0*len(ms))
+    
+    # base run (runs the only DCON run and runs IPEC to get singcoup svd modes)
+    print('-'*40+' Running base case')
+    run(loc=loc,rundir=rundir,qsub=False,
+        rundcon=True,runipec=True,runpent=False,runpentrc=False,**kwargs)
+    
+    # retrieve base variables
+    kwargs['dcon'] = namelist.read(loc+'dcon.in')
+    nn = kwargs['dcon']['DCON_CONTROL']['nn']
+    mem = (10/max(1,5-nn))*1e3
+    # retrieve ipec svd modes
+    print('Reading IPEC svd dominant modes...')
+    sc1,sc2 = data.read(loc+'ipec_singcoup_svd_n{}.out'.format(nn),quiet=True)[:2]
+    msc = sc1.x[0]
+    Phi1,Phi2 = [],[]
+    for m in ms:
+        if m in msc:
+            Phi1.append(sc1.y['b'][msc==m][0])
+            Phi2.append(sc2.y['b'][msc==m][0])
+        else:
+            Phi1.append(0)
+            Phi2.append(0)
+    Phi1,Phi2 = np.array([Phi1,Phi2])
+    amp1,amp2 = np.sqrt(np.sum(np.abs(Phi1)**2)),np.sqrt(np.sum(np.abs(Phi2)**2))
+    print('Renormalizing |Phi1| = {:}, to {:} Tesla meter^2'.format(amp1,norm))
+    Phi1 =(Phi1/amp1)*norm#/np.sqrt(2.0*len(ms))
+    print('Renormalizing |Phi2| = {:}, to {:} Tesla meter^2'.format(amp2,norm))
+    Phi2 =(Phi2/amp2)*norm#/np.sqrt(2.0*len(ms))
+    
+    # assert sub-run variables
+    kwargs['ipec']['IPEC_INPUT']['idconfile']=loc+'euler.bin'
+    kwargs['ipec']['IPEC_INPUT']['ivacuumfile']=loc+'vacuum.bin'
+    kwargs['ipec']['IPEC_INPUT']['ieqfile']=loc+'psi_in.bin'
+    for k in kwargs['ipec']['IPEC_OUTPUT']: # maximum speed
+        if 'flag' in k: kwargs['ipec']['IPEC_OUTPUT'][k]=False
+    kwargs['ipec']['IPEC_OUTPUT']['xclebsch_flag']=True
+    kwargs['pentrc'] = namelist.read(loc+'pentrc.in')
+    kwargs['pentrc']['PENT_INPUT']['peq_file'] = 'ipec_xclebsch_n{}.out'.format(nn)
+    kwargs['pentrc']['PENT_INPUT']['idconfile']= loc+'euler.bin'
+    # run ipec for each spectral component
+    print('-'*40+' Submitting jobs for each m')
+    
+    
+    for m in ms:
+        # null all other components
+        for m2 in ms:
+            kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m2)+')'] = 0
+            kwargs['ipec']['IPEC_INPUT']['sinmn('+str(m2)+')'] = 0
+        # apply pure component
+        kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m)+')'] = norm
+        if not os.path.isfile(loc+'cosmn{}.oe'.format(m)):
+            run(loc=loc+'cosmn{}'.format(m),rundir=rundir,qsub=True,mem=mem,
+                rundcon=False,runipec=True,runpent=False,runpentrc=True,**kwargs)
+        kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m)+')'] = 0
+        kwargs['ipec']['IPEC_INPUT']['sinmn('+str(m)+')'] = norm        
+        if not os.path.isfile(loc+'sinmn{}.oe'.format(m)):
+            run(loc=loc+'sinmn{}'.format(m),rundir=rundir,qsub=True,mem=mem,
+                rundcon=False,runipec=True,runpent=False,runpentrc=True,**kwargs)
+    
+    
+    # wait for runs to finish
+    print('Waiting for m runs to complete...')
+    ipecdone = False
+    while not ipecdone:
+        test = [os.path.isfile(loc+'cosmn{}.oe'.format(m)) for m in ms]
+        test+= [os.path.isfile(loc+'sinmn{}.oe'.format(m)) for m in ms]
+        if np.all(test):
+            ipecdone=True
+        else:
+            time.sleep(60*3)
+    
+    # read all the displacements (this takes time)
+    print('Reading xclebsch files...')
+    data.default_quiet=True
+    xms = data.readall(loc,filetype='ipec_xclebsch_n{:}.out'.format(nn),quiet=True)
+    
+    # assert pentrc iteration variables
+    kwargs['pentrc'] = namelist.read(loc+'pentrc.in')
+    kwargs['pentrc']['PENT_INPUT']['peq_file'] = loc+'ipec_xclebsch_mopt_n{}.out'.format(nn)
+    kwargs['pentrc']['PENT_INPUT']['idconfile']= loc+'euler.bin'
+    for k in kwargs['pentrc']['PENT_OUTPUT'].keys():
+        if 'flag' in k: kwargs['pentrc']['PENT_OUTPUT'][k]=False
+    kwargs['pentrc']['PENT_OUTPUT'][ttype+'_flag']=True
+    
+    # functional wrapper of PENTRC for optimization
+    def wrapper(cs,ms=ms):
+        """
+        Returns total ntv torque given a list of the cosine coefficients 
+        and sine coefficients each ordered largest m to lowest.
+
+        """
+        ccs = condition(cs,direction=-1)
+        # form linear superpostion of ipec results
+        cosmn,sinmn = np.array(ccs).reshape(2,-1)#*np.array([[1,-1]]).T
+        xclebsch = 0
+        for m,c,s in zip(ms,cosmn,sinmn):
+            xclebsch = xclebsch+(c*xms['cosmn'+str(m)][0]+s*xms['sinmn'+str(m)][0])
+        # write the summed displacement
+        #  - note read cannot distinguish between psi' and psi and numbers the second
+        #  - note extra precision needed for psi values
+        data.write(xclebsch,fname=loc+'ipec_xclebsch_mopt_n{}.out'.format(nn),
+                   ynames=['xi^psi','xi^psi_1','xi^alpha'],fmt='%24.16E') 
+        
+        # run pentrc in que, but wait for result
+        run(loc=loc,rundcon=False,runipec=False,runpent=False,runpentrc=True,fill_inputs=False,
+            mem=mem,qsub=qsub,return_on_complete=True,pentrc=kwargs['pentrc'])
+        ntv = data.read('pentrc_{:}_n{:}.out'.format(ttype,nn),quiet=True)
+        metric = tfac*np.abs(ntv[0].y['intT_phi'][-1]) # gets minimized
+        #print('metric = {:.9E}'.format(metric))
+        callback(cs)
+        return metric
+    
+    # log progress
+    with open('pentrc_optimization.log','w') as f:
+        header = '{:>16} {:>16} {:>16} {:>16}'.format('i','T_phi','eqcons','overlap')
+        for m in ms:
+            header+=' {:>16} {:>16}'.format('real(m{})'.format(m),'imag(m{})'.format(m))
+        f.write(header+'\n')
+    def callback(x):
+        global iteration
+        #print('callback, iteration = {}'.format(iteration))
+        ntv = data.read('pentrc_{:}_n{:}.out'.format(ttype,nn),quiet=True)
+        tphi= ntv[0].y['intT_phi'][-1]
+        check = checknorm(x)
+        xin = condition(x,direction=-1)
+        ovlp = overlap(xin)
+        with open('pentrc_optimization.log','a') as f:
+            f.write(('{:16.8E} {:16.8E} {:16.8E} {:16.8E}'+' {:16.8E}'*len(x)
+                     +'\n').format(iteration,tphi,check,ovlp,*xin))
+        if iteration%10==0:
+            keys = sorted(ntv[0].y.keys()) # make order consistent
+            ntv[0].params['iteration'] = iteration
+            data.write(ntv[0],ynames=keys,
+                       fname='pentrc_{:}_n{:}_i{:}.log'.format(ttype,nn,iteration))
+        iteration+=1
+    
+    # initial guesses
+    if not perp1:
+        x0 = np.array([Phi1.real,Phi1.imag]).ravel()
+    else:
+        x0 = np.array([Phi2.real,Phi2.imag]).ravel()
+    
+    # Conditioning and constraints
+    def condition(vec,x0=x0,direction=1):
+        """Scale m components to have equal weighting (best guess)"""
+        if direction>=0:
+            convec = vec/x0
+        else:
+            convec = vec*x0
+        convec*= norm/np.norm(convec)
+        return convec
+    def checknorm(vec,norm=norm,debug=False):
+        """Equality or inequality constraint on the norm of the vector""" 
+        vnorm = np.norm(vec)#np.sqrt(np.sum(np.abs(vec).ravel()**2))
+        if debug: print("  vnorm,norm = {:}, {:}".format(vnorm,norm))
+        diff = (vnorm-norm)/norm
+        return diff
+    def checknorm_prime(vec,norm=norm):
+        """Jacobian of checknorm"""
+        vnorm = np.norm(vec)
+        return (np.abs(vm)/vnorm)/norm
+    def overlap(vec,Phi1=Phi1,debug=False):
+        """Equality constrain that solution be perpendicular to IPEC dominant mode"""
+        compvec = np.sum(np.array(vec).reshape([2,-1])*np.array([[1,1j]]).T,axis=0)
+        dot = compvec.dot(Phi1.conj()).real#np.sum(compvec.real*Phi1.real+compvec.imag*Phi1.imag)
+        ovlp= dot/(np.norm(compvec)*np.norm(Phi1))
+        return ovlp
+    
+    # Linear combination estimate
+    print('Reading torques for linear estimate...')
+    tm = data.readall(loc,filetype='pentrc_{:}_n{:}.out'.format(ttype,nn),quiet=True)
+    tvec = np.array([tm['cosmn'+str(m)][0].y['intT_phi'][-1]
+                     +1j*tm['sinmn'+str(m)][0].y['intT_phi'][-1] for m in ms])
+    Phiq = tvec**0.5 * norm/np.norm(tvec**0.5)
+    Phil = tvec * norm/np.norm(tvec)
+    darray = np.array([ms,Phi1.real,Phi1.imag,Phi2.real,Phi2.imag,Phil.real,Phil.imag,Phiq.real,Phiq.imag]).T
+    header ='GPEC: Area normalized poloidal IPEC spectrum that optimizes the PENTRC torque\n'
+    header+='Phi_L estimated by linear approximation of PENTRC torque\n'
+    header+='Phi_Q estimated by quadratic approximation of PENTRC torque\n'
+    header+='Phi_T estimated by nonlinear {:} optimization of PENTRC torque\n\n'.format(method)
+    header+='{:>16} {:>16} {:>16} {:>16} {:>16} {:>16} {:>16} {:>16} {:>16}'.format('m',
+            'real(Phi_1)','imag(Phi_1)','real(Phi_2)','imag(Phi_2)',
+            'real(Phi_L)','imag(Phi_L)','real(Phi_Q)','imag(Phi_Q)')
+    fname = loc+'pentrc_optimized_spectrum_n{:}.log'.format(nn)    
+    print('Writing estimated spectrum:\n  '+fname)
+    np.savetxt(fname,darray,header=header,fmt='%16.8E',delimiter=' ',comments='')
+    
+    # ACTUAL OPTIMIZATION
+    print('-'*40+' Optimizing PENTRC')
+    #opt = optimize.fmin_slsqp(wrapper,x0,iter=maxiter,full_output=1,disp=2,
+    #                          eqcons=[checknorm]+perp1*[checkperp1])
+    cons = [{'type':'eq',
+             'fun':checknorm,
+             'jac':checknorm_prime}]#lambda x: np.array([np.sqrt(np.sum(np.abs(x).ravel()**2))-norm])}]
+    if perp1: cons+=[{'type':'ineq','fun':checkperp1}]
+    #opt = optimize.minimize(wrapper,condition(x0),method='SLSQP',options={'disp':True},constraints=cons)
+    opt = optimize.minimize(wrapper,condition(x0),method=method,options={'disp':True})#,callback=callback)
+    data.default_quiet=False
+    
+    # save output
+    print('Pickling fmin_slsqp output -> pentrc_optimization.pkl')
+    with open(loc+'pentrc_optimization.pkl','wb') as f:
+        pickle.dump(opt,f)
+    rspec,ispec = opt.x.reshape(2,-1)#opt[0].reshape(2,-1)
+    darray = np.array([ms,Phi1.real,Phi1.imag,Phi2.real,Phi2.imag,Phil.real,Phil.imag,rspec,ispec]).T
+    header+='{:>16} {:>16}'.format('real(Phi_T)','imag(Phi_T)')
+    print('Writing nonlinear optimized spectrum -> '+fname)
+    np.savetxt(fname,darray,header=header,fmt='%16.8E',delimiter=' ',comments='')
+        
+    return opt
+    
 
 
-def wescan(base='.',scale=np.linspace(-2,2,20),pentfile='pent.in',qsub=True,**kwargs):
-	"""
-	Run pent for series of scaled omegaE values. 
-	User must specify full path to all files named in pent.in input file
-	located in the base directory.
+def omegascan(omega='wp',base='.',scale=np.linspace(-2,2,20),pentrcfile='pentrc.in',**kwargs):
+    """
+    Run pent for series of scaled nu/omega_phi/omega_E/omega_D/gamma_damp values. 
+    User must specify full path to all files named in pent.in input file
+    located in the base directory.
+    Note that the rotation profile is scaled by manipulating omega_E
+    on each surface to obtain the scaled roation.
 
-	kwargs - base : str. Top level directory containing dcon and ipec runs.
-	                -- Must contain euler.bin and vacuum.bin file.
-	         scale: ndarray. The scale factors iterated over.
-	returns -     : True.
-	"""
-	base = os.path.abspath(base)+'/'
-	pent = namelist.read(pentfile)
-	scale = map(float,scale)
-	for k in ['kinetic_file','o1fun_file','o1mn_file','idconfile']:
-		if k in pent['PENT_INPUT']:
-			pent['PENT_INPUT'][k] = os.path.abspath(pent['PENT_INPUT'][k])
+    Key Word Arguments:
+      omega     : str. 
+       Choose from nu, wp, we, wd, or ga
+      base    : str. 
+       Top level directory containing dcon and ipec runs.
+       Must contain euler.bin and vacuum.bin file.
+      scale   : ndarray. 
+        The scale factors iterated over.
+      pentfile: str. 
+        Original input file.
+      rundcon : bool
+        Set true if using hybrid kinetic MHD DCON. Will also attempt IPEC + PENT.
 
-	for s in scale:
-		name = 'we{0:.5}'.format(s)
-		_newloc(base+name)
-		pent['PENT_CONTROL']['wefac'] = s
-		run(rundcon=False,runipec=False,mailon='',qsub=qsub,
-			fill_inputs=False,pent=pent,**kwargs)
-		
-	return True
+    Returns:
+      bool. 
+        True.
 
+    """
+    # setup
+    base = os.path.abspath(base)+'/'
+    pentrc = namelist.read(pentrcfile)
+    scale = map(float,scale)
+    for k in ['dcon','ipec','pent','pentrc']:
+        if 'run'+k not in kwargs:
+            kwargs['run'+k] = k=='pentrc'
+        elif kwargs['run'+k]:
+            kwargs[k] = namelist.read(base+k+'.in')
+            if k=='dcon':
+                kwargs['equil'] = namelist.read(base+'equil'+'.in')
+                kwargs['vac'] = namelist.read(base+'vac'+'.in')
+            if k=='ipec':
+                kwargs['coil'] = namelist.read(base+'coil'+'.in')
+    
+    # use some initial ipec run if already available
+    if not kwargs['runipec'] or kwargs['rundcon']:
+        for k in pentrc['PENT_INPUT']:
+            if 'file' in k:
+                pentrc['PENT_INPUT'][k] = os.path.abspath(pentrc['PENT_INPUT'][k])
+    
+    # submit the scaled runs
+    for s in scale:
+        name = omega+'{0:.5}'.format(s)
+        _newloc(base+name)
+        pentrc['PENT_CONTROL'][omega+'fac'] = s
+        run(pentrc=pentrc,**kwargs)
+        
+    return True
 
+def nustarscan(base='.',scale=10**np.linspace(-1,1,11),pentfile='pent.in',
+           scalen=True,scalet=True,**kwargs):
+    """
+    Run pent for series of *approximately* scaled collisionality values.
+    Default scaling holds P=NT constant (NTV~P), but this is broken using
+    scalen or scalet (scalet=False, for example, scales only density).
+    
+    User may want to include a non-zero ximag if going to low collisionality.
+    
+    User must specify full path to all files named in the pent input.
+    
+    Kinetic file must have header with 'n' and 'i' in the ion density label
+    but no other label, both 't' and 'e' in only the electron temperature label,
+    'omega' omega_EXB label, etc.
+    
+    .. note:: Approximate scaling ignores log-Lambda dependence, and uses
+       nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.
 
+    Key Word Arguments:
+      base    : str. 
+       Top level directory containing dcon and ipec runs.
+       Must contain euler.bin and vacuum.bin file.
+      scale   : ndarray. 
+        The scale factors iterated over.
+      pentfile: str. 
+        Original input file.
+      scalen : bool.
+        Use density scaling to change nu_star.
+      scalet : bool.
+        Use temperature scaling to change nu_star.
+
+    Returns:
+      bool. 
+        True.
+    """
+    # setup
+    base = os.path.abspath(base) +'/'
+    pent = namelist.read(pentfile)
+    kfile = pent['PENT_INPUT']['kinetic_file']
+    kin, = data.read(pent['PENT_INPUT']['kinetic_file'])
+    markers = [['n','i'],['n','e'],['t','i'],['t','e'],['omega']]
+    ynames = []
+    for ms in markers:
+        for key in kin.y.keys():
+            unitless = key.replace('eV','').replace('m3','').replace('rads','')
+            if np.all([m in unitless for m in ms]): ynames.append(key)
+    # make sure names arent poluted
+    assert(len(ynames)==5)
+    #ynames = ['nim3', 'nem3',  'tieV', 'teeV', 'wexbrads']
+    #for name in ynames:
+    #    assert(name in kin.y)
+    if not scalen and not scalet:
+        raise ValueError('Must scale density, temperature, or both.')
+
+    #loop through the scan
+    for s in map(float,scale):
+        # distribute nu scale to N and T (keeping NT constant if allowed)
+        nscale = scalen*s**(scalet*(1.0/3)+1.0*(not scalet)) + (not scalen)
+        tscale = scalet*s**(scalen*(-1./3)-0.5*(not scalen)) + (not scalet)
+        print('nuscale = {:.3e} \n tscale = {:.3e}, nscale = {:.3e}, 1/tscale = {:.3e}'.format(s,nscale,tscale,1.0/tscale))
+        if(nscale and tscale): assert(np.isclose(nscale,1.0/tscale)) # double check NT constant scaling
+        newkfile = (join(kfile.split('.')[:-1],'.')
+                +'_nustar{:.2e}.dat'.format(s))
+        kcop = copy.deepcopy(kin)
+        kcop.y[ynames[0]]*=nscale
+        kcop.y[ynames[1]]*=nscale
+        kcop.y[ynames[2]]*=tscale
+        kcop.y[ynames[3]]*=tscale
+        data.write(kcop,fname=newkfile,ynames=ynames)
+
+        # run pent with new kinetic profile
+        pent['PENT_INPUT']['kinetic_file']=os.path.abspath(newkfile)
+        
+        run(loc=base+'nustar{:.2e}'.format(s),rundcon=False,
+            runipec=False,pent=pent,**kwargs)
+    
+    return True
+
+if __name__ == '__main__':
+    gui.main()

@@ -570,7 +570,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute coordinates.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Diagnosing Grad-Shafranov solution"
+      IF(verbose) WRITE(*,*)"Diagnosing Grad-Shafranov solution"
       DO ipsi=0,mpsi
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),0)

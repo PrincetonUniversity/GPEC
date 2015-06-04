@@ -1,29 +1,95 @@
+!@PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE
+
+      MODULE dcon_interface
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     read and preprocess ideal DCON/VACUUM data
+c     !! SELECT ROUTINES FROM IDEAL PERTURBED EQUILIBRIUM CONTROL !!
+c     Subroutines by Jong-Kyu Park for interfacing with DCON outputs.
+c     For the majority, these are identical to counterparts in the
+c     IPEC idcon module. There are a few additions from ipeq and ismath
+c     modules.
+c     Major changes are:
+c     - psixy=1 IF statement that optionally read psi_in.bin removed (no ieqfile)
+c     - No vacuum data read (no ivacuumfile)
+c     - Major culling of global variables
+c      -- Explicit imports
+c      -- Local variables moved to their respective subroutines
 c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     code organization.
-c-----------------------------------------------------------------------
-c     0. idcon_mod.
-c     1. idcon_read.
-c     2. idcon_transform
-c     3. idcon_build
-c     4. idcon_metric
-c     5. idcon_matrix
-c     6. idcon_vacuum
-c-----------------------------------------------------------------------
-c     subprogram 0. idcon_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE idcon_mod
-      USE ipglobal_mod
-      USE ismath_mod
+
+      USE spline_mod, only : spline_type,spline_eval,spline_alloc,
+     $                       spline_dealloc,spline_fit,spline_int
+      USE cspline_mod, only : cspline_type,cspline_eval,cspline_alloc,
+     $                       cspline_dealloc,cspline_fit,cspline_int
+      USE fspline_mod, only : fspline_type,fspline_eval,fspline_alloc,
+     $                       fspline_dealloc,fspline_fit_1,fspline_fit_2
+      USE bicube_mod, only : bicube_type,bicube_eval,bicube_alloc,
+     $                       bicube_dealloc,bicube_fit
+      USE params, only : r4,r8,pi,twopi,mu0
+      USE utilities, only : get_free_file_unit,iscdftb,iscdftf
+      
       IMPLICIT NONE
 
+      LOGICAL :: edge_flag=.FALSE.,fft_flag=.FALSE.
+      INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
+     $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
+     $     power_b,power_r,power_bp,
+     $     nn,mmin,mmax
+
+      REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
+     $     singfac_min,bo
+      COMPLEX(r8), PARAMETER  :: ifac = (0,1)
+      CHARACTER(16) :: jac_type
+      CHARACTER(128) :: idconfile
+
+      LOGICAL, DIMENSION(:), POINTER :: sing_flag
+      INTEGER, DIMENSION(:), POINTER :: fixstep,mfac,lmfac
+
+      REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
+     $     r,z,theta,et,ep,ee
+
+      COMPLEX(r8), DIMENSION(:), POINTER ::
+     $     edge_mn,edge_fun
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,
+     $     amat,bmat,cmat,fmats,gmats,kmats
+
+      TYPE(spline_type) :: sq
+      TYPE(bicube_type) :: psi_in,eqfun,rzphi
+      TYPE(cspline_type) :: u1,u2
+      TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
+      TYPE(fspline_type) :: metric
+
+      TYPE :: resist_type
+      REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,di,dr,sfac,deltac
+      END TYPE resist_type
+
+      TYPE :: solution_type
+      INTEGER :: msol
+      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
+      END TYPE solution_type
+
+      TYPE :: fixfac_type
+      INTEGER :: msol
+      INTEGER, DIMENSION(:), POINTER :: index
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: fixfac,transform,gauss
+      END TYPE fixfac_type
+
+      TYPE :: sing_type
+      INTEGER :: msol_l,msol_r,jfix,jpert
+      REAL(r8) :: psifac,q,q1
+      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: ca_l,ca_r
+      TYPE(resist_type) :: restype
+      END TYPE sing_type
+
+      TYPE(solution_type), DIMENSION(:), POINTER :: soltype
+      TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
+      TYPE(sing_type), DIMENSION(:), POINTER :: singtype
+      
+
+      
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. idcon_read.
@@ -36,15 +102,19 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: lpsixy
       CHARACTER(128) :: message
-      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,i
+      CHARACTER(2) :: sn
+      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,in_unit
       REAL(r8) :: sfac0
 
       REAL(r4), DIMENSION(:,:), POINTER :: rgarr,zgarr,psigarr
 c-----------------------------------------------------------------------
 c     open euler.bin and read header.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,*)"Reading dcon eigenfuctions"
-      CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
+      WRITE(*,*)"Reading dcon eigenfuctions"
+      in_unit = get_free_file_unit(-1)
+      OPEN(UNIT=in_unit,FILE=idconfile,STATUS="OLD",POSITION="REWIND",
+     $        FORM="UNFORMATTED")
+      !CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
@@ -60,8 +130,6 @@ c-----------------------------------------------------------------------
       ELSE 
          jac_type="other"
       ENDIF
-      IF (jac_in=="") jac_in=jac_type
-      IF (jac_out=="") jac_out=jac_type
       chi1=twopi*psio
       mpert=mhigh-mlow+1
       lmlow=mmin
@@ -84,6 +152,14 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=sn,FMT='(I2)')nn
       ENDIF
 c-----------------------------------------------------------------------
+c     only accept mband=0.
+c-----------------------------------------------------------------------
+      IF (mband /= (mpert-1)) THEN
+         !WRITE(message,'(a)')"IPEC needs full band matrix"
+         !CALL ipec_stop(message)
+         STOP 'PENTRC needs full band matrix'
+      ENDIF
+c-----------------------------------------------------------------------
 c     read equilibrium on flux coordinates.
 c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
@@ -100,7 +176,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     count solutions in euler.bin.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,*)"Counting and reading dcon solutions"
+      WRITE(*,*)"Counting and reading dcon solutions"
       DO
          READ(UNIT=in_unit,IOSTAT=ios)data_type
          IF(ios /= 0)EXIT
@@ -125,37 +201,31 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
-         CASE(5)
-            READ(UNIT=in_unit)
-            READ(UNIT=in_unit)
-            READ(UNIT=in_unit)
-            READ(UNIT=in_unit)
-            READ(UNIT=in_unit)
-            READ(UNIT=in_unit)
          CASE DEFAULT
             WRITE(message,'(a,i1,a,i4)')"Cannot recognize data_type = ",
      $           data_type,", at istep = ",istep
-            CALL ipec_stop(message)
+!            CALL ipec_stop(message)
+            PRINT *,message
+            STOP
          END SELECT
       ENDDO
-      CALL bin_close(in_unit)
+      !CALL bin_close(in_unit)
+      CLOSE(in_unit)
 c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
 c-----------------------------------------------------------------------
-      IF(verbose)THEN
-        WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
-        WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
-      ENDIF
+      WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
+      WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
       ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
-      ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert)) !LOGAN
-      eft = -1 ! LOGAN - used to tell if it is read (actual vals >0)
-      wft = 0
       fixstep(0)=0
       fixstep(mfix+1)=mstep
-      CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
+      in_unit = get_free_file_unit(-1)
+      OPEN(UNIT=in_unit,FILE=idconfile,STATUS="OLD",POSITION="REWIND",
+     $        FORM="UNFORMATTED")
+      !CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
@@ -216,18 +286,12 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%rho,
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
-         CASE(5)
-            READ(UNIT=in_unit)ep
-            READ(UNIT=in_unit)et
-            READ(UNIT=in_unit)wt
-            READ(UNIT=in_unit)efp
-            READ(UNIT=in_unit)eft
-            READ(UNIT=in_unit)wft
          END SELECT
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
          WRITE(message,'(a)')"Terminated by zero crossing"
-         CALL ipec_stop(message)
+         !CALL ipec_stop(message)
+         STOP "Terminated by zero crossing"
       ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
@@ -237,9 +301,6 @@ c-----------------------------------------------------------------------
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
-      eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      wft=wft*(chi1*1e-3)
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
 c-----------------------------------------------------------------------
@@ -250,43 +311,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     close data file.
 c-----------------------------------------------------------------------
-      CALL bin_close(in_unit)
-c-----------------------------------------------------------------------
-c     read psi_in.bin.
-c-----------------------------------------------------------------------
-      IF (psixy == 1) THEN
-         IF(verbose)
-     $     WRITE(*,*)"Reading axisymmetric equilibrium solutions"
-         CALL bin_open(in_unit,ieqfile,"OLD","REWIND","none")
-         READ(in_unit)
-         READ(in_unit)mr,mz
-         CALL bicube_alloc(psi_in,mr,mz,1)
-         psi_in%name="equilibrium psi"
-         psi_in%xtitle="r"
-         psi_in%ytitle="z"
-         psi_in%title=" normalized psi "
-         ALLOCATE(rgarr(0:mr,0:mz),zgarr(0:mr,0:mz),psigarr(0:mr,0:mz))
-         READ(in_unit)rgarr,zgarr
-         psi_in%xs=rgarr(:,0)
-         psi_in%ys=zgarr(0,:)
-         READ(in_unit)psigarr
-         psi_in%fs(:,:,1)=1-psigarr/psio
-         CALL bin_close(in_unit)
-         DEALLOCATE(rgarr,zgarr,psigarr)
-         CALL bicube_fit(psi_in,"extrap","extrap")
-         IF(verbose) WRITE(*,*)"mr = ",mr,", mz = ",mz
-      ELSE
-         DO itheta=0,mthsurf
-            CALL bicube_eval(rzphi,psilim,theta(itheta),0)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta(itheta)+rzphi%f(2))
-            r(itheta)=ro+rfac*COS(eta)
-            z(itheta)=zo+rfac*SIN(eta)
-         ENDDO  
-         rmin=0.75*MINVAL(r)
-         rmax=1.5*MAXVAL(r)
-         zlim=1.5*MAXVAL(z)
-      ENDIF      
+      !CALL bin_close(in_unit)
+      CLOSE(in_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -421,16 +447,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      INTEGER :: ipsi,itheta
-      REAL(r8) :: w11,w12,delpsi,qintb,val1,val2
-
+      INTEGER :: ipsi,itheta,out_unit
+      REAL(r8) :: w11,w12,delpsi,qintb,val1,val2,
+     $      q,rfac,eta,jac,jac1
+      
       REAL(r8), DIMENSION(0:mpsi) :: psitor
       REAL(r8), DIMENSION(0:mpsi,0:mtheta) :: rs,zs,jacb2
-
+      REAL(r8), DIMENSION(3,3) :: w,v
       TYPE(spline_type) :: qs
 
-      IF(verbose) WRITE(*,*)
-     $  "Recontructing flux functions and metric tensors"
+      WRITE(*,*)"Recontructing flux functions and metric tensors"
 c-----------------------------------------------------------------------
 c     set up fourier-spline type for metric tensors.
 c-----------------------------------------------------------------------
@@ -534,7 +560,9 @@ c-----------------------------------------------------------------------
       psitor(:)=qs%fsi(1:mpsi+1,1)/qintb
       CALL spline_dealloc(qs)
 
-      CALL ascii_open(out_unit,"idcon_equil.out","UNKNOWN")
+      out_unit = get_free_file_unit(-1)
+      OPEN(UNIT=out_unit,FILE="idcon_equil.out",STATUS="UNKNOWN")
+      !CALL ascii_open(out_unit,"idcon_equil.out","UNKNOWN")
       WRITE(out_unit,*)"IDCON_EQUIL: "//
      $     "Various equilibrium quantities"
       WRITE(out_unit,*)     
@@ -573,7 +601,7 @@ c-----------------------------------------------------------------------
      $           rzphi%f(4)/(twopi*sq%f(4)*chi1),eqfun%f(1)
          ENDDO
       ENDDO
-      CALL ascii_close(out_unit)
+      CLOSE(out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -592,6 +620,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: message
       INTEGER :: ipert,jpert,m1,m2,m,dm,info,iqty
       REAL(r8) :: jtheta,nq,singfac1,singfac2,rm
+      REAL(r8) :: q,q1,p,p1
       INTEGER, DIMENSION(mpert) :: ipiva
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
 
@@ -679,7 +708,9 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zhetrf: amat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         CALL ipec_stop(message)
+         !CALL ipec_stop(message)
+         PRINT *,message
+         STOP
       ENDIF
 c-----------------------------------------------------------------------
 c     compute composite matrices fgk, different from dcon notes.
@@ -707,7 +738,9 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zpbtrf: fmat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         CALL ipec_stop(message)
+         !CALL ipec_stop(message)
+         PRINT *,message
+         STOP         
       ENDIF
 c-----------------------------------------------------------------------
 c     store hermitian matrices fg.
@@ -762,28 +795,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_matrix
-c-----------------------------------------------------------------------
-c     subprogram 6. idcon_vacuum.
-c     read vacuum.bin from vacuum code.
-c-----------------------------------------------------------------------
-      SUBROUTINE idcon_vacuum
-c-----------------------------------------------------------------------
-c     read vacuum data.
-c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,*)"Reading vacuum energy matrices"
-      CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
-      READ(bin_unit)nths2,nfm2
-      ALLOCATE(grri(nths2,nfm2))
-      READ(bin_unit)grri
-      READ(bin_unit)nths2,nfm2
-      ALLOCATE(grre(nths2,nfm2))
-      READ(bin_unit)grre
-      CALL bin_close(bin_unit)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE idcon_vacuum
+
 c-----------------------------------------------------------------------
 c     subprogram 6. idcon_action_matrices.
 c     Equilibrium matrices nexessary to calc perturbed mod b for gpec.
@@ -797,19 +809,18 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ipsi,istep,ipert,jpert,itheta,dm,m1,m2
       REAL(r8) :: psi,angle,rs,
-     $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht
-
+     $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht,
+     $     p1,q,rfac,eta,jac,jac1
       COMPLEX(r8), DIMENSION(-mband:mband) :: 
      $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
-      COMPLEX(r8), DIMENSION(mpert) :: curv_mn,divx_mn
       COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: divxmns,curvmns
+      REAL(r8), DIMENSION(3,3) :: w,v
 
       TYPE(fspline_type) :: fmodb
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,*)"Computing perturbed b field for gpec"
+      WRITE(*,*)"Computing perturbed b field for gpec"
 
       !CALL idcon_build(egnum,xspmn)   !! Only needed for ipeq_sol for xi's
       !CALL ipeq_alloc                 !! displacements now in pentrc inputs
@@ -955,4 +966,252 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_action_matrices
 
-      END MODULE idcon_mod
+
+c-----------------------------------------------------------------------
+c     compute root of discrete function by the secant method.
+c     use when only function is monotonic.
+c-----------------------------------------------------------------------
+      FUNCTION issect(gridnum,xvec,yvec,yval)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: gridnum
+      REAL(r8), DIMENSION(0:gridnum), INTENT(IN) :: xvec
+      REAL(r8), DIMENSION(0:gridnum), INTENT(IN) :: yvec
+      REAL(r8), INTENT(IN) :: yval
+
+      REAL(r8) :: xval1,xval2,xval3,yval1,yval2,yval3,issect
+      TYPE(spline_type) :: yfun
+
+      CALL spline_alloc(yfun,gridnum,1)
+      yfun%xs=xvec
+      yfun%fs(:,1)=yvec
+      CALL spline_fit(yfun,"extrap")
+
+      xval1=xvec(0)
+      yval1=yvec(0)
+      xval2=xvec(gridnum)
+      yval2=yvec(gridnum)
+
+      xval3=yval
+      CALL spline_eval(yfun,xval3,0)
+      yval3=yfun%f(1)
+
+      DO
+         IF (ABS(yval3-yval) .LT. 1e-6) EXIT
+         IF (yval3 .GT. yval) THEN
+            xval2=xval3
+            yval2=yval3
+            xval3=xval1+(yval-yval1)*(xval2-xval1)/(yval2-yval1)
+         ELSE
+            xval1=xval3
+            yval1=yval3
+            xval3=xval1+(yval-yval1)*(xval2-xval1)/(yval2-yval1)
+         ENDIF
+         CALL spline_eval(yfun,xval3,0)
+         yval3=yfun%f(1)
+      ENDDO
+      issect=xval3
+      CALL spline_dealloc(yfun)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      END FUNCTION issect
+      
+      
+c-----------------------------------------------------------------------
+c     subprogram 9. idcon_coords.
+c     transform coordinates to dcon coordinates. 
+c-----------------------------------------------------------------------
+      SUBROUTINE idcon_coords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: amp,ri,bpi,bi,rci,ti,ji
+      REAL(r8), INTENT(IN) :: psi
+      INTEGER, DIMENSION(amp), INTENT(IN) :: amf
+      COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
+
+      INTEGER :: i,ising,itheta
+      REAL(r8) :: thetai,jarea,
+     $      rfac,eta,jac,bpfac,btfac,bfac,fac
+
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,thetas,jacfac
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
+      REAL(r8), DIMENSION(3,3) :: w
+
+      TYPE(spline_type) :: spl     
+      
+      CALL spline_alloc(spl,mthsurf,2)
+      spl%xs=theta
+
+      CALL spline_eval(sq,psi,0)
+      dphi=0
+      DO itheta=0,mthsurf
+         CALL bicube_eval(rzphi,psi,theta(itheta),1)
+         rfac=SQRT(rzphi%f(1))
+         eta=twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta)=ro+rfac*COS(eta)
+         z(itheta)=zo+rfac*SIN(eta)
+         jac=rzphi%f(4)
+         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+         bpfac=psio*delpsi(itheta)/r(itheta)
+         btfac=sq%f(1)/(twopi*r(itheta))
+         bfac=SQRT(bpfac*bpfac+btfac*btfac)
+         fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
+         spl%fs(itheta,1)=fac/(r(itheta)**ri*rfac**rci)*
+     $        bpfac**bpi*bfac**bi
+         ! jacobian for coordinate angle at dcon angle
+         spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
+     $        (bpfac**bpi*bfac**bi)  
+         IF (ti .EQ. 0) THEN
+            dphi(itheta)=rzphi%f(3)
+         ENDIF
+      ENDDO      
+
+      CALL spline_fit(spl,"periodic")
+      CALL spline_int(spl)
+
+      ! coordinate angle at dcon angle
+      thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
+      IF (ji .EQ. 1) THEN
+         DO itheta=0,mthsurf
+            ! jacobian at coordinate angle
+            thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
+            CALL spline_eval(spl,thetai,0)
+            jacfac(itheta)=spl%f(2)
+         ENDDO
+         jarea=0
+         DO itheta=0,mthsurf-1
+            jarea=jarea+jacfac(itheta)/mthsurf
+         ENDDO
+         CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
+         ftnfun=ftnfun/jacfac*jarea
+         CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
+      ENDIF         
+c-----------------------------------------------------------------------
+c     convert coordinates.
+c-----------------------------------------------------------------------      
+      ! compute given function in dcon angle
+      DO itheta=0,mthsurf
+         ftnfun(itheta)=0
+         DO i=1,amp
+            ftnfun(itheta)=ftnfun(itheta)+
+     $           ftnmn(i)*EXP(ifac*twopi*amf(i)*thetas(itheta))
+         ENDDO
+      ENDDO
+
+      ! multiply toroidal factor for dcon angle
+      IF (ti .EQ. 0) THEN
+         ftnfun(:)=ftnfun(:)*EXP(-ifac*nn*dphi(:))
+      ELSE
+         ftnfun(:)=ftnfun(:)*
+     $        EXP(-twopi*ifac*nn*sq%f(4)*(thetas(:)-theta(:)))
+      ENDIF
+
+      CALL spline_dealloc(spl)
+
+      CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE idcon_coords
+      
+
+      
+      
+      
+      
+      
+      
+      !=======================================================================
+      subroutine set_eq(set_eqfun,set_sq,set_rzphi,
+     $              set_smats,set_tmats,set_xmats,set_ymats,set_zmats,
+     $              set_chi1,set_ro,set_nn,set_jac_type,
+     $              set_mlow,set_mhigh,set_mpert)
+      !----------------------------------------------------------------------- 
+      !*DESCRIPTION: 
+      !   Set the dcon equilibrium global variables directly. For internal use
+      !   within kinetic dcon.
+      !
+      !*ARGUMENTS:
+      !   set_eqfun : bicube_type
+      !   set_sq : spline_type
+      !   set_rzphi : bicube_type
+      !       Equilibrium matrix
+      !   set_chi1 : real
+      !       Derivative of poloidal flux on psifac
+      !   set_ro : real
+      !       Major radius
+      !   set_nn : integer
+      !       toroidal mode number
+      !   set_jac_type : character
+      !       DCON working jacobian
+      !   set_mfac : integer array
+      !       Poloidal modes
+      !   set_psifac : real array
+      !       psi grid
+      !   set_mpert : integer
+      !       Number of poloidal modes
+      !   set_mstep : integer
+      !       Number grid points in psi
+      !
+      !-----------------------------------------------------------------------
+    
+        implicit none
+        ! declare arguments
+        integer :: set_mlow,set_mhigh,set_mpert,set_nn
+        real(r8) :: set_ro,set_chi1
+        !real(r8), dimension(:) :: set_psifac
+        character(*), intent(in) :: set_jac_type
+        
+        type(spline_type) :: set_sq
+        type(bicube_type) :: set_eqfun,set_rzphi
+        type(cspline_type) :: set_smats,set_tmats,set_xmats,
+     $      set_ymats,set_zmats
+        
+        integer :: m
+        
+        ! directly transfer dcon global equilibrium variables to PENTRC
+        eqfun   =set_eqfun
+        sq      =set_sq
+        rzphi   =set_rzphi
+        
+        ! needed to create w_i^T*w_j coefficient matices
+        smats   =set_smats 
+        tmats   =set_tmats
+        xmats   =set_xmats
+        ymats   =set_ymats
+        zmats   =set_zmats
+        !! only needed if using old ipec_o1 inputs
+        !mstep   =set_mstep
+        !allocate(psifac(0:mstep))
+        !psifac(:) = set_psifac(:)
+        
+        chi1    =set_chi1
+        ro      =set_ro
+        nn      =set_nn
+        jac_type=set_jac_type
+        mpert   =set_mpert
+        allocate(mfac(mpert))
+        mfac    =(/(m,m=set_mlow,set_mhigh)/)
+        
+        ! evaluate field on axis
+        call spline_eval(sq,0.0_r8,0)
+        bo = abs(sq%f(1))/(twopi*ro)
+        
+      end subroutine set_eq
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      END MODULE dcon_interface
+
