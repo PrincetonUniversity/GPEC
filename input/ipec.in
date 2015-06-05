@@ -1,37 +1,42 @@
 &ipec_input
-	jac_in="pest"
-	jsurf_in=1
-	tmag_in=0
-
-	data_flag=t
-	data_type="surfmn"
-        infile="/p/gpec/users/jpark/data/3d_field/d3d/surfmn.out.cossin.144182.03750_Intrins"
-	nmin=0
+	idconfile  = 'euler.bin'	! Eigenfunctions output by DCON run
+	ieqfile    = 'psi_in.bin'	! Flux surfaces output by DCON run
+	ivacuumfile= 'vacuum.bin'	! Vacuum info output by DCON run
+	rdconfile  = 'gal_solution.bin'	! ?? output by resistive DCON run
+	
+	jac_in="pest"		! Coordinate system of applied perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
+	jsurf_in=1			! True(1) if applied perturbation is area weighted (i.e. flux)
+	tmag_in=0			! True(1) if applied perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
+	
+	coil_flag=t			! Calculate applied perturbation from coils in coil.in
+	
+	data_flag=t			! Apply perturbation from thrid party code output
+	data_type="surfmn"	! Name of said code. Choose: surfmn,??
+	infile="path/to/file"	! Path to said output
+	nmin=0				! Extra paramaters needed to read surfmn files.
 	nmax=64
 	mmin=-64
 	mmax=64
 
-        harmonic_flag=f
-	cosmn(3)=1e-4
-
-	displacement_flag=f
-	fixed_boundary_flag=f
-
-	coil_flag=t
-
+	harmonic_flag=f		! Apply self-defined perturbations
+	cosmn(3)=1e-4		! Real part of m=3 component (n defined by DCON run). 
+	sinmn(6)=1e-4		! Imaginary part of m=6 component. etc.
+	
+	displacement_flag=f ! Perturbations are displacement (m). Default is field (T).
+	fixed_boundary_flag=f ! Total perturbation = applied perturbation
 /
 &ipec_control
-	resp_index=0
-	sing_spot=5e-4
-	reg_flag=t
-	reg_spot=5e-2
-	chebyshev_flag=t
-	nche=20
+	resp_index=0		! ??
+	sing_spot=5e-4		! Minimum distance to singular surface in (m-nq) space
+	reg_flag=t			! Regularize the solution near resonant surfaces
+	reg_spot=5e-2		! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
+	chebyshev_flag=t	! Fit chebyshev polynomials to the displacement.
+	nche=20				! Number of chebyshev polynomials used
 /
 &ipec_output
-	jac_out="hamada"	! coordinates of select outputs
-	jsurf_out=0			! 1 for area weighted outputs
-	tmag_out=1			! 1 for magnetic toroidal angle outputs
+	jac_out="hamada"	! Coordinates of select outputs
+	jsurf_out=0			! True(1) for area weighted outputs
+	tmag_out=1			! True(1) for magnetic toroidal angle outputs
 
 	resp_flag=f
 	singcoup_flag=f		! Calculate coupling of each m to resonant surfaces
@@ -41,8 +46,8 @@
 	xbnormal_flag=f		! Outputs normal displacement and field in plasma
 	vbnormal_flag=f		! Outputs vacuum normal displacement and field in plasma
 
-	fun_flag=f			! Maps outputs to (r,z) 
-	flux_flag=f
+	fun_flag=f			! Outputs to (r,z) in addition to default (psi,m)
+	flux_flag=f			! Outputs to (psi,theta) in addition to default (psi,m)
 
 	eqbrzphi_flag=f		! Outputs equilibrium field on regular (r,z) grid
 	brzphi_flag=f		! Outputs perturbed field on regular (r,z) grid
@@ -63,6 +68,6 @@
 
 /
 &ipec_diagnose
-	div_flag=f
-	radvar_flag=t
+	div_flag=f			!!
+	radvar_flag=t		!!
 /
