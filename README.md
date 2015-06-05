@@ -1,51 +1,79 @@
 General Perturbed Equilibrium Codes
 ===================================
 
-This is a repository for the suite of perturbed equilibrium package codes including IPEC, RPEC, GPEC, and PENTRC.
+This package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, IPEC, RPEC, GPEC, and PENTRC.
 
-The primary purpose of these codes is to calcuated the nonaxisymmetric force balance in tokamak plasmas.
+The primary purpose of this package is to calcuated the nonaxisymmetric force balance in tokamak plasmas.
+
+Note that the DCON code was developed by Allen Glasser at Los Alamos National Laboratory, while IPEC and PENTRC were developed and are maintained by the GPEC team at the Princeton Plasma Physics Laboratory.
+
+Installation
+-------------
+
+Public installations should be downloaded and kept up to date from the releases on github. The releases remain private for now, so only those with access to the repository will be able to install the package.
 
 
-How to Contibute
-------------------
+Developement
+--------------
 
 There is a `github repository <https://github.com/PrincetonUniversity/GPEC>`_ for this package to facilitate version control and collaborative contributions.
 
-To become a contributor to the GPEC package, first go to the repository on `github <https://github.com/PrincetonUniversity/GPEC>`_ and fork using the button in the upper right. Copy the clone url from the box in the right side panel of your forked repository. Now create a local directory in your user area on the GA computers where you will make your changes. Navigate there and do::
+To become a contributor to the GPEC package, contact nlogan@pppl.gov to be added to the developement team. Next, go the the github repository to familiarize yourself with the documentation, branch structure, latest commits, etc. While there, go ahead and copy the HTTPS clone URL from the box in the right side panel. Finally, create a directory on your local machine, clone the repository, and checkout the appropriate branch in order to start contributing.
 
-   git clone <copied-url-from-github-fork> gpec
-   cd gpec
-   git checkout -b <new-branch>
+On the PPPL portal computers, navigate to a directory in which you want to do your developement (something like /p/gpec/users/<username>/gpec) and use following commands::
 
-and for convinience, add::
+   git clone <copied-url-from-github> develop
+   cd develop
+   git checkout -b develop
 
-   git remote add github <copied-url-from-github-fork>
-
-By convention, use your pppl username as the branch. Now you can freely edit files in the lib and bin directories. As you add files or make changes remember to::
+This will create a directory 'develop' and with the developmental brnach of the repository in it. For more on branches, see the section below. Now you are free to add/edit files in this branch. Be sure to use:: 
 
    git add <new-file>
+
+when creating new files, so that they come under version control. Be sure to make regular commits::
+
    git commit -a # Will open $EDITOR for message
 
-When you have finished a significant addition/improvement push it using::
+as you go. You can't go wrong with more commits. Especially when developing as a team.
 
-   git push --set-upstream github <new_branch>
-   
-When things are really working beautifully and you are ready to share your new developments with the community at large, go back on github, go to your forked repository, and submit a new pull request. Email nlogan@pppl.gov to have your code reviewed before being merged with the master. Continue to push to the same branch to update the pull request.
+When you have finished a significant addition/improvement push it to github using::
 
-**Building the documentation**
+   git push -u origin develop
 
-The very first time, starting from the root of the repo::
+so that others working on the same branch can stay in sync with your developements. Similarly, you should be regularly pulling from the branch in order to stay in sync with what others are doing. To do so, use::
 
-    cd doc
-    make init
-    
-With that set up, the following will build the documentation and push it to the proper place::
+   git pull 
 
-    make ghpages
+There are many great git tutorials on the web, and great documentation for all the commands. Use them!
 
-Which is all you need do to update docs from there on out.
+**GIT Workflow**
+
+All developers need to use Vincent Driessen's `GitFlow <http://nvie.com/posts/a-successful-git-branching-model>`_ workflow when editing the GPEC package. PLEASE READ THE ENTIRE POST. It is short, very thorough, and good for both experienced and new git users.
+
+The highlights are,
+  - There are two permenant branches: master and develop
+  - The master branch is only updated for at release ready stages
+  - New features should be developed in short-lived (days) branches coming off of and merging back to the development branch.
+  
+Specific instructions are given in the link above as to exactly how to branch and merge these various branches. For example, the --no-ff option should be used when merging in order to keep branch histories. Just follow the examples and you wont go wrong!
+
 
 Documentation
 -------------
 
 Documentation of the GPEC package has been created using sphinx and is hosted by `PrincetonUniveristy GitHub Pages <http://princetonuniversity.github.io/GPEC/>`_.
+
+The doumentation for the entire package is contained within the top level docs directory, and uses rst files with syntax that should be straight forward to mimic. If creating a new .rst file be sure to include it in the top level orginization of the index.rst file.
+
+**Building the documentation**
+
+The very first time, starting from the root of the repo::
+
+    cd docs
+    make init
+    
+This creates a new gpec-docs directory in the same directory that contains the local repository (not in the repository itself) and checks out a devoted documentation branch. With that set up, the following will build the documentation and push it to the proper place::
+
+    make ghpages
+
+This is now all you need to do in order to update docs for that local repo from there on out.
