@@ -7,7 +7,7 @@ The primary purpose of these codes is to calcuated the nonaxisymmetric force bal
 
 
 How to Contibute
------------------
+------------------
 
 There is a `github repository <https://github.com/PrincetonUniversity/GPEC>`_ for this package to facilitate version control and collaborative contributions.
 
