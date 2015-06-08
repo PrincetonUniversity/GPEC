@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>IPEC Namelist Inputs &mdash; GPEC 3.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">IPEC Namelist Inputs</a><ul>
+<li><a class="reference internal" href="#ipec-input">IPEC_INPUT</a></li>
+<li><a class="reference internal" href="#ipec-control">IPEC_CONTROL</a></li>
+<li><a class="reference internal" href="#ipec-output">IPEC_OUTPUT</a></li>
+<li><a class="reference internal" href="#ipec-diagnose">IPEC_DIAGNOSE</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/ipec_namelist.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="ipec-namelist-inputs">
+<h1>IPEC Namelist Inputs<a class="headerlink" href="#ipec-namelist-inputs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="ipec-input">
+<h2>IPEC_INPUT<a class="headerlink" href="#ipec-input" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>jac_in</strong> = &#8220;pest&#8221;</dt>
+<dd>Coordinate system of 3D field input.  Choose from hamada, pest, boozer, equal_arc or other</dd>
+<dt><strong>jsurf_in</strong> = 1</dt>
+<dd>Set to 1 for surface weighted spectrum  Common for surfmn inputs</dd>
+<dt><strong>tmag_in</strong> = 0</dt>
+<dd>0 for ordinary toroidal angle 1 for magnetic coordinate angle</dd>
+<dt><strong>data_flag</strong> = .TRUE.</dt>
+<dd>Set true to read a 3D field spectrum from the file specified by the infile variable and apply it to the plasma boundary.</dd>
+<dt><strong>data_type</strong> = &#8220;surfmn&#8221;</dt>
+<dd>Type of vacuum 3D error field input file.  Choose from &#8216;vac3d&#8217; or &#8216;surfmn&#8217;.</dd>
+<dt><strong>infile</strong> = &#8220;/p/gpec/users/jpark/data/3d_field/d3d/surfmn.out.cossin.144182.03750_Intrins&#8221;</dt>
+<dd>Path to vacuum 3D field input file of type specified by data_type.  This file must specify the 3D vacuum field on the plasma boundary as determined in DCON.</dd>
+<dt><strong>nmin</strong> = 0</dt>
+<dd>The minimum toroidal mode number included in the infile data (typically 0).</dd>
+<dt><strong>nmax</strong> = 64</dt>
+<dd>The maximum toroidal mode number included in the infile data.</dd>
+<dt><strong>mmin</strong> = -64</dt>
+<dd>The minimum poloidal mode number included in the infile data (typically -64).</dd>
+<dt><strong>mmax</strong> = 64</dt>
+<dd>The maximum poloidal mode number included in the infile data (typically 64).</dd>
+<dt><strong>harmonic_flag</strong> = .FALSE.</dt>
+<dd>If true Tesla amplitudes must be assigned to variables cosmn(int) and sinmn(int), where int is the applied 3D field m  harmonic on the plasma surface. The toroidal mode number of the applied field is set by the DCON mode being analyzed.</dd>
+</dl>
+<p><strong>cosmn(3)</strong> = 0.0001</p>
+<dl class="docutils">
+<dt><strong>displacement_flag</strong> = .FALSE.</dt>
+<dd>Take all boundary inputs as normal displacements rather than magnetic fields</dd>
+<dt><strong>fixed_boundary_flag</strong> = .FALSE.</dt>
+<dd>Sets the plasma boundary as defined in the equilibrium input file fixed in all IPEC calculations.</dd>
+</dl>
+<p><strong>coil_flag</strong> = .TRUE.</p>
+</div>
+<div class="section" id="ipec-control">
+<h2>IPEC_CONTROL<a class="headerlink" href="#ipec-control" title="Permalink to this headline">¶</a></h2>
+<p><strong>resp_index</strong> = 0</p>
+<p><strong>sing_spot</strong> = 0.0005</p>
+<dl class="docutils">
+<dt><strong>reg_flag</strong> = .TRUE.</dt>
+<dd>Regularize unintegrable pmodb in psi</dd>
+<dt><strong>reg_spot</strong> = 0.05</dt>
+<dd>dB ~ (m-nq)^2/[(m-nq)^2+reg_spot^2)] if reg_flag</dd>
+<dt><strong>chebyshev_flag</strong> = .TRUE.</dt>
+<dd>Set true for chebyshev polynomials of the 3D perturbations in (psi, artheta).</dd>
+<dt><strong>nche</strong> = 20</dt>
+<dd>Number of coefficients used in the chebyshev polynomials (typicaly ~30).</dd>
+</dl>
+</div>
+<div class="section" id="ipec-output">
+<h2>IPEC_OUTPUT<a class="headerlink" href="#ipec-output" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>jac_out</strong> = &#8220;hamada&#8221;</dt>
+<dd>Coordinates of IPEC output files.  Choose from hamada, pest, boozer, equal_arc or other</dd>
+<dt><strong>jsurf_out</strong> = 0</dt>
+<dd>Set to 1 for a surface weighted spectrum b_{mn}=ointleft(deltamathbf{B}cdothat{n}</dd>
+</dl>
+<p>ight)left(     heta,phi
+ight)e^{-ileft(m       heta-nphi
+ight)}Jcdot|nablapsi|d       heta dphi (an invariant flux on rational surfaces). Set to 0 for unweighted spectrum b_{mn}=ointleft(deltamathbf{B}cdothat{n}
+ight)left(     heta,phi
+ight)e^{-ileft(m       heta-nphi
+ight)}d heta dphi.</p>
+<dl class="docutils">
+<dt><strong>tmag_out</strong> = 1</dt>
+<dd>0 for ordinary toroidal angle. 1 for magnetic coordinate angle</dd>
+<dt><strong>resp_flag</strong> = .FALSE.</dt>
+<dd>Output ipec_response_n#.out file.</dd>
+</dl>
+<p><strong>singcoup_flag</strong> = .FALSE.</p>
+<dl class="docutils">
+<dt><strong>singfld_flag</strong> = .FALSE.</dt>
+<dd>Output the q, Psi_{N}, resonant mathbf{B}, singular current, island width and Chirikov parameter at rational surfaces inside the plasma, including the plasma response.</dd>
+<dt><strong>vsingfld_flag</strong> = .FALSE.</dt>
+<dd>Output the psi_{N}, resonant mathbf{B}, singular current, island width and Chirikov parameter at rational surfaces inside the plasma, using vacuum calculations.  Requires coil_flag=True.</dd>
+<dt><strong>pmodb_flag</strong> = .FALSE.</dt>
+<dd>Plasma <a href="#id1"><span class="problematic" id="id2">|\delta B|</span></a> on flux surfaces.</dd>
+<dt><strong>xbnormal_flag</strong> = .FALSE.</dt>
+<dd>Output the normal components of the displacement, covarient perturbed magnetic field, and contravarient perturbed field (area weighted -&gt; can compare between coordinates)  with plasma response included.</dd>
+<dt><strong>vbnormal_flag</strong> = .FALSE.</dt>
+<dd>Output the normal components of the displacement, covarient perturbed magnetic field, and contravarient perturbed field (area weighted -&gt; can compare between coordinates) from vacuum calculations.  Requires coil_flag=True.</dd>
+<dt><strong>fun_flag</strong> = .FALSE.</dt>
+<dd>Outputs in functional format (on a coordinate grid) by back transforming the harmonic information (WARNING: this will result in larger data output).</dd>
+<dt><strong>flux_flag</strong> = .FALSE.</dt>
+<dd>New flux surfaces psi(r+delta r,z+delta z,phi) for visualization of perturbation.</dd>
+<dt><strong>eqbrzphi_flag</strong> = .FALSE.</dt>
+<dd>Output the original equilibrium field on a (r,z,phi) grid.</dd>
+<dt><strong>brzphi_flag</strong> = .FALSE.</dt>
+<dd>Output the (r,z,phi) components of the perturbed magnetic fields everywhere on the (r,z,phi) grid.  - IPEC 1 only outputs perturbed magnetic fields valid inside the plasma on the (r,z,phi) grid.  - IPEC 2.0 and later includes the plasma response and vacuum fields when the coil_flag is the vacuum input.</dd>
+<dt><strong>xrzphi_flag</strong> = .FALSE.</dt>
+<dd>Output the plasma displacement on a (r,z,phi) grid.</dd>
+<dt><strong>vbrzphi_flag</strong> = .FALSE.</dt>
+<dd>Output the field due to the surface current defining the IPEC final solution boundary condition at the plasma surface (original external field boundary condition and plasma response) on an r,z grid. This does not represent a true field.</dd>
+<dt><strong>vvbrzphi_flag</strong> = .FALSE.</dt>
+<dd>Outputs the field due to the surface current defining the external 3D field boundary condition on a (r,z,phi) grid. This field does not represent a true field.</dd>
+<dt><strong>bin_flag</strong> = .TRUE.</dt>
+<dd>Output binary files for use with the xdraw command when appropriate.</dd>
+<dt><strong>bin_2d_flag</strong> = .TRUE.</dt>
+<dd>Output binary files containing 2D contours for use with the xdraw command  when appropriate.</dd>
+</dl>
+<p><strong>vsbrzphi_flag</strong> = .FALSE.</p>
+<p><strong>ss_flag(7)</strong> = .FALSE.</p>
+<p><strong>ss_flag(8)</strong> = .FALSE.</p>
+<p><strong>xbrzphifun_flag</strong> = .FALSE.</p>
+<p><strong>arzphifun_flag</strong> = .FALSE.</p>
+<dl class="docutils">
+<dt><strong>ntv_flag</strong> = .TRUE.</dt>
+<dd>Output first order quantities to bin files for interfacing with PENT code</dd>
+</dl>
+</div>
+<div class="section" id="ipec-diagnose">
+<h2>IPEC_DIAGNOSE<a class="headerlink" href="#ipec-diagnose" title="Permalink to this headline">¶</a></h2>
+<p><strong>div_flag</strong> = .FALSE.</p>
+<p><strong>radvar_flag</strong> = .TRUE.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, PPPL.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

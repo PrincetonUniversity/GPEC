@@ -1,0 +1,282 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Outputs and Post-Processing &mdash; GPEC 3.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" />
+    <link rel="next" title="DCON README" href="dcon_readme.html" />
+    <link rel="prev" title="Getting started" href="getting_started.html" /> 
+  </head>
+  <body>
+
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="dcon_readme.html" title="DCON README"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting started"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Outputs and Post-Processing</a><ul>
+<li><a class="reference internal" href="#output-files">Output Files</a><ul>
+<li><a class="reference internal" href="#ascii-file-outputs">ASCII File Outputs</a></li>
+<li><a class="reference internal" href="#binary-file-outputs">Binary File Outputs</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#xdraw">xdraw</a></li>
+<li><a class="reference internal" href="#idl-ntv-post-processing">IDL NTV Post Processing</a><ul>
+<li><a class="reference internal" href="#run-instructions">Run Instructions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="getting_started.html"
+                        title="previous chapter">Getting started</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="dcon_readme.html"
+                        title="next chapter">DCON README</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/outputs.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="outputs-and-post-processing">
+<h1>Outputs and Post-Processing<a class="headerlink" href="#outputs-and-post-processing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="output-files">
+<h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
+<p>The IPEC outputs are entirely specified by flags (bool types t or f) set in the IPEC_output section of IPEC.in. All outputs are ASCII files, and can be grouped into two major categories.</p>
+<div class="section" id="ascii-file-outputs">
+<h3>ASCII File Outputs<a class="headerlink" href="#ascii-file-outputs" title="Permalink to this headline">¶</a></h3>
+<p>A number of the flag options in IPEC.in instruct IPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.</p>
+<p>Outputs Always Available</p>
+<p>These IPEC outputs can always be obtained from a equil.bin file output from DCON.</p>
+<p>IPEC_response_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> resp_flag</p>
+<p><strong>Info</strong> Energy for DCON eigenmodes and stability indices. Eigenvalues and eigenvectors for vacuum and plasma inductance (virtual casing currents to fields), plasma permeability (external fields to total fields), and plasma reluctance.</p>
+</div></blockquote>
+<p>IPEC_singcoup_matrix_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> singcoup_flag</p>
+<p><strong>Info</strong> The coupling matrix to resonant fields, coupling matrix to singular currents, and to island half-widths is given for each rational surface within the plasma (q=2, 3, etc) for each surface the real and imaginary coupling constants are given for each poloidal mode number on the control surface.</p>
+</div></blockquote>
+<p>IPEC_singcoup_svd_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> singcoup_flag</p>
+<p><strong>Info</strong> The SVD singular values (s) and eigen vectors for each coupling matrix in IPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.</p>
+</div></blockquote>
+<p>Outputs Available When Error Field is Provided</p>
+<p>These outputs are only available when an external error field file is provided as an input to IPEC. This means IPEC.in must have the data_flag turned on and a infile specified.</p>
+<p>IPEC_control_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong></p>
+<p><strong>Info</strong> The Plasma response for an external perturbation on the control surface. This includes the vacuum energy, surface energy, plasma energy, real and imaginary vacuum input mathbf{B}_{in} and total field on plasma boundarymathbf{B}_{out}as a function of poloidal mode number.</p>
+</div></blockquote>
+<p>IPEC_singfld_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> singfld_flag</p>
+<p><strong>Info</strong> The Psi_{N}, total resonant mathbf{B} (real and imaginary), singular current (real and imaginary), island half width in units of normalized flux and Chirikov parameter at rational surface inside the plasma.</p>
+<p><strong>Flag</strong> singcoup_flag</p>
+<p><strong>Info</strong> Additional section showing the overlap field and overlap percentage for each eigenmode in the singcoup_svd output.</p>
+</div></blockquote>
+<p>IPEC_pmod_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> pmodb_flag</p>
+<p><strong>Info</strong> Eulerian and Lagrangian left|mathbf{B}right|(real and imaginary) for each poloidal mode number at each value of Psi_{N} output. This output is necessary for NTV post processing.</p>
+</div></blockquote>
+<p>IPEC_xbnormal_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> xbnormal_flag</p>
+<p><strong>Info</strong> The normal components of the displacement, magnetic field without the plasma response, and magnetic field with the plasma response included for each poloidal mode number at each value of Psi_{N} output.??</p>
+</div></blockquote>
+<p>IPEC_*rzphi_n#.out</p>
+<p>A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a IPEC_xrzphi_n1.out file. some common properties of these files are:</p>
+<ul>
+<li><p class="first">real and imaginary components: Output files contain two dimensional data on an left(r,zright) grid for a single toroidal harmonic. To translate into three dimensions, perform the transformationBleft(r,z,phiright)=B_{real}left(r,zright)cosleft(nphiright)+B_{imag}left(r,zright)sinleft(nphiright)</p>
+</li>
+<li><p class="first">l parameter: 1 designates points inside plasma, 0 points in vacuum, -1 points near/on surface (singularity)</p>
+<blockquote>
+<div><p><strong>Flag</strong> eqbrzphi_flag</p>
+<p><strong>Info</strong> The original equilibrium field on a left(r,z,phiright) grid.</p>
+<p><strong>Flag</strong> brzphi_flag</p>
+<p><strong>Info</strong> The left(r,z,phiright)components of the perturbed magnetic fields inside the plasma on the left(r,z,phiright) grid.</p>
+<p><strong>Flag</strong> xrzphi_flag</p>
+<p><strong>Info</strong> The displacement on the left(r,z,phiright) grid.</p>
+<p><strong>Flag</strong> vbrzphi_flag</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the IPEC boundary surface current composed of both the vacuum component and the plasma response.</p>
+<p><strong>Flag</strong> vpbrzphi_flag</p>
+<p><strong>Info</strong> The true perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid due to the plasma response alone calculated from the plasma response surface condition.</p>
+<p><strong>Flag</strong> vvbrzphi_flag</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the IPEC boundary surface current from the external fields alone.</p>
+<p><strong>Flag</strong> ssbrzphi_flag</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the IPEC boundary surface current from the external fields alone.</p>
+</div></blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="binary-file-outputs">
+<h3>Binary File Outputs<a class="headerlink" href="#binary-file-outputs" title="Permalink to this headline">¶</a></h3>
+<p>These files are designed for quick and easy visualization of results using the xdraw command. For more details on using xdraw see the devoted section on this page.</p>
+<p>xbnormal.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> bin_flag</p>
+<p><strong>Info</strong> The normal displacement and magnetic field as functions of Psi_{N} for xdraw.</p>
+</div></blockquote>
+<p>xbnormal_2d.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> bin_2d_flag</p>
+<p><strong>Info</strong> Contour profiles of the normal displacement and magnetic field in (R,z) for xdraw.</p>
+</div></blockquote>
+<p>pflux_re(im)_2d.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> bin_2d_flag</p>
+<p><strong>Info</strong> Contour profiles of the real (imaginary) perturbed flux in (R,z) for xdraw.</p>
+</div></blockquote>
+<p>bnormal_spectrum.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> bin_flag</p>
+<p><strong>Info</strong> Surfmn type contours of the normal perturbed magnetic fields as a function of poloidal harmonic number and Psi_{N}.</p>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="xdraw">
+<h2>xdraw<a class="headerlink" href="#xdraw" title="Permalink to this headline">¶</a></h2>
+<p>The binary IPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by IPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.</p>
+</div>
+<div class="section" id="idl-ntv-post-processing">
+<h2>IDL NTV Post Processing<a class="headerlink" href="#idl-ntv-post-processing" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>The calculation of neoclassical toroidal viscosity (NTV) requires knowledge of many plasma properties. These the 3D magnetic field within the plasma delta B</dt>
+<dd>given by IPEC, as well as external variables such as pressure profiles, velocity profiles, and more that are not included in IPEC itself. To calculate an estimate of the NTV torque it is necessary to specify additional profile information with either measured data or analytical formulae. Either way, it should be emphasized that the calculation is a post-processing of IPEC data that is not self consistent with the IPEC solution. This is a reasonable estimate as long as the torque is not great enough to significantly effect the equilibrium.</dd>
+</dl>
+<p>A review of the NTV calculation and definitions of the involved variables can be found in Ref. [Park, 2009]. For the detailed mathematics, although important, are not the subject of this manual. The important highlights for the user to keep in mind are the following:</p>
+<ul class="simple">
+<li>Necessary profiles include the toroidal rotationV_{phi}, pressure P, and magnetic field B.</li>
+</ul>
+<p>– Force balance and the neoclassical value of the poloidal velocity are used to calculate the radial electric field.qnleft(E_{r}-v_{phi}B_{theta}+v_{theta}B_{phi}right)  =       frac{partial P}{partial r}  v_{theta}       =       frac{c_{p}}{eB_{theta}}frac{partial T_{i}}{partial r}approxfrac{1.17}{eB_{theta}}frac{partial T_{i}}{partial r}</p>
+<p>– Specifically, the experimental profiles used are ion temperature T_{i}, electron temperature T_{e}, electron density n_{e}, impurity density n_{iz}, the effective charge Z_{eff}, and toroidal rotation V_{phi}. Optionally the Etimes B rotation and deuterium rotation can be specified as well.</p>
+<ul class="simple">
+<li>The integral over kappa^{2}=left[E-mu B_{0}left(1-epsilonright)right]/2mu B_{0}epsilon is approximated away. ?</li>
+<li>There are multiple distinct regimes of collisional and methods of dealing with them. In the post processing these are output as variables with the prefixes</li>
+</ul>
+<p>– CP rightarrow Collisional Plateau regimes transport estimated by Shaing [Zhu2006, and references therein].</p>
+<p>– IN rightarrow Generalized combination of the 1/nu and nu regimes. This is the most trusted result at the time of this manual&#8217;s writing.</p>
+<div class="section" id="run-instructions">
+<h3>Run Instructions<a class="headerlink" href="#run-instructions" title="Permalink to this headline">¶</a></h3>
+<p>The first step in an NTV calculation for any given shot is to run the corresponding IPEC calculation. The output files necessary are the control, singfld, and pmodb, files. These should use the functional outputs.</p>
+<p>Having obtained the required output files, the user should enter the IDL environment and run one of the two NTV routines. These routines are &#8216;total_energy_torque.pro&#8217; and &#8216;simple_energy_torque.pro&#8217;. The first requires full experimental data and should be initialized in the package script found at &#8216;/u/jpark/analysis/lib/init_routines_jkp.idl&#8217;, while the second defines analytic profiles for the necessary variables in order to calculate results from IPEC outputs and can be used on its own.</p>
+<p>An example of the run process within the IDL environment is shown here:</p>
+<div class="highlight-python"><div class="highlight"><pre>IDL&gt; @/u/jpark/analysis/lib/init_routines_jkp.idl
+IDL&gt; gfile=&#39;g145117.03600_d3d_kinetic&#39; ;efit equilibrium
+IDL&gt; kdir = &#39;samplepath&#39; ;directory of GA kinetic file
+IDL&gt; path1 = &#39;samplepath&#39; ;directory of equilibrium file
+IDL&gt; path2 = &#39;samplepath&#39; ;directory of IPEC outputs
+IDL&gt; numstr = &#39;145117.03600&#39;  ;shot.time
+IDL&gt; t = total_energy_torque(nn=3,/adata,/atime, kdir=kdir,gfile=gfile,/diamag,/magpre,/counter,path1=path1,path2=path2,nl=8,numstr=numstr)
+</pre></div>
+</div>
+<p>The result can be saved using:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">IDL</span><span class="o">&gt;</span> <span class="n">save</span><span class="p">,</span><span class="nb">file</span><span class="o">=</span><span class="s">&#39;t145117.03600_d3d_kinetic_ievenc1_counter.tsav&#39;</span><span class="p">,</span><span class="n">t</span>
+</pre></div>
+</div>
+<p>or the user&#8217;s choice of save file path. The result holds a huge amount of information. The structure can be found using the command:</p>
+<div class="highlight-python"><div class="highlight"><pre>IDL&gt; help, /str, tor
+IDL&gt; help, /str, t.TOT.L.NTVetc.
+</pre></div>
+</div>
+<p>This example uses a number of specific call words, and there are many more that can be examined by looking into the nuts and bolts of the script &#8216;total_energy_torque.pro&#8217;. So as not to leave the reader hanging, we will quickly review the calls used above. The keywords &#8216;/adata&#8217; and &#8216;/atime&#8217; tell the routine that it will be using data from Andrea Garofalo, the structure of which has been hard-coded into the routine and would need to be edited for any new data format. The keyword &#8216;/counter&#8217; changes the sign of some of Andrea Garofalo&#8217;s data to be consistent with other conventions. The keywords &#8216;/diamag&#8217; and &#8216;/magpre&#8217; tell the routine to use the diamagnetic rotation and magnetic precession respectively, and should be called for almost all non-debugging calculation purposes. Finally, the variable &#8216;nl&#8217; specifies the number of bounce harmonics to include in the calculation. There are many other arguments that could be passed to the total_energy_torque such as specifying a separate machine, or individual profiles. However, the user will be required to familiarize themselves with the internal structures of the function and the data before extending themselves to use its full functionality.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="dcon_readme.html" title="DCON README"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting started"
+             >previous</a> |</li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, PPPL.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>COIL Namelist Inputs &mdash; GPEC 3.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">COIL Namelist Inputs</a><ul>
+<li><a class="reference internal" href="#coil-control">COIL_CONTROL</a></li>
+<li><a class="reference internal" href="#coil-output">COIL_OUTPUT</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/coil_namelist.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="coil-namelist-inputs">
+<h1>COIL Namelist Inputs<a class="headerlink" href="#coil-namelist-inputs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="coil-control">
+<h2>COIL_CONTROL<a class="headerlink" href="#coil-control" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>ceq_type</strong> = &#8220;efit&#8221;</dt>
+<dd>This should be identical to the eq_type specified in equil.in</dd>
+<dt><strong>machine</strong> = &#8220;d3d&#8221;</dt>
+<dd>As of IPEC 3.00 supported machines include &#8216;nstx&#8217;, &#8216;d3d&#8217;, &#8216;kstar&#8217;, and &#8216;iter&#8217;.</dd>
+<dt><strong>ip_direction</strong> = &#8220;positive&#8221;</dt>
+<dd>Set as &#8216;positive&#8217; (default) or &#8216;negative&#8217; for CCW or CW from a top down view respectively.</dd>
+<dt><strong>bt_direction</strong> = &#8220;negative&#8221;</dt>
+<dd>Set as &#8220;positive&#8221; (default) or &#8220;negative&#8221; for CCW or CW from a top down view respectively.</dd>
+<dt><strong>coil_num</strong> = 3</dt>
+<dd>Total number of coil sets to be activated.</dd>
+</dl>
+<p><strong>cmpsi</strong> = 64</p>
+<p><strong>cmtheta</strong> = 480</p>
+<p><strong>cmzeta</strong> = 40</p>
+<dl class="docutils">
+<dt><strong>coil_name(1)</strong> = &#8220;iu&#8221;</dt>
+<dd>Array values should be specified for each of the coil arrays to be activated. For example &#8220;coil_name(1) = c&#8221;. The supported coil sets (and number of coils in each) as of IPEC 3.00 include,  - for nstx: &#8220;rwmef&#8221; (6), &#8220;tfef&#8221; (12), &#8220;pf5ef&#8221; (2), &#8220;ppu&#8221; (12), &#8220;ppl&#8221; (12), &#8220;psu&#8221; (12), &#8220;psl&#8221; (12), &#8220;vpu&#8221; (12), &#8220;vpl&#8221; (12), &#8220;vsu&#8221; (12), &#8220;vsl&#8221; (12), &#8220;hhfw&#8221; (24)  - for d3d: &#8220;iu&#8221; (6), &#8220;il&#8221; (6), &#8220;c&#8221; (6), &#8220;tbm_solenoid&#8221; (1), &#8220;tbm_racetrack&#8221; (1)  - for kstar: &#8220;fecu&#8221; (4), &#8220;fecm&#8221; (4), &#8220;fecl&#8221; (4)  -  for iter: &#8220;efcu&#8221; (6), &#8220;efcm&#8221; (6), &#8220;efcl&#8221; (6), &#8220;bl2u&#8221; (9), &#8220;bl2m&#8221; (9), &#8220;bl2l&#8221; (9), &#8220;avvu&#8221; (9), &#8220;avvm&#8221; (9), &#8220;avvl&#8221; (9)</dd>
+<dt><strong>coil_cur(1,1)</strong> = 2178.0</dt>
+<dd>Array of Ampere coil current for the nc-th coil in the set corresponding to coil_name(nc) (default  = 0).</dd>
+</dl>
+<p><strong>coil_cur(1,2)</strong> = 1577.0</p>
+<p><strong>coil_cur(1,3)</strong> = -601.0</p>
+<p><strong>coil_cur(1,4)</strong> = -2178.0</p>
+<p><strong>coil_cur(1,5)</strong> = -1577.0</p>
+<p><strong>coil_cur(1,6)</strong> = 601.0</p>
+<p><strong>coil_name(2)</strong> = &#8220;il&#8221;</p>
+<p><strong>coil_cur(2,2)</strong> = -2178.0</p>
+<p><strong>coil_cur(2,3)</strong> = -1577.0</p>
+<p><strong>coil_cur(2,4)</strong> = 601.0</p>
+<p><strong>coil_cur(2,5)</strong> = 2178.0</p>
+<p><strong>coil_cur(2,6)</strong> = 1577.0</p>
+<p><strong>coil_cur(2,1)</strong> = -601.0</p>
+<p><strong>coil_name(3)</strong> = &#8220;c&#8221;</p>
+<p><strong>coil_cur(3,1)</strong> = -1551.0</p>
+<p><strong>coil_cur(3,2)</strong> = 268.0</p>
+<p><strong>coil_cur(3,3)</strong> = 1744.0</p>
+<p><strong>coil_cur(3,4)</strong> = 1551.0</p>
+<p><strong>coil_cur(3,5)</strong> = -268.0</p>
+<p><strong>coil_cur(3,6)</strong> = -1744.0</p>
+</div>
+<div class="section" id="coil-output">
+<h2>COIL_OUTPUT<a class="headerlink" href="#coil-output" title="Permalink to this headline">¶</a></h2>
+<p><strong>ipec_interface</strong> = .TRUE.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, PPPL.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

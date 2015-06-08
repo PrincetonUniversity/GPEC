@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PENT Namelist Inputs &mdash; GPEC 3.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">PENT Namelist Inputs</a><ul>
+<li><a class="reference internal" href="#pent-input">PENT_INPUT</a></li>
+<li><a class="reference internal" href="#pent-control">PENT_CONTROL</a></li>
+<li><a class="reference internal" href="#pent-output">PENT_OUTPUT</a></li>
+<li><a class="reference internal" href="#pent-admin">PENT_ADMIN</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pent_namelist.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pent-namelist-inputs">
+<h1>PENT Namelist Inputs<a class="headerlink" href="#pent-namelist-inputs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="pent-input">
+<h2>PENT_INPUT<a class="headerlink" href="#pent-input" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>kinetic_file</strong> = &#8220;/p/gpec/users/nlogan/data/a10/kinetics/kinetic_a10_MARSbenchmark.dat&#8221;</dt>
+<dd>1 header line followed by column data for psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_E(rad/s).</dd>
+<dt><strong>o1fun_file</strong> = &#8220;ipec_order1_fun_n1.bin&#8221;</dt>
+<dd>IPEC output generated using ntv_flag or ascii B(psi,theta).</dd>
+<dt><strong>o1mn_file</strong> = &#8220;ipec_order1_n1.bin&#8221;</dt>
+<dd>IPEC output generated using ntv_flag, or ascii B(m,n).</dd>
+</dl>
+<p><strong>idconfile</strong> = &#8220;euler.bin&#8221;</p>
+<dl class="docutils">
+<dt><strong>o1native</strong> = .TRUE.</dt>
+<dd>o1fun_file and o1mn_file are IPEC output bin files.</dd>
+<dt><strong>imass</strong> = 2</dt>
+<dd>Mass of main species in atomic mass units (0 for electrons).</dd>
+<dt><strong>icharge</strong> = 1</dt>
+<dd>Charge of main species in elementry charge units.</dd>
+<dt><strong>zimp</strong> = 6</dt>
+<dd>Charge of impurity species in elementry charge units.</dd>
+<dt><strong>zmass</strong> = 12</dt>
+<dd>Mass of impurity species in atomic mass units.</dd>
+<dt><strong>nl</strong> = 6</dt>
+<dd>Number of bounce harmonics calculated (-nl&lt;=l&lt;=nl).</dd>
+<dt><strong>collision</strong> = &#8220;harmonic&#8221;</dt>
+<dd>Collision operator. Choose from zero,small,krook, or harmonic.</dd>
+</dl>
+</div>
+<div class="section" id="pent-control">
+<h2>PENT_CONTROL<a class="headerlink" href="#pent-control" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>wefac</strong> = 1</dt>
+<dd>Multiplier applied to omega_E profile.</dd>
+<dt><strong>wdfac</strong> = 1</dt>
+<dd>Multiplier applied to oemga_D.</dd>
+</dl>
+<p><strong>wpfac</strong> = 1</p>
+<dl class="docutils">
+<dt><strong>ptfac</strong> = 0.001</dt>
+<dd>Fractional cutoff in Lambda space near trapped-passing boundry.</dd>
+<dt><strong>kolim_flag</strong> = .FALSE.</dt>
+<dd>Infinite rotation limit.</dd>
+<dt><strong>neorot_flag</strong> = .FALSE.</dt>
+<dd>Approximate numerator of resonant operator using neoclassical rotation.</dd>
+<dt><strong>divxprp_flag</strong> = .TRUE.</dt>
+<dd>Include arc-length change in perturbed Action.</dd>
+<dt><strong>xlsode_flag</strong> = .TRUE.</dt>
+<dd>Use LSODE package to integrate in energy space.</dd>
+<dt><strong>lmdalsode_flag</strong> = .TRUE.</dt>
+<dd>Use LSODE package to integrate in pitch angle.</dd>
+<dt><strong>lsode_rtol</strong> = 1e-09</dt>
+<dd>Relative tolarance in LSODE.</dd>
+<dt><strong>lsode_atol</strong> = 1e-12</dt>
+<dd>absolute tolarance in LSODE.</dd>
+<dt><strong>xmax</strong> = 72</dt>
+<dd>Upper limit of energy integration.</dd>
+<dt><strong>ximag</strong> = 0</dt>
+<dd>Step contour of integration off of real axis to avoid poles when collision is zero.</dd>
+<dt><strong>nx</strong> = 128</dt>
+<dd>Number of energy spline points if xlsode_flag false.</dd>
+<dt><strong>nt</strong> = 128</dt>
+<dd>Number of theta points used in bounce averaging.</dd>
+<dt><strong>nlmda</strong> = 128</dt>
+<dd>Number of Lambda points used in splines.</dd>
+<dt><strong>maskpsi</strong> = 2</dt>
+<dd>Step size taken by PENT on dcon psi grid (determined by idconfile).</dd>
+</dl>
+</div>
+<div class="section" id="pent-output">
+<h2>PENT_OUTPUT<a class="headerlink" href="#pent-output" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>passing_flag</strong> = .FALSE.</dt>
+<dd>Calculate torque and energy contributed by passing particles.</dd>
+<dt><strong>gen_flag</strong> = .TRUE.</dt>
+<dd>Perform full calculation in general geometry.</dd>
+<dt><strong>rlar_flag</strong> = .TRUE.</dt>
+<dd>Perform Reduced LAR approximate calculation.</dd>
+<dt><strong>clar_flag</strong> = .FALSE.</dt>
+<dd>Perform Circular LAR approximate calculation.</dd>
+<dt><strong>kinetic_flag</strong> = .FALSE.</dt>
+<dd>Output kinetic profiles.</dd>
+<dt><strong>bounce_flag</strong> = .FALSE.</dt>
+<dd>Output sample bounce averaging profiles.</dd>
+<dt><strong>pitch_flag</strong> = .FALSE.</dt>
+<dd>Output sample pitch angle profiles.</dd>
+<dt><strong>energy_flag</strong> = .FALSE.</dt>
+<dd>Output sample energy profiles.</dd>
+<dt><strong>psiout(1)</strong> = 0.1</dt>
+<dd>Include this surface in sampled outputs.</dd>
+<dt><strong>psiout(10)</strong> = 1.0</dt>
+<dd>Include this surface in sampled outputs.</dd>
+</dl>
+</div>
+<div class="section" id="pent-admin">
+<h2>PENT_ADMIN<a class="headerlink" href="#pent-admin" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>fmnl_flag</strong> = .FALSE.</dt>
+<dd>Do not change unless you know what you are doing.</dd>
+<dt><strong>diag_flag</strong> = .FALSE.</dt>
+<dd>Do not change unless you know what you are doing.</dd>
+</dl>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, PPPL.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
