@@ -1,4 +1,4 @@
-&coil_control
+&COIL_CONTROL
 	ceq_type="efit"				! eq_type from equil.in used in DCON run
 
 	machine="d3d"				! Choose from: nstx, d3d, kstar, iter
@@ -12,12 +12,12 @@
 
 ! Array values should be specified for each of the coil arrays to be activated.
 ! The supported coil sets (number of coils) include...
-! For nstx:	rwmef (6), tfef (12), pf5ef (2), ppu (12), ppl (12),
-! 			psu (12), psl (12), vpu (12), vpl (12), vsu (12), vsl (12), hhfw (24)
-! For d3d:	iu (6), il (6), c (6), tbm_solenoid (1), tbm_racetrack (1)
-! For kstar:fecu (4), fecm (4), fecl (4)
-! For iter:	efcu (6), efcm (6), efcl (6), bl2u (9), bl2m (9),
-! 			bl2l (9), avvu (9), avvm (9), avvl (9)
+! For nstx:	rwmef(6), tfef(12), pf5ef(2), hhfw(24), ppu(12), ppl(12),
+! 			psu(12),  psl(12),  vpu(12),  vpl(12),  vsu(12), vsl(12)
+! For d3d:	iu(6), il(6), c(6), tbm_solenoid(1), tbm_racetrack(1)
+! For kstar:fecu(4), fecm(4), fecl(4)
+! For iter:	efcu(6), efcm(6), efcl(6), bl2u(9), bl2m(9),
+! 			bl2l(9), avvu(9), avvm(9), avvl(9)
 
 	coil_name(1)="iu"			! Name of first coil set
 	coil_cur(1,1)=0.0			! Current (A) in first coil of first set
@@ -36,6 +36,6 @@
 	coil_cur(2,1)=0.0
 
 /
-&coil_output
+&COIL_OUTPUT
 	ipec_interface=t			! Provides external field to IPEC
 /
