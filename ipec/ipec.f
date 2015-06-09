@@ -38,7 +38,7 @@ c-----------------------------------------------------------------------
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
-     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,svd_flag,svdfac,
+     $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
      $     displacement_flag,mode,coil_flag,
      $     ip_direction,bt_direction,rdconfile,
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode ! LOGAN
@@ -78,8 +78,6 @@ c-----------------------------------------------------------------------
       harmonic_flag=.FALSE.
       mode_flag=.FALSE.
       svd_flag=.FALSE.
-      svdfac(0) = 1
-      svdfac(1:) = 0
       displacement_flag=.FALSE.
       mthsurf0=1
       nmin=1

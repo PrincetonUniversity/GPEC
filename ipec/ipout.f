@@ -777,9 +777,7 @@ c-----------------------------------------------------------------------
          CALL ipeq_weight(psilim,tempmn,mfac,mpert,1)              
       ENDIF
 c-----------------------------------------------------------------------
-c     LOGAN - Include or exclude SVD modes
-c      -> svdfac(0:1) = 0  1 applies only the svd1 parallel  fields
-c      -> svdfac(1:1) = 1 -1 applies only the svd1 perpendictular fields
+c     LOGAN - Isolate singular coupling SVD modes
 c-----------------------------------------------------------------------
       finmn=finmn+tempmn
       IF(smode>0)THEN
