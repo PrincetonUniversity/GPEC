@@ -357,7 +357,7 @@ c-----------------------------------------------------------------------
          DO i=1,mpert
             temp2(i,i)=temp1(i,i)
          ENDDO
-         temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
+         !temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
          reluctevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
