@@ -24,6 +24,15 @@
 	
 	displacement_flag=f			! Perturbations are displacement (m). Default is field (T).
 	fixed_boundary_flag=f		! Total perturbation = external perturbation
+	
+	mode_flag = .F.				! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
+	mode  = 0					! DCON eigen function index (1 is least stable)
+	dmode = 0					! Isolate the first dmode DCON eigenmodes of the total displacement
+	fmode = 0					! Isolate the first fmode DCON eigenmodes of the total flux
+	pmode = 0					! Isolate the first pmode permeability eigenmodes of the total field
+	rmode = 0					! Isolate the first rmode reluctance eigenmodes of the external field
+	smode = 0					! Isolate the first smode singular-coupling right singular vectors of the external field
+	p1mode= 0					! Isolate the first p1mode (P-I) right singular vectors of the external field
 /
 &IPEC_CONTROL
 	resp_index=0				! ??
