@@ -8,5 +8,5 @@
 FC = mpif90
 
 LIBDIR = \
-	-L../lib/LinuxLahey64 \
+	-L../lib \
 	-L/opt/pgi/linux86-64/12.10/lib
