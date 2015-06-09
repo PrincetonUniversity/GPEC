@@ -1,0 +1,15 @@
+#------------------------------------------------------------------
+# Make variables for Linux Lahaey64 compiler on portal.pppl.gov
+# 
+# - user must have executed "module load gcc4"
+#
+#------------------------------------------------------------------
+
+FC = gcc4
+
+LIBDIR = \
+	-L../lib/Linuxgfortran \
+	-L/usr/pppl/gcc/4.4-pkgs/acml/4.4.0/gfortran64/lib
+
+FCLIBS = \
+	-lacml

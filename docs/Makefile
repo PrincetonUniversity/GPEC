@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
-GH_PAGES_DIR      = ../../gpec-doc/html
+GH_PAGES_DIR      = ../../gpec_ghpages/html
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4

@@ -1,0 +1,16 @@
+#------------------------------------------------------------------
+# Make variables for Linux Lahaey64 compiler on portal.pppl.gov
+# 
+# - user must have executed "module load lff95"
+#
+#------------------------------------------------------------------
+
+FC = lfc
+
+LIBDIR = \
+	-L../lib/LinuxLahey64 \
+	-L/usr/pppl/lff95/8.x86_64-pkgs/lapack-3.1.1.x86_64
+	
+FCLIBS = \
+	-llapack \
+	-lblas

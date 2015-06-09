@@ -1,0 +1,12 @@
+#------------------------------------------------------------------
+# Make variables for Linux MPI compiler on venus.gat.com
+# 
+# - user must have /task/imd/local64/bin in their path
+#
+#------------------------------------------------------------------
+
+FC = mpif90
+
+LIBDIR = \
+	-L../lib/LinuxLahey64 \
+	-L/opt/pgi/linux86-64/12.10/lib
