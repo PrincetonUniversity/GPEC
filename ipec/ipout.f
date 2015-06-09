@@ -1156,7 +1156,7 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
          ENDDO
       ENDIF
       ! Calculate the overlap Resonant Field SVD modes with DCON eigenmodes
-      IF (sc_flag .OR. svd_flag) THEN
+      IF (sc_flag) THEN
         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
           ALLOCATE(eigmn(lmpert))
           DO j=1,msing
@@ -1181,7 +1181,7 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
         t1vev = MATMUL(CONJG(TRANSPOSE(permeabevmats(resp_index,:,:))),
      $                 t1v_type)
         x1vev = MATMUL(CONJG(TRANSPOSE(wt)),x1v_type)
-        ! Write the overlap for the first 9 svd modes
+        ! Write the overlap for the svd modes
         WRITE(out_unit,*) 
         WRITE(out_unit,*) "Flux SVD modes in the Permeability (Phi) "
      $    //"and DCON (xi) eigenbases"

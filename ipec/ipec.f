@@ -77,7 +77,6 @@ c-----------------------------------------------------------------------
       data_flag=.FALSE.
       harmonic_flag=.FALSE.
       mode_flag=.FALSE.
-      svd_flag=.FALSE.
       displacement_flag=.FALSE.
       mthsurf0=1
       nmin=1
@@ -313,14 +312,14 @@ c-----------------------------------------------------------------------
       IF (resp_flag) THEN
          CALL ipout_response
       ENDIF
-      IF (singcoup_flag .OR. svd_flag) THEN
+      IF (singcoup_flag .OR. smode>0) THEN
          CALL ipout_singcoup(sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
 c-----------------------------------------------------------------------
-      IF (data_flag.OR.harmonic_flag.OR.coil_flag.OR.svd_flag)THEN
+      IF (data_flag.OR.harmonic_flag.OR.coil_flag)THEN
          edge_flag=.TRUE.
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
