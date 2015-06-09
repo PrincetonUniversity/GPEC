@@ -8,7 +8,7 @@
 FC = pathscale
 
 LIBDIR = \
-	-L../lib/LinuxPathscale \
+	-L../lib \
 	-L/usr/pppl/pathscale/3.2-pkgs/acml-4.2.0/pathscale64/lib
 
 FCLIBS = \

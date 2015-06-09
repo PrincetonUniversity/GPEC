@@ -35,8 +35,8 @@ OBJS = \
 
 pentrc: $(OBJS)
 	$(F90) -o pentrc $(OBJS) $(LIBS)
-	mkdir -p ../lib/LinuxLahey64
-	ar -r ../lib/LinuxLahey64/libpentrc.a *.o
+	mkdir -p ../lib
+	ar -r ../lib/libpentrc.a *.o
 
 # dependencies
 

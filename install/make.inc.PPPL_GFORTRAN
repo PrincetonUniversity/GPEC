@@ -8,7 +8,7 @@
 FC = gcc4
 
 LIBDIR = \
-	-L../lib/Linuxgfortran \
+	-L../lib \
 	-L/usr/pppl/gcc/4.4-pkgs/acml/4.4.0/gfortran64/lib
 
 FCLIBS = \

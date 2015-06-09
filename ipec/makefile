@@ -30,8 +30,8 @@ OBJS = \
 
 ipec: $(OBJS)
 	$(F90) -o ipec $(OBJS) $(LIBS)
-	mkdir -p ../lib/LinuxLahey64
-	ar -r ../lib/LinuxLahey64/libipec.a *.o
+	mkdir -p ../lib
+	ar -r ../lib/libipec.a *.o
 
 # dependencies
 

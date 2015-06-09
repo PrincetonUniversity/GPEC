@@ -34,8 +34,8 @@ OBJS = \
 	xsetun.o
 
 liblsode: $(OBJS)
-	mkdir -p ../lib/LinuxLahey64
-	ar -r ../lib/LinuxLahey64/liblsode.a *.o
+	mkdir -p ../lib
+	ar -r ../lib/liblsode.a *.o
 
 clean:
 	rm -f *.o *.a

@@ -1,4 +1,4 @@
-#Global makefile for the DCON/IPEC suite of codes.
+#Global makefile for the GPEC suite of codes.
 
 .IGNORE:
 

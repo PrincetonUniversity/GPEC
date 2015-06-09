@@ -1,11 +1,11 @@
 #------------------------------------------------------------------
-# Make variables for Linux MPI compiler on venus.gat.com
+# Make variables for Linux Portland Group compiler on venus.gat.com
 # 
 # - user must have /task/imd/local64/bin in their path
 #
 #------------------------------------------------------------------
 
-FC = mpif90
+FC = pgf95
 
 LIBDIR = \
 	-L../lib \

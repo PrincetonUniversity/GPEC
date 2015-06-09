@@ -13,8 +13,8 @@ OBJS = \
 	field.o 
 
 libcoil: $(OBJS)
-	mkdir -p ../lib/LinuxLahey64
-	ar -r ../lib/LinuxLahey64/libcoil.a *.o
+	mkdir -p ../lib
+	ar -r ../lib/libcoil.a *.o
 
 # dependencies
 
