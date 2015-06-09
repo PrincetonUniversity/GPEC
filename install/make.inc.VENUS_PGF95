@@ -10,3 +10,7 @@ FC = pgf95
 LIBDIR = \
 	-L../lib \
 	-L/opt/pgi/linux86-64/12.10/lib
+
+FCLIBS = \
+	-llapack \
+	-lblas

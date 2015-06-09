@@ -99,14 +99,15 @@ program pentrc
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
         ipec_file  ="ipec_order1_n1.bin", &
-        peq_file ="ipec_xclebsch_n1.out"
+        peq_file ="ipec_xclebsch_n1.out", &
+        data_dir ="."
     character(32) :: &
         nutype = "harmonic",&
         f0type = "maxwellian",&
         jac_in = ""
       
-    namelist/pent_input/kinetic_file,ipec_file,peq_file, &
-        idconfile,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
+    namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
+        data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
         
     namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
@@ -575,7 +576,7 @@ program pentrc
         
         if(clar_flag)then
             if(verbose) print *,"PENTRC - cylindrical large-aspect-ratio calculation v3.0"
-            call read_fnml('/p/gpec/users/nlogan/ipec_3.00/nlogan/pent/fkmnl.dat')
+            call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
             print *, psilim
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'clar',eq_out)
             if(verbose)then
@@ -608,7 +609,7 @@ program pentrc
         endif
         if(rlar_flag)then
             if(verbose) print *,"PENTRC - reduced large-aspect-ratio calculation v3.0"
-            if(.not. clar_flag) call read_fnml('/p/gpec/users/nlogan/ipec_3.00/nlogan/pent/fkmnl.dat')
+            if(.not. clar_flag) call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'rlar',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"

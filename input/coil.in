@@ -1,6 +1,7 @@
 &COIL_CONTROL
 	ceq_type="efit"				! eq_type from equil.in used in DCON run
 
+	data_dir="."				! Directory from which <machine>_<coil_name>.dat files are read
 	machine="d3d"				! Choose from: nstx, d3d, kstar, iter
 	ip_direction="positive"		! Set positive for CCW or negative for CW from a top down view
 	bt_direction="negative"		! Set positive for CCW or negative for CW from a top down view
