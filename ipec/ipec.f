@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
-     $     xclebsch_flag,pbrzphi_flag,verbose
+     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,pmodbrz_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -127,6 +127,7 @@ c-----------------------------------------------------------------------
       bin_2d_flag=.TRUE.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
+      max_linesout=0
       vsbrzphi_flag=.FALSE.
       DO i=1,100 
          ss_flag(i)=.FALSE.
@@ -246,6 +247,7 @@ c-----------------------------------------------------------------------
       IF (rstep==0) rstep=mstep
       IF (nchr==20) nchr=nche
       IF (nchz==20) nchz=nche
+      IF (max_linesout==0) max_linesout=-1
 c-----------------------------------------------------------------------
 c     check time.
 c-----------------------------------------------------------------------
