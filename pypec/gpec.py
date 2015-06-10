@@ -154,8 +154,8 @@ def _newloc(loc):
 
 def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=False,
         rundcon=True,runipec=True,runpentrc=True,fill_inputs=False,
-        mailon=_defaults_.mailon,email=_defaults_.email,mem=1e4,optpentrc=False,
-        pent_tol=0,**kwargs):
+        mailon=_defaults_.mailon,email=_defaults_.email,mem=1e4,
+        runpent=False,optpentrc=False,pent_tol=0,**kwargs):
     """
     Python wrapper for running ipec package.
     
@@ -186,12 +186,18 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
       mem : float
         Memory request of q-submission in megabytes (converted to integer).
     
-    Deprecated Arguments:
+    Deprecated Key Word Arguments:
+      runpent : bool.
+        Run deprecated pent program.
       optpentrc : bool.
         Run OPENTRC executable pentrc optimization (under construction).
       pent_tol : float. 
         Acceptable torque error. pent_tol>0 tries maskpsi of 32,16,4,2,1 
         until convergence or 1. Forced to 0 when qsub is true.
+    ..note::
+      Deprecated kwrags are kept for a time so as to avoid incorrect assumption
+      that they are input files.
+    
     
       kwargs   : dict. 
         namelist instance(s) written to <kwarg>.in file(s).

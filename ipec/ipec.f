@@ -122,7 +122,6 @@ c-----------------------------------------------------------------------
       vbrzphi_flag=.FALSE.
       pbrzphi_flag=.FALSE.      
       vvbrzphi_flag=.FALSE.
-      pbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
       fun_flag=.FALSE.

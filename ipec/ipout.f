@@ -835,6 +835,7 @@ c-----------------------------------------------------------------------
       IF (pmode>0) THEN
           PRINT *,'Isolating drive || to first ',pmode,
      $            ' flux permeability eigenmodes'
+          PRINT *,' **WARNING: This is not a valid orthoganal basis.**'
           ALLOCATE(eigmn(mpert))
           tmpmn = finmn
           finmn = 0
@@ -842,7 +843,6 @@ c-----------------------------------------------------------------------
               eigmn = permeabevmats(resp_index,:,i)
               eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
               finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $               -eigmn*DOT_PRODUCT(eigmn,finmn) ! Overlap from non-orthonormal vectors
           ENDDO
           DEALLOCATE(eigmn)
       ENDIF
