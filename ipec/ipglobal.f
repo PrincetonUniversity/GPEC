@@ -21,7 +21,7 @@ c-----------------------------------------------------------------------
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
-     $     nche,nchr,nchz,rsing,rnqty,rnx,
+     $     nche,nchr,nchz,rsing,rnqty,rnx,max_linesout,
      $     pmode,p1mode,rmode,dmode,d1mode,fmode,smode ! LOGAN
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,

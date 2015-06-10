@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
 
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
-     $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
+     $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
      $     displacement_flag,mode,coil_flag,
@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
-     $     xclebsch_flag,pbrzphi_flag,verbose
+     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,pmodbrz_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -83,6 +83,7 @@ c-----------------------------------------------------------------------
       nmax=1
       mmin=-128
       mmax=128
+      mthsurf=0
       pmode =0
       p1mode =0
       rmode =0
@@ -127,6 +128,7 @@ c-----------------------------------------------------------------------
       bin_2d_flag=.TRUE.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
+      max_linesout=0
       vsbrzphi_flag=.FALSE.
       DO i=1,100 
          ss_flag(i)=.FALSE.
@@ -246,6 +248,7 @@ c-----------------------------------------------------------------------
       IF (rstep==0) rstep=mstep
       IF (nchr==20) nchr=nche
       IF (nchz==20) nchz=nche
+      IF (max_linesout==0) max_linesout=-1
 c-----------------------------------------------------------------------
 c     check time.
 c-----------------------------------------------------------------------
