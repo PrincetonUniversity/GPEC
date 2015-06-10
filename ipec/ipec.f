@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
 
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
-     $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,
+     $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
      $     displacement_flag,mode,coil_flag,
@@ -83,6 +83,7 @@ c-----------------------------------------------------------------------
       nmax=1
       mmin=-128
       mmax=128
+      mthsurf=0
       pmode =0
       p1mode =0
       rmode =0
