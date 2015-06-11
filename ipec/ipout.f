@@ -993,13 +993,15 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"jac_type = "//jac_type
       WRITE(out_unit,*)
 
-      WRITE(out_unit,'(1x,a4,6(1x,a16))')"m","real(bin)","imag(bin)",
-     $     "real(bout)","imag(bout)","real(Phi_x)","imag(Phi_x)"
+      WRITE(out_unit,'(1x,a4,8(1x,a16))') "m",
+     $     "real(bin)","imag(bin)","real(bout)","imag(bout)",
+     $     "real(Phi^x)","imag(Phi^x)","real(Phi)","imag(Phi)"
       DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,6(1x,es16.8))')mfac(i),
+         WRITE(out_unit,'(1x,I4,8(1x,es16.8))')mfac(i),
      $        REAL(binmn(i)),AIMAG(binmn(i)),
      $        REAL(boutmn(i)),AIMAG(boutmn(i)),
-     $        REAL(finmn(i)),AIMAG(finmn(i))
+     $        REAL(finmn(i)),AIMAG(finmn(i)),
+     $        REAL(foutmn(i)),AIMAG(foutmn(i))
       ENDDO
       WRITE(out_unit,*)
 
