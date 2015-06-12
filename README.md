@@ -12,6 +12,8 @@ Installation
 
 Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install the package.
 
+To compile a new release of GPEC the user must set the GPEC_PLATFORM variable to a value appropriate for their archetecture and fortran compiler. The available options can be obtained by examining the suffixes of the install/make.inc.* files. Additional instuctions, if necessary, for each case can be found in the header of the corresponding file.
+
 
 Development
 ---------------
@@ -27,7 +29,7 @@ On the PPPL portal computers, navigate to a directory in which you want to do yo
    git checkout -b develop
    git pull origin develop
 
-This will create a directory 'develop' and with the developmental branch of the repository in it. For more on branches, see the section below. Now you are free to add/edit files in this branch. Be sure to use:: 
+This will create a directory 'develop' and with the developmental branch of the repository in it. For more on branches, see the section below. For compile instructions, see above. Now you are free to add/edit files in this branch. Be sure to use:: 
 
    git add <new-file>
 
