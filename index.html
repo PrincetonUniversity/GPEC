@@ -39,6 +39,9 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="getting_started.html" title="Getting started"
              accesskey="N">next</a> |</li>
         <li><a href="#">home</a>|&nbsp;</li>
@@ -57,6 +60,7 @@
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#id1">Installation</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
@@ -97,6 +101,7 @@
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install the package.</p>
+<p>To compile a new release of GPEC the user must set the GPEC_PLATFORM variable to a value appropriate for their archetecture and fortran compiler. The available options can be obtained by examining the suffixes of the install/make.inc.* files. Additional instuctions, if necessary, for each case can be found in the header of the corresponding file.</p>
 </div>
 <div class="section" id="development">
 <h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
@@ -109,7 +114,7 @@ git checkout -b develop
 git pull origin develop
 </pre></div>
 </div>
-<p>This will create a directory &#8216;develop&#8217; and with the developmental branch of the repository in it. For more on branches, see the section below. Now you are free to add/edit files in this branch. Be sure to use:</p>
+<p>This will create a directory &#8216;develop&#8217; and with the developmental branch of the repository in it. For more on branches, see the section below. For compile instructions, see above. Now you are free to add/edit files in this branch. Be sure to use:</p>
 <div class="highlight-python"><div class="highlight"><pre>git add &lt;new-file&gt;
 </pre></div>
 </div>
@@ -155,6 +160,23 @@ make init
 </pre></div>
 </div>
 <p>This is now all you need to do in order to update docs for that local repo from there on out.</p>
+</div>
+</div>
+<div class="section" id="id1">
+<h1>Installation<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>Using a stable release, the user should set the environment variable GPEC_PLATFORM to the appropriate tag for their architecture and fortran 90 compiler. For example, at PPPL this might be done using:</p>
+<div class="highlight-python"><div class="highlight"><pre>export GPEC_PLATFORM=PPPL_LFF95
+</pre></div>
+</div>
+<p>The tag should match a make.inc file in the install directory, which sets a number of make variables defining compiler types and library paths. Not the appropriate compiler must be in the users path. Instructions for adding the compiler can be found in each make.inc file. For example, if using the Lahey64 compiler at PPPL the user must have executed:</p>
+<div class="highlight-python"><div class="highlight"><pre>module load lff95
+</pre></div>
+</div>
+<p>With the GPEC_PLATFORM variable set and the compiler in the users path, the package exicutables can be made from the source code from the package root using:</p>
+<div class="highlight-python"><div class="highlight"><pre>make -f makefile_platform
+</pre></div>
+</div>
+<p>The exicutables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
 <p>Contents:</p>
 <div class="toctree-wrapper compound">
 <ul>
@@ -182,7 +204,15 @@ make init
 <li class="toctree-l2"><a class="reference internal" href="namelists.html#pent-namelist-inputs">PENT Namelist Inputs</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="source_documentation.html">PYPEC Source documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_documentation.html">PYPEC Source documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="source_documentation.html#pypec-main-package"><tt class="docutils literal"><span class="pre">pypec</span></tt> &#8211; Main Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source_documentation.html#python-at-pppl">Python at PPPL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source_documentation.html#pypec-data-ascii-table-data-turned-pythonic"><tt class="docutils literal"><span class="pre">pypec.data</span></tt> &#8211; ASCII Table Data Turned Pythonic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source_documentation.html#pypec-gpec-python-wrappers-for-fortran-codes"><tt class="docutils literal"><span class="pre">pypec.gpec</span></tt> &#8211; Python Wrappers for FORTRAN Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source_documentation.html#pypec-namelist-io-for-fortran-namelists"><tt class="docutils literal"><span class="pre">pypec.namelist</span></tt> &#8211; IO for FORTRAN Namelists</a></li>
+<li class="toctree-l2"><a class="reference internal" href="source_documentation.html#pypec-modplot-matplotlib-customizations"><tt class="docutils literal"><span class="pre">pypec.modplot</span></tt> &#8211; matplotlib Customizations</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact Information</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="contact.html#dcon">DCON</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contact.html#ipec">IPEC</a></li>
@@ -199,7 +229,6 @@ make init
 </ul>
 </li>
 </ul>
-</div>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
@@ -223,6 +252,9 @@ make init
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li class="right" >
           <a href="getting_started.html" title="Getting started"
              >next</a> |</li>
