@@ -412,5 +412,55 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipresp_indrel
-
+c-----------------------------------------------------------------------
+c     subprogram 7. ipresp_reluctsqrta.
+c     construct "reluctance" matrix for Isqrt(A) in Bsqrt(A) basis.
+c      - Define sqrt(A) weighting matrix as
+c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c        int{b^2da}/int{da} = 1
+c        - This is a physically meaningful quantity (power), and thus
+c          independent of coordinate system
+c      - We get I = RWPhi' and want to keep the operator Hermitian so we
+c        use W^dagger I = W^daggerRW Phi'
+c      - Since W is Hermitian, eigenvalues correspond to int{I^2da}/A 
+c-----------------------------------------------------------------------
+      SUBROUTINE ipresp_reluctpow
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,j,lwork
+      INTEGER, DIMENSION(mpert):: ipiv
+      REAL(r8), DIMENSION(3*mpert-2) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+      COMPLEX(r8), DIMENSION(mpert) :: temp
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,temp1,temp2,work2
+c-----------------------------------------------------------------------
+c     calculate sqrt(A) weighting matrix.
+c-----------------------------------------------------------------------
+      DO i=1,mpert
+         temp = 0
+         temp(i) = 1+1*ifac
+         CALL ipeq_weight(psilim,binmn,mfac,mpert,2)
+         sqrta(:,i) = temp
+      ENDDO
+c-----------------------------------------------------------------------
+c     Re-calculate eigenvectors and eigenvalues
+c-----------------------------------------------------------------------
+      ALLOCATE(reluctpowev(0:4,mpert),reluctpowevmats(0:4,mpert,mpert))
+      DO j=0,4
+         work=0
+         rwork=0
+         lwork=2*mpert-1
+         temp1=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),sqrta)
+         CALL zheev('V','U',mpert,temp1,mpert,reluctpowev(j,:),work,
+     $        lwork,rwork,info)
+         reluctpowevmats(j,:,:)=temp1
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipresp_reluctpow
+      
       END MODULE ipresp_mod
