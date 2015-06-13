@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>General Perturbed Equilibrium Codes &mdash; GPEC 3.0.0 documentation</title>
+    <title>Indices and tables &mdash; GPEC 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -52,17 +52,6 @@
 
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">General Perturbed Equilibrium Codes</a><ul>
-<li><a class="reference internal" href="#development">Development</a></li>
-<li><a class="reference internal" href="#documentation">Documentation</a></li>
-<li><a class="reference internal" href="#install">Install</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-</ul>
-
   <h4>Next topic</h4>
   <p class="topless"><a href="getting_started.html"
                         title="next chapter">Getting started</a></p>
@@ -92,90 +81,14 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="general-perturbed-equilibrium-codes">
-<h1>General Perturbed Equilibrium Codes<a class="headerlink" href="#general-perturbed-equilibrium-codes" title="Permalink to this headline">¶</a></h1>
-<p>This package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, IPEC, RPEC, GPEC, and PENTRC.</p>
+  <p>This package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, IPEC, RPEC, GPEC, and PENTRC.</p>
 <p>The primary purpose of this package is to calculated the nonaxisymmetric force balance in tokamak plasmas.</p>
 <p>Note that the DCON code was developed by Allen Glasser at Los Alamos National Laboratory, while IPEC and PENTRC were developed and are maintained by the GPEC team at the Princeton Plasma Physics Laboratory.</p>
-<div class="section" id="development">
-<h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
-<p>There is a <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">Github repository</a> for this package to facilitate version control and collaborative contributions.</p>
-<p>To become a contributor to the GPEC package, contact <a class="reference external" href="mailto:nlogan&#37;&#52;&#48;pppl&#46;gov">nlogan<span>&#64;</span>pppl<span>&#46;</span>gov</a> to be added to the development team. Next, go the the Github repository to familiarize yourself with the documentation, branch structure, latest commits, etc. While there, go ahead and copy the HTTPS clone URL from the box in the right side panel. Finally, create a directory on your local machine, clone the repository, and checkout the appropriate branch in order to start contributing.</p>
-<p>On the PPPL portal computers, navigate to a directory in which you want to do your development (something like /p/gpec/users/&lt;username&gt;/gpec) and use following commands:</p>
-<div class="highlight-python"><div class="highlight"><pre>git clone &lt;copied-url-from-github&gt; develop
-cd develop
-git checkout -b develop
-git pull origin develop
-</pre></div>
-</div>
-<p>This will create a directory &#8216;develop&#8217; and with the developmental branch of the repository in it. For more on branches, see the workflow section below. For compile instructions, see the install section. Now you are free to add/edit files in this branch. Be sure to use:</p>
-<div class="highlight-python"><div class="highlight"><pre>git add &lt;new-file&gt;
-</pre></div>
-</div>
-<p>when creating new files, so that they come under version control. Be sure to make regular commits:</p>
-<div class="highlight-python"><div class="highlight"><pre>git commit -a # Will open $EDITOR for message
-</pre></div>
-</div>
-<p>as you go. You can&#8217;t go wrong with more commits. Especially when developing as a team.</p>
-<p>When you have finished a significant addition/improvement push it to Github using:</p>
-<div class="highlight-python"><div class="highlight"><pre>git push -u origin develop
-</pre></div>
-</div>
-<p>so that others working on the same branch can stay in sync with your developments. Similarly, you should be regularly pulling from the branch in order to stay in sync with what others are doing. To do so, use:</p>
-<div class="highlight-python"><div class="highlight"><pre>git pull origin develop
-</pre></div>
-</div>
-<p>There are many great git tutorials on the web, and great documentation for all the commands. Use them!</p>
-<p><strong>GIT Workflow</strong></p>
-<p>All developers need to use Vincent Driessen&#8217;s <a class="reference external" href="http://nvie.com/posts/a-successful-git-branching-model">GitFlow</a> workflow when editing the GPEC package. PLEASE READ THE ENTIRE POST. It is short, very thorough, and good for both experienced and new git users.</p>
-<dl class="docutils">
-<dt>The highlights are,</dt>
-<dd><ul class="first last simple">
-<li>There are two permanent branches: master and develop</li>
-<li>The master branch is only updated for at release ready stages</li>
-<li>New features should be developed in short-lived (days) branches coming off of and merging back to the development branch.</li>
-</ul>
-</dd>
-</dl>
-<p>Specific instructions are given in the link above as to exactly how to branch and merge these various branches. For example, the &#8211;no-ff option should be used when merging in order to keep branch histories. Just follow the examples and you wont go wrong!</p>
-</div>
-<div class="section" id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
-<p>Documentation of the GPEC package has been created using sphinx and is hosted by <a class="reference external" href="http://princetonuniversity.github.io/GPEC/">PrincetonUniveristy GitHub Pages</a>.</p>
-<p>The documentation for the entire package is contained within the top level docs directory, and uses rst files with syntax that should be straight forward to mimic. If creating a new .rst file be sure to include it in the top level organization of the index.rst file.</p>
-<p><strong>Building the documentation</strong></p>
-<p>The very first time, starting from the root of the repo:</p>
-<div class="highlight-python"><div class="highlight"><pre>cd docs
-make init
-</pre></div>
-</div>
-<p>This creates a new gpec-docs directory in the same directory that contains the local repository (not in the repository itself) and checks out a devoted documentation branch. With that set up, the following will build the documentation and push it to the proper place:</p>
-<div class="highlight-python"><div class="highlight"><pre>make ghpages
-</pre></div>
-</div>
-<p>This is now all you need to do in order to update docs for that local repo from there on out.</p>
-</div>
-<div class="section" id="install">
-<h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
-<p>Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install/update the site package.</p>
-<p>Using a stable release, the user should set the environment variable GPEC_PLATFORM to the appropriate tag for their architecture and fortran 90 compiler. For example, at PPPL this might be done using:</p>
-<div class="highlight-python"><div class="highlight"><pre>export GPEC_PLATFORM=PPPL_LFF95
-</pre></div>
-</div>
-<p>The tag should match a make.inc file in the install directory, which sets a number of make variables defining compiler types and library paths. Not the appropriate compiler must be in the users path. Instructions for adding the compiler can be found in each make.inc file. For example, if using the Lahey64 compiler at PPPL the user must have executed:</p>
-<div class="highlight-python"><div class="highlight"><pre>module load lff95
-</pre></div>
-</div>
-<p>With the GPEC_PLATFORM variable set and the compiler in the users path, the package exicutables can be made from the source code from the package root using:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">make</span>
-</pre></div>
-</div>
-<p>The exicutables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
 <p>Contents:</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#obtaining-the-package">Obtaining the Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#install">Install</a></li>
 <li class="toctree-l2"><a class="reference internal" href="getting_started.html#run-process">Run Process</a></li>
 <li class="toctree-l2"><a class="reference internal" href="getting_started.html#a-word-on-coordinates">A Word On Coordinates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="getting_started.html#inputs">Inputs</a></li>
@@ -207,6 +120,10 @@ make init
 <li class="toctree-l2"><a class="reference internal" href="source_documentation.html#pypec-modplot-matplotlib-customizations"><tt class="docutils literal"><span class="pre">pypec.modplot</span></tt> &#8211; matplotlib Customizations</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="developers.html">Developers Corner</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developers.html#general-perturbed-equilibrium-codes">General Perturbed Equilibrium Codes</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact Information</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="contact.html#dcon">DCON</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contact.html#ipec">IPEC</a></li>
@@ -223,8 +140,6 @@ make init
 </ul>
 </li>
 </ul>
-</div>
-</div>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>

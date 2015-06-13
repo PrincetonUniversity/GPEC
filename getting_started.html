@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" />
     <link rel="next" title="Outputs and Post-Processing" href="outputs.html" />
-    <link rel="prev" title="General Perturbed Equilibrium Codes" href="index.html" /> 
+    <link rel="prev" title="Indices and tables" href="index.html" /> 
   </head>
   <body>
 
@@ -40,10 +40,13 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="outputs.html" title="Outputs and Post-Processing"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="General Perturbed Equilibrium Codes"
+          <a href="index.html" title="Indices and tables"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">home</a>|&nbsp;</li>
         <li><a href="search.html">search</a>|&nbsp;</li>
@@ -56,7 +59,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Getting started</a><ul>
-<li><a class="reference internal" href="#obtaining-the-package">Obtaining the Package</a></li>
+<li><a class="reference internal" href="#install">Install</a></li>
 <li><a class="reference internal" href="#run-process">Run Process</a></li>
 <li><a class="reference internal" href="#a-word-on-coordinates">A Word On Coordinates</a></li>
 <li><a class="reference internal" href="#inputs">Inputs</a></li>
@@ -67,7 +70,7 @@
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
-                        title="previous chapter">General Perturbed Equilibrium Codes</a></p>
+                        title="previous chapter">Indices and tables</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="outputs.html"
                         title="next chapter">Outputs and Post-Processing</a></p>
@@ -100,21 +103,22 @@
   <div class="section" id="getting-started">
 <span id="id1"></span><h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
 <p>This section provides the basic structure of the IPEC code and the processes necessary to run it. Although it is not a tutorial, the user should be able to run a sample of the code after reading this chapter.</p>
-<div class="section" id="obtaining-the-package">
-<span id="installing"></span><h2>Obtaining the Package<a class="headerlink" href="#obtaining-the-package" title="Permalink to this headline">¶</a></h2>
-<p>IPEC version 3.0 is available in the PPPL project directory. The code is written in FORTRAN, and is available in both Lahey64 and PathScale implementation. This manual is for the NSTX staple Lahey64 version found at</p>
-<ul class="simple">
-<li>/p/gpec/users/jpark/IPEC/IPEC_3.00/rundir/LinuxLahey64</li>
-</ul>
-<p>The crucial inputs to IPEC are 2D equilibria and applied 3D (error) fields. The first can be input in many different formats. The most relevant to DIII-D is the efit equilibrium output, examples of which can be found in Jong-Kyu&#8217;s directory</p>
-<ul class="simple">
-<li>/u/jpark/data/equilibria/efit/</li>
-</ul>
-<p>The DIII-D error field input files are most often in the form of surfmn output tables, examples of which can be found in Jong-Kyu&#8217;s directory</p>
-<ul class="simple">
-<li>/u/jpark/data/error-field/d3d/</li>
-</ul>
-<p>A user is capable of running IPEC in their own area by simply copying the contents of the project directory and a file from each of the data directories (or, of course, similar files of their own).</p>
+<div class="section" id="install">
+<span id="installing"></span><h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
+<p>Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install/update the site package.</p>
+<p>Using a stable release, the user should set the environment variable GPEC_PLATFORM to the appropriate tag for their architecture and fortran 90 compiler. For example, at PPPL this might be done using:</p>
+<div class="highlight-python"><div class="highlight"><pre>export GPEC_PLATFORM=PPPL_LFF95
+</pre></div>
+</div>
+<p>The tag should match a make.inc file in the install directory, which sets a number of make variables defining compiler types and library paths. Not the appropriate compiler must be in the users path. Instructions for adding the compiler can be found in each make.inc file. For example, if using the Lahey64 compiler at PPPL the user must have executed:</p>
+<div class="highlight-python"><div class="highlight"><pre>module load lff95
+</pre></div>
+</div>
+<p>With the GPEC_PLATFORM variable set and the compiler in the users path, the package exicutables can be made from the source code from the package root using:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">make</span>
+</pre></div>
+</div>
+<p>The exicutables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
 </div>
 <div class="section" id="run-process">
 <span id="id2"></span><h2>Run Process<a class="headerlink" href="#run-process" title="Permalink to this headline">¶</a></h2>
@@ -203,10 +207,13 @@
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="outputs.html" title="Outputs and Post-Processing"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="General Perturbed Equilibrium Codes"
+          <a href="index.html" title="Indices and tables"
              >previous</a> |</li>
         <li><a href="index.html">home</a>|&nbsp;</li>
         <li><a href="search.html">search</a>|&nbsp;</li>
