@@ -157,11 +157,27 @@ c-----------------------------------------------------------------------
       SUBROUTINE ipec_stop(message)
 
       CHARACTER(*), INTENT(IN) :: message
+      INTEGER :: hrs,mins,secs
+
       CALL DATE_AND_TIME(date,time,zone,values)
       seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
      $     -seconds
-      IF(verbose) WRITE(*,*)"Total cpu time for ipec=",seconds,"seconds"
-      IF(verbose) WRITE(*,'(1x,2a)')'IPEC_STOP=>',TRIM(message)
+      secs = int(seconds)
+      hrs = secs/(60*60)
+      mins = (secs-hrs*60*60)/60
+      secs = secs-hrs*60*60-mins*60
+      IF (verbose) THEN
+         IF(hrs>0)THEN
+             PRINT *,"Total cpu time for IPEC = ",hrs," hours, ",
+     $           mins," minutes, ",secs," seconds"
+         ELSEIF(mins>0)then
+             PRINT *,"Total cpu time for IPEC = ",
+     $           mins," minutes, ",secs," seconds"
+         ELSE
+             PRINT *,"Total cpu time for IPEC = ",secs," seconds"
+         ENDIF
+         WRITE(*,'(1x,2a)')'IPEC_STOP=>',TRIM(message)
+      ENDIF
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------

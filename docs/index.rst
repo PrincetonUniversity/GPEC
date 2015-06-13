@@ -5,6 +5,8 @@
 
 .. include:: ../README.md
 
+.. include:: ../install/README
+
 Contents:
 
 .. toctree::
