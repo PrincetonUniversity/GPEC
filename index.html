@@ -55,12 +55,11 @@
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">General Perturbed Equilibrium Codes</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a></li>
 <li><a class="reference internal" href="#development">Development</a></li>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#install">Install</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id1">Installation</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
@@ -98,11 +97,6 @@
 <p>This package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, IPEC, RPEC, GPEC, and PENTRC.</p>
 <p>The primary purpose of this package is to calculated the nonaxisymmetric force balance in tokamak plasmas.</p>
 <p>Note that the DCON code was developed by Allen Glasser at Los Alamos National Laboratory, while IPEC and PENTRC were developed and are maintained by the GPEC team at the Princeton Plasma Physics Laboratory.</p>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install the package.</p>
-<p>To compile a new release of GPEC the user must set the GPEC_PLATFORM variable to a value appropriate for their archetecture and fortran compiler. The available options can be obtained by examining the suffixes of the install/make.inc.* files. Additional instuctions, if necessary, for each case can be found in the header of the corresponding file.</p>
-</div>
 <div class="section" id="development">
 <h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
 <p>There is a <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">Github repository</a> for this package to facilitate version control and collaborative contributions.</p>
@@ -114,7 +108,7 @@ git checkout -b develop
 git pull origin develop
 </pre></div>
 </div>
-<p>This will create a directory &#8216;develop&#8217; and with the developmental branch of the repository in it. For more on branches, see the section below. For compile instructions, see above. Now you are free to add/edit files in this branch. Be sure to use:</p>
+<p>This will create a directory &#8216;develop&#8217; and with the developmental branch of the repository in it. For more on branches, see the workflow section below. For compile instructions, see the install section. Now you are free to add/edit files in this branch. Be sure to use:</p>
 <div class="highlight-python"><div class="highlight"><pre>git add &lt;new-file&gt;
 </pre></div>
 </div>
@@ -161,9 +155,9 @@ make init
 </div>
 <p>This is now all you need to do in order to update docs for that local repo from there on out.</p>
 </div>
-</div>
-<div class="section" id="id1">
-<h1>Installation<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="install">
+<h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
+<p>Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install/update the site package.</p>
 <p>Using a stable release, the user should set the environment variable GPEC_PLATFORM to the appropriate tag for their architecture and fortran 90 compiler. For example, at PPPL this might be done using:</p>
 <div class="highlight-python"><div class="highlight"><pre>export GPEC_PLATFORM=PPPL_LFF95
 </pre></div>
@@ -173,7 +167,7 @@ make init
 </pre></div>
 </div>
 <p>With the GPEC_PLATFORM variable set and the compiler in the users path, the package exicutables can be made from the source code from the package root using:</p>
-<div class="highlight-python"><div class="highlight"><pre>make -f makefile_platform
+<div class="highlight-python"><div class="highlight"><pre><span class="n">make</span>
 </pre></div>
 </div>
 <p>The exicutables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
@@ -229,6 +223,7 @@ make init
 </ul>
 </li>
 </ul>
+</div>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
