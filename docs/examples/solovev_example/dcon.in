@@ -1,0 +1,29 @@
+
+&DCON_CONTROL
+   bal_flag = .TRUE.
+   mat_flag = .TRUE.
+   ode_flag = .TRUE.
+   vac_flag = .TRUE.
+   sas_flag = .FALSE.
+   nn = 1
+   delta_mlow = 8
+   delta_mhigh = 8
+   delta_mband = 0
+   sing_start = 0
+   dmlim = 0.0
+   mthvac = 960
+   thmax0 = 1
+   tol_nr = 1e-06
+   tol_r = 1e-06
+   crossover = 0.01
+   singfac_min = 0.0001
+   ucrit = 1000.0
+/
+&DCON_OUTPUT
+   crit_break = .TRUE.
+   ahb_flag = .TRUE.
+   msol_ahb = 1
+   mthsurf0 = 1
+   bin_euler = .TRUE.
+   euler_stride = 1
+/

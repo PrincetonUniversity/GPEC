@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
-     $     cas3d_flag,test_flag,resol,smallwidth
+     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -167,6 +167,8 @@ c-----------------------------------------------------------------------
       m3mode=2
       resol=1e4
       smallwidth=1e-6
+      
+      debug_flag = .FALSE.
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------

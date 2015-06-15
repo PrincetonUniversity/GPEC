@@ -50,6 +50,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
 
       COMPLEX(r8), DIMENSION(mpert) :: xspfac
+      IF(debug_flag) PRINT *, "Entering ipeq_sol"      
 c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
@@ -107,6 +108,7 @@ c-----------------------------------------------------------------------
       ENDIF
 
       DEALLOCATE(amat,bmat,cmat,fmats,gmats,kmats)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_sol"      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -124,6 +126,8 @@ c-----------------------------------------------------------------------
       
       INTEGER :: ipert,jpert,m1,m2,dm
       COMPLEX(r8), DIMENSION(-mband:mband) ::jmat,jmat1
+
+      IF(debug_flag) PRINT *, "Entering ipeq_contra"      
 
       CALL spline_eval(sq,psi,1)
       CALL cspline_eval(metric%cs,psi,0)
@@ -189,6 +193,7 @@ c-----------------------------------------------------------------------
          xmt_mn=xwt_mn
          xmz_mn=xwz_mn
       ENDIF
+      IF(debug_flag) PRINT *, "->Leaving ipeq_contra"      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -207,6 +212,8 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,m1,m2,dm
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
 
+      IF(debug_flag) PRINT *, "Entering ipeq_cova"      
+      
       CALL spline_eval(sq,psi,1)
       CALL cspline_eval(metric%cs,psi,0)
       q=sq%f(4)
@@ -257,6 +264,7 @@ c-----------------------------------------------------------------------
      $           g23(dm)*bmt_mn(jpert)+g33(dm)*bmz_mn(jpert)
          ENDDO
       ENDDO
+      IF(debug_flag) PRINT *, "->Leaving ipeq_cova"      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -277,6 +285,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
      $     xno_fun,bno_fun
+      IF(debug_flag) PRINT *, "Entering ipeq_normal"      
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -301,6 +310,7 @@ c-----------------------------------------------------------------------
       bno_fun=bwp_fun/(jacs*delpsi)
       CALL iscdftf(mfac,mpert,xno_fun,mthsurf,xno_mn)
       CALL iscdftf(mfac,mpert,bno_fun,mthsurf,bno_mn)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_normal"      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -321,6 +331,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,bs,rfun,zfun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwt_fun,xvt_fun,xvz_fun,
      $     bwt_fun,bvt_fun,bvz_fun,xta_fun,bta_fun
+      IF(debug_flag) PRINT *, "Entering ipeq_tangent"
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -355,6 +366,7 @@ c-----------------------------------------------------------------------
       bta_fun=bta_fun*sqrt(rfun**2+zfun**2)
       CALL iscdftf(mfac,mpert,xta_fun,mthsurf,xta_mn)
       CALL iscdftf(mfac,mpert,bta_fun,mthsurf,bta_mn)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_tangent"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -375,6 +387,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: eqb
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xvt_fun,bvt_fun,
      $     xvz_fun,bvz_fun,xpa_fun,bpa_fun
+      IF(debug_flag) PRINT *, "Entering ipeq_parallel"
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -395,6 +408,7 @@ c-----------------------------------------------------------------------
       bpa_fun=(bvt_fun+q*bvz_fun)/eqb
       CALL iscdftf(mfac,mpert,xpa_fun,mthsurf,xpa_mn)
       CALL iscdftf(mfac,mpert,bpa_fun,mthsurf,bpa_mn)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_parallel"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -416,6 +430,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
      $     xwt_fun,bwt_fun,xvz_fun,bvz_fun,xrr_fun,brr_fun,
      $     xrz_fun,brz_fun,xrp_fun,brp_fun
+      IF(debug_flag) PRINT *, "Entering ipeq_rzphi"
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -459,6 +474,7 @@ c-----------------------------------------------------------------------
       CALL iscdftf(mfac,mpert,brz_fun,mthsurf,brz_mn)
       CALL iscdftf(mfac,mpert,xrp_fun,mthsurf,xrp_mn)
       CALL iscdftf(mfac,mpert,brp_fun,mthsurf,brp_mn)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_rzphi"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -487,14 +503,16 @@ c-----------------------------------------------------------------------
 
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
      $     grre_real(nths2),grre_imag(nths2))
+      IF(debug_flag) PRINT *, "Entering ipeq_surface"
 c-----------------------------------------------------------------------
 c     take into account reverse-theta in vacuum code.
 c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xwp_fun,mthsurf,xwp_mn)
-      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn) !!
+      CALL iscdftb(mfac,mpert,xwt_fun,mthsurf,xwt_mn)
       CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
       CALL iscdftb(mfac,mpert,bvt_fun,mthsurf,bvt_mn)
-      CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)      
+      CALL iscdftb(mfac,mpert,bvz_fun,mthsurf,bvz_mn)
+      
       CALL spline_eval(sq,psi,1)
       DO itheta=0,mthsurf
          CALL bicube_eval(rzphi,psi,theta(itheta),1)
@@ -566,6 +584,7 @@ c-----------------------------------------------------------------------
       CALL iscdftf(mfac,mpert,kax_fun,mthsurf,kax_mn)
      
       DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_surface"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -591,6 +610,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
       TYPE(spline_type) :: spl       
+
+      IF(debug_flag) PRINT *, "Entering ipeq_fcoords"
       
       CALL spline_alloc(spl,mthsurf,2)
       spl%xs=theta
@@ -664,6 +685,7 @@ c-----------------------------------------------------------------------
       CALL spline_dealloc(spl)
 
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_fcoords"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -689,6 +711,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
       TYPE(spline_type) :: spl       
+
+      IF(debug_flag) PRINT *, "Entering ipeq_bcoords"
       
       CALL spline_alloc(spl,mthsurf,2)
       spl%xs=theta
@@ -765,6 +789,7 @@ c-----------------------------------------------------------------------
    
       CALL spline_dealloc(spl)
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_bcoords"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -787,6 +812,8 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,wgtfun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
+
+      IF(debug_flag) PRINT *, "Entering ipeq_weight"
 
       DO itheta=0,mthsurf
          CALL bicube_eval(rzphi,psi,theta(itheta),1)
@@ -819,6 +846,7 @@ c-----------------------------------------------------------------------
          ftnfun=ftnfun*delpsi
       END SELECT
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_weight"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -983,6 +1011,7 @@ c     subprogram 14. ipeq_alloc.
 c     allocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_alloc
+      IF(debug_flag) PRINT *, "Entering ipeq_alloc"      
 
       ALLOCATE(xsp_mn(mpert),xsp1_mn(mpert),xss_mn(mpert),xms_mn(mpert),
      $     xwp_mn(mpert),xwt_mn(mpert),xwz_mn(mpert),xmt_mn(mpert),
@@ -994,6 +1023,7 @@ c-----------------------------------------------------------------------
      $     bno_mn(mpert),bta_mn(mpert),bpa_mn(mpert),
      $     xrr_mn(mpert),xrz_mn(mpert),xrp_mn(mpert),
      $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert))
+      IF(debug_flag) PRINT *, "->Leaving ipeq_alloc"      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1004,12 +1034,14 @@ c     subprogram 15. ipeq_dealloc.
 c     deallocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_dealloc
+      IF(debug_flag) PRINT *, "Entering ipeq_dealloc"      
 
       DEALLOCATE(xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,xmp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn)
+      IF(debug_flag) PRINT *, "->Leaving ipeq_dealloc"      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

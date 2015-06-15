@@ -376,6 +376,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert) :: ipiv
       COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
+      IF(debug_flag) PRINT *, "Entering idcon_build"
 c-----------------------------------------------------------------------
 c     construct uedge.
 c-----------------------------------------------------------------------
@@ -409,6 +410,7 @@ c-----------------------------------------------------------------------
       u2%xs=psifac
       CALL cspline_fit(u1,"extrap")
       CALL cspline_fit(u2,"extrap")
+      IF(debug_flag) PRINT *, "->Leaving idcon_build"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
