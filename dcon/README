@@ -1,31 +1,21 @@
-   The Use of the DCON Stability Code for Determining
-	   the MHD Stability of Axisymmetric Toroidal Plasmas
+Determining the MHD Stability of Axisymmetric Toroidal Plasmas
+================================================================
 
-		       Version 3.60, September 5, 2002
-
-			    Alan H. Glasser
-		     Los Alamos National Laboratory
-			  Phone: 505-667-7723
-			  Email: ahg@lanl.gov
-
-
-SECTIONS
-
- 1. Introduction
- 2. Straight-Fieldline Coordinates
- 3. Installation
- 4. EQUIL Input
- 5. DCON Input
- 6. VACUUM Input
- 7. DCON Output
- 8. ORBIT Input
- 9. ORBIT Output
-10. Other documentation
-
+:Version:
+    3.60, September 5, 2002
+:Author:
+    Alan H. Glasser
+:Location:
+    Los Alamos National Laboratory
+:Phone: 
+    505-667-7723
+:Email: 
+    ahg@lanl.gov
 
 Section 1. Introduction
+-----------------------
 
-	DCON is a code for determining the MHD stability of static
+DCON is a code for determining the MHD stability of static
 axisymmetric toroidal plasma.  It uses a very efficient algorithm,
 originally developed by Newcomb [W. A. Newcomb, Ann. Phys. 10, 232
 (1960)] for cylindrical plasmas and generalized by myself to
@@ -48,7 +38,7 @@ the plasma edge can be used to quantify the degree of instability for an
 internal mode, while the total perturbed potential energy can be used
 for this purpose for a free-boundary mode.
 
-	The present version of DCON evaluates the Mercier criterion D_I
+The present version of DCON evaluates the Mercier criterion D_I
 > 0 for unstable localized ideal interchange modes; the related
 criterion D_R > 0 of Glasser, Greene, and Johnson for localized
 resistive interchange modes; the criterion C_A < 0 for ideal MHD
@@ -58,7 +48,7 @@ one low toroidal mode number; and the plasma, vacuum, and total response
 matrices and their eigenvalues for determining free-boundary stability.
 A future version of DCON will treat resistive instabilities.
 
-	In addition to MHD stability, there is a code ORBIT for tracking
+In addition to MHD stability, there is a code ORBIT for tracking
 the full Hamiltonian orbits of charged particles in the same equilibrium
 fields used by DCON.  The full-orbit equations are integrated with a
 very efficient adaptive ODE solver with high accuracy, both inside and
@@ -71,8 +61,8 @@ ions, full orbits are more efficient and more accurate.  Drift orbits
 will be added to ORBIT in a later release, allowing the best of both
 worlds and comparisons between them.
 
-	Both DCON and ORBIT are written entirely in high-level Fortran
-90.  They make extensive use of dynamic allocation and deallocation to
+Both DCON and ORBIT are written entirely in high-level Fortran 90.  
+They make extensive use of dynamic allocation and deallocation to
 allow maximum use of available memory.  They use many other advanced
 features of Fortran 90, such as derived types, array syntax, and
 modules.  There are no fixed dimensions of large arrays, no goto
@@ -84,17 +74,18 @@ to help.  Graphic output from DCON is viewed with the XDRAW graphics
 code, which is distributed as part of the package and runs on any X
 Window system.
 
-	This document is a guide to preparing input for DCON and ORBIT
+This document is a guide to preparing input for DCON and ORBIT
 and interpreting their output.  
 
 
 Section 2. Straight-Fieldline Coordinates
+-----------------------------------------
 
-	A major new feature of dcon_3.50 is the use of generalized
+A major new feature of dcon_3.50 is the use of generalized
 straight-fieldline (SFL) coordinates.  Previous versions have used only
 one type of these, Hamada coordinates.
 
-	For any flux coordinate system, one coordinate, psi, labels the
+For any flux coordinate system, one coordinate, psi, labels the
 flux surface, and its gradient is orthogonal to the equillibrium
 magnetic field; the other two, theta and zeta, are angle-like quantities
 that parameterize the position around the torus the short and long way,
@@ -104,7 +95,7 @@ flux surface.  Occasionally, rho=sqrt(psi) is used for graphical
 purposes as a radius-like variable.  Theta and zeta are normalized to
 increase by 1 (not twopi) in going one full turn around the torus.
 
-	A flux coordinate system is an SFL coordinate system for which
+A flux coordinate system is an SFL coordinate system for which
 the safety factor
 
 q = (B.del zeta) / (B.del theta)
@@ -118,24 +109,26 @@ poloidal field strength, B the total field strength, R the major radius,
 and power_bp, power_b, and power_r input integers.  Some commonly-used
 and named coordinate systems are:
 
-name	     power_bp power_b power_r
--------------------------------------
-hamada	        0       0    	0
-pest	        0       0    	2
-equal_arc       1       0    	0
-boozer	        0       2    	0
--------------------------------------
+==========  ==========  =======  ========
+name	    power_bp    power_b  power_r
+==========  ==========  =======  ========
+hamada	        0       0    	 0
+pest	        0       0    	 2
+equal_arc       1       0    	 0
+boozer	        0       2    	 0
+==========  ==========  =======  ========
 
-	The (ignorable) toroidal coordinate is 
 
-zeta = phi/twopi + nu(psi,theta),
+The (ignorable) toroidal coordinate is::
+
+  zeta = phi/twopi + nu(psi,theta),
 
 where nu is a single-valued function of theta.  PEST coordinates have
 the unique property that nu = 0 and the toroidal coordinate is
 proportional to the conventional polar angle phi.  For all other SLF
 coordinate system, nu /= 0.  
 
-	PEST coordinates are well-adapted to high-aspect-ratio, circular
+PEST coordinates are well-adapted to high-aspect-ratio, circular
 equilibria.  For low-aspect-ratio, strongly-shaped equilibria, detailed
 numerical comparisons with DCON show that Hamada coordinates generally
 have the best Fourier convergence properties, and others are worse in
@@ -149,14 +142,16 @@ monitor the convergence.
 
 
 Section 3. Installation
+-----------------------------------------
 
-	The easiest way to unpack dcon_3.50.tar.gz is:
+The easiest way to unpack dcon_3.50.tar.gz is:
 
 gzip -cd dcon_3.50.tar.gz | tar -xvf -
 
 It will create a subdirectory ./dcon_3.50 and place its files there.
 The contents of the dcon package are as follows:
 
+============    =======================================================
 README:		this file.
 equil:		source code for equilibrium data processing
 dcon:		source code for DCON, stability code
@@ -172,8 +167,9 @@ makefile:	master makefile for all codes on all machines
 tex:		preprint on the theory of DCON and equations for ORBIT
 vacuum:		source code for Morrell Chance's VACUUM code
 xdraw:		source code for XDRAW graphics code
+============    =======================================================
 
-	DCON has been set up and tested on the following machines:
+DCON has been set up and tested on the following machines:
 
 SGI Octane running the IRIX 6.4 operating system
 Sun SparcStations running the SunOS operating system
@@ -201,8 +197,9 @@ while in ./dcon_3.50.
 
 
 Section 4. EQUIL Input
+-----------------------------------------
 
-	Both DCON and ORBIT use EQUIL to process the equilibrium data.
+Both DCON and ORBIT use EQUIL to process the equilibrium data.
 EQUIL is controlled primarily by equil.in.  It contains two Fortran 90
 namelists: equil_control and equil_output.  The equil_control namelist
 contains most of the input parameters needed to control the equilibrium
@@ -211,7 +208,7 @@ output which is mostly used to diagnose problems.  For the most part,
 these may be left false and ignored.  In this and other namelist input
 files, all input parameters have reasonable default values.
 
-	Here is an explanation of the input parameters in the first
+Here is an explanation of the input parameters in the first
 namelist equil_control, along with typical input values and extensive
 commentary.
 
@@ -221,8 +218,9 @@ This specifies the type of the input file.  It allows DCON to determine
 whether the file is ascii or binary, whether it is direct or inverse,
 and how to interpret the data.  Here is a list of allowed types:
 
+============    =============================   ============    ========
 Name		Description			Data Type	Format
--------------------------------------------------------------------------
+============    =============================   ============    ========
 "fluxgrid"	NIMROD data file		inverse		ascii
 "miller"	Bob Miller's TOQ code		inverse		binary_8
 "chease"	Lausanne CHEASE code, 8-byte	inverse		binary_8
@@ -237,7 +235,7 @@ Name		Description			Data Type	Format
 "lez"		Leonid Zakharov'v code		inverse		binary_4
 "transp"	Data from the TRANSP code	inverse		ascii
 "sontag"	Aaron Sontag's direct solver	direct		ascii
--------------------------------------------------------------------------
+============    =============================   ============    ========
 
 In addition, you may specify eq_type="lar" or "soloviev" to get the two
 analytical equilibria.  See below for more details.
@@ -267,11 +265,13 @@ power_r.
 
 Next come specifications of grid parameters.
 
+=============== ============================================
 grid_type="ldp"	type of radial grid packing
 psilow=1e-4	minimum value of psi, normalized from 0 to 1
 psihigh=1	maximum value of psi, normalized from 0 to 1
 mpsi=128	number of radial grid intervals
 mtheta=128	number of poloidal grid intervals
+=============== ============================================
 
 There are several options for radial grid types.  The first,
 grid_type="rho", distributes radial grid points uniformly in
@@ -318,7 +318,7 @@ This is occasionally used in the course of debugging interfaces to new
 equilibrium file types.  It causes the code to generate information
 about the input and then quit.
 
-	The equil_output namelist of equil.in determines which auxiliary
+The equil_output namelist of equil.in determines which auxiliary
 output files are produced.  These are primarily of interest to me, the
 developer, and of very little interest to users.  For most code
 operation, they should all be left off (f).  Turning them on (t) when
@@ -327,6 +327,7 @@ readable by any text editor and can also be printed.  The binary files
 are intended for viewing with XDRAW.  Here is a brief description of the
 optional output files.
 
+=============== ======================================================
 gse_flag=f	produces diagnostic output for accuracy of solution to
 		Grad-Shafranov equation
 
@@ -338,13 +339,14 @@ bin_eq_2d=f	binary output of 2D equilibrium file data
 
 out_2d=f	ascii output of processed 2D data
 bin_2d=f	binary output of processed 2D data
+=============== ======================================================
 
-	There are two other input files, each containing a single
+There are two other input files, each containing a single
 namelist.  The first, lar.in, is for large-aspect-ratio, circular cross,
 low beta equilibrium, using the Shafranov expansion to second order.
 The second, sol.in, is for the Soloviev equilibrium.
 
-	The lar_input namelist of equil.in is used when eq_type="lar"
+The lar_input namelist of equil.in is used when eq_type="lar"
 and eq_filename="lar.in".  This allows the user to construct a
 large-aspect-ratio, circular-cross-section equilibrium, using the
 Shafranov expansion to second order, specifying minor radius a, major
@@ -354,6 +356,7 @@ of sigma=J.B/B^2 is given by sigma0*(1-(r/a))**p_pres.  Changing these
 to something more interesting would be very simple.  Here are sample
 input parameters:
 
+=============== ======================================================
 ma=64		number of radial grid points
 mtau=64		number of azimuthal grid points
 
@@ -365,13 +368,15 @@ q0=3.2		value of q (safety factor) on axis
 
 p_pres=2	power used in specifying pressure profile
 p_sig=2		power used in specifying current profile
+=============== ======================================================
 
-	The sol_input namelist of equil.in is used when
+The sol_input namelist of equil.in is used when
 eq_type="soloviev" and eq_filename="sol.in".  See Berger et al
 [D. Berger,L.C. Bernard, R. Gruber,and 6. Troyon, J. Appl. Math.
 Phys. (ZAMP) 31 (1980) 113] for a published stability analysis of this
 equilibrium.  Here are input parameters:
 
+=============== ======================================================
 mr=128		number of radial grid points
 mz=128		number of axial grid points
 ma=128		number of flux surfaces for surface quantities
@@ -380,21 +385,24 @@ e=1		vertical elongation factor
 a=1		minor radius
 r0=3		major radius
 q0=1.26		value of q (safety factor) on axis
+=============== ======================================================
+
 
 
 Section 5. DCON Input
+-----------------------------------------
 
-	The stability operations of DCON are controlled by the file
+The stability operations of DCON are controlled by the file
 dcon.in, containing two namelists, dcon_control and dcon_output.  The
 first begins with a set of flags which determine which features of DCON
 are exercised:
 
+===========     ===========================================================================
 bal_flag=t	Ideal MHD ballooning criterion for short wavelengths
 mat_flag=t	Construct coefficient matrices for diagnostic purposes
-ode_flag=t	Integrate ODE's for determining stability of internal
-			long-wavelength mode
-vac_flag=t	Compute plasma, vacuum, and total energies for
-		free-boundary modes
+ode_flag=t	Integrate ODE's for determining stability of internal long-wavelength mode
+vac_flag=t	Compute plasma, vacuum, and total energies for free-boundary modes
+===========     ===========================================================================
 
 Next come values determining mode numbers:
 
@@ -527,11 +535,12 @@ stopped occasionally, and the independent solution vectors are
 reorganized to eliminate this problem.  Ucrit determines how often this
 is done.  It should be left at 1e4 by the casual user.
 
-	The final section of input, dcon_output controls stability
+The final section of input, dcon_output controls stability
 output options.  Many of the optional outputs of interest only to the
 developer have been removed to avoid confusion.  The only remaining ones
 are:
 
+=============  =============================================================
 crit_break=t	determines whether the color of the crit curve (see
 		below) changes after crossing a singular surface
 
@@ -543,11 +552,13 @@ mthsurf0	real variable, provides user control over number of boundary
 		points used to display surface eigenfunctions for
 		ahgb_flag=t.  Default value 1, number of points
 		increases linearly with mthsurf0 
+=============  =============================================================
 
 
 Section 6. VACUUM Input
+-----------------------------------------
 
-	Computation of perturbed vacuum potential energy is performed
+Computation of perturbed vacuum potential energy is performed
 with Morrell Chance's VACUUM code.  This is controlled by the file
 vac.in, formerly named modivmc.  It is safest to leave the variables in
 this file unchanged, with one exception.  The input variable a allows
@@ -562,35 +573,37 @@ contains a complete description of the input.  Use LaTeX.
 
 
 Section 7. DCON Output
+-----------------------------------------
 
-	During the running of DCON, the code writes terse messages to
+During the running of DCON, the code writes terse messages to
 the screen to inform the user of its progress.  Here is the output of a
-typical run:
-$
-$ dcon 
- Equilibrium: ../../equilibria/efit/82205-1.25X, Type: efit
- Jac_type = hamada, power_b = 0, power_r = 0
- Diagnosing Grad-Shafranov solution
- Evaluating Mercier criterion
- Evaluating ballooning criterion
- Fourier analysis of metric tensor components
- q0 =  1.087E+00, qmin =  1.082E+00, qmax =  5.426E+00, qa =  6.119E+00
- betat =  2.843E-02, betan =  2.579E+00, betap1 =  1.033E+00
- nn =   1, mlow =  -8, mhigh =  13, mpert =  22, mband =  21
- Computing F, G, and K Matrices
- Starting integration of ODE's
- psi = 1.000E-04, q =  1.087
- psi = 5.845E-01, q =  2.000
- psi = 8.024E-01, q =  3.000
- psi = 9.337E-01, q =  4.000
- psi = 9.813E-01, q =  5.000
- psi = 9.900E-01, q =  5.426
- Computing free boundary energies
- Energies: plasma = -1.773E+00, vacuum =  3.050E+00, total =  1.277E+00
- All modes stable for nn =  1.
- Total cpu time = 2.349E+01 seconds
- PROGRAM_STOP => Normal termination.
-$ 
+typical run::
+
+    $
+    $ dcon 
+     Equilibrium: ../../equilibria/efit/82205-1.25X, Type: efit
+     Jac_type = hamada, power_b = 0, power_r = 0
+     Diagnosing Grad-Shafranov solution
+     Evaluating Mercier criterion
+     Evaluating ballooning criterion
+     Fourier analysis of metric tensor components
+     q0 =  1.087E+00, qmin =  1.082E+00, qmax =  5.426E+00, qa =  6.119E+00
+     betat =  2.843E-02, betan =  2.579E+00, betap1 =  1.033E+00
+     nn =   1, mlow =  -8, mhigh =  13, mpert =  22, mband =  21
+     Computing F, G, and K Matrices
+     Starting integration of ODE's
+     psi = 1.000E-04, q =  1.087
+     psi = 5.845E-01, q =  2.000
+     psi = 8.024E-01, q =  3.000
+     psi = 9.337E-01, q =  4.000
+     psi = 9.813E-01, q =  5.000
+     psi = 9.900E-01, q =  5.426
+     Computing free boundary energies
+     Energies: plasma = -1.773E+00, vacuum =  3.050E+00, total =  1.277E+00
+     All modes stable for nn =  1.
+     Total cpu time = 2.349E+01 seconds
+     PROGRAM_STOP => Normal termination.
+    $ 
 
 If there are violations of the Newcomb stability criterion, indicating
 the existence of internal (fixed-boundary) instabilities, the position
@@ -598,11 +611,11 @@ and q-value of the zero crossing(s) are also reported to the screen as
 they occur.  In that case, the free-boundary energies are not meaningful
 and are not reported.
 
-	The main results of DCON are reported in four files: dcon.out,
+The main results of DCON are reported in four files: dcon.out,
 dcon,bin, crit.out, and crit.bin.  Here is a description of their
 contents.
 
-	Dcon.out echoes input parameters; gives various global
+Dcon.out echoes input parameters; gives various global
 properties of the equilibrium; lists a table of surfaces quantities,
 including the ideal and resistive interchange criteria D_I and D_R;
 lists all singular surfaces for the specified toroidal mode number nn
@@ -617,16 +630,16 @@ modes, also reported to the screen; negative means unstable.  Following
 the table of eigenvalues is a list of the eigenvectors corresponding to
 each eigenvalue, normalized to unit magnitude.  For each eigenvector,
 the component with the largest absolute value is marked with an asterisk
-(*).  This is useful for identifying the dominant Fourier component of
+"*".  This is useful for identifying the dominant Fourier component of
 the most unstable mode.  It is also useful to note whether the
 components for mlow and mhigh are sufficiently small, e.g. 1e-3.  If
 not, this is an indication the delta_mlow and/or delta_mhigh should be
 increased.
 
-	Dcon.bin contains data about equilibrium profiles and local
+Dcon.bin contains data about equilibrium profiles and local
 stability criteria.  It is viewed by doing "xdraw dcon".
 
-	Crit.out and crit.bin contain the low-n internal stability
+Crit.out and crit.bin contain the low-n internal stability
 results.  Do "xdraw crit" to view the graphics file.  The main result is
 in the first frame, showing the stability criterion.  If this changes
 sign, the equilibrium is unstable to an internal ideal mode for the
@@ -639,13 +652,13 @@ This is useful for comparing different runs, using a different solid
 color for each run.  Multiple files can be compared by listing their
 paths below the line "filename(s)" in drawcrit.in.
 
-	If bin_2d=t in equil.in, then a graphics file 2d.bin is produced
+If bin_2d=t in equil.in, then a graphics file 2d.bin is produced
 and may be viewed with "xdraw 2d".  It produces two windows, one showing
 flux surfaces for the equilibrium, the other surfaces of constant theta.
 The latter is especially useful for comparing the angular distribution
 for different choices of straight-fieldline coordinates.
 
-	If gse_flag=t in equil.in, then a graphics file gsei.bin is
+If gse_flag=t in equil.in, then a graphics file gsei.bin is
 prodcued and may be viewed with "xdraw gsei".  It shows log_10 of the
 Grad-Shafranov error, integrated over flux surfaces.  This can be used
 to assess the accuracy of the Grad-Shafranov solution.  More detailed
@@ -655,12 +668,13 @@ input files, obtainable by "cp ../../draw/drawgse*.in .".
 
 
 Section 8. ORBIT Input
+-----------------------------------------
 
-	This section describes input for controlling the ORBIT code for
+This section describes input for controlling the ORBIT code for
 following guiding-center or full-orbit trajectories of charged
 particles, both inside and outside the separatrix.
 
-	In order to follow the particle both inside and outside the
+In order to follow the particle both inside and outside the
 separatrix, account must be taken of the fact that the magnetic field
 representation is different in these two regions.  The Hamiltonian
 equations of motion are expressed in terms of the vector potential A,
@@ -679,7 +693,7 @@ separatrix and cylindrical coordinates outside, and passes the particle
 between the two when it crosses the separatrix.  Graphs of the orbit
 change color to indicate such a crossing.
 
-	The equilibrium used by ORBIT is controlled by the same files
+The equilibrium used by ORBIT is controlled by the same files
 equil.in, lar.in, and sol.in, described above in Section 4.  For
 direct-type equilibria, the orbit is followed both inside and outside
 the separatrix, terminating if the orbit crosses a boundary of the
@@ -688,7 +702,7 @@ followed only inside the separatrix, terminating if it crosses the
 separatrix, this this is the boundary of the compuatational domain for
 inverse-type data.
 
-	The ORBIT code is controlled by orbit.in, containing one
+The ORBIT code is controlled by orbit.in, containing one
 namelist, orbit_input.  The first two variables:
 
 gc_flag=t
@@ -698,7 +712,7 @@ determine whether to use guiding-center or full orbits and whether the
 initial particle position is specified inside or outside the separatrix
 (see below for more detail).
 
-	The next three variables:
+The next three variables:
 
 particle="ion"
 ai=2
@@ -708,7 +722,7 @@ determine whether the particle to be followed is an ion or an electron,
 and if it is an ion, its atomic weight ai and atomic number zi.  If the
 particle is an electon, then ai and zi are ignored.
 
-	The next three variables:
+The next three variables:
 
 psi0=.85
 theta0=0
@@ -720,7 +734,7 @@ flux and normalized to go from 0 at the magnetic axis to 1 at the
 separatrix; and theta and zeta parameterizing position the short and
 long ways around the torus, increasing by 1 for each full circuit.
 
-	The next three variables:
+The next three variables:
 
 r0=.5
 z0=0
@@ -740,7 +754,7 @@ z=(zmax+zmin)/2+z0*(zmax-zmin)/2
 where zmin and zmax are the bottom and top edges of the computational
 domain.  The initial azimuthal position phi0 is specified in radians.
 
-	The next three variables:
+The next three variables:
 
 energy0=1e4
 alpha0=40
@@ -751,7 +765,7 @@ velocity space.  The initial particle energy is specified in eV; alpha0
 and phase0 specify the angle of the initial velocity vector from the
 z-axis and the from the r-axis in the r-phi plane, in degrees.
 
-	The next three variables:
+The next three variables:
 
 taumax=10
 report=1
@@ -767,7 +781,7 @@ number of internal integrator steps between graphic and tabular output
 of the orbit.  Increasing stride can be used to limit the size of the
 output files, which decreasing it allows for more detail in the graphs.
 
-	The next two variables:
+The next two variables:
 
 tol=1e-9
 errmax=1
@@ -778,7 +792,7 @@ tolerance at the expense of computation time.  The code monitors the
 relative change in the particle energy due to accumulated numerical
 error.  If this error exceeds errmax, the code quits.
 
-	The next variable:
+The next variable:
 
 break_flag=f
 
@@ -788,7 +802,7 @@ of the separatrix.  Setting break_flag=t increases the frequency of
 color change.  This can be useful for cross-correlating different orbit
 segments between graphs.
 
-	The next variable:
+The next variable:
 
 cross=t
 
@@ -797,7 +811,7 @@ direct-type equilibrium data.  If cross=f, the particle stops at the
 separatrix.  For inversse-type equilibrium data, the orbit can only be
 followed inside the separatrix.
 
-	The next variable:
+The next variable:
 
 restart_flag=f
 
@@ -810,7 +824,7 @@ to specify an increment on the runtime.  If restart_flag=t but
 restart.out is not found, the code resets restart_flag=f and proceeds as
 if this were the input value.
 
-	The final variables:
+The final variables:
 
 orbit_out=f
 orbit_bin=t
@@ -822,19 +836,20 @@ very useful and is time-consuming.  Setting orbit_bin=f causes the
 graphical output to be suppressed.
 
 Section 9. ORBIT Input
+-----------------------------------------
 
-	This section describes output for the ORBIT code for following
+This section describes output for the ORBIT code for following
 full-orbit trajectories of charged particles, both inside and outside
 the separatrix.
 
-	There is an output file orbit.out which starts with the same
+There is an output file orbit.out which starts with the same
 kind of equilibrium data as dcon.out, described in Section 7 above.
 Then there are a few lines of information about the orbit that was run.
 If orbit_out=t, this is followed by a long table of the orbit.  This is
 not recommended: it is not very useful, it wastes time, and the
 information is better obtained in graphical form.
 
-	To view the main graphical output, do "xdraw orbit".  This
+To view the main graphical output, do "xdraw orbit".  This
 produces 9 graphs:
 
 1. Radial Position, R vs. tau
@@ -851,8 +866,9 @@ The color changes each time the particle crosses the separatrix.
 
 
 Section 10. Other documentation
+-----------------------------------------
 
-	There is a subdirectory ./tex containing miscellaneous
+There is a subdirectory ./tex containing miscellaneous
 documentation.  Here is a brief description.
 
 1. tex/dcon/manuscript:
@@ -870,8 +886,7 @@ metric.tex	Expressions for the metric tensor
 
 tex/orbit:
 
-orbit.tex	Raw Hamiltonian orbit equations in straight-fieldline 
-		coordinates
+orbit.tex	Raw Hamiltonian orbit equations in straight-fieldline coordinates
 
 tex/vacuum:
 

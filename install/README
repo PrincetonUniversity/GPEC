@@ -1,5 +1,7 @@
-Installation
-===============
+Install
+========
+
+Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install/update the site package.
 
 Using a stable release, the user should set the environment variable GPEC_PLATFORM to the appropriate tag for their architecture and fortran 90 compiler. For example, at PPPL this might be done using::
 
@@ -11,6 +13,6 @@ The tag should match a make.inc file in the install directory, which sets a numb
 
 With the GPEC_PLATFORM variable set and the compiler in the users path, the package exicutables can be made from the source code from the package root using::
 
-  make -f makefile_platform
+  make
   
 The exicutables will then be available in their individual subdirectories as well as collected in the bin directory.

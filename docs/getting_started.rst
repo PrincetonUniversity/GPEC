@@ -9,22 +9,7 @@ This section provides the basic structure of the IPEC code and the processes nec
 
 .. _installing:
 
-Obtaining the Package
-=====================
-
-IPEC version 3.0 is available in the PPPL project directory. The code is written in FORTRAN, and is available in both Lahey64 and PathScale implementation. This manual is for the NSTX staple Lahey64 version found at
-
-• /p/gpec/users/jpark/IPEC/IPEC_3.00/rundir/LinuxLahey64
-
-The crucial inputs to IPEC are 2D equilibria and applied 3D (error) fields. The first can be input in many different formats. The most relevant to DIII-D is the efit equilibrium output, examples of which can be found in Jong-Kyu's directory
-
-• /u/jpark/data/equilibria/efit/
-
-The DIII-D error field input files are most often in the form of surfmn output tables, examples of which can be found in Jong-Kyu's directory
-
-• /u/jpark/data/error-field/d3d/
-
-A user is capable of running IPEC in their own area by simply copying the contents of the project directory and a file from each of the data directories (or, of course, similar files of their own).
+.. include:: ../install/README
 
 .. _Run_Process:
 
