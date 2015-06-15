@@ -683,51 +683,69 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
       INTEGER :: i,ising,itheta
-      REAL(r8) :: thetai,jarea
+      INTEGER, SAVE, DIMENSION(6) :: jsave
+      REAL(r8),SAVE :: thetai,jarea
 
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,thetas,jacfac
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
+      REAL(r8), DIMENSION(0:mthsurf), SAVE :: dphi,delpsi,thetas,jacfac
+      COMPLEX(r8), DIMENSION(0:mthsurf), SAVE :: ftnfun
 
       TYPE(spline_type) :: spl       
       
-      CALL spline_alloc(spl,mthsurf,2)
-      spl%xs=theta
+      CALL spline_eval(sq,psi,0) !global var, may have changed
+      ! expensive spline formation, do only if asking for new coords
+      IF((/psi,ri,bpi,bi,rci,ti,ji/)/=jsave)THEN
+         jsave = (/psi,ri,bpi,bi,rci,ti,ji/)
+         IF(.NOT. firstcall) CALL spline_dealloc(spl)
+         CALL spline_alloc(spl,mthsurf,2)
+         spl%xs=theta
+         
+         dphi=0
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psi,theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+            bpfac=psio*delpsi(itheta)/r(itheta)
+            btfac=sq%f(1)/(twopi*r(itheta))
+            bfac=SQRT(bpfac*bpfac+btfac*btfac)
+            fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
+            spl%fs(itheta,1)=fac/(r(itheta)**ri*rfac**rci)*
+     $           bpfac**bpi*bfac**bi
+            spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
+     $           (bpfac**bpi*bfac**bi)
+            IF (ti .EQ. 0) THEN
+               dphi(itheta)=rzphi%f(3)
+            ENDIF
+         ENDDO
+         
+         CALL spline_fit(spl,"periodic")
+         CALL spline_int(spl)
 
-      CALL spline_eval(sq,psi,0)
-      dphi=0
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         bpfac=psio*delpsi(itheta)/r(itheta)
-         btfac=sq%f(1)/(twopi*r(itheta))
-         bfac=SQRT(bpfac*bpfac+btfac*btfac)
-         fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-         spl%fs(itheta,1)=fac/(r(itheta)**ri*rfac**rci)*
-     $        bpfac**bpi*bfac**bi
-         spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
-     $        (bpfac**bpi*bfac**bi)
-         IF (ti .EQ. 0) THEN
-            dphi(itheta)=rzphi%f(3)
-         ENDIF
-      ENDDO
-
-      CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
-
-      CALL spline_fit(spl,"periodic")
-      CALL spline_int(spl)
-
-      ! coordinate angle at dcon angle
-      thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
+         ! coordinate angle at dcon angle
+         thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
+         DO itheta=0,mthsurf
+            ! dcon angle at coordinate angle
+            thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
+            ! jacobian at coordinate angle
+            CALL spline_eval(spl,thetai,0)
+            jacfac(itheta)=spl%f(2)
+         ENDDO
+         ! surface area
+         jarea=0
+         DO itheta=0,mthsurf-1
+            jarea=jarea+jacfac(itheta)/mthsurf
+         ENDDO
+      ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.
 c-----------------------------------------------------------------------
+      ! functional form of dcon fourier vector
+      CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
       ! take toroidal factor from dcon angle
       IF (ti .EQ. 0) THEN
          ftnfun=ftnfun*EXP(ifac*nn*dphi)
@@ -743,27 +761,17 @@ c-----------------------------------------------------------------------
             ftnfun(itheta)=ftnfun(itheta)+
      $           ftnmn(i)*EXP(ifac*twopi*amf(i)*thetai)
          ENDDO
-
          ! take toroidal factor back for coordinate angle
          IF (ti .NE. 0) THEN
             ftnfun(itheta)=ftnfun(itheta)*
      $           EXP(-twopi*ifac*nn*sq%f(4)*(thetai-theta(itheta)))
          ENDIF
-
-         ! jacobian at coordinate angle
-         CALL spline_eval(spl,thetai,0)
-         jacfac(itheta)=spl%f(2)
       ENDDO
-         
+      ! optional jacobian wieghting
       IF (ji .EQ. 1) THEN
-         jarea=0
-         DO itheta=0,mthsurf-1
-            jarea=jarea+jacfac(itheta)/mthsurf
-         ENDDO
          ftnfun=ftnfun*jacfac/jarea
       ENDIF
-   
-      CALL spline_dealloc(spl)
+      ! forward transform function to coordinate fourier spectrum
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     terminate.

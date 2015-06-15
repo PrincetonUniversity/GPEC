@@ -12,6 +12,7 @@ c      3. ipresp_sinduct
 c      4. ipresp_permeab
 c      5. ipresp_reluct
 c      6. ipresp_indrel
+c      7. ipresp_reluct
 c-----------------------------------------------------------------------
 c     subprogram 0. ipresp_mod.
 c     module declarations.
@@ -357,7 +358,6 @@ c-----------------------------------------------------------------------
          DO i=1,mpert
             temp2(i,i)=temp1(i,i)
          ENDDO
-         !temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
          reluctevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
@@ -430,33 +430,68 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j,lwork
-      INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
       COMPLEX(r8), DIMENSION(mpert) :: temp
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,temp1,temp2,work2
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,temp1
+
+      INTEGER :: lworko
+      REAL(r8), DIMENSION(3*lmpert-2) :: rworko
+      COMPLEX(r8), DIMENSION(2*lmpert-1) :: worko
+      COMPLEX(r8), DIMENSION(lmpert) :: tempo
+      COMPLEX(r8), DIMENSION(lmpert,lmpert) :: sqrtao,temp1o
 c-----------------------------------------------------------------------
 c     calculate sqrt(A) weighting matrix.
 c-----------------------------------------------------------------------
       DO i=1,mpert
          temp = 0
-         temp(i) = 1+1*ifac
-         CALL ipeq_weight(psilim,binmn,mfac,mpert,2)
+         temp(i) = 1.0
+         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
          sqrta(:,i) = temp
       ENDDO
 c-----------------------------------------------------------------------
-c     Re-calculate eigenvectors and eigenvalues
+c     Calculate power eigenvectors and eigenvalues in DCON coordinates
+c       - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
 c-----------------------------------------------------------------------
-      ALLOCATE(reluctpowev(0:4,mpert),reluctpowevmats(0:4,mpert,mpert))
+      ALLOCATE(reluctpinev(0:4,mpert),reluctpinevmats(0:4,mpert,mpert))
       DO j=0,4
          work=0
          rwork=0
          lwork=2*mpert-1
-         temp1=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),sqrta)
-         CALL zheev('V','U',mpert,temp1,mpert,reluctpowev(j,:),work,
+         reluctpinmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
+     $                                      sqrta)
+         temp1=reluctpinmats(j,:,:)
+         CALL zheev('V','U',mpert,temp1,mpert,reluctpinev(j,:),work,
      $        lwork,rwork,info)
-         reluctpowevmats(j,:,:)=temp1
+         reluctpinevmats(j,:,:)=temp1
       ENDDO
+c-----------------------------------------------------------------------
+c     Convert to output coordinates 
+c-----------------------------------------------------------------------
+      IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+         ALLOCATE(reluctpoutmats(0:4,lmpert,lmpert),
+     $    reluctpoutev(0:4,lmpert),reluctpoutevmats(0:4,lmpert,lmpert))
+         reluctpoutmats=0
+         DO k=1,4
+            ! convert normalized reluctance matrix to jac_out
+            DO j=1,mpert
+               DO i=1,mpert
+                   IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert))
+     $               reluctpoutmats(k,mlow-lmlow+i,j)=reluctpinmats(i,j)
+               ENDDO
+               CALL ipeq_bcoords(psilim,reluctpoutmats(k,:,j),lmfac,
+     $              lmpert,rout,bpout,bout,rcout,tout,0)
+            ENDDO
+            ! re-calculate eigenvectors and eigenvalues
+            worko=0
+            rworko=0
+            lworko=2*lmpert-1
+            temp1o=reluctpoutmats(k,:,:)
+            CALL zheev('V','U',lmpert,temp1o,lmpert,reluctpoutev(k,:),
+     $           worko,lworko,rworko,info)
+            reluctpoutevmats(j,:,:)=temp1
+         ENDDO
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
