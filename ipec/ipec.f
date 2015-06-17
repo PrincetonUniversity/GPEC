@@ -172,7 +172,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,*)"Starting ipec calculations - v3.00"
+      IF(verbose) WRITE(*,*)""
+      IF(verbose) WRITE(*,*)"IPEC START => "//TRIM(version)
+      IF(verbose) WRITE(*,*)"__________________________________________"
       CALL ascii_open(in_unit,"ipec.in","OLD")
       READ(in_unit,NML=ipec_input)
       READ(in_unit,NML=ipec_control)  

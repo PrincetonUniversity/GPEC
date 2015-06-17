@@ -5,6 +5,7 @@ c-----------------------------------------------------------------------
       MODULE ipglobal_mod
       USE bicube_mod
       USE fspline_mod
+      USE global_mod, ONLY: version
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -177,7 +178,7 @@ c-----------------------------------------------------------------------
          ELSE
              PRINT *,"Total cpu time for IPEC = ",secs," seconds"
          ENDIF
-         WRITE(*,'(1x,2a)')'IPEC_STOP=>',TRIM(message)
+         WRITE(*,'(1x,2a)')'IPEC STOP => ',TRIM(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     termination.
