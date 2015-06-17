@@ -9,8 +9,8 @@ FC = gfortran
 
 LIBDIR = \
 	-L../lib \
-	-L/usr/lib
+	-L/usr/lib \
 
 FCLIBS = \
-	-llapack.dylib
+	-llapack.dylib \
 	-lblas.dylib

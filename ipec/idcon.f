@@ -772,6 +772,8 @@ c     read vacuum.bin from vacuum code.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_vacuum
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      REAL(r8) :: kernelsignin
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
@@ -790,11 +792,14 @@ c     get grri and grre matrices by calling mscvac functions.
 c-----------------------------------------------------------------------
       ELSE
          PRINT *,'------',mthvac,mtheta,mthsurf,nths2
-         CALL mscvac(wv,mpert,mthsurf,mthsurf,nfm2,nths2,.TRUE.,-1.0)
+         kernelsignin = -1.0
+         CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
+     $               kernelsignin)
          PRINT *,'------',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
          ALLOCATE(grri(nths2,nfm2))
          CALL grrget(nfm2,nths2,grri)
-         CALL mscvac(wv,mpert,mthsurf,mthsurf,nfm2,nths2,.TRUE.,1.0)
+         CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
+     $               kernelsignin)
          ALLOCATE(grre(nths2,nfm2))
          CALL grrget(nfm2,nths2,grre) ! grre is nths2 by nfm2 by definition
       ENDIF
