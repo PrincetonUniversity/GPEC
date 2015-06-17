@@ -2676,7 +2676,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)
      $      "Computing vacuum fields by surface currents"
          CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
          IF (helicity<0) THEN
             vbr=CONJG(vbr)
@@ -2707,7 +2707,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)"Computing total perturbed fields"
          bnomn=bnomn-bnimn
          CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
@@ -2888,7 +2888,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)"Computing total perturbed fields"
          bnomn=bnomn-bnimn
          CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
@@ -2901,7 +2901,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)
      $      "Computing vacuum fields without plasma response"
          CALL ipvacuum_bnormal(psilim,bnimn,nr,nz)
-         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp)
          IF (helicity<0) THEN
             vvbr=CONJG(vvbr)
@@ -3198,7 +3198,7 @@ c-----------------------------------------------------------------------
      $     TRIM(ss)//"th resonant field"
       CALL ipvacuum_bnormal(singtype(snum)%psifac,
      $     singbno_mn(:,snum),nr,nz)
-      CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+      CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $     nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
       IF (helicity<0) THEN
          vbr=CONJG(vbr)

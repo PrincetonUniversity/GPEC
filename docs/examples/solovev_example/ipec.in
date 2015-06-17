@@ -72,10 +72,8 @@
 	flux_flag=f					! Write outputs to (psi,theta) in addition to default (psi,m)
 	bin_flag=t					! Write binary outputs for use with xdraw
 	bin_2d_flag=t				! Write 2D binary outputs for use with xdraw
-	max_linesout=0				! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
 /
 &IPEC_DIAGNOSE
-    debug_flag = .T.
 	div_flag=f					! ??
 	radvar_flag=t				! ??
 /

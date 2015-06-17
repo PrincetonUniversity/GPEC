@@ -535,15 +535,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     return into original coordinates.
 c-----------------------------------------------------------------------
-      DO itheta=0,mthvac-1
-         rtheta=mthvac-itheta
+      DO itheta=0,mthsurf-1
+         rtheta=mthsurf-itheta
          chi_fun(itheta+1)=(grri_real(rtheta)-ifac*grri_imag(rtheta))
      $        *EXP(-ifac*nn*dphi(itheta+1))
          che_fun(itheta+1)=(grre_real(rtheta)-ifac*grre_imag(rtheta))
      $        *EXP(-ifac*nn*dphi(itheta+1))
       ENDDO
-      chi_fun(0)=chi_fun(mthvac)
-      che_fun(0)=che_fun(mthvac)
+      chi_fun(0)=chi_fun(mthsurf)
+      che_fun(0)=che_fun(mthsurf)
 c-----------------------------------------------------------------------
 c     normalize chi functions of vacuum.
 c-----------------------------------------------------------------------
@@ -574,8 +574,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     fourier transform and compute necessary matrices.
 c-----------------------------------------------------------------------
-      CALL iscdftb(mfac,mpert,chp_fun(2,:),mthvac,chp_mn(2,:))
-      CALL iscdftb(mfac,mpert,chp_fun(4,:),mthvac,chp_mn(4,:))
+      CALL iscdftb(mfac,mpert,chp_fun(2,:),mthsurf,chp_mn(2,:))
+      CALL iscdftb(mfac,mpert,chp_fun(4,:),mthsurf,chp_mn(4,:))
       DO j=1,4
          kap_fun(j,:)=(chp_fun(j,:)-che_fun(:))/mu0
          CALL iscdftf(mfac,mpert,kap_fun(j,:),mthsurf,kap_mn(j,:))
