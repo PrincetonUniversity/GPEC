@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: chptsq,chpdsq
 
       COMPLEX(r8), DIMENSION(2,mpert) :: chpwmn,chpdif,chpwif
+      IF(debug_flag) PRINT *, "Entering ipresp_eigen"      
 c-----------------------------------------------------------------------
 c     build ideal solutions.
 c-----------------------------------------------------------------------
@@ -106,6 +107,7 @@ c-----------------------------------------------------------------------
          DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
       ENDDO
       DEALLOCATE(grri,grre)
+      IF(debug_flag) PRINT *, "->Leaving ipresp_eigen"      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -357,7 +359,7 @@ c-----------------------------------------------------------------------
          DO i=1,mpert
             temp2(i,i)=temp1(i,i)
          ENDDO
-         temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
+         !temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
          reluctevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------

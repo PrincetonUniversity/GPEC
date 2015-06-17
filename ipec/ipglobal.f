@@ -5,23 +5,25 @@ c-----------------------------------------------------------------------
       MODULE ipglobal_mod
       USE bicube_mod
       USE fspline_mod
+      USE global_mod, ONLY: version
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       LOGICAL :: power_flag,fft_flag,edge_flag,pbrzphi_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
      $     vbrzphi_flag,vvbrzphi_flag,div_flag,
-     $     data_flag,harmonic_flag,mode_flag,svd_flag,resp_flag,
+     $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
-     $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose
+     $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
+     $     debug_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
-     $     nche,nchr,nchz,rsing,rnqty,rnx,
+     $     nche,nchr,nchz,rsing,rnqty,rnx,max_linesout,
      $     pmode,p1mode,rmode,dmode,d1mode,fmode,smode ! LOGAN
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
@@ -39,8 +41,6 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(-hmnum:hmnum) :: sinmn
       REAL(r8), DIMENSION(-hmnum:hmnum) :: cosmn
-      REAL(r8), DIMENSION(0:2*hmnum) :: svdfac = 0
-      
 
       INTEGER, DIMENSION(8) :: values
 
@@ -159,11 +159,27 @@ c-----------------------------------------------------------------------
       SUBROUTINE ipec_stop(message)
 
       CHARACTER(*), INTENT(IN) :: message
+      INTEGER :: hrs,mins,secs
+
       CALL DATE_AND_TIME(date,time,zone,values)
       seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
      $     -seconds
-      IF(verbose) WRITE(*,*)"Total cpu time for ipec=",seconds,"seconds"
-      IF(verbose) WRITE(*,'(1x,2a)')'IPEC_STOP=>',TRIM(message)
+      secs = int(seconds)
+      hrs = secs/(60*60)
+      mins = (secs-hrs*60*60)/60
+      secs = secs-hrs*60*60-mins*60
+      IF (verbose) THEN
+         IF(hrs>0)THEN
+             PRINT *,"Total cpu time for IPEC = ",hrs," hours, ",
+     $           mins," minutes, ",secs," seconds"
+         ELSEIF(mins>0)then
+             PRINT *,"Total cpu time for IPEC = ",
+     $           mins," minutes, ",secs," seconds"
+         ELSE
+             PRINT *,"Total cpu time for IPEC = ",secs," seconds"
+         ENDIF
+         WRITE(*,'(1x,2a)')'IPEC STOP => ',TRIM(message)
+      ENDIF
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------

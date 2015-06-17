@@ -1,5 +1,99 @@
 !@PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE
 
+
+module spline_help
+
+    use params, only: r8
+    use spline_mod, only: spline_type,spline_eval
+
+    implicit none
+    
+    contains
+    
+    !=======================================================================
+    subroutine spline_roots(roots,spl,iqty)
+    !----------------------------------------------------------------------- 
+    !*DESCRIPTION: 
+    !   Find roots of a single spline quantity.
+    !
+    !*ARGUMENTS:
+    !    roots : real, 1D allocatable (out)
+    !       Zeros of the spline quantity.
+    !    spl : spline_type (inout)
+    !       Spline.
+    !    iqty : integer (in)
+    !       Spline quantity used.
+    !
+    !*RETURNS:
+    !     real array.
+    !        Zeros of spl%f(iqty).
+    !-----------------------------------------------------------------------
+        ! declarations.
+        implicit none
+        integer, intent(in) :: iqty
+        type(spline_type) :: spl
+        real(r8), dimension(:), allocatable :: roots
+        ! declare variables
+        integer :: iroot,it,ix,nroots
+        integer, parameter :: itmax=20
+        real(r8), parameter :: eps=1e-10
+        real(r8) :: x,dx,lx,lf,f,df
+    
+        ! compute number of roots
+        lx=spl%xs(spl%mx)-spl%xs(0)
+        iroot = 1
+        lf = maxval(spl%fs(:,iqty))-minval(spl%fs(:,iqty))
+        nroots = 0
+        do ix=1,spl%mx
+           if(spl%fs(ix,iqty)*spl%fs(ix-1,iqty) .le. 0.0) nroots=nroots+1
+           !zeros counted twice
+           if(spl%fs(ix,iqty)==0.0 .and. ix<spl%mx) nroots=nroots-1 
+        enddo
+        if(spl%periodic .and. spl%fs(spl%mx,iqty)==0) nroots=nroots-1
+        if(allocated(roots)) deallocate(roots)
+        allocate(roots(1:nroots))
+    
+        ! find all zero passings, intialize at larger gradient.
+        do ix=1,spl%mx
+           ! dont calculate exact zeros twice
+           if(spl%fs(ix,iqty)==0.0 .and. ix<spl%mx) cycle
+           if(spl%fs(ix,iqty)==0.0 .and. spl%periodic) cycle
+           ! find crossing window
+           if (spl%fs(ix,iqty)*spl%fs(ix-1,iqty) .le. 0.0) then
+              x = sum(spl%xs(ix-1:ix))/2.0 ! first estimate
+              f=huge(f)
+              dx=lx
+              it=0
+              ! locate roots by newton iteration.
+              do
+                 call spline_eval(spl,x,1)
+                 df=spl%f(iqty)-f
+                 if(abs(dx) < eps*lx .or. abs(df) < eps*lf .or. it >= itmax)exit
+                 it=it+1
+                 f=spl%f(iqty)
+                 dx=-spl%f(iqty)/spl%f1(iqty)
+                 x=x+dx
+              enddo
+              ! abort on failure.
+              if(it >= itmax)then
+                 !x=spl%xs(ix)
+                 !if(spl%fs(ix,iqty) .lt. 0.0) x = spl%xs(ix-1)
+                 write(*,*) "WARNING: roots convergence failure!"
+                 write(*,*) "-- failure accured at index ",ix
+                 write(*,*) "-- indexed x value ",spl%xs(ix)
+                 write(*,*) "-- estimated root ",x
+              endif
+              !store each root, and allocate it to the spline.
+              roots(iroot) = x
+              iroot = iroot+1
+           endif
+        enddo
+        return
+        end subroutine spline_roots
+
+end module spline_help
+
+
 module torque
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
@@ -44,6 +138,7 @@ module torque
     implicit none
     
     real(r8) :: tatol = 1e-3, trtol= 1e-6
+    real(r8) :: psi_warned = 0.0
     logical :: tdebug
     integer :: nlmda=128, ntheta=128
     
@@ -493,12 +588,15 @@ module torque
                         vpar = vspl%f(1) ! more consistent w/ bnce pts than direct from tspl
                         if(vpar<=0)then ! local zero between nodes
                             if(lmda>lmdatpe .or. lmda<(2*lmdatpb-lmdatpe))then ! expected near t/p bounry
-                                print('(a61,es10.3E2)'), "WARNING: vpar zero crossing &
-                                        &internal to magnetic well at psi ",psi
-                                print('(2x,es10.3E2,a4,es10.3E2,a4,es10.3E2)'),&
-                                    t1," <= ",tdt(1,i)," <= ",t2
-                                print *, "  -> Lambda, t/p boundry = ",lmda,lmdatpb
-                                print *, "  -> consider changing mtheta in equil.in"
+                                if(ABS(psi_warned-psi)>0.1)then !avoid flood of warnings
+                                    print('(2x,a61,es10.3E2)'), "WARNING: vpar zero crossing &
+                                            &internal to magnetic well at psi ",psi
+                                    print('(2x,es10.3E2,a4,es10.3E2,a4,es10.3E2)'),&
+                                        t1," <= ",tdt(1,i)," <= ",t2
+                                    print *, "  -> Lambda, t/p boundry = ",lmda,lmdatpb
+                                    print *, "  -> consider changing mtheta in equil.in"
+                                    psi_warned = psi
+                                endif
                             endif
                             if(i<ntheta/2)then
                                 bspl%fs(:i-1,1) = 0
@@ -856,6 +954,8 @@ module torque
         
         common /tcom/ wdcom,dxcom,methcom
         
+        ! set module variables
+        psi_warned = 0.0
         ! set common variables
         wdcom = wdfac
         dxcom = divxfac
@@ -1088,6 +1188,8 @@ module torque
         
         common /tcom/ wdcom,dxcom,methcom
         
+        ! set module variables
+        psi_warned = 0.0
         ! set common variables
         wdcom = wdfac
         dxcom = divxfac
@@ -1403,95 +1505,4 @@ end module torque
 
 
 
-module spline_help
-
-    use params, only: r8
-    use spline_mod, only: spline_type,spline_eval
-
-    implicit none
-    
-    contains
-    
-    !=======================================================================
-    subroutine spline_roots(roots,spl,iqty)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
-    !   Find roots of a single spline quantity.
-    !
-    !*ARGUMENTS:
-    !    roots : real, 1D allocatable (out)
-    !       Zeros of the spline quantity.
-    !    spl : spline_type (inout)
-    !       Spline.
-    !    iqty : integer (in)
-    !       Spline quantity used.
-    !
-    !*RETURNS:
-    !     real array.
-    !        Zeros of spl%f(iqty).
-    !-----------------------------------------------------------------------
-        ! declarations.
-        implicit none
-        integer, intent(in) :: iqty
-        type(spline_type) :: spl
-        real(r8), dimension(:), allocatable :: roots
-        ! declare variables
-        integer :: iroot,it,ix,nroots
-        integer, parameter :: itmax=20
-        real(r8), parameter :: eps=1e-10
-        real(r8) :: x,dx,lx,lf,f,df
-    
-        ! compute number of roots
-        lx=spl%xs(spl%mx)-spl%xs(0)
-        iroot = 1
-        lf = maxval(spl%fs(:,iqty))-minval(spl%fs(:,iqty))
-        nroots = 0
-        do ix=1,spl%mx
-           if(spl%fs(ix,iqty)*spl%fs(ix-1,iqty) .le. 0.0) nroots=nroots+1
-           !zeros counted twice
-           if(spl%fs(ix,iqty)==0.0 .and. ix<spl%mx) nroots=nroots-1 
-        enddo
-        if(spl%periodic .and. spl%fs(spl%mx,iqty)==0) nroots=nroots-1
-        if(allocated(roots)) deallocate(roots)
-        allocate(roots(1:nroots))
-    
-        ! find all zero passings, intialize at larger gradient.
-        do ix=1,spl%mx
-           ! dont calculate exact zeros twice
-           if(spl%fs(ix,iqty)==0.0 .and. ix<spl%mx) cycle
-           if(spl%fs(ix,iqty)==0.0 .and. spl%periodic) cycle
-           ! find crossing window
-           if (spl%fs(ix,iqty)*spl%fs(ix-1,iqty) .le. 0.0) then
-              x = sum(spl%xs(ix-1:ix))/2.0 ! first estimate
-              f=huge(f)
-              dx=lx
-              it=0
-              ! locate roots by newton iteration.
-              do
-                 call spline_eval(spl,x,1)
-                 df=spl%f(iqty)-f
-                 if(abs(dx) < eps*lx .or. abs(df) < eps*lf .or. it >= itmax)exit
-                 it=it+1
-                 f=spl%f(iqty)
-                 dx=-spl%f(iqty)/spl%f1(iqty)
-                 x=x+dx
-              enddo
-              ! abort on failure.
-              if(it >= itmax)then
-                 !x=spl%xs(ix)
-                 !if(spl%fs(ix,iqty) .lt. 0.0) x = spl%xs(ix-1)
-                 write(*,*) "WARNING: roots convergence failure!"
-                 write(*,*) "-- failure accured at index ",ix
-                 write(*,*) "-- indexed x value ",spl%xs(ix)
-                 write(*,*) "-- estimated root ",x
-              endif
-              !store each root, and allocate it to the spline.
-              roots(iroot) = x
-              iroot = iroot+1
-           endif
-        enddo
-        return
-        end subroutine spline_roots
-
-end module spline_help
 

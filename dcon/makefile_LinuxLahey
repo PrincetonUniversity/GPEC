@@ -1,22 +1,18 @@
-# This is the makefile for DCON on LinuxLahey computers.
+# FC, LIBDIR and FCLIBS are set in the platform-specific included file
+include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -I../equil -g
-F90 = lf95 $(FFLAGS)
+FFLAGS = -I../equil
+F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
-
-LIBDIR = \
-	-L../lib/LinuxLahey \
-	-L/usr/pppl/lff95/6.20c/lapack-3.0
 
 LIBS = \
 	$(LIBDIR) \
 	-llsode \
 	-lequil \
 	-lvac \
-	-llapack \
-	-lblas
+	$(FCLIBS)
 
 OBJS = \
 	debug.o \

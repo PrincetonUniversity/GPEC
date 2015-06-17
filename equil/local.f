@@ -180,7 +180,7 @@ c     write completion message.
 c-----------------------------------------------------------------------
       CALL timer(1,out_unit)
       CALL ascii_close(out_unit)
-      WRITE(*,'(1x,2a)') 'PROGRAM_STOP => ', TRIM(message)
+      WRITE(*,'(1x,2a)') 'DCON STOP => ', TRIM(message)
 c-----------------------------------------------------------------------
 c     write completion message.
 c-----------------------------------------------------------------------

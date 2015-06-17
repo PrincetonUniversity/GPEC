@@ -292,12 +292,12 @@ c-----------------------------------------------------------------------
 c     get grri and grre matrices by calling mscvac functions.
 c-----------------------------------------------------------------------
       kernelsignin=-1.0
-      CALL mscvac(vwv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
+      CALL mscvac(vwv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
      $     kernelsignin)
       ALLOCATE(vgrri(nths2,nfm2))
       CALL grrget(nfm2,nths2,vgrri)
       kernelsignin=1.0
-      CALL mscvac(vwv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
+      CALL mscvac(vwv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
      $     kernelsignin)
       ALLOCATE(vgrre(nths2,nfm2))
       CALL grrget(nfm2,nths2,vgrre)
@@ -325,15 +325,15 @@ c-----------------------------------------------------------------------
          grre_real=MATMUL(vgrre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
          grre_imag=MATMUL(vgrre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))            
          
-         DO itheta=0,mthvac-1
-            rtheta=mthvac-itheta
+         DO itheta=0,mthsurf-1
+            rtheta=mthsurf-itheta
             chi_fun(itheta+1)=(grri_real(rtheta)-
      $           ifac*grri_imag(rtheta))*EXP(-ifac*nn*dphi(itheta+1))
             che_fun(itheta+1)=(grre_real(rtheta)-
      $           ifac*grre_imag(rtheta))*EXP(-ifac*nn*dphi(itheta+1))
          ENDDO
-         chi_fun(0)=chi_fun(mthvac)
-         che_fun(0)=che_fun(mthvac)
+         chi_fun(0)=chi_fun(mthsurf)
+         che_fun(0)=che_fun(mthsurf)
          !jacobian with twopi angles.
          chi_fun=chi_fun/(twopi**2)
          che_fun=-che_fun/(twopi**2)         

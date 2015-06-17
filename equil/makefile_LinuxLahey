@@ -1,8 +1,9 @@
-# This is the makefile for EQUIL on LinuxLahey computers.
+# FC is set in the platform-specific included file
+include ../install/make.inc.${GPEC_PLATFORM}
 
 FFLAGS = -g
 
-F90 = lf95 $(FFLAGS)
+F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
@@ -27,8 +28,8 @@ OBJS = \
 	equil_out.o
 
 libequil: $(OBJS)
-	mkdir -p ../lib/LinuxLahey
-	ar -r ../lib/LinuxLahey/libequil.a *.o
+	mkdir -p ../lib/
+	ar -r ../lib/libequil.a *.o
 
 # dependencies
 

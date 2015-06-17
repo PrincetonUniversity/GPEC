@@ -51,6 +51,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
+      IF(verbose) WRITE(*,*)""
+      IF(verbose) WRITE(*,*)"DCON START => "//TRIM(version)
+      IF(verbose) WRITE(*,*)"__________________________________________"
       CALL timer(0,out_unit)
       CALL ascii_open(in_unit,"dcon.in","OLD")
       READ(UNIT=in_unit,NML=dcon_control)

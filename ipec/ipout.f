@@ -177,190 +177,6 @@ c-----------------------------------------------------------------------
          ENDDO 
       ENDDO
 
-c      b=wt
-c      ev=et
-c
-c      WRITE(out_unit,*)"DCON xi^psi eigenvectors"
-c      WRITE(out_unit,*)
-c      DO i=1,mpert
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,'(1x,a12,es12.3)')"eigenvalue =",ev(i)
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(W)","imag(W)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c         ENDDO 
-c         WRITE(out_unit,*)
-c      ENDDO
-c      
-c      IF(eft(1)>0)THEN
-c         b=wft
-c         ev=eft
-c         
-c         WRITE(out_unit,*)"DCON Phi^psi eigenvectors"
-c         WRITE(out_unit,*)
-c         DO i=1,mpert
-c            WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c            WRITE(out_unit,'(1x,a12,es12.3)')"eigenvalue =",ev(i)
-c            WRITE(out_unit,*)
-c            WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(W_Phi)",
-c     $                     "imag(W_Phi)"
-c            DO j=1,mpert
-c               WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $              mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c            ENDDO 
-c            WRITE(out_unit,*)
-c         ENDDO
-c      ENDIF
-c      
-c      b=surf_indevmats
-c      ev=surf_indev
-c
-c      WRITE(out_unit,*)"Vacuum inductance eigenvectors"
-c      WRITE(out_unit,*)
-c      DO i=1,mpert
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,'(1x,a12,es12.3)')"eigenvalue =",ev(i)
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(L)","imag(L)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c         ENDDO 
-c         WRITE(out_unit,*)
-c      ENDDO
-c      
-c      b=plas_indevmats(resp_index,:,:)
-c      ev=plas_indev(resp_index,:)
-c
-c      WRITE(out_unit,*)"Plasma inductance eigenvectors"
-c      WRITE(out_unit,*)
-c      DO i=1,mpert
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,'(1x,a12,es12.3)')"eigenvalue =",ev(i)
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(L)","imag(L)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c         ENDDO
-c         WRITE(out_unit,*) 
-c      ENDDO
-c
-c      b=reluctevmats(resp_index,:,:)
-c      ev=reluctev(resp_index,:)
-c
-c      WRITE(out_unit,*)"Reluctance eigenvectors"
-c      WRITE(out_unit,*) 
-c      DO i=1,mpert
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,'(1x,a12,es12.3)')"eigenvalue =",ev(i)
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(rho)","imag(rho)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c         ENDDO 
-c         WRITE(out_unit,*) 
-c      ENDDO
-c
-c      b=permeabevmats(resp_index,:,:)
-c      cev=permeabev(resp_index,:)
-c
-c      WRITE(out_unit,*)"Permeability eigenvectors"
-c      WRITE(out_unit,*) 
-c      DO i=1,mpert
-c         k=permeabindex(resp_index,i)
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,'(2(1x,a19,es12.3))')
-c     $        "real(eigenvalue) =",REAL(cev(k)),
-c     $        "imag(eigenvalue) =",AIMAG(cev(k))
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(P)","imag(P)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,k)),AIMAG(b(j,k))
-c         ENDDO 
-c         WRITE(out_unit,*) 
-c      ENDDO
-c      
-c      b=permv(:,:)
-c      ev=perms(:)
-c
-c      WRITE(out_unit,*)"Plasma Response (P-I) eigenvectors"
-c      WRITE(out_unit,*) 
-c      DO i=1,mpert
-c         k=permeabindex(resp_index,i)
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,'(1x,a12,es12.3)')"eigenvalue =",ev(i)
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(R)","imag(R)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))') mfac(j),b(j,k)
-c         ENDDO 
-c         WRITE(out_unit,*) 
-c      ENDDO
-c
-c      b=surf_indmats
-c
-c      WRITE(out_unit,*)"Vacuum inductance matrix"
-c      WRITE(out_unit,*) 
-c      DO i=1,mpert
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(L)","imag(L)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c         ENDDO 
-c         WRITE(out_unit,*) 
-c      ENDDO
-c
-c      b=plas_indmats(resp_index,:,:)
-c
-c      WRITE(out_unit,*)"Plasma inductance matrix"
-c      WRITE(out_unit,*) 
-c      DO i=1,mpert
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(L)","imag(L)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c         ENDDO 
-c         WRITE(out_unit,*) 
-c      ENDDO
-c
-c      b=reluctmats(resp_index,:,:)
-c
-c      WRITE(out_unit,*)"Reluctance matrix"
-c      WRITE(out_unit,*) 
-c      DO i=1,mpert
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(rho)","imag(rho)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c         ENDDO 
-c         WRITE(out_unit,*) 
-c      ENDDO
-c
-c      b=permeabmats(resp_index,:,:)
-c      WRITE(out_unit,*)"Permeability matrix"
-c      WRITE(out_unit,*) 
-c      DO i=1,mpert
-c         WRITE(out_unit,'(1x,a6,I4)')"mode =",i
-c         WRITE(out_unit,*)
-c         WRITE(out_unit,'(1x,a4,2(1x,a12))')"m","real(P)","imag(P)"
-c         DO j=1,mpert
-c            WRITE(out_unit,'(1x,I4,2(1x,es12.3))')
-c     $           mfac(j),REAL(b(j,i)),AIMAG(b(j,i))
-c         ENDDO 
-c         WRITE(out_unit,*) 
-c      ENDDO
-c      
       CALL ascii_close(out_unit)
       
       ! LOGAN - Eigenvectors on control surface in functions
@@ -961,9 +777,7 @@ c-----------------------------------------------------------------------
          CALL ipeq_weight(psilim,tempmn,mfac,mpert,1)              
       ENDIF
 c-----------------------------------------------------------------------
-c     LOGAN - Include or exclude SVD modes
-c      -> svdfac(0:1) = 0  1 applies only the svd1 parallel  fields
-c      -> svdfac(1:1) = 1 -1 applies only the svd1 perpendictular fields
+c     LOGAN - Isolate singular coupling SVD modes
 c-----------------------------------------------------------------------
       finmn=finmn+tempmn
       IF(smode>0)THEN
@@ -1014,35 +828,6 @@ c-----------------------------------------------------------------------
           CALL ipeq_weight(psilim,finmn,mfac,mpert,2)
         ENDIF
        DEALLOCATE(eigmn)
-c       ! collect contributions from each svd mode in output coords
-c       norm = SQRT(ABS(DOT_PRODUCT(finmn,finmn))) 
-c       vinmn = 0
-c       DO i=1,msing
-c          fin1v = 0
-c          eigmn = t1v(:,i)/SQRT(ABS(DOT_PRODUCT(t1v(:,i),t1v(:,i))))
-c          IF(norm==0)THEN    ! no other applied fields, normalized to 10Gauss
-c             fin1v = eigmn !t1v is b, w1v is bsqrtA
-c          ELSE                ! manipulate component of b_x in svd direction
-c             fin1v(:) = eigmn*DOT_PRODUCT(eigmn,sbno_mn(:))      ! need Re+Im for phase info
-c          ENDIF
-c          vinmn=vinmn+svdfac(i)*fin1v
-c       ENDDO
-c       ! back to working coords and area weighted spectrum
-c       IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-c           jout = 1
-c           CALL ipeq_fcoords(psilim,vinmn,lmfac,lmpert,
-c    $          rout,bpout,bout,rcout,tout,jout)
-c       ENDIF
-c       tempmn = 0
-c       DO i=1,mpert
-c           IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-c              tempmn(i) = vinmn(mlow-lmlow+i)
-c           ENDIF
-c       ENDDO
-c       CALL ipeq_weight(psilim,tempmn,mfac,mpert,1) ! 2 for w1v?
-c       ! final inclusion of manipulated SVD modes
-c       finmn = svdfac(0)*finmn+tempmn
-c       DEALLOCATE(sbno_mn,sbno_fun,vinmn,fin1v,eigmn)
       ENDIF
 c-----------------------------------------------------------------------
 c     LOGAN - Isolate drive parallel to permeability eigenmodes
@@ -1050,6 +835,7 @@ c-----------------------------------------------------------------------
       IF (pmode>0) THEN
           PRINT *,'Isolating drive || to first ',pmode,
      $            ' flux permeability eigenmodes'
+          PRINT *,' **WARNING: This is not a valid orthoganal basis.**'
           ALLOCATE(eigmn(mpert))
           tmpmn = finmn
           finmn = 0
@@ -1057,7 +843,6 @@ c-----------------------------------------------------------------------
               eigmn = permeabevmats(resp_index,:,i)
               eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
               finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $               -eigmn*DOT_PRODUCT(eigmn,finmn) ! Overlap from non-orthonormal vectors
           ENDDO
           DEALLOCATE(eigmn)
       ENDIF
@@ -1114,7 +899,7 @@ c-----------------------------------------------------------------------
 c     LOGAN - Isolate plasma or total perturbation parallel to a DCON eigenmode
 c-----------------------------------------------------------------------
       ALLOCATE(eigmn(mpert))
-      IF (d1mode>0) THEN
+      IF (d1mode>0) THEN ! This is unphysical. The response can have resonant components (shielding).
           PRINT *,'Isolating response || to first ',d1mode,
      $            ' DCON eigenmodes'
           tmpmn = (foutmn-finmn)/(chi1*twopi*ifac*(mfac-nn*qlim))
@@ -1371,7 +1156,7 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
          ENDDO
       ENDIF
       ! Calculate the overlap Resonant Field SVD modes with DCON eigenmodes
-      IF (sc_flag .OR. svd_flag) THEN
+      IF (sc_flag) THEN
         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
           ALLOCATE(eigmn(lmpert))
           DO j=1,msing
@@ -1396,7 +1181,7 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
         t1vev = MATMUL(CONJG(TRANSPOSE(permeabevmats(resp_index,:,:))),
      $                 t1v_type)
         x1vev = MATMUL(CONJG(TRANSPOSE(wt)),x1v_type)
-        ! Write the overlap for the first 9 svd modes
+        ! Write the overlap for the svd modes
         WRITE(out_unit,*) 
         WRITE(out_unit,*) "Flux SVD modes in the Permeability (Phi) "
      $    //"and DCON (xi) eigenbases"
@@ -1411,81 +1196,6 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
         ENDDO
       ENDIF
       CALL ascii_close(out_unit)
-
-      ! LOGAN - Output the DCON eignemodes on the control surface
-      !         is now in ipec_response_n*.out
-c     IF(eigm_flag)THEN
-c     CALL ascii_open(out_unit,"ipec_dconcontrol_n"//
-c    $     TRIM(sn)//".out","UNKNOWN")
-c     WRITE(out_unit,*)"IPEC_DCONCONTROL: "//
-c    $     "DCON Eigenmodes on the control surface"
-c     WRITE(out_unit,*)
-c     WRITE(out_unit,'(1x,a12,I4)')"mpert =",mpert
-c     WRITE(out_unit,*)
-c
-c     WRITE(out_unit,*)"jac_type = "//jac_type
-c     WRITE(out_unit,*)"mpert = ",mpert
-c     WRITE(out_unit,*)
-c     mout = MIN(12,mpert)-2
-c     WRITE(header,'(a4,1x,a4,6(1x,a16))') "m","i","real(x)","imag(x)",
-c    $      "real(b)","imag(b)"
-c     WRITE(out_unit,*) trim(header)
-c     DO i=1,mpert
-c       DO j=1,mpert
-c         WRITE(out_unit,'(2(1x,I4),6(1x,es16.8))') mfac(i),j,
-c    $     wt(i,j),bwt(i,j)
-c       ENDDO
-c     ENDDO
-c     WRITE(out_unit,*)
-c
-c     IF ((jac_in /= jac_type).OR.(tin==0).OR.(jin==1)) THEN
-c        wt_tmp = wt*1.0
-c        bwt_tmp = bwt*1.0
-c        DO i=1,mpert
-c          CALL ipeq_bcoords(psilim,wt_tmp(:,i),mfac,mpert,
-c    $          rin,bpin,bin,rcin,tin,jin)
-c          CALL ipeq_bcoords(psilim,bwt_tmp(:,i),mfac,mpert,
-c    $          rin,bpin,bin,rcin,tin,jin)
-c        ENDDO
-c        WRITE(out_unit,'(1x,a13,a8,1x,2(a12,I2))')"jac_in = ",jac_in,
-c    $        "jsurf_in =",jin,"tmag_in =",tin
-c        WRITE(out_unit,*)
-c        WRITE(out_unit,*) trim(header)
-c        DO i=1,mpert
-c          DO j=1,mpert
-c            WRITE(out_unit,'(2(1x,I4),4(1x,es16.8))') mfac(i),j,
-c    $        wt_tmp(i,j),bwt(i,j)
-c          ENDDO
-c        ENDDO
-c        WRITE(out_unit,*)       
-c     ENDIF
-c
-c     IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-c        jout=0
-c        wt_tmp = wt*1.0
-c        bwt_tmp = bwt*1.0
-c        DO i=1,mpert
-c          CALL ipeq_bcoords(psilim,wt_tmp(:,i),mfac,mpert,
-c    $          rout,bpout,bout,rcout,tout,jout) 
-c          CALL ipeq_bcoords(psilim,bwt_tmp(:,i),mfac,mpert,
-c    $          rout,bpout,bout,rcout,tout,jout) 
-c        ENDDO 
-c        WRITE(out_unit,'(1x,a13,a8,1x,2(a12,I2))')"jac_out = ",jac_out,
-c    $        "jsurf_out =",jout,"tmag_out =",tout  
-c        WRITE(out_unit,*)          
-c        WRITE(out_unit,*) trim(header)
-c        DO i=1,mpert
-c          DO j=1,mpert
-c            WRITE(out_unit,'(2(1x,I4),4(1x,es16.8))') mfac(i),j,
-c    $        wt_tmp(i,j),bwt(i,j)
-c          ENDDO
-c        ENDDO
-c        WRITE(out_unit,*)
-c        
-c     ENDIF
-c     CALL ascii_close(out_unit)
-c     ENDIF
-
 
 
       IF (fun_flag) THEN
@@ -1993,7 +1703,7 @@ c-----------------------------------------------------------------------
      $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
      $     "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
      $     "imag(Bkxprp)"
-      DO istep=1,mstep
+      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
          DO ipert=1,mpert
             WRITE(out_unit,'(1x,es16.8,1x,I4,8(1x,es16.8))')
      $           psifac(istep),mfac(ipert),
@@ -2107,7 +1817,7 @@ c-----------------------------------------------------------------------
      $        "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
      $        "imag(Bkxprp)","equilb","dequilbdpsi","dequilbdtheta",
      $        "real(xms)","imag(xms)"
-         DO istep=1,mstep,MAX(1,mstep/256)
+         DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
             CALL ipeq_sol(psifac(istep))
             CALL ipeq_contra(psifac(istep))         
             CALL ipeq_cova(psifac(istep))
@@ -2286,7 +1996,7 @@ c-----------------------------------------------------------------------
      $     "real(xno)","imag(xno)","real(bno)","imag(bno)",
      $     "real(bwp)","imag(bwp)"
 
-      DO istep=1,mstep
+      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
          DO ipert=1,mpert
             WRITE(out_unit,'(2(1x,es16.8),1x,I4,6(1x,es16.8))')
      $           psifac(istep),qfac(istep),mfac(ipert),
@@ -2309,7 +2019,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
      $        "real(bwp)","imag(bwp)"
          
-         DO istep=1,mstep
+         DO istep=1,mstep,MAX(1,(mstep*lmpert-1)/max_linesout+1)
             DO ipert=1,lmpert
                WRITE(out_unit,'(2(1x,es16.8),1x,I4,6(1x,es16.8))')
      $              psifac(istep),qfac(istep),lmfac(ipert),
@@ -2332,7 +2042,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(10(1x,a16))')"psi","theta","r","z","rvec",
      $        "zvec","real(xno)","imag(xno)","real(bno)","imag(bno)"
          
-         DO istep=1,mstep,MAX(1,mstep/256)
+         DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
             DO itheta=0,mthsurf
                WRITE(out_unit,'(10(1x,es16.8))')
      $              psifac(istep),theta(itheta),
@@ -2457,7 +2167,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(7(1x,a16))')"r","z","real(r)","imag(r)",
      $        "real(z)","imag(z)","psi"   
          
-         DO istep=1,mstep
+         DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
             DO itheta=0,mthsurf
                WRITE(out_unit,'(7(1x,es16.8))')
      $              rs(istep,itheta),zs(istep,itheta),
@@ -2718,7 +2428,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
      $     "real(xta)","imag(xta)","real(bta)","imag(bta)"
 
-      DO istep=1,mstep
+      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
          DO ipert=1,mpert
             WRITE(out_unit,'(2(1x,es16.8),1x,I4,4(1x,es16.8))')
      $           psifac(istep),qfac(istep),mfac(ipert),
@@ -2742,7 +2452,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(8(1x,a16))')"r","z","rvec","zvec",
      $        "real(xta)","imag(xta)","real(bta)","imag(bta)"
          
-         DO istep=1,mstep,MAX(1,mstep/256)
+         DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
             DO itheta=0,mthsurf
                WRITE(out_unit,'(8(1x,es16.8))')
      $              rs(istep,itheta),zs(istep,itheta),
@@ -2966,7 +2676,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)
      $      "Computing vacuum fields by surface currents"
          CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
          IF (helicity<0) THEN
             vbr=CONJG(vbr)
@@ -2997,7 +2707,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)"Computing total perturbed fields"
          bnomn=bnomn-bnimn
          CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
@@ -3178,7 +2888,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)"Computing total perturbed fields"
          bnomn=bnomn-bnimn
          CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
@@ -3191,7 +2901,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)
      $      "Computing vacuum fields without plasma response"
          CALL ipvacuum_bnormal(psilim,bnimn,nr,nz)
-         CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp)
          IF (helicity<0) THEN
             vvbr=CONJG(vvbr)
@@ -3488,7 +3198,7 @@ c-----------------------------------------------------------------------
      $     TRIM(ss)//"th resonant field"
       CALL ipvacuum_bnormal(singtype(snum)%psifac,
      $     singbno_mn(:,snum),nr,nz)
-      CALL mscfld(wv,mpert,mthvac,mthvac,nfm2,nths2,complex_flag,
+      CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $     nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
       IF (helicity<0) THEN
          vbr=CONJG(vbr)
@@ -3633,7 +3343,7 @@ c-----------------------------------------------------------------------
      $     "real(xp)","imag(xp)","real(br)","imag(br)",
      $     "real(bz)","imag(bz)","real(bp)","imag(bp)"
 
-      DO istep=1,mstep
+      DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
          DO itheta=0,mthsurf
             WRITE(out_unit,'(14(1x,es16.8))')
      $           rs(istep,itheta),zs(istep,itheta),
@@ -3765,7 +3475,7 @@ c-----------------------------------------------------------------------
      $     "real(eap)","imag(eap)","real(arr)","imag(arr)",
      $     "real(arz)","imag(arz)","real(arp)","imag(arp)"
 
-      DO istep=1,mstep
+      DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
          DO itheta=0,mthsurf
             WRITE(out_unit,'(14(1x,es16.8))')
      $           rs(istep,itheta),zs(istep,itheta),
@@ -3862,7 +3572,7 @@ c-----------------------------------------------------------------------
      $   "real(derxi^psi)","imag(derxi^psi)",
      $   "real(xi^psi)","imag(xi^psi)",
      $   "real(xi^alpha)","imag(xi^alpha)"
-      DO istep=1,mstep
+      DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
          DO ipert=1,mpert
             WRITE(out_unit,'(1x,es23.15,1x,I4,6(1x,es16.8))')
      $         psifac(istep),mfac(ipert),xmp1mns(istep,ipert),

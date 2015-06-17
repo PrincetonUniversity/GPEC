@@ -20,7 +20,7 @@ Python at PPPL
 To set up python on portal at PPPL, insert the 
 following lines into your .bashrc file:
 
-  export PYTHONPATH=$PYTHONPATH:/p/gpec/users/nlogan/ipec_3.00/nlogan
+  export PYTHONPATH=$PYTHONPATH:/path/to/gpec
   module load anaconda
   
 ..note: Anaconda is the most complete and current python distribution
@@ -28,10 +28,11 @@ available at pppl. Users can also use locally built python/2.7.2, but
 will loose 3D plotting capabilities and may experience problems reading
 large data files.
 
+Obviously, "/path/to/gpec" needs to be replaced with the path
+to your installation of the GPEC package (containing the pypec directory).
+
 For tcsh shell users, replace export with setenv syntax
-and insert in .cshrc. For gpec owners, 
-replace /p/gpec/users/nlogan/ipec_3.00/nlogan 
-with the top level directory for your own branch of ipec if you have one.
+and insert in .cshrc.
 
 ..note: Mayavi's default gui api is not consistent with the anaconda
 interactive python default. To enable 3D plotting, you must add
@@ -43,10 +44,7 @@ To put the changes into effect:
 
 Users are futher encouraged to create a matplotlib rc file in
 user ~/.config/matplotlib similar to /u/nlogan/.config/matplotlib/matplotlibrc.
-This file sets a number of plotting defaults,
-
-..note: 
-
+This file sets a number of plotting defaults.
 
 
 Python Tutorials
@@ -89,12 +87,9 @@ are recomended to edit ~/.matplotlib/matplotlibrc and
 
 Now in the ipython envirnment, type
 
->>> from pypec import *
-WARNING: Mayavi not in python path
-WARNING: USING PORTAL - "use -w 24:00:00 -l mem=8gb" recomended for heavy computation
+>>> from pypec import gpec,data # doctest:+ELLIPSIS
 
-This will import a number of modules, the most important of which
-are  gpec, and data. There may be a few warnings/hints... ignore them for now.
+There may be a few warnings/hints... take them or leave them.
 
 
 """

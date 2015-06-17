@@ -65,7 +65,6 @@ from string import join                 # string manipulation
 
 #in this package
 import data                             # read/write .out files
-import _defaults_
 import namelist                         # read/write fortran namelist .in files
 from _bashjob_ import bashjob            # bash script skeleton
 try:
@@ -79,7 +78,7 @@ if os.getenv('HOST').startswith('sunfire'):
 # make sure package is in path
 packagedir = join(os.path.abspath(__file__).split('/')[:-2],'/')+'/' # one directory up
 sys.path.insert(0,packagedir+'pypec')
-sys.path.insert(0,packagedir+'rundir/'+_defaults_.rundir)
+sys.path.insert(0,packagedir+'bin')
 
 
 np.norm = np.linalg.norm
@@ -100,7 +99,7 @@ class InputSet:
         Tree like storage of namelist objects.
 
     """
-    def __init__(self,rundir=packagedir+'rundir/'+_defaults_.rundir,indir=packagedir+'input'):
+    def __init__(self,rundir=packagedir+'bin',indir=packagedir+'input'):
         """
         Initializes the intance.
 
@@ -111,7 +110,7 @@ class InputSet:
             Location of .in namelist files to read.
 
         """
-        self.rundir = rundir
+        self.rundir = rundir.rstrip('/')+'/' # want ending /
         self.indir = indir.rstrip('/')+'/' # want ending /
 
         self.infiles ={}
@@ -153,9 +152,9 @@ def _newloc(loc):
 
 
 def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=False,
-        rundcon=True,runipec=True,runpent=True,runpentrc=False,fill_inputs=False,
-        mailon=_defaults_.mailon,email=_defaults_.email,mem=1e4,optpentrc=False,
-        pent_tol=0,**kwargs):
+        rundcon=True,runipec=True,runpentrc=True,fill_inputs=False,
+        mailon='ae',email='',mem=1e4,
+        runpent=False,optpentrc=False,pent_tol=0,**kwargs):
     """
     Python wrapper for running ipec package.
     
@@ -174,8 +173,6 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         Run dcon.
       runipec  : bool. 
         Run ipec.
-      runpent  : bool. 
-        Run pent.
       runpentrc : bool.
         Run pentrc.
       fill_inputs : bool. 
@@ -188,12 +185,18 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
       mem : float
         Memory request of q-submission in megabytes (converted to integer).
     
-    Deprecated Arguments:
+    Deprecated Key Word Arguments:
+      runpent : bool.
+        Run deprecated pent program.
       optpentrc : bool.
         Run OPENTRC executable pentrc optimization (under construction).
       pent_tol : float. 
         Acceptable torque error. pent_tol>0 tries maskpsi of 32,16,4,2,1 
         until convergence or 1. Forced to 0 when qsub is true.
+    ..note::
+      Deprecated kwrags are kept for a time so as to avoid incorrect assumption
+      that they are input files.
+    
     
       kwargs   : dict. 
         namelist instance(s) written to <kwarg>.in file(s).
@@ -240,11 +243,8 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         print('Writting '+key+'.in from keyword argument.')
         namelist.write(kwargs[key],key+'.in') #over-write if exists
     
-    print('Using base package '+rundir)
+    print('Using package from '+rundir)
     if rundir != loc:
-        # get all supporting data files
-        os.system('cp '+packagedir+'coil/*.dat .')
-        os.system('cp '+packagedir+'pent/*.dat .')
         # fill missing input files 
         if fill_inputs:
             localins=[f for f in os.listdir('.') if f[-3:]=='.in' and f[:4]!='draw']
@@ -253,6 +253,18 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
             for infile in missedins:
                 print('Copying '+infile+' from rundir.')
                 os.system('cp '+rundir+'/'+infile+' .')
+        # path to package data files
+        if os.path.isfile('coil.in'):
+            coil = namelist.read('coil.in')
+            if 'data_dir' not in coil['COIL_CONTROL']:
+                coil['COIL_CONTROL']['data_dir'] = packagedir+'coil'
+        if os.path.isfile('pentrc.in'):
+            pentrc = namelist.read('pentrc.in')
+            if 'data_dir' not in pentrc['PENT_INPUT']:
+                pentrc['PENT_INPUT']['data_dir'] = packagedir+'pentrc'
+        # get all supporting data files (NOTE:: not necessary with new data_dir inputs)
+        #os.system('cp '+packagedir+'coil/*.dat .')
+        #os.system('cp '+packagedir+'pent/*.dat .')
 
     
     # actual run
@@ -263,7 +275,6 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         exelist=''
         if rundcon: exelist+=rundir+'/dcon \n'
         if runipec: exelist+=rundir+'/ipec \n'
-        if runpent: exelist+=rundir+'/pent \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
         if optpentrc: exelist+=rundir+'/OPENTRC \n'
         jobstr = bashjob.replace('jobnamehere',jobname)
@@ -287,27 +298,6 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         print(rundir+'/dcon')
         if rundcon: os.system(rundir+'/dcon')
         if runipec: os.system(rundir+'/ipec')
-        if runpent:
-            # pent tolerance tests
-            if pent_tol>0:
-                old_tphi,new_tphi = 0,0
-                err = 1.0
-                nn = namelist.read('dcon.in')['DCON_CONTROL']['nn']
-                if not 'pent' in kwargs: 
-                    kwargs['pent'] = namelist.read('pent.in')
-                if kwargs['pent']['PENT_CONTROL']['maskpsi'] < 32:
-                    kwargs['pent']['PENT_CONTROL']['maskpsi'] = 32
-                while err>tol and kwargs['pent']['PENT_CONTROL']['maskpsi']>0:
-                    print('Rewritting pent.in with maskpsi = '+
-                          str(kwargs['pent']['PENT_CONTROL']['maskpsi']))
-                    namelist.write(kwargs[key],key+'.in') #over-write
-                    os.system(rundir+'/pent')
-                    pentdata = data.read('pent_n{}.out'.format(nn),quiet=True)
-                    new_tphi = pentdata[0].params['total(T_phi)']
-                    err = np.abs((old_tphi-new_tphi)/new_tphi)
-                    kwargs['pent']['PENT_CONTROL']['maskpsi']/=2
-            else:
-                os.system(rundir+'/pent')
         if runpentrc: os.system(rundir+'/pentrc')
         if optpentrc: os.system(rundir+'/OPENTRC')
         # clean up
