@@ -17,6 +17,7 @@ Contents:
    outputs.rst
    dcon_readme.rst
    namelists.rst
+   examples.rst
    source_documentation.rst
    developers.rst
    contact.rst
