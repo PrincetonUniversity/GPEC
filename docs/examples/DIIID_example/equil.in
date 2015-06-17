@@ -1,0 +1,26 @@
+
+&EQUIL_CONTROL
+   eq_type = "efit"
+   eq_filename = "g147131.02300_DIIID_KEFIT"
+   jac_type = "hamada"
+   power_bp = 0
+   power_b = 0
+   power_r = 0
+   grid_type = "ldp"
+   psilow = 0.0001
+   psihigh = 0.993
+   mpsi = 128
+   mtheta = 256
+   newq0 = 0
+   input_only = .FALSE.
+/
+&EQUIL_OUTPUT
+   gse_flag = .TRUE.
+   out_eq_1d = .FALSE.
+   bin_eq_1d = .FALSE.
+   out_eq_2d = .FALSE.
+   bin_eq_2d = .TRUE.
+   out_2d = .FALSE.
+   bin_2d = .TRUE.
+   dump_flag = .FALSE.
+/

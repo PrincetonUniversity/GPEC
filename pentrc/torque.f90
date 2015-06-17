@@ -138,6 +138,7 @@ module torque
     implicit none
     
     real(r8) :: tatol = 1e-3, trtol= 1e-6
+    real(r8) :: psi_warned = 0.0
     logical :: tdebug
     integer :: nlmda=128, ntheta=128
     
@@ -587,12 +588,15 @@ module torque
                         vpar = vspl%f(1) ! more consistent w/ bnce pts than direct from tspl
                         if(vpar<=0)then ! local zero between nodes
                             if(lmda>lmdatpe .or. lmda<(2*lmdatpb-lmdatpe))then ! expected near t/p bounry
-                                print('(a61,es10.3E2)'), "WARNING: vpar zero crossing &
-                                        &internal to magnetic well at psi ",psi
-                                print('(2x,es10.3E2,a4,es10.3E2,a4,es10.3E2)'),&
-                                    t1," <= ",tdt(1,i)," <= ",t2
-                                print *, "  -> Lambda, t/p boundry = ",lmda,lmdatpb
-                                print *, "  -> consider changing mtheta in equil.in"
+                                if(ABS(psi_warned-psi)>0.1)then !avoid flood of warnings
+                                    print('(2x,a61,es10.3E2)'), "WARNING: vpar zero crossing &
+                                            &internal to magnetic well at psi ",psi
+                                    print('(2x,es10.3E2,a4,es10.3E2,a4,es10.3E2)'),&
+                                        t1," <= ",tdt(1,i)," <= ",t2
+                                    print *, "  -> Lambda, t/p boundry = ",lmda,lmdatpb
+                                    print *, "  -> consider changing mtheta in equil.in"
+                                    psi_warned = psi
+                                endif
                             endif
                             if(i<ntheta/2)then
                                 bspl%fs(:i-1,1) = 0
@@ -950,6 +954,8 @@ module torque
         
         common /tcom/ wdcom,dxcom,methcom
         
+        ! set module variables
+        psi_warned = 0.0
         ! set common variables
         wdcom = wdfac
         dxcom = divxfac
@@ -1182,6 +1188,8 @@ module torque
         
         common /tcom/ wdcom,dxcom,methcom
         
+        ! set module variables
+        psi_warned = 0.0
         ! set common variables
         wdcom = wdfac
         dxcom = divxfac

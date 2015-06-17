@@ -5,6 +5,7 @@ c-----------------------------------------------------------------------
       MODULE ipglobal_mod
       USE bicube_mod
       USE fspline_mod
+      USE global_mod, ONLY: version
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -14,7 +15,8 @@ c-----------------------------------------------------------------------
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
-     $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose
+     $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
+     $     debug_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
@@ -176,7 +178,7 @@ c-----------------------------------------------------------------------
          ELSE
              PRINT *,"Total cpu time for IPEC = ",secs," seconds"
          ENDIF
-         WRITE(*,'(1x,2a)')'IPEC_STOP=>',TRIM(message)
+         WRITE(*,'(1x,2a)')'IPEC STOP => ',TRIM(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     termination.

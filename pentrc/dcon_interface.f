@@ -49,11 +49,11 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), POINTER :: fixstep,mfac,lmfac
 
       REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
-     $     r,z,theta,et,ep,ee
+     $     r,z,theta,et,ep,ee,eft,efp
 
       COMPLEX(r8), DIMENSION(:), POINTER ::
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wft,
      $     amat,bmat,cmat,fmats,gmats,kmats
 
       TYPE(spline_type) :: sq
@@ -201,6 +201,13 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+        CASE(5)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE DEFAULT
             WRITE(message,'(a,i1,a,i4)')"Cannot recognize data_type = ",
      $           data_type,", at istep = ",istep
@@ -220,6 +227,7 @@ c-----------------------------------------------------------------------
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
       ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
+      ALLOCATE(eft(mpert),efp(mpert),wft(mpert,mpert))
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       in_unit = get_free_file_unit(-1)
@@ -286,6 +294,13 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%rho,
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
+         CASE(5)
+            READ(UNIT=in_unit)ep
+            READ(UNIT=in_unit)et
+            READ(UNIT=in_unit)wt
+            READ(UNIT=in_unit)efp
+            READ(UNIT=in_unit)eft
+            READ(UNIT=in_unit)wft
          END SELECT
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
@@ -301,6 +316,9 @@ c-----------------------------------------------------------------------
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
+      eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+      efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+      wft=wft*(chi1*1e-3)
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
 c-----------------------------------------------------------------------

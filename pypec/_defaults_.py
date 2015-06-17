@@ -5,12 +5,11 @@ Edit this file to set the defaults for your pypec package.
 
 """
 
+import os
+
 ######################### gpec run default keyword arguments
-email    = 'jpark@pppl.gov'
+email    = os.getlogin()+'@pppl.gov'
 mailon   = 'ae'
-rundir   = 'LinuxLahey64'
-
-
 
 ######################### gui defaults
 
@@ -19,6 +18,4 @@ inputdir = "."
 # inputs used
 inputs   = ['equil','dcon','ipec','coil','pent']
 # temp file location for brute editing (this is the temp dir in this dir)
-import os
-from string import join
-tempdir  = join(os.path.abspath(__file__).split('/')[:-1],'/')+'/temp'
+tempdir  = '~/GPEC/temp'

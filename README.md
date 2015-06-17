@@ -7,16 +7,8 @@ The primary purpose of this package is to calculated the nonaxisymmetric force b
 
 Note that the DCON code was developed by Allen Glasser at Los Alamos National Laboratory, while IPEC and PENTRC were developed and are maintained by the GPEC team at the Princeton Plasma Physics Laboratory.
 
-Installation
--------------
-
-Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install the package.
-
-To compile a new release of GPEC the user must set the GPEC_PLATFORM variable to a value appropriate for their archetecture and fortran compiler. The available options can be obtained by examining the suffixes of the install/make.inc.* files. Additional instuctions, if necessary, for each case can be found in the header of the corresponding file.
-
-
 Development
----------------
+------------
 
 There is a `Github repository <https://github.com/PrincetonUniversity/GPEC>`_ for this package to facilitate version control and collaborative contributions.
 
@@ -24,12 +16,12 @@ To become a contributor to the GPEC package, contact nlogan@pppl.gov to be added
 
 On the PPPL portal computers, navigate to a directory in which you want to do your development (something like /p/gpec/users/<username>/gpec) and use following commands::
 
-   git clone <copied-url-from-github> develop
-   cd develop
+   git clone <copied-url-from-github> gpec
+   cd gpec
    git checkout -b develop
    git pull origin develop
 
-This will create a directory 'develop' and with the developmental branch of the repository in it. For more on branches, see the section below. For compile instructions, see above. Now you are free to add/edit files in this branch. Be sure to use:: 
+This will create a directory 'gpec' and with the developmental branch of the repository in it. For more on branches, see the workflow section below. For compile instructions, see the install section. Now you are free to add/edit files in this branch. Be sure to use:: 
 
    git add <new-file>
 

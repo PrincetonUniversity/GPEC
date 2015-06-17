@@ -1,0 +1,227 @@
+GPEC DIII-D Example
+====================
+
+This example uses a baseline H-mode Error Field Correction (EFC) plasma from a n=1 EFC study done in 2013. The equilibrium used is a kinetic EFIT from DIII-D shot 147131 at 2300ms, and the profiles are self consistent with the equilibrium. Pre-GPEC results using a combination of IPEC and PENT for this calculation are published in `[C. Paz-Soldan, M. J. Lanctot, N. C. Logan, et al., Phys. Plasmas 21, 072503 (2014).] <http://scitation.aip.org/content/aip/journal/pop/21/7/10.1063/1.4886795>`_.
+
+Note that the coil and pentrc input namelists use relative paths to the package's data files. If you would like to run the example in a different location, you must change the input appropriately.
+
+Following a typical workflow we first cd to the example's directory, then run DCON::
+
+  dcon
+   
+   DCON START => GPEC version 0.1.0
+   __________________________________________
+   psihigh = 9.930E-01
+   Equilibrium: g147131.02300_DIIID_KEFIT, Type: efit
+   Jac_type = hamada, power_bp = 0, power_b = 0, power_r = 0
+   Diagnosing Grad-Shafranov solution
+   Evaluating Mercier criterion
+   Evaluating ballooning criterion
+   Fourier analysis of metric tensor components
+   q0 =  1.062E+00, qmin =  1.062E+00, qmax =  5.321E+00, q95 =  4.228E+00
+   sas_flag = T, dmlim =  2.000E-01, qlim =  5.200E+00, psilim =  9.915E-01
+   betat =  2.184E-02, betan =  1.905E+00, betap1 =  7.977E-01
+   nn =   1, mlow = -12, mhigh =  21, mpert =  34, mband =  33
+   Computing F, G, and K Matrices
+   Starting integration of ODE's
+   psi = 1.000E-04, q =  1.062
+   psi = 5.936E-01, q =  2.000
+   psi = 8.186E-01, q =  3.000
+   psi = 9.282E-01, q =  4.000
+   psi = 9.884E-01, q =  5.000
+   psi = 9.915E-01, q =  5.200
+   Computing free boundary energies
+   Energies: plasma = -1.754E+00, vacuum =  2.485E+00, total =  7.309E-01
+   All free-boundary modes stable for nn =  1.
+   Total cpu time =  8.328E+00 seconds
+   DCON STOP => Normal termination.
+
+
+From the positive total energy, we see that the plasma is reasonably stable for n=1 perturbations. Totals are often of this order 1e0-1e-2, while numbers of order 1e-3 or smaller might be considered approching instability and require some investigation. It is
+always a good idea to check any solution, using xdraw or just skimming dcon.out.
+
+Satisfied with the DCON result, we run IPEC::
+
+  ipec
+   
+   IPEC START => GPEC version 0.1.0
+   __________________________________________
+   Reading dcon eigenfuctions
+   Counting and reading dcon solutions
+   mlow =  -12 , mhigh =  21 , mpert =  34
+   mstep =  1574 , mfix =  17 , msing =  4
+   Recontructing flux functions and metric tensors
+   Reading vacuum energy matrices
+   Calculating field on the boundary from coils
+   Building free boundary solutions
+   eigenmode =   1, dw = -2.364E-03, error =  3.608E-09
+   eigenmode =   2, dw =  3.918E-01, error =  1.151E-12
+   eigenmode =   3, dw =  1.413E+00, error =  1.776E-11
+   eigenmode =   4, dw =  2.932E+00, error =  4.966E-12
+   eigenmode =   5, dw =  3.617E+00, error =  6.209E-12
+   eigenmode =   6, dw =  4.939E+00, error =  5.212E-12
+   eigenmode =   7, dw =  7.459E+00, error =  4.384E-12
+   eigenmode =   8, dw =  1.033E+01, error =  3.098E-12
+   eigenmode =   9, dw =  1.050E+01, error =  7.427E-12
+   eigenmode =  10, dw =  1.301E+01, error =  4.758E-12
+   eigenmode =  11, dw =  1.602E+01, error =  4.668E-12
+   eigenmode =  12, dw =  1.760E+01, error =  2.422E-11
+   eigenmode =  13, dw =  1.913E+01, error =  5.817E-12
+   eigenmode =  14, dw =  2.227E+01, error =  6.625E-12
+   eigenmode =  15, dw =  2.553E+01, error =  6.178E-12
+   eigenmode =  16, dw =  2.650E+01, error =  4.967E-11
+   eigenmode =  17, dw =  2.876E+01, error =  6.067E-12
+   eigenmode =  18, dw =  3.129E+01, error =  3.658E-11
+   eigenmode =  19, dw =  3.229E+01, error =  5.655E-13
+   eigenmode =  20, dw =  3.677E+01, error =  1.296E-11
+   eigenmode =  21, dw =  3.718E+01, error =  3.762E-11
+   eigenmode =  22, dw =  4.168E+01, error =  1.153E-11
+   eigenmode =  23, dw =  4.429E+01, error =  2.995E-11
+   eigenmode =  24, dw =  5.306E+01, error =  2.081E-11
+   eigenmode =  25, dw =  6.506E+01, error =  1.280E-11
+   eigenmode =  26, dw =  8.191E+01, error =  8.032E-12
+   eigenmode =  27, dw =  9.998E+01, error =  7.700E-12
+   eigenmode =  28, dw =  1.069E+02, error =  5.822E-12
+   eigenmode =  29, dw =  1.389E+02, error =  1.135E-12
+   eigenmode =  30, dw =  1.347E+02, error =  1.387E-11
+   eigenmode =  31, dw =  1.374E+02, error =  1.473E-11
+   eigenmode =  32, dw =  2.171E+02, error =  6.004E-12
+   eigenmode =  33, dw =  2.329E+02, error =  9.530E-12
+   eigenmode =  34, dw =  6.934E+02, error =  2.111E-12
+   Calculating inductrances and permeability
+   Single mode permeability =  7.923E+00
+   Required energy to perturb vacuum =  9.309E+00
+   Required energy to perturb plasma =  3.862E+00
+   Amplification factor =  2.411E+00
+   Computing total resonant fields
+   psi =  5.936E-01, q =  2.000, total resonant field =  3.705E-04
+   psi =  8.186E-01, q =  3.000, total resonant field =  2.805E-04
+   psi =  9.282E-01, q =  4.000, total resonant field =  5.450E-05
+   psi =  9.884E-01, q =  5.000, total resonant field =  4.211E-04
+   Computing Clebsch displacements
+   volume =  10% Clebsch decomposition
+   volume =  20% Clebsch decomposition
+   volume =  30% Clebsch decomposition
+   volume =  40% Clebsch decomposition
+   volume =  50% Clebsch decomposition
+   volume =  60% Clebsch decomposition
+   volume =  70% Clebsch decomposition
+   volume =  80% Clebsch decomposition
+   volume =  90% Clebsch decomposition
+   volume = 100% Clebsch decomposition
+   Total cpu time for IPEC =  27  seconds
+   IPEC STOP => Normal termination.
+
+
+Here we see the plasma has a single mode permeability ~8, meaning that the application of the first permeability eigenmode on the plasma control surface would result in a total flux (external + plasma response) 8 times the applied mode. The full permeability eigenmode and eigevector information can be found in ipec_response_n1.out. We also see a preview of the resonant field information, a more detailed collection of which is in ipec_singfld_n1.out. Finally, we have told IPEC to calculate and output the clebsch coordinate displacments in ipec_xclebsch_n1.out. This becomes an input for PENT.
+
+Finally, we run PENT::
+
+  pentrc
+   
+   PENTRC START => GPEC version 0.1.0
+   __________________________________________
+   clearing working directory
+  rm: cannot remove `pentrc_*.out': No such file or directory
+   Set idconfile:
+     euler.bin
+   Reading dcon eigenfuctions
+   Counting and reading dcon solutions
+   mlow =  -12 , mhigh =  21 , mpert =  34
+   mstep =  1574 , mfix =  17 , msing =  4
+   Recontructing flux functions and metric tensors
+   Computing perturbed b field for gpec
+   Reading table from file: 
+     g147131.02300_DIIID_KEFIT.kin
+   Reading table from file: 
+     ipec_xclebsch_n1.out
+     -> WARNING: Assuming DCON hamada coordinates
+     -> calculating deltaB/B, divxi_prp
+     |----------|   0% iterations complete
+     |oo--------|  20% iterations complete
+     |oooo------|  40% iterations complete
+     |oooooo----|  60% iterations complete
+     |oooooooo--|  80% iterations complete
+     |oooooooooo| 100% iterations complete
+   PENTRC - full general-aspect-ratio calculation
+    psi = 0.0  -> T_phi =   7.63E-05  1.36E-04j
+    psi = 0.1  -> T_phi =   1.42E-02  5.57E-03j
+    psi = 0.2  -> T_phi =   2.26E-02  5.39E-03j
+    psi = 0.3  -> T_phi =   2.50E-02  9.84E-03j
+    psi = 0.4  -> T_phi =   2.80E-02  1.49E-02j
+    WARNING: vpar zero crossing internal to magnetic well at psi  4.783E-01
+     5.000E-01 <=  5.006E-01 <=  1.500E+00
+     -> Lambda, t/p boundry =  0.7737391481753563 0.7737464409937628
+     -> consider changing mtheta in equil.in
+    psi = 0.5  -> T_phi =   3.56E-02  2.03E-02j
+    psi = 0.6  -> T_phi =   4.20E-02  2.21E-02j
+    WARNING: vpar zero crossing internal to magnetic well at psi  6.333E-01
+     5.000E-01 <=  1.497E+00 <=  1.500E+00
+     -> Lambda, t/p boundry =  0.7299058478670797 0.7299127275381094
+     -> consider changing mtheta in equil.in
+    psi = 0.7  -> T_phi =   4.32E-02  2.33E-02j
+    psi = 0.8  -> T_phi =   5.03E-02  2.12E-02j
+    WARNING: vpar zero crossing internal to magnetic well at psi  8.265E-01
+     4.844E-01 <=  1.481E+00 <=  1.484E+00
+     -> Lambda, t/p boundry =  0.6744367173720330 0.6744430742230700
+     -> consider changing mtheta in equil.in
+    psi = 0.9  -> T_phi =   5.55E-02  3.58E-02j
+    WARNING: vpar zero crossing internal to magnetic well at psi  9.326E-01
+     4.492E-01 <=  4.495E-01 <=  1.449E+00
+     -> Lambda, t/p boundry =  0.6424701444514599 0.6424762000040400
+     -> consider changing mtheta in equil.in
+   ---------------------------------------------
+           Total torque =  4.263E-001
+   Total Kinetic Energy =  2.657E-002
+               alpha/s  = -8.022E+000
+   ---------------------------------------------
+    WARNING: vpar zero crossing internal to magnetic well at psi  8.000E-01
+     4.844E-01 <=  4.847E-01 <=  1.484E+00
+     -> Lambda, t/p boundry =  0.6821990656221174 0.6822054956365666
+     -> consider changing mtheta in equil.in
+    WARNING: vpar zero crossing internal to magnetic well at psi  4.575E-01
+     5.039E-01 <=  1.502E+00 <=  1.504E+00
+     -> Lambda, t/p boundry =  0.7797137521775525 0.7797211013091262
+     -> consider changing mtheta in equil.in
+   PENTRC - trapped particle general-aspect-ratio calculation
+    psi = 0.0  -> T_phi =   9.05E-05  1.38E-04j
+    psi = 0.1  -> T_phi =   1.41E-02  3.46E-03j
+    psi = 0.2  -> T_phi =   2.25E-02 -9.46E-05j
+    psi = 0.3  -> T_phi =   2.49E-02  1.45E-03j
+    psi = 0.4  -> T_phi =   2.74E-02  4.33E-03j
+    psi = 0.5  -> T_phi =   3.56E-02  7.62E-03j
+    psi = 0.6  -> T_phi =   4.18E-02  7.99E-03j
+    psi = 0.7  -> T_phi =   4.31E-02  8.85E-03j
+    psi = 0.8  -> T_phi =   5.07E-02  5.19E-03j
+    psi = 0.9  -> T_phi =   5.42E-02  1.97E-02j
+   ---------------------------------------------
+           Total torque =  4.027E-001
+   Total Kinetic Energy =  1.002E-002
+               alpha/s  = -2.010E+001
+   ---------------------------------------------
+   PENTRC - reduced large-aspect-ratio calculation
+   Reading F^-1/2_mnl from file:
+     ../../../pentrc/fkmnl.dat
+    psi = 0.0  -> T_phi =   7.47E-06  1.01E-04j
+    psi = 0.1  -> T_phi =   9.18E-01  2.02E-01j
+    psi = 0.2  -> T_phi =   1.40E+00  1.76E+00j
+    psi = 0.3  -> T_phi =   1.66E+00  5.13E+00j
+    psi = 0.4  -> T_phi =   1.94E+00  1.07E+01j
+    psi = 0.5  -> T_phi =   2.33E+00  1.74E+01j
+    psi = 0.6  -> T_phi =   2.98E+00  2.32E+01j
+    psi = 0.7  -> T_phi =   3.62E+00  3.68E+01j
+    psi = 0.8  -> T_phi =   6.27E+00  5.75E+01j
+    psi = 0.9  -> T_phi =   1.47E+01  3.04E+02j
+   ---------------------------------------------
+           Total torque =  2.039E+003
+   Total Kinetic Energy = -2.748E+002
+               alpha/s  =  3.710E+000
+   ---------------------------------------------
+   total cpu time =  8  minutes,  0  seconds
+  PENTRC STOP => Normal termination.
+
+
+..note:: The warnings about magnetic wells are ok in this case.
+
+We see that the full and trapped-only calculations of the torque agree reasonably well, which is consistent with the understanding that particles on banana orbits dominate the nonambipolar transport. The RLAR result in this case is orders of magnitude off, but does have generaly the correct qualitative behavior.
+

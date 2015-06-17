@@ -69,8 +69,9 @@ c-----------------------------------------------------------------------
       IF (mlow<mmin) lmlow=mlow 
       IF (mhigh>mmax) lmhigh=mhigh
       lmpert=lmhigh-lmlow+1
-      IF (mthsurf < 4*MAX(ABS(mlow),mhigh))
-     $    mthsurf = 4*MAX(ABS(mlow),mhigh)
+      IF (mthsurf <=0) mthsurf=mthvac
+      IF (mthsurf < 4*(2*MAX(ABS(mlow),mhigh)))
+     $    mthsurf = 4*(2*MAX(ABS(mlow),mhigh)) ! 4 times the nyquist limit
       ALLOCATE(r(0:mthsurf),z(0:mthsurf),theta(0:mthsurf))
       ALLOCATE(mfac(mpert),singfac(mpert))
       ALLOCATE(lmfac(lmpert))
@@ -376,6 +377,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert) :: ipiv
       COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
+      IF(debug_flag) PRINT *, "Entering idcon_build"
 c-----------------------------------------------------------------------
 c     construct uedge.
 c-----------------------------------------------------------------------
@@ -409,6 +411,7 @@ c-----------------------------------------------------------------------
       u2%xs=psifac
       CALL cspline_fit(u1,"extrap")
       CALL cspline_fit(u2,"extrap")
+      IF(debug_flag) PRINT *, "->Leaving idcon_build"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -768,18 +771,38 @@ c     subprogram 6. idcon_vacuum.
 c     read vacuum.bin from vacuum code.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_vacuum
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      REAL(r8) :: kernelsignin
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,*)"Reading vacuum energy matrices"
-      CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
-      READ(bin_unit)nths2,nfm2
-      ALLOCATE(grri(nths2,nfm2))
-      READ(bin_unit)grri
-      READ(bin_unit)nths2,nfm2
-      ALLOCATE(grre(nths2,nfm2))
-      READ(bin_unit)grre
-      CALL bin_close(bin_unit)
+      IF(mthsurf==mthvac)THEN
+         IF(verbose) WRITE(*,*)"Reading vacuum energy matrices"
+         CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
+         READ(bin_unit)nths2,nfm2
+         ALLOCATE(grri(nths2,nfm2))
+         READ(bin_unit)grri
+         READ(bin_unit)nths2,nfm2
+         ALLOCATE(grre(nths2,nfm2))
+         READ(bin_unit)grre
+         CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
+c     get grri and grre matrices by calling mscvac functions.
+c-----------------------------------------------------------------------
+      ELSE
+         PRINT *,'------',mthvac,mtheta,mthsurf,nths2
+         kernelsignin = -1.0
+         CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
+     $               kernelsignin)
+         PRINT *,'------',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
+         ALLOCATE(grri(nths2,nfm2))
+         CALL grrget(nfm2,nths2,grri)
+         CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
+     $               kernelsignin)
+         ALLOCATE(grre(nths2,nfm2))
+         CALL grrget(nfm2,nths2,grre) ! grre is nths2 by nfm2 by definition
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

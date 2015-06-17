@@ -4,10 +4,9 @@
 	ivacuumfile= 'vacuum.bin'	! Vacuum info output by DCON run
 	rdconfile  = 'gal_solution.bin'	! ?? output by resistive DCON run
 	
-	jac_in="pest"				! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
+	jac_in="hamada"				! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
 	jsurf_in=1					! True(1) if external perturbation is area weighted (i.e. flux)
 	tmag_in=0					! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
-	mthsurf=0					! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
 	
 	coil_flag=t					! Calculate external perturbation from coils in coil.in
 	
@@ -44,7 +43,7 @@
 	nche=20						! Number of chebyshev polynomials used
 /
 &IPEC_OUTPUT
-	jac_out="hamada"			! Coordinate system of outputs
+	jac_out="pest"	    		! Coordinate system of outputs
 	jsurf_out=0					! True(1) for area weighted outputs (only appends standard ipec_control output)
 	tmag_out=0					! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
 	
@@ -54,7 +53,8 @@
 	vsingfld_flag=f				! Output of vacuum resonant surface quantities
 	eigm_flag=t					! Outputs DCON eigmode displacement on control surface
 	pmodb_flag=f				! Outputs delta-B_Lagrangian
-	xbnormal_flag=t				! Outputs normal displacement and field in plasma
+	xclebsch_flag=t				! Outputs plasma displacement in clebsch coordinates (input for PENT)
+	xbnormal_flag=f				! Outputs normal displacement and field in plasma
 	vbnormal_flag=f				! Outputs vacuum normal displacement and field in plasma
 
 	eqbrzphi_flag=f				! Outputs equilibrium field on regular (r,z) grid
@@ -67,13 +67,11 @@
 	xbrzphifun_flag=f			! Outputs r,z, and perturbation vectors on psi,theta grid 
 	arzphifun_flag=f			! Outputs r,z, and vector potential on psi,theta grid
 
-	fun_flag=f					! Write outputs to (r,z) in addition to default (psi,m)
+	fun_flag=t					! Write outputs to (r,z) in addition to default (psi,m)
 	flux_flag=f					! Write outputs to (psi,theta) in addition to default (psi,m)
-	bin_flag=t					! Write binary outputs for use with xdraw
-	bin_2d_flag=t				! Write 2D binary outputs for use with xdraw
+	bin_flag=f					! Write binary outputs for use with xdraw
+	bin_2d_flag=f				! Write 2D binary outputs for use with xdraw
 	max_linesout=0				! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
 /
 &IPEC_DIAGNOSE
-	div_flag=f					! ??
-	radvar_flag=t				! ??
 /

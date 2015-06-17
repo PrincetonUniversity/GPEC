@@ -2,10 +2,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+This package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, IPEC, RPEC, GPEC, and PENTRC.
 
-.. include:: ../README.md
+The primary purpose of this package is to calculated the nonaxisymmetric force balance in tokamak plasmas.
 
-.. include:: ../install/README
+Note that the DCON code was developed by Allen Glasser at Los Alamos National Laboratory, while IPEC and PENTRC were developed and are maintained by the GPEC team at the Princeton Plasma Physics Laboratory.
 
 Contents:
 
@@ -16,7 +17,9 @@ Contents:
    outputs.rst
    dcon_readme.rst
    namelists.rst
+   examples.rst
    source_documentation.rst
+   developers.rst
    contact.rst
    references.rst
 

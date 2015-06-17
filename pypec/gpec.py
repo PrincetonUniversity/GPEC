@@ -65,7 +65,6 @@ from string import join                 # string manipulation
 
 #in this package
 import data                             # read/write .out files
-import _defaults_
 import namelist                         # read/write fortran namelist .in files
 from _bashjob_ import bashjob            # bash script skeleton
 try:
@@ -79,7 +78,7 @@ if os.getenv('HOST').startswith('sunfire'):
 # make sure package is in path
 packagedir = join(os.path.abspath(__file__).split('/')[:-2],'/')+'/' # one directory up
 sys.path.insert(0,packagedir+'pypec')
-sys.path.insert(0,packagedir+'rundir/'+_defaults_.rundir)
+sys.path.insert(0,packagedir+'bin')
 
 
 np.norm = np.linalg.norm
@@ -154,7 +153,7 @@ def _newloc(loc):
 
 def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=False,
         rundcon=True,runipec=True,runpentrc=True,fill_inputs=False,
-        mailon=_defaults_.mailon,email=_defaults_.email,mem=1e4,
+        mailon='ae',email='',mem=1e4,
         runpent=False,optpentrc=False,pent_tol=0,**kwargs):
     """
     Python wrapper for running ipec package.
