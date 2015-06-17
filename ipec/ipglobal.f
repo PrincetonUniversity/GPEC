@@ -51,8 +51,8 @@ c-----------------------------------------------------------------------
      $     surf_indev,vsurf_indev,fsurf_indev
      $     ,eft,efp,perms ! LOGAN
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
-     $     chperr,chpsqr,plas_indev,reluctev,indrelev,grri,grre,
-     $     gdr,gdz,gdpsi,gdthe,gdphi
+     $     chperr,chpsqr,plas_indev,reluctev,reluctpev,reluctpoutev,
+     $     indrelev,grri,grre,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
 
@@ -71,8 +71,8 @@ c-----------------------------------------------------------------------
      $     ,wft,permv ! LOGAN
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,reluctmats,
-     $     plas_indevmats,permeabevmats,reluctevmats,
-     $     indrelmats,indrelevmats
+     $     plas_indevmats,permeabevmats,indrelmats,indrelevmats,
+     $     reluctevmats,reluctpevmats,reluctpoutevmats
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi

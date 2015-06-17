@@ -12,7 +12,7 @@ c      3. ipresp_sinduct
 c      4. ipresp_permeab
 c      5. ipresp_reluct
 c      6. ipresp_indrel
-c      7. ipresp_reluct
+c      7. ipresp_reluctpow
 c-----------------------------------------------------------------------
 c     subprogram 0. ipresp_mod.
 c     module declarations.
@@ -253,10 +253,32 @@ c-----------------------------------------------------------------------
          CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
          temp1=TRANSPOSE(temp2)
          permeabmats(j,:,:)=temp1
+c-----------------------------------------------------------------------
+c     calculate permeability eigenvalues and vectors, then sort them.
+c      - sorting taken from http://stackoverflow.com/questions/8834585/sorting-eigensystem-obtained-from-zgeev
+c      - which is from the end of zsteqr.f
+c-----------------------------------------------------------------------
          lwork=2*mpert+1
          CALL zgeev('V','V',mpert,temp1,mpert,permeabev(j,:),
      $        vl,mpert,vr,mpert,work,lwork,rwork,info)
          permeabevmats(j,:,:)=vr
+         ! sort by absolute value of eigenvector
+         DO i = 1, mpert-1
+            k = i
+            ev = permeabev(j,i)
+            DO ii = i+1, mpert
+               IF( ABS(permeabev(j,ii)) > ABS(ev) ) THEN
+                  K = ii
+                  ev = permeabev(j,ii)
+               ENDIF
+            ENDDO
+            IF( K.NE.I ) THEN
+               permeabev(j,k) = permeabev(j,i)
+               permeabev(j,i) = ev
+               CALL ZSWAP( mpert, permeabevmats(j,:,i), 1,
+     $                            permeabevmats(j,:,k), 1)
+            END IF
+         ENDDO
       ENDDO
 c-----------------------------------------------------------------------
 c     LOGAN - Hermitian eigenvectors for orthonormal basis.
@@ -361,6 +383,10 @@ c-----------------------------------------------------------------------
          reluctevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
+c     calculate eigenvectors and values corresponding to physical power
+c-----------------------------------------------------------------------
+      CALL ipresp_reluctpow
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -413,7 +439,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipresp_indrel
 c-----------------------------------------------------------------------
-c     subprogram 7. ipresp_reluctsqrta.
+c     subprogram 7. ipresp_reluctpow.
 c     construct "reluctance" matrix for Isqrt(A) in Bsqrt(A) basis.
 c      - Define sqrt(A) weighting matrix as
 c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
@@ -453,7 +479,7 @@ c-----------------------------------------------------------------------
 c     Calculate power eigenvectors and eigenvalues in DCON coordinates
 c       - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
 c-----------------------------------------------------------------------
-      ALLOCATE(reluctpinev(0:4,mpert),reluctpinevmats(0:4,mpert,mpert))
+      ALLOCATE(reluctpev(0:4,mpert),reluctpevmats(0:4,mpert,mpert))
       DO j=0,4
          work=0
          rwork=0
@@ -461,9 +487,9 @@ c-----------------------------------------------------------------------
          reluctpinmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
      $                                      sqrta)
          temp1=reluctpinmats(j,:,:)
-         CALL zheev('V','U',mpert,temp1,mpert,reluctpinev(j,:),work,
+         CALL zheev('V','U',mpert,temp1,mpert,reluctpev(j,:),work,
      $        lwork,rwork,info)
-         reluctpinevmats(j,:,:)=temp1
+         reluctpevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
 c     Convert to output coordinates 
