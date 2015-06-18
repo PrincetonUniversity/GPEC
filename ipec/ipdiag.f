@@ -1810,7 +1810,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(reluctpomats(0:4,mpert,mpert),
      $         reluctpoev(0:4,mpert),reluctpoevmats(0:4,mpert,mpert))
       reluctpomats(:,:,:)=reluctpmats(:,:,:)
-      DO k=1,4
+      DO k=0,4
          ! convert normalized reluctance matrix to jac_out
          DO j=1,mpert
 c            DO i=1,mpert
@@ -1820,7 +1820,7 @@ c            ENDDO
             CALL ipeq_bcoords(psilim,reluctpomats(k,:,j),mfac,
      $           mpert,rout,bpout,bout,rcout,0,0)
          ENDDO
-         ! re-calculate eigenvectors and eigenvalues
+         ! calculate eigenvectors and eigenvalues
          worko=0
          rworko=0
          lworko=2*mpert-1
