@@ -20,6 +20,7 @@ c     11. ipdiag_rzphibx
 c     12. ipdiag_rzpgrid
 c     13. ipdiag_rzpdiv
 c     14. ipdiag_radvar
+c     15. ipdiag_permeabev_orthogonality
 c-----------------------------------------------------------------------
 c     subprogram 0. ipdiag_mod.
 c     module declarations.
@@ -1742,5 +1743,43 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_radvar
+c-----------------------------------------------------------------------
+c     subprogram 15. ipdiag_permeabev_orthogonality.
+c     diagnose orhtogonality of eigenvectors.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipdiag_permeabev_orthogonality
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,j
+      REAL(r8) :: a1,a2
+      COMPLEX(r8), DIMENSION(mpert) :: v1,v2
+      REAL(r8), DIMENSION(mpert,mpert) :: potengy
+c-----------------------------------------------------------------------
+c     construct 2d eigenvector sets in fourier space.
+c-----------------------------------------------------------------------
+      CALL ascii_open(out_unit,"ipdiag_permeabevorthogonality_n"//
+     $                         TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPDIAG_PERMEABEVORTHOGONALITY: "//
+     $     "Diagnose orhtogonality of permeability eigenvectors"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(2(1x,a3),4(1x,a16))')"m1","m2","A1","A2",
+     $      "real(dot)","imag(dot)"
+      DO i=1,mpert
+         v1 = permeabevmats(resp_index,:,i)
+         a1 = norm=SQRT(ABS(DOT_PRODUCT(v1,v1)))
+         DO j=1,mpert
+            v2 = permeabevmats(resp_index,:,j)
+            a2 = norm=SQRT(ABS(DOT_PRODUCT(v2,v2)))
+            WRITE(out_unit,'(2(1x,I3),4(1x,es16.8))')
+     $           mfac(i),mfac(j),a1,a2,DOT_PRODUCT(v1,v2)
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipdiag_eigen
 
       END MODULE ipdiag_mod
