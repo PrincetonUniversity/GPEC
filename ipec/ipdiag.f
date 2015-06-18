@@ -1767,19 +1767,20 @@ c-----------------------------------------------------------------------
      $      "real(dot)","imag(dot)"
       DO i=1,mpert
          v1 = permeabevmats(resp_index,:,i)
-         a1 = norm=SQRT(ABS(DOT_PRODUCT(v1,v1)))
+         a1 = SQRT(ABS(DOT_PRODUCT(v1,v1)))
          DO j=1,mpert
             v2 = permeabevmats(resp_index,:,j)
-            a2 = norm=SQRT(ABS(DOT_PRODUCT(v2,v2)))
+            a2 = SQRT(ABS(DOT_PRODUCT(v2,v2)))
             WRITE(out_unit,'(2(1x,I3),4(1x,es16.8))')
      $           mfac(i),mfac(j),a1,a2,DOT_PRODUCT(v1,v2)
          ENDDO
       ENDDO
+      WRITE(out_unit,*)
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_eigen
+      END SUBROUTINE ipdiag_permeabev_orthogonality
 
       END MODULE ipdiag_mod
