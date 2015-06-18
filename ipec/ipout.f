@@ -122,7 +122,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"  F = Flux energy"
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a4,8(1x,a16))')"mode",
-     $  "s_L","s_Lambda","real(s_P)","imag(s_P)","s_P1","s_rho",
+     $  "s_L","s_Lambda","real(s_P)","imag(s_P)","s_{P1}","s_rho",
      $  "s_W","s_F"
       DO i=1,mpert
          WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,
@@ -145,7 +145,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)
       WRITE(out_unit,'(2(1x,a4),14(1x,a16))')"mode","m",
      $  "real(v_L)","imag(v_L)","real(v_Lambda)","imag(v_Lambda)",
-     $  "real(v_P)","imag(v_P)","real(v_P1)","imag(v_P1)",
+     $  "real(v_P)","imag(v_P)","real(v_{P1})","imag(v_{P1})",
      $  "real(v_rho)","imag(v_rho)",
      $  "real(v_W)","imag(v_W)","real(v_F)","imag(v_F)"
       DO i=1,mpert
@@ -170,9 +170,9 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a4,1(1x,a16))')"mode",
      $  "s_rho"
-      DO i=1,lmpert
+      DO i=1,mpert
          WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,
-     $     reluctpoutev(resp_index,i)
+     $     reluctpoev(resp_index,i)
       ENDDO
       WRITE(out_unit,*)
       
@@ -183,10 +183,10 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)
       WRITE(out_unit,'(2(1x,a4),2(1x,a16))')"mode","m",
      $  "real(v_rho)","imag(v_rho)"
-      DO i=1,lmpert
-         DO j=1,lmpert
-            WRITE(out_unit,'(2(1x,I4),2(1x,es16.8))')i,lmfac(j),
-     $           reluctpoutevmats(resp_index,j,i)
+      DO i=1,mpert
+         DO j=1,mpert
+            WRITE(out_unit,'(2(1x,I4),2(1x,es16.8))')i,mfac(j),
+     $           reluctpoevmats(resp_index,j,i)
          ENDDO 
       ENDDO
       WRITE(out_unit,*)
@@ -906,7 +906,7 @@ c-----------------------------------------------------------------------
             eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
             finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
          ENDDO
-      IF (p1mode<0) THEN
+      ELSEIF (p1mode<0) THEN
          PRINT *,'Isolating drive || to last ',ABS(p1mode),
      $           ' (P-I) right singular vectors'
          tmpmn = finmn

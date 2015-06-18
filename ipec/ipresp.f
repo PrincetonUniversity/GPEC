@@ -471,10 +471,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,temp1
 
       INTEGER :: lworko
-      REAL(r8), DIMENSION(3*lmpert-2) :: rworko
-      COMPLEX(r8), DIMENSION(2*lmpert-1) :: worko
-      COMPLEX(r8), DIMENSION(lmpert) :: tempo
-      COMPLEX(r8), DIMENSION(lmpert,lmpert) :: sqrtao,temp1o
+      REAL(r8), DIMENSION(3*mpert-2) :: rworko
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: worko
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1o
 c-----------------------------------------------------------------------
 c     calculate sqrt(A) weighting matrix.
 c-----------------------------------------------------------------------
@@ -490,49 +489,46 @@ c       - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
 c-----------------------------------------------------------------------
       ALLOCATE(reluctpevmats(0:4,mpert,mpert),reluctpev(0:4,mpert),
      $         reluctpmats(0:4,mpert,mpert))
-      print *,'  alloc done'
       DO j=0,4
          work=0
          rwork=0
          lwork=2*mpert-1
-         print *, "work done"
          reluctpmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
      $                                      sqrta)
-         print *,'  matmul done'
          temp1=reluctpmats(j,:,:)
          CALL zheev('V','U',mpert,temp1,mpert,reluctpev(j,:),work,
      $        lwork,rwork,info)
          reluctpevmats(j,:,:)=temp1
       ENDDO
-      print *,'  zheev done'
 c-----------------------------------------------------------------------
 c     Convert to output coordinates
+c      - Note we cannot use the usual lmpert output vectors in this case
+c      baceause we do not have enough modes to fill the matrix columns
+c      (while bcoords fills the rows)
 c-----------------------------------------------------------------------
       IF ((jac_out /= jac_type).OR.(tout==0)) THEN
          print *,'in reluctpow out'
-         print *,lmpert,mpert
-         ALLOCATE(reluctpoutmats(0:4,lmpert,lmpert),
-     $    reluctpoutev(0:4,lmpert),reluctpoutevmats(0:4,lmpert,lmpert))
-         reluctpoutmats=0
+         ALLOCATE(reluctpomats(0:4,mpert,mpert),
+     $            reluctpoev(0:4,mpert),reluctpoevmats(0:4,mpert,mpert))
+         reluctpomats(:,:,:)=reluctpmats(:,:,:)
          DO k=1,4
             ! convert normalized reluctance matrix to jac_out
             DO j=1,mpert
-               DO i=1,mpert
-                   IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert))
-     $               reluctpoutmats(k,mlow-lmlow+i,j)=reluctpmats(k,i,j)
-               ENDDO
-               print *,'calling bcoords'
-               CALL ipeq_bcoords(psilim,reluctpoutmats(k,:,j),lmfac,
-     $              lmpert,rout,bpout,bout,rcout,tout,0)
+c               DO i=1,mpert
+c                   IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert))
+c     $               reluctpomats(k,mlow-lmlow+i,j)=reluctpmats(k,i,j)
+c               ENDDO
+               CALL ipeq_bcoords(psilim,reluctpomats(k,:,j),mfac,
+     $              mpert,rout,bpout,bout,rcout,tout,0)
             ENDDO
             ! re-calculate eigenvectors and eigenvalues
             worko=0
             rworko=0
-            lworko=2*lmpert-1
-            temp1o=reluctpoutmats(k,:,:)
-            CALL zheev('V','U',lmpert,temp1o,lmpert,reluctpoutev(k,:),
+            lworko=2*mpert-1
+            temp1o=reluctpomats(k,:,:)
+            CALL zheev('V','U',mpert,temp1o,mpert,reluctpoev(k,:),
      $           worko,lworko,rworko,info)
-            reluctpoutevmats(j,:,:)=temp1o
+            reluctpoevmats(j,:,:)=temp1o
          ENDDO
       ENDIF
       print *,'done reluctpow'
