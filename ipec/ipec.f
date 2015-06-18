@@ -304,6 +304,8 @@ c-----------------------------------------------------------------------
       CALL ipresp_sinduct
       CALL ipresp_permeab
       CALL ipresp_reluct
+      CALL ipresp_reluctpow(power_rout,power_bpout,power_bout,
+     $                      power_rcout,tmag_out)
 c-----------------------------------------------------------------------
 c     run and test rdcon.
 c-----------------------------------------------------------------------
@@ -312,7 +314,7 @@ c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
       IF (resp_flag) THEN
-         CALL ipout_response
+         CALL ipout_response(tmag_out)
       ENDIF
       IF (singcoup_flag .OR. smode>0) THEN
          CALL ipout_singcoup(sing_spot,power_rout,
@@ -520,6 +522,9 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
          CALL iscdftb(mfac,mpert,fxfun,mthsurf,fxmn)
          CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
+         
+         ! test orthoganality of permeabev eigenvectors
+         CALL ipdiag_permeabev_orthogonality
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

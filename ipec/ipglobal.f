@@ -70,8 +70,9 @@ c-----------------------------------------------------------------------
      $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,w1v,fldflxmat
      $     ,wft,permv ! LOGAN
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
-     $     plas_indmats,permeabmats,diff_indmats,reluctmats,
+     $     plas_indmats,permeabmats,diff_indmats,
      $     plas_indevmats,permeabevmats,indrelmats,indrelevmats,
+     $     reluctmats,reluctpmats,reluctpoutmats,
      $     reluctevmats,reluctpevmats,reluctpoutevmats
 
       TYPE(spline_type) :: sq

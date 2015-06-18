@@ -69,6 +69,7 @@ c-----------------------------------------------------------------------
       IF (mlow<mmin) lmlow=mlow 
       IF (mhigh>mmax) lmhigh=mhigh
       lmpert=lmhigh-lmlow+1
+      mthsurf = mthvac
       IF (mthsurf < 4*MAX(ABS(mlow),mhigh))
      $    mthsurf = 4*MAX(ABS(mlow),mhigh)
       ALLOCATE(r(0:mthsurf),z(0:mthsurf),theta(0:mthsurf))

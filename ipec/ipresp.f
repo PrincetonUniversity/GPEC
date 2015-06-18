@@ -229,12 +229,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER :: i,j,lwork
+      INTEGER :: i,j,k,ii,lwork
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(2*mpert) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,vr,vl
-      ! LOGAN variables
+      COMPLEX(r8) :: ev
+      COMPLEX(r8), DIMENSION(mpert) :: vec
+      
       REAL(r8), DIMENSION(5*mpert) :: rworks
       COMPLEX(r8), DIMENSION(3*mpert) :: works
       COMPLEX(r8), DIMENSION(mpert,mpert) :: ctp,a,permu
@@ -262,6 +264,11 @@ c-----------------------------------------------------------------------
          CALL zgeev('V','V',mpert,temp1,mpert,permeabev(j,:),
      $        vl,mpert,vr,mpert,work,lwork,rwork,info)
          permeabevmats(j,:,:)=vr
+         ! check sorting
+         i = MINLOC(ABS(permeabev(j,:)),DIM=1)
+         vec = permeabevmats(j,:,i)
+         print *,ABS(permeabev(j,1:5))
+         print *,i,vec(30:31)
          ! sort by absolute value of eigenvector
          DO i = 1, mpert-1
             k = i
@@ -275,10 +282,15 @@ c-----------------------------------------------------------------------
             IF( K.NE.I ) THEN
                permeabev(j,k) = permeabev(j,i)
                permeabev(j,i) = ev
-               CALL ZSWAP( mpert, permeabevmats(j,:,i), 1,
+               CALL zswap( mpert, permeabevmats(j,:,i), 1,
      $                            permeabevmats(j,:,k), 1)
             END IF
          ENDDO
+         ! checks sorting
+         i = MINLOC(ABS(permeabev(j,:)),DIM=1)
+         vec = permeabevmats(j,:,i)
+         print *,i,vec(30:31)
+         print *,ABS(permeabev(j,1:5))
       ENDDO
 c-----------------------------------------------------------------------
 c     LOGAN - Hermitian eigenvectors for orthonormal basis.
@@ -383,10 +395,6 @@ c-----------------------------------------------------------------------
          reluctevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
-c     calculate eigenvectors and values corresponding to physical power
-c-----------------------------------------------------------------------
-      CALL ipresp_reluctpow
-c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -451,11 +459,12 @@ c      - We get I = RWPhi' and want to keep the operator Hermitian so we
 c        use W^dagger I = W^daggerRW Phi'
 c      - Since W is Hermitian, eigenvalues correspond to int{I^2da}/A 
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_reluctpow
+      SUBROUTINE ipresp_reluctpow(rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER :: i,j,lwork
+      INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
+      INTEGER :: i,j,k,lwork
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
       COMPLEX(r8), DIMENSION(mpert) :: temp
@@ -479,22 +488,29 @@ c-----------------------------------------------------------------------
 c     Calculate power eigenvectors and eigenvalues in DCON coordinates
 c       - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
 c-----------------------------------------------------------------------
-      ALLOCATE(reluctpev(0:4,mpert),reluctpevmats(0:4,mpert,mpert))
+      ALLOCATE(reluctpevmats(0:4,mpert,mpert),reluctpev(0:4,mpert),
+     $         reluctpmats(0:4,mpert,mpert))
+      print *,'  alloc done'
       DO j=0,4
          work=0
          rwork=0
          lwork=2*mpert-1
-         reluctpinmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
+         print *, "work done"
+         reluctpmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
      $                                      sqrta)
-         temp1=reluctpinmats(j,:,:)
+         print *,'  matmul done'
+         temp1=reluctpmats(j,:,:)
          CALL zheev('V','U',mpert,temp1,mpert,reluctpev(j,:),work,
      $        lwork,rwork,info)
          reluctpevmats(j,:,:)=temp1
       ENDDO
+      print *,'  zheev done'
 c-----------------------------------------------------------------------
-c     Convert to output coordinates 
+c     Convert to output coordinates
 c-----------------------------------------------------------------------
       IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+         print *,'in reluctpow out'
+         print *,lmpert,mpert
          ALLOCATE(reluctpoutmats(0:4,lmpert,lmpert),
      $    reluctpoutev(0:4,lmpert),reluctpoutevmats(0:4,lmpert,lmpert))
          reluctpoutmats=0
@@ -503,8 +519,9 @@ c-----------------------------------------------------------------------
             DO j=1,mpert
                DO i=1,mpert
                    IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert))
-     $               reluctpoutmats(k,mlow-lmlow+i,j)=reluctpinmats(i,j)
+     $               reluctpoutmats(k,mlow-lmlow+i,j)=reluctpmats(k,i,j)
                ENDDO
+               print *,'calling bcoords'
                CALL ipeq_bcoords(psilim,reluctpoutmats(k,:,j),lmfac,
      $              lmpert,rout,bpout,bout,rcout,tout,0)
             ENDDO
@@ -515,9 +532,10 @@ c-----------------------------------------------------------------------
             temp1o=reluctpoutmats(k,:,:)
             CALL zheev('V','U',lmpert,temp1o,lmpert,reluctpoutev(k,:),
      $           worko,lworko,rworko,info)
-            reluctpoutevmats(j,:,:)=temp1
+            reluctpoutevmats(j,:,:)=temp1o
          ENDDO
       ENDIF
+      print *,'done reluctpow'
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

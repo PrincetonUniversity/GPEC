@@ -48,11 +48,11 @@ c-----------------------------------------------------------------------
 c     subprogram 1. ipout_response.
 c     write basic information.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_response
+      SUBROUTINE ipout_response(tout)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      INTEGER :: lwork,i,j,k
+      INTEGER :: lwork,i,j,k,tout
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(mpert) :: sts,s,ev
       COMPLEX(r8), DIMENSION(mpert) :: cev
@@ -112,61 +112,96 @@ c-----------------------------------------------------------------------
 
       
       WRITE(out_unit,*)"Eigenvalues"
-      WRITE(out_unit,*)" L = Vacuum Inductancy"
-      WRITE(out_unit,*)" Lambda = Inductancy"
-      WRITE(out_unit,*)" P = Permeability   *these are complex"
-      WRITE(out_unit,*)" P1= Response (P-I) *these are singular values"
-      WRITE(out_unit,*)" rho = Reluctance"
-      WRITE(out_unit,*)" W = Displacement energy"
-      WRITE(out_unit,*)" F = Flux energy"
+      WRITE(out_unit,*)" jac_type = ",jac_type
+      WRITE(out_unit,*)"  L = Vacuum Inductance"
+      WRITE(out_unit,*)"  Lambda = Inductancy"
+      WRITE(out_unit,*)"  P = Permeability   *Complex (not Hermitian)"
+      WRITE(out_unit,*)"  P1= Response (P-I) *Singular values"
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)"  W = Displacement energy"
+      WRITE(out_unit,*)"  F = Flux energy"
       WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a4,8(1x,a12))')"mode",
+      WRITE(out_unit,'(1x,a4,8(1x,a16))')"mode",
      $  "s_L","s_Lambda","real(s_P)","imag(s_P)","s_P1","s_rho",
      $  "s_W","s_F"
       DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,8(1x,es12.3))') i,
+         WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,
      $     surf_indev(i),plas_indev(resp_index,i),
      $     REAL(permeabev(resp_index,i)),AIMAG(permeabev(resp_index,i)),
-     $     perms(i),reluctev(resp_index,i),
+     $     perms(i),reluctpev(resp_index,i),
      $     et(i),eft(i)
       ENDDO
+      WRITE(out_unit,*)
       
       WRITE(out_unit,*)"Eigenvectors"
-      WRITE(out_unit,*)" L = Vacuum Inductancy"
-      WRITE(out_unit,*)" Lambda = Inductancy"
-      WRITE(out_unit,*)" P = Permeability"
-      WRITE(out_unit,*)" P1= Response (P-I) *these are right-singular"
-      WRITE(out_unit,*)" rho = Reluctance"
-      WRITE(out_unit,*)" W = Displacement energy"
-      WRITE(out_unit,*)" F = Flux energy"
+      WRITE(out_unit,*)" jac_type = ",jac_type
+      WRITE(out_unit,*)"  L = Vacuum Inductance"
+      WRITE(out_unit,*)"  Lambda = Inductancy"
+      WRITE(out_unit,*)"  P = Permeability"
+      WRITE(out_unit,*)"  P1= Response (P-I) *these are right-singular"
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)"  W = Displacement energy"
+      WRITE(out_unit,*)"  F = Flux energy"
       WRITE(out_unit,*)
-      WRITE(out_unit,'(2(1x,a4),14(1x,a12))')"mode","m",
-     $  "real(v_L)","imag(v_L)","real(v_Lambda)","imag(Lambda)",
+      WRITE(out_unit,'(2(1x,a4),14(1x,a16))')"mode","m",
+     $  "real(v_L)","imag(v_L)","real(v_Lambda)","imag(v_Lambda)",
      $  "real(v_P)","imag(v_P)","real(v_P1)","imag(v_P1)",
-     $  "real(v_rho)","imag(v_rho)","real(v_W)","imag(v_W)",
-     $  "real(v_F)","imag(v_F)"
+     $  "real(v_rho)","imag(v_rho)",
+     $  "real(v_W)","imag(v_W)","real(v_F)","imag(v_F)"
       DO i=1,mpert
          DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),14(1x,es12.3))')i,mfac(j),
+            WRITE(out_unit,'(2(1x,I4),14(1x,es16.8))')i,mfac(j),
      $           surf_indevmats(j,i),
      $           plas_indevmats(resp_index,j,i),
      $           permeabevmats(resp_index,j,i),
      $           permv(j,i),
-     $           reluctevmats(resp_index,j,i),
+     $           reluctpevmats(resp_index,j,i),
      $           wt(j,i),
      $           wft(j,i)
          ENDDO 
       ENDDO
+      WRITE(out_unit,*)
+      
+      ! TEMPORARY CHECK OF POWER NORM
+      WRITE(out_unit,*)"Eigenvalues"
+      WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
+     $     "jac_out = ",jac_out,"tmag_out =",tout
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a4,1(1x,a16))')"mode",
+     $  "s_rho"
+      DO i=1,lmpert
+         WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,
+     $     reluctpoutev(resp_index,i)
+      ENDDO
+      WRITE(out_unit,*)
+      
+      WRITE(out_unit,*)"Eigenvectors"
+      WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
+     $     "jac_out = ",jac_out,"tmag_out =",tout
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(2(1x,a4),2(1x,a16))')"mode","m",
+     $  "real(v_rho)","imag(v_rho)"
+      DO i=1,lmpert
+         DO j=1,lmpert
+            WRITE(out_unit,'(2(1x,I4),2(1x,es16.8))')i,lmfac(j),
+     $           reluctpoutevmats(resp_index,j,i)
+         ENDDO 
+      ENDDO
+      WRITE(out_unit,*)
+      WRITE(out_unit,*)
       
       WRITE(out_unit,*)"Raw Matrices"
+      WRITE(out_unit,*)" jac_type = ",jac_type
       WRITE(out_unit,*)" L = Vacuum Inductancy"
       WRITE(out_unit,*)" Lambda = Inductancy"
       WRITE(out_unit,*)" P = Permeability"
       WRITE(out_unit,*)" rho = Reluctance"
       WRITE(out_unit,*)
       WRITE(out_unit,'(2(1x,a4),8(1x,a12))')"mode","m",
-     $  "real(v_L)","imag(v_L)","real(v_Lambda)","imag(Lambda)",
-     $  "real(v_P)","imag(v_P)","real(v_rho)","imag(v_rho)"
+     $  "real(L)","imag(L)","real(Lambda)","imag(Lambda)",
+     $  "real(P)","imag(P)","real(rho)","imag(rho)"
       DO i=1,mpert
          DO j=1,mpert
             WRITE(out_unit,'(2(1x,I4),8(1x,es12.3))')i,mfac(j),
@@ -176,6 +211,7 @@ c-----------------------------------------------------------------------
      $           reluctmats(resp_index,j,i)
          ENDDO 
       ENDDO
+      WRITE(out_unit,*)
 
       CALL ascii_close(out_unit)
       
@@ -185,7 +221,7 @@ c-----------------------------------------------------------------------
           CALL iscdftb(mfac,mpert,wtfun(:,i),mthsurf,wt(:,i))     
           CALL iscdftb(mfac,mpert,wftfun(:,i),mthsurf,wft(:,i))     
           CALL iscdftb(mfac,mpert,rfun(:,i),mthsurf,
-     $      reluctevmats(resp_index,:,i))    
+     $      reluctpevmats(resp_index,:,i))    
           CALL iscdftb(mfac,mpert,pfun(:,i),mthsurf,
      $      permeabevmats(resp_index,:,i))
         ENDDO
@@ -201,7 +237,7 @@ c-----------------------------------------------------------------------
         WRITE(out_unit,*)"IPEC_RESPONSE_FUN: "//
      $    "Eigenmodes on control surface in functions"
         WRITE(out_unit,*)" P = Permeability"
-        WRITE(out_unit,*)" rho = Reluctance"
+        WRITE(out_unit,*)" rho = Reluctance (power norm)"
         WRITE(out_unit,*)" W = Displacement energy"
         WRITE(out_unit,*)" F = Flux energy"
         WRITE(out_unit,*)
@@ -832,52 +868,82 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     LOGAN - Isolate drive parallel to permeability eigenmodes
 c-----------------------------------------------------------------------
+      ALLOCATE(eigmn(mpert))
       IF (pmode>0) THEN
-          PRINT *,'Isolating drive || to first ',pmode,
-     $            ' flux permeability eigenmodes'
-          PRINT *,' **WARNING: This is not a valid orthoganal basis.**'
-          ALLOCATE(eigmn(mpert))
-          tmpmn = finmn
-          finmn = 0
-          DO i=1,MIN(mpert,ABS(pmode))
-              eigmn = permeabevmats(resp_index,:,i)
-              eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-          ENDDO
-          DEALLOCATE(eigmn)
+         PRINT *,'Isolating drive || to first ',pmode,
+     $           ' flux permeability eigenmodes'
+         PRINT *,' **WARNING: This is not a valid orthoganal basis.**'
+         tmpmn = finmn
+         finmn = 0
+         DO i=1,MIN(mpert,ABS(pmode))
+            eigmn = permeabevmats(resp_index,:,i)
+            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+         ENDDO
+      ELSEIF (pmode<0) THEN
+         PRINT *,'Isolating drive || to last ',pmode,
+     $           ' flux permeability eigenmodes'
+         PRINT *,' **WARNING: This is not a valid orthoganal basis.**'
+         tmpmn = finmn
+         finmn = 0
+         DO j=1,MIN(mpert,ABS(pmode))
+            i = mpert+1-j
+            eigmn = permeabevmats(resp_index,:,i)
+            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+         ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     LOGAN - Isolate drive parallel to plasma responce SVD modes
 c-----------------------------------------------------------------------
       IF (p1mode>0) THEN
-          PRINT *,'Isolating drive || to first ',ABS(p1mode),
-     $            ' (P-I) right singular vectors'
-          ALLOCATE(eigmn(mpert))
-          tmpmn = finmn
-          finmn = 0
-          DO i=1,MIN(mpert,ABS(rmode))
-              eigmn = permv(:,i)
-              eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-          ENDDO
-          DEALLOCATE(eigmn)
+         PRINT *,'Isolating drive || to first ',ABS(p1mode),
+     $           ' (P-I) right singular vectors'
+         tmpmn = finmn
+         finmn = 0
+         DO i=1,MIN(mpert,ABS(p1mode))
+            eigmn = permv(:,i)
+            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+         ENDDO
+      IF (p1mode<0) THEN
+         PRINT *,'Isolating drive || to last ',ABS(p1mode),
+     $           ' (P-I) right singular vectors'
+         tmpmn = finmn
+         finmn = 0
+         DO j=1,MIN(mpert,ABS(p1mode))
+            i = mpert+1-j
+            eigmn = permv(:,i)
+            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+         ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     LOGAN - Isolate drive parallel to reluctance eigenmodes
 c-----------------------------------------------------------------------
       IF (rmode>0) THEN
-          PRINT *,'Isolating drive || to first ',ABS(rmode),
-     $            ' plasma reluctance eigenmodes'
-          ALLOCATE(eigmn(mpert))
-          tmpmn = finmn
-          finmn = 0
-          DO i=1,MIN(mpert,ABS(rmode))
-              eigmn = reluctevmats(resp_index,:,i)
-              eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-          ENDDO
-          DEALLOCATE(eigmn)
+         PRINT *,'Isolating drive || to first ',ABS(rmode),
+     $           ' plasma reluctance eigenmodes'
+         tmpmn = finmn
+         finmn = 0
+         DO i=1,MIN(mpert,ABS(rmode))
+            eigmn = reluctevmats(resp_index,:,i)
+            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+         ENDDO
+      ELSEIF (rmode<0) THEN
+         PRINT *,'Isolating drive || to last ',ABS(rmode),
+     $           ' plasma reluctance eigenmodes'
+         tmpmn = finmn
+         finmn = 0
+         DO j=1,MIN(mpert,ABS(rmode))
+           i = mpert+1-j
+           eigmn = reluctevmats(resp_index,:,i)
+           eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+           finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+         ENDDO
       ENDIF
+      DEALLOCATE(eigmn)
 c-----------------------------------------------------------------------
 c     get plasma response on the control surface.
 c-----------------------------------------------------------------------
@@ -896,44 +962,54 @@ c-----------------------------------------------------------------------
       CALL ipeq_weight(psilim,xinmn,mfac,mpert,4)
       CALL ipeq_weight(psilim,xoutmn,mfac,mpert,4)
 c-----------------------------------------------------------------------
-c     LOGAN - Isolate plasma or total perturbation parallel to a DCON eigenmode
+c     LOGAN - Isolate total perturbation parallel to a DCON eigenmode
 c-----------------------------------------------------------------------
       ALLOCATE(eigmn(mpert))
-      IF (d1mode>0) THEN ! This is unphysical. The response can have resonant components (shielding).
-          PRINT *,'Isolating response || to first ',d1mode,
-     $            ' DCON eigenmodes'
-          tmpmn = (foutmn-finmn)/(chi1*twopi*ifac*(mfac-nn*qlim))
-          foutmn = finmn
-          DO i=1,MIN(mpert,ABS(d1mode))
-              eigmn = wt(:,i)
-              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $          *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
-          ENDDO
-      ENDIF
       IF (dmode>0) THEN
-          PRINT *,'Isolating perturbation || to first ',dmode,
-     $            ' DCON eigenmodes'
-          tmpmn = foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
-          foutmn = 0
-          DO i=1,MIN(mpert,ABS(dmode))
-              eigmn = wt(:,i)
-              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $          *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
-          ENDDO
+         PRINT *,'Isolating perturbation || to first ',dmode,
+     $           ' DCON eigenmodes'
+         tmpmn = foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
+         foutmn = 0
+         DO i=1,MIN(mpert,ABS(dmode))
+            eigmn = wt(:,i)
+            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+     $        *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
+         ENDDO
+      ELSEIF (dmode<0) THEN
+         PRINT *,'Isolating perturbation || to last ',dmode,
+     $           ' DCON eigenmodes'
+         tmpmn = foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
+         foutmn = 0
+         DO j=1,MIN(mpert,ABS(dmode))
+            i = mpert+1-j
+            eigmn = wt(:,i)
+            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+     $        *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
+         ENDDO
       ENDIF
       IF (fmode>0) THEN
-          PRINT *,'Isolating perturbation || to first ',fmode,
-     $            ' flux eigenmodes'
-          tmpmn = foutmn
-          foutmn = 0
-          DO i=1,MIN(mpert,ABS(fmode))
-              eigmn = wft(:,i)
-              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $               /(norm*norm)
-          ENDDO
+         PRINT *,'Isolating perturbation || to first ',fmode,
+     $           ' DCON flux eigenmodes'
+         tmpmn = foutmn
+         foutmn = 0
+         DO i=1,MIN(mpert,ABS(fmode))
+            eigmn = wft(:,i)
+            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)/(norm*norm)
+         ENDDO
+      ELSEIF (fmode<0) THEN
+         PRINT *,'Isolating perturbation || to last ',fmode,
+     $           ' DCON flux eigenmodes'
+         tmpmn = foutmn
+         foutmn = 0
+         DO j=1,MIN(mpert,ABS(fmode))
+            i = mpert+1-i
+            eigmn = wft(:,i)
+            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)/(norm*norm)
+         ENDDO
       ENDIF
       ! reform all the standard output forms
       boutmn=foutmn

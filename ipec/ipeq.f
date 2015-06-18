@@ -677,25 +677,36 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
+      IMPLICIT NONE
       INTEGER, INTENT(IN) :: amp,ri,bpi,bi,rci,ti,ji
       REAL(r8), INTENT(IN) :: psi
       INTEGER, DIMENSION(amp), INTENT(IN) :: amf
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
       INTEGER :: i,ising,itheta
-      INTEGER, SAVE, DIMENSION(6) :: jsave
-      REAL(r8),SAVE :: thetai,jarea
+      INTEGER, DIMENSION(6) :: jsave = 0
+      REAL(r8) :: thetai,jarea,psave = 0
 
-      REAL(r8), DIMENSION(0:mthsurf), SAVE :: dphi,delpsi,thetas,jacfac
-      COMPLEX(r8), DIMENSION(0:mthsurf), SAVE :: ftnfun
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: dphi,thetas,jacfac
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
-      TYPE(spline_type) :: spl       
+      TYPE(spline_type) :: spl
       
-      CALL spline_eval(sq,psi,0) !global var, may have changed
-      ! expensive spline formation, do only if asking for new coords
-      IF((/psi,ri,bpi,bi,rci,ti,ji/)/=jsave)THEN
-         jsave = (/psi,ri,bpi,bi,rci,ti,ji/)
-         IF(.NOT. firstcall) CALL spline_dealloc(spl)
+      ! note we had to make arrays allocatable to be allowed to save
+      SAVE :: psave,jsave,jarea,spl,dphi,thetas,jacfac
+      
+      ! global sq may have been eval'd elsewhere inbetween bcoords calls
+      CALL spline_eval(sq,psi,0) 
+      ! expensive spline formation, do only if asking for new bcoords
+      IF(.NOT.ALL((/ri,bpi,bi,rci,ti,ji/)==jsave).OR.(psi/=psave))THEN
+         jsave = (/ri,bpi,bi,rci,ti,ji/)
+         psave = psi
+         IF(ALLOCATED(dphi))THEN
+            DEALLOCATE(dphi,thetas,jacfac)
+            CALL spline_dealloc(spl)
+         ENDIF
+         ALLOCATE(dphi(0:mthsurf),thetas(0:mthsurf),jacfac(0:mthsurf))
          CALL spline_alloc(spl,mthsurf,2)
          spl%xs=theta
          
@@ -740,6 +751,10 @@ c-----------------------------------------------------------------------
          DO itheta=0,mthsurf-1
             jarea=jarea+jacfac(itheta)/mthsurf
          ENDDO
+         print *,jacfac(1:3)
+      ELSE
+         print *,"Re-using saved bcoord conversions"
+         print *,jacfac(1:3)
       ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.
@@ -767,6 +782,7 @@ c-----------------------------------------------------------------------
      $           EXP(-twopi*ifac*nn*sq%f(4)*(thetai-theta(itheta)))
          ENDIF
       ENDDO
+
       ! optional jacobian wieghting
       IF (ji .EQ. 1) THEN
          ftnfun=ftnfun*jacfac/jarea
