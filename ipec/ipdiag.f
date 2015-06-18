@@ -1782,5 +1782,103 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_permeabev_orthogonality
+      
+c-----------------------------------------------------------------------
+c     subprogram 16. ipdiag_reluctpowout.
+c     diagnose coordinate independence of power normalized eigenvalues.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipdiag_reluctpowout(rout,bpout,bout,rcout)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: rout,bpout,bout,rcout
+      INTEGER :: i,j,k,lworko
+      REAL(r8), DIMENSION(3*mpert-2) :: rworko
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: worko
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1o
+      
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: reluctpoev
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: reluctpomats,
+     $   reluctpoevmats
+c-----------------------------------------------------------------------
+c     Convert to output coordinates
+c      - Note we cannot use the usual lmpert output vectors in this case
+c      baceause we do not have enough modes to fill the matrix columns
+c      (while bcoords fills the rows)
+c-----------------------------------------------------------------------
+      WRITE(*,*) 'Diagnosing reluctance power eigenvalues in out coords'
+      ALLOCATE(reluctpomats(0:4,mpert,mpert),
+     $         reluctpoev(0:4,mpert),reluctpoevmats(0:4,mpert,mpert))
+      reluctpomats(:,:,:)=reluctpmats(:,:,:)
+      DO k=1,4
+         ! convert normalized reluctance matrix to jac_out
+         DO j=1,mpert
+c            DO i=1,mpert
+c                IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert))
+c                  reluctpomats(k,mlow-lmlow+i,j)=reluctpmats(k,i,j)
+c            ENDDO
+            CALL ipeq_bcoords(psilim,reluctpomats(k,:,j),mfac,
+     $           mpert,rout,bpout,bout,rcout,0,0)
+         ENDDO
+         ! re-calculate eigenvectors and eigenvalues
+         worko=0
+         rworko=0
+         lworko=2*mpert-1
+         temp1o(:,:)=reluctpomats(k,:,:)
+         CALL zheev('V','U',mpert,temp1o,mpert,reluctpoev(k,:),
+     $        worko,lworko,rworko,info)
+         reluctpoevmats(k,:,:)=temp1o(:,:)
+      ENDDO
+      
+      CALL ascii_open(out_unit,"ipdiag_reluctpowout_n"//
+     $	   TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPDIAG_RELUCTPOWOUT: Reluctance matrix "//
+     $     "power eigenvalue calculation in output coordinates."
+      WRITE(out_unit,*)
+      WRITE(out_unit,*)"jac_out=",jac_out,"tmag_out=",0,"jsurf_out=",0
+      WRITE(out_unit,*)"resp_index=",resp_index
+      WRITE(out_unit,*)
+      WRITE(out_unit,*)"Eigenvalues"
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a4,1(1x,a16))')"mode",
+     $  "s_rho"
+      DO i=1,mpert
+         WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,
+     $     reluctpoev(resp_index,i)
+      ENDDO
+      WRITE(out_unit,*)
+      
+      WRITE(out_unit,*)"Eigenvectors"
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(2(1x,a4),2(1x,a16))')"mode","m",
+     $  "real(v_rho)","imag(v_rho)"
+      DO i=1,mpert
+         DO j=1,mpert
+            WRITE(out_unit,'(2(1x,I4),2(1x,es16.8))')i,mfac(j),
+     $           reluctpoevmats(resp_index,j,i)
+         ENDDO 
+      ENDDO
+      WRITE(out_unit,*)
+      
+      WRITE(out_unit,*)"Raw Matrix"
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(2(1x,a4),2(1x,a16))')"mode","m",
+     $  "real(rho)","imag(rho)"
+      DO i=1,mpert
+         DO j=1,mpert
+            WRITE(out_unit,'(2(1x,I4),2(1x,es16.8))')i,mfac(j),
+     $           reluctpomats(resp_index,j,i)
+         ENDDO 
+      ENDDO
+      WRITE(out_unit,*)
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipdiag_reluctpowout
 
       END MODULE ipdiag_mod

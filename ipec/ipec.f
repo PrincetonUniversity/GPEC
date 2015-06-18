@@ -304,8 +304,6 @@ c-----------------------------------------------------------------------
       CALL ipresp_sinduct
       CALL ipresp_permeab
       CALL ipresp_reluct
-      CALL ipresp_reluctpow(power_rout,power_bpout,power_bout,
-     $                      power_rcout,tmag_out)
 c-----------------------------------------------------------------------
 c     run and test rdcon.
 c-----------------------------------------------------------------------
@@ -314,7 +312,8 @@ c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
       IF (resp_flag) THEN
-         CALL ipout_response(tmag_out)
+         CALL ipout_response(power_rout,power_bpout,
+     $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
       IF (singcoup_flag .OR. smode>0) THEN
          CALL ipout_singcoup(sing_spot,power_rout,
@@ -525,6 +524,9 @@ c-----------------------------------------------------------------------
          
          ! test orthoganality of permeabev eigenvectors
          CALL ipdiag_permeabev_orthogonality
+         ! Test coordinate independence of power eigenvectors
+         CALL ipdiag_reluctpowout(power_rout,power_bpout,power_bout,
+     $        power_rcout)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

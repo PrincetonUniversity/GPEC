@@ -751,10 +751,6 @@ c-----------------------------------------------------------------------
          DO itheta=0,mthsurf-1
             jarea=jarea+jacfac(itheta)/mthsurf
          ENDDO
-         print *,jacfac(1:3)
-      ELSE
-         print *,"Re-using saved bcoord conversions"
-         print *,jacfac(1:3)
       ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.

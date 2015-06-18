@@ -12,7 +12,6 @@ c      3. ipresp_sinduct
 c      4. ipresp_permeab
 c      5. ipresp_reluct
 c      6. ipresp_indrel
-c      7. ipresp_reluctpow
 c-----------------------------------------------------------------------
 c     subprogram 0. ipresp_mod.
 c     module declarations.
@@ -264,11 +263,6 @@ c-----------------------------------------------------------------------
          CALL zgeev('V','V',mpert,temp1,mpert,permeabev(j,:),
      $        vl,mpert,vr,mpert,work,lwork,rwork,info)
          permeabevmats(j,:,:)=vr
-         ! check sorting
-         i = MINLOC(ABS(permeabev(j,:)),DIM=1)
-         vec = permeabevmats(j,:,i)
-         print *,ABS(permeabev(j,1:5))
-         print *,i,vec(30:31)
          ! sort by absolute value of eigenvector
          DO i = 1, mpert-1
             k = i
@@ -286,11 +280,6 @@ c-----------------------------------------------------------------------
      $                            permeabevmats(j,:,k), 1)
             END IF
          ENDDO
-         ! checks sorting
-         i = MINLOC(ABS(permeabev(j,:)),DIM=1)
-         vec = permeabevmats(j,:,i)
-         print *,i,vec(30:31)
-         print *,ABS(permeabev(j,1:5))
       ENDDO
 c-----------------------------------------------------------------------
 c     LOGAN - Hermitian eigenvectors for orthonormal basis.
@@ -364,7 +353,8 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
+      COMPLEX(r8), DIMENSION(mpert) :: temp
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,sqrta
 c-----------------------------------------------------------------------
 c     calculate reluctance matrix.
 c-----------------------------------------------------------------------
@@ -388,11 +378,45 @@ c-----------------------------------------------------------------------
          lwork=2*mpert-1
          CALL zheev('V','U',mpert,temp1,mpert,reluctev(j,:),work,
      $        lwork,rwork,info)
-         temp2=0
-         DO i=1,mpert
-            temp2(i,i)=temp1(i,i)
-         ENDDO
          reluctevmats(j,:,:)=temp1
+      ENDDO
+c-----------------------------------------------------------------------
+c     calculate sqrt(A) weighting matrix.
+c-----------------------------------------------------------------------
+      DO i=1,mpert
+         temp = 0
+         temp(i) = 1.0
+         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
+         sqrta(:,i) = temp
+      ENDDO
+c-----------------------------------------------------------------------
+c     Calculate power eigenvectors and eigenvalues in working coordinates
+c      - Construct "reluctance" matrix for Isqrt(A) in Bsqrt(A) basis.
+c      - Define sqrt(A) weighting matrix as
+c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c        int{b^2da}/int{da} = 1
+c        - This is a physically meaningful quantity (energy), and thus
+c          independent of coordinate system
+c      - We get I = RWPhi' and want to keep the operator Hermitian so we
+c        use W^dagger I = W^daggerRW Phi'
+c      - Since W is Hermitian, eigenvalues correspond to int{I^2da}/A (power) 
+c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
+c-----------------------------------------------------------------------c-----------------------------------------------------------------------
+      ALLOCATE(reluctpevmats(0:4,mpert,mpert),reluctpev(0:4,mpert),
+     $         reluctpmats(0:4,mpert,mpert))
+      DO j=0,4
+         work=0
+         rwork=0
+         lwork=2*mpert-1
+         reluctpmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
+     $                                      sqrta)
+         temp1(:,:)=reluctpmats(j,:,:)
+         print *,reluctpmats(j,1:5,1)
+         CALL zheev('V','U',mpert,temp1,mpert,reluctpev(j,:),work,
+     $        lwork,rwork,info)
+         reluctpevmats(j,:,:)=temp1
+         print *,reluctpmats(j,1:5,1)
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
@@ -446,96 +470,5 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipresp_indrel
-c-----------------------------------------------------------------------
-c     subprogram 7. ipresp_reluctpow.
-c     construct "reluctance" matrix for Isqrt(A) in Bsqrt(A) basis.
-c      - Define sqrt(A) weighting matrix as
-c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
-c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
-c        int{b^2da}/int{da} = 1
-c        - This is a physically meaningful quantity (power), and thus
-c          independent of coordinate system
-c      - We get I = RWPhi' and want to keep the operator Hermitian so we
-c        use W^dagger I = W^daggerRW Phi'
-c      - Since W is Hermitian, eigenvalues correspond to int{I^2da}/A 
-c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_reluctpow(rout,bpout,bout,rcout,tout)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
-      INTEGER :: i,j,k,lwork
-      REAL(r8), DIMENSION(3*mpert-2) :: rwork
-      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert) :: temp
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,temp1
-
-      INTEGER :: lworko
-      REAL(r8), DIMENSION(3*mpert-2) :: rworko
-      COMPLEX(r8), DIMENSION(2*mpert-1) :: worko
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1o
-c-----------------------------------------------------------------------
-c     calculate sqrt(A) weighting matrix.
-c-----------------------------------------------------------------------
-      DO i=1,mpert
-         temp = 0
-         temp(i) = 1.0
-         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
-         sqrta(:,i) = temp
-      ENDDO
-c-----------------------------------------------------------------------
-c     Calculate power eigenvectors and eigenvalues in DCON coordinates
-c       - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
-c-----------------------------------------------------------------------
-      ALLOCATE(reluctpevmats(0:4,mpert,mpert),reluctpev(0:4,mpert),
-     $         reluctpmats(0:4,mpert,mpert))
-      DO j=0,4
-         work=0
-         rwork=0
-         lwork=2*mpert-1
-         reluctpmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
-     $                                      sqrta)
-         temp1=reluctpmats(j,:,:)
-         CALL zheev('V','U',mpert,temp1,mpert,reluctpev(j,:),work,
-     $        lwork,rwork,info)
-         reluctpevmats(j,:,:)=temp1
-      ENDDO
-c-----------------------------------------------------------------------
-c     Convert to output coordinates
-c      - Note we cannot use the usual lmpert output vectors in this case
-c      baceause we do not have enough modes to fill the matrix columns
-c      (while bcoords fills the rows)
-c-----------------------------------------------------------------------
-      IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-         print *,'in reluctpow out'
-         ALLOCATE(reluctpomats(0:4,mpert,mpert),
-     $            reluctpoev(0:4,mpert),reluctpoevmats(0:4,mpert,mpert))
-         reluctpomats(:,:,:)=reluctpmats(:,:,:)
-         DO k=1,4
-            ! convert normalized reluctance matrix to jac_out
-            DO j=1,mpert
-c               DO i=1,mpert
-c                   IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert))
-c     $               reluctpomats(k,mlow-lmlow+i,j)=reluctpmats(k,i,j)
-c               ENDDO
-               CALL ipeq_bcoords(psilim,reluctpomats(k,:,j),mfac,
-     $              mpert,rout,bpout,bout,rcout,tout,0)
-            ENDDO
-            ! re-calculate eigenvectors and eigenvalues
-            worko=0
-            rworko=0
-            lworko=2*mpert-1
-            temp1o=reluctpomats(k,:,:)
-            CALL zheev('V','U',mpert,temp1o,mpert,reluctpoev(k,:),
-     $           worko,lworko,rworko,info)
-            reluctpoevmats(j,:,:)=temp1o
-         ENDDO
-      ENDIF
-      print *,'done reluctpow'
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE ipresp_reluctpow
       
       END MODULE ipresp_mod

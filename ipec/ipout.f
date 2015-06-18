@@ -48,11 +48,11 @@ c-----------------------------------------------------------------------
 c     subprogram 1. ipout_response.
 c     write basic information.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_response(tout)
+      SUBROUTINE ipout_response(rout,bpout,bout,rcout,tout,jout)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      INTEGER :: lwork,i,j,k,tout
+      INTEGER :: lwork,i,j,k,rout,bpout,bout,rcout,tout,jout
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(mpert) :: sts,s,ev
       COMPLEX(r8), DIMENSION(mpert) :: cev
@@ -61,6 +61,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(5*mpert) :: rwork
       COMPLEX(r8), DIMENSION(3*mpert) :: work
       ! LOGAN - ADDITIONAL VARIABLES
+      COMPLEX(r8), DIMENSION(lmpert) :: vL,vL1,vP,vP1,vR,vW,vF
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert) :: wtfun,wftfun,rfun,pfun
       CHARACTER(2048) :: header
 c-----------------------------------------------------------------------
@@ -114,7 +115,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"Eigenvalues"
       WRITE(out_unit,*)" jac_type = ",jac_type
       WRITE(out_unit,*)"  L = Vacuum Inductance"
-      WRITE(out_unit,*)"  Lambda = Inductancy"
+      WRITE(out_unit,*)"  Lambda = Inductance"
       WRITE(out_unit,*)"  P = Permeability   *Complex (not Hermitian)"
       WRITE(out_unit,*)"  P1= Response (P-I) *Singular values"
       WRITE(out_unit,*)"  rho = Reluctance (power norm)"
@@ -161,37 +162,59 @@ c-----------------------------------------------------------------------
          ENDDO 
       ENDDO
       WRITE(out_unit,*)
-      
-      ! TEMPORARY CHECK OF POWER NORM
-      WRITE(out_unit,*)"Eigenvalues"
-      WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $     "jac_out = ",jac_out,"tmag_out =",tout
-      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a4,1(1x,a16))')"mode",
-     $  "s_rho"
-      DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,
-     $     reluctpoev(resp_index,i)
-      ENDDO
-      WRITE(out_unit,*)
-      
-      WRITE(out_unit,*)"Eigenvectors"
-      WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $     "jac_out = ",jac_out,"tmag_out =",tout
-      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(2(1x,a4),2(1x,a16))')"mode","m",
-     $  "real(v_rho)","imag(v_rho)"
-      DO i=1,mpert
-         DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),2(1x,es16.8))')i,mfac(j),
-     $           reluctpoevmats(resp_index,j,i)
-         ENDDO 
-      ENDDO
-      WRITE(out_unit,*)
-      WRITE(out_unit,*)
-      
+        
+      IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+         WRITE(out_unit,*)"Eigenvectors"
+         WRITE(out_unit,*)" jac_out  = ",jac_out
+         WRITE(out_unit,*)" tmag_out = ",tout
+         WRITE(out_unit,*)" jsurf_out = ",jout
+         WRITE(out_unit,*)"  L = Vacuum Inductance"
+         WRITE(out_unit,*)"  Lambda = Inductance"
+         WRITE(out_unit,*)"  P = Permeability"
+         WRITE(out_unit,*)"  P1= Response (P-I) *right-singular"
+         WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+         WRITE(out_unit,*)"  W = Displacement energy"
+         WRITE(out_unit,*)"  F = Flux energy"
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(2(1x,a4),14(1x,a16))')"mode","m",
+     $     "real(v_L)","imag(v_L)","real(v_Lambda)","imag(v_Lambda)",
+     $     "real(v_P)","imag(v_P)","real(v_{P1})","imag(v_{P1})",
+     $     "real(v_rho)","imag(v_rho)",
+     $     "real(v_W)","imag(v_W)","real(v_F)","imag(v_F)"
+         DO i=1,mpert
+            DO j=1,mpert
+                IF ((mlow-lmlow+j>=1).AND.(mlow-lmlow+j<=lmpert)) THEN
+                   vL(mlow-lmlow+j) =surf_indevmats(j,i)
+                   vL1(mlow-lmlow+j)=plas_indevmats(resp_index,j,i)
+                   vP(mlow-lmlow+j) =permeabevmats(resp_index,j,i)
+                   vP1(mlow-lmlow+j)=permv(j,i)
+                   vR(mlow-lmlow+j) =reluctpevmats(resp_index,j,i)
+                   vW(mlow-lmlow+j) =wt(j,i)
+                   vF(mlow-lmlow+j) =wft(j,i)
+                ENDIF
+             ENDDO  
+             CALL ipeq_bcoords(psilim,vL,lmfac,lmpert,
+     $            rout,bpout,bout,rcout,tout,jout)
+             CALL ipeq_bcoords(psilim,vL1,lmfac,lmpert,
+     $            rout,bpout,bout,rcout,tout,jout)
+             CALL ipeq_bcoords(psilim,vP,lmfac,lmpert,
+     $            rout,bpout,bout,rcout,tout,0)
+             CALL ipeq_bcoords(psilim,vP1,lmfac,lmpert,
+     $            rout,bpout,bout,rcout,tout,0)
+             CALL ipeq_bcoords(psilim,vR,lmfac,lmpert,
+     $            rout,bpout,bout,rcout,tout,0)
+             CALL ipeq_bcoords(psilim,vW,lmfac,lmpert,
+     $            rout,bpout,bout,rcout,tout,0)
+             CALL ipeq_bcoords(psilim,vF,lmfac,lmpert,
+     $            rout,bpout,bout,rcout,tout,0)
+            DO j=1,lmpert
+               WRITE(out_unit,'(2(1x,I4),14(1x,es16.8))')i,lmfac(j),
+     $              vL(j),vL1(j),vP(j),vP1(j),vR(j),vW(j),vF(j)
+            ENDDO 
+         ENDDO
+         WRITE(out_unit,*)
+      ENDIF
+
       WRITE(out_unit,*)"Raw Matrices"
       WRITE(out_unit,*)" jac_type = ",jac_type
       WRITE(out_unit,*)" L = Vacuum Inductancy"
