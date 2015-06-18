@@ -412,11 +412,9 @@ c-----------------------------------------------------------------------c-------
          reluctpmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
      $                                      sqrta)
          temp1(:,:)=reluctpmats(j,:,:)
-         print *,reluctpmats(j,1:5,1)
          CALL zheev('V','U',mpert,temp1,mpert,reluctpev(j,:),work,
      $        lwork,rwork,info)
          reluctpevmats(j,:,:)=temp1
-         print *,reluctpmats(j,1:5,1)
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
