@@ -123,8 +123,7 @@ program pentrc
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug
 
-    
-    
+        
     ! distribute some simplified inputs to module circles
     xatol = atol
     xrtol = rtol

@@ -11,6 +11,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE global_mod
       USE bicube_mod
+      USE cspline_mod
       IMPLICIT NONE
 
       CHARACTER(32), PARAMETER :: version = "GPEC version 0.1.0" 
@@ -47,6 +48,8 @@ c-----------------------------------------------------------------------
      $     li1,li2,li3,volume,p0,ppeakfac,q95
       REAL(r8), DIMENSION(2) :: rext,rsep,zsep
       TYPE(spline_type) :: sq,sq_in
-      TYPE(bicube_type) :: rzphi
+      TYPE(bicube_type) :: rzphi,eqfun
+      TYPE(cspline_type) :: amats,bmats,cmats,
+     $     smats,tmats,xmats,ymats,zmats
 
       END MODULE global_mod

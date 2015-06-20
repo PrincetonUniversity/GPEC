@@ -38,7 +38,7 @@ module inputs
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
     
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
-        idcon_action_matrices,idcon_build,&
+        idcon_action_matrix,idcon_build,&
         eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         mfac,psifac,mpert,mstep,&
@@ -95,7 +95,7 @@ module inputs
         ! read vacuum data.
         !CALL idcon_vacuum
         ! form action matrices (this will move !!)
-        call idcon_action_matrices!(egnum,xspmn)
+        call idcon_action_matrix!(egnum,xspmn)
         
         ! evaluate field on axis
         call spline_eval(sq,0.0_r8,0)

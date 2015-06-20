@@ -761,7 +761,7 @@ module torque
                 
                 ! energy space integrations
                 allocate(lxint(fbnce%nqty-2))
-                wtwnorm = 2*xj*n ! euler-lagrange real energy metrices (default)
+                wtwnorm = 1.0 ! euler-lagrange real energy metrices (default)
                 rex = 1.0 ! include real part of resonance operator (default)
                 imx = 1.0 ! include imag part of resonance operator (default)
                 if(method(2:4)=='wmm' .or. method(2:4)=='kmm')then
@@ -769,7 +769,7 @@ module torque
                 endif
                 if(method(2:4)=='tmm')then
                     imx = 0.0
-                    wtwnorm = 1.0
+                    wtwnorm = -1.0
                 endif
                 if(write_espace)then
                     lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
@@ -793,7 +793,7 @@ module torque
                         do j=1,mpert
                             do i=1,mpert
                                 iqty = ((k-1)*mpert+j-1)*mpert + i + 1
-                                wtw(i,j,k) = wtwnorm*lxint(iqty)/fbnce_norm(iqty) &
+                                wtw(i,j,k) = (1/(2*xj*n))*lxint(iqty)/fbnce_norm(iqty) &
                                     *kin%f(s)*kin%f(s+2) &
                                     *(-n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
                             enddo
@@ -837,10 +837,9 @@ module torque
                         t_xx = matmul(conjg(transpose(xix)),matmul(wtw(:,:,4),xix))
                         t_xy = matmul(conjg(transpose(xix)),matmul(wtw(:,:,5),xiy))
                         t_yy = matmul(conjg(transpose(xiy)),matmul(wtw(:,:,6),xiy))
-                        tpsi = (1/wtwnorm) & ! convert energy to real torque convention
-                                  *(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
+                        tpsi = 2*n*xj*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
                             +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
-                            +conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
+                            +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
                         if(tdebug)then
                             print *," -> WxWx ~ ",wtw(20:25,20,1)
                             print *,"expected to be all real (wmm) or all imag (tmm):"
@@ -869,23 +868,6 @@ module torque
         
         return
     end function tpsi
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
 
     !=======================================================================
     function tintgrl_eqpsi(psilim,n,nl,zi,mi,wdfac,divxfac,electron,method,&
@@ -1114,14 +1096,6 @@ module torque
         
         return
     end function tintgrl_eqpsi
-
-
-
-
-
-
-
-
 
     !=======================================================================
     function tintgrl_lsode(psilim,n,nl,zi,mi,wdfac,divxfac,electron,method,&

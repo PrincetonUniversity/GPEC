@@ -87,6 +87,9 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)rzphi%xs,rzphi%ys,
      $        rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $        rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
+         WRITE(euler_bin_unit)amats%xs,bmats%xs,cmats%xs,
+     $        amats%fs,bmats%fs,cmats%fs,amats%fs1,bmats%fs1,cmats%fs1,
+     $        amats%xpower,bmats%xpower,cmats%xpower,fsmat,ksmat
       ENDIF
 c-----------------------------------------------------------------------
 c     open output files for crit and write header.
@@ -141,7 +144,7 @@ c     print initial point of integration.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psifac,0)
       q=sq%f(4)
-      IF(verbose) WRITE(*,40)"psi = ",psifac,", q = ",q
+      WRITE(*,40)"psi = ",psifac,", q = ",q
 c-----------------------------------------------------------------------
 c     open file for error output.
 c-----------------------------------------------------------------------

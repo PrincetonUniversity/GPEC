@@ -22,6 +22,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE ideal_mod
       USE match_mod
+      USE cspline_mod
       USE bicube_mod
       IMPLICIT NONE
 
@@ -30,6 +31,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: ro,zo
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: rzphi
+      TYPE(cspline_type) :: amats,bmats,cmats
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: fsmat,ksmat
 
       CHARACTER(8) :: z_level_type="axis"
       REAL(r8) :: phi_level=0
@@ -47,11 +50,11 @@ c-----------------------------------------------------------------------
       CHARACTER(*), INTENT(IN) :: filename
 
       CHARACTER(128) :: message
-      INTEGER :: data_type,ifix,ios,msol,istep,ising
+      INTEGER :: data_type,ifix,ios,mband,msol,istep,ising
 
       INTEGER :: i1,i2,i3,i4,i5,i6
       REAL(r8) :: r1,r2,r3,r4,r5
-      REAL(r8), DIMENSION(:), POINTER :: ep
+      COMPLEX(r8), DIMENSION(:), POINTER :: ep
 
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
 c-----------------------------------------------------------------------
@@ -59,16 +62,24 @@ c     open data file and read header.
 c-----------------------------------------------------------------------
       CALL bin_open(in_unit,filename,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
-      READ(in_unit)i1,i2,i3,r1,r2,r3,r4,r5
+      READ(in_unit)mband,i2,i3,r1,r2,r3,r4,r5
       READ(in_unit)i4,i5,i6
 
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
+      CALL cspline_alloc(amats,mpsi,mpert**2)
+      CALL cspline_alloc(bmats,mpsi,mpert**2)
+      CALL cspline_alloc(cmats,mpsi,mpert**2)
+      ALLOCATE(fsmat(3*mband+1,mpert),ksmat(2*mband+1,mpert))
+
       rzphi%periodic(2)=.TRUE.
       READ(in_unit)sq%xs,sq%fs,sq%fs1
       READ(in_unit)rzphi%xs,rzphi%ys,
      $        rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $        rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
+      READ(in_unit)amats%xs,bmats%xs,cmats%xs,
+     $        amats%fs,bmats%fs,cmats%fs,amats%fs1,bmats%fs1,cmats%fs1,
+     $        amats%xpower,bmats%xpower,cmats%xpower,fsmat,ksmat
       mstep=-1
       mfix=0
       msing=0
@@ -245,8 +256,9 @@ c-----------------------------------------------------------------------
             ENDDO
             fixtype(ifix)%gauss=MATMUL(fixtype(ifix)%gauss,temp)
          ENDDO
-         IF(sing_flag(ifix))
-     $        fixtype(ifix)%gauss(:,fixtype(ifix)%index(1))=0
+         IF(sing_flag(ifix).AND.(.NOT.con_flag)) THEN
+            fixtype(ifix)%gauss(:,fixtype(ifix)%index(1))=0
+         ENDIF
       ENDDO
 c-----------------------------------------------------------------------
 c     concatenate gaussian reduction matrices.

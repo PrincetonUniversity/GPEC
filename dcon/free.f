@@ -41,25 +41,31 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE free_run(plasma1,vacuum1,total1,nzero)
 
-      REAL(r8), INTENT(OUT) :: plasma1,vacuum1,total1
+      COMPLEX(r8), INTENT(OUT) :: plasma1,vacuum1,total1
       INTEGER, INTENT(IN) :: nzero
 
       LOGICAL, PARAMETER :: normalize=.TRUE.
       CHARACTER(1), DIMENSION(mpert,msol) :: star
       INTEGER :: ipert,jpert,isol,info,lwork
-      INTEGER, DIMENSION(mpert) :: ipiv,m
+      INTEGER, DIMENSION(mpert) :: ipiv,m,eindex
       INTEGER, DIMENSION(1) :: imax
       REAL(r8) :: v1
-      REAL(r8), DIMENSION(mpert) :: ep,ev,et,singfac
+      REAL(r8), DIMENSION(mpert) :: singfac
+      ! eigenvalues are complex for gpec
+      COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et,tt
+
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
+      REAL(r8), DIMENSION(2*mpert) :: rwork2
       COMPLEX(r8) :: phase,norm
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+      COMPLEX(r8), DIMENSION(2*mpert+1) :: work2
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,temp,wpt,wvt
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat,vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
+
       REAL(r8), DIMENSION(mpert) :: ebt,ebp,ebv ! LOGAN
       COMPLEX(r8), DIMENSION(mpert) :: diff
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wbt,wbp,wbv,ct ! LOGAN
@@ -67,11 +73,11 @@ c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
  10   FORMAT(1x,"Energies: plasma = ",1p,e10.3,", vacuum = ",e10.3,
-     $     ", total = ",e10.3)
+     $     ", real = ",e10.3,", imaginary = ",e10.3)
  20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",5x,"total"/)
- 30   FORMAT(i6,1p,3e11.3,a)
+ 30   FORMAT(i6,1p,4e11.3,a)
  40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",5x,"vacuum",5x,"total"/)
- 50   FORMAT(2i6,1p,3e11.3,a)
+ 50   FORMAT(2i6,1p,4e11.3,a)
  60   FORMAT(/2x,"ipert",4x,"m",4x,"re wt",6x,"im wt",6x,"abs wt"/)
  70   FORMAT(2i6,1p,3e11.3,2x,a)
  80   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum"/)
@@ -85,7 +91,7 @@ c-----------------------------------------------------------------------
          wp=CONJG(TRANSPOSE(wp))
          CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)  
          CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
-         wp=(wp+CONJG(TRANSPOSE(wp)))/(2*psio**2)
+         wp=CONJG(TRANSPOSE(wp))/psio**2
       ELSE
          wp=0
       ENDIF
@@ -137,16 +143,6 @@ c-----------------------------------------------------------------------
          wbt(ipert,:)= ifac*singfac*wbt(ipert,:)    !*twopi*chi1
          wbt(:,ipert)=-ifac*singfac*wbt(:,ipert)    !*twopi*chi1
       ENDDO
-      !ct = CONJG(TRANSPOSE(wbt))
-      !print *, "Is flux matrix Hermitian?"
-      !print *, ALL(wbt .EQ. ct)
-      !print *, ALL(ABS(wbt - ct)/ABS(wt) < 1e-3)
-      !DO isol=1,mpert
-      !   IF(.NOT. ALL(wbt(isol,:) .EQ. ct(isol,:))) THEN
-      !     diff = wbt(isol,:)-ct(isol,:)
-      !     print *,isol,SQRT(ABS(DOT_PRODUCT(diff,diff)))
-      !   ENDIF
-      !ENDDO
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,wbt,mpert,ebt,work,lwork,rwork,info)
       work = 0
@@ -186,21 +182,19 @@ c-----------------------------------------------------------------------
          ebv(ipert)=wbv(ipert,ipert)
       ENDDO
 c-----------------------------------------------------------------------
-c     compute energy eigenvalues.
+c     compute complex energy eigenvalues.
 c-----------------------------------------------------------------------
       wt=wp+wv
-      lwork=2*mpert-1
-      !ct = CONJG(TRANSPOSE(wt))
-      !print *, "Is displacement matrix Hermitian?"
-      !print *, ALL(wt .EQ. ct)
-      !print *, ALL(ABS(wt - ct)/ABS(wt) < 1e-3)
-      !DO isol=1,mpert
-      !   IF(.NOT. ALL(wt(isol,:) .EQ. ct(isol,:))) THEN
-      !     diff = wt(isol,:)-ct(isol,:)
-      !     print *,isol,wt(isol,isol),SQRT(ABS(DOT_PRODUCT(diff,diff)))
-      !   ENDIF
-      !ENDDO
-      CALL zheev('V','U',mpert,wt,mpert,et,work,lwork,rwork,info)
+      lwork=2*mpert+1
+      CALL zgeev('V','V',mpert,wt,mpert,et,
+     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+      eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+      CALL bubble(REAL(et),eindex,1,mpert)
+      tt=et
+      DO ipert=1,mpert
+         wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
+         et(ipert)=tt(eindex(mpert+1-ipert))
+      ENDDO
 c-----------------------------------------------------------------------
 c     normalize eigenfunction and energy.
 c-----------------------------------------------------------------------
@@ -249,14 +243,7 @@ c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
          WRITE(euler_bin_unit)5
-c-----------------------------------------------------------------------
-c     <MODIFIED>
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     <MODIFIED>
-c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)ep
-c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
          WRITE(euler_bin_unit)ebp  ! LOGAN ADDED with option 5
@@ -266,17 +253,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,10)ep(1),ev(1),et(1)
-      plasma1=ep(1)
-      vacuum1=ev(1)
-      total1=et(1)
+      WRITE(*,10)REAL(ep(1)),REAL(ev(1)),REAL(et(1)),AIMAG(et(1))
+      plasma1=REAL(ep(1))
+      vacuum1=REAL(ev(1))
+      total1=REAL(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
 c-----------------------------------------------------------------------
       message=""
       WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
       WRITE(out_unit,20)
-      WRITE(out_unit,30)(isol,ep(isol),ev(isol),et(isol),
+      WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
+     $     REAL(et(isol)),AIMAG(et(isol)),
      $     TRIM(message(isol)),isol=1,mpert)
       WRITE(out_unit,20)
 c-----------------------------------------------------------------------
@@ -286,8 +274,8 @@ c-----------------------------------------------------------------------
       m=mlow+(/(isol,isol=0,mpert-1)/)
       DO isol=1,mpert
          WRITE(out_unit,40)
-         WRITE(out_unit,50)isol,imax(1),ep(isol),ev(isol),et(isol),
-     $        TRIM(message(isol))
+         WRITE(out_unit,50)isol,imax(1),REAL(ep(isol)),REAL(ev(isol)),
+     $        REAL(et(isol)),AIMAG(et(isol)),TRIM(message(isol))
          WRITE(out_unit,60)
          WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
      $        ABS(wt(ipert,isol)),star(ipert,isol),ipert=1,mpert)
@@ -307,12 +295,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute and print separate plasma and vacuum eigenvalues.
 c-----------------------------------------------------------------------
-      CALL zheev('V','U',mpert,wp,mpert,ep,work,lwork,rwork,info)
+      lwork=2*mpert+1
+      CALL zgeev('V','V',mpert,wp,mpert,ep,
+     $     vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+      eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+      CALL bubble(REAL(ep),eindex,1,mpert)
+      tt=ep
+      DO ipert=1,mpert
+         ep(ipert)=tt(eindex(mpert+1-ipert))
+      ENDDO
       CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
-      WRITE(out_unit,*)"Separate Energy Eigenvalues:"
-      WRITE(out_unit,80)
-      WRITE(out_unit,90)(isol,ep(isol),ev(isol),isol=1,mpert)
-      WRITE(out_unit,80)      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -483,8 +475,8 @@ c-----------------------------------------------------------------------
       u(:,:,2)=wp*psio**2
       CALL sing_der(neq,psifac,u,du)
       nmat=du(:,:,1)
-      smat=-(MATMUL(bmat,du(:,:,1))+MATMUL(cmat,u(:,:,1)))
-      CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,smat,mpert,info)
+      smat=-(MATMUL(bsmat,du(:,:,1))+MATMUL(csmat,u(:,:,1)))
+      CALL zhetrs('L',mpert,mpert,asmat,mpert,ipiva,smat,mpert,info)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -500,7 +492,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE free_ahb_write(nmat,smat,wt,et)
 
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: nmat,smat,wt
-      REAL(r8), DIMENSION(mpert), INTENT(IN) :: et
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: et
 
       INTEGER :: itheta,ipert,isol,m
       INTEGER, DIMENSION(mpert) :: mvec
@@ -511,10 +503,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert,3) :: jqvec
       COMPLEX(r8), DIMENSION(mpert,0:mthsurf,3) :: bvec0,bvec
 c-----------------------------------------------------------------------
-c     compute Fourier components of magnetic field.
-c     wt = vector of xsp_mn = u
-c     xsp1_mn = xin
-c     xss_mn = xis
+c     compute Fourier components: xsp1_mn = xin, xss_mn = xis.
 c-----------------------------------------------------------------------
       xin=MATMUL(nmat,wt)
       xis=MATMUL(smat,wt)

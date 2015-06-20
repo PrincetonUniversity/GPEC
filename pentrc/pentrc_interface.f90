@@ -16,7 +16,7 @@ module pentrc_interface
     !   ro, real                - Major radius (idcon)
     !   bo, real                - Field on axis (determined from sq)
     !   kin, spline_type        - (psi) Kinetic profiles
-    !   xs_m, fspline_type     - (psi,theta) First order perturbations
+    !   xs_m, fspline_type      - (psi,theta) First order perturbations
     !   eqfun, bicube_type      - (psi,theta) Equilibrium mod b
     !   sq, spline_type         - (psi,theta) Equilibrium flux functions
     !   rzphi, bicube_type      - (psi,theta) Cylindrical coordinate & Jacobian
@@ -72,9 +72,12 @@ module pentrc_interface
         eq_out=.false.,&
         theta_out=.false.,&
         xlmda_out=.false.,&
+        eqpsi_out=.false.,&
         fnml_flag=.false.,&
         ellip_flag=.false.,&
-        diag_flag=.false.
+        diag_flag=.false.,&
+        term_flag=.true.,&
+        clean=.true.
         
     integer :: i, &
         mi=2, &
@@ -103,27 +106,28 @@ module pentrc_interface
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
         ipec_file  ="ipec_order1_n1.bin", &
-        peq_file ="ipec_xclebsch_n1.out"
+        peq_file ="ipec_xclebsch_n1.out", &
+        data_dir ="."
     character(32) :: &
         nutype = "harmonic",&
         f0type = "maxwellian",&
         jac_in = ""
       
-    namelist/pent_input/kinetic_file,ipec_file,peq_file, &
-        idconfile,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
+    namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
+        data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
         
-    namelist/pent_control/wefac,wdfac,wpfac,nufac,divxfac, &
+    namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
         atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
         
-    namelist/pent_output/eq_out,theta_out,xlmda_out,&
+    namelist/pent_output/eq_out,theta_out,xlmda_out,eqpsi_out,&
         fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
         wxyz_flag,psiout,fkmm_flag,tkmm_flag,pkmm_flag,&
-        fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag
+        fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
+        term_flag,clean
         
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug
-
         
     contains    
         

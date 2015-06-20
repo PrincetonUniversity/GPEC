@@ -19,7 +19,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-
       USE spline_mod, only : spline_type,spline_eval,spline_alloc,
      $                       spline_dealloc,spline_fit,spline_int
       USE cspline_mod, only : cspline_type,cspline_eval,cspline_alloc,
@@ -59,7 +58,8 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
       TYPE(cspline_type) :: u1,u2
-      TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
+      TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats,
+     $     amats,bmats,cmats
       TYPE(fspline_type) :: metric
 
       TYPE :: resist_type
@@ -88,8 +88,6 @@ c-----------------------------------------------------------------------
       TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
       
-
-      
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. idcon_read.
@@ -114,7 +112,6 @@ c-----------------------------------------------------------------------
       in_unit = get_free_file_unit(-1)
       OPEN(UNIT=in_unit,FILE=idconfile,STATUS="OLD",POSITION="REWIND",
      $        FORM="UNFORMATTED")
-      !CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
@@ -155,8 +152,6 @@ c-----------------------------------------------------------------------
 c     only accept mband=0.
 c-----------------------------------------------------------------------
       IF (mband /= (mpert-1)) THEN
-         !WRITE(message,'(a)')"IPEC needs full band matrix"
-         !CALL ipec_stop(message)
          STOP 'PENTRC needs full band matrix'
       ENDIF
 c-----------------------------------------------------------------------
@@ -164,12 +159,18 @@ c     read equilibrium on flux coordinates.
 c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
+      CALL cspline_alloc(amats,mpsi,mpert**2)
+      CALL cspline_alloc(bmats,mpsi,mpert**2)
+      CALL cspline_alloc(cmats,mpsi,mpert**2)
 
       rzphi%periodic(2)=.TRUE.
       READ(in_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
       READ(in_unit)rzphi%xs,rzphi%ys,
      $     rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $     rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
+      READ(in_unit)amats%xs,bmats%xs,cmats%xs,
+     $        amats%fs,bmats%fs,cmats%fs,amats%fs1,bmats%fs1,cmats%fs1,
+     $        amats%xpower,bmats%xpower,cmats%xpower
       mstep=-1
       mfix=0
       msing=0
@@ -211,12 +212,10 @@ c-----------------------------------------------------------------------
          CASE DEFAULT
             WRITE(message,'(a,i1,a,i4)')"Cannot recognize data_type = ",
      $           data_type,", at istep = ",istep
-!            CALL ipec_stop(message)
             PRINT *,message
             STOP
          END SELECT
       ENDDO
-      !CALL bin_close(in_unit)
       CLOSE(in_unit)
 c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
@@ -233,7 +232,6 @@ c-----------------------------------------------------------------------
       in_unit = get_free_file_unit(-1)
       OPEN(UNIT=in_unit,FILE=idconfile,STATUS="OLD",POSITION="REWIND",
      $        FORM="UNFORMATTED")
-      !CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
@@ -305,7 +303,6 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
          WRITE(message,'(a)')"Terminated by zero crossing"
-         !CALL ipec_stop(message)
          STOP "Terminated by zero crossing"
       ENDIF
       rhofac=SQRT(psifac)
@@ -580,7 +577,6 @@ c-----------------------------------------------------------------------
 
       out_unit = get_free_file_unit(-1)
       OPEN(UNIT=out_unit,FILE="idcon_equil.out",STATUS="UNKNOWN")
-      !CALL ascii_open(out_unit,"idcon_equil.out","UNKNOWN")
       WRITE(out_unit,*)"IDCON_EQUIL: "//
      $     "Various equilibrium quantities"
       WRITE(out_unit,*)     
@@ -726,7 +722,6 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zhetrf: amat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         !CALL ipec_stop(message)
          PRINT *,message
          STOP
       ENDIF
@@ -809,22 +804,29 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
+c     kinetic abc matrices.
+c----------------------------------------------------------------------- 
+      IF (.TRUE.) THEN 
+         CALL cspline_eval(amats,psi,0)  
+         CALL cspline_eval(bmats,psi,0)  
+         CALL cspline_eval(cmats,psi,0)         
+         amat=RESHAPE(amats%f,(/mpert,mpert/))
+         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
+         cmat=RESHAPE(cmats%f,(/mpert,mpert/))
+      ENDIF
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_matrix
-
 c-----------------------------------------------------------------------
-c     subprogram 6. idcon_action_matrices.
+c     subprogram 6. idcon_action_matrice.
 c     Equilibrium matrices nexessary to calc perturbed mod b for gpec.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_action_matrices()!(egnum,xspmn)
+      SUBROUTINE idcon_action_matrix()!(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      !INTEGER, INTENT(IN) :: egnum
-      !COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
-
       INTEGER :: ipsi,istep,ipert,jpert,itheta,dm,m1,m2
       REAL(r8) :: psi,angle,rs,
      $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht,
@@ -839,9 +841,6 @@ c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing perturbed b field for gpec"
-
-      !CALL idcon_build(egnum,xspmn)   !! Only needed for ipeq_sol for xi's
-      !CALL ipeq_alloc                 !! displacements now in pentrc inputs
 c-----------------------------------------------------------------------
 c     set up fourier-spline type.
 c-----------------------------------------------------------------------
@@ -982,9 +981,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_action_matrices
-
-
+      END SUBROUTINE idcon_action_matrix
 c-----------------------------------------------------------------------
 c     compute root of discrete function by the secant method.
 c     use when only function is monotonic.
@@ -1034,9 +1031,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      END FUNCTION issect
-      
-      
+      END FUNCTION issect           
 c-----------------------------------------------------------------------
 c     subprogram 9. idcon_coords.
 c     transform coordinates to dcon coordinates. 
@@ -1137,14 +1132,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_coords
-      
-
-      
-      
-      
-      
-      
-      
+            
       !=======================================================================
       subroutine set_eq(set_eqfun,set_sq,set_rzphi,
      $              set_smats,set_tmats,set_xmats,set_ymats,set_zmats,
@@ -1222,14 +1210,6 @@ c-----------------------------------------------------------------------
         bo = abs(sq%f(1))/(twopi*ro)
         
       end subroutine set_eq
-      
-      
-      
-      
-      
-      
-      
-      
-      
+            
       END MODULE dcon_interface
 

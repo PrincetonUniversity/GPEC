@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
      $     big,small,ns,root,scan_flag,root_flag,contour_flag,full,
      $     z_level_type,phi_level,transform_flag,poly_form_type,
      $     poly_test_type,scan0,scan1,nscan,delta0,delta1,condense,
-     $     ripple_flag,mripple
+     $     ripple_flag,mripple,kin_flag,con_flag
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
