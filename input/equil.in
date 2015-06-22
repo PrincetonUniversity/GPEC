@@ -2,15 +2,16 @@
 	eq_type="efit"
    	eq_filename = "/p/gpec/users/jpark/data/equilibria/efit/142301_C94/EQDSK.OUT.CHEASE.NSTX_142301_C94_7800_7950.06"
 	eq_filename="/p/gpec/users/jpark/data/equilibria/efit/g144182.03750.qo105_d3d"
+   	eq_filename="/u/jpark/data/equilibria/efit/g126006.03600_d3d_osborne"
 	jac_type="hamada"
 	power_bp=0
 	power_b=0
 	power_r=0
 
 	grid_type="ldp"
-	psilow=1e-3
+	psilow=1e-2
 	psihigh=0.99
-	mpsi=128
+	mpsi=64
 	mtheta=256
 	newq0=0
 	input_only=f

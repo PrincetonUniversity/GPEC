@@ -47,9 +47,11 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,iqty
 
       INTEGER, DIMENSION(mpert) :: ipiva
-      COMPLEX(r8), DIMENSION(mpert*mpert) :: work
-
       COMPLEX(r8), DIMENSION(mpert) :: xspfac
+
+      COMPLEX(r8), DIMENSION(mpert*mpert) :: work
+      COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu,fmatlu
+
       IF(debug_flag) PRINT *, "Entering ipeq_sol"      
 c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
@@ -70,15 +72,44 @@ c-----------------------------------------------------------------------
 c     compute preliminary quantities.
 c-----------------------------------------------------------------------
       xsp_mn=u1%f
-      xspfac=u2%f/singfac
-      CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
-     $     2*mband+1,u1%f,1,ione,xspfac,1)
-      CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
-      xsp1_mn=xspfac/singfac
-      !xsp1_mn=u1%f1
-      CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
-      CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
-      CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
+
+      IF (kin_flag) THEN
+         xsp1_mn=u1%f1  
+         IF (surface_flag) THEN
+            xspfac=u2%f
+            CALL zgbmv('N',mpert,mpert,mband,mband,-ione,ksmat,
+     $           2*mband+1,u1%f,1,ione,xspfac,1)
+            fmatlu=fsmat
+            CALL zgbtrf(mpert,mpert,mband,mband,fmatlu,3*mband+1,
+     $           ipiva,info)
+            CALL zgbtrs("N",mpert,mband,mband,1,fmatlu,
+     $           3*mband+1,ipiva,xspfac,mpert,info)         
+            xsp1_mn=xspfac
+         ENDIF
+
+         amatlu=0
+         DO jpert=1,mpert
+            DO ipert=1,mpert
+               amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
+            ENDDO
+         ENDDO
+         CALL zgbtrf(mpert,mpert,mband,mband,amatlu,
+     $        3*mband+1,ipiva,info)
+         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,3*mband+1,ipiva,
+     $        bmat,mpert,info)
+         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,3*mband+1,ipiva,
+     $        cmat,mpert,info)
+      ELSE
+         xspfac=u2%f/singfac
+         CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
+     $        2*mband+1,u1%f,1,ione,xspfac,1)
+         CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
+         xsp1_mn=xspfac/singfac
+         CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
+      ENDIF
+
       xss_mn=-MATMUL(bmat,xsp1_mn)-MATMUL(cmat,xsp_mn)
 c-----------------------------------------------------------------------
 c     compute contravariant b fields.

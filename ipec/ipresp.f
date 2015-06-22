@@ -57,7 +57,9 @@ c-----------------------------------------------------------------------
          ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
      $        kap_mn(4,mpert),kax_mn(mpert))
          CALL ipeq_alloc
+         surface_flag=.TRUE.
          CALL ipeq_sol(psilim)
+         surface_flag=.FALSE.
          CALL ipeq_contra(psilim)
          CALL ipeq_cova(psilim)
          CALL ipeq_surface(psilim)
@@ -91,18 +93,30 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute surface energy.
 c-----------------------------------------------------------------------
-         surfei(i)=0.5/mu0*SUM(REAL(CONJG(chimats(:,i))*
-     $        flxmats(:,i),r8))
-         surfee(i)=-0.5/mu0*SUM(REAL(CONJG(chemats(:,i))*
-     $        flxmats(:,i),r8))
-         DO j=1,4
-            surfep(j,i)=0.5/mu0*SUM(REAL(CONJG(chpmats(j,:,i))*
-     $           flxmats(:,i),r8))
-            surfet(j,i)=surfep(j,i)+surfee(i)
-         ENDDO
-         IF(verbose) WRITE(*,'(1x,a12,i3,a7,es10.3,a10,es10.3)')
-     $        "eigenmode = ",i,", dw = ",surfet(1,i),
-     $        ", error = ",ABS(1-surfet(2,i)/surfet(1,i))   
+         surfei(i)=0.5/mu0*SUM(REAL(chimats(:,i)*CONJG(flxmats(:,i))))
+         surfee(i)=-0.5/mu0*SUM(REAL(chemats(:,i)*CONJG(flxmats(:,i))))
+
+         IF(kin_flag)THEN
+            DO j=1,4
+               surfep(j,i)=0.5/mu0*SUM(chpmats(j,:,i)*
+     $              CONJG(flxmats(:,i)))
+               surfet(j,i)=surfep(j,i)+surfee(i)
+            ENDDO
+            IF(verbose)WRITE(*,'(1x,a12,i3,2(a7,es10.3),a10,es10.3)')
+     $           "eigenmode = ",i,", dw = ",REAL(surfet(1,i)),
+     $           ", T = ",-2*nn*AIMAG(surfet(1,i)),", error = ",
+     $           ABS(1-surfet(2,i)/surfet(1,i))   
+         ELSE 
+            DO j=1,4
+               surfep(j,i)=0.5/mu0*SUM(REAL(chpmats(j,:,i)*
+     $              CONJG(flxmats(:,i))))
+               surfet(j,i)=surfep(j,i)+surfee(i)
+            ENDDO
+            IF(verbose) WRITE(*,'(1x,a12,i3,a7,es10.3,a10,es10.3)')
+     $           "eigenmode = ",i,", dw = ",REAL(surfet(1,i)),
+     $           ", error = ",ABS(1-surfet(2,i)/surfet(1,i))   
+         ENDIF
+         
          CALL ipeq_dealloc
          DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
       ENDDO
@@ -123,9 +137,9 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j,k,lwork
       INTEGER, DIMENSION(mpert):: ipiv
-      REAL(r8), DIMENSION(3*mpert-2) :: rwork
-      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
+      REAL(r8), DIMENSION(2*mpert) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert+1) :: work
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,vr,vl
 c-----------------------------------------------------------------------
 c     calculate plasma inductance matrix by surface consideration.
 c-----------------------------------------------------------------------
@@ -134,24 +148,17 @@ c-----------------------------------------------------------------------
      $     plas_indevmats(0:4,mpert,mpert))
       DO j=1,4
          work=0
-         work2=0
          rwork=0
          temp1=TRANSPOSE(kapmats(j,:,:))
          temp2=TRANSPOSE(flxmats)
          CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
          temp1=TRANSPOSE(temp2)
-         temp1=0.5*(temp1+CONJG(TRANSPOSE(temp1)))
          plas_indmats(j,:,:)=temp1
-         lwork=2*mpert-1
-         CALL zheev('V','U',mpert,temp1,mpert,plas_indev(j,:),work,
-     $        lwork,rwork,info)
-         temp2=0
-         DO i=1,mpert
-            temp2(i,i)=temp1(i,i)
-         ENDDO
-         temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
-         plas_indevmats(j,:,:)=temp1
+         lwork=2*mpert+1
+         CALL zgeev('V','V',mpert,temp1,mpert,plas_indev(j,:),
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         plas_indevmats(j,:,:)=vr
       ENDDO
 c-----------------------------------------------------------------------
 c     calculate energy inductance matrix by energy consideration.
@@ -167,17 +174,12 @@ c-----------------------------------------------------------------------
      $              /(et(k)*2.0)
             ENDDO
          ENDDO
-      ENDDO      
-      lwork=2*mpert-1
+      ENDDO  
+      lwork=2*mpert+1
       plas_indmats(0,:,:)=temp1
-      CALL zheev('V','U',mpert,temp1,mpert,plas_indev(0,:),work,
-     $     lwork,rwork,info)
-      temp2=0
-      DO i=1,mpert
-         temp2(i,i)=temp1(i,i)
-      ENDDO
-      temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
-      plas_indevmats(0,:,:)=temp1
+      CALL zgeev('V','V',mpert,temp1,mpert,plas_indev(0,:),
+     $     vl,mpert,vr,mpert,work,lwork,rwork,info)
+      plas_indevmats(0,:,:)=vr
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -211,11 +213,6 @@ c-----------------------------------------------------------------------
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,temp1,mpert,surf_indev,work,
      $     lwork,rwork,info)
-      temp2=0
-      DO i=1,mpert
-         temp2(i,i)=temp1(i,i)
-      ENDDO
-      temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
       surf_indevmats=temp1
 c-----------------------------------------------------------------------
 c     terminate.
@@ -246,7 +243,6 @@ c-----------------------------------------------------------------------
      $     permeabevmats(0:4,mpert,mpert),permeabindex(0:4,mpert))
       DO j=0,4
          work=0
-         work2=0
          rwork=0
          temp1=TRANSPOSE(surf_indmats)
          temp2=TRANSPOSE(plas_indmats(j,:,:))
@@ -260,30 +256,6 @@ c-----------------------------------------------------------------------
          permeabevmats(j,:,:)=vr
       ENDDO
 c-----------------------------------------------------------------------
-c     LOGAN - Hermitian eigenvectors for orthonormal basis.
-c-----------------------------------------------------------------------
-c     ALLOCATE(permeabhev(0:4,mpert),permeabhevmats(0:4,mpert,mpert))
-c     !ctp = CONJG(TRANSPOSE(permeabmats(resp_index,:,:)))
-c     !IF (ALL(permeabmats(resp_index,:,:) .EQ. ctp)) THEN
-c     IF (ALL(ABS(AIMAG(permeabev(resp_index,:))
-c    $        /REAL(permeabev(resp_index,:))) .LT. 1e-9)) THEN
-c       PRINT *, "Permeability ~ Hermitian"
-c       phermitian = .FALSE.
-c       DO j=0,4
-c         work=0
-c         rwork=0
-c         lwork=2*mpert-1
-c         permeabhevmats(j,:,:) = permeabmats(j,:,:)
-c         CALL zheev('V','U',mpert,permeabhevmats(j,:,:),mpert,
-c    $      permeabhev(j,:),work,lwork,rwork,info)
-c       ENDDO
-c     ELSE
-c       PRINT *, "Permeability not Hermitian"
-c       phermitian = .FALSE.
-c       permeabhev = permeabev
-c       permeabhevmats = permeabevmats
-c     ENDIF
-c-----------------------------------------------------------------------
 c     LOGAN - SVD permeability matrix for orthonormal basis.
 c-----------------------------------------------------------------------
       ALLOCATE(perms(mpert),permv(mpert,mpert))
@@ -295,12 +267,12 @@ c-----------------------------------------------------------------------
       permv=0
       a = 0
       DO i=1,mpert
-        a(i,i) = 1 !identitiy
+         a(i,i) = 1 !identitiy
       ENDDO
       ! sudo permeability: plasma response operator (Phi^p = a Phi^x)
       a=permeabmats(resp_index,:,:) - a
-      CALL zgesvd('S','S',mpert,mpert,a,mpert,perms,permu,mpert,permv,
-     $     mpert,works,lwork,rworks,info)
+      CALL zgesvd('S','S',mpert,mpert,a,mpert,perms,permu,mpert,
+     $     permv,mpert,works,lwork,rworks,info)
       permv=CONJG(TRANSPOSE(permv))
 c-----------------------------------------------------------------------
 c     sort by amplitudes.
@@ -329,9 +301,9 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j,lwork
       INTEGER, DIMENSION(mpert):: ipiv
-      REAL(r8), DIMENSION(3*mpert-2) :: rwork
-      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
+      REAL(r8), DIMENSION(2*mpert) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert+1) :: work
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,vl,vr
 c-----------------------------------------------------------------------
 c     calculate reluctance matrix.
 c-----------------------------------------------------------------------
@@ -352,15 +324,11 @@ c-----------------------------------------------------------------------
          reluctmats(j,:,:)=MATMUL(temp1,
      $        MATMUL(diff_indmats(j,:,:),temp1))
          temp1=reluctmats(j,:,:)
-         lwork=2*mpert-1
-         CALL zheev('V','U',mpert,temp1,mpert,reluctev(j,:),work,
-     $        lwork,rwork,info)
-         temp2=0
-         DO i=1,mpert
-            temp2(i,i)=temp1(i,i)
-         ENDDO
-         !temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
-         reluctevmats(j,:,:)=temp1
+
+         lwork=2*mpert+1
+         CALL zgeev('V','V',mpert,temp1,mpert,reluctev(j,:),
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         reluctevmats(j,:,:)=vr
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
@@ -377,9 +345,9 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j,lwork
       INTEGER, DIMENSION(mpert):: ipiv
-      REAL(r8), DIMENSION(3*mpert-2) :: rwork
-      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
+      REAL(r8), DIMENSION(2*mpert) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert+1) :: work
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,vl,vr
 c-----------------------------------------------------------------------
 c     calculate reluctance matrix.
 c-----------------------------------------------------------------------
@@ -399,15 +367,10 @@ c-----------------------------------------------------------------------
          indrelmats(j,:,:)=MATMUL(temp1,
      $        MATMUL(plas_indmats(j,:,:),temp1))
          temp1=indrelmats(j,:,:)
-         lwork=2*mpert-1
-         CALL zheev('V','U',mpert,temp1,mpert,indrelev(j,:),work,
-     $        lwork,rwork,info)
-         temp2=0
-         DO i=1,mpert
-            temp2(i,i)=temp1(i,i)
-         ENDDO
-         temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
-         indrelevmats(j,:,:)=temp1
+         lwork=2*mpert+1
+         CALL zgeev('V','V',mpert,temp1,mpert,indrelev(j,:),
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         indrelevmats(j,:,:)=vr
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.

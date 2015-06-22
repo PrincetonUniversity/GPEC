@@ -140,7 +140,7 @@ c-----------------------------------------------------------------------
          CALL fspline_fit_2(fmodb,"extrap",.FALSE.)
       ELSE
          CALL fspline_fit_1(metric,"extrap",.FALSE.)
-         CALL fspline_fit_2(fmodb,"extrap",.FALSE.)
+         CALL fspline_fit_1(fmodb,"extrap",.FALSE.)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

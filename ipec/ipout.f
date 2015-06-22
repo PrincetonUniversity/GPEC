@@ -97,8 +97,21 @@ c-----------------------------------------------------------------------
      $     "ep0","ep1","ep2","ep3","ep4","et0"
       DO i=1,mpert
          WRITE(out_unit,'(1x,I4,9(1x,es12.3))')i,ee(i),surfee(i),
-     $        surfei(i),ep(i),surfep(1,i),surfep(2,i),surfep(3,i),
-     $        surfep(4,i),et(i)
+     $        surfei(i),REAL(ep(i)),REAL(surfep(1,i)),REAL(surfep(2,i)),
+     $        REAL(surfep(3,i)),REAL(surfep(4,i)),REAL(et(i))
+      ENDDO
+      WRITE(out_unit,*)
+
+      WRITE(out_unit,*)
+      WRITE(out_unit,*)"Torque for dcon eigenmodes"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a4,5(1x,a12))')"mode",
+     $     "ep0","ep1","ep2","ep3","ep4"
+      ! torque = -2*nn*imag(ep)
+      DO i=1,mpert
+         WRITE(out_unit,'(1x,I4,5(1x,es12.3))')i,-2.0*nn*AIMAG(ep(i)),
+     $        -2.0*nn*AIMAG(surfep(1,i)),-2.0*nn*AIMAG(surfep(2,i)),
+     $        -2.0*nn*AIMAG(surfep(3,i)),-2.0*nn*AIMAG(surfep(4,i))
       ENDDO
       WRITE(out_unit,*)
 
@@ -109,7 +122,6 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,I4,2(1x,es12.3))')i,s(i),sts(i)
       ENDDO
       WRITE(out_unit,*)
-
       
       WRITE(out_unit,*)"Eigenvalues"
       WRITE(out_unit,*)" L = Vacuum Inductancy"
@@ -125,10 +137,10 @@ c-----------------------------------------------------------------------
      $  "s_W","s_F"
       DO i=1,mpert
          WRITE(out_unit,'(1x,I4,8(1x,es12.3))') i,
-     $     surf_indev(i),plas_indev(resp_index,i),
+     $     surf_indev(i),REAL(plas_indev(resp_index,i)),
      $     REAL(permeabev(resp_index,i)),AIMAG(permeabev(resp_index,i)),
-     $     perms(i),reluctev(resp_index,i),
-     $     et(i),eft(i)
+     $     perms(i),REAL(reluctev(resp_index,i)),
+     $     REAL(et(i)),eft(i)
       ENDDO
       
       WRITE(out_unit,*)"Eigenvectors"
@@ -965,16 +977,18 @@ c-----------------------------------------------------------------------
          temp1(i,i)=1
       ENDDO
       temp2 = plas_indmats(resp_index,:,:)
-      CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
-      CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+      CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+      CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
       py = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/4.0
       pengy = REAL(py)
       IF(verbose) WRITE(*,'(1x,a,es10.3)')
      $  "Required energy to perturb vacuum = ",sengy
       IF(verbose) WRITE(*,'(1x,a,es10.3)')
-     $  "Required energy to perturb plasma = ",pengy
+     $  "Required energy to perturb plasma = ",REAL(py)
       IF(verbose) WRITE(*,'(1x,a,es10.3)')
-     $  "Amplification factor = ",sengy/pengy
+     $  "Required torque to perturb plasma = ",-2.0*nn*AIMAG(py)
+      IF(verbose) WRITE(*,'(1x,a,es10.3)')
+     $  "Amplification factor = ",sengy/ABS(py)
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
@@ -987,7 +1001,9 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a12,I4)')"mpert =",mpert
       WRITE(out_unit,'(1x,a16,1x,es16.8)')"vacuum energy =",vengy
       WRITE(out_unit,'(1x,a16,1x,es16.8)')"surface energy =",sengy
-      WRITE(out_unit,'(1x,a16,1x,es16.8)')"plasma energy =",pengy
+      WRITE(out_unit,'(1x,a18,1x,es16.8)')"plasma energy =",REAL(py)
+      WRITE(out_unit,'(1x,a18,1x,es16.8)')"toroidal torque =",
+     $     -2.0*nn*AIMAG(py)
       WRITE(out_unit,*)
 
       WRITE(out_unit,*)"jac_type = "//jac_type
@@ -1223,7 +1239,9 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
          WRITE(out_unit,'(1x,a12,I4)')"mthsurf =",mthsurf
          WRITE(out_unit,'(1x,a16,1x,es16.8)')"vacuum energy =",vengy
          WRITE(out_unit,'(1x,a16,1x,es16.8)')"surface energy =",sengy
-         WRITE(out_unit,'(1x,a16,1x,es16.8)')"plasma energy =",pengy
+         WRITE(out_unit,'(1x,a16,1x,es16.8)')"plasma energy =",REAL(py)
+         WRITE(out_unit,'(1x,a16,1x,es16.8)')"toroidal torque =",
+     $        -2.0*nn*AIMAG(py)
          WRITE(out_unit,*)
          
          WRITE(out_unit,*)"jac_type = "//jac_type

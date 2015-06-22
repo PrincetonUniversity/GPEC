@@ -12,6 +12,7 @@ c     3. idcon_build
 c     4. idcon_metric
 c     5. idcon_matrix
 c     6. idcon_vacuum
+c     7. idcon_action_matrix
 c-----------------------------------------------------------------------
 c     subprogram 0. idcon_mod.
 c     module declarations.
@@ -90,12 +91,19 @@ c     read equilibrium on flux coordinates.
 c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
+      CALL cspline_alloc(amats,mpsi,mpert**2)
+      CALL cspline_alloc(bmats,mpsi,mpert**2)
+      CALL cspline_alloc(cmats,mpsi,mpert**2)
+      ALLOCATE(fsmat(3*mband+1,mpert),ksmat(2*mband+1,mpert))
 
       rzphi%periodic(2)=.TRUE.
       READ(in_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
       READ(in_unit)rzphi%xs,rzphi%ys,
      $     rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $     rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
+      READ(in_unit)amats%xs,bmats%xs,cmats%xs,
+     $        amats%fs,bmats%fs,cmats%fs,amats%fs1,bmats%fs1,cmats%fs1,
+     $        amats%xpower,bmats%xpower,cmats%xpower,fsmat,ksmat
       mstep=-1
       mfix=0
       msing=0
@@ -330,7 +338,7 @@ c-----------------------------------------------------------------------
             ENDDO
             fixtype(ifix)%gauss=MATMUL(fixtype(ifix)%gauss,temp)
          ENDDO
-         IF(sing_flag(ifix))
+         IF(sing_flag(ifix).AND.(.NOT.con_flag))
      $        fixtype(ifix)%gauss(:,fixtype(ifix)%index(1))=0
       ENDDO
 c-----------------------------------------------------------------------
@@ -397,10 +405,8 @@ c-----------------------------------------------------------------------
          temp1=MATMUL(fixtype(ifix)%transform,uedge)
          kfix=fixstep(ifix+1)
          DO istep=jfix,kfix
-            u1%fs(istep,:)
-     $           =MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
-            u2%fs(istep,:)
-     $           =MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+            u1%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
+            u2%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
          ENDDO         
          jfix=kfix+1
       ENDDO
@@ -762,6 +768,17 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
+c     read kinetic abc matrices.
+c----------------------------------------------------------------------- 
+      IF (kin_flag) THEN 
+         CALL cspline_eval(amats,psi,0)  
+         CALL cspline_eval(bmats,psi,0)  
+         CALL cspline_eval(cmats,psi,0)         
+         amat=RESHAPE(amats%f,(/mpert,mpert/))
+         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
+         cmat=RESHAPE(cmats%f,(/mpert,mpert/))
+      ENDIF
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -809,10 +826,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_vacuum
 c-----------------------------------------------------------------------
-c     subprogram 6. idcon_action_matrices.
+c     subprogram 7. idcon_action_matrix.
 c     Equilibrium matrices nexessary to calc perturbed mod b for gpec.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_action_matrices()!(egnum,xspmn)
+      SUBROUTINE idcon_action_matrix()!(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -977,6 +994,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_action_matrices
+      END SUBROUTINE idcon_action_matrix
 
       END MODULE idcon_mod

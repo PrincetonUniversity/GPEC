@@ -9,7 +9,7 @@
 	tmag_in=0					! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
 	mthsurf=0					! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
 	
-	coil_flag=t					! Calculate external perturbation from coils in coil.in
+	coil_flag=f					! Calculate external perturbation from coils in coil.in
 	
 	data_flag=f					! Apply perturbation from thrid party code output
 	data_type="surfmn"			! Name of said code. Choose: surfmn,??
@@ -19,9 +19,9 @@
 	mmin=-64					! Extra paramaters needed to read surfmn files.
 	mmax=64						! Extra paramaters needed to read surfmn files.
 
-	harmonic_flag=f				! Apply self-defined perturbations
+	harmonic_flag=t				! Apply self-defined perturbations
 	cosmn(3)=1e-4				! Real part of m=3 component (n defined by DCON run). 
-	sinmn(6)=1e-4				! Imaginary part of m=6 component. etc.
+!	sinmn(6)=1e-4				! Imaginary part of m=6 component. etc.
 	
 	displacement_flag=f			! Perturbations are displacement (m). Default is field (T).
 	fixed_boundary_flag=f		! Total perturbation = external perturbation
@@ -34,11 +34,15 @@
 	rmode = 0					! Isolate the first rmode reluctance eigenmodes of the external field
 	smode = 0					! Isolate the first smode singular-coupling right singular vectors of the external field
 	p1mode= 0					! Isolate the first p1mode (P-I) right singular vectors of the external field
+
+	kin_flag=t				! Kinetic dcon
+	con_flag=t				! Continuous jump condition
+
 /
 &IPEC_CONTROL
 	resp_index=0				! ??
 	sing_spot=5e-4				! Minimum distance to singular surface in (m-nq) space
-	reg_flag=t					! Regularize the solution near resonant surfaces
+	reg_flag=f					! Regularize the solution near resonant surfaces
 	reg_spot=5e-2				! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
 	chebyshev_flag=f			! Fit chebyshev polynomials to the displacement.
 	nche=20						! Number of chebyshev polynomials used
@@ -50,12 +54,14 @@
 	
 	resp_flag=t					! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
 	singcoup_flag=f				! Calculate coupling of each m to resonant surfaces
-	singfld_flag=t				! Output of resonant surface quantities (flux,current,etc.)
+	singfld_flag=f				! Output of resonant surface quantities (flux,current,etc.)
 	vsingfld_flag=f				! Output of vacuum resonant surface quantities
-	eigm_flag=t					! Outputs DCON eigmode displacement on control surface
+	eigm_flag=f
+ 						! Outputs DCON eigmode displacement on control surface
 	pmodb_flag=f				! Outputs delta-B_Lagrangian
 	xbnormal_flag=t				! Outputs normal displacement and field in plasma
 	vbnormal_flag=f				! Outputs vacuum normal displacement and field in plasma
+	xclebsch_flag=t				! Outputs plasma displacement in clebsch coordinates (input for PENT)
 
 	eqbrzphi_flag=f				! Outputs equilibrium field on regular (r,z) grid
 	brzphi_flag=f				! Outputs perturbed field on regular (r,z) grid

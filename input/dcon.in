@@ -3,10 +3,16 @@
 	mat_flag=t
 	ode_flag=t
 	vac_flag=t
-	sas_flag=t
+	sas_flag=f
+
+   	kin_flag = t			! kinetic EL equation
+   	con_flag = t			! continue integration through layers
+   	kinfac1 = 1.0		! scale factor for energy contribution
+   	kinfac2 = 1.0		! scale factor for torque contribution
+
 	nn=1
-	delta_mlow=12
-	delta_mhigh=12
+	delta_mlow=6
+	delta_mhigh=6
 	delta_mband=0
 	sing_start=0
 	dmlim=0.2
