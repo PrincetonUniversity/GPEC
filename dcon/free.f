@@ -242,13 +242,22 @@ c-----------------------------------------------------------------------
 c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
+         WRITE(euler_bin_unit)3
+         WRITE(euler_bin_unit)ep
+         WRITE(euler_bin_unit)et
+         WRITE(euler_bin_unit)wt
+      ENDIF
+c-----------------------------------------------------------------------
+c    LOGAN - add option 5.
+c-----------------------------------------------------------------------
+      IF(bin_euler)THEN
          WRITE(euler_bin_unit)5
          WRITE(euler_bin_unit)ep
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
-         WRITE(euler_bin_unit)ebp  ! LOGAN ADDED with option 5
-         WRITE(euler_bin_unit)ebt  ! LOGAN ADDED with option 5
-         WRITE(euler_bin_unit)wbt  ! LOGAN ADDED with option 5
+         WRITE(euler_bin_unit)ebp 
+         WRITE(euler_bin_unit)ebt
+         WRITE(euler_bin_unit)wbt
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.

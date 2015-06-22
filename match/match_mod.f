@@ -45,8 +45,10 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), POINTER :: fixstep
       REAL(r8) :: sfac0=1
       REAL(r8), DIMENSION(:), POINTER :: psifac,rho,q
-      COMPLEX(r8), DIMENSION(:), POINTER :: deltap1,deltap2,ff,et
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,match,bmatch
+
+      REAL(r8), DIMENSION(:), POINTER :: ebt,ebp
+      COMPLEX(r8), DIMENSION(:), POINTER :: deltap1,deltap2,ff,et,ep
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wbt,match,bmatch
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: v
 
       TYPE(solution_type), DIMENSION(:), POINTER :: soltype

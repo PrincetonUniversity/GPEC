@@ -54,7 +54,6 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i1,i2,i3,i4,i5,i6
       REAL(r8) :: r1,r2,r3,r4,r5
-      COMPLEX(r8), DIMENSION(:), POINTER :: ep
 
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
 c-----------------------------------------------------------------------
@@ -111,6 +110,13 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+         CASE(5)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE DEFAULT
             WRITE(message,'(a,i1,a,i4)')"Cannot recognize data_type = ",
      $           data_type,", at istep = ",istep
@@ -128,6 +134,7 @@ c-----------------------------------------------------------------------
      $     soltype(0:mstep),v(mpert,2,0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
       ALLOCATE(ep(mpert),et(mpert),wt(mpert,mpert))
+      ALLOCATE(ebp(mpert),ebt(mpert),wbt(mpert,mpert))
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       CALL bin_open(in_unit,filename,"OLD","REWIND","none")
@@ -188,6 +195,13 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%rho,
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
+         CASE(5)
+            READ(UNIT=in_unit)ep
+            READ(UNIT=in_unit)et
+            READ(UNIT=in_unit)wt
+            READ(UNIT=in_unit)ebp
+            READ(UNIT=in_unit)ebt
+            READ(UNIT=in_unit)wbt
          END SELECT
       ENDDO
 c-----------------------------------------------------------------------
