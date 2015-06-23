@@ -761,7 +761,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: newmn,eigmn
       COMPLEX(r8), DIMENSION(mpert,msing) :: t1vev,x1vev,
      $  t1v_type,x1v_type
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: fwt,bwt,bwt_tmp,wt_tmp
+      COMPLEX(r8), DIMENSION(mpert,mpert)::fwt,bwt,bwt_tmp,wt_tmp,sqrta
       CHARACTER(2048) :: header
 
 c-----------------------------------------------------------------------
@@ -1229,7 +1229,25 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
       WRITE(out_unit,*)
       finev = MATMUL(CONJG(TRANSPOSE(permv)),finmn)
       foutev= MATMUL(CONJG(TRANSPOSE(permv)),foutmn)
-      WRITE(out_unit,*) "Flux in response eigenbasis"
+      WRITE(out_unit,*) "Flux in P-I SVD basis"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a4,4(1x,a16))')"mode",
+     $    "real(Phi^x)","imag(Phi^x)","real(Phi)","imag(Phi)"
+      DO i=1,mpert
+         WRITE(out_unit,'(1x,I4,4(1x,es16.8))') i,finev(i),foutev(i)
+      ENDDO
+      WRITE(out_unit,*)
+      DO i=1,mpert
+         tempmn = 0
+         tempmn(i) = 1.0
+         CALL ipeq_weight(psilim,tempmn,mfac,mpert,2)
+         sqrta(:,i) = tempmn
+      ENDDO
+      finev = MATMUL(CONJG(TRANSPOSE(reluctpevmats(resp_index,:,:))),
+     $        MATMUL(sqrta,finmn))
+      foutev= MATMUL(CONJG(TRANSPOSE(reluctpevmats(resp_index,:,:))),
+     $        MATMUL(sqrta,foutmn))
+      WRITE(out_unit,*) "Bsrt(A) in Reluctance eigenbasis"
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a4,4(1x,a16))')"mode",
      $    "real(Phi^x)","imag(Phi^x)","real(Phi)","imag(Phi)"
