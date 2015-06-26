@@ -127,6 +127,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE(4)
             msing=msing+1
             READ(UNIT=in_unit)
@@ -159,7 +160,8 @@ c-----------------------------------------------------------------------
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
-      ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
+      ALLOCATE(et(mpert),ep(mpert),ee(mpert))
+      ALLOCATE(wt(mpert,mpert),wt0(mpert,mpert))
       ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert)) !LOGAN
       eft = -1 ! LOGAN - used to tell if it is read (actual vals >0)
       wft = 0
@@ -198,6 +200,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
+            READ(UNIT=in_unit)wt0
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix
@@ -247,6 +250,7 @@ c-----------------------------------------------------------------------
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
+      wt0=wt0/(mu0*2.0)*psio**2
       eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       wft=wft*(chi1*1e-3)

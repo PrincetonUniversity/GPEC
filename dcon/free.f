@@ -59,7 +59,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: phase,norm
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work2
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,temp,wpt,wvt
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,wt0,temp,wpt,wvt
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat,vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
@@ -185,6 +185,7 @@ c-----------------------------------------------------------------------
 c     compute complex energy eigenvalues.
 c-----------------------------------------------------------------------
       wt=wp+wv
+      wt0=wt
       lwork=2*mpert+1
       CALL zgeev('V','V',mpert,wt,mpert,et,
      $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
@@ -246,6 +247,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)ep
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
+         WRITE(euler_bin_unit)wt0
       ENDIF
 c-----------------------------------------------------------------------
 c    LOGAN - add option 5.
