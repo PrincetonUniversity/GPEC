@@ -33,7 +33,7 @@ module pentrc_interface
     use utilities, only : get_free_file_unit
     use inputs, only : read_kin
     use energy_integration, only: &
-        xatol,xrtol,xmax,ximag,xnufac, &       ! reals
+        xatol,xrtol,xmax,ximag,xnufac,& ! reals
         xnutype,xf0type,        &       ! character(32)
         xdebug                          ! logical
     use pitch_integration, only: &
@@ -42,8 +42,8 @@ module pentrc_interface
     use torque, only : tintgrl_lsode,tpsi,&
         ntheta,nlmda,&                  ! integers
         tatol,trtol,&                   ! reals
-        tdebug,&                          ! logical
-        mpert,mfac                    !! hacked for test writting
+        tdebug,&                        ! logical
+        mpert,mfac                      !! hacked for test writting
 
     implicit none
     private
