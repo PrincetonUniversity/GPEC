@@ -238,11 +238,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE fourfit_make_matrix
+      SUBROUTINE fourfit_make_matrix(methodin)
+      
+      INTEGER, OPTIONAL :: methodin
+      INTEGER :: kgrid = -1
 
       CHARACTER(128) :: message
-      INTEGER :: ipsi,ipert,jpert,m1,m2,m,dm,info,iqty,l
-      REAL(r8) :: chi1,jtheta,nq,p1,psifac,q,q1,singfac1,singfac2
+      INTEGER :: ipsi,ipert,jpert,m1,m2,m,dm,info,iqty,l,iindex
+      REAL(r8) :: chi1,jtheta,nq,p1,psifac,q,q1,singfac1,singfac2,ileft
       COMPLEX(r8) :: tphi
 
       INTEGER, DIMENSION(mpert) :: mfac
@@ -267,6 +270,7 @@ c-----------------------------------------------------------------------
      $        kse,ksh,kaa,kab,kac,kad,kae,kah
 
       mfac =(/(m,m=mlow,mhigh)/)
+      IF(PRESENT(methodin)) kgrid = methodin
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -447,19 +451,48 @@ c-----------------------------------------------------------------------
             ENDDO
             kinmats = 0
             kinmata = 0
-            print *,psifac," - kinetic mats"
-            DO l=-nl,nl
-               print *,"l=",l
-               kinmats_l = 0
-               kinmata_l = 0
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $              "twmm",keq_out,theta_out,xlmda_out,kinmats_l)
-               kinmats = kinmats+kinmats_l
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $              "ttmm",keq_out,theta_out,xlmda_out,kinmata_l)
-               kinmata = kinmata+kinmata_l
-            ENDDO
-
+            IF(kgrid==-1)THEN
+               iindex = FLOOR(REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0))*10
+               ileft = REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0)*10-iindex
+               IF ((ipsi /= 0) .AND. (ileft == 0) .AND. verbose)
+     $          WRITE(*,*)"  ...",iindex,"% of kinetic-MHD computations"
+               DO l=-nl,nl
+                  kinmats_l = 0
+                  kinmata_l = 0
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+     $                 "twmm",keq_out,theta_out,xlmda_out,kinmats_l)
+                  kinmats = kinmats+kinmats_l
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+     $                 "ttmm",keq_out,theta_out,xlmda_out,kinmata_l)
+                  kinmata = kinmata+kinmata_l
+               ENDDO
+            ELSE
+               CALL cspline_eval(atmm,psifac,0)
+               CALL cspline_eval(btmm,psifac,0)
+               CALL cspline_eval(ctmm,psifac,0)
+               CALL cspline_eval(dtmm,psifac,0)
+               CALL cspline_eval(etmm,psifac,0)
+               CALL cspline_eval(htmm,psifac,0)
+               kinmata(:,:,1) = RESHAPE(atmm%f,(/mpert,mpert/))
+               kinmata(:,:,2) = RESHAPE(btmm%f,(/mpert,mpert/))
+               kinmata(:,:,3) = RESHAPE(ctmm%f,(/mpert,mpert/))
+               kinmata(:,:,4) = RESHAPE(dtmm%f,(/mpert,mpert/))
+               kinmata(:,:,5) = RESHAPE(etmm%f,(/mpert,mpert/))
+               kinmata(:,:,6) = RESHAPE(htmm%f,(/mpert,mpert/))
+               CALL cspline_eval(awmm,psifac,0)
+               CALL cspline_eval(bwmm,psifac,0)
+               CALL cspline_eval(cwmm,psifac,0)
+               CALL cspline_eval(dwmm,psifac,0)
+               CALL cspline_eval(ewmm,psifac,0)
+               CALL cspline_eval(hwmm,psifac,0)
+               kinmats(:,:,1) = RESHAPE(awmm%f,(/mpert,mpert/))
+               kinmats(:,:,2) = RESHAPE(bwmm%f,(/mpert,mpert/))
+               kinmats(:,:,3) = RESHAPE(cwmm%f,(/mpert,mpert/))
+               kinmats(:,:,4) = RESHAPE(dwmm%f,(/mpert,mpert/))
+               kinmats(:,:,5) = RESHAPE(ewmm%f,(/mpert,mpert/))
+               kinmats(:,:,6) = RESHAPE(hwmm%f,(/mpert,mpert/))
+            ENDIF
+            
             kinmats=kinfac1*kinmats
             kinmata=kinfac2*kinmata
 
@@ -677,46 +710,48 @@ c-----------------------------------------------------------------------
             WRITE(bin_unit)
          ENDDO
          CALL bin_close(bin_unit)
-         CALL bin_open(bin_unit,"kss.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,mpert**2
-            DO ipsi=0,mpsi
-               WRITE(bin_unit)REAL(sq%xs(ipsi),4),
-     $              REAL(REAL(ksa(ipsi,ipert)),4),
-     $              REAL(AIMAG(ksa(ipsi,ipert)),4),
-     $              REAL(REAL(ksb(ipsi,ipert)),4),
-     $              REAL(AIMAG(ksb(ipsi,ipert)),4),
-     $              REAL(REAL(ksc(ipsi,ipert)),4),
-     $              REAL(AIMAG(ksc(ipsi,ipert)),4),
-     $              REAL(REAL(ksd(ipsi,ipert)),4),
-     $              REAL(AIMAG(ksd(ipsi,ipert)),4),
-     $              REAL(REAL(kse(ipsi,ipert)),4),
-     $              REAL(AIMAG(kse(ipsi,ipert)),4),
-     $              REAL(REAL(ksh(ipsi,ipert)),4),
-     $              REAL(AIMAG(ksh(ipsi,ipert)),4)
+         IF(kgrid==-1)THEN
+            CALL bin_open(bin_unit,"kss.bin","UNKNOWN","REWIND","none")
+            DO ipert=1,mpert**2
+               DO ipsi=0,mpsi
+                  WRITE(bin_unit)REAL(sq%xs(ipsi),4),
+     $                 REAL(REAL(ksa(ipsi,ipert)),4),
+     $                 REAL(AIMAG(ksa(ipsi,ipert)),4),
+     $                 REAL(REAL(ksb(ipsi,ipert)),4),
+     $                 REAL(AIMAG(ksb(ipsi,ipert)),4),
+     $                 REAL(REAL(ksc(ipsi,ipert)),4),
+     $                 REAL(AIMAG(ksc(ipsi,ipert)),4),
+     $                 REAL(REAL(ksd(ipsi,ipert)),4),
+     $                 REAL(AIMAG(ksd(ipsi,ipert)),4),
+     $                 REAL(REAL(kse(ipsi,ipert)),4),
+     $                 REAL(AIMAG(kse(ipsi,ipert)),4),
+     $                 REAL(REAL(ksh(ipsi,ipert)),4),
+     $                 REAL(AIMAG(ksh(ipsi,ipert)),4)
+               ENDDO
+               WRITE(bin_unit)
             ENDDO
-            WRITE(bin_unit)
-         ENDDO
-         CALL bin_close(bin_unit)
-         CALL bin_open(bin_unit,"kas.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,mpert**2
-            DO ipsi=0,mpsi
-               WRITE(bin_unit)REAL(sq%xs(ipsi),4),
-     $              REAL(REAL(kaa(ipsi,ipert)),4),
-     $              REAL(AIMAG(kaa(ipsi,ipert)),4),
-     $              REAL(REAL(kab(ipsi,ipert)),4),
-     $              REAL(AIMAG(kab(ipsi,ipert)),4),
-     $              REAL(REAL(kac(ipsi,ipert)),4),
-     $              REAL(AIMAG(kac(ipsi,ipert)),4),
-     $              REAL(REAL(kad(ipsi,ipert)),4),
-     $              REAL(AIMAG(kad(ipsi,ipert)),4),
-     $              REAL(REAL(kae(ipsi,ipert)),4),
-     $              REAL(AIMAG(kae(ipsi,ipert)),4),
-     $              REAL(REAL(kah(ipsi,ipert)),4),
-     $              REAL(AIMAG(kah(ipsi,ipert)),4)
+            CALL bin_close(bin_unit)
+            CALL bin_open(bin_unit,"kas.bin","UNKNOWN","REWIND","none")
+            DO ipert=1,mpert**2
+               DO ipsi=0,mpsi
+                  WRITE(bin_unit)REAL(sq%xs(ipsi),4),
+     $                 REAL(REAL(kaa(ipsi,ipert)),4),
+     $                 REAL(AIMAG(kaa(ipsi,ipert)),4),
+     $                 REAL(REAL(kab(ipsi,ipert)),4),
+     $                 REAL(AIMAG(kab(ipsi,ipert)),4),
+     $                 REAL(REAL(kac(ipsi,ipert)),4),
+     $                 REAL(AIMAG(kac(ipsi,ipert)),4),
+     $                 REAL(REAL(kad(ipsi,ipert)),4),
+     $                 REAL(AIMAG(kad(ipsi,ipert)),4),
+     $                 REAL(REAL(kae(ipsi,ipert)),4),
+     $                 REAL(AIMAG(kae(ipsi,ipert)),4),
+     $                 REAL(REAL(kah(ipsi,ipert)),4),
+     $                 REAL(AIMAG(kah(ipsi,ipert)),4)
+               ENDDO
+               WRITE(bin_unit)
             ENDDO
-            WRITE(bin_unit)
-         ENDDO
-         CALL bin_close(bin_unit)
+            CALL bin_close(bin_unit)
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     store matrices for plasma inductance and permeability.
@@ -1042,8 +1077,8 @@ c-----------------------------------------------------------------------
       INTEGER, OPTIONAL :: methodin
 
       LOGICAL :: writeb=.FALSE.,write_flux = .TRUE.
-      INTEGER :: ipsi,ipert,l,iindex,ileft,method = 0
-      REAL(r8) :: psifac,chi1,psilim(2) = (0.0,1.0)
+      INTEGER :: ipsi,ipert,l,iindex,method = 0
+      REAL(r8) :: ileft,psifac,chi1,psilim(2) = (0.0,1.0)
       COMPLEX(r8) :: tphi
       COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kinmats,kinmats_l,
      $     kinmata,kinmata_l,kinmat_tot
@@ -1086,16 +1121,15 @@ c-----------------------------------------------------------------------
          etmm%xs=rzphi%xs
          htmm%xs=rzphi%xs
          DO ipsi=0,mpsi
-            iindex = FLOOR(REAL(ipsi,8)/FLOOR(mpsi/10.0))*10
-            ileft = REAL(ipsi,8)/FLOOR(mpsi/10.0)*10-iindex
-            IF ((ipsi-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $           WRITE(*,*)"  done ",iindex,"% of kinetic computations"
+            iindex = FLOOR(REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0))*10
+            ileft = REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0)*10-iindex
+            IF ((ipsi /= 0) .AND. (ileft == 0) .AND. verbose)
+     $           WRITE(*,*)"  ...",iindex,"% of kinetic computations"
             kinmats = 0
             kinmata = 0
             psifac=sq%xs(ipsi)
             ! get matrices for all ell at this one psi
             DO l=-nl,nl
-               print *,"l=",l
                kinmats_l = 0
                kinmata_l = 0
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
@@ -1172,7 +1206,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Use built in PENTRC LSODE integration options to form matrixes
 c-----------------------------------------------------------------------
-      ELSEIF(method==0)THEN
+      ELSEIF(method==2)THEN
          ! Full (trapped and passing) dWk matrix calculation
          tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        "fwmm",write_flux)
@@ -1191,6 +1225,8 @@ c-----------------------------------------------------------------------
          dtmm = dkmm
          etmm = ekmm
          htmm = hkmm
+      ELSEIF(method/=-1)THEN
+         CALL program_stop("ERROR: Valid kinetic grid types are 0,1,2")
       ENDIF
 c-----------------------------------------------------------------------
 c     Optionally write matrices to binary files for diagnostics

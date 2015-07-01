@@ -1062,6 +1062,12 @@ module torque
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
+            if(akmm%nqty/=0) call cspline_dealloc(akmm) 
+            if(bkmm%nqty/=0) call cspline_dealloc(bkmm)
+            if(ckmm%nqty/=0) call cspline_dealloc(ckmm)
+            if(dkmm%nqty/=0) call cspline_dealloc(dkmm)
+            if(ekmm%nqty/=0) call cspline_dealloc(ekmm)
+            if(hkmm%nqty/=0) call cspline_dealloc(hkmm)
             call cspline_alloc(akmm,iwork(11)-1,mpert**2)
             call cspline_alloc(bkmm,iwork(11)-1,mpert**2)
             call cspline_alloc(ckmm,iwork(11)-1,mpert**2)
@@ -1280,6 +1286,12 @@ module torque
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
+            if(akmm%nqty/=0) call cspline_dealloc(akmm)
+            if(bkmm%nqty/=0) call cspline_dealloc(bkmm)
+            if(ckmm%nqty/=0) call cspline_dealloc(ckmm)
+            if(dkmm%nqty/=0) call cspline_dealloc(dkmm)
+            if(ekmm%nqty/=0) call cspline_dealloc(ekmm)
+            if(hkmm%nqty/=0) call cspline_dealloc(hkmm)
             call cspline_alloc(akmm,iwork(11)-1,mpert**2)
             call cspline_alloc(bkmm,iwork(11)-1,mpert**2)
             call cspline_alloc(ckmm,iwork(11)-1,mpert**2)
