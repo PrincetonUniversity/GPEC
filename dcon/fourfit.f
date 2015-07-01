@@ -23,7 +23,8 @@ c-----------------------------------------------------------------------
       MODULE fourfit_mod
       USE fspline_mod
       USE dcon_mod
-      USE torque, only : tpsi
+      USE torque, only : tpsi,tintgrl_lsode,tintgrl_eqpsi, ! functions
+     $     akmm,bkmm,ckmm,dkmm,ekmm,hkmm                   ! cspline EL mats for local use
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
@@ -34,6 +35,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat,
      $     fsmat,ksmat
       COMPLEX(r8), DIMENSION(:), POINTER :: jmat
+      
+      TYPE(cspline_type) :: awmm,bwmm,cwmm,dwmm,ewmm,hwmm, ! kientic EL mats for sing_mod
+     $     atmm,btmm,ctmm,dtmm,etmm,htmm                   ! kinetic EL mats for sing_mod
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -1023,4 +1027,222 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE fourfit_diagnose_1
+c-----------------------------------------------------------------------
+c     subprogram 8. fourfit_kinetic_matrix.
+c     Use PENTRC to calculated the coefficient matrices on a dynamic
+c     grid and fit them to cubic splines.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE fourfit_kinetic_matrix(methodin,writebin)
+      IMPLICIT NONE
+      
+      LOGICAL, OPTIONAL :: writebin
+      INTEGER, OPTIONAL :: methodin
+
+      LOGICAL :: writeb=.FALSE.,write_flux = .TRUE.
+      INTEGER :: ipsi,ipert,l,iindex,ileft,method = 0
+      REAL(r8) :: psifac,chi1,psilim(2) = (0.0,1.0)
+      COMPLEX(r8) :: tphi
+      COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kinmats,kinmats_l,
+     $     kinmata,kinmata_l,kinmat_tot
+
+c-----------------------------------------------------------------------
+c     some basic variables
+c-----------------------------------------------------------------------
+      IF(PRESENT(methodin)) method = methodin
+      IF(PRESENT(writebin)) writeb = writebin
+      chi1=twopi*psio
+      
+c-----------------------------------------------------------------------
+c     Original approach using eqgrid loop to calculate kinetic matrices
+c-----------------------------------------------------------------------
+      IF(method==0)THEN
+         ! set up tphi splines for interpolation in psi.
+         CALL cspline_alloc(awmm,mpsi,mpert**2)
+         CALL cspline_alloc(bwmm,mpsi,mpert**2)
+         CALL cspline_alloc(cwmm,mpsi,mpert**2)
+         CALL cspline_alloc(dwmm,mpsi,mpert**2)
+         CALL cspline_alloc(ewmm,mpsi,mpert**2)
+         CALL cspline_alloc(hwmm,mpsi,mpert**2)
+         awmm%xs=rzphi%xs
+         bwmm%xs=rzphi%xs
+         cwmm%xs=rzphi%xs
+         dwmm%xs=rzphi%xs
+         ewmm%xs=rzphi%xs
+         hwmm%xs=rzphi%xs
+         ! set up tphi splines for interpolation in psi.
+         CALL cspline_alloc(atmm,mpsi,mpert**2)
+         CALL cspline_alloc(btmm,mpsi,mpert**2)
+         CALL cspline_alloc(ctmm,mpsi,mpert**2)
+         CALL cspline_alloc(dtmm,mpsi,mpert**2)
+         CALL cspline_alloc(etmm,mpsi,mpert**2)
+         CALL cspline_alloc(htmm,mpsi,mpert**2)
+         atmm%xs=rzphi%xs
+         btmm%xs=rzphi%xs
+         ctmm%xs=rzphi%xs
+         dtmm%xs=rzphi%xs
+         etmm%xs=rzphi%xs
+         htmm%xs=rzphi%xs
+         DO ipsi=0,mpsi
+            iindex = FLOOR(REAL(ipsi,8)/FLOOR(mpsi/10.0))*10
+            ileft = REAL(ipsi,8)/FLOOR(mpsi/10.0)*10-iindex
+            IF ((ipsi-1 /= 0) .AND. (ileft == 0) .AND. verbose)
+     $           WRITE(*,*)"  done ",iindex,"% of kinetic computations"
+            kinmats = 0
+            kinmata = 0
+            psifac=sq%xs(ipsi)
+            ! get matrices for all ell at this one psi
+            DO l=-nl,nl
+               print *,"l=",l
+               kinmats_l = 0
+               kinmata_l = 0
+               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+     $              "fwmm",keq_out,theta_out,xlmda_out,kinmats_l)
+               kinmats = kinmats+kinmats_l
+               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+     $              "ftmm",keq_out,theta_out,xlmda_out,kinmata_l)
+               kinmata = kinmata+kinmata_l
+            ENDDO
+            ! apply normalizations
+            kinmats=kinfac1*kinmats
+            kinmata=kinfac2*kinmata
+            kinmats(:,:,1)=kinmats(:,:,1)*2*mu0/chi1**2
+            kinmata(:,:,1)=kinmata(:,:,1)*2*mu0/chi1**2
+            kinmats(:,:,2)=kinmats(:,:,2)*2*mu0/chi1
+            kinmata(:,:,2)=kinmata(:,:,2)*2*mu0/chi1
+            kinmats(:,:,3)=kinmats(:,:,3)*2*mu0/chi1
+            kinmata(:,:,3)=kinmata(:,:,3)*2*mu0/chi1
+            kinmats(:,:,4)=kinmats(:,:,4)*2*mu0
+            kinmata(:,:,4)=kinmata(:,:,4)*2*mu0
+            kinmats(:,:,5)=kinmats(:,:,5)*2*mu0
+            kinmata(:,:,5)=kinmata(:,:,5)*2*mu0
+            kinmats(:,:,6)=kinmats(:,:,6)*2*mu0
+            kinmata(:,:,6)=kinmata(:,:,6)*2*mu0
+            ! store to splines
+            awmm%fs(ipsi,:)=RESHAPE(kinmats(:,:,1),(/mpert**2/))
+            bwmm%fs(ipsi,:)=RESHAPE(kinmats(:,:,2),(/mpert**2/))
+            cwmm%fs(ipsi,:)=RESHAPE(kinmats(:,:,3),(/mpert**2/))
+            dwmm%fs(ipsi,:)=RESHAPE(kinmats(:,:,4),(/mpert**2/))
+            ewmm%fs(ipsi,:)=RESHAPE(kinmats(:,:,5),(/mpert**2/))
+            hwmm%fs(ipsi,:)=RESHAPE(kinmats(:,:,6),(/mpert**2/))
+            atmm%fs(ipsi,:)=RESHAPE(kinmata(:,:,1),(/mpert**2/))
+            btmm%fs(ipsi,:)=RESHAPE(kinmata(:,:,2),(/mpert**2/))
+            ctmm%fs(ipsi,:)=RESHAPE(kinmata(:,:,3),(/mpert**2/))
+            dtmm%fs(ipsi,:)=RESHAPE(kinmata(:,:,4),(/mpert**2/))
+            etmm%fs(ipsi,:)=RESHAPE(kinmata(:,:,5),(/mpert**2/))
+            htmm%fs(ipsi,:)=RESHAPE(kinmata(:,:,6),(/mpert**2/))
+         ENDDO
+         ! fit splines
+         call cspline_fit(awmm,"extrap")
+         call cspline_fit(bwmm,"extrap")
+         call cspline_fit(cwmm,"extrap")
+         call cspline_fit(dwmm,"extrap")
+         call cspline_fit(ewmm,"extrap")
+         call cspline_fit(hwmm,"extrap")
+         call cspline_fit(atmm,"extrap")
+         call cspline_fit(btmm,"extrap")
+         call cspline_fit(ctmm,"extrap")
+         call cspline_fit(dtmm,"extrap")
+         call cspline_fit(etmm,"extrap")
+         call cspline_fit(htmm,"extrap")
+c-----------------------------------------------------------------------
+c     Use built in PENTRC spline integration options to form matrixes
+c-----------------------------------------------------------------------
+      ELSEIF(method==1)THEN
+         ! Full (trapped and passing) dWk matrix calculation
+         tphi = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,
+     $        "fwmm",write_flux)
+         awmm = akmm
+         bwmm = bkmm
+         cwmm = ckmm
+         dwmm = dkmm
+         ewmm = ekmm
+         hwmm = hkmm
+         ! Full (trapped and passing) Tphi matrix calculation
+         tphi = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,
+     $        "ftmm",write_flux)
+         atmm = akmm
+         btmm = bkmm
+         ctmm = ckmm
+         dtmm = dkmm
+         etmm = ekmm
+         htmm = hkmm         
+c-----------------------------------------------------------------------
+c     Use built in PENTRC LSODE integration options to form matrixes
+c-----------------------------------------------------------------------
+      ELSEIF(method==0)THEN
+         ! Full (trapped and passing) dWk matrix calculation
+         tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,
+     $        "fwmm",write_flux)
+         awmm = akmm
+         bwmm = bkmm
+         cwmm = ckmm
+         dwmm = dkmm
+         ewmm = ekmm
+         hwmm = hkmm
+         ! Full (trapped and passing) Tphi matrix calculation
+         tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,
+     $        "ftmm",write_flux)
+         atmm = akmm
+         btmm = bkmm
+         ctmm = ckmm
+         dtmm = dkmm
+         etmm = ekmm
+         htmm = hkmm
+      ENDIF
+c-----------------------------------------------------------------------
+c     Optionally write matrices to binary files for diagnostics
+c-----------------------------------------------------------------------
+      IF(writeb)THEN
+         CALL bin_open(bin_unit,"kss.bin","UNKNOWN","REWIND","none")
+         DO ipert=1,mpert**2
+            DO ipsi=0,awmm.mx
+               WRITE(bin_unit)REAL(awmm%xs(ipsi),4),
+     $              REAL(REAL( awmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(awmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( bwmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(bwmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( cwmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(cwmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( dwmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(dwmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( ewmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(ewmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( hwmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(hwmm%fs(ipsi,ipert)),4)
+            ENDDO
+            WRITE(bin_unit)
+         ENDDO
+         CALL bin_close(bin_unit)
+         CALL bin_open(bin_unit,"kas.bin","UNKNOWN","REWIND","none")
+         DO ipert=1,mpert**2
+            DO ipsi=0,atmm.mx
+               WRITE(bin_unit)   REAL(atmm%xs(ipsi),4),
+     $              REAL(REAL( atmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(atmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( btmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(btmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( ctmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(ctmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( dtmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(dtmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( etmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(etmm%fs(ipsi,ipert)),4),
+     $              REAL(REAL( htmm%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(htmm%fs(ipsi,ipert)),4)
+            ENDDO
+            WRITE(bin_unit)
+         ENDDO
+         CALL bin_close(bin_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE fourfit_kinetic_matrix
+
+
+
       END MODULE fourfit_mod

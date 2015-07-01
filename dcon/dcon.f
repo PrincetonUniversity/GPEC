@@ -169,9 +169,11 @@ c-----------------------------------------------------------------------
             xtmp = 1e-4
             CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,.false.)
             DEALLOCATE(xtmp,mtmp,psitmp)
+            IF(verbose) WRITE(*,*)"Computing Kinetic Matrices"
+            CALL fourfit_kinetic_matrix(0,.TRUE.)
          ENDIF
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
-         CALL fourfit_make_matrix
+         CALL fourfit_make_matrix       
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
          CALL sing_scan
