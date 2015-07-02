@@ -60,7 +60,7 @@ module inputs
         verbose
     
     ! global variables with defaults
-    logical :: verbose
+    logical :: verbose=.TRUE.
     type(spline_type) :: kin
     type(cspline_type) :: dbdx_m(2),xs_m(3)
     type(bicube_type):: fnml
@@ -397,6 +397,8 @@ module inputs
         !if(debug) print *,"  nm,mpert",nm,mpert
         if(debug) print *,"  mfac = ",mfac
         if(debug) print *,"  ms   = ",ms
+        if(debug) print *,"  npsi = ",npsi
+        if(debug) print *,"  psi lim = ",psi(0),psi(npsi)
     
         ! fill dcon m modes from available input
         do i=1,3

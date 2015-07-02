@@ -143,7 +143,7 @@ module torque
     integer :: nlmda=128, ntheta=128
     
     complex(r8), dimension(:,:,:), allocatable :: elems ! temperary variable
-    TYPE(cspline_type) :: akmm,bkmm,ckmm,dkmm,ekmm,hkmm ! kinetic euler lagrange eq. matrices
+    TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
 
     contains
     
@@ -240,6 +240,14 @@ module torque
         
         if(tdebug) print *,"torque - tpsi function, psi = ",psi
         if(tdebug) print *,"  electron ",electron
+        if(tdebug) print *,"  mpert ",mpert
+        if(tdebug) print *,"  mfac ",mfac
+        if(tdebug) print *,"  sq   psi ",sq%xs
+        if(tdebug) print *,"  dbdx psi ",dbdx_m(1)%xs
+        if(tdebug) print *,"  db ",dbdx_m(1)%f
+        if(tdebug) print *,"  xs ",xs_m(1)%f
+        
+        ! enforce bounds
         if(psi>1) then
             tpsi = 0
             return
@@ -470,8 +478,9 @@ module torque
         
         
         ! full general aspect ratio, trapped general aspect ratio
-            case("fgar","tgar","pgar","fkmm","tkmm","pkmm", &
-                 "fwmm","twmm","pwmm","ftmm","ttmm","ptmm")
+            case("fgar","tgar","pgar", &
+                 "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
+                 "fkmm","tkmm","pkmm","frmm","trmm","prmm")
                 ! set up
                 call cspline_eval(dbdx_m(1),psi,0)
                 call cspline_eval(dbdx_m(2),psi,0)
@@ -767,7 +776,7 @@ module torque
                 if(method(2:4)=='wmm' .or. method(2:4)=='kmm')then
                     rex = 0.0
                 endif
-                if(method(2:4)=='tmm')then
+                if(method(2:4)=='tmm' .or. method(2:4)=='rmm')then
                     imx = 0.0
                     wtwnorm = -1.0
                 endif
@@ -804,7 +813,7 @@ module torque
                     
                     
                     
-                    if(index(method,'kmm')>0)then ! Euler-Lagrange Matrix norms indep xi 
+                    if(method(2:4)=='kmm' .or. method(2:4)=='rmm')then ! Euler-Lagrange Matrix norms indep xi 
                         xix(:,1) = 1.0/sqrt(1.0*mpert) ! ||xix||=1
                         tpsi = 0
                         do i=1,6
@@ -823,7 +832,7 @@ module torque
                             if(tdebug) print *,i,maxval(svals)
                             tpsi = tpsi + maxval(svals) ! euclidean (spectral) norm
                         enddo
-                        tpsi = (1+xj)*sqrt(tpsi) ! euclidean norm of the 6 norms
+                        tpsi = (rex+imx*xj)*sqrt(tpsi) ! euclidean norm of the 6 norms
                     elseif(index(method,'mm')>0)then ! Mode-coupled dW of T_phi 
                         call cspline_eval(xs_m(1),psi,0)
                         call cspline_eval(xs_m(2),psi,0)
@@ -921,8 +930,7 @@ module torque
         integer :: i,j,l,unit1,unit2,unit3
         real(r8) :: xlast,wdcom,dxcom
         real(r8), dimension(1000) :: tmppsi
-        complex(r8), dimension(1000,mpert**2) :: tmpak,tmpbk,tmpck, &
-            tmpdk,tmpek,tmphk
+        complex(r8), dimension(0:sq%mx,mpert**2,6) :: tmpmats
         character(64) ::file1,file2,file3
         character(8) :: nstring,methcom
         ! declare lsode input variables
@@ -1029,14 +1037,11 @@ module torque
 
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
-                if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
-                tmppsi(iwork(11)) = x
-                tmpak(iwork(11),:) = RESHAPE(elems(:,:,1),(/mpert**2/))
-                tmpbk(iwork(11),:) = RESHAPE(elems(:,:,2),(/mpert**2/))
-                tmpck(iwork(11),:) = RESHAPE(elems(:,:,3),(/mpert**2/))
-                tmpdk(iwork(11),:) = RESHAPE(elems(:,:,4),(/mpert**2/))
-                tmpek(iwork(11),:) = RESHAPE(elems(:,:,5),(/mpert**2/))
-                tmphk(iwork(11),:) = RESHAPE(elems(:,:,6),(/mpert**2/))
+                if(tdebug) print *, "Euler-Lagrange tmp vars, index=",i
+                tmppsi(i) = x
+                do j=1,6
+                    tmpmats(i,:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
+                enddo
             endif
             xlast = x
         enddo
@@ -1062,36 +1067,13 @@ module torque
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
-            if(akmm%nqty/=0) call cspline_dealloc(akmm) 
-            if(bkmm%nqty/=0) call cspline_dealloc(bkmm)
-            if(ckmm%nqty/=0) call cspline_dealloc(ckmm)
-            if(dkmm%nqty/=0) call cspline_dealloc(dkmm)
-            if(ekmm%nqty/=0) call cspline_dealloc(ekmm)
-            if(hkmm%nqty/=0) call cspline_dealloc(hkmm)
-            call cspline_alloc(akmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(bkmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(ckmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(dkmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(ekmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(hkmm,iwork(11)-1,mpert**2)
-            akmm%xs(:) = tmppsi(1:iwork(11))
-            bkmm%xs(:) = tmppsi(1:iwork(11))
-            ckmm%xs(:) = tmppsi(1:iwork(11))
-            dkmm%xs(:) = tmppsi(1:iwork(11))
-            ekmm%xs(:) = tmppsi(1:iwork(11))
-            hkmm%xs(:) = tmppsi(1:iwork(11))
-            akmm%fs(:,:) = tmpak(1:iwork(11),:)
-            bkmm%fs(:,:) = tmpbk(1:iwork(11),:)
-            ckmm%fs(:,:) = tmpck(1:iwork(11),:)
-            dkmm%fs(:,:) = tmpdk(1:iwork(11),:)
-            ekmm%fs(:,:) = tmpek(1:iwork(11),:)
-            hkmm%fs(:,:) = tmphk(1:iwork(11),:)
-            call cspline_fit(akmm,"extrap")
-            call cspline_fit(bkmm,"extrap")
-            call cspline_fit(ckmm,"extrap")
-            call cspline_fit(dkmm,"extrap")
-            call cspline_fit(ekmm,"extrap")
-            call cspline_fit(hkmm,"extrap")
+            do i=1,6
+                if(kelmm(i)%nqty/=0) call cspline_dealloc(kelmm(i)) 
+                call cspline_alloc(kelmm(i),sq%mx,mpert**2)
+                kelmm(i)%xs(:)  = tmppsi(:)
+                kelmm(i)%fs(:,:)= tmpmats(:,:,i)
+                call cspline_fit(kelmm(i),"extrap")
+            enddo
             deallocate(elems)
         endif
         
@@ -1155,8 +1137,7 @@ module torque
         integer :: i,j,l,unit1,unit2,unit3
         real(r8) :: xlast,wdcom,dxcom
         real(r8), dimension(1000) :: tmppsi
-        complex(r8), dimension(1000,mpert**2) :: tmpak,tmpbk,tmpck, &
-            tmpdk,tmpek,tmphk
+        complex(r8), dimension(1000,mpert**2,6) :: tmpmats
         character(64) ::file1,file2,file3
         character(8) :: nstring,methcom
         ! declare lsode input variables
@@ -1199,6 +1180,10 @@ module torque
         x = max(psilim(1),x)
         xout = min(psilim(2),xout)
         rwork(1) = xout
+        if(tdebug) print *,"psilim = ",psilim
+        if(tdebug) print *,"sq lim = ",sq%xs(0),sq%xs(sq%mx)
+        if(tdebug) print *,"xs lim = ",xs_m(1)%xs(0),xs_m(1)%xs(xs_m(1)%mx)
+        if(tdebug) print *,"x,xout = ",x,xout
 
         ! steup
         allocate(maski(neq))
@@ -1273,12 +1258,9 @@ module torque
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
                 tmppsi(iwork(11)) = x
-                tmpak(iwork(11),:) = RESHAPE(elems(:,:,1),(/mpert**2/))
-                tmpbk(iwork(11),:) = RESHAPE(elems(:,:,2),(/mpert**2/))
-                tmpck(iwork(11),:) = RESHAPE(elems(:,:,3),(/mpert**2/))
-                tmpdk(iwork(11),:) = RESHAPE(elems(:,:,4),(/mpert**2/))
-                tmpek(iwork(11),:) = RESHAPE(elems(:,:,5),(/mpert**2/))
-                tmphk(iwork(11),:) = RESHAPE(elems(:,:,6),(/mpert**2/))
+                do j=1,6
+                    tmpmats(iwork(11),:,i) = RESHAPE(elems(:,:,i),(/mpert**2/))
+                enddo
             endif
         enddo
         close(unit1)
@@ -1286,36 +1268,13 @@ module torque
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
-            if(akmm%nqty/=0) call cspline_dealloc(akmm)
-            if(bkmm%nqty/=0) call cspline_dealloc(bkmm)
-            if(ckmm%nqty/=0) call cspline_dealloc(ckmm)
-            if(dkmm%nqty/=0) call cspline_dealloc(dkmm)
-            if(ekmm%nqty/=0) call cspline_dealloc(ekmm)
-            if(hkmm%nqty/=0) call cspline_dealloc(hkmm)
-            call cspline_alloc(akmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(bkmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(ckmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(dkmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(ekmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(hkmm,iwork(11)-1,mpert**2)
-            akmm%xs(:) = tmppsi(1:iwork(11))
-            bkmm%xs(:) = tmppsi(1:iwork(11))
-            ckmm%xs(:) = tmppsi(1:iwork(11))
-            dkmm%xs(:) = tmppsi(1:iwork(11))
-            ekmm%xs(:) = tmppsi(1:iwork(11))
-            hkmm%xs(:) = tmppsi(1:iwork(11))
-            akmm%fs(:,:) = tmpak(1:iwork(11),:)
-            bkmm%fs(:,:) = tmpbk(1:iwork(11),:)
-            ckmm%fs(:,:) = tmpck(1:iwork(11),:)
-            dkmm%fs(:,:) = tmpdk(1:iwork(11),:)
-            ekmm%fs(:,:) = tmpek(1:iwork(11),:)
-            hkmm%fs(:,:) = tmphk(1:iwork(11),:)
-            call cspline_fit(akmm,"extrap")
-            call cspline_fit(bkmm,"extrap")
-            call cspline_fit(ckmm,"extrap")
-            call cspline_fit(dkmm,"extrap")
-            call cspline_fit(ekmm,"extrap")
-            call cspline_fit(hkmm,"extrap")
+            do i=1,6
+                if(kelmm(i)%nqty/=0) call cspline_dealloc(kelmm(i)) 
+                call cspline_alloc(kelmm(i),iwork(11)-1,mpert**2)
+                kelmm(i)%xs(:) = tmppsi(1:iwork(11))
+                kelmm(i)%fs(:,:) = tmpmats(1:iwork(11),:,i)
+                call cspline_fit(kelmm(i),"extrap")
+            enddo
             deallocate(elems)
         endif
         

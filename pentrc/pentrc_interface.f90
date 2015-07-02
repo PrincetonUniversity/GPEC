@@ -174,7 +174,7 @@ module pentrc_interface
         ! set the kinetic spline
         if(tdebug)THEN
             print *,"read_kin args:"
-            print *,"  ",kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
+            print *,"  ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
         endif
         call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
 
