@@ -163,9 +163,10 @@ c-----------------------------------------------------------------------
             PRINT *, 'set_eq completed'
             CALL get_pentrc(nl,zi,mi,wdfac,divxfac,electron,
      $          keq_out,theta_out,xlmda_out)
-            ! debugging
+            ! set flat displacement spectrum
+            ! as well as false flat psi derivative for equal weighting
             ALLOCATE(psitmp(sq%mx+1),mtmp(mpert),xtmp(sq%mx+1,mpert))
-            psitmp(:) = sq%xs(:)
+            psitmp(:) = sq%xs(0:)
             mtmp = (/(m,m=mlow,mhigh)/)
             xtmp = 1e-4
             CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,.false.)
