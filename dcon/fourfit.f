@@ -21,6 +21,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE fourfit_mod
+      USE netcdf
       USE fspline_mod
       USE dcon_mod
       USE torque, only : tpsi,tintgrl_lsode,tintgrl_eqpsi, ! functions
@@ -1293,4 +1294,24 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE fourfit_kinetic_matrix
+c-----------------------------------------------------------------------
+c     subprogram #. check.
+c     Check status of netcdf file.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE check(stat)
+        USE netcdf
+        INTEGER, INTENT (in) :: stat
+        
+        IF(stat /= nf90_noerr) THEN 
+          PRINT *, trim(nf90_strerror(stat))
+          STOP "ERROR: Failed to Write/Read netCDF file"
+        ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE check 
       END MODULE fourfit_mod

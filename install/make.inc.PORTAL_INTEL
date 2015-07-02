@@ -1,0 +1,34 @@
+#------------------------------------------------------------------
+# Make variables for Linux Pathscale compiler on portal.pppl.gov
+#
+# - Use on portalr6.pppl.gov
+# - Requirements:
+#    module load intel
+#	 module load acml
+#	 module load lapack
+#	 module load netcdf
+#
+# These modify the LD_LIBRARY_PATH variable appropriately, which can
+# be used to trace the specific origins of libraries used.
+# Alternately, paths explicitly stating library locations can be added
+# to the LIBDIR list.
+# 
+#  .. This might not need both lapack-blas and acml?
+#------------------------------------------------------------------
+
+FC = ifort
+
+FCFLAGS = \
+    -I${NETCDFHOME}/include \
+#	-I${ACML_HOME}/ifort64/include
+
+LIBDIR = \
+	-L../lib \
+
+FCLIBS = \
+#	-lacml \
+	-lapack \
+	-lblas \
+	-lnetcdff \
+	-lnetcdf \
+	-lm

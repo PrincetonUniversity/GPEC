@@ -7,6 +7,8 @@
 
 FC = pgf95
 
+FCFLAGS = 
+
 LIBDIR = \
 	-L../lib \
 	-L/opt/pgi/linux86-64/12.10/lib

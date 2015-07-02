@@ -1,9 +1,14 @@
 #Global makefile for the GPEC suite of codes.
 
-.IGNORE:
+HOST=$(shell hostname)	
+# could do some conditional on HOST
 
-all: lsode_x equil_x orbit_x vacuum_x dcon_x match_x multi_x sum_x \
-	xdraw_x coil_x ipec_x pentrc_x bin_x
+
+.IGNORE:
+	
+
+all: lsode_x equil_x orbit_x vacuum_x pentrc_x dcon_x match_x multi_x sum_x \
+	xdraw_x coil_x ipec_x bin_x
 
 # executables_x:
 
