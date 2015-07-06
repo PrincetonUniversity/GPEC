@@ -623,5 +623,25 @@ module inputs
         endif
     end subroutine read_ipec_peq
 
+    !=======================================================================
+    subroutine check(stat)
+    !----------------------------------------------------------------------- 
+    !*DESCRIPTION: 
+    !   Check status of netcdf file.
+    !
+    !*ARGUMENTS:
+    !    stat : integer (in)
+    !       Status index given by some netcdf subroutine.
+    !
+    !-----------------------------------------------------------------------
+        ! declare arguments
+        use netcdf
+        integer, intent (in) :: stat
+        ! stop if it is an error
+        if(stat /= nf90_noerr) then 
+          print *, trim(nf90_strerror(stat))
+          stop "ERROR: failed to write/read netcdf file"
+        endif
+    end subroutine check
     
 end module inputs

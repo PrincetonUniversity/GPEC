@@ -377,7 +377,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,1p,e10.3,0p,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -537,7 +537,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,1p,e10.3,0p,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -633,7 +633,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,1p,e10.3,0p,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -659,7 +659,7 @@ c     write to crit.out.
 c-----------------------------------------------------------------------
       IF(verbose)
      $  WRITE(*,10)"psi = ",sing(ising)%psifac,", q = ",sing(ising)%q
-      WRITE(crit_out_unit,'(/1x,a,i6,a,1p,e9.3,0p,a,f6.3,a,i2)')
+      WRITE(crit_out_unit,'(/1x,a,i6,a,1p,e10.3,0p,a,f6.3,a,i2)')
      $     "Gaussian Reduction at istep = ",istep,
      $     ", psi = ",sing(ising)%psifac,", q = ",sing(ising)%q,
      $     ", index1 = ",index(1)
@@ -889,7 +889,7 @@ c-----------------------------------------------------------------------
          ipert=errloc(1)
          isol=errloc(2)
          ieq=errloc(3)
-         WRITE(message,'(4(a,i3),1p,3(a,e9.3))')
+         WRITE(message,'(4(a,i3),1p,3(a,e10.3))')
      $        "Termination by ode_step"//CHAR(10)
      $        //" ipert = ",ipert,", ieq = ",ieq,", isol = ",isol,
      $        ", msol = ",msol,CHAR(10)
@@ -968,7 +968,7 @@ c     format statements.
 c-----------------------------------------------------------------------
  10   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
- 20   FORMAT(1x,a,i6,a,1p,e9.3,0p,a,f6.3)
+ 20   FORMAT(1x,a,i6,a,1p,e10.3,0p,a,f6.3)
  40   FORMAT(2(a,i3))
  30   FORMAT(3x,"mlow",1x,"mhigh",1x,"mpert",2x,"msol",3x,"psifac",
      $     6x,"q"//4i6,1p,2e11.3/)

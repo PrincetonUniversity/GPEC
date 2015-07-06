@@ -3,7 +3,7 @@ include ../install/make.inc.${GPEC_PLATFORM}
 
 FFLAGS = -I../equil
 
-F90 = $(FC) $(FFLAGS)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
 
 .f.o:
 	$(F90) -c $*.f

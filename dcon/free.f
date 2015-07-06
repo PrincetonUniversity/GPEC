@@ -74,11 +74,13 @@ c     write formats.
 c-----------------------------------------------------------------------
  10   FORMAT(1x,"Energies: plasma = ",1p,e10.3,", vacuum = ",e10.3,
      $     ", real = ",e10.3,", imaginary = ",e10.3)
- 20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",5x,"total"/)
+ 20   FORMAT(/3x,"isol",4x,"plasma",5x,"vacuum",2x,"real(tot)",
+     $ 2x,"imag(tot)"/)
  30   FORMAT(i6,1p,4e11.3,a)
- 40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",5x,"vacuum",5x,"total"/)
+ 40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",6x,"vacuum",
+     $ 2x,"real(tot)",2x,"imag(tot)"/)
  50   FORMAT(2i6,1p,4e11.3,a)
- 60   FORMAT(/2x,"ipert",4x,"m",4x,"re wt",6x,"im wt",6x,"abs wt"/)
+ 60   FORMAT(/2x,"ipert",4x,"m",6x,"re wt",6x,"im wt",5x,"abs wt"/)
  70   FORMAT(2i6,1p,3e11.3,2x,a)
  80   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum"/)
  90   FORMAT(i6,1p,2e11.3)
@@ -220,7 +222,7 @@ c-----------------------------------------------------------------------
          phase=ABS(wt(imax(1),isol))/wt(imax(1),isol)
          wt(:,isol)=wt(:,isol)*phase
          star(:,isol)=' '
-         star(imax(1),isol)='*'
+         !star(imax(1),isol)='*'
       ENDDO      
 c-----------------------------------------------------------------------
 c     compute plasma and vacuum contributions.

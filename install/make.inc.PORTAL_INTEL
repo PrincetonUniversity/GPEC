@@ -4,9 +4,9 @@
 # - Use on portalr6.pppl.gov
 # - Requirements:
 #    module load intel
-#	 module load acml
 #	 module load lapack
-#	 module load netcdf
+#	 module load netcdf # sets NETCDFHOME
+#    export GPEC_PLATFORM=PORTAL_INTEL
 #
 # These modify the LD_LIBRARY_PATH variable appropriately, which can
 # be used to trace the specific origins of libraries used.
@@ -18,17 +18,17 @@
 
 FC = ifort
 
-FCFLAGS = \
-    -I${NETCDFHOME}/include \
+IFLAGS = \
+    -I${NETCDFHOME}/include
 #	-I${ACML_HOME}/ifort64/include
 
 LIBDIR = \
 	-L../lib \
+	-L${LAPACKHOME} \
+	-L${NETCDFHOME}/lib \
+#	-L${ACML_HOME}/ifort64/lib \
 
 FCLIBS = \
-#	-lacml \
-	-lapack \
+	-llapack \
 	-lblas \
-	-lnetcdff \
-	-lnetcdf \
-	-lm
+	-lnetcdf

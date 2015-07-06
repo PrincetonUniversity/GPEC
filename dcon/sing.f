@@ -1056,7 +1056,7 @@ c-----------------------------------------------------------------------
 c     diagnose asymptotic solutions.
 c-----------------------------------------------------------------------
       CALL ascii_open(debug_unit,"ua.out","UNKNOWN")
-      WRITE(debug_unit,'(a,i2,a,i1,a,1p,e10.3,a,e9.3)')
+      WRITE(debug_unit,'(a,i2,a,i1,a,1p,e10.3,a,e10.3)')
      $     "ising = ",ising,", sing_order = ",sing_order,
      $     ", dpsi = ",dpsi,", alpha = ",REAL(sing(ising)%alpha)
       WRITE(debug_unit,10)
