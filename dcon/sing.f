@@ -840,7 +840,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mband+mband+1,mpert) :: amatlu,fmatlu
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,
      $     amat,bmat,cmat,dmat,emat,hmat,baat,caat,eaat,
-     $     dbat,fmat,kmat,gmat,kaat,pmat,paat,rmat,f0mat,f1mat
+     $     dbat,fmat,kmat,gmat,kaat,pmat,paat,
+     $     kkmat,kkaat,r1mat,r2mat,r3mat,f0mat,f1mat,k1mat,k1aat
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
 c-----------------------------------------------------------------------
@@ -861,7 +862,12 @@ c-----------------------------------------------------------------------
          CALL cspline_eval(kbats,psifac,0)
          CALL cspline_eval(pmats,psifac,0)
          CALL cspline_eval(paats,psifac,0)
-         CALL cspline_eval(rmats,psifac,0)
+         CALL cspline_eval(kkmats,psifac,0)
+         CALL cspline_eval(kkaats,psifac,0)
+         CALL cspline_eval(r1mats,psifac,0)
+         CALL cspline_eval(r2mats,psifac,0)
+         CALL cspline_eval(r3mats,psifac,0)
+
          amat=RESHAPE(amats%f,(/mpert,mpert/))
          bmat=RESHAPE(bmats%f,(/mpert,mpert/))
          cmat=RESHAPE(cmats%f,(/mpert,mpert/))
@@ -876,8 +882,11 @@ c-----------------------------------------------------------------------
          kmat=RESHAPE(kbats%f,(/mpert,mpert/))
          pmat=RESHAPE(pmats%f,(/mpert,mpert/))
          paat=RESHAPE(paats%f,(/mpert,mpert/))
-         rmat=RESHAPE(rmats%f,(/mpert,mpert/))
-
+         kkmat=RESHAPE(kkmats%f,(/mpert,mpert/))
+         kkaat=RESHAPE(kkaats%f,(/mpert,mpert/))
+         r1mat=RESHAPE(r1mats%f,(/mpert,mpert/))
+         r2mat=RESHAPE(r2mats%f,(/mpert,mpert/))
+         r3mat=RESHAPE(r3mats%f,(/mpert,mpert/))
       ELSE
          CALL cspline_eval(fmats,psifac,0)
          CALL cspline_eval(kmats,psifac,0)
@@ -937,11 +946,17 @@ c-----------------------------------------------------------------------
                singfac2=m2-nn*q
                f1mat(ipert,jpert)=singfac1*f0mat(ipert,jpert)*singfac2-
      $              singfac1*pmat(ipert,jpert)-
-     $              CONJG(paat(jpert,ipert))*singfac2+rmat(ipert,jpert)
+     $              CONJG(paat(jpert,ipert))*singfac2+r1mat(ipert,jpert)
+               k1mat(ipert,jpert)=singfac1*kkmat(ipert,jpert)+
+     $                 r2mat(ipert,jpert)  
+               k1aat(ipert,jpert)=kkaat(ipert,jpert)*singfac2+
+     $                 r3mat(ipert,jpert)    
             ENDDO
          ENDDO
                 
          fmat=f1mat !
+         kmat=k1mat !
+         kaat=k1aat !
 
          fmatlu=0
          DO jpert=1,mpert
