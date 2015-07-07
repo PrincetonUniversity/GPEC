@@ -28,7 +28,8 @@ c-----------------------------------------------------------------------
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
       TYPE(cspline_type) :: dmats,emats,hmats,
-     $     baats,caats,eaats,kaats,gaats,fmats,gmats,kmats,fbats,kbats
+     $     baats,caats,eaats,kaats,gaats,fmats,gmats,kmats,dbats,
+     $     fbats,kbats,pmats,paats,rmats,f1mats,f2mats
       TYPE(spline_type) :: k0s
       INTEGER, DIMENSION(:), POINTER :: ipiva
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat,
@@ -250,7 +251,8 @@ c-----------------------------------------------------------------------
      $     g11,g22,g33,g23,g31,g12,jmat1,imat
       COMPLEX(r8), DIMENSION(mpert,mpert) :: amat,bmat,cmat,dmat,emat,
      $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,baat,caat,eaat,
-     $     fbat,kbat,gaat
+     $     fbat,kbat,gaat,dbat,pmat,paat,rmat,
+     $     umat,aamat,b1mat,bkmat,bkaat,f0mat,f1mat,f2mat
 
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu,fmatlu
       COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kinmats,kinmats_l,
@@ -305,8 +307,15 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(baats,mpsi,mpert**2)
       CALL cspline_alloc(caats,mpsi,mpert**2)
       CALL cspline_alloc(eaats,mpsi,mpert**2)
+      CALL cspline_alloc(dbats,mpsi,mpert**2)      
       CALL cspline_alloc(fbats,mpsi,mpert**2)
       CALL cspline_alloc(kbats,mpsi,mpert**2)
+      CALL cspline_alloc(pmats,mpsi,mpert**2)
+      CALL cspline_alloc(paats,mpsi,mpert**2)
+      CALL cspline_alloc(rmats,mpsi,mpert**2)
+
+      CALL cspline_alloc(f1mats,mpsi,mpert**2)
+      CALL cspline_alloc(f2mats,mpsi,mpert**2) 
   
       amats%xs=rzphi%xs
       bmats%xs=rzphi%xs
@@ -317,8 +326,13 @@ c-----------------------------------------------------------------------
       baats%xs=rzphi%xs
       caats%xs=rzphi%xs
       eaats%xs=rzphi%xs
+      dbats%xs=rzphi%xs
       fbats%xs=rzphi%xs
       kbats%xs=rzphi%xs
+      pmats%xs=rzphi%xs
+      paats%xs=rzphi%xs
+      rmats%xs=rzphi%xs
+
       amats%fs=0
       bmats%fs=0
       cmats%fs=0
@@ -328,8 +342,12 @@ c-----------------------------------------------------------------------
       baats%fs=0
       caats%fs=0
       eaats%fs=0
+      dbats%fs=0
       fbats%fs=0
       kbats%fs=0
+      pmats%fs=0
+      paats%fs=0
+      rmats%fs=0
 c-----------------------------------------------------------------------
 c     define flux surface quantities.
 c-----------------------------------------------------------------------
@@ -399,8 +417,10 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
          temp0=amat
+         dbat=dmat
          fbat=fmat
-         kbat=kmat  
+         kbat=kmat
+         b1mat=ifac*dmat
 c-----------------------------------------------------------------------
 c     factor A.
 c-----------------------------------------------------------------------
@@ -422,7 +442,7 @@ c-----------------------------------------------------------------------
          kmat=emat-MATMUL(CONJG(TRANSPOSE(kmat)),temp2)
          gmat=hmat-MATMUL(CONJG(TRANSPOSE(cmat)),temp2)
 c-----------------------------------------------------------------------
-c     kinetic matrices
+c     kinetic matrices.
 c-----------------------------------------------------------------------
          amat=temp0
          IF (kin_flag) THEN
@@ -443,18 +463,20 @@ c-----------------------------------------------------------------------
             ENDDO
             kinmats = 0
             kinmata = 0
-            print *,psifac," - kinetic mats"
-            DO l=-nl,nl
-               print *,"l=",l
-               kinmats_l = 0
-               kinmata_l = 0
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $              "twmm",keq_out,theta_out,xlmda_out,kinmats_l)
-               kinmats = kinmats+kinmats_l
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $              "ttmm",keq_out,theta_out,xlmda_out,kinmata_l)
-               kinmata = kinmata+kinmata_l
-            ENDDO
+            IF (.NOT.(kinfac1==0.OR.kinfac2==0)) THEN
+               print *,psifac," - kinetic mats"
+               DO l=-nl,nl
+                  print *,"l=",l
+                  kinmats_l = 0
+                  kinmata_l = 0
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+     $                 "twmm",keq_out,theta_out,xlmda_out,kinmats_l)
+                  kinmats = kinmats+kinmats_l
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+     $                 "ttmm",keq_out,theta_out,xlmda_out,kinmata_l)
+                  kinmata = kinmata+kinmata_l
+               ENDDO
+            ENDIF
 
             kinmats=kinfac1*kinmats
             kinmata=kinfac2*kinmata
@@ -498,16 +520,18 @@ c-----------------------------------------------------------------------
                kae(ipsi,:)=RESHAPE(kinmata(:,:,5),(/mpert**2/))
                kah(ipsi,:)=RESHAPE(kinmata(:,:,6),(/mpert**2/))
             ENDIF
-            amatlu=0
-            DO jpert=1,mpert
-               DO ipert=1,mpert
-                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
-               ENDDO
-            ENDDO
 c-----------------------------------------------------------------------
 c     factor non-hermitian matrix A.
 c-----------------------------------------------------------------------
-            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,2*mband+mband+1,
+            amatlu=0
+            umat=0
+            DO jpert=1,mpert
+               DO ipert=1,mpert
+                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
+                  IF(ipert==jpert)umat(ipert,jpert)=1
+               ENDDO
+            ENDDO
+            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
      $           ipiva,info)
             IF(info /= 0)THEN
                WRITE(message,'(2(a,i2))')
@@ -515,12 +539,44 @@ c-----------------------------------------------------------------------
      $              ", ipert = ",info,", increase delta_mband"
                CALL program_stop(message)
             ENDIF
+
+            temp2=amat
+            CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiva,temp2,mpert,info) ! close to unit matrix.
+            aamat=CONJG(TRANSPOSE(temp2))
+            umat=umat-aamat
+
+            bkmat=kinmats(:,:,2)+kinmata(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kinmats(:,:,1)+kinmata(:,:,1))
+            bkaat=kinmats(:,:,2)-kinmata(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kinmats(:,:,1)+kinmata(:,:,1))
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiva,temp2,mpert,info)
+            pmat=MATMUL(CONJG(TRANSPOSE(b1mat)),temp2)
+            
+            temp2=b1mat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiva,temp2,mpert,info)
+            paat=MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+     $           -ifac*chi1/(twopi*nn)*MATMUL(umat,b1mat)
+            paat=CONJG(TRANSPOSE(paat))
+
+            temp1=kinmats(:,:,1)+kinmata(:,:,1)
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiva,temp2,mpert,info)
+            rmat=kinmats(:,:,4)+kinmata(:,:,4)-
+     $           (chi1/(twopi*nn))**2*CONJG(TRANSPOSE(temp1))+
+     $           ifac*chi1/(twopi*nn)*CONJG(TRANSPOSE(bkaat))-
+     $           ifac*chi1/(twopi*nn)*MATMUL(aamat,bkmat)-
+     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2) 
 c-----------------------------------------------------------------------
 c     modify matrix G.
 c-----------------------------------------------------------------------
             temp2=cmat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $           2*mband+mband+1,ipiva,temp2,mpert,info)
+     $           3*mband+1,ipiva,temp2,mpert,info)
             gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2) 
 
             iqty=1
@@ -530,6 +586,34 @@ c-----------------------------------------------------------------------
                   iqty=iqty+1
                ENDDO
             ENDDO
+
+            ! diagnose
+            temp1=dbat          
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiva,temp1,mpert,info)
+            f0mat=fbat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
+c-----------------------------------------------------------------------
+c     calculate kinetic non-Hermitian matrices.
+c-----------------------------------------------------------------------
+            temp1=bmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiva,temp1,mpert,info)
+            f1mat=dmat-MATMUL(CONJG(TRANSPOSE(baat)),temp1)
+         
+            DO ipert=1,mpert
+               m1=mlow+ipert-1
+               singfac1=m1-nn*q
+               DO jpert=1,mpert
+                  m2=mlow+jpert-1
+                  singfac2=m2-nn*q
+                  f2mat(ipert,jpert)=singfac1*f0mat(ipert,jpert)*
+     $                 singfac2-singfac1*pmat(ipert,jpert)-
+     $                 CONJG(paat(jpert,ipert))*singfac2+
+     $                 rmat(ipert,jpert)
+               ENDDO
+            ENDDO   
+            f1mats%fs(ipsi,:)=RESHAPE(f1mat,(/mpert**2/))         
+            f2mats%fs(ipsi,:)=RESHAPE(f2mat,(/mpert**2/))  
          ENDIF
 c-----------------------------------------------------------------------
 c     store matrices for interpolation.
@@ -543,8 +627,12 @@ c-----------------------------------------------------------------------
          baats%fs(ipsi,:)=RESHAPE(baat,(/mpert**2/))
          caats%fs(ipsi,:)=RESHAPE(caat,(/mpert**2/))
          eaats%fs(ipsi,:)=RESHAPE(eaat,(/mpert**2/))
+         dbats%fs(ipsi,:)=RESHAPE(dbat,(/mpert**2/))
          fbats%fs(ipsi,:)=RESHAPE(fbat,(/mpert**2/))
          kbats%fs(ipsi,:)=RESHAPE(kbat,(/mpert**2/))
+         pmats%fs(ipsi,:)=RESHAPE(pmat,(/mpert**2/))
+         paats%fs(ipsi,:)=RESHAPE(paat,(/mpert**2/))
+         rmats%fs(ipsi,:)=RESHAPE(rmat,(/mpert**2/))
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
@@ -633,8 +721,12 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(kmats,"extrap")
       CALL cspline_fit(gmats,"extrap")
       CALL cspline_fit(gaats,"extrap")
+      CALL cspline_fit(dbats,"extrap")
       CALL cspline_fit(fbats,"extrap")
       CALL cspline_fit(kbats,"extrap")
+      CALL cspline_fit(pmats,"extrap")
+      CALL cspline_fit(paats,"extrap")
+      CALL cspline_fit(rmats,"extrap")
 c-----------------------------------------------------------------------
 c     write binary output for diagnosis.
 c-----------------------------------------------------------------------  
@@ -709,6 +801,18 @@ c-----------------------------------------------------------------------
      $              REAL(AIMAG(kae(ipsi,ipert)),4),
      $              REAL(REAL(kah(ipsi,ipert)),4),
      $              REAL(AIMAG(kah(ipsi,ipert)),4)
+            ENDDO
+            WRITE(bin_unit)
+         ENDDO
+         CALL bin_close(bin_unit)
+         CALL bin_open(bin_unit,"fss.bin","UNKNOWN","REWIND","none")
+         DO ipert=1,mpert**2
+            DO ipsi=0,mpsi
+               WRITE(bin_unit)REAL(sq%xs(ipsi),4),
+     $              REAL(REAL(f1mats%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(f1mats%fs(ipsi,ipert)),4),
+     $              REAL(REAL(f2mats%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(f2mats%fs(ipsi,ipert)),4)
             ENDDO
             WRITE(bin_unit)
          ENDDO

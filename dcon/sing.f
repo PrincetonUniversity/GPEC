@@ -840,7 +840,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mband+mband+1,mpert) :: amatlu,fmatlu
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,
      $     amat,bmat,cmat,dmat,emat,hmat,baat,caat,eaat,
-     $     fmat,kmat,gmat,kaat
+     $     dbat,fmat,kmat,gmat,kaat,pmat,paat,rmat,f0mat,f1mat
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
 c-----------------------------------------------------------------------
@@ -856,8 +856,12 @@ c-----------------------------------------------------------------------
          CALL cspline_eval(caats,psifac,0)
          CALL cspline_eval(eaats,psifac,0)
          CALL cspline_eval(gaats,psifac,0)
+         CALL cspline_eval(dbats,psifac,0)
          CALL cspline_eval(fbats,psifac,0)
          CALL cspline_eval(kbats,psifac,0)
+         CALL cspline_eval(pmats,psifac,0)
+         CALL cspline_eval(paats,psifac,0)
+         CALL cspline_eval(rmats,psifac,0)
          amat=RESHAPE(amats%f,(/mpert,mpert/))
          bmat=RESHAPE(bmats%f,(/mpert,mpert/))
          cmat=RESHAPE(cmats%f,(/mpert,mpert/))
@@ -867,8 +871,13 @@ c-----------------------------------------------------------------------
          baat=RESHAPE(baats%f,(/mpert,mpert/))
          caat=RESHAPE(caats%f,(/mpert,mpert/))
          eaat=RESHAPE(eaats%f,(/mpert,mpert/))
+         dbat=RESHAPE(dbats%f,(/mpert,mpert/))
          fmat=RESHAPE(fbats%f,(/mpert,mpert/))
          kmat=RESHAPE(kbats%f,(/mpert,mpert/))
+         pmat=RESHAPE(pmats%f,(/mpert,mpert/))
+         paat=RESHAPE(paats%f,(/mpert,mpert/))
+         rmat=RESHAPE(rmats%f,(/mpert,mpert/))
+
       ELSE
          CALL cspline_eval(fmats,psifac,0)
          CALL cspline_eval(kmats,psifac,0)
@@ -901,6 +910,11 @@ c-----------------------------------------------------------------------
      $           ", ipert = ",info,", reduce delta_mband"
             CALL program_stop(message)
          ENDIF
+
+         temp1=dbat !
+         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $        3*mband+1,ipiv,temp1,mpert,info)
+         f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
 c-----------------------------------------------------------------------
 c     calculate kinetic non-Hermitian matrices.
 c-----------------------------------------------------------------------      
@@ -914,6 +928,20 @@ c-----------------------------------------------------------------------
          kmat=emat-MATMUL(CONJG(TRANSPOSE(baat)),temp2)
          kaat=CONJG(TRANSPOSE(eaat))-
      $        MATMUL(CONJG(TRANSPOSE(caat)),temp1)
+
+         DO ipert=1,mpert
+            m1=mlow+ipert-1
+            singfac1=m1-nn*q
+            DO jpert=1,mpert
+               m2=mlow+jpert-1
+               singfac2=m2-nn*q
+               f1mat(ipert,jpert)=singfac1*f0mat(ipert,jpert)*singfac2-
+     $              singfac1*pmat(ipert,jpert)-
+     $              CONJG(paat(jpert,ipert))*singfac2+rmat(ipert,jpert)
+            ENDDO
+         ENDDO
+                
+         fmat=f1mat !
 
          fmatlu=0
          DO jpert=1,mpert
@@ -1112,7 +1140,7 @@ c-----------------------------------------------------------------------
          CALL cspline_eval(bmats,psifac,0)
          CALL cspline_eval(dmats,psifac,0)
          CALL cspline_eval(baats,psifac,0)
-         CALL cspline_eval(fbats,psifac,0)
+         CALL cspline_eval(fmats,psifac,0)
          amat=RESHAPE(amats%f,(/mpert,mpert/))
          bmat=RESHAPE(bmats%f,(/mpert,mpert/))
          dmat=RESHAPE(dmats%f,(/mpert,mpert/))
@@ -1138,8 +1166,8 @@ c-----------------------------------------------------------------------
      $        3*mband+1,ipiv,temp1,mpert,info)
          f=dmat-MATMUL(CONJG(TRANSPOSE(baat)),temp1)
       ELSE
-         CALL cspline_eval(fbats,psifac,0)
-         temp1=RESHAPE(fbats%f,(/mpert,mpert/))
+         CALL cspline_eval(fmats,psifac,0)
+         temp1=RESHAPE(fmats%f,(/mpert,mpert/))
          ipert=0
          DO m1=mlow,mhigh
             ipert=ipert+1

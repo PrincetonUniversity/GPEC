@@ -179,7 +179,7 @@ c-----------------------------------------------------------------------
             CALL resist_eval(sing(ising))
          ENDDO
 
-         CALL ksing_find
+c         CALL ksing_find
       ENDIF
 c-----------------------------------------------------------------------
 c     integrate main ODE's.
