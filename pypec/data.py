@@ -781,7 +781,10 @@ class DataBase(object):
         if not type(x) in [list,tuple,np.ndarray]: x=[x,]
         NewData = copy.deepcopy(self)
         NewData.x = list(x)
-        NewData.shape = list(np.shape(NewData.x))
+        if type(x[0]) in [list,tuple,np.ndarray]:
+            NewData.shape = [len(xx) for xx in NewData.x]
+        else:
+            NewData.shape = list(np.shape(NewData.x))
         NewData.pts = np.array(np.meshgrid(*x)).T.reshape(-1,len(NewData.shape))
         
         #function to form interpolator if needed
