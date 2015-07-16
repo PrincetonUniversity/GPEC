@@ -1105,7 +1105,7 @@ class DataBase(object):
         return f
 
     def plot3d(self,ynames=None,filter={'psi':1},cbar=False,size=(600,600),
-               plot_type='',**kwargs):
+               plot_type='',phi=None,**kwargs):
         """
         Three dimensional plots. Data with xnames r,z will be plotted
         with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).
@@ -1128,6 +1128,8 @@ class DataBase(object):
           plot_type : str. 
             Valid mayavi.mlab function name. 
             Overrides default function choices (plot3d,mesh,quiver3d).
+          phi : ndarray. 
+            Toroidal angle grid for complex 2D data. Default is 360 degrees, 180 pts.
 
         *Returns:*
           figure.
@@ -1184,6 +1186,7 @@ class DataBase(object):
         # Extra work to convert the cylindrical axes
         if self.xnames==['r','z']:
             r,z,p = self.pts[:,0][fltr],self.pts[:,1][fltr],np.linspace(0,2*np.pi,180)
+            if phi!=None: p = np.array(phi) # Added for more custamization
             XY = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
             Z = z.reshape(-1,1)*np.ones_like(XY.real)
             X = [XY.real,XY.imag,Z]
@@ -1200,10 +1203,13 @@ class DataBase(object):
             else:
                 XYZ = X+np.real(S).tolist()
             #print(np.array(XYZ).shape)
+            #XYZ = map(np.transpose,XYZ)
+            #for v in XYZ:
+            #    print(v.shape)
             plotfunc(*XYZ,name=name,**kwargs)
             if cbar: mmlab.colorbar(title=name,orientation='vertical')
             f = mmlab.gcf()
-        return f #X,S
+        return X,S
     
 
     def scatter(self,ynames=None,xname=None,x1=None,x2=None,x3=None,**kwargs):

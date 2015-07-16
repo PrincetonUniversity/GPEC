@@ -1,0 +1,32 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+kas.bin
+
+graph title:	Solutions
+
+variable names
+0	psifac
+1	Real kaa
+2	Imag kaa
+3	Real kab
+4	Imag kab
+5	Real kac
+6	Imag kac
+7	Real kad
+8	Imag kad
+9	Real kae
+10	Imag kae
+11	Real kah
+12	Imag kah
+
+
+ix	iy	title
+0	7	"Re kaa
+0	8	"Im kaa
+0	9	"Re kab
+0	10	"Im kab
+0	11	"Re kac
+0	12	"Im kac
+
+

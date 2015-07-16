@@ -17,7 +17,7 @@ program pentrc
     !-----------------------------------------------------------------------
     
     use params, only: r8,xj
-    use utilities, only: timer
+    use utilities, only: timer,to_upper
     use special, only: set_fymnl,set_ellip
     use inputs, only : read_kin,read_equil,nn,read_peq,&
                        read_ipec_peq,read_fnml,verbose
@@ -40,6 +40,7 @@ program pentrc
     implicit none
 
     ! declarations and defaults
+    integer, parameter :: nflags=6
     logical :: &
         fgar_flag=.true.,&
         tgar_flag=.false.,&
@@ -51,6 +52,9 @@ program pentrc
         fkmm_flag=.false.,&
         tkmm_flag=.false.,&
         pkmm_flag=.false.,&
+        frmm_flag=.false.,&
+        trmm_flag=.false.,&
+        prmm_flag=.false.,&
         fwmm_flag=.false.,&
         twmm_flag=.false.,&
         pwmm_flag=.false.,&
@@ -66,9 +70,10 @@ program pentrc
         ellip_flag=.false.,&
         diag_flag=.false.,&
         term_flag=.true.,&
-        clean=.true.
+        clean=.true.,&
+        flags(nflags)=.false.
         
-    integer :: i,j,k,l, &
+    integer :: i,j,k,l,m, &
         mi=2, &
         zi=1, &
         zimp=6, &
@@ -95,13 +100,14 @@ program pentrc
     complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
     complex(r8), dimension(:,:,:), allocatable :: wtw
         
-    character(4) :: nstring
+    character(4) :: nstring,method,methods(nflags)
     character(512) :: &
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
         ipec_file  ="ipec_order1_n1.bin", &
         peq_file ="ipec_xclebsch_n1.out", &
-        data_dir ="."
+        data_dir =".",&
+        docs(nflags)=""
     character(32) :: &
         nutype = "harmonic",&
         f0type = "maxwellian",&
@@ -198,37 +204,54 @@ program pentrc
             enddo
             close(1)
         endif
-        if(fkmm_flag)then
-            if(verbose) print *,"PENTRC - FUll Kinetic MXM euler lagrange matrix calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fkmm',eq_out)
-            if(verbose) then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fkmm',eq_out)
+        flags  =(/fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag/)
+        methods=(/"fkmm","tkmm","pkmm","frmm","trmm","prmm"/)
+        docs   =(/"Full kinetic energy MXM euler lagrange matrix norm calculation   ",&
+                  "Trapped kinetic energy MXM euler lagrange matrix norm calculation",&
+                  "Passing kinetic energy MXM euler lagrange matrix norm calculation",&
+                  "Full torque MXM euler lagrange matrix norm calculation           ",&
+                  "Trapped torque MXM euler lagrange matrix norm calculation        ",&
+                  "Passing torque MXM euler lagrange matrix norm calculation        " &
+                /)
+        do m=1,nflags
+            print *,m
+            if(flags(m))then
+                method = to_upper(methods(m))
                 if(verbose)then
                     print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                    print *,method//" - "//TRIM(docs(m))
+                ENDIF
+                tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
+                if(verbose) then
+                    print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
+                    print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
+                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
+                endif
+                if(eqpsi_out)then
+                    if(verbose) print *,method//" - "//"Recalculating on equilibrium grid"
+                    teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
+                    if(verbose)then
+                        print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
+                        print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
+                        print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                    endif
+                endif
+                ! run select surfaces with detailed output
+                if(verbose) print *,method//" - "//"Recalculating on psiout grid for detailed outputs"
+                do i=1,nout
+                    do l=-nl,nl,max(1,nl)
+                        if(psiout(i)>0 .and. psiout(i)<=1)then
+                            tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'fkmm',&
+                                .false.,theta_out,xlmda_out)
+                        endif
+                    enddo
+                if(verbose)then
+                    print *, method//" - Finished"
                     print *, "---------------------------------------------"
                 endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'fkmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
                 enddo
-            enddo
-        endif
+            endif
+        enddo
         if(tkmm_flag)then
             if(verbose) print *,"PENTRC - Trapped Kinetic MXM euler lagrange matrix calculation"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'tkmm',eq_out)
