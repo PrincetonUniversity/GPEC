@@ -26,7 +26,7 @@ program pentrc
     use energy_integration, only: &
         xatol,xrtol,xmax,ximag,xnufac,&  ! reals
         xnutype,xf0type,        &       ! character(32)
-        xdebug                          ! logical
+        qt,xdebug                          ! logical
     use pitch_integration, only: &
         lambdaatol,lambdartol,&         ! reals
         lambdadebug                     ! logical
@@ -35,7 +35,6 @@ program pentrc
         tatol,trtol,&                   ! reals
         tdebug,&                          ! logical
         mpert,mfac                    !! hacked for test writting
-    use global_mod, only: version       ! GPEC package
 
     implicit none
 
@@ -105,13 +104,14 @@ program pentrc
     character(32) :: &
         nutype = "harmonic",&
         f0type = "maxwellian",&
-        jac_in = ""
+        jac_in = "",&
+        moment = "pressure"
       
     namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
         
-    namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
+    namelist/pent_control/moment,nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
         atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
         
     namelist/pent_output/eq_out,theta_out,xlmda_out,eqpsi_out,&
@@ -135,11 +135,18 @@ program pentrc
     lambdartol = rtol    
     verbose = term_flag
     
+    if(moment=="heat")then
+        qt = .true.
+    elseif(moment=="pressure")then
+        qt = .false.
+    else
+        stop "ERROR: Input moment must be 'pressure' or 'heat'"
+    endif
     
     ! read interface and set modules
     if(verbose) print *,''
-    if(verbose) print *,"PENTRC START => "//TRIM(version)
-    if(verbose) print *,"__________________________________________"
+    if(verbose) print *,"PENTRC START => v3.00"
+    if(verbose) print *,"_____________________"
     open(unit=1,file="pentrc.in",status="old")
     read(unit=1,nml=pent_input)
     read(unit=1,nml=pent_control)
@@ -168,7 +175,7 @@ program pentrc
         call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug)
         !call read_ipec_peq(ipec_file,tdebug) 
         if(wxyz_flag)then
-            if(verbose) print *,"PENTRC - euler-lagrange matrix calculation"
+            if(verbose) print *,"PENTRC - euler-lagrange matrix calculation v3.0"
             !! HACK - this should have its own flag
             allocate(wtw(mpert,mpert,6))
             write(nstring,'(I4)') nn
@@ -200,7 +207,7 @@ program pentrc
             close(1)
         endif
         if(fkmm_flag)then
-            if(verbose) print *,"PENTRC - FUll Kinetic MXM euler lagrange matrix calculation"
+            if(verbose) print *,"PENTRC - FUll Kinetic MXM euler lagrange matrix calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fkmm',eq_out)
             if(verbose) then
                 print *, "---------------------------------------------"
@@ -231,7 +238,7 @@ program pentrc
             enddo
         endif
         if(tkmm_flag)then
-            if(verbose) print *,"PENTRC - Trapped Kinetic MXM euler lagrange matrix calculation"
+            if(verbose) print *,"PENTRC - Trapped Kinetic MXM euler lagrange matrix calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'tkmm',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -294,7 +301,7 @@ program pentrc
         endif
         
         if(fwmm_flag)then
-            if(verbose) print *,"PENTRC - FUll dW MXM matrix calculation"
+            if(verbose) print *,"PENTRC - FUll dW MXM matrix calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fwmm',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -325,7 +332,7 @@ program pentrc
             enddo
         endif
         if(twmm_flag)then
-            if(verbose) print *,"PENTRC - Trapped dW MXM matrix calculation"
+            if(verbose) print *,"PENTRC - Trapped dW MXM matrix calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'twmm',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -356,7 +363,7 @@ program pentrc
             enddo
         endif
         if(pwmm_flag)then
-            if(verbose) print *,"PENTRC - Passing dW MXM matrix calculation"
+            if(verbose) print *,"PENTRC - Passing dW MXM matrix calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'pwmm',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -388,7 +395,7 @@ program pentrc
         endif
         
         if(ftmm_flag)then
-            if(verbose) print *,"PENTRC - FUll Torque MXM matrix calculation"
+            if(verbose) print *,"PENTRC - FUll Torque MXM matrix calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ftmm',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -419,7 +426,7 @@ program pentrc
             enddo
         endif
         if(ttmm_flag)then
-            if(verbose) print *,"PENTRC - Trapped Torque MXM matrix calculation"
+            if(verbose) print *,"PENTRC - Trapped Torque MXM matrix calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ttmm',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -450,7 +457,7 @@ program pentrc
             enddo
         endif
         if(ptmm_flag)then
-            if(verbose) print *,"PENTRC - Passing Torque MXM  matrix calculation"
+            if(verbose) print *,"PENTRC - Passing Torque MXM  matrix calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ptmm',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -482,7 +489,7 @@ program pentrc
         endif
         
         if(fgar_flag)then
-            if(verbose) print *,"PENTRC - full general-aspect-ratio calculation"
+            if(verbose) print *,"PENTRC - full general-aspect-ratio calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fgar',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -513,7 +520,7 @@ program pentrc
             enddo
         endif
         if(tgar_flag)then
-            if(verbose) print *,"PENTRC - trapped particle general-aspect-ratio calculation"
+            if(verbose) print *,"PENTRC - trapped particle general-aspect-ratio calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'tgar',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -544,7 +551,7 @@ program pentrc
             enddo
         endif
         if(pgar_flag)then
-            if(verbose) print *,"PENTRC - passing particle general-aspect-ratio calculation"
+            if(verbose) print *,"PENTRC - passing particle general-aspect-ratio calculation v3.0"
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'pgar',eq_out)
             if(verbose)then
                 print *, "---------------------------------------------"
@@ -576,7 +583,7 @@ program pentrc
         endif
         
         if(clar_flag)then
-            if(verbose) print *,"PENTRC - cylindrical large-aspect-ratio calculation"
+            if(verbose) print *,"PENTRC - cylindrical large-aspect-ratio calculation v3.0"
             call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
             print *, psilim
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'clar',eq_out)
@@ -609,7 +616,7 @@ program pentrc
             enddo
         endif
         if(rlar_flag)then
-            if(verbose) print *,"PENTRC - reduced large-aspect-ratio calculation"
+            if(verbose) print *,"PENTRC - reduced large-aspect-ratio calculation v3.0"
             if(.not. clar_flag) call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
             tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'rlar',eq_out)
             if(verbose)then
@@ -668,5 +675,5 @@ program pentrc
     
     ! display timer and stop
     call timer(mode=1)
-    stop "PENTRC STOP => Normal termination."
+    stop "PENTRC STOP=> normal termination."
 end program pentrc

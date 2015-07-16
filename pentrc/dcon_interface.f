@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wft,
      $     amat,bmat,cmat,fmats,gmats,kmats
 
-      TYPE(spline_type) :: sq
+      TYPE(spline_type) :: sq,geom
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
       TYPE(cspline_type) :: u1,u2
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
@@ -1138,11 +1138,117 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_coords
       
+c-----------------------------------------------------------------------
+c     subprogram 4. issurfint.
+c     surface integration by simple method.
+c-----------------------------------------------------------------------
+      FUNCTION issurfint(func,fs,psi,wegt,ave)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fs,wegt,ave
+      REAL(r8), INTENT(IN) :: psi
+      REAL(r8), DIMENSION(0:fs), INTENT(IN) :: func
+
+      INTEGER :: itheta
+      REAL(r8) :: issurfint
+      REAL(r8) :: rfac,eta,jac,area
+      REAL(r8), DIMENSION(1,2) :: w
+      REAL(r8), DIMENSION(0:fs) :: z
+      
+      ! note we had to make arrays allocatable to be allowed to save
+      REAL(r8) :: psave
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: thetas,jacs,delpsi,r,a
+      SAVE :: psave,jacs,delpsi,r,a
+      
+      issurfint=0
+      area=0
+      IF(psi/=psave)THEN
+         psave = psi
+         IF(ALLOCATED(thetas)) DEALLOCATE(thetas,jacs,delpsi,r,a)
+         ALLOCATE(thetas(0:fs),jacs(0:fs),delpsi(0:fs),r(0:fs),a(0:fs))
+         thetas=(/(itheta,itheta=0,fs)/)/REAL(fs,r8)
+         DO itheta=0,fs-1
+            CALL bicube_eval(rzphi,psi,thetas(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(thetas(itheta)+rzphi%f(2))
+            a(itheta)=rfac
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            jacs(itheta)=jac
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+         ENDDO
+      ENDIF
+
+      IF (wegt==0) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE IF (wegt==1) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           r(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE IF (wegt==2) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           jacs(itheta)*delpsi(itheta)*func(itheta)/r(itheta)/fs
+         ENDDO
+      ELSE 
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           a(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ENDIF
+
+      IF (ave==1) THEN
+         DO itheta=0,fs-1
+            area=area+jacs(itheta)*delpsi(itheta)/fs
+         ENDDO
+         issurfint=issurfint/area
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END FUNCTION issurfint
 
       
       
       
+      !=======================================================================
+      subroutine set_geom
+      !----------------------------------------------------------------------- 
+      !*DESCRIPTION: 
+      !   Form a spline of additional geometric flux surface functions.
+      !
+      !*ARGUMENTS:
+      !
+      !----------------------------------------------------------------------- 
+        ! declare variables
+        integer  :: ipsi
+        real(r8) :: psifac
+        real(r8), dimension(0:mthsurf) :: unitfun
+        
+        unitfun = 1
+        call spline_alloc(geom,mpsi,3)
+        geom%title=(/"area  ","<r>   ","<R>   "/)
+        geom%xs = sq%xs
+        do ipsi=0,mpsi
+            psifac = geom%xs(ipsi)
+            geom%fs(ipsi,1) = issurfint(unitfun,mthsurf,psifac,0,0)
+            geom%fs(ipsi,2) = issurfint(unitfun,mthsurf,psifac,3,1)
+            geom%fs(ipsi,3) = issurfint(unitfun,mthsurf,psifac,1,1)
+        enddo
+        call spline_fit(geom,"extrap")
+        !call spline_int(geom) ! not necessary yet
       
+      end subroutine set_geom
       
       
       !=======================================================================
@@ -1220,6 +1326,9 @@ c-----------------------------------------------------------------------
         ! evaluate field on axis
         call spline_eval(sq,0.0_r8,0)
         bo = abs(sq%f(1))/(twopi*ro)
+        
+        ! set additional geometric spline
+        call set_geom
         
       end subroutine set_eq
       

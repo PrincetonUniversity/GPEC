@@ -50,7 +50,7 @@ dcon_interface.o: params.o utilities.o
 inputs.o:  params.o utilities.o special.o dcon_interface.o
 energy.o:  params.o utilities.o lsode2.o
 pitch.o:   params.o utilities.o lsode1.o energy.o special.o
-torque.o:  params.o utilities.o special.o inputs.o energy.o pitch.o
+torque.o:  params.o utilities.o special.o dcon_interface.o inputs.o energy.o pitch.o
 diagnostics.o: params.o special.o energy.o pitch.o
 pentrc.o:  utilities.o special.o energy.o pitch.o torque.o inputs.o diagnostics.o 
 pentrc_interface.o: params.o utilities.o inputs.o energy.o pitch.o torque.o
