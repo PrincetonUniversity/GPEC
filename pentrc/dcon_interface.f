@@ -1151,23 +1151,27 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       REAL(r8), DIMENSION(0:fs), INTENT(IN) :: func
 
-      INTEGER :: itheta
+      LOGICAL  :: first = .TRUE. ! Only set at first call, implicitly saved
+      INTEGER  :: itheta
       REAL(r8) :: issurfint
       REAL(r8) :: rfac,eta,jac,area
       REAL(r8), DIMENSION(1,2) :: w
-      REAL(r8), DIMENSION(0:fs) :: z
+      REAL(r8), DIMENSION(0:fs) :: z,thetas
       
       ! note we had to make arrays allocatable to be allowed to save
+      INTEGER  :: fsave
       REAL(r8) :: psave
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: thetas,jacs,delpsi,r,a
-      SAVE :: psave,jacs,delpsi,r,a
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: jacs,delpsi,r,a
+      SAVE :: psave,fsave,jacs,delpsi,r,a
       
       issurfint=0
       area=0
-      IF(psi/=psave)THEN
+      IF(first .OR. psi/=psave .OR. fs/=fsave)THEN
          psave = psi
-         IF(ALLOCATED(thetas)) DEALLOCATE(thetas,jacs,delpsi,r,a)
-         ALLOCATE(thetas(0:fs),jacs(0:fs),delpsi(0:fs),r(0:fs),a(0:fs))
+         fsave = fs
+         IF(.NOT.first) DEALLOCATE(jacs,delpsi,r,a)
+         first = .FALSE.
+         ALLOCATE(jacs(0:fs),delpsi(0:fs),r(0:fs),a(0:fs))
          thetas=(/(itheta,itheta=0,fs)/)/REAL(fs,r8)
          DO itheta=0,fs-1
             CALL bicube_eval(rzphi,psi,thetas(itheta),1)
@@ -1199,11 +1203,13 @@ c-----------------------------------------------------------------------
             issurfint=issurfint+
      $           jacs(itheta)*delpsi(itheta)*func(itheta)/r(itheta)/fs
          ENDDO
-      ELSE 
+      ELSE IF (wegt==3) THEN
          DO itheta=0,fs-1
             issurfint=issurfint+
      $           a(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
          ENDDO
+      ELSE
+         STOP "ERROR: issurfint wegt must be in [0,1,2,3]"
       ENDIF
 
       IF (ave==1) THEN
