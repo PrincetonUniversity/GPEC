@@ -65,10 +65,14 @@ class LinearBase:
         pts = np.array([self.pts[name] for name in self.xnames])
         
         #self.data = data.interp(pts,**kwargs) # fails is not both monotonicly increasing
-        self.data = data.interp(pts[:,0].tolist(),**kwargs)
-        for pt in zip(pts[0,1:],pts[1,1:]):
+        #self.data = data.interp(pts[:,0].tolist(),**kwargs)
+        #for pt in zip(pts[0,1:],pts[1,1:]):
+        self.data = {}
+        for k in data.y.keys(): self.data[k] = []
+        print(self.data)
+        for pt in zip(pts[0,:],pts[1,:]):
             d = data.interp(pt,quiet=True)
-            for k,v in d.iteritems():
+            for k,v in d.y.iteritems():
                 self.data[k] = np.hstack((self.data[k],v))
         
         # mode number
