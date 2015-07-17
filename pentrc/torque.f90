@@ -317,8 +317,8 @@ module torque
             enddo
             stop "ERROR: torque - minor radius is negative"
         endif
-        !epsr = geom%f(1)/ro
-        epsr = sqrt(psi)*SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
+        epsr = geom%f(2)/geom%f(3)
+        !epsr = sqrt(psi)*SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
         !epsr = sqrt(rzphi%f(1))/ro                  ! epsr at deep trapped limit
         wbhat = (pi/4)*SQRT(epsr/2)*wtran           ! RLAR normalized by x^1/2
         wdhat = q**3*wtran**2/(4*epsr*wgyro)*wdfac  ! RLAR normalized by x
@@ -349,12 +349,12 @@ module torque
                 write(out_unit,'(3(a10,es16.8E3))')"     R0 = ",ro,"     B0 = ",bo,"   chi1 = ",chi1
                 !write(out_unit,'(1/,a26,2(a10,es16.8E3),1/)') " Common normalizations:",&
                 !    "    bbar = ",ro/sqrt(2.0/(mi*mp)),"    dbar = ",zi*e*bo*ro**2 ! needs T_is
-                write(out_unit,'(1/,19(a18))') "psi_n","eps_r","n_i","n_e",&
+                write(out_unit,'(1/,21(a18))') "psi_n","eps_r","n_i","n_e",&
                     "T_i","T_e","omega_E","logLambda","nu_i","nu_e","q","dconPmu_0","dvdpsi_n",&
                     "omega_N","omega_T","omega_trans","omega_gyro","RLARomega_b","RLARomega_d",&
                     "<(deltaB_L/B)^2>","<(divxprp)^2>"!/J??
             endif
-            WRITE(out_unit,'(19(es18.8E3))') psi,epsr,kin%f(1:8),q,sq%f(2),sq%f(3),&
+            WRITE(out_unit,'(21(es18.8E3))') psi,epsr,kin%f(1:8),q,sq%f(2),sq%f(3),&
                 wdian,wdiat,wtran,wgyro,wbhat,wdhat,dbave,dxave
             close(out_unit)
         endif
@@ -997,13 +997,14 @@ module torque
             file2 = "pentrc_"//trim(method)//"_eqpsi_ell_n"//trim(adjustl(nstring))//".out"
         endif
         if(qt)then
-            file1 = file1(:7)//"heat_"//file1(7:)
-            file2 = file2(:7)//"heat_"//file2(7:)
+            file1 = file1(:7)//"heat_"//file1(8:)
+            file2 = file2(:7)//"heat_"//file2(8:)
         endif
         unit1 = get_free_file_unit(-1)
         open(unit=unit1,file=file1,status="unknown")
             write(unit1,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
             write(unit1,*) "Neoclassical nonambipolar flux profile."
+            write(unit1,*)
             if(qt)then
                 write(unit1,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
                 write(unit1,*) " chi = Heat diffusivity in m^2/s"
@@ -1027,16 +1028,17 @@ module torque
             write(unit2,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
             write(unit2,*) "Neoclassical transport profiles &
                 &for each bounce harmonic."
+            write(unit2,*)
             if(qt)then
-                write(unit1,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
-                write(unit1,*) " chi = Heat diffusivity in m^2/s"
-                write(unit1,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
-                write(unit1,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
+                write(unit2,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
+                write(unit2,*) " chi = Heat diffusivity in m^2/s"
+                write(unit2,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
+                write(unit2,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
             else
-                write(unit1,*) " Gamma = Particle flux in 1/(sm^2)"
-                write(unit1,*) " chi = Particle diffusivity in m^2/s"
-                write(unit1,*) " T_phi = Torque in Nm"
-                write(unit1,*) " 2ndeltaW = Kinetic energy in J"
+                write(unit2,*) " Gamma = Particle flux in 1/(sm^2)"
+                write(unit2,*) " chi = Particle diffusivity in m^2/s"
+                write(unit2,*) " T_phi = Torque in Nm"
+                write(unit2,*) " 2ndeltaW = Kinetic energy in J"
             endif
             write(unit2,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
                 " zi = ",zi," mi = ",mi
@@ -1082,7 +1084,7 @@ module torque
             call spline_eval(sq,x,0)
             call spline_eval(kin,x,1)
             call spline_eval(geom,x,1)
-            gam = tphi_spl%fs(i,:) /(chrg*chi1*geom%f(1))
+            gam = tphi_spl%fs(i,:)*twopi/(chrg*chi1*geom%f(1))
             if(qt)then
                 drive = (kin%f(s)/kin%f(s+2))*(kin%f1(s+2)/geom%f1(2)) ! (ndT/dr) /T
             else
@@ -1090,14 +1092,14 @@ module torque
                        +(chrg*kin%f(s)/kin%f(s+2))*((kin%f(5)/twopi)/geom%f1(2)) ! (en/T)*dPhi/dr
             endif
             chi = -gam/(drive)
-            write(unit1,'(8(es18.8e3))') x,&
+            write(unit1,'(10(es18.8e3))') x,&
                 sum(gam(:),dim=1),&
                 sum(chi(:),dim=1),&
                 sum(tphi_spl%fs(i,:),dim=1),&
                 sum(tphi_spl%fsi(i,:),dim=1),&
                 sq%f(3)
             do l=-nl,nl
-                write(unit2,'(es18.8e3,i5,4(es18.8e3))') x,l,&
+                write(unit2,'(es18.8e3,i5,8(es18.8e3))') x,l,&
                     gam(2*(nl+l)+1),chi(2*(nl+l)+1),&
                     tphi_spl%fs(i,2*(nl+l)+1),tphi_spl%fsi(i,2*(nl+l)+1)
             enddo
@@ -1283,13 +1285,14 @@ module torque
             file2 = "pentrc_"//trim(method)//"_ell_n"//trim(adjustl(nstring))//".out"
         endif
         if(qt)then
-            file1 = file1(:7)//"heat_"//file1(7:)
-            file2 = file2(:7)//"heat_"//file2(7:)
+            file1 = file1(:7)//"heat_"//file1(8:)
+            file2 = file2(:7)//"heat_"//file2(8:)
         endif
         unit1 = get_free_file_unit(-1)
         open(unit=unit1,file=file1,status="unknown")
             write(unit1,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
             write(unit1,*) "Neoclassical nonambipolar flux profile."
+            write(unit1,*)
             if(qt)then
                 write(unit1,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
                 write(unit1,*) " chi = Heat diffusivity in m^2/s"
@@ -1313,16 +1316,17 @@ module torque
             write(unit2,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
             write(unit2,*) "Neoclassical transport profiles &
                 &for each bounce harmonic."
+            write(unit2,*)
             if(qt)then
-                write(unit1,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
-                write(unit1,*) " chi = Heat diffusivity in m^2/s"
-                write(unit1,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
-                write(unit1,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
+                write(unit2,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
+                write(unit2,*) " chi = Heat diffusivity in m^2/s"
+                write(unit2,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
+                write(unit2,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
             else
-                write(unit1,*) " Gamma = Particle flux in 1/(sm^2)"
-                write(unit1,*) " chi = Particle diffusivity in m^2/s"
-                write(unit1,*) " T_phi = Torque in Nm"
-                write(unit1,*) " 2ndeltaW = Kinetic energy in J"
+                write(unit2,*) " Gamma = Particle flux in 1/(sm^2)"
+                write(unit2,*) " chi = Particle diffusivity in m^2/s"
+                write(unit2,*) " T_phi = Torque in Nm"
+                write(unit2,*) " 2ndeltaW = Kinetic energy in J"
             endif
             write(unit2,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
                 " zi = ",zi," mi = ",mi
@@ -1344,7 +1348,7 @@ module torque
             call spline_eval(sq,x,0)
             call spline_eval(kin,x,1)
             call spline_eval(geom,x,1)
-            gam = dky/(e*chi1*geom%f(1))
+            gam = dky*twopi/(chrg*chi1*geom%f(1))
             if(qt)then
                 drive = (kin%f(s)/kin%f(s+2))*(kin%f1(s+2)/geom%f1(2)) ! (ndT/dr) /T
             else
@@ -1352,14 +1356,14 @@ module torque
                        +(chrg*kin%f(s)/kin%f(s+2))*((kin%f(5)/twopi)/geom%f1(2)) ! (en/T)*dPhi/dr
             endif
             chi = -gam/(drive)
-            write(unit1,'(7(es18.8e3))') x,&
+            write(unit1,'(11(es18.8e3))') x,&
                 sum(gam,dim=1,mask=maskr),sum(gam,dim=1,mask=maski),&
                 sum(chi,dim=1,mask=maskr),sum(chi,dim=1,mask=maski),&
                 sum(dky,dim=1,mask=maskr),sum(dky,dim=1,mask=maski),&
                 sum(y,dim=1,mask=maskr),sum(y,dim=1,mask=maski),&
                 sq%f(3)
             do l=-nl,nl
-                write(unit2,'(es18.8e3,i5,4(es18.8e3))') x,l,&
+                write(unit2,'(es18.8e3,i5,8es18.8e3))') x,l,&
                     gam(2*(nl+l)+1:2*(nl+l)+2),chi(2*(nl+l)+1:2*(nl+l)+2),&
                     dky(2*(nl+l)+1:2*(nl+l)+2),y(2*(nl+l)+1:2*(nl+l)+2)
             enddo

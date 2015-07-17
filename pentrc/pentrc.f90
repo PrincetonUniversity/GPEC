@@ -111,10 +111,10 @@ program pentrc
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
         
-    namelist/pent_control/moment,nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
+    namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
         atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
         
-    namelist/pent_output/eq_out,theta_out,xlmda_out,eqpsi_out,&
+    namelist/pent_output/moment,eq_out,theta_out,xlmda_out,eqpsi_out,&
         fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
         wxyz_flag,psiout,fkmm_flag,tkmm_flag,pkmm_flag,&
         fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
@@ -124,6 +124,13 @@ program pentrc
         tdebug,xdebug,lambdadebug
 
     
+    ! read interface and set modules
+    open(unit=1,file="pentrc.in",status="old")
+    read(unit=1,nml=pent_input)
+    read(unit=1,nml=pent_control)
+    read(unit=1,nml=pent_output)
+    read(unit=1,nml=pent_admin)
+    close(1)
     
     ! distribute some simplified inputs to module circles
     xatol = atol
@@ -134,25 +141,21 @@ program pentrc
     lambdaatol = atol
     lambdartol = rtol    
     verbose = term_flag
-    
+    if(verbose) print *,''
+    if(verbose) print *,"PENTRC START => v3.00"
+    if(verbose) print *,"______________________________"
     if(moment=="heat")then
         qt = .true.
+        if(verbose) print *,"Heat transport calculation"
+        if(verbose) print *,"------------------------------"
     elseif(moment=="pressure")then
         qt = .false.
+        if(verbose) print *,"Particle transport and torque"
+        if(verbose) print *,"------------------------------"
     else
         stop "ERROR: Input moment must be 'pressure' or 'heat'"
     endif
     
-    ! read interface and set modules
-    if(verbose) print *,''
-    if(verbose) print *,"PENTRC START => v3.00"
-    if(verbose) print *,"_____________________"
-    open(unit=1,file="pentrc.in",status="old")
-    read(unit=1,nml=pent_input)
-    read(unit=1,nml=pent_control)
-    read(unit=1,nml=pent_output)
-    read(unit=1,nml=pent_admin)
-    close(1)
     ! start timer
     call timer(mode=0)
     ! clear working directory
@@ -160,7 +163,6 @@ program pentrc
         if(verbose) print *, "clearing working directory"
         call system ('rm pentrc_*.out')
     endif
-        
     
     ! administrative setup/diagnostics/debugging.
     if(fnml_flag) call set_fymnl
