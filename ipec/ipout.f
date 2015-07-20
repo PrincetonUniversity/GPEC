@@ -3103,9 +3103,9 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (pbrzphi_flag) THEN
-         CALL ascii_open(out_unit,"ipec_pbrzphi_n"//
+         CALL ascii_open(out_unit,"ipec_vpbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_PBRZPHI: Vacuum field by "//
+         WRITE(out_unit,*)"IPEC_VPBRZPHI: Vacuum field by "//
      $        "surface currents"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3118,7 +3118,7 @@ c-----------------------------------------------------------------------
          DO i=0,nr
             DO j=0,nz
                WRITE(out_unit,'(1x,I2,8(es16.8))')
-     $              vgdl(i,j),vgdr(i,j),vgdz(i,j),
+     $              vgdl(i,j),gdr(i,j),gdz(i,j),
      $              REAL(vpbr(i,j)),AIMAG(vpbr(i,j)),
      $              REAL(vpbz(i,j)),AIMAG(vpbz(i,j)),
      $              REAL(vpbp(i,j)),AIMAG(vpbp(i,j))
@@ -3144,7 +3144,7 @@ c-----------------------------------------------------------------------
          DO i=0,nr
             DO j=0,nz
                WRITE(out_unit,'(1x,I2,8(es16.8))')
-     $              vgdl(i,j),vgdr(i,j),vgdz(i,j),
+     $              vgdl(i,j),gdr(i,j),gdz(i,j),
      $              REAL(vvbr(i,j)),AIMAG(vvbr(i,j)),
      $              REAL(vvbz(i,j)),AIMAG(vvbz(i,j)),
      $              REAL(vvbp(i,j)),AIMAG(vvbp(i,j))

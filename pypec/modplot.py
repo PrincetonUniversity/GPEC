@@ -285,7 +285,7 @@ def _modaxes(ax,useOffset=False):
 	return ax
 	
 # down sample all lines in axes
-def _axes_downsample(self,ax,npts=1000):
+def _axes_downsample(self,ax,npts=10000):
 	"""
 	Attempt to down sample original data in
 	each Line2D object in lines.
