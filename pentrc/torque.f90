@@ -1138,10 +1138,11 @@ module torque
         ! declare variables
         logical :: fexists
         logical, dimension(:), allocatable :: maskr,maski
+        integer, parameter :: maxsteps = 10000
         integer :: i,j,l,unit1,unit2,unit3
         real(r8) :: xlast,wdcom,dxcom
-        real(r8), dimension(1000) :: tmppsi
-        complex(r8), dimension(1000,mpert**2,6) :: tmpmats
+        real(r8), dimension(maxsteps) :: tmppsi
+        complex(r8), dimension(maxsteps,mpert**2,6) :: tmpmats
         character(64) ::file1,file2,file3
         character(8) :: nstring,methcom
         ! declare lsode input variables
@@ -1178,7 +1179,7 @@ module torque
         iwork(:) = 0              ! defaults
         rwork(:) = 0              ! defaults
         rwork(1) = xout           ! only used if itask 4,5
-        iwork(6) = 10000          ! max number steps
+        iwork(6) = maxsteps       ! max number steps
         mf = 10                   ! not stiff with unknown J 
         ! enforce integration bounds
         x = max(psilim(1),x)
@@ -1199,7 +1200,7 @@ module torque
         if(electron) neqarray(6)=1
         if(write_flux) neqarray(7)=1
         if(index(method,'mm')>0) then
-            iwork(6) = 1000 ! equilibrium grid
+            !iwork(6) = 1000 ! make second param for tmp size?
             allocate(elems(mpert,mpert,6))
         endif
         
