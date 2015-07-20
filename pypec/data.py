@@ -778,13 +778,18 @@ class DataBase(object):
         if not ynames: ynames=np.sort(self.y.keys()).tolist()
         if not type(ynames) in (list,tuple): ynames=(ynames,)
         if not type(x) in [list,tuple,np.ndarray]: x=[x,]
-        x = np.array(x)
         NewData = copy.deepcopy(self)
-        NewData.pts = x
         if self.nd==1:
+            x = np.atleast_1d(x)
+            NewData.pts = x
             NewData.x = [x]
             NewData.shape = [len(x)]
         else:
+            if self.nd==2:
+                x = np.atleast_2d(x)
+            elif self.nd==3:
+                x = np.atleast_3d(x)
+            NewData.pts = x
             NewData.x = [np.array(sorted(set(xi))) for xi in x.T]
             NewData.shape = [len(xi) for xi in NewData.x]
             if np.product(NewData.shape)!=len(NewData.pts):
