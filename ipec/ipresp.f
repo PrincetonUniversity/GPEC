@@ -230,12 +230,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER :: i,j,lwork
+      INTEGER :: i,j,k,ii,lwork
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(2*mpert) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,vr,vl
-      ! LOGAN variables
+      COMPLEX(r8) :: ev
+      COMPLEX(r8), DIMENSION(mpert) :: vec
+      
       REAL(r8), DIMENSION(5*mpert) :: rworks
       COMPLEX(r8), DIMENSION(3*mpert) :: works
       COMPLEX(r8), DIMENSION(mpert,mpert) :: ctp,a,permu
@@ -254,10 +256,32 @@ c-----------------------------------------------------------------------
          CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
          temp1=TRANSPOSE(temp2)
          permeabmats(j,:,:)=temp1
+c-----------------------------------------------------------------------
+c     calculate permeability eigenvalues and vectors, then sort them.
+c      - sorting taken from http://stackoverflow.com/questions/8834585/sorting-eigensystem-obtained-from-zgeev
+c      - which is from the end of zsteqr.f
+c-----------------------------------------------------------------------
          lwork=2*mpert+1
          CALL zgeev('V','V',mpert,temp1,mpert,permeabev(j,:),
      $        vl,mpert,vr,mpert,work,lwork,rwork,info)
          permeabevmats(j,:,:)=vr
+         ! sort by absolute value of eigenvector
+         DO i = 1, mpert-1
+            k = i
+            ev = permeabev(j,i)
+            DO ii = i+1, mpert
+               IF( ABS(permeabev(j,ii)) > ABS(ev) ) THEN
+                  K = ii
+                  ev = permeabev(j,ii)
+               ENDIF
+            ENDDO
+            IF( K.NE.I ) THEN
+               permeabev(j,k) = permeabev(j,i)
+               permeabev(j,i) = ev
+               CALL zswap( mpert, permeabevmats(j,:,i), 1,
+     $                            permeabevmats(j,:,k), 1)
+            END IF
+         ENDDO
       ENDDO
 c-----------------------------------------------------------------------
 c     LOGAN - Hermitian eigenvectors for orthonormal basis.
@@ -331,7 +355,8 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
+      COMPLEX(r8), DIMENSION(mpert) :: temp
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,sqrta
 c-----------------------------------------------------------------------
 c     calculate reluctance matrix.
 c-----------------------------------------------------------------------
@@ -355,12 +380,43 @@ c-----------------------------------------------------------------------
          lwork=2*mpert-1
          CALL zheev('V','U',mpert,temp1,mpert,reluctev(j,:),work,
      $        lwork,rwork,info)
-         temp2=0
-         DO i=1,mpert
-            temp2(i,i)=temp1(i,i)
-         ENDDO
-         !temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
          reluctevmats(j,:,:)=temp1
+      ENDDO
+c-----------------------------------------------------------------------
+c     calculate sqrt(A) weighting matrix.
+c-----------------------------------------------------------------------
+      DO i=1,mpert
+         temp = 0
+         temp(i) = 1.0
+         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
+         sqrta(:,i) = temp
+      ENDDO
+c-----------------------------------------------------------------------
+c     Calculate power eigenvectors and eigenvalues in working coordinates
+c      - Construct "reluctance" matrix for Isqrt(A) in Bsqrt(A) basis.
+c      - Define sqrt(A) weighting matrix as
+c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c        int{b^2da}/int{da} = 1
+c        - This is a physically meaningful quantity (energy), and thus
+c          independent of coordinate system
+c      - We get I = RWPhi' and want to keep the operator Hermitian so we
+c        use W^dagger I = W^daggerRW Phi'
+c      - Since W is Hermitian, eigenvalues correspond to int{I^2da}/A (power) 
+c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
+c-----------------------------------------------------------------------c-----------------------------------------------------------------------
+      ALLOCATE(reluctpevmats(0:4,mpert,mpert),reluctpev(0:4,mpert),
+     $         reluctpmats(0:4,mpert,mpert))
+      DO j=0,4
+         work=0
+         rwork=0
+         lwork=2*mpert-1
+         reluctpmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
+     $                                      sqrta)
+         temp1(:,:)=reluctpmats(j,:,:)
+         CALL zheev('V','U',mpert,temp1,mpert,reluctpev(j,:),work,
+     $        lwork,rwork,info)
+         reluctpevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
@@ -414,5 +470,5 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipresp_indrel
-
+      
       END MODULE ipresp_mod

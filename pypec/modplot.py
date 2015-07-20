@@ -463,7 +463,44 @@ def xyaxes(axes,x=True,y=True,**kwargs):
 		axes.set_xlim(*xlim)
 	return True
 
-
+def set_linearray(lines,values,colormap='jet',offset=0):
+	"""
+	Set colors of lines to correspond to colormap
+	of values.
+	
+	A good sequential colormap is YlOrBr. Or autumn.
+	
+	**Arguments:**
+		- lines : list. Lines to get set colors.
+		- values: array like. Values corresponding to each line.
+	
+	**Key Word Arguments:**
+		- colormap : str. Valid matplotlib colormap name.
+		- offset : float. Offset normalized colorbar values from zero (positive)
+		           or 1 (negative). Helps avoid light colors in sequential maps.
+	
+	**Returns:**
+		- PathCollection. An invisible scatter plot that can be used for colorbars.
+		
+	"""
+	vrng = np.max(values)-np.min(values)
+	vmin = np.min(values)
+	vnrm = (np.array(values,dtype=np.float64)-vmin+offset*vrng)/vrng
+	
+	cm = pyplot.get_cmap(colormap)
+	colors = [cm(int(255*v)) for v in vnrm]
+	l=None
+	for l,c in zip(lines,colors):
+		l.set_color(list(c))
+	# enable colorbar using a scatter plot
+	if l:
+		x = np.arange(len(lines))*0+l.get_xdata()[0]
+		y = np.arange(len(lines))*0+l.get_ydata()[0]
+		sc = l.get_axes().scatter(x,y,s=0,c=values,cmap=cm)
+		pyplot.draw()
+	else:
+		sc = None
+	return sc
 
 def onkey(event):
 	"""
