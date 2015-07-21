@@ -40,7 +40,7 @@ program pentrc
     implicit none
 
     ! declarations and defaults
-    integer, parameter :: nflags=6
+    integer, parameter :: nflags=18
     logical :: &
         fgar_flag=.true.,&
         tgar_flag=.false.,&
@@ -203,17 +203,17 @@ program pentrc
             enddo
             close(1)
         endif
-        flags  =(/
-                fgar_flag,tgar_flag,pgar_flag,rlar_flag,clar_flag,fcgl_flag,
-                fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,
-                fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag
+        flags  =(/&
+                fgar_flag,tgar_flag,pgar_flag,rlar_flag,clar_flag,fcgl_flag,&
+                fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
+                fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag &
                 /)
-        methods=(/
-                "fgar","tgar","pgar","rlar","clar","fcgl",
-                "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",
-                "fkmm","tkmm","pkmm","frmm","trmm","prmm"
+        methods=(/&
+                "fgar","tgar","pgar","rlar","clar","fcgl",&
+                "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
+                "fkmm","tkmm","pkmm","frmm","trmm","prmm" &
                 /)
-        docs   =(/
+        docs   =(/&
                 "Full general-aspect-ratio calculation                       ",&
                 "Trapped particle general-aspect-ratio calculation           ",&
                 "Passing particle general-aspect-ratio calculation           ",&
