@@ -980,7 +980,7 @@ c-----------------------------------------------------------------------
      $        MATMUL(CONJG(TRANSPOSE(caat)),temp1)
 c-----------------------------------------------------------------------
 c     calculate kinetic non-Hermitian FK (method 1).
-c-----------------------------------------------------------------------           
+c-----------------------------------------------------------------------
          temp1=bmat
          temp2=cmat
          CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
@@ -1227,15 +1227,16 @@ c-----------------------------------------------------------------------
 c     compute F matrix.
 c-----------------------------------------------------------------------      
       IF (kin_flag) THEN
-c         CALL cspline_eval(amats,psifac,0)
-c         CALL cspline_eval(bmats,psifac,0)
-c         CALL cspline_eval(dmats,psifac,0)
-c         CALL cspline_eval(baats,psifac,0)
-c         CALL cspline_eval(fmats,psifac,0)
-c         amat=RESHAPE(amats%f,(/mpert,mpert/))
-c         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
-c         dmat=RESHAPE(dmats%f,(/mpert,mpert/))
-c         baat=RESHAPE(baats%f,(/mpert,mpert/))
+         CALL cspline_eval(amats,psifac,0)
+         CALL cspline_eval(bmats,psifac,0)
+         CALL cspline_eval(dmats,psifac,0)
+         CALL cspline_eval(ktmats(2),psifac,0)
+         !CALL cspline_eval(fmats,psifac,0)
+         amat=RESHAPE(amats%f,(/mpert,mpert/))
+         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
+         dmat=RESHAPE(dmats%f,(/mpert,mpert/))
+         !baat=RESHAPE(baats%f,(/mpert,mpert/))
+         baat = bmat-2*RESHAPE(ktmats(2)%f,(/mpert,mpert/))
 
          amatlu=0
          DO jpert=1,mpert

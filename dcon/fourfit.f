@@ -914,48 +914,78 @@ c-----------------------------------------------------------------------
 c     Use built in PENTRC spline integration options to form matrixes
 c-----------------------------------------------------------------------
       ELSEIF(method==1)THEN
-         ! Full (trapped and passing) dWk matrix calculation
-         WRITE(*,*) " TWMM"
+         WRITE(*,*) "  Trapped energy calculation using MXM euler "//
+     $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        "twmm",write_flux)
-         kwmats = kelmm
-         ! Full (trapped and passing) Tphi matrix calculation
-         WRITE(*,*) " TTMM"
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),kwmats(i))
+            kwmats(i)%fs = kinfac1*kwmats(i)%fs
+            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+         ENDDO
+         WRITE(*,*) "  Trapped torque calculation using MXM euler "//
+     $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        "ttmm",write_flux)
-         ktmats = kelmm
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),ktmats(i))
+            ktmats(i)%fs = kinfac2*ktmats(i)%fs
+            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+         ENDDO
 c-----------------------------------------------------------------------
 c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by T & dW from flat xi spectrum
 c-----------------------------------------------------------------------
       ELSEIF(method==2)THEN
-         ! Full (trapped and passing) dWk matrix calculation
-         WRITE(*,*) " TWMM"
+         WRITE(*,*) "  Trapped energy calculation using MXM euler "//
+     $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        "twmm",write_flux)
-         kwmats = kelmm
-         ! Full (trapped and passing) Tphi matrix calculation
-         WRITE(*,*) " TTMM"
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),kwmats(i))
+            kwmats(i)%fs = kinfac1*kwmats(i)%fs
+            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+         ENDDO
+         WRITE(*,*) "  Trapped torque calculation using MXM euler "//
+     $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        "ttmm",write_flux)
-         ktmats = kelmm
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),ktmats(i))
+            ktmats(i)%fs = kinfac2*ktmats(i)%fs
+            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+         ENDDO
 c-----------------------------------------------------------------------
 c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by norm of EL matrices
 c-----------------------------------------------------------------------
       ELSEIF(method==3)THEN
-         ! Full (trapped and passing) dWk matrix calculation
-         WRITE(*,*) " TWMM"
+         WRITE(*,*) "  Trapped MXM euler lagrange energy matrix norm "
+     $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        "tkmm",write_flux)
-         kwmats = kelmm
-         ! Full (trapped and passing) Tphi matrix calculation
-         WRITE(*,*) " TTMM"
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),kwmats(i))
+            kwmats(i)%fs = kinfac1*kwmats(i)%fs
+            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+         ENDDO
+         WRITE(*,*) "  Trapped MXM euler lagrange torque matrix norm "
+     $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        "trmm",write_flux)
-         ktmats = kelmm
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),ktmats(i))
+            ktmats(i)%fs = kinfac2*ktmats(i)%fs
+            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+         ENDDO
       ELSE
-         CALL program_stop("ERROR: Valid kingridtypes are -1,0,1,2,3")
+         CALL program_stop("ERROR: Valid kingridtypes are 0,1,2,3")
       ENDIF
 c-----------------------------------------------------------------------
 c     Optionally write matrices to binary files for diagnostics
@@ -1005,12 +1035,13 @@ c-----------------------------------------------------------------------
          
          ! ascii output
          CALL ascii_open(out_unit,"kss.out","UNKNOWN")
+         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
+         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+     $        "mpsi =",mpsi,"mpert =",mpert
          WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
      $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
      $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
      $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,1(a12,I4))')
-     $        "mpsi =",mpsi,"mpert =",mpert
          DO ipsi=0,kwmats(1)%mx 
             DO i=1,mpert
                DO j=1,mpert
@@ -1035,12 +1066,13 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          CALL ascii_close(out_unit)
          CALL ascii_open(out_unit,"kas.out","UNKNOWN")
+         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
+         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+     $        "mpsi =",mpsi,"mpert =",mpert
          WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
      $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
      $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
      $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,1(a12,I4))')
-     $        "mpsi =",mpsi,"mpert =",mpert
          DO ipsi=0,kwmats(1)%mx 
             DO i=1,mpert
                DO j=1,mpert
@@ -1064,9 +1096,6 @@ c-----------------------------------------------------------------------
          ENDDO
          WRITE(out_unit,*)
          CALL ascii_close(out_unit)
-         
-         ! netcdf output
-         
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
