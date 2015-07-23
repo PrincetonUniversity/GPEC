@@ -273,7 +273,7 @@ c-----------------------------------------------------------------------
      $    "real(P)","imag(P)","real(rho)","imag(rho)",
      $    "real(W)","imag(W)","real(F)","imag(F)"
         DO j=1,mpert
-          WRITE(out_unit,'(1x2(,a12,I4))')"isol =",j," n =",nn
+          WRITE(out_unit,'(1x,2(a12,I4))')"isol =",j," n =",nn
           WRITE(out_unit,*)
           WRITE(out_unit,*) header
           DO i=0,mthsurf

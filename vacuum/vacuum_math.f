@@ -296,7 +296,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine search(xbar,x,n,i,mflag)
       implicit real*8 (a-h,o-z)
-      real*8 com1(5)
+      character(8) com1(5)
       dimension x(1)
       data com1/ 'search  ','xbar is ','outside ','range of',' table'/
 c-----------------------------------------------------------------------
@@ -368,7 +368,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine searchx(xbar,x,n,i,mflag)
       implicit real*8 (a-h,o-z)
-      real*8 com1(5)
+      character(8) com1(5)
       integer xbar,x(1)
 c-----------------------------------------------------------------------
 c     computations.

@@ -714,11 +714,11 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
       TYPE(spline_type) :: spl       
-
-      IF(debug_flag) PRINT *, "Entering ipeq_bcoords"
       
       ! note we had to make arrays allocatable to be allowed to save
       SAVE :: psave,jsave,jarea,spl,dphi,thetas,jacfac
+
+      IF(debug_flag) PRINT *, "Entering ipeq_bcoords"
       
       ! global sq may have been eval'd elsewhere inbetween bcoords calls
       CALL spline_eval(sq,psi,0) 

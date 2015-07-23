@@ -1363,7 +1363,7 @@ module torque
                 sum(y,dim=1,mask=maskr),sum(y,dim=1,mask=maski),&
                 sq%f(3)
             do l=-nl,nl
-                write(unit2,'(es18.8e3,i5,8es18.8e3))') x,l,&
+                write(unit2,'(es18.8e3,i5,8es18.8e3)') x,l,&
                     gam(2*(nl+l)+1:2*(nl+l)+2),chi(2*(nl+l)+1:2*(nl+l)+2),&
                     dky(2*(nl+l)+1:2*(nl+l)+2),y(2*(nl+l)+1:2*(nl+l)+2)
             enddo

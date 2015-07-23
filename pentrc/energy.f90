@@ -395,7 +395,7 @@ module energy_integration
                 nux = nuk
             case ("harmonic")
                 if(x==0)then        ! (0+0i)^-3 = (nan,nan) -> causes error
-                    nux=0.0**(-1.5) ! 0^-3 = inf -> smooth arithmatic
+                    nux= HUGE(1.0_r8) !0.0**(-1.5) ! 0^-3 = inf -> smooth arithmatic
                 else
                     nux = nuk*(1+0.25*l*l)*cx**(-1.5)
                 endif
