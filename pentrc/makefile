@@ -1,7 +1,7 @@
 # FC, LIBDIR and FCLIBS are set in the platform-specific included file
 include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -I../equil -ffree-line-length-0
+FFLAGS = -I../equil
 
 F90 = $(FC) $(FFLAGS)
 
