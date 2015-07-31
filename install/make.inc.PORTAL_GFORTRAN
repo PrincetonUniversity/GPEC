@@ -1,15 +1,21 @@
 #------------------------------------------------------------------
-# Make variables for Linux Lahaey64 compiler on portal.pppl.gov
-# 
-# - user must have executed "module load gcc4"
+# Make variables for gfortran compiler on portal.pppl.gov
+#
+# - Use on portalr6.pppl.gov
+# - Requirements (These modify LD_LIBRARY_PATH):
+#    module load gcc4   # compiler
+#    module load lapack # sets $LAPACKHOME
 #
 #------------------------------------------------------------------
 
 FC = gcc4
 
+IFLAGS = -I${NETCDFHOME}/include
+
 LIBDIR = \
 	-L../lib \
-	-L/usr/pppl/gcc/4.4-pkgs/acml/4.4.0/gfortran64/lib
-
+	-L${LAPACKHOME} \
+	
 FCLIBS = \
-	-lacml
+	-llapack \
+	-lblas
