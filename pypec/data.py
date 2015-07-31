@@ -975,7 +975,7 @@ class DataBase(object):
         f.show()
         return f
                               
-    def plot2d(self,ynames=None,aspect='auto',plot_type='imshow',cmap='pcolormesh',cbar=True,
+    def plot2d(self,ynames=None,aspect='auto',plot_type='imshow',cmap='Oranges',cbar=True,
                grid_size=(256,256),swap=False,**kwargs):
         """
         Matplotlib 2D plots of the data.
@@ -1064,32 +1064,31 @@ class DataBase(object):
             #        plotter = a.pcolormesh
             #    else:
             #        plotter = a.tripcolor
-            if plotter in [a.pcolormesh,a.tripcolor]:
-                kwargs.setdefault('edgecolor','None')
-                kwargs.setdefault('shading','gouraud')
+            
+            # convert to reals and grid if necessary
+            reducedname = name.replace('real ','').replace('imag ','')
+            if 'imag ' in name:
+                raw = np.imag(self.y[reducedname])
+            else:
+                raw = np.real(self.y[reducedname])
+            if self.x:
+                y = raw.reshape(self.shape)
+            elif np.all(x1==self.pts[:,0]) or np.all(x1==self.pts[:,1]):
+                y = raw
+            else:
+                y = griddata(self.pts,np.nan_to_num(raw),(x1,x2),method='nearest')
+            
+            # plot type specifics
             if plotter==a.imshow:
                 kwargs.setdefault('extent',[x1.min(),x1.max(),x2.min(),x2.max()])
                 kwargs.setdefault('origin','lower')
                 kwargs['aspect']=aspect
-                xargs = []
+                args = [y.T]
             else:
-                xargs = [x1,x2]
-            reducedname = name.replace('real ','').replace('imag ','')
-            if self.x:
-                ry = np.real(self.y[reducedname]).reshape(self.shape)
-                iy = np.imag(self.y[reducedname]).reshape(self.shape)
-            elif np.all(x1==self.pts[:,0]) or np.all(x1==self.pts[:,1]):
-                ry = np.real(self.y[reducedname])
-                iy = np.imag(self.y[reducedname])
-            else:
-                ry = griddata(self.pts,np.nan_to_num(np.real(self.y[reducedname])),
-                              (x1,x2),method='nearest')
-                iy = griddata(self.pts,np.nan_to_num(np.imag(self.y[reducedname])),
-                              (x1,x2),method='nearest')
-            if 'imag' in name:
-                args = xargs+[iy]
-            else:
-                args = xargs+[ry]
+                args = [x1,x2,y]
+                if plotter in [a.pcolormesh,a.tripcolor]:
+                    kwargs.setdefault('edgecolor','None')
+                    kwargs.setdefault('shading','gouraud')
             pcm = plotter(*args,**kwargs)
 
             a.set_xlabel(_mathtext(self.xnames[0+swap]))
