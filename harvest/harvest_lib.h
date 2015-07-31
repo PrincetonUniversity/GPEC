@@ -1,0 +1,15 @@
+int hostname_to_ip(char * hostname , char* ip);
+int print_storage(char *harvest_sendline);
+int set_harvest_verbose(int verbose);
+int set_harvest_payload_str(char *harvest_sendline, char *what, char *data);
+int set_harvest_payload_int(char *harvest_sendline, char *what, int data);
+int set_harvest_payload_swt(char *harvest_sendline, char *what, int data);
+int set_harvest_payload_flt(char *harvest_sendline, char *what, double data);
+int set_harvest_payload_dbl(char *harvest_sendline, char *what, double data);
+int set_harvest_payload_bol(char *harvest_sendline, char *what, int data);
+int set_harvest_host(char *host);
+int set_harvest_tag(char *tag);
+int set_harvest_port(int port);
+int set_harvest_table(char *table);
+int init_harvest(char *table, char *harvest_sendline, int n);
+int harvest_send(char* harvest_sendline);
