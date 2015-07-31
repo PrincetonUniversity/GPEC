@@ -463,44 +463,36 @@ def xyaxes(axes,x=True,y=True,**kwargs):
 		axes.set_xlim(*xlim)
 	return True
 
-def set_linearray(lines,values,colormap='jet',offset=0):
-	"""
-	Set colors of lines to correspond to colormap
-	of values.
-	
-	A good sequential colormap is YlOrBr. Or autumn.
-	
-	**Arguments:**
-		- lines : list. Lines to get set colors.
-		- values: array like. Values corresponding to each line.
-	
-	**Key Word Arguments:**
-		- colormap : str. Valid matplotlib colormap name.
-		- offset : float. Offset normalized colorbar values from zero (positive)
-		           or 1 (negative). Helps avoid light colors in sequential maps.
-	
-	**Returns:**
-		- PathCollection. An invisible scatter plot that can be used for colorbars.
-		
-	"""
-	vrng = np.max(values)-np.min(values)
-	vmin = np.min(values)
-	vnrm = (np.array(values,dtype=np.float64)-vmin+offset*vrng)/vrng
-	
-	cm = pyplot.get_cmap(colormap)
-	colors = [cm(int(255*v)) for v in vnrm]
-	l=None
-	for l,c in zip(lines,colors):
-		l.set_color(list(c))
-	# enable colorbar using a scatter plot
-	if l:
-		x = np.arange(len(lines))*0+l.get_xdata()[0]
-		y = np.arange(len(lines))*0+l.get_ydata()[0]
-		sc = l.get_axes().scatter(x,y,s=0,c=values,cmap=cm)
-		pyplot.draw()
-	else:
-		sc = None
-	return sc
+def set_linearray(lines,values=None,cmap='Blues',vmin=None,vmax=None):
+    """
+    Set colors of lines to colormaping of values.
+    
+    Other good sequential colormaps are YlOrBr and autumn.
+    A good diverging colormap is bwr.
+    
+    **Arguments:**
+        - lines : list. Lines to get set colors.
+    
+    **Key Word Arguments:**
+        - values : array like. Values corresponding to each line. Default is indexing.
+        - cmap : str. Valid matplotlib colormap name.
+        - vmax : float. Upper bound of colormaping.
+        - vmin : float. Lower bound of colormaping.
+    
+    **Returns:**
+        - ScalarMappable. A mapping object used for colorbars.
+        
+    """
+    if values==None:
+        values = range(len(lines))
+    nm = matplotlib.colors.Normalize(vmin,vmax)
+    sm = matplotlib.cm.ScalarMappable(cmap=cmap,norm=nm)
+    sm.set_array(values)
+    colors = sm.cmap(sm.norm(values))
+    for l,c in zip(lines,colors):
+        l.set_color(c)    
+        
+    return sm
 
 def onkey(event):
 	"""
