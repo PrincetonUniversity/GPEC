@@ -975,10 +975,10 @@ class DataBase(object):
         f.show()
         return f
                               
-    def plot2d(self,ynames=None,aspect='auto',plot_type='pcolormesh',cbar=True,
+    def plot2d(self,ynames=None,aspect='auto',plot_type='imshow',cmap='pcolormesh',cbar=True,
                grid_size=(256,256),swap=False,**kwargs):
         """
-        Matplotlib pcolormesh or contour plots of 2D data.
+        Matplotlib 2D plots of the data.
         
         Key Word Arguments:
           ynames : list. 
@@ -989,6 +989,7 @@ class DataBase(object):
           plot_type: str. 
             Choose one of:
             
+            - "imshow" Use matplotlib imshow to plot on grid.
             - "pcolormesh" Use matplotlib pcolormesh to plot on grid.
             - "contour"    Use matplotlib contour to plot on grid.
             - "contourf"   Use matplotlib contourf to plot on grid.
@@ -996,6 +997,8 @@ class DataBase(object):
             - "tripcontour"  Use matplotlib tripcontour to plot raw points.
             - "tripcontourf" Use matplotlib tripcontourf to plot raw points.
 
+          cmap   : str.
+            Valid matplotlib colormap. Default is sequential. For diverging data, 'bwr' is recomended.
           cbar   : bool. 
             Show colorbar. 
           grid_size : tuple. 
@@ -1009,13 +1012,14 @@ class DataBase(object):
           figure. 
         
         """
+        kwargs['cmap'] = cmap
         if not ynames: ynames=np.sort(self.y.keys()).tolist()
         if not type(ynames) in (list,tuple): ynames=[ynames]
         if self.nd != 2: raise IndexError("Data not 2D.")
             
         if self.x:
             x1,x2 = map(np.reshape,self.pts.T,[self.shape]*self.nd)
-        elif plot_type in ['pcolormesh','contour','contourf']:
+        elif plot_type in ['imshow','pcolormesh','contour','contourf']:
             x1,x2 = np.mgrid[self.pts[:,0].min():self.pts[:,0].max():1j*grid_size[0],
                              self.pts[:,1].min():self.pts[:,1].max():1j*grid_size[1]]
         else:
@@ -1061,8 +1065,15 @@ class DataBase(object):
             #    else:
             #        plotter = a.tripcolor
             if plotter in [a.pcolormesh,a.tripcolor]:
-                if 'edgecolor' not in kwargs: kwargs['edgecolor']='None'
-                if 'shading' not in kwargs: kwargs['shading']='gouraud'
+                kwargs.setdefault('edgecolor','None')
+                kwargs.setdefault('shading','gouraud')
+            if plotter==a.imshow:
+                kwargs.setdefault('extent',[x1.min(),x1.max(),x2.min(),x2.max()])
+                kwargs.setdefault('origin','lower')
+                kwargs['aspect']=aspect
+                xargs = []
+            else:
+                xargs = [x1,x2]
             reducedname = name.replace('real ','').replace('imag ','')
             if self.x:
                 ry = np.real(self.y[reducedname]).reshape(self.shape)
@@ -1075,12 +1086,11 @@ class DataBase(object):
                               (x1,x2),method='nearest')
                 iy = griddata(self.pts,np.nan_to_num(np.imag(self.y[reducedname])),
                               (x1,x2),method='nearest')
-            if 'real' in name:
-                pcm = plotter(x1,x2,ry,**kwargs)
-            elif 'imag' in name:
-                pcm = plotter(x1,x2,iy,**kwargs)
+            if 'imag' in name:
+                args = xargs+[iy]
             else:
-                pcm = plotter(x1,x2,ry,**kwargs)
+                args = xargs+[ry]
+            pcm = plotter(*args,**kwargs)
 
             a.set_xlabel(_mathtext(self.xnames[0+swap]))
             a.set_ylabel(_mathtext(self.xnames[1-swap]))
