@@ -245,7 +245,7 @@ interp1d_unbound.__doc__ = interp1d.__doc__
 
 ######################################################## IO FOR DATA OBJECTs
 
-def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_quiet):
+def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,quiet=default_quiet):
     """
     Get the data from any ipec output as a list of python 
     class-type objects using numpy.genfromtxt.
@@ -261,6 +261,8 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_q
         Set independent data labels.
       forcedim : list.
         Set dimensionality of each x.
+      maxnumber : int. 
+        Reads only first maxnumber of tables.
       maxlength : int. 
         Tables with more rows than this are downsampled for speed.
       quiet   : bool. 
@@ -310,8 +312,9 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_q
             else:
                 lines = f.readlines()
             top,bot = 0,0
+            count = 0
             length= len(lines)
-            while bot<length and top<(length-2):
+            while bot<length and top<(length-2) and count<maxnumber:
                 preamble=''
                 lastline=''
                 for i,line in enumerate(lines[bot:]):
@@ -376,6 +379,7 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_q
                                      deletechars='?',dtype=np.float)
                 pcollection.append(preamble)
                 dcollection.append(data)
+                count+=1
         #debug print("Finished parsing file in "
         #debug       +"{} seconds".format(time.time()-start_time))
         #turn arrays into classes
