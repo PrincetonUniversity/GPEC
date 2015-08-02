@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
      $     ip_direction,bt_direction,rdconfile,
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode ! LOGAN
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz
+     $     chebyshev_flag,nche,nchr,nchz,resp_induct_flag
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,

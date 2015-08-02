@@ -281,6 +281,14 @@ c-----------------------------------------------------------------------
       key=-ABS(1/evals)
       CALL bubble(key,index,1,mpert)
 c-----------------------------------------------------------------------
+c     compute and sort inverse eigenvalues.
+c-----------------------------------------------------------------------
+      lwork=2*mpert-1  
+      CALL zheev('N','U',mpert,wp,mpert,evalsi,work,lwork,rwork,info)
+      indexi=(/(ipert,ipert=1,mpert)/)
+      key=-ABS(evalsi)
+      CALL bubble(key,indexi,1,mpert)
+c-----------------------------------------------------------------------
 c     write ascii eigenvalues.
 c-----------------------------------------------------------------------
       IF(out_evals .AND. istep > 0)THEN

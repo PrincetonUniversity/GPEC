@@ -40,7 +40,7 @@ program pentrc
     implicit none
 
     ! declarations and defaults
-    integer, parameter :: nflags=6
+    integer, parameter :: nflags=18
     logical :: &
         fgar_flag=.true.,&
         tgar_flag=.false.,&
@@ -130,6 +130,14 @@ program pentrc
         tdebug,xdebug,lambdadebug
 
         
+    ! read interface and set modules
+    open(unit=1,file="pentrc.in",status="old")
+    read(unit=1,nml=pent_input)
+    read(unit=1,nml=pent_control)
+    read(unit=1,nml=pent_output)
+    read(unit=1,nml=pent_admin)
+    close(1)
+    
     ! distribute some simplified inputs to module circles
     xatol = atol
     xrtol = rtol
@@ -139,18 +147,10 @@ program pentrc
     lambdaatol = atol
     lambdartol = rtol    
     verbose = term_flag
-    
-    
-    ! read interface and set modules
     if(verbose) print *,''
     if(verbose) print *,"PENTRC START => "//TRIM(version)
-    if(verbose) print *,"__________________________________________"
-    open(unit=1,file="pentrc.in",status="old")
-    read(unit=1,nml=pent_input)
-    read(unit=1,nml=pent_control)
-    read(unit=1,nml=pent_output)
-    read(unit=1,nml=pent_admin)
-    close(1)
+    if(verbose) print *,"______________________________"
+    
     ! start timer
     call timer(mode=0)
     ! clear working directory
@@ -159,7 +159,6 @@ program pentrc
         call system ('rm pentrc_*.out')
     endif
         
-    
     ! administrative setup/diagnostics/debugging.
     if(fnml_flag) call set_fymnl
     if(ellip_flag) call set_ellip
@@ -204,14 +203,37 @@ program pentrc
             enddo
             close(1)
         endif
-        flags  =(/fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag/)
-        methods=(/"fkmm","tkmm","pkmm","frmm","trmm","prmm"/)
-        docs   =(/"Full kinetic energy MXM euler lagrange matrix norm calculation   ",&
-                  "Trapped kinetic energy MXM euler lagrange matrix norm calculation",&
-                  "Passing kinetic energy MXM euler lagrange matrix norm calculation",&
-                  "Full torque MXM euler lagrange matrix norm calculation           ",&
-                  "Trapped torque MXM euler lagrange matrix norm calculation        ",&
-                  "Passing torque MXM euler lagrange matrix norm calculation        " &
+        flags  =(/&
+                fgar_flag,tgar_flag,pgar_flag,rlar_flag,clar_flag,fcgl_flag,&
+                fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
+                fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag &
+                /)
+        methods=(/&
+                "fgar","tgar","pgar","rlar","clar","fcgl",&
+                "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
+                "fkmm","tkmm","pkmm","frmm","trmm","prmm" &
+                /)
+        docs   =(/&
+                "Full general-aspect-ratio calculation                       ",&
+                "Trapped particle general-aspect-ratio calculation           ",&
+                "Passing particle general-aspect-ratio calculation           ",&
+                "Trapped particle large-aspect-ratio calculation             ",&
+                "Trapped particle cylindrical large-aspect-ratio calculation ",&
+                "Fluid Chew-Goldberger-Low calculation                       ",&
+                &
+                "Full    energy calculation using MXM euler lagrange matrix  ",&
+                "Trapped energy calculation using MXM euler lagrange matrix  ",&
+                "Passing energy calculation using MXM euler lagrange matrix  ",&
+                "Full    torque calculation using MXM euler lagrange matrix  ",&
+                "Trapped torque calculation using MXM euler lagrange matrix  ",&
+                "Passing torque calculation using MXM euler lagrange matrix  ",&
+                &
+                "Full    MXM euler lagrange energy matrix norm calculation   ",&
+                "Trapped MXM euler lagrange energy matrix norm calculation   ",&
+                "Passing MXM euler lagrange energy matrix norm calculation   ",&
+                "Full    MXM euler lagrange torque matrix norm calculation   ",&
+                "Trapped MXM euler lagrange torque matrix norm calculation   ",&
+                "Passing MXM euler lagrange torque matrix norm calculation   " &
                 /)
         do m=1,nflags
             print *,m
@@ -241,7 +263,7 @@ program pentrc
                 do i=1,nout
                     do l=-nl,nl,max(1,nl)
                         if(psiout(i)>0 .and. psiout(i)<=1)then
-                            tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'fkmm',&
+                            tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
                                 .false.,theta_out,xlmda_out)
                         endif
                     enddo
@@ -252,439 +274,6 @@ program pentrc
                 enddo
             endif
         enddo
-        if(tkmm_flag)then
-            if(verbose) print *,"PENTRC - Trapped Kinetic MXM euler lagrange matrix calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'tkmm',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'tkmm',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'tkmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        if(pkmm_flag)then
-            if(verbose) print *,"PENTRC - Passing Kinetic MXM euler lagrange matrix calculation v3.0"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'pkmm',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'pkmm',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'pkmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        
-        if(fwmm_flag)then
-            if(verbose) print *,"PENTRC - FUll dW MXM matrix calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fwmm',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fwmm',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'fwmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        if(twmm_flag)then
-            if(verbose) print *,"PENTRC - Trapped dW MXM matrix calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'twmm',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'twmm',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        if(pwmm_flag)then
-            if(verbose) print *,"PENTRC - Passing dW MXM matrix calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'pwmm',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'pwmm',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'pwmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        
-        if(ftmm_flag)then
-            if(verbose) print *,"PENTRC - FUll Torque MXM matrix calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ftmm',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ftmm',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'ftmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        if(ttmm_flag)then
-            if(verbose) print *,"PENTRC - Trapped Torque MXM matrix calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ttmm',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ttmm',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'ttmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        if(ptmm_flag)then
-            if(verbose) print *,"PENTRC - Passing Torque MXM  matrix calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ptmm',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'ptmm',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'ptmm',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        
-        if(fgar_flag)then
-            if(verbose) print *,"PENTRC - full general-aspect-ratio calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fgar',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fgar',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'fgar',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        if(tgar_flag)then
-            if(verbose) print *,"PENTRC - trapped particle general-aspect-ratio calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'tgar',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'tgar',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'tgar',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        if(pgar_flag)then
-            if(verbose) print *,"PENTRC - passing particle general-aspect-ratio calculation"
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'pgar',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'pgar',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'pgar',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        
-        if(clar_flag)then
-            if(verbose) print *,"PENTRC - cylindrical large-aspect-ratio calculation"
-            call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
-            print *, psilim
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'clar',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'clar',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'clar',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        if(rlar_flag)then
-            if(verbose) print *,"PENTRC - reduced large-aspect-ratio calculation"
-            if(.not. clar_flag) call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
-            tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'rlar',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'rlar',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-            ! run select surfaces with detailed output
-            do i=1,nout
-                do l=-nl,nl,max(1,nl)
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'rlar',&
-                            .false.,theta_out,xlmda_out)
-                    endif
-                enddo
-            enddo
-        endif
-        
-        if(fcgl_flag)then
-            if(verbose) print *,"PENTRC - fluid Chew-Goldberger-Low calculation v1.0"
-            tphi = tintgrl_lsode(psilim,nn,0,zi,mi,wdfac,divxfac,electron,'fcgl',eq_out)
-            if(verbose)then
-                print *, "---------------------------------------------"
-                print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
-                print *, "---------------------------------------------"
-            endif
-            if(eqpsi_out)then
-                if(verbose) print *,"Recalculating on equilibrium grid"
-                teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,'fcgl',eq_out)
-                if(verbose)then
-                    print *, "---------------------------------------------"
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                    print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
-                    print *, "---------------------------------------------"
-                endif
-            endif
-        endif
         
     endif
     

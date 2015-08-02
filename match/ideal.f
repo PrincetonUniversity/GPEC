@@ -102,6 +102,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE(4)
             msing=msing+1
             READ(UNIT=in_unit)
@@ -170,6 +171,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
+            READ(UNIT=in_unit)wt0
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix

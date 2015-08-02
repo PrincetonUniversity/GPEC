@@ -16,7 +16,7 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
-     $     debug_flag,kin_flag,con_flag
+     $     debug_flag,kin_flag,con_flag,resp_induct_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
@@ -67,7 +67,7 @@ c-----------------------------------------------------------------------
      $     edge_mn,edge_fun
       COMPLEX(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
      $     plas_indev,reluctev,indrelev
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,w1v,fldflxmat,

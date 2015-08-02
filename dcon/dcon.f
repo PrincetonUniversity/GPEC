@@ -156,6 +156,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
          CALL fourfit_make_metric
+
          IF(kin_flag)THEN
             CALL fourfit_action_matrix
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
@@ -175,7 +176,7 @@ c-----------------------------------------------------------------------
             CALL fourfit_kinetic_matrix(kingridtype,.TRUE.)
          ENDIF
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
-         CALL fourfit_make_matrix(kingridtype)    
+         CALL fourfit_make_matrix  
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
          CALL sing_scan
@@ -183,7 +184,7 @@ c-----------------------------------------------------------------------
             CALL resist_eval(sing(ising))
          ENDDO
 
-         CALL ksing_find
+c         CALL ksing_find
       ENDIF
 c-----------------------------------------------------------------------
 c     integrate main ODE's.
@@ -266,16 +267,16 @@ c-----------------------------------------------------------------------
          CALL cspline_dealloc(dmats)
          CALL cspline_dealloc(emats)
          CALL cspline_dealloc(hmats)
-         CALL cspline_dealloc(baats)
-         CALL cspline_dealloc(caats)
-         CALL cspline_dealloc(eaats)
-         CALL cspline_dealloc(kaats)
-         CALL cspline_dealloc(gaats)
+         CALL cspline_dealloc(dbats)
+         CALL cspline_dealloc(ebats)
+         CALL cspline_dealloc(fbats)
+         CALL cspline_dealloc(kbats)
          CALL cspline_dealloc(fmats)
          CALL cspline_dealloc(gmats)
          CALL cspline_dealloc(kmats)
-         CALL cspline_dealloc(fbats)
-         CALL cspline_dealloc(kbats)
+         CALL cspline_dealloc(kaats)
+         CALL cspline_dealloc(gaats)
+
          DO ising=1,msing
             DEALLOCATE(sing(ising)%vmat)
             DEALLOCATE(sing(ising)%mmat)

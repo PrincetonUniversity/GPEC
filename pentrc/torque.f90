@@ -812,7 +812,10 @@ module torque
                     call cspline_dealloc(bwspl(1))
                     call cspline_dealloc(bwspl(2))
                     
-                    
+                    ! DCON norms
+                    wtw = 2*mu0*wtw
+                    wtw(:,:,1:3) = wtw(:,:,1:3)/chi1
+                    wtw(:,:,1) = wtw(:,:,1)/chi1
                     
                     if(method(2:4)=='kmm' .or. method(2:4)=='rmm')then ! Euler-Lagrange Matrix norms indep xi 
                         xix(:,1) = 1.0/sqrt(1.0*mpert) ! ||xix||=1
@@ -841,13 +844,13 @@ module torque
                         xix(:,1) = xs_m(1)%f(:)
                         xiy(:,1) = xs_m(2)%f(:)
                         xiz(:,1) = xs_m(3)%f(:)
-                        t_zz = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,1),xiz))
-                        t_zx = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,2),xix))
-                        t_zy = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,3),xiy))
+                        t_zz = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,1),xiz))*chi1**2
+                        t_zx = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,2),xix))*chi1
+                        t_zy = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,3),xiy))*chi1
                         t_xx = matmul(conjg(transpose(xix)),matmul(wtw(:,:,4),xix))
                         t_xy = matmul(conjg(transpose(xix)),matmul(wtw(:,:,5),xiy))
                         t_yy = matmul(conjg(transpose(xiy)),matmul(wtw(:,:,6),xiy))
-                        tpsi = 2*n*xj*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
+                        tpsi = (2*n*xj/(2*mu0))*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
                             +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
                             +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
                         if(tdebug)then
@@ -864,6 +867,7 @@ module torque
                 ! wrap up
                 deallocate(fbnce_norm,lxint)
                 call spline_dealloc(vspl) ! vparallel(theta) -> roots are bounce pts
+
                 call spline_dealloc(bspl) ! omegab,d bounce integration
                 call spline_dealloc(turns) ! bounce points
                 call cspline_dealloc(bjspl) ! action bounce integration
@@ -928,18 +932,14 @@ module torque
         ! declare variables
         logical :: fexists
         logical, dimension(:), allocatable :: maskr,maski
-        integer :: i,j,l,unit1,unit2,unit3
+        integer :: i,j,l,unit1,unit2,unit3,istrt,istop,mx
         real(r8) :: xlast,wdcom,dxcom
-        real(r8), dimension(1000) :: tmppsi
-        complex(r8), dimension(0:sq%mx,mpert**2,6) :: tmpmats
         character(64) ::file1,file2,file3
         character(8) :: nstring,methcom
-        ! declare lsode input variables
-        integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(9),&
-            neq,liw,lrw
-        integer, dimension(:), allocatable :: iwork
+        ! declare lsode like variables
+        integer  neqarray(9),neq
         real*8 :: x,xout
-        real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
+        real*8, dimension(:), allocatable ::  y,dky
         ! declare new spline
         TYPE(cspline_type) :: tphi_spl
         
@@ -952,30 +952,23 @@ module torque
         dxcom = divxfac
         methcom = method
         if(tdebug) print *, "torque - lsode wrapper method "//method//" -> "//methcom
-        ! set lsode options - see lsode package for documentation
+        ! set lsode integrand type variables - see lsode package for documentation
         neq = 2*(1+2*nl)        ! true number of equations
-        liw  = 20 + neq         ! for mf 22 ! only uses 20 if mf 10
-        lrw  = 20 + 16*neq      ! for mf 10
-        allocate(iwork(liw))
-        allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
+        allocate(y(neq),dky(neq))
         neqarray(:) = (/neq,n,nl,zi,mi,0,0,0,0/)
         y(:) = 0
         x = sq%xs(0)
         xout = min(xs_m(1)%xs(xs_m(1)%mx),sq%xs(sq%mx)) ! psilim, psihigh
-        itol = 2                  ! rtol and atol are arrays
-        rtol(:) = trtol              !1.d-7!9              ! 14
-        atol(:) = tatol              !1.d-7!9              ! 15
-        istate = 1                ! first step
-        iopt = 1                  ! optional inputs
-        iwork(:) = 0              ! defaults
-        rwork(:) = 0              ! defaults
-        rwork(1) = xout           ! only used if itask 4,5
-        iwork(6) = 10000          ! max number steps
-        mf = 10                   ! not stiff with unknown J 
         ! enforce integration bounds
         x = max(psilim(1),x)
         xout = min(psilim(2),xout)
-        rwork(1) = xout
+        istrt = -1
+        istop = -1
+        do i=0,sq%mx
+            if(istrt<0 .and. sq%xs(i)>=x) istrt = i
+            if(sq%xs(i)<=xout) istop = i
+        enddo
+        mx = istop-istrt
 
         ! steup
         allocate(maski(neq))
@@ -986,10 +979,6 @@ module torque
         enddo
         if(electron) neqarray(6)=1
         if(write_flux) neqarray(7)=1
-        if(index(method,'mm')>0) then
-            iwork(6) = 1000 ! equilibrium grid
-            allocate(elems(mpert,mpert,6))
-        endif
         
         ! open and prepare files as needed
         write(nstring,'(I8)') n
@@ -1022,11 +1011,18 @@ module torque
             write(unit2,'(a18,a5,4(a18))') "psi_n","ell",&
                 "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
                 
-        ! integration
-        CALL cspline_alloc(tphi_spl,sq%mx,2*nl+1)
+        ! prep
         xlast = 0
-        do i=0,sq%mx
-            x = sq%xs(i)
+        CALL cspline_alloc(tphi_spl,mx,2*nl+1)
+        if(index(method,'mm')>0)then
+            do j=1,6
+                if(kelmm(j)%nqty/=0) call cspline_dealloc(kelmm(j)) 
+                call cspline_alloc(kelmm(j),mx,mpert**2)
+            enddo
+        endif
+        ! integration
+        do i=0,mx
+            x = sq%xs(i+istrt)
             CALL tintgrnd(neqarray,x,y,dky)
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
@@ -1039,19 +1035,27 @@ module torque
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, index=",i
-                tmppsi(i) = x
                 do j=1,6
-                    tmpmats(i,:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
+                    kelmm(j)%xs(i) = x 
+                    kelmm(j)%fs(i,:) = RESHAPE(elems(:,:,j),(/mpert**2/))
                 enddo
             endif
+            
             xlast = x
         enddo
+        ! fit and integrate torque density spline
         CALL cspline_fit(tphi_spl,"extrap")
         CALL cspline_int(tphi_spl)
+        ! optionally fit global euler-lagrange coefficient splines
+        if(index(method,'mm')>0)then
+            do j=1,6
+                call cspline_fit(kelmm(j),"extrap")
+            enddo
+        endif
 
         ! write profiles
-        do i=0,sq%mx
-            x = sq%xs(i)
+        do i=0,mx
+            x = sq%xs(i+istrt)
             call cspline_eval(dbdx_m(1),x,0)
             call spline_eval(sq,x,0)
             write(unit1,'(7(es18.8e3))') x,sum(tphi_spl%fs(i,:),dim=1),&
@@ -1064,27 +1068,12 @@ module torque
             enddo
         enddo
         close(unit1)
-        close(unit2)
+        close(unit2)        
         
-        
-        
-        
-        ! optionally set global euler-lagrange coefficient splines
-        if(index(method,'mm')>0)then
-            do i=1,6
-                if(kelmm(i)%nqty/=0) call cspline_dealloc(kelmm(i)) 
-                call cspline_alloc(kelmm(i),sq%mx,mpert**2)
-                kelmm(i)%xs(:)  = tmppsi(:)
-                kelmm(i)%fs(:,:)= tmpmats(:,:,i)
-                call cspline_fit(kelmm(i),"extrap")
-            enddo
-            deallocate(elems)
-        endif
-        
-        ! convert to complex space if integrations successful
-        tintgrl_eqpsi = sum(tphi_spl%fsi(sq%mx,:),dim=1)
+        ! sum for ultimate result
+        tintgrl_eqpsi = sum(tphi_spl%fsi(mx,:),dim=1)
 
-        deallocate(iwork,rwork,atol,rtol,y,dky,maskr,maski)
+        deallocate(y,dky,maskr,maski)
         
         return
     end function tintgrl_eqpsi
@@ -1138,11 +1127,14 @@ module torque
         ! declare variables
         logical :: fexists
         logical, dimension(:), allocatable :: maskr,maski
+        integer, parameter :: maxsteps = 10000
         integer :: i,j,l,unit1,unit2,unit3
         real(r8) :: xlast,wdcom,dxcom
         real(r8), dimension(1000) :: tmppsi
-        complex(r8), dimension(:,:), allocatable :: tmptor
         complex(r8), dimension(1000,mpert**2,6) :: tmpmats
+        real(r8), dimension(maxsteps) :: tmppsi
+        complex(r8), dimension(maxsteps,mpert**2,6) :: tmpmats
+        complex(r8), dimension(maxsteps,1+2*nl), allocatable :: tmptor
         character(64) ::file1,file2,file3
         character(8) :: nstring,methcom
         ! declare lsode input variables
@@ -1179,7 +1171,7 @@ module torque
         iwork(:) = 0              ! defaults
         rwork(:) = 0              ! defaults
         rwork(1) = xout           ! only used if itask 4,5
-        iwork(6) = 10000          ! max number steps
+        iwork(6) = maxsteps       ! max number steps
         mf = 10                   ! not stiff with unknown J 
         ! enforce integration bounds
         x = max(psilim(1),x)
@@ -1199,11 +1191,7 @@ module torque
         enddo
         if(electron) neqarray(6)=1
         if(write_flux) neqarray(7)=1
-        if(index(method,'mm')>0) then
-            iwork(6) = 1000 ! equilibrium grid
-            allocate(elems(mpert,mpert,6))
-        endif
-        allocate(tmptor(1000,1+2*nl))
+
         ! open and prepare files as needed
         write(nstring,'(I8)') n
         if(electron)then
@@ -1264,7 +1252,7 @@ module torque
                 if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
                 tmppsi(iwork(11)) = x
                 do j=1,6
-                    tmpmats(iwork(11),:,i) = RESHAPE(elems(:,:,i),(/mpert**2/))
+                    tmpmats(iwork(11),:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
                 enddo
             endif
             
@@ -1281,14 +1269,13 @@ module torque
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
-            do i=1,6
-                if(kelmm(i)%nqty/=0) call cspline_dealloc(kelmm(i)) 
-                call cspline_alloc(kelmm(i),iwork(11)-1,mpert**2)
-                kelmm(i)%xs(:) = tmppsi(1:iwork(11))
-                kelmm(i)%fs(:,:) = tmpmats(1:iwork(11),:,i)
-                call cspline_fit(kelmm(i),"extrap")
+            do j=1,6
+                if(kelmm(j)%nqty/=0) call cspline_dealloc(kelmm(j)) 
+                call cspline_alloc(kelmm(j),iwork(11)-1,mpert**2)
+                kelmm(j)%xs(:) = tmppsi(1:iwork(11))
+                kelmm(j)%fs(:,:) = tmpmats(1:iwork(11),:,j)
+                call cspline_fit(kelmm(j),"extrap")
             enddo
-            deallocate(elems)
         endif
         
         ! convert to complex space if integrations successful
@@ -1298,9 +1285,6 @@ module torque
         
         return
     end function tintgrl_lsode
-
-
-
 
 
 
@@ -1335,7 +1319,7 @@ module torque
         complex(r8) trq
         integer :: n,l,zi,mi,ee,wf,wt,we,nl
         logical :: electron=.false.,write_flux=.false.,&
-            write_theta=.false.,write_espace=.false.
+            write_theta=.false.,write_espace=.false.,first=.true.
         character(8) :: method
         
         logical :: fexists
@@ -1364,6 +1348,12 @@ module torque
         if(wf>0) write_flux = .true.
         if(wt>0) write_theta = .true.
         if(we>0) write_espace = .true.
+        
+        if(first) then
+            allocate(elems(mpert,mpert,6))
+            first = .false.
+        endif
+        elems = 0
         
         psi = 1.0*x
         do l=-nl,nl

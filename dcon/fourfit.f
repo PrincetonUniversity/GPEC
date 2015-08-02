@@ -28,8 +28,8 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
-      TYPE(cspline_type) :: dmats,emats,hmats,
-     $     baats,caats,eaats,kaats,gaats,fmats,gmats,kmats,fbats,kbats
+      TYPE(cspline_type) :: dmats,emats,hmats,dbats,ebats,fbats,kbats,
+     $     fmats,kmats,gmats,kaats,gaats
       TYPE(spline_type) :: k0s
       INTEGER, DIMENSION(:), POINTER :: ipiva
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat,
@@ -238,11 +238,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE fourfit_make_matrix(methodin)
+      SUBROUTINE fourfit_make_matrix
       
-      INTEGER, OPTIONAL :: methodin
-      INTEGER :: kgrid = -1
-
       CHARACTER(128) :: message
       INTEGER :: ipsi,ipert,jpert,m1,m2,m,dm,info,iqty,l,i,iindex
       REAL(r8) :: chi1,jtheta,nq,p1,psifac,q,q1,singfac1,singfac2,ileft
@@ -256,21 +253,14 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(-mband:mband) ::
      $     g11,g22,g33,g23,g31,g12,jmat1,imat
       COMPLEX(r8), DIMENSION(mpert,mpert) :: amat,bmat,cmat,dmat,emat,
-     $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,baat,caat,eaat,
-     $     fbat,kbat,gaat
+     $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,dbat,ebat,fbat,kbat
 
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu,fmatlu
-      COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kinmats,kinmats_l,
-     $     kinmata,kinmata_l
 
       LOGICAL, PARAMETER :: diagnose=.FALSE.
       INTEGER, PARAMETER :: unit=99
 
-      COMPLEX(r8), DIMENSION(0:mpsi,mpert**2) :: ksa,ksb,ksc,ksd,
-     $        kse,ksh,kaa,kab,kac,kad,kae,kah
-
       mfac =(/(m,m=mlow,mhigh)/)
-      IF(PRESENT(methodin)) kgrid = methodin
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -310,9 +300,8 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(dmats,mpsi,mpert**2)
       CALL cspline_alloc(emats,mpsi,mpert**2)
       CALL cspline_alloc(hmats,mpsi,mpert**2) 
-      CALL cspline_alloc(baats,mpsi,mpert**2)
-      CALL cspline_alloc(caats,mpsi,mpert**2)
-      CALL cspline_alloc(eaats,mpsi,mpert**2)
+      CALL cspline_alloc(dbats,mpsi,mpert**2) 
+      CALL cspline_alloc(ebats,mpsi,mpert**2) 
       CALL cspline_alloc(fbats,mpsi,mpert**2)
       CALL cspline_alloc(kbats,mpsi,mpert**2)
   
@@ -322,20 +311,19 @@ c-----------------------------------------------------------------------
       dmats%xs=rzphi%xs
       emats%xs=rzphi%xs
       hmats%xs=rzphi%xs
-      baats%xs=rzphi%xs
-      caats%xs=rzphi%xs
-      eaats%xs=rzphi%xs
+      dbats%xs=rzphi%xs
+      ebats%xs=rzphi%xs
       fbats%xs=rzphi%xs
       kbats%xs=rzphi%xs
+
       amats%fs=0
       bmats%fs=0
       cmats%fs=0
       dmats%fs=0
       emats%fs=0
       hmats%fs=0
-      baats%fs=0
-      caats%fs=0
-      eaats%fs=0
+      dbats%fs=0
+      ebats%fs=0
       fbats%fs=0
       kbats%fs=0
 c-----------------------------------------------------------------------
@@ -406,12 +394,14 @@ c-----------------------------------------------------------------------
                kmat(ipert,jpert)=twopi*ifac*chi1*(g23(dm)+g33(dm)*m1/nn)
             ENDDO
          ENDDO
-         temp0=amat
+         dbat=dmat
+         ebat=emat
          fbat=fmat
-         kbat=kmat  
+         kbat=kmat
 c-----------------------------------------------------------------------
 c     factor A.
 c-----------------------------------------------------------------------
+         temp0=amat
          CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
          IF(info /= 0)THEN
             WRITE(message,'(2(a,i2))')
@@ -429,10 +419,10 @@ c-----------------------------------------------------------------------
          fmat=fmat-MATMUL(CONJG(TRANSPOSE(dmat)),temp1)
          kmat=emat-MATMUL(CONJG(TRANSPOSE(kmat)),temp2)
          gmat=hmat-MATMUL(CONJG(TRANSPOSE(cmat)),temp2)
-c-----------------------------------------------------------------------
-c     kinetic matrices
-c-----------------------------------------------------------------------
          amat=temp0
+c-----------------------------------------------------------------------
+c     kinetic matrices.
+c-----------------------------------------------------------------------
          IF (kin_flag) THEN
             ipert=0
             DO m1=mlow,mhigh
@@ -449,106 +439,6 @@ c-----------------------------------------------------------------------
      $                 p1*jmat(dm)
                ENDDO
             ENDDO
-            kinmats = 0
-            kinmata = 0
-            IF(kgrid==-1)THEN
-               iindex = FLOOR(REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0))*10
-               ileft = REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0)*10-iindex
-               IF ((ipsi /= 0) .AND. (ileft == 0) .AND. verbose)
-     $          WRITE(*,*)"  ...",iindex,"% of kinetic-MHD computations"
-               DO l=-nl,nl
-                  kinmats_l = 0
-                  kinmata_l = 0
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $                 "twmm",keq_out,theta_out,xlmda_out,kinmats_l)
-                  kinmats = kinmats+kinmats_l
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $                 "ttmm",keq_out,theta_out,xlmda_out,kinmata_l)
-                  kinmata = kinmata+kinmata_l
-               ENDDO
-            ELSE
-               DO i=1,6
-                  CALL cspline_eval(kwmats(i),psifac,0)
-                  CALL cspline_eval(ktmats(i),psifac,0)
-                  kinmats(:,:,i) = RESHAPE(kwmats(i)%f,(/mpert,mpert/))
-                  kinmata(:,:,i) = RESHAPE(ktmats(i)%f,(/mpert,mpert/))
-               ENDDO
-            ENDIF
-            
-            kinmats=kinfac1*kinmats
-            kinmata=kinfac2*kinmata
-
-            kinmats(:,:,1)=kinmats(:,:,1)*2*mu0/chi1**2
-            kinmata(:,:,1)=kinmata(:,:,1)*2*mu0/chi1**2
-            kinmats(:,:,2)=kinmats(:,:,2)*2*mu0/chi1
-            kinmata(:,:,2)=kinmata(:,:,2)*2*mu0/chi1
-            kinmats(:,:,3)=kinmats(:,:,3)*2*mu0/chi1
-            kinmata(:,:,3)=kinmata(:,:,3)*2*mu0/chi1
-            kinmats(:,:,4)=kinmats(:,:,4)*2*mu0
-            kinmata(:,:,4)=kinmata(:,:,4)*2*mu0
-            kinmats(:,:,5)=kinmats(:,:,5)*2*mu0
-            kinmata(:,:,5)=kinmata(:,:,5)*2*mu0
-            kinmats(:,:,6)=kinmats(:,:,6)*2*mu0
-            kinmata(:,:,6)=kinmata(:,:,6)*2*mu0
-
-            amat=amat+kinmats(:,:,1)+kinmata(:,:,1)
-            bmat=bmat+kinmats(:,:,2)+kinmata(:,:,2)
-            cmat=cmat+kinmats(:,:,3)+kinmata(:,:,3)
-            dmat=dmat+kinmats(:,:,4)+kinmata(:,:,4)
-            emat=emat+kinmats(:,:,5)+kinmata(:,:,5)
-            hmat=hmat+kinmats(:,:,6)+kinmata(:,:,6)
-            baat=bmat-2*kinmata(:,:,2)
-            caat=cmat-2*kinmata(:,:,3)
-            eaat=emat-2*kinmata(:,:,5)
-c-----------------------------------------------------------------------
-c     only for diagnostic purposes.
-c-----------------------------------------------------------------------
-            IF(.TRUE.)THEN
-               ksa(ipsi,:)=RESHAPE(kinmats(:,:,1),(/mpert**2/))
-               ksb(ipsi,:)=RESHAPE(kinmats(:,:,2),(/mpert**2/))
-               ksc(ipsi,:)=RESHAPE(kinmats(:,:,3),(/mpert**2/))
-               ksd(ipsi,:)=RESHAPE(kinmats(:,:,4),(/mpert**2/))
-               kse(ipsi,:)=RESHAPE(kinmats(:,:,5),(/mpert**2/))
-               ksh(ipsi,:)=RESHAPE(kinmats(:,:,6),(/mpert**2/))
-               kaa(ipsi,:)=RESHAPE(kinmata(:,:,1),(/mpert**2/))
-               kab(ipsi,:)=RESHAPE(kinmata(:,:,2),(/mpert**2/))
-               kac(ipsi,:)=RESHAPE(kinmata(:,:,3),(/mpert**2/))
-               kad(ipsi,:)=RESHAPE(kinmata(:,:,4),(/mpert**2/))
-               kae(ipsi,:)=RESHAPE(kinmata(:,:,5),(/mpert**2/))
-               kah(ipsi,:)=RESHAPE(kinmata(:,:,6),(/mpert**2/))
-            ENDIF
-            amatlu=0
-            DO jpert=1,mpert
-               DO ipert=1,mpert
-                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
-               ENDDO
-            ENDDO
-c-----------------------------------------------------------------------
-c     factor non-hermitian matrix A.
-c-----------------------------------------------------------------------
-            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,2*mband+mband+1,
-     $           ipiva,info)
-            IF(info /= 0)THEN
-               WRITE(message,'(2(a,i2))')
-     $              "zgbtrf: amat singular at ipsi = ",ipsi,
-     $              ", ipert = ",info,", increase delta_mband"
-               CALL program_stop(message)
-            ENDIF
-c-----------------------------------------------------------------------
-c     modify matrix G.
-c-----------------------------------------------------------------------
-            temp2=cmat
-            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $           2*mband+mband+1,ipiva,temp2,mpert,info)
-            gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2) 
-
-            iqty=1
-            DO jpert=1,mpert
-               DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
-                  gaats%fs(ipsi,iqty)=gaat(ipert,jpert)
-                  iqty=iqty+1
-               ENDDO
-            ENDDO
          ENDIF
 c-----------------------------------------------------------------------
 c     store matrices for interpolation.
@@ -559,9 +449,8 @@ c-----------------------------------------------------------------------
          dmats%fs(ipsi,:)=RESHAPE(dmat,(/mpert**2/))
          emats%fs(ipsi,:)=RESHAPE(emat,(/mpert**2/))
          hmats%fs(ipsi,:)=RESHAPE(hmat,(/mpert**2/))
-         baats%fs(ipsi,:)=RESHAPE(baat,(/mpert**2/))
-         caats%fs(ipsi,:)=RESHAPE(caat,(/mpert**2/))
-         eaats%fs(ipsi,:)=RESHAPE(eaat,(/mpert**2/))
+         dbats%fs(ipsi,:)=RESHAPE(dbat,(/mpert**2/))
+         ebats%fs(ipsi,:)=RESHAPE(ebat,(/mpert**2/))
          fbats%fs(ipsi,:)=RESHAPE(fbat,(/mpert**2/))
          kbats%fs(ipsi,:)=RESHAPE(kbat,(/mpert**2/))
 c-----------------------------------------------------------------------
@@ -645,13 +534,11 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(dmats,"extrap")
       CALL cspline_fit(emats,"extrap")
       CALL cspline_fit(hmats,"extrap")
-      CALL cspline_fit(baats,"extrap")
-      CALL cspline_fit(caats,"extrap")
-      CALL cspline_fit(eaats,"extrap")
       CALL cspline_fit(fmats,"extrap")
       CALL cspline_fit(kmats,"extrap")
       CALL cspline_fit(gmats,"extrap")
-      CALL cspline_fit(gaats,"extrap")
+      CALL cspline_fit(dbats,"extrap")
+      CALL cspline_fit(ebats,"extrap")
       CALL cspline_fit(fbats,"extrap")
       CALL cspline_fit(kbats,"extrap")
 c-----------------------------------------------------------------------
@@ -692,108 +579,14 @@ c-----------------------------------------------------------------------
             WRITE(bin_unit)
          ENDDO
          CALL bin_close(bin_unit)
-         IF(kgrid==-1)THEN
-            CALL bin_open(bin_unit,"kss.bin","UNKNOWN","REWIND","none")
-            DO ipert=1,mpert**2
-               DO ipsi=0,mpsi
-                  WRITE(bin_unit)REAL(sq%xs(ipsi),4),
-     $                 REAL(REAL(ksa(ipsi,ipert)),4),
-     $                 REAL(AIMAG(ksa(ipsi,ipert)),4),
-     $                 REAL(REAL(ksb(ipsi,ipert)),4),
-     $                 REAL(AIMAG(ksb(ipsi,ipert)),4),
-     $                 REAL(REAL(ksc(ipsi,ipert)),4),
-     $                 REAL(AIMAG(ksc(ipsi,ipert)),4),
-     $                 REAL(REAL(ksd(ipsi,ipert)),4),
-     $                 REAL(AIMAG(ksd(ipsi,ipert)),4),
-     $                 REAL(REAL(kse(ipsi,ipert)),4),
-     $                 REAL(AIMAG(kse(ipsi,ipert)),4),
-     $                 REAL(REAL(ksh(ipsi,ipert)),4),
-     $                 REAL(AIMAG(ksh(ipsi,ipert)),4)
-               ENDDO
-               WRITE(bin_unit)
-            ENDDO
-            CALL bin_close(bin_unit)
-            CALL bin_open(bin_unit,"kas.bin","UNKNOWN","REWIND","none")
-            DO ipert=1,mpert**2
-               DO ipsi=0,mpsi
-                  WRITE(bin_unit)REAL(sq%xs(ipsi),4),
-     $                 REAL(REAL(kaa(ipsi,ipert)),4),
-     $                 REAL(AIMAG(kaa(ipsi,ipert)),4),
-     $                 REAL(REAL(kab(ipsi,ipert)),4),
-     $                 REAL(AIMAG(kab(ipsi,ipert)),4),
-     $                 REAL(REAL(kac(ipsi,ipert)),4),
-     $                 REAL(AIMAG(kac(ipsi,ipert)),4),
-     $                 REAL(REAL(kad(ipsi,ipert)),4),
-     $                 REAL(AIMAG(kad(ipsi,ipert)),4),
-     $                 REAL(REAL(kae(ipsi,ipert)),4),
-     $                 REAL(AIMAG(kae(ipsi,ipert)),4),
-     $                 REAL(REAL(kah(ipsi,ipert)),4),
-     $                 REAL(AIMAG(kah(ipsi,ipert)),4)
-               ENDDO
-               WRITE(bin_unit)
-            ENDDO
-            CALL bin_close(bin_unit)
-         ENDIF
       ENDIF
-c-----------------------------------------------------------------------
-c     store matrices for plasma inductance and permeability.
-c-----------------------------------------------------------------------
-      CALL cspline_eval(amats,psilim,0)
-      CALL cspline_eval(bmats,psilim,0)
-      CALL cspline_eval(cmats,psilim,0)
-      CALL cspline_eval(dmats,psilim,0)
-      CALL cspline_eval(emats,psilim,0)
-      CALL cspline_eval(baats,psilim,0)
-      amat=RESHAPE(amats%f,(/mpert,mpert/))
-      bmat=RESHAPE(bmats%f,(/mpert,mpert/))
-      cmat=RESHAPE(cmats%f,(/mpert,mpert/))
-      dmat=RESHAPE(dmats%f,(/mpert,mpert/))
-      emat=RESHAPE(emats%f,(/mpert,mpert/))
-      baat=RESHAPE(baats%f,(/mpert,mpert/))
-
-      amatlu=0
-      DO jpert=1,mpert
-         DO ipert=1,mpert
-            amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
-         ENDDO
-      ENDDO
-         
-      CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
-     $     ipiva,info)
-      IF(info /= 0)THEN
-         WRITE(message,'(a,e16.9,a,i2)')
-     $        "zgbtrf: amat singular at psifac = ",psilim,
-     $        ", ipert = ",info,", reduce delta_mband"
-         CALL program_stop(message)
-      ENDIF
-      temp1=bmat
-      temp2=cmat
-      CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $     3*mband+1,ipiva,temp1,mpert,info)
-      CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $     3*mband+1,ipiva,temp2,mpert,info)
-      fmat=dmat-MATMUL(CONJG(TRANSPOSE(baat)),temp1)
-      kmat=emat-MATMUL(CONJG(TRANSPOSE(baat)),temp2)
-
-      fsmat=0
-      DO jpert=1,mpert
-         DO ipert=1,mpert
-            fsmat(2*mband+1+ipert-jpert,jpert)=fmat(ipert,jpert)
-         ENDDO
-      ENDDO
-
-      ksmat=0
-      iqty=1
-      DO jpert=1,mpert
-         DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
-            ksmat(1+mband+ipert-jpert,jpert)=kmat(ipert,jpert)
-            iqty=iqty+1
-         ENDDO
-      ENDDO
 c-----------------------------------------------------------------------
 c     interpolate matrices to psilim (need modification for valen3d).
 c-----------------------------------------------------------------------
       IF(sas_flag)THEN
+         CALL cspline_eval(amats,psilim,0)
+         CALL cspline_eval(bmats,psilim,0)
+         CALL cspline_eval(cmats,psilim,0)
          asmat=RESHAPE(amats%f,(/mpert,mpert/))
          bsmat=RESHAPE(bmats%f,(/mpert,mpert/))
          csmat=RESHAPE(cmats%f,(/mpert,mpert/))
@@ -1062,9 +855,8 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,ipert,l,i,j,iindex,method = 0
       REAL(r8) :: ileft,psifac,chi1,plim(2)
       COMPLEX(r8) :: tphi
-      COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kinmats,kinmats_l,
-     $     kinmata,kinmata_l,kinmat_tot
-
+      COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kwmat,kwmat_l,
+     $     ktmat,ktmat_l
 c-----------------------------------------------------------------------
 c     some basic variables
 c-----------------------------------------------------------------------
@@ -1090,39 +882,27 @@ c-----------------------------------------------------------------------
             ileft = REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0)*10-iindex
             IF ((ipsi /= 0) .AND. (ileft == 0) .AND. verbose)
      $           WRITE(*,*)"  ...",iindex,"% of kinetic computations"
-            kinmats = 0
-            kinmata = 0
-            psifac=sq%xs(ipsi)
+            kwmat = 0
+            ktmat = 0
+            psifac=rzphi%xs(ipsi)
             ! get matrices for all ell at this one psi
             DO l=-nl,nl
-               kinmats_l = 0
-               kinmata_l = 0
+               kwmat_l = 0
+               ktmat_l = 0
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $              "fwmm",keq_out,theta_out,xlmda_out,kinmats_l)
-               kinmats = kinmats+kinmats_l
+     $              "twmm",keq_out,theta_out,xlmda_out,kwmat_l)
+               kwmat = kwmat+kwmat_l
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $              "ftmm",keq_out,theta_out,xlmda_out,kinmata_l)
-               kinmata = kinmata+kinmata_l
+     $              "ttmm",keq_out,theta_out,xlmda_out,ktmat_l)
+               ktmat = ktmat+ktmat_l
             ENDDO
             ! apply normalizations
-            kinmats=kinfac1*kinmats
-            kinmata=kinfac2*kinmata
-            kinmats(:,:,1)=kinmats(:,:,1)*2*mu0/chi1**2
-            kinmata(:,:,1)=kinmata(:,:,1)*2*mu0/chi1**2
-            kinmats(:,:,2)=kinmats(:,:,2)*2*mu0/chi1
-            kinmata(:,:,2)=kinmata(:,:,2)*2*mu0/chi1
-            kinmats(:,:,3)=kinmats(:,:,3)*2*mu0/chi1
-            kinmata(:,:,3)=kinmata(:,:,3)*2*mu0/chi1
-            kinmats(:,:,4)=kinmats(:,:,4)*2*mu0
-            kinmata(:,:,4)=kinmata(:,:,4)*2*mu0
-            kinmats(:,:,5)=kinmats(:,:,5)*2*mu0
-            kinmata(:,:,5)=kinmata(:,:,5)*2*mu0
-            kinmats(:,:,6)=kinmats(:,:,6)*2*mu0
-            kinmata(:,:,6)=kinmata(:,:,6)*2*mu0
+            kwmat=kinfac1*kwmat
+            ktmat=kinfac2*ktmat
             ! store to splines
             DO i=1,6
-               kwmats(i)%fs(ipsi,:)=RESHAPE(kinmats(:,:,i),(/mpert**2/))
-               ktmats(i)%fs(ipsi,:)=RESHAPE(kinmata(:,:,i),(/mpert**2/))
+               kwmats(i)%fs(ipsi,:)=RESHAPE(kwmat(:,:,i),(/mpert**2/))
+               ktmats(i)%fs(ipsi,:)=RESHAPE(ktmat(:,:,i),(/mpert**2/))
             ENDDO
          ENDDO
          ! fit splines
@@ -1134,48 +914,78 @@ c-----------------------------------------------------------------------
 c     Use built in PENTRC spline integration options to form matrixes
 c-----------------------------------------------------------------------
       ELSEIF(method==1)THEN
-         ! Full (trapped and passing) dWk matrix calculation
-         WRITE(*,*) " FWMM"
+         WRITE(*,*) "  Trapped energy calculation using MXM euler "//
+     $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "fwmm",write_flux)
-         kwmats = kelmm
-         ! Full (trapped and passing) Tphi matrix calculation
-         WRITE(*,*) " FTMM"
+     $        "twmm",write_flux)
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),kwmats(i))
+            kwmats(i)%fs = kinfac1*kwmats(i)%fs
+            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+         ENDDO
+         WRITE(*,*) "  Trapped torque calculation using MXM euler "//
+     $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "ftmm",write_flux)
-         ktmats = kelmm
+     $        "ttmm",write_flux)
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),ktmats(i))
+            ktmats(i)%fs = kinfac2*ktmats(i)%fs
+            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+         ENDDO
 c-----------------------------------------------------------------------
 c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by T & dW from flat xi spectrum
 c-----------------------------------------------------------------------
       ELSEIF(method==2)THEN
-         ! Full (trapped and passing) dWk matrix calculation
-         WRITE(*,*) " FWMM"
+         WRITE(*,*) "  Trapped energy calculation using MXM euler "//
+     $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "fwmm",write_flux)
-         kwmats = kelmm
-         ! Full (trapped and passing) Tphi matrix calculation
-         WRITE(*,*) " FTMM"
+     $        "twmm",write_flux)
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),kwmats(i))
+            kwmats(i)%fs = kinfac1*kwmats(i)%fs
+            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+         ENDDO
+         WRITE(*,*) "  Trapped torque calculation using MXM euler "//
+     $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "ftmm",write_flux)
-         ktmats = kelmm
+     $        "ttmm",write_flux)
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),ktmats(i))
+            ktmats(i)%fs = kinfac2*ktmats(i)%fs
+            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+         ENDDO
 c-----------------------------------------------------------------------
 c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by norm of EL matrices
 c-----------------------------------------------------------------------
       ELSEIF(method==3)THEN
-         ! Full (trapped and passing) dWk matrix calculation
-         WRITE(*,*) " FWMM"
+         WRITE(*,*) "  Trapped MXM euler lagrange energy matrix norm "
+     $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "fkmm",write_flux)
-         kwmats = kelmm
-         ! Full (trapped and passing) Tphi matrix calculation
-         WRITE(*,*) " FTMM"
+     $        "tkmm",write_flux)
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),kwmats(i))
+            kwmats(i)%fs = kinfac1*kwmats(i)%fs
+            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+         ENDDO
+         WRITE(*,*) "  Trapped MXM euler lagrange torque matrix norm "
+     $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "frmm",write_flux)
-         ktmats = kelmm
+     $        "trmm",write_flux)
+         ! copy and apply factor to splines
+         DO i=1,6
+            CALL cspline_copy(kelmm(i),ktmats(i))
+            ktmats(i)%fs = kinfac2*ktmats(i)%fs
+            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+         ENDDO
       ELSE
-         CALL program_stop("ERROR: Valid kingridtypes are -1,0,1,2,3")
+         CALL program_stop("ERROR: Valid kingridtypes are 0,1,2,3")
       ENDIF
 c-----------------------------------------------------------------------
 c     Optionally write matrices to binary files for diagnostics
@@ -1186,17 +996,17 @@ c-----------------------------------------------------------------------
          DO ipert=1,mpert**2
             DO ipsi=0,kwmats(1)%mx
                WRITE(bin_unit)   REAL(kwmats(1)%xs(ipsi),4),
-     $              REAL(REAL( kwmats(1)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(1)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(1)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(2)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(2)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(2)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(3)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(3)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(3)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(4)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(4)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(4)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(5)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(5)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(5)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(6)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(6)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(6)%fs(ipsi,ipert)),4)
             ENDDO
             WRITE(bin_unit)
@@ -1206,17 +1016,17 @@ c-----------------------------------------------------------------------
          DO ipert=1,mpert**2
             DO ipsi=0,ktmats(1)%mx
                WRITE(bin_unit)   REAL(ktmats(1)%xs(ipsi),4),
-     $              REAL(REAL( ktmats(1)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(1)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(1)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(2)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(2)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(2)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(3)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(3)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(3)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(4)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(4)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(4)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(5)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(5)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(5)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(6)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(6)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(6)%fs(ipsi,ipert)),4)
             ENDDO
             WRITE(bin_unit)
@@ -1225,29 +1035,30 @@ c-----------------------------------------------------------------------
          
          ! ascii output
          CALL ascii_open(out_unit,"kss.out","UNKNOWN")
+         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
+         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+     $        "mpsi =",mpsi,"mpert =",mpert
          WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
      $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
      $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
      $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,1(a12,I4))')
-     $        "mpsi =",mpsi,"mpert =",mpert
          DO ipsi=0,kwmats(1)%mx 
             DO i=1,mpert
                DO j=1,mpert
                   ipert = (i-1)*mpert + j
                   WRITE(out_unit,'(1x,es16.8,2(1x,I4),12(1x,es16.8))')
      $              REAL(kwmats(1)%xs(ipsi),4),i,j,
-     $              REAL(REAL( kwmats(1)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(1)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(1)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(2)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(2)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(2)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(3)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(3)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(3)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(4)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(4)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(4)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(5)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(5)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(5)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( kwmats(6)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(kwmats(6)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(kwmats(6)%fs(ipsi,ipert)),4)
                ENDDO
             ENDDO
@@ -1255,38 +1066,36 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          CALL ascii_close(out_unit)
          CALL ascii_open(out_unit,"kas.out","UNKNOWN")
+         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
+         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+     $        "mpsi =",mpsi,"mpert =",mpert
          WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
      $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
      $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
      $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,1(a12,I4))')
-     $        "mpsi =",mpsi,"mpert =",mpert
          DO ipsi=0,kwmats(1)%mx 
             DO i=1,mpert
                DO j=1,mpert
                   ipert = (i-1)*mpert + j
                   WRITE(out_unit,'(1x,es16.8,2(1x,I4),12(1x,es16.8))')
      $              REAL(kwmats(1)%xs(ipsi),4),i,j,
-     $              REAL(REAL( ktmats(1)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(1)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(1)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(2)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(2)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(2)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(3)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(3)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(3)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(4)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(4)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(4)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(5)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(5)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(5)%fs(ipsi,ipert)),4),
-     $              REAL(REAL( ktmats(6)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(6)%fs(ipsi,ipert)),4),
      $              REAL(AIMAG(ktmats(6)%fs(ipsi,ipert)),4)
                ENDDO
             ENDDO
          ENDDO
          WRITE(out_unit,*)
          CALL ascii_close(out_unit)
-         
-         ! netcdf output
-         
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

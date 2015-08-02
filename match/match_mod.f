@@ -48,7 +48,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), POINTER :: ebt,ebp
       COMPLEX(r8), DIMENSION(:), POINTER :: deltap1,deltap2,ff,et,ep
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wbt,match,bmatch
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wt0,wbt,match,bmatch
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: v
 
       TYPE(solution_type), DIMENSION(:), POINTER :: soltype

@@ -2219,8 +2219,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
       REAL(r8), DIMENSION(cmpsi) :: qs
       REAL(r8), DIMENSION(cmpsi,mpert) :: xmns,ymns
-      COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vmn
-      COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: pmn
+      COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vnomns,vwpmns
+      COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: pwpmns
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -2229,8 +2229,9 @@ c-----------------------------------------------------------------------
       psi=(/(ipsi,ipsi=0,cmpsi)/)/REAL(cmpsi,r8)
       psi=psilow+(psilim-psilow)*SIN(psi*pi/2)**2
       ALLOCATE(vcmn(cmpert))
-      vmn = 0
-      pmn = 0
+      vnomns = 0
+      vwpmns = 0
+      pwpmns = 0
 
       DO ipsi=1,cmpsi
          CALL spline_eval(sq,psi(ipsi),0)
@@ -2240,33 +2241,45 @@ c-----------------------------------------------------------------------
             CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
                IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
-                  pmn(ipsi,cmlow-lmlow+i)=vcmn(i)
+                  pwpmns(ipsi,cmlow-lmlow+i)=vcmn(i)
                ENDIF
             ENDDO
             pwpmn=0
-            pwpmn=pmn(ipsi,:)
+            pwpmn=pwpmns(ipsi,:)
             CALL ipeq_bcoords(psi(ipsi),pwpmn,lmfac,lmpert,
      $           2,0,0,0,0,1)             
-            pmn(ipsi,:)=pwpmn            
+            pwpmns(ipsi,:)=pwpmn            
          ENDIF
          
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  vmn(ipsi,cmlow-mlow+i)=vcmn(i)
+                  vwpmns(ipsi,cmlow-mlow+i)=vcmn(i)
                ENDIF
             ENDDO
             vwpmn=0
-            vwpmn=vmn(ipsi,:)
+            vwpmn=vwpmns(ipsi,:)
+            CALL ipeq_bcoords(psi(ipsi),vwpmn,mfac,mpert,
+     $           rout,bpout,bout,rcout,tout,0)  
+            vnomns(ipsi,:)=vwpmn
+            vwpmn=0
+            vwpmn=vwpmns(ipsi,:)            
             CALL ipeq_bcoords(psi(ipsi),vwpmn,mfac,mpert,
      $           rout,bpout,bout,rcout,tout,1)  
-            vmn(ipsi,:)=vwpmn         
+            vwpmns(ipsi,:)=vwpmn         
          ELSE
+            CALL field_bs_psi(psi(ipsi),vcmn,0)
+            DO i=1,cmpert
+               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
+                  vnomns(ipsi,cmlow-mlow+i)=vcmn(i)
+               ENDIF
+            ENDDO
+
             CALL field_bs_psi(psi(ipsi),vcmn,2)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  vmn(ipsi,cmlow-mlow+i)=vcmn(i)
+                  vwpmns(ipsi,cmlow-mlow+i)=vcmn(i)
                ENDIF
             ENDDO
          ENDIF
@@ -2283,14 +2296,15 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $     "mpsi =",cmpsi,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
-      WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
-     $     "real(bno)","imag(bno)"
+      WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
+     $     "real(bno)","imag(bno)","real(bwp)","imag(bwp)"
 
       DO ipsi=1,cmpsi
          DO ipert=1,mpert
-            WRITE(out_unit,'(2(1x,es16.8),1x,I4,2(1x,es16.8))')
+            WRITE(out_unit,'(2(1x,es16.8),1x,I4,4(1x,es16.8))')
      $           psi(ipsi),qs(ipsi),mfac(ipert),
-     $           REAL(vmn(ipsi,ipert)),AIMAG(vmn(ipsi,ipert)) 
+     $           REAL(vnomns(ipsi,ipert)),AIMAG(vnomns(ipsi,ipert)),
+     $           REAL(vwpmns(ipsi,ipert)),AIMAG(vwpmns(ipsi,ipert)) 
          ENDDO
       ENDDO
 
@@ -2311,7 +2325,7 @@ c-----------------------------------------------------------------------
             DO ipert=1,lmpert
                WRITE(out_unit,'(2(1x,es16.8),1x,I4,2(1x,es16.8))')
      $              psi(ipsi),qs(ipsi),lmfac(ipert),
-     $              REAL(pmn(ipsi,ipert)),AIMAG(pmn(ipsi,ipert)) 
+     $              REAL(pwpmns(ipsi,ipert)),AIMAG(pwpmns(ipsi,ipert)) 
             ENDDO
          ENDDO
       ENDIF
@@ -2322,8 +2336,10 @@ c-----------------------------------------------------------------------
          DO ipert=1,mpert
             DO ipsi=1,cmpsi
                WRITE(bin_unit)REAL(psi(ipsi),4),
-     $              REAL(REAL(vmn(ipsi,ipert)),4),
-     $              REAL(AIMAG(vmn(ipsi,ipert)),4)
+     $              REAL(REAL(vnomns(ipsi,ipert)),4),
+     $              REAL(AIMAG(vnomns(ipsi,ipert)),4),
+     $              REAL(REAL(vwpmns(ipsi,ipert)),4),
+     $              REAL(AIMAG(vwpmns(ipsi,ipert)),4)
                
             ENDDO
             WRITE(bin_unit)
@@ -2340,7 +2356,7 @@ c-----------------------------------------------------------------------
          WRITE(bin_2d_unit)cmpsi-1,mpert-1
          WRITE(bin_2d_unit)REAL(xmns(1:cmpsi,:),4),
      $        REAL(ymns(1:cmpsi,:),4)
-         WRITE(bin_2d_unit)REAL(ABS(vmn(1:cmpsi,:)),4)
+         WRITE(bin_2d_unit)REAL(ABS(vwpmns(1:cmpsi,:)),4)
          CALL bin_close(bin_2d_unit)
       ENDIF
 c-----------------------------------------------------------------------

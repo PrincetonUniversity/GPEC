@@ -136,6 +136,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j,k,lwork
+      COMPLEX(r8) :: t1,t2
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(2*mpert) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work
@@ -163,23 +164,40 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate energy inductance matrix by energy consideration.
 c-----------------------------------------------------------------------
-      work=0
-      rwork=0
-      temp1=0
-      temp2=flxmats
-      DO i=1,mpert
-         DO j=1,mpert
-            DO k=1,mpert
-               temp1(i,j)=temp1(i,j)+temp2(i,k)*CONJG(temp2(j,k))
-     $              /(et(k)*2.0)
+      IF(resp_induct_flag)THEN
+         temp1=0
+         DO i=1,mpert
+            DO j=1,mpert
+               t1=-1/(chi1*(mfac(i)-nn*qlim)*twopi*ifac)
+               t2=1/(chi1*(mfac(j)-nn*qlim)*twopi*ifac)
+               temp2(i,j)=2.0*t1*wt0(i,j)*t2
+               IF(i==j)temp1(i,j)=1.0
             ENDDO
          ENDDO
-      ENDDO  
-      lwork=2*mpert+1
-      plas_indmats(0,:,:)=temp1
-      CALL zgeev('V','V',mpert,temp1,mpert,plas_indev(0,:),
-     $     vl,mpert,vr,mpert,work,lwork,rwork,info)
-      plas_indevmats(0,:,:)=vr
+         work=0
+         rwork=0
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+         plas_indmats(0,:,:)=temp1
+         ELSE
+            work=0
+            rwork=0
+            temp1=0
+            temp2=flxmats
+            DO i=1,mpert
+               DO j=1,mpert
+                  DO k=1,mpert
+                     temp1(i,j)=temp1(i,j)+temp2(i,k)*CONJG(temp2(j,k))
+     $                    /(et(k)*2.0)
+                  ENDDO
+               ENDDO
+            ENDDO  
+            lwork=2*mpert+1
+            plas_indmats(0,:,:)=temp1
+         ENDIF
+         CALL zgeev('V','V',mpert,temp1,mpert,plas_indev(0,:),
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         plas_indevmats(0,:,:)=vr
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
