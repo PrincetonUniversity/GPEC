@@ -4,8 +4,9 @@
 # - Use on portalr6.pppl.gov
 # - Requirements (These modify LD_LIBRARY_PATH):
 #    module load lff95  # compiler is lfc
-#	 module load lapack # sets $LAPACKHOME
+#	 module load lapack-blas # sets $LAPACKHOME
 #	 module load netcdf # sets $NETCDFHOME
+# - Don't forget to export GPEC_PLATFORM=PORTAL_LFF95
 #
 #------------------------------------------------------------------
 

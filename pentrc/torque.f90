@@ -117,7 +117,8 @@ module torque
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,pi,twopi
-    use utilities, only : get_free_file_unit,median
+    use netcdf
+    use utilities, only : get_free_file_unit,median,check,replacestring
     use special, only : ellipk,ellipe
     use grid, only : powspace,linspace
     ! use lsode_mod just a subroutine in the lsode directory...
@@ -1065,6 +1066,9 @@ module torque
         close(unit1)
         close(unit2)
         
+        
+        
+        
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
             do i=1,6
@@ -1137,6 +1141,7 @@ module torque
         integer :: i,j,l,unit1,unit2,unit3
         real(r8) :: xlast,wdcom,dxcom
         real(r8), dimension(1000) :: tmppsi
+        complex(r8), dimension(:,:), allocatable :: tmptor
         complex(r8), dimension(1000,mpert**2,6) :: tmpmats
         character(64) ::file1,file2,file3
         character(8) :: nstring,methcom
@@ -1198,7 +1203,7 @@ module torque
             iwork(6) = 1000 ! equilibrium grid
             allocate(elems(mpert,mpert,6))
         endif
-        
+        allocate(tmptor(1000,1+2*nl))
         ! open and prepare files as needed
         write(nstring,'(I8)') n
         if(electron)then
@@ -1262,9 +1267,17 @@ module torque
                     tmpmats(iwork(11),:,i) = RESHAPE(elems(:,:,i),(/mpert**2/))
                 enddo
             endif
+            
+            ! keep profile in memory
+            tmptor(iwork(11),:) = dky(::2)
+            
         enddo
         close(unit1)
         close(unit2)
+        
+        ! write to netcdf
+        call replacestring(file1,'.out','.nc ')
+        call write_profile(trim(file1),n,iwork(11),1+2*nl,tmptor)
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
@@ -1415,25 +1428,6 @@ module torque
     !    nrpd : integer.
     !       First dimension of pd.
     !
-    !*OPTIONAL ARGUMENTS:
-    !    wntedbk_ln : real, dimension(8) (in)
-    !       wn : real.
-    !           density gradient diamagnetic drift frequency
-    !       wt : real.
-    !           temperature gradient diamagnetic drift frequency
-    !       we : real.
-    !           electric precession frequency
-    !       wd : real.
-    !           magnetic precession frequency
-    !       wb : real.
-    !           bounce frequency divided by x (x=E/T)
-    !       nuk : real.
-    !           effective Krook collision frequency (i.e. /2eps for trapped)
-    !       l : real.
-    !           effective bounce harmonic (i.e. ell-nq for passing)
-    !       n : real.
-    !           toroidal mode number
-    !
     !*RETURNS:
     !     complex.
     !        energy integral.
@@ -1445,6 +1439,59 @@ module torque
         pd(:,:) = 0
         return
     end subroutine noj
+    
+
+    !=======================================================================
+    subroutine write_profile(filename,nn,np,nl,tphi)
+    !----------------------------------------------------------------------- 
+    !*DESCRIPTION: 
+    !   Test of netcdf capabilities.
+    !
+    !*ARGUMENTS:
+    !    psi : integer (in)
+    !       Number of radial points.
+    !
+    !*RETURNS:
+    !
+    !-----------------------------------------------------------------------
+    implicit none
+    
+    integer, intent(in) :: np,nl,nn
+    complex(r8), dimension(np,nl), intent(in) :: tphi
+    character(*), intent(in) :: filename
+    
+    integer           :: ncid
+    integer           :: varid_tpl,varid_tp
+    integer           :: dimids(2),dimid1,dimid_p,dimid_l
+    character(8)    :: nstring
+    
+    !Create netCDF file
+    call check( nf90_create(filename, cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=ncid) )
+
+    !Define Dimensions
+    call check( nf90_def_dim(ncid,"psi_N",np,dimid_p) )
+    call check( nf90_def_dim(ncid,"ell",nl,dimid_l) )
+    dimids = (/ dimid_p, dimid_l /)
+
+    !Define variable
+    !call check( nf90_def_var(ncid,"n",NF90_INT,dimid1,nr_varid) )
+    call check( nf90_def_var(ncid,"Torque_ell",NF90_DOUBLE,dimids,varid_tpl) )
+    call check( nf90_def_var(ncid,"Torque",NF90_DOUBLE,(/dimid_p/),varid_tp) )
+
+    !Add unit attributes
+    call check( nf90_put_att(ncid,varid_tpl,"units","Nm") )
+    call check( nf90_put_att(ncid,varid_tp,"units","Nm") )
+    call check( nf90_enddef(ncid) )
+
+    !Write data to file
+    call check( nf90_put_var(ncid,varid_tpl,REAL(tphi)) )
+    call check( nf90_put_var(ncid,varid_tp,REAL(sum(tphi,DIM=2))) )
+
+    !Close netCDF file
+    call check( nf90_close(ncid) )
+
+    print *, ' - Torque profile written to: ',filename
+  end subroutine write_profile
 
 end module torque
 
