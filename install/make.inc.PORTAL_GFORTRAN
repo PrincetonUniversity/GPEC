@@ -10,7 +10,7 @@
 
 FC = gcc4
 
-IFLAGS = -I${NETCDFHOME}/include
+IFLAGS = -I${NETCDFHOME}/include -I$../harvest
 
 LIBDIR = \
 	-L../lib \

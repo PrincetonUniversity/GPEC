@@ -1,12 +1,16 @@
-# FC, LIBDIR and FCLIBS are set in the platform-specific included file
-include ../install/make.inc.${GPEC_PLATFORM}
+# FC, *HOME are set in the platform-specific included file
+include ../install/make.inc
 
-FFLAGS = -I../equil -I../coil
+FFLAGS = -I../equil -I../coil -I../harvest
 
 F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
+
+LIBDIR = \
+	-L${LAPACKHOME} \
+	-L../lib
 
 LIBS = \
 	$(LIBDIR) \
@@ -14,7 +18,9 @@ LIBS = \
 	-lequil \
 	-lvac \
 	-lcoil \
-	$(FCLIBS)
+	-lharvest \
+	-llapack \
+	-lblas
 
 OBJS = \
 	ipglobal.o \
