@@ -35,9 +35,11 @@ program pentrc
         tatol,trtol,&                   ! reals
         tdebug,&                          ! logical
         mpert,mfac                    !! hacked for test writting
-
+    
     implicit none
 
+    include 'harvest_lib.inc'
+    
     ! declarations and defaults
     integer, parameter :: nflags=18
     logical :: &
@@ -112,6 +114,12 @@ program pentrc
         f0type = "maxwellian",&
         jac_in = "",&
         moment = "pressure"
+    
+    ! harvest variables
+    integer :: ierr
+    character(len=65507) :: harvest_sendline
+    character nul
+    parameter (nul = char(0))
       
     namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
@@ -176,7 +184,14 @@ program pentrc
     if(diag_flag)then
         call diagnose_all
     else
-        
+    
+    ! harvest client
+    ierr=init_harvest('CODEDB_PENTRC'//NUL,harvest_sendline,len(harvest_sendline))
+    ierr=set_harvest_verbose(1)
+    ierr=set_harvest_payload_str(harvest_sendline,'code'//NUL,'PENT'//NUL)
+    ierr=harvest_send(harvest_sendline)
+    print *, "harvested"
+    
     ! run models
         call read_equil(idconfile)
         call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
@@ -245,7 +260,6 @@ program pentrc
                 "Passing MXM euler lagrange torque matrix norm calculation   " &
                 /)
         do m=1,nflags
-            print *,m
             if(flags(m))then
                 method = methods(m) !to_upper(methods(m))
                 if(verbose)then
@@ -278,15 +292,18 @@ program pentrc
                                 .false.,theta_out,xlmda_out)
                         endif
                     enddo
-                if(verbose)then
-                    print *, method//" - Finished"
-                    print *, "---------------------------------------------"
-                endif
                 enddo
+            endif
+            if(verbose)then
+                print *, method//" - Finished"
+                print *, "---------------------------------------------"
             endif
         enddo
         
     endif
+    
+    ! send harvest record
+    !ierr=harvest_send(harvest_sendline)
     
     ! display timer and stop
     call timer(mode=1)
