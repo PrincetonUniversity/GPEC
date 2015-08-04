@@ -189,7 +189,7 @@ program pentrc
     
     ! set up harvest client package
         ierr=init_harvest('CODEDB_PENT'//NUL,harvest_sendline,len(harvest_sendline))
-        ierr=set_harvest_verbose(1)
+        ierr=set_harvest_verbose(0)
         ! standard CODEDB records
         ierr=set_harvest_payload_str(harvest_sendline,'CODE'//nul,'PENT'//nul)
         ierr=set_harvest_payload_int(harvest_sendline,'SHOT'//nul,shot)
