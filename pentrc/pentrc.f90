@@ -38,8 +38,6 @@ program pentrc
     
     implicit none
 
-    include 'harvest_lib.inc'
-    
     ! declarations and defaults
     integer, parameter :: nflags=18
     logical :: &
@@ -116,13 +114,15 @@ program pentrc
         moment = "pressure"
     
     ! harvest variables
+    include 'harvest_lib.inc'
     integer :: ierr
     integer :: shot = 0, time=0
     character(len=16) :: machine = "UNKNOWN"
     CHARACTER(LEN=50000) :: nml_str
     character(len=65507) :: harvest_sendline
     character, parameter :: nul = char(0)
-      
+    
+    ! namelists 
     namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
@@ -277,6 +277,9 @@ program pentrc
                     print *, "---------------------------------------------"
                     print *,method//" - "//TRIM(docs(m))
                 ENDIF
+                if ((method=="clar" .or. method=="rlar")) then ! .and. fnml%nqty==0) then
+                    call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
+                endif
                 tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
                 if(verbose) then
                     print "(a24,es11.3E3)", "Total torque = ", real(tphi)
