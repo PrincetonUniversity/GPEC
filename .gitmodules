@@ -1,0 +1,3 @@
+[submodule "harvest"]
+	path = harvest
+	url = git@github.com:gafusion/harvest_client.git

@@ -35,9 +35,11 @@ program pentrc
         tatol,trtol,&                   ! reals
         tdebug,&                          ! logical
         mpert,mfac                    !! hacked for test writting
-
+    
     implicit none
 
+    include 'harvest_lib.inc'
+    
     ! declarations and defaults
     integer, parameter :: nflags=18
     logical :: &
@@ -112,6 +114,14 @@ program pentrc
         f0type = "maxwellian",&
         jac_in = "",&
         moment = "pressure"
+    
+    ! harvest variables
+    integer :: ierr
+    integer :: shot = 0, time=0
+    character(len=16) :: machine = "UNKNOWN"
+    CHARACTER(LEN=50000) :: nml_str
+    character(len=65507) :: harvest_sendline
+    character, parameter :: nul = char(0)
       
     namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
@@ -176,7 +186,23 @@ program pentrc
     if(diag_flag)then
         call diagnose_all
     else
-        
+    
+    ! set up harvest client package
+        ierr=init_harvest('CODEDB_PENT'//NUL,harvest_sendline,len(harvest_sendline))
+        ierr=set_harvest_verbose(1)
+        ! standard CODEDB records
+        ierr=set_harvest_payload_str(harvest_sendline,'CODE'//nul,'PENT'//nul)
+        ierr=set_harvest_payload_int(harvest_sendline,'SHOT'//nul,shot)
+        ierr=set_harvest_payload_int(harvest_sendline,'TIME'//nul,time)
+        ierr=set_harvest_payload_str(harvest_sendline,'MACHINE'//NUL,trim(machine)//nul)
+        ! PENT input records
+        write(nml_str,nml=pent_input)
+        ierr=set_harvest_payload_nam(harvest_sendline,'PENT_INPUT'//nul,trim(nml_str)//nul)
+        write(nml_str,nml=pent_control)
+        ierr=set_harvest_payload_nam(harvest_sendline,'PENT_CONTROL'//nul,trim(nml_str)//nul)
+        write(nml_str,nml=pent_output)
+        ierr=set_harvest_payload_nam(harvest_sendline,'PENT_OUTPUT'//nul,trim(nml_str)//nul)
+    
     ! run models
         call read_equil(idconfile)
         call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
@@ -245,7 +271,6 @@ program pentrc
                 "Passing MXM euler lagrange torque matrix norm calculation   " &
                 /)
         do m=1,nflags
-            print *,m
             if(flags(m))then
                 method = methods(m) !to_upper(methods(m))
                 if(verbose)then
@@ -254,10 +279,12 @@ program pentrc
                 ENDIF
                 tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
                 if(verbose) then
-                    print "(a24,es11.3E3)", "Total torque = ", REAL(tphi)
-                    print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(tphi)/(2*nn)
-                    print "(a24,es11.3E3)", "alpha/s  = ", REAL(tphi)/(-1*AIMAG(tphi))
+                    print "(a24,es11.3E3)", "Total torque = ", real(tphi)
+                    print "(a24,es11.3E3)", "Total Kinetic Energy = ", aimag(tphi)/(2*nn)
+                    print "(a24,es11.3E3)", "alpha/s  = ", real(tphi)/(-1*aimag(tphi))
                 endif
+                ierr=set_harvest_payload_dbl(harvest_sendline,'torque_'//method//nul,real(tphi))
+                ierr=set_harvest_payload_dbl(harvest_sendline,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
                 if(eqpsi_out)then
                     if(verbose) print *,method//" - "//"Recalculating on equilibrium grid"
                     teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
@@ -278,15 +305,18 @@ program pentrc
                                 .false.,theta_out,xlmda_out)
                         endif
                     enddo
+                enddo
                 if(verbose)then
                     print *, method//" - Finished"
                     print *, "---------------------------------------------"
                 endif
-                enddo
             endif
         enddo
         
     endif
+    
+    ! send harvest record
+    ierr=harvest_send(harvest_sendline)
     
     ! display timer and stop
     call timer(mode=1)
