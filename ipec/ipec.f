@@ -34,6 +34,15 @@ c-----------------------------------------------------------------------
      $     fxmn,fxfun,coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
+      ! harvest variables
+      !INCLUDE 'harvest_lib.inc77'
+      !INTEGER :: ierr
+      INTEGER :: shot = 0, shottime=0
+      !CHARACTER(LEN=50000) :: hnml
+      !CHARACTER(LEN=65507) :: harvestline
+      !CHARACTER, PARAMETER :: nul = char(0)
+
+      
       NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
@@ -301,6 +310,33 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------
+c     set up harvest client package.
+c-----------------------------------------------------------------------
+      ierr=init_harvest('CODEDB_IPEC'//NUL,harvestline,len(harvestline))
+      ierr=set_harvest_verbose(0)
+      ! standard CODEDB records
+      ierr=set_harvest_payload_str(harvestline,'CODE'//nul,'IPEC'//nul)
+      ierr=set_harvest_payload_int(harvestline,'SHOT'//nul,shot)
+      ierr=set_harvest_payload_int(harvestline,'TIME'//nul,shottime)
+      IF (machine=='') then
+         machine = "UNKNOWN"
+      ELSEIF (machine=='d3d') then
+         machine = "DIII-D"
+      ENDIF
+      machine = to_upper(machine)
+      ierr=set_harvest_payload_str(harvestline,'MACHINE'//nul,
+     $                             trim(machine)//nul)
+      ! input records
+      write(hnml,nml=ipec_input)
+      ierr=set_harvest_payload_nam(harvestline,'IPEC_INPUT'//nul,
+     $                             trim(hnml)//nul)
+      write(hnml,nml=ipec_control)
+      ierr=set_harvest_payload_nam(harvestline,'IPEC_CONTROL'//nul,
+     $                             trim(hnml)//nul)
+      write(hnml,nml=ipec_output)
+      ierr=set_harvest_payload_nam(harvestline,'IPEC_OUTPUT'//nul,
+     $                             trim(hnml)//nul)
+c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
       CALL ipresp_eigen
@@ -532,6 +568,10 @@ c-----------------------------------------------------------------------
          CALL ipdiag_reluctpowout(power_rout,power_bpout,power_bout,
      $        power_rcout)
       ENDIF
+c-----------------------------------------------------------------------
+c     send harvest record.
+c-----------------------------------------------------------------------
+      ierr=harvest_send(harvestline)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

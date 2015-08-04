@@ -34,16 +34,63 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
+      ! harvest variables
+      INCLUDE 'harvest_lib.inc77'
+      INTEGER  :: ierr
+      INTEGER  :: hint = 0
+      REAL(r8) :: hdbl = 0
+      CHARACTER(LEN=16)    :: hkey
+      CHARACTER(LEN=50000) :: hnml
+      CHARACTER(LEN=65507) :: harvestline
+      CHARACTER, PARAMETER :: nul = char(0)
+
       CONTAINS
       
-      character(len=20) function str(k,fmt)
-      !   "Convert an integer to string."
+      !----------------------------------------------------------------- 
+      function str(k,fmt)
+      !----------------------------------------------------------------- 
+      !*DESCRIPTION: 
+      !   Convert an integer to string.
+      !*ARGUMENTS:
+      !   k : integer. Maximum unit.
+      !   fmt : str. Format specification.
+      !*RETURNS:
+      !     str. length 20.
+      !-----------------------------------------------------------------
+          character(len=20) str
           integer, intent(in) :: k
           character(*),intent(in) :: fmt
           
           write (str, trim(fmt)) k
           str = adjustl(str)
       end function str
+      !----------------------------------------------------------------- 
+      function to_upper(strIn) result(strOut)
+      !----------------------------------------------------------------- 
+      !*DESCRIPTION: 
+      !   Capitalize a string.
+      !   Adapted from http://www.star.le.ac.uk/~cgp/fortran.html
+      !   Original author: Clive Page
+      !*ARGUMENTS:
+      !   strIn : str. Original string.
+      !*RETURNS:
+      !   strOut : str. New capitalized string.
+      !-----------------------------------------------------------------
+         implicit none
+         character(len=*), intent(in) :: strIn
+         character(len=len(strIn)) :: strOut
+         integer :: i,j
+    
+         do i = 1, len(strIn)
+              j = iachar(strIn(i:i))
+              if (j>= iachar("a") .and. j<=iachar("z") ) then
+                   strOut(i:i) = achar(iachar(strIn(i:i))-32)
+              else
+                   strOut(i:i) = strIn(i:i)
+              end if
+         end do
+      end function to_upper
+
 c-----------------------------------------------------------------------
 c     subprogram 1. ipout_response.
 c     write basic information.
@@ -1074,6 +1121,16 @@ c-----------------------------------------------------------------------
      $  "Required energy to perturb plasma = ",pengy
       IF(verbose) WRITE(*,'(1x,a,es10.3)')
      $  "Amplification factor = ",sengy/pengy
+     
+      ! log results with harvest
+      ierr=set_harvest_payload_dbl(harvestline,"ENERGY (VACUUM)"//nul,
+     $                             vengy)
+      ierr=set_harvest_payload_dbl(harvestline,"ENERGY (SURFACE)"//nul,
+     $                             sengy)
+      ierr=set_harvest_payload_dbl(harvestline,"ENERGY (PLASMA)"//nul,
+     $                             pengy)
+      ierr=set_harvest_payload_dbl(harvestline,"AMPLIFICATION"//nul,
+     $                             sengy/pengy)
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
@@ -1521,6 +1578,20 @@ c-----------------------------------------------------------------------
      $        island_hwidth(ising),chirikov(ising)
       ENDDO
       WRITE(out_unit,*)
+      
+      ! log singular response with harvest
+      DO ising=1,msing
+         WRITE(hkey,'(A8,I2.2,F0.3,A1)')
+     $      'SINGCUR(',INT(singtype(ising)%q),
+     $      singtype(ising)%q-INT(singtype(ising)%q),')'
+         hdbl = ABS(singcur(ising))
+         ierr=set_harvest_payload_dbl(harvestline,TRIM(hkey)//nul,hdbl)
+         WRITE(hkey,'(A8,I2.2,F0.3,A1)')
+     $      'SINGFLX(',INT(singtype(ising)%q),
+     $      singtype(ising)%q-INT(singtype(ising)%q),')'
+         hdbl = ABS(singflx_mn(resnum(ising),ising))
+         ierr=set_harvest_payload_dbl(harvestline,TRIM(hkey)//nul,hdbl)
+      ENDDO
  
       IF (svd_flag) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
@@ -1550,6 +1621,13 @@ c-----------------------------------------------------------------------
      $           REAL(ovi(ising)),AIMAG(ovi(ising)),novi(ising)
          ENDDO
          WRITE(out_unit,*)
+         
+         ! log svd response with harvest
+         DO ising=1,msing
+            WRITE(hkey,'(A5,I2.2,A1)') '%OVF(',ising,')'
+            ierr=set_harvest_payload_dbl(harvestline,TRIM(hkey)//nul,
+     $                                   novf(ising))
+         ENDDO
       ENDIF
         
       CALL ascii_close(out_unit)
