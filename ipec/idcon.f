@@ -49,6 +49,9 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      READ(in_unit) amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
       IF ((power_b==0).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="hamada"
       ELSE IF ((power_b==0).AND.(power_bp==0).AND.(power_r==2)) THEN

@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: hdbl = 0
       CHARACTER(LEN=16)    :: hkey
       CHARACTER(LEN=50000) :: hnml
-      CHARACTER(LEN=65507) :: harvestline
+      CHARACTER(LEN=65507) :: hlog
       CHARACTER, PARAMETER :: nul = char(0)
 
       CONTAINS
@@ -180,6 +180,7 @@ c-----------------------------------------------------------------------
      $     et(i),eft(i)
       ENDDO
       WRITE(out_unit,*)
+
       
       WRITE(out_unit,*)"Eigenvectors"
       WRITE(out_unit,*)" jac_type = ",jac_type
@@ -331,6 +332,16 @@ c-----------------------------------------------------------------------
         ENDDO
         CALL ascii_close(out_unit)
       ENDIF
+      
+      ! log eigenvalues with harvest
+      ierr=set_harvest_payload_dbl_array(hlog,"s_P"//nul,
+     $     REAL(permeabev(resp_index,:)),mpert)
+      ierr=set_harvest_payload_dbl_array(hlog,"s_L"//nul,
+     $     surf_indev(:),mpert)
+      ierr=set_harvest_payload_dbl_array(hlog,"s_Lambda"//nul,
+     $     plas_indev(resp_index,:),mpert)
+      ierr=set_harvest_payload_dbl_array(hlog,"s_rho"//nul,
+     $     reluctpev(resp_index,:),mpert)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1123,13 +1134,14 @@ c-----------------------------------------------------------------------
      $  "Amplification factor = ",sengy/pengy
      
       ! log results with harvest
-      ierr=set_harvest_payload_dbl(harvestline,"ENERGY (VACUUM)"//nul,
-     $                             vengy)
-      ierr=set_harvest_payload_dbl(harvestline,"ENERGY (SURFACE)"//nul,
-     $                             sengy)
-      ierr=set_harvest_payload_dbl(harvestline,"ENERGY (PLASMA)"//nul,
-     $                             pengy)
-      ierr=set_harvest_payload_dbl(harvestline,"AMPLIFICATION"//nul,
+      norm=SQRT(ABS(DOT_PRODUCT(finmn,finmn)))
+      ierr=set_harvest_payload_dbl(hlog,"MODPhi_x"//nul,norm)
+      norm=SQRT(ABS(DOT_PRODUCT(foutmn,foutmn)))
+      ierr=set_harvest_payload_dbl(hlog,"MODPhi"//nul,norm)
+      ierr=set_harvest_payload_dbl(hlog,"energy_vacuum"//nul,vengy)
+      ierr=set_harvest_payload_dbl(hlog,"energy_surface"//nul,sengy)
+      ierr=set_harvest_payload_dbl(hlog,"energy_plasma"//nul,pengy)
+      ierr=set_harvest_payload_dbl(hlog,"amplification"//nul,
      $                             sengy/pengy)
 c-----------------------------------------------------------------------
 c     write results.
@@ -1449,7 +1461,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: lbwp1mn,rbwp1mn
 
       INTEGER, DIMENSION(msing) :: resnum
-      REAL(r8), DIMENSION(msing) :: area,j_c
+      REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
 
@@ -1581,17 +1593,14 @@ c-----------------------------------------------------------------------
       
       ! log singular response with harvest
       DO ising=1,msing
-         WRITE(hkey,'(A8,I2.2,F0.3,A1)')
-     $      'SINGCUR(',INT(singtype(ising)%q),
-     $      singtype(ising)%q-INT(singtype(ising)%q),')'
-         hdbl = ABS(singcur(ising))
-         ierr=set_harvest_payload_dbl(harvestline,TRIM(hkey)//nul,hdbl)
-         WRITE(hkey,'(A8,I2.2,F0.3,A1)')
-     $      'SINGFLX(',INT(singtype(ising)%q),
-     $      singtype(ising)%q-INT(singtype(ising)%q),')'
-         hdbl = ABS(singflx_mn(resnum(ising),ising))
-         ierr=set_harvest_payload_dbl(harvestline,TRIM(hkey)//nul,hdbl)
+         aq(ising) = singtype(ising)%q
+         asingflx(ising) = ABS(singflx_mn(resnum(ising),ising))
       ENDDO
+      ierr=set_harvest_payload_dbl_array(hlog,"q"//nul,aq,msing)
+      ierr=set_harvest_payload_dbl_array(hlog,"singcur"//nul,
+     $     ABS(singcur),msing)
+      ierr=set_harvest_payload_dbl_array(hlog,"singflx"//nul,
+     $     asingflx,msing)
  
       IF (svd_flag) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
@@ -1623,11 +1632,9 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          
          ! log svd response with harvest
-         DO ising=1,msing
-            WRITE(hkey,'(A5,I2.2,A1)') '%OVF(',ising,')'
-            ierr=set_harvest_payload_dbl(harvestline,TRIM(hkey)//nul,
-     $                                   novf(ising))
-         ENDDO
+         ierr=set_harvest_payload_dbl_array(hlog,'overlap_percent'//nul,
+     $        novf,msing)
+         print *,ierr
       ENDIF
         
       CALL ascii_close(out_unit)

@@ -112,6 +112,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
       READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim
       READ(in_unit)
+      READ(in_unit)
 
       CALL spline_alloc(csq,ci3,4)
       CALL bicube_alloc(crzphi,ci3,ci4,4)
