@@ -1,9 +1,3 @@
-#Global makefile for the GPEC suite of codes.
-ifdef GPEC_PLATFORM
-	include install/make.inc.${GPEC_PLATFORM}
-else
-	include install/make.inc
-endif
 
 .IGNORE:
 

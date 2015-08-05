@@ -1,5 +1,3 @@
-# FC is set in the platform-specific included file
-include ../install/make.inc
 
 FFLAGS = 
 

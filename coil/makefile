@@ -1,8 +1,3 @@
-# FC is set in the platform-specific included file
-include ../install/make.inc
-
-# hardcode pacakge directory variable?
-#sed -i '0,:#REPLACE-WITH-PATH:{s:#REPLACE-WITH-PATH:'`pwd`':}' coil.f
 
 FFLAGS = -I../equil
 

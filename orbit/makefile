@@ -1,5 +1,3 @@
-# FC, *HOMEare set in the platform-specific included file
-include ../install/make.inc
 
 FFLAGS = -I../equil
 F90 = $(FC) $(FFLAGS)

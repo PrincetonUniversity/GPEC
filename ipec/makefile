@@ -1,5 +1,3 @@
-# FC, *HOME are set in the platform-specific included file
-include ../install/make.inc
 
 FFLAGS = -I../equil -I../coil -I../harvest
 
@@ -35,6 +33,7 @@ OBJS = \
 	ipec.o
 
 ipec: $(OBJS)
+	@echo $(PLATFORM)
 	$(F90) -o ipec $(OBJS) $(LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libipec.a *.o
