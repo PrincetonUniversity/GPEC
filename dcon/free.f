@@ -190,16 +190,6 @@ c     compute energy eigenvalues.
 c-----------------------------------------------------------------------
       wt=wp+wv
       lwork=2*mpert-1
-      !ct = CONJG(TRANSPOSE(wt))
-      !print *, "Is displacement matrix Hermitian?"
-      !print *, ALL(wt .EQ. ct)
-      !print *, ALL(ABS(wt - ct)/ABS(wt) < 1e-3)
-      !DO isol=1,mpert
-      !   IF(.NOT. ALL(wt(isol,:) .EQ. ct(isol,:))) THEN
-      !     diff = wt(isol,:)-ct(isol,:)
-      !     print *,isol,wt(isol,isol),SQRT(ABS(DOT_PRODUCT(diff,diff)))
-      !   ENDIF
-      !ENDDO
       CALL zheev('V','U',mpert,wt,mpert,et,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
 c     normalize eigenfunction and energy.
@@ -252,11 +242,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     <MODIFIED>
 c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     <MODIFIED>
-c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)ep
-c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
          WRITE(euler_bin_unit)ebp  ! LOGAN ADDED with option 5
