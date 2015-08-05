@@ -35,6 +35,7 @@ program pentrc
         tatol,trtol,&                   ! reals
         tdebug,&                          ! logical
         mpert,mfac                    !! hacked for test writting
+    use global_mod, only: version       ! GPEC package
     
     implicit none
 
@@ -110,16 +111,14 @@ program pentrc
     character(32) :: &
         nutype = "harmonic",&
         f0type = "maxwellian",&
-        jac_in = "",&
+        jac_in = "default",&
         moment = "pressure"
     
     ! harvest variables
     include 'harvest_lib.inc'
     integer :: ierr
-    integer :: shot = 0, time=0
-    character(len=16) :: machine = "UNKNOWN"
-    CHARACTER(LEN=50000) :: nml_str
-    character(len=65507) :: harvest_sendline
+    CHARACTER(LEN=50000) :: hnml
+    character(len=65507) :: hlog
     character, parameter :: nul = char(0)
     
     ! namelists 
@@ -158,7 +157,7 @@ program pentrc
     lambdartol = rtol    
     verbose = term_flag
     if(verbose) print *,''
-    if(verbose) print *,"PENTRC START => v3.00"
+    if(verbose) print *,"PENTRC START => "//trim(version)
     if(verbose) print *,"______________________________"
     if(moment=="heat")then
         qt = .true.
@@ -187,27 +186,29 @@ program pentrc
         call diagnose_all
     else
     
-    ! set up harvest client package
-        ierr=init_harvest('CODEDB_PENT'//NUL,harvest_sendline,len(harvest_sendline))
-        ierr=set_harvest_verbose(0)
-        ! standard CODEDB records
-        ierr=set_harvest_payload_str(harvest_sendline,'CODE'//nul,'PENT'//nul)
-        ierr=set_harvest_payload_int(harvest_sendline,'SHOT'//nul,shot)
-        ierr=set_harvest_payload_int(harvest_sendline,'TIME'//nul,time)
-        ierr=set_harvest_payload_str(harvest_sendline,'MACHINE'//NUL,trim(machine)//nul)
-        ! PENT input records
-        write(nml_str,nml=pent_input)
-        ierr=set_harvest_payload_nam(harvest_sendline,'PENT_INPUT'//nul,trim(nml_str)//nul)
-        write(nml_str,nml=pent_control)
-        ierr=set_harvest_payload_nam(harvest_sendline,'PENT_CONTROL'//nul,trim(nml_str)//nul)
-        write(nml_str,nml=pent_output)
-        ierr=set_harvest_payload_nam(harvest_sendline,'PENT_OUTPUT'//nul,trim(nml_str)//nul)
-    
     ! run models
-        call read_equil(idconfile)
+        ! start log with harvest
+        ierr=init_harvest('CODEDB_PENT'//nul,hlog,len(hlog))
+        ierr=set_harvest_verbose(1)
+        ! standard CODEDB records
+        ierr=set_harvest_payload_str(hlog,'CODE'//nul,'PENT'//nul)
+        ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
+        ! PENT input records
+        if(jac_in=="") jac_in = "default" ! harvest can't parse empty strings
+        write(hnml,nml=pent_input)
+        ierr=set_harvest_payload_nam(hlog,'PENT_INPUT'//nul,trim(hnml)//nul)
+        write(hnml,nml=pent_control)
+        ierr=set_harvest_payload_nam(hlog,'PENT_CONTROL'//nul,trim(hnml)//nul)
+        write(hnml,nml=pent_output)
+        ierr=set_harvest_payload_nam(hlog,'PENT_OUTPUT'//nul,trim(hnml)//nul)
+        
+        ! read & log (perturbed) equilibrium inputs
+        call read_equil(idconfile,hlog)
         call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
         call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug)
-        !call read_ipec_peq(ipec_file,tdebug) 
+        !call read_ipec_peq(ipec_file,tdebug)
+        
+        ! explicit matrix calculations
         if(wxyz_flag)then
             if(verbose) print *,"PENTRC - euler-lagrange matrix calculation"
             !! HACK - this should have its own flag
@@ -286,8 +287,8 @@ program pentrc
                     print "(a24,es11.3E3)", "Total Kinetic Energy = ", aimag(tphi)/(2*nn)
                     print "(a24,es11.3E3)", "alpha/s  = ", real(tphi)/(-1*aimag(tphi))
                 endif
-                ierr=set_harvest_payload_dbl(harvest_sendline,'torque_'//method//nul,real(tphi))
-                ierr=set_harvest_payload_dbl(harvest_sendline,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
+                ierr=set_harvest_payload_dbl(hlog,'torque_'//method//nul,real(tphi))
+                ierr=set_harvest_payload_dbl(hlog,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
                 if(eqpsi_out)then
                     if(verbose) print *,method//" - "//"Recalculating on equilibrium grid"
                     teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
@@ -319,7 +320,7 @@ program pentrc
     endif
     
     ! send harvest record
-    ierr=harvest_send(harvest_sendline)
+    ierr=harvest_send(hlog)
     
     ! display timer and stop
     call timer(mode=1)

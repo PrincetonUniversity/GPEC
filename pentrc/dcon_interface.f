@@ -39,10 +39,12 @@ c-----------------------------------------------------------------------
      $     power_b,power_r,power_bp,
      $     nn,mmin,mmax
 
-      REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
-     $     singfac_min,bo
+      REAL(r8) :: bo,ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
+     $     singfac_min,   amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
       COMPLEX(r8), PARAMETER  :: ifac = (0,1)
-      CHARACTER(16) :: jac_type
+      CHARACTER(16) :: jac_type,machine
       CHARACTER(128) :: idconfile
 
       LOGICAL, DIMENSION(:), POINTER :: sing_flag
@@ -119,6 +121,9 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      READ(in_unit) amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
       IF ((power_b==0).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="hamada"
       ELSE IF ((power_b==0).AND.(power_bp==0).AND.(power_r==2)) THEN
@@ -1338,7 +1343,71 @@ c-----------------------------------------------------------------------
         
       end subroutine set_eq
       
-      
+c-----------------------------------------------------------------------
+c     subprogram idcon_harvest.
+c     log inputs with harvest.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE idcon_harvest(hlog)
+c-----------------------------------------------------------------------
+c     no declarations. All module variables.
+c-----------------------------------------------------------------------
+      ! harvest variables
+      include 'harvest_lib.inc77'
+      integer :: ierr
+      character(len=65507) :: hlog
+      character, parameter :: nul = char(0)
+
+      ! log inputs with harvest
+      ! standard CODEDB records
+      if(machine/='') ierr=set_harvest_payload_str(hlog,'MACHINE'//nul,
+     $   trim(machine)//nul)
+      if(shotnum>0)
+     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,int(shotnum))
+      if(shottime>0)
+     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,int(shottime))
+      ! DCON specifc records
+      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
+      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
+      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
+      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
+      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
+      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
+      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
+      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
+      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
+      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
+      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
+      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
+      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
+      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
+      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
+      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
+      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
+      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
+      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
+      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
+      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
+      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
+      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
+      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
+      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
+      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
+      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
+      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
+      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
+      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
+      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
+      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
+      ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
+      ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE idcon_harvest
       
       
       
