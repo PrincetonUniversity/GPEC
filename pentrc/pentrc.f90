@@ -16,6 +16,7 @@ program pentrc
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
+    use global_mod, only: version
     use params, only: r8,xj
     use utilities, only: timer
     use special, only: set_fymnl,set_ellip
@@ -142,7 +143,7 @@ program pentrc
     lambdartol = rtol    
     verbose = term_flag
     if(verbose) print *,''
-    if(verbose) print *,"PENTRC START => v3.00"
+    if(verbose) print *,"PENTRC START => "//trim(version)
     if(verbose) print *,"______________________________"
     if(moment=="heat")then
         qt = .true.
