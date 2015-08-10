@@ -16,7 +16,6 @@ program pentrc
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use global_mod, only: version
     use params, only: r8,xj
     use utilities, only: timer
     use special, only: set_fymnl,set_ellip
