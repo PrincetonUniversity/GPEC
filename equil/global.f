@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
       USE bicube_mod
       IMPLICIT NONE
 
-      CHARACTER(32), PARAMETER :: version = "GPEC version 0.1.0" 
+      CHARACTER(32), PARAMETER :: version = "GPEC version 0.2.0" 
 
       CHARACTER(16) :: eq_type="fluxgrid"
       CHARACTER(128) :: eq_filename="fluxgrid.dat"

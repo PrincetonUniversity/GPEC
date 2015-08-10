@@ -57,7 +57,7 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
 
-      real*8 under
+      character(8) under
       data under / "--------" /
       namelist / modes  / mfel,m,mth,n,mdiv,lsymz,lfunin,xiin,
      .     leqarcw, lpest1, lnova, ladj, ldcon, lgato, lrgato, lspark, 

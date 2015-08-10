@@ -129,8 +129,9 @@ module torque
     use bicube_mod, only : bicube_eval
     use spline_help, only: spline_roots
     use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappaintgnd
-    use energy_integration, only : xintgrl_lsode
-    use inputs, only : eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
+    use energy_integration, only : xintgrl_lsode,qt
+    use dcon_interface, only : issurfint
+    use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
         kin,xs_m,dbdx_m,fnml,&                  ! equilib and pert. equilib splines
         chi1,ro,zo,bo,mfac,mpert,&                 ! reals
         verbose                                 ! logical
@@ -211,7 +212,7 @@ module torque
         real(r8) :: chrg,mass,welec,wdian,wdiat,wphi,wtran,wgyro,&
             wbhat,wdhat,nuk,nueff,q,epsr,bmin,bmax,lnq,theta,&
             lmdamin,lmdamax,lmdatpb,lmdatpe,lmda,t1,t2,&
-            wbbar,wdbar,bhat,dhat,&
+            wbbar,wdbar,bhat,dhat,dbave,dxave,&
             vpar,kappaint,kappa,kk,djdj,jbb,&
             rex,imx
         real(r8), dimension(mpert) :: expm
@@ -219,7 +220,7 @@ module torque
         real(r8), dimension(2,nlmda/2) :: ldl_c
         real(r8), dimension(2,nlmda+1-nlmda/2) :: ldl_t
         real(r8), dimension(2,ntheta) :: tdt
-        real(r8), dimension(:), allocatable :: bpts
+        real(r8), dimension(:), allocatable :: bpts,dbfun,dxfun
         complex(r8) :: db,divx,kx,xint,wtwnorm
         complex(r8), dimension(ntheta) :: jvtheta,pl
         complex(r8), dimension(1,1) :: t_zz,t_xx,t_yy,t_zx,t_zy,t_xy
@@ -256,7 +257,11 @@ module torque
             s = 1
         endif
         
+        ! Get perturbations
+        call cspline_eval(dbdx_m(1),psi,0)
+        
         !Poloidal functions - note ABS(A*clebsch) = ABS(A)
+        allocate(dbfun(0:eqfun%my),dxfun(0:eqfun%my))
         call spline_alloc(tspl,eqfun%my,5)
         tspl%xs(0:) = eqfun%ys(0:)
         do i=0,eqfun%my
@@ -267,6 +272,11 @@ module torque
            tspl%fs(i,3)= eqfun%fy(1)           !db/dtheta
            tspl%fs(i,4)= rzphi%f(4)/chi1       !jac
            tspl%fs(i,5)= rzphi%fx(4)/chi1**2   !dj/dpsi
+           ! for flux fun outputs
+           expm = exp(xj*twopi*mfac*eqfun%ys(i))
+           jbb  = rzphi%f(4)*eqfun%f(1)**2 ! chi1 cuz its the DCON working J
+           dbfun(i) = ABS(sum(dbdx_m(1)%f(:)*expm)/jbb)**2
+           dxfun(i) = ABS((sum(dbdx_m(2)%f(:)*expm)/jbb)*divxfac)**2
         enddo
         ! clebsch conversion now in djdt o1*exp(-twopi*ifac*nn*q*theta)
         call spline_fit(tspl,"periodic")
@@ -286,6 +296,7 @@ module torque
         ! flux function variables
         call spline_eval(sq,psi,1)
         call spline_eval(kin,psi,1)
+        call spline_eval(geom,psi,0)
         q     = sq%f(4)
         welec = kin%f(5)                            ! electric precession
         wdian =-twopi*kin%f(s+2)*kin%f1(s)/(chrg*chi1*kin%f(s)) ! density gradient drive
@@ -306,11 +317,15 @@ module torque
             enddo
             stop "ERROR: torque - minor radius is negative"
         endif
-        epsr = sqrt(psi)*SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
+        epsr = geom%f(2)/geom%f(3)
+        !epsr = sqrt(psi)*SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
         !epsr = sqrt(rzphi%f(1))/ro                  ! epsr at deep trapped limit
         wbhat = (pi/4)*SQRT(epsr/2)*wtran           ! RLAR normalized by x^1/2
         wdhat = q**3*wtran**2/(4*epsr*wgyro)*wdfac  ! RLAR normalized by x
-        nueff = kin%f(s+6)/(2*epsr)                  ! if trapped
+        nueff = kin%f(s+6)/(2*epsr)                 ! if trapped
+        dbave = issurfint(dbfun,eqfun%my,psi,0,1)
+        dxave = issurfint(dxfun,eqfun%my,psi,0,1)
+        DEALLOCATE(dbfun,dxfun)
         if(tdebug) print('(a14,7(es10.1E2),i4)'), "  eq values = ",wdian,&
                         wdiat,welec,wdhat,wbhat,nueff,q
         
@@ -334,12 +349,13 @@ module torque
                 write(out_unit,'(3(a10,es16.8E3))')"     R0 = ",ro,"     B0 = ",bo,"   chi1 = ",chi1
                 !write(out_unit,'(1/,a26,2(a10,es16.8E3),1/)') " Common normalizations:",&
                 !    "    bbar = ",ro/sqrt(2.0/(mi*mp)),"    dbar = ",zi*e*bo*ro**2 ! needs T_is
-                write(out_unit,'(1/,19(a18))') "psi_n","eps_r","n_i","n_e",&
+                write(out_unit,'(1/,21(a18))') "psi_n","eps_r","n_i","n_e",&
                     "T_i","T_e","omega_E","logLambda","nu_i","nu_e","q","dconPmu_0","dvdpsi_n",&
-                    "omega_N","omega_T","omega_trans","omega_gyro","RLARomega_b","RLARomega_d"
+                    "omega_N","omega_T","omega_trans","omega_gyro","RLARomega_b","RLARomega_d",&
+                    "<(deltaB_L/B)^2>","<(divxprp)^2>"!/J??
             endif
-            WRITE(out_unit,'(19(es18.8E3))') psi,epsr,kin%f(1:8),q,sq%f(2),sq%f(3),&
-                wdian,wdiat,wtran,wgyro,wbhat,wdhat
+            WRITE(out_unit,'(21(es18.8E3))') psi,epsr,kin%f(1:8),q,sq%f(2),sq%f(3),&
+                wdian,wdiat,wtran,wgyro,wbhat,wdhat,dbave,dxave
             close(out_unit)
         endif
         
@@ -935,68 +951,39 @@ module torque
         character(*) :: method
         ! declare variables
         logical :: fexists
-        logical, dimension(:), allocatable :: maskr,maski
-        integer :: i,j,l,unit1,unit2,unit3
-        real(r8) :: xlast,wdcom,dxcom
-        real(r8), dimension(1000) :: tmppsi
-        complex(r8), dimension(1000,mpert**2) :: tmpak,tmpbk,tmpck, &
+        integer :: i,j,l,unit1,unit2,s
+        real(r8) :: x,xlast,chrg,drive
+        real(r8), dimension(sq%mx+1) :: tmppsi
+        complex(r8), dimension(sq%mx+1,mpert**2) :: tmpak,tmpbk,tmpck, &
             tmpdk,tmpek,tmphk
-        character(64) ::file1,file2,file3
-        character(8) :: nstring,methcom
-        ! declare lsode input variables
-        integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(9),&
-            neq,liw,lrw
-        integer, dimension(:), allocatable :: iwork
-        real*8 :: x,xout
-        real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
+        complex(r8), dimension(:), allocatable :: gam,chi
+        character(64) ::file1,file2
+        character(8) :: nstring
+        ! lsode type variables
+        integer  neqarray(9),neq
+        real*8, dimension(:), allocatable ::  y,dky
         ! declare new spline
         TYPE(cspline_type) :: tphi_spl
         
-        common /tcom/ wdcom,dxcom,methcom
-        
         ! set module variables
         psi_warned = 0.0
-        ! set common variables
-        wdcom = wdfac
-        dxcom = divxfac
-        methcom = method
-        if(tdebug) print *, "torque - lsode wrapper method "//method//" -> "//methcom
-        ! set lsode options - see lsode package for documentation
-        neq = 2*(1+2*nl)        ! true number of equations
-        liw  = 20 + neq         ! for mf 22 ! only uses 20 if mf 10
-        lrw  = 20 + 16*neq      ! for mf 10
-        allocate(iwork(liw))
-        allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
+        ! setup
+        neq = 2*(1+2*nl)
+        allocate(y(neq),dky(neq))
         neqarray(:) = (/neq,n,nl,zi,mi,0,0,0,0/)
-        y(:) = 0
-        x = sq%xs(0)
-        xout = min(xs_m(1)%xs(xs_m(1)%mx),sq%xs(sq%mx)) ! psilim, psihigh
-        itol = 2                  ! rtol and atol are arrays
-        rtol(:) = trtol              !1.d-7!9              ! 14
-        atol(:) = tatol              !1.d-7!9              ! 15
-        istate = 1                ! first step
-        iopt = 1                  ! optional inputs
-        iwork(:) = 0              ! defaults
-        rwork(:) = 0              ! defaults
-        rwork(1) = xout           ! only used if itask 4,5
-        iwork(6) = 10000          ! max number steps
-        mf = 10                   ! not stiff with unknown J 
-        ! enforce integration bounds
-        x = max(psilim(1),x)
-        xout = min(psilim(2),xout)
-        rwork(1) = xout
-
-        ! steup
-        allocate(maski(neq))
-        allocate(maskr(neq))
-        do i=1,neq-1,2
-            maskr(i:i+1) = (/.true.,.false./)
-            maski(i:i+1) = (/.false.,.true./)
-        enddo
         if(electron) neqarray(6)=1
         if(write_flux) neqarray(7)=1
+
+        ! for flux calculations
+        allocate(gam(2*nl+1),chi(2*nl+1))
+        if(electron)then
+            chrg = e
+            s = 2
+        else
+            chrg = zi*e
+            s = 1
+        endif
         if(index(method,'mm')>0) then
-            iwork(6) = 1000 ! equilibrium grid
             allocate(elems(mpert,mpert,6))
         endif
         
@@ -1009,28 +996,58 @@ module torque
             file1 = "pentrc_"//trim(method)//"_eqpsi_n"//trim(adjustl(nstring))//".out"
             file2 = "pentrc_"//trim(method)//"_eqpsi_ell_n"//trim(adjustl(nstring))//".out"
         endif
+        if(qt)then
+            file1 = file1(:7)//"heat_"//file1(8:)
+            file2 = file2(:7)//"heat_"//file2(8:)
+        endif
         unit1 = get_free_file_unit(-1)
         open(unit=unit1,file=file1,status="unknown")
             write(unit1,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(unit1,*) "Neoclassical Toroidal Viscosity total torque profile."
+            write(unit1,*) "Neoclassical nonambipolar flux profile."
+            write(unit1,*)
+            if(qt)then
+                write(unit1,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
+                write(unit1,*) " chi = Heat diffusivity in m^2/s"
+                write(unit1,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
+                write(unit1,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
+            else
+                write(unit1,*) " Gamma = Particle flux in 1/(sm^2)"
+                write(unit1,*) " chi = Particle diffusivity in m^2/s"
+                write(unit1,*) " T_phi = Torque in Nm"
+                write(unit1,*) " 2ndeltaW = Kinetic energy in J"
+            endif
             write(unit1,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
                 " zi = ",zi," mi = ",mi
             write(unit1,'(3(a8,es18.8e3),1/)') "  R0 = ",ro,"  B0 = ",bo,&
                 " chi1 = ",chi1
-            write(unit1,'(7(a18))') "psi_n","T_phi","2ndeltaW","int(T_phi)",&
-                "int(2ndeltaW)","<|deltaB_L|^2>","dv/dpsi_n"
+            write(unit1,'(10(a18))') "psi_n","real(Gamma)","imag(Gamma)",&
+                    "real(chi)","imag(chi)","T_phi","2ndeltaW", &
+                    "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
         unit2 = get_free_file_unit(-1)
         open(unit=unit2,file=file2,status="unknown")
             write(unit2,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(unit2,*) "Neoclassical Toroidal Viscosity torque profiles &
+            write(unit2,*) "Neoclassical transport profiles &
                 &for each bounce harmonic."
+            write(unit2,*)
+            if(qt)then
+                write(unit2,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
+                write(unit2,*) " chi = Heat diffusivity in m^2/s"
+                write(unit2,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
+                write(unit2,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
+            else
+                write(unit2,*) " Gamma = Particle flux in 1/(sm^2)"
+                write(unit2,*) " chi = Particle diffusivity in m^2/s"
+                write(unit2,*) " T_phi = Torque in Nm"
+                write(unit2,*) " 2ndeltaW = Kinetic energy in J"
+            endif
             write(unit2,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
                 " zi = ",zi," mi = ",mi
             write(unit2,'(3(a8,es18.8e3),1/)') "  R0 = ",ro,"  B0 = ",bo,&
                 " chi1 = ",chi1
-            write(unit2,'(a18,a5,4(a18))') "psi_n","ell",&
+            write(unit2,'(a18,a5,8(a18))') "psi_n","ell",&
+                "real(Gamma)","imag(Gamma)","real(chi)","imag(chi)",&
                 "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
-                
+
         ! integration
         CALL cspline_alloc(tphi_spl,sq%mx,2*nl+1)
         xlast = 0
@@ -1042,19 +1059,19 @@ module torque
 
             if(mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
-                    " -> dT/dpsi= ",sum(dky,dim=1,mask=maskr),sum(dky,dim=1,mask=maski),'j'                
+                    " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'                
             endif
 
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
-                if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
-                tmppsi(iwork(11)) = x
-                tmpak(iwork(11),:) = RESHAPE(elems(:,:,1),(/mpert**2/))
-                tmpbk(iwork(11),:) = RESHAPE(elems(:,:,2),(/mpert**2/))
-                tmpck(iwork(11),:) = RESHAPE(elems(:,:,3),(/mpert**2/))
-                tmpdk(iwork(11),:) = RESHAPE(elems(:,:,4),(/mpert**2/))
-                tmpek(iwork(11),:) = RESHAPE(elems(:,:,5),(/mpert**2/))
-                tmphk(iwork(11),:) = RESHAPE(elems(:,:,6),(/mpert**2/))
+                if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",i+1
+                tmppsi(i+1) = x
+                tmpak(i+1,:) = RESHAPE(elems(:,:,1),(/mpert**2/))
+                tmpbk(i+1,:) = RESHAPE(elems(:,:,2),(/mpert**2/))
+                tmpck(i+1,:) = RESHAPE(elems(:,:,3),(/mpert**2/))
+                tmpdk(i+1,:) = RESHAPE(elems(:,:,4),(/mpert**2/))
+                tmpek(i+1,:) = RESHAPE(elems(:,:,5),(/mpert**2/))
+                tmphk(i+1,:) = RESHAPE(elems(:,:,6),(/mpert**2/))
             endif
             xlast = x
         enddo
@@ -1064,15 +1081,27 @@ module torque
         ! write profiles
         do i=0,sq%mx
             x = sq%xs(i)
-            call cspline_eval(dbdx_m(1),x,0)
             call spline_eval(sq,x,0)
-            write(unit1,'(7(es18.8e3))') x,sum(tphi_spl%fs(i,:),dim=1),&
+            call spline_eval(kin,x,1)
+            call spline_eval(geom,x,1)
+            gam = tphi_spl%fs(i,:)*twopi/(chrg*chi1*geom%f(1))
+            if(qt)then
+                drive = (kin%f(s)/kin%f(s+2))*(kin%f1(s+2)/geom%f1(2)) ! (ndT/dr) /T
+            else
+                drive = kin%f1(s)/geom%f1(2)&   ! dn/dr
+                       +(chrg*kin%f(s)/kin%f(s+2))*((kin%f(5)/twopi)/geom%f1(2)) ! (en/T)*dPhi/dr
+            endif
+            chi = -gam/(drive)
+            write(unit1,'(10(es18.8e3))') x,&
+                sum(gam(:),dim=1),&
+                sum(chi(:),dim=1),&
+                sum(tphi_spl%fs(i,:),dim=1),&
                 sum(tphi_spl%fsi(i,:),dim=1),&
-                0.5*sum(abs(dbdx_m(1)%f(:)/bo)**2),sq%f(3)
-                !! should be B0_m where bo above
+                sq%f(3)
             do l=-nl,nl
-                write(unit2,'(es18.8e3,i5,4(es18.8e3))')&
-                    x,l,tphi_spl%fs(i,2*(nl+l)+1),tphi_spl%fsi(i,2*(nl+l)+1)
+                write(unit2,'(es18.8e3,i5,8(es18.8e3))') x,l,&
+                    gam(2*(nl+l)+1),chi(2*(nl+l)+1),&
+                    tphi_spl%fs(i,2*(nl+l)+1),tphi_spl%fsi(i,2*(nl+l)+1)
             enddo
         enddo
         close(unit1)
@@ -1080,24 +1109,24 @@ module torque
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
-            call cspline_alloc(akmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(bkmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(ckmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(dkmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(ekmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(hkmm,iwork(11)-1,mpert**2)
-            akmm%xs(:) = tmppsi(1:iwork(11))
-            bkmm%xs(:) = tmppsi(1:iwork(11))
-            ckmm%xs(:) = tmppsi(1:iwork(11))
-            dkmm%xs(:) = tmppsi(1:iwork(11))
-            ekmm%xs(:) = tmppsi(1:iwork(11))
-            hkmm%xs(:) = tmppsi(1:iwork(11))
-            akmm%fs(:,:) = tmpak(1:iwork(11),:)
-            bkmm%fs(:,:) = tmpbk(1:iwork(11),:)
-            ckmm%fs(:,:) = tmpck(1:iwork(11),:)
-            dkmm%fs(:,:) = tmpdk(1:iwork(11),:)
-            ekmm%fs(:,:) = tmpek(1:iwork(11),:)
-            hkmm%fs(:,:) = tmphk(1:iwork(11),:)
+            call cspline_alloc(akmm,sq%mx,mpert**2)
+            call cspline_alloc(bkmm,sq%mx,mpert**2)
+            call cspline_alloc(ckmm,sq%mx,mpert**2)
+            call cspline_alloc(dkmm,sq%mx,mpert**2)
+            call cspline_alloc(ekmm,sq%mx,mpert**2)
+            call cspline_alloc(hkmm,sq%mx,mpert**2)
+            akmm%xs(:) = tmppsi(1:sq%mx+1)
+            bkmm%xs(:) = tmppsi(1:sq%mx+1)
+            ckmm%xs(:) = tmppsi(1:sq%mx+1)
+            dkmm%xs(:) = tmppsi(1:sq%mx+1)
+            ekmm%xs(:) = tmppsi(1:sq%mx+1)
+            hkmm%xs(:) = tmppsi(1:sq%mx+1)
+            akmm%fs(:,:) = tmpak(1:sq%mx+1,:)
+            bkmm%fs(:,:) = tmpbk(1:sq%mx+1,:)
+            ckmm%fs(:,:) = tmpck(1:sq%mx+1,:)
+            dkmm%fs(:,:) = tmpdk(1:sq%mx+1,:)
+            ekmm%fs(:,:) = tmpek(1:sq%mx+1,:)
+            hkmm%fs(:,:) = tmphk(1:sq%mx+1,:)
             call cspline_fit(akmm,"extrap")
             call cspline_fit(bkmm,"extrap")
             call cspline_fit(ckmm,"extrap")
@@ -1110,7 +1139,7 @@ module torque
         ! convert to complex space if integrations successful
         tintgrl_eqpsi = sum(tphi_spl%fsi(sq%mx,:),dim=1)
 
-        deallocate(iwork,rwork,atol,rtol,y,dky,maskr,maski)
+        deallocate(y,dky,gam,chi)
         
         return
     end function tintgrl_eqpsi
@@ -1172,8 +1201,9 @@ module torque
         ! declare variables
         logical :: fexists
         logical, dimension(:), allocatable :: maskr,maski
-        integer :: i,j,l,unit1,unit2,unit3
-        real(r8) :: xlast,wdcom,dxcom
+        integer :: i,j,l,unit1,unit2,s
+        real(r8) :: xlast,wdcom,dxcom,chrg,drive
+        real(r8), dimension(:), allocatable :: gam,chi
         real(r8), dimension(1000) :: tmppsi
         complex(r8), dimension(1000,mpert**2) :: tmpak,tmpbk,tmpck, &
             tmpdk,tmpek,tmphk
@@ -1201,6 +1231,7 @@ module torque
         lrw  = 20 + 16*neq      ! for mf 10
         allocate(iwork(liw))
         allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
+        allocate(gam(neq),chi(neq))
         neqarray(:) = (/neq,n,nl,zi,mi,0,0,0,0/)
         y(:) = 0
         x = sq%xs(0)
@@ -1233,6 +1264,16 @@ module torque
             iwork(6) = 1000 ! equilibrium grid
             allocate(elems(mpert,mpert,6))
         endif
+
+        ! for flux calculation
+        if(electron)then
+            chrg = e
+            s = 2
+        else
+            chrg = zi*e
+            s = 1
+        endif
+
         
         ! open and prepare files as needed
         write(nstring,'(I8)') n
@@ -1243,26 +1284,56 @@ module torque
             file1 = "pentrc_"//trim(method)//"_n"//trim(adjustl(nstring))//".out"
             file2 = "pentrc_"//trim(method)//"_ell_n"//trim(adjustl(nstring))//".out"
         endif
+        if(qt)then
+            file1 = file1(:7)//"heat_"//file1(8:)
+            file2 = file2(:7)//"heat_"//file2(8:)
+        endif
         unit1 = get_free_file_unit(-1)
         open(unit=unit1,file=file1,status="unknown")
             write(unit1,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(unit1,*) "Neoclassical Toroidal Viscosity total torque profile."
+            write(unit1,*) "Neoclassical nonambipolar flux profile."
+            write(unit1,*)
+            if(qt)then
+                write(unit1,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
+                write(unit1,*) " chi = Heat diffusivity in m^2/s"
+                write(unit1,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
+                write(unit1,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
+            else
+                write(unit1,*) " Gamma = Particle flux in 1/(sm^2)"
+                write(unit1,*) " chi = Particle diffusivity in m^2/s"
+                write(unit1,*) " T_phi = Torque in Nm"
+                write(unit1,*) " 2ndeltaW = Kinetic energy in J"
+            endif
             write(unit1,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
                 " zi = ",zi," mi = ",mi
             write(unit1,'(3(a8,es18.8e3),1/)') "  R0 = ",ro,"  B0 = ",bo,&
                 " chi1 = ",chi1
-            write(unit1,'(7(a18))') "psi_n","T_phi","2ndeltaW","int(T_phi)",&
-                "int(2ndeltaW)","<|deltaB_L|^2>","dv/dpsi_n"
+            write(unit1,'(10(a18))') "psi_n","real(Gamma)","imag(Gamma)",&
+                    "real(chi)","imag(chi)","T_phi","2ndeltaW", &
+                    "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
         unit2 = get_free_file_unit(-1)
         open(unit=unit2,file=file2,status="unknown")
             write(unit2,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(unit2,*) "Neoclassical Toroidal Viscosity torque profiles &
+            write(unit2,*) "Neoclassical transport profiles &
                 &for each bounce harmonic."
+            write(unit2,*)
+            if(qt)then
+                write(unit2,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
+                write(unit2,*) " chi = Heat diffusivity in m^2/s"
+                write(unit2,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
+                write(unit2,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
+            else
+                write(unit2,*) " Gamma = Particle flux in 1/(sm^2)"
+                write(unit2,*) " chi = Particle diffusivity in m^2/s"
+                write(unit2,*) " T_phi = Torque in Nm"
+                write(unit2,*) " 2ndeltaW = Kinetic energy in J"
+            endif
             write(unit2,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
                 " zi = ",zi," mi = ",mi
             write(unit2,'(3(a8,es18.8e3),1/)') "  R0 = ",ro,"  B0 = ",bo,&
                 " chi1 = ",chi1
-            write(unit2,'(a18,a5,4(a18))') "psi_n","ell",&
+            write(unit2,'(a18,a5,8(a18))') "psi_n","ell",&
+                "real(Gamma)","imag(Gamma)","real(chi)","imag(chi)",&
                 "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
                 
         ! integration
@@ -1274,16 +1345,30 @@ module torque
             call dintdy(x, 1, rwork(21), neq, dky, iflag)
             
             ! write profiles
-            call cspline_eval(dbdx_m(1),x,0)
             call spline_eval(sq,x,0)
-            write(unit1,'(7(es18.8e3))') x,sum(dky,dim=1,mask=maskr),&
-                sum(dky,dim=1,mask=maski),sum(y,dim=1,mask=maskr),sum(y,dim=1,mask=maski),&
-                0.5*sum(abs(dbdx_m(1)%f(:)/bo)**2),sq%f(3)
-                !! should be B0_m where bo above
+            call spline_eval(kin,x,1)
+            call spline_eval(geom,x,1)
+            gam = dky*twopi/(chrg*chi1*geom%f(1))
+            if(qt)then
+                drive = (kin%f(s)/kin%f(s+2))*(kin%f1(s+2)/geom%f1(2)) ! (ndT/dr) /T
+            else
+                drive = kin%f1(s)/geom%f1(2)&   ! dn/dr
+                       +(chrg*kin%f(s)/kin%f(s+2))*((kin%f(5)/twopi)/geom%f1(2)) ! (en/T)*dPhi/dr
+            endif
+            chi = -gam/(drive)
+            write(unit1,'(11(es18.8e3))') x,&
+                sum(gam,dim=1,mask=maskr),sum(gam,dim=1,mask=maski),&
+                sum(chi,dim=1,mask=maskr),sum(chi,dim=1,mask=maski),&
+                sum(dky,dim=1,mask=maskr),sum(dky,dim=1,mask=maski),&
+                sum(y,dim=1,mask=maskr),sum(y,dim=1,mask=maski),&
+                sq%f(3)
             do l=-nl,nl
-                write(unit2,'(es18.8e3,i5,4(es18.8e3))')&
-                    x,l,dky(2*(nl+l)+1:2*(nl+l)+2),y(2*(nl+l)+1:2*(nl+l)+2)
+                write(unit2,'(es18.8e3,i5,8es18.8e3)') x,l,&
+                    gam(2*(nl+l)+1:2*(nl+l)+2),chi(2*(nl+l)+1:2*(nl+l)+2),&
+                    dky(2*(nl+l)+1:2*(nl+l)+2),y(2*(nl+l)+1:2*(nl+l)+2)
             enddo
+            
+            ! print progress
             if(mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> T_phi = ",sum(y,dim=1,mask=maskr),sum(y,dim=1,mask=maski),'j'                
@@ -1336,7 +1421,7 @@ module torque
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y,mask=maskr)+xj*sum(y,mask=maski)
 
-        deallocate(iwork,rwork,atol,rtol,y,dky,maskr,maski)
+        deallocate(iwork,rwork,atol,rtol,y,dky,maskr,maski,gam,chi)
         
         return
     end function tintgrl_lsode

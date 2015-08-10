@@ -316,7 +316,8 @@ c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
       IF (resp_flag) THEN
-         CALL ipout_response
+         CALL ipout_response(power_rout,power_bpout,
+     $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
       IF (singcoup_flag .OR. smode>0) THEN
          CALL ipout_singcoup(sing_spot,power_rout,
@@ -524,6 +525,12 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
          CALL iscdftb(mfac,mpert,fxfun,mthsurf,fxmn)
          CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
+         
+         ! test orthoganality of permeabev eigenvectors
+         CALL ipdiag_permeabev_orthogonality
+         ! Test coordinate independence of power eigenvectors
+         CALL ipdiag_reluctpowout(power_rout,power_bpout,power_bout,
+     $        power_rcout)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

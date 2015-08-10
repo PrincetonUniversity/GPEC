@@ -38,8 +38,8 @@ module inputs
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
     
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
-        idcon_action_matrices,idcon_build,&
-        eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
+        idcon_action_matrices,idcon_build,set_geom,&
+        geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         mfac,psifac,mpert,mstep,&
         idcon_coords
@@ -55,7 +55,7 @@ module inputs
         read_equil, &
         read_fnml, &
         kin, xs_m, dbdx_m, fnml, &
-        eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
+        geom,eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
         chi1,ro,zo,bo,nn,mfac,mpert, &
         verbose
     
@@ -100,6 +100,9 @@ module inputs
         ! evaluate field on axis
         call spline_eval(sq,0.0_r8,0)
         bo = abs(sq%f(1))/(twopi*ro)
+        
+        ! set additional geometry spline
+        call set_geom
         
     end subroutine read_equil
     
@@ -316,6 +319,8 @@ module inputs
                 powin=(/2,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
+            CASE("park")
+                powin=(/1,0,0,0/)
             CASE DEFAULT
                 stop "ERROR: inputs - jac_in must be 'hamada','pest',&
                     & 'equal_arc','boozer', or 'polar'"

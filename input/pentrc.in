@@ -14,7 +14,7 @@
     f0type = "maxwellian"               ! distribution function: "maxwellian"
     jac_in = ""                         ! jacobian of peq_file harmonic decomposition
 /                                       
-&PENT_CONTROL                           
+&PENT_CONTROL
     wefac = 1                           ! artificial factor applied to omega_EXB
     wdfac = 1                           ! artificial factor applied to omega_b
     wpfac = 1                           ! artificial factor applied to omega_phi
@@ -32,7 +32,9 @@
     ximag = 0.0                         ! step off real energy axis (use to avoid zero collisionality singularities)
     psilim = 0 1                        ! range in psi_n
 /                                       
-&PENT_OUTPUT                            
+&PENT_OUTPUT
+    moment = "pressure"                 ! 'pressure' for torque and particle transport, 'heat' for heat transport
+    
     fgar_flag = .true.                  ! full    general aspect ratio calculation
     tgar_flag = .true.                  ! trapped general aspect ratio calculation
     pgar_flag = .false.                 ! passing general aspect ratio calculation

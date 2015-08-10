@@ -123,7 +123,7 @@ c-----------------------------------------------------------------------
          mhigh=nn*qmax+delta_mhigh
       ELSE
          mmin=HUGE(mmin)
-         DO ising=sing_start,msing
+         DO ising=INT(sing_start),msing
             mmin=MIN(mmin,sing(ising)%m)
          ENDDO
          mlow=mmin-delta_mlow

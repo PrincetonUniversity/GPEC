@@ -12,5 +12,6 @@ LIBDIR = \
 	-L/usr/lib \
 
 FCLIBS = \
-	-llapack.dylib \
-	-lblas.dylib
+	-llapack \
+	-lblas
+	

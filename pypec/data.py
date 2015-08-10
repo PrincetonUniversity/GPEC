@@ -212,7 +212,7 @@ from StringIO import StringIO
 from types import MethodType
 
 import numpy as np                               # math
-from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,griddata
+from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,RegularGridInterpolator,griddata
 from scipy.special import ellipk,ellipe
 
 #in this package
@@ -708,7 +708,6 @@ class DataBase(object):
         #debug start_time = time.time()
 
         #scipy interpolation function for ND (stored so user can override)
-        self._interpfunc=[interp1d_unbound,interp2d,LinearNDInterpolator][self.nd-1]
         self._interpdict={}
 
         # Set any variables from preamble
@@ -761,7 +760,7 @@ class DataBase(object):
         Interpolate data to point(s).
         
         Arguments:
-          x  : tuple. 
+          x  : ndarray shape (npts,ndim). 
             Point(s) on dependent axis(axes).
         
         Key Word Arguments:
@@ -780,62 +779,46 @@ class DataBase(object):
         if not type(ynames) in (list,tuple): ynames=(ynames,)
         if not type(x) in [list,tuple,np.ndarray]: x=[x,]
         NewData = copy.deepcopy(self)
-        NewData.x = list(x)
-        NewData.shape = list(np.shape(NewData.x))
-        NewData.pts = np.array(np.meshgrid(*x)).T.reshape(-1,len(NewData.shape))
+        if self.nd==1:
+            x = np.atleast_1d(x)
+            NewData.pts = x
+            NewData.x = [x]
+            NewData.shape = [len(x)]
+        else:
+            if self.nd==2:
+                x = np.atleast_2d(x)
+            elif self.nd==3:
+                x = np.atleast_3d(x)
+            NewData.pts = x
+            NewData.x = [np.array(sorted(set(xi))) for xi in x.T]
+            NewData.shape = [len(xi) for xi in NewData.x]
+            if np.product(NewData.shape)!=len(NewData.pts):
+                NewData.x = None
         
         #function to form interpolator if needed
         def new_interp(name):
+            if not quiet: print("Forming interpolator for "+name+".")
             args = []
-            if self.x: #regular grid is fast
+            if self.x: # regular grid is fast
                 for n in range(self.nd):
                     args.append(self.x[n])
-                args.append(self.y[name])#.reshape(self.shape))
-            else: #irregular grid is slow
-                """myslices=[]
-                for n in range(self.nd):
-                    myslices.append(np.s_[::max(1,self.shape[n]/(150/self.nd))])
-                args = [self.pts[:,n].reshape(self.shape)[myslices] 
-                        for n in range(self.nd)]+[self.y[name].reshape(self.shape)][myslices]]
-                newlen = np.product(np.shape(args[0]))
-                print("Warning: "+str(newlen)+" of "+str(len(self.pts))+" points being passed to interpolator")"""
-                step = max(1,len(self.pts[:,0])/1e4)
+                return RegularGridInterpolator(tuple(args),self.y[name].reshape(self.shape),bounds_error=False)
+            else: # irregular grid is slower but ok
+                step = max(1,len(self.pts[:,0])/1e6)
                 for n in range(self.nd):
                     args.append(self.pts[::step,n])
-                args.append(self.y[name][::step])
-                
-            if np.any(np.iscomplex(self.y[name])):
-                if not quiet: print("Forming real interpolator for "+name+".")
-                rargs = copy.copy(args)
-                rargs[-1] = np.real(args[-1])
-                freal = self._interpfunc(*rargs,**kwargs)
-                if not quiet: print("Forming imaginary interpolator (assumed independent).")
-                args[-1] = np.imag(args[-1])
-                fimag = self._interpfunc(*args,**kwargs)
-                def fcmplx(*xy):
-                    #return freal(*xy)+1j*fimag(*xy)
-                    return freal(xy[0],xy[1])+1j*fimag(xy[0],xy[1])
-                atts = ['y','z','values']
-                att = atts[self.nd-1]
-                setattr(fcmplx,att,getattr(freal,att)+1j*getattr(fimag,att))
-                return fcmplx
-                #return lambda *xy: freal(*np.real(xy))+1j*fimag(*np.imag(xy))
-            else:
-                if not quiet: print("Forming interpolator for "+name+".")
-                return self._interpfunc(*args,**kwargs)
-                
+                return LinearNDInterpolator(zip(*args),self.y[name][::step])
+                           
         # for each name check if interpolator is up to date and get values
-        atts = ['y','z','values']
-        att = atts[self.nd-1]
         values={}
         for name in ynames:
             if name in self._interpdict.keys():
-                if not all(getattr(self._interpdict[name],att) == self.y[name]):
+                if not all(self._interpdict[name].values.ravel() == self.y[name]):
                     self._interpdict[name] = new_interp(name)
             else:
                 self._interpdict[name] = new_interp(name)
             if not quiet: print("Interpolating values for "+name+".")
-            values[name]=np.array(self._interpdict[name](*x)).T.ravel()
+            values[name]=self._interpdict[name](x)
         NewData.y = values
         return NewData
         
@@ -1084,9 +1067,9 @@ class DataBase(object):
                 ry = np.real(self.y[reducedname])
                 iy = np.imag(self.y[reducedname])
             else:
-                ry = griddata(self.pts,np.real(self.y[reducedname]),
+                ry = griddata(self.pts,np.nan_to_num(np.real(self.y[reducedname])),
                               (x1,x2),method='nearest')
-                iy = griddata(self.pts,np.imag(self.y[reducedname]),
+                iy = griddata(self.pts,np.nan_to_num(np.imag(self.y[reducedname])),
                               (x1,x2),method='nearest')
             if 'real' in name:
                 pcm = plotter(x1,x2,ry,**kwargs)
@@ -1438,10 +1421,7 @@ def _data_op(self,other,fun,op,quiet=default_quiet):
             raise ArithmeticError('Two data objects do not have same dependent variables.')
         if not np.all(self.pts==other.pts):#[np.all(sx==ox) for sx,ox in zip(self.x,other.x)]):
             if not quiet: print('interpolating to same axes.')
-            if NewData.x:
-                otherinterp = other.interp(NewData.x).y # interp2D auto-grids
-            else:
-                otherinterp = other.interp(NewData.pts).y
+            otherinterp = other.interp(NewData.pts).y
         else:
             otherinterp = other.y
         # problem from unbound interpolation?? Fixed when switched to returning objects.
