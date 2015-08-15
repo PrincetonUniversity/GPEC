@@ -55,7 +55,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(:), POINTER ::
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wft,
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wft,wtraw,
      $     amat,bmat,cmat,fmats,gmats,kmats
 
       TYPE(spline_type) :: sq,geom
