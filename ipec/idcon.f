@@ -155,7 +155,8 @@ c-----------------------------------------------------------------------
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
       ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
-      ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert)) !LOGAN
+      ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert)) 
+      ALLOCATE(wtraw(mpert,mpert))
       eft = -1 ! LOGAN - used to tell if it is read (actual vals >0)
       wft = 0
       fixstep(0)=0
@@ -228,6 +229,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)efp
             READ(UNIT=in_unit)eft
             READ(UNIT=in_unit)wft
+            READ(UNIT=in_unit)wtraw
          END SELECT
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
@@ -242,6 +244,7 @@ c-----------------------------------------------------------------------
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
+      wtraw=wtraw*(chi1*1e-3)
       eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       wft=wft*(chi1*1e-3)

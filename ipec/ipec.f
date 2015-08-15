@@ -18,9 +18,10 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER :: i,in,osing,resol,angnum,
-     $     mthnumb,meas,mode,nr,nz,m3mode,lowmode,highmode
+     $     mthnumb,meas,mode,m3mode,lowmode,highmode,filter_modes
       INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8) :: majr,minr,rdist,smallwidth,factor,fp,normpsi
+      CHARACTER(4) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
@@ -28,7 +29,8 @@ c-----------------------------------------------------------------------
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
-     $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag
+     $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
+     $     filter_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -41,7 +43,8 @@ c-----------------------------------------------------------------------
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
      $     displacement_flag,mode,coil_flag,
      $     ip_direction,bt_direction,rdconfile,
-     $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode ! LOGAN
+     $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
+     $     filter_types,filter_modes
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
@@ -52,7 +55,7 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
-     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout
+     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,pmodbrz_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -91,6 +94,8 @@ c-----------------------------------------------------------------------
       fmode =0
       dmode =0
       d1mode=0
+      filter_modes = 0
+      filter_types = '   '
 
       resp_index=0
       sing_spot=5e-4
@@ -113,6 +118,7 @@ c-----------------------------------------------------------------------
       vbnormal_flag=.FALSE.
       xbtangent_flag=.FALSE.
       xclebsch_flag=.FALSE.
+      filter_flag  = .TRUE.
       rstep=0
       nrzeq_flag=.FALSE.
       nr=64
@@ -360,15 +366,12 @@ c-----------------------------------------------------------------------
       write(hnml,nml=ipec_input)
       ierr=set_harvest_payload_nam(hlog,'IPEC_INPUT'//nul,
      $                             trim(hnml)//nul)
-      print *,ierr
       write(hnml,nml=ipec_control)
       ierr=set_harvest_payload_nam(hlog,'IPEC_CONTROL'//nul,
      $                             trim(hnml)//nul)
-      print *,ierr
       write(hnml,nml=ipec_output)
       ierr=set_harvest_payload_nam(hlog,'IPEC_OUTPUT'//nul,
      $                             trim(hnml)//nul)
-      print *,ierr
 c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
@@ -382,8 +385,17 @@ c     run and test rdcon.
 c-----------------------------------------------------------------------
 c      CALL rdcon_read
 c-----------------------------------------------------------------------
+c     Set parameters for outputs.
+c-----------------------------------------------------------------------
+      IF (nrzeq_flag) THEN
+         nr=mr
+         nz=mz
+      ENDIF
+      CALL ipeq_rzpgrid(nr,nz,psixy)
+c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
+      CALL ipout_init_netcdf
       IF (resp_flag) THEN
          CALL ipout_response(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,jsurf_out)
@@ -400,7 +412,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,tmag_out,
-     $        singcoup_flag)
+     $        filter_types,filter_modes,filter_flag)
       ELSE IF (mode_flag) THEN
          edge_flag=.FALSE.
       ENDIF
@@ -433,14 +445,7 @@ c-----------------------------------------------------------------------
      $        power_rcout,tmag_out)
       ENDIF
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag)
-     $     THEN
-         IF (nrzeq_flag) THEN
-            nr=mr
-            nz=mz
-         ENDIF
-         IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $     vbrzphi_flag) CALL ipeq_rzpgrid(nr,nz)
+     $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag) THEN
          IF (.NOT.mode_flag) THEN
             CALL ipout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
          ELSE
@@ -468,10 +473,6 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
       IF (singfld_flag .AND. vsbrzphi_flag) THEN
-         IF (nrzeq_flag) THEN
-            nr=mr
-            nz=mz
-         ENDIF
          DO i=1,msing
             IF (ss_flag(i)) CALL ipout_vsbrzphi(i,nr,nz)
          ENDDO
@@ -483,6 +484,7 @@ c-----------------------------------------------------------------------
       IF (arzphifun_flag) THEN
          CALL ipout_arzphifun(mode,xspmn)
       ENDIF
+
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
@@ -542,7 +544,7 @@ c-----------------------------------------------------------------------
          fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
          CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
          CALL ipout_control(infile,fxmn,foutmn,xspmn,
-     $        0,0,0,0,1,0,0,0,0,0,1,.FALSE.)
+     $        0,0,0,0,1,0,0,0,0,0,1,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xspmn,sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out,.FALSE.)
@@ -557,7 +559,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
-     $        tmag_out,.FALSE.)
+     $        tmag_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xspmn,sing_spot,0,0,0,0,1,.FALSE.)
          CALL ipdiag_xbcontra(mode,xspmn,0,0,0,0,1)

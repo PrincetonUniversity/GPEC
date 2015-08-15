@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
      $     nche,nchr,nchz,rsing,rnqty,rnx,max_linesout,
-     $     pmode,p1mode,rmode,dmode,d1mode,fmode,smode ! LOGAN
+     $     pmode,p1mode,rmode,dmode,d1mode,fmode,smode,nr,nz ! LOGAN
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
@@ -72,8 +72,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
-     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,w1v,fldflxmat
-     $     ,wft,permv ! LOGAN
+     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,fldflxmat
+     $     ,wft,permv,wtraw ! LOGAN
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,
      $     plas_indevmats,permeabevmats,indrelmats,indrelevmats,

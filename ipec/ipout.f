@@ -31,6 +31,7 @@ c-----------------------------------------------------------------------
       USE ipvacuum_mod
       USE ipdiag_mod
       USE field_mod
+      USE netcdf
 
       IMPLICIT NONE
 
@@ -43,6 +44,15 @@ c-----------------------------------------------------------------------
       CHARACTER(LEN=50000) :: hnml
       CHARACTER(LEN=65507) :: hlog
       CHARACTER, PARAMETER :: nul = char(0)
+
+      ! netcdf ids
+      INTEGER :: mncid,fncid,cncid
+      CHARACTER(64) :: mncfile,fncfile,cncfile
+      
+      ! module wide output variables
+      LOGICAL :: singcoup_set = .FALSE.
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: w1s
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: w1v
 
       CONTAINS
       
@@ -132,6 +142,7 @@ c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipec_response_n"//
      $	   TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_RESPONSE: Response parameters"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(3(1x,a12,I4))')
      $     "mpert =",mpert,"mlow =",mlow,"mhigh =",mhigh
@@ -307,6 +318,7 @@ c-----------------------------------------------------------------------
      $    TRIM(sn)//".out","UNKNOWN")
         WRITE(out_unit,*)"IPEC_RESPONSE_FUN: "//
      $    "Eigenmodes on control surface in functions"
+        WRITE(out_unit,*)version
         WRITE(out_unit,*)" P = Permeability"
         WRITE(out_unit,*)" rho = Reluctance (power norm)"
         WRITE(out_unit,*)" W = Displacement energy"
@@ -651,7 +663,12 @@ c-----------------------------------------------------------------------
      $     work,lwork,rwork,info)    
       s3=s
       t3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
-
+c-----------------------------------------------------------------------
+c     save module wide variables
+c-----------------------------------------------------------------------
+      ALLOCATE(w1s(msing))
+      w1s = s1
+      singcoup_set  = .TRUE.
 c-----------------------------------------------------------------------
 c     write matrix.
 c-----------------------------------------------------------------------
@@ -659,6 +676,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_SINGCOUP_MATRIX: Coupling matrices"//
      $     " between resonant field and external field"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
      $     "jac_out = ",jac_out,"tmag_out =",tout  
@@ -716,6 +734,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_SINGCOUP_SVD: SVD analysis"//
      $     " for coupling matrices"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
      $     "jac_out = ",jac_out,"tmag_out =",tmag_out  
@@ -780,15 +799,17 @@ c-----------------------------------------------------------------------
 c     subprogram 3. ipout_control
 c     calculate response from external field on the control surface.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_control(ifile,finmn,foutmn,xspmn,rin,bpin,bin,
-     $     rcin,tin,jin,rout,bpout,bout,rcout,tout,sc_flag)
+      SUBROUTINE ipout_control(ifile,finmn,foutmn,xspmn,
+     $     rin,bpin,bin,rcin,tin,jin,rout,bpout,bout,rcout,tout,
+     $     filter_types,filter_modes,filter_out)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       CHARACTER(128), INTENT(IN) :: ifile
       INTEGER, INTENT(IN) :: rin,bpin,bin,rcin,tin,jin,
-     $     rout,bpout,bout,rcout,tout
-      LOGICAL, INTENT(IN) :: sc_flag
+     $     rout,bpout,bout,rcout,tout,filter_modes
+      LOGICAL, INTENT(IN) :: filter_out
+      CHARACTER(4), INTENT(IN) :: filter_types
       
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn,xspmn
@@ -893,10 +914,10 @@ c-----------------------------------------------------------------------
          tempmn=binmn
          CALL ipeq_weight(psilim,tempmn,mfac,mpert,1)              
       ENDIF
+      finmn=finmn+tempmn
 c-----------------------------------------------------------------------
 c     LOGAN - Isolate singular coupling SVD modes
 c-----------------------------------------------------------------------
-      finmn=finmn+tempmn
       IF(smode>0)THEN
         PRINT *,'Isolating response || to first ',smode,
      $            ' singular flux coupling eigenmodes'
@@ -1026,6 +1047,11 @@ c-----------------------------------------------------------------------
       ENDIF
       DEALLOCATE(eigmn)
 c-----------------------------------------------------------------------
+c     Filter external flux
+c-----------------------------------------------------------------------
+      CALL ipout_control_filter(finmn,filter_types,filter_modes,
+     $           rout,bpout,bout,rcout,tout,jout,filter_out)
+c-----------------------------------------------------------------------
 c     get plasma response on the control surface.
 c-----------------------------------------------------------------------
       IF (fixed_boundary_flag) THEN
@@ -1043,54 +1069,44 @@ c-----------------------------------------------------------------------
       CALL ipeq_weight(psilim,xinmn,mfac,mpert,4)
       CALL ipeq_weight(psilim,xoutmn,mfac,mpert,4)
 c-----------------------------------------------------------------------
-c     LOGAN - Isolate total perturbation parallel to a DCON eigenmode
+c     LOGAN - Isolate plasma or total perturbation parallel to a DCON eigenmode
 c-----------------------------------------------------------------------
       ALLOCATE(eigmn(mpert))
+      IF (d1mode>0) THEN ! This is unphysical. The response can have resonant components (shielding).
+          PRINT *,'Isolating response || to first ',d1mode,
+     $            ' DCON eigenmodes'
+          tmpmn = (foutmn-finmn)/(chi1*twopi*ifac*(mfac-nn*qlim))
+          foutmn = finmn
+          DO i=1,MIN(mpert,ABS(d1mode))
+              eigmn = wt(:,i)
+              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+     $          *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
+          ENDDO
+      ENDIF
       IF (dmode>0) THEN
-         PRINT *,'Isolating perturbation || to first ',dmode,
-     $           ' DCON eigenmodes'
-         tmpmn = foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
-         foutmn = 0
-         DO i=1,MIN(mpert,ABS(dmode))
-            eigmn = wt(:,i)
-            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $        *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
-         ENDDO
-      ELSEIF (dmode<0) THEN
-         PRINT *,'Isolating perturbation || to last ',dmode,
-     $           ' DCON eigenmodes'
-         tmpmn = foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
-         foutmn = 0
-         DO j=1,MIN(mpert,ABS(dmode))
-            i = mpert+1-j
-            eigmn = wt(:,i)
-            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $        *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
-         ENDDO
+          PRINT *,'Isolating perturbation || to first ',dmode,
+     $            ' DCON eigenmodes'
+          tmpmn = foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
+          foutmn = 0
+          DO i=1,MIN(mpert,ABS(dmode))
+              eigmn = wt(:,i)
+              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+     $          *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
+          ENDDO
       ENDIF
       IF (fmode>0) THEN
-         PRINT *,'Isolating perturbation || to first ',fmode,
-     $           ' DCON flux eigenmodes'
-         tmpmn = foutmn
-         foutmn = 0
-         DO i=1,MIN(mpert,ABS(fmode))
-            eigmn = wft(:,i)
-            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)/(norm*norm)
-         ENDDO
-      ELSEIF (fmode<0) THEN
-         PRINT *,'Isolating perturbation || to last ',fmode,
-     $           ' DCON flux eigenmodes'
-         tmpmn = foutmn
-         foutmn = 0
-         DO j=1,MIN(mpert,ABS(fmode))
-            i = mpert+1-i
-            eigmn = wft(:,i)
-            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)/(norm*norm)
-         ENDDO
+          PRINT *,'Isolating perturbation || to first ',fmode,
+     $            ' flux eigenmodes'
+          tmpmn = foutmn
+          foutmn = 0
+          DO i=1,MIN(mpert,ABS(fmode))
+              eigmn = wft(:,i)
+              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
+     $               /(norm*norm)
+          ENDDO
       ENDIF
       ! reform all the standard output forms
       boutmn=foutmn
@@ -1151,6 +1167,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"IPEC_CONTROL: "//
      $     "Plasma response for an external perturbation on the "//
      $     "control surface"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a12,I4)')"mpert =",mpert
       WRITE(out_unit,'(1x,a16,1x,es16.8)')"vacuum energy =",vengy
@@ -1232,14 +1249,14 @@ c-----------------------------------------------------------------------
      $           REAL(acinmn(i)),AIMAG(acinmn(i))
          ENDDO 
          WRITE(out_unit,*)
-         IF (sc_flag) THEN
+         IF (singcoup_set) THEN
             ALLOCATE(sbno_mn(lmpert),sbno_fun(0:mthsurf))
             sbno_mn=MATMUL(fldflxmat,cinmn)
             CALL iscdftb(lmfac,lmpert,sbno_fun,mthsurf,sbno_mn)
             sbno_mn=cinmn
          ENDIF
       ELSE
-         IF (sc_flag) THEN
+         IF (singcoup_set) THEN
             ALLOCATE(sbno_mn(mpert),sbno_fun(0:mthsurf))
             sbno_mn=MATMUL(fldflxmat,binmn)
             CALL iscdftb(mfac,mpert,sbno_fun,mthsurf,sbno_mn)
@@ -1282,6 +1299,7 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
      $   TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_EIGENDECOMPOSITION: "//
      $   "Decomposition of the edge perturbation in eigenbases"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a12,I4)')"mpert =",mpert
       WRITE(out_unit,*)
@@ -1344,7 +1362,7 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
          ENDDO
       ENDIF
       ! Calculate the overlap Resonant Field SVD modes with DCON eigenmodes
-      IF (sc_flag) THEN
+      IF (singcoup_set) THEN
         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
           ALLOCATE(eigmn(lmpert))
           DO j=1,msing
@@ -1406,6 +1424,7 @@ c      ovfin = MATMUL(CONJG(TRANSPOSE(fwt)),ovfin)           !overlap with each 
          WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
      $        "Plasma response for an external perturbation on the "//
      $        "control surface in functions"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,a12,I4)')"mthsurf =",mthsurf
@@ -1571,6 +1590,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_SINGFLD: "//
      $     "Resonant fields, singular currents, and islands"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)       
       WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
      $     "jac_out = ",jac_out,"tmag_out =",tout 
@@ -1634,7 +1654,6 @@ c-----------------------------------------------------------------------
          ! log svd response with harvest
          ierr=set_harvest_payload_dbl_array(hlog,'overlap_percent'//nul,
      $        novf,msing)
-         print *,ierr
       ENDIF
         
       CALL ascii_close(out_unit)
@@ -1707,6 +1726,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_SINGFLD: "//
      $     "Resonant fields and islands from coils"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)       
       WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
      $     "jac_out = ",jac_out,"tmag_out =",tout 
@@ -1897,6 +1917,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_PMODB: "//
      $     "Components in perturbed mod b and del.x_prp"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
@@ -1945,6 +1966,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_PMODB_CHEBYSHEV: "//
      $        "Chebyshev coefficients for perturbed mod b"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(2(1x,a12,I4))')
      $        "nche =",nche,"mpert =",mpert
@@ -1982,6 +2004,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_CHEPMODB: "//
      $        "Reconstructed perturbed mod b by chebyshev"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
@@ -2008,6 +2031,7 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_PMODB_FUN: "//
      $        "Components in perturbed mod b in functions"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8,a13,es16.8)')
      $        "jac_out = ",jac_out,"R0 = ",ro
@@ -2096,6 +2120,9 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
+      INTEGER :: did_m,did_p,did_t,vid_m,vid_p,vid_t,vid_r,vid_z,
+     $   vid_rb,vid_ib,vid_rx,vid_ix
+      
       INTEGER :: i,istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax,area
 
@@ -2190,6 +2217,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_XBNORMAL: "//
      $     "Normal components of displacement and field"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -2215,6 +2243,7 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_BNORMAL_PEST: "//
      $        "Normal components of field in pest coordinates"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
@@ -2237,6 +2266,7 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")         
          WRITE(out_unit,*)"IPEC_XBNORMAL_FUN: "//
      $        "Normal components of displacement and field in functions"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -2343,6 +2373,65 @@ c-----------------------------------------------------------------------
          WRITE(bin_2d_unit)REAL(ABS(bwpmns(9:mstep,:)),4)
          CALL bin_close(bin_2d_unit)
       ENDIF
+      
+      ! append to netcdf file
+       CALL check( nf90_redef(fncid))
+       ! Define dimensions
+       CALL check( nf90_def_dim(fncid,"psi_N",mstep,did_p) )
+       CALL check( nf90_def_dim(fncid,"theta",mthsurf,did_t) )
+       ! Define variables
+       CALL check( nf90_def_var(fncid, "psi_N", nf90_double,
+     $             (/did_p/),vid_p) )
+       CALL check( nf90_put_att(fncid,vid_p,"long_name",
+     $             "Normalized Poloidal Flux") )
+       CALL check( nf90_def_var(fncid, "theta", nf90_double,
+     $             (/did_t/),vid_t) )
+       CALL check( nf90_put_att(fncid,vid_t,"long_name",
+     $             jac_type//" Poloidal Angle") )
+       CALL check( nf90_def_var(fncid, "R", nf90_double,
+     $             (/did_p,did_t/),vid_r) )
+       CALL check( nf90_put_att(fncid,vid_r,"long_name",
+     $             "Major Radius") )
+       CALL check( nf90_def_var(fncid, "z", nf90_double,
+     $             (/did_p,did_t/),vid_z) )
+       CALL check( nf90_put_att(fncid,vid_r,"long_name",
+     $             "Vertical Position") )
+       CALL check( nf90_def_var(fncid, "real(b_n)", nf90_double,
+     $             (/did_p,did_t/),vid_rb) )
+       CALL check( nf90_put_att(fncid,vid_rb,"long_name",
+     $             "Perturbed Field Normal to the Flux Surface") )
+       CALL check( nf90_def_var(fncid, "imag(b_n)", nf90_double,
+     $             (/did_p,did_t/),vid_ib) )
+       CALL check( nf90_put_att(fncid,vid_ib,"long_name",
+     $             "Displacement Normal to the Flux Surface") )
+       CALL check( nf90_def_var(fncid, "real(xi_n)", nf90_double,
+     $             (/did_p,did_t/),vid_rx) )
+       CALL check( nf90_put_att(fncid,vid_rx,"long_name",
+     $             "Displacement Normal to the Flux Surface") )
+       CALL check( nf90_def_var(fncid, "imag(xi_n)", nf90_double,
+     $             (/did_p,did_t/),vid_ix) )
+       CALL check( nf90_put_att(fncid,vid_ix,"long_name",
+     $             "Perturbed Field Normal to the Flux Surface") )
+      ! define units
+      CALL check( nf90_put_att(fncid,vid_r,"units","m") )
+      CALL check( nf90_put_att(fncid,vid_z,"units","m") )
+      CALL check( nf90_put_att(fncid,vid_rx,"units","m") )
+      CALL check( nf90_put_att(fncid,vid_ix,"units","m") )
+      CALL check( nf90_put_att(fncid,vid_rb,"units","Tesla") )
+      CALL check( nf90_put_att(fncid,vid_ib,"units","Tesla") )
+      ! End definitions
+      CALL check( nf90_enddef(fncid) )
+      ! Write data to file
+      CALL check( nf90_put_var(fncid,vid_p,psifac) )
+      CALL check( nf90_put_var(fncid,vid_t,twopi*theta) )
+      CALL check( nf90_put_var(fncid,vid_r,rs) )
+      CALL check( nf90_put_var(fncid,vid_z,zs) )
+      CALL check( nf90_put_var(fncid,vid_rx, REAL(xnofuns)) )
+      CALL check( nf90_put_var(fncid,vid_rx, REAL(xnofuns)) )
+      CALL check( nf90_put_var(fncid,vid_rx, REAL(xnofuns)) )
+      CALL check( nf90_put_var(fncid,vid_ix,-helicity*AIMAG(xnofuns)) )
+      CALL check( nf90_put_var(fncid,vid_rb, REAL(bnofuns)) )
+      CALL check( nf90_put_var(fncid,vid_ib,-helicity*AIMAG(bnofuns)) )
 
       IF (flux_flag) THEN
          IF (.NOT. bin_2d_flag) THEN
@@ -2362,6 +2451,7 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")         
          WRITE(out_unit,*)"IPEC_XBNROMAL_FLUX: "//
      $        "Perturbed flux surfaces"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
          WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
@@ -2464,6 +2554,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_VBNROMAL: "//
      $     "Normal components of coil field"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
@@ -2485,6 +2576,7 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_VBNROMAL_PEST: "//
      $        "Normal components of coil field in pest coordinates"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
@@ -2624,6 +2716,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_XBNROMAL: "//
      $     "Tangential components of displacement and field"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
@@ -2647,6 +2740,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)"IPEC_XBTANGENT_FUN: "//
      $        "Tangential components of displacement "//
      $        "and field in functions"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3007,6 +3101,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_BRZPHI_CHEBYSHEV: "//
      $        "Chebyshev coefficients for brzphi field"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(2(1x,a12,I4))')
      $        "nchr =",nchr,"nchz =",nchz
@@ -3028,6 +3123,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_XRZPHI_CHEBYSHEV: "//
      $        "Chebyshev coefficients for displacement"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)     
          WRITE(out_unit,'(2(1x,a12,I4))')
      $        "nchr =",nchr,"nchz =",nchz
@@ -3120,6 +3216,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"ipec_eqbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_EQBRZPHI: Eq. b field in rzphi grid"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3141,6 +3238,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"ipec_brzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_BRZPHI: Total perturbed field"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3164,6 +3262,7 @@ c-----------------------------------------------------------------------
             CALL ascii_open(out_unit,"ipec_chebrzphi_n"//
      $           TRIM(sn)//".out","UNKNOWN")
             WRITE(out_unit,*)"IPEC_CEHBRZPHI: Total perturbed field"
+            WRITE(out_unit,*)version
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
             WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3187,6 +3286,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"ipec_pbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_PBRZPHI: Perturbed field by plasma"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3210,6 +3310,7 @@ c-----------------------------------------------------------------------
             CALL ascii_open(out_unit,"ipec_cbrzphi_n"//
      $           TRIM(sn)//".out","UNKNOWN")
             WRITE(out_unit,*)"IPEC_CBRZPHI: External field by coils"
+            WRITE(out_unit,*)version
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
             WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3237,6 +3338,7 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_VBRZPHI: Total perturbed field "//
      $        "by surface currents"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3262,6 +3364,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"ipec_xrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_XRZPHI: Displacement"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3285,6 +3388,7 @@ c-----------------------------------------------------------------------
             CALL ascii_open(out_unit,"ipec_chexrzphi_n"//
      $           TRIM(sn)//".out","UNKNOWN")
             WRITE(out_unit,*)"IPEC_CEHXRZPHI: Displacement"
+            WRITE(out_unit,*)version
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
             WRITE(out_unit,*)
@@ -3311,6 +3415,7 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_VPBRZPHI: Vacuum field by "//
      $        "surface currents"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3337,6 +3442,7 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"IPEC_VVBRZPHI: Vacuum field by "//
      $        "surface currents"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -3416,6 +3522,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//"_s"//TRIM(ss)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_VSBRZPHI: Vacuum field in rzphi grid by "//
      $     TRIM(ss)//"th resonant field"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
       WRITE(out_unit,*)
@@ -3536,6 +3643,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_XBRZPHI_FUN: "//
      $     "Rzphi components of displacement and field in functions"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3668,6 +3776,7 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_ARZPHI_FUN: "//
      $     "Rzphi components of vector potential in functions"
+      WRITE(out_unit,*)version
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3769,6 +3878,7 @@ c-----------------------------------------------------------------------
      $   TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_PMODB: "//
      $   "Clebsch Components of the displacement."
+      WRITE(out_unit,*)version
       WRITE(out_unit,'(1/,1x,a13,a8)')"jac_type = ",jac_type
       WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,2(a12,I4),1/)')
      $   "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
@@ -3791,5 +3901,424 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_xclebsch
-   
+c-----------------------------------------------------------------------
+c     subprogram 14. ipout_control_filter.
+c     Filter control surface flux vector in flux bases with energy norms
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_control_filter(finmn,ftypes,fmodes,
+     $           rout,bpout,bout,rcout,tout,jout,op_write)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: fmodes,rout,bpout,bout,rcout,tout,jout
+      CHARACTER(4), INTENT(IN) :: ftypes
+      COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
+      LOGICAL, INTENT(IN), OPTIONAL :: op_write
+      
+      ! eigendecompositions variables
+      INTEGER :: info,lwork
+      REAL(r8), DIMENSION(3*mpert-2) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+      ! SVD variables
+      REAL(r8), DIMENSION(5*mpert) :: rworksvd
+      COMPLEX(r8), DIMENSION(3*mpert) :: worksvd
+
+      LOGICAL :: output
+      INTEGER :: i,j,k,ipert,maxmode
+      INTEGER :: idid,mdid,vdid,sdid,edid,
+     $   vid,wvid,rvid,svid,wsovid,wrovid,rsovid
+      REAL(r8) :: norm
+      REAL(r8), DIMENSION(mpert) :: singfac
+      COMPLEX(r8), DIMENSION(mpert) :: temp,eigmn,filmn
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: mat,sqrta,umat
+      COMPLEX(r8), DIMENSION(mpert,msing) :: matms
+      CHARACTER(32) :: message
+      
+      REAL(r8), DIMENSION(mpert,mpert,2) :: test
+      
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE  :: fenb_wvals,fenb_rvals,
+     $   fenb_pvals,fenb_svals,vids
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE:: fenb_wvecs,fenb_rvecs,
+     $   fenb_pvecs,fenb_svecs
+
+      IF(verbose) WRITE(*,*)"Computing Energy-Normalized flux bases"
+c-----------------------------------------------------------------------
+c     basic definitions
+c-----------------------------------------------------------------------
+      singfac=mfac-nn*qlim
+      IF(.NOT. PRESENT(op_write)) THEN
+         output = .FALSE.
+      ELSE
+        output = op_write
+      ENDIF
+c-----------------------------------------------------------------------
+c     calculate sqrt(A) weighting matrix.
+c      - Define sqrt(A) weighting matrix as
+c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c-----------------------------------------------------------------------
+      DO i=1,mpert
+         temp = 0
+         temp(i) = 1.0
+         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
+         sqrta(:,i) = temp
+      ENDDO
+c-----------------------------------------------------------------------
+c     compute energy eigenvalues and eigenvectors.
+c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c        int{b^2da}/int{da} = 1
+c     - we start with E = xi* Wt xi where * is the conjugate transpose
+c     - convert to total flux so E = Phi* F Phi
+c     - convert to external flux using permeability E = Phi* P* FP Phi
+c     - then use our weighting matrix to get E = Phi'* W*P*FPW Phi'
+c-----------------------------------------------------------------------
+      ALLOCATE(fenb_wvecs(mpert,mpert),fenb_wvals(mpert))
+      ! start with DCON's total displacement vectors
+      fenb_wvecs = wtraw
+      DO ipert=1,mpert ! Hermitian diag explicit (errors get magnified)
+         fenb_wvecs(ipert,ipert) = REAL(fenb_wvecs(ipert,ipert)) 
+      ENDDO
+      ! convert to total flux
+      DO ipert=1,mpert
+         fenb_wvecs(ipert,:)= ifac*singfac*fenb_wvecs(ipert,:)    !*twopi*chi1
+         fenb_wvecs(:,ipert)=-ifac*singfac*fenb_wvecs(:,ipert)    !*twopi*chi1
+      ENDDO
+      ! convert to external flux
+      mat = permeabmats(resp_index,:,:)
+      fenb_wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),fenb_wvecs),mat)
+      ! convert to bsqrt(A)
+      fenb_wvecs=MATMUL(MATMUL(sqrta,fenb_wvecs),sqrta)
+      work = 0
+      rwork = 0
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,fenb_wvecs,mpert,fenb_wvals,
+     $           work,lwork,rwork,info)
+c-----------------------------------------------------------------------
+c     Calculate reluctance eigenvectors and eigenvalues
+c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c        int{b^2da}/int{da} = 1
+c        - This is a physiCALLy meaningful quantity (energy), and thus
+c          independent of coordinate system
+c      - Normalizing the input, I = RPhi becomes I = RWPhi'
+c      - Normalizing the output gives W^dagger I = W^daggerRW Phi'
+c      - Since W is Hermitian (W^dagger=W) the new operator is too
+c      - Eigenvalues correspond to int{I^2da} (power) per int{b^2da} (energy)
+c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
+c-----------------------------------------------------------------------
+      ALLOCATE(fenb_rvecs(mpert,mpert),fenb_rvals(mpert))
+      ! start with IPEC flux matrix
+      fenb_rvecs = reluctmats(resp_index,:,:)
+      DO ipert=1,mpert ! Hermitian diag explicit (errors get magnified)
+         fenb_rvecs(ipert,ipert) = REAL(fenb_rvecs(ipert,ipert)) 
+      ENDDO
+      ! convert to bsqrt(A)
+      fenb_rvecs=MATMUL(MATMUL(sqrta,fenb_rvecs),sqrta)
+      work = 0
+      rwork = 0
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,fenb_rvecs,mpert,fenb_rvals,
+     $           work,lwork,rwork,info)
+c-----------------------------------------------------------------------
+c     Calculate permeability right-singular vectors and singular values
+c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c        int{b^2da}/int{da} = 1
+c        - This is a physically meaningful quantity (energy)
+c      - Phi = P Phix -> WPhi' = PW Phix' -> Phi' = W*PW Phix' 
+c      - Eigenvalues correspond to int{Phi^2da} (energy) per int{Phix'^2da} (energy)
+c-----------------------------------------------------------------------
+      ALLOCATE(fenb_pvecs(mpert,mpert),fenb_pvals(mpert))
+      worksvd=0
+      rworksvd=0
+      lwork=3*mpert
+      mat = MATMUL(MATMUL(sqrta,permeabmats(resp_index,:,:)),sqrta)
+      CALL zgesvd('S','S',mpert,mpert,mat,mpert,fenb_pvals,umat,mpert,
+     $     fenb_pvecs,mpert,worksvd,lwork,rworksvd,info)
+      fenb_pvecs=CONJG(TRANSPOSE(fenb_pvecs))
+      mat = 0
+      umat = 0
+c-----------------------------------------------------------------------
+c     Convert singcoup vectors to working coordinates.
+c-----------------------------------------------------------------------
+      ALLOCATE(fenb_svecs(mpert,msing),fenb_svals(msing))
+      IF (singcoup_set) THEN
+         DO j=1,msing
+            DO i=1,mpert
+              IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+                 fenb_svecs(i,j) = w1v(mlow-lmlow+i,j)
+              ENDIF
+            ENDDO
+            CALL ipeq_fcoords(psilim,fenb_svecs(:,j),mfac,mpert,
+     $           rout,bpout,bout,rcout,tout,0)
+         ENDDO
+        fenb_svals = w1s
+      ENDIF
+c-----------------------------------------------------------------------
+c     Filter 
+c-----------------------------------------------------------------------
+      DO k=1,4
+         temp = finmn
+         filmn = 0
+         CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
+         SELECT CASE(ftypes(k:k))
+         CASE('w') 
+            mat = fenb_wvecs
+            message = "energy eigenmodes"
+            maxmode = mpert
+         CASE('r')
+            mat = fenb_rvecs
+            message = "reluctance eigenmodes"
+            maxmode = mpert
+        CASE('p')
+            mat = fenb_pvecs
+            message = "permeability RS vectors"
+            maxmode = mpert
+         CASE('s')
+            mat = fenb_svecs
+            message = "singular coupling RS vectors"
+            maxmode = msing
+         CASE DEFAULT
+            CYCLE
+         END SELECT
+         IF (fmodes>0) THEN
+            PRINT *,'Isolating perturbation || to first ',fmodes,message
+            DO i=1,MIN(maxmode,ABS(fmodes))
+               eigmn = mat(:,i)
+               norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+               filmn=filmn+eigmn*DOT_PRODUCT(eigmn,temp)/(norm*norm)
+            ENDDO
+            CALL ipeq_weight(psilim,filmn,mfac,mpert,2) ! sqrt(A)b to flux
+         ELSEIF (fmodes<0) THEN
+            PRINT *,'Isolating perturbation || to last ',fmodes,message
+            DO j=1,MIN(maxmode,ABS(fmodes))
+               i = maxmode+1-j
+               eigmn = mat(:,i)
+               norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+               filmn=filmn+eigmn*DOT_PRODUCT(eigmn,temp)/(norm*norm)
+            ENDDO
+             CALL ipeq_weight(psilim,filmn,mfac,mpert,2) ! sqrt(A)b to flux
+         ELSE
+            filmn = finmn ! do nothing
+         ENDIF
+         finmn = filmn
+      ENDDO
+c-----------------------------------------------------------------------
+c     Write outputs 
+c-----------------------------------------------------------------------
+      IF(output)THEN        ! Create netCDF file
+         IF(debug_flag) PRINT *,"Opening "//TRIM(mncfile)
+         CALL check( nf90_open(mncfile,nf90_write,mncid) )
+         IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+         CALL check( nf90_inq_dimid(mncid,"i",idid) )
+         CALL check( nf90_inq_dimid(mncid,"m",mdid) )
+         CALL check( nf90_inq_dimid(mncid,"m_eig",edid) )
+         CALL check( nf90_inq_dimid(mncid,"m_SVD",vdid) )
+         CALL check( nf90_inq_dimid(mncid,"m_sing",sdid) )
+         
+         ! Start definitions
+         CALL check( nf90_redef(mncid))
+         
+         IF(debug_flag) PRINT *,"  Defining vecs"
+         CALL check( nf90_def_var(mncid,"V_WENF",nf90_double,
+     $                            (/mdid,edid,idid/),wvid) )
+         CALL check( nf90_put_att(mncid,wvid,"long_name",
+     $               "Energy-Normalized-Flux Energy Eigenmodes") )
+         CALL check( nf90_put_att(mncid,wvid,"units","Wb/m") )
+         
+         CALL check( nf90_def_var(mncid,"V_RENF",nf90_double,
+     $                            (/mdid,edid,idid/),rvid) )
+         CALL check( nf90_put_att(mncid,rvid,"long_name",
+     $               "Energy-Normalized-Flux Reluctance Eigenmodes") )
+         CALL check( nf90_put_att(mncid,rvid,"units","Wb/m") )
+
+         CALL check( nf90_def_var(mncid,"V_SENF",nf90_double,
+     $                            (/mdid,sdid,idid/),svid) )
+         CALL check( nf90_put_att(mncid,svid,"long_name",
+     $               "Energy-Normalized-Flux Singular Coupling Modes") )
+         CALL check( nf90_put_att(mncid,svid,"units","Wb/m") )
+         
+         CALL check( nf90_def_var(mncid,"WRO",nf90_double,
+     $               (/edid,edid/),wrovid) )
+         CALL check( nf90_put_att(mncid,wrovid,"long_name",
+     $               "Energy-Reluctance Overlap") )
+         CALL check( nf90_def_var(mncid,"WSO",nf90_double,
+     $               (/edid,edid/),wsovid) )
+         CALL check( nf90_put_att(mncid,wsovid,"long_name",
+     $               "Energy-Singular Overlap") )
+         CALL check( nf90_def_var(mncid,"RSO",nf90_double,
+     $               (/edid,edid/),rsovid) )
+         CALL check( nf90_put_att(mncid,rsovid,"long_name",
+     $               "Reluctance-Singular Overlap") )
+         
+         ! End definitions
+         CALL check( nf90_enddef(mncid) )
+         
+         IF(debug_flag) PRINT *,"  Putting variables"     
+         CALL check( nf90_put_var(mncid,wvid,RESHAPE((/REAL(fenb_wvecs),
+     $               AIMAG(fenb_wvecs)/),(/mpert,mpert,2/))) )
+         CALL check( nf90_put_var(mncid,rvid,RESHAPE((/REAL(fenb_rvecs),
+     $               AIMAG(fenb_rvecs)/),(/mpert,mpert,2/))) )
+         CALL check( nf90_put_var(mncid,svid,RESHAPE((/REAL(fenb_svecs),
+     $               AIMAG(fenb_svecs)/),(/mpert,msing,2/))) )
+         
+         mat = MATMUL(CONJG(TRANSPOSE(fenb_wvecs)),fenb_rvecs)
+         CALL check( nf90_put_var(mncid,wrovid,ABS(mat)) )
+         matms = MATMUL(CONJG(TRANSPOSE(fenb_wvecs)),fenb_svecs)
+         CALL check( nf90_put_var(mncid,wsovid,ABS(matms)) )
+         matms = MATMUL(CONJG(TRANSPOSE(fenb_rvecs)),fenb_svecs)
+         CALL check( nf90_put_var(mncid,rsovid,ABS(matms)) )
+         
+         CALL check( nf90_close(mncid) )
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_control_filter
+c-----------------------------------------------------------------------
+c     subprogram 15. check.
+c     Check status of netcdf file.
+c-----------------------------------------------------------------------
+      SUBROUTINE check(stat)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT (IN) :: stat
+c-----------------------------------------------------------------------
+c     stop if it is an error.
+c-----------------------------------------------------------------------
+      IF(stat /= nf90_noerr) THEN 
+         PRINT *, TRIM(nf90_strerror(stat))
+         STOP "ERROR: failed to write/read netcdf file"
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE check
+c-----------------------------------------------------------------------
+c     subprogram 16. ipout_init_netcdf.
+c     Initialize the netcdf files used for module outputs.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_init_netcdf
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER:: i,midid,mmdid,medid,mvdid,msdid,fidid,fmdid,fpdid,ftdid,
+     $   cidid,crdid,czdid,
+     $   mivid,mmvid,mevid,mvvid,msvid,fivid,fmvid,fpvid,ftvid,
+     $   civid,crvid,czvid
+      INTEGER, DIMENSION(mpert) :: mmodes
+c-----------------------------------------------------------------------
+c     set variables
+c-----------------------------------------------------------------------
+      PRINT *,"Initializing NETCDF files"
+      print *,mpert,msing,mstep,mthsurf,nr,nz
+      mmodes = (/(i,i=1,mpert)/)
+      mncfile = "ipec_modal_output_n"//TRIM(sn)//".nc"
+      fncfile = "ipec_flux_output_n"//TRIM(sn)//".nc"
+      cncfile = "ipec_cylindrical_output_n"//TRIM(sn)//".nc"
+c-----------------------------------------------------------------------
+c     open files
+c-----------------------------------------------------------------------
+      IF(debug_flag) PRINT *," - Creating netcdf files"
+      CALL check( nf90_create(mncfile,
+     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=mncid) )
+      CALL check( nf90_create(fncfile,
+     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=fncid) )
+      CALL check( nf90_create(cncfile,
+     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=cncid) )
+c-----------------------------------------------------------------------
+c     define global file attributes
+c-----------------------------------------------------------------------
+      IF(debug_flag) PRINT *," - Defining modal netcdf globals"
+      CALL check( nf90_put_att(mncid,nf90_global,"title",
+     $     "IPEC outputs in Fourier or alternate modal bases"))
+      CALL check( nf90_def_dim(mncid,"i",2,       midid) )
+      CALL check( nf90_def_var(mncid,"i",nf90_int,midid,mivid) )
+      CALL check( nf90_def_dim(mncid,"m",mpert,   mmdid) )
+      CALL check( nf90_def_var(mncid,"m",nf90_int,mmdid,mmvid) )
+      CALL check( nf90_def_dim(mncid,"m_eig",mpert,   medid) )
+      CALL check( nf90_def_var(mncid,"m_eig",nf90_int,medid,mevid))
+      CALL check( nf90_def_dim(mncid,"m_SVD",mpert,   mvdid) )
+      CALL check( nf90_def_var(mncid,"m_SVD",nf90_int,mvdid,mvvid))
+      CALL check( nf90_def_dim(mncid,"m_sing",msing,   msdid) )
+      CALL check( nf90_def_var(mncid,"m_sing",nf90_int,msdid,msvid))
+      CALL check( nf90_put_att(mncid,nf90_global,"n",nn) )
+      CALL check( nf90_put_att(mncid,nf90_global,"jac_type",jac_type))
+      
+      IF(debug_flag) PRINT *," - Defining flux netcdf globals"
+      CALL check( nf90_put_att(fncid,nf90_global,"title",
+     $     "IPEC outputs in magnetic coordinate systems"))
+      CALL check( nf90_def_dim(fncid,"i",2,       fidid) )
+      CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
+      CALL check( nf90_def_dim(fncid,"m",mpert,   fmdid) )
+      CALL check( nf90_def_var(fncid,"m",NF90_INT,fmdid,fmvid) )
+      CALL check( nf90_def_dim(fncid,"psi_N",mstep+1,    fpdid) )
+      CALL check( nf90_def_var(fncid,"psi_N",nf90_double,fpdid,fpvid) )
+      CALL check( nf90_def_dim(fncid,"theta",mthsurf+1,  ftdid) )
+      CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
+      CALL check( nf90_put_att(fncid,nf90_global,"n",nn) )
+
+      IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
+      CALL check( nf90_put_att(cncid,nf90_global,"title",
+     $     "IPEC outputs in (R,z) coordinates"))
+      CALL check( nf90_def_dim(cncid,"i",2,       cidid) )
+      CALL check( nf90_def_var(cncid,"i",nf90_int,cidid,civid) )
+      CALL check( nf90_def_dim(cncid,"R",nr+1,crdid) )
+      CALL check( nf90_def_var(cncid,"R",nf90_double,crdid,crvid) )
+      CALL check( nf90_put_att(cncid,crvid,"units","m") )
+      CALL check( nf90_def_dim(cncid,"z",nz+1,czdid) )
+      CALL check( nf90_def_var(cncid,"z",nf90_double,czdid,czvid) )
+      CALL check( nf90_put_att(cncid,czvid,"units","m") )
+      CALL check( nf90_put_att(cncid,nf90_global,"n",nn) )
+      
+      CALL check( nf90_enddef(mncid) )
+      CALL check( nf90_enddef(fncid) )
+      CALL check( nf90_enddef(cncid) )
+c-----------------------------------------------------------------------
+c     set dimensional variables
+c-----------------------------------------------------------------------
+      IF(debug_flag) PRINT *," - Putting coordinates in modal netcdfs"
+      CALL check( nf90_put_var(mncid,mivid,(/0,1/)) )
+      CALL check( nf90_put_var(mncid,mmvid,mfac) )
+      CALL check( nf90_put_var(mncid,mevid,mmodes) )
+      CALL check( nf90_put_var(mncid,mvvid,mmodes) )
+      CALL check( nf90_put_var(mncid,msvid,mmodes(:msing)) )
+
+      IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
+      CALL check( nf90_put_var(fncid,fivid,(/0,1/)) )
+      CALL check( nf90_put_var(fncid,fmvid,mfac) )
+      CALL check( nf90_put_var(fncid,fpvid,psifac) )
+      CALL check( nf90_put_var(fncid,ftvid,theta) )
+
+      IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
+      CALL check( nf90_put_var(cncid,civid,(/0,1/)) )
+      CALL check( nf90_put_var(cncid,crvid,gdr(:,0)) )
+      CALL check( nf90_put_var(cncid,czvid,gdz(0,:)) )
+
+      IF(debug_flag) PRINT *," - Closing netcdf files"
+      CALL check( nf90_close(mncid) )
+      CALL check( nf90_close(fncid) )
+      CALL check( nf90_close(cncid) )      
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_init_netcdf
+c-----------------------------------------------------------------------
+c     subprogram 17. ipout_close_netcdf.
+c     Close the netcdf files used for module outputs.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_close_netcdf
+c-----------------------------------------------------------------------
+c     close files
+c-----------------------------------------------------------------------
+      CALL check( nf90_close(mncid) )
+      CALL check( nf90_close(fncid) )
+      CALL check( nf90_close(cncid) )
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_close_netcdf
+      
       END MODULE ipout_mod
