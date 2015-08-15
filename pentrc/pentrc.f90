@@ -189,7 +189,7 @@ program pentrc
     ! run models
         ! start log with harvest
         ierr=init_harvest('CODEDB_PENT'//nul,hlog,len(hlog))
-        ierr=set_harvest_verbose(1)
+        ierr=set_harvest_verbose(0)
         ! standard CODEDB records
         ierr=set_harvest_payload_str(hlog,'CODE'//nul,'PENT'//nul)
         ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
