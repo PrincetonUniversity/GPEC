@@ -248,6 +248,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)ebp  ! LOGAN ADDED with option 5
          WRITE(euler_bin_unit)ebt  ! LOGAN ADDED with option 5
          WRITE(euler_bin_unit)wbt  ! LOGAN ADDED with option 5
+         WRITE(euler_bin_unit)wp+wv! LOGAN ADDED with option 5 
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
