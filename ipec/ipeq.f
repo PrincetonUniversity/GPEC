@@ -864,6 +864,8 @@ c-----------------------------------------------------------------------
          ftnfun=ftnfun/delpsi
       CASE(5) ! x^norm to x^psi
          ftnfun=ftnfun*delpsi
+      CASE(6) ! flux to sqrt(A)b
+         ftnfun=ftnfun*sqrt(wgtfun)
       END SELECT
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
       IF(debug_flag) PRINT *, "->Leaving ipeq_weight"
@@ -876,11 +878,11 @@ c-----------------------------------------------------------------------
 c     subprogram 12. ipeq_rzpgrid.
 c     find magnetic coordinates for given rz coords.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_rzpgrid(nr,nz)
+      SUBROUTINE ipeq_rzpgrid(nr,nz,psixy)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: nr,nz
+      INTEGER, INTENT(IN) :: nr,nz,psixy
 
       INTEGER :: i,j,itheta
       REAL(r8) :: xint,zint,ttheta,ptheta
@@ -891,6 +893,9 @@ c-----------------------------------------------------------------------
 
       ALLOCATE(gdr(0:nr,0:nz),gdz(0:nr,0:nz),gdl(0:nr,0:nz),
      $     gdpsi(0:nr,0:nz),gdthe(0:nr,0:nz),gdphi(0:nr,0:nz))
+     
+      IF(debug_flag) WRITE(*,*) "Entering ipeq_rzgrid"
+      IF(debug_flag) WRITE(*,*) "  ",nr,nz
 c-----------------------------------------------------------------------
 c     invert given rzphi to magnetic coordinates.
 c-----------------------------------------------------------------------
@@ -900,9 +905,12 @@ c-----------------------------------------------------------------------
       gdpsi=0
       gdthe=0
       gdphi=0
+      
+      IF(psixy<1) RETURN
 
       xint=(psi_in%xs(mr)-psi_in%xs(0))/nr
       zint=(psi_in%ys(mz)-psi_in%ys(0))/nz
+      IF(debug_flag) WRITE(*,*) "Used psi_in"
 
       ! information of plasma boundary
       CALL spline_alloc(rbeta,mthsurf,1)
@@ -954,6 +962,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL spline_dealloc(rbeta)
+      IF(debug_flag) WRITE(*,*) "Leaving ipeq_rzgrid"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
