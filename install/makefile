@@ -87,7 +87,7 @@ all: v harvest lsode equil orbit vacuum dcon match multi sum \
 # executables:
 
 harvest:
-	git submodule init; git submodule update
+	cd ../; git submodule init; git submodule update
 	cd ../harvest; export GACODE_ROOT=;make CC=$(CC) -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/
