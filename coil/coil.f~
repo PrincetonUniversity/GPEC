@@ -29,7 +29,8 @@ c-----------------------------------------------------------------------
      $     ipd,btd,helicity
 
       LOGICAL :: ipec_interface
-      CHARACTER(128) :: cfile
+      CHARACTER(256) :: data_dir
+      CHARACTER(512) :: cfile
       INTEGER, DIMENSION(:), POINTER :: cmfac
 
       TYPE :: coil_type
@@ -57,7 +58,8 @@ c-----------------------------------------------------------------------
       CHARACTER(128), INTENT(IN) :: cdconfile
 
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
-     $     machine,ip_direction,bt_direction,coil_num,coil_name,coil_cur
+     $     data_dir,machine,ip_direction,bt_direction,
+     $     coil_num,coil_name,coil_cur
       NAMELIST/coil_output/ipec_interface
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4
@@ -71,6 +73,7 @@ c-----------------------------------------------------------------------
       cmlow=-64
       cmhigh=64
       coil_cur=0
+      data_dir='.' !#REPLACE-WITH-PATH
       CALL ascii_open(in_unit,"coil.in","OLD")
       READ(UNIT=in_unit,NML=coil_control)
       READ(UNIT=in_unit,NML=coil_output)
@@ -81,7 +84,8 @@ c-----------------------------------------------------------------------
       IF(coil_num>0)ALLOCATE(coil(coil_num))
 
       DO ci=1,coil_num
-         cfile=TRIM(machine)//"_"//TRIM(coil_name(ci))//".dat"
+         cfile=TRIM(data_dir)//"/"//TRIM(machine)//"_"//
+     $         TRIM(coil_name(ci))//".dat"
          CALL ascii_open(coil_unit,cfile,"old")
          coil(ci)%coil_name=TRIM(coil_name(ci))
          READ(coil_unit,'(3(1x,I4),1x,f7.2)')
@@ -108,6 +112,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
       READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim
       READ(in_unit)
+      READ(in_unit)
 
       CALL spline_alloc(csq,ci3,4)
       CALL bicube_alloc(crzphi,ci3,ci4,4)
@@ -122,7 +127,7 @@ c     initialize variables.
 c-----------------------------------------------------------------------
       cmpsi=MAXVAL((/64,cmpsi/))
       cmtheta=MAXVAL((/400,cmtheta/))
-      cmzeta=cnn*MAXVAL((/128,cmzeta/))
+      cmzeta=cnn*MAXVAL((/40,cmzeta/))
       cmpert=cmhigh-cmlow+1
       ALLOCATE(cmfac(cmpert))
       cmfac=(/(cm,cm=cmlow,cmhigh)/)

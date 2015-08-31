@@ -627,7 +627,7 @@ def coils(coil,dim=3,cmap='coolwarm',curlim=None,exclude=[],**kwargs):
             f,ax = data.plt.subplots()
     colormap = data.plt.pyplot.get_cmap(cmap)
     to_rgb =  data.plt.matplotlib.colors.ColorConverter().to_rgb
-    r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84}
+    r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84,'rfxmod':0.46}
     
     # set normalization of currents using max absolute current
     if not curlim:
