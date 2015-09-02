@@ -603,65 +603,100 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(amp), INTENT(IN) :: amf
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
+      LOGICAL :: first = .TRUE.
       INTEGER :: i,ising,itheta
-      REAL(r8) :: thetai,jarea
+      REAL(r8) :: thetai,jarea,psave=0
+      INTEGER, DIMENSION(6) :: isave=0,itmp=0
 
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,thetas,jacfac
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: dphi,thetas,jacfac
+      REAL(r8), DIMENSION(0:mthsurf) :: delpsi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
-      TYPE(spline_type) :: spl       
+      TYPE(spline_type) :: spl
+
+      ! note automatic arrays are allocated and deallocated on entry/exit
+      ! instead, we use allocatables and just allocate once for all
+      SAVE :: first,psave,isave,jarea,dphi,thetas,jacfac
+      IF(first) ALLOCATE(dphi(0:mthsurf),thetas(0:mthsurf),
+     $      jacfac(0:mthsurf))
+      first  = .FALSE.
 
       IF(debug_flag) PRINT *, "Entering ipeq_fcoords"
       
-      CALL spline_alloc(spl,mthsurf,2)
-      spl%xs=theta
+      ! global sq may have been eval'd elsewhere inbetween bcoords calls
+      CALL spline_eval(sq,psi,0) 
+      ! expensive spline formation, do only if asking for new coords or surface
+      itmp = (/ri,bpi,bi,rci,ti,ji/)
+      IF(.NOT.ALL(itmp==isave).OR. (psave/=psi))THEN
+         isave = (/ri,bpi,bi,rci,ti,ji/)
+         psave = psi
+         dphi   = 0
+         thetas = 0
+         jacfac = 0
 
-      CALL spline_eval(sq,psi,0)
-      dphi=0
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         bpfac=psio*delpsi(itheta)/r(itheta)
-         btfac=sq%f(1)/(twopi*r(itheta))
-         bfac=SQRT(bpfac*bpfac+btfac*btfac)
-         fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
-         spl%fs(itheta,1)=fac/(r(itheta)**ri*rfac**rci)*
-     $        bpfac**bpi*bfac**bi
-         ! jacobian for coordinate angle at dcon angle
-         spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
-     $        (bpfac**bpi*bfac**bi)  
-         IF (ti .EQ. 0) THEN
-            dphi(itheta)=rzphi%f(3)
-         ENDIF
-      ENDDO      
-
-      CALL spline_fit(spl,"periodic")
-      CALL spline_int(spl)
-
-      ! coordinate angle at dcon angle
-      thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
-      IF (ji .EQ. 1) THEN
+         CALL spline_alloc(spl,mthsurf,2)
+         spl%xs=theta
+         
          DO itheta=0,mthsurf
-            ! jacobian at coordinate angle
-            thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
-            CALL spline_eval(spl,thetai,0)
-            jacfac(itheta)=spl%f(2)
-         ENDDO
-         jarea=0
-         DO itheta=0,mthsurf-1
-            jarea=jarea+jacfac(itheta)/mthsurf
-         ENDDO
+            CALL bicube_eval(rzphi,psi,theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+            bpfac=psio*delpsi(itheta)/r(itheta)
+            btfac=sq%f(1)/(twopi*r(itheta))
+            bfac=SQRT(bpfac*bpfac+btfac*btfac)
+            fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
+            spl%fs(itheta,1)=fac/(r(itheta)**ri*rfac**rci)*
+     $           bpfac**bpi*bfac**bi
+            ! jacobian for coordinate angle at dcon angle
+            spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
+     $           (bpfac**bpi*bfac**bi)  
+            IF (ti .EQ. 0) THEN
+               dphi(itheta)=rzphi%f(3)
+            ENDIF
+         ENDDO      
+         
+         CALL spline_fit(spl,"periodic")
+         CALL spline_int(spl)
+
+         ! coordinate angle at dcon angle
+         thetas(:)=spl%fsi(:,1)/spl%fsi(mthsurf,1)
+         IF (ji /= 0) THEN
+            DO itheta=0,mthsurf
+               ! jacobian at coordinate angle
+               thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
+               CALL spline_eval(spl,thetai,0)
+               jacfac(itheta) = spl%f(2)
+            ENDDO
+            SELECT CASE(ji)
+               CASE(-2)
+                  jacfac = 1/sqrt(jacfac)
+               CASE(-1)
+                  jacfac = 1/jacfac
+               CASE(1)
+                  jacfac = jacfac
+               CASE(2)
+                  jacfac = sqrt(jacfac)
+            END SELECT
+            ! surface area
+            jarea=0
+            DO itheta=0,mthsurf-1
+               jarea=jarea+jacfac(itheta)/mthsurf
+            ENDDO
+         ENDIF
+         CALL spline_dealloc(spl)
+      ENDIF
+      ! convert to unweighted spectrum
+      IF (ji /= 0) THEN
          CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
          ftnfun=ftnfun/jacfac*jarea
          CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
-      ENDIF         
+      ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.
 c-----------------------------------------------------------------------      
@@ -681,8 +716,6 @@ c-----------------------------------------------------------------------
          ftnfun(:)=ftnfun(:)*
      $        EXP(-twopi*ifac*nn*sq%f(4)*(thetas(:)-theta(:)))
       ENDIF
-
-      CALL spline_dealloc(spl)
 
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
       IF(debug_flag) PRINT *, "->Leaving ipeq_fcoords"
@@ -705,9 +738,10 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(amp), INTENT(IN) :: amf
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
+      LOGICAL :: first = .TRUE.
       INTEGER :: i,ising,itheta
-      INTEGER, DIMENSION(6) :: jsave = 0
-      REAL(r8) :: thetai,jarea,psave = 0
+      INTEGER, DIMENSION(6) :: isave=0,itmp=0
+      REAL(r8) :: thetai,jarea,psave=0
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: dphi,thetas,jacfac
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi
@@ -715,26 +749,29 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: spl       
       
-      ! note we had to make arrays allocatable to be allowed to save
-      SAVE :: psave,jsave,jarea,spl,dphi,thetas,jacfac
+      ! note automatic arrays are allocated and deallocated on entry/exit
+      ! instead, we use allocatables and just allocate once for all
+      SAVE :: first,psave,isave,jarea,spl,dphi,thetas,jacfac
+      IF(first) ALLOCATE(dphi(0:mthsurf),thetas(0:mthsurf),
+     $   jacfac(0:mthsurf))
+      first = .FALSE.
 
       IF(debug_flag) PRINT *, "Entering ipeq_bcoords"
       
       ! global sq may have been eval'd elsewhere inbetween bcoords calls
       CALL spline_eval(sq,psi,0) 
       ! expensive spline formation, do only if asking for new bcoords
-      IF(.NOT.ALL((/ri,bpi,bi,rci,ti,ji/)==jsave).OR.(psi/=psave))THEN
-         jsave = (/ri,bpi,bi,rci,ti,ji/)
+      itmp = (/ri,bpi,bi,rci,ti,ji/)
+      IF(.NOT.ALL(itmp==isave).OR. psave/=psi)THEN
+         isave = (/ri,bpi,bi,rci,ti,ji/)
          psave = psi
-         IF(ALLOCATED(dphi))THEN
-            DEALLOCATE(dphi,thetas,jacfac)
-            CALL spline_dealloc(spl)
-         ENDIF
-         ALLOCATE(dphi(0:mthsurf),thetas(0:mthsurf),jacfac(0:mthsurf))
+         dphi   = 0
+         thetas = 0
+         jacfac = 0
+
          CALL spline_alloc(spl,mthsurf,2)
          spl%xs=theta
          
-         dphi=0
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psi,theta(itheta),1)
             rfac=SQRT(rzphi%f(1))
@@ -768,13 +805,24 @@ c-----------------------------------------------------------------------
             thetai=issect(mthsurf,theta(:),thetas(:),theta(itheta))
             ! jacobian at coordinate angle
             CALL spline_eval(spl,thetai,0)
-            jacfac(itheta)=spl%f(2)
+            jacfac(itheta) = spl%f(2)
          ENDDO
+         SELECT CASE(ji)
+            CASE(-2)
+               jacfac = 1/sqrt(jacfac)
+            CASE(-1)
+               jacfac = 1/jacfac
+            CASE(1)
+               jacfac = jacfac
+            CASE(2)
+               jacfac = sqrt(jacfac)
+         END SELECT
          ! surface area
          jarea=0
          DO itheta=0,mthsurf-1
             jarea=jarea+jacfac(itheta)/mthsurf
          ENDDO
+         CALL spline_dealloc(spl)
       ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.
@@ -804,7 +852,7 @@ c-----------------------------------------------------------------------
       ENDDO
 
       ! optional jacobian wieghting
-      IF (ji .EQ. 1) THEN
+      IF (ji /= 0) THEN
          ftnfun=ftnfun*jacfac/jarea
       ENDIF
       ! forward transform function to coordinate fourier spectrum
@@ -828,25 +876,37 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(amp), INTENT(IN) :: amf
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
+      LOGICAL :: first = .TRUE.
       INTEGER :: itheta
+      REAL(r8) :: psave = 0
 
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,wgtfun
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: delpsi,wgtfun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
+      
+      ! note automatic arrays are allocated and deallocated on entry/exit
+      ! instead, we use allocatables and just allocate once for all
+      SAVE :: psave,wgtfun,delpsi
 
       IF(debug_flag) PRINT *, "Entering ipeq_weight"
 
-      DO itheta=0,mthsurf
-         CALL bicube_eval(rzphi,psi,theta(itheta),1)
-         rfac=SQRT(rzphi%f(1))
-         eta=twopi*(theta(itheta)+rzphi%f(2))
-         r(itheta)=ro+rfac*COS(eta)
-         z(itheta)=zo+rfac*SIN(eta)
-         jac=rzphi%f(4)
-         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-         wgtfun(itheta)=1.0/(jac*delpsi(itheta))
-      ENDDO
+      ! form expensive geometry factors if called on new surface
+      IF(psave/=psi) THEN
+         IF(first) ALLOCATE(delpsi(0:mthsurf),wgtfun(0:mthsurf))
+         first = .FALSE.
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psi,theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+            wgtfun(itheta)=1.0/(jac*delpsi(itheta))
+         ENDDO
+      ENDIF
+      ! convert from fourier to real space
       CALL iscdftb(amf,amp,ftnfun,mthsurf,ftnmn)
 c-----------------------------------------------------------------------
 c     weight function.
