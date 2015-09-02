@@ -224,6 +224,12 @@ try:
 except ImportError:
     mmlab = False
     print('WARNING: Mayavi not in python path')
+try:
+    import xray
+except ImportError:
+    xray = False
+    print('WARNING: xray not in python path')
+    print(' -> We recomend loading anaconda/2.3.0 on portal')
 
 # better label recognition using genfromtxt
 for c in '^|<>/':
@@ -1026,8 +1032,6 @@ class DataBase(object):
             step = max(len(self.pts[:,0])/np.product(grid_size),1)
             if step>1: print('Reducing data by factor of {:}'.format(step))
             x1,x2 = self.pts[::step].T
-        if swap:
-            x1,x2 = x2,x1
 
         for name in ynames:
             try:
@@ -1077,15 +1081,19 @@ class DataBase(object):
                 y = raw
             else:
                 y = griddata(self.pts,np.nan_to_num(raw),(x1,x2),method='nearest')
+            if swap:
+                x1,x2,y = x2.T,x1.T,y.T
             
             # plot type specifics
             if plotter==a.imshow:
-                kwargs.setdefault('extent',[x1.min(),x1.max(),x2.min(),x2.max()])
                 kwargs.setdefault('origin','lower')
                 kwargs['aspect']=aspect
+                kwargs.setdefault('extent',[x1.min(),x1.max(),x2.min(),x2.max()])
                 args = [y.T]
+                print(kwargs['extent'],np.shape(args[0]))
             else:
                 args = [x1,x2,y]
+                print(np.shape(x1),np.shape(x2),np.shape(y))
                 if plotter in [a.pcolormesh,a.tripcolor]:
                     kwargs.setdefault('edgecolor','None')
                     kwargs.setdefault('shading','gouraud')
