@@ -72,7 +72,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
-     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,fldflxmat
+     $     amat,bmat,cmat,fmats,gmats,kmats
      $     ,wft,permv,wtraw ! LOGAN
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,

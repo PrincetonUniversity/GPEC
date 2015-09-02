@@ -51,8 +51,8 @@ c-----------------------------------------------------------------------
       
       ! module wide output variables
       LOGICAL :: singcoup_set = .FALSE.
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: w1s
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: w1v
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: singcoup1mat,
+     $   w1v,w2v,w3v,t1v,t2v,t3v,fldflxmat
 
       CONTAINS
       
@@ -257,15 +257,15 @@ c-----------------------------------------------------------------------
              CALL ipeq_bcoords(psilim,vL1,lmfac,lmpert,
      $            rout,bpout,bout,rcout,tout,jout)
              CALL ipeq_bcoords(psilim,vP,lmfac,lmpert,
-     $            rout,bpout,bout,rcout,tout,0)
+     $            rout,bpout,bout,rcout,tout,jout)
              CALL ipeq_bcoords(psilim,vP1,lmfac,lmpert,
-     $            rout,bpout,bout,rcout,tout,0)
+     $            rout,bpout,bout,rcout,tout,jout)
              CALL ipeq_bcoords(psilim,vR,lmfac,lmpert,
-     $            rout,bpout,bout,rcout,tout,0)
+     $            rout,bpout,bout,rcout,tout,jout)
              CALL ipeq_bcoords(psilim,vW,lmfac,lmpert,
-     $            rout,bpout,bout,rcout,tout,0)
+     $            rout,bpout,bout,rcout,tout,jout)
              CALL ipeq_bcoords(psilim,vF,lmfac,lmpert,
-     $            rout,bpout,bout,rcout,tout,0)
+     $            rout,bpout,bout,rcout,tout,jout)
             DO j=1,lmpert
                WRITE(out_unit,'(2(1x,I4),14(1x,es16.8))')i,lmfac(j),
      $              vL(j),vL1(j),vP(j),vP1(j),vR(j),vW(j),vF(j)
@@ -276,8 +276,8 @@ c-----------------------------------------------------------------------
 
       WRITE(out_unit,*)"Raw Matrices"
       WRITE(out_unit,*)" jac_type = ",jac_type
-      WRITE(out_unit,*)" L = Vacuum Inductancy"
-      WRITE(out_unit,*)" Lambda = Inductancy"
+      WRITE(out_unit,*)" L = Vacuum Inductance"
+      WRITE(out_unit,*)" Lambda = Inductance"
       WRITE(out_unit,*)" P = Permeability"
       WRITE(out_unit,*)" rho = Reluctance"
       WRITE(out_unit,*)
@@ -617,9 +617,11 @@ c     svd analysis.
 c-----------------------------------------------------------------------
       lwork=3*tmpert
       ALLOCATE(ipiv(tmpert),rwork(5*msing),work(lwork),
-     $     a(msing,tmpert),vt(msing,tmpert),w1v(tmpert,msing),
+     $     a(msing,tmpert),vt(msing,tmpert),
+     $     w1v(tmpert,msing),w2v(tmpert,msing),w3v(tmpert,msing),
      $     t1v(tmpert,msing),t2v(tmpert,msing),t3v(tmpert,msing),
-     $     temp1(tmpert,tmpert),temp2(tmpert,tmpert),bmn(tmpert))
+     $     temp1(tmpert,tmpert),temp2(tmpert,tmpert),bmn(tmpert),
+     $     singcoup1mat(msing,tmpert))
       
       temp1=fldflxmat
       temp2=0
@@ -636,6 +638,7 @@ c-----------------------------------------------------------------------
       u=0
       vt=0
       a=MATMUL(t1mat,temp2)
+      singcoup1mat = a
       CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $     work,lwork,rwork,info)    
       s1=s
@@ -651,6 +654,7 @@ c-----------------------------------------------------------------------
       CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $     work,lwork,rwork,info)    
       s2=s
+      w2v=CONJG(TRANSPOSE(vt))
       t2v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
 
       work=0
@@ -662,12 +666,11 @@ c-----------------------------------------------------------------------
       CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $     work,lwork,rwork,info)    
       s3=s
+      w3v=CONJG(TRANSPOSE(vt))
       t3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
 c-----------------------------------------------------------------------
 c     save module wide variables
 c-----------------------------------------------------------------------
-      ALLOCATE(w1s(msing))
-      w1s = s1
       singcoup_set  = .TRUE.
 c-----------------------------------------------------------------------
 c     write matrix.
@@ -923,7 +926,7 @@ c-----------------------------------------------------------------------
      $            ' singular flux coupling eigenmodes'
         binmn=finmn
         CALL ipeq_weight(psilim,binmn,mfac,mpert,0) ! b not weighted
-        CALL ipeq_weight(psilim,binmn,mfac,mpert,2) ! b half weighted
+        !CALL ipeq_weight(psilim,binmn,mfac,mpert,2) ! b half weighted
         ! use output coords for consistency with SVD mode from ipout_singcoup
         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
           ! convert to jac_out
@@ -934,7 +937,7 @@ c-----------------------------------------------------------------------
              ENDIF
           ENDDO  
           CALL ipeq_bcoords(psilim,cinmn,lmfac,lmpert,
-     $         rout,bpout,bout,rcout,tout,0)
+     $         rout,bpout,bout,rcout,tout,2) ! sqrt(A) weighting
           ! Isolation
           ALLOCATE(eigmn(lmpert),newmn(lmpert))
           newmn = 0
@@ -945,7 +948,7 @@ c-----------------------------------------------------------------------
           ENDDO
           ! back to working coords
           CALL ipeq_fcoords(psilim,newmn,lmfac,lmpert,
-     $        rout,bpout,bout,rcout,tout,0)
+     $        rout,bpout,bout,rcout,tout,2)
           finmn = 0
           DO i=1,mpert
             IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
@@ -953,8 +956,9 @@ c-----------------------------------------------------------------------
             ENDIF
           ENDDO
           ! back to full wieghting (flux)
-          CALL ipeq_weight(psilim,finmn,mfac,mpert,2)
+          CALL ipeq_weight(psilim,finmn,mfac,mpert,1)
         ELSE
+           CALL ipeq_weight(psilim,binmn,mfac,mpert,2) ! b to sqrt(A)b
            ALLOCATE(eigmn(mpert))
            tmpmn = binmn
            finmn = 0
@@ -963,7 +967,7 @@ c-----------------------------------------------------------------------
                eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
                finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
            ENDDO
-          CALL ipeq_weight(psilim,finmn,mfac,mpert,2)
+          CALL ipeq_weight(psilim,finmn,mfac,mpert,2) ! sqrt(A)b to flux
         ENDIF
        DEALLOCATE(eigmn)
       ENDIF
@@ -1625,10 +1629,11 @@ c-----------------------------------------------------------------------
       IF (svd_flag) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
      $        sbno_fun(1:mthsurf)))/mthsurf/2.0)
+         sbno_mn = MATMUL(fldflxmat,sbno_mn)
          DO ising=1,msing
-            ovf(ising)=DOT_PRODUCT(t1v(:,ising),sbno_mn(:))/SQRT(2.0)
-            ovs(ising)=DOT_PRODUCT(t2v(:,ising),sbno_mn(:))/SQRT(2.0)
-            ovi(ising)=DOT_PRODUCT(t3v(:,ising),sbno_mn(:))/SQRT(2.0)
+            ovf(ising)=DOT_PRODUCT(w1v(:,ising),sbno_mn(:))/SQRT(2.0)
+            ovs(ising)=DOT_PRODUCT(w2v(:,ising),sbno_mn(:))/SQRT(2.0)
+            ovi(ising)=DOT_PRODUCT(w3v(:,ising),sbno_mn(:))/SQRT(2.0)
          ENDDO
          DO ising=1,msing
             novf(ising)=ABS(ovf(ising))/sbnosurf*1e2
@@ -3921,23 +3926,25 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
       ! SVD variables
       REAL(r8), DIMENSION(5*mpert) :: rworksvd
+      REAL(r8), DIMENSION(5*msing) :: sworksvd
       COMPLEX(r8), DIMENSION(3*mpert) :: worksvd
 
       LOGICAL :: output
       INTEGER :: i,j,k,ipert,maxmode
-      INTEGER :: idid,mdid,vdid,sdid,edid,
-     $   vid,wvid,rvid,svid,wsovid,wrovid,rsovid
+      INTEGER :: idid,mdid,vdid,sdid,edid, weid,reid,seid,
+     $   wvid,rvid,svid, wsovid,wrovid,rsovid
+      INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8) :: norm
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(mpert) :: temp,eigmn,filmn
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: mat,sqrta,umat
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: matmm,sqrta,mat
       COMPLEX(r8), DIMENSION(mpert,msing) :: matms
+      COMPLEX(r8), DIMENSION(msing,msing) :: matss
+      COMPLEX(r8), DIMENSION(msing,mpert) :: matsm
       CHARACTER(32) :: message
       
-      REAL(r8), DIMENSION(mpert,mpert,2) :: test
-      
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE  :: fenb_wvals,fenb_rvals,
-     $   fenb_pvals,fenb_svals,vids
+      REAL(r8), DIMENSION(:), ALLOCATABLE  :: fenb_wvals,fenb_rvals,
+     $   fenb_pvals,fenb_svals
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE:: fenb_wvecs,fenb_rvecs,
      $   fenb_pvecs,fenb_svecs
 
@@ -3974,14 +3981,24 @@ c-----------------------------------------------------------------------
       ALLOCATE(fenb_wvecs(mpert,mpert),fenb_wvals(mpert))
       ! start with DCON's total displacement vectors
       fenb_wvecs = wtraw
-      DO ipert=1,mpert ! Hermitian diag explicit (errors get magnified)
-         fenb_wvecs(ipert,ipert) = REAL(fenb_wvecs(ipert,ipert)) 
-      ENDDO
+      !DO ipert=1,mpert ! Hermitian diag explicit (errors get magnified)
+      !   fenb_wvecs(ipert,ipert) = REAL(fenb_wvecs(ipert,ipert)) 
+      !ENDDO
       ! convert to total flux
       DO ipert=1,mpert
          fenb_wvecs(ipert,:)= ifac*singfac*fenb_wvecs(ipert,:)    !*twopi*chi1
          fenb_wvecs(:,ipert)=-ifac*singfac*fenb_wvecs(:,ipert)    !*twopi*chi1
       ENDDO
+      ! start with the inverse of the inductance matrix (dW = 0.5 Phi Lambda^-1 Phi)
+      !fenb_wvecs = 0
+      !mat   = 0
+      !matmm = 0
+      !DO i=1,mpert
+      !   fenb_wvecs(i,i) = 1
+      !ENDDO
+      !mat = 2*plas_indmats(0,:,:)
+      !CALL zhetrf('L',mpert,mat,mpert,ipiv,matmm,mpert*mpert,info)
+      !CALL zhetrs('L',mpert,mpert,mat,mpert,ipiv,fenb_wvecs,mpert,info)
       ! convert to external flux
       mat = permeabmats(resp_index,:,:)
       fenb_wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),fenb_wvecs),mat)
@@ -4007,9 +4024,6 @@ c-----------------------------------------------------------------------
       ALLOCATE(fenb_rvecs(mpert,mpert),fenb_rvals(mpert))
       ! start with IPEC flux matrix
       fenb_rvecs = reluctmats(resp_index,:,:)
-      DO ipert=1,mpert ! Hermitian diag explicit (errors get magnified)
-         fenb_rvecs(ipert,ipert) = REAL(fenb_rvecs(ipert,ipert)) 
-      ENDDO
       ! convert to bsqrt(A)
       fenb_rvecs=MATMUL(MATMUL(sqrta,fenb_rvecs),sqrta)
       work = 0
@@ -4026,30 +4040,37 @@ c      - Phi = P Phix -> WPhi' = PW Phix' -> Phi' = W*PW Phix'
 c      - Eigenvalues correspond to int{Phi^2da} (energy) per int{Phix'^2da} (energy)
 c-----------------------------------------------------------------------
       ALLOCATE(fenb_pvecs(mpert,mpert),fenb_pvals(mpert))
+      mat = 0
       worksvd=0
       rworksvd=0
       lwork=3*mpert
       mat = MATMUL(MATMUL(sqrta,permeabmats(resp_index,:,:)),sqrta)
-      CALL zgesvd('S','S',mpert,mpert,mat,mpert,fenb_pvals,umat,mpert,
+      mat = TRANSPOSE(mat)
+      CALL zgesvd('S','S',mpert,mpert,mat,mpert,fenb_pvals,matmm,mpert,
      $     fenb_pvecs,mpert,worksvd,lwork,rworksvd,info)
       fenb_pvecs=CONJG(TRANSPOSE(fenb_pvecs))
-      mat = 0
-      umat = 0
 c-----------------------------------------------------------------------
 c     Convert singcoup vectors to working coordinates.
 c-----------------------------------------------------------------------
       ALLOCATE(fenb_svecs(mpert,msing),fenb_svals(msing))
       IF (singcoup_set) THEN
+         matsm = 0
          DO j=1,msing
             DO i=1,mpert
               IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-                 fenb_svecs(i,j) = w1v(mlow-lmlow+i,j)
+                 matsm(j,i) = singcoup1mat(j,mlow-lmlow+i)
               ENDIF
             ENDDO
-            CALL ipeq_fcoords(psilim,fenb_svecs(:,j),mfac,mpert,
-     $           rout,bpout,bout,rcout,tout,0)
+            CALL ipeq_fcoords(psilim,matsm(j,:),mfac,mpert,
+     $           rout,bpout,bout,rcout,tout,2) ! removes sqrt(A) wieght
+            CALL ipeq_weight(psilim,matsm(j,:),mfac,mpert,2) ! field to sqrt(A)b
          ENDDO
-        fenb_svals = w1s
+         lwork = 3*mpert
+         worksvd  = 0
+         sworksvd = 0
+         CALL zgesvd('S','O',msing,mpert,matsm,msing,fenb_svals, !'O' writes VT to A
+     $        matss,msing,matsm,msing,worksvd,lwork,sworksvd,info)    
+         fenb_svecs=CONJG(TRANSPOSE(matsm))
       ENDIF
 c-----------------------------------------------------------------------
 c     Filter 
@@ -4059,7 +4080,7 @@ c-----------------------------------------------------------------------
          filmn = 0
          CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
          SELECT CASE(ftypes(k:k))
-         CASE('w') 
+         CASE('w')
             mat = fenb_wvecs
             message = "energy eigenmodes"
             maxmode = mpert
@@ -4121,30 +4142,45 @@ c-----------------------------------------------------------------------
      $                            (/mdid,edid,idid/),wvid) )
          CALL check( nf90_put_att(mncid,wvid,"long_name",
      $               "Energy-Normalized-Flux Energy Eigenmodes") )
-         CALL check( nf90_put_att(mncid,wvid,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,wvid,"units","None") )
+         CALL check( nf90_def_var(mncid,"e_WENF",nf90_double,
+     $                            (/edid/),weid) )
+         CALL check( nf90_put_att(mncid,weid,"long_name",
+     $               "Energy-Normalized-Flux Energy Eigenvalues") )
+         CALL check( nf90_put_att(mncid,weid,"units","Wb/m") )
          
          CALL check( nf90_def_var(mncid,"V_RENF",nf90_double,
      $                            (/mdid,edid,idid/),rvid) )
          CALL check( nf90_put_att(mncid,rvid,"long_name",
      $               "Energy-Normalized-Flux Reluctance Eigenmodes") )
-         CALL check( nf90_put_att(mncid,rvid,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,rvid,"units","None") )
+         CALL check( nf90_def_var(mncid,"e_RENF",nf90_double,
+     $                            (/edid/),reid) )
+         CALL check( nf90_put_att(mncid,reid,"long_name",
+     $               "Energy-Normalized-Flux Reluctance Eigenvalues") )
+         CALL check( nf90_put_att(mncid,reid,"units","Wb/m") )
 
          CALL check( nf90_def_var(mncid,"V_SENF",nf90_double,
      $                            (/mdid,sdid,idid/),svid) )
          CALL check( nf90_put_att(mncid,svid,"long_name",
      $               "Energy-Normalized-Flux Singular Coupling Modes") )
-         CALL check( nf90_put_att(mncid,svid,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,svid,"units","None") )
+         CALL check( nf90_def_var(mncid,"e_SENF",nf90_double,
+     $                            (/sdid/),seid) )
+         CALL check( nf90_put_att(mncid,seid,"long_name",
+     $               "Energy-Normalized-Flux Singular Coupling Values"))
+         CALL check( nf90_put_att(mncid,seid,"units","Wb/m") )
          
          CALL check( nf90_def_var(mncid,"WRO",nf90_double,
      $               (/edid,edid/),wrovid) )
          CALL check( nf90_put_att(mncid,wrovid,"long_name",
      $               "Energy-Reluctance Overlap") )
          CALL check( nf90_def_var(mncid,"WSO",nf90_double,
-     $               (/edid,edid/),wsovid) )
+     $               (/edid,sdid/),wsovid) )
          CALL check( nf90_put_att(mncid,wsovid,"long_name",
      $               "Energy-Singular Overlap") )
          CALL check( nf90_def_var(mncid,"RSO",nf90_double,
-     $               (/edid,edid/),rsovid) )
+     $               (/edid,sdid/),rsovid) )
          CALL check( nf90_put_att(mncid,rsovid,"long_name",
      $               "Reluctance-Singular Overlap") )
          
@@ -4154,10 +4190,15 @@ c-----------------------------------------------------------------------
          IF(debug_flag) PRINT *,"  Putting variables"     
          CALL check( nf90_put_var(mncid,wvid,RESHAPE((/REAL(fenb_wvecs),
      $               AIMAG(fenb_wvecs)/),(/mpert,mpert,2/))) )
+         CALL check( nf90_put_var(mncid,weid,fenb_wvals) )
+
          CALL check( nf90_put_var(mncid,rvid,RESHAPE((/REAL(fenb_rvecs),
      $               AIMAG(fenb_rvecs)/),(/mpert,mpert,2/))) )
+         CALL check( nf90_put_var(mncid,reid,fenb_rvals) )
+
          CALL check( nf90_put_var(mncid,svid,RESHAPE((/REAL(fenb_svecs),
      $               AIMAG(fenb_svecs)/),(/mpert,msing,2/))) )
+         CALL check( nf90_put_var(mncid,seid,fenb_svals) )
          
          mat = MATMUL(CONJG(TRANSPOSE(fenb_wvecs)),fenb_rvecs)
          CALL check( nf90_put_var(mncid,wrovid,ABS(mat)) )
@@ -4210,8 +4251,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set variables
 c-----------------------------------------------------------------------
-      PRINT *,"Initializing NETCDF files"
-      print *,mpert,msing,mstep,mthsurf,nr,nz
+      IF(debug_flag) PRINT *,"Initializing NETCDF files"
       mmodes = (/(i,i=1,mpert)/)
       mncfile = "ipec_modal_output_n"//TRIM(sn)//".nc"
       fncfile = "ipec_flux_output_n"//TRIM(sn)//".nc"

@@ -404,7 +404,7 @@ c      - We get I = RWPhi' and want to keep the operator Hermitian so we
 c        use W^dagger I = W^daggerRW Phi'
 c      - Since W is Hermitian, eigenvalues correspond to int{I^2da}/A (power) 
 c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
-c-----------------------------------------------------------------------c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       ALLOCATE(reluctpevmats(0:4,mpert,mpert),reluctpev(0:4,mpert),
      $         reluctpmats(0:4,mpert,mpert))
       DO j=0,4
