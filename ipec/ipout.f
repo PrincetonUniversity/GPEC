@@ -3796,8 +3796,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(5*mpert) :: rworksvd
       REAL(r8), DIMENSION(5*msing) :: sworksvd
       COMPLEX(r8), DIMENSION(3*mpert) :: worksvd
-      ! matrix inversion
-      INTEGER, DIMENSION(mpert):: ipiv
 
       LOGICAL :: output
       INTEGER :: i,j,k,ipert,maxmode
@@ -3806,7 +3804,9 @@ c-----------------------------------------------------------------------
      $   wxovid,rxovid,pxovid,sxovid
       REAL(r8) :: norm
       REAL(r8), DIMENSION(mpert) :: singfac
-      REAL(r8), DIMENSION(mpert,2) :: temp2
+      REAL(r8), DIMENSION(mpert,2) :: tempmi
+      REAL(r8), DIMENSION(msing,2) :: tempsi
+      COMPLEX(r8), DIMENSION(msing) :: temps
       COMPLEX(r8), DIMENSION(mpert) :: temp,eigmn,filmn
       COMPLEX(r8), DIMENSION(mpert,mpert) :: matmm,sqrta,mat
       COMPLEX(r8), DIMENSION(mpert,msing) :: matms
@@ -4017,9 +4017,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(mncid,reid,"long_name",
      $               "Energy-Normalized-Flux Reluctance Eigenvalues") )
          CALL check( nf90_put_att(mncid,reid,"units","Wb/m") )
-         CALL check( nf90_def_var(mncid,"V_RENF",nf90_double,
-     $                            (/mdid,edid,idid/),rvid) )
-     
+
+         CALL check( nf90_def_var(mncid,"V_PENF",nf90_double,
+     $                            (/mdid,edid,idid/),pvid) )     
          CALL check( nf90_put_att(mncid,pvid,"long_name",
      $               "Energy-Normalized-Flux Permeability Eigenmodes") )
          CALL check( nf90_def_var(mncid,"e_PENF",nf90_double,
@@ -4042,15 +4042,15 @@ c-----------------------------------------------------------------------
      $               "Reluctance-Permeability Overlap") )
 
          CALL check( nf90_def_var(mncid,"O_WXENF",nf90_double,
-     $               (/edid,edid/),wxovid) )
+     $               (/edid,idid/),wxovid) )
          CALL check( nf90_put_att(mncid,wxovid,"long_name",
      $               "Energy-Phi_x Overlap") )
          CALL check( nf90_def_var(mncid,"O_RXENF",nf90_double,
-     $               (/edid,edid/),rxovid) )
+     $               (/edid,idid/),rxovid) )
          CALL check( nf90_put_att(mncid,rxovid,"long_name",
      $               "Reluctance-Phi_x Overlap") )
          CALL check( nf90_def_var(mncid,"O_PXENF",nf90_double,
-     $               (/edid,edid/),pxovid) )
+     $               (/edid,idid/),pxovid) )
          CALL check( nf90_put_att(mncid,pxovid,"long_name",
      $               "Permeability-Phi_x Overlap") )
 
@@ -4078,7 +4078,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(mncid,psovid,"long_name",
      $                  "Permeability-Singular Overlap") )
             CALL check( nf90_def_var(mncid,"O_SXENF",nf90_double,
-     $                  (/edid,edid/),sxovid) )
+     $                  (/sdid,idid/),sxovid) )
             CALL check( nf90_put_att(mncid,sxovid,"long_name",
      $                  "Singular-Phi_x Overlap") )
          ENDIF
@@ -4122,18 +4122,18 @@ c-----------------------------------------------------------------------
          temp = finmn
          CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
          filmn = MATMUL(CONJG(TRANSPOSE(fenb_wvecs)),temp)
-         temp2 = RESHAPE((/REAL(filmn),AIMAG(filmn)/),(/mpert,2/))
-         CALL check( nf90_put_var(mncid,wxovid,temp2) )
+         tempmi = RESHAPE((/REAL(filmn),AIMAG(filmn)/),(/mpert,2/))
+         CALL check( nf90_put_var(mncid,wxovid,tempmi) )
          filmn = MATMUL(CONJG(TRANSPOSE(fenb_rvecs)),temp)
-         temp2 = RESHAPE((/REAL(filmn),AIMAG(filmn)/),(/mpert,2/))
-         CALL check( nf90_put_var(mncid,rxovid,temp2) )
+         tempmi = RESHAPE((/REAL(filmn),AIMAG(filmn)/),(/mpert,2/))
+         CALL check( nf90_put_var(mncid,rxovid,tempmi) )
          filmn = MATMUL(CONJG(TRANSPOSE(fenb_pvecs)),temp)
-         temp2 = RESHAPE((/REAL(filmn),AIMAG(filmn)/),(/mpert,2/))
-         CALL check( nf90_put_var(mncid,pxovid,temp2) )
+         tempmi = RESHAPE((/REAL(filmn),AIMAG(filmn)/),(/mpert,2/))
+         CALL check( nf90_put_var(mncid,pxovid,tempmi) )
          IF(singcoup_set) THEN
-            filmn = MATMUL(CONJG(TRANSPOSE(fenb_svecs)),temp)
-            temp2 = RESHAPE((/REAL(filmn),AIMAG(filmn)/),(/mpert,2/))
-            CALL check( nf90_put_var(mncid,sxovid,temp2) )
+            temps = MATMUL(CONJG(TRANSPOSE(fenb_svecs)),temp)
+            tempsi = RESHAPE((/REAL(temps),AIMAG(temps)/),(/msing,2/))
+            CALL check( nf90_put_var(mncid,sxovid,tempsi) )
          ENDIF
          
          CALL check( nf90_close(mncid) )

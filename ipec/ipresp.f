@@ -130,8 +130,10 @@ c-----------------------------------------------------------------------
 c     calculate plasma inductance matrix by surface consideration.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Calculating inductrances and permeability"
-      ALLOCATE(plas_indev(0:4,mpert),plas_indmats(0:4,mpert,mpert),
-     $     plas_indevmats(0:4,mpert,mpert))
+      ALLOCATE(plas_indmats(0:4,mpert,mpert),
+     $   pinv_indmats(0:4,mpert,mpert),
+     $   plas_indev(0:4,mpert),plas_indevmats(0:4,mpert,mpert),
+     $   pinv_indev(0:4,mpert),pinv_indevmats(0:4,mpert,mpert))
       DO j=1,4
          work=0
          work2=0
@@ -167,7 +169,7 @@ c-----------------------------------------------------------------------
          pinv_indmats(j,:,:) = temp1
          CALL zheev('V','U',mpert,temp1,mpert,pinv_indev(j,:),work,
      $        lwork,rwork,info)
-         plas_indevmats(j,:,:)=temp1
+         pinv_indevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
 c     calculate energy inductance matrix by energy consideration.
@@ -202,9 +204,9 @@ c-----------------------------------------------------------------------
       CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
       CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
       pinv_indmats(0,:,:) = temp1
-      CALL zheev('V','U',mpert,temp1,mpert,pinv_indev(j,:),work,
+      CALL zheev('V','U',mpert,temp1,mpert,pinv_indev(0,:),work,
      $     lwork,rwork,info)
-      plas_indevmats(0,:,:)=temp1
+      pinv_indevmats(0,:,:)=temp1
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
