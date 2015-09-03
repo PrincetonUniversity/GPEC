@@ -45,7 +45,6 @@
 	tmag_out=0					! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
 	
 	resp_flag=t					! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
-	eigm_flag=t					! Outputs DCON eigmode displacement on control surface
 	filter_flag=t				! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
 	singcoup_flag=f				! Calculate coupling of each m to resonant surfaces
 	singfld_flag=t				! Output of resonant surface quantities (flux,current,etc.)

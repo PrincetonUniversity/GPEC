@@ -54,9 +54,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,surfee,surfei,rpsifac,
      $     surf_indev,vsurf_indev,fsurf_indev
-     $     ,eft,efp,perms ! LOGAN
+     $     ,eft,efp
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
-     $     chperr,chpsqr,plas_indev,reluctev,reluctpev,
+     $     chperr,chpsqr,plas_indev,reluctev,pinv_indev,permeabsv,
      $     indrelev,grri,grre,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
@@ -73,11 +73,11 @@ c-----------------------------------------------------------------------
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     amat,bmat,cmat,fmats,gmats,kmats
-     $     ,wft,permv,wtraw ! LOGAN
+     $     ,wft,wtraw
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
-     $     plas_indmats,permeabmats,diff_indmats,
-     $     plas_indevmats,permeabevmats,indrelmats,indrelevmats,
-     $     reluctmats,reluctpmats,reluctevmats,reluctpevmats
+     $     plas_indmats,pinv_indmats,permeabmats,diff_indmats,
+     $     plas_indevmats,pinv_indevmats,indrelmats,indrelevmats,
+     $     reluctmats,reluctevmats,permeabevmats,permeabsvmats
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
