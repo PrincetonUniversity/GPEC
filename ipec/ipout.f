@@ -3990,97 +3990,98 @@ c-----------------------------------------------------------------------
          IF(debug_flag) PRINT *,"  Inquiring about dimensions"
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
          CALL check( nf90_inq_dimid(mncid,"m",mdid) )
-         CALL check( nf90_inq_dimid(mncid,"m_eig",edid) )
-         CALL check( nf90_inq_dimid(mncid,"m_svd",vdid) )
-         CALL check( nf90_inq_dimid(mncid,"m_sing",sdid) )
+         CALL check( nf90_inq_dimid(mncid,"mode",edid) )
+         CALL check( nf90_inq_dimid(mncid,"smode",sdid) )
          
          ! Start definitions
          CALL check( nf90_redef(mncid))
          
          IF(debug_flag) PRINT *,"  Defining vecs"
-         CALL check( nf90_def_var(mncid,"V_WENF",nf90_double,
+         CALL check( nf90_def_var(mncid,"W_XED",nf90_double,
      $                            (/mdid,edid,idid/),wvid) )
          CALL check( nf90_put_att(mncid,wvid,"long_name",
-     $               "Energy-Normalized-Flux Energy Eigenmodes") )
-         CALL check( nf90_def_var(mncid,"e_WENF",nf90_double,
+     $    "Energy normalized external flux energy eigendecomposition") )
+         CALL check( nf90_def_var(mncid,"W_XEV",nf90_double,
      $                            (/edid/),weid) )
          CALL check( nf90_put_att(mncid,weid,"long_name",
-     $               "Energy-Normalized-Flux Energy Eigenvalues") )
-         CALL check( nf90_put_att(mncid,weid,"units","Wb/m") )
+     $    "Energy normalized external flux energy eigenvalues") )
+         CALL check( nf90_put_att(mncid,weid,"units","J/(Wb/m)^2") )
          
-         CALL check( nf90_def_var(mncid,"V_RENF",nf90_double,
+         CALL check( nf90_def_var(mncid,"rho_XED",nf90_double,
      $                            (/mdid,edid,idid/),rvid) )
-         CALL check( nf90_put_att(mncid,rvid,"long_name",
-     $               "Energy-Normalized-Flux Reluctance Eigenmodes") )
-         CALL check( nf90_def_var(mncid,"e_RENF",nf90_double,
+         CALL check( nf90_put_att(mncid,rvid,"long_name","Energy "//
+     $    "normalized external flux reluctance eigendecomposition") )
+         CALL check( nf90_def_var(mncid,"rho_XEV",nf90_double,
      $                            (/edid/),reid) )
-         CALL check( nf90_put_att(mncid,reid,"long_name",
-     $               "Energy-Normalized-Flux Reluctance Eigenvalues") )
-         CALL check( nf90_put_att(mncid,reid,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,reid,"long_name","Energy "//
+     $    "normalized external flux reluctance eigenvalues") )
+         CALL check( nf90_put_att(mncid,reid,"units","A/(Wb/m)") )
 
-         CALL check( nf90_def_var(mncid,"V_PENF",nf90_double,
+         CALL check( nf90_def_var(mncid,"P_XED",nf90_double,
      $                            (/mdid,edid,idid/),pvid) )     
-         CALL check( nf90_put_att(mncid,pvid,"long_name",
-     $               "Energy-Normalized-Flux Permeability Eigenmodes") )
-         CALL check( nf90_def_var(mncid,"e_PENF",nf90_double,
+         CALL check( nf90_put_att(mncid,pvid,"long_name","Energy "//
+     $    "normalized external flux permeability eigendecomposition") )
+         CALL check( nf90_def_var(mncid,"P_XEV",nf90_double,
      $                            (/edid/),peid) )
-         CALL check( nf90_put_att(mncid,peid,"long_name",
-     $               "Energy-Normalized-Flux Permeability Eigenvalues"))
-         CALL check( nf90_put_att(mncid,peid,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,peid,"long_name","Energy "//
+     $    "normalized external flux permeability eigenvalues") )
+         CALL check( nf90_put_att(mncid,peid,"units","unitless") )
          
-         CALL check( nf90_def_var(mncid,"O_WRENF",nf90_double,
+         CALL check( nf90_def_var(mncid,"O_WRX",nf90_double,
      $               (/edid,edid/),wrovid) )
          CALL check( nf90_put_att(mncid,wrovid,"long_name",
-     $               "Energy-Reluctance Overlap") )
-         CALL check( nf90_def_var(mncid,"O_WPENF",nf90_double,
+     $    "Overlap of energy and reluctance eigendecompositions") )
+         CALL check( nf90_def_var(mncid,"O_WPX",nf90_double,
      $               (/edid,edid/),wpovid) )
          CALL check( nf90_put_att(mncid,wpovid,"long_name",
-     $               "Energy-Permeability Overlap") )
-         CALL check( nf90_def_var(mncid,"O_RPENF",nf90_double,
+     $    "Overlap of energy and permeability eigendecompositions") )
+         CALL check( nf90_def_var(mncid,"O_RPX",nf90_double,
      $               (/edid,edid/),rpovid) )
          CALL check( nf90_put_att(mncid,wrovid,"long_name",
-     $               "Reluctance-Permeability Overlap") )
+     $    "Overlap of reluctance and permeability eigendecompositions"))
 
-         CALL check( nf90_def_var(mncid,"O_WXENF",nf90_double,
+         CALL check( nf90_def_var(mncid,"O_WX",nf90_double,
      $               (/edid,idid/),wxovid) )
-         CALL check( nf90_put_att(mncid,wxovid,"long_name",
-     $               "Energy-Phi_x Overlap") )
-         CALL check( nf90_def_var(mncid,"O_RXENF",nf90_double,
+         CALL check( nf90_put_att(mncid,wxovid,"long_name","Energy "//
+     $    "normalized external flux decomposed in energy eigenmodes") )
+         CALL check( nf90_def_var(mncid,"O_RX",nf90_double,
      $               (/edid,idid/),rxovid) )
-         CALL check( nf90_put_att(mncid,rxovid,"long_name",
-     $               "Reluctance-Phi_x Overlap") )
-         CALL check( nf90_def_var(mncid,"O_PXENF",nf90_double,
+         CALL check( nf90_put_att(mncid,rxovid,"long_name","Energy no"//
+     $    "rmalized external flux decomposed in reluctance eigenmodes"))
+         CALL check( nf90_def_var(mncid,"O_PX",nf90_double,
      $               (/edid,idid/),pxovid) )
-         CALL check( nf90_put_att(mncid,pxovid,"long_name",
-     $               "Permeability-Phi_x Overlap") )
+         CALL check( nf90_put_att(mncid,pxovid,"long_name","Energy no"//
+     $  "rmalized external flux decomposed in permeability eigenmodes"))
 
          IF(singcoup_Set)THEN
-            CALL check( nf90_def_var(mncid,"V_SENF",nf90_double,
+            CALL check( nf90_def_var(mncid,"C_XED",nf90_double,
      $                               (/mdid,sdid,idid/),svid) )
             CALL check( nf90_put_att(mncid,svid,"long_name",
-     $           "Energy-Normalized-Flux Singular Coupling Modes") )
-            CALL check( nf90_put_att(mncid,svid,"units","None") )
-            CALL check( nf90_def_var(mncid,"e_SENF",nf90_double,
+     $       "Energy normalized external flux singular-coupling "//
+     $       "SVD right-singular vectors") )
+            CALL check( nf90_def_var(mncid,"C_XEV",nf90_double,
      $                               (/sdid/),seid) )
             CALL check( nf90_put_att(mncid,seid,"long_name",
-     $           "Energy-Normalized-Flux Singular Coupling Values"))
-            CALL check( nf90_put_att(mncid,seid,"units","Wb/m") )
-            CALL check( nf90_def_var(mncid,"O_WSENF",nf90_double,
+     $       "Energy normalized external flux singular-coupling "//
+     $       "SVD singular values") )
+            CALL check( nf90_put_att(mncid,seid,"units","unitless") )
+            CALL check( nf90_def_var(mncid,"O_WCX",nf90_double,
      $                  (/edid,sdid/),wsovid) )
             CALL check( nf90_put_att(mncid,wsovid,"long_name",
-     $                  "Energy-Singular Overlap") )
-            CALL check( nf90_def_var(mncid,"O_RSENF",nf90_double,
+     $       "Overlap of energy and singular-coupling modes") )
+            CALL check( nf90_def_var(mncid,"O_RCX",nf90_double,
      $                  (/edid,sdid/),rsovid) )
             CALL check( nf90_put_att(mncid,rsovid,"long_name",
-     $                  "Reluctance-Singular Overlap") )
-            CALL check( nf90_def_var(mncid,"O_PSENF",nf90_double,
+     $       "Overlap of reluctance and singular-coupling modes") )
+            CALL check( nf90_def_var(mncid,"O_PCX",nf90_double,
      $                  (/edid,sdid/),psovid) )
             CALL check( nf90_put_att(mncid,psovid,"long_name",
-     $                  "Permeability-Singular Overlap") )
-            CALL check( nf90_def_var(mncid,"O_SXENF",nf90_double,
+     $       "Overlap of permeability and singular-coupling modes") )
+            CALL check( nf90_def_var(mncid,"O_CX",nf90_double,
      $                  (/sdid,idid/),sxovid) )
             CALL check( nf90_put_att(mncid,sxovid,"long_name",
-     $                  "Singular-Phi_x Overlap") )
+     $       "Energy normalized external flux decomposed in singular "//
+     $       "coupling modes"))
          ENDIF
          
          ! End definitions
@@ -4205,12 +4206,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"i",nf90_int,midid,mivid) )
       CALL check( nf90_def_dim(mncid,"m",mpert,   mmdid) )
       CALL check( nf90_def_var(mncid,"m",nf90_int,mmdid,mmvid) )
-      CALL check( nf90_def_dim(mncid,"m_eig",mpert,   medid) )
-      CALL check( nf90_def_var(mncid,"m_eig",nf90_int,medid,mevid))
-      CALL check( nf90_def_dim(mncid,"m_svd",mpert,   mvdid) )
-      CALL check( nf90_def_var(mncid,"m_svd",nf90_int,mvdid,mvvid))
-      CALL check( nf90_def_dim(mncid,"m_sing",msing,   msdid) )
-      CALL check( nf90_def_var(mncid,"m_sing",nf90_int,msdid,msvid))
+      CALL check( nf90_def_dim(mncid,"mode",mpert,   medid) )
+      CALL check( nf90_def_var(mncid,"mode",nf90_int,medid,mevid))
+      CALL check( nf90_def_dim(mncid,"smode",msing,   msdid) )
+      CALL check( nf90_def_var(mncid,"smode",nf90_int,msdid,msvid))
       CALL check( nf90_put_att(mncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(mncid,nf90_global,"jac_type",jac_type))
       
@@ -4250,7 +4249,6 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(mncid,mivid,(/0,1/)) )
       CALL check( nf90_put_var(mncid,mmvid,mfac) )
       CALL check( nf90_put_var(mncid,mevid,mmodes) )
-      CALL check( nf90_put_var(mncid,mvvid,mmodes) )
       CALL check( nf90_put_var(mncid,msvid,mmodes(:msing)) )
 
       IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
