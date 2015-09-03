@@ -1,5 +1,5 @@
 
-FFLAGS = -I../equil -I../coil -I../harvest
+FFLAGS = -I../equil -I../coil -I../harvest -I$(NETCDFHOME)/include
 
 F90 = $(FC) $(FFLAGS)
 
@@ -7,7 +7,8 @@ F90 = $(FC) $(FFLAGS)
 	$(F90) -c $*.f
 
 LIBDIR = \
-	-L${LAPACKHOME} \
+	-L$(LAPACKHOME) \
+	-L$(NETCDFHOME)/lib \
 	-L../lib
 
 LIBS = \
@@ -18,7 +19,8 @@ LIBS = \
 	-lcoil \
 	-lharvest \
 	-llapack \
-	-lblas
+	-lblas \
+	-lnetcdf
 
 OBJS = \
 	ipglobal.o \

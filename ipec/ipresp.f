@@ -130,8 +130,10 @@ c-----------------------------------------------------------------------
 c     calculate plasma inductance matrix by surface consideration.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Calculating inductrances and permeability"
-      ALLOCATE(plas_indev(0:4,mpert),plas_indmats(0:4,mpert,mpert),
-     $     plas_indevmats(0:4,mpert,mpert))
+      ALLOCATE(plas_indmats(0:4,mpert,mpert),
+     $   pinv_indmats(0:4,mpert,mpert),
+     $   plas_indev(0:4,mpert),plas_indevmats(0:4,mpert,mpert),
+     $   pinv_indev(0:4,mpert),pinv_indevmats(0:4,mpert,mpert))
       DO j=1,4
          work=0
          work2=0
@@ -146,12 +148,28 @@ c-----------------------------------------------------------------------
          lwork=2*mpert-1
          CALL zheev('V','U',mpert,temp1,mpert,plas_indev(j,:),work,
      $        lwork,rwork,info)
-         temp2=0
-         DO i=1,mpert
-            temp2(i,i)=temp1(i,i)
-         ENDDO
-         temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
+         !temp2=0
+         !DO i=1,mpert
+         !   temp2(i,i)=temp1(i,i)
+         !ENDDO
+         !temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2 !!whyyyyy??
          plas_indevmats(j,:,:)=temp1
+         ! Inverse of the plasma inductance ~ Energy
+         lwork=2*mpert-1
+         work=0
+         work2=0
+         rwork=0
+         temp1=0
+         DO i=1,mpert
+            temp1(i,i)=1
+         ENDDO
+         temp2=2*plas_indmats(j,:,:)
+         CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
+         CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+         pinv_indmats(j,:,:) = temp1
+         CALL zheev('V','U',mpert,temp1,mpert,pinv_indev(j,:),work,
+     $        lwork,rwork,info)
+         pinv_indevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
 c     calculate energy inductance matrix by energy consideration.
@@ -172,12 +190,23 @@ c-----------------------------------------------------------------------
       plas_indmats(0,:,:)=temp1
       CALL zheev('V','U',mpert,temp1,mpert,plas_indev(0,:),work,
      $     lwork,rwork,info)
-      temp2=0
-      DO i=1,mpert
-         temp2(i,i)=temp1(i,i)
-      ENDDO
-      temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
       plas_indevmats(0,:,:)=temp1
+      ! Inverse of the plasma inductance ~ Energy
+      lwork=2*mpert-1
+      work=0
+      work2=0
+      rwork=0
+      temp1=0
+      DO i=1,mpert
+         temp1(i,i)=1
+      ENDDO
+      temp2=2*plas_indmats(0,:,:)
+      CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
+      CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+      pinv_indmats(0,:,:) = temp1
+      CALL zheev('V','U',mpert,temp1,mpert,pinv_indev(0,:),work,
+     $     lwork,rwork,info)
+      pinv_indevmats(0,:,:)=temp1
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -211,11 +240,6 @@ c-----------------------------------------------------------------------
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,temp1,mpert,surf_indev,work,
      $     lwork,rwork,info)
-      temp2=0
-      DO i=1,mpert
-         temp2(i,i)=temp1(i,i)
-      ENDDO
-      temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
       surf_indevmats=temp1
 c-----------------------------------------------------------------------
 c     terminate.
@@ -284,48 +308,18 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
-c     LOGAN - Hermitian eigenvectors for orthonormal basis.
-c-----------------------------------------------------------------------
-c     ALLOCATE(permeabhev(0:4,mpert),permeabhevmats(0:4,mpert,mpert))
-c     !ctp = CONJG(TRANSPOSE(permeabmats(resp_index,:,:)))
-c     !IF (ALL(permeabmats(resp_index,:,:) .EQ. ctp)) THEN
-c     IF (ALL(ABS(AIMAG(permeabev(resp_index,:))
-c    $        /REAL(permeabev(resp_index,:))) .LT. 1e-9)) THEN
-c       PRINT *, "Permeability ~ Hermitian"
-c       phermitian = .FALSE.
-c       DO j=0,4
-c         work=0
-c         rwork=0
-c         lwork=2*mpert-1
-c         permeabhevmats(j,:,:) = permeabmats(j,:,:)
-c         CALL zheev('V','U',mpert,permeabhevmats(j,:,:),mpert,
-c    $      permeabhev(j,:),work,lwork,rwork,info)
-c       ENDDO
-c     ELSE
-c       PRINT *, "Permeability not Hermitian"
-c       phermitian = .FALSE.
-c       permeabhev = permeabev
-c       permeabhevmats = permeabevmats
-c     ENDIF
-c-----------------------------------------------------------------------
 c     LOGAN - SVD permeability matrix for orthonormal basis.
 c-----------------------------------------------------------------------
-      ALLOCATE(perms(mpert),permv(mpert,mpert))
-      lwork=3*mpert
-      works=0
-      rworks=0
-      perms=0
-      permu=0
-      permv=0
-      a = 0
-      DO i=1,mpert
-        a(i,i) = 1 !identitiy
+      ALLOCATE(permeabsv(0:4,mpert),permeabsvmats(0:4,mpert,mpert))
+      DO j=0,4
+         lwork=3*mpert
+         works=0
+         rworks=0
+         temp1=permeabmats(resp_index,:,:)
+         CALL zgesvd('S','S',mpert,mpert,temp1,mpert,permeabsv(j,:),
+     $        vl,mpert,vr,mpert,works,lwork,rworks,info)
+         permeabsvmats(j,:,:)=CONJG(TRANSPOSE(vr))
       ENDDO
-      ! sudo permeability: plasma response operator (Phi^p = a Phi^x)
-      a=permeabmats(resp_index,:,:) - a
-      CALL zgesvd('S','S',mpert,mpert,a,mpert,perms,permu,mpert,permv,
-     $     mpert,works,lwork,rworks,info)
-      permv=CONJG(TRANSPOSE(permv))
 c-----------------------------------------------------------------------
 c     sort by amplitudes.
 c-----------------------------------------------------------------------
@@ -382,45 +376,6 @@ c-----------------------------------------------------------------------
      $        lwork,rwork,info)
          reluctevmats(j,:,:)=temp1
       ENDDO
-c-----------------------------------------------------------------------
-c     calculate sqrt(A) weighting matrix.
-c-----------------------------------------------------------------------
-      DO i=1,mpert
-         temp = 0
-         temp(i) = 1.0
-         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
-         sqrta(:,i) = temp
-      ENDDO
-c-----------------------------------------------------------------------
-c     Calculate power eigenvectors and eigenvalues in working coordinates
-c      - Construct "reluctance" matrix for Isqrt(A) in Bsqrt(A) basis.
-c      - Define sqrt(A) weighting matrix as
-c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
-c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
-c        int{b^2da}/int{da} = 1
-c        - This is a physically meaningful quantity (energy), and thus
-c          independent of coordinate system
-c      - We get I = RWPhi' and want to keep the operator Hermitian so we
-c        use W^dagger I = W^daggerRW Phi'
-c      - Since W is Hermitian, eigenvalues correspond to int{I^2da}/A (power) 
-c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
-c-----------------------------------------------------------------------c-----------------------------------------------------------------------
-      ALLOCATE(reluctpevmats(0:4,mpert,mpert),reluctpev(0:4,mpert),
-     $         reluctpmats(0:4,mpert,mpert))
-      DO j=0,4
-         work=0
-         rwork=0
-         lwork=2*mpert-1
-         reluctpmats(j,:,:)=MATMUL(MATMUL(sqrta,reluctmats(j,:,:)),
-     $                                      sqrta)
-         temp1(:,:)=reluctpmats(j,:,:)
-         CALL zheev('V','U',mpert,temp1,mpert,reluctpev(j,:),work,
-     $        lwork,rwork,info)
-         reluctpevmats(j,:,:)=temp1
-      ENDDO
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipresp_reluct
 c-----------------------------------------------------------------------
@@ -458,11 +413,6 @@ c-----------------------------------------------------------------------
          lwork=2*mpert-1
          CALL zheev('V','U',mpert,temp1,mpert,indrelev(j,:),work,
      $        lwork,rwork,info)
-         temp2=0
-         DO i=1,mpert
-            temp2(i,i)=temp1(i,i)
-         ENDDO
-         temp1=temp1+CONJG(TRANSPOSE(temp1))-temp2
          indrelevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------

@@ -3,12 +3,13 @@
 # - Conditionals used to determine platform 
 # - This defines platform specific defaults for FC,LAPACKHOME,NETCDFHOME
 #
-# On portalr6.pppl.gov
-#   Recomended prerequisites (These modify LD_LIBRARY_PATH):
-#	$ module load yourcompiler # choose from gcc4,intel,lff95,pathscale
-#	$ module load lapack # sets $LAPACKHOME
-#	$ module load netcdf # sets $NETCDFHOME
-#	Default will load gcc4
+# On portal.pppl.gov (or portalr6.pppl.gov for more up-to-date libraries)
+#   Must load compiler and basic libraries (These modify LD_LIBRARY_PATH).
+#   Choose one of the following
+#	$ module load lff95 lapack-blas netcdf
+#	$ module load gcc4; module load lapack-blas netcdf
+#	$ module load intel acml netcdf
+#	Defaults will try to use gcc4
 #
 # On venus.gat.com
 # - All paths are hardcoded at this point (08/2015).
@@ -32,10 +33,18 @@
 ifneq ($(shell echo $(HOSTNAME) | grep sunfire),)
 	PLATFORM = portal
 ifndef FC
+ifndef F90
 	FC = /usr/pppl/gcc/4.6.3/bin/gfortran4
+else
+	FC = $(F90)
+endif
 endif
 ifndef LAPACKHOME
-	LAPACKHOME = /usr/pppl/lapack/3.5.0.rhel6
+ifndef ACML_HOME
+	LAPACKHOME = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
+else
+	LAPACKHOME = $(ACML_HOME)
+endif
 endif
 ifndef NETCDFHOME
 	NETCDFHOME = /usr/pppl/gcc/4.6-pkgs/netcdf-4.1.2
@@ -73,14 +82,14 @@ endif
 .IGNORE:
 
 all: v harvest lsode equil orbit vacuum dcon match multi sum \
-	xdraw coil ipec pentrc bin
+	xdraw coil ipec pentrc mkbin
 
 # executables:
 
 harvest:
 	cd ../harvest; export GACODE_ROOT=;make CC=$(CC) -f Makefile libharvest.a
 	mkdir -p ../lib
-	cp -f ../harvest/libharvest.a lib/
+	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
 	cd ../xdraw; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
@@ -118,17 +127,17 @@ ipec:
 pentrc:  
 	cd ../pentrc; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
 
-bin:
+mkbin:
 	mkdir -p ../bin
-	cp -f ../orbit/orbit bin
-	cp -f ../dcon/dcon bin
-	cp -f ../xdraw/xdraw bin
-	cp -f ../match/match bin
-	cp -f ../multi/multi bin
-	cp -f ../sum/sum bin
-	cp -f ../ipec/ipec bin
-	cp -f ../pentrc/pentrc bin
-	cp -f ../input/mput bin
+	cp -f ../orbit/orbit ../bin
+	cp -f ../dcon/dcon ../bin
+	cp -f ../xdraw/xdraw ../bin
+	cp -f ../match/match ../bin
+	cp -f ../multi/multi ../bin
+	cp -f ../sum/sum ../bin
+	cp -f ../ipec/ipec ../bin
+	cp -f ../pentrc/pentrc ../bin
+	cp -f ../input/mput ../bin
 
 # print verbose info
 
@@ -137,10 +146,11 @@ v:
 	@echo "Defaults tailored for $(PLATFORM)"
 	@echo "Compiling with FC = $(FC)"
 	@echo "   using lapack libraries from $(LAPACKHOME)"
+	@echo "   using netcdf libraries from $(NETCDFHOME)"
 	@echo
-	@echo "Set environement FC,LAPACKHOME to change these if desired"
+	@echo "Set environement FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
-	@echo "   example: module load gcc4 lapack"
+	@echo "   example: module load gcc4 lapack netcdf"
 endif
 	@echo "------------------------------------------------------------"
 

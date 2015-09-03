@@ -28,15 +28,11 @@
 	
 	mode_flag = .F.				! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
 	mode  = 0					! DCON eigen function index (1 is least stable)
-	dmode = 0					! Isolate the first dmode DCON eigenmodes of the total displacement
-	fmode = 0					! Isolate the first fmode DCON eigenmodes of the total flux
-	pmode = 0					! Isolate the first pmode permeability eigenmodes of the total field
-	rmode = 0					! Isolate the first rmode reluctance eigenmodes of the external field
-	smode = 0					! Isolate the first smode singular-coupling right singular vectors of the external field
-	p1mode= 0					! Isolate the first p1mode (P-I) right singular vectors of the external field
+	filter_types = 'w'			! Isolate the filter_modes of energy (w), reluctance (r), permiability (p) or singular coupling (s) eigenvectors/singular-vectors
+	filter_modes = 0			! Number of modes isolated, negative values isolate backwards from the last mode
 /
 &IPEC_CONTROL
-	resp_index=0				! ??
+	resp_index=0				! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recomended.
 	sing_spot=5e-4				! Minimum distance to singular surface in (m-nq) space
 	reg_flag=t					! Regularize the solution near resonant surfaces
 	reg_spot=5e-2				! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
@@ -49,10 +45,11 @@
 	tmag_out=0					! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
 	
 	resp_flag=t					! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
+	filter_flag=t				! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
 	singcoup_flag=f				! Calculate coupling of each m to resonant surfaces
 	singfld_flag=t				! Output of resonant surface quantities (flux,current,etc.)
 	vsingfld_flag=f				! Output of vacuum resonant surface quantities
-	eigm_flag=t					! Outputs DCON eigmode displacement on control surface
+	
 	pmodb_flag=f				! Outputs delta-B_Lagrangian
 	xbnormal_flag=t				! Outputs normal displacement and field in plasma
 	vbnormal_flag=f				! Outputs vacuum normal displacement and field in plasma

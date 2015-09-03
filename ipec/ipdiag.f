@@ -1792,43 +1792,56 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout
-      INTEGER :: i,j,k,lworko
-      REAL(r8), DIMENSION(3*mpert-2) :: rworko
-      COMPLEX(r8), DIMENSION(2*mpert-1) :: worko
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1o
+      INTEGER :: i,j,k,lwork
+      REAL(r8), DIMENSION(3*mpert-2) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+      COMPLEX(r8), DIMENSION(mpert) :: temp,ev,evo
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1o,sqrta,mat,mato,
+     $   sqrtao
       
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: reluctpoev
-      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: reluctpomats,
-     $   reluctpoevmats
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: reluctpomats,
+     $   reluctpoevmats,reluctpmats(:,:,:)
+
+      WRITE(*,*) 'Diagnosing reluctance power eigenvalues in out coords'
+c-----------------------------------------------------------------------
+c     calculate sqrt(A) weighting matrix.
+c      - Define sqrt(A) weighting matrix as
+c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c-----------------------------------------------------------------------
+      DO i=1,mpert
+         temp = 0
+         temp(i) = 1.0
+         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
+         sqrta(:,i) = temp
+      ENDDO
+      ! start with IPEC flux matrix
+      mat = reluctmats(resp_index,:,:)
+      ! convert to bsqrt(A)
+      mat=MATMUL(MATMUL(sqrta,mat),sqrta)
+      work = 0
+      rwork = 0
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,mat,mpert,ev,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
 c     Convert to output coordinates
 c      - Note we cannot use the usual lmpert output vectors in this case
 c      baceause we do not have enough modes to fill the matrix columns
 c      (while bcoords fills the rows)
 c-----------------------------------------------------------------------
-      WRITE(*,*) 'Diagnosing reluctance power eigenvalues in out coords'
-      ALLOCATE(reluctpomats(0:4,mpert,mpert),
-     $         reluctpoev(0:4,mpert),reluctpoevmats(0:4,mpert,mpert))
-      reluctpomats(:,:,:)=reluctpmats(:,:,:)
-      DO k=0,4
-         ! convert normalized reluctance matrix to jac_out
-         DO j=1,mpert
-c            DO i=1,mpert
-c                IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert))
-c                  reluctpomats(k,mlow-lmlow+i,j)=reluctpmats(k,i,j)
-c            ENDDO
-            CALL ipeq_bcoords(psilim,reluctpomats(k,:,j),mfac,
-     $           mpert,rout,bpout,bout,rcout,0,0)
-         ENDDO
-         ! calculate eigenvectors and eigenvalues
-         worko=0
-         rworko=0
-         lworko=2*mpert-1
-         temp1o(:,:)=reluctpomats(k,:,:)
-         CALL zheev('V','U',mpert,temp1o,mpert,reluctpoev(k,:),
-     $        worko,lworko,rworko,info)
-         reluctpoevmats(k,:,:)=temp1o(:,:)
+      mato = reluctmats(resp_index,:,:)
+      DO j=1,mpert
+         CALL ipeq_bcoords(psilim,mato(:,j),mfac,
+     $        mpert,rout,bpout,bout,rcout,0,1)
+         !CALL ipeq_weight_out(psilim,mato(j,:),mfac,mpert,1) ! field to flux
       ENDDO
+      ! convert to bsqrt(A)
+      sqrtao = 0 ! Need easy way to get fldflxmat from ipout
+      mato=MATMUL(MATMUL(sqrtao,mato),sqrtao)
+      work = 0
+      rwork = 0
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,mato,mpert,evo,work,lwork,rwork,info)
       
       CALL ascii_open(out_unit,"ipdiag_reluctpowout_n"//
      $	   TRIM(sn)//".out","UNKNOWN")
@@ -1841,11 +1854,10 @@ c            ENDDO
       WRITE(out_unit,*)"Eigenvalues"
       WRITE(out_unit,*)"  rho = Reluctance (power norm)"
       WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a4,1(1x,a16))')"mode",
-     $  "s_rho"
+      WRITE(out_unit,'(1x,a4,2(1x,a16))')"mode",
+     $  "s_type","s_out"
       DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,
-     $     reluctpoev(resp_index,i)
+         WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,ev(i),evo(i)
       ENDDO
       WRITE(out_unit,*)
       
@@ -1853,24 +1865,11 @@ c            ENDDO
       WRITE(out_unit,*)"  rho = Reluctance (power norm)"
       WRITE(out_unit,*)
       WRITE(out_unit,'(2(1x,a4),2(1x,a16))')"mode","m",
-     $  "real(v_rho)","imag(v_rho)"
+     $  "real(v_type)","imag(v_type)","real(v_out)","imag(v_out)"
       DO i=1,mpert
          DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),2(1x,es16.8))')i,mfac(j),
-     $           reluctpoevmats(resp_index,j,i)
-         ENDDO 
-      ENDDO
-      WRITE(out_unit,*)
-      
-      WRITE(out_unit,*)"Raw Matrix"
-      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(2(1x,a4),2(1x,a16))')"mode","m",
-     $  "real(rho)","imag(rho)"
-      DO i=1,mpert
-         DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),2(1x,es16.8))')i,mfac(j),
-     $           reluctpomats(resp_index,j,i)
+            WRITE(out_unit,'(2(1x,I4),4(1x,es16.8))')i,mfac(j),
+     $           mat(j,i),mato(j,i)
          ENDDO 
       ENDDO
       WRITE(out_unit,*)

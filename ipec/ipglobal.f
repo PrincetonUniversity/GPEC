@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
      $     nche,nchr,nchz,rsing,rnqty,rnx,max_linesout,
-     $     pmode,p1mode,rmode,dmode,d1mode,fmode,smode ! LOGAN
+     $     pmode,p1mode,rmode,dmode,d1mode,fmode,smode,nr,nz ! LOGAN
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
@@ -54,9 +54,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,surfee,surfei,rpsifac,
      $     surf_indev,vsurf_indev,fsurf_indev
-     $     ,eft,efp,perms ! LOGAN
+     $     ,eft,efp
       REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
-     $     chperr,chpsqr,plas_indev,reluctev,reluctpev,
+     $     chperr,chpsqr,plas_indev,reluctev,pinv_indev,permeabsv,
      $     indrelev,grri,grre,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
@@ -72,12 +72,12 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
-     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,w1v,fldflxmat
-     $     ,wft,permv ! LOGAN
+     $     amat,bmat,cmat,fmats,gmats,kmats
+     $     ,wft,wtraw
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
-     $     plas_indmats,permeabmats,diff_indmats,
-     $     plas_indevmats,permeabevmats,indrelmats,indrelevmats,
-     $     reluctmats,reluctpmats,reluctevmats,reluctpevmats
+     $     plas_indmats,pinv_indmats,permeabmats,diff_indmats,
+     $     plas_indevmats,pinv_indevmats,indrelmats,indrelevmats,
+     $     reluctmats,reluctevmats,permeabevmats,permeabsvmats
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
