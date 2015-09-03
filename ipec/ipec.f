@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
-     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag
+     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -141,7 +141,6 @@ c-----------------------------------------------------------------------
       arzphifun_flag=.FALSE.
       xbrzphifun_flag=.FALSE.
       bwp_pest_flag=.FALSE.
-      verbose = .TRUE.
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.
@@ -174,6 +173,8 @@ c-----------------------------------------------------------------------
       resol=1e4
       smallwidth=1e-6
       
+      timeit = .FALSE.
+      verbose = .TRUE.
       debug_flag = .FALSE.
 c-----------------------------------------------------------------------
 c     read ipec.in.
@@ -187,6 +188,7 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=ipec_output)
       READ(in_unit,NML=ipec_diagnose)
       CALL ascii_close(in_unit)
+      IF(timeit) CALL ipec_timer(0)
 c-----------------------------------------------------------------------
 c     define coordinates.
 c-----------------------------------------------------------------------
@@ -276,6 +278,7 @@ c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
       CALL idcon_vacuum
+      IF(timeit) CALL ipec_timer(2)
 c-----------------------------------------------------------------------
 c     set parameters from dcon.
 c-----------------------------------------------------------------------
@@ -305,6 +308,7 @@ c-----------------------------------------------------------------------
                finmn(cmlow-mlow+i)=coilmn(i)
             ENDIF
          ENDDO
+         IF(timeit) CALL ipec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------
 c     log inputs with harvest
@@ -378,10 +382,12 @@ c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
       CALL ipresp_eigen
+      IF(timeit) CALL ipec_timer(2)
       CALL ipresp_pinduct
       CALL ipresp_sinduct
       CALL ipresp_permeab
       CALL ipresp_reluct
+      IF(timeit) CALL ipec_timer(2)
 c-----------------------------------------------------------------------
 c     run and test rdcon.
 c-----------------------------------------------------------------------

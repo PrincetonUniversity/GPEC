@@ -72,6 +72,8 @@
 	max_linesout=0				! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
 /
 &IPEC_DIAGNOSE
+	verbose=t                   ! Print run log to terminal 
+	timeit=t                    ! Print timer splits for major subroutines
 	div_flag=f					! ??
 	radvar_flag=t				! ??
 /

@@ -16,7 +16,7 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
-     $     debug_flag
+     $     debug_flag,timeit
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
@@ -188,5 +188,101 @@ c     termination.
 c-----------------------------------------------------------------------
       STOP
       END SUBROUTINE ipec_stop
+c-----------------------------------------------------------------------
+c     subprogram 3. ipec_timer.
+!----------------------------------------------------------------------- 
+c     *DESCRIPTION: 
+c        Handles machine-dependent timing statistics.
+c     
+c     *ARGUMENTS:
+c        mode : integer, in
+c            mode = 0 starts timer
+c            mode = 1 writes total time from last start
+c            mode = 2 writes split & total time from start
+c            mode = -2 resets the split without writting 
+c     
+c     *OPTIONAL ARGUMENTS:
+c        opunit : integer, in
+c            Output written to this unit (default to terminal)
+c     
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipec_timer(mode,opunit)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: mode
+      INTEGER, INTENT(IN), OPTIONAL :: opunit
+    
+      CHARACTER(10) :: date,time,zone
+      INTEGER, DIMENSION(8) :: values
+      REAL(4), SAVE :: start,split
+      INTEGER :: hrs,mins,secs,msec
+      
+      ! get time
+      CALL DATE_AND_TIME(date,time,zone,values)
+      
+      IF(mode==0)THEN ! start timer
+         start=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+         split=0
+      ELSEIF(mode==-2)THEN ! Reset split
+         split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+     $         -start
+      ELSEIF(mode>0)THEN ! outputs
+         IF(mode==2)THEN ! write split (time since last call)
+            split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+     $            -start-split
+            secs = INT(split)
+            hrs = secs/(60*60)
+            mins = (secs-hrs*60*60)/60
+            secs = secs-hrs*60*60-mins*60
+            msec = int((split-secs)*1e3)
+            IF(PRESENT(opunit))THEN
+               write(opunit,"(1x,a,1p,e10.3,a)")"  split cpu time = ",
+     $            split," seconds"
+            ELSE
+               IF(hrs>0)THEN
+                  PRINT *,"  split cpu time = ",hrs," hours, ",
+     $               mins," minutes, ",secs," seconds"
+               ELSEIF(mins>0)THEN
+                  PRINT *,"  split cpu time = ",
+     $               mins," minutes, ",secs," seconds"
+               ELSEIF(secs>0)THEN
+                  PRINT *,"  split cpu time = ",secs," seconds"
+               ELSE
+                  PRINT *,"  split cpu time = ",msec," miliseconds"
+               ENDIF
+            ENDIF
+         ENDIF
+         ! write total time since start
+         split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+     $         -start
+         secs = INT(split)
+         hrs = secs/(60*60)
+         mins = (secs-hrs*60*60)/60
+         secs = secs-hrs*60*60-mins*60
+         msec = int((split-secs)*1e3)
+         IF(PRESENT(opunit))THEN
+            write(opunit,"(1x,a,1p,e10.3,a)")"  total cpu time = ",
+     $         split," seconds"
+         ELSE
+            IF(hrs>0)THEN
+               PRINT *,"  total cpu time = ",hrs," hours, ",
+     $            mins," minutes, ",secs," seconds"
+            ELSEIF(mins>0)THEN
+               PRINT *,"  total cpu time = ",
+     $            mins," minutes, ",secs," seconds"
+            ELSEIF(secs>0)THEN
+               PRINT *,"  total cpu time = ",secs," seconds"
+            ELSE
+               PRINT *,"  total cpu time = ",msec," miliseconds"
+            ENDIF
+         ENDIF
+      ENDIF
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipec_timer
 
       END MODULE ipglobal_mod
