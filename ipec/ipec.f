@@ -363,6 +363,7 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
       ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
       ! ipec inputs
+      if(filter_types=='') filter_types = 'none' ! harvest can't parse empty strings
       write(hnml,nml=ipec_input)
       ierr=set_harvest_payload_nam(hlog,'IPEC_INPUT'//nul,
      $                             trim(hnml)//nul)
@@ -372,6 +373,7 @@ c-----------------------------------------------------------------------
       write(hnml,nml=ipec_output)
       ierr=set_harvest_payload_nam(hlog,'IPEC_OUTPUT'//nul,
      $                             trim(hnml)//nul)
+      if(filter_types=='none') filter_types = '' ! harvest can't parse empty strings
 c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
