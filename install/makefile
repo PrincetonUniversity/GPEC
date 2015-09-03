@@ -3,7 +3,11 @@
 # - Conditionals used to determine platform 
 # - This defines platform specific defaults for FC,LAPACKHOME,NETCDFHOME
 #
+<<<<<<< HEAD
 # On portal.pppl.gov (or portalr6.pppl.gov for more up-to-date libraries)
+=======
+# On portalr6.pppl.gov
+>>>>>>> 4058d72c8afd34c808c2e6a632df65265c11acc8
 #   Must load compiler and basic libraries (These modify LD_LIBRARY_PATH).
 #   Choose one of the following
 #	$ module load lff95 lapack-blas netcdf
@@ -87,6 +91,7 @@ all: v harvest lsode equil orbit vacuum dcon match multi sum \
 # executables:
 
 harvest:
+	cd ../; git submodule init; git submodule update
 	cd ../harvest; export GACODE_ROOT=;make CC=$(CC) -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/

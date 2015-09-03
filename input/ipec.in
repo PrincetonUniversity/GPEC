@@ -53,7 +53,7 @@
 	pmodb_flag=f				! Outputs delta-B_Lagrangian
 	xbnormal_flag=t				! Outputs normal displacement and field in plasma
 	vbnormal_flag=f				! Outputs vacuum normal displacement and field in plasma
-    xclebsch_flag=f			    ! Outputs clebsch coordinate displacement for PENT 
+    	xclebsch_flag=f			    ! Outputs clebsch coordinate displacement for PENT 
 
 	eqbrzphi_flag=f				! Outputs equilibrium field on regular (r,z) grid
 	brzphi_flag=f				! Outputs perturbed field on regular (r,z) grid
