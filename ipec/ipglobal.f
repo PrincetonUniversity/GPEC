@@ -47,21 +47,21 @@ c-----------------------------------------------------------------------
 
       INTEGER, DIMENSION(8) :: values
 
-      LOGICAL, DIMENSION(:), POINTER :: sing_flag
-      INTEGER, DIMENSION(:), POINTER :: fixstep,mfac,lmfac
-      INTEGER, DIMENSION(:,:), POINTER :: permeabindex,gdl
+      LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
+      INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
+      INTEGER, DIMENSION(:,:), ALLOCATABLE :: permeabindex,gdl
 
-      REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,surfee,surfei,rpsifac,
      $     surf_indev,vsurf_indev,fsurf_indev
      $     ,eft,efp
-      REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: surfet,surfep,
      $     chperr,chpsqr,plas_indev,reluctev,pinv_indev,permeabsv,
      $     indrelev,grri,grre,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
 
-      COMPLEX(r8), DIMENSION(:), POINTER ::
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE ::
      $     xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,xmp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
@@ -69,12 +69,12 @@ c-----------------------------------------------------------------------
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     amat,bmat,cmat,fmats,gmats,kmats
      $     ,wft,wtraw
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: chpmats,kapmats,
      $     plas_indmats,pinv_indmats,permeabmats,diff_indmats,
      $     plas_indevmats,pinv_indevmats,indrelmats,indrelevmats,
      $     reluctmats,reluctevmats,permeabevmats,permeabsvmats
@@ -91,25 +91,25 @@ c-----------------------------------------------------------------------
 
       TYPE :: solution_type
       INTEGER :: msol
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
       END TYPE solution_type
 
       TYPE :: fixfac_type
       INTEGER :: msol
-      INTEGER, DIMENSION(:), POINTER :: index
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: fixfac,transform,gauss
+      INTEGER, DIMENSION(:), ALLOCATABLE :: index
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fixfac,transform,gauss
       END TYPE fixfac_type
 
       TYPE :: sing_type
       INTEGER :: msol_l,msol_r,jfix,jpert
       REAL(r8) :: psifac,q,q1
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: ca_l,ca_r
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: ca_l,ca_r
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
-      TYPE(solution_type), DIMENSION(:), POINTER :: soltype,rsoltype
-      TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
-      TYPE(sing_type), DIMENSION(:), POINTER :: singtype
+      TYPE(solution_type), DIMENSION(:), ALLOCATABLE :: soltype,rsoltype
+      TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
+      TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype
 
       CONTAINS
 c-----------------------------------------------------------------------

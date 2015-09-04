@@ -2708,7 +2708,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnimn,bnomn
 
       INTEGER :: i,j,k,l,ipert,iindex,np
-      REAL(r8) :: mid,btlim,rlim,ileft,delr,delz,cha,chb,chc,chd
+      REAL(r8) :: mid,btlim,rlim,ileft,delr,delz,cha,chb,chc,chd,
+     $   rij,zij,tij,t11,t12,t21,t22,t33
+      COMPLEX(r8) :: xwp,bwp,xwt,bwt,xvz,bvz
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
@@ -2723,7 +2725,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: chear,cheaz,
      $     chxar,chxaz
      
-      IF(timeit) CALL ipec_timer(-2)     
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
@@ -2766,6 +2767,7 @@ c-----------------------------------------------------------------------
 
       IF (eqbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing equilibrium magnetic fields"
+         IF(timeit) CALL ipec_timer(-2)
          ! evaluate f value for vacuum
          mid = 0.0
          CALL spline_eval(sq,psilim,0)
@@ -2788,16 +2790,18 @@ c-----------------------------------------------------------------------
             ENDDO   
          ENDDO
 
-      IF(ipd>0)THEN
-         ebr=-ebr
-         ebz=-ebz
-      ENDIF
-      IF(btd<0)ebp=-ebp
+         IF(ipd>0)THEN
+            ebr=-ebr
+            ebz=-ebz
+         ENDIF
+         IF(btd<0)ebp=-ebp
+         IF(timeit) CALL ipec_timer(2)
       ENDIF
 
       CALL ipeq_alloc
 
       IF(verbose) WRITE(*,*)"Mapping fields to cylindrical coordinates"
+      IF(timeit) CALL ipec_timer(-2)     
 
       IF (brzphi_flag .OR. xrzphi_flag) THEN
          DO i=0,nr
@@ -2811,57 +2815,57 @@ c-----------------------------------------------------------------------
                   CALL ipeq_sol(gdpsi(i,j))
                   CALL ipeq_contra(gdpsi(i,j))
                   CALL ipeq_cova(gdpsi(i,j))
-                  CALL ipeq_rzphi(gdpsi(i,j))
-                  DO ipert=1,mpert
-                     IF (brzphi_flag) THEN
-                        brr(i,j)=brr(i,j)+brr_mn(ipert)*
-     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                        brz(i,j)=brz(i,j)+brz_mn(ipert)*
-     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                        brp(i,j)=brp(i,j)+brp_mn(ipert)*
-     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                     ENDIF
-                     IF (xrzphi_flag) THEN
-                        xrr(i,j)=xrr(i,j)+xrr_mn(ipert)*
-     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                        xrz(i,j)=xrz(i,j)+xrz_mn(ipert)*
-     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                        xrp(i,j)=xrp(i,j)+xrp_mn(ipert)*
-     $                       EXP(twopi*ifac*mfac(ipert)*gdthe(i,j))
-                     ENDIF
-                  ENDDO
-                  IF (brzphi_flag) THEN
-                     brr(i,j)=
-     $                    REAL(brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))-
-     $                    helicity*ifac*AIMAG(brr(i,j)*EXP(-twopi*ifac*
-     $                    nn*gdphi(i,j)))
-                     brz(i,j)=
-     $                    REAL(brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))-
-     $                    helicity*ifac*AIMAG(brz(i,j)*EXP(-twopi*ifac*
-     $                    nn*gdphi(i,j)))
-                     brp(i,j)=
-     $                    REAL(brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))-
-     $                    helicity*ifac*AIMAG(brp(i,j)*EXP(-twopi*ifac*
-     $                    nn*gdphi(i,j)))
+                  ! compute matric tensor components.
+                  CALL bicube_eval(rzphi,gdpsi(i,j),gdthe(i,j),1)
+                  rfac=SQRT(rzphi%f(1))
+                  eta=twopi*(gdthe(i,j)+rzphi%f(2))
+                  rij=ro+rfac*COS(eta)
+                  zij=zo+rfac*SIN(eta)
+                  jac=rzphi%f(4)
+                  v(1,1)=rzphi%fx(1)/(2*rfac)
+                  v(1,2)=rzphi%fx(2)*twopi*rfac
+                  v(2,1)=rzphi%fy(1)/(2*rfac)
+                  v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+                  v(3,3)=twopi*rij
+                  t11=cos(eta)*v(1,1)-sin(eta)*v(1,2)
+                  t12=cos(eta)*v(2,1)-sin(eta)*v(2,2)
+                  t21=sin(eta)*v(1,1)+cos(eta)*v(1,2)
+                  t22=sin(eta)*v(2,1)+cos(eta)*v(2,2)
+                  t33=-1.0/v(3,3)
+                  ! three vector components.
+                  xwp = SUM(xwp_mn*EXP(ifac*mfac*twopi*gdthe(i,j)))
+                  bwp = SUM(bwp_mn*EXP(ifac*mfac*twopi*gdthe(i,j)))
+                  xwt = SUM(xwt_mn*EXP(ifac*mfac*twopi*gdthe(i,j)))
+                  bwt = SUM(bwt_mn*EXP(ifac*mfac*twopi*gdthe(i,j)))
+                  xvz = SUM(xvz_mn*EXP(ifac*mfac*twopi*gdthe(i,j)))
+                  bvz = SUM(bvz_mn*EXP(ifac*mfac*twopi*gdthe(i,j)))
+                  xrr(i,j) = (t11*xwp+t12*xwt)/jac
+                  brr(i,j) = (t11*bwp+t12*bwt)/jac
+                  xrz(i,j) = (t21*xwp+t22*xwt)/jac
+                  brz(i,j) = (t21*bwp+t22*bwt)/jac
+                  xrp(i,j) = t33*xvz
+                  brp(i,j) = t33*bvz
+                  ! Correction for helicity
+                  IF(helicity>0)THEN
+                     xrr(i,j) = CONJG(xrr(i,j))
+                     brr(i,j) = CONJG(brr(i,j))
+                     xrz(i,j) = CONJG(xrz(i,j))
+                     brz(i,j) = CONJG(brz(i,j))
+                     xrp(i,j) = CONJG(xrp(i,j))
+                     brp(i,j) = CONJG(brp(i,j))
                   ENDIF
-                  IF (xrzphi_flag) THEN
-                     xrr(i,j)=
-     $                    REAL(xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))-
-     $                    helicity*ifac*AIMAG(xrr(i,j)*EXP(-twopi*ifac*
-     $                    nn*gdphi(i,j)))
-                     xrz(i,j)=
-     $                    REAL(xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))-
-     $                    helicity*ifac*AIMAG(xrz(i,j)*EXP(-twopi*ifac*
-     $                    nn*gdphi(i,j)))
-                     xrp(i,j)=
-     $                    REAL(xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j)))-
-     $                    helicity*ifac*AIMAG(xrp(i,j)*EXP(-twopi*ifac*
-     $                    nn*gdphi(i,j)))
-                  ENDIF
+                  ! machine toroidal angle
+                  xrr(i,j) = xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brr(i,j) = brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  xrz(i,j) = xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brz(i,j) = brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  xrp(i,j) = xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brp(i,j) = brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
                ENDIF
             ENDDO
          ENDDO
       ENDIF
+      IF(timeit) CALL ipec_timer(2)     
 
       CALL ipeq_dealloc
 
@@ -2887,6 +2891,7 @@ c-----------------------------------------------------------------------
                
             ENDDO
          ENDDO
+         IF(timeit) CALL ipec_timer(2)     
       ENDIF
       
       IF (divzero_flag) THEN
@@ -3361,6 +3366,7 @@ c-----------------------------------------------------------------------
 
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag) DEALLOCATE(gdr,gdz,gdl,gdpsi,gdthe,gdphi)
+      CALL ipeq_rzpgrid(nr,nz,psixy) ! reset the grid
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

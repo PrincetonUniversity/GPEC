@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       USE idcon_mod
  
       IMPLICIT NONE
-
+      
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. ipeq_sol.
@@ -50,7 +50,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
 
       COMPLEX(r8), DIMENSION(mpert) :: xspfac
-      IF(debug_flag) PRINT *, "Entering ipeq_sol"      
+      
+      IF(debug_flag) PRINT *, "Entering ipeq_sol"
 c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
@@ -127,7 +128,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,m1,m2,dm
       COMPLEX(r8), DIMENSION(-mband:mband) ::jmat,jmat1
 
-      IF(debug_flag) PRINT *, "Entering ipeq_contra"      
+      IF(debug_flag) PRINT *, "Entering ipeq_contra"
 
       CALL spline_eval(sq,psi,1)
       CALL cspline_eval(metric%cs,psi,0)
@@ -212,7 +213,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,m1,m2,dm
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
 
-      IF(debug_flag) PRINT *, "Entering ipeq_cova"      
+      IF(debug_flag) PRINT *, "Entering ipeq_cova"
       
       CALL spline_eval(sq,psi,1)
       CALL cspline_eval(metric%cs,psi,0)
@@ -430,6 +431,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
      $     xwt_fun,bwt_fun,xvz_fun,bvz_fun,xrr_fun,brr_fun,
      $     xrz_fun,brz_fun,xrp_fun,brp_fun
+     
       IF(debug_flag) PRINT *, "Entering ipeq_rzphi"
 c-----------------------------------------------------------------------
 c     compute necessary components.
@@ -966,8 +968,15 @@ c-----------------------------------------------------------------------
       gdthe=0
       gdphi=0
       
-      IF(psixy<1) RETURN
-
+      IF(psixy<1)THEN
+         DO i=0,nr 
+            DO j=0,nz
+               gdr(i,j) = rmin+i*(rmax-rmin)/nr
+               gdz(i,j) = -zlim+j*2.0*zlim/nz
+            ENDDO
+         ENDDO
+         RETURN
+      ENDIF
       xint=(psi_in%xs(mr)-psi_in%xs(0))/nr
       zint=(psi_in%ys(mz)-psi_in%ys(0))/nz
       IF(debug_flag) WRITE(*,*) "Used psi_in"
