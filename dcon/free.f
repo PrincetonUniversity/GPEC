@@ -60,8 +60,9 @@ c-----------------------------------------------------------------------
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
-      REAL(r8), DIMENSION(mpert) :: ebt,ebp,ebv ! LOGAN
       COMPLEX(r8), DIMENSION(mpert) :: diff
+      REAL(r8) :: chi1 ! LOGAN
+      REAL(r8), DIMENSION(mpert) :: ebt,ebp,ebv ! LOGAN
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wbt,wbp,wbv,ct ! LOGAN
 c-----------------------------------------------------------------------
 c     write formats.
@@ -129,24 +130,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     LOGAN - compute flux eigenvalues and eigenvectors.
 c-----------------------------------------------------------------------
-      wbt = wp+wv
-      DO ipert=1,mpert ! Hermitian diag explicit (errors get magnified)
-         wbt(ipert,ipert) = REAL(wbt(ipert,ipert)) 
-      ENDDO
+      wbp = wp
+      wbv = wv
+      chi1=twopi*psio
+      print *,chi1
       DO ipert=1,mpert
-         wbt(ipert,:)= ifac*singfac*wbt(ipert,:)    !*twopi*chi1
-         wbt(:,ipert)=-ifac*singfac*wbt(:,ipert)    !*twopi*chi1
+         wbp(ipert,:)= 1/(ifac*twopi*chi1*singfac*wbp(ipert,:))    !*twopi*chi1
+         wbp(:,ipert)=-1/(ifac*twopi*chi1*singfac*wbp(:,ipert))    !*twopi*chi1
+         wbv(ipert,:)= 1/(ifac*twopi*chi1*singfac*wbv(ipert,:))    !*twopi*chi1
+         wbv(:,ipert)=-1/(ifac*twopi*chi1*singfac*wbv(:,ipert))    !*twopi*chi1
       ENDDO
-      !ct = CONJG(TRANSPOSE(wbt))
-      !print *, "Is flux matrix Hermitian?"
-      !print *, ALL(wbt .EQ. ct)
-      !print *, ALL(ABS(wbt - ct)/ABS(wt) < 1e-3)
-      !DO isol=1,mpert
-      !   IF(.NOT. ALL(wbt(isol,:) .EQ. ct(isol,:))) THEN
-      !     diff = wbt(isol,:)-ct(isol,:)
-      !     print *,isol,SQRT(ABS(DOT_PRODUCT(diff,diff)))
-      !   ENDIF
-      !ENDDO
+      wbt = wbp+wbv
+      work = 0
+      rwork = 0
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,wbt,mpert,ebt,work,lwork,rwork,info)
       work = 0
@@ -179,8 +175,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     LOGAN - compute plasma and vacuum contributions.
 c-----------------------------------------------------------------------
-      wbp=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wp,wbt))
-      wbv=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wv,wbt))
+      wbp=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wbp,wbt))
+      wbv=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wbv,wbt))
       DO ipert=1,mpert
          ebp(ipert)=wbp(ipert,ipert)
          ebv(ipert)=wbv(ipert,ipert)

@@ -215,7 +215,7 @@ c-----------------------------------------------------------------------
      $   "real(Phi^iLmda)","imag(Phi^iLmda)"
       DO i=1,mpert
          DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),14(1x,es16.8))')i,mfac(j),
+            WRITE(out_unit,'(2(1x,I4),16(1x,es16.8))')i,mfac(j),
      $           surf_indevmats(j,i),
      $           plas_indevmats(resp_index,j,i),
      $           permeabevmats(resp_index,j,i),
@@ -276,13 +276,21 @@ c-----------------------------------------------------------------------
              CALL ipeq_bcoords(psilim,vF,lmfac,lmpert,
      $            rout,bpout,bout,rcout,tout,jout)
             DO j=1,lmpert
-               WRITE(out_unit,'(2(1x,I4),14(1x,es16.8))')i,lmfac(j),
+               WRITE(out_unit,'(2(1x,I4),16(1x,es16.8))')i,lmfac(j),
      $              vL(j),vL1(j),vP(j),vP1(j),vR(j),vW(j),vF(j),vLi(j)
             ENDDO 
          ENDDO
          WRITE(out_unit,*)
       ENDIF
 
+      ! start with DCON's total displacement vectors
+      a = wtraw*(twopi**2)/(2*mu0)
+      b = 0
+      DO i=1,mpert
+         b(i,i) = 1/(chi1*twopi*ifac*(mfac(i)-nn*qlim))
+      ENDDO
+      ! convert to total flux
+      a = MATMUL(CONJG(b),MATMUL(a,b))
       WRITE(out_unit,*)"Raw Matrices"
       WRITE(out_unit,*)" jac_type = ",jac_type
       WRITE(out_unit,*)" L = Vacuum Inductance"
@@ -290,16 +298,20 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)" P = Permeability"
       WRITE(out_unit,*)" rho = Reluctance"
       WRITE(out_unit,*)
-      WRITE(out_unit,'(2(1x,a4),8(1x,a12))')"mode","m",
+      WRITE(out_unit,'(2(1x,a4),16(1x,a12))')"m_i","m_j",
      $  "real(L)","imag(L)","real(Lambda)","imag(Lambda)",
-     $  "real(P)","imag(P)","real(rho)","imag(rho)"
+     $  "real(P)","imag(P)","real(rho)","imag(rho)",
+     $  "real(iLmda)","imag(iLmda)","real(F)","imag(F)",
+     $  "real(W)","imag(W)","real(S)","imag(S)"
       DO i=1,mpert
          DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),8(1x,es12.3))')i,mfac(j),
+            WRITE(out_unit,'(2(1x,I4),16(1x,es12.3))')mfac(i),mfac(j),
      $           surf_indmats(j,i),
      $           plas_indmats(resp_index,j,i),
      $           permeabmats(resp_index,j,i),
-     $           reluctmats(resp_index,j,i)
+     $           reluctmats(resp_index,j,i),
+     $           pinv_indmats(resp_index,j,i),
+     $           a(j,i),wtraw(j,i),b(j,i)
          ENDDO 
       ENDDO
       WRITE(out_unit,*)
@@ -2007,8 +2019,8 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: did_m,did_p,did_t,vid_m,vid_p,vid_t,vid_r,vid_z,
-     $   vid_rb,vid_ib,vid_rx,vid_ix
+      INTEGER :: did_m,pdid,tdid,idid,mdid,vid_m,vid_r,vid_z,
+     $   vid_b,vid_x
       
       INTEGER :: i,istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax,area
@@ -2263,63 +2275,48 @@ c-----------------------------------------------------------------------
       ENDIF
       
       ! append to netcdf file
-       CALL check( nf90_redef(fncid))
-       ! Define dimensions
-       CALL check( nf90_def_dim(fncid,"psi_N",mstep,did_p) )
-       CALL check( nf90_def_dim(fncid,"theta",mthsurf,did_t) )
-       ! Define variables
-       CALL check( nf90_def_var(fncid, "psi_N", nf90_double,
-     $             (/did_p/),vid_p) )
-       CALL check( nf90_put_att(fncid,vid_p,"long_name",
-     $             "Normalized Poloidal Flux") )
-       CALL check( nf90_def_var(fncid, "theta", nf90_double,
-     $             (/did_t/),vid_t) )
-       CALL check( nf90_put_att(fncid,vid_t,"long_name",
-     $             jac_type//" Poloidal Angle") )
-       CALL check( nf90_def_var(fncid, "R", nf90_double,
-     $             (/did_p,did_t/),vid_r) )
-       CALL check( nf90_put_att(fncid,vid_r,"long_name",
-     $             "Major Radius") )
-       CALL check( nf90_def_var(fncid, "z", nf90_double,
-     $             (/did_p,did_t/),vid_z) )
-       CALL check( nf90_put_att(fncid,vid_r,"long_name",
-     $             "Vertical Position") )
-       CALL check( nf90_def_var(fncid, "real(b_n)", nf90_double,
-     $             (/did_p,did_t/),vid_rb) )
-       CALL check( nf90_put_att(fncid,vid_rb,"long_name",
-     $             "Perturbed Field Normal to the Flux Surface") )
-       CALL check( nf90_def_var(fncid, "imag(b_n)", nf90_double,
-     $             (/did_p,did_t/),vid_ib) )
-       CALL check( nf90_put_att(fncid,vid_ib,"long_name",
-     $             "Displacement Normal to the Flux Surface") )
-       CALL check( nf90_def_var(fncid, "real(xi_n)", nf90_double,
-     $             (/did_p,did_t/),vid_rx) )
-       CALL check( nf90_put_att(fncid,vid_rx,"long_name",
-     $             "Displacement Normal to the Flux Surface") )
-       CALL check( nf90_def_var(fncid, "imag(xi_n)", nf90_double,
-     $             (/did_p,did_t/),vid_ix) )
-       CALL check( nf90_put_att(fncid,vid_ix,"long_name",
-     $             "Perturbed Field Normal to the Flux Surface") )
+      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
+      CALL check( nf90_open(fncfile,nf90_write,fncid) )
+      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+      CALL check( nf90_inq_dimid(fncid,"i",idid) )
+      CALL check( nf90_inq_dimid(fncid,"m",mdid) )
+      CALL check( nf90_inq_dimid(fncid,"psi_N",pdid) )
+      CALL check( nf90_inq_dimid(fncid,"theta",tdid) )
+      ! Start definitions
+      CALL check( nf90_redef(fncid))
+      ! Define variables
+      CALL check( nf90_def_var(fncid, "R", nf90_double,
+     $            (/pdid,tdid/),vid_r) )
+      CALL check( nf90_put_att(fncid,vid_r,"long_name",
+     $            "Major Radius") )
+      CALL check( nf90_def_var(fncid, "z", nf90_double,
+     $            (/pdid,tdid/),vid_z) )
+      CALL check( nf90_put_att(fncid,vid_r,"long_name",
+     $            "Vertical Position") )
+      CALL check( nf90_def_var(fncid, "b_n", nf90_double,
+     $            (/pdid,tdid,idid/),vid_b) )
+      CALL check( nf90_put_att(fncid,vid_b,"long_name",
+     $            "Perturbed Field Normal to the Flux Surface") )
+      CALL check( nf90_def_var(fncid, "xi_n", nf90_double,
+     $            (/pdid,tdid,idid/),vid_x) )
+      CALL check( nf90_put_att(fncid,vid_x,"long_name",
+     $            "Displacement Normal to the Flux Surface") )
       ! define units
       CALL check( nf90_put_att(fncid,vid_r,"units","m") )
       CALL check( nf90_put_att(fncid,vid_z,"units","m") )
-      CALL check( nf90_put_att(fncid,vid_rx,"units","m") )
-      CALL check( nf90_put_att(fncid,vid_ix,"units","m") )
-      CALL check( nf90_put_att(fncid,vid_rb,"units","Tesla") )
-      CALL check( nf90_put_att(fncid,vid_ib,"units","Tesla") )
+      CALL check( nf90_put_att(fncid,vid_x,"units","m") )
+      CALL check( nf90_put_att(fncid,vid_b,"units","Tesla") )
       ! End definitions
       CALL check( nf90_enddef(fncid) )
       ! Write data to file
-      CALL check( nf90_put_var(fncid,vid_p,psifac) )
-      CALL check( nf90_put_var(fncid,vid_t,twopi*theta) )
       CALL check( nf90_put_var(fncid,vid_r,rs) )
       CALL check( nf90_put_var(fncid,vid_z,zs) )
-      CALL check( nf90_put_var(fncid,vid_rx, REAL(xnofuns)) )
-      CALL check( nf90_put_var(fncid,vid_rx, REAL(xnofuns)) )
-      CALL check( nf90_put_var(fncid,vid_rx, REAL(xnofuns)) )
-      CALL check( nf90_put_var(fncid,vid_ix,-helicity*AIMAG(xnofuns)) )
-      CALL check( nf90_put_var(fncid,vid_rb, REAL(bnofuns)) )
-      CALL check( nf90_put_var(fncid,vid_ib,-helicity*AIMAG(bnofuns)) )
+      CALL check( nf90_put_var(fncid,vid_x,RESHAPE((/REAL(xnofuns),
+     $             -helicity*AIMAG(xnofuns)/),(/mstep,mthsurf+1,2/))) )
+      CALL check( nf90_put_var(fncid,vid_b,RESHAPE((/REAL(bnofuns),
+     $             -helicity*AIMAG(bnofuns)/),(/mstep,mthsurf+1,2/))) )
+      ! Close file
+      CALL check( nf90_close(mncid) )
 
       IF (flux_flag) THEN
          IF (.NOT. bin_2d_flag) THEN
