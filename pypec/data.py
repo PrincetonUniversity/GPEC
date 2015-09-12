@@ -1080,7 +1080,7 @@ class DataBase(object):
             elif np.all(x1==self.pts[:,0]) or np.all(x1==self.pts[:,1]):
                 y = raw
             else:
-                y = griddata(self.pts,np.nan_to_num(raw),(x1,x2),method='nearest')
+                y = griddata(self.pts,np.nan_to_num(raw),(x1,x2),method='linear')
             if swap:
                 x1,x2,y = x2.T,x1.T,y.T
             
@@ -1090,10 +1090,8 @@ class DataBase(object):
                 kwargs['aspect']=aspect
                 kwargs.setdefault('extent',[x1.min(),x1.max(),x2.min(),x2.max()])
                 args = [y.T]
-                print(kwargs['extent'],np.shape(args[0]))
             else:
                 args = [x1,x2,y]
-                print(np.shape(x1),np.shape(x2),np.shape(y))
                 if plotter in [a.pcolormesh,a.tripcolor]:
                     kwargs.setdefault('edgecolor','None')
                     kwargs.setdefault('shading','gouraud')
