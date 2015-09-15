@@ -805,6 +805,7 @@ c-----------------------------------------------------------------------
          PRINT *,'------',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
          ALLOCATE(grri(nths2,nfm2))
          CALL grrget(nfm2,nths2,grri)
+         kernelsignin = 1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
      $               kernelsignin)
          ALLOCATE(grre(nths2,nfm2))
