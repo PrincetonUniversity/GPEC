@@ -1659,6 +1659,9 @@ c-----------------------------------------------------------------------
       INTEGER :: i,istep,ipert,itheta,iindex,cstep
       REAL(r8) :: ileft,jac
 
+      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,b_id,bme_id,be_id,
+     $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat
+
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
       REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,equilbfun
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
@@ -1810,6 +1813,101 @@ c-----------------------------------------------------------------------
       ENDDO
 
       CALL cspline_dealloc(cspl)
+      
+      ! append to netcdf file
+      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
+      CALL check( nf90_open(fncfile,nf90_write,fncid) )
+      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
+      CALL check( nf90_inq_dimid(fncid,"psi_N",p_id) )
+      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
+      IF(debug_flag) PRINT *,"  Defining variables"
+      CALL check( nf90_redef(fncid))
+      rzstat = nf90_inq_varid(fncid, "R", r_id) ! check if R,z already stored
+      IF(rzstat/=nf90_noerr)THEN
+         CALL check( nf90_def_var(fncid, "R", nf90_double,
+     $               (/p_id,t_id/),r_id) )
+         CALL check( nf90_put_att(fncid,r_id,"long_name",
+     $               "Major Radius") )
+         CALL check( nf90_put_att(fncid,r_id,"units","m") )
+         CALL check( nf90_def_var(fncid, "z", nf90_double,
+     $               (/p_id,t_id/),z_id) )
+         CALL check( nf90_put_att(fncid,z_id,"long_name",
+     $               "Vertical Position") )
+         CALL check( nf90_put_att(fncid,z_id,"units","m") )
+      ENDIF
+      CALL check( nf90_def_var(fncid, "b_eul", nf90_double,
+     $            (/p_id,t_id,i_id/),be_id) )
+      CALL check( nf90_put_att(fncid,be_id,"long_name",
+     $            "Eulerian Perturbed Field") )
+      CALL check( nf90_put_att(fncid,be_id,"units","Tesla") )
+      CALL check( nf90_def_var(fncid, "b_lag", nf90_double,
+     $            (/p_id,t_id,i_id/),bl_id) )
+      CALL check( nf90_put_att(fncid,bl_id,"long_name",
+     $            "Lagrangian Perturbed Field") )
+      CALL check( nf90_put_att(fncid,bl_id,"units","Tesla") )
+      CALL check( nf90_def_var(fncid, "b_m-eul", nf90_double,
+     $            (/p_id,m_id,i_id/),bme_id) )
+      CALL check( nf90_put_att(fncid,bme_id,"long_name",
+     $            "Eulerian Perturbed Field") )
+      CALL check( nf90_put_att(fncid,bme_id,"units","Tesla") )
+      CALL check( nf90_put_att(fncid,bme_id,"Jacobian",jac_out) )
+      CALL check( nf90_def_var(fncid, "b_m-lag", nf90_double,
+     $            (/p_id,m_id,i_id/),bml_id) )
+      CALL check( nf90_put_att(fncid,bml_id,"long_name",
+     $            "Lagrangian Perturbed Field") )
+      CALL check( nf90_put_att(fncid,bml_id,"units","Tesla") )
+      CALL check( nf90_put_att(fncid,bml_id,"Jacobian",jac_out) )
+      CALL check( nf90_def_var(fncid, "Bdivxi_perp", nf90_double,
+     $            (/p_id,t_id,i_id/),x_id) )
+      CALL check( nf90_put_att(fncid,x_id,"long_name",
+     $            "Divergence of the normal displacement") )
+      CALL check( nf90_def_var(fncid, "Bdivxi_m-perp", nf90_double,
+     $            (/p_id,m_id,i_id/),xm_id) )
+      CALL check( nf90_put_att(fncid,xm_id,"long_name",
+     $            "Divergence of the normal displacement") )
+      CALL check( nf90_put_att(fncid,xm_id,"Jacobian",jac_out) )
+      CALL check( nf90_def_var(fncid, "Bkappaxi_perp", nf90_double,
+     $            (/p_id,t_id,i_id/),k_id) )
+      CALL check( nf90_put_att(fncid,k_id,"long_name",
+     $            "Divergence of the normal displacement") )
+      CALL check( nf90_def_var(fncid, "Bkappaxi_m-perp", nf90_double,
+     $            (/p_id,m_id,i_id/),km_id) )
+      CALL check( nf90_put_att(fncid,km_id,"long_name",
+     $            "Divergence of the normal displacement") )
+      CALL check( nf90_put_att(fncid,km_id,"Jacobian",jac_out) )
+      CALL check( nf90_def_var(fncid, "B", nf90_double,
+     $            (/p_id,t_id/),b_id) )
+      CALL check( nf90_put_att(fncid,b_id,"long_name",
+     $            "Equilibrium Field Strength") )
+      CALL check( nf90_enddef(fncid) )
+      IF(debug_flag) PRINT *,"  Writting variables"
+      IF(rzstat/=nf90_noerr)THEN
+         CALL check( nf90_put_var(fncid,r_id,rs) )
+         CALL check( nf90_put_var(fncid,z_id,zs) )
+      ENDIF
+      CALL check( nf90_put_var(fncid,bme_id,RESHAPE((/REAL(eulbparmout),
+     $             AIMAG(eulbparmout)/),(/mstep,mpert,2/))) )
+      CALL check( nf90_put_var(fncid,bml_id,RESHAPE((/REAL(lagbparmout),
+     $             AIMAG(lagbparmout)/),(/mstep,mpert,2/))) )
+      CALL check( nf90_put_var(fncid,xm_id,RESHAPE((/REAL(-divxprpmout),
+     $             AIMAG(-divxprpmout)/),(/mstep,mpert,2/))) )
+      CALL check( nf90_put_var(fncid,km_id,RESHAPE((/REAL(-curvmout),
+     $             AIMAG(-curvmout)/),(/mstep,mpert,2/))) )
+      CALL check( nf90_put_var(fncid,be_id,RESHAPE((/REAL(eulbparfout),
+     $            -helicity*AIMAG(eulbparfout)/),(/mstep,mthsurf,2/))) )
+      CALL check( nf90_put_var(fncid,bl_id,RESHAPE((/REAL(lagbparfout),
+     $            -helicity*AIMAG(lagbparfout)/),(/mstep,mthsurf,2/))) )
+      CALL check( nf90_put_var(fncid,x_id,RESHAPE((/REAL(-divxprpfout),
+     $            -helicity*AIMAG(-divxprpfout)/),(/mstep,mthsurf,2/))))
+      CALL check( nf90_put_var(fncid,k_id,RESHAPE((/REAL(-curvfout),
+     $            -helicity*AIMAG(-curvfout)/),(/mstep,mthsurf,2/))) )
+      CALL check( nf90_put_var(fncid,b_id,equilbfun) )
+      
+      CALL check( nf90_close(fncid) )
+      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
+
 
       CALL ascii_open(out_unit,"ipec_pmodb_n"//
      $     TRIM(sn)//".out","UNKNOWN")
@@ -2019,8 +2117,8 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: did_m,pdid,tdid,idid,mdid,vid_m,vid_r,vid_z,
-     $   vid_b,vid_x
+      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,xm_id,x_id,
+     $   rv_id,zv_id,rzstat
       
       INTEGER :: i,istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax,area
@@ -2278,45 +2376,73 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
       CALL check( nf90_open(fncfile,nf90_write,fncid) )
       IF(debug_flag) PRINT *,"  Inquiring about dimensions"
-      CALL check( nf90_inq_dimid(fncid,"i",idid) )
-      CALL check( nf90_inq_dimid(fncid,"m",mdid) )
-      CALL check( nf90_inq_dimid(fncid,"psi_N",pdid) )
-      CALL check( nf90_inq_dimid(fncid,"theta",tdid) )
-      ! Start definitions
+      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
+      CALL check( nf90_inq_dimid(fncid,"psi_N",p_id) )
+      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
+      IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(fncid))
-      ! Define variables
-      CALL check( nf90_def_var(fncid, "R", nf90_double,
-     $            (/pdid,tdid/),vid_r) )
-      CALL check( nf90_put_att(fncid,vid_r,"long_name",
-     $            "Major Radius") )
-      CALL check( nf90_def_var(fncid, "z", nf90_double,
-     $            (/pdid,tdid/),vid_z) )
-      CALL check( nf90_put_att(fncid,vid_r,"long_name",
-     $            "Vertical Position") )
-      CALL check( nf90_def_var(fncid, "b_n", nf90_double,
-     $            (/pdid,tdid,idid/),vid_b) )
-      CALL check( nf90_put_att(fncid,vid_b,"long_name",
+      rzstat = nf90_inq_varid(fncid, "R", r_id) ! check if R,z already stored
+      IF(rzstat/=nf90_noerr)THEN
+         CALL check( nf90_def_var(fncid, "R", nf90_double,
+     $               (/p_id,t_id/),r_id) )
+         CALL check( nf90_put_att(fncid,r_id,"long_name",
+     $               "Major Radius") )
+         CALL check( nf90_put_att(fncid,r_id,"units","m") )
+         CALL check( nf90_def_var(fncid, "z", nf90_double,
+     $               (/p_id,t_id/),z_id) )
+         CALL check( nf90_put_att(fncid,z_id,"long_name",
+     $               "Vertical Position") )
+         CALL check( nf90_put_att(fncid,z_id,"units","m") )
+      ENDIF
+      CALL check( nf90_def_var(fncid, "b_perp", nf90_double,
+     $            (/p_id,t_id,i_id/),b_id) )
+      CALL check( nf90_put_att(fncid,b_id,"long_name",
      $            "Perturbed Field Normal to the Flux Surface") )
-      CALL check( nf90_def_var(fncid, "xi_n", nf90_double,
-     $            (/pdid,tdid,idid/),vid_x) )
-      CALL check( nf90_put_att(fncid,vid_x,"long_name",
+      CALL check( nf90_put_att(fncid,b_id,"units","Tesla") )
+      CALL check( nf90_def_var(fncid, "b_m-perp", nf90_double,
+     $            (/p_id,m_id,i_id/),bm_id) )
+      CALL check( nf90_put_att(fncid,bm_id,"long_name",
+     $            "Perturbed Field Normal to the Flux Surface") )
+      CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
+      CALL check( nf90_put_att(fncid,bm_id,"Jacobian",jac_out) )
+      CALL check( nf90_def_var(fncid, "xi_perp", nf90_double,
+     $            (/p_id,t_id,i_id/),x_id) )
+      CALL check( nf90_put_att(fncid,x_id,"long_name",
      $            "Displacement Normal to the Flux Surface") )
-      ! define units
-      CALL check( nf90_put_att(fncid,vid_r,"units","m") )
-      CALL check( nf90_put_att(fncid,vid_z,"units","m") )
-      CALL check( nf90_put_att(fncid,vid_x,"units","m") )
-      CALL check( nf90_put_att(fncid,vid_b,"units","Tesla") )
-      ! End definitions
+      CALL check( nf90_put_att(fncid,x_id,"units","m") )
+      CALL check( nf90_def_var(fncid, "xi_m-perp", nf90_double,
+     $            (/p_id,m_id,i_id/),xm_id) )
+      CALL check( nf90_put_att(fncid,xm_id,"long_name",
+     $            "Displacement Normal to the Flux Surface") )
+      CALL check( nf90_put_att(fncid,xm_id,"units","m") )
+      CALL check( nf90_put_att(fncid,bm_id,"Jacobian",jac_out) )
+      CALL check( nf90_def_var(fncid, "R_perp", nf90_double,
+     $            (/p_id,t_id/),rv_id) )
+      CALL check( nf90_put_att(fncid,rv_id,"long_name",
+     $            "Radial unit normal: R_3D = R_sym+x_n*R_perp") )
+      CALL check( nf90_def_var(fncid, "z_perp", nf90_double,
+     $            (/p_id,t_id/),zv_id) )
+      CALL check( nf90_put_att(fncid,zv_id,"long_name",
+     $            "Vertical unit normal: z_3D = z_sym+x_n*z_perp") )
       CALL check( nf90_enddef(fncid) )
-      ! Write data to file
-      CALL check( nf90_put_var(fncid,vid_r,rs) )
-      CALL check( nf90_put_var(fncid,vid_z,zs) )
-      CALL check( nf90_put_var(fncid,vid_x,RESHAPE((/REAL(xnofuns),
+      IF(debug_flag) PRINT *,"  Writting variables"
+      IF(rzstat/=nf90_noerr)THEN
+         CALL check( nf90_put_var(fncid,r_id,rs) )
+         CALL check( nf90_put_var(fncid,z_id,zs) )
+      ENDIF
+      CALL check( nf90_put_var(fncid,xm_id,RESHAPE((/REAL(xnomns),
+     $             AIMAG(xnomns)/),(/mstep,mpert,2/))) )
+      CALL check( nf90_put_var(fncid,bm_id,RESHAPE((/REAL(xnomns),
+     $             AIMAG(bnomns)/),(/mstep,mpert,2/))) )
+      CALL check( nf90_put_var(fncid,x_id,RESHAPE((/REAL(xnofuns),
      $             -helicity*AIMAG(xnofuns)/),(/mstep,mthsurf+1,2/))) )
-      CALL check( nf90_put_var(fncid,vid_b,RESHAPE((/REAL(bnofuns),
+      CALL check( nf90_put_var(fncid,b_id,RESHAPE((/REAL(bnofuns),
      $             -helicity*AIMAG(bnofuns)/),(/mstep,mthsurf+1,2/))) )
-      ! Close file
-      CALL check( nf90_close(mncid) )
+      CALL check( nf90_put_var(fncid,rv_id,rvecs) )
+      CALL check( nf90_put_var(fncid,zv_id,zvecs) )
+      CALL check( nf90_close(fncid) )
+      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
 
       IF (flux_flag) THEN
          IF (.NOT. bin_2d_flag) THEN
@@ -2376,6 +2502,8 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,ipert,i
       REAL(r8), DIMENSION(0:cmpsi) :: psi
       COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
+
+      INTEGER :: p_id,t_id,i_id,m_id,bm_id,q_id
 
       COMPLEX(r8), DIMENSION(mpert) :: vwpmn
       COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
@@ -2437,6 +2565,33 @@ c-----------------------------------------------------------------------
 
       DEALLOCATE(vcmn)
 
+      
+      ! append to netcdf file once this is (mstep,mpert)
+c      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
+c      CALL check( nf90_open(fncfile,nf90_write,fncid) )
+c      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+c      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+c      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
+c      CALL check( nf90_inq_dimid(fncid,"psi_N",p_id) )
+c      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
+c      IF(debug_flag) PRINT *,"  Defining variables"
+c      CALL check( nf90_redef(fncid))
+c      CALL check( nf90_def_var(fncid, "q", nf90_double,(/p_id/),q_id) )
+c      CALL check( nf90_put_att(fncid,q_id,"long_name","Safety Factor") )
+c      CALL check( nf90_def_var(fncid, "b_m-vperp", nf90_double,
+c     $            (/p_id,m_id,i_id/),bm_id) )
+c      CALL check( nf90_put_att(fncid,bm_id,"long_name",
+c     $            "Vacuum Field Normal to the Flux Surface") )
+c      CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
+c      CALL check( nf90_put_att(fncid,bm_id,"Jacobian",jac_out) )
+c      CALL check( nf90_enddef(fncid) )
+c      IF(debug_flag) PRINT *,"  Writting variables"
+c      CALL check( nf90_put_var(fncid,bm_id,qs) )
+c      CALL check( nf90_put_var(fncid,bm_id,RESHAPE((/REAL(vmn),
+c     $             AIMAG(vmn)/),(/mstep,mpert,2/))) )
+c      CALL check( nf90_close(fncid) )
+c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
+      
       CALL ascii_open(out_unit,"ipec_vbnormal_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_VBNROMAL: "//
@@ -2708,6 +2863,9 @@ c-----------------------------------------------------------------------
       REAL(r8) :: mid,btlim,rlim,ileft,delr,delz,cha,chb,chc,chd,
      $   rij,zij,tij,t11,t12,t21,t22,t33
       COMPLEX(r8) :: xwp,bwp,xwt,bwt,xvz,bvz
+
+      INTEGER :: r_id,z_id,i_id,xr_id,xz_id,xp_id,br_id,bz_id,bp_id,
+     $   bre_id,bze_id,bpe_id,brp_id,bzp_id,bpp_id
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
@@ -3109,6 +3267,102 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
+      ! append to netcdf file once this is (mstep,mpert)
+      IF(debug_flag) PRINT *,"Opening "//TRIM(cncfile)
+      CALL check( nf90_open(cncfile,nf90_write,cncid) )
+      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+      CALL check( nf90_inq_dimid(cncid,"i",i_id) )
+      CALL check( nf90_inq_dimid(cncid,"R",r_id) )
+      CALL check( nf90_inq_dimid(cncid,"z",z_id) )
+      IF(debug_flag) PRINT *,"  Defining variables"
+      CALL check( nf90_redef(cncid))
+      CALL check( nf90_def_var(cncid, "b_r-equil", nf90_double,
+     $            (/r_id,z_id/),bre_id) )
+      CALL check( nf90_put_att(cncid,bre_id,"long_name",
+     $            "Radial Equilibrium Field") )
+      CALL check( nf90_put_att(cncid,bre_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "b_z-equil", nf90_double,
+     $            (/r_id,z_id/),bze_id) )
+      CALL check( nf90_put_att(cncid,bze_id,"long_name",
+     $            "Vertical Equilibrium Field") )
+      CALL check( nf90_put_att(cncid,bze_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "b_t-equil", nf90_double,
+     $            (/r_id,z_id/),bpe_id) )
+      CALL check( nf90_put_att(cncid,bpe_id,"long_name",
+     $            "Toroidal Equilibrium Field") )
+      CALL check( nf90_put_att(cncid,bpe_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "b_r-plas", nf90_double,
+     $            (/r_id,z_id,i_id/),brp_id) )
+      CALL check( nf90_put_att(cncid,brp_id,"long_name",
+     $            "Radial Plasma Field") )
+      CALL check( nf90_put_att(cncid,brp_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "b_z-plas", nf90_double,
+     $            (/r_id,z_id,i_id/),bzp_id) )
+      CALL check( nf90_put_att(cncid,bzp_id,"long_name",
+     $            "Vertical Plasma Field") )
+      CALL check( nf90_put_att(cncid,bzp_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "b_t-plas", nf90_double,
+     $            (/r_id,z_id,i_id/),bpp_id) )
+      CALL check( nf90_put_att(cncid,bpp_id,"long_name",
+     $            "Toroidal Plasma Field") )
+      CALL check( nf90_put_att(cncid,bpp_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "b_r", nf90_double,
+     $            (/r_id,z_id,i_id/),br_id) )
+      CALL check( nf90_put_att(cncid,br_id,"long_name",
+     $            "Radial Nonaxisymmetric Field") )
+      CALL check( nf90_put_att(cncid,br_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "b_z", nf90_double,
+     $            (/r_id,z_id,i_id/),bz_id) )
+      CALL check( nf90_put_att(cncid,bz_id,"long_name",
+     $            "Vertical Nonaxisymmetric Field") )
+      CALL check( nf90_put_att(cncid,bz_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "b_t", nf90_double,
+     $            (/r_id,z_id,i_id/),bp_id) )
+      CALL check( nf90_put_att(cncid,bp_id,"long_name",
+     $            "Toroidal Nonaxisymmetric Field") )
+      CALL check( nf90_put_att(cncid,bp_id,"units","Tesla") )
+      CALL check( nf90_def_var(cncid, "xi_r", nf90_double,
+     $            (/r_id,z_id,i_id/),xr_id) )
+      CALL check( nf90_put_att(cncid,xr_id,"long_name",
+     $            "Radial Nonaxisymmetric Displacement") )
+      CALL check( nf90_put_att(cncid,xr_id,"units","m") )
+      CALL check( nf90_def_var(cncid, "xi_z", nf90_double,
+     $            (/r_id,z_id,i_id/),xz_id) )
+      CALL check( nf90_put_att(cncid,xz_id,"long_name",
+     $            "Vertical Nonaxisymmetric Displacement") )
+      CALL check( nf90_put_att(cncid,bz_id,"units","m") )
+      CALL check( nf90_def_var(cncid, "xi_t", nf90_double,
+     $            (/r_id,z_id,i_id/),xp_id) )
+      CALL check( nf90_put_att(cncid,xp_id,"long_name",
+     $            "Toroidal Nonaxisymmetric Displacement") )
+      CALL check( nf90_put_att(cncid,bp_id,"units","m") )
+      CALL check( nf90_enddef(cncid) )
+      IF(debug_flag) PRINT *,"  Writting variables"
+      CALL check( nf90_put_var(cncid,bre_id,ebr) )
+      CALL check( nf90_put_var(cncid,bze_id,ebz) )
+      CALL check( nf90_put_var(cncid,bpe_id,ebp) )
+      CALL check( nf90_put_var(cncid,br_id,RESHAPE((/REAL(btr),
+     $             AIMAG(btr)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_put_var(cncid,bz_id,RESHAPE((/REAL(btz),
+     $             AIMAG(btz)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_put_var(cncid,bp_id,RESHAPE((/REAL(btp),
+     $             AIMAG(btp)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_put_var(cncid,brp_id,RESHAPE((/REAL(bpr),
+     $             AIMAG(bpr)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_put_var(cncid,bzp_id,RESHAPE((/REAL(bpz),
+     $             AIMAG(bpz)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_put_var(cncid,bpp_id,RESHAPE((/REAL(bpp),
+     $             AIMAG(bpp)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_put_var(cncid,xr_id,RESHAPE((/REAL(xrr),
+     $             AIMAG(xrr)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_put_var(cncid,xz_id,RESHAPE((/REAL(xrz),
+     $             AIMAG(xrz)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_put_var(cncid,xp_id,RESHAPE((/REAL(xrp),
+     $             AIMAG(xrp)/),(/nr+1,nz+1,2/))) )
+      CALL check( nf90_close(cncid) )
+      IF(debug_flag) PRINT *,"Closed "//TRIM(cncfile)
+
+      
       IF (eqbrzphi_flag) THEN
          CALL ascii_open(out_unit,"ipec_eqbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
@@ -4210,7 +4464,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER:: i,midid,mmdid,medid,mvdid,msdid,fidid,fmdid,fpdid,ftdid,
-     $   cidid,crdid,czdid,
+     $   cidid,crdid,czdid,clvid,
      $   mivid,mmvid,mevid,mvvid,msvid,fivid,fmvid,fpvid,ftvid,
      $   civid,crvid,czvid
       INTEGER, DIMENSION(mpert) :: mmodes
@@ -4273,6 +4527,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(cncid,"z",nz+1,czdid) )
       CALL check( nf90_def_var(cncid,"z",nf90_double,czdid,czvid) )
       CALL check( nf90_put_att(cncid,czvid,"units","m") )
+      CALL check( nf90_def_var(cncid,"l",nf90_double,
+     $                         (/crdid,czdid/),clvid) )
       CALL check( nf90_put_att(cncid,nf90_global,"n",nn) )
       
       CALL check( nf90_enddef(mncid) )
@@ -4297,6 +4553,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(cncid,civid,(/0,1/)) )
       CALL check( nf90_put_var(cncid,crvid,gdr(:,0)) )
       CALL check( nf90_put_var(cncid,czvid,gdz(0,:)) )
+      CALL check( nf90_put_var(cncid,clvid,gdl(:,:)) )
 
       IF(debug_flag) PRINT *," - Closing netcdf files"
       CALL check( nf90_close(mncid) )
