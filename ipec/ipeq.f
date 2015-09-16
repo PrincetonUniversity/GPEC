@@ -727,6 +727,52 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_fcoords
 c-----------------------------------------------------------------------
+c     subprogram 9.1 ipeq_fcoords2.
+c     transform to dcon coordinates. Assumes mpert,lmpert,jac_out
+c-----------------------------------------------------------------------
+      SUBROUTINE ipeq_fcoordsout(fmo,fmi,psi,ti,ji)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN), OPTIONAL :: ti,ji
+      REAL(r8), INTENT(IN) :: psi
+      COMPLEX(r8), DIMENSION(lmpert), INTENT(IN) :: fmi
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: fmo
+      
+      INTEGER :: i,tout,jout
+c-----------------------------------------------------------------------
+c     Defaults.
+c-----------------------------------------------------------------------
+      IF(PRESENT(ti))THEN
+         tout = ti
+      ELSE
+         tout = tmag_out
+      ENDIF
+      IF(PRESENT(ji))THEN
+         jout = ji
+      ELSE
+         jout = 0
+      ENDIF
+c-----------------------------------------------------------------------
+c     Form new vector in mi space.
+c-----------------------------------------------------------------------
+      fmo = 0
+      DO i=1,mpert
+        IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+           fmo(i) = fmi(mlow-lmlow+i)
+        ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     transform new vector.
+c-----------------------------------------------------------------------
+      CALL ipeq_fcoords(psi,fmo,mfac,mpert,power_rout,power_bpout,
+     $   power_bout,power_rcout,ti,ji)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipeq_fcoordsout
+c-----------------------------------------------------------------------
 c     subprogram 10. ipeq_bcoords.
 c     transform dcon coordinates to other coordinates.
 c-----------------------------------------------------------------------
@@ -865,6 +911,52 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_bcoords
+c-----------------------------------------------------------------------
+c     subprogram 10.1 ipeq_bcoordsout.
+c     transform dcon to other coordinates. Assumes mpert,lmpert,jac_out
+c-----------------------------------------------------------------------
+      SUBROUTINE ipeq_bcoordsout(fmo,fmi,psi,ti,ji)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN), OPTIONAL :: ti,ji
+      REAL(r8), INTENT(IN) :: psi
+      COMPLEX(r8), DIMENSION(lmpert), INTENT(IN) :: fmi
+      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: fmo
+      
+      INTEGER :: i,tout,jout
+c-----------------------------------------------------------------------
+c     Defaults.
+c-----------------------------------------------------------------------
+      IF(PRESENT(ti))THEN
+         tout = ti
+      ELSE
+         tout = tmag_out
+      ENDIF
+      IF(PRESENT(ji))THEN
+         jout = ji
+      ELSE
+         jout = 0
+      ENDIF
+c-----------------------------------------------------------------------
+c     Form new vector in mi space.
+c-----------------------------------------------------------------------
+      fmo = 0
+      DO i=1,mpert
+        IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+           fmo(mlow-lmlow+i) = fmi(i)
+        ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     transform new vector.
+c-----------------------------------------------------------------------
+      CALL ipeq_bcoords(psi,fmo,lmfac,lmpert,power_rout,power_bpout,
+     $   power_bout,power_rcout,tout,jout)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipeq_bcoordsout
 c-----------------------------------------------------------------------
 c     subprogram 11. ipeq_weight.
 c     switch between a function and a weighted function.
