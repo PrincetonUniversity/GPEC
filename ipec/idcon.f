@@ -798,11 +798,11 @@ c-----------------------------------------------------------------------
 c     get grri and grre matrices by calling mscvac functions.
 c-----------------------------------------------------------------------
       ELSE
-         PRINT *,'------',mthvac,mtheta,mthsurf,nths2
+         IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
          kernelsignin = -1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
      $               kernelsignin)
-         PRINT *,'------',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
+         IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
          ALLOCATE(grri(nths2,nfm2))
          CALL grrget(nfm2,nths2,grri)
          kernelsignin = 1.0

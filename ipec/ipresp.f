@@ -163,7 +163,7 @@ c-----------------------------------------------------------------------
          DO i=1,mpert
             temp1(i,i)=1
          ENDDO
-         temp2=2*plas_indmats(j,:,:)
+         temp2=plas_indmats(j,:,:)
          CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
          CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
          pinv_indmats(j,:,:) = temp1

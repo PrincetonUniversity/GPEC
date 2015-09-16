@@ -4200,15 +4200,8 @@ c     - convert to total flux so E = Phi* F Phi
 c     - convert to external flux using permeability E = Phi* P* FP Phi
 c     - then use our weighting matrix to get E = Phi'* W*P*FPW Phi'
 c-----------------------------------------------------------------------
-      ! start with DCON's total displacement vectors
-      wvecs = wtraw
-      ! convert to total flux
-      DO ipert=1,mpert
-         wvecs(ipert,:)= ifac*singfac*wvecs(ipert,:)    !*twopi*chi1
-         wvecs(:,ipert)=-ifac*singfac*wvecs(:,ipert)    !*twopi*chi1
-      ENDDO
       ! start with the inverse of the inductance matrix (dW = 0.5 Phi Lambda^-1 Phi)
-      !wvecs = pinv_indmats(resp_index,:,:)
+      wvecs = 0.5*pinv_indmats(resp_index,:,:)
       ! convert to external flux
       mat = permeabmats(resp_index,:,:)
       wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wvecs),mat)
@@ -4334,8 +4327,8 @@ c-----------------------------------------------------------------------
          DO i=1,mpert
            templ = 0
            templ(mlow-lmlow+i) = 1.0
-           CALL ipeq_bcoords(psilim,templ,lmfac,lmpert,
-     $        rout,bpout,bout,rcout,tout,0)
+           IF((jac_out /= jac_type).OR.(tout==0)) CALL ipeq_bcoords(
+     $        psilim,templ,lmfac,lmpert,rout,bpout,bout,rcout,tout,0)
            coordmat(:,i) = templ
          ENDDO
          wveco = MATMUL(coordmat,wvecs)

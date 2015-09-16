@@ -135,10 +135,10 @@ c-----------------------------------------------------------------------
       chi1=twopi*psio
       print *,chi1
       DO ipert=1,mpert
-         wbp(ipert,:)= 1/(ifac*twopi*chi1*singfac*wbp(ipert,:))    !*twopi*chi1
-         wbp(:,ipert)=-1/(ifac*twopi*chi1*singfac*wbp(:,ipert))    !*twopi*chi1
-         wbv(ipert,:)= 1/(ifac*twopi*chi1*singfac*wbv(ipert,:))    !*twopi*chi1
-         wbv(:,ipert)=-1/(ifac*twopi*chi1*singfac*wbv(:,ipert))    !*twopi*chi1
+         wbp(ipert,:)= wbp(ipert,:)/( ifac*twopi*chi1*singfac)
+         wbp(:,ipert)= wbp(:,ipert)/(-ifac*twopi*chi1*singfac)
+         wbv(ipert,:)= wbv(ipert,:)/( ifac*twopi*chi1*singfac)
+         wbv(:,ipert)= wbv(:,ipert)/(-ifac*twopi*chi1*singfac)
       ENDDO
       wbt = wbp+wbv
       work = 0
