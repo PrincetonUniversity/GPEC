@@ -34,9 +34,10 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j
-      REAL(r8) :: chptsq,chpdsq
+      REAL(r8) :: chptsq,chpdsq,error
 
       COMPLEX(r8), DIMENSION(2,mpert) :: chpwmn,chpdif,chpwif
+      CHARACTER(32) :: emessage
       IF(debug_flag) PRINT *, "Entering ipresp_eigen"      
 c-----------------------------------------------------------------------
 c     build ideal solutions.
@@ -100,9 +101,16 @@ c-----------------------------------------------------------------------
      $           flxmats(:,i),r8))
             surfet(j,i)=surfep(j,i)+surfee(i)
          ENDDO
-         IF(verbose) WRITE(*,'(1x,a12,i3,a7,es10.3,a10,es10.3)')
-     $        "eigenmode = ",i,", dw = ",surfet(1,i),
-     $        ", error = ",ABS(1-surfet(2,i)/surfet(1,i))   
+         error = ABS(1-surfet(2,i)/surfet(1,i))
+         IF(error>1e-6)THEN
+            emessage="   **WARNING: Large Error**"
+         ELSE
+            emessage=""
+         ENDIF
+         IF(verbose.AND.((i==1).OR.(i==mpert).OR.(error>1e-6)))
+     $      WRITE(*,'(1x,a12,i3,a7,es10.3,a10,es10.3,a32)')
+     $      "eigenmode = ",i,", dw = ",surfet(1,i),", error = ",error,
+     $      emessage
          CALL ipeq_dealloc
          DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
       ENDDO
