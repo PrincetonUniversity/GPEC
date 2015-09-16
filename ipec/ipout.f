@@ -860,6 +860,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: rawmn
       
       ! LOGAN - Additional variables
+      INTEGER :: t_id,i_id,r_id,z_id,p_id,x_id,xx_id,b_id,bx_id
       REAL(r8) :: norm
       COMPLEX(r8), DIMENSION(lmpert) :: acinmn
       COMPLEX(r8), DIMENSION(mpert) :: finev,foutev,xinev,xoutev,tmpmn
@@ -1323,11 +1324,10 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a16,es17.8e3)')"surface energy =",sengy
          WRITE(out_unit,'(1x,a16,es17.8e3)')"plasma energy =",pengy
          WRITE(out_unit,*)
-         
          WRITE(out_unit,*)"jac_type = "//jac_type
          WRITE(out_unit,*)
-         
-         WRITE(out_unit,'(11(1x,a16))')"r","z","theta",
+         WRITE(out_unit,'(12(1x,a16))')
+     $        "r","z","theta","dphi",
      $        "real(xin)","imag(xin)","real(xout)","imag(xout)",
      $        "real(bin)","imag(bin)","real(bout)","imag(bout)"
          DO itheta=0,mthsurf
@@ -1335,17 +1335,75 @@ c-----------------------------------------------------------------------
             rfac=SQRT(rzphi%f(1))
             eta=twopi*(theta(itheta)+rzphi%f(2))
             r(itheta)=ro+rfac*COS(eta)
-            z(itheta)=zo+rfac*SIN(eta)         
-            WRITE(out_unit,'(11(es17.8e3))')r(itheta),z(itheta),
-     $           theta(itheta),
+            z(itheta)=zo+rfac*SIN(eta)
+            dphi(itheta)=rzphi%f(3)
+            WRITE(out_unit,'(12(es17.8e3))')r(itheta),z(itheta),
+     $           theta(itheta),rzphi%f(3),
      $        REAL(xinfun(itheta)),-helicity*AIMAG(xinfun(itheta)),
      $        REAL(xoutfun(itheta)),-helicity*AIMAG(xoutfun(itheta)),
      $        REAL(binfun(itheta)),-helicity*AIMAG(binfun(itheta)),
      $        REAL(boutfun(itheta)),-helicity*AIMAG(boutfun(itheta))
          ENDDO
-
          CALL ascii_close(out_unit)
       
+         IF(debug_flag) PRINT *,"Opening "//TRIM(mncfile)
+         CALL check( nf90_open(mncfile,nf90_write,mncid) )
+         IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+         CALL check( nf90_inq_dimid(mncid,"i",i_id) )
+         CALL check( nf90_inq_dimid(mncid,"theta",t_id) )
+         IF(debug_flag) PRINT *,"  Defining variables"
+         CALL check( nf90_redef(mncid))
+         CALL check( nf90_put_att(mncid,nf90_global,
+     $               "energy_vacuum",vengy) )
+         CALL check( nf90_put_att(mncid,nf90_global,
+     $               "energy_surface",sengy) )
+         CALL check( nf90_put_att(mncid,nf90_global,
+     $               "energy_plasma",pengy) )
+         CALL check( nf90_def_var(mncid, "R", nf90_double,t_id,r_id) )
+         CALL check( nf90_put_att(mncid,r_id,"long_name",
+     $               "Major Radius") )
+         CALL check( nf90_put_att(mncid,r_id,"units","m") )
+         CALL check( nf90_def_var(mncid, "z", nf90_double,t_id,z_id) )
+         CALL check( nf90_put_att(mncid,z_id,"long_name",
+     $               "Vertical Position") )
+         CALL check( nf90_put_att(mncid,z_id,"units","m") )
+         CALL check( nf90_def_var(mncid, "dphi", nf90_double,t_id,p_id))
+         CALL check( nf90_put_att(mncid,p_id,"long_name",
+     $               "Toroidal - Magnetic Angle") )
+         CALL check( nf90_def_var(mncid, "xi", nf90_double,
+     $                    (/t_id,i_id/),x_id) )
+         CALL check( nf90_put_att(mncid,x_id,"long_name",
+     $               "Displacement") )
+         CALL check( nf90_put_att(mncid,x_id,"units","m") )
+         CALL check( nf90_def_var(mncid, "xi_x", nf90_double,
+     $                    (/t_id,i_id/),xx_id) )
+         CALL check( nf90_put_att(mncid,xx_id,"long_name",
+     $               "Externally Applied Displacement") )
+         CALL check( nf90_put_att(mncid,xx_id,"units","m") )
+         CALL check( nf90_def_var(mncid, "b", nf90_double,
+     $                    (/t_id,i_id/),b_id) )
+         CALL check( nf90_put_att(mncid,b_id,"long_name",
+     $               "Field") )
+         CALL check( nf90_put_att(mncid,x_id,"units","Tesla") )
+         CALL check( nf90_def_var(mncid, "b_x", nf90_double,
+     $                    (/t_id,i_id/),bx_id) )
+         CALL check( nf90_put_att(mncid,bx_id,"long_name",
+     $               "Externally Applied Field") )
+         CALL check( nf90_put_att(mncid,bx_id,"units","Tesla") )
+         CALL check( nf90_enddef(mncid) )
+         CALL check( nf90_put_var(mncid,r_id,r) )
+         CALL check( nf90_put_var(mncid,z_id,z) )
+         CALL check( nf90_put_var(mncid,p_id,dphi) )
+         CALL check( nf90_put_var(mncid,x_id,RESHAPE((/REAL(xinfun),
+     $             -helicity*AIMAG(xinfun)/),(/mthsurf+1,2/))) )      
+         CALL check( nf90_put_var(mncid,xx_id,RESHAPE((/REAL(xoutfun),
+     $             -helicity*AIMAG(xoutfun)/),(/mthsurf+1,2/))) )      
+         CALL check( nf90_put_var(mncid,b_id,RESHAPE((/REAL(binfun),
+     $             -helicity*AIMAG(binfun)/),(/mthsurf+1,2/))) )      
+         CALL check( nf90_put_var(mncid,bx_id,RESHAPE((/REAL(boutfun),
+     $             -helicity*AIMAG(boutfun)/),(/mthsurf+1,2/))) )      
+         CALL check( nf90_close(mncid) )
+
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -4477,9 +4535,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER:: i,midid,mmdid,medid,mvdid,msdid,fidid,fmdid,fpdid,ftdid,
-     $   cidid,crdid,czdid,clvid,
-     $   mivid,mmvid,mevid,mvvid,msvid,fivid,fmvid,fpvid,ftvid,
+      INTEGER:: i,midid,mmdid,medid,mvdid,msdid,mtdid,
+     $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
+     $   mivid,mmvid,mevid,mvvid,msvid,mtvid,fivid,fmvid,fpvid,ftvid,
      $   civid,crvid,czvid
       INTEGER, DIMENSION(mpert) :: mmodes
 c-----------------------------------------------------------------------
@@ -4514,6 +4572,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"mode",nf90_int,medid,mevid))
       CALL check( nf90_def_dim(mncid,"smode",msing,   msdid) )
       CALL check( nf90_def_var(mncid,"smode",nf90_int,msdid,msvid))
+      CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
+      CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
       CALL check( nf90_put_att(mncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(mncid,nf90_global,"jac_type",jac_type))
       CALL check( nf90_put_att(mncid,nf90_global,"version",version))
@@ -4554,11 +4614,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set dimensional variables
 c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Putting coordinates in modal netcdfs"
+      IF(debug_flag) PRINT *," - Putting coordinates in control netcdfs"
       CALL check( nf90_put_var(mncid,mivid,(/0,1/)) )
       CALL check( nf90_put_var(mncid,mmvid,lmfac) )
       CALL check( nf90_put_var(mncid,mevid,mmodes) )
       CALL check( nf90_put_var(mncid,msvid,mmodes(:msing)) )
+      CALL check( nf90_put_var(mncid,mtvid,theta) )
 
       IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
       CALL check( nf90_put_var(fncid,fivid,(/0,1/)) )
