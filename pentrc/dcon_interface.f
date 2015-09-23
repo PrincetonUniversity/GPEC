@@ -233,8 +233,6 @@ c-----------------------------------------------------------------------
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
       ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
-      ALLOCATE(eft(mpert),efp(mpert),wft(mpert,mpert))
-      ALLOCATE(wtraw(mpert,mpert))
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       in_unit = get_free_file_unit(-1)
@@ -302,6 +300,8 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
          CASE(5)
+            ALLOCATE(eft(mpert),efp(mpert),wft(mpert,mpert))
+            ALLOCATE(wtraw(mpert,mpert))
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
@@ -324,10 +324,12 @@ c-----------------------------------------------------------------------
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
-      wtraw=wtraw*(chi1*1e-3)
-      eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      wft=wft*(chi1*1e-3)
+      IF(data_type==5)THEN
+         wtraw=wtraw*(chi1*1e-3)
+         eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+         efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+         wft=wft*(chi1*1e-3)
+      ENDIF
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
 c-----------------------------------------------------------------------
