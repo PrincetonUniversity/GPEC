@@ -303,6 +303,7 @@ c-----------------------------------------------------------------------
       m       = 2
       mp     = 3
       minc   = 10
+      mthvac = 0
       mth    = mthvac
       mth1   = mth + 1
       mth2   = mth1 + 1
@@ -662,10 +663,10 @@ c-----------------------------------------------------------------------
       if ( lfarw .gt. 0 ) go to 20
      
       call bounds(xwal,zwal,1,mw,xmnw,xmxw,zmnw,zmxw)     
-      xmin = amin1(xmnp,xmnw)
-      xmax = amax1(xmxp,xmxw)
-      zmin = amin1(zmnp,zmnw)
-      zmax = amax1(zmxp,zmxw)
+      xmin = min(xmnp,xmnw)
+      xmax = max(xmxp,xmxw)
+      zmin = min(zmnp,zmnw)
+      zmax = max(zmxp,zmxw)
      
  20   CONTINUE
      
@@ -674,10 +675,10 @@ c-----------------------------------------------------------------------
       nobs = nloop + 3*nloopr
      
       call bounds ( xloop,zloop,1, nobs, xmn,xmx, zmn,zmx )
-      xmin = amin1 ( xmin,xmn )
-      xmax = amax1 ( xmax,xmx )
-      zmin = amin1 ( zmin,zmn )
-      zmax = amax1 ( zmax,zmx )
+      xmin = min( xmin,xmn )
+      xmax = max( xmax,xmx )
+      zmin = min( zmin,zmn )
+      zmax = max( zmax,zmx )
      
       dtpw = dth
       ns = mth
