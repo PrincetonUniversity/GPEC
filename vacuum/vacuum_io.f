@@ -12,6 +12,7 @@ c     4. readahg
 c     5. readvacin
 c     6. readvacin5
 c     7. adjustm
+c     8. setahgdir
 c-----------------------------------------------------------------------
 c     subprogram 1. inglo.
 c     read data from inadjv.
@@ -263,8 +264,8 @@ c     dcon inputs.
 c-----------------------------------------------------------------------
       if ( ldcon .eq. 1 ) then
          lzio = 1
-         call readahg ( mthin,lmin(1),lmax(1),ndcon,qa1,xinf,zinf,
-     $        delta, vecin, mth )
+         call readahg ( ahgdir, mthin,lmin(1),lmax(1),ndcon,qa1,xinf,
+     $        zinf, delta, vecin, mth )
          mthin1 = mthin + 1
          mthin2 = mthin1 + 1
          n = ndcon
@@ -444,15 +445,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine readahg ( mthin,lmin,lmax,ndcon,qa1,xinf,zinf,
-     $     delta, vecin, mth )
+      subroutine readahg ( ahgdir, mthin,lmin,lmax,ndcon,qa1,xinf,
+     $     zinf, delta, vecin, mth )
       implicit real*8 (a-h,o-z)
+      character(128) ahgdir
       integer mthin,lmin,lmax,ndcon,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*)
 c-----------------------------------------------------------------------
 c     read data.
 c-----------------------------------------------------------------------
-      open(unit=3,file='ahg2msc.out')
+      open(unit=3,file=trim(ahgdir)//'/ahg2msc.out')
       read(3,*)mthin
       read(3,*)lmin
       read(3,*)lmax
@@ -627,6 +629,26 @@ c-----------------------------------------------------------------------
          mth1 = mth + 1
          mth2 = mth1 + 1
       endif
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      return
+      end
+
+c-----------------------------------------------------------------------
+c     subprogram 7. setahgdir.
+c     read netcdf data.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      subroutine setahgdir ( directory )
+      use vglobal_mod
+      character(len=*), intent(in) :: directory
+c-----------------------------------------------------------------------
+c     computations.
+c-----------------------------------------------------------------------
+      ahgdir = directory
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
