@@ -75,6 +75,5 @@
 &IPEC_DIAGNOSE
    verbose=t                ! Print run log to terminal 
    timeit=t                 ! Print timer splits for major subroutines
-   div_flag=f               ! ??
-   radvar_flag=t            ! ??
+   radvar_flag=t            ! Map various radial variables (rho,psi_tor) on psi_N grid
 /

@@ -19,6 +19,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i,in,osing,resol,angnum,
      $     mthnumb,meas,mode,m3mode,lowmode,highmode,filter_modes
+      INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode
       INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8) :: majr,minr,rdist,smallwidth,factor,fp,normpsi
       CHARACTER(4) :: filter_types
@@ -190,6 +191,15 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=ipec_diagnose)
       CALL ascii_close(in_unit)
       IF(timeit) CALL ipec_timer(0)
+c-----------------------------------------------------------------------
+c     Deprecated variable errors
+c-----------------------------------------------------------------------
+      IF((pmode/=0).or.(p1mode/=0).or.(dmode/=0).or.(d1mode/=0).or.
+     $   (fmode/=0).or.(rmode/=0).or.(smode/=0))THEN
+         PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
+         PRINT *,"  Use filter_types to filter external spectrum."
+         CALL ipec_stop("Deprecated input.")
+      ENDIF
 c-----------------------------------------------------------------------
 c     define relative file paths.
 c-----------------------------------------------------------------------
@@ -417,7 +427,10 @@ c-----------------------------------------------------------------------
          CALL ipout_response(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
-      IF (singcoup_flag .OR. smode>0) THEN
+      DO i=1,LEN(filter_types)
+         IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
+      ENDDO
+      IF (singcoup_flag) THEN
          CALL ipout_singcoup(sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF

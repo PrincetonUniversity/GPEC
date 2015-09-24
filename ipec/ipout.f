@@ -839,7 +839,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i,j,i1,i2,i3,ms,itheta,jout
       INTEGER, DIMENSION(mpert) :: ipiv
-      REAL(r8) :: vengy,sengy,pengy,area,thetai,scale
+      REAL(r8) :: vengy,sengy,pengy,area,thetai,scale,norm
       COMPLEX(r8) :: vy,sy,py
       CHARACTER(128) :: message
 
@@ -848,25 +848,14 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,xinmn,xoutmn,tempmn,
      $      abinmn
-      COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,cawmn
+      COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,cawmn,acinmn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun,xinfun,xoutfun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
 
       REAL(r8), DIMENSION(:,:), POINTER :: dcosmn,dsinmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: rawmn
       
-      ! LOGAN - Additional variables
       INTEGER :: t_id,i_id,r_id,z_id,p_id,x_id,xx_id,b_id,bx_id
-      REAL(r8) :: norm
-      COMPLEX(r8), DIMENSION(lmpert) :: acinmn
-      COMPLEX(r8), DIMENSION(mpert) :: finev,foutev,xinev,xoutev,tmpmn
-     $  ,fevmn
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: newmn,eigmn
-      COMPLEX(r8), DIMENSION(mpert,msing) :: t1vev,x1vev,
-     $  t1v_type,x1v_type
-      COMPLEX(r8), DIMENSION(mpert,mpert)::fwt,bwt,bwt_tmp,wt_tmp,sqrta
-      CHARACTER(2048) :: header
-
 c-----------------------------------------------------------------------
 c     check data_type and read data.
 c-----------------------------------------------------------------------
@@ -941,139 +930,7 @@ c-----------------------------------------------------------------------
       ENDIF
       finmn=finmn+tempmn
 c-----------------------------------------------------------------------
-c     LOGAN - Isolate singular coupling SVD modes
-c-----------------------------------------------------------------------
-      IF(smode>0)THEN
-        PRINT *,'Isolating response || to first ',smode,
-     $            ' singular flux coupling eigenmodes'
-        binmn=finmn
-        CALL ipeq_weight(psilim,binmn,mfac,mpert,0) ! b not weighted
-        !CALL ipeq_weight(psilim,binmn,mfac,mpert,2) ! b half weighted
-        ! use output coords for consistency with SVD mode from ipout_singcoup
-        IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-          ! convert to jac_out
-          cinmn=0
-          DO i=1,mpert
-             IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-                cinmn(mlow-lmlow+i)=binmn(i)
-             ENDIF
-          ENDDO  
-          CALL ipeq_bcoords(psilim,cinmn,lmfac,lmpert,
-     $         rout,bpout,bout,rcout,tout,2) ! sqrt(A) weighting
-          ! Isolation
-          ALLOCATE(eigmn(lmpert),newmn(lmpert))
-          newmn = 0
-          DO i=1,MIN(msing,ABS(smode))
-              eigmn = w1v(:,i)
-              eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              newmn=newmn+eigmn*DOT_PRODUCT(eigmn,cinmn)
-          ENDDO
-          ! back to working coords
-          CALL ipeq_fcoords(psilim,newmn,lmfac,lmpert,
-     $        rout,bpout,bout,rcout,tout,2)
-          finmn = 0
-          DO i=1,mpert
-            IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-               finmn(i) = newmn(mlow-lmlow+i)
-            ENDIF
-          ENDDO
-          ! back to full wieghting (flux)
-          CALL ipeq_weight(psilim,finmn,mfac,mpert,1)
-        ELSE
-           CALL ipeq_weight(psilim,binmn,mfac,mpert,2) ! b to sqrt(A)b
-           ALLOCATE(eigmn(mpert))
-           tmpmn = binmn
-           finmn = 0
-           DO i=1,MIN(msing,ABS(smode))
-               eigmn = w1v(:,i)
-               eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-               finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-           ENDDO
-          CALL ipeq_weight(psilim,finmn,mfac,mpert,2) ! sqrt(A)b to flux
-        ENDIF
-       DEALLOCATE(eigmn)
-      ENDIF
-c-----------------------------------------------------------------------
-c     LOGAN - Isolate drive parallel to permeability eigenmodes
-c-----------------------------------------------------------------------
-      ALLOCATE(eigmn(mpert))
-      IF (pmode>0) THEN
-         PRINT *,'Isolating drive || to first ',pmode,
-     $           ' flux permeability eigenmodes'
-         PRINT *,' **WARNING: This is not a valid orthoganal basis.**'
-         tmpmn = finmn
-         finmn = 0
-         DO i=1,MIN(mpert,ABS(pmode))
-            eigmn = permeabevmats(resp_index,:,i)
-            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-         ENDDO
-      ELSEIF (pmode<0) THEN
-         PRINT *,'Isolating drive || to last ',pmode,
-     $           ' flux permeability eigenmodes'
-         PRINT *,' **WARNING: This is not a valid orthoganal basis.**'
-         tmpmn = finmn
-         finmn = 0
-         DO j=1,MIN(mpert,ABS(pmode))
-            i = mpert+1-j
-            eigmn = permeabevmats(resp_index,:,i)
-            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-         ENDDO
-      ENDIF
-c-----------------------------------------------------------------------
-c     LOGAN - Isolate drive parallel to plasma responce SVD modes
-c-----------------------------------------------------------------------
-      IF (p1mode>0) THEN
-         PRINT *,'Isolating drive || to first ',ABS(p1mode),
-     $           ' permeability right singular vectors'
-         tmpmn = finmn
-         finmn = 0
-         DO i=1,MIN(mpert,ABS(p1mode))
-            eigmn = permeabsvmats(resp_index,:,i)
-            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-         ENDDO
-      ELSEIF (p1mode<0) THEN
-         PRINT *,'Isolating drive || to last ',ABS(p1mode),
-     $           ' permeability right singular vectors'
-         tmpmn = finmn
-         finmn = 0
-         DO j=1,MIN(mpert,ABS(p1mode))
-            i = mpert+1-j
-            eigmn = permeabsvmats(resp_index,:,i)
-            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-         ENDDO
-      ENDIF
-c-----------------------------------------------------------------------
-c     LOGAN - Isolate drive parallel to reluctance eigenmodes
-c-----------------------------------------------------------------------
-      IF (rmode>0) THEN
-         PRINT *,'Isolating drive || to first ',ABS(rmode),
-     $           ' plasma reluctance eigenmodes'
-         tmpmn = finmn
-         finmn = 0
-         DO i=1,MIN(mpert,ABS(rmode))
-            eigmn = reluctevmats(resp_index,:,i)
-            eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-         ENDDO
-      ELSEIF (rmode<0) THEN
-         PRINT *,'Isolating drive || to last ',ABS(rmode),
-     $           ' plasma reluctance eigenmodes'
-         tmpmn = finmn
-         finmn = 0
-         DO j=1,MIN(mpert,ABS(rmode))
-           i = mpert+1-j
-           eigmn = reluctevmats(resp_index,:,i)
-           eigmn = eigmn/SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-           finmn=finmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-         ENDDO
-      ENDIF
-      DEALLOCATE(eigmn)
-c-----------------------------------------------------------------------
-c     Filter external flux
+c     filter external flux
 c-----------------------------------------------------------------------
       CALL ipout_control_filter(finmn,filter_types,filter_modes,
      $           rout,bpout,bout,rcout,tout,jout,filter_out)
@@ -1094,53 +951,6 @@ c-----------------------------------------------------------------------
       xoutmn=xspmn
       CALL ipeq_weight(psilim,xinmn,mfac,mpert,4)
       CALL ipeq_weight(psilim,xoutmn,mfac,mpert,4)
-c-----------------------------------------------------------------------
-c     LOGAN - Isolate plasma or total perturbation parallel to a DCON eigenmode
-c-----------------------------------------------------------------------
-      ALLOCATE(eigmn(mpert))
-      IF (d1mode>0) THEN ! This is unphysical. The response can have resonant components (shielding).
-          PRINT *,'Isolating response || to first ',d1mode,
-     $            ' DCON eigenmodes'
-          tmpmn = (foutmn-finmn)/(chi1*twopi*ifac*(mfac-nn*qlim))
-          foutmn = finmn
-          DO i=1,MIN(mpert,ABS(d1mode))
-              eigmn = wt(:,i)
-              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $          *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
-          ENDDO
-      ENDIF
-      IF (dmode>0) THEN
-          PRINT *,'Isolating perturbation || to first ',dmode,
-     $            ' DCON eigenmodes'
-          tmpmn = foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
-          foutmn = 0
-          DO i=1,MIN(mpert,ABS(dmode))
-              eigmn = wt(:,i)
-              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $          *(chi1*twopi*ifac*(mfac-nn*qlim))/(norm*norm)
-          ENDDO
-      ENDIF
-      IF (fmode>0) THEN
-          PRINT *,'Isolating perturbation || to first ',fmode,
-     $            ' flux eigenmodes'
-          tmpmn = foutmn
-          foutmn = 0
-          DO i=1,MIN(mpert,ABS(fmode))
-              eigmn = wft(:,i)
-              norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-              foutmn=foutmn+eigmn*DOT_PRODUCT(eigmn,tmpmn)
-     $               /(norm*norm)
-          ENDDO
-      ENDIF
-      ! reform all the standard output forms
-      boutmn=foutmn
-      CALL ipeq_weight(psilim,boutmn,mfac,mpert,0)
-      xspmn=foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
-      xoutmn=xspmn
-      CALL ipeq_weight(psilim,xoutmn,mfac,mpert,4)
-      DEALLOCATE(eigmn)
 c-----------------------------------------------------------------------
 c     compute perturbed energy.
 c-----------------------------------------------------------------------
