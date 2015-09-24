@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
      $     fxmn,fxfun,coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
-      NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
+      NAMELIST/ipec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
@@ -70,6 +70,7 @@ c-----------------------------------------------------------------------
       jsurf_in=0
       tmag_in=1
       jac_in=""
+      dcon_dir=""
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
       ivacuumfile="vacuum.bin"
@@ -189,6 +190,16 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=ipec_diagnose)
       CALL ascii_close(in_unit)
       IF(timeit) CALL ipec_timer(0)
+c-----------------------------------------------------------------------
+c     define relative file paths.
+c-----------------------------------------------------------------------
+      IF(dcon_dir/="")THEN
+         CALL setahgdir(dcon_dir)
+         idconfile = TRIM(dcon_dir)//"/"//TRIM(idconfile)
+         ieqfile = TRIM(dcon_dir)//"/"//TRIM(ieqfile)
+         ivacuumfile = TRIM(dcon_dir)//"/"//TRIM(ivacuumfile)
+         rdconfile = TRIM(dcon_dir)//"/"//TRIM(rdconfile)
+      ENDIF
 c-----------------------------------------------------------------------
 c     define coordinates.
 c-----------------------------------------------------------------------
@@ -367,7 +378,6 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
       ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
       ! ipec inputs
-      if(filter_types=='') filter_types = 'none' ! harvest can't parse empty strings
       write(hnml,nml=ipec_input)
       ierr=set_harvest_payload_nam(hlog,'IPEC_INPUT'//nul,
      $                             trim(hnml)//nul)
@@ -377,7 +387,6 @@ c-----------------------------------------------------------------------
       write(hnml,nml=ipec_output)
       ierr=set_harvest_payload_nam(hlog,'IPEC_OUTPUT'//nul,
      $                             trim(hnml)//nul)
-      if(filter_types=='none') filter_types = '' ! harvest can't parse empty strings
 c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
