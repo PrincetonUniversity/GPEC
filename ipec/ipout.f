@@ -118,8 +118,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(5*mpert) :: rwork
       COMPLEX(r8), DIMENSION(3*mpert) :: work
       ! LOGAN - ADDITIONAL VARIABLES
-      COMPLEX(r8), DIMENSION(lmpert) :: vL,vL1,vLi,vP,vP1,vR,vW,vF
-      COMPLEX(r8), DIMENSION(0:mthsurf,mpert) :: wtfun,wftfun,rfun,pfun
+      COMPLEX(r8), DIMENSION(lmpert) :: vL,vL1,vLi,vP,vP1,vR,vW
+      COMPLEX(r8), DIMENSION(0:mthsurf,mpert) :: wtfun,ilfun,rfun,pfun
       CHARACTER(2048) :: header
 
       IF(timeit) CALL ipec_timer(-2)
@@ -183,15 +183,15 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"  W = Displacement energy"
       WRITE(out_unit,*)"  F = Flux energy"
       WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a4,9(1x,a16))')"mode",
+      WRITE(out_unit,'(1x,a4,8(1x,a16))')"mode",
      $  "e_L","e_Lambda","real(e_P)","imag(e_P)","s_P","e_rho",
-     $  "e_W","e_F","e_iLmda"
+     $  "e_W","e_iLmda"
       DO i=1,mpert
-         WRITE(out_unit,'(1x,I4,9(es17.8e3))') i,
+         WRITE(out_unit,'(1x,I4,8(es17.8e3))') i,
      $     surf_indev(i),plas_indev(resp_index,i),
      $     REAL(permeabev(resp_index,i)),AIMAG(permeabev(resp_index,i)),
      $     permeabsv(resp_index,i),reluctev(resp_index,i),
-     $     et(i),eft(i),pinv_indev(resp_index,i)
+     $     et(i),pinv_indev(resp_index,i)
       ENDDO
       WRITE(out_unit,*)
 
@@ -205,24 +205,23 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"  W = Displacement energy"
       WRITE(out_unit,*)"  F = Flux energy"
       WRITE(out_unit,*)
-      WRITE(out_unit,'(2(1x,a4),16(1x,a16))')"mode","m",
+      WRITE(out_unit,'(2(1x,a4),14(1x,a16))')"mode","m",
      $   "real(K_x^L)","imag(K_x^L)",
      $   "real(K_x^Lambda)","imag(K_x^Lambda)",
      $   "real(Phi_x^P)","imag(Phi_x^P)",
      $   "real(Phi_x^PS)","imag(Phi_x^PS)",
      $   "real(Phi_x^rho)","imag(Phi_x^rho)",
-     $   "real(X^W)","imag(X^W)","real(Phi^F)","imag(Phi^F)",
+     $   "real(X^W)","imag(X^W)",
      $   "real(Phi^iLmda)","imag(Phi^iLmda)"
       DO i=1,mpert
          DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),16(es17.8e3))')i,mfac(j),
+            WRITE(out_unit,'(2(1x,I4),14(es17.8e3))')i,mfac(j),
      $           surf_indevmats(j,i),
      $           plas_indevmats(resp_index,j,i),
      $           permeabevmats(resp_index,j,i),
      $           permeabsvmats(resp_index,j,i),
      $           reluctevmats(resp_index,j,i),
      $           wt(j,i),
-     $           wft(j,i),
      $           pinv_indevmats(resp_index,j,i)
          ENDDO 
       ENDDO
@@ -240,11 +239,11 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)"  W = Displacement energy"
          WRITE(out_unit,*)"  F = Flux energy"
          WRITE(out_unit,*)
-         WRITE(out_unit,'(2(1x,a4),16(1x,a16))')"mode","m",
+         WRITE(out_unit,'(2(1x,a4),14(1x,a16))')"mode","m",
      $     "real(V_L)","imag(V_L)","real(V_Lambda)","imag(V_Lambda)",
      $     "real(V_P)","imag(V_P)","real(V_PS)","imag(V_PS)",
      $     "real(V_rho)","imag(V_rho)",
-     $     "real(V_W)","imag(V_W)","real(V_F)","imag(V_F)",
+     $     "real(V_W)","imag(V_W)",
      $     "real(Phi^iLmda)","imag(Phi^iLmda)"
          DO i=1,mpert
             DO j=1,mpert
@@ -256,7 +255,6 @@ c-----------------------------------------------------------------------
                    vP1(mlow-lmlow+j)=permeabsvmats(resp_index,j,i)
                    vR(mlow-lmlow+j) =reluctevmats(resp_index,j,i)
                    vW(mlow-lmlow+j) =wt(j,i)
-                   vF(mlow-lmlow+j) =wft(j,i)
                 ENDIF
              ENDDO  
              CALL ipeq_bcoords(psilim,vL,lmfac,lmpert,
@@ -273,21 +271,19 @@ c-----------------------------------------------------------------------
      $            rout,bpout,bout,rcout,tout,jout)
              CALL ipeq_bcoords(psilim,vW,lmfac,lmpert,
      $            rout,bpout,bout,rcout,tout,jout)
-             CALL ipeq_bcoords(psilim,vF,lmfac,lmpert,
-     $            rout,bpout,bout,rcout,tout,jout)
             DO j=1,lmpert
-               WRITE(out_unit,'(2(1x,I4),16(es17.8e3))')i,lmfac(j),
-     $              vL(j),vL1(j),vP(j),vP1(j),vR(j),vW(j),vF(j),vLi(j)
+               WRITE(out_unit,'(2(1x,I4),14(es17.8e3))')i,lmfac(j),
+     $              vL(j),vL1(j),vP(j),vP1(j),vR(j),vW(j),vLi(j)
             ENDDO 
          ENDDO
          WRITE(out_unit,*)
       ENDIF
 
       ! start with DCON's total displacement vectors
-      a = wtraw*(twopi**2)/(2*mu0)
+      a = pinv_indmats(resp_index,:,:)
       b = 0
       DO i=1,mpert
-         b(i,i) = 1/(chi1*twopi*ifac*(mfac(i)-nn*qlim))
+         b(i,i) = (chi1*twopi*ifac*(mfac(i)-nn*qlim))
       ENDDO
       ! convert to total flux
       a = MATMUL(CONJG(b),MATMUL(a,b))
@@ -298,20 +294,19 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)" P = Permeability"
       WRITE(out_unit,*)" rho = Reluctance"
       WRITE(out_unit,*)
-      WRITE(out_unit,'(2(1x,a4),16(1x,a12))')"m_i","m_j",
+      WRITE(out_unit,'(2(1x,a4),12(1x,a12))')"m_i","m_j",
      $  "real(L)","imag(L)","real(Lambda)","imag(Lambda)",
      $  "real(P)","imag(P)","real(rho)","imag(rho)",
-     $  "real(iLmda)","imag(iLmda)","real(F)","imag(F)",
-     $  "real(W)","imag(W)","real(S)","imag(S)"
+     $  "real(iLmda)","imag(iLmda)","real(W)","imag(W)"
       DO i=1,mpert
          DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),16(1x,es12.3))')mfac(i),mfac(j),
+            WRITE(out_unit,'(2(1x,I4),12(1x,es12.3))')mfac(i),mfac(j),
      $           surf_indmats(j,i),
      $           plas_indmats(resp_index,j,i),
      $           permeabmats(resp_index,j,i),
      $           reluctmats(resp_index,j,i),
      $           pinv_indmats(resp_index,j,i),
-     $           a(j,i),wtraw(j,i),b(j,i)
+     $           a(j,i)
          ENDDO 
       ENDDO
       WRITE(out_unit,*)
@@ -322,7 +317,8 @@ c-----------------------------------------------------------------------
       IF(fun_flag) THEN
         DO i=1,mpert
           CALL iscdftb(mfac,mpert,wtfun(:,i),mthsurf,wt(:,i))     
-          CALL iscdftb(mfac,mpert,wftfun(:,i),mthsurf,wft(:,i))     
+          CALL iscdftb(mfac,mpert,ilfun(:,i),mthsurf,
+     $      pinv_indmats(resp_index,:,i))
           CALL iscdftb(mfac,mpert,rfun(:,i),mthsurf,
      $      reluctevmats(resp_index,:,i))    
           CALL iscdftb(mfac,mpert,pfun(:,i),mthsurf,
@@ -352,14 +348,14 @@ c-----------------------------------------------------------------------
         WRITE(out_unit,*)
         WRITE(header,'(a16,9(1x,a16))')"r","z",
      $    "real(P)","imag(P)","real(rho)","imag(rho)",
-     $    "real(W)","imag(W)","real(F)","imag(F)"
+     $    "real(W)","imag(W)","real(iLmda)","imag(iLmda)"
         DO j=1,mpert
           WRITE(out_unit,'(1x,2(a12,I4))')"isol =",j," n =",nn
           WRITE(out_unit,*)
           WRITE(out_unit,*) header
           DO i=0,mthsurf
             WRITE(out_unit,'(10(es17.8e3))') r(i),z(i),
-     $        pfun(i,j),rfun(i,j),wtfun(i,j),wftfun(i,j)
+     $        pfun(i,j),rfun(i,j),wtfun(i,j),ilfun(i,j)
           ENDDO
           WRITE(out_unit,*)
         ENDDO

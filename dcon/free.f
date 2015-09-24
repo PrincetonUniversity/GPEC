@@ -61,9 +61,6 @@ c-----------------------------------------------------------------------
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       COMPLEX(r8), DIMENSION(mpert) :: diff
-      REAL(r8) :: chi1 ! LOGAN
-      REAL(r8), DIMENSION(mpert) :: ebt,ebp,ebv ! LOGAN
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: wbt,wbp,wbv,ct ! LOGAN
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -128,59 +125,6 @@ c-----------------------------------------------------------------------
          wv(:,ipert)=wv(:,ipert)*singfac
       ENDDO
 c-----------------------------------------------------------------------
-c     LOGAN - compute flux eigenvalues and eigenvectors.
-c-----------------------------------------------------------------------
-      wbp = wp
-      wbv = wv
-      chi1=twopi*psio
-      DO ipert=1,mpert
-         wbp(ipert,:)= wbp(ipert,:)/( ifac*twopi*chi1*singfac)
-         wbp(:,ipert)= wbp(:,ipert)/(-ifac*twopi*chi1*singfac)
-         wbv(ipert,:)= wbv(ipert,:)/( ifac*twopi*chi1*singfac)
-         wbv(:,ipert)= wbv(:,ipert)/(-ifac*twopi*chi1*singfac)
-      ENDDO
-      wbt = wbp+wbv
-      work = 0
-      rwork = 0
-      lwork=2*mpert-1
-      CALL zheev('V','U',mpert,wbt,mpert,ebt,work,lwork,rwork,info)
-      work = 0
-      rwork = 0
-c-----------------------------------------------------------------------
-c     LOGAN - normalize eigenfunction and energy.
-c-----------------------------------------------------------------------
-      IF(normalize)THEN
-         DO isol=1,mpert
-            norm=0
-            DO ipert=1,mpert
-               DO jpert=1,mpert
-                  norm=norm+jmat(jpert-ipert)
-     $                 *wbt(ipert,isol)*CONJG(wbt(jpert,isol))
-               ENDDO
-            ENDDO
-            norm=norm/v1
-            wbt(:,isol)=wbt(:,isol)/SQRT(norm)
-            ebt(isol)=ebt(isol)/norm
-         ENDDO
-      ENDIF
-c-----------------------------------------------------------------------
-c     LOGAN - normalize phase and label largest component.
-c-----------------------------------------------------------------------
-      DO isol=1,mpert
-         imax=MAXLOC(ABS(wbt(:,isol)))
-         phase=ABS(wbt(imax(1),isol))/wbt(imax(1),isol)
-         wbt(:,isol)=wbt(:,isol)*phase
-      ENDDO
-c-----------------------------------------------------------------------
-c     LOGAN - compute plasma and vacuum contributions.
-c-----------------------------------------------------------------------
-      wbp=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wbp,wbt))
-      wbv=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wbv,wbt))
-      DO ipert=1,mpert
-         ebp(ipert)=wbp(ipert,ipert)
-         ebv(ipert)=wbv(ipert,ipert)
-      ENDDO
-c-----------------------------------------------------------------------
 c     compute energy eigenvalues.
 c-----------------------------------------------------------------------
       wt=wp+wv
@@ -233,17 +177,13 @@ c-----------------------------------------------------------------------
 c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
-         WRITE(euler_bin_unit)5
+         WRITE(euler_bin_unit)3
 c-----------------------------------------------------------------------
 c     <MODIFIED>
 c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)ep
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
-         WRITE(euler_bin_unit)ebp  ! LOGAN ADDED with option 5
-         WRITE(euler_bin_unit)ebt  ! LOGAN ADDED with option 5
-         WRITE(euler_bin_unit)wbt  ! LOGAN ADDED with option 5
-         WRITE(euler_bin_unit)wp+wv! LOGAN ADDED with option 5 
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
