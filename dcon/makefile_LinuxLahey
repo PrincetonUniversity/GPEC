@@ -1,18 +1,22 @@
-# FC, LIBDIR and FCLIBS are set in the platform-specific included file
-include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -I../equil
+FFLAGS = -I../equil -I../harvest
 F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
+
+LIBDIR = \
+	-L${LAPACKHOME} \
+	-L../lib
 
 LIBS = \
 	$(LIBDIR) \
 	-llsode \
 	-lequil \
 	-lvac \
-	$(FCLIBS)
+	-lharvest \
+	-llapack \
+	-lblas
 
 OBJS = \
 	debug.o \
@@ -38,7 +42,7 @@ mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
 fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
 sing.o: fourfit.o
-ode_output.o: sing.o debug.o
+ode_output.o: dcon_mod.o sing.o debug.o
 ode.o: ode_output.o
 free.o: ode.o
 resist.o: dcon_mod.o

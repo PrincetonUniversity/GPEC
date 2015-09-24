@@ -18,9 +18,11 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER :: i,in,osing,resol,angnum,
-     $     mthnumb,meas,mode,nr,nz,m3mode,lowmode,highmode
+     $     mthnumb,meas,mode,m3mode,lowmode,highmode,filter_modes
+      INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode
       INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8) :: majr,minr,rdist,smallwidth,factor,fp,normpsi
+      CHARACTER(4) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
@@ -28,20 +30,22 @@ c-----------------------------------------------------------------------
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
-     $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag
+     $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
+     $     filter_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
-      NAMELIST/ipec_input/ieqfile,idconfile,ivacuumfile,
+      NAMELIST/ipec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
      $     displacement_flag,mode,coil_flag,
      $     ip_direction,bt_direction,rdconfile,
-     $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode ! LOGAN
+     $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
+     $     filter_types,filter_modes
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
@@ -52,13 +56,13 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
-     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout
+     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,pmodbrz_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
-     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag
+     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -67,6 +71,7 @@ c-----------------------------------------------------------------------
       jsurf_in=0
       tmag_in=1
       jac_in=""
+      dcon_dir=""
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
       ivacuumfile="vacuum.bin"
@@ -91,6 +96,8 @@ c-----------------------------------------------------------------------
       fmode =0
       dmode =0
       d1mode=0
+      filter_modes = 0
+      filter_types = '   '
 
       resp_index=0
       sing_spot=5e-4
@@ -113,6 +120,7 @@ c-----------------------------------------------------------------------
       vbnormal_flag=.FALSE.
       xbtangent_flag=.FALSE.
       xclebsch_flag=.FALSE.
+      filter_flag  = .TRUE.
       rstep=0
       nrzeq_flag=.FALSE.
       nr=64
@@ -135,7 +143,6 @@ c-----------------------------------------------------------------------
       arzphifun_flag=.FALSE.
       xbrzphifun_flag=.FALSE.
       bwp_pest_flag=.FALSE.
-      verbose = .TRUE.
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.
@@ -168,6 +175,8 @@ c-----------------------------------------------------------------------
       resol=1e4
       smallwidth=1e-6
       
+      timeit = .FALSE.
+      verbose = .TRUE.
       debug_flag = .FALSE.
 c-----------------------------------------------------------------------
 c     read ipec.in.
@@ -181,6 +190,26 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=ipec_output)
       READ(in_unit,NML=ipec_diagnose)
       CALL ascii_close(in_unit)
+      IF(timeit) CALL ipec_timer(0)
+c-----------------------------------------------------------------------
+c     Deprecated variable errors
+c-----------------------------------------------------------------------
+      IF((pmode/=0).or.(p1mode/=0).or.(dmode/=0).or.(d1mode/=0).or.
+     $   (fmode/=0).or.(rmode/=0).or.(smode/=0))THEN
+         PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
+         PRINT *,"  Use filter_types to filter external spectrum."
+         CALL ipec_stop("Deprecated input.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     define relative file paths.
+c-----------------------------------------------------------------------
+      IF(dcon_dir/="")THEN
+         CALL setahgdir(dcon_dir)
+         idconfile = TRIM(dcon_dir)//"/"//TRIM(idconfile)
+         ieqfile = TRIM(dcon_dir)//"/"//TRIM(ieqfile)
+         ivacuumfile = TRIM(dcon_dir)//"/"//TRIM(ivacuumfile)
+         rdconfile = TRIM(dcon_dir)//"/"//TRIM(rdconfile)
+      ENDIF
 c-----------------------------------------------------------------------
 c     define coordinates.
 c-----------------------------------------------------------------------
@@ -270,6 +299,7 @@ c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
       CALL idcon_vacuum
+      IF(timeit) CALL ipec_timer(2)
 c-----------------------------------------------------------------------
 c     set parameters from dcon.
 c-----------------------------------------------------------------------
@@ -299,26 +329,108 @@ c-----------------------------------------------------------------------
                finmn(cmlow-mlow+i)=coilmn(i)
             ENDIF
          ENDDO
+         IF(timeit) CALL ipec_timer(2)
       ENDIF
+c-----------------------------------------------------------------------
+c     log inputs with harvest
+c-----------------------------------------------------------------------
+      ierr=init_harvest('CODEDB_IPEC'//NUL,hlog,len(hlog))
+      ierr=set_harvest_verbose(0)
+      ! standard CODEDB records
+      ierr=set_harvest_payload_str(hlog,'CODE'//nul,'IPEC'//nul)
+      IF (machine=='') then
+         machine = "UNKNOWN"
+      ELSEIF (machine=='d3d') then
+         machine = "DIII-D"
+      ENDIF
+      machine = to_upper(machine)
+      ierr=set_harvest_payload_str(hlog,'MACHINE'//nul,
+     $                             trim(machine)//nul)
+      ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
+      if(shotnum>0)
+     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,INT(shotnum))
+      if(shottime>0)
+     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,INT(shottime))
+      ! DCON equilibrium descriptors
+      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
+      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
+      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
+      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
+      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
+      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
+      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
+      ierr=set_harvest_payload_dbl(hlog,'psilim'//nul,psilim)
+      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
+      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
+      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
+      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
+      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
+      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
+      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
+      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
+      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
+      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
+      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
+      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
+      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
+      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
+      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
+      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
+      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
+      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
+      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
+      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
+      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
+      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
+      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
+      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
+      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
+      ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
+      ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
+      ! ipec inputs
+      write(hnml,nml=ipec_input)
+      ierr=set_harvest_payload_nam(hlog,'IPEC_INPUT'//nul,
+     $                             trim(hnml)//nul)
+      write(hnml,nml=ipec_control)
+      ierr=set_harvest_payload_nam(hlog,'IPEC_CONTROL'//nul,
+     $                             trim(hnml)//nul)
+      write(hnml,nml=ipec_output)
+      ierr=set_harvest_payload_nam(hlog,'IPEC_OUTPUT'//nul,
+     $                             trim(hnml)//nul)
 c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
       CALL ipresp_eigen
+      IF(timeit) CALL ipec_timer(2)
       CALL ipresp_pinduct
       CALL ipresp_sinduct
       CALL ipresp_permeab
       CALL ipresp_reluct
+      IF(timeit) CALL ipec_timer(2)
 c-----------------------------------------------------------------------
 c     run and test rdcon.
 c-----------------------------------------------------------------------
 c      CALL rdcon_read
 c-----------------------------------------------------------------------
+c     Set parameters for outputs.
+c-----------------------------------------------------------------------
+      IF (nrzeq_flag) THEN
+         nr=mr
+         nz=mz
+      ENDIF
+      CALL ipeq_rzpgrid(nr,nz,psixy)
+c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
+      CALL ipout_init_netcdf
       IF (resp_flag) THEN
-         CALL ipout_response
+         CALL ipout_response(power_rout,power_bpout,
+     $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
-      IF (singcoup_flag .OR. smode>0) THEN
+      DO i=1,LEN(filter_types)
+         IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
+      ENDDO
+      IF (singcoup_flag) THEN
          CALL ipout_singcoup(sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
@@ -330,7 +442,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,tmag_out,
-     $        singcoup_flag)
+     $        filter_types,filter_modes,filter_flag)
       ELSE IF (mode_flag) THEN
          edge_flag=.FALSE.
       ENDIF
@@ -363,14 +475,7 @@ c-----------------------------------------------------------------------
      $        power_rcout,tmag_out)
       ENDIF
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag)
-     $     THEN
-         IF (nrzeq_flag) THEN
-            nr=mr
-            nz=mz
-         ENDIF
-         IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
-     $     vbrzphi_flag) CALL ipeq_rzpgrid(nr,nz)
+     $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag) THEN
          IF (.NOT.mode_flag) THEN
             CALL ipout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
          ELSE
@@ -398,10 +503,6 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
       IF (singfld_flag .AND. vsbrzphi_flag) THEN
-         IF (nrzeq_flag) THEN
-            nr=mr
-            nz=mz
-         ENDIF
          DO i=1,msing
             IF (ss_flag(i)) CALL ipout_vsbrzphi(i,nr,nz)
          ENDDO
@@ -413,6 +514,7 @@ c-----------------------------------------------------------------------
       IF (arzphifun_flag) THEN
          CALL ipout_arzphifun(mode,xspmn)
       ENDIF
+
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
@@ -472,7 +574,7 @@ c-----------------------------------------------------------------------
          fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
          CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
          CALL ipout_control(infile,fxmn,foutmn,xspmn,
-     $        0,0,0,0,1,0,0,0,0,0,1,.FALSE.)
+     $        0,0,0,0,1,0,0,0,0,0,1,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xspmn,sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out,.FALSE.)
@@ -487,7 +589,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
-     $        tmag_out,.FALSE.)
+     $        tmag_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xspmn,sing_spot,0,0,0,0,1,.FALSE.)
          CALL ipdiag_xbcontra(mode,xspmn,0,0,0,0,1)
@@ -524,7 +626,17 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
          CALL iscdftb(mfac,mpert,fxfun,mthsurf,fxmn)
          CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
+         
+         ! test orthoganality of permeabev eigenvectors
+         CALL ipdiag_permeabev_orthogonality
+         ! Test coordinate independence of power eigenvectors
+         CALL ipdiag_reluctpowout(power_rout,power_bpout,power_bout,
+     $        power_rcout)
       ENDIF
+c-----------------------------------------------------------------------
+c     send harvest record.
+c-----------------------------------------------------------------------
+      ierr=harvest_send(hlog)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

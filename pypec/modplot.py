@@ -285,7 +285,7 @@ def _modaxes(ax,useOffset=False):
 	return ax
 	
 # down sample all lines in axes
-def _axes_downsample(self,ax,npts=1000):
+def _axes_downsample(self,ax,npts=10000):
 	"""
 	Attempt to down sample original data in
 	each Line2D object in lines.
@@ -463,7 +463,36 @@ def xyaxes(axes,x=True,y=True,**kwargs):
 		axes.set_xlim(*xlim)
 	return True
 
-
+def set_linearray(lines,values=None,cmap='Blues',vmin=None,vmax=None):
+    """
+    Set colors of lines to colormaping of values.
+    
+    Other good sequential colormaps are YlOrBr and autumn.
+    A good diverging colormap is bwr.
+    
+    **Arguments:**
+        - lines : list. Lines to get set colors.
+    
+    **Key Word Arguments:**
+        - values : array like. Values corresponding to each line. Default is indexing.
+        - cmap : str. Valid matplotlib colormap name.
+        - vmax : float. Upper bound of colormaping.
+        - vmin : float. Lower bound of colormaping.
+    
+    **Returns:**
+        - ScalarMappable. A mapping object used for colorbars.
+        
+    """
+    if values==None:
+        values = range(len(lines))
+    nm = matplotlib.colors.Normalize(vmin,vmax)
+    sm = matplotlib.cm.ScalarMappable(cmap=cmap,norm=nm)
+    sm.set_array(values)
+    colors = sm.cmap(sm.norm(values))
+    for l,c in zip(lines,colors):
+        l.set_color(c)    
+        
+    return sm
 
 def onkey(event):
 	"""

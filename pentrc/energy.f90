@@ -35,7 +35,7 @@ module energy_integration
     public &
         xatol,xrtol,xmax,ximag,xnufac, &    ! reals
         xnutype,xf0type, &                  ! characters
-        xdebug, &                           ! logical
+        qt,xdebug, &                        ! logical
         xintgrl_lsode                       ! functions
     
     ! global variables with defaults
@@ -48,7 +48,9 @@ module energy_integration
     character(32) :: &
         xnutype = "harmonic", &
         xf0type = "maxwellian"
-    logical :: xdebug = .false.
+    logical :: &
+        qt     = .false., &
+        xdebug = .false.
     ! global variables for internal use
     complex(r8), parameter :: xj = (0,1)
     !real(r8) :: wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
@@ -393,7 +395,7 @@ module energy_integration
                 nux = nuk
             case ("harmonic")
                 if(x==0)then        ! (0+0i)^-3 = (nan,nan) -> causes error
-                    nux=0.0**(-1.5) ! 0^-3 = inf -> smooth arithmatic
+                    nux= HUGE(1.0_r8) !0.0**(-1.5) ! 0^-3 = inf -> smooth arithmatic
                 else
                     nux = nuk*(1+0.25*l*l)*cx**(-1.5)
                 endif
@@ -417,6 +419,9 @@ module energy_integration
             case default
                 Stop "ERROR: xintgrnd - f0 type must be maxwellian, jkp, or cgl"
         end select
+        
+        ! Heat flux calculation
+        if(qt) fx = (cx-2.5)*fx
         
         if(.false.)then
             print *,'nutype = ',xnutype

@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
       INTEGER :: cnn,cmpsi,cmtheta,cmzeta,cmpert,coil_num
       CHARACTER(24) :: machine,ceq_type,ip_direction,bt_direction
       CHARACTER(24), DIMENSION(10) :: coil_name
-      REAL(r8), DIMENSION(10,36) :: coil_cur
+      REAL(r8), DIMENSION(10,48) :: coil_cur
       REAL(r8) :: cro,czo,cpsio,cpsilow,cpsilim,cqlim,
      $     ipd,btd,helicity
 
@@ -111,6 +111,7 @@ c-----------------------------------------------------------------------
       CALL bin_open(in_unit,cdconfile,"OLD","REWIND","none")
       READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
       READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim
+      READ(in_unit)
       READ(in_unit)
 
       CALL spline_alloc(csq,ci3,4)

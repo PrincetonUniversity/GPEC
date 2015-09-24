@@ -212,7 +212,7 @@ from StringIO import StringIO
 from types import MethodType
 
 import numpy as np                               # math
-from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,griddata
+from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,RegularGridInterpolator,griddata
 from scipy.special import ellipk,ellipe
 
 #in this package
@@ -224,6 +224,12 @@ try:
 except ImportError:
     mmlab = False
     print('WARNING: Mayavi not in python path')
+try:
+    import xray
+except ImportError:
+    xray = False
+    print('WARNING: xray not in python path')
+    print(' -> We recomend loading anaconda/2.3.0 on portal')
 
 # better label recognition using genfromtxt
 for c in '^|<>/':
@@ -245,7 +251,7 @@ interp1d_unbound.__doc__ = interp1d.__doc__
 
 ######################################################## IO FOR DATA OBJECTs
 
-def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_quiet):
+def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,quiet=default_quiet):
     """
     Get the data from any ipec output as a list of python 
     class-type objects using numpy.genfromtxt.
@@ -261,6 +267,8 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_q
         Set independent data labels.
       forcedim : list.
         Set dimensionality of each x.
+      maxnumber : int. 
+        Reads only first maxnumber of tables.
       maxlength : int. 
         Tables with more rows than this are downsampled for speed.
       quiet   : bool. 
@@ -310,8 +318,9 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_q
             else:
                 lines = f.readlines()
             top,bot = 0,0
+            count = 0
             length= len(lines)
-            while bot<length and top<(length-2):
+            while bot<length and top<(length-2) and count<maxnumber:
                 preamble=''
                 lastline=''
                 for i,line in enumerate(lines[bot:]):
@@ -376,6 +385,7 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxlength=1e6,quiet=default_q
                                      deletechars='?',dtype=np.float)
                 pcollection.append(preamble)
                 dcollection.append(data)
+                count+=1
         #debug print("Finished parsing file in "
         #debug       +"{} seconds".format(time.time()-start_time))
         #turn arrays into classes
@@ -708,7 +718,6 @@ class DataBase(object):
         #debug start_time = time.time()
 
         #scipy interpolation function for ND (stored so user can override)
-        self._interpfunc=[interp1d_unbound,interp2d,LinearNDInterpolator][self.nd-1]
         self._interpdict={}
 
         # Set any variables from preamble
@@ -761,7 +770,7 @@ class DataBase(object):
         Interpolate data to point(s).
         
         Arguments:
-          x  : tuple. 
+          x  : ndarray shape (npts,ndim). 
             Point(s) on dependent axis(axes).
         
         Key Word Arguments:
@@ -780,62 +789,46 @@ class DataBase(object):
         if not type(ynames) in (list,tuple): ynames=(ynames,)
         if not type(x) in [list,tuple,np.ndarray]: x=[x,]
         NewData = copy.deepcopy(self)
-        NewData.x = list(x)
-        NewData.shape = list(np.shape(NewData.x))
-        NewData.pts = np.array(np.meshgrid(*x)).T.reshape(-1,len(NewData.shape))
+        if self.nd==1:
+            x = np.atleast_1d(x)
+            NewData.pts = x
+            NewData.x = [x]
+            NewData.shape = [len(x)]
+        else:
+            if self.nd==2:
+                x = np.atleast_2d(x)
+            elif self.nd==3:
+                x = np.atleast_3d(x)
+            NewData.pts = x
+            NewData.x = [np.array(sorted(set(xi))) for xi in x.T]
+            NewData.shape = [len(xi) for xi in NewData.x]
+            if np.product(NewData.shape)!=len(NewData.pts):
+                NewData.x = None
         
         #function to form interpolator if needed
         def new_interp(name):
+            if not quiet: print("Forming interpolator for "+name+".")
             args = []
-            if self.x: #regular grid is fast
+            if self.x: # regular grid is fast
                 for n in range(self.nd):
                     args.append(self.x[n])
-                args.append(self.y[name])#.reshape(self.shape))
-            else: #irregular grid is slow
-                """myslices=[]
-                for n in range(self.nd):
-                    myslices.append(np.s_[::max(1,self.shape[n]/(150/self.nd))])
-                args = [self.pts[:,n].reshape(self.shape)[myslices] 
-                        for n in range(self.nd)]+[self.y[name].reshape(self.shape)][myslices]]
-                newlen = np.product(np.shape(args[0]))
-                print("Warning: "+str(newlen)+" of "+str(len(self.pts))+" points being passed to interpolator")"""
-                step = max(1,len(self.pts[:,0])/1e4)
+                return RegularGridInterpolator(tuple(args),self.y[name].reshape(self.shape),bounds_error=False)
+            else: # irregular grid is slower but ok
+                step = max(1,len(self.pts[:,0])/1e6)
                 for n in range(self.nd):
                     args.append(self.pts[::step,n])
-                args.append(self.y[name][::step])
-                
-            if np.any(np.iscomplex(self.y[name])):
-                if not quiet: print("Forming real interpolator for "+name+".")
-                rargs = copy.copy(args)
-                rargs[-1] = np.real(args[-1])
-                freal = self._interpfunc(*rargs,**kwargs)
-                if not quiet: print("Forming imaginary interpolator (assumed independent).")
-                args[-1] = np.imag(args[-1])
-                fimag = self._interpfunc(*args,**kwargs)
-                def fcmplx(*xy):
-                    #return freal(*xy)+1j*fimag(*xy)
-                    return freal(xy[0],xy[1])+1j*fimag(xy[0],xy[1])
-                atts = ['y','z','values']
-                att = atts[self.nd-1]
-                setattr(fcmplx,att,getattr(freal,att)+1j*getattr(fimag,att))
-                return fcmplx
-                #return lambda *xy: freal(*np.real(xy))+1j*fimag(*np.imag(xy))
-            else:
-                if not quiet: print("Forming interpolator for "+name+".")
-                return self._interpfunc(*args,**kwargs)
-                
+                return LinearNDInterpolator(zip(*args),self.y[name][::step])
+                           
         # for each name check if interpolator is up to date and get values
-        atts = ['y','z','values']
-        att = atts[self.nd-1]
         values={}
         for name in ynames:
             if name in self._interpdict.keys():
-                if not all(getattr(self._interpdict[name],att) == self.y[name]):
+                if not all(self._interpdict[name].values.ravel() == self.y[name]):
                     self._interpdict[name] = new_interp(name)
             else:
                 self._interpdict[name] = new_interp(name)
             if not quiet: print("Interpolating values for "+name+".")
-            values[name]=np.array(self._interpdict[name](*x)).T.ravel()
+            values[name]=self._interpdict[name](x)
         NewData.y = values
         return NewData
         
@@ -988,10 +981,10 @@ class DataBase(object):
         f.show()
         return f
                               
-    def plot2d(self,ynames=None,aspect='auto',plot_type='pcolormesh',cbar=True,
+    def plot2d(self,ynames=None,aspect='auto',plot_type='imshow',cmap='Oranges',cbar=True,
                grid_size=(256,256),swap=False,**kwargs):
         """
-        Matplotlib pcolormesh or contour plots of 2D data.
+        Matplotlib 2D plots of the data.
         
         Key Word Arguments:
           ynames : list. 
@@ -1002,6 +995,7 @@ class DataBase(object):
           plot_type: str. 
             Choose one of:
             
+            - "imshow" Use matplotlib imshow to plot on grid.
             - "pcolormesh" Use matplotlib pcolormesh to plot on grid.
             - "contour"    Use matplotlib contour to plot on grid.
             - "contourf"   Use matplotlib contourf to plot on grid.
@@ -1009,6 +1003,8 @@ class DataBase(object):
             - "tripcontour"  Use matplotlib tripcontour to plot raw points.
             - "tripcontourf" Use matplotlib tripcontourf to plot raw points.
 
+          cmap   : str.
+            Valid matplotlib colormap. Default is sequential. For diverging data, 'bwr' is recomended.
           cbar   : bool. 
             Show colorbar. 
           grid_size : tuple. 
@@ -1022,21 +1018,20 @@ class DataBase(object):
           figure. 
         
         """
+        kwargs['cmap'] = cmap
         if not ynames: ynames=np.sort(self.y.keys()).tolist()
         if not type(ynames) in (list,tuple): ynames=[ynames]
         if self.nd != 2: raise IndexError("Data not 2D.")
             
         if self.x:
             x1,x2 = map(np.reshape,self.pts.T,[self.shape]*self.nd)
-        elif plot_type in ['pcolormesh','contour','contourf']:
+        elif plot_type in ['imshow','pcolormesh','contour','contourf']:
             x1,x2 = np.mgrid[self.pts[:,0].min():self.pts[:,0].max():1j*grid_size[0],
                              self.pts[:,1].min():self.pts[:,1].max():1j*grid_size[1]]
         else:
             step = max(len(self.pts[:,0])/np.product(grid_size),1)
             if step>1: print('Reducing data by factor of {:}'.format(step))
             x1,x2 = self.pts[::step].T
-        if swap:
-            x1,x2 = x2,x1
 
         for name in ynames:
             try:
@@ -1073,27 +1068,34 @@ class DataBase(object):
             #        plotter = a.pcolormesh
             #    else:
             #        plotter = a.tripcolor
-            if plotter in [a.pcolormesh,a.tripcolor]:
-                if 'edgecolor' not in kwargs: kwargs['edgecolor']='None'
-                if 'shading' not in kwargs: kwargs['shading']='gouraud'
+            
+            # convert to reals and grid if necessary
             reducedname = name.replace('real ','').replace('imag ','')
+            if 'imag ' in name:
+                raw = np.imag(self.y[reducedname])
+            else:
+                raw = np.real(self.y[reducedname])
             if self.x:
-                ry = np.real(self.y[reducedname]).reshape(self.shape)
-                iy = np.imag(self.y[reducedname]).reshape(self.shape)
+                y = raw.reshape(self.shape)
             elif np.all(x1==self.pts[:,0]) or np.all(x1==self.pts[:,1]):
-                ry = np.real(self.y[reducedname])
-                iy = np.imag(self.y[reducedname])
+                y = raw
             else:
-                ry = griddata(self.pts,np.real(self.y[reducedname]),
-                              (x1,x2),method='nearest')
-                iy = griddata(self.pts,np.imag(self.y[reducedname]),
-                              (x1,x2),method='nearest')
-            if 'real' in name:
-                pcm = plotter(x1,x2,ry,**kwargs)
-            elif 'imag' in name:
-                pcm = plotter(x1,x2,iy,**kwargs)
+                y = griddata(self.pts,np.nan_to_num(raw),(x1,x2),method='linear')
+            if swap:
+                x1,x2,y = x2.T,x1.T,y.T
+            
+            # plot type specifics
+            if plotter==a.imshow:
+                kwargs.setdefault('origin','lower')
+                kwargs['aspect']=aspect
+                kwargs.setdefault('extent',[x1.min(),x1.max(),x2.min(),x2.max()])
+                args = [y.T]
             else:
-                pcm = plotter(x1,x2,ry,**kwargs)
+                args = [x1,x2,y]
+                if plotter in [a.pcolormesh,a.tripcolor]:
+                    kwargs.setdefault('edgecolor','None')
+                    kwargs.setdefault('shading','gouraud')
+            pcm = plotter(*args,**kwargs)
 
             a.set_xlabel(_mathtext(self.xnames[0+swap]))
             a.set_ylabel(_mathtext(self.xnames[1-swap]))
@@ -1438,10 +1440,7 @@ def _data_op(self,other,fun,op,quiet=default_quiet):
             raise ArithmeticError('Two data objects do not have same dependent variables.')
         if not np.all(self.pts==other.pts):#[np.all(sx==ox) for sx,ox in zip(self.x,other.x)]):
             if not quiet: print('interpolating to same axes.')
-            if NewData.x:
-                otherinterp = other.interp(NewData.x).y # interp2D auto-grids
-            else:
-                otherinterp = other.interp(NewData.pts).y
+            otherinterp = other.interp(NewData.pts).y
         else:
             otherinterp = other.y
         # problem from unbound interpolation?? Fixed when switched to returning objects.

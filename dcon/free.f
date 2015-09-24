@@ -60,9 +60,7 @@ c-----------------------------------------------------------------------
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
-      REAL(r8), DIMENSION(mpert) :: ebt,ebp,ebv ! LOGAN
       COMPLEX(r8), DIMENSION(mpert) :: diff
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: wbt,wbp,wbv,ct ! LOGAN
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -127,79 +125,10 @@ c-----------------------------------------------------------------------
          wv(:,ipert)=wv(:,ipert)*singfac
       ENDDO
 c-----------------------------------------------------------------------
-c     LOGAN - compute flux eigenvalues and eigenvectors.
-c-----------------------------------------------------------------------
-      wbt = wp+wv
-      DO ipert=1,mpert ! Hermitian diag explicit (errors get magnified)
-         wbt(ipert,ipert) = REAL(wbt(ipert,ipert)) 
-      ENDDO
-      DO ipert=1,mpert
-         wbt(ipert,:)= ifac*singfac*wbt(ipert,:)    !*twopi*chi1
-         wbt(:,ipert)=-ifac*singfac*wbt(:,ipert)    !*twopi*chi1
-      ENDDO
-      !ct = CONJG(TRANSPOSE(wbt))
-      !print *, "Is flux matrix Hermitian?"
-      !print *, ALL(wbt .EQ. ct)
-      !print *, ALL(ABS(wbt - ct)/ABS(wt) < 1e-3)
-      !DO isol=1,mpert
-      !   IF(.NOT. ALL(wbt(isol,:) .EQ. ct(isol,:))) THEN
-      !     diff = wbt(isol,:)-ct(isol,:)
-      !     print *,isol,SQRT(ABS(DOT_PRODUCT(diff,diff)))
-      !   ENDIF
-      !ENDDO
-      lwork=2*mpert-1
-      CALL zheev('V','U',mpert,wbt,mpert,ebt,work,lwork,rwork,info)
-      work = 0
-      rwork = 0
-c-----------------------------------------------------------------------
-c     LOGAN - normalize eigenfunction and energy.
-c-----------------------------------------------------------------------
-      IF(normalize)THEN
-         DO isol=1,mpert
-            norm=0
-            DO ipert=1,mpert
-               DO jpert=1,mpert
-                  norm=norm+jmat(jpert-ipert)
-     $                 *wbt(ipert,isol)*CONJG(wbt(jpert,isol))
-               ENDDO
-            ENDDO
-            norm=norm/v1
-            wbt(:,isol)=wbt(:,isol)/SQRT(norm)
-            ebt(isol)=ebt(isol)/norm
-         ENDDO
-      ENDIF
-c-----------------------------------------------------------------------
-c     LOGAN - normalize phase and label largest component.
-c-----------------------------------------------------------------------
-      DO isol=1,mpert
-         imax=MAXLOC(ABS(wbt(:,isol)))
-         phase=ABS(wbt(imax(1),isol))/wbt(imax(1),isol)
-         wbt(:,isol)=wbt(:,isol)*phase
-      ENDDO
-c-----------------------------------------------------------------------
-c     LOGAN - compute plasma and vacuum contributions.
-c-----------------------------------------------------------------------
-      wbp=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wp,wbt))
-      wbv=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wv,wbt))
-      DO ipert=1,mpert
-         ebp(ipert)=wbp(ipert,ipert)
-         ebv(ipert)=wbv(ipert,ipert)
-      ENDDO
-c-----------------------------------------------------------------------
 c     compute energy eigenvalues.
 c-----------------------------------------------------------------------
       wt=wp+wv
       lwork=2*mpert-1
-      !ct = CONJG(TRANSPOSE(wt))
-      !print *, "Is displacement matrix Hermitian?"
-      !print *, ALL(wt .EQ. ct)
-      !print *, ALL(ABS(wt - ct)/ABS(wt) < 1e-3)
-      !DO isol=1,mpert
-      !   IF(.NOT. ALL(wt(isol,:) .EQ. ct(isol,:))) THEN
-      !     diff = wt(isol,:)-ct(isol,:)
-      !     print *,isol,wt(isol,isol),SQRT(ABS(DOT_PRODUCT(diff,diff)))
-      !   ENDIF
-      !ENDDO
       CALL zheev('V','U',mpert,wt,mpert,et,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
 c     normalize eigenfunction and energy.
@@ -248,20 +177,13 @@ c-----------------------------------------------------------------------
 c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
-         WRITE(euler_bin_unit)5
-c-----------------------------------------------------------------------
-c     <MODIFIED>
-c-----------------------------------------------------------------------
+         WRITE(euler_bin_unit)3
 c-----------------------------------------------------------------------
 c     <MODIFIED>
 c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)ep
-c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
-         WRITE(euler_bin_unit)ebp  ! LOGAN ADDED with option 5
-         WRITE(euler_bin_unit)ebt  ! LOGAN ADDED with option 5
-         WRITE(euler_bin_unit)wbt  ! LOGAN ADDED with option 5
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.

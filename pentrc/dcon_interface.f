@@ -39,10 +39,12 @@ c-----------------------------------------------------------------------
      $     power_b,power_r,power_bp,
      $     nn,mmin,mmax
 
-      REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
-     $     singfac_min,bo
+      REAL(r8) :: bo,ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
+     $     singfac_min,   amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
       COMPLEX(r8), PARAMETER  :: ifac = (0,1)
-      CHARACTER(16) :: jac_type
+      CHARACTER(16) :: jac_type,machine
       CHARACTER(128) :: idconfile
 
       LOGICAL, DIMENSION(:), POINTER :: sing_flag
@@ -53,10 +55,10 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(:), POINTER ::
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wft,
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wft,wtraw,
      $     amat,bmat,cmat,fmats,gmats,kmats
 
-      TYPE(spline_type) :: sq
+      TYPE(spline_type) :: sq,geom
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
       TYPE(cspline_type) :: u1,u2
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
@@ -119,6 +121,9 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      READ(in_unit) amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
       IF ((power_b==0).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="hamada"
       ELSE IF ((power_b==0).AND.(power_bp==0).AND.(power_r==2)) THEN
@@ -208,6 +213,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE DEFAULT
             WRITE(message,'(a,i1,a,i4)')"Cannot recognize data_type = ",
      $           data_type,", at istep = ",istep
@@ -227,7 +233,6 @@ c-----------------------------------------------------------------------
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
       ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
-      ALLOCATE(eft(mpert),efp(mpert),wft(mpert,mpert))
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       in_unit = get_free_file_unit(-1)
@@ -295,12 +300,15 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
          CASE(5)
+            ALLOCATE(eft(mpert),efp(mpert),wft(mpert,mpert))
+            ALLOCATE(wtraw(mpert,mpert))
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
             READ(UNIT=in_unit)efp
             READ(UNIT=in_unit)eft
             READ(UNIT=in_unit)wft
+            READ(UNIT=in_unit)wtraw
          END SELECT
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
@@ -316,9 +324,12 @@ c-----------------------------------------------------------------------
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
-      eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      wft=wft*(chi1*1e-3)
+      IF(data_type==5)THEN
+         wtraw=wtraw*(chi1*1e-3)
+         eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+         efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+         wft=wft*(chi1*1e-3)
+      ENDIF
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
 c-----------------------------------------------------------------------
@@ -1138,11 +1149,123 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_coords
       
+c-----------------------------------------------------------------------
+c     subprogram 4. issurfint.
+c     surface integration by simple method.
+c-----------------------------------------------------------------------
+      FUNCTION issurfint(func,fs,psi,wegt,ave)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fs,wegt,ave
+      REAL(r8), INTENT(IN) :: psi
+      REAL(r8), DIMENSION(0:fs), INTENT(IN) :: func
+
+      LOGICAL  :: first = .TRUE. ! Only set at first call, implicitly saved
+      INTEGER  :: itheta
+      REAL(r8) :: issurfint
+      REAL(r8) :: rfac,eta,jac,area
+      REAL(r8), DIMENSION(1,2) :: w
+      REAL(r8), DIMENSION(0:fs) :: z,thetas
+      
+      ! note we had to make arrays allocatable to be allowed to save
+      INTEGER  :: fsave
+      REAL(r8) :: psave
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: jacs,delpsi,r,a
+      SAVE :: psave,fsave,jacs,delpsi,r,a
+      
+      issurfint=0
+      area=0
+      IF(first .OR. psi/=psave .OR. fs/=fsave)THEN
+         psave = psi
+         fsave = fs
+         IF(.NOT.first) DEALLOCATE(jacs,delpsi,r,a)
+         first = .FALSE.
+         ALLOCATE(jacs(0:fs),delpsi(0:fs),r(0:fs),a(0:fs))
+         thetas=(/(itheta,itheta=0,fs)/)/REAL(fs,r8)
+         DO itheta=0,fs-1
+            CALL bicube_eval(rzphi,psi,thetas(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(thetas(itheta)+rzphi%f(2))
+            a(itheta)=rfac
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            jacs(itheta)=jac
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+         ENDDO
+      ENDIF
+
+      IF (wegt==0) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE IF (wegt==1) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           r(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE IF (wegt==2) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           jacs(itheta)*delpsi(itheta)*func(itheta)/r(itheta)/fs
+         ENDDO
+      ELSE IF (wegt==3) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           a(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE
+         STOP "ERROR: issurfint wegt must be in [0,1,2,3]"
+      ENDIF
+
+      IF (ave==1) THEN
+         DO itheta=0,fs-1
+            area=area+jacs(itheta)*delpsi(itheta)/fs
+         ENDDO
+         issurfint=issurfint/area
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END FUNCTION issurfint
 
       
       
       
+      !=======================================================================
+      subroutine set_geom
+      !----------------------------------------------------------------------- 
+      !*DESCRIPTION: 
+      !   Form a spline of additional geometric flux surface functions.
+      !
+      !*ARGUMENTS:
+      !
+      !----------------------------------------------------------------------- 
+        ! declare variables
+        integer  :: ipsi
+        real(r8) :: psifac
+        real(r8), dimension(0:mthsurf) :: unitfun
+        
+        unitfun = 1
+        call spline_alloc(geom,mpsi,3)
+        geom%title=(/"area  ","<r>   ","<R>   "/)
+        geom%xs = sq%xs
+        do ipsi=0,mpsi
+            psifac = geom%xs(ipsi)
+            geom%fs(ipsi,1) = issurfint(unitfun,mthsurf,psifac,0,0)
+            geom%fs(ipsi,2) = issurfint(unitfun,mthsurf,psifac,3,1)
+            geom%fs(ipsi,3) = issurfint(unitfun,mthsurf,psifac,1,1)
+        enddo
+        call spline_fit(geom,"extrap")
+        !call spline_int(geom) ! not necessary yet
       
+      end subroutine set_geom
       
       
       !=======================================================================
@@ -1221,9 +1344,76 @@ c-----------------------------------------------------------------------
         call spline_eval(sq,0.0_r8,0)
         bo = abs(sq%f(1))/(twopi*ro)
         
+        ! set additional geometric spline
+        call set_geom
+        
       end subroutine set_eq
       
-      
+c-----------------------------------------------------------------------
+c     subprogram idcon_harvest.
+c     log inputs with harvest.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE idcon_harvest(hlog)
+c-----------------------------------------------------------------------
+c     no declarations. All module variables.
+c-----------------------------------------------------------------------
+      ! harvest variables
+      include 'harvest_lib.inc77'
+      integer :: ierr
+      character(len=65507) :: hlog
+      character, parameter :: nul = char(0)
+
+      ! log inputs with harvest
+      ! standard CODEDB records
+      if(machine/='') ierr=set_harvest_payload_str(hlog,'MACHINE'//nul,
+     $   trim(machine)//nul)
+      if(shotnum>0)
+     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,int(shotnum))
+      if(shottime>0)
+     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,int(shottime))
+      ! DCON specifc records
+      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
+      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
+      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
+      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
+      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
+      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
+      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
+      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
+      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
+      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
+      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
+      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
+      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
+      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
+      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
+      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
+      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
+      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
+      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
+      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
+      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
+      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
+      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
+      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
+      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
+      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
+      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
+      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
+      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
+      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
+      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
+      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
+      ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
+      ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE idcon_harvest
       
       
       

@@ -6,8 +6,10 @@ CC = cc $(CFLAGS)
 .c.o:
 	$(CC) -c $*.c
 
+# Linux and OSX standards
 LIBDIR= \
-	-L/usr/X11R6/lib64
+	-L/usr/X11R6/lib64 \
+	-L/opt/local/include
 
 LIBS = \
 	$(LIBDIR) \

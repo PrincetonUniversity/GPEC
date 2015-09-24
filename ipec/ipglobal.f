@@ -16,7 +16,7 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
-     $     debug_flag
+     $     debug_flag,timeit
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
@@ -24,16 +24,19 @@ c-----------------------------------------------------------------------
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
      $     nche,nchr,nchz,rsing,rnqty,rnx,max_linesout,
-     $     pmode,p1mode,rmode,dmode,d1mode,fmode,smode ! LOGAN
+     $     nr,nz
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
-     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,sing_spot,reg_spot
+     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,sing_spot,reg_spot,
+     $     amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qa,crnt,q95,shotnum,shottime
 
       CHARACTER(2) :: sn,ss
       CHARACTER(10) :: date,time,zone
       CHARACTER(16) :: jac_type,jac_in,jac_out,data_type
-      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,rdconfile
+      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,rdconfile,dcon_dir
 
       INTEGER, PARAMETER :: hmnum=128
       REAL(r8), PARAMETER :: gauss=0.0001
@@ -44,21 +47,21 @@ c-----------------------------------------------------------------------
 
       INTEGER, DIMENSION(8) :: values
 
-      LOGICAL, DIMENSION(:), POINTER :: sing_flag
-      INTEGER, DIMENSION(:), POINTER :: fixstep,mfac,lmfac
-      INTEGER, DIMENSION(:,:), POINTER :: permeabindex,gdl
+      LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
+      INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
+      INTEGER, DIMENSION(:,:), ALLOCATABLE :: permeabindex,gdl
 
-      REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,surfee,surfei,rpsifac,
      $     surf_indev,vsurf_indev,fsurf_indev
-     $     ,eft,efp,perms ! LOGAN
-      REAL(r8), DIMENSION(:,:), POINTER :: surfet,surfep,
-     $     chperr,chpsqr,plas_indev,reluctev,indrelev,grri,grre,
-     $     gdr,gdz,gdpsi,gdthe,gdphi
+     $     ,eft,efp
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: surfet,surfep,
+     $     chperr,chpsqr,plas_indev,reluctev,pinv_indev,permeabsv,
+     $     indrelev,grri,grre,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
 
-      COMPLEX(r8), DIMENSION(:), POINTER ::
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE ::
      $     xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,xmp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
@@ -66,15 +69,15 @@ c-----------------------------------------------------------------------
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,chp_mn,kap_mn,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
-     $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,w1v,fldflxmat
-     $     ,wft,permv ! LOGAN
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
-     $     plas_indmats,permeabmats,diff_indmats,reluctmats,
-     $     plas_indevmats,permeabevmats,reluctevmats,
-     $     indrelmats,indrelevmats
+     $     amat,bmat,cmat,fmats,gmats,kmats
+     $     ,wft,wtraw
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: chpmats,kapmats,
+     $     plas_indmats,pinv_indmats,permeabmats,diff_indmats,
+     $     plas_indevmats,pinv_indevmats,indrelmats,indrelevmats,
+     $     reluctmats,reluctevmats,permeabevmats,permeabsvmats
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
@@ -88,25 +91,25 @@ c-----------------------------------------------------------------------
 
       TYPE :: solution_type
       INTEGER :: msol
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
       END TYPE solution_type
 
       TYPE :: fixfac_type
       INTEGER :: msol
-      INTEGER, DIMENSION(:), POINTER :: index
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: fixfac,transform,gauss
+      INTEGER, DIMENSION(:), ALLOCATABLE :: index
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fixfac,transform,gauss
       END TYPE fixfac_type
 
       TYPE :: sing_type
       INTEGER :: msol_l,msol_r,jfix,jpert
       REAL(r8) :: psifac,q,q1
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: ca_l,ca_r
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: ca_l,ca_r
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
-      TYPE(solution_type), DIMENSION(:), POINTER :: soltype,rsoltype
-      TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
-      TYPE(sing_type), DIMENSION(:), POINTER :: singtype
+      TYPE(solution_type), DIMENSION(:), ALLOCATABLE :: soltype,rsoltype
+      TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
+      TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -185,5 +188,101 @@ c     termination.
 c-----------------------------------------------------------------------
       STOP
       END SUBROUTINE ipec_stop
+c-----------------------------------------------------------------------
+c     subprogram 3. ipec_timer.
+!----------------------------------------------------------------------- 
+c     *DESCRIPTION: 
+c        Handles machine-dependent timing statistics.
+c     
+c     *ARGUMENTS:
+c        mode : integer, in
+c            mode = 0 starts timer
+c            mode = 1 writes total time from last start
+c            mode = 2 writes split & total time from start
+c            mode = -2 resets the split without writting 
+c     
+c     *OPTIONAL ARGUMENTS:
+c        opunit : integer, in
+c            Output written to this unit (default to terminal)
+c     
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipec_timer(mode,opunit)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: mode
+      INTEGER, INTENT(IN), OPTIONAL :: opunit
+    
+      CHARACTER(10) :: date,time,zone
+      INTEGER, DIMENSION(8) :: values
+      REAL(4), SAVE :: start,split
+      INTEGER :: hrs,mins,secs,msec
+      
+      ! get time
+      CALL DATE_AND_TIME(date,time,zone,values)
+      
+      IF(mode==0)THEN ! start timer
+         start=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+         split=0
+      ELSEIF(mode==-2)THEN ! Reset split
+         split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+     $         -start
+      ELSEIF(mode>0)THEN ! outputs
+         IF(mode==2)THEN ! write split (time since last call)
+            split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+     $            -start-split
+            secs = INT(split)
+            hrs = secs/(60*60)
+            mins = (secs-hrs*60*60)/60
+            secs = secs-hrs*60*60-mins*60
+            msec = int((split-secs)*1e3)
+            IF(PRESENT(opunit))THEN
+               write(opunit,"(1x,a,1p,e10.3,a)")"  split cpu time = ",
+     $            split," seconds"
+            ELSE
+               IF(hrs>0)THEN
+                  PRINT *,"  split cpu time = ",hrs," hours, ",
+     $               mins," minutes, ",secs," seconds"
+               ELSEIF(mins>0)THEN
+                  PRINT *,"  split cpu time = ",
+     $               mins," minutes, ",secs," seconds"
+               ELSEIF(secs>0)THEN
+                  PRINT *,"  split cpu time = ",secs," seconds"
+               ELSE
+                  PRINT *,"  split cpu time = ",msec," miliseconds"
+               ENDIF
+            ENDIF
+         ENDIF
+         ! write total time since start
+         split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+     $         -start
+         secs = INT(split)
+         hrs = secs/(60*60)
+         mins = (secs-hrs*60*60)/60
+         secs = secs-hrs*60*60-mins*60
+         msec = int((split-secs)*1e3)
+         IF(PRESENT(opunit))THEN
+            write(opunit,"(1x,a,1p,e10.3,a)")"  total cpu time = ",
+     $         split," seconds"
+         ELSE
+            IF(hrs>0)THEN
+               PRINT *,"  total cpu time = ",hrs," hours, ",
+     $            mins," minutes, ",secs," seconds"
+            ELSEIF(mins>0)THEN
+               PRINT *,"  total cpu time = ",
+     $            mins," minutes, ",secs," seconds"
+            ELSEIF(secs>0)THEN
+               PRINT *,"  total cpu time = ",secs," seconds"
+            ELSE
+               PRINT *,"  total cpu time = ",msec," miliseconds"
+            ENDIF
+         ENDIF
+      ENDIF
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipec_timer
 
       END MODULE ipglobal_mod

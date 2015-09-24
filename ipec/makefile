@@ -1,12 +1,15 @@
-# FC, LIBDIR and FCLIBS are set in the platform-specific included file
-include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -I../equil -I../coil
+FFLAGS = -I../equil -I../coil -I../harvest -I$(NETCDFHOME)/include
 
 F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
+
+LIBDIR = \
+	-L$(LAPACKHOME) \
+	-L$(NETCDFHOME)/lib \
+	-L../lib
 
 LIBS = \
 	$(LIBDIR) \
@@ -14,7 +17,10 @@ LIBS = \
 	-lequil \
 	-lvac \
 	-lcoil \
-	$(FCLIBS)
+	-lharvest \
+	-llapack \
+	-lblas \
+	-lnetcdf
 
 OBJS = \
 	ipglobal.o \
@@ -29,6 +35,7 @@ OBJS = \
 	ipec.o
 
 ipec: $(OBJS)
+	@echo $(PLATFORM)
 	$(F90) -o ipec $(OBJS) $(LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libipec.a *.o

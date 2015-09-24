@@ -52,7 +52,7 @@ class LinearBase:
     xnames - list. Default coordinates.
 
     """
-    def set_data(self,data,**kwargs):
+    def set_data(self,data,quiet=True,**kwargs):
         """
         Interpolate data from Data object to diagnostic points.
 
@@ -64,12 +64,16 @@ class LinearBase:
         """
         pts = np.array([self.pts[name] for name in self.xnames])
         
-        #self.data = data.interp(pts,**kwargs) # fails is not both monotonicly increasing
-        self.data = data.interp(pts[:,0].tolist(),**kwargs)
-        for pt in zip(pts[0,1:],pts[1,1:]):
-            d = data.interp(pt,quiet=True)
-            for k,v in d.iteritems():
-                self.data[k] = np.hstack((self.data[k],v))
+        # Don't spend time interpolating auto-generated phases and amplitudes
+        keys = data.y.keys()
+        for k in data.y.keys():
+            if (('angle ' in k and k.replace('angle ','') in keys) or
+                ('|' in k and k.rstrip('|').lstrip('|') in keys)):
+                keys.remove(k)
+        if not quiet: print("Interpolating {:} to {:}".format(keys,self.xnames[:2]))
+
+        pts = zip(*[self.pts[name] for name in self.xnames[:2]])
+        self.data = data.interp(pts,quiet=quiet,**kwargs).y
         
         # mode number
         if 'n' in data.params:
@@ -269,7 +273,7 @@ class SurfaceBase:
     xnames - list. Default coordinates.
     """
 
-    def set_data(self,data,**kwargs):
+    def set_data(self,data,quiet=True,**kwargs):
         """
         Interpolate data from Data object to diagnostic points.
 
@@ -279,8 +283,8 @@ class SurfaceBase:
 
         **kwargs - dict. Passed to Data.interp
         """
-        pts = tuple([self.pts[name] for name in self.xnames])
-        self.data = interp(pts,**kwargs)
+        pts = zip([self.pts[name] for name in self.xnames])
+        self.data = data.interp(pts,quiet=quiet,**kwargs).y
 
         # some quick default manipulation
         keys = self.data.keys()
@@ -517,7 +521,7 @@ class AxisymSurface(SurfaceBase):
         return datamean
         
 
-    def set_data(self,data,**kwargs):
+    def set_data(self,data,quiet=True,**kwargs):
         """
         Interpolate data from Data object to diagnostic points.
 
@@ -528,7 +532,7 @@ class AxisymSurface(SurfaceBase):
         **kwargs - dict. Passed to Data.interp
         """
         # get 1D data
-        self.CrossSection.set_data(data,**kwargs)
+        self.CrossSection.set_data(data,quiet=quiet,**kwargs)
         self.CrossSection.set_rzcharacteristics()
         
         # extent toroidally
@@ -623,7 +627,7 @@ def coils(coil,dim=3,cmap='coolwarm',curlim=None,exclude=[],**kwargs):
             f,ax = data.plt.subplots()
     colormap = data.plt.pyplot.get_cmap(cmap)
     to_rgb =  data.plt.matplotlib.colors.ColorConverter().to_rgb
-    r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84}
+    r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84,'rfxmod':0.46}
     
     # set normalization of currents using max absolute current
     if not curlim:

@@ -39,8 +39,11 @@ c-----------------------------------------------------------------------
       REAL(r8) :: a=1           ! minor radius
       REAL(r8) :: r0=3          ! major radius
       REAL(r8) :: q0=1.26       ! safety factor at the o-point
+      REAL(r8) :: p0fac=1       ! scales on axis pressure (s*P. beta changes. Phi,q constant)
+      REAL(r8) :: b0fac=1       ! scales on toroidal field (s*Phi,s*f,s^2*P. bt changes. Shape,beta constant)
+      REAL(r8) :: f0fac=1       ! scales on toroidal field (s*f. bt,q changes. Phi,p,bp constant)
 
-      NAMELIST/sol_input/mr,mz,ma,e,a,r0,q0
+      NAMELIST/sol_input/mr,mz,ma,e,a,r0,q0,p0fac,b0fac,f0fac
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
@@ -54,11 +57,18 @@ c-----------------------------------------------------------------------
       CALL bicube_alloc(psi_in,mr,mz,1)
       CALL spline_alloc(sq_in,ma,4)
 c-----------------------------------------------------------------------
+c     enforce physical requirements
+c-----------------------------------------------------------------------
+      IF(p0fac<1)THEN
+         WRITE(*,*) "WARNING: Enforcing p0fac>=1 (no negative pressure)"
+         p0fac = 1
+      ENDIF
+c-----------------------------------------------------------------------
 c     compute scalar data.
 c-----------------------------------------------------------------------
       ro=0
       zo=0
-      f0=r0
+      f0=r0*b0fac
       psio=e*f0*a*a/(2*q0*r0)
       psifac=psio/(a*r0)**2
       efac=1/(e*e)
@@ -72,8 +82,8 @@ c     compute 1D data.
 c-----------------------------------------------------------------------
       sq_in%xs=(/(ia,ia=1,ma+1)/)/REAL(ma+1,r8)
       sq_in%xs=sq_in%xs**2
-      sq_in%fs(:,1)=f0
-      sq_in%fs(:,2)=pfac*(1-sq_in%xs)
+      sq_in%fs(:,1)=f0*f0fac
+      sq_in%fs(:,2)=pfac*(1*p0fac-sq_in%xs)
       sq_in%fs(:,3)=0
 c-----------------------------------------------------------------------
 c     compute 2D data.

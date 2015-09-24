@@ -387,11 +387,11 @@ c-----------------------------------------------------------------------
          etas(itheta)=twopi*(theta(itheta)+rzphi%f(2))
          dphi(itheta)=rzphi%f(3)
       ENDDO
-      IF (eqbrzphi_flag) THEN
-         x1 = psi_in%xs(0)
-         x2 = psi_in%xs(mr)
-         z1 = psi_in%ys(0)
-         z2 = psi_in%ys(mz)
+      IF(ALLOCATED(gdr))THEN
+         x1 = gdr(0,0)
+         x2 = gdr(nr,0)
+         z1 = gdz(0,0)
+         z2 = gdz(0,nz)
       ELSE
          x1 = rmin
          x2 = rmax

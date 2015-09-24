@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
       USE bicube_mod
       IMPLICIT NONE
 
-      CHARACTER(32), PARAMETER :: version = "GPEC version 0.1.0" 
+      CHARACTER(32), PARAMETER :: version = "GPEC version 0.3.0" 
 
       CHARACTER(16) :: eq_type="fluxgrid"
       CHARACTER(128) :: eq_filename="fluxgrid.dat"
@@ -45,6 +45,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: ro,zo,psio,q0,qa,qmin,qmax,amean,rmean,aratio,kappa,
      $     delta1,delta2,bt0,crnt,betat,betan,betap1,betap2,betap3,
      $     li1,li2,li3,volume,p0,ppeakfac,q95
+      REAL(r8) :: shotnum=0, shottime=0
       REAL(r8), DIMENSION(2) :: rext,rsep,zsep
       TYPE(spline_type) :: sq,sq_in
       TYPE(bicube_type) :: rzphi

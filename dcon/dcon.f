@@ -28,12 +28,22 @@ c-----------------------------------------------------------------------
       INTEGER :: mmin,ipsi
       REAL(r8) :: plasma1,vacuum1,total1
 
+      ! harvest variables
+      INCLUDE 'harvest_lib.inc77'
+      INTEGER  :: ierr
+      INTEGER  :: hint = 0
+      REAL(r8) :: hdbl = 0
+      CHARACTER(LEN=16)    :: hkey
+      CHARACTER(LEN=50000) :: hnml
+      CHARACTER(LEN=65507) :: hlog
+      CHARACTER, PARAMETER :: nul = char(0)
+
       NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
-     $     termbycross_flag
+     $     termbycross_flag,qhigh
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -123,7 +133,7 @@ c-----------------------------------------------------------------------
          mhigh=nn*qmax+delta_mhigh
       ELSE
          mmin=HUGE(mmin)
-         DO ising=sing_start,msing
+         DO ising=INT(sing_start),msing
             mmin=MIN(mmin,sing(ising)%m)
          ENDDO
          mlow=mmin-delta_mlow
@@ -197,9 +207,9 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
-c     save output in sum1.dat.
+c     save output in sum1.bin.
 c-----------------------------------------------------------------------
-      CALL bin_open(sum_unit,"sum1.dat","UNKNOWN","REWIND","none")
+      CALL bin_open(sum_unit,"sum1.bin","UNKNOWN","REWIND","none")
       WRITE(sum_unit)mpsi,mtheta,mlow,mhigh,mpert,mband,
      $     REAL(psilow,4),REAL(psihigh,4),REAL(amean,4),REAL(rmean,4),
      $     REAL(aratio,4),REAL(kappa,4),REAL(delta1,4),REAL(delta2,4),
@@ -209,6 +219,56 @@ c-----------------------------------------------------------------------
      $     REAL(qmin,4),REAL(qmax,4),REAL(qa,4),REAL(crnt,4),
      $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1),REAL(q95)
       CALL bin_close(sum_unit)
+c-----------------------------------------------------------------------
+c     log inputs/outputs with harvest
+c-----------------------------------------------------------------------
+      ierr=init_harvest('CODEDB_DCON'//nul,hlog,LEN(hlog))
+      ierr=set_harvest_verbose(0)
+      ! standard CODEDB records
+      ierr=set_harvest_payload_str(hlog,'CODE'//nul,'DCON'//nul)
+      ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
+      if(shotnum>0)
+     $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,INT(shotnum))
+      if(shottime>0)
+     $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,INT(shottime))
+      ! DCON specifc records
+      ierr=set_harvest_payload_int(hlog,'mpsi'//nul,mpsi)
+      ierr=set_harvest_payload_int(hlog,'mtheta'//nul,mtheta)
+      ierr=set_harvest_payload_int(hlog,'mlow'//nul,mlow)
+      ierr=set_harvest_payload_int(hlog,'mhigh'//nul,mhigh)
+      ierr=set_harvest_payload_int(hlog,'mpert'//nul,mpert)
+      ierr=set_harvest_payload_int(hlog,'mband'//nul,mband)
+      ierr=set_harvest_payload_dbl(hlog,'psilow'//nul,psilow)
+      ierr=set_harvest_payload_dbl(hlog,'psilim'//nul,psilim)
+      ierr=set_harvest_payload_dbl(hlog,'amean'//nul,amean)
+      ierr=set_harvest_payload_dbl(hlog,'rmean'//nul,rmean)
+      ierr=set_harvest_payload_dbl(hlog,'aratio'//nul,aratio)
+      ierr=set_harvest_payload_dbl(hlog,'kappa'//nul,kappa)
+      ierr=set_harvest_payload_dbl(hlog,'delta1'//nul,delta1)
+      ierr=set_harvest_payload_dbl(hlog,'delta2'//nul,delta2)
+      ierr=set_harvest_payload_dbl(hlog,'li1'//nul,li1)
+      ierr=set_harvest_payload_dbl(hlog,'li2'//nul,li2)
+      ierr=set_harvest_payload_dbl(hlog,'li3'//nul,li3)
+      ierr=set_harvest_payload_dbl(hlog,'ro'//nul,ro)
+      ierr=set_harvest_payload_dbl(hlog,'zo'//nul,zo)
+      ierr=set_harvest_payload_dbl(hlog,'psio'//nul,psio)
+      ierr=set_harvest_payload_dbl(hlog,'betap1'//nul,betap1)
+      ierr=set_harvest_payload_dbl(hlog,'betap2'//nul,betap2)
+      ierr=set_harvest_payload_dbl(hlog,'betap3'//nul,betap3)
+      ierr=set_harvest_payload_dbl(hlog,'betat'//nul,betat)
+      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
+      ierr=set_harvest_payload_dbl(hlog,'bt0'//nul,bt0)
+      ierr=set_harvest_payload_dbl(hlog,'q0'//nul,q0)
+      ierr=set_harvest_payload_dbl(hlog,'qmin'//nul,qmin)
+      ierr=set_harvest_payload_dbl(hlog,'qmax'//nul,qmax)
+      ierr=set_harvest_payload_dbl(hlog,'qa'//nul,qa)
+      ierr=set_harvest_payload_dbl(hlog,'crnt'//nul,crnt)
+      ierr=set_harvest_payload_dbl(hlog,'q95'//nul,q95)
+      ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
+      ierr=set_harvest_payload_dbl(hlog,'plasma1'//nul,plasma1)
+      ierr=set_harvest_payload_dbl(hlog,'vacuum1'//nul,vacuum1)
+      ierr=set_harvest_payload_dbl(hlog,'total1'//nul,total1)
+      ierr=harvest_send(hlog)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
