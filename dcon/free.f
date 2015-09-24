@@ -133,7 +133,6 @@ c-----------------------------------------------------------------------
       wbp = wp
       wbv = wv
       chi1=twopi*psio
-      print *,chi1
       DO ipert=1,mpert
          wbp(ipert,:)= wbp(ipert,:)/( ifac*twopi*chi1*singfac)
          wbp(:,ipert)= wbp(:,ipert)/(-ifac*twopi*chi1*singfac)
