@@ -854,6 +854,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: output=.FALSE.,write_flux = .TRUE.
       INTEGER :: ipsi,ipert,l,i,j,iindex,method = 0
       CHARACTER(1) :: ft
+      INTEGER, DIMENSION(mpert) :: mfac
       REAL(r8) :: ileft,psifac,chi1,plim(2)
       COMPLEX(r8) :: tphi
       COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kwmat,kwmat_l,
@@ -925,7 +926,7 @@ c-----------------------------------------------------------------------
 c     Use built in PENTRC spline integration options to form matrixes
 c-----------------------------------------------------------------------
       ELSEIF(method==1)THEN
-         WRITE(*,*) "  Trapped energy calculation using MXM euler "//
+         WRITE(*,*) " Trapped energy calculation using MXM euler "//
      $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"wmm",write_flux)
@@ -944,7 +945,7 @@ c-----------------------------------------------------------------------
                kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
             ENDIF
          ENDDO
-         WRITE(*,*) "  Trapped torque calculation using MXM euler "//
+         WRITE(*,*) " Trapped torque calculation using MXM euler "//
      $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"tmm",write_flux)
@@ -969,7 +970,7 @@ c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by T & dW from flat xi spectrum
 c-----------------------------------------------------------------------
       ELSEIF(method==2)THEN
-         WRITE(*,*) "  Trapped energy calculation using MXM euler "//
+         WRITE(*,*) " Trapped energy calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"wmm",write_flux)
@@ -988,7 +989,7 @@ c-----------------------------------------------------------------------
                kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
             ENDIF
          ENDDO
-         WRITE(*,*) "  Trapped torque calculation using MXM euler "//
+         WRITE(*,*) " Trapped torque calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"tmm",write_flux)
@@ -1012,7 +1013,7 @@ c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by norm of EL matrices
 c-----------------------------------------------------------------------
       ELSEIF(method==3)THEN
-         WRITE(*,*) "  Trapped MXM euler lagrange energy matrix norm "
+         WRITE(*,*) " Trapped MXM euler lagrange energy matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"kmm",write_flux)
@@ -1031,7 +1032,7 @@ c-----------------------------------------------------------------------
                kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
             ENDIF
          ENDDO
-         WRITE(*,*) "  Trapped MXM euler lagrange torque matrix norm "
+         WRITE(*,*) " Trapped MXM euler lagrange torque matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"rmm",write_flux)
@@ -1099,69 +1100,73 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL bin_close(bin_unit)
          
-         ! ascii output
-c         CALL ascii_open(out_unit,"kss.out","UNKNOWN")
-c         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
-c         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
-c     $        "mpsi =",mpsi,"mpert =",mpert
-c         WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
-c     $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
-c     $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
-c     $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
-c         DO ipsi=0,kwmats(1)%mx 
-c            DO i=1,mpert
-c               DO j=1,mpert
-c                  ipert = (i-1)*mpert + j
-c                  WRITE(out_unit,'(1x,es16.8,2(1x,I4),12(1x,es16.8))')
-c     $              REAL(kwmats(1)%xs(ipsi),4),i,j,
-c     $              REAL(REAL(kwmats(1)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(kwmats(1)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(kwmats(2)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(kwmats(2)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(kwmats(3)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(kwmats(3)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(kwmats(4)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(kwmats(4)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(kwmats(5)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(kwmats(5)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(kwmats(6)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(kwmats(6)%fs(ipsi,ipert)),4)
-c               ENDDO
-c            ENDDO
-c         ENDDO
-c         WRITE(out_unit,*)
-c         CALL ascii_close(out_unit)
-c         CALL ascii_open(out_unit,"kas.out","UNKNOWN")
-c         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
-c         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
-c     $        "mpsi =",mpsi,"mpert =",mpert
-c         WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
-c     $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
-c     $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
-c     $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
-c         DO ipsi=0,kwmats(1)%mx 
-c            DO i=1,mpert
-c               DO j=1,mpert
-c                  ipert = (i-1)*mpert + j
-c                  WRITE(out_unit,'(1x,es16.8,2(1x,I4),12(1x,es16.8))')
-c     $              REAL(kwmats(1)%xs(ipsi),4),i,j,
-c     $              REAL(REAL(ktmats(1)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(ktmats(1)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(ktmats(2)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(ktmats(2)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(ktmats(3)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(ktmats(3)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(ktmats(4)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(ktmats(4)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(ktmats(5)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(ktmats(5)%fs(ipsi,ipert)),4),
-c     $              REAL(REAL(ktmats(6)%fs(ipsi,ipert)),4),
-c     $              REAL(AIMAG(ktmats(6)%fs(ipsi,ipert)),4)
-c               ENDDO
-c            ENDDO
-c         ENDDO
-c         WRITE(out_unit,*)
-c         CALL ascii_close(out_unit)
+         mfac =(/(i,i=mlow,mhigh)/)
+         CALL ascii_open(fourfit_out_unit,"kss.out","UNKNOWN")
+         WRITE(fourfit_out_unit,*)"DCON Kinetic energy matrices"
+         WRITE(fourfit_out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+     $        "mpsi =",mpsi,"mpert =",mpert
+         WRITE(fourfit_out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')
+     $      "psi","m1","m2",
+     $      "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
+     $      "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
+     $      "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
+         DO ipsi=0,kwmats(1)%mx 
+            DO i=1,mpert
+               DO j=1,mpert
+                  ipert = (i-1)*mpert + j
+                  WRITE(fourfit_out_unit,'(1x,es16.8,2(1x,I4),'//
+     $               '12(1x,es16.8))')
+     $               REAL(kwmats(1)%xs(ipsi),4),mfac(i),mfac(j),
+     $               REAL(REAL(kwmats(1)%fs(ipsi,ipert)),4),
+     $               REAL(AIMAG(kwmats(1)%fs(ipsi,ipert)),4),
+     $               REAL(REAL(kwmats(2)%fs(ipsi,ipert)),4),
+     $               REAL(AIMAG(kwmats(2)%fs(ipsi,ipert)),4),
+     $               REAL(REAL(kwmats(3)%fs(ipsi,ipert)),4),
+     $               REAL(AIMAG(kwmats(3)%fs(ipsi,ipert)),4),
+     $               REAL(REAL(kwmats(4)%fs(ipsi,ipert)),4),
+     $               REAL(AIMAG(kwmats(4)%fs(ipsi,ipert)),4),
+     $               REAL(REAL(kwmats(5)%fs(ipsi,ipert)),4),
+     $               REAL(AIMAG(kwmats(5)%fs(ipsi,ipert)),4),
+     $               REAL(REAL(kwmats(6)%fs(ipsi,ipert)),4),
+     $               REAL(AIMAG(kwmats(6)%fs(ipsi,ipert)),4)
+               ENDDO
+            ENDDO
+         ENDDO
+         WRITE(fourfit_out_unit,*)
+         CALL ascii_close(fourfit_out_unit)
+         CALL ascii_open(fourfit_out_unit,"kas.out","UNKNOWN")
+         WRITE(fourfit_out_unit,*) "DCON Kinetic torque matrices"
+         WRITE(fourfit_out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+     $      "mpsi =",mpsi,"mpert =",mpert
+         WRITE(fourfit_out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')
+     $      "psi","m1","m2",
+     $      "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
+     $      "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
+     $      "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
+         DO ipsi=0,kwmats(1)%mx 
+            DO i=1,mpert
+               DO j=1,mpert
+                  ipert = (i-1)*mpert + j
+                  WRITE(fourfit_out_unit,'(1x,es16.8,2(1x,I4),'//
+     $              '12(1x,es16.8))')
+     $              REAL(kwmats(1)%xs(ipsi),4),mfac(i),mfac(j),
+     $              REAL(REAL(ktmats(1)%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(ktmats(1)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(2)%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(ktmats(2)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(3)%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(ktmats(3)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(4)%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(ktmats(4)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(5)%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(ktmats(5)%fs(ipsi,ipert)),4),
+     $              REAL(REAL(ktmats(6)%fs(ipsi,ipert)),4),
+     $              REAL(AIMAG(ktmats(6)%fs(ipsi,ipert)),4)
+               ENDDO
+            ENDDO
+         ENDDO
+         WRITE(fourfit_out_unit,*)
+         CALL ascii_close(fourfit_out_unit)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
