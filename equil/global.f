@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: mex
       REAL(r8), DIMENSION(:), POINTER :: qex,psiex
+      COMPLEX(r8), DIMENSION(:), POINTER :: f1mats,k1mats,k1aats,g1aats
 
       CHARACTER(16) :: jac_type="hamada"
       INTEGER :: power_bp=0,power_b=0,power_r=0,jac_method=1

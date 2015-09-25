@@ -179,6 +179,11 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)1
          WRITE(euler_bin_unit)psifac,q,msol
          WRITE(euler_bin_unit)u
+         ! diagnostics
+         WRITE(euler_bin_unit)f1mats
+         WRITE(euler_bin_unit)k1mats
+         WRITE(euler_bin_unit)k1aats
+         WRITE(euler_bin_unit)g1aats
       ENDIF
 c-----------------------------------------------------------------------
 c     output solutions components for each time step.

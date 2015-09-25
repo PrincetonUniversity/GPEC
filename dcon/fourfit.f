@@ -853,6 +853,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: output=.FALSE.,write_flux = .TRUE.
       INTEGER :: ipsi,ipert,l,i,j,iindex,method = 0
+      CHARACTER(1) :: ft
       REAL(r8) :: ileft,psifac,chi1,plim(2)
       COMPLEX(r8) :: tphi
       COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kwmat,kwmat_l,
@@ -864,6 +865,11 @@ c-----------------------------------------------------------------------
       IF(PRESENT(writein)) output = writein
       chi1=twopi*psio
       plim = (/0.0,1.0/)
+      IF (passing_flag) THEN
+         ft="f"
+      ELSE
+         ft="t"
+      ENDIF
 c-----------------------------------------------------------------------
 c     Original approach using eqgrid loop to calculate kinetic matrices
 c-----------------------------------------------------------------------
@@ -890,26 +896,31 @@ c-----------------------------------------------------------------------
                kwmat_l = 0
                ktmat_l = 0
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $              "twmm",keq_out,theta_out,xlmda_out,kwmat_l)
+     $              ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
                kwmat = kwmat+kwmat_l
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
-     $              "ttmm",keq_out,theta_out,xlmda_out,ktmat_l)
+     $              ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
                ktmat = ktmat+ktmat_l
             ENDDO
-            ! apply normalizations
-            kwmat=kinfac1*kwmat
-            ktmat=kinfac2*ktmat
+            ! apply normalizations and hypertangent smoothing for core
+            IF (ktanh_flag) THEN
+               kwmat=kinfac1*kwmat*(1+tanh((psifac-ktc)*ktw))
+               ktmat=kinfac2*ktmat*(1+tanh((psifac-ktc)*ktw))
+            ELSE
+               kwmat=kinfac1*kwmat
+               ktmat=kinfac2*ktmat
+            ENDIF
             ! store to splines
             DO i=1,6
                kwmats(i)%fs(ipsi,:)=RESHAPE(kwmat(:,:,i),(/mpert**2/))
                ktmats(i)%fs(ipsi,:)=RESHAPE(ktmat(:,:,i),(/mpert**2/))
             ENDDO
          ENDDO
-         ! fit splines
-         DO i=1,6
-            CALL cspline_fit(kwmats(i),"extrap")
-            CALL cspline_fit(ktmats(i),"extrap")
-         ENDDO
+      ! fit splines
+      DO i=1,6
+         CALL cspline_fit(kwmats(i),"extrap")
+         CALL cspline_fit(ktmats(i),"extrap")
+      ENDDO
 c-----------------------------------------------------------------------
 c     Use built in PENTRC spline integration options to form matrixes
 c-----------------------------------------------------------------------
@@ -917,22 +928,41 @@ c-----------------------------------------------------------------------
          WRITE(*,*) "  Trapped energy calculation using MXM euler "//
      $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "twmm",write_flux)
+     $        ft//"wmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),kwmats(i))
-            kwmats(i)%fs = kinfac1*kwmats(i)%fs
-            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+            IF (ktanh_flag) THEN
+               DO ipsi=0,kwmats(1)%mx
+                  kwmats(i)%fs(ipsi,:) = kinfac1*kwmats(i)%fs(ipsi,:)*
+     $                 (1+tanh((kwmats(i)%xs(ipsi)-ktc)*ktw))
+                  kwmats(i)%fs1(ipsi,:) = kinfac1*kwmats(i)%fs1(ipsi,:)*
+     $                 (1+tanh((kwmats(i)%xs(ipsi)-ktc)*ktw))
+               ENDDO
+            ELSE
+               kwmats(i)%fs = kinfac1*kwmats(i)%fs
+               kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+            ENDIF
          ENDDO
          WRITE(*,*) "  Trapped torque calculation using MXM euler "//
      $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "ttmm",write_flux)
+     $        ft//"tmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),ktmats(i))
-            ktmats(i)%fs = kinfac2*ktmats(i)%fs
-            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+            IF (ktanh_flag) THEN
+               DO ipsi=0,kwmats(1)%mx
+                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+     $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
+                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+     $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
+               ENDDO
+            ELSE
+               ktmats(i)%fs = kinfac1*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+            ENDIF
+
          ENDDO
 c-----------------------------------------------------------------------
 c     Use built in PENTRC LSODE integration options to form matrixes
@@ -942,22 +972,40 @@ c-----------------------------------------------------------------------
          WRITE(*,*) "  Trapped energy calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "twmm",write_flux)
+     $        ft//"wmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),kwmats(i))
-            kwmats(i)%fs = kinfac1*kwmats(i)%fs
-            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+            IF (ktanh_flag) THEN
+               DO ipsi=0,kwmats(1)%mx
+                  kwmats(i)%fs(ipsi,:) = kinfac1*kwmats(i)%fs(ipsi,:)*
+     $                 (1+tanh((kwmats(i)%xs(ipsi)-ktc)*ktw))
+                  kwmats(i)%fs1(ipsi,:) = kinfac1*kwmats(i)%fs1(ipsi,:)*
+     $                 (1+tanh((kwmats(i)%xs(ipsi)-ktc)*ktw))
+               ENDDO
+            ELSE
+               kwmats(i)%fs = kinfac1*kwmats(i)%fs
+               kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+            ENDIF
          ENDDO
          WRITE(*,*) "  Trapped torque calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "ttmm",write_flux)
+     $        ft//"tmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),ktmats(i))
-            ktmats(i)%fs = kinfac2*ktmats(i)%fs
-            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+            IF (ktanh_flag) THEN
+               DO ipsi=0,kwmats(1)%mx
+                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+     $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
+                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+     $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
+               ENDDO
+            ELSE
+               ktmats(i)%fs = kinfac1*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+            ENDIF
          ENDDO
 c-----------------------------------------------------------------------
 c     Use built in PENTRC LSODE integration options to form matrixes
@@ -967,22 +1015,40 @@ c-----------------------------------------------------------------------
          WRITE(*,*) "  Trapped MXM euler lagrange energy matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "tkmm",write_flux)
+     $        ft//"kmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),kwmats(i))
-            kwmats(i)%fs = kinfac1*kwmats(i)%fs
-            kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+            IF (ktanh_flag) THEN
+               DO ipsi=0,kwmats(1)%mx
+                  kwmats(i)%fs(ipsi,:) = kinfac1*kwmats(i)%fs(ipsi,:)*
+     $                 (1+tanh((kwmats(i)%xs(ipsi)-ktc)*ktw))
+                  kwmats(i)%fs1(ipsi,:) = kinfac1*kwmats(i)%fs1(ipsi,:)*
+     $                 (1+tanh((kwmats(i)%xs(ipsi)-ktc)*ktw))
+               ENDDO
+            ELSE
+               kwmats(i)%fs = kinfac1*kwmats(i)%fs
+               kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
+            ENDIF
          ENDDO
          WRITE(*,*) "  Trapped MXM euler lagrange torque matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
-     $        "trmm",write_flux)
+     $        ft//"rmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),ktmats(i))
-            ktmats(i)%fs = kinfac2*ktmats(i)%fs
-            ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
+            IF (ktanh_flag) THEN
+               DO ipsi=0,kwmats(1)%mx
+                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+     $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
+                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+     $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
+               ENDDO
+            ELSE
+               ktmats(i)%fs = kinfac1*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+            ENDIF
          ENDDO
       ELSE
          CALL program_stop("ERROR: Valid kingridtypes are 0,1,2,3")
@@ -1034,68 +1100,68 @@ c-----------------------------------------------------------------------
          CALL bin_close(bin_unit)
          
          ! ascii output
-         CALL ascii_open(out_unit,"kss.out","UNKNOWN")
-         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
-         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
-     $        "mpsi =",mpsi,"mpert =",mpert
-         WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
-     $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
-     $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
-     $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
-         DO ipsi=0,kwmats(1)%mx 
-            DO i=1,mpert
-               DO j=1,mpert
-                  ipert = (i-1)*mpert + j
-                  WRITE(out_unit,'(1x,es16.8,2(1x,I4),12(1x,es16.8))')
-     $              REAL(kwmats(1)%xs(ipsi),4),i,j,
-     $              REAL(REAL(kwmats(1)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(kwmats(1)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(kwmats(2)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(kwmats(2)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(kwmats(3)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(kwmats(3)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(kwmats(4)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(kwmats(4)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(kwmats(5)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(kwmats(5)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(kwmats(6)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(kwmats(6)%fs(ipsi,ipert)),4)
-               ENDDO
-            ENDDO
-         ENDDO
-         WRITE(out_unit,*)
-         CALL ascii_close(out_unit)
-         CALL ascii_open(out_unit,"kas.out","UNKNOWN")
-         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
-         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
-     $        "mpsi =",mpsi,"mpert =",mpert
-         WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
-     $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
-     $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
-     $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
-         DO ipsi=0,kwmats(1)%mx 
-            DO i=1,mpert
-               DO j=1,mpert
-                  ipert = (i-1)*mpert + j
-                  WRITE(out_unit,'(1x,es16.8,2(1x,I4),12(1x,es16.8))')
-     $              REAL(kwmats(1)%xs(ipsi),4),i,j,
-     $              REAL(REAL(ktmats(1)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(ktmats(1)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(ktmats(2)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(ktmats(2)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(ktmats(3)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(ktmats(3)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(ktmats(4)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(ktmats(4)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(ktmats(5)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(ktmats(5)%fs(ipsi,ipert)),4),
-     $              REAL(REAL(ktmats(6)%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(ktmats(6)%fs(ipsi,ipert)),4)
-               ENDDO
-            ENDDO
-         ENDDO
-         WRITE(out_unit,*)
-         CALL ascii_close(out_unit)
+c         CALL ascii_open(out_unit,"kss.out","UNKNOWN")
+c         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
+c         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+c     $        "mpsi =",mpsi,"mpert =",mpert
+c         WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
+c     $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
+c     $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
+c     $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
+c         DO ipsi=0,kwmats(1)%mx 
+c            DO i=1,mpert
+c               DO j=1,mpert
+c                  ipert = (i-1)*mpert + j
+c                  WRITE(out_unit,'(1x,es16.8,2(1x,I4),12(1x,es16.8))')
+c     $              REAL(kwmats(1)%xs(ipsi),4),i,j,
+c     $              REAL(REAL(kwmats(1)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(kwmats(1)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(kwmats(2)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(kwmats(2)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(kwmats(3)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(kwmats(3)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(kwmats(4)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(kwmats(4)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(kwmats(5)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(kwmats(5)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(kwmats(6)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(kwmats(6)%fs(ipsi,ipert)),4)
+c               ENDDO
+c            ENDDO
+c         ENDDO
+c         WRITE(out_unit,*)
+c         CALL ascii_close(out_unit)
+c         CALL ascii_open(out_unit,"kas.out","UNKNOWN")
+c         WRITE(out_unit,*) "DCON Kinetic energy metrix components"
+c         WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+c     $        "mpsi =",mpsi,"mpert =",mpert
+c         WRITE(out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')"psi","m1","m2",
+c     $        "real(Ak)","imag(Ak)","real(Bk)","imag(Bk)",
+c     $        "real(Ck)","imag(Ck)","real(Dk)","imag(Dk)",
+c     $        "real(Ek)","imag(Ek)","real(Hk)","imag(Hk)"
+c         DO ipsi=0,kwmats(1)%mx 
+c            DO i=1,mpert
+c               DO j=1,mpert
+c                  ipert = (i-1)*mpert + j
+c                  WRITE(out_unit,'(1x,es16.8,2(1x,I4),12(1x,es16.8))')
+c     $              REAL(kwmats(1)%xs(ipsi),4),i,j,
+c     $              REAL(REAL(ktmats(1)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(ktmats(1)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(ktmats(2)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(ktmats(2)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(ktmats(3)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(ktmats(3)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(ktmats(4)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(ktmats(4)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(ktmats(5)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(ktmats(5)%fs(ipsi,ipert)),4),
+c     $              REAL(REAL(ktmats(6)%fs(ipsi,ipert)),4),
+c     $              REAL(AIMAG(ktmats(6)%fs(ipsi,ipert)),4)
+c               ENDDO
+c            ENDDO
+c         ENDDO
+c         WRITE(out_unit,*)
+c         CALL ascii_close(out_unit)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

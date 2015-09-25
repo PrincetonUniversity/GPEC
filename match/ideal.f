@@ -50,12 +50,15 @@ c-----------------------------------------------------------------------
       CHARACTER(*), INTENT(IN) :: filename
 
       CHARACTER(128) :: message
-      INTEGER :: data_type,ifix,ios,mband,msol,istep,ising
+      INTEGER :: data_type,ifix,ios,mband,msol,istep,ising,ipert
 
       INTEGER :: i1,i2,i3,i4,i5,i6
       REAL(r8) :: r1,r2,r3,r4,r5
 
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
+      !diagnostics
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: f1mats,k1mats,
+     $     k1aats,g1aats
 c-----------------------------------------------------------------------
 c     open data file and read header.
 c-----------------------------------------------------------------------
@@ -92,6 +95,11 @@ c-----------------------------------------------------------------------
          SELECT CASE(data_type)
          CASE(1)
             mstep=mstep+1
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            !diagnostics
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
          CASE(2)
@@ -145,6 +153,9 @@ c-----------------------------------------------------------------------
       istep=-1
       ifix=0
       ising=0
+      !diagnostics
+      ALLOCATE(f1mats(0:mstep,mpert**2),k1mats(0:mstep,mpert**2),
+     $     k1aats(0:mstep,mpert**2),g1aats(0:mstep,mpert**2))
       WRITE(*,*)"Read solutions."
 c-----------------------------------------------------------------------
 c     read data.
@@ -159,6 +170,10 @@ c-----------------------------------------------------------------------
             ALLOCATE(soltype(istep)%u(mpert,soltype(istep)%msol,2))
             u => soltype(istep)%u
             READ(UNIT=in_unit)soltype(istep)%u
+            READ(UNIT=in_unit)f1mats(istep,:)
+            READ(UNIT=in_unit)k1mats(istep,:)
+            READ(UNIT=in_unit)k1aats(istep,:)
+            READ(UNIT=in_unit)g1aats(istep,:)
          CASE(2)
             ifix=ifix+1
             fixstep(ifix)=istep
@@ -230,6 +245,23 @@ c-----------------------------------------------------------------------
       ELSE
          res_flag=.FALSE.
       ENDIF
+      !diagnostics
+      CALL bin_open(bin_unit,"fss.bin","UNKNOWN","REWIND","none")
+      DO ipert=1,mpert**2
+         DO istep=0,mstep
+            WRITE(bin_unit)   REAL(psifac(istep),4),
+     $           REAL(REAL(f1mats(istep,ipert)),4),
+     $           REAL(AIMAG(f1mats(istep,ipert)),4),
+     $           REAL(REAL(k1mats(istep,ipert)),4),
+     $           REAL(AIMAG(k1mats(istep,ipert)),4),
+     $           REAL(REAL(k1aats(istep,ipert)),4),
+     $           REAL(AIMAG(k1aats(istep,ipert)),4),
+     $           REAL(REAL(g1aats(istep,ipert)),4),
+     $           REAL(AIMAG(g1aats(istep,ipert)),4)
+         ENDDO
+         WRITE(bin_unit)
+      ENDDO
+      CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

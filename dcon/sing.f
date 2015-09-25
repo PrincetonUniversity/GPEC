@@ -1028,6 +1028,11 @@ c-----------------------------------------------------------------------
                iqty=iqty+1
             ENDDO
          ENDDO
+         ! diagnostics
+         f1mats=RESHAPE(f1mat,(/mpert**2/))
+         k1mats=RESHAPE(k1mat,(/mpert**2/))
+         k1aats=RESHAPE(k1aat,(/mpert**2/))
+         g1aats=RESHAPE(gaat,(/mpert**2/))         
 c-----------------------------------------------------------------------
 c    store FKG in banded matrix forms.
 c-----------------------------------------------------------------------

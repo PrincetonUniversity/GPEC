@@ -97,9 +97,11 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8
 
       INTEGER :: nl,zi,mi
-      REAL(r8) :: wdfac,divxfac,kinfac1=1.0,kinfac2=1.0
+      REAL(r8) :: wdfac,divxfac,kinfac1=1.0,kinfac2=1.0,ktc=0.15,ktw=0.5
       LOGICAL :: kin_flag = .FALSE.
       LOGICAL :: con_flag = .FALSE.
+      LOGICAL :: ktanh_flag = .FALSE.
+      LOGICAL :: passing_flag = .FALSE.
       LOGICAL :: electron = .FALSE.
       LOGICAL :: keq_out = .FALSE.
       LOGICAL :: theta_out = .FALSE.
