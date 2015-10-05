@@ -841,7 +841,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,
      $     amat,bmat,cmat,dmat,emat,hmat,baat,caat,eaat,dbat,ebat,
      $     fmat,kmat,gmat,kaat,gaat,pmat,paat,umat,aamat,b1mat,bkmat,
-     $     bkaat,kkmat,kkaat,r1mat,r2mat,r3mat,f0mat,f1mat,k1mat,k1aat
+     $     bkaat,kkmat,kkaat,r1mat,r2mat,r3mat,f0mat
       COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kwmat,ktmat
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
@@ -862,7 +862,6 @@ c-----------------------------------------------------------------------
          CALL cspline_eval(dbats,psifac,0)
          CALL cspline_eval(ebats,psifac,0)
          CALL cspline_eval(fbats,psifac,0)
-         CALL cspline_eval(kbats,psifac,0)
          amat=RESHAPE(amats%f,(/mpert,mpert/))
          bmat=RESHAPE(bmats%f,(/mpert,mpert/))
          cmat=RESHAPE(cmats%f,(/mpert,mpert/))
@@ -872,7 +871,6 @@ c-----------------------------------------------------------------------
          dbat=RESHAPE(dbats%f,(/mpert,mpert/))
          ebat=RESHAPE(ebats%f,(/mpert,mpert/))
          fmat=RESHAPE(fbats%f,(/mpert,mpert/))
-         kmat=RESHAPE(kbats%f,(/mpert,mpert/))
          DO i=1,6
             CALL cspline_eval(kwmats(i),psifac,0)
             CALL cspline_eval(ktmats(i),psifac,0)
@@ -880,18 +878,8 @@ c-----------------------------------------------------------------------
             ktmat(:,:,i)=RESHAPE(ktmats(i)%f,(/mpert,mpert/))
          ENDDO
 c-----------------------------------------------------------------------
-c     compute kinetic matrices.
-c-----------------------------------------------------------------------
-         amat=amat+kwmat(:,:,1)+ktmat(:,:,1)
-         bmat=bmat+kwmat(:,:,2)+ktmat(:,:,2)
-         cmat=cmat+kwmat(:,:,3)+ktmat(:,:,3)
-         dmat=dmat+kwmat(:,:,4)+ktmat(:,:,4)
-         emat=emat+kwmat(:,:,5)+ktmat(:,:,5)
-         hmat=hmat+kwmat(:,:,6)+ktmat(:,:,6)
-         baat=bmat-2*ktmat(:,:,2)
-         caat=cmat-2*ktmat(:,:,3)
-         eaat=emat-2*ktmat(:,:,5)
-
+c     factor kinetic non-Hermitian matrix A.
+c----------------------------------------------------------------------- 
          amatlu=0
          umat=0
          DO jpert=1,mpert
@@ -900,9 +888,7 @@ c-----------------------------------------------------------------------
                IF(ipert==jpert)umat(ipert,jpert)=1
             ENDDO
          ENDDO
-c-----------------------------------------------------------------------
-c     factor kinetic non-Hermitian matrix A.
-c-----------------------------------------------------------------------         
+        
          CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
      $        ipiv,info)
          IF(info /= 0)THEN
@@ -911,86 +897,138 @@ c-----------------------------------------------------------------------
      $           ", ipert = ",info,", reduce delta_mband"
             CALL program_stop(message)
          ENDIF
-c-----------------------------------------------------------------------
-c     prepare matrices to separate Q factors.
-c-----------------------------------------------------------------------  
-         temp2=amat
-         CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp2,mpert,info) ! close to unit matrix.
-         aamat=CONJG(TRANSPOSE(temp2))
-         umat=umat-aamat
-         b1mat=ifac*dbat
-
-         bkmat=kwmat(:,:,2)+ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
-     $        (kwmat(:,:,1)+ktmat(:,:,1))
-         bkaat=kwmat(:,:,2)-ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
-     $        (kwmat(:,:,1)+ktmat(:,:,1))
-         temp2=bkmat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp2,mpert,info)
-         pmat=MATMUL(CONJG(TRANSPOSE(b1mat)),temp2)
-         
-         temp2=b1mat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp2,mpert,info)
-         paat=MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
-     $        -ifac*chi1/(twopi*nn)*MATMUL(umat,b1mat)
-         paat=CONJG(TRANSPOSE(paat))
-
-         temp1=kwmat(:,:,1)+ktmat(:,:,1)
-         temp2=bkmat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp2,mpert,info)
-         r1mat=kwmat(:,:,4)+ktmat(:,:,4)-
-     $        (chi1/(twopi*nn))**2*CONJG(TRANSPOSE(temp1))+
-     $        ifac*chi1/(twopi*nn)*CONJG(TRANSPOSE(bkaat))-
-     $        ifac*chi1/(twopi*nn)*MATMUL(aamat,bkmat)-
-     $        MATMUL(CONJG(TRANSPOSE(bkaat)),temp2) 
-                  
-         temp1=kwmat(:,:,5)+ktmat(:,:,5)-ifac*chi1/(twopi*nn)*
-     $        (kwmat(:,:,3)+ktmat(:,:,3))
-         temp2=cmat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp2,mpert,info)
-         r2mat=temp1+ifac*chi1/(twopi*nn)*MATMUL(umat,cmat)-
-     $        MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
-         
-         temp1=kwmat(:,:,5)-ktmat(:,:,5)-ifac*chi1/(twopi*nn)*
-     $        (kwmat(:,:,3)-ktmat(:,:,3))
-         temp2=bkmat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp2,mpert,info)
-         r3mat=CONJG(TRANSPOSE(temp1))-
-     $        MATMUL(CONJG(TRANSPOSE(caat)),temp2)
-    
          temp1=dbat 
          CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $        3*mband+1,ipiv,temp1,mpert,info)
          f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
+c-----------------------------------------------------------------------
+c     compute kinetic matrices.
+c-----------------------------------------------------------------------
+         IF (fkg_kmats_flag) THEN
+            CALL cspline_eval(pmats,psifac,0)
+            CALL cspline_eval(paats,psifac,0)
+            CALL cspline_eval(kkmats,psifac,0)
+            CALL cspline_eval(kkaats,psifac,0)
+            CALL cspline_eval(r1mats,psifac,0)
+            CALL cspline_eval(r2mats,psifac,0)
+            CALL cspline_eval(r3mats,psifac,0)
+            CALL cspline_eval(gaats,psifac,0)
 
-         temp1=cmat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp1,mpert,info)
-         kkmat=ebat-MATMUL(CONJG(TRANSPOSE(b1mat)),temp1)
-         
-         temp1=b1mat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp1,mpert,info)
-         kkaat=CONJG(TRANSPOSE(ebat))-
-     $        MATMUL(CONJG(TRANSPOSE(caat)),temp1)
+            pmat=RESHAPE(pmats%f,(/mpert,mpert/))
+            paat=RESHAPE(paats%f,(/mpert,mpert/))
+            kkmat=RESHAPE(kkmats%f,(/mpert,mpert/))
+            kkaat=RESHAPE(kkaats%f,(/mpert,mpert/))
+            r1mat=RESHAPE(r1mats%f,(/mpert,mpert/))
+            r2mat=RESHAPE(r2mats%f,(/mpert,mpert/))
+            r3mat=RESHAPE(r3mats%f,(/mpert,mpert/))
+
+            ! diagnostics
+            iqty=1
+            DO jpert=1,mpert
+               DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+                  gaat(ipert,jpert)=gaats%f(iqty)
+                  iqty=iqty+1
+               ENDDO
+            ENDDO
+         ELSE
+            amat=amat+kwmat(:,:,1)+ktmat(:,:,1)
+            bmat=bmat+kwmat(:,:,2)+ktmat(:,:,2)
+            cmat=cmat+kwmat(:,:,3)+ktmat(:,:,3)
+            dmat=dmat+kwmat(:,:,4)+ktmat(:,:,4)
+            emat=emat+kwmat(:,:,5)+ktmat(:,:,5)
+            hmat=hmat+kwmat(:,:,6)+ktmat(:,:,6)
+            baat=bmat-2*ktmat(:,:,2)
+            caat=cmat-2*ktmat(:,:,3)
+            eaat=emat-2*ktmat(:,:,5)
+            b1mat=ifac*dbat
+c-----------------------------------------------------------------------
+c     prepare matrices to separate Q factors.
+c-----------------------------------------------------------------------  
+            temp2=amat
+            CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info) ! close to unit matrix.
+            aamat=CONJG(TRANSPOSE(temp2))
+            umat=umat-aamat
+            
+            bkmat=kwmat(:,:,2)+ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,1)+ktmat(:,:,1))
+            bkaat=kwmat(:,:,2)-ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,1)+ktmat(:,:,1))
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            pmat=MATMUL(CONJG(TRANSPOSE(b1mat)),temp2)
+            
+            temp2=b1mat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            paat=MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+     $           -ifac*chi1/(twopi*nn)*MATMUL(umat,b1mat)
+            paat=CONJG(TRANSPOSE(paat))
+            
+            temp1=kwmat(:,:,1)+ktmat(:,:,1)
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            r1mat=kwmat(:,:,4)+ktmat(:,:,4)-
+     $           (chi1/(twopi*nn))**2*CONJG(TRANSPOSE(temp1))+
+     $           ifac*chi1/(twopi*nn)*CONJG(TRANSPOSE(bkaat))-
+     $           ifac*chi1/(twopi*nn)*MATMUL(aamat,bkmat)-
+     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2) 
+            
+            temp1=kwmat(:,:,5)+ktmat(:,:,5)-ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,3)+ktmat(:,:,3))
+            temp2=cmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            r2mat=temp1+ifac*chi1/(twopi*nn)*MATMUL(umat,cmat)-
+     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+            
+            temp1=kwmat(:,:,5)-ktmat(:,:,5)-ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,3)-ktmat(:,:,3))
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            r3mat=CONJG(TRANSPOSE(temp1))-
+     $           MATMUL(CONJG(TRANSPOSE(caat)),temp2)
+           
+            temp1=cmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp1,mpert,info)
+            kkmat=ebat-MATMUL(CONJG(TRANSPOSE(b1mat)),temp1)
+            
+            temp1=b1mat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp1,mpert,info)
+            kkaat=CONJG(TRANSPOSE(ebat))-
+     $           MATMUL(CONJG(TRANSPOSE(caat)),temp1)
+
+            temp2=cmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2)    
+      
+            iqty=1
+            DO jpert=1,mpert
+               DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+                  gaats%f(iqty)=gaat(ipert,jpert)
+                  iqty=iqty+1
+               ENDDO
+            ENDDO
+         ENDIF
 c-----------------------------------------------------------------------
 c     calculate kinetic non-Hermitian FK (method 1).
 c-----------------------------------------------------------------------
-         temp1=bmat
-         temp2=cmat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp1,mpert,info)
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp2,mpert,info)
-         fmat=dmat-MATMUL(CONJG(TRANSPOSE(baat)),temp1)
-         kmat=emat-MATMUL(CONJG(TRANSPOSE(baat)),temp2)
-         kaat=CONJG(TRANSPOSE(eaat))-
-     $        MATMUL(CONJG(TRANSPOSE(caat)),temp1)
+c            temp1=bmat
+c            temp2=cmat
+c            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+c     $           3*mband+1,ipiv,temp1,mpert,info)
+c            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+c     $           3*mband+1,ipiv,temp2,mpert,info)
+c            fmat=dmat-MATMUL(CONJG(TRANSPOSE(baat)),temp1)
+c            kmat=emat-MATMUL(CONJG(TRANSPOSE(baat)),temp2)
+c            kaat=CONJG(TRANSPOSE(eaat))-
+c     $           MATMUL(CONJG(TRANSPOSE(caat)),temp1)
 c-----------------------------------------------------------------------
 c     calculate kinetic non-Hermitian FK (method 2).
 c-----------------------------------------------------------------------  
@@ -1000,39 +1038,21 @@ c-----------------------------------------------------------------------
             DO jpert=1,mpert
                m2=mlow+jpert-1
                singfac2=m2-nn*q
-               f1mat(ipert,jpert)=singfac1*f0mat(ipert,jpert)*singfac2-
-     $              singfac1*pmat(ipert,jpert)-
-     $              CONJG(paat(jpert,ipert))*singfac2+r1mat(ipert,jpert)
-               k1mat(ipert,jpert)=singfac1*kkmat(ipert,jpert)+
+               fmat(ipert,jpert)=singfac1*f0mat(ipert,jpert)*
+     $              singfac2-singfac1*pmat(ipert,jpert)-
+     $              CONJG(paat(jpert,ipert))*singfac2+
+     $              r1mat(ipert,jpert)
+               kmat(ipert,jpert)=singfac1*kkmat(ipert,jpert)+
      $              r2mat(ipert,jpert)  
-               k1aat(ipert,jpert)=kkaat(ipert,jpert)*singfac2+
+               kaat(ipert,jpert)=kkaat(ipert,jpert)*singfac2+
      $              r3mat(ipert,jpert)    
             ENDDO
          ENDDO
-                
-         fmat=f1mat !
-         kmat=k1mat !
-         kaat=k1aat !
-c-----------------------------------------------------------------------
-c     calculate kinetic non-Hermitian G.
-c-----------------------------------------------------------------------
-         temp2=cmat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp2,mpert,info)
-         gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2) 
-         
-         iqty=1
-         DO jpert=1,mpert
-            DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
-               gaats%f(iqty)=gaat(ipert,jpert)
-               iqty=iqty+1
-            ENDDO
-         ENDDO
          ! diagnostics
-         f1mats=RESHAPE(f1mat,(/mpert**2/))
-         k1mats=RESHAPE(k1mat,(/mpert**2/))
-         k1aats=RESHAPE(k1aat,(/mpert**2/))
-         g1aats=RESHAPE(gaat,(/mpert**2/))         
+         f1mats=RESHAPE(fmat,(/mpert**2/))
+         k1mats=RESHAPE(kmat,(/mpert**2/))
+         k1aats=RESHAPE(kaat,(/mpert**2/))
+         g1aats=RESHAPE(gaat,(/mpert**2/))     
 c-----------------------------------------------------------------------
 c    store FKG in banded matrix forms.
 c-----------------------------------------------------------------------
@@ -1071,7 +1091,6 @@ c-----------------------------------------------------------------------
                iqty=iqty+1
             ENDDO
          ENDDO
-
       ELSE
          CALL cspline_eval(fmats,psifac,0)
          CALL cspline_eval(kmats,psifac,0)
@@ -1129,7 +1148,7 @@ c-----------------------------------------------------------------------
             CALL zgbmv('N',mpert,mpert,mband,mband,one,kaatb,
      $           2*mband+1,du(:,isol,1),1,one,du(:,isol,2),1)
             du(:,isol,1)=du(:,isol,1)
-         ENDDO         
+         ENDDO   
       ELSE
          DO isol=1,msol
             du(:,isol,1)=u(:,isol,2)*singfac
