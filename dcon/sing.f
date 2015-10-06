@@ -905,6 +905,7 @@ c-----------------------------------------------------------------------
 c     compute kinetic matrices.
 c-----------------------------------------------------------------------
          IF (fkg_kmats_flag) THEN
+            CALL cspline_eval(f0mats,psifac,0) ! different from gpec_0.95
             CALL cspline_eval(pmats,psifac,0)
             CALL cspline_eval(paats,psifac,0)
             CALL cspline_eval(kkmats,psifac,0)
@@ -914,6 +915,7 @@ c-----------------------------------------------------------------------
             CALL cspline_eval(r3mats,psifac,0)
             CALL cspline_eval(gaats,psifac,0)
 
+            f0mat=RESHAPE(f0mats%f,(/mpert,mpert/))
             pmat=RESHAPE(pmats%f,(/mpert,mpert/))
             paat=RESHAPE(paats%f,(/mpert,mpert/))
             kkmat=RESHAPE(kkmats%f,(/mpert,mpert/))

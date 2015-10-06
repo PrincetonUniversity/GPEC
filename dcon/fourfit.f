@@ -30,7 +30,7 @@ c-----------------------------------------------------------------------
       TYPE(fspline_type), PRIVATE :: metric,fmodb
       TYPE(cspline_type) :: dmats,emats,hmats,dbats,ebats,fbats,
      $     fmats,kmats,gmats,baats,caats,eaats,kaats,gaats,
-     $     pmats,paats,kkmats,kkaats,r1mats,r2mats,r3mats
+     $     f0mats,pmats,paats,kkmats,kkaats,r1mats,r2mats,r3mats
       TYPE(spline_type) :: k0s
       INTEGER, DIMENSION(:), POINTER :: ipiva
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat,
@@ -860,7 +860,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: amat,bmat,cmat,dmat,emat,
      $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,baat,caat,eaat,gaat,
-     $     pmat,paat,kkmat,kkaat,r1mat,r2mat,r3mat,
+     $     f0mat,pmat,paat,kkmat,kkaat,r1mat,r2mat,r3mat,
      $     dbat,ebat,umat,aamat,bkmat,bkaat,b1mat
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu
 c-----------------------------------------------------------------------
@@ -897,6 +897,7 @@ c-----------------------------------------------------------------------
          gaats%fs=0
 
          IF (fkg_kmats_flag) THEN
+            CALL cspline_alloc(f0mats,mpsi,mpert**2)
             CALL cspline_alloc(pmats,mpsi,mpert**2)
             CALL cspline_alloc(paats,mpsi,mpert**2)
             CALL cspline_alloc(kkmats,mpsi,mpert**2)
@@ -905,6 +906,7 @@ c-----------------------------------------------------------------------
             CALL cspline_alloc(r2mats,mpsi,mpert**2)
             CALL cspline_alloc(r3mats,mpsi,mpert**2)
 
+            f0mats%xs=rzphi%xs
             pmats%xs=rzphi%xs
             paats%xs=rzphi%xs
             kkmats%xs=rzphi%xs
@@ -913,6 +915,7 @@ c-----------------------------------------------------------------------
             r2mats%xs=rzphi%xs
             r3mats%xs=rzphi%xs
 
+            f0mats%fs=0
             pmats%fs=0
             paats%fs=0
             kkmats%fs=0
@@ -967,6 +970,7 @@ c-----------------------------------------------------------------------
                CALL cspline_eval(hmats,psifac,0)
                CALL cspline_eval(dbats,psifac,0)
                CALL cspline_eval(ebats,psifac,0)
+               CALL cspline_eval(fbats,psifac,0)
    
                amat=RESHAPE(amats%f,(/mpert,mpert/))
                bmat=RESHAPE(bmats%f,(/mpert,mpert/))
@@ -976,6 +980,7 @@ c-----------------------------------------------------------------------
                hmat=RESHAPE(hmats%f,(/mpert,mpert/))
                dbat=RESHAPE(dbats%f,(/mpert,mpert/))
                ebat=RESHAPE(ebats%f,(/mpert,mpert/))
+               fmat=RESHAPE(fbats%f,(/mpert,mpert/))
                
                ! add kinetic matrices
                amat=amat+kwmat(:,:,1)+ktmat(:,:,1)
@@ -1008,6 +1013,11 @@ c-----------------------------------------------------------------------
                   CALL program_stop(message)
                ENDIF
                
+               temp1=dbat 
+               CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $              3*mband+1,ipiv,temp1,mpert,info)
+               f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
+
                ! calculate 3 submatrices for kinetic f matrix
                temp2=amat
                CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
@@ -1076,6 +1086,7 @@ c-----------------------------------------------------------------------
                gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2) 
 
                ! pass only essential kinetic matrices
+               f0mats%fs(ipsi,:)=RESHAPE(f0mat,(/mpert**2/))
                pmats%fs(ipsi,:)=RESHAPE(pmat,(/mpert**2/))
                paats%fs(ipsi,:)=RESHAPE(paat,(/mpert**2/))
                kkmats%fs(ipsi,:)=RESHAPE(kkmat,(/mpert**2/))
@@ -1103,6 +1114,7 @@ c-----------------------------------------------------------------------
          CALL cspline_fit(gaats,"extrap")
 
          IF (fkg_kmats_flag) THEN
+            CALL cspline_fit(f0mats,"extrap")
             CALL cspline_fit(pmats,"extrap")
             CALL cspline_fit(paats,"extrap")
             CALL cspline_fit(kkmats,"extrap")
