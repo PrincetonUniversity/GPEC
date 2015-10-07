@@ -7,9 +7,14 @@
 
 FC = gcc4
 
+IFLAGS = -I${NETCDFHOME}/include
+
 LIBDIR = \
 	-L../lib \
-	-L/usr/pppl/gcc/4.4-pkgs/acml/4.4.0/gfortran64/lib
+	-L${LAPACKHOME} \
+	-L${NETCDFHOME}/lib \
 
 FCLIBS = \
-	-lacml
+	-llapack \
+	-lblas \
+	-lnetcdf
