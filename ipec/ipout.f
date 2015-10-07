@@ -3993,7 +3993,7 @@ c     - convert to external flux using permeability E = Phi* P* FP Phi
 c     - then use our weighting matrix to get E = Phi'* W*P*FPW Phi'
 c-----------------------------------------------------------------------
       ! start with the inverse of the inductance matrix (dW = 0.5 Phi Lambda^-1 Phi)
-      ! remove aliased/untrusted modes/solutions
+      ! remove border of modes/solutions (diagnostic only)
       i = malias+1
       j = mpert-malias
       wvecs = 0
@@ -4021,7 +4021,11 @@ c      - Eigenvalues correspond to int{I^2da} (power) per int{b^2da} (energy)
 c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
 c-----------------------------------------------------------------------
       ! start with IPEC flux matrix
-      rvecs = reluctmats(resp_index,:,:)
+      ! remove border of modes/solutions (diagnostic only)
+      i = malias+1
+      j = mpert-malias
+      rvecs = 0
+      rvecs(i:j,i:j) = reluctmats(resp_index,i:j,i:j)
       ! convert to bsqrt(A)
       rvecs=MATMUL(MATMUL(sqrta,rvecs),sqrta)
       work = 0
@@ -4036,12 +4040,17 @@ c        - This is a physically meaningful quantity (energy)
 c      - Phi = P Phix -> WPhi' = PW Phix' -> Phi' = W*PW Phix' 
 c      - Eigenvalues correspond to int{Phi^2da} (energy) per int{Phix'^2da} (energy)
 c-----------------------------------------------------------------------
+      ! remove border of modes/solutions (diagnostic only)
+      i = malias+1
+      j = mpert-malias
       mat = 0
+      mat(i:j,i:j) = permeabmats(resp_index,i:j,i:j)
+      ! convert to bsqrt(A)
+      mat = MATMUL(MATMUL(sqrta,mat),sqrta)
+      mat = TRANSPOSE(mat)
       worksvd=0
       rworksvd=0
       lwork=3*mpert
-      mat = MATMUL(MATMUL(sqrta,permeabmats(resp_index,:,:)),sqrta)
-      mat = TRANSPOSE(mat)
       CALL zgesvd('S','S',mpert,mpert,mat,mpert,pvals,matmm,mpert,
      $     pvecs,mpert,worksvd,lwork,rworksvd,info)
       pvecs=CONJG(TRANSPOSE(pvecs))
@@ -4066,30 +4075,6 @@ c-----------------------------------------------------------------------
          CALL zgesvd('S','O',msing,mpert,matsm,msing,svals, !'O' writes VT to A
      $        matss,msing,matsm,msing,worksvd,lwork,sworksvd,info)    
          svecs=CONJG(TRANSPOSE(matsm))
-      ENDIF
-c-----------------------------------------------------------------------
-c     Filter to remove undesired numerical modes
-c-----------------------------------------------------------------------
-      ! remove aliased/untrusted modes/solutions
-      IF(malias>0)THEN
-         matmm = 0.5*plas_indinvmats(resp_index,:,:)
-         mat   = permeabmats(resp_index,:,:)
-         matmm = MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),matmm),mat)
-         PRINT *,'Removing perturbation || to ',malias,' malias modes'
-         ! remove energy modes
-         DO i=1,malias
-            eigmn = matmm(:,i)
-            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            finmn=finmn-eigmn*DOT_PRODUCT(eigmn,finmn)/(norm*norm)
-         ENDDO
-         DO i=mpert-malias,mpert
-            eigmn = matmm(:,i)
-            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
-            finmn=finmn-eigmn*DOT_PRODUCT(eigmn,finmn)/(norm*norm)
-         ENDDO
-         ! remove poloidal modes
-         finmn(:malias) = 0
-         finmn(mpert-malias:) = 0
       ENDIF
 c-----------------------------------------------------------------------
 c     Filter to keep desired physics modes 

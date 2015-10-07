@@ -47,7 +47,7 @@ c-----------------------------------------------------------------------
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
      $     filter_types,filter_modes
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz,malias
+     $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
@@ -62,7 +62,8 @@ c-----------------------------------------------------------------------
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
-     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit
+     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit,
+     $     malias
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -99,7 +100,6 @@ c-----------------------------------------------------------------------
       filter_modes = 0
       filter_types = '   '
 
-      malias=0
       resp_index=0
       sing_spot=5e-4
       reg_flag=.TRUE.
@@ -179,6 +179,7 @@ c-----------------------------------------------------------------------
       timeit = .FALSE.
       verbose = .TRUE.
       debug_flag = .FALSE.
+      malias=0
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -200,6 +201,9 @@ c-----------------------------------------------------------------------
          PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
          PRINT *,"  Use filter_types to filter external spectrum."
          CALL ipec_stop("Deprecated input.")
+      ENDIF
+      IF(malias/=0) THEN
+       PRINT *,"WARNING: malias may not be supported in future versions"
       ENDIF
 c-----------------------------------------------------------------------
 c     define relative file paths.
