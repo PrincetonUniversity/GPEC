@@ -139,9 +139,9 @@ c     calculate plasma inductance matrix by surface consideration.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Calculating inductrances and permeability"
       ALLOCATE(plas_indmats(0:4,mpert,mpert),
-     $   pinv_indmats(0:4,mpert,mpert),
+     $   plas_indinvmats(0:4,mpert,mpert),
      $   plas_indev(0:4,mpert),plas_indevmats(0:4,mpert,mpert),
-     $   pinv_indev(0:4,mpert),pinv_indevmats(0:4,mpert,mpert))
+     $   plas_indinvev(0:4,mpert),plas_indinvevmats(0:4,mpert,mpert))
       DO j=1,4
          work=0
          work2=0
@@ -174,10 +174,10 @@ c-----------------------------------------------------------------------
          temp2=plas_indmats(j,:,:)
          CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
          CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
-         pinv_indmats(j,:,:) = temp1
-         CALL zheev('V','U',mpert,temp1,mpert,pinv_indev(j,:),work,
+         plas_indinvmats(j,:,:) = temp1
+         CALL zheev('V','U',mpert,temp1,mpert,plas_indinvev(j,:),work,
      $        lwork,rwork,info)
-         pinv_indevmats(j,:,:)=temp1
+         plas_indinvevmats(j,:,:)=temp1
       ENDDO
 c-----------------------------------------------------------------------
 c     calculate energy inductance matrix by energy consideration.
@@ -208,13 +208,13 @@ c-----------------------------------------------------------------------
       DO i=1,mpert
          temp1(i,i)=1
       ENDDO
-      temp2=2*plas_indmats(0,:,:)
+      temp2=plas_indmats(0,:,:)
       CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
       CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
-      pinv_indmats(0,:,:) = temp1
-      CALL zheev('V','U',mpert,temp1,mpert,pinv_indev(0,:),work,
+      plas_indinvmats(0,:,:) = temp1
+      CALL zheev('V','U',mpert,temp1,mpert,plas_indinvev(0,:),work,
      $     lwork,rwork,info)
-      pinv_indevmats(0,:,:)=temp1
+      plas_indinvevmats(0,:,:)=temp1
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -232,12 +232,13 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
 c-----------------------------------------------------------------------
 c     calculate surface inductance matrix by vacuum consideration.
 c-----------------------------------------------------------------------
       ALLOCATE(surf_indev(mpert),surf_indmats(mpert,mpert),
-     $     surf_indevmats(mpert,mpert))
+     $     surf_indevmats(mpert,mpert),surf_indinvev(mpert),
+     $     surf_indinvmats(mpert,mpert),surf_indinvevmats(mpert,mpert))
       temp1=TRANSPOSE(kaxmats)
       temp2=TRANSPOSE(flxmats)
       CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
@@ -249,6 +250,23 @@ c-----------------------------------------------------------------------
       CALL zheev('V','U',mpert,temp1,mpert,surf_indev,work,
      $     lwork,rwork,info)
       surf_indevmats=temp1
+c-----------------------------------------------------------------------
+c     calculate inverse.
+c-----------------------------------------------------------------------      
+      work = 0
+      rwork = 0
+      work2=0
+      temp1=0
+      DO i=1,mpert
+         temp1(i,i)=1
+      ENDDO
+      temp2 = surf_indmats
+      CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
+      CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+      surf_indinvmats = temp1
+      CALL zheev('V','U',mpert,temp1,mpert,surf_indinvev,work,
+     $     lwork,rwork,info)
+      surf_indinvevmats=temp1
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

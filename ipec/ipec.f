@@ -62,7 +62,8 @@ c-----------------------------------------------------------------------
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
-     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit
+     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit,
+     $     malias
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -178,6 +179,7 @@ c-----------------------------------------------------------------------
       timeit = .FALSE.
       verbose = .TRUE.
       debug_flag = .FALSE.
+      malias=0
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -199,6 +201,9 @@ c-----------------------------------------------------------------------
          PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
          PRINT *,"  Use filter_types to filter external spectrum."
          CALL ipec_stop("Deprecated input.")
+      ENDIF
+      IF(malias/=0) THEN
+       PRINT *,"WARNING: malias may not be supported in future versions"
       ENDIF
 c-----------------------------------------------------------------------
 c     define relative file paths.

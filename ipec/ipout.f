@@ -191,11 +191,14 @@ c-----------------------------------------------------------------------
      $     surf_indev(i),plas_indev(resp_index,i),
      $     REAL(permeabev(resp_index,i)),AIMAG(permeabev(resp_index,i)),
      $     permeabsv(resp_index,i),reluctev(resp_index,i),
-     $     et(i),pinv_indev(resp_index,i)
+     $     et(i),plas_indinvev(resp_index,i)
       ENDDO
       WRITE(out_unit,*)
 
-      
+      a = wt
+      DO i=1,mpert
+         a(:,i) = a(:,i)*(chi1*twopi*ifac*(mfac-nn*qlim))
+      ENDDO
       WRITE(out_unit,*)"Eigenvectors"
       WRITE(out_unit,*)" jac_type = ",jac_type
       WRITE(out_unit,*)"  L = Vacuum Inductance"
@@ -205,24 +208,24 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)"  W = Displacement energy"
       WRITE(out_unit,*)"  F = Flux energy"
       WRITE(out_unit,*)
-      WRITE(out_unit,'(2(1x,a4),14(1x,a16))')"mode","m",
+      WRITE(out_unit,'(2(1x,a4),16(1x,a16))')"mode","m",
      $   "real(K_x^L)","imag(K_x^L)",
      $   "real(K_x^Lambda)","imag(K_x^Lambda)",
      $   "real(Phi_x^P)","imag(Phi_x^P)",
      $   "real(Phi_x^PS)","imag(Phi_x^PS)",
      $   "real(Phi_x^rho)","imag(Phi_x^rho)",
-     $   "real(X^W)","imag(X^W)",
+     $   "real(X^W)","imag(X^W)","real(Phi^W)","imag(Phi^W)",
      $   "real(Phi^iLmda)","imag(Phi^iLmda)"
       DO i=1,mpert
          DO j=1,mpert
-            WRITE(out_unit,'(2(1x,I4),14(es17.8e3))')i,mfac(j),
+            WRITE(out_unit,'(2(1x,I4),16(es17.8e3))')i,mfac(j),
      $           surf_indevmats(j,i),
      $           plas_indevmats(resp_index,j,i),
      $           permeabevmats(resp_index,j,i),
      $           permeabsvmats(resp_index,j,i),
      $           reluctevmats(resp_index,j,i),
-     $           wt(j,i),
-     $           pinv_indevmats(resp_index,j,i)
+     $           wt(j,i),a(j,i),
+     $           plas_indinvevmats(resp_index,j,i)
          ENDDO 
       ENDDO
       WRITE(out_unit,*)
@@ -250,7 +253,7 @@ c-----------------------------------------------------------------------
                 IF ((mlow-lmlow+j>=1).AND.(mlow-lmlow+j<=lmpert)) THEN
                    vL(mlow-lmlow+j) =surf_indevmats(j,i)
                    vL1(mlow-lmlow+j)=plas_indevmats(resp_index,j,i)
-                   vLi(mlow-lmlow+j)=pinv_indevmats(resp_index,j,i)
+                   vLi(mlow-lmlow+j)=plas_indinvevmats(resp_index,j,i)
                    vP(mlow-lmlow+j) =permeabevmats(resp_index,j,i)
                    vP1(mlow-lmlow+j)=permeabsvmats(resp_index,j,i)
                    vR(mlow-lmlow+j) =reluctevmats(resp_index,j,i)
@@ -280,7 +283,7 @@ c-----------------------------------------------------------------------
       ENDIF
 
       ! start with DCON's total displacement vectors
-      a = pinv_indmats(resp_index,:,:)
+      a = plas_indinvmats(resp_index,:,:)
       b = 0
       DO i=1,mpert
          b(i,i) = (chi1*twopi*ifac*(mfac(i)-nn*qlim))
@@ -305,7 +308,7 @@ c-----------------------------------------------------------------------
      $           plas_indmats(resp_index,j,i),
      $           permeabmats(resp_index,j,i),
      $           reluctmats(resp_index,j,i),
-     $           pinv_indmats(resp_index,j,i),
+     $           plas_indinvmats(resp_index,j,i),
      $           a(j,i)
          ENDDO 
       ENDDO
@@ -318,7 +321,7 @@ c-----------------------------------------------------------------------
         DO i=1,mpert
           CALL iscdftb(mfac,mpert,wtfun(:,i),mthsurf,wt(:,i))     
           CALL iscdftb(mfac,mpert,ilfun(:,i),mthsurf,
-     $      pinv_indmats(resp_index,:,i))
+     $      plas_indinvmats(resp_index,:,i))
           CALL iscdftb(mfac,mpert,rfun(:,i),mthsurf,
      $      reluctevmats(resp_index,:,i))    
           CALL iscdftb(mfac,mpert,pfun(:,i),mthsurf,
@@ -850,7 +853,6 @@ c-----------------------------------------------------------------------
      $      abinmn
       COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,cawmn,acinmn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun,xinfun,xoutfun
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
 
       REAL(r8), DIMENSION(:,:), POINTER :: dcosmn,dsinmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: rawmn
@@ -954,29 +956,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute perturbed energy.
 c-----------------------------------------------------------------------
-      temp1=0
-      work2=0
-      DO i=1,mpert
-         temp1(i,i)=1
-      ENDDO
-      temp2 = surf_indmats
-      CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
-      CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
-
-      vy = SUM(CONJG(finmn)*MATMUL(temp1,finmn))/4.0
-      sy = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/4.0
+      vy = SUM(CONJG(finmn)*MATMUL(surf_indinvmats,finmn))/4.0
+      sy = SUM(CONJG(foutmn)*MATMUL(surf_indinvmats,foutmn))/4.0
       vengy = REAL(vy)
       sengy = REAL(sy)
 
-      temp1=0
-      work2=0
-      DO i=1,mpert
-         temp1(i,i)=1
-      ENDDO
-      temp2 = plas_indmats(resp_index,:,:)
-      CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
-      CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
-      py = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/4.0
+      py = SUM(CONJG(foutmn)*MATMUL(plas_indinvmats(resp_index,:,:),
+     $     foutmn))/4.0
       pengy = REAL(py)
       IF(verbose) WRITE(*,'(1x,a,es10.3)')
      $  "Required energy to perturb vacuum = ",sengy
@@ -4007,12 +3993,17 @@ c     - convert to external flux using permeability E = Phi* P* FP Phi
 c     - then use our weighting matrix to get E = Phi'* W*P*FPW Phi'
 c-----------------------------------------------------------------------
       ! start with the inverse of the inductance matrix (dW = 0.5 Phi Lambda^-1 Phi)
-      wvecs = 0.5*pinv_indmats(resp_index,:,:)
+      ! remove border of modes/solutions (diagnostic only)
+      i = malias+1
+      j = mpert-malias
+      wvecs = 0
+      wvecs(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j)
       ! convert to external flux
       mat = permeabmats(resp_index,:,:)
       wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wvecs),mat)
       ! convert to bsqrt(A)
       wvecs=MATMUL(MATMUL(sqrta,wvecs),sqrta)
+      ! get eigenvalues and eigenvectors
       work = 0
       rwork = 0
       lwork=2*mpert-1
@@ -4030,7 +4021,11 @@ c      - Eigenvalues correspond to int{I^2da} (power) per int{b^2da} (energy)
 c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
 c-----------------------------------------------------------------------
       ! start with IPEC flux matrix
-      rvecs = reluctmats(resp_index,:,:)
+      ! remove border of modes/solutions (diagnostic only)
+      i = malias+1
+      j = mpert-malias
+      rvecs = 0
+      rvecs(i:j,i:j) = reluctmats(resp_index,i:j,i:j)
       ! convert to bsqrt(A)
       rvecs=MATMUL(MATMUL(sqrta,rvecs),sqrta)
       work = 0
@@ -4045,12 +4040,17 @@ c        - This is a physically meaningful quantity (energy)
 c      - Phi = P Phix -> WPhi' = PW Phix' -> Phi' = W*PW Phix' 
 c      - Eigenvalues correspond to int{Phi^2da} (energy) per int{Phix'^2da} (energy)
 c-----------------------------------------------------------------------
+      ! remove border of modes/solutions (diagnostic only)
+      i = malias+1
+      j = mpert-malias
       mat = 0
+      mat(i:j,i:j) = permeabmats(resp_index,i:j,i:j)
+      ! convert to bsqrt(A)
+      mat = MATMUL(MATMUL(sqrta,mat),sqrta)
+      mat = TRANSPOSE(mat)
       worksvd=0
       rworksvd=0
       lwork=3*mpert
-      mat = MATMUL(MATMUL(sqrta,permeabmats(resp_index,:,:)),sqrta)
-      mat = TRANSPOSE(mat)
       CALL zgesvd('S','S',mpert,mpert,mat,mpert,pvals,matmm,mpert,
      $     pvecs,mpert,worksvd,lwork,rworksvd,info)
       pvecs=CONJG(TRANSPOSE(pvecs))
@@ -4077,7 +4077,7 @@ c-----------------------------------------------------------------------
          svecs=CONJG(TRANSPOSE(matsm))
       ENDIF
 c-----------------------------------------------------------------------
-c     Filter 
+c     Filter to keep desired physics modes 
 c-----------------------------------------------------------------------
       DO k=1,4
          temp = finmn
