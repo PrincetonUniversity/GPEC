@@ -170,7 +170,7 @@ pyplot.Figure.colorbar = _figure_colorbar
 
 
 # new method to print text file of lines in figure
-def printlines(self,filename,squeeze=False):
+def printlines(self,filename,labeled_only=False,squeeze=False):
 	"""
 	Print all data in line plot(s) to text file.The x values 
 	will be taken from the line with the greatest number of
@@ -181,6 +181,12 @@ def printlines(self,filename,squeeze=False):
 	Arguments:
 	  filename : str. 
 	    Path to print to.
+	
+	Key Word Arguments:
+	  labeled_only : bool
+	    Only print labeled lines to file.
+	  squeeze : bool.
+	    Print lines from all axes in a single table.
  
 	returns
 	  bool. 
@@ -213,7 +219,12 @@ def printlines(self,filename,squeeze=False):
 				f.write('\n'+a.get_title()+'\n\n')
 				f.write('  ylabel = '+a.get_ylabel().encode().translate(None,' \${}')+'\n\n')
 			# use x-axis from line with greatest number of pts
-			xs = [l.get_xdata() for l in a.lines]
+			xs = []
+			for line in a.lines:
+				label = line.get_label().encode().translate(None,' \${}') 
+				if labeled_only and (label.startswith('_') or not label):
+					continue
+				xs.append(line.get_xdata())
 			longest = np.array([len(x) for x in xs]).argmax()
 			if not data: 
 				data.append(xs[longest])
@@ -221,6 +232,8 @@ def printlines(self,filename,squeeze=False):
 			# label and extrapolate each line
 			for line in a.lines:
 				label = line.get_label().encode().translate(None,' \${}') 
+				if labeled_only and (label.startswith('_') or not label):
+					continue
 				if squeeze and not sameylbl: 
 					label = a.get_ylabel().encode().translate(None,' \${}')+label
 				f.write('{0:>25s}'.format(label))
