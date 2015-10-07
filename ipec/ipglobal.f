@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
      $     nche,nchr,nchz,rsing,rnqty,rnx,max_linesout,
-     $     nr,nz
+     $     nr,nz,malias
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,

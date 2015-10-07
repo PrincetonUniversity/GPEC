@@ -4007,12 +4007,17 @@ c     - convert to external flux using permeability E = Phi* P* FP Phi
 c     - then use our weighting matrix to get E = Phi'* W*P*FPW Phi'
 c-----------------------------------------------------------------------
       ! start with the inverse of the inductance matrix (dW = 0.5 Phi Lambda^-1 Phi)
-      wvecs = 0.5*pinv_indmats(resp_index,:,:)
+      ! remove aliased/untrusted modes/solutions
+      i = malias+1
+      j = mpert-malias
+      wvecs = 0
+      wvecs(i:j,i:j) = 0.5*pinv_indmats(resp_index,i:j,i:j)
       ! convert to external flux
       mat = permeabmats(resp_index,:,:)
       wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wvecs),mat)
       ! convert to bsqrt(A)
       wvecs=MATMUL(MATMUL(sqrta,wvecs),sqrta)
+      ! get eigenvalues and eigenvectors
       work = 0
       rwork = 0
       lwork=2*mpert-1
@@ -4077,7 +4082,31 @@ c-----------------------------------------------------------------------
          svecs=CONJG(TRANSPOSE(matsm))
       ENDIF
 c-----------------------------------------------------------------------
-c     Filter 
+c     Filter to remove undesired numerical modes
+c-----------------------------------------------------------------------
+      ! remove aliased/untrusted modes/solutions
+      IF(malias>0)THEN
+         matmm = 0.5*pinv_indmats(resp_index,:,:)
+         mat   = permeabmats(resp_index,:,:)
+         matmm = MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),matmm),mat)
+         PRINT *,'Removing perturbation || to ',malias,' malias modes'
+         ! remove energy modes
+         DO i=1,malias
+            eigmn = matmm(:,i)
+            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            finmn=finmn-eigmn*DOT_PRODUCT(eigmn,finmn)/(norm*norm)
+         ENDDO
+         DO i=mpert-malias,mpert
+            eigmn = matmm(:,i)
+            norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
+            finmn=finmn-eigmn*DOT_PRODUCT(eigmn,finmn)/(norm*norm)
+         ENDDO
+         ! remove poloidal modes
+         finmn(:malias) = 0
+         finmn(mpert-malias:) = 0
+      ENDIF
+c-----------------------------------------------------------------------
+c     Filter to keep desired physics modes 
 c-----------------------------------------------------------------------
       DO k=1,4
          temp = finmn

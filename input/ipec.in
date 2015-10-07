@@ -33,6 +33,7 @@
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
 /
 &IPEC_CONTROL
+   malias=0                 ! Integer band width of DCON harmonics/modes considered untrustowrhty due to aliasing at edges of Fourier spectrum.
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recomended.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
    reg_flag=t               ! Regularize the solution near resonant surfaces
