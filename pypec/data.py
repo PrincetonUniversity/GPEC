@@ -230,6 +230,12 @@ except ImportError:
     xray = False
     print('WARNING: xray not in python path')
     print(' -> We recomend loading anaconda/2.3.0 on portal')
+try:
+    import seaborn as sns
+except ImportError:
+    sns = False
+    print('WARNING: seaborn not in python path')
+    print(' -> We recomend loading anaconda/2.3.0 on portal')
 
 # better label recognition using genfromtxt
 for c in '^|<>/':
