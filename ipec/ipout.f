@@ -835,7 +835,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rin,bpin,bin,rcin,tin,jin,
      $     rout,bpout,bout,rcout,tout,filter_modes
       LOGICAL, INTENT(IN) :: filter_out
-      CHARACTER(4), INTENT(IN) :: filter_types
+      CHARACTER(len=*), INTENT(IN) :: filter_types
       
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn,xspmn
@@ -3922,7 +3922,7 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: fmodes,rout,bpout,bout,rcout,tout,jout
-      CHARACTER(4), INTENT(IN) :: ftypes
+      CHARACTER(len=*), INTENT(IN) :: ftypes
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
       LOGICAL, INTENT(IN), OPTIONAL :: op_write
       
@@ -3939,7 +3939,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,k,ipert,maxmode
       INTEGER :: idid,mdid,vdid,sdid,edid, we_id,re_id,pe_id,se_id,
      $   w_id,r_id,p_id,s_id, wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
-     $   wx_id,rx_id,px_id,sx_id
+     $   wx_id,rx_id,px_id,sx_id,wa_id,wi_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(mpert) :: singfac
       REAL(r8), DIMENSION(mpert,2) :: tempmi
@@ -3952,11 +3952,12 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(msing,msing) :: matss
       COMPLEX(r8), DIMENSION(msing,mpert) :: matsm
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
-      CHARACTER(32) :: message
+      CHARACTER(64) :: message
       
-      REAL(r8), DIMENSION(mpert) :: wvals,rvals,pvals
+      INTEGER,  DIMENSION(mpert) :: aindx
+      REAL(r8), DIMENSION(mpert) :: wvals,rvals,pvals,avals
       REAL(r8), DIMENSION(msing) :: svals
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: wvecs,rvecs,pvecs
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wvecs,rvecs,pvecs,avecs
       COMPLEX(r8), DIMENSION(mpert,msing) :: svecs
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: wveco,rveco,pveco
       COMPLEX(r8), DIMENSION(lmpert,msing) :: sveco
@@ -4008,6 +4009,19 @@ c-----------------------------------------------------------------------
       rwork = 0
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,wvecs,mpert,wvals,work,lwork,rwork,info)
+c-----------------------------------------------------------------------
+c     re-order energy eigenmodes by amplification dW/dW_vac.
+c-----------------------------------------------------------------------
+      DO i=1,mpert
+         avals(i) = SUM(CONJG(wvecs(:,i))*MATMUL(surf_indinvmats,
+     $      wvecs(:,i)))/(2*wvals(i))
+      ENDDO
+      aindx = (/(i,i=1,mpert)/)
+      CALL isbubble(avals,aindx,1,mpert)
+      aindx = aindx(mpert:1:-1) ! ascending order like zheev
+      DO i=1,mpert
+         avecs(:,i) = wvecs(:,aindx(i))
+      ENDDO
 c-----------------------------------------------------------------------
 c     Calculate reluctance eigenvectors and eigenvalues
 c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
@@ -4079,7 +4093,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Filter to keep desired physics modes 
 c-----------------------------------------------------------------------
-      DO k=1,4
+      DO k=1,LEN_TRIM(ftypes)
          temp = finmn
          filmn = 0
          CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
@@ -4087,6 +4101,10 @@ c-----------------------------------------------------------------------
          CASE('w')
             mat = wvecs
             message = "energy eigenmodes"
+            maxmode = mpert
+         CASE('a')
+            mat = avecs
+            message = "amplification ordered energy eigenmodes"
             maxmode = mpert
          CASE('r')
             mat = rvecs
@@ -4104,7 +4122,8 @@ c-----------------------------------------------------------------------
             CYCLE
          END SELECT
          IF (fmodes>0) THEN
-            PRINT *,'Isolating perturbation || to first ',fmodes,message
+            PRINT *,'Isolating perturbation || to first ',fmodes,
+     $         TRIM(message)
             DO i=1,MIN(maxmode,ABS(fmodes))
                eigmn = mat(:,i)
                norm=SQRT(ABS(DOT_PRODUCT(eigmn,eigmn)))
@@ -4112,7 +4131,8 @@ c-----------------------------------------------------------------------
             ENDDO
             CALL ipeq_weight(psilim,filmn,mfac,mpert,2) ! sqrt(A)b to flux
          ELSEIF (fmodes<0) THEN
-            PRINT *,'Isolating perturbation || to last ',fmodes,message
+            PRINT *,'Isolating perturbation || to last ',fmodes,
+     $         TRIM(message)
             DO j=1,MIN(maxmode,ABS(fmodes))
                i = maxmode+1-j
                eigmn = mat(:,i)
@@ -4164,6 +4184,14 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(mncid,we_id,"long_name",
      $    "Energy normalized external flux energy eigenvalues") )
          CALL check( nf90_put_att(mncid,we_id,"units","J/(Wb/m)^2") )
+         CALL check( nf90_def_var(mncid,"W_XAV",nf90_double,
+     $                         (/edid/),wa_id) )
+         CALL check( nf90_put_att(mncid,wa_id,"long_name",
+     $    "Energy-norm. ex. flux energy eigenmode amplifications") )
+         CALL check( nf90_def_var(mncid,"W_XAI",nf90_int,
+     $                         (/edid/),wi_id) )
+         CALL check( nf90_put_att(mncid,wi_id,"long_name",
+     $    "Energy-norm. ex. flux energy eigenmode amplification order"))
          
          CALL check( nf90_def_var(mncid,"rho_XED",nf90_double,
      $               (/mdid,edid,idid/),r_id) )
@@ -4250,6 +4278,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,w_id,RESHAPE((/REAL(wveco),
      $               AIMAG(wveco)/),(/lmpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,we_id,wvals) )
+         CALL check( nf90_put_var(mncid,wa_id,avals) )
+         CALL check( nf90_put_var(mncid,wi_id,aindx) )
          CALL check( nf90_put_var(mncid,r_id,RESHAPE((/REAL(rveco),
      $               AIMAG(rveco)/),(/lmpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,re_id,rvals) )
