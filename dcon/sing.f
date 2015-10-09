@@ -862,6 +862,7 @@ c-----------------------------------------------------------------------
          CALL cspline_eval(dbats,psifac,0)
          CALL cspline_eval(ebats,psifac,0)
          CALL cspline_eval(fbats,psifac,0)
+
          amat=RESHAPE(amats%f,(/mpert,mpert/))
          bmat=RESHAPE(bmats%f,(/mpert,mpert/))
          cmat=RESHAPE(cmats%f,(/mpert,mpert/))
@@ -871,36 +872,13 @@ c-----------------------------------------------------------------------
          dbat=RESHAPE(dbats%f,(/mpert,mpert/))
          ebat=RESHAPE(ebats%f,(/mpert,mpert/))
          fmat=RESHAPE(fbats%f,(/mpert,mpert/))
+
          DO i=1,6
             CALL cspline_eval(kwmats(i),psifac,0)
             CALL cspline_eval(ktmats(i),psifac,0)
             kwmat(:,:,i)=RESHAPE(kwmats(i)%f,(/mpert,mpert/))
             ktmat(:,:,i)=RESHAPE(ktmats(i)%f,(/mpert,mpert/))
          ENDDO
-c-----------------------------------------------------------------------
-c     factor kinetic non-Hermitian matrix A.
-c----------------------------------------------------------------------- 
-         amatlu=0
-         umat=0
-         DO jpert=1,mpert
-            DO ipert=1,mpert
-               amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
-               IF(ipert==jpert)umat(ipert,jpert)=1
-            ENDDO
-         ENDDO
-        
-         CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
-     $        ipiv,info)
-         IF(info /= 0)THEN
-            WRITE(message,'(a,e16.9,a,i2)')
-     $           "zgbtrf: amat singular at psifac = ",psifac,
-     $           ", ipert = ",info,", reduce delta_mband"
-            CALL program_stop(message)
-         ENDIF
-         temp1=dbat 
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp1,mpert,info)
-         f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
 c-----------------------------------------------------------------------
 c     compute kinetic matrices.
 c-----------------------------------------------------------------------
@@ -943,6 +921,30 @@ c-----------------------------------------------------------------------
             caat=cmat-2*ktmat(:,:,3)
             eaat=emat-2*ktmat(:,:,5)
             b1mat=ifac*dbat
+c-----------------------------------------------------------------------
+c     factor kinetic non-Hermitian matrix A.
+c----------------------------------------------------------------------- 
+            amatlu=0
+            umat=0
+            DO jpert=1,mpert
+               DO ipert=1,mpert
+                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
+                  IF(ipert==jpert)umat(ipert,jpert)=1
+               ENDDO
+            ENDDO
+            
+            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
+     $           ipiv,info)
+            IF(info /= 0)THEN
+               WRITE(message,'(a,e16.9,a,i2)')
+     $              "zgbtrf: amat singular at psifac = ",psifac,
+     $              ", ipert = ",info,", reduce delta_mband"
+               CALL program_stop(message)
+            ENDIF
+            temp1=dbat 
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp1,mpert,info)
+            f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
 c-----------------------------------------------------------------------
 c     prepare matrices to separate Q factors.
 c-----------------------------------------------------------------------  
@@ -1047,10 +1049,10 @@ c-----------------------------------------------------------------------
                kmat(ipert,jpert)=singfac1*kkmat(ipert,jpert)+
      $              r2mat(ipert,jpert)  
                kaat(ipert,jpert)=kkaat(ipert,jpert)*singfac2+
-     $              r3mat(ipert,jpert)    
+     $              r3mat(ipert,jpert)  
             ENDDO
          ENDDO
-         ! diagnostics
+         ! diagnostics (only working for kin_flag)
          f1mats=RESHAPE(fmat,(/mpert**2/))
          k1mats=RESHAPE(kmat,(/mpert**2/))
          k1aats=RESHAPE(kaat,(/mpert**2/))
@@ -1262,7 +1264,7 @@ c-----------------------------------------------------------------------
          bmat=RESHAPE(bmats%f,(/mpert,mpert/))
          dmat=RESHAPE(dmats%f,(/mpert,mpert/))
          !baat=RESHAPE(baats%f,(/mpert,mpert/))
-         baat = bmat-2*RESHAPE(ktmats(2)%f,(/mpert,mpert/))
+         baat=bmat-2*RESHAPE(ktmats(2)%f,(/mpert,mpert/))
 
          amatlu=0
          DO jpert=1,mpert

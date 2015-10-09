@@ -258,7 +258,6 @@ c-----------------------------------------------------------------------
      $     g11,g22,g33,g23,g31,g12,jmat1,imat
       COMPLEX(r8), DIMENSION(mpert,mpert) :: amat,bmat,cmat,dmat,emat,
      $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,dbat,ebat,fbat
-
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu,fmatlu
 
       LOGICAL, PARAMETER :: diagnose=.FALSE.
@@ -504,7 +503,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set powers.
 c-----------------------------------------------------------------------
+      hmats%x0(2)=1.0
+      hmats%xpower(1,:)=-1
+      hmats%xpower(2,:)=-1
+      gmats%x0(2)=1.0
       gmats%xpower(1,:)=-1
+      gmats%xpower(2,:)=-1
       IF(power_flag)THEN
          m=mlow
          iqty=1
@@ -878,8 +882,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Original approach using eqgrid loop to calculate kinetic matrices
 c-----------------------------------------------------------------------
+      CALL cspline_alloc(kaats,mpsi,(2*mband+1)*mpert)
+      CALL cspline_alloc(gaats,mpsi,(2*mband+1)*mpert)
+      kaats%xs=rzphi%xs
+      gaats%xs=rzphi%xs
+      kaats%fs=0
+      gaats%fs=0
+      
       IF(method==-1)THEN
-        output = .FALSE.
+         output = .FALSE.
       ELSEIF(method==0)THEN
          ! set up kinetic splines for interpolation in psi.
          DO i=1,6
@@ -888,13 +899,6 @@ c-----------------------------------------------------------------------
             kwmats(i)%xs=rzphi%xs
             ktmats(i)%xs=rzphi%xs
          ENDDO
-
-         CALL cspline_alloc(kaats,mpsi,(2*mband+1)*mpert)
-         CALL cspline_alloc(gaats,mpsi,(2*mband+1)*mpert)
-         kaats%xs=rzphi%xs
-         gaats%xs=rzphi%xs
-         kaats%fs=0
-         gaats%fs=0
 
          IF (fkg_kmats_flag) THEN
             CALL cspline_alloc(f0mats,mpsi,mpert**2)
@@ -1110,8 +1114,6 @@ c-----------------------------------------------------------------------
             CALL cspline_fit(kwmats(i),"extrap")
             CALL cspline_fit(ktmats(i),"extrap")
          ENDDO
-         CALL cspline_fit(kaats,"extrap")
-         CALL cspline_fit(gaats,"extrap")
 
          IF (fkg_kmats_flag) THEN
             CALL cspline_fit(f0mats,"extrap")
@@ -1127,6 +1129,7 @@ c-----------------------------------------------------------------------
 c     Use built in PENTRC spline integration options to form matrixes
 c-----------------------------------------------------------------------
       ELSEIF(method==1)THEN
+         fkg_kmats_flag=.FALSE.
          WRITE(*,*) " Trapped energy calculation using MXM euler "//
      $        "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
@@ -1164,13 +1167,13 @@ c-----------------------------------------------------------------------
                ktmats(i)%fs = kinfac1*ktmats(i)%fs
                ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
             ENDIF
-            
          ENDDO
 c-----------------------------------------------------------------------
 c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by T & dW from flat xi spectrum
 c-----------------------------------------------------------------------
       ELSEIF(method==2)THEN
+         fkg_kmats_flag=.FALSE.
          WRITE(*,*) " Trapped energy calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
@@ -1214,6 +1217,7 @@ c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by norm of EL matrices
 c-----------------------------------------------------------------------
       ELSEIF(method==3)THEN
+         fkg_kmats_flag=.FALSE.
          WRITE(*,*) " Trapped MXM euler lagrange energy matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
@@ -1255,6 +1259,11 @@ c-----------------------------------------------------------------------
       ELSE
          CALL program_stop("ERROR: Valid kingridtypes are 0,1,2,3")
       ENDIF
+      gaats%x0(2)=1.0
+      gaats%xpower(1,:)=-1
+      gaats%xpower(2,:)=-1
+      CALL cspline_fit(kaats,"extrap")
+      CALL cspline_fit(gaats,"extrap")
 c-----------------------------------------------------------------------
 c     Optionally write matrices to binary files for diagnostics
 c-----------------------------------------------------------------------
