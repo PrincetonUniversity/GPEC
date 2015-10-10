@@ -1231,17 +1231,17 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,iqty,isol,m1,m2,dm
       INTEGER :: ldab,kl,ku,info,m,n,i
 
-      REAL(r8) :: q,nq,singfac1,singfac2
+      REAL(r8) :: q,nq,singfac1,singfac2,chi1
 
       INTEGER, DIMENSION(mpert) :: ipiv
       INTEGER,DIMENSION(:),ALLOCATABLE:: fpiv
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8) :: d
-      COMPLEX(r8), DIMENSION(:,:),ALLOCATABLE:: lumat
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: f,temp1,temp2,
-     $     amat,bmat,dmat,baat
-      COMPLEX(r8), DIMENSION(2*mband+mband+1,mpert) :: amatlu
-
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE:: lumat
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: f,temp1,temp2,f0mat,
+     $     amat,dbat,fmat,pmat,paat,umat,aamat,b1mat,bkmat,bkaat,r1mat
+      COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu
+      COMPLEX(r8), DIMENSION(mpert,mpert,4) :: kwmat,ktmat
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
       CHARACTER(128) :: message
 c-----------------------------------------------------------------------
@@ -1251,68 +1251,147 @@ c-----------------------------------------------------------------------
       q=sq%f(4)
       nq=nn*q
       singfac=mlow-nn*q+(/(ipert,ipert=0,mpert-1)/)
+      chi1=twopi*psio
 c-----------------------------------------------------------------------
 c     compute F matrix.
 c-----------------------------------------------------------------------      
       IF (kin_flag) THEN
-         CALL cspline_eval(amats,psifac,0)
-         CALL cspline_eval(bmats,psifac,0)
-         CALL cspline_eval(dmats,psifac,0)
-         CALL cspline_eval(ktmats(2),psifac,0)
-         !CALL cspline_eval(fmats,psifac,0)
-         amat=RESHAPE(amats%f,(/mpert,mpert/))
-         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
-         dmat=RESHAPE(dmats%f,(/mpert,mpert/))
-         !baat=RESHAPE(baats%f,(/mpert,mpert/))
-         baat=bmat-2*RESHAPE(ktmats(2)%f,(/mpert,mpert/))
-
-         amatlu=0
-         DO jpert=1,mpert
-            DO ipert=1,mpert
-               amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
+         IF (fkg_kmats_flag) THEN
+            CALL cspline_eval(f0mats,psifac,0)
+            CALL cspline_eval(pmats,psifac,0)
+            CALL cspline_eval(paats,psifac,0)
+            CALL cspline_eval(r1mats,psifac,0)
+            f0mat=RESHAPE(f0mats%f,(/mpert,mpert/))
+            pmat=RESHAPE(pmats%f,(/mpert,mpert/))
+            paat=RESHAPE(paats%f,(/mpert,mpert/))
+            r1mat=RESHAPE(r1mats%f,(/mpert,mpert/))
+         ELSE
+            CALL cspline_eval(amats,psifac,0)
+            CALL cspline_eval(dbats,psifac,0)
+            CALL cspline_eval(fbats,psifac,0)
+            amat=RESHAPE(amats%f,(/mpert,mpert/))
+            dbat=RESHAPE(dbats%f,(/mpert,mpert/))
+            fmat=RESHAPE(fbats%f,(/mpert,mpert/))
+            DO i=1,4
+               CALL cspline_eval(kwmats(i),psifac,0)
+               CALL cspline_eval(ktmats(i),psifac,0)
+               kwmat(:,:,i)=RESHAPE(kwmats(i)%f,(/mpert,mpert/))
+               ktmat(:,:,i)=RESHAPE(ktmats(i)%f,(/mpert,mpert/))
+            ENDDO
+            amat=amat+kwmat(:,:,1)+ktmat(:,:,1)
+            b1mat=ifac*dbat
+c-----------------------------------------------------------------------
+c     factor kinetic non-Hermitian matrix A.
+c----------------------------------------------------------------------- 
+            amatlu=0
+            umat=0
+            DO jpert=1,mpert
+               DO ipert=1,mpert
+                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
+                  IF(ipert==jpert)umat(ipert,jpert)=1
+               ENDDO
+            ENDDO
+         
+            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
+     $           ipiv,info)
+            IF(info /= 0)THEN
+               WRITE(message,'(a,e16.9,a,i2)')
+     $              "zgbtrf: amat singular at psifac = ",psifac,
+     $              ", ipert = ",info,", reduce delta_mband"
+               CALL program_stop(message)
+            ENDIF
+            temp1=dbat 
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp1,mpert,info)
+            f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
+            
+            temp2=amat
+            CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info) ! close to unit matrix.
+            aamat=CONJG(TRANSPOSE(temp2))
+            umat=umat-aamat
+            
+            bkmat=kwmat(:,:,2)+ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,1)+ktmat(:,:,1))
+            bkaat=kwmat(:,:,2)-ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,1)+ktmat(:,:,1))
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            pmat=MATMUL(CONJG(TRANSPOSE(b1mat)),temp2)
+            
+            temp2=b1mat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            paat=MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+     $           -ifac*chi1/(twopi*nn)*MATMUL(umat,b1mat)
+            paat=CONJG(TRANSPOSE(paat))
+            
+            temp1=kwmat(:,:,1)+ktmat(:,:,1)
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            r1mat=kwmat(:,:,4)+ktmat(:,:,4)-
+     $           (chi1/(twopi*nn))**2*CONJG(TRANSPOSE(temp1))+
+     $           ifac*chi1/(twopi*nn)*CONJG(TRANSPOSE(bkaat))-
+     $           ifac*chi1/(twopi*nn)*MATMUL(aamat,bkmat)-
+     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+         ENDIF         
+         DO ipert=1,mpert
+            m1=mlow+ipert-1
+            singfac1=m1-nn*q
+            DO jpert=1,mpert
+               m2=mlow+jpert-1
+               singfac2=m2-nn*q
+               f(ipert,jpert)=singfac1*f0mat(ipert,jpert)*
+     $              singfac2-singfac1*pmat(ipert,jpert)-
+     $              CONJG(paat(jpert,ipert))*singfac2+
+     $              r1mat(ipert,jpert)
             ENDDO
          ENDDO
-         
-         CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
-     $        ipiv,info)
+      ELSE
+         CALL cspline_eval(amats,psifac,0)
+         CALL cspline_eval(dbats,psifac,0)
+         CALL cspline_eval(fbats,psifac,0)
+         amat=RESHAPE(amats%f,(/mpert,mpert/))
+         dbat=RESHAPE(dbats%f,(/mpert,mpert/))
+         fmat=RESHAPE(fbats%f,(/mpert,mpert/))
+
+         CALL zhetrf('L',mpert,amat,mpert,ipiv,work,mpert*mpert,info)
          IF(info /= 0)THEN
             WRITE(message,'(a,e16.9,a,i2)')
-     $           "zgbtrf: amat singular at psifac = ",psifac,
-     $           ", ipert = ",info,", reduce delta_mband"
+     $           "zhetrf: amat singular at psifac = ",psifac,
+     $           ", ipert = ",info,", increase delta_mband"
             CALL program_stop(message)
          ENDIF
-         temp1=bmat
-         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
-     $        3*mband+1,ipiv,temp1,mpert,info)
-         f=dmat-MATMUL(CONJG(TRANSPOSE(baat)),temp1)
-      ELSE
-         CALL cspline_eval(fmats,psifac,0)
-         temp1=RESHAPE(fmats%f,(/mpert,mpert/))
-         ipert=0
-         DO m1=mlow,mhigh
-            ipert=ipert+1
-            singfac1=m1-nq
-            DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
-               m2=m1+dm
-               singfac2=m2-nq
-               jpert=ipert+dm
-               f(ipert,jpert)=singfac1*temp1(ipert,jpert)*singfac2
+
+         temp1=dbat
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiv,temp1,mpert,info)
+         fmat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
+
+         DO ipert=1,mpert
+            m1=mlow+ipert-1
+            singfac1=m1-nn*q
+            DO jpert=1,mpert
+               m2=mlow+jpert-1
+               singfac2=m2-nn*q
+               f(ipert,jpert)=singfac1*fmat(ipert,jpert)*singfac2
             ENDDO
          ENDDO
       ENDIF
+
       kl=mpert-1
       ku=mpert-1
       ldab=2*kl+ku+1 
       m=mpert
       n=mpert
-      ALLOCATE (lumat(ldab,n),fpiv(min(m,n))) 
+      ALLOCATE(lumat(ldab,n),fpiv(min(m,n))) 
       DO jpert=1,mpert
          DO ipert=1,mpert
             lumat(kl+ku+1+ipert-jpert,jpert)=f(ipert,jpert)
-            iqty=iqty+1
          ENDDO
       ENDDO
-      CALL zgbtrf (m,n,kl,ku,lumat,ldab,ipiv,info)
+      CALL zgbtrf(m,n,kl,ku,lumat,ldab,ipiv,info)
       IF (info.NE.0) THEN
          PRINT *,"zgbtrf info=",info
          CALL program_stop("Termination by galerkin_solve_equation")
@@ -1334,7 +1413,7 @@ c     find new singular surfaces.
 c-----------------------------------------------------------------------
       SUBROUTINE ksing_find
 
-      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,eps=1e-10
+      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,eps=1e-5
       INTEGER, PARAMETER :: nsing=1000
       REAL(r8), DIMENSION(nsing) :: psising,psising_check
 
