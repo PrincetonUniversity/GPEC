@@ -30,11 +30,11 @@ c-----------------------------------------------------------------------
       TYPE(fspline_type), PRIVATE :: metric,fmodb
       TYPE(cspline_type) :: dmats,emats,hmats,dbats,ebats,fbats,
      $     fmats,kmats,gmats,baats,caats,eaats,kaats,gaats,
-     $     f0mats,pmats,paats,kkmats,kkaats,r1mats,r2mats,r3mats
+     $     f0mats,pmats,paats,kkmats,kkaats,r1mats,r2mats,r3mats,
+     $     akmats,bkmats,ckmats
       TYPE(spline_type) :: k0s
       INTEGER, DIMENSION(:), POINTER :: ipiva
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat,
-     $     fsmat,ksmat
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat
       COMPLEX(r8), DIMENSION(:), POINTER :: jmat
       
       ! kientic ABCDEH mats for sing_mod
@@ -192,7 +192,6 @@ c-----------------------------------------------------------------------
       IF(diagnose)CALL bin_open(unit,"coefs.bin","UNKNOWN","REWIND",
      $     "none")
       ALLOCATE(asmat(mpert,mpert),bsmat(mpert,mpert),csmat(mpert,mpert),
-     $     fsmat(3*mband+1,mpert),ksmat(2*mband+1,mpert),
      $     jmat(-mband:mband),ipiva(mpert))
       CALL cspline_alloc(fmats,mpsi,(mband+1)*(2*mpert-mband)/2)
       CALL cspline_alloc(gmats,mpsi,(mband+1)*(2*mpert-mband)/2)
@@ -925,6 +924,9 @@ c-----------------------------------------------------------------------
       ELSEIF(method==0)THEN
          fkg_kmats_flag=.TRUE.
 
+         CALL cspline_alloc(akmats,mpsi,mpert**2)
+         CALL cspline_alloc(bkmats,mpsi,mpert**2)
+         CALL cspline_alloc(ckmats,mpsi,mpert**2)
          CALL cspline_alloc(f0mats,mpsi,mpert**2)
          CALL cspline_alloc(pmats,mpsi,mpert**2)
          CALL cspline_alloc(paats,mpsi,mpert**2)
@@ -934,6 +936,9 @@ c-----------------------------------------------------------------------
          CALL cspline_alloc(r2mats,mpsi,mpert**2)
          CALL cspline_alloc(r3mats,mpsi,mpert**2)
 
+         akmats%xs=rzphi%xs
+         bkmats%xs=rzphi%xs
+         ckmats%xs=rzphi%xs
          f0mats%xs=rzphi%xs
          pmats%xs=rzphi%xs
          paats%xs=rzphi%xs
@@ -943,6 +948,9 @@ c-----------------------------------------------------------------------
          r2mats%xs=rzphi%xs
          r3mats%xs=rzphi%xs
 
+         akmats%fs=0
+         bkmats%fs=0
+         ckmats%fs=0
          f0mats%fs=0
          pmats%fs=0
          paats%fs=0
@@ -1117,6 +1125,9 @@ c-----------------------------------------------------------------------
             gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2) 
 
             ! pass only essential kinetic matrices
+            akmats%fs(ipsi,:)=RESHAPE(amat,(/mpert**2/))
+            bkmats%fs(ipsi,:)=RESHAPE(bmat,(/mpert**2/))
+            ckmats%fs(ipsi,:)=RESHAPE(cmat,(/mpert**2/))
             f0mats%fs(ipsi,:)=RESHAPE(f0mat,(/mpert**2/))
             pmats%fs(ipsi,:)=RESHAPE(pmat,(/mpert**2/))
             paats%fs(ipsi,:)=RESHAPE(paat,(/mpert**2/))
@@ -1141,6 +1152,9 @@ c-----------------------------------------------------------------------
             CALL cspline_fit(ktmats(i),"extrap")
          ENDDO
 
+         CALL cspline_fit(akmats,"extrap")
+         CALL cspline_fit(bkmats,"extrap")
+         CALL cspline_fit(ckmats,"extrap")
          CALL cspline_fit(f0mats,"extrap")
          CALL cspline_fit(pmats,"extrap")
          CALL cspline_fit(paats,"extrap")

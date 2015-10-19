@@ -71,7 +71,7 @@ c-----------------------------------------------------------------------
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     amat,bmat,cmat,fmats,gmats,kmats,t1v,t2v,t3v,w1v,fldflxmat,
-     $     wft,permv,fsmat,ksmat ! LOGAN
+     $     wft,permv ! LOGAN
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: chpmats,kapmats,
      $     plas_indmats,permeabmats,diff_indmats,reluctmats,
      $     plas_indevmats,permeabevmats,reluctevmats,
@@ -79,7 +79,7 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
-      TYPE(cspline_type) :: u1,u2,amats,bmats,cmats
+      TYPE(cspline_type) :: u1,u2,u3,u4
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
 

@@ -87,9 +87,6 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)rzphi%xs,rzphi%ys,
      $        rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $        rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
-         WRITE(euler_bin_unit)amats%xs,bmats%xs,cmats%xs,
-     $        amats%fs,bmats%fs,cmats%fs,amats%fs1,bmats%fs1,cmats%fs1,
-     $        amats%xpower,bmats%xpower,cmats%xpower,fsmat,ksmat
       ENDIF
 c-----------------------------------------------------------------------
 c     open output files for crit and write header.
@@ -166,6 +163,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_output_step(unorm)
 
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: xss
       REAL(r8), DIMENSION(:), INTENT(IN) :: unorm
 c-----------------------------------------------------------------------
 c     compute and print critical data for each time step.
@@ -176,14 +174,18 @@ c-----------------------------------------------------------------------
 c     write solutions.
 c-----------------------------------------------------------------------
       IF(bin_euler .AND. mod(istep,euler_stride) == 0)THEN
+         CALL sing_der(neq,psifac,u,du)
          WRITE(euler_bin_unit)1
          WRITE(euler_bin_unit)psifac,q,msol
          WRITE(euler_bin_unit)u
-         ! diagnostics
-         WRITE(euler_bin_unit)f1mats
-         WRITE(euler_bin_unit)k1mats
-         WRITE(euler_bin_unit)k1aats
-         WRITE(euler_bin_unit)g1aats
+         WRITE(euler_bin_unit)ud
+c-----------------------------------------------------------------------
+c     obsolete diagnostics.
+c-----------------------------------------------------------------------         
+c         WRITE(euler_bin_unit)f1mats
+c         WRITE(euler_bin_unit)k1mats
+c         WRITE(euler_bin_unit)k1aats
+c         WRITE(euler_bin_unit)g1aats
       ENDIF
 c-----------------------------------------------------------------------
 c     output solutions components for each time step.

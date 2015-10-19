@@ -911,7 +911,8 @@ c-----------------------------------------------------------------------
 c     LOGAN - Isolate plasma or total perturbation parallel to a DCON eigenmode
 c-----------------------------------------------------------------------
       ALLOCATE(eigmn(mpert))
-      IF (d1mode>0) THEN ! This is unphysical. The response can have resonant components (shielding).
+      IF (d1mode>0) THEN 
+      ! This is unphysical. The response can have resonant components (shielding).
           PRINT *,'Isolating response || to first ',d1mode,
      $            ' DCON eigenmodes'
           tmpmn = (foutmn-finmn)/(chi1*twopi*ifac*(mfac-nn*qlim))

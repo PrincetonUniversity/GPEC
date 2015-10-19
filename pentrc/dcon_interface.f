@@ -57,9 +57,8 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
-      TYPE(cspline_type) :: u1,u2
-      TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats,
-     $     amats,bmats,cmats
+      TYPE(cspline_type) :: u1,u2,u3,u4
+      TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
 
       TYPE :: resist_type
@@ -159,18 +158,12 @@ c     read equilibrium on flux coordinates.
 c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
-      CALL cspline_alloc(amats,mpsi,mpert**2)
-      CALL cspline_alloc(bmats,mpsi,mpert**2)
-      CALL cspline_alloc(cmats,mpsi,mpert**2)
 
       rzphi%periodic(2)=.TRUE.
       READ(in_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
       READ(in_unit)rzphi%xs,rzphi%ys,
      $     rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $     rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
-      READ(in_unit)amats%xs,bmats%xs,cmats%xs,
-     $        amats%fs,bmats%fs,cmats%fs,amats%fs1,bmats%fs1,cmats%fs1,
-     $        amats%xpower,bmats%xpower,cmats%xpower
       mstep=-1
       mfix=0
       msing=0
@@ -184,6 +177,7 @@ c-----------------------------------------------------------------------
          SELECT CASE(data_type)
          CASE(1)
             mstep=mstep+1
+            READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
          CASE(2)
@@ -251,8 +245,9 @@ c-----------------------------------------------------------------------
             istep=istep+1
             READ(UNIT=in_unit)psifac(istep),qfac(istep),
      $           soltype(istep)%msol
-            ALLOCATE(soltype(istep)%u(mpert,soltype(istep)%msol,2))
-            READ(UNIT=in_unit)soltype(istep)%u
+            ALLOCATE(soltype(istep)%u(mpert,soltype(istep)%msol,4))
+            READ(UNIT=in_unit)soltype(istep)%u(:,:,1:2)
+            READ(UNIT=in_unit)soltype(istep)%u(:,:,3:4)
          CASE(2)
             ifix=ifix+1
             fixstep(ifix)=istep
@@ -393,6 +388,8 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL cspline_alloc(u1,mstep,mpert)
       CALL cspline_alloc(u2,mstep,mpert)
+      CALL cspline_alloc(u3,mstep,mpert)
+      CALL cspline_alloc(u4,mstep,mpert)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -437,10 +434,10 @@ c-----------------------------------------------------------------------
          temp1=MATMUL(fixtype(ifix)%transform,uedge)
          kfix=fixstep(ifix+1)
          DO istep=jfix,kfix
-            u1%fs(istep,:)
-     $           =MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
-            u2%fs(istep,:)
-     $           =MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+            u1%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
+            u2%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+            u3%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,3),temp1)
+            u4%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,4),temp1)
          ENDDO         
          jfix=kfix+1
       ENDDO
@@ -449,8 +446,12 @@ c     fit the functions.
 c-----------------------------------------------------------------------
       u1%xs=psifac
       u2%xs=psifac
+      u3%xs=psifac
+      u4%xs=psifac
       CALL cspline_fit(u1,"extrap")
       CALL cspline_fit(u2,"extrap")
+      CALL cspline_fit(u3,"extrap")
+      CALL cspline_fit(u4,"extrap")
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -805,17 +806,6 @@ c-----------------------------------------------------------------------
             iqty=iqty+1
          ENDDO
       ENDDO
-c-----------------------------------------------------------------------
-c     kinetic abc matrices.
-c----------------------------------------------------------------------- 
-      IF (.TRUE.) THEN 
-         CALL cspline_eval(amats,psi,0)  
-         CALL cspline_eval(bmats,psi,0)  
-         CALL cspline_eval(cmats,psi,0)         
-         amat=RESHAPE(amats%f,(/mpert,mpert/))
-         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
-         cmat=RESHAPE(cmats%f,(/mpert,mpert/))
-      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

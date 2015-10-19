@@ -57,7 +57,7 @@ c-----------------------------------------------------------------------
          ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
      $        kap_mn(4,mpert),kax_mn(mpert))
          CALL ipeq_alloc
-         surface_flag=.TRUE.
+         surface_flag=.FALSE.
          CALL ipeq_sol(psilim)
          surface_flag=.FALSE.
          CALL ipeq_contra(psilim)

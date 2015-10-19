@@ -883,7 +883,10 @@ c-----------------------------------------------------------------------
 c     compute kinetic matrices.
 c-----------------------------------------------------------------------
          IF (fkg_kmats_flag) THEN
-            CALL cspline_eval(f0mats,psifac,0) ! different from gpec_0.95
+            CALL cspline_eval(akmats,psifac,0)
+            CALL cspline_eval(bkmats,psifac,0)
+            CALL cspline_eval(ckmats,psifac,0)
+            CALL cspline_eval(f0mats,psifac,0)
             CALL cspline_eval(pmats,psifac,0)
             CALL cspline_eval(paats,psifac,0)
             CALL cspline_eval(kkmats,psifac,0)
@@ -893,6 +896,9 @@ c-----------------------------------------------------------------------
             CALL cspline_eval(r3mats,psifac,0)
             CALL cspline_eval(gaats,psifac,0)
 
+            amat=RESHAPE(akmats%f,(/mpert,mpert/))
+            bmat=RESHAPE(bkmats%f,(/mpert,mpert/))
+            cmat=RESHAPE(ckmats%f,(/mpert,mpert/))
             f0mat=RESHAPE(f0mats%f,(/mpert,mpert/))
             pmat=RESHAPE(pmats%f,(/mpert,mpert/))
             paat=RESHAPE(paats%f,(/mpert,mpert/))
@@ -902,14 +908,29 @@ c-----------------------------------------------------------------------
             r2mat=RESHAPE(r2mats%f,(/mpert,mpert/))
             r3mat=RESHAPE(r3mats%f,(/mpert,mpert/))
 
-            ! diagnostics
-            iqty=1
+            amatlu=0
             DO jpert=1,mpert
-               DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
-                  gaat(ipert,jpert)=gaats%f(iqty)
-                  iqty=iqty+1
+               DO ipert=1,mpert
+                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
                ENDDO
             ENDDO
+            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
+     $           ipiv,info)
+            IF(info /= 0)THEN
+               WRITE(message,'(a,e16.9,a,i2)')
+     $              "zgbtrf: amat singular at psifac = ",psifac,
+     $              ", ipert = ",info,", reduce delta_mband"
+               CALL program_stop(message)
+            ENDIF
+c-----------------------------------------------------------------------
+c     obsolete diagnostics.
+c-----------------------------------------------------------------------
+c            DO jpert=1,mpert
+c               DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+c                  gaat(ipert,jpert)=gaats%f(iqty)
+c                  iqty=iqty+1
+c               ENDDO
+c            ENDDO
          ELSE
             amat=amat+kwmat(:,:,1)+ktmat(:,:,1)
             bmat=bmat+kwmat(:,:,2)+ktmat(:,:,2)
@@ -931,8 +952,7 @@ c-----------------------------------------------------------------------
                   amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
                   IF(ipert==jpert)umat(ipert,jpert)=1
                ENDDO
-            ENDDO
-            
+            ENDDO            
             CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
      $           ipiv,info)
             IF(info /= 0)THEN
@@ -941,6 +961,7 @@ c-----------------------------------------------------------------------
      $              ", ipert = ",info,", reduce delta_mband"
                CALL program_stop(message)
             ENDIF
+
             temp1=dbat 
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp1,mpert,info)
@@ -1020,8 +1041,12 @@ c-----------------------------------------------------------------------
                ENDDO
             ENDDO
          ENDIF
+         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,3*mband+1,
+     $        ipiv,bmat,mpert,info)
+         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,3*mband+1,
+     $        ipiv,cmat,mpert,info)
 c-----------------------------------------------------------------------
-c     calculate kinetic non-Hermitian FK (method 1).
+c     obsolete method for non-Hermitian FK.
 c-----------------------------------------------------------------------
 c            temp1=bmat
 c            temp2=cmat
@@ -1034,7 +1059,7 @@ c            kmat=emat-MATMUL(CONJG(TRANSPOSE(baat)),temp2)
 c            kaat=CONJG(TRANSPOSE(eaat))-
 c     $           MATMUL(CONJG(TRANSPOSE(caat)),temp1)
 c-----------------------------------------------------------------------
-c     calculate kinetic non-Hermitian FK (method 2).
+c     calculate kinetic non-Hermitian FK.
 c-----------------------------------------------------------------------  
          DO ipert=1,mpert
             m1=mlow+ipert-1
@@ -1052,11 +1077,13 @@ c-----------------------------------------------------------------------
      $              r3mat(ipert,jpert)  
             ENDDO
          ENDDO
-         ! diagnostics (only working for kin_flag)
-         f1mats=RESHAPE(fmat,(/mpert**2/))
-         k1mats=RESHAPE(kmat,(/mpert**2/))
-         k1aats=RESHAPE(kaat,(/mpert**2/))
-         g1aats=RESHAPE(gaat,(/mpert**2/))     
+c-----------------------------------------------------------------------
+c     obsolete diagnostics.
+c----------------------------------------------------------------------- 
+c         f1mats=RESHAPE(fmat,(/mpert**2/))
+c         k1mats=RESHAPE(kmat,(/mpert**2/))
+c         k1aats=RESHAPE(kaat,(/mpert**2/))
+c         g1aats=RESHAPE(gaat,(/mpert**2/))     
 c-----------------------------------------------------------------------
 c    store FKG in banded matrix forms.
 c-----------------------------------------------------------------------
@@ -1096,9 +1123,18 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
       ELSE
+         CALL cspline_eval(amats,psifac,0)
+         CALL cspline_eval(bmats,psifac,0)
+         CALL cspline_eval(cmats,psifac,0)
          CALL cspline_eval(fmats,psifac,0)
          CALL cspline_eval(kmats,psifac,0)
          CALL cspline_eval(gmats,psifac,0)
+         amat=RESHAPE(amats%f,(/mpert,mpert/))
+         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
+         cmat=RESHAPE(cmats%f,(/mpert,mpert/))
+         CALL zhetrf('L',mpert,amat,mpert,ipiv,work,mpert*mpert,info)
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiv,bmat,mpert,info)
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiv,cmat,mpert,info)
 c-----------------------------------------------------------------------
 c     copy ideal Hermitian banded matrices F and G.
 c-----------------------------------------------------------------------
@@ -1151,7 +1187,6 @@ c-----------------------------------------------------------------------
      $           2*mband+1,u(:,isol,1),1,one,du(:,isol,2),1)
             CALL zgbmv('N',mpert,mpert,mband,mband,one,kaatb,
      $           2*mband+1,du(:,isol,1),1,one,du(:,isol,2),1)
-            du(:,isol,1)=du(:,isol,1)
          ENDDO   
       ELSE
          DO isol=1,msol
@@ -1168,6 +1203,11 @@ c-----------------------------------------------------------------------
             du(:,isol,1)=du(:,isol,1)*singfac
          ENDDO         
       ENDIF
+c-----------------------------------------------------------------------
+c     calculate and store u-derivative and xss.
+c-----------------------------------------------------------------------
+      ud(:,:,1)=du(:,:,1)
+      ud(:,:,2)=-MATMUL(bmat,du(:,:,1))-MATMUL(cmat,u(:,:,1)) 
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1413,13 +1453,13 @@ c     find new singular surfaces.
 c-----------------------------------------------------------------------
       SUBROUTINE ksing_find
 
-      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,eps=1e-5
+      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,keps1=1e-10,keps2=1e-4
       INTEGER, PARAMETER :: nsing=1000
       REAL(r8), DIMENSION(nsing) :: psising,psising_check
 
       LOGICAL :: sing_flag
       INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check
-      REAL(r8) :: x0,x1
+      REAL(r8) :: x0,x1,eps,reps
       COMPLEX(r8) :: det0,det1,sing_det
 
       singnum=0
@@ -1479,12 +1519,14 @@ c-----------------------------------------------------------------------
       psising_check=psising
       psising=-1
       singnum=1
-      WRITE (*,*) 'ABS(det_max)=',ABS(det_max),'eps=',eps
+      WRITE (*,*) 'ABS(det_max)=',ABS(det_max),'eps=',keps1
       psising(1)=psising_check(1)
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
          WRITE (*,*) 'psising_check(',i,')=',psising_check(i),
      $               'det0=',ABS(det0)
+         reps=keps1/keps2
+         eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
          IF (ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)

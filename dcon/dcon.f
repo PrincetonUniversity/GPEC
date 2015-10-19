@@ -162,8 +162,9 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
          IF(kin_flag)THEN
-            ALLOCATE(f1mats(mpert**2),k1mats(mpert**2),
-     $           k1aats(mpert**2),g1aats(mpert**2))      
+            ! obsolete diagnostics.
+c            ALLOCATE(f1mats(mpert**2),k1mats(mpert**2),
+c     $           k1aats(mpert**2),g1aats(mpert**2))      
             CALL fourfit_action_matrix
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
      $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert)
@@ -192,10 +193,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     integrate main ODE's.
 c-----------------------------------------------------------------------
+      ALLOCATE(ud(mpert,mpert,2))
       IF(ode_flag)THEN
          IF(verbose) WRITE(*,*)"Starting integration of ODE's"
          CALL ode_run
       ENDIF
+      DEALLOCATE(ud)
 c-----------------------------------------------------------------------
 c     compute free boundary energies.
 c-----------------------------------------------------------------------
