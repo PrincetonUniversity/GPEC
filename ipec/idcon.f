@@ -97,6 +97,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)rzphi%xs,rzphi%ys,
      $     rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $     rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
+      READ(in_unit)kin_flag,con_flag
       mstep=-1
       mfix=0
       msing=0

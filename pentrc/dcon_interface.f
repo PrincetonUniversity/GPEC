@@ -32,7 +32,8 @@ c-----------------------------------------------------------------------
       
       IMPLICIT NONE
 
-      LOGICAL :: edge_flag=.FALSE.,fft_flag=.FALSE.
+      LOGICAL :: edge_flag=.FALSE.,fft_flag=.FALSE.,
+     $     kin_flag=.FALSE.,con_flag=.FALSE.
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,
@@ -164,6 +165,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)rzphi%xs,rzphi%ys,
      $     rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $     rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
+      READ(in_unit)kin_flag,con_flag
       mstep=-1
       mfix=0
       msing=0

@@ -20,7 +20,4 @@
 	root_flag=f
 	root=(1e-2,0)
 
-	kin_flag=t			! kinetic solutions
-	con_flag=t			! continuous solutions
-
 /

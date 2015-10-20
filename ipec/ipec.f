@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     infile,harmonic_flag,mode_flag,sinmn,cosmn,
-     $     displacement_flag,mode,coil_flag,con_flag,kin_flag,
+     $     displacement_flag,mode,coil_flag,
      $     ip_direction,bt_direction,rdconfile,
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode ! LOGAN
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,

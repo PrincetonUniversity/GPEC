@@ -35,9 +35,6 @@
 	smode = 0					! Isolate the first smode singular-coupling right singular vectors of the external field
 	p1mode= 0					! Isolate the first p1mode (P-I) right singular vectors of the external field
 
-	kin_flag=t				! Kinetic dcon
-	con_flag=t				! Continuous jump condition
-
 /
 &IPEC_CONTROL
 	resp_index=0				! ??

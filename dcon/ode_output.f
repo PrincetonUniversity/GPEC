@@ -87,6 +87,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)rzphi%xs,rzphi%ys,
      $        rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $        rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
+         WRITE(euler_bin_unit)kin_flag,con_flag
       ENDIF
 c-----------------------------------------------------------------------
 c     open output files for crit and write header.
