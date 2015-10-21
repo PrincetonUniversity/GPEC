@@ -50,6 +50,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      READ(in_unit)kin_flag,con_flag
       IF ((power_b==0).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="hamada"
       ELSE IF ((power_b==0).AND.(power_bp==0).AND.(power_r==2)) THEN
@@ -97,7 +98,6 @@ c-----------------------------------------------------------------------
       READ(in_unit)rzphi%xs,rzphi%ys,
      $     rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $     rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
-      READ(in_unit)kin_flag,con_flag
       mstep=-1
       mfix=0
       msing=0
@@ -167,6 +167,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      READ(in_unit)kin_flag,con_flag
       istep=-1
       ifix=0
       ising=0
@@ -930,8 +931,7 @@ c-----------------------------------------------------------------------
          CALL fspline_fit_1(fmodb,"extrap",.FALSE.)
       ENDIF
 
-      DO ipsi=0,mpsi
-         
+      DO ipsi=0,mpsi         
          q=sq%fs(ipsi,4)
          sband(0:-mband:-1)=fmodb%cs%fs(ipsi,1:mband+1)
          tband(0:-mband:-1)=fmodb%cs%fs(ipsi,mband+2:2*mband+2)
@@ -969,13 +969,11 @@ c-----------------------------------------------------------------------
      $              ifac*(m2*zband2(dm)+nn*zband3(dm))
             ENDDO
          ENDDO
-
          smats%fs(ipsi,:)=RESHAPE(smat,(/mpert**2/))
          tmats%fs(ipsi,:)=RESHAPE(tmat,(/mpert**2/))
          xmats%fs(ipsi,:)=RESHAPE(xmat,(/mpert**2/))
          ymats%fs(ipsi,:)=RESHAPE(ymat,(/mpert**2/))
          zmats%fs(ipsi,:)=RESHAPE(zmat,(/mpert**2/))
-
       ENDDO
 
       ! global splines like sq,rzphi,eqfun etc.

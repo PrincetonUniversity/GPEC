@@ -236,7 +236,6 @@ program pentrc
                 "Passing MXM euler lagrange torque matrix norm calculation   " &
                 /)
         do m=1,nflags
-            print *,m
             if(flags(m))then
                 method = to_upper(methods(m))
                 if(verbose)then
@@ -268,8 +267,8 @@ program pentrc
                         endif
                     enddo
                 if(verbose)then
-                    print *, method//" - Finished"
-                    print *, "---------------------------------------------"
+!                    print *, method//" - Finished"
+!                    print *, "---------------------------------------------"
                 endif
                 enddo
             endif

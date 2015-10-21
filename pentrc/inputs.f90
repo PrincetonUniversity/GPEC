@@ -316,6 +316,8 @@ module inputs
                 powin=(/2,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
+            CASE("other")
+                powin=(/1,0,0,0/)
             CASE DEFAULT
                 stop "ERROR: inputs - jac_in must be 'hamada','pest',&
                     & 'equal_arc','boozer', or 'polar'"

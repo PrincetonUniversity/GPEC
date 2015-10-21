@@ -1214,7 +1214,7 @@ c-----------------------------------------------------------------------
 c     Use built in PENTRC spline integration options to form matrixes
 c-----------------------------------------------------------------------
       ELSEIF(method==2)THEN
-         WRITE(*,*) " Trapped energy calculation using MXM euler "//
+         WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $        "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"wmm",write_flux)
@@ -1233,7 +1233,7 @@ c-----------------------------------------------------------------------
                kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
             ENDIF
          ENDDO
-         WRITE(*,*) " Trapped torque calculation using MXM euler "//
+         WRITE(*,*) " Kinetic torque calculation using MXM euler "//
      $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"tmm",write_flux)
@@ -1257,7 +1257,7 @@ c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by T & dW from flat xi spectrum
 c-----------------------------------------------------------------------
       ELSEIF(method==3)THEN
-         WRITE(*,*) " Trapped energy calculation using MXM euler "//
+         WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"wmm",write_flux)
@@ -1276,7 +1276,7 @@ c-----------------------------------------------------------------------
                kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
             ENDIF
          ENDDO
-         WRITE(*,*) " Trapped torque calculation using MXM euler "//
+         WRITE(*,*) " Kinetic torque calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"tmm",write_flux)
@@ -1300,7 +1300,7 @@ c     Use built in PENTRC LSODE integration options to form matrixes
 c      -> Grid determined by norm of EL matrices
 c-----------------------------------------------------------------------
       ELSEIF(method==4)THEN
-         WRITE(*,*) " Trapped MXM euler lagrange energy matrix norm "
+         WRITE(*,*) " Kinetic MXM euler lagrange energy matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"kmm",write_flux)
@@ -1319,7 +1319,7 @@ c-----------------------------------------------------------------------
                kwmats(i)%fs1 = kinfac1*kwmats(i)%fs1
             ENDIF
          ENDDO
-         WRITE(*,*) " Trapped MXM euler lagrange torque matrix norm "
+         WRITE(*,*) " Kinetic MXM euler lagrange torque matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
      $        ft//"rmm",write_flux)

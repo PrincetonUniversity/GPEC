@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
-     $     d3_flag,xbst_flag,pmodbrz_flag,rzphibx_flag,
+     $     d3_flag,xbst_flag,pmodbrz_flag,rzphibx_flag,dw_flag,
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
@@ -48,7 +48,7 @@ c-----------------------------------------------------------------------
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
-     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
@@ -93,6 +93,7 @@ c-----------------------------------------------------------------------
       d1mode=0
 
       resp_index=0
+      resp_induct_flag=.TRUE.
       sing_spot=5e-4
       reg_flag=.TRUE.
       reg_spot=5e-2
@@ -136,6 +137,7 @@ c-----------------------------------------------------------------------
       xbrzphifun_flag=.FALSE.
       bwp_pest_flag=.FALSE.
       verbose = .TRUE.
+      dw_flag = .FALSE.
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.
@@ -345,6 +347,9 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (xclebsch_flag) THEN
          CALL ipout_xclebsch(mode,xspmn)
+      ENDIF
+      IF (kin_flag .AND. dw_flag) THEN
+         CALL ipout_dw(mode,xspmn)
       ENDIF
       IF (pmodb_flag) THEN
          CALL ipout_pmodb(mode,xspmn,power_rout,

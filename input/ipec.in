@@ -59,6 +59,7 @@
 	xbnormal_flag=t				! Outputs normal displacement and field in plasma
 	vbnormal_flag=f				! Outputs vacuum normal displacement and field in plasma
 	xclebsch_flag=t				! Outputs plasma displacement in clebsch coordinates (input for PENT)
+	dw_flag=t                               ! Outputs self-consistent energy and torque profiles (when kin_flag=t from DCON)
 
 	eqbrzphi_flag=f				! Outputs equilibrium field on regular (r,z) grid
 	brzphi_flag=f				! Outputs perturbed field on regular (r,z) grid

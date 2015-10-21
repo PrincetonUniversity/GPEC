@@ -64,6 +64,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
       READ(in_unit)mband,i2,i3,r1,r2,r3,r4,r5
       READ(in_unit)i4,i5,i6
+      READ(in_unit)kin_flag,con_flag
 
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
@@ -73,7 +74,6 @@ c-----------------------------------------------------------------------
       READ(in_unit)rzphi%xs,rzphi%ys,
      $        rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $        rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
-      READ(in_unit)kin_flag,con_flag
       mstep=-1
       mfix=0
       msing=0
@@ -143,6 +143,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)mlow,mhigh,nn
       READ(in_unit)i1,i2,i3,r1,r2,r3,r4,r5
       READ(in_unit)i4,i5,i6
+      READ(in_unit)kin_flag,con_flag
       istep=-1
       ifix=0
       ising=0

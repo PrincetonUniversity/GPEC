@@ -967,8 +967,8 @@ c-----------------------------------------------------------------------
       CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
       CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
 
-      vy = SUM(CONJG(finmn)*MATMUL(temp1,finmn))/4.0
-      sy = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/4.0
+      vy = SUM(CONJG(finmn)*MATMUL(temp1,finmn))/2.0
+      sy = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/2.0
       vengy = REAL(vy)
       sengy = REAL(sy)
 
@@ -980,7 +980,7 @@ c-----------------------------------------------------------------------
       temp2 = plas_indmats(resp_index,:,:)
       CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
       CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
-      py = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/4.0
+      py = SUM(CONJG(foutmn)*MATMUL(temp1,foutmn))/2.0
       pengy = REAL(py)
       IF(verbose) WRITE(*,'(1x,a,es10.3)')
      $  "Required energy to perturb vacuum = ",sengy
@@ -1543,6 +1543,55 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_vsingfld
+c-----------------------------------------------------------------------
+c     subprogram 6. ipout_dw.
+c     restore energy and torque profiles from solutions.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_dw(egnum,xspmn)    
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: egnum
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
+
+      INTEGER :: istep
+      TYPE(cspline_type) :: dwk 
+c-----------------------------------------------------------------------
+c     compute solutions and contravariant/additional components.
+c-----------------------------------------------------------------------
+      CALL idcon_build(egnum,xspmn)
+      CALL cspline_alloc(dwk,mstep,1)
+      dwk%xs=psifac
+      DO istep=0,mstep
+         dwk%fs(istep,1)=2*nn*ifac*
+     $        SUM(CONJG(u1%fs(istep,:))*u2%fs(istep,:))/(2.0*mu0)
+      ENDDO
+      CALL cspline_fit(dwk,"extrap")
+
+      WRITE(*,*)"Restoring energy and torque profiles"
+
+      CALL ascii_open(out_unit,"ipec_dw_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPEC_dw: "//
+     $     "Energy and torque profiles by self-consistent solutions."
+      WRITE(out_unit,*)     
+
+      WRITE(out_unit,'(6(1x,a16))')"psi","T_phi","2ndeltaW",
+     $     "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
+      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+         CALL cspline_eval(dwk,psifac(istep),1)
+         CALL spline_eval(sq,psifac(istep),0)
+         WRITE(out_unit,'(6(1x,es16.8))')
+     $        psifac(istep),REAL(dwk%f1(1)),AIMAG(dwk%f1(1)),
+     $        REAL(dwk%fs(istep,1)),AIMAG(dwk%fs(istep,1)),sq%f(3)
+      ENDDO
+      CALL ascii_close(out_unit)
+      CALL cspline_dealloc(dwk)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_dw
 c-----------------------------------------------------------------------
 c     subprogram 6. ipout_pmodb.
 c     compute perturbed mod b.
@@ -3549,11 +3598,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,istep,ipert,iindex
       REAL(r8) :: ileft
 
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     xmz_fun,xmt_fun,xsp1_fun
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: 
-     $     xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
-
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: xmp1mns,xspmns,xmsmns
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -3574,26 +3619,12 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sq,psifac(istep),1)
          CALL ipeq_sol(psifac(istep))
          CALL ipeq_contra(psifac(istep))         
-         CALL ipeq_cova(psifac(istep))
 c-----------------------------------------------------------------------
 c     compute mod b variations in hamada.
 c-----------------------------------------------------------------------
-         CALL iscdftb(mfac,mpert,xsp_fun,mthsurf,xsp_mn)
-         CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
-         CALL iscdftb(mfac,mpert,xmt_fun,mthsurf,xmt_mn)
-         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
-
-        ! regularize singularities
-         CALL spline_eval(sq,psifac(istep),1)
-         singfac=mfac-nn*sq%f(4)
-         xsp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
-         CALL iscdftb(mfac,mpert,xsp1_fun,mthsurf,xsp1_mn)
-
          xmp1mns(istep,:) = xmp1_mn
          xspmns(istep,:) = xsp_mn
          xmsmns(istep,:) = xms_mn
-         xmtmns(istep,:) = xmt_mn
-         xmzmns(istep,:) = xmz_mn   
       ENDDO
          
       CALL ascii_open(out_unit,"ipec_xclebsch_n"//

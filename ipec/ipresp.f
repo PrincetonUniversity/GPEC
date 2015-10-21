@@ -102,10 +102,14 @@ c-----------------------------------------------------------------------
      $              CONJG(flxmats(:,i)))
                surfet(j,i)=surfep(j,i)+surfee(i)
             ENDDO
-            IF(verbose)WRITE(*,'(1x,a12,i3,2(a7,es10.3),a10,es10.3)')
-     $           "eigenmode = ",i,", dw = ",REAL(surfet(1,i)),
-     $           ", T = ",-2*nn*AIMAG(surfet(1,i)),", error = ",
-     $           ABS(1-surfet(2,i)/surfet(1,i))   
+            ! surface current needs dP_perp contributions
+c            IF(verbose)WRITE(*,'(1x,a12,i3,2(a7,es10.3),a10,es10.3)')
+c     $           "eigenmode = ",i,", dw = ",REAL(surfet(1,i)),
+c     $           ", T = ",-2*nn*AIMAG(surfet(1,i)),", error = ",
+c     $           ABS(1-surfet(2,i)/surfet(1,i))   
+            IF(verbose)WRITE(*,'(1x,a12,i3,2(a7,es10.3))')
+     $           "eigenmode = ",i,", dw = ",REAL(et(i)),
+     $           ", T = ",-2*nn*AIMAG(et(i))
          ELSE 
             DO j=1,4
                surfep(j,i)=0.5/mu0*SUM(REAL(chpmats(j,:,i)*
@@ -338,8 +342,9 @@ c-----------------------------------------------------------------------
          temp2=surf_indmats
          CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
          CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
-         diff_indmats(j,:,:)=plas_indmats(j,:,:)-surf_indmats
-         reluctmats(j,:,:)=MATMUL(temp1,
+         diff_indmats(j,:,:)=CONJG(TRANSPOSE(plas_indmats(j,:,:)))
+     $        -surf_indmats
+        reluctmats(j,:,:)=MATMUL(temp1,
      $        MATMUL(diff_indmats(j,:,:),temp1))
          temp1=reluctmats(j,:,:)
 
