@@ -1557,7 +1557,7 @@ c-----------------------------------------------------------------------
       INTEGER :: istep
       TYPE(cspline_type) :: dwk 
 c-----------------------------------------------------------------------
-c     compute solutions and contravariant/additional components.
+c     build and spline energy and torque profiles.
 c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xspmn)
       CALL cspline_alloc(dwk,mstep,1)
@@ -1593,6 +1593,282 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipout_dw
 c-----------------------------------------------------------------------
+c     subprogram 7. ipout_dw_matrix.
+c     restore energy and torque response matrix from solutions.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipout_dw_matrix
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: ipert,istep,itheta,i,j,mval,iindex,lwork
+      REAL(r8) :: jarea,ileft
+      COMPLEX(r8) :: t1,t2
+      LOGICAL :: diagnose1=.FALSE.,diagnose2=.TRUE.
+
+      INTEGER, DIMENSION(mpert) :: ipiv
+      REAL(r8), DIMENSION(mpert) :: teigen
+      REAL(r8), DIMENSION(3*mpert-2) :: rwork
+      REAL(r8), DIMENSION(2*mpert) :: rwork2
+      REAL(r8), DIMENSION(0:mthsurf) :: units
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+      COMPLEX(r8), DIMENSION(2*mpert+1) :: work2
+      COMPLEX(r8), DIMENSION(mpert*mpert) :: work3
+      COMPLEX(r8), DIMENSION(mpert) :: fldflxmn,tvec1,tvec2,reigen
+      COMPLEX(r8), DIMENSION(mstep) :: tprof
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,fldflxmat,vr,vl
+      COMPLEX(r8), DIMENSION(mstep,mpert,mpert) :: bsurfmat,dwks,dwk,
+     $     gind,gindp,gres,gresp
+
+      TYPE(cspline_type) :: optorq
+c-----------------------------------------------------------------------
+c     call solutions.
+c-----------------------------------------------------------------------
+      units = (/(1.0,itheta=0,mthsurf)/)
+      jarea = issurfint(units,mthsurf,psilim,0,0)
+      DO ipert=1,mpert
+         fldflxmn=0
+         fldflxmn(ipert)=1.0
+         CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
+         fldflxmat(:,ipert)=fldflxmn*sqrt(jarea) 
+      ENDDO
+      WRITE(*,*)
+     $     "Call solutions for general response matrix functions"
+      edge_flag=.TRUE.
+      DO ipert=1,mpert
+         edge_mn=0
+         edge_mn(ipert)=1.0
+         CALL idcon_build(0,edge_mn)
+         DO istep=0,mstep
+            bsurfmat(istep,:,ipert)=u1%fs(istep,:)
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     construct dws response matrix (normalized by xi).
+c-----------------------------------------------------------------------
+      WRITE(*,*)"Build general response matrix functions"
+      DO istep=1,mstep
+         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
+         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
+     $        WRITE(*,'(1x,a9,i3,a30)')
+     $        "volume = ",iindex,"% response matrix calculations"
+         temp1=CONJG(TRANSPOSE(soltype(istep)%u(:,:,1)))
+         temp2=CONJG(TRANSPOSE(soltype(istep)%u(:,:,2)))
+         CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)  
+         CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
+         dwks(istep,:,:)=CONJG(TRANSPOSE(temp2))/(2.0*mu0)*2*nn*ifac  
+c-----------------------------------------------------------------------
+c     construct dwk response matrix (normalized by xi boundary).
+c-----------------------------------------------------------------------   
+         temp1=MATMUL(dwks(istep,:,:),bsurfmat(istep,:,:))
+         temp2=CONJG(TRANSPOSE(bsurfmat(istep,:,:)))
+         dwk(istep,:,:)=MATMUL(temp2,temp1)
+c-----------------------------------------------------------------------
+c     make general (2x) inductance matrix (normalized by phi boundary).
+c-----------------------------------------------------------------------
+         DO i=1,mpert
+            DO j=1,mpert
+               t1=-1/(chi1*(mfac(i)-nn*qlim)*twopi*ifac)
+               t2=1/(chi1*(mfac(j)-nn*qlim)*twopi*ifac)
+               gind(istep,i,j)=t1*dwk(istep,i,j)*t2
+            ENDDO
+         ENDDO
+c-----------------------------------------------------------------------
+c     make general response matrix (normalized by phix boundary).
+c-----------------------------------------------------------------------
+         temp1=MATMUL(gind(istep,:,:),permeabmats(resp_index,:,:))
+         temp2=CONJG(TRANSPOSE(permeabmats(resp_index,:,:)))
+         gres(istep,:,:)=MATMUL(temp2,temp1)
+c-----------------------------------------------------------------------
+c     make coordinate-independent matrix (normalized by phi power).
+c-----------------------------------------------------------------------         
+         temp1=MATMUL(gind(istep,:,:),fldflxmat)
+         temp2=CONJG(TRANSPOSE(fldflxmat))
+         gindp(istep,:,:)=MATMUL(temp2,temp1)
+c-----------------------------------------------------------------------
+c     make coordinate-independent matrix (normalized by phix power).
+c-----------------------------------------------------------------------         
+         temp1=MATMUL(gres(istep,:,:),fldflxmat)
+         temp2=CONJG(TRANSPOSE(fldflxmat))
+         gresp(istep,:,:)=MATMUL(temp2,temp1)
+      ENDDO
+c-----------------------------------------------------------------------
+c     test by field applications.
+c-----------------------------------------------------------------------
+      IF (diagnose1) THEN
+         mval=1
+         tvec1=0
+         tvec1(mval-mlow+1)=1e-3
+         
+         CALL cspline_alloc(optorq,mstep,1)
+         optorq%xs=psifac
+
+         DO istep=1,mstep
+            temp1=MATMUL(gresp(istep,:,:),fldflxmat)
+            temp2=MATMUL(CONJG(TRANSPOSE(fldflxmat)),temp1)
+            temp1=(temp2+CONJG(TRANSPOSE(temp2)))/2.0
+            tvec2=MATMUL(temp1,tvec1)
+            tprof(istep)=DOT_PRODUCT(tvec1,tvec2)/jarea**2
+            optorq%fs(istep,1)=tprof(istep)
+         ENDDO
+         
+         optorq%fs(0,1)=tprof(1)-(tprof(2)-tprof(1))/
+     $        (psifac(2)-psifac(1))*(psifac(1)-psifac(0))
+         CALL cspline_fit(optorq,"extrap")
+         CALL ascii_open(out_unit,"ipec_dw_diag_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_dw_diag: "//
+     $        "Energy and torque profiles by self-consistent solutions."
+         WRITE(out_unit,*)     
+         
+         WRITE(out_unit,'(6(1x,a16))')"psi","T_phi","2ndeltaW",
+     $        "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
+         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+            CALL cspline_eval(optorq,psifac(istep),1)
+            CALL spline_eval(sq,psifac(istep),0)
+            WRITE(out_unit,'(6(1x,es16.8))')
+     $           psifac(istep),REAL(optorq%f1(1)),AIMAG(optorq%f1(1)),
+     $           REAL(optorq%f(1)),AIMAG(optorq%f(1)),sq%f(3)
+         ENDDO
+         CALL ascii_close(out_unit)
+         CALL cspline_dealloc(optorq)
+      ENDIF
+c-----------------------------------------------------------------------
+c     write general response matrix functions.
+c-----------------------------------------------------------------------
+      CALL ascii_open(out_unit,"ipec_dw_matrix_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPEC_dw_matrix: "//
+     $     "Self-consistent response matrix functions."
+      WRITE(out_unit,*)     
+
+      WRITE(out_unit,'(1x,a16,2(1x,a4),10(1x,a16))')"psi","i","j",
+     $     "Re(T_x)","Im(T_x)","Re(T_f)","Im(T_f)",
+     $     "Re(T_ef)","Im(T_ef)","Re(T_fp)","Im(T_fp)",
+     $     "Re(T_efp)","Im(T_efp)"
+      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+         DO i=1,mpert
+            DO j=1,mpert
+               WRITE(out_unit,'(1x,es16.8,2(1x,I4),10(1x,es16.8))')
+     $              psifac(istep),i,j,
+     $              REAL(dwk(istep,i,j)),AIMAG(dwk(istep,i,j)),
+     $              REAL(gind(istep,i,j)),AIMAG(gind(istep,i,j)),
+     $              REAL(gres(istep,i,j)),AIMAG(gres(istep,i,j)),
+     $              REAL(gindp(istep,i,j)),AIMAG(gindp(istep,i,j)),
+     $              REAL(gresp(istep,i,j)),AIMAG(gresp(istep,i,j))
+            ENDDO
+         ENDDO
+      ENDDO
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     calculate maximum torque eigenvalues.
+c-----------------------------------------------------------------------
+      CALL ascii_open(out_unit,"ipec_dw_eigen_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPEC_dw_eigen: "//
+     $     "Eigenvalue profiles by self-consistent solutions."
+      WRITE(out_unit,*)     
+
+      WRITE(out_unit,'(3(1x,a16))')"psi","MAX(teigen)","MIN(teigen)"
+      lwork=2*mpert-1
+      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+         temp1=(gresp(istep,:,:)+CONJG(TRANSPOSE(gresp(istep,:,:))))/2.0
+         CALL zheev('V','U',mpert,temp1,mpert,teigen,
+     $        work,lwork,rwork,info)
+         WRITE(out_unit,'(3(1x,es16.8))')
+     $        psifac(istep),MAXVAL(teigen),MINVAL(teigen)
+      ENDDO
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     diagnose eigenvector.
+c-----------------------------------------------------------------------
+      IF (diagnose1) THEN
+         tvec1=temp1(:,1)
+         DO istep=1,mstep
+            temp2=gresp(istep,:,:)
+            temp1=(temp2+CONJG(TRANSPOSE(temp2)))/2.0
+            tvec2=MATMUL(temp1,tvec1)
+            tprof(istep)=DOT_PRODUCT(tvec1,tvec2)
+         ENDDO
+         CALL ascii_open(out_unit,"ipec_dw_minimum_torque_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_dw_diag: "//
+     $        "Energy and torque profiles by self-consistent solutions."
+         WRITE(out_unit,*)     
+         
+         WRITE(out_unit,'(3(1x,a16))')"psi","int(T_phi)","int(2ndeltaW)"
+         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+            WRITE(out_unit,'(3(1x,es16.8))')psifac(istep),
+     $           REAL(tprof(istep)),AIMAG(tprof(istep))
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     calculate maximum torque-ratio TT^{-1}_b eigenvalues.
+c-----------------------------------------------------------------------
+      temp1=(gresp(mstep,:,:)+CONJG(TRANSPOSE(gresp(mstep,:,:))))/2.0
+      CALL zhetrf('L',mpert,temp1,mpert,ipiv,work3,mpert*mpert,info) 
+
+      CALL ascii_open(out_unit,"ipec_dw_ratio_eigen_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPEC_dw_ratio_eigen: "//
+     $     "Eigenvalue profiles by self-consistent solutions."
+      WRITE(out_unit,*)     
+
+      WRITE(out_unit,'(3(1x,a16))')"psi","MAX(teigen)","MIN(teigen)"
+      lwork=2*mpert+1
+      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+         temp2=(gresp(istep,:,:)+CONJG(TRANSPOSE(gresp(istep,:,:))))/2.0
+         CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
+         CALL zgeev('V','V',mpert,temp2,mpert,reigen,
+     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+         WRITE(out_unit,'(3(1x,es16.8))')
+     $        psifac(istep),MAXVAL(ABS(reigen)),MINVAL(ABS(reigen))
+         IF (ABS(psifac(istep)-0.5)<1e-3) THEN
+            tvec1=vr(:,1)
+         ENDIF
+      ENDDO
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     diagnose for eigenvector.
+c-----------------------------------------------------------------------
+      IF (diagnose2) THEN
+         CALL cspline_alloc(optorq,mstep,1)
+         optorq%xs=psifac
+         DO istep=1,mstep
+            temp2=gresp(istep,:,:)
+            temp1=(temp2+CONJG(TRANSPOSE(temp2)))/2.0
+            tvec2=MATMUL(temp1,tvec1)
+            tprof(istep)=DOT_PRODUCT(tvec1,tvec2)
+            optorq%fs(istep,1)=tprof(istep)
+         ENDDO
+         optorq%fs(0,1)=tprof(1)-(tprof(2)-tprof(1))/
+     $        (psifac(2)-psifac(1))*(psifac(1)-psifac(0))
+         CALL cspline_fit(optorq,"extrap")
+         CALL ascii_open(out_unit,"ipec_dw_optimized_torque_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_dw_diag: "//
+     $        "Energy and torque profiles by self-consistent solutions."
+         WRITE(out_unit,*)     
+         
+         WRITE(out_unit,'(6(1x,a16))')"psi","T_phi","2ndeltaW",
+     $        "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
+         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+            CALL cspline_eval(optorq,psifac(istep),1)
+            CALL spline_eval(sq,psifac(istep),0)
+            WRITE(out_unit,'(6(1x,es16.8))')
+     $           psifac(istep),REAL(optorq%f1(1)),AIMAG(optorq%f1(1)),
+     $           REAL(optorq%f(1)),AIMAG(optorq%f(1)),sq%f(3)
+         ENDDO
+         CALL ascii_close(out_unit)
+         CALL cspline_dealloc(optorq)
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipout_dw_matrix
+c-----------------------------------------------------------------------
 c     subprogram 6. ipout_pmodb.
 c     compute perturbed mod b.
 c-----------------------------------------------------------------------
@@ -1624,7 +1900,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: chelagb_mn
 
       TYPE(cspline_type) :: cspl,chespl 
-
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------

@@ -825,7 +825,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE idcon_vacuum
 c-----------------------------------------------------------------------
 c     subprogram 7. idcon_action_matrix.
-c     Equilibrium matrices nexessary to calc perturbed mod b for gpec.
+c     Equilibrium matrices necessary to calc perturbed mod b for gpec.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_action_matrix()!(egnum,xspmn)
 c-----------------------------------------------------------------------

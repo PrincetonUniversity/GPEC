@@ -98,7 +98,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: nl,zi,mi
       REAL(r8) :: wdfac,divxfac,
-     $     kinfac1=1.0,kinfac2=1.0,ktc=0.15,ktw=50
+     $     kinfac1=1.0,kinfac2=1.0,ktc=0.1,ktw=50
       LOGICAL :: kin_flag = .FALSE.
       LOGICAL :: con_flag = .FALSE.
       LOGICAL :: ktanh_flag = .FALSE.

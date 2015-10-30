@@ -350,6 +350,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (kin_flag .AND. dw_flag) THEN
          CALL ipout_dw(mode,xspmn)
+         CALL ipout_dw_matrix
       ENDIF
       IF (pmodb_flag) THEN
          CALL ipout_pmodb(mode,xspmn,power_rout,

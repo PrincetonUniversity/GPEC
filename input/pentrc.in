@@ -33,11 +33,11 @@
     psilim = 0 1                        ! range in psi_n
 /                                       
 &PENT_OUTPUT                            
-    fgar_flag = .false.                  ! full general aspect ratio calculation
+    fgar_flag = .false.                 ! full general aspect ratio calculation
     tgar_flag = .true.                  ! trapped general aspect ratio calculation
     pgar_flag = .false.                 ! passing general aspect ratio calculation
     clar_flag = .false.                 ! circular large aspect ratio calculation
-    rlar_flag = .false.                  ! reduced large aspect ratio calculation
+    rlar_flag = .false.                 ! reduced large aspect ratio calculation
     fcgl_flag = .false.                 ! fluid Chew-Goldberger-Low limit
     wxyz_flag = .false.                 ! euler-lagrange equation matrix output at psiout
     fkmm_flag = .false.                 ! full euler-lagrange matrix calculation (t,p also available)

@@ -924,7 +924,7 @@ module torque
         complex(r8) :: tintgrl_eqpsi        
         ! declare arguments
         integer, intent(in) :: n,nl,zi,mi
-        logical, intent(in) :: electron,write_flux!,write_theta,write_espace
+        logical, intent(in) :: electron,write_flux!write_theta,write_espace
         real(r8), intent(in) :: wdfac,divxfac
         real(r8), intent(inout) :: psilim(2)
         character(*) :: method

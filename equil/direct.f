@@ -370,7 +370,7 @@ c-----------------------------------------------------------------------
       INTEGER :: iopt,istate,itask,itol,jac,mf
       INTEGER, DIMENSION(liw) :: iwork
       INTEGER, PARAMETER :: nstep=2048
-      REAL(r8), PARAMETER :: tol0=1e-6,eps=1e-12
+      REAL(r8), PARAMETER :: tol0=1e-8,eps=1e-14
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork

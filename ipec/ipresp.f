@@ -344,7 +344,7 @@ c-----------------------------------------------------------------------
          CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
          diff_indmats(j,:,:)=CONJG(TRANSPOSE(plas_indmats(j,:,:)))
      $        -surf_indmats
-        reluctmats(j,:,:)=MATMUL(temp1,
+         reluctmats(j,:,:)=MATMUL(temp1,
      $        MATMUL(diff_indmats(j,:,:),temp1))
          temp1=reluctmats(j,:,:)
 
