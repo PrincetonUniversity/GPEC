@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode
       INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8) :: majr,minr,rdist,smallwidth,factor,fp,normpsi
-      CHARACTER(4) :: filter_types
+      CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
@@ -432,7 +432,7 @@ c-----------------------------------------------------------------------
          CALL ipout_response(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
-      DO i=1,LEN(filter_types)
+      DO i=1,LEN_TRIM(filter_types)
          IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
       ENDDO
       IF (singcoup_flag) THEN
