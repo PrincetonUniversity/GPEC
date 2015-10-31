@@ -7,7 +7,7 @@
 #   Must load compiler and basic libraries (These modify LD_LIBRARY_PATH).
 #   Choose one of the following
 #	$ module load lff95 lapack-blas netcdf
-#	$ module load gcc4; module load lapack-blas netcdf
+#	$ module load gcc4 lapack-blas netcdf
 #	$ module load intel acml netcdf
 #	Defaults will try to use gcc4
 #
