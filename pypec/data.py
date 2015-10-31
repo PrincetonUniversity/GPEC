@@ -239,6 +239,8 @@ for c in '^|<>/':
 ######################################################## Global Variables
 
 default_quiet = False
+cmap_div = plt.pyplot.get_cmap('RdBu_r')
+cmap_seq = plt.pyplot.get_cmap('viridis') #_load_default_cmap()
 
 ######################################################## Change default keywords
 
@@ -248,8 +250,64 @@ def interp1d_unbound(x, y, kind='linear', axis=-1, copy=True, bounds_error=False
                      fill_value=fill_value, assume_sorted=assume_sorted)
 interp1d_unbound.__doc__ = interp1d.__doc__
 
+######################################################## Helper functions
+
+def _set_color_defaults(calc_data,center=None,**kwargs):
+    """
+    Stolen from xray.plot. Sets vmin, vmax, cmap.
+    """
+    vmin = kwargs.get('vmin',None)
+    vmax = kwargs.get('vmax',None)
+    cmap = kwargs.get('cmap',None)
+    
+    if vmin is None:
+        vmin = np.percentile(calc_data, 2)
+    if vmax is None:
+        vmax = np.percentile(calc_data, 98)
+    # Simple heuristics for whether these data should  have a divergent map
+    divergent = ((vmin < 0) and (vmax > 0))
+    # Now set center to 0 so math below makes sense
+    if center is None:
+        center = 0
+    # A divergent map should be symmetric around the center value
+    if divergent:
+        vlim = max(abs(vmin - center), abs(vmax - center))
+        vmin, vmax = -vlim, vlim
+    # Now add in the centering value and set the limits
+    vmin += center
+    vmax += center
+    # Choose default colormaps if not provided
+    if cmap is None:
+        if divergent:
+            cmap = "RdBu_r"
+        else:
+            cmap = "viridis"
+            
+    kwargs['vmin'] = vmin
+    kwargs['vmax'] = vmax
+    kwargs['cmap'] = cmap
+    
+    return kwargs
 
 ######################################################## IO FOR DATA OBJECTs
+
+def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
+    """
+    Wrapper for xray.open_dataset that allows automated reduction of
+    a dimension destinguishing real and imaginary components.
+    
+    New Parameter
+    -------------
+    complex_dim : str, Dimension designating real/imaginary (0,1)
+    
+    """
+    ds = xray.open_dataset(filename_or_obj,**kwargs)
+    if complex_dim in ds.dims:
+        for k,v in ds.data_vars.iteritems():
+            if complex_dim in v.dims:
+                ds[k] = v.loc[{complex_dim:0}]+1j*v.loc[{complex_dim:1}]
+    return ds
+open_dataset.__doc__+= xray.open_dataset.__doc__
 
 def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,quiet=default_quiet):
     """
@@ -981,8 +1039,8 @@ class DataBase(object):
         f.show()
         return f
                               
-    def plot2d(self,ynames=None,aspect='auto',plot_type='imshow',cmap='Oranges',cbar=True,
-               grid_size=(256,256),swap=False,**kwargs):
+    def plot2d(self,ynames=None,aspect='auto',plot_type='imshow',cbar=True,
+               center=None,grid_size=(256,256),swap=False,**kwargs):
         """
         Matplotlib 2D plots of the data.
         
@@ -1003,10 +1061,8 @@ class DataBase(object):
             - "tripcontour"  Use matplotlib tripcontour to plot raw points.
             - "tripcontourf" Use matplotlib tripcontourf to plot raw points.
 
-          cmap   : str.
-            Valid matplotlib colormap. Default is sequential. For diverging data, 'bwr' is recomended.
           cbar   : bool. 
-            Show colorbar. 
+            Show colorbar.
           grid_size : tuple. 
             Size of grid used if no regular axes x (in order of xnames).
           swap   : bool. 
@@ -1018,7 +1074,6 @@ class DataBase(object):
           figure. 
         
         """
-        kwargs['cmap'] = cmap
         if not ynames: ynames=np.sort(self.y.keys()).tolist()
         if not type(ynames) in (list,tuple): ynames=[ynames]
         if self.nd != 2: raise IndexError("Data not 2D.")
@@ -1084,11 +1139,14 @@ class DataBase(object):
             if swap:
                 x1,x2,y = x2.T,x1.T,y.T
             
+            kwargs = _set_color_defaults(y,center=center,**kwargs)
+            
             # plot type specifics
             if plotter==a.imshow:
                 kwargs.setdefault('origin','lower')
                 kwargs['aspect']=aspect
                 kwargs.setdefault('extent',[x1.min(),x1.max(),x2.min(),x2.max()])
+                kwargs.setdefault('interpolation','gaussian')
                 args = [y.T]
             else:
                 args = [x1,x2,y]
@@ -1107,7 +1165,7 @@ class DataBase(object):
         return f
 
     def plot3d(self,ynames=None,filter={'psi':1},cbar=False,size=(600,600),
-               plot_type='',**kwargs):
+               plot_type='',center=None,**kwargs):
         """
         Three dimensional plots. Data with xnames r,z will be plotted
         with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).
@@ -1130,6 +1188,8 @@ class DataBase(object):
           plot_type : str. 
             Valid mayavi.mlab function name. 
             Overrides default function choices (plot3d,mesh,quiver3d).
+          center : float.
+            Center colormap on this value.
 
         *Returns:*
           figure.
@@ -1202,7 +1262,15 @@ class DataBase(object):
             else:
                 XYZ = X+np.real(S).tolist()
             #print(np.array(XYZ).shape)
-            plotfunc(*XYZ,name=name,**kwargs)
+            kwargs = _set_color_defaults(S,center=center,**kwargs)
+            mapper = {'viridis':'YlGnBu'}
+            cmap = kwargs.pop('cmap','')
+            cmap = mapper.get(cmap,cmap)
+            reverse = cmap.endswith('_r')
+            kwargs['colormap'] = cmap.rstrip('_r')
+            print(kwargs)
+            plotobj = plotfunc(*XYZ,name=name,**kwargs)
+            if reverse: plotobj.module_manager.scalar_lut_manager.reverse_lut = True
             if cbar: mmlab.colorbar(title=name,orientation='vertical')
             f = mmlab.gcf()
         return f #X,S
