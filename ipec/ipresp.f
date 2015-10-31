@@ -295,7 +295,8 @@ c-----------------------------------------------------------------------
 c     calculate permeability matrix.
 c-----------------------------------------------------------------------
       ALLOCATE(permeabev(0:4,mpert),permeabmats(0:4,mpert,mpert),
-     $     permeabevmats(0:4,mpert,mpert),permeabindex(0:4,mpert))
+     $     permeabevmats(0:4,mpert,mpert),permeabindex(0:4,mpert),
+     $     permeabinvmats(0:4,mpert,mpert))
       DO j=0,4
          work=0
          work2=0
@@ -306,11 +307,24 @@ c-----------------------------------------------------------------------
          CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
          temp1=TRANSPOSE(temp2)
          permeabmats(j,:,:)=temp1
+         ! calculate inverse.
+         work = 0
+         rwork = 0
+         work2=0
+         temp1=0
+         DO i=1,mpert
+            temp1(i,i)=1
+         ENDDO
+         temp2 = permeabmats(j,:,:)
+         CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
+         CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+         permeabinvmats(j,:,:) = temp1
 c-----------------------------------------------------------------------
 c     calculate permeability eigenvalues and vectors, then sort them.
 c      - sorting taken from http://stackoverflow.com/questions/8834585/sorting-eigensystem-obtained-from-zgeev
 c      - which is from the end of zsteqr.f
 c-----------------------------------------------------------------------
+         temp1 = permeabmats(j,:,:)
          lwork=2*mpert+1
          CALL zgeev('V','V',mpert,temp1,mpert,permeabev(j,:),
      $        vl,mpert,vr,mpert,work,lwork,rwork,info)
