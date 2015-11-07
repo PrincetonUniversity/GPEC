@@ -651,6 +651,9 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
         normcur = (cur+curlim)/(2*curlim) #*256
         rgb = to_rgb(colormap(normcur))
         return rgb
+    if 'color' in kwargs:
+        def current_rgb(cur):
+            return kwargs['color']
     
     # get x,y,z and plot each coil
     coils = {}
@@ -683,7 +686,7 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
             coils[name]['nw']    = nw
             #print(cur)
             #print([current_rgb(cur[j]) for j in range(ncoil)])
-            # Plot in 3D
+            # Plot
             for j in range(ncoil):
                 if curlim: kwargs['color']=current_rgb(cur[j])
                 if dim==3:

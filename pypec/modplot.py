@@ -98,9 +98,9 @@ def png_to_gif(files,gif_file,delay=20,clean=False):
 	"""gif_file should end in .gif"""
 	gif_file = gif_file.rstrip('.gif')
 	os.system('convert -delay {} -loop 0 {} {}'.format(delay, ' '.join(files), gif_file+'.gif'))
-	os.system('zip {} {}'.format(gif_file+'.zip', ' '.join(files)))
+	os.system('zip -j {zipfile} {files}'.format(zipfile=gif_file+'.zip', files=' '.join(files)))
 	if clean:
-		os.system('rm {}'.format(' '.join(files)))
+		os.system('rm {files}'.format(files=' '.join(files)))
 		
 	return
 
