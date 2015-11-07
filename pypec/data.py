@@ -307,7 +307,21 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
     complex_dim : str, Dimension designating real/imaginary (0,1)
     
     """
-    ds = xray.open_dataset(filename_or_obj,**kwargs)
+    
+    try:
+        ds = xray.open_dataset(filename_or_obj,**kwargs)
+    except:
+        dat = read(filename_or_obj,**kwargs)
+        ds = xray.Dataset()
+        for i,d in enumerate(dat):
+            if i==0:
+                for k,v in d.params.iteritems():
+                    ds.attrs[k]=v
+            if not d.x:
+                raise ValueError("No regular grid for dataset")
+            for yk,yv in d.y.iteritems():
+                ds[yk] = xray.DataArray(yv,coords=d.x,dims=d.xnames,attrs=d.params)
+    
     if complex_dim in ds.dims:
         for k,v in ds.data_vars.iteritems():
             if complex_dim in v.dims:
@@ -1618,6 +1632,63 @@ def getshot(path='.',full_name=False):
                 break
     return shot
 
+def add_control_geometry(ds,overwrite=False):
+    """
+    Add geometric dimensions to dataset from ipec_control_output_n#.nc.
+    
+    **Arguments:**
+        ds : Dataset. xray Dataset opened from ipec_control_output_n#.nc
+        
+    **Key Word Arguments:**
+        overwrite : bool. Overwrite geometric quantities if they already exist.
+    
+    **Examples:**
+    
+    After opening, and adding geometry,
+    
+    >>>ds = open_dataset('ipec_control_output_n1.nc')
+    >>>ds = add_control_geometry(ds)
+    
+    it is easy to make 3D surface plots using mayavi,
+    >>>mesh = plt.mmlab.mesh(dsl['X'].values,dsl['Y'].values,dsl['Z'].values,
+                              scalars=np.real(ds[key]*ds['expn'])
+                            
+    Make 2D perturbed last-closed-flux-surface plots quickly using,
+    >>>fac = 3e-2 # good for DIII-D unit eigenmodes
+    >>>f,ax = plt.subplots()
+    >>>for i in range(4):
+    >>>    v = ds['W_EDX_FUN'][0,i]*fac
+    >>>    l,= plot(ds['R']+v*ds['R_n'],ds['z']+v*ds['z_n'])
+    >>>sm = plt.set_linearray(ax.lines[-4:],range(1,5))
+    >>>cb = f.colorbar()
+    >>>cb.set_label('Mode Index')
+    >>>ax.set_xlabel('R (m)')
+    >>>ax.set_ylabel('z (m)')
+    
+    """
+    # Toroidal angle
+    if 'phi' not in ds or overwrite:
+        phi = np.linspace(0,2*np.pi,180)
+        phi = data.xray.DataArray(phi,coords={'phi':phi})
+        ds['phi'] = phi
+        ds['expn'] = np.exp(-1j*ds.attrs['n']*ds['phi'])
+
+    # 3D cartesian coords for 3D plots
+    if 'X' not in ds or overwrite:
+        xy = (ds['R']*np.exp(1j*ds['phi'])).to_dataset()
+        ds['X'] = xy.apply(np.real)[None]
+        ds['Y'] = xy.apply(np.imag)[None]
+        ds['Z'] = ds['z']*(1+0*ds['phi'])
+    
+    # Normal vectors
+    if 'z_n' not in ds or 'R_n' not in ds or overwrite:
+        dr = np.roll(ds['R'],1)-np.roll(ds['R'],-1)
+        dz = np.roll(ds['z'],1)-np.roll(ds['z'],-1)
+        norm = np.sqrt(dr**2+dz**2)
+        ds['z_n'] = data.xray.DataArray(dr/norm,coords=ds['theta'].to_dataset())
+        ds['R_n'] =-data.xray.DataArray(dz/norm,coords=ds['theta'].to_dataset())
+    
+    return ds
 
 ######################################################## Developer functions
 
