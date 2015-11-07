@@ -1669,7 +1669,7 @@ def add_control_geometry(ds,overwrite=False):
     # Toroidal angle
     if 'phi' not in ds or overwrite:
         phi = np.linspace(0,2*np.pi,180)
-        phi = data.xray.DataArray(phi,coords={'phi':phi})
+        phi = xray.DataArray(phi,coords={'phi':phi})
         ds['phi'] = phi
         ds['expn'] = np.exp(-1j*ds.attrs['n']*ds['phi'])
 
@@ -1685,8 +1685,8 @@ def add_control_geometry(ds,overwrite=False):
         dr = np.roll(ds['R'],1)-np.roll(ds['R'],-1)
         dz = np.roll(ds['z'],1)-np.roll(ds['z'],-1)
         norm = np.sqrt(dr**2+dz**2)
-        ds['z_n'] = data.xray.DataArray(dr/norm,coords=ds['theta'].to_dataset())
-        ds['R_n'] =-data.xray.DataArray(dz/norm,coords=ds['theta'].to_dataset())
+        ds['z_n'] = xray.DataArray(dr/norm,coords=ds['theta'].to_dataset())
+        ds['R_n'] =-xray.DataArray(dz/norm,coords=ds['theta'].to_dataset())
     
     return ds
 
