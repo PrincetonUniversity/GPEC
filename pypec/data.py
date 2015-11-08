@@ -1650,8 +1650,8 @@ def add_control_geometry(ds,overwrite=False):
     >>>ds = add_control_geometry(ds)
     
     it is easy to make 3D surface plots using mayavi,
-    >>>mesh = plt.mmlab.mesh(dsl['X'].values,dsl['Y'].values,dsl['Z'].values,
-                              scalars=np.real(ds[key]*ds['expn'])
+    >>>mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,
+                              scalars=np.real(ds['b_n']*ds['expn'])
                             
     Make 2D perturbed last-closed-flux-surface plots quickly using,
     >>>fac = 3e-2 # good for DIII-D unit eigenmodes

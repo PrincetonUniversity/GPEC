@@ -4704,6 +4704,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"mode_SC",nf90_int,msdid,msvid))
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
       CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
+      CALL check( nf90_put_att(mncid,nf90_global,"shot",INT(shotnum)) )
+      CALL check( nf90_put_att(mncid,nf90_global,"time",INT(shottime)) )
+      CALL check( nf90_put_att(mncid,nf90_global,"machine",machine)) )
       CALL check( nf90_put_att(mncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(mncid,nf90_global,"jac_type",jac_type))
       CALL check( nf90_put_att(mncid,nf90_global,"version",version))
@@ -4719,7 +4722,11 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"psi_N",nf90_double,fpdid,fpvid) )
       CALL check( nf90_def_dim(fncid,"theta",mthsurf+1,  ftdid) )
       CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
+      CALL check( nf90_put_att(fncid,nf90_global,"shot",INT(shotnum)) )
+      CALL check( nf90_put_att(fncid,nf90_global,"time",INT(shottime)) )
+      CALL check( nf90_put_att(fncid,nf90_global,"machine",machine)) )
       CALL check( nf90_put_att(fncid,nf90_global,"n",nn) )
+      CALL check( nf90_put_att(fncid,nf90_global,"jac_type",jac_type))
       CALL check( nf90_put_att(fncid,nf90_global,"version",version))
 
       IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
@@ -4735,6 +4742,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(cncid,czvid,"units","m") )
       CALL check( nf90_def_var(cncid,"l",nf90_double,
      $                         (/crdid,czdid/),clvid) )
+      CALL check( nf90_put_att(cncid,nf90_global,"shot",INT(shotnum)) )
+      CALL check( nf90_put_att(cncid,nf90_global,"time",INT(shottime)) )
+      CALL check( nf90_put_att(cncid,nf90_global,"machine",machine)) )
       CALL check( nf90_put_att(cncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(cncid,nf90_global,"version",version))
       
