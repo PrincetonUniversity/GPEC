@@ -904,7 +904,7 @@ module torque
 
 
     !=======================================================================
-    function tintgrl_eqpsi(psilim,n,nl,zi,mi,wdfac,divxfac,electron,method,&
+    function tintgrl_grid(gtype,psilim,n,nl,zi,mi,wdfac,divxfac,electron,method,&
         write_flux)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
@@ -912,6 +912,10 @@ module torque
     !   on the equilibrium grid taken from the DCON sq spline.
     !
     !*ARGUMENTS:
+    !   gtype : string.
+    !       Choose from
+    !           - 'equil' for equilibrium spline grid from DCON
+    !           - 'input' for input clebsch displacements grid (DCON Euler-Lagrange LSODE)
     !   psilim : real.
     !       (min,max) tuple specifying integration bounds.
     !   n : integer.
@@ -942,19 +946,19 @@ module torque
     !-----------------------------------------------------------------------
         implicit none
         ! declare function
-        complex(r8) :: tintgrl_eqpsi        
+        complex(r8) :: tintgrl_grid        
         ! declare arguments
         integer, intent(in) :: n,nl,zi,mi
         logical, intent(in) :: electron,write_flux!,write_theta,write_espace
         real(r8), intent(in) :: wdfac,divxfac
         real(r8), intent(inout) :: psilim(2)
-        character(*) :: method
+        character(*) :: method,gtype
         ! declare variables
         logical :: fexists
-        integer :: i,j,l,unit1,unit2,s
+        integer :: i,j,l,unit1,unit2,s,mx
         real(r8) :: x,xlast,chrg,drive
-        real(r8), dimension(sq%mx+1) :: tmppsi
-        complex(r8), dimension(sq%mx+1,mpert**2) :: tmpak,tmpbk,tmpck, &
+        real(r8), dimension(:), allocatable :: xs,tmppsi
+        complex(r8), dimension(:,:), allocatable :: tmpak,tmpbk,tmpck, &
             tmpdk,tmpek,tmphk
         complex(r8), dimension(:), allocatable :: gam,chi
         character(64) ::file1,file2
@@ -990,11 +994,11 @@ module torque
         ! open and prepare files as needed
         write(nstring,'(I8)') n
         if(electron)then
-            file1 = "pentrc_"//trim(method)//"_e_eqpsi_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_e_eqpsi_ell_n"//trim(adjustl(nstring))//".out"
+            file1 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
+            file2 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
         else
-            file1 = "pentrc_"//trim(method)//"_eqpsi_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_eqpsi_ell_n"//trim(adjustl(nstring))//".out"
+            file1 = "pentrc_"//trim(method)//"_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
+            file2 = "pentrc_"//trim(method)//"_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
         endif
         if(qt)then
             file1 = file1(:7)//"heat_"//file1(8:)
@@ -1048,16 +1052,28 @@ module torque
                 "real(Gamma)","imag(Gamma)","real(chi)","imag(chi)",&
                 "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
 
+        ! set grid based on requested type
+        if (gtype=='equil')then
+            mx = sq%mx
+            allocate(xs(0:mx))
+            xs = sq%xs
+        elseif (gtype=='input')then
+            mx = xs_m(1)%mx
+            allocate(xs(0:mx),tmppsi(0:mx),tmpak(mx+1,mpert**2),tmpbk(mx+1,mpert**2), &
+                tmpck(mx+1,mpert**2),tmpdk(mx+1,mpert**2),tmpek(mx+1,mpert**2),tmphk(mx+1,mpert**2))
+            xs = xs_m(1)%xs
+        endif
+        
         ! integration
-        CALL cspline_alloc(tphi_spl,sq%mx,2*nl+1)
+        CALL cspline_alloc(tphi_spl,mx,2*nl+1)
         xlast = 0
-        do i=0,sq%mx
-            x = sq%xs(i)
+        do i=0,mx
+            x = xs(i)
             CALL tintgrnd(neqarray,x,y,dky)
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
 
-            if(mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0) .and. verbose)then
+            if(mod(x,.1)<mod(xlast,.1) .or. xlast==xs(0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'                
             endif
@@ -1077,10 +1093,10 @@ module torque
         enddo
         CALL cspline_fit(tphi_spl,"extrap")
         CALL cspline_int(tphi_spl)
-
+        
         ! write profiles
-        do i=0,sq%mx
-            x = sq%xs(i)
+        do i=0,mx
+            x = xs(i)
             call spline_eval(sq,x,0)
             call spline_eval(kin,x,1)
             call spline_eval(geom,x,1)
@@ -1109,24 +1125,24 @@ module torque
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
-            call cspline_alloc(akmm,sq%mx,mpert**2)
-            call cspline_alloc(bkmm,sq%mx,mpert**2)
-            call cspline_alloc(ckmm,sq%mx,mpert**2)
-            call cspline_alloc(dkmm,sq%mx,mpert**2)
-            call cspline_alloc(ekmm,sq%mx,mpert**2)
-            call cspline_alloc(hkmm,sq%mx,mpert**2)
-            akmm%xs(:) = tmppsi(1:sq%mx+1)
-            bkmm%xs(:) = tmppsi(1:sq%mx+1)
-            ckmm%xs(:) = tmppsi(1:sq%mx+1)
-            dkmm%xs(:) = tmppsi(1:sq%mx+1)
-            ekmm%xs(:) = tmppsi(1:sq%mx+1)
-            hkmm%xs(:) = tmppsi(1:sq%mx+1)
-            akmm%fs(:,:) = tmpak(1:sq%mx+1,:)
-            bkmm%fs(:,:) = tmpbk(1:sq%mx+1,:)
-            ckmm%fs(:,:) = tmpck(1:sq%mx+1,:)
-            dkmm%fs(:,:) = tmpdk(1:sq%mx+1,:)
-            ekmm%fs(:,:) = tmpek(1:sq%mx+1,:)
-            hkmm%fs(:,:) = tmphk(1:sq%mx+1,:)
+            call cspline_alloc(akmm,mx,mpert**2)
+            call cspline_alloc(bkmm,mx,mpert**2)
+            call cspline_alloc(ckmm,mx,mpert**2)
+            call cspline_alloc(dkmm,mx,mpert**2)
+            call cspline_alloc(ekmm,mx,mpert**2)
+            call cspline_alloc(hkmm,mx,mpert**2)
+            akmm%xs(:) = tmppsi(1:mx+1)
+            bkmm%xs(:) = tmppsi(1:mx+1)
+            ckmm%xs(:) = tmppsi(1:mx+1)
+            dkmm%xs(:) = tmppsi(1:mx+1)
+            ekmm%xs(:) = tmppsi(1:mx+1)
+            hkmm%xs(:) = tmppsi(1:mx+1)
+            akmm%fs(:,:) = tmpak(1:mx+1,:)
+            bkmm%fs(:,:) = tmpbk(1:mx+1,:)
+            ckmm%fs(:,:) = tmpck(1:mx+1,:)
+            dkmm%fs(:,:) = tmpdk(1:mx+1,:)
+            ekmm%fs(:,:) = tmpek(1:mx+1,:)
+            hkmm%fs(:,:) = tmphk(1:mx+1,:)
             call cspline_fit(akmm,"extrap")
             call cspline_fit(bkmm,"extrap")
             call cspline_fit(ckmm,"extrap")
@@ -1137,12 +1153,12 @@ module torque
         endif
         
         ! convert to complex space if integrations successful
-        tintgrl_eqpsi = sum(tphi_spl%fsi(sq%mx,:),dim=1)
+        tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
         deallocate(y,dky,gam,chi)
         
         return
-    end function tintgrl_eqpsi
+    end function tintgrl_grid
 
 
 
