@@ -320,7 +320,7 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
             if not d.x:
                 raise ValueError("No regular grid for dataset")
             for yk,yv in d.y.iteritems():
-                ds[yk] = xray.DataArray(yv,coords=d.x,dims=d.xnames,attrs=d.params)
+                ds[yk] = xray.DataArray(yv.reshape(d.shape),coords=d.x,dims=d.xnames,attrs=d.params)
     
     if complex_dim in ds.dims:
         for k,v in ds.data_vars.iteritems():

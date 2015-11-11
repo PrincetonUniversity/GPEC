@@ -170,7 +170,7 @@ def subplots(nrows=1, ncols=1, sharex=False, sharey=False, squeeze=True, autosiz
 		   a.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(nbins=nybins))
 	if nxbins is not None:
 		for a in ax.flat:
-		   a.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(nbins=nybins))
+		   a.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(nbins=nxbins))
 	f = _modfigure(f)
 	
 	return f,ax
