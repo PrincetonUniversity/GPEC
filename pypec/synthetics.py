@@ -719,10 +719,17 @@ class _magnetics(object):
             'MPID66M' :{'rz':(2.413,  0.000),'length':1.40e-01,'angle':-np.pi/2},
             'MPID1A'  :{'rz':(0.977,  0.070),'length':1.40e-01,'angle': np.pi/2},  #note wall at r=0.95748
             'MPID1B'  :{'rz':(0.977, -0.070),'length':1.40e-01,'angle': np.pi/2},   #note wall at r=0.95748
-            'MPID67A' :{'rz':(2.268,  0.759),'length':1.55e0-1,'angle':-1.17766},
-            'MPID67B' :{'rz':(2.261, -0.753),'length':1.55e0-1,'angle':-1.96524},
-            'MPID79A' :{'rz':(1.762,  1.312),'length':1.53e0-1,'angle':-0.68548},
-            'MPID79B' :{'rz':(2.043, -1.110),'length':1.53e0-1,'angle':-2.25758},
+            'MPID67A' :{'rz':(2.268,  0.759),'length':1.55e-01,'angle':-1.17766},
+            'MPID67B' :{'rz':(2.261, -0.753),'length':1.55e-01,'angle':-1.96524},
+            'MPID79A' :{'rz':(1.762,  1.312),'length':1.53e-01,'angle':-0.68548},
+            'MPID79B' :{'rz':(2.043, -1.110),'length':1.53e-01,'angle':-2.25758},
+            'ISLD66M' :{'rz':(2.431,  0.000),'length':8.00e-01,'angle':-np.pi/2},
+            'ISLD1A'  :{'rz':(0.960,  0.070),'length':1.33e-01,'angle': np.pi/2},
+            'ISLD1B'  :{'rz':(0.960, -0.070),'length':1.33e-01,'angle': np.pi/2},
+            'ISLD67A' :{'rz':(2.300,  0.714),'length':6.80e-01,'angle':-1.17635},
+            'ISLD67B' :{'rz':(2.300, -0.714),'length':6.80e-01,'angle':-1.96524},
+            'ISLD79A' :{'rz':(1.773,  1.326),'length':2.13e-01,'angle':-0.68068},
+            'ISLD79B' :{'rz':(2.057, -1.122),'length':2.13e-01,'angle':-2.27068},
         }
         
         # extend points along length
