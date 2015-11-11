@@ -2352,36 +2352,36 @@ c-----------------------------------------------------------------------
      $               "Vertical Position") )
          CALL check( nf90_put_att(fncid,z_id,"units","m") )
       ENDIF
-      CALL check( nf90_def_var(fncid, "b_perp", nf90_double,
+      CALL check( nf90_def_var(fncid, "b_n", nf90_double,
      $            (/p_id,t_id,i_id/),b_id) )
       CALL check( nf90_put_att(fncid,b_id,"long_name",
      $            "Perturbed Field Normal to the Flux Surface") )
       CALL check( nf90_put_att(fncid,b_id,"units","Tesla") )
-      CALL check( nf90_def_var(fncid, "b_m-perp", nf90_double,
+      CALL check( nf90_def_var(fncid, "b_nm", nf90_double,
      $            (/p_id,m_id,i_id/),bm_id) )
       CALL check( nf90_put_att(fncid,bm_id,"long_name",
      $            "Perturbed Field Normal to the Flux Surface") )
       CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
       CALL check( nf90_put_att(fncid,bm_id,"Jacobian",jac_out) )
-      CALL check( nf90_def_var(fncid, "xi_perp", nf90_double,
+      CALL check( nf90_def_var(fncid, "xi_n", nf90_double,
      $            (/p_id,t_id,i_id/),x_id) )
       CALL check( nf90_put_att(fncid,x_id,"long_name",
      $            "Displacement Normal to the Flux Surface") )
       CALL check( nf90_put_att(fncid,x_id,"units","m") )
-      CALL check( nf90_def_var(fncid, "xi_m-perp", nf90_double,
+      CALL check( nf90_def_var(fncid, "xi_nm", nf90_double,
      $            (/p_id,m_id,i_id/),xm_id) )
       CALL check( nf90_put_att(fncid,xm_id,"long_name",
      $            "Displacement Normal to the Flux Surface") )
       CALL check( nf90_put_att(fncid,xm_id,"units","m") )
       CALL check( nf90_put_att(fncid,bm_id,"Jacobian",jac_out) )
-      CALL check( nf90_def_var(fncid, "R_perp", nf90_double,
+      CALL check( nf90_def_var(fncid, "R_n", nf90_double,
      $            (/p_id,t_id/),rv_id) )
       CALL check( nf90_put_att(fncid,rv_id,"long_name",
-     $            "Radial unit normal: R_3D = R_sym+x_n*R_perp") )
-      CALL check( nf90_def_var(fncid, "z_perp", nf90_double,
+     $            "Radial unit normal: R_3D = R_sym+x_n*R_n") )
+      CALL check( nf90_def_var(fncid, "z_n", nf90_double,
      $            (/p_id,t_id/),zv_id) )
       CALL check( nf90_put_att(fncid,zv_id,"long_name",
-     $            "Vertical unit normal: z_3D = z_sym+x_n*z_perp") )
+     $            "Vertical unit normal: z_3D = z_sym+x_n*z_n") )
       CALL check( nf90_enddef(fncid) )
       IF(debug_flag) PRINT *,"  Writting variables"
       IF(rzstat/=nf90_noerr)THEN
@@ -4706,7 +4706,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
       CALL check( nf90_put_att(mncid,nf90_global,"shot",INT(shotnum)) )
       CALL check( nf90_put_att(mncid,nf90_global,"time",INT(shottime)) )
-      CALL check( nf90_put_att(mncid,nf90_global,"machine",machine)) )
+      CALL check( nf90_put_att(mncid,nf90_global,"machine",machine) )
       CALL check( nf90_put_att(mncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(mncid,nf90_global,"jac_type",jac_type))
       CALL check( nf90_put_att(mncid,nf90_global,"version",version))
@@ -4724,7 +4724,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
       CALL check( nf90_put_att(fncid,nf90_global,"shot",INT(shotnum)) )
       CALL check( nf90_put_att(fncid,nf90_global,"time",INT(shottime)) )
-      CALL check( nf90_put_att(fncid,nf90_global,"machine",machine)) )
+      CALL check( nf90_put_att(fncid,nf90_global,"machine",machine) )
       CALL check( nf90_put_att(fncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(fncid,nf90_global,"jac_type",jac_type))
       CALL check( nf90_put_att(fncid,nf90_global,"version",version))
@@ -4744,7 +4744,7 @@ c-----------------------------------------------------------------------
      $                         (/crdid,czdid/),clvid) )
       CALL check( nf90_put_att(cncid,nf90_global,"shot",INT(shotnum)) )
       CALL check( nf90_put_att(cncid,nf90_global,"time",INT(shottime)) )
-      CALL check( nf90_put_att(cncid,nf90_global,"machine",machine)) )
+      CALL check( nf90_put_att(cncid,nf90_global,"machine",machine) )
       CALL check( nf90_put_att(cncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(cncid,nf90_global,"version",version))
       
