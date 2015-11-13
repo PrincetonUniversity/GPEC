@@ -78,7 +78,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: chpmats,kapmats,
      $     plas_indmats,plas_indinvmats,permeabmats,diff_indmats,
      $     plas_indevmats,plas_indinvevmats,indrelmats,indrelevmats,
-     $     reluctmats,reluctevmats,permeabevmats,permeabsvmats
+     $     reluctmats,reluctevmats,permeabevmats,permeabsvmats,
+     $     permeabinvmats
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi

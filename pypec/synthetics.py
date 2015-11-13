@@ -21,7 +21,7 @@ Casting table 1 into Data object.
 # standard module imports
 import os
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d,interpn
 from string import join                 # string manipulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable    #for splitting axes
 
@@ -207,7 +207,12 @@ class RZCrossSection(LinearBase):
         # closer was causing plot issues... resort by theta
         t,r,z = self.pts['theta'],self.pts['r'],self.pts['z']
         t,r,z = np.array( zip( *sorted(zip(t,r,z)) ) ) #sorts by theta
+        if close:
+            t = np.hstack((t,t[0]+2*np.pi))
+            r = np.hstack((r,r[0]))
+            z = np.hstack((z,z[0]))
         self.pts['theta'],self.pts['r'],self.pts['z'] = t,r,z
+        self.pts['theta (deg)'] = self.pts['theta']*180/np.pi# -90
 
         # check extrapolations
         #f,ax = plt.subplots()
@@ -592,7 +597,7 @@ for k,v in _d3d_nodes.iteritems():
 
 
 
-def coils(coil,dim=3,cmap='coolwarm',curlim=None,exclude=[],**kwargs):
+def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
     """
     Plot each coil referenced in the given coil input namelist.
     Coloring of the coils will be determined from its current normalized to +/-curlim.
@@ -620,11 +625,16 @@ def coils(coil,dim=3,cmap='coolwarm',curlim=None,exclude=[],**kwargs):
     # set up
     if type(coil)==str:
         coil = data.namelist.read(coil)
-    if 'figure' not in kwargs:
+    f = kwargs.pop('figure',None)    
+    axes = kwargs.pop('axes',None)
+    if not f and not axes:
         if dim==3:
             f = data.mmlab.figure()#bgcolor=(1,1,1))
         else:
-            f,ax = data.plt.subplots()
+            f,axes = data.plt.subplots()
+    if not axes and hasattr(f,'axes'):
+        axes = np.array(f.axes).flat[0]
+            
     colormap = data.plt.pyplot.get_cmap(cmap)
     to_rgb =  data.plt.matplotlib.colors.ColorConverter().to_rgb
     r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84,'rfxmod':0.46,'mast':0.83}
@@ -641,6 +651,9 @@ def coils(coil,dim=3,cmap='coolwarm',curlim=None,exclude=[],**kwargs):
         normcur = (cur+curlim)/(2*curlim) #*256
         rgb = to_rgb(colormap(normcur))
         return rgb
+    if 'color' in kwargs:
+        def current_rgb(cur):
+            return kwargs['color']
     
     # get x,y,z and plot each coil
     coils = {}
@@ -673,17 +686,91 @@ def coils(coil,dim=3,cmap='coolwarm',curlim=None,exclude=[],**kwargs):
             coils[name]['nw']    = nw
             #print(cur)
             #print([current_rgb(cur[j]) for j in range(ncoil)])
-            # Plot in 3D
+            # Plot
             for j in range(ncoil):
+                if curlim: kwargs['color']=current_rgb(cur[j])
                 if dim==3:
-                    color = current_rgb(cur[j])
                     data.mmlab.plot3d(x[j].ravel(),y[j].ravel(),z[j].ravel(),#cur[j]*np.ones_like(z[j].ravel()),
-                                      name=name+str(j),color=color,**kwargs)
+                                      name=name+str(j),**kwargs)
                 elif dim==2:
-                    ax.plot(coils[name]['phi'][j].ravel()/dtor,coils[name]['theta'][j].ravel()/dtor,
-                            color=current_rgb(cur[j]),label=name+str(j),**kwargs)
+                    axes.plot(coils[name]['phi'][j].ravel()/dtor,coils[name]['theta'][j].ravel()/dtor,
+                            label=name+str(j),**kwargs)
                 else:
-                    ax.plot(coils[name]['r'][j].ravel(),coils[name]['z'][j].ravel(),
-                            color=current_rgb(cur[j]),label=name+str(j),**kwargs)
+                    axes.plot(coils[name]['r'][j].ravel(),coils[name]['z'][j].ravel(),
+                            label=name+str(j),**kwargs)
     
     return coils
+
+
+############################################################ Magnetic Diagnostics
+
+class _magnetics(object):
+    """
+    Class for getting synthetic magnetic diagnostics from IPEC results.
+    """
+    def __init__(self):
+        """
+        Just stores hardcoded geometries for now.
+        Could eventually pass key words like machine='DIII-D' to make seperate
+        classes for each machine.
+        """
+        self.toroidal_arrays = {
+            # DIII-D
+            'MPID66M' :{'rz':(2.413,  0.000),'length':1.40e-01,'angle':-np.pi/2},
+            'MPID1A'  :{'rz':(0.977,  0.070),'length':1.40e-01,'angle': np.pi/2},  #note wall at r=0.95748
+            'MPID1B'  :{'rz':(0.977, -0.070),'length':1.40e-01,'angle': np.pi/2},   #note wall at r=0.95748
+            'MPID67A' :{'rz':(2.268,  0.759),'length':1.55e-01,'angle':-1.17766},
+            'MPID67B' :{'rz':(2.261, -0.753),'length':1.55e-01,'angle':-1.96524},
+            'MPID79A' :{'rz':(1.762,  1.312),'length':1.53e-01,'angle':-0.68548},
+            'MPID79B' :{'rz':(2.043, -1.110),'length':1.53e-01,'angle':-2.25758},
+            'ISLD66M' :{'rz':(2.431,  0.000),'length':8.00e-01,'angle':-np.pi/2},
+            'ISLD1A'  :{'rz':(0.960,  0.070),'length':1.33e-01,'angle': np.pi/2},
+            'ISLD1B'  :{'rz':(0.960, -0.070),'length':1.33e-01,'angle': np.pi/2},
+            'ISLD67A' :{'rz':(2.300,  0.714),'length':6.80e-01,'angle':-1.17635},
+            'ISLD67B' :{'rz':(2.300, -0.714),'length':6.80e-01,'angle':-1.96524},
+            'ISLD79A' :{'rz':(1.773,  1.326),'length':2.13e-01,'angle':-0.68068},
+            'ISLD79B' :{'rz':(2.057, -1.122),'length':2.13e-01,'angle':-2.27068},
+        }
+        
+        # extend points along length
+        for k,v in self.toroidal_arrays.iteritems():
+            r,z = v['rz']
+            l,a = v['length'],v['angle']
+            rs = np.linspace(r-np.cos(a)*l/2,r+np.cos(a)*l/2,30)
+            zs = np.linspace(z-np.sin(a)*l/2,z+np.sin(a)*l/2,30)
+            v['rzs'] = np.array(zip(rs,zs))
+    
+    def get_signal(self,key,ds,op='mean'):
+        """
+        Get synthetic signal for array of magentic sensors.
+        
+        *Arguments:*
+            - key : str. Sensor array from mags.
+            - ds : Dataset. Dataset from ipec cylindrical output netcdf.
+    
+        *Key Word Arguments:*
+            - op : str. Operation applied to the points along the surface
+            spaned by the sensors (i.e. 'mean','max',etc.)
+    
+        *Returns:*
+            - complex. Sensor array signal.
+        
+        """
+        v = self.toroidal_arrays[key]
+        
+        # project over length of sensor cross section
+        bz = interpn((ds['R'].values,ds['z'].values),ds['b_z-plas'].values.T,v['rzs'])
+        br = interpn((ds['R'].values,ds['z'].values),ds['b_r-plas'].values.T,v['rzs'])
+        bprp =-1*(br*np.sin(v['angle'])-bz*np.cos(v['angle']))
+        bpar = 1*(br*np.cos(v['angle'])+bz*np.sin(v['angle']))
+        if 'SL' in key:
+            sigs = bprp
+        else:
+            sigs = bpar
+        if op=='max':
+            result = np.abs(sigs).max()
+        else:
+            result = np.mean(sigs)
+        
+        return result
+magnetics = _magnetics()

@@ -40,9 +40,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
 
 # standard python modules
-import sys
+import sys,copy,os
 import numpy as np                      # math
-import copy
 from scipy.interpolate import interp1d  # math
 from types import MethodType            # to modify instances
 
@@ -58,6 +57,14 @@ from types import MethodType            # to modify instances
 #import matplotlib.pyplot as pyplot
 #sys.modules['matplotlib.pyplot'] = save
 
+# matplotlib modifications
+try:
+	interactive = matplotlib.is_interactive()
+	import seaborn
+	seaborn.reset_orig()
+	matplotlib.interactive(interactive)
+except:
+	seaborn = None
 #override user preferences from ~/.matplotlib/matplotlibrc file.
 #really should define new functions
 matplotlib.rcParams['figure.autolayout']=True # Necessary for tight_layout
@@ -75,11 +82,74 @@ draw = pyplot.draw
 rcp_size = np.array(matplotlib.rcParams['figure.figsize'])
 pop_size = np.array([3.346,3.346]) #single column. Do *2 for double
 
+########################################### default colormaps
+
+import colormaps as cmaps
+for k in ['magma','inferno','plasma','viridis']:
+	pyplot.register_cmap(name=k, cmap=cmaps.cmaps[k])
+	pyplot.register_cmap(name=k+'_r', cmap=cmaps.cmaps[k+'_r'])
+f,ax = pyplot.subplots()
+pyplot.set_cmap(cmaps.cmaps['viridis'])
+pyplot.close(f)
+
+########################################### default colormaps
+
+def png_to_gif(files,gif_file,delay=20,clean=False):
+	"""gif_file should end in .gif"""
+	gif_file = gif_file.rstrip('.gif')
+	os.system('convert -delay {} -loop 0 {} {}'.format(delay, ' '.join(files), gif_file+'.gif'))
+	os.system('zip -j {zipfile} {files}'.format(zipfile=gif_file+'.zip', files=' '.join(files)))
+	if clean:
+		os.system('rm {files}'.format(files=' '.join(files)))
+		
+	return
+
+########################################### Custom Styles
+
+def set_style(style=None,rc={}):
+	"""
+	Seaborn set_style with additional 'thick',
+	
+	Thick (thin) style multiplies rcParams axes.linewidth, lines.linewidth,
+	xtick.major.width, xtick.minor.width, ytick.major.width, and 
+	ytick.minor.width by 2 (0.5).
+	"""
+	if style in ['thick','thin']:
+		if pyplot.rcParams['font.weight']=='normal':
+			pyplot.rcParams['font.weight'] = '400'
+		elif pyplot.rcParams['font.weight']=='bold':
+			pyplot.rcParams['font.weight'] = '700'
+		if style =='thick':
+			fac = 3/2.
+			pyplot.rcParams['font.weight'] = str(min((900,int(pyplot.rcParams['font.weight'])+200)))
+		elif style=='thin':
+			fac = 2./3
+			pyplot.rcParams['font.weight'] = str(max((100,int(pyplot.rcParams['font.weight'])-200)))
+		
+		for k,v in pyplot.rcParams.iteritems():
+			if 'weight' in k: pyplot.rcParams[k] = pyplot.rcParams['font.weight']
+		
+		for k,v in dict(rc).iteritems():
+			pyplot.rcParams[k] = v
+		
+		for k in ['axes.linewidth','lines.linewidth','xtick.major.width',
+				  'xtick.minor.width','ytick.major.width','ytick.minor.width']:
+			pyplot.rcParams[k]*= fac
+		
+	else:
+		seaborn.set_style(style,rc)
+	
+	return
+
+
 ########################################### modified pyplot functions
 
-def subplots(nrows=1, ncols=1, sharex=True, sharey=False, squeeze=True, subplot_kw=None, powerlim=(-3,3),useOffset=False,**fig_kw):
+def subplots(nrows=1, ncols=1, sharex=False, sharey=False, squeeze=True, autosize=True,
+			 subplot_kw=None, powerlim=(-3,3),useOffset=False,nybins=None,nxbins=None,
+			 **fig_kw):
 	"""
-	Matplotlib subplots with default sharex=True. 
+	Matplotlib subplots with default figsize = rcp_size*[ncols,nrows]
+	fig_kw.setdefault('figsize',figsize). 
 
 	Additional Key Word Arguments:
 	  powlim    : tuple. 
@@ -91,11 +161,18 @@ def subplots(nrows=1, ncols=1, sharex=True, sharey=False, squeeze=True, subplot_
     
 
     """
+	figsize = np.array(matplotlib.rcParams['figure.figsize'])*[ncols,nrows]
+	if autosize: fig_kw.setdefault('figsize',figsize)
 	f,ax = pyplot.subplots(nrows=nrows,ncols=ncols,sharex=sharex,sharey=sharey,squeeze=squeeze,subplot_kw=subplot_kw,**fig_kw)
 	# customize axes and figure
-	#for a in np.array(ax).ravel():
-	#   a = modaxes(a,useOffset=useOffset)
+	if nybins is not None:
+		for a in ax.flat:
+		   a.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(nbins=nybins))
+	if nxbins is not None:
+		for a in ax.flat:
+		   a.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(nbins=nxbins))
 	f = _modfigure(f)
+	
 	return f,ax
 subplots.__doc__ += 'ORIGINAL DOCUMENTATION \n\n'+pyplot.subplots.__doc__
 
@@ -476,7 +553,7 @@ def xyaxes(axes,x=True,y=True,**kwargs):
 		axes.set_xlim(*xlim)
 	return True
 
-def set_linearray(lines,values=None,cmap='Blues',vmin=None,vmax=None):
+def set_linearray(lines,values=None,cmap=None,vmin=None,vmax=None):
     """
     Set colors of lines to colormaping of values.
     
