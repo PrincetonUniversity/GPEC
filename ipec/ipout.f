@@ -1088,56 +1088,56 @@ c-----------------------------------------------------------------------
       CALL ascii_close(out_unit)
 
 
-      IF (fun_flag) THEN
-         CALL ipeq_bcoords(psilim,binmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,boutmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,xinmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,xoutmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,binmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,boutmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,xinmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,xoutmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
 
-         CALL iscdftb(mfac,mpert,binfun,mthsurf,binmn)     
-         CALL iscdftb(mfac,mpert,boutfun,mthsurf,boutmn)    
-         CALL iscdftb(mfac,mpert,xinfun,mthsurf,xinmn)    
-         CALL iscdftb(mfac,mpert,xoutfun,mthsurf,xoutmn)     
-         
-         CALL ascii_open(out_unit,"ipec_control_fun_n"//
+      CALL iscdftb(mfac,mpert,binfun,mthsurf,binmn)     
+      CALL iscdftb(mfac,mpert,boutfun,mthsurf,boutmn)    
+      CALL iscdftb(mfac,mpert,xinfun,mthsurf,xinmn)    
+      CALL iscdftb(mfac,mpert,xoutfun,mthsurf,xoutmn)     
+      
+      CALL ascii_open(out_unit,"ipec_control_fun_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
-     $        "Plasma response for an external perturbation on the "//
-     $        "control surface in functions"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
-         WRITE(out_unit,'(1x,a12,I4)')"mthsurf =",mthsurf
-         WRITE(out_unit,'(1x,a16,es17.8e3)')"vacuum energy =",vengy
-         WRITE(out_unit,'(1x,a16,es17.8e3)')"surface energy =",sengy
-         WRITE(out_unit,'(1x,a16,es17.8e3)')"plasma energy =",pengy
-         WRITE(out_unit,*)
-         WRITE(out_unit,*)"jac_type = "//jac_type
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(12(1x,a16))')
-     $        "r","z","theta","dphi",
-     $        "real(xin)","imag(xin)","real(xout)","imag(xout)",
-     $        "real(bin)","imag(bin)","real(bout)","imag(bout)"
-         DO itheta=0,mthsurf
-            CALL bicube_eval(rzphi,psilim,theta(itheta),0)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta(itheta)+rzphi%f(2))
-            r(itheta)=ro+rfac*COS(eta)
-            z(itheta)=zo+rfac*SIN(eta)
-            dphi(itheta)=rzphi%f(3)
-            WRITE(out_unit,'(12(es17.8e3))')r(itheta),z(itheta),
-     $           theta(itheta),rzphi%f(3),
+      WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
+     $     "Plasma response for an external perturbation on the "//
+     $     "control surface in functions"
+      WRITE(out_unit,*)version
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
+      WRITE(out_unit,'(1x,a12,I4)')"mthsurf =",mthsurf
+      WRITE(out_unit,'(1x,a16,es17.8e3)')"vacuum energy =",vengy
+      WRITE(out_unit,'(1x,a16,es17.8e3)')"surface energy =",sengy
+      WRITE(out_unit,'(1x,a16,es17.8e3)')"plasma energy =",pengy
+      WRITE(out_unit,*)
+      WRITE(out_unit,*)"jac_type = "//jac_type
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(12(1x,a16))')
+     $     "r","z","theta","dphi",
+     $     "real(xin)","imag(xin)","real(xout)","imag(xout)",
+     $     "real(bin)","imag(bin)","real(bout)","imag(bout)"
+      DO itheta=0,mthsurf
+         CALL bicube_eval(rzphi,psilim,theta(itheta),0)
+         rfac=SQRT(rzphi%f(1))
+         eta=twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta)=ro+rfac*COS(eta)
+         z(itheta)=zo+rfac*SIN(eta)
+         dphi(itheta)=rzphi%f(3)
+         WRITE(out_unit,'(12(es17.8e3))')r(itheta),z(itheta),
+     $        theta(itheta),rzphi%f(3),
      $        REAL(xinfun(itheta)),-helicity*AIMAG(xinfun(itheta)),
      $        REAL(xoutfun(itheta)),-helicity*AIMAG(xoutfun(itheta)),
      $        REAL(binfun(itheta)),-helicity*AIMAG(binfun(itheta)),
      $        REAL(boutfun(itheta)),-helicity*AIMAG(boutfun(itheta))
-         ENDDO
-         CALL ascii_close(out_unit)
-      
+      ENDDO
+      CALL ascii_close(out_unit)
+           
+      IF (fun_flag) THEN 
          IF(debug_flag) PRINT *,"Opening "//TRIM(mncfile)
          CALL check( nf90_open(mncfile,nf90_write,mncid) )
          IF(debug_flag) PRINT *,"  Inquiring about dimensions"
