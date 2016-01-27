@@ -85,6 +85,7 @@ ifdef cflag
 	ifeq ($(cflag),pintel)
 		PLATFORM = PPPL_Portal_Cluster_with_Intel_Compiler
 		FC = /usr/pppl/intel/2013.1.3/bin/ifort
+		CC = /usr/pppl/intel/2013.1.3/bin/icc
 		LAPACKHOME = /u/zwang/numericalLib/lapack_3.4.2
 		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
 	else
