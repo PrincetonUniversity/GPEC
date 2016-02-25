@@ -18,7 +18,7 @@ Run Process
 
 This section outlines the basic run process with reference to some of the most common input-output manipulation in IPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the Namelist Variables section. 
 
-For generality we will refer to the user's copy of /p/gpec/users/jpark/IPEC/IPEC_1.00/rundir/LinuxLahey64 as the run-directory. To run IPEC, a user should first navigate to their run directory. Once in the run-directory the user follows these simple steps to complete a IPEC run:
+Public copies of the GPEC releases are available at /p/gpec on portal. The user should usually choose the latest release, lets call it <release>. To run IPEC, a user should first navigate to a directory in which they wish to run and write outputs. Once in the run-directory the user needs (at a minimum) the dcon, equil, vac, and ipec namelist files, which can be copied from /p/gpec/<release>/input for example. The user can then follow these simple steps to complete a IPEC run:
 
 1. Edit the dcon.in file
 
@@ -30,9 +30,9 @@ For generality we will refer to the user's copy of /p/gpec/users/jpark/IPEC/IPEC
 
   - Set the range of normalized flux to be included in the calculation.
 
-3. ./dcon
+3. $/p/gpec/<release>/bin/dcon
 
-  - This creates the euler.bin file, which provides the initial equilibrium input for IPEC. ??
+  - This creates the euler.bin file, which provides a orthonormal basis of force balance states for IPEC.
 
   - Once this is created, you can various effects on this equilibrium by changing the 3D field input in ipec.in without having to run DCON again.
 
@@ -44,7 +44,7 @@ For generality we will refer to the user's copy of /p/gpec/users/jpark/IPEC/IPEC
 
   - Set the flags to specify the desired outputs.
 
-5. ./ipec
+5. /p/gpec/<release>/bin/ipec
 
   - That’s it! Now go look at your output files.
 

@@ -3,101 +3,136 @@
 :mod:`pypec.data` -- ASCII Table Data Turned Pythonic
 =====================================================
 
-The data module is a very generalized tool for visualizing and
-manipulating scientific data from ascii files. The only requirement
-for creating a data object is that the file have one or more tables
-of data, with appropriate labels in a header line directly above the data.
+The data module is a very generalized tool for visualizing and manipulating scientific data from netcdf and ascii files.
+
+GPEC data is migrating to netcdf, and this module uses the xray module for its python netcdf interface. The xray module is very powerful and well documented `here <http://xray.readthedocs.org/>`_. 
+
+Previous GPEC results and some current outputs are still writen to ascii. This module contains a custom I/O for converting ascii data to python objects. A custom Data object was created for this purpose, and conversion to the xray Dataset is automated in the open_dataset function to facilitate migration to netcdf. The only requirement for creating a data object from an ascii file is that the file have one or more tables of data, with appropriate labels in a header line directly above the data.
 
 Here, we show some examples using common outputs from both IPEC and PENT.
-
 
 Beginners
 ---------
 
-First, in an open ipython session, explore the data module by 
-typing 'data.' and hitting tab.
+First, add your release of GPEC to your PYTHONPATH environment variable. 
+
+In an open ipython session, import the data module
+
+>>> from pypec import data
+
+Explore the data module by typing 'data.' and hitting tab.
 For information on any particular object in the module, 
-use the '?' syntax or 'help' function. For example, enter 'data.read?'.
-You will see that it has a lot of metadata on this function,
-but the important things to look at for now are the arguments
-and key word arguments. These are passed to the function
-as shown in the Definition line... you can either pass a single string,
-or a string and specification for squeeze. If this confuses you, consult 
-any of the many great python tutorials online.
+use the '?' syntax or 'help' function. For example, enter 'data.read?'. You will see that it has a lot of metadata on this function, but the important things to look at for now are the arguments and key word arguments. These are passed to the function as shown in the Definition line... you can either pass a single string, or a string and specification for squeeze. If this confuses you, consult any of the many great python tutorials online.
 
-Lets use it! To read an ascii file containing tablular data 
-use the read function.
+Lets use it! To get a typical GPEC output into python, use the open_dataset function.
 
->>> mydata = read('examples/example_profiles.dat')
-Casting table 1 into Data object.
->>> type(mydata),len(mydata)
-(<type 'list'>, 1)
+>>> con = data.open_dataset('examples/DIIID_example/ipec_control_output_n1.nc')
 
-The read function creates a list of data objects corresponding to the tables in the text file. In this case, there is only one table. If we knew this ahead of time, we could have gotten the data object directly by splitting the list.
+Printing to the terminal is intelegent, giving a conviniently human readable summary of the data.
 
->>> mydata, = read('examples/example_profiles.dat')
-Casting table 1 into Data object.
+>>> con
+<xray.Dataset>
+Dimensions:        (i: 2, m: 129, mode: 34, mode_PX: 34, mode_RX: 34, mode_SC: 4, mode_WX: 34, mode_XT: 34, theta: 513)
+Coordinates:
+  * i              (i) int32 0 1
+  * m              (m) int32 -64 -63 -62 -61 -60 -59 -58 -57 -56 -55 -54 -53 ...
+  * mode           (mode) int32 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 ...
+  * mode_SC        (mode_SC) int32 1 2 3 4
+  * theta          (theta) float64 0.0 0.001953 0.003906 0.005859 0.007812 ...
+  * mode_XT        (mode_XT) int32 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 ...
+  * mode_WX        (mode_WX) int32 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 ...
+  * mode_RX        (mode_RX) int32 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 ...
+  * mode_PX        (mode_PX) int32 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 ...
+Data variables:
+    L              (mode, m) complex128 (-0.465050580297-0.0407256177767j) ...
+    Lambda         (mode, m) complex128 (1.43467729344e-07-3.83466162574e-08j) ...
+    P              (mode, m) complex128 (0.000217073138424-0.000105328832572j) ...
+    rho            (mode, m) complex128 (9.96920996839e+36+9.96920996839e+36j) ...
+    X_EDT          (mode_XT, m) complex128 (2.38470938304e-05+1.82302855995e-05j) ...
+    X_EVT          (mode_XT) float64 2.037e+04 1.32e+05 5.034e+05 1.109e+06 ...
+    W_EDX          (mode_WX, m) complex128 (-2.04093219782e-06+4.534568265e-07j) ...
+    W_EVX          (mode_WX) float64 3.401e+06 1.326e+06 1.014e+06 4.598e+05 ...
+    W_EVX_A        (mode_WX) float64 0.9848 0.163 0.617 0.7467 1.354 0.999 ...
+    W_EVX_energyv  (mode_WX) float64 6.699e+06 4.322e+05 1.252e+06 6.867e+05 ...
+    W_EVX_energys  (mode_WX) float64 6.39e+06 8.91e+05 1.719e+06 6.895e+05 ...
+    W_EVX_energyp  (mode_WX) float64 6.806e+06 5.195e+05 8.505e+05 5.577e+05 ...
+    R_EDX          (mode_RX, m) complex128 (-8.44367175752e-07-5.25380617371e-07j) ...
+    R_EVX          (mode_RX) float64 2.247e+06 8.429e+05 2.654e+05 2.002e+05 ...
+    R_EVX_RL       (mode_RX) float64 6.948 0.748 0.4161 0.8845 0.2146 0.2696 ...
+    R_EVX_energyv  (mode_RX) float64 4.23e+05 1.346e+06 9.696e+05 6.651e+05 ...
+    R_EVX_energys  (mode_RX) float64 9.543e+05 1.732e+06 1.021e+06 7.659e+05 ...
+    R_EVX_energyp  (mode_RX) float64 3.785e+05 8.635e+05 7.822e+05 5.609e+05 ...
+    P_EDX          (mode_PX, m) complex128 (-4.75158507406e-06-3.09731036771e-06j) ...
+    P_EVX          (mode_PX) float64 565.9 163.0 148.9 129.5 128.7 111.3 ...
+    O_WRX          (mode_RX, mode_WX) float64 0.08231 0.9943 0.02 0.009278 ...
+    O_WPX          (mode_PX, mode_WX) float64 0.01574 0.9646 0.00978 0.01778 ...
+    O_RPX          (mode_PX, mode_RX) float64 0.9585 0.009999 0.03635 0.138 ...
+    O_XT           (mode_XT) complex128 (0.00371272677759+0.00592509884488j) ...
+    O_WX           (mode_XT) complex128 (-0.000571685873793+0.000235780294608j) ...
+    O_RX           (mode_RX) complex128 (-0.000898864353759-4.5829910651e-05j) ...
+    O_PX           (mode_PX) complex128 (-0.000391541252291+0.00103668211879j) ...
+    Phi_EX         (m) complex128 (-1.31675253659e-10-1.75571293379e-12j) ...
+    Phi_ET         (m) complex128 (-1.96197817263e-09-2.62121509413e-09j) ...
+    W_EDX_FUN      (mode_WX, theta) complex128 (1.44727814347+0.0485374143873j) ...
+    R_EDX_FUN      (mode_RX, theta) complex128 (1.42252747648-0.582886053509j) ...
+    C_EDX_FUN      (mode_SC, theta) complex128 (9.96920996839e+36+9.96920996839e+36j) ...
+    b_nm           (m) complex128 (-5.57055775393e-10+3.65182554714e-09j) ...
+    b_xnm          (m) complex128 (-5.47185354236e-10+5.93500500287e-10j) ...
+    xi_nm          (m) complex128 (-3.44081034463e-09-1.87650109007e-09j) ...
+    xi_xnm         (m) complex128 (9.96920996839e+36+9.96920996839e+36j) ...
+    xi_n           (theta) complex128 (0.000422916382087+0.00330056827183j) ...
+    xi_xn          (theta) complex128 (-0.000601103802377-0.00197980096363j) ...
+    b_n            (theta) complex128 (-0.00167301438377+0.000542462246525j) ...
+    b_xn           (theta) complex128 (-0.000920389871475+0.00031515888113j) ...
+    R              (theta) float64 2.289 2.289 2.288 2.287 2.286 2.284 2.282 ...
+    z              (theta) float64 0.02442 0.03972 0.05506 0.07046 0.08596 ...
+    R_n            (theta) float64 1.0 0.9995 0.9981 0.9959 0.9928 0.9889 ...
+    z_n            (theta) float64 0.003585 0.03243 0.06136 0.09038 0.1196 ...
+    dphi           (theta) float64 0.0 -0.039 -0.078 -0.117 -0.1559 -0.1948 ...
+Attributes:
+    title: IPEC outputs in Fourier or alternate modal bases
+    shot: 147131
+    time: 2300
+    machine: DIII-D
+    n: 1
+    jac_type: hamada
+    version: GPEC version 0.3.0
+    long_name: Surface Inductance
+    energy_vacuum: 3.28696165726
+    energy_surface: 9.30917446749
+    energy_plasma: 3.86167925482
 
-At its heart, the data object consists of independent data and dependent data. This are stored differently, namely as a list in the pts attribute and as a dictionary in y. The x attribute is a dictionary if the data is 1 dimensional or a regular grid is found in the first n columns of the data (n=2,3), and left empty if the n>1 dependent data is irregular. 
+We see the data contains dimensions, variables, and global attributes. Some individual data arrays may have attributes as well.
 
-Explore the data using the corresponding python tools.
+For quick visualization, we can use xray's built in plotting routines,
 
->>> mydata.xnames
-['psi']
->>> mydata.y.keys()
-['teeV', 'nim3', 'tieV', 'omega_Erads', 'nem3']
+>>> import xray.plot as xplot
+>>> f1,a1 = plt.subplots()
+>>> l1 = xplot.plot(con['W_EVX']) # 1D data, returns a list of lines
+>>> f1.savefig('examples/example_eigenvalues.png')
 
-You would access the ion density data using mydata.y['nim3'] for example.
-
-The data object, however, is more that just a place holder for parced text files. It contains powerful visualization and data manipulation tools. Plotting functions return interactive matplotlib Figure objects.
-
->>> fig = mydata.plot1d()
->>> fig.savefig('examples/example_profiles.png')
-
-.. image:: examples/example_profiles.png
+.. image:: examples/example_eigenvalues.png
    :width: 600px
 
-Navigate and zoom using the toolbar below plots (notice x-axes are linked!).
+>>> f2,a2 = plt.subplots()
+>>> l2 = xplot.plot(con['W_EDX']) # This is 2D, returns Quadmesh
+>>> f2.savefig('examples/example_eigenvectors.png')
 
-Interpolation returns a dictionary of the desired data, which can be one, multiple, or all of the dependent variables found in y.
+.. image:: examples/example_eigenvectors.png
+   :width: 600px
 
->>> mydata.interp(0.9,['nim3','nem3','omega_Erads'])
-Forming interpolator for nim3.
-Interpolating values for nim3.
-Forming interpolator for nem3.
-Interpolating values for nem3.
-Forming interpolator for omega_Erads.
-Interpolating values for omega_Erads.
-{'nim3': array(2.7359086497890296e+19), 'omega_Erads': array(344.72573839660663), 'nem3': array(3.3564206751054852e+19)}
+Note this uses matplotlib, and the plots are fully interactive. Navigate and zoom using the toolbar below plots.
 
-Lets combine these basic functionalities to make a more specific plot,
-adding interpolated values.
+This is not the recomended way to display detailed studies using GPEC data, however. It is recomended that the user familiarise themselves with matplotlib (there are many great online tutorials) and write their own scripts for plotting the data of interest, as details will inevitably need tweaking.
 
->>> x = np.linspace(0.02,0.98,30)
->>> f = mydata.plot1d('omega_Erads')
->>> newdata = mydata.interp(x,'omega_Erads')
-Interpolating values for omega_Erads.
->>> newline = f.axes[0].plot(x,newdata['omega_Erads'])
->>> f.savefig('examples/example_profiles2.png')
-
-.. image:: examples/example_profiles2.png
-   :width: 400px
-
-Note that the interpolator initialized the interpolation function on the 
-first call, and saved it internally for the second.
-
-Thats covers the basics. Test out the module yourself in 
-ipython, getting familiar with things before moving on.
-
+The following section gives some common examples of more customized plots. First, test out the module yourself in ipython, getting familiar with things before moving on.
 
 Advanced Users
 --------------
 
-In this section, we will assume you have a pretty good hold on both python
-and the basic ploting functions of these modules.
+In this section, we will assume you have a pretty good hold on both python and the basic ploting functions of these modules.
 
-Now that you use this module regularly, save yourself some time by placing
-the line:
+Now that you use this module regularly, save yourself some time by placing the line:
 
   from pypec import *
 
@@ -189,6 +224,61 @@ Plotting imag b_r.
    :width: 400px
 
 There. That looks better.
+
+
+
+Deprecated Ascii Interface
+---------------------------
+
+As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should be used to create xray Dataset objects whenever possible. This section describes the depprecated ascii interface for context, and motivates the move to netcdf.
+
+Data in ascii tables can be read into a custom Data object using the read function,
+
+>>> mydata = read('examples/DIII-D_example/g147131.02300_DIIID_KEFIT.kin')
+Casting table 1 into Data object.
+>>> type(mydata),len(mydata)
+(<type 'list'>, 1)
+
+The read function creates a list of data objects corresponding to the tables in the text file. In this case, there is only one table. If we knew this ahead of time, we could have gotten the data object directly by splitting the list.
+
+>>> mydata = read('examples/example_profiles.dat')[0]
+Casting table 1 into Data object.
+
+At its heart, the data object consists of independent data and dependent data. This are stored differently, namely as a list in the pts attribute and as a dictionary in y. The x attribute is a dictionary if the data is 1 dimensional or a regular grid is found in the first n columns of the data (n=2,3), and left empty if the n>1 dependent data is irregular. 
+
+Explore the data using the corresponding python tools.
+
+>>> mydata.xnames
+['psi']
+>>> mydata.y.keys()
+['teeV', 'nim3', 'tieV', 'omega_Erads', 'nem3']
+
+You would access the ion density data using mydata.y['nim3'] for example.
+
+The data object, however, is more that just a place holder for parced text files. It contains visualization and data manipulation tools. Plotting functions return interactive matplotlib Figure objects.
+
+>>> fig = mydata.plot1d()
+>>> fig.savefig('examples/example_profiles.png')
+
+.. image:: examples/example_profiles.png
+   :width: 600px
+
+Interpolation returns a new Data object of the desired data, which can be one, multiple, or all of the dependent variables found in y.
+
+>>> myinterp = mydata.interp(np.arange(0.1,1.0,0.1),['nim^3','tieV'])
+Forming interpolator for nim^3.
+Interpolating values for nim^3.
+Forming interpolator for tieV.
+Interpolating values for tieV.
+>>> f = mydata.plot1d('nim^3')
+>>> f = myinterp.plot1d('nim^3',marker='s',lw=0,figure=f)
+>>> f.savefig('examples/example_profiles2.png')
+
+.. image:: examples/example_profiles2.png
+   :width: 400px
+
+Note that the interpolator initialized the interpolation function on the first call, this is saved internally for subsequent calls.
+
 
 .. note:: 
   These examples can be tested by developers using ipython 
@@ -329,7 +419,8 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
     return ds
 open_dataset.__doc__+= xray.open_dataset.__doc__
 
-def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,quiet=default_quiet):
+def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
+         auto_complex=True,quiet=default_quiet):
     """
     Get the data from any ipec output as a list of python 
     class-type objects using numpy.genfromtxt.
@@ -349,6 +440,8 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,q
         Reads only first maxnumber of tables.
       maxlength : int. 
         Tables with more rows than this are downsampled for speed.
+      auto_complex : bool.
+        Include amplitude and phase of complex data as variables.
       quiet   : bool. 
         Prevent non-warning messages printed to terminal.
     
@@ -664,8 +757,8 @@ class DataBase(object):
     
     """
     
-    def __init__(self,fromtxt,preamble,forcex=[],forcedim=[],quiet=default_quiet,
-                 maxlength=1e6):
+    def __init__(self,fromtxt,preamble,forcex=[],forcedim=[],maxlength=1e6,
+                 auto_complex=True,quiet=default_quiet):
         """
         Takes structured array from numpy.genfromtxt, and creates
         dictionaries of dependent and independent data. Also breaks
@@ -678,10 +771,12 @@ class DataBase(object):
         **Key Word Arguments:**
           forcex  : list.
             x-axis labels.
-          quiet : bool.
-            Supress printed information and warnings.
           maxlength : int.
             Tables with more rows than this are downsampled for speed.
+          auto_complex : bool.
+            Include amplitude and phase of complex data as variables.
+          quiet : bool.
+            Supress printed information and warnings.
         
         """
         #debug start_time = time.time()
@@ -788,8 +883,9 @@ class DataBase(object):
             if 'real' in name:
                 newname = name.replace('real','')
                 self.y[newname] = fromtxt[name]+1j*fromtxt[name.replace('real','imag')]
-                self.y['|'+newname+'|'] = np.abs(self.y[newname]).real
-                self.y['angle '+newname] = np.angle(self.y[newname])
+                if auto_complex:
+                    self.y['|'+newname+'|'] = np.abs(self.y[newname]).real
+                    self.y['angle '+newname] = np.angle(self.y[newname])
             elif not 'imag' in name:
                 self.y[name]=fromtxt[name]
         #debug print("Set y in {} seconds".format(time.time()-start_time))
