@@ -94,12 +94,12 @@ pyplot.close(f)
 
 ########################################### default colormaps
 
-def png_to_gif(files,gif_file,delay=20,clean=False):
+def png_to_gif(files,gif_file,delay=20,loop=0,clean=False):
 	"""gif_file should end in .gif"""
 	gif_file = gif_file.rstrip('.gif')
-	os.system('convert -delay {} -loop 0 {} {}'.format(delay, ' '.join(files), gif_file+'.gif'))
-	os.system('zip -j {zipfile} {files}'.format(zipfile=gif_file+'.zip', files=' '.join(files)))
+	os.system('convert -delay {d} -loop {l} {i} {o}'.format(d=delay,l=loop,i=' '.join(files),o=gif_file+'.gif'))
 	if clean:
+		os.system('zip -j {zipfile} {files}'.format(zipfile=gif_file+'.zip', files=' '.join(files)))
 		os.system('rm {files}'.format(files=' '.join(files)))
 		
 	return
