@@ -297,9 +297,9 @@ c-----------------------------------------------------------------------
       ALLOCATE(permeabev(0:4,mpert),permeabmats(0:4,mpert,mpert),
      $     permeabevmats(0:4,mpert,mpert),permeabindex(0:4,mpert),
      $     permeabinvmats(0:4,mpert,mpert))
+      lwork=2*mpert+1
       DO j=0,4
          work=0
-         work2=0
          rwork=0
          temp1=TRANSPOSE(surf_indmats)
          temp2=TRANSPOSE(plas_indmats(j,:,:))
@@ -307,29 +307,25 @@ c-----------------------------------------------------------------------
          CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
          temp1=TRANSPOSE(temp2)
          permeabmats(j,:,:)=temp1
+         CALL zgeev('V','V',mpert,temp1,mpert,permeabev(j,:),
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         permeabevmats(j,:,:)=vr
+         
          ! calculate inverse.
-         work = 0
-         rwork = 0
-         work2=0
          temp1=0
          DO i=1,mpert
             temp1(i,i)=1
          ENDDO
-         temp2 = permeabmats(j,:,:)
-         CALL zhetrf('L',mpert,temp2,mpert,ipiv,work2,mpert*mpert,info)
-         CALL zhetrs('L',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+         temp2=permeabmats(j,:,:)
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
          permeabinvmats(j,:,:) = temp1
 c-----------------------------------------------------------------------
-c     calculate permeability eigenvalues and vectors, then sort them.
+c     sort permeability eigenvalues by absolute value
 c      - sorting taken from http://stackoverflow.com/questions/8834585/sorting-eigensystem-obtained-from-zgeev
 c      - which is from the end of zsteqr.f
 c-----------------------------------------------------------------------
          temp1 = permeabmats(j,:,:)
-         lwork=2*mpert+1
-         CALL zgeev('V','V',mpert,temp1,mpert,permeabev(j,:),
-     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
-         permeabevmats(j,:,:)=vr
-         ! sort by absolute value of eigenvector
          DO i = 1, mpert-1
             k = i
             ev = permeabev(j,i)
@@ -348,7 +344,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
-c     LOGAN - SVD permeability matrix for orthonormal basis.
+c     SVD permeability matrix for orthonormal basis.
 c-----------------------------------------------------------------------
       ALLOCATE(permeabsv(0:4,mpert),permeabsvmats(0:4,mpert,mpert))
       DO j=0,4
