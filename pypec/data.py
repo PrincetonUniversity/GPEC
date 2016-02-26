@@ -5,9 +5,9 @@
 
 The data module is a very generalized tool for visualizing and manipulating scientific data from netcdf and ascii files.
 
-GPEC data is migrating to netcdf, and this module uses the xray module for its python netcdf interface. The xray module is very powerful and well documented `here <http://xray.readthedocs.org/>`_. 
+GPEC data is migrating to netcdf, and this module uses the xarray module for its python netcdf interface. The xarray module is very powerful and well documented `here <http://xarray.readthedocs.org/>`_. 
 
-Previous GPEC results and some current outputs are still writen to ascii. This module contains a custom I/O for converting ascii data to python objects. A custom Data object was created for this purpose, and conversion to the xray Dataset is automated in the open_dataset function to facilitate migration to netcdf. The only requirement for creating a data object from an ascii file is that the file have one or more tables of data, with appropriate labels in a header line directly above the data.
+Previous GPEC results and some current outputs are still writen to ascii. This module contains a custom I/O for converting ascii data to python objects. A custom Data object was created for this purpose, and conversion to the xarray Dataset is automated in the open_dataset function to facilitate migration to netcdf. The only requirement for creating a data object from an ascii file is that the file have one or more tables of data, with appropriate labels in a header line directly above the data.
 
 Here, we show some examples using common outputs from both IPEC and PENT.
 
@@ -31,7 +31,7 @@ Lets use it! To get a typical GPEC output into python, use the open_dataset func
 Printing to the terminal is intelegent, giving a conviniently human readable summary of the data.
 
 >>> con
-<xray.Dataset>
+<xarray.Dataset>
 Dimensions:        (i: 2, m: 129, mode: 34, mode_PX: 34, mode_RX: 34, mode_SC: 4, mode_WX: 34, mode_XT: 34, theta: 513)
 Coordinates:
   * i              (i) int32 0 1
@@ -104,9 +104,9 @@ Attributes:
 
 We see the data contains dimensions, variables, and global attributes. Some individual data arrays may have attributes as well.
 
-For quick visualization, we can use xray's built in plotting routines,
+For quick visualization, we can use xarray's built in plotting routines,
 
->>> import xray.plot as xplot
+>>> import xarray.plot as xplot
 >>> f1,a1 = plt.subplots()
 >>> l1 = xplot.plot(con['W_EVX']) # 1D data, returns a list of lines
 >>> f1.savefig('examples/example_eigenvalues.png')
@@ -230,7 +230,7 @@ There. That looks better.
 Deprecated Ascii Interface
 ---------------------------
 
-As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should be used to create xray Dataset objects whenever possible. This section describes the depprecated ascii interface for context, and motivates the move to netcdf.
+As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should be used to create xarray Dataset objects whenever possible. This section describes the depprecated ascii interface for context, and motivates the move to netcdf.
 
 Data in ascii tables can be read into a custom Data object using the read function,
 
@@ -315,10 +315,10 @@ except ImportError:
     mmlab = False
     print('WARNING: Mayavi not in python path')
 try:
-    import xray
+    import xarray
 except ImportError:
-    xray = False
-    print('WARNING: xray not in python path')
+    xarray = False
+    print('WARNING: xarray not in python path')
     print(' -> We recomend loading anaconda/2.3.0 on portal')
 try:
     import seaborn as sns
@@ -350,7 +350,7 @@ interp1d_unbound.__doc__ = interp1d.__doc__
 
 def _set_color_defaults(calc_data,center=None,**kwargs):
     """
-    Stolen from xray.plot. Sets vmin, vmax, cmap.
+    Stolen from xarray.plot. Sets vmin, vmax, cmap.
     """
     vmin = kwargs.get('vmin',None)
     vmax = kwargs.get('vmax',None)
@@ -389,7 +389,7 @@ def _set_color_defaults(calc_data,center=None,**kwargs):
 
 def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
     """
-    Wrapper for xray.open_dataset that allows automated reduction of
+    Wrapper for xarray.open_dataset that allows automated reduction of
     a dimension destinguishing real and imaginary components.
     
     New Parameter
@@ -399,10 +399,10 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
     """
     
     try:
-        ds = xray.open_dataset(filename_or_obj,**kwargs)
+        ds = xarray.open_dataset(filename_or_obj,**kwargs)
     except:
         dat = read(filename_or_obj,**kwargs)
-        ds = xray.Dataset()
+        ds = xarray.Dataset()
         for i,d in enumerate(dat):
             if i==0:
                 for k,v in d.params.iteritems():
@@ -410,14 +410,14 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
             if not d.x:
                 raise ValueError("No regular grid for dataset")
             for yk,yv in d.y.iteritems():
-                ds[yk] = xray.DataArray(yv.reshape(d.shape),coords=d.x,dims=d.xnames,attrs=d.params)
+                ds[yk] = xarray.DataArray(yv.reshape(d.shape),coords=d.x,dims=d.xnames,attrs=d.params)
     
     if complex_dim in ds.dims:
         for k,v in ds.data_vars.iteritems():
             if complex_dim in v.dims:
                 ds[k] = v.loc[{complex_dim:0}]+1j*v.loc[{complex_dim:1}]
     return ds
-open_dataset.__doc__+= xray.open_dataset.__doc__
+open_dataset.__doc__+= xarray.open_dataset.__doc__
 
 def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
          auto_complex=True,quiet=default_quiet):
@@ -1733,7 +1733,7 @@ def add_control_geometry(ds,overwrite=False):
     Add geometric dimensions to dataset from ipec_control_output_n#.nc.
     
     **Arguments:**
-        ds : Dataset. xray Dataset opened from ipec_control_output_n#.nc
+        ds : Dataset. xarray Dataset opened from ipec_control_output_n#.nc
         
     **Key Word Arguments:**
         overwrite : bool. Overwrite geometric quantities if they already exist.
@@ -1765,7 +1765,7 @@ def add_control_geometry(ds,overwrite=False):
     # Toroidal angle
     if 'phi' not in ds or overwrite:
         phi = np.linspace(0,2*np.pi,180)
-        phi = xray.DataArray(phi,coords={'phi':phi})
+        phi = xarray.DataArray(phi,coords={'phi':phi})
         ds['phi'] = phi
         ds['expn'] = np.exp(-1j*ds.attrs['n']*ds['phi'])
 
@@ -1781,8 +1781,8 @@ def add_control_geometry(ds,overwrite=False):
         dr = np.roll(ds['R'],1)-np.roll(ds['R'],-1)
         dz = np.roll(ds['z'],1)-np.roll(ds['z'],-1)
         norm = np.sqrt(dr**2+dz**2)
-        ds['z_n'] = xray.DataArray(dr/norm,coords=ds['theta'].to_dataset())
-        ds['R_n'] =-xray.DataArray(dz/norm,coords=ds['theta'].to_dataset())
+        ds['z_n'] = xarray.DataArray(dr/norm,coords=ds['theta'].to_dataset())
+        ds['R_n'] =-xarray.DataArray(dz/norm,coords=ds['theta'].to_dataset())
     
     return ds
 
