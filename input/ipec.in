@@ -71,9 +71,9 @@
    bin_flag=t               ! Write binary outputs for use with xdraw
    bin_2d_flag=t            ! Write 2D binary outputs for use with xdraw
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
+   verbose=t                ! Print run log to terminal 
 /
 &IPEC_DIAGNOSE
-   verbose=t                ! Print run log to terminal 
    timeit=t                 ! Print timer splits for major subroutines
    radvar_flag=t            ! Map various radial variables (rho,psi_tor) on psi_N grid
 /
