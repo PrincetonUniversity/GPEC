@@ -103,6 +103,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: con_flag = .FALSE.
       LOGICAL :: ktanh_flag = .FALSE.
       LOGICAL :: passing_flag = .FALSE.
+      LOGICAL :: electron_flag = .FALSE.
       LOGICAL :: fkg_kmats_flag = .FALSE.
       LOGICAL :: electron = .FALSE.
       LOGICAL :: keq_out = .FALSE.

@@ -3,7 +3,7 @@
 	mat_flag=t
 	ode_flag=t
 	vac_flag=t
-	sas_flag=f
+	sas_flag=t
 
    	kin_flag = t		! kinetic EL equation (default: false)
    	con_flag = t		! continue integration through layers (default: false)
@@ -14,7 +14,7 @@
 	ktanh_flag = t          ! ignore kinetic effects in the core smoothly (default: false)
 	ktc = 0.15		! parameter activiated by ktanh_flag: roughly corresponds to core width ignored (default: 0.15)
 	ktw = 0.5		! parameter activiated by ktanh_flag: width of hypertangential functions (default: 0.5)	
-
+   	electron_flag = f       ! calculates electron contributions
 	nn=1
 	delta_mlow=6
 	delta_mhigh=6

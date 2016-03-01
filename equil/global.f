@@ -34,6 +34,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6
       REAL(r8) :: newq0=0
+      REAL(r8) :: etol=1e-7
 
       INTEGER :: mex
       REAL(r8), DIMENSION(:), POINTER :: qex,psiex

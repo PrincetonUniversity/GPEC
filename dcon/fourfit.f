@@ -979,13 +979,25 @@ c-----------------------------------------------------------------------
             DO l=-nl,nl
                kwmat_l = 0
                ktmat_l = 0
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
                kwmat = kwmat+kwmat_l
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
                ktmat = ktmat+ktmat_l
             ENDDO
+            IF (electron_flag) THEN
+               DO l=-nl,nl
+                  kwmat_l = 0
+                  ktmat_l = 0
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
+     $                 ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
+                  kwmat = kwmat+kwmat_l
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
+     $                 ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
+                  ktmat = ktmat+ktmat_l
+               ENDDO
+            ENDIF
             ! apply normalizations and hypertangent smoothing for core
             IF (ktanh_flag) THEN
                kwmat=kinfac1*kwmat*(1+tanh((psifac-ktc)*ktw))
@@ -1185,13 +1197,25 @@ c-----------------------------------------------------------------------
             DO l=-nl,nl
                kwmat_l = 0
                ktmat_l = 0
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
                kwmat = kwmat+kwmat_l
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,electron,
+               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
                ktmat = ktmat+ktmat_l
             ENDDO
+            IF (electron_flag) THEN
+               DO l=-nl,nl
+                  kwmat_l = 0
+                  ktmat_l = 0
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
+     $                 ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
+                  kwmat = kwmat+kwmat_l
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
+     $                 ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
+                  ktmat = ktmat+ktmat_l
+               ENDDO
+            ENDIF
             ! apply normalizations and hypertangent smoothing for core
             IF (ktanh_flag) THEN
                kwmat=kinfac1*kwmat*(1+tanh((psifac-ktc)*ktw))
@@ -1216,7 +1240,7 @@ c-----------------------------------------------------------------------
       ELSEIF(method==2)THEN
          WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $        "lagrange matrix on equilibrium grid"
-         tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
+         tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
      $        ft//"wmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
@@ -1235,7 +1259,7 @@ c-----------------------------------------------------------------------
          ENDDO
          WRITE(*,*) " Kinetic torque calculation using MXM euler "//
      $      "lagrange matrix on equilibrium grid"
-         tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
+         tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
      $        ft//"tmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
@@ -1259,7 +1283,7 @@ c-----------------------------------------------------------------------
       ELSEIF(method==3)THEN
          WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $      "lagrange matrix"
-         tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
+         tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
      $        ft//"wmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
@@ -1278,7 +1302,7 @@ c-----------------------------------------------------------------------
          ENDDO
          WRITE(*,*) " Kinetic torque calculation using MXM euler "//
      $      "lagrange matrix"
-         tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
+         tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
      $        ft//"tmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
@@ -1302,7 +1326,7 @@ c-----------------------------------------------------------------------
       ELSEIF(method==4)THEN
          WRITE(*,*) " Kinetic MXM euler lagrange energy matrix norm "
      $      //"calculation"
-         tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
+         tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
      $        ft//"kmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
@@ -1321,7 +1345,7 @@ c-----------------------------------------------------------------------
          ENDDO
          WRITE(*,*) " Kinetic MXM euler lagrange torque matrix norm "
      $      //"calculation"
-         tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,electron,
+         tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
      $        ft//"rmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6

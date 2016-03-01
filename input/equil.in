@@ -15,6 +15,7 @@
 	mtheta=256
 	newq0=0
 	input_only=f
+	etol=1e-7		! controls tolerance in equilibrium field integrations
 /
 &equil_output
 	gse_flag=t

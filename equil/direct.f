@@ -370,8 +370,8 @@ c-----------------------------------------------------------------------
       INTEGER :: iopt,istate,itask,itol,jac,mf
       INTEGER, DIMENSION(liw) :: iwork
       INTEGER, PARAMETER :: nstep=2048
-      REAL(r8), PARAMETER :: tol0=1e-7,eps=1e-14
-      REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
+      REAL(r8), PARAMETER :: eps=1e-14
+      REAL(r8) :: tol0,atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork
 c-----------------------------------------------------------------------
@@ -385,6 +385,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     find flux surface.
 c-----------------------------------------------------------------------
+      tol0=etol
       psifac=sq%xs(ipsi)
       psi0=psio*(1-psifac)
       r=ro+SQRT(psifac)*(rs2-ro)
