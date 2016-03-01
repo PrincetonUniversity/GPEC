@@ -1604,6 +1604,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: jarea,ileft
       COMPLEX(r8) :: t1,t2
       LOGICAL :: diagnose1=.FALSE.,diagnose2=.TRUE.
+      LOGICAL :: kstar_coil_optimization=.TRUE.
 
       INTEGER, DIMENSION(mpert) :: ipiv
       REAL(r8), DIMENSION(mpert) :: teigen
@@ -1618,6 +1619,25 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,fldflxmat,vr,vl
       COMPLEX(r8), DIMENSION(mstep,mpert,mpert) :: bsurfmat,dwks,dwk,
      $     gind,gindp,gres,gresp
+      COMPLEX(r8), DIMENSION(5,mpert) :: tvecs
+      COMPLEX(r8), DIMENSION(9,mpert,mpert) :: tgresp
+
+      REAL(r8), DIMENSION(10,36) :: icoilcur
+      CHARACTER(24), DIMENSION(10) :: icoilname  
+      COMPLEX(r8), DIMENSION(:), POINTER :: coilmn
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: coilmns,coil1,
+     $     coil2,coil3,coil4
+      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: gcoil
+
+      INTEGER, DIMENSION(3) :: cipiv
+      REAL(r8), DIMENSION(3) :: ceigen
+      REAL(r8), DIMENSION(3*3-2) :: crwork
+      REAL(r8), DIMENSION(2*3) :: crwork2
+      COMPLEX(r8), DIMENSION(2*3-1) :: cwork
+      COMPLEX(r8), DIMENSION(2*3+1) :: cwork2
+      COMPLEX(r8), DIMENSION(3*3) :: cwork3
+      COMPLEX(r8), DIMENSION(3) :: creigen
+      COMPLEX(r8), DIMENSION(3,3) :: cvr,cvl
 
       TYPE(cspline_type) :: optorq
 c-----------------------------------------------------------------------
@@ -1819,31 +1839,46 @@ c-----------------------------------------------------------------------
       lwork=2*mpert+1
       DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
          temp2=(gresp(istep,:,:)+CONJG(TRANSPOSE(gresp(istep,:,:))))/2.0
+         DO i=1,9
+            IF (ABS(psifac(istep)-0.1*i)<1e-3) THEN
+               tgresp(i,:,:)=temp2
+            ENDIF
+         ENDDO
          CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
          CALL zgeev('V','V',mpert,temp2,mpert,reigen,
      $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
          WRITE(out_unit,'(3(1x,es16.8))')
      $        psifac(istep),MAXVAL(ABS(reigen)),MINVAL(ABS(reigen))
          IF (ABS(psifac(istep)-0.5)<1e-3) THEN
-            tvec1=vr(:,1)
+            tvecs(1,:)=vr(:,1)
          ENDIF
+      ENDDO
+      DO i=1,4
+         temp2=tgresp(i+5,:,:)-tgresp(i,:,:)
+         CALL zhetrs('L',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
+         CALL zgeev('V','V',mpert,temp2,mpert,reigen,
+     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+         tvecs(i+1,:)=vr(:,1)
       ENDDO
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
-c     diagnose for eigenvector.
+c     optimized torque profile (0-0.5,0.1-0.6,0.2-0.7..0.4-0.9)
 c-----------------------------------------------------------------------
       IF (diagnose2) THEN
-         CALL cspline_alloc(optorq,mstep,1)
+         CALL cspline_alloc(optorq,mstep,5)
          optorq%xs=psifac
-         DO istep=1,mstep
-            temp2=gresp(istep,:,:)
-            temp1=(temp2+CONJG(TRANSPOSE(temp2)))/2.0
-            tvec2=MATMUL(temp1,tvec1)
-            tprof(istep)=DOT_PRODUCT(tvec1,tvec2)
-            optorq%fs(istep,1)=tprof(istep)
+         DO i=1,5
+            tvec1=tvecs(i,:)
+            DO istep=1,mstep
+               temp2=gresp(istep,:,:)
+               temp1=(temp2+CONJG(TRANSPOSE(temp2)))/2.0
+               tvec2=MATMUL(temp1,tvec1)
+               tprof(istep)=DOT_PRODUCT(tvec1,tvec2)
+               optorq%fs(istep,i)=tprof(istep)
+            ENDDO
+            optorq%fs(0,i)=tprof(1)-(tprof(2)-tprof(1))/
+     $           (psifac(2)-psifac(1))*(psifac(1)-psifac(0))
          ENDDO
-         optorq%fs(0,1)=tprof(1)-(tprof(2)-tprof(1))/
-     $        (psifac(2)-psifac(1))*(psifac(1)-psifac(0))
          CALL cspline_fit(optorq,"extrap")
          CALL ascii_open(out_unit,"ipec_dw_optimized_torque_n"//
      $        TRIM(sn)//".out","UNKNOWN")
@@ -1851,17 +1886,171 @@ c-----------------------------------------------------------------------
      $        "Energy and torque profiles by self-consistent solutions."
          WRITE(out_unit,*)     
          
-         WRITE(out_unit,'(6(1x,a16))')"psi","T_phi","2ndeltaW",
-     $        "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
+         WRITE(out_unit,'(7(1x,a16))')"psi","T_phi05",
+     $        "T_phi16","T_phi27","T_phi38","T_phi49","dv/dpsi_n"
          DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
             CALL cspline_eval(optorq,psifac(istep),1)
             CALL spline_eval(sq,psifac(istep),0)
-            WRITE(out_unit,'(6(1x,es16.8))')
-     $           psifac(istep),REAL(optorq%f1(1)),AIMAG(optorq%f1(1)),
-     $           REAL(optorq%f(1)),AIMAG(optorq%f(1)),sq%f(3)
+            WRITE(out_unit,'(7(1x,es16.8))')
+     $           psifac(istep),REAL(optorq%f1(1)),REAL(optorq%f1(2)),
+     $           REAL(optorq%f1(3)),REAL(optorq%f1(4)),
+     $           REAL(optorq%f1(5)),sq%f(3)
          ENDDO
          CALL ascii_close(out_unit)
          CALL cspline_dealloc(optorq)
+      ENDIF
+c-----------------------------------------------------------------------
+c     construct coil-torque response matrix.
+c----------------------------------------------------------------------
+      IF (kstar_coil_optimization) THEN
+         ALLOCATE(coilmns(mpert,3),coil1(mpert,3))
+         ALLOCATE(coil2(3,mpert),coil3(3,3),coil4(3,3))
+         icoilname='fecu'
+         icoilcur(1,1)=1e3
+         icoilcur(1,2)=0
+         icoilcur(1,3)=-1e3
+         icoilcur(1,4)=0
+         CALL coil_read(idconfile,1,icoilname,icoilcur)
+         ALLOCATE(coilmn(cmpert))
+         CALL field_bs_psi(psilim,coilmn,1)
+         DO i=1,cmpert
+            IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
+               coilmns(cmlow-mlow+i,1)=coilmn(i)
+            ENDIF
+         ENDDO
+         DEALLOCATE(coilmn)
+         CALL coil_dealloc
+         icoilname='fecm'
+         icoilcur(1,1)=1e3
+         icoilcur(1,2)=0
+         icoilcur(1,3)=-1e3
+         icoilcur(1,4)=0
+         CALL coil_read(idconfile,1,icoilname,icoilcur)
+         ALLOCATE(coilmn(cmpert))
+         CALL field_bs_psi(psilim,coilmn,1)
+         DO i=1,cmpert
+            IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
+               coilmns(cmlow-mlow+i,2)=coilmn(i)
+            ENDIF
+         ENDDO
+         DEALLOCATE(coilmn)
+         CALL coil_dealloc
+         icoilname='fecl'
+         icoilcur(1,1)=1e3
+         icoilcur(1,2)=0
+         icoilcur(1,3)=-1e3
+         icoilcur(1,4)=0
+         CALL coil_read(idconfile,1,icoilname,icoilcur)
+         ALLOCATE(coilmn(cmpert))
+         CALL field_bs_psi(psilim,coilmn,1)
+         DO i=1,cmpert
+            IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
+               coilmns(cmlow-mlow+i,3)=coilmn(i)
+            ENDIF
+         ENDDO
+         DEALLOCATE(coilmn)
+         CALL coil_dealloc
+
+         ALLOCATE(gcoil(mstep,3,3))
+
+         WRITE(*,*)"Build coil response matrix functions"
+         DO istep=1,mstep
+            iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+            ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
+            IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
+     $           WRITE(*,'(1x,a9,i3,a26)')
+     $           "volume = ",iindex,"% coil matrix calculations"
+
+            coil1=MATMUL(gres(istep,:,:),coilmns(:,:))
+            coil2=CONJG(TRANSPOSE(coilmns(:,:)))
+            gcoil(istep,:,:)=MATMUL(coil2,coil1)
+         ENDDO
+c-----------------------------------------------------------------------
+c     write coil response matrix functions.
+c-----------------------------------------------------------------------
+         CALL ascii_open(out_unit,"ipec_coil_matrix_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_coil_matrix: "//
+     $        "Self-consistent coil response matrix functions."
+         WRITE(out_unit,*)     
+         
+         WRITE(out_unit,'(1x,a16,2(1x,a4),2(1x,a16))')"psi","i","j",
+     $        "Re(T_x)","Im(T_x)"
+         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+            DO i=1,3
+               DO j=1,3
+                  WRITE(out_unit,'(1x,es16.8,2(1x,I4),2(1x,es16.8))')
+     $                 psifac(istep),i,j,
+     $                 REAL(gcoil(istep,i,j)),AIMAG(gcoil(istep,i,j))
+               ENDDO
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     calculate maximum coil eigenvalues.
+c-----------------------------------------------------------------------
+         CALL ascii_open(out_unit,"ipec_coil_eigen_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_coil_eigen: "//
+     $        "Coil eigenvalue profiles by self-consistent solutions."
+         WRITE(out_unit,*)     
+
+         WRITE(out_unit,'(15(1x,a16))')"psi",
+     $        "MAX(ceigen)","MIN(ceigen)",
+     $        "Real(MIN1)","Imag(MIN1)","Real(MIN2)","Imag(MIN2)",
+     $        "Real(MIN3)","Imag(MIN3)","Real(MAX1)","Imag(MAX1)",
+     $        "Real(MAX2)","Imag(MAX2)","Real(MAX3)","Imag(MAX3)"
+         lwork=2*3-1         
+         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+            coil3=(gcoil(istep,:,:)+
+     $           CONJG(TRANSPOSE(gcoil(istep,:,:))))/2.0
+            CALL zheev('V','U',3,coil3,3,ceigen,cwork,lwork,crwork,info)
+            WRITE(out_unit,'(15(1x,es16.8))')
+     $           psifac(istep),MAXVAL(ceigen),MINVAL(ceigen),
+     $           REAL(coil3(1,1)),AIMAG(coil3(1,1)),
+     $           REAL(coil3(2,1)),AIMAG(coil3(2,1)),
+     $           REAL(coil3(3,1)),AIMAG(coil3(3,1)),
+     $           REAL(coil3(1,3)),AIMAG(coil3(1,3)),
+     $           REAL(coil3(2,3)),AIMAG(coil3(2,3)),
+     $           REAL(coil3(3,3)),AIMAG(coil3(3,3))
+         ENDDO
+         CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     calculate maximum torque-ratio TT^{-1}_b coil eigenvalues.
+c-----------------------------------------------------------------------
+         coil3=(gcoil(mstep,:,:)+CONJG(TRANSPOSE(gcoil(mstep,:,:))))/2.0
+         CALL zhetrf('L',3,coil3,3,cipiv,cwork3,3*3,info) 
+
+         CALL ascii_open(out_unit,"ipec_coil_ratio_eigen_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"IPEC_coil_ratio_eigen: "//
+     $        "Eigenvalue profiles by self-consistent solutions."
+         WRITE(out_unit,*)     
+         
+         WRITE(out_unit,'(15(1x,a16))')"psi",
+     $        "MAX(ceigen)","MIN(ceigen)",
+     $        "Real(MIN1)","Imag(MIN1)","Real(MIN2)","Imag(MIN2)",
+     $        "Real(MIN3)","Imag(MIN3)","Real(MAX1)","Imag(MAX1)",
+     $        "Real(MAX2)","Imag(MAX2)","Real(MAX3)","Imag(MAX3)"
+
+         lwork=2*3+1
+         DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
+            coil4=(gcoil(istep,:,:)+
+     $           CONJG(TRANSPOSE(gcoil(istep,:,:))))/2.0
+            CALL zhetrs('L',3,3,coil3,3,cipiv,coil4,3,info)
+            CALL zgeev('V','V',3,coil4,3,creigen,
+     $           cvl,3,cvr,3,cwork2,lwork,crwork2,info)
+
+            WRITE(out_unit,'(15(1x,es16.8))')psifac(istep),
+     $           MAXVAL(ABS(creigen)),MINVAL(ABS(creigen)),
+     $           REAL(cvr(1,1)),AIMAG(cvr(1,1)),
+     $           REAL(cvr(2,1)),AIMAG(cvr(2,1)),
+     $           REAL(cvr(3,1)),AIMAG(cvr(3,1)),
+     $           REAL(cvr(1,3)),AIMAG(cvr(1,3)),
+     $           REAL(cvr(2,3)),AIMAG(cvr(2,3)),
+     $           REAL(cvr(3,3)),AIMAG(cvr(3,3))
+         ENDDO
+         CALL ascii_close(out_unit)        
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

@@ -12,8 +12,8 @@
 	kingridtype = 0         ! regular grid method (default : 0)
 	passing_flag = t        ! includes passing particle effects (default: false)
 	ktanh_flag = t          ! ignore kinetic effects in the core smoothly (default: false)
-	ktc = 0.15		! parameter activiated by ktanh_flag: roughly corresponds to core width ignored (default: 0.15)
-	ktw = 0.5		! parameter activiated by ktanh_flag: width of hypertangential functions (default: 0.5)	
+	ktc = 0.1		! parameter activiated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
+	ktw = 50.0		! parameter activiated by ktanh_flag: width of hypertangential functions (default: 50.0)	
    	electron_flag = f       ! calculates electron contributions
 	nn=1
 	delta_mlow=6
@@ -31,7 +31,7 @@
 /
 &dcon_output
 	crit_break=t
-	ahb_flag=t
+	ahb_flag=f		! needs to be set false
 	msol_ahb=1
 	mthsurf0=1
 	bin_euler=t
