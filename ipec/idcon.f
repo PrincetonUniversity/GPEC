@@ -51,6 +51,9 @@ c-----------------------------------------------------------------------
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
       READ(in_unit)kin_flag,con_flag
+      READ(in_unit) amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
       IF ((power_b==0).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="hamada"
       ELSE IF ((power_b==0).AND.(power_bp==0).AND.(power_r==2)) THEN
@@ -132,6 +135,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
          CASE(5)
+            READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
@@ -227,12 +231,15 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
          CASE(5)
+            ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert))
+            ALLOCATE(wtraw(mpert,mpert))
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
             READ(UNIT=in_unit)efp
             READ(UNIT=in_unit)eft
             READ(UNIT=in_unit)wft
+            READ(UNIT=in_unit)wtraw
          END SELECT
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
@@ -247,10 +254,12 @@ c-----------------------------------------------------------------------
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
-      wt0=wt0/(mu0*2.0)*psio**2
-      eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      wft=wft*(chi1*1e-3)
+      IF(data_type==5)THEN
+         wtraw=wtraw*(chi1*1e-3)
+         eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+         efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
+         wft=wft*(chi1*1e-3)
+      ENDIF
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
 c-----------------------------------------------------------------------
@@ -806,13 +815,14 @@ c-----------------------------------------------------------------------
 c     get grri and grre matrices by calling mscvac functions.
 c-----------------------------------------------------------------------
       ELSE
-         PRINT *,'------',mthvac,mtheta,mthsurf,nths2
+         IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
          kernelsignin = -1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
      $               kernelsignin)
-         PRINT *,'------',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
+         IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
          ALLOCATE(grri(nths2,nfm2))
          CALL grrget(nfm2,nths2,grri)
+         kernelsignin = 1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
      $               kernelsignin)
          ALLOCATE(grre(nths2,nfm2))
@@ -931,7 +941,7 @@ c-----------------------------------------------------------------------
          CALL fspline_fit_1(fmodb,"extrap",.FALSE.)
       ENDIF
 
-      DO ipsi=0,mpsi         
+      DO ipsi=0,mpsi
          q=sq%fs(ipsi,4)
          sband(0:-mband:-1)=fmodb%cs%fs(ipsi,1:mband+1)
          tband(0:-mband:-1)=fmodb%cs%fs(ipsi,mband+2:2*mband+2)

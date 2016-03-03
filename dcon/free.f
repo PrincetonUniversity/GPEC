@@ -65,10 +65,7 @@ c-----------------------------------------------------------------------
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
-
-      REAL(r8), DIMENSION(mpert) :: ebt,ebp,ebv ! LOGAN
       COMPLEX(r8), DIMENSION(mpert) :: diff
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: wbt,wbp,wbv,ct ! LOGAN
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -131,55 +128,6 @@ c-----------------------------------------------------------------------
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
          wv(:,ipert)=wv(:,ipert)*singfac
-      ENDDO
-c-----------------------------------------------------------------------
-c     LOGAN - compute flux eigenvalues and eigenvectors.
-c-----------------------------------------------------------------------
-      wbt = wp+wv
-      DO ipert=1,mpert ! Hermitian diag explicit (errors get magnified)
-         wbt(ipert,ipert) = REAL(wbt(ipert,ipert)) 
-      ENDDO
-      DO ipert=1,mpert
-         wbt(ipert,:)= ifac*singfac*wbt(ipert,:)    !*twopi*chi1
-         wbt(:,ipert)=-ifac*singfac*wbt(:,ipert)    !*twopi*chi1
-      ENDDO
-      lwork=2*mpert-1
-      CALL zheev('V','U',mpert,wbt,mpert,ebt,work,lwork,rwork,info)
-      work = 0
-      rwork = 0
-c-----------------------------------------------------------------------
-c     LOGAN - normalize eigenfunction and energy.
-c-----------------------------------------------------------------------
-      IF(normalize)THEN
-         DO isol=1,mpert
-            norm=0
-            DO ipert=1,mpert
-               DO jpert=1,mpert
-                  norm=norm+jmat(jpert-ipert)
-     $                 *wbt(ipert,isol)*CONJG(wbt(jpert,isol))
-               ENDDO
-            ENDDO
-            norm=norm/v1
-            wbt(:,isol)=wbt(:,isol)/SQRT(norm)
-            ebt(isol)=ebt(isol)/norm
-         ENDDO
-      ENDIF
-c-----------------------------------------------------------------------
-c     LOGAN - normalize phase and label largest component.
-c-----------------------------------------------------------------------
-      DO isol=1,mpert
-         imax=MAXLOC(ABS(wbt(:,isol)))
-         phase=ABS(wbt(imax(1),isol))/wbt(imax(1),isol)
-         wbt(:,isol)=wbt(:,isol)*phase
-      ENDDO
-c-----------------------------------------------------------------------
-c     LOGAN - compute plasma and vacuum contributions.
-c-----------------------------------------------------------------------
-      wbp=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wp,wbt))
-      wbv=MATMUL(CONJG(TRANSPOSE(wbt)),MATMUL(wv,wbt))
-      DO ipert=1,mpert
-         ebp(ipert)=wbp(ipert,ipert)
-         ebv(ipert)=wbv(ipert,ipert)
       ENDDO
 c-----------------------------------------------------------------------
 c     compute complex energy eigenvalues.
@@ -250,24 +198,12 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)wt0
       ENDIF
 c-----------------------------------------------------------------------
-c    LOGAN - add option 5.
-c-----------------------------------------------------------------------
-      IF(bin_euler)THEN
-         WRITE(euler_bin_unit)5
-         WRITE(euler_bin_unit)ep
-         WRITE(euler_bin_unit)et
-         WRITE(euler_bin_unit)wt
-         WRITE(euler_bin_unit)ebp 
-         WRITE(euler_bin_unit)ebt
-         WRITE(euler_bin_unit)wbt
-      ENDIF
-c-----------------------------------------------------------------------
 c     write to screen and copy to output.
 c-----------------------------------------------------------------------
-      WRITE(*,10)REAL(ep(1)),REAL(ev(1)),REAL(et(1)),AIMAG(et(1))
       plasma1=REAL(ep(1))
       vacuum1=REAL(ev(1))
       total1=REAL(et(1))
+      IF(verbose) WRITE(*,10) plasma1,vacuum1,total1,AIMAG(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
 c-----------------------------------------------------------------------

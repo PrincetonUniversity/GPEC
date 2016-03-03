@@ -22,6 +22,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE ode_output_mod
       USE sing_mod
+      USE dcon_mod, ONLY : shotnum,shottime
       IMPLICIT NONE
 
       CHARACTER(6), DIMENSION(:), POINTER :: name
@@ -83,6 +84,10 @@ c-----------------------------------------------------------------------
      $        psilow,psilim,qlim,singfac_min
          WRITE(euler_bin_unit)power_b,power_r,power_bp
          WRITE(euler_bin_unit)kin_flag,con_flag
+         ! from sum1 equilibrium descriptions
+         WRITE(euler_bin_unit) amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
 c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
          WRITE(euler_bin_unit)rzphi%xs,rzphi%ys,
@@ -142,7 +147,7 @@ c     print initial point of integration.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psifac,0)
       q=sq%f(4)
-      WRITE(*,40)"psi = ",psifac,", q = ",q
+      IF(verbose) WRITE(*,40)"psi = ",psifac,", q = ",q
 c-----------------------------------------------------------------------
 c     open file for error output.
 c-----------------------------------------------------------------------
@@ -182,7 +187,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)ud
 c-----------------------------------------------------------------------
 c     obsolete diagnostics.
-c-----------------------------------------------------------------------         
+c-----------------------------------------------------------------------
 c         WRITE(euler_bin_unit)f1mats
 c         WRITE(euler_bin_unit)k1mats
 c         WRITE(euler_bin_unit)k1aats
@@ -291,7 +296,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute and sort inverse eigenvalues.
 c-----------------------------------------------------------------------
-      lwork=2*mpert-1  
+      lwork=2*mpert-1
       CALL zheev('N','U',mpert,wp,mpert,evalsi,work,lwork,rwork,info)
       indexi=(/(ipert,ipert=1,mpert)/)
       key=-ABS(evalsi)

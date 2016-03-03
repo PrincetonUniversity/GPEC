@@ -20,6 +20,7 @@ c     11. ipdiag_rzphibx
 c     12. ipdiag_rzpgrid
 c     13. ipdiag_rzpdiv
 c     14. ipdiag_radvar
+c     15. ipdiag_permeabev_orthogonality
 c-----------------------------------------------------------------------
 c     subprogram 0. ipdiag_mod.
 c     module declarations.
@@ -1742,5 +1743,141 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_radvar
+c-----------------------------------------------------------------------
+c     subprogram 15. ipdiag_permeabev_orthogonality.
+c     diagnose orhtogonality of eigenvectors.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipdiag_permeabev_orthogonality
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,j
+      REAL(r8) :: a1,a2
+      COMPLEX(r8), DIMENSION(mpert) :: v1,v2
+      REAL(r8), DIMENSION(mpert,mpert) :: potengy
+c-----------------------------------------------------------------------
+c     construct 2d eigenvector sets in fourier space.
+c-----------------------------------------------------------------------
+      CALL ascii_open(out_unit,"ipdiag_permeabevorthogonality_n"//
+     $                         TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPDIAG_PERMEABEVORTHOGONALITY: "//
+     $     "Diagnose orhtogonality of permeability eigenvectors"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(2(1x,a3),4(1x,a16))')"m1","m2","A1","A2",
+     $      "real(dot)","imag(dot)"
+      DO i=1,mpert
+         v1 = permeabevmats(resp_index,:,i)
+         a1 = SQRT(ABS(DOT_PRODUCT(v1,v1)))
+         DO j=1,mpert
+            v2 = permeabevmats(resp_index,:,j)
+            a2 = SQRT(ABS(DOT_PRODUCT(v2,v2)))
+            WRITE(out_unit,'(2(1x,I3),4(1x,es16.8))')
+     $           mfac(i),mfac(j),a1,a2,DOT_PRODUCT(v1,v2)
+         ENDDO
+      ENDDO
+      WRITE(out_unit,*)
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipdiag_permeabev_orthogonality
+      
+c-----------------------------------------------------------------------
+c     subprogram 16. ipdiag_reluctpowout.
+c     diagnose coordinate independence of power normalized eigenvalues.
+c-----------------------------------------------------------------------
+      SUBROUTINE ipdiag_reluctpowout(rout,bpout,bout,rcout)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: rout,bpout,bout,rcout
+      INTEGER :: i,j,k,lwork
+      REAL(r8), DIMENSION(3*mpert-2) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+      COMPLEX(r8), DIMENSION(mpert) :: temp,ev,evo
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1o,sqrta,mat,mato,
+     $   sqrtao
+      
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: reluctpoev
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: reluctpomats,
+     $   reluctpoevmats,reluctpmats(:,:,:)
+
+      WRITE(*,*) 'Diagnosing reluctance power eigenvalues in out coords'
+c-----------------------------------------------------------------------
+c     calculate sqrt(A) weighting matrix.
+c      - Define sqrt(A) weighting matrix as
+c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c-----------------------------------------------------------------------
+      DO i=1,mpert
+         temp = 0
+         temp(i) = 1.0
+         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
+         sqrta(:,i) = temp
+      ENDDO
+      ! start with IPEC flux matrix
+      mat = reluctmats(resp_index,:,:)
+      ! convert to bsqrt(A)
+      mat=MATMUL(MATMUL(sqrta,mat),sqrta)
+      work = 0
+      rwork = 0
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,mat,mpert,ev,work,lwork,rwork,info)
+c-----------------------------------------------------------------------
+c     Convert to output coordinates
+c      - Note we cannot use the usual lmpert output vectors in this case
+c      baceause we do not have enough modes to fill the matrix columns
+c      (while bcoords fills the rows)
+c-----------------------------------------------------------------------
+      mato = reluctmats(resp_index,:,:)
+      DO j=1,mpert
+         CALL ipeq_bcoords(psilim,mato(:,j),mfac,
+     $        mpert,rout,bpout,bout,rcout,0,1)
+         !CALL ipeq_weight_out(psilim,mato(j,:),mfac,mpert,1) ! field to flux
+      ENDDO
+      ! convert to bsqrt(A)
+      sqrtao = 0 ! Need easy way to get fldflxmat from ipout
+      mato=MATMUL(MATMUL(sqrtao,mato),sqrtao)
+      work = 0
+      rwork = 0
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,mato,mpert,evo,work,lwork,rwork,info)
+      
+      CALL ascii_open(out_unit,"ipdiag_reluctpowout_n"//
+     $	   TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"IPDIAG_RELUCTPOWOUT: Reluctance matrix "//
+     $     "power eigenvalue calculation in output coordinates."
+      WRITE(out_unit,*)
+      WRITE(out_unit,*)"jac_out=",jac_out,"tmag_out=",0,"jsurf_out=",0
+      WRITE(out_unit,*)"resp_index=",resp_index
+      WRITE(out_unit,*)
+      WRITE(out_unit,*)"Eigenvalues"
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a4,2(1x,a16))')"mode",
+     $  "s_type","s_out"
+      DO i=1,mpert
+         WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,ev(i),evo(i)
+      ENDDO
+      WRITE(out_unit,*)
+      
+      WRITE(out_unit,*)"Eigenvectors"
+      WRITE(out_unit,*)"  rho = Reluctance (power norm)"
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(2(1x,a4),2(1x,a16))')"mode","m",
+     $  "real(v_type)","imag(v_type)","real(v_out)","imag(v_out)"
+      DO i=1,mpert
+         DO j=1,mpert
+            WRITE(out_unit,'(2(1x,I4),4(1x,es16.8))')i,mfac(j),
+     $           mat(j,i),mato(j,i)
+         ENDDO 
+      ENDDO
+      WRITE(out_unit,*)
+      CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ipdiag_reluctpowout
 
       END MODULE ipdiag_mod

@@ -1,18 +1,21 @@
-# FC, LIBDIR and FCLIBS are set in the platform-specific included file
-include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -I../equil -g
+FFLAGS = -I../equil
 F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
+LIBDIR = \
+	-L${LAPACKHOME} \
+	-L../lib
+
 LIBS = \
 	$(LIBDIR) \
 	-llsode \
 	-lequil \
-	$(FCLIBS)
-
+	-llapack \
+	-lblas
+	
 OBJS = \
 	orbit_mod.o \
 	restart.o \

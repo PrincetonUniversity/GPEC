@@ -1,7 +1,5 @@
-# FC is set in the platform-specific included file
-include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -g
+FFLAGS = 
 F90 = $(FC) $(FFLAGS)
 
 .f.o:
