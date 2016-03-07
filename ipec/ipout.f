@@ -1720,7 +1720,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(5,mpert) :: tvecs
       COMPLEX(r8), DIMENSION(9,mpert,mpert) :: tgresp
 
-      REAL(r8), DIMENSION(10,36) :: icoilcur
+      REAL(r8), DIMENSION(10,48) :: icoilcur
       CHARACTER(24), DIMENSION(10) :: icoilname
       COMPLEX(r8), DIMENSION(:), POINTER :: coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: coilmns,coil1,

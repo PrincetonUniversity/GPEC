@@ -383,7 +383,7 @@ module inputs
         complex(r8), dimension(:,:), intent(in) :: xmp1mns,xspmns,xmsmns
         ! declare local variables
         logical :: debug,set_dbdx
-        integer :: i,j,ims,npsi,nm, out_unit
+        integer :: i,j,ims,istrt_psi,istop_psi,npsi,nm, out_unit
         real(r8) :: r_mjr,r_mnr,jac,g12,g13,g22,g23,g33,gfac
         complex(r8), dimension(:), allocatable :: lagb_mn,divx_mn,&
             expm
@@ -396,6 +396,8 @@ module inputs
         if(present(op_debug)) debug = op_debug
         if(present(op_set_dbdx)) set_dbdx = op_set_dbdx
         ! get dimensions
+        istrt_psi = LBOUND(psi,1)
+        istop_psi = UBOUND(psi,1)
         npsi = size(psi)
         nm = size(ms)
         
@@ -405,7 +407,7 @@ module inputs
         if(debug) print *,"  mfac = ",mfac
         if(debug) print *,"  ms   = ",ms
         if(debug) print *,"  npsi = ",npsi
-        if(debug) print *,"  psi lim = ",psi(0),psi(npsi)
+        if(debug) print *,"  psi lim = ",psi(1),psi(npsi)
 
         ! fill dcon m modes from available input
         do i=1,3
@@ -444,8 +446,9 @@ module inputs
             allocate(xmat(mpert,mpert),ymat(mpert,mpert),zmat(mpert,mpert),&
                     smat(mpert,mpert),tmat(mpert,mpert))
             !call ipeq_alloc
-            do i=1,npsi
-                if(verbose) call progressbar(i,1,npsi,op_percent=20)
+            do i=istrt_psi,istop_psi
+                j = i-istrt_psi+1
+                if(verbose) call progressbar(j,1,npsi,op_percent=20)
                 call spline_eval(sq,psi(i),0)
                 call cspline_eval(xs_m(1),psi(i),0)
                 call cspline_eval(xs_m(2),psi(i),0)
@@ -471,8 +474,8 @@ module inputs
                 !    +MATMUL(zmat,xms_mn)/chi1
                 !lagb_mn(:)=-(divx_mn+MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1)
                 
-                dbdx_m(1)%fs(i-1,:) = lagb_mn(:)
-                dbdx_m(2)%fs(i-1,:) = divx_mn(:)
+                dbdx_m(1)%fs(j-1,:) = lagb_mn(:)
+                dbdx_m(2)%fs(j-1,:) = divx_mn(:)
             enddo
             
             !call ipeq_dealloc
