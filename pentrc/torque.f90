@@ -898,8 +898,8 @@ module torque
     end function tpsi
 
     !=======================================================================
-    function tintgrl_grid(gtype,psilim,n,nl,zi,mi,wdfac,divxfac,electron,method,&
-        write_flux)
+    function tintgrl_grid(gtype,psilim,n,nl,zi,mi,wdfac,divxfac,electron,&
+                          method,write_flux)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Torque integratal over psi. This function forms a cubic spline of tpsi
@@ -1064,13 +1064,13 @@ module torque
 
         ! enforce integration bounds
         psilim(1) = max(psilim(1),xs(0))
-        psilim(2) = min(psilim(2),xs(0))
+        psilim(2) = min(psilim(2),xs(mx))
         do i=0,mx
             if(istrt<0 .and. xs(i)>=psilim(1)) exit
         enddo
         istrt = i
         do i=mx,0,-1
-            if(sq%xs(i)<=xout) exit
+            if(sq%xs(i)<=xs(mx)) exit
         enddo
         istop = i
         mx = istop-istrt
@@ -1088,7 +1088,7 @@ module torque
         ! loop forming integrand
         xlast = 0
         do i=0,mx
-            x = xs(i+strt)
+            x = xs(i+istrt)
             CALL tintgrnd(neqarray,x,y,dky)
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
@@ -1149,7 +1149,7 @@ module torque
         close(unit2)
         
         ! sum for ultimate result
-        tintgrl_eqpsi = sum(tphi_spl%fsi(mx,:),dim=1)
+        tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
         deallocate(y,dky,gam,chi)
 

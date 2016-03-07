@@ -23,7 +23,7 @@ c-----------------------------------------------------------------------
       MODULE fourfit_mod
       USE fspline_mod
       USE dcon_mod
-      USE torque, only : tpsi,tintgrl_lsode,tintgrl_eqpsi, ! functions
+      USE torque, only : tpsi,tintgrl_lsode,tintgrl_grid, ! functions
      $     kelmm             ! cspline Euler-Lagrange mats for local use
       IMPLICIT NONE
 
@@ -1240,8 +1240,8 @@ c-----------------------------------------------------------------------
       ELSEIF(method==2)THEN
          WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $        "lagrange matrix on equilibrium grid"
-         tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
-     $        ft//"wmm",write_flux)
+         tphi = tintgrl_grid('equil',plim,nn,nl,zi,mi,wdfac,divxfac,
+     $        .FALSE.,ft//"wmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),kwmats(i))
@@ -1259,8 +1259,8 @@ c-----------------------------------------------------------------------
          ENDDO
          WRITE(*,*) " Kinetic torque calculation using MXM euler "//
      $      "lagrange matrix on equilibrium grid"
-         tphi = tintgrl_eqpsi(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
-     $        ft//"tmm",write_flux)
+         tphi = tintgrl_grid('equil',plim,nn,nl,zi,mi,wdfac,divxfac,
+     $        .FALSE.,ft//"tmm",write_flux)
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),ktmats(i))

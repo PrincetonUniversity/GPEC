@@ -472,7 +472,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_build
 c-----------------------------------------------------------------------
-c     subprogram 4. idcon_matric.
+c     subprogram 4. idcon_metric.
 c     reconstructs metric tensors from dcon.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_metric
@@ -826,10 +826,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_matrix
 c-----------------------------------------------------------------------
-c     subprogram 6. idcon_action_matrice.
-c     Equilibrium matrices nexessary to calc perturbed mod b for gpec.
+c     subprogram 6. idcon_action_matrices.
+c     Equilibrium matrices necessary to calc perturbed mod b for gpec.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_action_matrix()!(egnum,xspmn)
+      SUBROUTINE idcon_action_matrices()!(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -987,7 +987,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_action_matrix
+      END SUBROUTINE idcon_action_matrices
 c-----------------------------------------------------------------------
 c     compute root of discrete function by the secant method.
 c     use when only function is monotonic.

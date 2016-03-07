@@ -57,7 +57,7 @@ c-----------------------------------------------------------------------
       
       CHARACTER(128), INTENT(IN) :: cdconfile
       INTEGER, OPTIONAL :: icoil_num
-      REAL(r8), DIMENSION(10,36), OPTIONAL :: icoil_cur
+      REAL(r8), DIMENSION(10,48), OPTIONAL :: icoil_cur
       CHARACTER(24), DIMENSION(10), OPTIONAL :: icoil_name
 
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,

@@ -12,7 +12,7 @@ c     3. idcon_build
 c     4. idcon_metric
 c     5. idcon_matrix
 c     6. idcon_vacuum
-c     7. idcon_action_matrix
+c     7. idcon_action_matrices
 c-----------------------------------------------------------------------
 c     subprogram 0. idcon_mod.
 c     module declarations.
@@ -834,10 +834,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_vacuum
 c-----------------------------------------------------------------------
-c     subprogram 7. idcon_action_matrix.
+c     subprogram 7. idcon_action_matrices.
 c     Equilibrium matrices necessary to calc perturbed mod b for gpec.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_action_matrix()!(egnum,xspmn)
+      SUBROUTINE idcon_action_matrices()!(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -998,6 +998,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_action_matrix
+      END SUBROUTINE idcon_action_matrices
 
       END MODULE idcon_mod

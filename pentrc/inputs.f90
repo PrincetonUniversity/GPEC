@@ -97,7 +97,7 @@ module inputs
         ! read vacuum data.
         !CALL idcon_vacuum
         ! form action matrices (this will move !!)
-        call idcon_action_matrix!(egnum,xspmn)
+        call idcon_action_matrices!(egnum,xspmn)
         
         ! evaluate field on axis
         call spline_eval(sq,0.0_r8,0)

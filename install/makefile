@@ -99,8 +99,8 @@ endif
 
 .IGNORE:
 
-all: v harvest lsode equil orbit vacuum dcon match multi sum \
-	xdraw coil ipec pentrc mkbin
+all: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
+	xdraw coil ipec mkbin
 
 # executables:
 
