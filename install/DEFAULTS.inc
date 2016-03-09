@@ -98,7 +98,7 @@ ifdef cflag
 	else ifeq ($(cflag),portal_gfortran)
 		PLATFORM = portal
 		FC = /usr/pppl/gcc/4.6.3/bin/gfortran4
-		LAPACKHOME = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
+		MATHHOME = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
 		MATHLIBS = -llapack -lblas
 		NETCDFHOME = /usr/pppl/gcc/4.6-pkgs/netcdf-4.1.2
 		NETCDFLIBS = -lnetcdf -lnetcdff
