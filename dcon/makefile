@@ -1,4 +1,6 @@
 
+include ../install/DEFAULTS.inc
+
 FFLAGS = -I../equil -I../harvest -I../pentrc
 F90 = $(FC) $(FFLAGS)
 
@@ -6,7 +8,7 @@ F90 = $(FC) $(FFLAGS)
 	$(F90) -c $*.f
 
 LIBDIR = \
-	-L${LAPACKHOME} \
+	-L$(MATHHOME) \
 	-L../lib
 
 LIBS = \
@@ -16,8 +18,7 @@ LIBS = \
 	-lvac \
 	-lharvest \
 	-lpentrc \
-	-llapack \
-	-lblas
+	$(MATHLIBS)
 
 OBJS = \
 	debug.o \

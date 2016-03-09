@@ -1,4 +1,6 @@
 
+include ../install/DEFAULTS.inc
+
 FFLAGS = -I../equil
 F90 = $(FC) $(FFLAGS)
 
@@ -6,15 +8,14 @@ F90 = $(FC) $(FFLAGS)
 	$(F90) -c $*.f
 
 LIBDIR = \
-	-L${LAPACKHOME} \
+	-L$(MATHHOME) \
 	-L../lib
 
 LIBS = \
 	$(LIBDIR) \
 	-lequil \
 	-llsode \
-	-llapack \
-	-lblas
+	$(MATHLIBS)
 
 OBJS = \
 	qsort.o \
