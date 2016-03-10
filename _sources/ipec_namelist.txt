@@ -99,7 +99,7 @@ IPEC_OUTPUT
   Output the \psi_{N}, resonant \mathbf{B}, singular current, island width and Chirikov parameter at rational surfaces inside the plasma, using vacuum calculations.  Requires coil_flag=True.
 
 **pmodb_flag** = .FALSE.
-  Plasma |\delta B| on flux surfaces.
+  Plasma | \delta B | on flux surfaces.
 
 **xbnormal_flag** = .FALSE.
   Output the normal components of the displacement, covarient perturbed magnetic field, and contravarient perturbed field (area weighted -> can compare between coordinates)  with plasma response included.
