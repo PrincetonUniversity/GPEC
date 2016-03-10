@@ -687,9 +687,7 @@ so beware of loosing accuracy near rational surfaces.</p>
 &gt;&gt;&gt;ds = open_dataset(&#8216;ipec_control_output_n1.nc&#8217;)
 &gt;&gt;&gt;ds = add_control_geometry(ds)</p>
 <p>it is easy to make 3D surface plots using mayavi,
-&gt;&gt;&gt;mesh = mmlab.mesh(ds[&#8216;X&#8217;].values,ds[&#8216;Y&#8217;].values,ds[&#8216;Z&#8217;].values,</p>
-<blockquote>
-<div>scalars=np.real(ds[&#8216;b_n&#8217;]*ds[&#8216;expn&#8217;])</div></blockquote>
+&gt;&gt;&gt;mesh = mmlab.mesh(ds[&#8216;X&#8217;].values,ds[&#8216;Y&#8217;].values,ds[&#8216;Z&#8217;].values,scalars=np.real(ds[&#8216;b_n&#8217;]*ds[&#8216;expn&#8217;])</p>
 <p>Make 2D perturbed last-closed-flux-surface plots quickly using,
 &gt;&gt;&gt;fac = 3e-2 # good for DIII-D unit eigenmodes
 &gt;&gt;&gt;f,ax = plt.subplots()
