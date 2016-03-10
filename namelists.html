@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" />
-    <link rel="next" title="PYPEC Source documentation" href="source_documentation.html" />
+    <link rel="next" title="COIL Namelist Inputs" href="coil_namelist.html" />
     <link rel="prev" title="DCON README" href="dcon_readme.html" /> 
   </head>
   <body>
@@ -40,7 +40,7 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="source_documentation.html" title="PYPEC Source documentation"
+          <a href="coil_namelist.html" title="COIL Namelist Inputs"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="dcon_readme.html" title="DCON README"
@@ -83,8 +83,8 @@
   <p class="topless"><a href="dcon_readme.html"
                         title="previous chapter">DCON README</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="source_documentation.html"
-                        title="next chapter">PYPEC Source documentation</a></p>
+  <p class="topless"><a href="coil_namelist.html"
+                        title="next chapter">COIL Namelist Inputs</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/namelists.txt"
@@ -113,6 +113,30 @@
             
   <div class="section" id="namelist-variables">
 <h1>Namelist Variables<a class="headerlink" href="#namelist-variables" title="Permalink to this headline">¶</a></h1>
+<p>Download a fully annotated copy of the <a class="reference download internal" href="_downloads/dcon.in"><tt class="xref download docutils literal"><span class="pre">DCON</span> <span class="pre">namelist</span></tt></a>.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="coil_namelist.html">COIL Namelist Inputs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="coil_namelist.html#coil-control">COIL_CONTROL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coil_namelist.html#coil-output">COIL_OUTPUT</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ipec_namelist.html">IPEC Namelist Inputs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ipec_namelist.html#ipec-input">IPEC_INPUT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ipec_namelist.html#ipec-control">IPEC_CONTROL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ipec_namelist.html#ipec-output">IPEC_OUTPUT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ipec_namelist.html#ipec-diagnose">IPEC_DIAGNOSE</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pent_namelist.html">PENT Namelist Inputs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pent_namelist.html#pent-input">PENT_INPUT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pent_namelist.html#pent-control">PENT_CONTROL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pent_namelist.html#pent-output">PENT_OUTPUT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pent_namelist.html#pent-admin">PENT_ADMIN</a></li>
+</ul>
+</li>
+</ul>
+</div>
 <div class="section" id="coil-namelist-inputs">
 <h2>COIL Namelist Inputs<a class="headerlink" href="#coil-namelist-inputs" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="coil-control">
@@ -221,15 +245,7 @@
 <dt><strong>jac_out</strong> = &#8220;hamada&#8221;</dt>
 <dd>Coordinates of IPEC output files.  Choose from hamada, pest, boozer, equal_arc or other</dd>
 <dt><strong>jsurf_out</strong> = 0</dt>
-<dd>Set to 1 for a surface weighted spectrum b_{mn}=ointleft(deltamathbf{B}cdothat{n}</dd>
-</dl>
-<p>ight)left(     heta,phi
-ight)e^{-ileft(m       heta-nphi
-ight)}Jcdot|nablapsi|d       heta dphi (an invariant flux on rational surfaces). Set to 0 for unweighted spectrum b_{mn}=ointleft(deltamathbf{B}cdothat{n}
-ight)left(     heta,phi
-ight)e^{-ileft(m       heta-nphi
-ight)}d heta dphi.</p>
-<dl class="docutils">
+<dd>Set to 1 for a surface weighted spectrum b_{mn}=ointleft(deltamathbf{B}cdothat{n}right)left(theta,phi right)e^{-ileft(mtheta-nphi right)}Jcdot|nablapsi|dtheta dphi (an invariant flux on rational surfaces). Set to 0 for unweighted spectrum b_{mn}=ointleft(deltamathbf{B}cdothat{n} right)left(theta,phi right)e^{-ileft(mtheta-nphi right)}dtheta dphi.</dd>
 <dt><strong>tmag_out</strong> = 1</dt>
 <dd>0 for ordinary toroidal angle. 1 for magnetic coordinate angle</dd>
 <dt><strong>resp_flag</strong> = .FALSE.</dt>
@@ -402,7 +418,7 @@ ight)}d heta dphi.</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="source_documentation.html" title="PYPEC Source documentation"
+          <a href="coil_namelist.html" title="COIL Namelist Inputs"
              >next</a> |</li>
         <li class="right" >
           <a href="dcon_readme.html" title="DCON README"

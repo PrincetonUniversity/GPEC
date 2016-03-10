@@ -40,9 +40,6 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
           <a href="outputs.html" title="Outputs and Post-Processing"
              accesskey="N">next</a> |</li>
         <li class="right" >
@@ -106,24 +103,21 @@
 <div class="section" id="install">
 <span id="installing"></span><h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
 <p>Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install/update the site package.</p>
-<p>Using a stable release, the user should set the environment variable GPEC_PLATFORM to the appropriate tag for their architecture and fortran 90 compiler. For example, at PPPL this might be done using:</p>
-<div class="highlight-python"><div class="highlight"><pre>export GPEC_PLATFORM=PPPL_LFF95
-</pre></div>
-</div>
-<p>The tag should match a make.inc file in the install directory, which sets a number of make variables defining compiler types and library paths. Not the appropriate compiler must be in the users path. Instructions for adding the compiler can be found in each make.inc file. For example, if using the Lahey64 compiler at PPPL the user must have executed:</p>
-<div class="highlight-python"><div class="highlight"><pre>module load lff95
-</pre></div>
-</div>
-<p>With the GPEC_PLATFORM variable set and the compiler in the users path, the package exicutables can be made from the source code from the package root using:</p>
+<p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory&#8217;s makefile references the make.inc file, also in install. A basic compiling is as simple as executing:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">make</span>
 </pre></div>
 </div>
-<p>The exicutables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
+<p>in the install directory. The exicutables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
+<p>The make.inc sets a number of variables based on conditionals that determine the archetecture on which GPEC is being compiled. If you are installing in a new or recently changed environment these can be over-riden at the individual level. For example, at PPPL this might be done in pentrc using:</p>
+<div class="highlight-python"><div class="highlight"><pre>make FC=lfc
+</pre></div>
+</div>
+<p>The executable then must be manually copied to the package bin directory.</p>
 </div>
 <div class="section" id="run-process">
 <span id="id2"></span><h2>Run Process<a class="headerlink" href="#run-process" title="Permalink to this headline">¶</a></h2>
 <p>This section outlines the basic run process with reference to some of the most common input-output manipulation in IPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the Namelist Variables section.</p>
-<p>For generality we will refer to the user&#8217;s copy of /p/gpec/users/jpark/IPEC/IPEC_1.00/rundir/LinuxLahey64 as the run-directory. To run IPEC, a user should first navigate to their run directory. Once in the run-directory the user follows these simple steps to complete a IPEC run:</p>
+<p>Public copies of the GPEC releases are available at /p/gpec on portal. The user should usually choose the latest release, lets call it &lt;release&gt;. To run IPEC, a user should first navigate to a directory in which they wish to run and write outputs. Once in the run-directory the user needs (at a minimum) the dcon, equil, vac, and ipec namelist files, which can be copied from /p/gpec/&lt;release&gt;/input for example. The user can then follow these simple steps to complete a IPEC run:</p>
 <ol class="arabic simple">
 <li>Edit the dcon.in file</li>
 </ol>
@@ -142,11 +136,11 @@
 </ul>
 </div></blockquote>
 <ol class="arabic simple" start="3">
-<li>./dcon</li>
+<li>$/p/gpec/&lt;release&gt;/bin/dcon</li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li>This creates the euler.bin file, which provides the initial equilibrium input for IPEC. ??</li>
+<li>This creates the euler.bin file, which provides a orthonormal basis of force balance states for IPEC.</li>
 <li>Once this is created, you can various effects on this equilibrium by changing the 3D field input in ipec.in without having to run DCON again.</li>
 </ul>
 </div></blockquote>
@@ -163,7 +157,7 @@
 </ul>
 </div></blockquote>
 <ol class="arabic simple" start="5">
-<li>./ipec</li>
+<li>/p/gpec/&lt;release&gt;/bin/ipec</li>
 </ol>
 <blockquote>
 <div><ul class="simple">
@@ -206,9 +200,6 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
         <li class="right" >
           <a href="outputs.html" title="Outputs and Post-Processing"
              >next</a> |</li>
