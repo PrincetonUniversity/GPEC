@@ -317,7 +317,7 @@ are recomended to edit ~/.matplotlib/matplotlibrc and
 <p>Right, now for the cool stuff:</p>
 <p>One common need is to look at spectra. For this we want to utilize 
 the full functionality of the data instances&#8217; plot1d function.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pspec</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/example_output_pmodb_n2.out&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pspec</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_pmodb_n1.out&#39;</span><span class="p">)</span>
 <span class="go">Casting table 1 into Data object.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">pspec</span><span class="o">.</span><span class="n">plot1d</span><span class="p">(</span><span class="s">&#39;lagb&#39;</span><span class="p">,</span><span class="s">&#39;psi&#39;</span><span class="p">,</span><span class="n">x2rng</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.005</span><span class="p">,</span><span class="mf">0.005</span><span class="p">)</span>
@@ -335,7 +335,7 @@ given in the documentation &#8220;Definition&#8221; line (watch out for inconsis
 <p>Lets look through a huge file of first order perterbations
 we want to define some new data from the raw outputs, plot it,
 and save the results in a table</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pmodb</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/example_output_pmodb_fun_n2.out&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pmodb</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_pmodb_fun_n1.out&#39;</span><span class="p">)</span>
 <span class="go">Casting table 1 into Data object.</span>
 <span class="go">WARNING: Reducing length of table from 2497639 to 1664452 by reducing x[0] by a factor of 3</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;cyltheta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">],</span><span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;r&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pmodb</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;R0&#39;</span><span class="p">])</span>
@@ -357,7 +357,7 @@ Oh, and then we just added data!</p>
 <p>Thats it! Read the table with your favorit editor. It will probably need a little
 cleaning at the top since it tries to use the lengthy legend labels as column headers.</p>
 <p>Lets look at some 2d data</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pb2</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/example_output_pbrzphi_n2.out&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pb2</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_brzphi_n1.out&#39;</span><span class="p">)</span>
 <span class="go">Casting table 1 into Data object.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span> <span class="o">=</span> <span class="n">pb2</span><span class="o">.</span><span class="n">plot2d</span><span class="p">(</span><span class="s">&#39;b_r&#39;</span><span class="p">)</span>
 <span class="go">Plotting real b_r.</span>
@@ -392,14 +392,14 @@ this case, pyplot.pcolormesh).</p>
 <h3>Deprecated Ascii Interface<a class="headerlink" href="#deprecated-ascii-interface" title="Permalink to this headline">¶</a></h3>
 <p>As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should be used to create xarray Dataset objects whenever possible. This section describes the depprecated ascii interface for context, and motivates the move to netcdf.</p>
 <p>Data in ascii tables can be read into a custom Data object using the read function,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIII-D_example/g147131.02300_DIIID_KEFIT.kin&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin&#39;</span><span class="p">)</span>
 <span class="go">Casting table 1 into Data object.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">mydata</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">mydata</span><span class="p">)</span>
 <span class="go">(&lt;type &#39;list&#39;&gt;, 1)</span>
 </pre></div>
 </div>
 <p>The read function creates a list of data objects corresponding to the tables in the text file. In this case, there is only one table. If we knew this ahead of time, we could have gotten the data object directly by splitting the list.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/example_profiles.dat&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <span class="go">Casting table 1 into Data object.</span>
 </pre></div>
 </div>
@@ -408,7 +408,7 @@ this case, pyplot.pcolormesh).</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span><span class="o">.</span><span class="n">xnames</span>
 <span class="go">[&#39;psi&#39;]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-<span class="go">[&#39;teeV&#39;, &#39;nim3&#39;, &#39;tieV&#39;, &#39;omega_Erads&#39;, &#39;nem3&#39;]</span>
+<span class="go">[&#39;nim^3&#39;, &#39;tieV&#39;, &#39;teeV&#39;, &#39;wexbrad/s&#39;, &#39;nem^3&#39;]</span>
 </pre></div>
 </div>
 <p>You would access the ion density data using mydata.y[&#8216;nim3&#8217;] for example.</p>
@@ -594,10 +594,8 @@ Overrides default function choices (plot3d,mesh,quiver3d).</dd>
 <dd>figure.</dd>
 </dl>
 <p><em>Example:</em></p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xb</span><span class="p">,</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;ipec_xbnormal_fun_n1.out&#39;</span><span class="p">,</span><span class="n">forcex</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;r&#39;</span><span class="p">,</span><span class="s">&#39;z&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">xb</span><span class="o">.</span><span class="n">plot3d</span><span class="p">(</span><span class="s">&#39;bno&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
+<p>xb, = data.read(&#8216;examples/DIIID_example/ipec_xbnormal_fun_n1.out&#8217;,forcex=[&#8216;r&#8217;,&#8217;z&#8217;])
+xb.plot3d(&#8216;bno&#8217;)</p>
 <p>..note: I think what we usually want out of IPEC is
 the 3D surface perturbation. If we run with fun_flag
 xn, = data.read(&#8216;ipec_xbnormal_fun_n2.out&#8217;)
@@ -684,21 +682,21 @@ so beware of loosing accuracy near rational surfaces.</p>
 </dl>
 <p><strong>Examples:</strong></p>
 <p>After opening, and adding geometry,
-&gt;&gt;&gt;ds = open_dataset(&#8216;ipec_control_output_n1.nc&#8217;)
-&gt;&gt;&gt;ds = add_control_geometry(ds)</p>
+&gt;&gt;&gt; ds = open_dataset(&#8216;examples/DIIID_example/ipec_control_output_n1.nc&#8217;)
+&gt;&gt;&gt; ds = add_control_geometry(ds)</p>
 <p>it is easy to make 3D surface plots using mayavi,
-&gt;&gt;&gt;mesh = mmlab.mesh(ds[&#8216;X&#8217;].values,ds[&#8216;Y&#8217;].values,ds[&#8216;Z&#8217;].values,scalars=np.real(ds[&#8216;b_n&#8217;]*ds[&#8216;expn&#8217;])</p>
+&gt;&gt;&gt; mesh = mmlab.mesh(ds[&#8216;X&#8217;].values,ds[&#8216;Y&#8217;].values,ds[&#8216;Z&#8217;].values,scalars=np.real(ds[&#8216;b_n&#8217;]*ds[&#8216;expn&#8217;]))</p>
 <p>Make 2D perturbed last-closed-flux-surface plots quickly using,
-&gt;&gt;&gt;fac = 3e-2 # good for DIII-D unit eigenmodes
-&gt;&gt;&gt;f,ax = plt.subplots()
-&gt;&gt;&gt;for i in range(4):
-&gt;&gt;&gt;    v = ds[&#8216;W_EDX_FUN&#8217;][0,i]*fac
-&gt;&gt;&gt;    l,= plot(ds[&#8216;R&#8217;]+v*ds[&#8216;R_n&#8217;],ds[&#8216;z&#8217;]+v*ds[&#8216;z_n&#8217;])
-&gt;&gt;&gt;sm = plt.set_linearray(ax.lines[-4:],range(1,5))
-&gt;&gt;&gt;cb = f.colorbar()
-&gt;&gt;&gt;cb.set_label(&#8216;Mode Index&#8217;)
-&gt;&gt;&gt;ax.set_xlabel(&#8216;R (m)&#8217;)
-&gt;&gt;&gt;ax.set_ylabel(&#8216;z (m)&#8217;)</p>
+&gt;&gt;&gt; fac = 3e-2 # good for DIII-D unit eigenmodes
+&gt;&gt;&gt; f,ax = plt.subplots()
+&gt;&gt;&gt; for i in range(4):
+...     v = np.real(ds[&#8216;W_EDX_FUN&#8217;][0,i]*fac)
+...     l, = ax.plot(ds[&#8216;R&#8217;]+v*ds[&#8216;R_n&#8217;],ds[&#8216;z&#8217;]+v*ds[&#8216;z_n&#8217;])
+&gt;&gt;&gt; sm = plt.set_linearray(ax.lines[-4:],range(1,5))
+&gt;&gt;&gt; cb = f.colorbar(sm)
+&gt;&gt;&gt; cb.set_label(&#8216;Mode Index&#8217;)
+&gt;&gt;&gt; txt = ax.set_xlabel(&#8216;R (m)&#8217;)
+&gt;&gt;&gt; txt = ax.set_ylabel(&#8216;z (m)&#8217;)</p>
 </dd></dl>
 
 <dl class="function">
