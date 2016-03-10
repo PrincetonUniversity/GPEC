@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode
       INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8) :: majr,minr,rdist,smallwidth,factor,fp,normpsi
-      CHARACTER(4) :: filter_types
+      CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
@@ -62,7 +62,8 @@ c-----------------------------------------------------------------------
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
-     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit
+     $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit,
+     $     malias
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -178,6 +179,7 @@ c-----------------------------------------------------------------------
       timeit = .FALSE.
       verbose = .TRUE.
       debug_flag = .FALSE.
+      malias=0
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------
@@ -199,6 +201,9 @@ c-----------------------------------------------------------------------
          PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
          PRINT *,"  Use filter_types to filter external spectrum."
          CALL ipec_stop("Deprecated input.")
+      ENDIF
+      IF(malias/=0) THEN
+       PRINT *,"WARNING: malias may not be supported in future versions"
       ENDIF
 c-----------------------------------------------------------------------
 c     define relative file paths.
@@ -427,7 +432,7 @@ c-----------------------------------------------------------------------
          CALL ipout_response(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
-      DO i=1,LEN(filter_types)
+      DO i=1,LEN_TRIM(filter_types)
          IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
       ENDDO
       IF (singcoup_flag) THEN

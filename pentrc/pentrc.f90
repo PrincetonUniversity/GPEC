@@ -30,7 +30,7 @@ program pentrc
     use pitch_integration, only: &
         lambdaatol,lambdartol,&         ! reals
         lambdadebug                     ! logical
-    use torque, only : tintgrl_lsode,tintgrl_eqpsi,tpsi,&
+    use torque, only : tintgrl_lsode,tintgrl_grid,tpsi,&
         ntheta,nlmda,&                  ! integers
         tatol,trtol,&                   ! reals
         tdebug,&                          ! logical
@@ -66,6 +66,8 @@ program pentrc
         theta_out=.false.,&
         xlmda_out=.false.,&
         eqpsi_out=.false.,&
+        equil_grid=.false.,&
+        input_grid=.false.,&
         fnml_flag=.false.,&
         ellip_flag=.false.,&
         diag_flag=.false.,&
@@ -95,7 +97,8 @@ program pentrc
         divxfac=1.0,&
         diag_psi = 0.7, &
         psilim(2) = (/0,1/),&
-        psiout(30)= (/(i,i=1,30)/)/30.6
+        psiout(30)= 0, &
+        psi_out(30)= (/(i,i=1,30)/)/30.6
         
     complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
     complex(r8), dimension(:,:,:), allocatable :: wtw
@@ -129,9 +132,9 @@ program pentrc
     namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
         atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
         
-    namelist/pent_output/moment,eq_out,theta_out,xlmda_out,eqpsi_out,&
+    namelist/pent_output/moment,eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&
         fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
-        wxyz_flag,psiout,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
+        wxyz_flag,psiout,psi_out,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
         fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
         term_flag,clean
         
@@ -146,6 +149,10 @@ program pentrc
     read(unit=1,nml=pent_output)
     read(unit=1,nml=pent_admin)
     close(1)
+    
+    ! warnings if using deprecated inputs
+    if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
+    if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out."
     
     ! distribute some simplified inputs to module circles
     xatol = atol
@@ -220,15 +227,15 @@ program pentrc
             write(1,'(1/,4x,2(a4,i4),1/)') "n = ",nn," l = ",0
             
             do i=1,nout
-                if(verbose) print *," psi = ",psiout(i)
-                write(1,'(1/,1x,a16,es16.8e3,1/)') "psi = ",psiout(i)
+                if(verbose) print *," psi = ",psi_out(i)
+                write(1,'(1/,1x,a16,es16.8e3,1/)') "psi = ",psi_out(i)
                 write(1,'(1x,a4,a4,12(1x,a16))') "m_1","m_2","real(A_k)",&
                  "imag(A_k)","real(B_k)","imag(B_k)","real(C_k)","imag(C_k)",&
                  "real(D_k)","imag(D_k)","real(E_k)","imag(E_k)","real(H_k)",&
                  "imag(H_k)"
                 do l=0,0!! should be all
-                    if(psiout(i)>0 .and. psiout(i)<=1)then
-                        tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
+                    if(psi_out(i)>0 .and. psi_out(i)<=1)then
+                        tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
                             .false.,theta_out,xlmda_out,wtw)
                         do j=1,mpert
                             do k=1,mpert
@@ -289,9 +296,20 @@ program pentrc
                 endif
                 ierr=set_harvest_payload_dbl(hlog,'torque_'//method//nul,real(tphi))
                 ierr=set_harvest_payload_dbl(hlog,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
-                if(eqpsi_out)then
+                if(equil_grid)then
                     if(verbose) print *,method//" - "//"Recalculating on equilibrium grid"
-                    teq = tintgrl_eqpsi(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
+                    teq = tintgrl_grid('equil',psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
+                    if(verbose)then
+                        print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
+                            ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
+                        print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),&
+                            ", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
+                        print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                    endif
+                endif
+                if(input_grid)then
+                    if(verbose) print *,method//" - "//"Recalculating on input displacements' grid"
+                    teq = tintgrl_grid('input',psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
                     if(verbose)then
                         print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
                             ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
@@ -301,11 +319,11 @@ program pentrc
                     endif
                 endif
                 ! run select surfaces with detailed output
-                if(verbose) print *,method//" - "//"Recalculating on psiout grid for detailed outputs"
+                if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
                 do i=1,nout
                     do l=-nl,nl,max(1,nl)
-                        if(psiout(i)>0 .and. psiout(i)<=1)then
-                            tsurf = tpsi(psiout(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
+                        if(psi_out(i)>0 .and. psi_out(i)<=1)then
+                            tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
                                 .false.,theta_out,xlmda_out)
                         endif
                     enddo

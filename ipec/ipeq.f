@@ -727,7 +727,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_fcoords
 c-----------------------------------------------------------------------
-c     subprogram 9.1 ipeq_fcoords2.
+c     subprogram 9.1 ipeq_fcoordsout.
 c     transform to dcon coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_fcoordsout(fmo,fmi,psi,ti,ji)
@@ -765,8 +765,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     transform new vector.
 c-----------------------------------------------------------------------
-      CALL ipeq_fcoords(psi,fmo,mfac,mpert,power_rout,power_bpout,
-     $   power_bout,power_rcout,ti,ji)
+      IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
+         CALL ipeq_fcoords(psi,fmo,mfac,mpert,power_rout,power_bpout,
+     $      power_bout,power_rcout,ti,ji)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -921,8 +923,8 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN), OPTIONAL :: ti,ji
       REAL(r8), INTENT(IN) :: psi
-      COMPLEX(r8), DIMENSION(lmpert), INTENT(IN) :: fmi
-      COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: fmo
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: fmi
+      COMPLEX(r8), DIMENSION(lmpert), INTENT(OUT) :: fmo
       
       INTEGER :: i,tout,jout
 c-----------------------------------------------------------------------
@@ -950,8 +952,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     transform new vector.
 c-----------------------------------------------------------------------
-      CALL ipeq_bcoords(psi,fmo,lmfac,lmpert,power_rout,power_bpout,
-     $   power_bout,power_rcout,tout,jout)
+      IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
+         CALL ipeq_bcoords(psi,fmo,lmfac,lmpert,power_rout,power_bpout,
+     $      power_bout,power_rcout,tout,jout)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

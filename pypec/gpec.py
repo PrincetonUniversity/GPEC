@@ -269,9 +269,14 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     
     # actual run
     if qsub:
-        os.system('rm *.sh')
-        jobname=data.getshot(loc)+'_'+os.path.abspath(loc).split('/')[-1]
-        os.system('rm ../'+jobname+'.o*')
+        dloc = os.path.abspath(loc).split('/')[-1]
+        jobname=data.getshot(loc)+'_'+dloc
+        # clean up old qsub if it exists
+        if os.path.exists('../{:}.oe'.format(dloc)):
+            os.system('rm ../{:}.oe'.format(dloc))
+        if os.path.exists('{:}.sh'.format(jobname)):
+            os.system('rm {:}.sh'.format(jobname))
+        # fill in and write shell script
         exelist=''
         if rundcon: exelist+=rundir+'/dcon \n'
         if runipec: exelist+=rundir+'/ipec \n'
@@ -286,6 +291,7 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         if mem<=3e3: jobstr = jobstr.replace('#PBS -q mque','')
         with open(jobname+'.sh','w') as f:
             f.write(jobstr)
+        # submit job to cluster
         os.system('qsub '+jobname+'.sh')
         #wait for job completion to return
         if return_on_complete:

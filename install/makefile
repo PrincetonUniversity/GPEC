@@ -7,7 +7,7 @@
 #   Must load compiler and basic libraries (These modify LD_LIBRARY_PATH).
 #   Choose one of the following
 #	$ module load lff95 lapack-blas netcdf
-#	$ module load gcc4; module load lapack-blas netcdf
+#	$ module load gcc4 lapack-blas netcdf
 #	$ module load intel acml netcdf
 #	Defaults will try to use gcc4
 #
@@ -32,6 +32,7 @@
 
 ifneq ($(shell echo $(HOSTNAME) | grep sunfire),)
 	PLATFORM = portal
+
 ifndef FC
 ifndef F90
 	FC = /usr/pppl/gcc/4.6.3/bin/gfortran4
@@ -76,6 +77,23 @@ ifndef NETCDFHOME
 	NETCDFHOME = /usr/lib
 endif
 endif
+
+# set the environment for intel compiler on PPPL cluster
+# use 'make cflag=pintel'
+
+ifdef cflag
+	ifeq ($(cflag),pintel)
+		PLATFORM = PPPL_Portal_Cluster_with_Intel_Compiler
+		FC = /usr/pppl/intel/2013.1.3/bin/ifort
+		CC = /usr/pppl/intel/2013.1.3/bin/icc
+		LAPACKHOME = /u/zwang/numericalLib/lapack_3.4.2
+		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
+	else
+$(error No corresponding option of cflag to set compile environment.)
+	endif
+
+endif
+
 
 # compile package
 
@@ -123,7 +141,7 @@ coil:
 	cd ../coil; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
 
 ipec:  
-	cd ../ipec; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../ipec; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) NETCDFHOME=$(NETCDFHOME)
 
 pentrc:  
 	cd ../pentrc; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
