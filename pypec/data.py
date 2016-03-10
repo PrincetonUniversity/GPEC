@@ -96,7 +96,7 @@ Attributes:
     machine: DIII-D
     n: 1
     jac_type: hamada
-    version: GPEC version 0.3.0
+    version: GPEC version 0.3.1
     long_name: Surface Inductance
     energy_vacuum: 3.28696165726
     energy_surface: 9.30917446749
