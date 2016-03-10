@@ -1182,14 +1182,10 @@ a search for the normalized spectrum that maximizes NTV.</p>
 <p>Approach is as follows:
 1) Run DCON and IPEC in base directory with singcoup_flag True
 2) Run IPEC twice for each m, creating new subdirectories cosmn* and sinmn*
-3) Optimize a functional wrapper for PENTRC using optimize.fmin_slsqp</p>
-<blockquote>
-<div><ul class="simple">
-<li>Spectra constrained to have 1 Gm^2 norm</li>
-<li>wrapper uses data package to linearly combine ipec_xclebsch outputs</li>
-<li>Initial guess is the first singcoup_svd mode from IPEC</li>
-</ul>
-</div></blockquote>
+3) Optimize a functional wrapper for PENTRC using optimize.fmin_slsqp
+- Spectra constrained to have 1 Gm^2 norm
+- wrapper uses data package to linearly combine ipec_xclebsch outputs
+- Initial guess is the first singcoup_svd mode from IPEC</p>
 <dl class="docutils">
 <dt>Arguments:      </dt>
 <dd><dl class="first last docutils">
