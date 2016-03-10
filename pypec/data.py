@@ -20,9 +20,7 @@ In an open ipython session, import the data module
 
 >>> from pypec import data
 
-Explore the data module by typing 'data.' and hitting tab.
-For information on any particular object in the module, 
-use the '?' syntax or 'help' function. For example, enter 'data.read?'. You will see that it has a lot of metadata on this function, but the important things to look at for now are the arguments and key word arguments. These are passed to the function as shown in the Definition line... you can either pass a single string, or a string and specification for squeeze. If this confuses you, consult any of the many great python tutorials online.
+Explore the data module by typing 'data.' and hitting tab. For information on any particular object in the module, use the '?' syntax or 'help' function. For example, enter 'data.read?'. You will see that it has a lot of metadata on this function, but the important things to look at for now are the arguments and key word arguments. These are passed to the function as shown in the Definition line... you can either pass a single string, or a string and specification for squeeze. If this confuses you, consult any of the many great python tutorials online.
 
 Lets use it! To get a typical GPEC output into python, use the open_dataset function.
 
@@ -415,7 +413,10 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
     if complex_dim in ds.dims:
         for k,v in ds.data_vars.iteritems():
             if complex_dim in v.dims:
+                tmp = v.attrs
                 ds[k] = v.loc[{complex_dim:0}]+1j*v.loc[{complex_dim:1}]
+                ds[k].attrs = tmp
+
     return ds
 open_dataset.__doc__+= xarray.open_dataset.__doc__
 
@@ -1034,10 +1035,9 @@ class DataBase(object):
           squeeze : bool
             Plots all ynames in same axis.
             
-        **kwargs : dict
+        kwargs : dict
             Valid matplotlib pyplot.plot keyword arguments.
-            
-        
+
         Returns:
 
           f : figure
@@ -1741,14 +1741,13 @@ def add_control_geometry(ds,overwrite=False):
     **Examples:**
     
     After opening, and adding geometry,
-    
     >>>ds = open_dataset('ipec_control_output_n1.nc')
     >>>ds = add_control_geometry(ds)
     
     it is easy to make 3D surface plots using mayavi,
     >>>mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,
                               scalars=np.real(ds['b_n']*ds['expn'])
-                            
+
     Make 2D perturbed last-closed-flux-surface plots quickly using,
     >>>fac = 3e-2 # good for DIII-D unit eigenmodes
     >>>f,ax = plt.subplots()
