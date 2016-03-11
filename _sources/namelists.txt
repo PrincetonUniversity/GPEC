@@ -6,9 +6,13 @@ Download a fully annotated copy of the :download:`DCON namelist <_static/dcon.in
 .. include:: ../iput/dcon.in
    :literal:
 
-.. include:: coil_namelist.rst
+docs
 
-.. include:: ipec_namelist.rst
+.. include:: dcon.in
+   :literal:
 
-.. include:: pent_namelist.rst
+raw
+
+.. include:: dcon.in
+   :raw:
 

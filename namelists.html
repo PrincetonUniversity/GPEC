@@ -56,32 +56,6 @@
 
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Namelist Variables</a><ul>
-<li><a class="reference internal" href="#coil-namelist-inputs">COIL Namelist Inputs</a><ul>
-<li><a class="reference internal" href="#coil-control">COIL_CONTROL</a></li>
-<li><a class="reference internal" href="#coil-output">COIL_OUTPUT</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#ipec-namelist-inputs">IPEC Namelist Inputs</a><ul>
-<li><a class="reference internal" href="#ipec-input">IPEC_INPUT</a></li>
-<li><a class="reference internal" href="#ipec-control">IPEC_CONTROL</a></li>
-<li><a class="reference internal" href="#ipec-output">IPEC_OUTPUT</a></li>
-<li><a class="reference internal" href="#ipec-diagnose">IPEC_DIAGNOSE</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#pent-namelist-inputs">PENT Namelist Inputs</a><ul>
-<li><a class="reference internal" href="#pent-input">PENT_INPUT</a></li>
-<li><a class="reference internal" href="#pent-control">PENT_CONTROL</a></li>
-<li><a class="reference internal" href="#pent-output">PENT_OUTPUT</a></li>
-<li><a class="reference internal" href="#pent-admin">PENT_ADMIN</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="dcon_readme.html"
                         title="previous chapter">DCON README</a></p>
@@ -117,272 +91,40 @@
   <div class="section" id="namelist-variables">
 <h1>Namelist Variables<a class="headerlink" href="#namelist-variables" title="Permalink to this headline">¶</a></h1>
 <p>Download a fully annotated copy of the <a class="reference download internal" href="_downloads/dcon.in"><tt class="xref download docutils literal"><span class="pre">DCON</span> <span class="pre">namelist</span></tt></a>.</p>
-<div class="section" id="coil-namelist-inputs">
-<h2>COIL Namelist Inputs<a class="headerlink" href="#coil-namelist-inputs" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="coil-control">
-<h3>COIL_CONTROL<a class="headerlink" href="#coil-control" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><strong>ceq_type</strong> = &#8220;efit&#8221;</dt>
-<dd>This should be identical to the eq_type specified in equil.in</dd>
-<dt><strong>machine</strong> = &#8220;d3d&#8221;</dt>
-<dd>As of IPEC 3.00 supported machines include &#8216;nstx&#8217;, &#8216;d3d&#8217;, &#8216;kstar&#8217;, and &#8216;iter&#8217;.</dd>
-<dt><strong>ip_direction</strong> = &#8220;positive&#8221;</dt>
-<dd>Set as &#8216;positive&#8217; (default) or &#8216;negative&#8217; for CCW or CW from a top down view respectively.</dd>
-<dt><strong>bt_direction</strong> = &#8220;negative&#8221;</dt>
-<dd>Set as &#8220;positive&#8221; (default) or &#8220;negative&#8221; for CCW or CW from a top down view respectively.</dd>
-<dt><strong>coil_num</strong> = 3</dt>
-<dd>Total number of coil sets to be activated.</dd>
-</dl>
-<p><strong>cmpsi</strong> = 64</p>
-<p><strong>cmtheta</strong> = 480</p>
-<p><strong>cmzeta</strong> = 40</p>
-<dl class="docutils">
-<dt><strong>coil_name(1)</strong> = &#8220;iu&#8221;</dt>
-<dd>Array values should be specified for each of the coil arrays to be activated. For example &#8220;coil_name(1) = c&#8221;. The supported coil sets (and number of coils in each) as of IPEC 3.00 include,  - for nstx: &#8220;rwmef&#8221; (6), &#8220;tfef&#8221; (12), &#8220;pf5ef&#8221; (2), &#8220;ppu&#8221; (12), &#8220;ppl&#8221; (12), &#8220;psu&#8221; (12), &#8220;psl&#8221; (12), &#8220;vpu&#8221; (12), &#8220;vpl&#8221; (12), &#8220;vsu&#8221; (12), &#8220;vsl&#8221; (12), &#8220;hhfw&#8221; (24)  - for d3d: &#8220;iu&#8221; (6), &#8220;il&#8221; (6), &#8220;c&#8221; (6), &#8220;tbm_solenoid&#8221; (1), &#8220;tbm_racetrack&#8221; (1)  - for kstar: &#8220;fecu&#8221; (4), &#8220;fecm&#8221; (4), &#8220;fecl&#8221; (4)  -  for iter: &#8220;efcu&#8221; (6), &#8220;efcm&#8221; (6), &#8220;efcl&#8221; (6), &#8220;bl2u&#8221; (9), &#8220;bl2m&#8221; (9), &#8220;bl2l&#8221; (9), &#8220;avvu&#8221; (9), &#8220;avvm&#8221; (9), &#8220;avvl&#8221; (9)</dd>
-<dt><strong>coil_cur(1,1)</strong> = 2178.0</dt>
-<dd>Array of Ampere coil current for the nc-th coil in the set corresponding to coil_name(nc) (default  = 0).</dd>
-</dl>
-<p><strong>coil_cur(1,2)</strong> = 1577.0</p>
-<p><strong>coil_cur(1,3)</strong> = -601.0</p>
-<p><strong>coil_cur(1,4)</strong> = -2178.0</p>
-<p><strong>coil_cur(1,5)</strong> = -1577.0</p>
-<p><strong>coil_cur(1,6)</strong> = 601.0</p>
-<p><strong>coil_name(2)</strong> = &#8220;il&#8221;</p>
-<p><strong>coil_cur(2,2)</strong> = -2178.0</p>
-<p><strong>coil_cur(2,3)</strong> = -1577.0</p>
-<p><strong>coil_cur(2,4)</strong> = 601.0</p>
-<p><strong>coil_cur(2,5)</strong> = 2178.0</p>
-<p><strong>coil_cur(2,6)</strong> = 1577.0</p>
-<p><strong>coil_cur(2,1)</strong> = -601.0</p>
-<p><strong>coil_name(3)</strong> = &#8220;c&#8221;</p>
-<p><strong>coil_cur(3,1)</strong> = -1551.0</p>
-<p><strong>coil_cur(3,2)</strong> = 268.0</p>
-<p><strong>coil_cur(3,3)</strong> = 1744.0</p>
-<p><strong>coil_cur(3,4)</strong> = 1551.0</p>
-<p><strong>coil_cur(3,5)</strong> = -268.0</p>
-<p><strong>coil_cur(3,6)</strong> = -1744.0</p>
-</div>
-<div class="section" id="coil-output">
-<h3>COIL_OUTPUT<a class="headerlink" href="#coil-output" title="Permalink to this headline">¶</a></h3>
-<p><strong>ipec_interface</strong> = .TRUE.</p>
-</div>
-</div>
-<div class="section" id="ipec-namelist-inputs">
-<h2>IPEC Namelist Inputs<a class="headerlink" href="#ipec-namelist-inputs" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="ipec-input">
-<h3>IPEC_INPUT<a class="headerlink" href="#ipec-input" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><strong>jac_in</strong> = &#8220;pest&#8221;</dt>
-<dd>Coordinate system of 3D field input.  Choose from hamada, pest, boozer, equal_arc or other</dd>
-<dt><strong>jsurf_in</strong> = 1</dt>
-<dd>Set to 1 for surface weighted spectrum  Common for surfmn inputs</dd>
-<dt><strong>tmag_in</strong> = 0</dt>
-<dd>0 for ordinary toroidal angle 1 for magnetic coordinate angle</dd>
-<dt><strong>data_flag</strong> = .TRUE.</dt>
-<dd>Set true to read a 3D field spectrum from the file specified by the infile variable and apply it to the plasma boundary.</dd>
-<dt><strong>data_type</strong> = &#8220;surfmn&#8221;</dt>
-<dd>Type of vacuum 3D error field input file.  Choose from &#8216;vac3d&#8217; or &#8216;surfmn&#8217;.</dd>
-<dt><strong>infile</strong> = &#8220;/p/gpec/users/jpark/data/3d_field/d3d/surfmn.out.cossin.144182.03750_Intrins&#8221;</dt>
-<dd>Path to vacuum 3D field input file of type specified by data_type.  This file must specify the 3D vacuum field on the plasma boundary as determined in DCON.</dd>
-<dt><strong>nmin</strong> = 0</dt>
-<dd>The minimum toroidal mode number included in the infile data (typically 0).</dd>
-<dt><strong>nmax</strong> = 64</dt>
-<dd>The maximum toroidal mode number included in the infile data.</dd>
-<dt><strong>mmin</strong> = -64</dt>
-<dd>The minimum poloidal mode number included in the infile data (typically -64).</dd>
-<dt><strong>mmax</strong> = 64</dt>
-<dd>The maximum poloidal mode number included in the infile data (typically 64).</dd>
-<dt><strong>harmonic_flag</strong> = .FALSE.</dt>
-<dd>If true Tesla amplitudes must be assigned to variables cosmn(int) and sinmn(int), where int is the applied 3D field m  harmonic on the plasma surface. The toroidal mode number of the applied field is set by the DCON mode being analyzed.</dd>
-</dl>
-<p><strong>cosmn(3)</strong> = 0.0001</p>
-<dl class="docutils">
-<dt><strong>displacement_flag</strong> = .FALSE.</dt>
-<dd>Take all boundary inputs as normal displacements rather than magnetic fields</dd>
-<dt><strong>fixed_boundary_flag</strong> = .FALSE.</dt>
-<dd>Sets the plasma boundary as defined in the equilibrium input file fixed in all IPEC calculations.</dd>
-</dl>
-<p><strong>coil_flag</strong> = .TRUE.</p>
-</div>
-<div class="section" id="ipec-control">
-<h3>IPEC_CONTROL<a class="headerlink" href="#ipec-control" title="Permalink to this headline">¶</a></h3>
-<p><strong>resp_index</strong> = 0</p>
-<p><strong>sing_spot</strong> = 0.0005</p>
-<dl class="docutils">
-<dt><strong>reg_flag</strong> = .TRUE.</dt>
-<dd>Regularize unintegrable pmodb in psi</dd>
-<dt><strong>reg_spot</strong> = 0.05</dt>
-<dd>dB ~ (m-nq)^2/[(m-nq)^2+reg_spot^2)] if reg_flag</dd>
-<dt><strong>chebyshev_flag</strong> = .TRUE.</dt>
-<dd>Set true for chebyshev polynomials of the 3D perturbations in (psi, artheta).</dd>
-<dt><strong>nche</strong> = 20</dt>
-<dd>Number of coefficients used in the chebyshev polynomials (typicaly ~30).</dd>
-</dl>
-</div>
-<div class="section" id="ipec-output">
-<h3>IPEC_OUTPUT<a class="headerlink" href="#ipec-output" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><strong>jac_out</strong> = &#8220;hamada&#8221;</dt>
-<dd>Coordinates of IPEC output files.  Choose from hamada, pest, boozer, equal_arc or other</dd>
-<dt><strong>jsurf_out</strong> = 0</dt>
-<dd>Set to 1 for a surface weighted spectrum b_{mn}=ointleft(deltamathbf{B}cdothat{n}right)left(theta,phi right)e^{-ileft(mtheta-nphi right)}Jcdot|nablapsi|dtheta dphi (an invariant flux on rational surfaces). Set to 0 for unweighted spectrum b_{mn}=ointleft(deltamathbf{B}cdothat{n} right)left(theta,phi right)e^{-ileft(mtheta-nphi right)}dtheta dphi.</dd>
-<dt><strong>tmag_out</strong> = 1</dt>
-<dd>0 for ordinary toroidal angle. 1 for magnetic coordinate angle</dd>
-<dt><strong>resp_flag</strong> = .FALSE.</dt>
-<dd>Output ipec_response_n#.out file.</dd>
-</dl>
-<p><strong>singcoup_flag</strong> = .FALSE.</p>
-<dl class="docutils">
-<dt><strong>singfld_flag</strong> = .FALSE.</dt>
-<dd>Output the q, Psi_{N}, resonant mathbf{B}, singular current, island width and Chirikov parameter at rational surfaces inside the plasma, including the plasma response.</dd>
-<dt><strong>vsingfld_flag</strong> = .FALSE.</dt>
-<dd>Output the psi_{N}, resonant mathbf{B}, singular current, island width and Chirikov parameter at rational surfaces inside the plasma, using vacuum calculations.  Requires coil_flag=True.</dd>
-<dt><strong>pmodb_flag</strong> = .FALSE.</dt>
-<dd>Plasma | delta B | on flux surfaces.</dd>
-<dt><strong>xbnormal_flag</strong> = .FALSE.</dt>
-<dd>Output the normal components of the displacement, covarient perturbed magnetic field, and contravarient perturbed field (area weighted -&gt; can compare between coordinates)  with plasma response included.</dd>
-<dt><strong>vbnormal_flag</strong> = .FALSE.</dt>
-<dd>Output the normal components of the displacement, covarient perturbed magnetic field, and contravarient perturbed field (area weighted -&gt; can compare between coordinates) from vacuum calculations.  Requires coil_flag=True.</dd>
-<dt><strong>fun_flag</strong> = .FALSE.</dt>
-<dd>Outputs in functional format (on a coordinate grid) by back transforming the harmonic information (WARNING: this will result in larger data output).</dd>
-<dt><strong>flux_flag</strong> = .FALSE.</dt>
-<dd>New flux surfaces psi(r+delta r,z+delta z,phi) for visualization of perturbation.</dd>
-<dt><strong>eqbrzphi_flag</strong> = .FALSE.</dt>
-<dd>Output the original equilibrium field on a (r,z,phi) grid.</dd>
-<dt><strong>brzphi_flag</strong> = .FALSE.</dt>
-<dd>Output the (r,z,phi) components of the perturbed magnetic fields everywhere on the (r,z,phi) grid.  - IPEC 1 only outputs perturbed magnetic fields valid inside the plasma on the (r,z,phi) grid.  - IPEC 2.0 and later includes the plasma response and vacuum fields when the coil_flag is the vacuum input.</dd>
-<dt><strong>xrzphi_flag</strong> = .FALSE.</dt>
-<dd>Output the plasma displacement on a (r,z,phi) grid.</dd>
-<dt><strong>vbrzphi_flag</strong> = .FALSE.</dt>
-<dd>Output the field due to the surface current defining the IPEC final solution boundary condition at the plasma surface (original external field boundary condition and plasma response) on an r,z grid. This does not represent a true field.</dd>
-<dt><strong>vvbrzphi_flag</strong> = .FALSE.</dt>
-<dd>Outputs the field due to the surface current defining the external 3D field boundary condition on a (r,z,phi) grid. This field does not represent a true field.</dd>
-<dt><strong>bin_flag</strong> = .TRUE.</dt>
-<dd>Output binary files for use with the xdraw command when appropriate.</dd>
-<dt><strong>bin_2d_flag</strong> = .TRUE.</dt>
-<dd>Output binary files containing 2D contours for use with the xdraw command  when appropriate.</dd>
-</dl>
-<p><strong>vsbrzphi_flag</strong> = .FALSE.</p>
-<p><strong>ss_flag(7)</strong> = .FALSE.</p>
-<p><strong>ss_flag(8)</strong> = .FALSE.</p>
-<p><strong>xbrzphifun_flag</strong> = .FALSE.</p>
-<p><strong>arzphifun_flag</strong> = .FALSE.</p>
-<dl class="docutils">
-<dt><strong>ntv_flag</strong> = .TRUE.</dt>
-<dd>Output first order quantities to bin files for interfacing with PENT code</dd>
-</dl>
-</div>
-<div class="section" id="ipec-diagnose">
-<h3>IPEC_DIAGNOSE<a class="headerlink" href="#ipec-diagnose" title="Permalink to this headline">¶</a></h3>
-<p><strong>div_flag</strong> = .FALSE.</p>
-<p><strong>radvar_flag</strong> = .TRUE.</p>
-</div>
-</div>
-<div class="section" id="pent-namelist-inputs">
-<h2>PENT Namelist Inputs<a class="headerlink" href="#pent-namelist-inputs" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="pent-input">
-<h3>PENT_INPUT<a class="headerlink" href="#pent-input" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><strong>kinetic_file</strong> = &#8220;/p/gpec/users/nlogan/data/a10/kinetics/kinetic_a10_MARSbenchmark.dat&#8221;</dt>
-<dd>1 header line followed by column data for psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_E(rad/s).</dd>
-<dt><strong>o1fun_file</strong> = &#8220;ipec_order1_fun_n1.bin&#8221;</dt>
-<dd>IPEC output generated using ntv_flag or ascii B(psi,theta).</dd>
-<dt><strong>o1mn_file</strong> = &#8220;ipec_order1_n1.bin&#8221;</dt>
-<dd>IPEC output generated using ntv_flag, or ascii B(m,n).</dd>
-</dl>
-<p><strong>idconfile</strong> = &#8220;euler.bin&#8221;</p>
-<dl class="docutils">
-<dt><strong>o1native</strong> = .TRUE.</dt>
-<dd>o1fun_file and o1mn_file are IPEC output bin files.</dd>
-<dt><strong>imass</strong> = 2</dt>
-<dd>Mass of main species in atomic mass units (0 for electrons).</dd>
-<dt><strong>icharge</strong> = 1</dt>
-<dd>Charge of main species in elementry charge units.</dd>
-<dt><strong>zimp</strong> = 6</dt>
-<dd>Charge of impurity species in elementry charge units.</dd>
-<dt><strong>zmass</strong> = 12</dt>
-<dd>Mass of impurity species in atomic mass units.</dd>
-<dt><strong>nl</strong> = 6</dt>
-<dd>Number of bounce harmonics calculated (-nl&lt;=l&lt;=nl).</dd>
-<dt><strong>collision</strong> = &#8220;harmonic&#8221;</dt>
-<dd>Collision operator. Choose from zero,small,krook, or harmonic.</dd>
-</dl>
-</div>
-<div class="section" id="pent-control">
-<h3>PENT_CONTROL<a class="headerlink" href="#pent-control" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><strong>wefac</strong> = 1</dt>
-<dd>Multiplier applied to omega_E profile.</dd>
-<dt><strong>wdfac</strong> = 1</dt>
-<dd>Multiplier applied to oemga_D.</dd>
-</dl>
-<p><strong>wpfac</strong> = 1</p>
-<dl class="docutils">
-<dt><strong>ptfac</strong> = 0.001</dt>
-<dd>Fractional cutoff in Lambda space near trapped-passing boundry.</dd>
-<dt><strong>kolim_flag</strong> = .FALSE.</dt>
-<dd>Infinite rotation limit.</dd>
-<dt><strong>neorot_flag</strong> = .FALSE.</dt>
-<dd>Approximate numerator of resonant operator using neoclassical rotation.</dd>
-<dt><strong>divxprp_flag</strong> = .TRUE.</dt>
-<dd>Include arc-length change in perturbed Action.</dd>
-<dt><strong>xlsode_flag</strong> = .TRUE.</dt>
-<dd>Use LSODE package to integrate in energy space.</dd>
-<dt><strong>lmdalsode_flag</strong> = .TRUE.</dt>
-<dd>Use LSODE package to integrate in pitch angle.</dd>
-<dt><strong>lsode_rtol</strong> = 1e-09</dt>
-<dd>Relative tolarance in LSODE.</dd>
-<dt><strong>lsode_atol</strong> = 1e-12</dt>
-<dd>absolute tolarance in LSODE.</dd>
-<dt><strong>xmax</strong> = 72</dt>
-<dd>Upper limit of energy integration.</dd>
-<dt><strong>ximag</strong> = 0</dt>
-<dd>Step contour of integration off of real axis to avoid poles when collision is zero.</dd>
-<dt><strong>nx</strong> = 128</dt>
-<dd>Number of energy spline points if xlsode_flag false.</dd>
-<dt><strong>nt</strong> = 128</dt>
-<dd>Number of theta points used in bounce averaging.</dd>
-<dt><strong>nlmda</strong> = 128</dt>
-<dd>Number of Lambda points used in splines.</dd>
-<dt><strong>maskpsi</strong> = 2</dt>
-<dd>Step size taken by PENT on dcon psi grid (determined by idconfile).</dd>
-</dl>
-</div>
-<div class="section" id="pent-output">
-<h3>PENT_OUTPUT<a class="headerlink" href="#pent-output" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><strong>passing_flag</strong> = .FALSE.</dt>
-<dd>Calculate torque and energy contributed by passing particles.</dd>
-<dt><strong>gen_flag</strong> = .TRUE.</dt>
-<dd>Perform full calculation in general geometry.</dd>
-<dt><strong>rlar_flag</strong> = .TRUE.</dt>
-<dd>Perform Reduced LAR approximate calculation.</dd>
-<dt><strong>clar_flag</strong> = .FALSE.</dt>
-<dd>Perform Circular LAR approximate calculation.</dd>
-<dt><strong>kinetic_flag</strong> = .FALSE.</dt>
-<dd>Output kinetic profiles.</dd>
-<dt><strong>bounce_flag</strong> = .FALSE.</dt>
-<dd>Output sample bounce averaging profiles.</dd>
-<dt><strong>pitch_flag</strong> = .FALSE.</dt>
-<dd>Output sample pitch angle profiles.</dd>
-<dt><strong>energy_flag</strong> = .FALSE.</dt>
-<dd>Output sample energy profiles.</dd>
-<dt><strong>psiout(1)</strong> = 0.1</dt>
-<dd>Include this surface in sampled outputs.</dd>
-<dt><strong>psiout(10)</strong> = 1.0</dt>
-<dd>Include this surface in sampled outputs.</dd>
-</dl>
-</div>
-<div class="section" id="pent-admin">
-<h3>PENT_ADMIN<a class="headerlink" href="#pent-admin" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><strong>fmnl_flag</strong> = .FALSE.</dt>
-<dd>Do not change unless you know what you are doing.</dd>
-<dt><strong>diag_flag</strong> = .FALSE.</dt>
-<dd>Do not change unless you know what you are doing.</dd>
-</dl>
-</div>
-</div>
+<p>docs</p>
+<pre class="literal-block">
+&amp;dcon_control
+        bal_flag=t
+        mat_flag=t
+        ode_flag=t
+        vac_flag=t
+        sas_flag=t                      ! q limit determined as q_ir +dmlim where q_ir is the equil outermost rational
+        nn=1                            ! toroidal mode number
+        delta_mlow=12           ! Expands lower bound of Fourier harmonics 
+        delta_mhigh=12          ! Expands upper bound of  Fourier harmonics
+        delta_mband=0           ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
+        sing_start=0            ! Start integration at the sing_start'th rational from the axis (psilow)
+        dmlim=0.2                       ! See sas_flag 
+        qhigh=1e3                       ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
+        mthvac=512                      ! Number of points used in splines over poloidal angle
+        thmax0=1
+        tol_nr=1e-5                     ! Relative tolerance of dynamic integration steps away from rationals
+        tol_r=1e-6                      ! Relative tolerance of dynamic integration steps near rationals
+        crossover=1e-2          ! Fractional distance from rational q at which tolerance is switched to tol_r 
+        singfac_min=1e-4        ! Fractional distance from rational q at which ideal jump condition is enforced 
+        ucrit=1e4                       ! Maximum fraction of solutions allowed before renormalized
+/
+&amp;dcon_output
+        crit_break=t
+        ahb_flag=t
+        msol_ahb=1
+        mthsurf0=1
+        bin_euler=t
+        euler_stride=1
+/
+
+</pre>
+<p>raw</p>
 </div>
 
 
