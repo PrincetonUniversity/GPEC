@@ -252,9 +252,9 @@ are recomended to edit ~/.matplotlib/matplotlibrc and
 <span class="go">    O_WPX          (mode_PX, mode_WX) float64 0.01574 0.9646 0.00978 0.01778 ...</span>
 <span class="go">    O_RPX          (mode_PX, mode_RX) float64 0.9585 0.009999 0.03635 0.138 ...</span>
 <span class="go">    O_XT           (mode_XT) complex128 (0.00371272677759+0.00592509884488j) ...</span>
-<span class="go">    O_WX           (mode_XT) complex128 (-0.000571685873793+0.000235780294608j) ...</span>
-<span class="go">    O_RX           (mode_RX) complex128 (-0.000898864353759-4.5829910651e-05j) ...</span>
-<span class="go">    O_PX           (mode_PX) complex128 (-0.000391541252291+0.00103668211879j) ...</span>
+<span class="go">    O_WX           (mode_XT) complex128 (-0.0100686703236+0.003968715919j) ...</span>
+<span class="go">    O_RX           (mode_RX) complex128 (-0.00995087171731-0.00072108011323j) ...</span>
+<span class="go">    O_PX           (mode_PX) complex128 (-0.00441395088654+0.0113228566973j) ...</span>
 <span class="go">    Phi_EX         (m) complex128 (-1.31675253659e-10-1.75571293379e-12j) ...</span>
 <span class="go">    Phi_ET         (m) complex128 (-1.96197817263e-09-2.62121509413e-09j) ...</span>
 <span class="go">    W_EDX_FUN      (mode_WX, theta) complex128 (1.44727814347+0.0485374143873j) ...</span>
@@ -280,7 +280,7 @@ are recomended to edit ~/.matplotlib/matplotlibrc and
 <span class="go">    machine: DIII-D</span>
 <span class="go">    n: 1</span>
 <span class="go">    jac_type: hamada</span>
-<span class="go">    version: GPEC version 0.3.1</span>
+<span class="go">    version: GPEC version 0.3.0</span>
 <span class="go">    long_name: Surface Inductance</span>
 <span class="go">    energy_vacuum: 3.28696165726</span>
 <span class="go">    energy_surface: 9.30917446749</span>
@@ -303,8 +303,47 @@ are recomended to edit ~/.matplotlib/matplotlibrc and
 </div>
 <a class="reference internal image-reference" href="_images/example_eigenvectors.png"><img alt="_images/example_eigenvectors.png" src="_images/example_eigenvectors.png" style="width: 600px;" /></a>
 <p>Note this uses matplotlib, and the plots are fully interactive. Navigate and zoom using the toolbar below plots.</p>
-<p>This is not the recomended way to display detailed studies using GPEC data, however. It is recomended that the user familiarise themselves with matplotlib (there are many great online tutorials) and write their own scripts for plotting the data of interest, as details will inevitably need tweaking.</p>
-<p>The following section gives some common examples of more customized plots. First, test out the module yourself in ipython, getting familiar with things before moving on.</p>
+<p>This is not the recommended way to display detailed studies using GPEC data, however. It is
+recommended that the user familiarise themselves with matplotlib (there are many great online
+tutorials) and write their own scripts for plotting the data of interest, as details will
+inevitably need tweaking.</p>
+<p>For a common example of more customized plots, lets look at some 2d data</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cyl</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_cylindrical_output_n1.nc&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We could use the built in plotting methods like ds[&#8216;b_z&#8217;].plot), but these are (R,z) figures
+should be done with a little care to look right. Lets look at b_z for example,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">v</span> <span class="o">=</span> <span class="n">cyl</span><span class="p">[</span><span class="s">&#39;b_z&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">v</span><span class="p">),</span><span class="n">aspect</span><span class="o">=</span><span class="s">&#39;equal&#39;</span><span class="p">,</span><span class="n">origin</span><span class="o">=</span><span class="s">&#39;lower&#39;</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="s">&#39;RdBu&#39;</span><span class="p">,</span><span class="n">vmin</span><span class="o">=-</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span>
+<span class="gp">... </span>         <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span><span class="n">v</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span><span class="n">v</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span><span class="n">v</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()],</span>
+<span class="gp">... </span>         <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;gaussian&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s">&#39;$\delta B_z$&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">xtks</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mf">1.7</span><span class="p">,</span><span class="mf">2.4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">xtxt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&#39;R (m)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ytxt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;z (m)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/example_pbrzphi.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/example_pbrzphi.png"><img alt="_images/example_pbrzphi.png" src="_images/example_pbrzphi.png" style="width: 600px;" /></a>
+<p>There we go. That looks publication ready!</p>
+<p>Note, one of the many cool additions to matplotlib in the pypec package is the ability to
+write line plots to tables. Lets look at a 1D mode spectrum plot for example,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prof</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_profile_output_n1.nc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">lines</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prof</span><span class="p">[</span><span class="s">&#39;xi_m_contrapsi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">),</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;xi_{:}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/example_xim.png&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span><span class="o">.</span><span class="n">printlines</span><span class="p">(</span><span class="s">&#39;examples/example_xim.dat&#39;</span><span class="p">,</span><span class="n">squeeze</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">Wrote lines to examples/example_xim.dat</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/example_xim.png"><img alt="_images/example_xim.png" src="_images/example_xim.png" style="width: 600px;" /></a>
+<p>That&#8217;s it! Read the table with your favorite editor. It will probably need a little
+cleaning at the top since it tries to use the lengthy legend labels as column headers.</p>
 </div>
 <div class="section" id="advanced-users">
 <h3>Advanced Users<a class="headerlink" href="#advanced-users" title="Permalink to this headline">¶</a></h3>
@@ -314,83 +353,12 @@ are recomended to edit ~/.matplotlib/matplotlibrc and
 <div>from pypec import *</div></blockquote>
 <p>into your autoimport file located at
 ~/.ipython/profile_default/startup/autoimports.ipy</p>
-<p>Right, now for the cool stuff:</p>
-<p>One common need is to look at spectra. For this we want to utilize 
-the full functionality of the data instances&#8217; plot1d function.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pspec</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_pmodb_n1.out&#39;</span><span class="p">)</span>
-<span class="go">Casting table 1 into Data object.</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">pspec</span><span class="o">.</span><span class="n">plot1d</span><span class="p">(</span><span class="s">&#39;lagb&#39;</span><span class="p">,</span><span class="s">&#39;psi&#39;</span><span class="p">,</span><span class="n">x2rng</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">0.005</span><span class="p">,</span><span class="mf">0.005</span><span class="p">)</span>
-<span class="go">(-0.005, 0.005)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/example_spectrum.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_spectrum.png"><img alt="_images/example_spectrum.png" src="_images/example_spectrum.png" style="width: 600px;" /></a>
-<p>We knew it was one table, so we used the &#8221;,&#8221; to automatically 
-unpack returned list. We were then so familiar with the args and 
-kwargs of the plotting function that we did not bother typing the names. 
-If you do this, be sure you get the order consistent with the order 
-given in the documentation &#8220;Definition&#8221; line (watch out for inconsistent 
-&#8220;Docstring&#8221; listings).</p>
-<p>Lets look through a huge file of first order perterbations
-we want to define some new data from the raw outputs, plot it,
-and save the results in a table</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pmodb</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_pmodb_fun_n1.out&#39;</span><span class="p">)</span>
-<span class="go">Casting table 1 into Data object.</span>
-<span class="go">WARNING: Reducing length of table from 2497639 to 1664452 by reducing x[0] by a factor of 3</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;cyltheta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">],</span><span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;r&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">pmodb</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;R0&#39;</span><span class="p">])</span>
-</pre></div>
-</div>
-<p>The data module automatically reduced the length of the data as it read
-it in order to spead up the reading and manipulation. If you need
-the full resolution, just set the rdim key word argument to infinity. 
-Oh, and then we just added data!</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;kxprp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;Bkxprp&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">pmodb</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;equilb&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span><span class="o">=</span><span class="n">pmodb</span><span class="o">.</span><span class="n">plot1d</span><span class="p">([</span><span class="s">&#39;cyltheta&#39;</span><span class="p">,</span><span class="s">&#39;kxprp&#39;</span><span class="p">],</span><span class="s">&#39;theta&#39;</span><span class="p">,</span><span class="n">x2rng</span><span class="o">=</span><span class="mf">0.16</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/example_pmodb.png&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f1</span><span class="o">.</span><span class="n">printlines</span><span class="p">(</span><span class="s">&#39;examples/example_pmodb.dat&#39;</span><span class="p">,</span><span class="n">squeeze</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="go">Wrote lines to examples/example_pmodb.dat</span>
-<span class="go">True</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_pmodb.png"><img alt="_images/example_pmodb.png" src="_images/example_pmodb.png" style="width: 400px;" /></a>
-<p>Thats it! Read the table with your favorit editor. It will probably need a little
-cleaning at the top since it tries to use the lengthy legend labels as column headers.</p>
-<p>Lets look at some 2d data</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pb2</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_brzphi_n1.out&#39;</span><span class="p">)</span>
-<span class="go">Casting table 1 into Data object.</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span> <span class="o">=</span> <span class="n">pb2</span><span class="o">.</span><span class="n">plot2d</span><span class="p">(</span><span class="s">&#39;b_r&#39;</span><span class="p">)</span>
-<span class="go">Plotting real b_r.</span>
-<span class="go">Plotting imag b_r.</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/example_pbrzphi.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_pbrzphi.png"><img alt="_images/example_pbrzphi.png" src="_images/example_pbrzphi.png" style="width: 600px;" /></a>
-<p>well that looks ugly! Lets stop the peak values from dominating dominating...</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span> <span class="o">=</span> <span class="n">pb2</span><span class="o">.</span><span class="n">plot2d</span><span class="p">(</span><span class="s">&#39;b_r&#39;</span><span class="p">,</span><span class="n">vmin</span><span class="o">=-</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
-<span class="go">Plotting real b_r.</span>
-<span class="go">Plotting imag b_r.</span>
-</pre></div>
-</div>
-<p>If you are thinking &#8220;But those weren&#8217;t listed as keyword arguments!&#8221; 
-then you have been glossing over the kwargs documentation. Most all 
-pypec calls accept key word arguments for their root functions (in 
-this case, pyplot.pcolormesh).</p>
-<p>Finally, we want to make sure the aspect ratio is right</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span> <span class="o">=</span> <span class="n">pb2</span><span class="o">.</span><span class="n">plot2d</span><span class="p">(</span><span class="s">&#39;b_r&#39;</span><span class="p">,</span><span class="n">aspect</span><span class="o">=</span><span class="s">&#39;equal&#39;</span><span class="p">,</span><span class="n">vmin</span><span class="o">=-</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
-<span class="go">Plotting real b_r.</span>
-<span class="go">Plotting imag b_r.</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">13</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f2</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/example_plot2d_pretty.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_plot2d_pretty.png"><img alt="_images/example_plot2d_pretty.png" src="_images/example_plot2d_pretty.png" style="width: 400px;" /></a>
-<p>There. That looks better.</p>
 </div>
 <div class="section" id="deprecated-ascii-interface">
 <h3>Deprecated Ascii Interface<a class="headerlink" href="#deprecated-ascii-interface" title="Permalink to this headline">¶</a></h3>
-<p>As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should be used to create xarray Dataset objects whenever possible. This section describes the depprecated ascii interface for context, and motivates the move to netcdf.</p>
+<p>As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should
+be used to create xarray Dataset objects whenever possible. This section describes the deprecated
+ascii interface for context, and motivates the move to netcdf.</p>
 <p>Data in ascii tables can be read into a custom Data object using the read function,</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin&#39;</span><span class="p">)</span>
 <span class="go">Casting table 1 into Data object.</span>
@@ -431,6 +399,21 @@ this case, pyplot.pcolormesh).</p>
 </div>
 <a class="reference internal image-reference" href="_images/example_profiles2.png"><img alt="_images/example_profiles2.png" src="_images/example_profiles2.png" style="width: 400px;" /></a>
 <p>Note that the interpolator initialized the interpolation function on the first call, this is saved internally for subsequent calls.</p>
+<p>One common need is to look at spectra. For this we want to utilize
+the full functionality of the data instances&#8217; plot1d function.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xc</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_xclebsch_n1.out&#39;</span><span class="p">)</span>
+<span class="go">Casting table 1 into Data object.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">xc</span><span class="o">.</span><span class="n">plot1d</span><span class="p">(</span><span class="s">&#39;xi^psi&#39;</span><span class="p">,</span><span class="s">&#39;psi&#39;</span><span class="p">,</span><span class="n">x2rng</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/example_spectrum.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/example_spectrum.png"><img alt="_images/example_spectrum.png" src="_images/example_spectrum.png" style="width: 600px;" /></a>
+<p>We knew it was one table, so we used the &#8221;,&#8221; to automatically
+unpack returned list. We were then so familiar with the args and
+kwargs of the plotting function that we did not bother typing the names.
+If you do this, be sure you get the order consistent with the order
+given in the documentation &#8220;Definition&#8221; line (watch out for inconsistent
+&#8220;Docstring&#8221; listings).</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>These examples can be tested by developers using ipython 
@@ -687,7 +670,7 @@ so beware of loosing accuracy near rational surfaces.</p>
 <p>it is easy to make 3D surface plots using mayavi,
 &gt;&gt;&gt; mesh = mmlab.mesh(ds[&#8216;X&#8217;].values,ds[&#8216;Y&#8217;].values,ds[&#8216;Z&#8217;].values,scalars=np.real(ds[&#8216;b_n&#8217;]*ds[&#8216;expn&#8217;]))</p>
 <p>Make 2D perturbed last-closed-flux-surface plots quickly using,
-&gt;&gt;&gt; fac = 3e-2 # good for DIII-D unit eigenmodes
+&gt;&gt;&gt; fac = 1e-1 # good for DIII-D unit eigenmodes
 &gt;&gt;&gt; f,ax = plt.subplots()
 &gt;&gt;&gt; for i in range(4):
 ...     v = np.real(ds[&#8216;W_EDX_FUN&#8217;][0,i]*fac)
