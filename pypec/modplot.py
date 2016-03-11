@@ -34,7 +34,8 @@ first two lines, for instance, contain only their original 10 points
 """
 
 #standard matplotlib modules
-import matplotlib                       # standard ploting library
+import matplotlib                       # standard plotting library
+from matplotlib import pyplot
 from mpl_toolkits.axes_grid1 import make_axes_locatable	#for splitting axes
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
@@ -71,7 +72,6 @@ matplotlib.rcParams['figure.autolayout']=True # Necessary for tight_layout
 matplotlib.rcParams['legend.frameon']=False
 matplotlib.rcParams['legend.loc']='best'
 
-pyplot = matplotlib.pyplot
 linestyles = [ '-' , '--' , '-.' , ':' , 'None' , ' ' ,'' ]
 show = pyplot.show
 draw = pyplot.draw

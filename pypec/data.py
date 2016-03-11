@@ -66,9 +66,9 @@ Data variables:
     O_WPX          (mode_PX, mode_WX) float64 0.01574 0.9646 0.00978 0.01778 ...
     O_RPX          (mode_PX, mode_RX) float64 0.9585 0.009999 0.03635 0.138 ...
     O_XT           (mode_XT) complex128 (0.00371272677759+0.00592509884488j) ...
-    O_WX           (mode_XT) complex128 (-0.000571685873793+0.000235780294608j) ...
-    O_RX           (mode_RX) complex128 (-0.000898864353759-4.5829910651e-05j) ...
-    O_PX           (mode_PX) complex128 (-0.000391541252291+0.00103668211879j) ...
+    O_WX           (mode_XT) complex128 (-0.0100686703236+0.003968715919j) ...
+    O_RX           (mode_RX) complex128 (-0.00995087171731-0.00072108011323j) ...
+    O_PX           (mode_PX) complex128 (-0.00441395088654+0.0113228566973j) ...
     Phi_EX         (m) complex128 (-1.31675253659e-10-1.75571293379e-12j) ...
     Phi_ET         (m) complex128 (-1.96197817263e-09-2.62121509413e-09j) ...
     W_EDX_FUN      (mode_WX, theta) complex128 (1.44727814347+0.0485374143873j) ...
@@ -94,7 +94,7 @@ Attributes:
     machine: DIII-D
     n: 1
     jac_type: hamada
-    version: GPEC version 0.3.1
+    version: GPEC version 0.3.0
     long_name: Surface Inductance
     energy_vacuum: 3.28696165726
     energy_surface: 9.30917446749
@@ -121,9 +121,54 @@ For quick visualization, we can use xarray's built in plotting routines,
 
 Note this uses matplotlib, and the plots are fully interactive. Navigate and zoom using the toolbar below plots.
 
-This is not the recomended way to display detailed studies using GPEC data, however. It is recomended that the user familiarise themselves with matplotlib (there are many great online tutorials) and write their own scripts for plotting the data of interest, as details will inevitably need tweaking.
+This is not the recommended way to display detailed studies using GPEC data, however. It is
+recommended that the user familiarise themselves with matplotlib (there are many great online
+tutorials) and write their own scripts for plotting the data of interest, as details will
+inevitably need tweaking.
 
-The following section gives some common examples of more customized plots. First, test out the module yourself in ipython, getting familiar with things before moving on.
+For a common example of more customized plots, lets look at some 2d data
+
+>>> cyl = data.open_dataset('examples/DIIID_example/ipec_cylindrical_output_n1.nc')
+
+We could use the built in plotting methods like ds['b_z'].plot), but these are (R,z) figures
+should be done with a little care to look right. Lets look at b_z for example,
+
+>>> plt = data.plt
+>>> f,ax = plt.subplots(figsize=(8,8))
+>>> v = cyl['b_z']
+>>> im = ax.imshow(np.real(v),aspect='equal',origin='lower',cmap='RdBu',vmin=-2e-3,vmax=2e-3,
+...          extent=[v['R'].min(),v['R'].max(),v['z'].min(),v['z'].max()],
+...          interpolation='gaussian')
+>>> cb = f.colorbar(im)
+>>> cb.set_label('$\delta B_z$')
+>>> xtks = ax.set_xticks([1,1.7,2.4])
+>>> xtxt = ax.set_xlabel('R (m)')
+>>> ytxt = ax.set_ylabel('z (m)')
+>>> f2.savefig('examples/example_pbrzphi.png')
+
+.. image:: examples/example_pbrzphi.png
+   :width: 600px
+
+There we go. That looks publication ready!
+
+Note, one of the many cool additions to matplotlib in the pypec package is the ability to
+write line plots to tables. Lets look at a 1D mode spectrum plot for example,
+
+>>> prof = data.open_dataset('examples/DIIID_example/ipec_profile_output_n1.nc')
+>>> f,ax = plt.subplots()
+>>> for m in range(1,4):
+...     lines = ax.plot(prof['xi_m_contrapsi'].sel(m=m),label='xi_{:}'.format(m))
+>>> f.savefig('examples/example_xim.png')
+>>> f1.printlines('examples/example_xim.dat',squeeze=True)
+Wrote lines to examples/example_xim.dat
+True
+
+.. image:: examples/example_xim.png
+   :width: 600px
+
+That's it! Read the table with your favorite editor. It will probably need a little
+cleaning at the top since it tries to use the lengthy legend labels as column headers.
+
 
 Advanced Users
 --------------
@@ -137,109 +182,24 @@ Now that you use this module regularly, save yourself some time by placing the l
 into your autoimport file located at
 ~/.ipython/profile_default/startup/autoimports.ipy
 
-Right, now for the cool stuff:
-
-One common need is to look at spectra. For this we want to utilize 
-the full functionality of the data instances' plot1d function.
-
->>> pspec, = read('examples/example_output_pmodb_n2.out')
-Casting table 1 into Data object.
->>> f = pspec.plot1d('lagb','psi',x2rng=(0,8))
->>> f.axes[0].set_ylim(-0.005,0.005)
-(-0.005, 0.005)
->>> f.savefig('examples/example_spectrum.png')
-
-.. image:: examples/example_spectrum.png
-   :width: 600px
-
-We knew it was one table, so we used the "," to automatically 
-unpack returned list. We were then so familiar with the args and 
-kwargs of the plotting function that we did not bother typing the names. 
-If you do this, be sure you get the order consistent with the order 
-given in the documentation "Definition" line (watch out for inconsistent 
-"Docstring" listings).
-
-Lets look through a huge file of first order perterbations
-we want to define some new data from the raw outputs, plot it,
-and save the results in a table
-
->>> pmodb, = read('examples/example_output_pmodb_fun_n2.out')
-Casting table 1 into Data object.
-WARNING: Reducing length of table from 2497639 to 1664452 by reducing x[0] by a factor of 3
->>> pmodb.y['cyltheta'] = np.arctan2(pmodb.y['z'],pmodb.y['r']-pmodb.params['R0'])
-
-The data module automatically reduced the length of the data as it read
-it in order to spead up the reading and manipulation. If you need
-the full resolution, just set the rdim key word argument to infinity. 
-Oh, and then we just added data!
-
->>> pmodb.y['kxprp'] = pmodb.y['Bkxprp']/pmodb.y['equilb']
->>> f1=pmodb.plot1d(['cyltheta','kxprp'],'theta',x2rng=0.16)
->>> f1.savefig('examples/example_pmodb.png')
->>> f1.printlines('examples/example_pmodb.dat',squeeze=True)
-Wrote lines to examples/example_pmodb.dat
-True
-
-.. image:: examples/example_pmodb.png
-   :width: 400px
-
-Thats it! Read the table with your favorit editor. It will probably need a little
-cleaning at the top since it tries to use the lengthy legend labels as column headers.
-
-Lets look at some 2d data
-
->>> pb2, = read('examples/example_output_pbrzphi_n2.out')
-Casting table 1 into Data object.
->>> f2 = pb2.plot2d('b_r')
-Plotting real b_r.
-Plotting imag b_r.
->>> f2.savefig('examples/example_pbrzphi.png')
-
-.. image:: examples/example_pbrzphi.png
-   :width: 600px
-
-well that looks ugly! Lets stop the peak values from dominating dominating...
-
->>> f2 = pb2.plot2d('b_r',vmin=-1e-4,vmax=1e-4)
-Plotting real b_r.
-Plotting imag b_r.
-
-If you are thinking "But those weren't listed as keyword arguments!" 
-then you have been glossing over the kwargs documentation. Most all 
-pypec calls accept key word arguments for their root functions (in 
-this case, pyplot.pcolormesh).
-
-Finally, we want to make sure the aspect ratio is right
-
->>> f2 = pb2.plot2d('b_r',aspect='equal',vmin=-1e-4,vmax=1e-4)
-Plotting real b_r.
-Plotting imag b_r.
->>> f2.set_size_inches(6,13)
->>> f2.show()
->>> f2.savefig('examples/example_plot2d_pretty.png')
-
-.. image:: examples/example_plot2d_pretty.png
-   :width: 400px
-
-There. That looks better.
-
-
 
 Deprecated Ascii Interface
 ---------------------------
 
-As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should be used to create xarray Dataset objects whenever possible. This section describes the depprecated ascii interface for context, and motivates the move to netcdf.
+As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should
+be used to create xarray Dataset objects whenever possible. This section describes the deprecated
+ascii interface for context, and motivates the move to netcdf.
 
 Data in ascii tables can be read into a custom Data object using the read function,
 
->>> mydata = read('examples/DIII-D_example/g147131.02300_DIIID_KEFIT.kin')
+>>> mydata = read('examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin')
 Casting table 1 into Data object.
 >>> type(mydata),len(mydata)
 (<type 'list'>, 1)
 
 The read function creates a list of data objects corresponding to the tables in the text file. In this case, there is only one table. If we knew this ahead of time, we could have gotten the data object directly by splitting the list.
 
->>> mydata = read('examples/example_profiles.dat')[0]
+>>> mydata = read('examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin')[0]
 Casting table 1 into Data object.
 
 At its heart, the data object consists of independent data and dependent data. This are stored differently, namely as a list in the pts attribute and as a dictionary in y. The x attribute is a dictionary if the data is 1 dimensional or a regular grid is found in the first n columns of the data (n=2,3), and left empty if the n>1 dependent data is irregular. 
@@ -249,7 +209,7 @@ Explore the data using the corresponding python tools.
 >>> mydata.xnames
 ['psi']
 >>> mydata.y.keys()
-['teeV', 'nim3', 'tieV', 'omega_Erads', 'nem3']
+['nim^3', 'tieV', 'teeV', 'wexbrad/s', 'nem^3']
 
 You would access the ion density data using mydata.y['nim3'] for example.
 
@@ -276,6 +236,24 @@ Interpolating values for tieV.
    :width: 400px
 
 Note that the interpolator initialized the interpolation function on the first call, this is saved internally for subsequent calls.
+
+One common need is to look at spectra. For this we want to utilize
+the full functionality of the data instances' plot1d function.
+
+>>> xc, = read('examples/DIIID_example/ipec_xclebsch_n1.out')
+Casting table 1 into Data object.
+>>> f = xc.plot1d('xi^psi','psi',x2rng=(1,3))
+>>> f.savefig('examples/example_spectrum.png')
+
+.. image:: examples/example_spectrum.png
+   :width: 600px
+
+We knew it was one table, so we used the "," to automatically
+unpack returned list. We were then so familiar with the args and
+kwargs of the plotting function that we did not bother typing the names.
+If you do this, be sure you get the order consistent with the order
+given in the documentation "Definition" line (watch out for inconsistent
+"Docstring" listings).
 
 
 .. note:: 
@@ -1313,8 +1291,8 @@ class DataBase(object):
           
         *Example:*
         
-        >>> xb, = data.read('ipec_xbnormal_fun_n1.out',forcex=['r','z'])
-        >>> xb.plot3d('bno')
+        xb, = data.read('examples/DIIID_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
+        xb.plot3d('bno')
         
         ..note: I think what we usually want out of IPEC is
         the 3D surface perturbation. If we run with fun_flag
@@ -1741,24 +1719,25 @@ def add_control_geometry(ds,overwrite=False):
     **Examples:**
     
     After opening, and adding geometry,
-    >>>ds = open_dataset('ipec_control_output_n1.nc')
-    >>>ds = add_control_geometry(ds)
+    >>> ds = open_dataset('examples/DIIID_example/ipec_control_output_n1.nc')
+    >>> ds = add_control_geometry(ds)
     
     it is easy to make 3D surface plots using mayavi,
-    >>>mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,
-                              scalars=np.real(ds['b_n']*ds['expn'])
+    >>> mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,scalars=np.real(ds['b_n']*ds['expn']))
 
     Make 2D perturbed last-closed-flux-surface plots quickly using,
-    >>>fac = 3e-2 # good for DIII-D unit eigenmodes
-    >>>f,ax = plt.subplots()
-    >>>for i in range(4):
-    >>>    v = ds['W_EDX_FUN'][0,i]*fac
-    >>>    l,= plot(ds['R']+v*ds['R_n'],ds['z']+v*ds['z_n'])
-    >>>sm = plt.set_linearray(ax.lines[-4:],range(1,5))
-    >>>cb = f.colorbar()
-    >>>cb.set_label('Mode Index')
-    >>>ax.set_xlabel('R (m)')
-    >>>ax.set_ylabel('z (m)')
+    >>> fac = 1e-1 # good for DIII-D unit eigenmodes
+    >>> f,ax = plt.subplots()
+    >>> for i in range(4):
+    ...     v = np.real(ds['W_EDX_FUN'][0,i]*fac)
+    ...     l, = ax.plot(ds['R']+v*ds['R_n'],ds['z']+v*ds['z_n'])
+    >>> sm = plt.set_linearray(ax.lines[-4:],range(1,5))
+    >>> cb = f.colorbar(sm)
+    >>> cb.set_label('Mode Index')
+    >>> txt = ax.set_xlabel('R (m)')
+    >>> txt = ax.set_ylabel('z (m)')
+
+
     
     """
     # Toroidal angle
@@ -1770,9 +1749,9 @@ def add_control_geometry(ds,overwrite=False):
 
     # 3D cartesian coords for 3D plots
     if 'X' not in ds or overwrite:
-        xy = (ds['R']*np.exp(1j*ds['phi'])).to_dataset()
-        ds['X'] = xy.apply(np.real)[None]
-        ds['Y'] = xy.apply(np.imag)[None]
+        xy = (ds['R']*np.exp(1j*ds['phi'])).to_dataset(name='xy')
+        ds['X'] = xy.apply(np.real)['xy']
+        ds['Y'] = xy.apply(np.imag)['xy']
         ds['Z'] = ds['z']*(1+0*ds['phi'])
     
     # Normal vectors
@@ -1914,8 +1893,8 @@ def _plot3d_dev(self,ynames=None,filter={'psi':1},cbar=False,plot_type='',**kwar
       
     *Example:*
     
-    >>> xb, = data.read('ipec_xbnormal_fun_n1.out',forcex=['r','z'])
-    >>> xb.plot3d('bno')
+    xb, = data.read('examples/DIIID_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
+    xb.plot3d('bno')
     
     ..note: I think what we usually want out of IPEC is
     the 3D surface perturbation. If we run with fun_flag

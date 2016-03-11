@@ -197,7 +197,7 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
       Deprecated kwrags are kept for a time so as to avoid incorrect assumption
       that they are input files.
     
-    
+    Additional key word arguments:
       kwargs   : dict. 
         namelist instance(s) written to <kwarg>.in file(s).
         
@@ -410,9 +410,9 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     1) Run DCON and IPEC in base directory with singcoup_flag True
     2) Run IPEC twice for each m, creating new subdirectories cosmn* and sinmn*
     3) Optimize a functional wrapper for PENTRC using optimize.fmin_slsqp
-      - Spectra constrained to have 1 Gm^2 norm
-      - wrapper uses data package to linearly combine ipec_xclebsch outputs
-      - Initial guess is the first singcoup_svd mode from IPEC
+    - Spectra constrained to have 1 Gm^2 norm
+    - wrapper uses data package to linearly combine ipec_xclebsch outputs
+    - Initial guess is the first singcoup_svd mode from IPEC
     
     Arguments:      
       ms    : list. 
