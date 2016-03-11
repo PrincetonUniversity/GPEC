@@ -3,7 +3,7 @@ Namelist Variables
 
 Download a fully annotated copy of the :download:`DCON namelist <_static/dcon.in>`.
 
-.. include:: ../iput/dcon.in
+.. include:: ../input/dcon.in
    :literal:
 
 docs

@@ -91,6 +91,38 @@
   <div class="section" id="namelist-variables">
 <h1>Namelist Variables<a class="headerlink" href="#namelist-variables" title="Permalink to this headline">¶</a></h1>
 <p>Download a fully annotated copy of the <a class="reference download internal" href="_downloads/dcon.in"><tt class="xref download docutils literal"><span class="pre">DCON</span> <span class="pre">namelist</span></tt></a>.</p>
+<pre class="literal-block">
+&amp;dcon_control
+        bal_flag=t
+        mat_flag=t
+        ode_flag=t
+        vac_flag=t
+        sas_flag=t                      ! q limit determined as q_ir +dmlim where q_ir is the equil outermost rational
+        nn=1                            ! toroidal mode number
+        delta_mlow=12           ! Expands lower bound of Fourier harmonics 
+        delta_mhigh=12          ! Expands upper bound of  Fourier harmonics
+        delta_mband=0           ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
+        sing_start=0            ! Start integration at the sing_start'th rational from the axis (psilow)
+        dmlim=0.2                       ! See sas_flag 
+        qhigh=1e3                       ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
+        mthvac=512                      ! Number of points used in splines over poloidal angle
+        thmax0=1
+        tol_nr=1e-5                     ! Relative tolerance of dynamic integration steps away from rationals
+        tol_r=1e-6                      ! Relative tolerance of dynamic integration steps near rationals
+        crossover=1e-2          ! Fractional distance from rational q at which tolerance is switched to tol_r 
+        singfac_min=1e-4        ! Fractional distance from rational q at which ideal jump condition is enforced 
+        ucrit=1e4                       ! Maximum fraction of solutions allowed before renormalized
+/
+&amp;dcon_output
+        crit_break=t
+        ahb_flag=t
+        msol_ahb=1
+        mthsurf0=1
+        bin_euler=t
+        euler_stride=1
+/
+
+</pre>
 <p>docs</p>
 <pre class="literal-block">
 &amp;dcon_control
