@@ -1,14 +1,10 @@
 Namelist Variables
 +++++++++++++++++++
 
-Download a fully annotated copy of the :download:`DCON namelist <../input/dcon.in>`.
+Download a fully annotated copy of the :download:`DCON namelist <_static/dcon.in>`.
 
-.. toctree::
-   :maxdepth: 2
-
-   coil_namelist.rst
-   ipec_namelist.rst
-   pent_namelist.rst
+.. include:: ../iput/dcon.in
+   :literal:
 
 .. include:: coil_namelist.rst
 
