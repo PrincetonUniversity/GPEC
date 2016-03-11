@@ -11,8 +11,3 @@ docs
 .. include:: dcon.in
    :literal:
 
-raw
-
-.. include:: dcon.in
-   :raw:
-
