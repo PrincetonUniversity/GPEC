@@ -248,12 +248,13 @@ c-----------------------------------------------------------------------
       ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
-c     normalize plasma/vacuum eigenenergy and eigenfunctions.
+c     normalize plasma/vacuum eigenvalues and eigenfunctions.
 c-----------------------------------------------------------------------
       et=et/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
+      wt0=wt0/(mu0*2.0)*psio**2
       IF(data_type==5)THEN
          wtraw=wtraw*(chi1*1e-3)
          eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2

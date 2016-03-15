@@ -163,22 +163,22 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate plasma inductance matrix by surface consideration.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,*)"Calculating inductrances and permeability"
+      IF(verbose) WRITE(*,*)"Calculating inductance and permeability"
       ALLOCATE(plas_indmats(0:4,mpert,mpert),
      $   plas_indinvmats(0:4,mpert,mpert),
      $   plas_indev(0:4,mpert),plas_indevmats(0:4,mpert,mpert),
      $   plas_indinvev(0:4,mpert),plas_indinvevmats(0:4,mpert,mpert))
+      lwork=2*mpert+1
       DO j=1,4
          ! plasma inductance
-         work=0
-         rwork=0
          temp1=TRANSPOSE(kapmats(j,:,:))
          temp2=TRANSPOSE(flxmats)
          CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
          temp1=TRANSPOSE(temp2)
          plas_indmats(j,:,:)=temp1
-         lwork=2*mpert+1
+         work=0
+         rwork=0
          CALL zgeev('V','V',mpert,temp1,mpert,plas_indev(j,:),
      $        vl,mpert,vr,mpert,work,lwork,rwork,info)
          plas_indevmats(j,:,:)=vr
@@ -196,14 +196,10 @@ c-----------------------------------------------------------------------
                IF(i==j)temp1(i,j)=1.0
             ENDDO
          ENDDO
-         work=0
-         rwork=0
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
          plas_indmats(0,:,:)=temp1
       ELSE
-         work=0
-         rwork=0
          temp1=0
          temp2=flxmats
          DO i=1,mpert
@@ -214,7 +210,6 @@ c-----------------------------------------------------------------------
                ENDDO
             ENDDO
          ENDDO
-         lwork=2*mpert+1
          plas_indmats(0,:,:)=temp1
       ENDIF
       CALL zgeev('V','V',mpert,temp1,mpert,plas_indev(0,:),
@@ -223,22 +218,21 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate inverse of the plasma inductance ~ Energy
 c-----------------------------------------------------------------------
-      temp1=0
-      DO i=1,mpert
-         temp1(i,i)=1
-      ENDDO
       CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
-      DO i=0,4
+      DO j=0,4
+         temp1=0
+         DO i=1,mpert
+            temp1(i,i)=1
+         ENDDO
+         temp2=plas_indmats(j,:,:)
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+         plas_indinvmats(j,:,:)=temp1
          work=0
          rwork=0
-         temp2=TRANSPOSE(plas_indmats(j,:,:))
-         CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
-         temp2=TRANSPOSE(temp2)
-         plas_indinvmats(j,:,:)=temp2
-         lwork=2*mpert+1
-         CALL zgeev('V','V',mpert,temp2,mpert,plas_indinvev(j,:),
+         CALL zgeev('V','V',mpert,temp1,mpert,plas_indinvev(j,:),
      $        vl,mpert,vr,mpert,work,lwork,rwork,info)
-         plas_indinvevmats(j,:,:)=TRANSPOSE(vr)
+         plas_indinvevmats(j,:,:)=vr
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.
