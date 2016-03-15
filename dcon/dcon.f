@@ -206,7 +206,9 @@ c-----------------------------------------------------------------------
       IF(vac_flag .AND. .NOT.
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          IF(verbose) WRITE(*,*)"Computing free boundary energies"
+         ALLOCATE(ud(mpert,mpert,2))
          CALL free_run(plasma1,vacuum1,total1,nzero)
+         DEALLOCATE(ud)
       ELSE
          plasma1=0
          vacuum1=0
