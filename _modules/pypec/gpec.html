@@ -1,0 +1,938 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pypec.gpec &mdash; GPEC 3.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="GPEC 3.0.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="../../index.html"><img src="../../_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">home</a>|&nbsp;</li>
+        <li><a href="../../search.html">search</a>|&nbsp;</li>
+
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pypec.gpec</h1><div class="highlight"><pre>
+<span class="c">#!/usr/local/env python</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:mod:`pypec.gpec` -- Python Wrappers for FORTRAN Codes</span>
+<span class="sd">======================================================</span>
+
+<span class="sd">This is a collection of wrapper functions for running DCON, IPEC, and PENT.</span>
+
+<span class="sd">If run from the command line, this module will call an associated GUI.</span>
+
+<span class="sd">This module is for more advanced operators who want to control/run </span>
+<span class="sd">the fortran package for DCON, IPEC, and PENT. To get started, lets</span>
+<span class="sd">explore the package</span>
+
+<span class="sd">&gt;&gt;&gt; gpec.</span>
+<span class="sd">gpec.InputSet       gpec.join           gpec.optimize       gpec.run</span>
+<span class="sd">gpec.bashjob        gpec.namelist       gpec.optntv         gpec.subprocess</span>
+<span class="sd">gpec.data           gpec.np             gpec.os             gpec.sys</span>
+<span class="sd">gpec.default        gpec.ntv_dominantm  gpec.packagedir     gpec.time</span>
+
+<span class="sd">many of these are simply standard python modules imported by gpec</span>
+<span class="sd">lets submit a full run in just 4 lines:</span>
+<span class="sd">steal the settings from a previous run (leaving run director as deafult)</span>
+
+<span class="sd">&gt;&gt;&gt; new_inputs = gpec.InputSet(indir=&#39;/p/gpec/users/nlogan/data/d3d/ipecout/145117/ico3_n3/&#39;)</span>
+
+<span class="sd">change what we want to</span>
+
+<span class="sd">&gt;&gt;&gt; new_inputs[&#39;dcon&#39;][&#39;DCON_CONTROL&#39;][&#39;nn&#39;]=2</span>
+<span class="sd">&gt;&gt;&gt; new_dir = new_inputs.indir[:-2]+&#39;2&#39;</span>
+
+<span class="sd">DOUBLE CHECK THAT ALL IPUTS ARE WHAT YOU EXPECT (not shown here)</span>
+<span class="sd">and submit the job to the cluster.</span>
+
+<span class="sd">&gt;&gt;&gt; gpec.run(loc=new_dir,**new_inputs.infiles)</span>
+
+<span class="sd">Running the package using this module will </span>
+
+<span class="sd">1. Create the new location (if not already existing), and cd to it</span>
+<span class="sd">2. rm all .out, .dat, and .bin files already in the directory (not dcon ones if rundcon=False, not pent ones for runpent=False, etc).</span>
+<span class="sd">3. cp all .dat and .in files from the run directoy to the new location</span>
+<span class="sd">4. Write all namelists supplied in kwargs to file (overwriting)</span>
+<span class="sd">5. Write a unique bash script for the run, and submit it OR run each fortran routine from the commandline.</span>
+<span class="sd">6. Remove all .dat and xdraw files from the directory</span>
+
+<span class="sd">You will not that there is significant oportunity for overwriting files,</span>
+<span class="sd">and the user must be responsible for double checking that all inputs </span>
+<span class="sd">are correct and will not result in life crushing disaster for themselves</span>
+<span class="sd">or a friend when that super special file gets over-written.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    @package pypec</span>
+<span class="sd">    @author NC Logan</span>
+<span class="sd">    @email nlogan@pppl.gov</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c">#basics</span>
+<span class="kn">import</span> <span class="nn">os</span>                               <span class="c"># operating system commands</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span><span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span><span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>                      <span class="c"># math</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">optimize</span>
+<span class="kn">from</span> <span class="nn">string</span> <span class="kn">import</span> <span class="n">join</span>                 <span class="c"># string manipulation</span>
+
+<span class="c">#in this package</span>
+<span class="kn">import</span> <span class="nn">data</span>                             <span class="c"># read/write .out files</span>
+<span class="kn">import</span> <span class="nn">namelist</span>                         <span class="c"># read/write fortran namelist .in files</span>
+<span class="kn">from</span> <span class="nn">_bashjob_</span> <span class="kn">import</span> <span class="n">bashjob</span>            <span class="c"># bash script skeleton</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">gui</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span> <span class="c"># not supported at GA</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Failed to import gui - must have enthought.traits&#39;</span><span class="p">)</span>
+    
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s">&#39;HOST&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;sunfire&#39;</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&#39;WARNING: USING PORTAL - &quot;use -w 24:00:00 -l mem=8gb&quot; recomended for heavy computation&#39;</span>
+
+<span class="c"># make sure package is in path</span>
+<span class="n">packagedir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span><span class="s">&#39;/&#39;</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;/&#39;</span> <span class="c"># one directory up</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;pypec&#39;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;bin&#39;</span><span class="p">)</span>
+
+
+<span class="n">np</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span>
+<span class="n">iteration</span> <span class="o">=</span><span class="mi">1</span>
+
+<span class="c">##################################################### DEFAULTS</span>
+
+<div class="viewcode-block" id="InputSet"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.InputSet">[docs]</a><span class="k">class</span> <span class="nc">InputSet</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class designed to hold the standard inputs for a run.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">      rundir : str. </span>
+<span class="sd">        Location of executables, .dat files, and extra .in files.</span>
+<span class="sd">      indir  : str. </span>
+<span class="sd">        Location of .in files read in and stored here</span>
+<span class="sd">      infiles: dict. </span>
+<span class="sd">        Tree like storage of namelist objects.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;bin&#39;</span><span class="p">,</span><span class="n">indir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;input&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the intance.</span>
+
+<span class="sd">        Key Word Arguments: </span>
+<span class="sd">          rundir : str. </span>
+<span class="sd">            Location of IPEC package rundirectory.</span>
+<span class="sd">          indir  : str. </span>
+<span class="sd">            Location of .in namelist files to read.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rundir</span> <span class="o">=</span> <span class="n">rundir</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;/&#39;</span> <span class="c"># want ending /</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indir</span> <span class="o">=</span> <span class="n">indir</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;/&#39;</span> <span class="c"># want ending /</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">infiles</span> <span class="o">=</span><span class="p">{}</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indir</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.in&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;draw&#39;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">infiles</span><span class="p">[</span><span class="n">f</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]]</span><span class="o">=</span><span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indir</span><span class="o">+</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Failed to read &#39;</span><span class="o">+</span><span class="n">f</span><span class="p">)</span>
+                    <span class="k">pass</span>
+            
+</div>
+<span class="n">default</span> <span class="o">=</span> <span class="n">InputSet</span><span class="p">()</span>
+
+
+<span class="c">##################################################### WRAPPER</span>
+
+<span class="k">def</span> <span class="nf">_newloc</span><span class="p">(</span><span class="n">loc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utility function for making and moving to a new location.</span>
+<span class="sd">    Note: First 2 directories counted pre-/ must exist already.</span>
+<span class="sd">    </span>
+<span class="sd">    Arguments: </span>
+<span class="sd">      loc : str. </span>
+<span class="sd">        Directory to make and/or move to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dirs</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">dirs</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">],</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">tmp</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;mkdir &#39;</span><span class="o">+</span><span class="n">tmp</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&#39;Could not make directory &#39;</span><span class="o">+</span><span class="n">tmp</span><span class="p">)</span>
+                <span class="k">raise</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+    <span class="k">return</span>
+        
+
+
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">rundir</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">return_on_complete</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">rerun</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">rundcon</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runipec</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runpentrc</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">fill_inputs</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">mailon</span><span class="o">=</span><span class="s">&#39;ae&#39;</span><span class="p">,</span><span class="n">email</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">mem</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
+        <span class="n">runpent</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">optpentrc</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">pent_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Python wrapper for running ipec package.</span>
+<span class="sd">    </span>
+<span class="sd">    Key Word Arguments:</span>
+<span class="sd">      loc      : str. </span>
+<span class="sd">        Directory location for run.</span>
+<span class="sd">      rundir   : str. </span>
+<span class="sd">        IPEC package directory with executables and .dat files.</span>
+<span class="sd">      qsub     : bool. </span>
+<span class="sd">        Submit job to cluster.</span>
+<span class="sd">      return_on_complete : bool. </span>
+<span class="sd">        Return only after job is finished on cluster (irrelevant if qsub=False).</span>
+<span class="sd">      rerun : bool.</span>
+<span class="sd">        Does not delete existing .out files.</span>
+<span class="sd">      rundcon  : bool. </span>
+<span class="sd">        Run dcon.</span>
+<span class="sd">      runipec  : bool. </span>
+<span class="sd">        Run ipec.</span>
+<span class="sd">      runpentrc : bool.</span>
+<span class="sd">        Run pentrc.</span>
+<span class="sd">      fill_inputs : bool. </span>
+<span class="sd">        Use inputs from rundir (see kwargs).</span>
+<span class="sd">      mailon   : str. </span>
+<span class="sd">        Any combination of a,b,e for on interruption</span>
+<span class="sd">        execution, and termination respectively.</span>
+<span class="sd">      email    : str. </span>
+<span class="sd">        Email address.</span>
+<span class="sd">      mem : float</span>
+<span class="sd">        Memory request of q-submission in megabytes (converted to integer).</span>
+<span class="sd">    </span>
+<span class="sd">    Deprecated Key Word Arguments:</span>
+<span class="sd">      runpent : bool.</span>
+<span class="sd">        Run deprecated pent program.</span>
+<span class="sd">      optpentrc : bool.</span>
+<span class="sd">        Run OPENTRC executable pentrc optimization (under construction).</span>
+<span class="sd">      pent_tol : float. </span>
+<span class="sd">        Acceptable torque error. pent_tol&gt;0 tries maskpsi of 32,16,4,2,1 </span>
+<span class="sd">        until convergence or 1. Forced to 0 when qsub is true.</span>
+<span class="sd">    ..note::</span>
+<span class="sd">      Deprecated kwrags are kept for a time so as to avoid incorrect assumption</span>
+<span class="sd">      that they are input files.</span>
+<span class="sd">    </span>
+<span class="sd">    Additional key word arguments:</span>
+<span class="sd">      kwargs   : dict. </span>
+<span class="sd">        namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
+<span class="sd">        </span>
+<span class="sd">    .. note:: </span>
+<span class="sd">      Namelists taken from (in order of priority): </span>
+<span class="sd">      1) Key word arguments </span>
+<span class="sd">      2) .in files from loc</span>
+<span class="sd">      3) .in files from rundir</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      bool. </span>
+<span class="sd">        True.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># housekeeping</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+    <span class="n">rundir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">rundir</span><span class="p">)</span>       
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Running Purturbed Equilibrium Package in &#39;</span><span class="o">+</span><span class="n">loc</span><span class="p">)</span>
+    <span class="n">_newloc</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+    <span class="n">locfiles</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">rerun</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;Cleaning old run out, dat, and bin files&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rundcon</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.out&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">locfiles</span><span class="p">]):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm *.out&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.dat&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">locfiles</span><span class="p">]):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm *.dat&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.bin&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">locfiles</span><span class="p">]):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm *.bin&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">runipec</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;ipec_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">locfiles</span><span class="p">]):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm ipec_*&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;ipdiag_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">locfiles</span><span class="p">]):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm ipdiag_*&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;pent_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">locfiles</span><span class="p">]):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm pent_*&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">runpent</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;pent_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">locfiles</span><span class="p">]):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm pent_*&#39;</span><span class="p">)</span>
+
+    <span class="c"># set up run</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;Writting &#39;</span><span class="o">+</span><span class="n">key</span><span class="o">+</span><span class="s">&#39;.in from keyword argument.&#39;</span><span class="p">)</span>
+        <span class="n">namelist</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span><span class="n">key</span><span class="o">+</span><span class="s">&#39;.in&#39;</span><span class="p">)</span> <span class="c">#over-write if exists</span>
+    
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Using package from &#39;</span><span class="o">+</span><span class="n">rundir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rundir</span> <span class="o">!=</span> <span class="n">loc</span><span class="p">:</span>
+        <span class="c"># fill missing input files </span>
+        <span class="k">if</span> <span class="n">fill_inputs</span><span class="p">:</span>
+            <span class="n">localins</span><span class="o">=</span><span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span><span class="o">==</span><span class="s">&#39;.in&#39;</span> <span class="ow">and</span> <span class="n">f</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span><span class="o">!=</span><span class="s">&#39;draw&#39;</span><span class="p">]</span>
+            <span class="n">rundirins</span><span class="o">=</span><span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">rundir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span><span class="o">==</span><span class="s">&#39;.in&#39;</span> <span class="ow">and</span> <span class="n">f</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span><span class="o">!=</span><span class="s">&#39;draw&#39;</span><span class="p">]</span>
+            <span class="n">missedins</span><span class="o">=</span><span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rundirins</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">localins</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">infile</span> <span class="ow">in</span> <span class="n">missedins</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&#39;Copying &#39;</span><span class="o">+</span><span class="n">infile</span><span class="o">+</span><span class="s">&#39; from rundir.&#39;</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;cp &#39;</span><span class="o">+</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/&#39;</span><span class="o">+</span><span class="n">infile</span><span class="o">+</span><span class="s">&#39; .&#39;</span><span class="p">)</span>
+        <span class="c"># path to package data files</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s">&#39;coil.in&#39;</span><span class="p">):</span>
+            <span class="n">coil</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;coil.in&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s">&#39;data_dir&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">coil</span><span class="p">[</span><span class="s">&#39;COIL_CONTROL&#39;</span><span class="p">]:</span>
+                <span class="n">coil</span><span class="p">[</span><span class="s">&#39;COIL_CONTROL&#39;</span><span class="p">][</span><span class="s">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;coil&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s">&#39;pentrc.in&#39;</span><span class="p">):</span>
+            <span class="n">pentrc</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;pentrc.in&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s">&#39;data_dir&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pentrc</span><span class="p">[</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">]:</span>
+                <span class="n">pentrc</span><span class="p">[</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;data_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;pentrc&#39;</span>
+        <span class="c"># get all supporting data files (NOTE:: not necessary with new data_dir inputs)</span>
+        <span class="c">#os.system(&#39;cp &#39;+packagedir+&#39;coil/*.dat .&#39;)</span>
+        <span class="c">#os.system(&#39;cp &#39;+packagedir+&#39;pent/*.dat .&#39;)</span>
+
+    
+    <span class="c"># actual run</span>
+    <span class="k">if</span> <span class="n">qsub</span><span class="p">:</span>
+        <span class="n">dloc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">jobname</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">getshot</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="n">dloc</span>
+        <span class="c"># clean up old qsub if it exists</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;../{:}.oe&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dloc</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm ../{:}.oe&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dloc</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;{:}.sh&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">jobname</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm {:}.sh&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">jobname</span><span class="p">))</span>
+        <span class="c"># fill in and write shell script</span>
+        <span class="n">exelist</span><span class="o">=</span><span class="s">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">rundcon</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/dcon </span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="k">if</span> <span class="n">runipec</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/ipec </span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="k">if</span> <span class="n">runpentrc</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/pentrc </span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="k">if</span> <span class="n">optpentrc</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/OPENTRC </span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="n">jobstr</span> <span class="o">=</span> <span class="n">bashjob</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;jobnamehere&#39;</span><span class="p">,</span><span class="n">jobname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mailon</span><span class="p">:</span> <span class="n">jobstr</span> <span class="o">=</span> <span class="n">jobstr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;# --- emailoptionhere&#39;</span><span class="p">,</span><span class="s">&#39;#PBS -m &#39;</span><span class="o">+</span><span class="n">mailon</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">email</span><span class="p">:</span>  <span class="n">jobstr</span> <span class="o">=</span> <span class="n">jobstr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;# --- emailhere&#39;</span><span class="p">,</span><span class="s">&#39;#PBS -M &#39;</span><span class="o">+</span><span class="n">email</span><span class="p">)</span>
+        <span class="n">jobstr</span> <span class="o">=</span> <span class="n">jobstr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;runlochere&#39;</span><span class="p">,</span><span class="n">loc</span><span class="p">)</span>
+        <span class="n">jobstr</span> <span class="o">=</span> <span class="n">jobstr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;exelisthere&#39;</span><span class="p">,</span><span class="n">exelist</span><span class="p">)</span>
+        <span class="n">jobstr</span> <span class="o">=</span> <span class="n">jobstr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;memhere&#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">mem</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">mem</span><span class="o">&lt;=</span><span class="mf">3e3</span><span class="p">:</span> <span class="n">jobstr</span> <span class="o">=</span> <span class="n">jobstr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;#PBS -q mque&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">jobname</span><span class="o">+</span><span class="s">&#39;.sh&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">jobstr</span><span class="p">)</span>
+        <span class="c"># submit job to cluster</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;qsub &#39;</span><span class="o">+</span><span class="n">jobname</span><span class="o">+</span><span class="s">&#39;.sh&#39;</span><span class="p">)</span>
+        <span class="c">#wait for job completion to return</span>
+        <span class="k">if</span> <span class="n">return_on_complete</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Waiting for job to complete...&#39;</span><span class="p">)</span>
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;../&#39;</span><span class="o">+</span><span class="n">jobname</span><span class="o">+</span><span class="s">&#39;.oe&#39;</span><span class="p">):</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>    
+            <span class="c"># clean up</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm *.dat&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/dcon&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rundcon</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/dcon&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">runipec</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/ipec&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">runpentrc</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/pentrc&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">optpentrc</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/OPENTRC&#39;</span><span class="p">)</span>
+        <span class="c"># clean up</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm *.dat&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="bp">True</span>
+
+
+<span class="c">##################################################### COMMON LOOP FUNCTIONS</span>
+
+</div>
+<div class="viewcode-block" id="optntv"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.optntv">[docs]</a><span class="k">def</span> <span class="nf">optntv</span><span class="p">(</span><span class="n">mlist</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span><span class="n">loc</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">rundir</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Python wrapper for running ipec package multiple times in</span>
+<span class="sd">    a search for the normalized spectrum that maximizes NTV.</span>
+<span class="sd">    </span>
+<span class="sd">    Arguments:      </span>
+<span class="sd">      mlist    : list. </span>
+<span class="sd">        Integer poloidal modes included on plasma surface.</span>
+<span class="sd">    </span>
+<span class="sd">    Key Word Arguments:    </span>
+<span class="sd">      maxiter  : int.</span>
+<span class="sd">        Maximum number of iterations.</span>
+<span class="sd">      loc      : str. </span>
+<span class="sd">        Directory location for run.</span>
+<span class="sd">      rundir   : str. </span>
+<span class="sd">        IPEC package directory with executables and .dat files.</span>
+<span class="sd">      kwargs : dict. </span>
+<span class="sd">        namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
+<span class="sd">        </span>
+<span class="sd">     .. note::</span>
+<span class="sd">       Namelists taken from (in order of priority):</span>
+<span class="sd">       1) Key word arguments </span>
+<span class="sd">       2) .in files from loc</span>
+<span class="sd">       3) .in files from rundir</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      bool. </span>
+<span class="sd">        True.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mlist</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span><span class="n">mlist</span><span class="p">)</span>
+    <span class="n">mlist</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">loc</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+        
+    <span class="c"># Clean ipec.in of any error fields</span>
+    <span class="k">if</span> <span class="s">&#39;ipec&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;WARNING: No ipec.in specidied. Using copy from run directory&#39;</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/ipec.in&#39;</span><span class="p">,</span><span class="n">combine_arrays</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;coil_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">False</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;data_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">False</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;harmonic_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_OUTPUT&#39;</span><span class="p">][</span><span class="s">&#39;ntv_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;cos&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;sin&#39;</span><span class="p">):</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="c"># Include each m errorfield namelist variable in ipec input</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mlist</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">cs</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;cosmn&#39;</span><span class="p">,</span><span class="s">&#39;sinmn&#39;</span><span class="p">]:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="n">cs</span><span class="o">+</span><span class="s">&#39;(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-4</span>
+
+    <span class="c"># Set up base for run</span>
+    <span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">rundir</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">rundcon</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runipec</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runpent</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">InputSet</span><span class="p">(</span><span class="n">indir</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">infiles</span>
+    <span class="n">nn</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s">&#39;dcon&#39;</span><span class="p">][</span><span class="s">&#39;DCON_CONTROL&#39;</span><span class="p">][</span><span class="s">&#39;nn&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">totntv</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span><span class="n">mlist</span><span class="o">=</span><span class="n">mlist</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns total ntv torque given a list of the cosine coefficients </span>
+<span class="sd">        and sine coefficients each ordered largest m to lowest.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cs</span><span class="p">)</span>
+        <span class="n">cs</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">mlist</span><span class="p">,</span><span class="n">cs</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">cs</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;cosmn(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;sinmn(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span><span class="n">rundcon</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ntv</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;pent_n&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;.out&#39;</span><span class="p">)</span>
+        <span class="n">tot</span> <span class="o">=</span> <span class="n">ntv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;total(T_phi)&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">tot</span>
+
+    <span class="n">norm</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mlist</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">)</span><span class="o">**</span><span class="mf">2.0</span>
+    <span class="k">def</span> <span class="nf">sumsqr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span><span class="p">)</span><span class="o">-</span><span class="n">norm</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1e-4</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mlist</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">opt</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">fmin_slsqp</span><span class="p">(</span><span class="n">totntv</span><span class="p">,</span><span class="n">x0</span><span class="p">,</span><span class="nb">iter</span><span class="o">=</span><span class="n">maxiter</span><span class="p">,</span><span class="n">eqcons</span><span class="o">=</span><span class="p">[</span><span class="n">sumsqr</span><span class="p">],</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;optimization.pkl&#39;</span><span class="p">,</span><span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">opt</span>
+</div>
+<div class="viewcode-block" id="optpentrc"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.optpentrc">[docs]</a><span class="k">def</span> <span class="nf">optpentrc</span><span class="p">(</span><span class="n">ms</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span><span class="mi">25</span><span class="p">),</span><span class="n">ttype</span><span class="o">=</span><span class="s">&#39;tgar&#39;</span><span class="p">,</span><span class="n">tfac</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">perp1</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">norm</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+              <span class="n">method</span><span class="o">=</span><span class="s">&#39;Powell&#39;</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">loc</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">rundir</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Python wrapper for running gpec packages multiple times in</span>
+<span class="sd">    a search for the normalized spectrum that maximizes NTV.</span>
+<span class="sd">    </span>
+<span class="sd">    Approach is as follows:</span>
+<span class="sd">    1) Run DCON and IPEC in base directory with singcoup_flag True</span>
+<span class="sd">    2) Run IPEC twice for each m, creating new subdirectories cosmn* and sinmn*</span>
+<span class="sd">    3) Optimize a functional wrapper for PENTRC using optimize.fmin_slsqp</span>
+<span class="sd">    - Spectra constrained to have 1 Gm^2 norm</span>
+<span class="sd">    - wrapper uses data package to linearly combine ipec_xclebsch outputs</span>
+<span class="sd">    - Initial guess is the first singcoup_svd mode from IPEC</span>
+<span class="sd">    </span>
+<span class="sd">    Arguments:      </span>
+<span class="sd">      ms    : list. </span>
+<span class="sd">        Integer poloidal modes included on plasma surface.</span>
+<span class="sd">    </span>
+<span class="sd">    Key Word Arguments:</span>
+<span class="sd">      ms    : list. </span>
+<span class="sd">        Integer poloidal modes included on plasma surface.</span>
+<span class="sd">      ttype : str.</span>
+<span class="sd">        PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).</span>
+<span class="sd">      tfac : int.</span>
+<span class="sd">        Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.</span>
+<span class="sd">      perp1 : bool.</span>
+<span class="sd">        Optimizes in space perpendicular to 1st IPEC SVD mode.</span>
+<span class="sd">      norm : float.</span>
+<span class="sd">        Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).</span>
+<span class="sd">      qsub : bool.</span>
+<span class="sd">        Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.</span>
+<span class="sd">      method : str.</span>
+<span class="sd">        Method used in scipy.optimize.minimize.</span>
+<span class="sd">      maxiter  : int.</span>
+<span class="sd">        Maximum number of iterations.</span>
+<span class="sd">      loc      : str. </span>
+<span class="sd">        Directory location for run.</span>
+<span class="sd">      rundir   : str. </span>
+<span class="sd">        IPEC package directory with executables and .dat files.</span>
+<span class="sd">      kwargs : dict. </span>
+<span class="sd">        namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
+<span class="sd">        </span>
+<span class="sd">     .. note::</span>
+<span class="sd">       Namelists taken from (in order of priority):</span>
+<span class="sd">       1) Key word arguments </span>
+<span class="sd">       2) .in files from loc</span>
+<span class="sd">       3) .in files from rundir</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      bool. </span>
+<span class="sd">        True.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">iteration</span>
+    <span class="n">iteration</span><span class="o">=</span><span class="mi">1</span>
+    <span class="c"># setup</span>
+    <span class="n">ms</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span><span class="n">ms</span><span class="p">)</span>
+    <span class="n">ms</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">loc</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;/&#39;</span>
+    <span class="n">rundir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">rundir</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;/&#39;</span>
+    
+    <span class="c"># get ipec.in</span>
+    <span class="k">if</span> <span class="s">&#39;ipec&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;ipec.in&#39;</span><span class="p">):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;ipec.in&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;WARNING: No ipec.in specified. Using copy from run directory&#39;</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;ipec.in&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;coil_flag&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;coil_flag&#39;</span><span class="p">]:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;WARNING: Includes additional field from coils as background.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;data_flag&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;data_flag&#39;</span><span class="p">]:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;WARNING: Includes additional field from data file as background.&#39;</span><span class="p">)</span>
+    <span class="c"># assert necessary flags</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;jsurf_in&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;harmonic_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_OUTPUT&#39;</span><span class="p">][</span><span class="s">&#39;xclebsch_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_OUTPUT&#39;</span><span class="p">][</span><span class="s">&#39;singcoup_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_OUTPUT&#39;</span><span class="p">][</span><span class="s">&#39;resp_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="c"># remove any previous spectra</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;cos&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;sin&#39;</span><span class="p">):</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+    <span class="c"># include flat cosine and sine component for each m</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">cs</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;cosmn&#39;</span><span class="p">,</span><span class="s">&#39;sinmn&#39;</span><span class="p">]:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="n">cs</span><span class="o">+</span><span class="s">&#39;(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">ms</span><span class="p">))</span>
+    
+    <span class="c"># base run (runs the only DCON run and runs IPEC to get singcoup svd modes)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="o">*</span><span class="mi">40</span><span class="o">+</span><span class="s">&#39; Running base case&#39;</span><span class="p">)</span>
+    <span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">rundir</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">rundcon</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runipec</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runpent</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runpentrc</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    
+    <span class="c"># retrieve base variables</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;dcon&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;dcon.in&#39;</span><span class="p">)</span>
+    <span class="n">nn</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;dcon&#39;</span><span class="p">][</span><span class="s">&#39;DCON_CONTROL&#39;</span><span class="p">][</span><span class="s">&#39;nn&#39;</span><span class="p">]</span>
+    <span class="n">mem</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="o">/</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="o">-</span><span class="n">nn</span><span class="p">))</span><span class="o">*</span><span class="mf">1e3</span>
+    <span class="c"># retrieve ipec svd modes</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Reading IPEC svd dominant modes...&#39;</span><span class="p">)</span>
+    <span class="n">sc1</span><span class="p">,</span><span class="n">sc2</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;ipec_singcoup_svd_n{}.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nn</span><span class="p">),</span><span class="n">quiet</span><span class="o">=</span><span class="bp">True</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">msc</span> <span class="o">=</span> <span class="n">sc1</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">Phi1</span><span class="p">,</span><span class="n">Phi2</span> <span class="o">=</span> <span class="p">[],[]</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">msc</span><span class="p">:</span>
+            <span class="n">Phi1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sc1</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;b&#39;</span><span class="p">][</span><span class="n">msc</span><span class="o">==</span><span class="n">m</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">Phi2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sc2</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;b&#39;</span><span class="p">][</span><span class="n">msc</span><span class="o">==</span><span class="n">m</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Phi1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">Phi2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">Phi1</span><span class="p">,</span><span class="n">Phi2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Phi1</span><span class="p">,</span><span class="n">Phi2</span><span class="p">])</span>
+    <span class="n">amp1</span><span class="p">,</span><span class="n">amp2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Phi1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)),</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Phi2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Renormalizing |Phi1| = {:}, to {:} Tesla meter^2&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">amp1</span><span class="p">,</span><span class="n">norm</span><span class="p">))</span>
+    <span class="n">Phi1</span> <span class="o">=</span><span class="p">(</span><span class="n">Phi1</span><span class="o">/</span><span class="n">amp1</span><span class="p">)</span><span class="o">*</span><span class="n">norm</span><span class="c">#/np.sqrt(2.0*len(ms))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Renormalizing |Phi2| = {:}, to {:} Tesla meter^2&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">amp2</span><span class="p">,</span><span class="n">norm</span><span class="p">))</span>
+    <span class="n">Phi2</span> <span class="o">=</span><span class="p">(</span><span class="n">Phi2</span><span class="o">/</span><span class="n">amp2</span><span class="p">)</span><span class="o">*</span><span class="n">norm</span><span class="c">#/np.sqrt(2.0*len(ms))</span>
+    
+    <span class="c"># assert sub-run variables</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;idconfile&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;euler.bin&#39;</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;ivacuumfile&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;vacuum.bin&#39;</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;ieqfile&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;psi_in.bin&#39;</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_OUTPUT&#39;</span><span class="p">]:</span> <span class="c"># maximum speed</span>
+        <span class="k">if</span> <span class="s">&#39;flag&#39;</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_OUTPUT&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="bp">False</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_OUTPUT&#39;</span><span class="p">][</span><span class="s">&#39;xclebsch_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;pentrc.in&#39;</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">][</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;peq_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;ipec_xclebsch_n{}.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">][</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;idconfile&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">loc</span><span class="o">+</span><span class="s">&#39;euler.bin&#39;</span>
+    <span class="c"># run ipec for each spectral component</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="o">*</span><span class="mi">40</span><span class="o">+</span><span class="s">&#39; Submitting jobs for each m&#39;</span><span class="p">)</span>
+    
+    
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">:</span>
+        <span class="c"># null all other components</span>
+        <span class="k">for</span> <span class="n">m2</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;cosmn(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;sinmn(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c"># apply pure component</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;cosmn(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;cosmn{}.oe&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">)):</span>
+            <span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;cosmn{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="n">rundir</span><span class="o">=</span><span class="n">rundir</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">mem</span><span class="o">=</span><span class="n">mem</span><span class="p">,</span>
+                <span class="n">rundcon</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runipec</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runpent</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runpentrc</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;cosmn(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;ipec&#39;</span><span class="p">][</span><span class="s">&#39;IPEC_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;sinmn(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm</span>        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;sinmn{}.oe&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">)):</span>
+            <span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;sinmn{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="n">rundir</span><span class="o">=</span><span class="n">rundir</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">mem</span><span class="o">=</span><span class="n">mem</span><span class="p">,</span>
+                <span class="n">rundcon</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runipec</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runpent</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runpentrc</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    
+    
+    <span class="c"># wait for runs to finish</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Waiting for m runs to complete...&#39;</span><span class="p">)</span>
+    <span class="n">ipecdone</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">ipecdone</span><span class="p">:</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;cosmn{}.oe&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">))</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">]</span>
+        <span class="n">test</span><span class="o">+=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;sinmn{}.oe&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">))</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">test</span><span class="p">):</span>
+            <span class="n">ipecdone</span><span class="o">=</span><span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span>
+    
+    <span class="c"># read all the displacements (this takes time)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Reading xclebsch files...&#39;</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">default_quiet</span><span class="o">=</span><span class="bp">True</span>
+    <span class="n">xms</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">readall</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="n">filetype</span><span class="o">=</span><span class="s">&#39;ipec_xclebsch_n{:}.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nn</span><span class="p">),</span><span class="n">quiet</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+    <span class="c"># assert pentrc iteration variables</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;pentrc.in&#39;</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">][</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;peq_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loc</span><span class="o">+</span><span class="s">&#39;ipec_xclebsch_mopt_n{}.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">][</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;idconfile&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">loc</span><span class="o">+</span><span class="s">&#39;euler.bin&#39;</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">][</span><span class="s">&#39;PENT_OUTPUT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s">&#39;flag&#39;</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">][</span><span class="s">&#39;PENT_OUTPUT&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="bp">False</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">][</span><span class="s">&#39;PENT_OUTPUT&#39;</span><span class="p">][</span><span class="n">ttype</span><span class="o">+</span><span class="s">&#39;_flag&#39;</span><span class="p">]</span><span class="o">=</span><span class="bp">True</span>
+    
+    <span class="c"># functional wrapper of PENTRC for optimization</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span><span class="n">ms</span><span class="o">=</span><span class="n">ms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns total ntv torque given a list of the cosine coefficients </span>
+<span class="sd">        and sine coefficients each ordered largest m to lowest.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ccs</span> <span class="o">=</span> <span class="n">condition</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span><span class="n">direction</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c"># form linear superpostion of ipec results</span>
+        <span class="n">cosmn</span><span class="p">,</span><span class="n">sinmn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ccs</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="c">#*np.array([[1,-1]]).T</span>
+        <span class="n">xclebsch</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">m</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ms</span><span class="p">,</span><span class="n">cosmn</span><span class="p">,</span><span class="n">sinmn</span><span class="p">):</span>
+            <span class="n">xclebsch</span> <span class="o">=</span> <span class="n">xclebsch</span><span class="o">+</span><span class="p">(</span><span class="n">c</span><span class="o">*</span><span class="n">xms</span><span class="p">[</span><span class="s">&#39;cosmn&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">s</span><span class="o">*</span><span class="n">xms</span><span class="p">[</span><span class="s">&#39;sinmn&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c"># write the summed displacement</span>
+        <span class="c">#  - note read cannot distinguish between psi&#39; and psi and numbers the second</span>
+        <span class="c">#  - note extra precision needed for psi values</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">xclebsch</span><span class="p">,</span><span class="n">fname</span><span class="o">=</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;ipec_xclebsch_mopt_n{}.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nn</span><span class="p">),</span>
+                   <span class="n">ynames</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;xi^psi&#39;</span><span class="p">,</span><span class="s">&#39;xi^psi_1&#39;</span><span class="p">,</span><span class="s">&#39;xi^alpha&#39;</span><span class="p">],</span><span class="n">fmt</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%24.16E</span><span class="s">&#39;</span><span class="p">)</span> 
+        
+        <span class="c"># run pentrc in que, but wait for result</span>
+        <span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span><span class="n">rundcon</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runipec</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runpent</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">runpentrc</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">fill_inputs</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">mem</span><span class="o">=</span><span class="n">mem</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="n">qsub</span><span class="p">,</span><span class="n">return_on_complete</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">pentrc</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;pentrc&#39;</span><span class="p">])</span>
+        <span class="n">ntv</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;pentrc_{:}_n{:}.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ttype</span><span class="p">,</span><span class="n">nn</span><span class="p">),</span><span class="n">quiet</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">metric</span> <span class="o">=</span> <span class="n">tfac</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">ntv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;intT_phi&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="c"># gets minimized</span>
+        <span class="c">#print(&#39;metric = {:.9E}&#39;.format(metric))</span>
+        <span class="n">callback</span><span class="p">(</span><span class="n">cs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">metric</span>
+    
+    <span class="c"># log progress</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;pentrc_optimization.log&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="s">&#39;{:&gt;16} {:&gt;16} {:&gt;16} {:&gt;16}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="s">&#39;T_phi&#39;</span><span class="p">,</span><span class="s">&#39;eqcons&#39;</span><span class="p">,</span><span class="s">&#39;overlap&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">:</span>
+            <span class="n">header</span><span class="o">+=</span><span class="s">&#39; {:&gt;16} {:&gt;16}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;real(m{})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="s">&#39;imag(m{})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">iteration</span>
+        <span class="c">#print(&#39;callback, iteration = {}&#39;.format(iteration))</span>
+        <span class="n">ntv</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;pentrc_{:}_n{:}.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ttype</span><span class="p">,</span><span class="n">nn</span><span class="p">),</span><span class="n">quiet</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">tphi</span><span class="o">=</span> <span class="n">ntv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;intT_phi&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">check</span> <span class="o">=</span> <span class="n">checknorm</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">xin</span> <span class="o">=</span> <span class="n">condition</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">direction</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ovlp</span> <span class="o">=</span> <span class="n">overlap</span><span class="p">(</span><span class="n">xin</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;pentrc_optimization.log&#39;</span><span class="p">,</span><span class="s">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">((</span><span class="s">&#39;{:16.8E} {:16.8E} {:16.8E} {:16.8E}&#39;</span><span class="o">+</span><span class="s">&#39; {:16.8E}&#39;</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                     <span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span><span class="n">tphi</span><span class="p">,</span><span class="n">check</span><span class="p">,</span><span class="n">ovlp</span><span class="p">,</span><span class="o">*</span><span class="n">xin</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">iteration</span><span class="o">%</span><span class="mi">10</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ntv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="c"># make order consistent</span>
+            <span class="n">ntv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s">&#39;iteration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">iteration</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ntv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">ynames</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span>
+                       <span class="n">fname</span><span class="o">=</span><span class="s">&#39;pentrc_{:}_n{:}_i{:}.log&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ttype</span><span class="p">,</span><span class="n">nn</span><span class="p">,</span><span class="n">iteration</span><span class="p">))</span>
+        <span class="n">iteration</span><span class="o">+=</span><span class="mi">1</span>
+    
+    <span class="c"># initial guesses</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">perp1</span><span class="p">:</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Phi1</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phi1</span><span class="o">.</span><span class="n">imag</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Phi2</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phi2</span><span class="o">.</span><span class="n">imag</span><span class="p">])</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    
+    <span class="c"># Conditioning and constraints</span>
+    <span class="k">def</span> <span class="nf">condition</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">x0</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scale m components to have equal weighting (best guess)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">direction</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">convec</span> <span class="o">=</span> <span class="n">vec</span><span class="o">/</span><span class="n">x0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">convec</span> <span class="o">=</span> <span class="n">vec</span><span class="o">*</span><span class="n">x0</span>
+        <span class="n">convec</span><span class="o">*=</span> <span class="n">norm</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">convec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">convec</span>
+    <span class="k">def</span> <span class="nf">checknorm</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Equality or inequality constraint on the norm of the vector&quot;&quot;&quot;</span> 
+        <span class="n">vnorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span><span class="c">#np.sqrt(np.sum(np.abs(vec).ravel()**2))</span>
+        <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span><span class="p">(</span><span class="s">&quot;  vnorm,norm = {:}, {:}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vnorm</span><span class="p">,</span><span class="n">norm</span><span class="p">))</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">vnorm</span><span class="o">-</span><span class="n">norm</span><span class="p">)</span><span class="o">/</span><span class="n">norm</span>
+        <span class="k">return</span> <span class="n">diff</span>
+    <span class="k">def</span> <span class="nf">checknorm_prime</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Jacobian of checknorm&quot;&quot;&quot;</span>
+        <span class="n">vnorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">vm</span><span class="p">)</span><span class="o">/</span><span class="n">vnorm</span><span class="p">)</span><span class="o">/</span><span class="n">norm</span>
+    <span class="k">def</span> <span class="nf">overlap</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">Phi1</span><span class="o">=</span><span class="n">Phi1</span><span class="p">,</span><span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Equality constrain that solution be perpendicular to IPEC dominant mode&quot;&quot;&quot;</span>
+        <span class="n">compvec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1j</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">dot</span> <span class="o">=</span> <span class="n">compvec</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Phi1</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span><span class="o">.</span><span class="n">real</span><span class="c">#np.sum(compvec.real*Phi1.real+compvec.imag*Phi1.imag)</span>
+        <span class="n">ovlp</span><span class="o">=</span> <span class="n">dot</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">compvec</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Phi1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ovlp</span>
+    
+    <span class="c"># Linear combination estimate</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Reading torques for linear estimate...&#39;</span><span class="p">)</span>
+    <span class="n">tm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">readall</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span><span class="n">filetype</span><span class="o">=</span><span class="s">&#39;pentrc_{:}_n{:}.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ttype</span><span class="p">,</span><span class="n">nn</span><span class="p">),</span><span class="n">quiet</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">tvec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">tm</span><span class="p">[</span><span class="s">&#39;cosmn&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;intT_phi&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                     <span class="o">+</span><span class="mi">1j</span><span class="o">*</span><span class="n">tm</span><span class="p">[</span><span class="s">&#39;sinmn&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="s">&#39;intT_phi&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">])</span>
+    <span class="n">Phiq</span> <span class="o">=</span> <span class="n">tvec</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">norm</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">tvec</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">Phil</span> <span class="o">=</span> <span class="n">tvec</span> <span class="o">*</span> <span class="n">norm</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">tvec</span><span class="p">)</span>
+    <span class="n">darray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ms</span><span class="p">,</span><span class="n">Phi1</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phi1</span><span class="o">.</span><span class="n">imag</span><span class="p">,</span><span class="n">Phi2</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phi2</span><span class="o">.</span><span class="n">imag</span><span class="p">,</span><span class="n">Phil</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phil</span><span class="o">.</span><span class="n">imag</span><span class="p">,</span><span class="n">Phiq</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phiq</span><span class="o">.</span><span class="n">imag</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">header</span> <span class="o">=</span><span class="s">&#39;GPEC: Area normalized poloidal IPEC spectrum that optimizes the PENTRC torque</span><span class="se">\n</span><span class="s">&#39;</span>
+    <span class="n">header</span><span class="o">+=</span><span class="s">&#39;Phi_L estimated by linear approximation of PENTRC torque</span><span class="se">\n</span><span class="s">&#39;</span>
+    <span class="n">header</span><span class="o">+=</span><span class="s">&#39;Phi_Q estimated by quadratic approximation of PENTRC torque</span><span class="se">\n</span><span class="s">&#39;</span>
+    <span class="n">header</span><span class="o">+=</span><span class="s">&#39;Phi_T estimated by nonlinear {:} optimization of PENTRC torque</span><span class="se">\n\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+    <span class="n">header</span><span class="o">+=</span><span class="s">&#39;{:&gt;16} {:&gt;16} {:&gt;16} {:&gt;16} {:&gt;16} {:&gt;16} {:&gt;16} {:&gt;16} {:&gt;16}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;m&#39;</span><span class="p">,</span>
+            <span class="s">&#39;real(Phi_1)&#39;</span><span class="p">,</span><span class="s">&#39;imag(Phi_1)&#39;</span><span class="p">,</span><span class="s">&#39;real(Phi_2)&#39;</span><span class="p">,</span><span class="s">&#39;imag(Phi_2)&#39;</span><span class="p">,</span>
+            <span class="s">&#39;real(Phi_L)&#39;</span><span class="p">,</span><span class="s">&#39;imag(Phi_L)&#39;</span><span class="p">,</span><span class="s">&#39;real(Phi_Q)&#39;</span><span class="p">,</span><span class="s">&#39;imag(Phi_Q)&#39;</span><span class="p">)</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">loc</span><span class="o">+</span><span class="s">&#39;pentrc_optimized_spectrum_n{:}.log&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span>    
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Writing estimated spectrum:</span><span class="se">\n</span><span class="s">  &#39;</span><span class="o">+</span><span class="n">fname</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">darray</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span><span class="n">fmt</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%16.8E</span><span class="s">&#39;</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="n">comments</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    
+    <span class="c"># ACTUAL OPTIMIZATION</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="o">*</span><span class="mi">40</span><span class="o">+</span><span class="s">&#39; Optimizing PENTRC&#39;</span><span class="p">)</span>
+    <span class="c">#opt = optimize.fmin_slsqp(wrapper,x0,iter=maxiter,full_output=1,disp=2,</span>
+    <span class="c">#                          eqcons=[checknorm]+perp1*[checkperp1])</span>
+    <span class="n">cons</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;type&#39;</span><span class="p">:</span><span class="s">&#39;eq&#39;</span><span class="p">,</span>
+             <span class="s">&#39;fun&#39;</span><span class="p">:</span><span class="n">checknorm</span><span class="p">,</span>
+             <span class="s">&#39;jac&#39;</span><span class="p">:</span><span class="n">checknorm_prime</span><span class="p">}]</span><span class="c">#lambda x: np.array([np.sqrt(np.sum(np.abs(x).ravel()**2))-norm])}]</span>
+    <span class="k">if</span> <span class="n">perp1</span><span class="p">:</span> <span class="n">cons</span><span class="o">+=</span><span class="p">[{</span><span class="s">&#39;type&#39;</span><span class="p">:</span><span class="s">&#39;ineq&#39;</span><span class="p">,</span><span class="s">&#39;fun&#39;</span><span class="p">:</span><span class="n">checkperp1</span><span class="p">}]</span>
+    <span class="c">#opt = optimize.minimize(wrapper,condition(x0),method=&#39;SLSQP&#39;,options={&#39;disp&#39;:True},constraints=cons)</span>
+    <span class="n">opt</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">wrapper</span><span class="p">,</span><span class="n">condition</span><span class="p">(</span><span class="n">x0</span><span class="p">),</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span><span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;disp&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">})</span><span class="c">#,callback=callback)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">default_quiet</span><span class="o">=</span><span class="bp">False</span>
+    
+    <span class="c"># save output</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Pickling fmin_slsqp output -&gt; pentrc_optimization.pkl&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="s">&#39;pentrc_optimization.pkl&#39;</span><span class="p">,</span><span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">rspec</span><span class="p">,</span><span class="n">ispec</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="c">#opt[0].reshape(2,-1)</span>
+    <span class="n">darray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ms</span><span class="p">,</span><span class="n">Phi1</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phi1</span><span class="o">.</span><span class="n">imag</span><span class="p">,</span><span class="n">Phi2</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phi2</span><span class="o">.</span><span class="n">imag</span><span class="p">,</span><span class="n">Phil</span><span class="o">.</span><span class="n">real</span><span class="p">,</span><span class="n">Phil</span><span class="o">.</span><span class="n">imag</span><span class="p">,</span><span class="n">rspec</span><span class="p">,</span><span class="n">ispec</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">header</span><span class="o">+=</span><span class="s">&#39;{:&gt;16} {:&gt;16}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s">&#39;real(Phi_T)&#39;</span><span class="p">,</span><span class="s">&#39;imag(Phi_T)&#39;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&#39;Writing nonlinear optimized spectrum -&gt; &#39;</span><span class="o">+</span><span class="n">fname</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">darray</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span><span class="n">fmt</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%16.8E</span><span class="s">&#39;</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="n">comments</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">opt</span>
+    
+
+</div>
+<span class="k">def</span> <span class="nf">omegascan</span><span class="p">(</span><span class="n">omega</span><span class="o">=</span><span class="s">&#39;wp&#39;</span><span class="p">,</span><span class="n">base</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">20</span><span class="p">),</span><span class="n">pentrcfile</span><span class="o">=</span><span class="s">&#39;pentrc.in&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run pent for series of scaled nu/omega_phi/omega_E/omega_D/gamma_damp values. </span>
+<span class="sd">    User must specify full path to all files named in pent.in input file</span>
+<span class="sd">    located in the base directory.</span>
+<span class="sd">    Note that the rotation profile is scaled by manipulating omega_E</span>
+<span class="sd">    on each surface to obtain the scaled roation.</span>
+
+<span class="sd">    Key Word Arguments:</span>
+<span class="sd">      omega     : str. </span>
+<span class="sd">       Choose from nu, wp, we, wd, or ga</span>
+<span class="sd">      base    : str. </span>
+<span class="sd">       Top level directory containing dcon and ipec runs.</span>
+<span class="sd">       Must contain euler.bin and vacuum.bin file.</span>
+<span class="sd">      scale   : ndarray. </span>
+<span class="sd">        The scale factors iterated over.</span>
+<span class="sd">      pentfile: str. </span>
+<span class="sd">        Original input file.</span>
+<span class="sd">      rundcon : bool</span>
+<span class="sd">        Set true if using hybrid kinetic MHD DCON. Will also attempt IPEC + PENT.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      bool. </span>
+<span class="sd">        True.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># setup</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">base</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;/&#39;</span>
+    <span class="n">pentrc</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">pentrcfile</span><span class="p">)</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span><span class="n">scale</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;dcon&#39;</span><span class="p">,</span><span class="s">&#39;ipec&#39;</span><span class="p">,</span><span class="s">&#39;pent&#39;</span><span class="p">,</span><span class="s">&#39;pentrc&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s">&#39;run&#39;</span><span class="o">+</span><span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;run&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="o">==</span><span class="s">&#39;pentrc&#39;</span>
+        <span class="k">elif</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;run&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">base</span><span class="o">+</span><span class="n">k</span><span class="o">+</span><span class="s">&#39;.in&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">==</span><span class="s">&#39;dcon&#39;</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;equil&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">base</span><span class="o">+</span><span class="s">&#39;equil&#39;</span><span class="o">+</span><span class="s">&#39;.in&#39;</span><span class="p">)</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;vac&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">base</span><span class="o">+</span><span class="s">&#39;vac&#39;</span><span class="o">+</span><span class="s">&#39;.in&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">==</span><span class="s">&#39;ipec&#39;</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;coil&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">base</span><span class="o">+</span><span class="s">&#39;coil&#39;</span><span class="o">+</span><span class="s">&#39;.in&#39;</span><span class="p">)</span>
+    
+    <span class="c"># use some initial ipec run if already available</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;runipec&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;rundcon&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">pentrc</span><span class="p">[</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="s">&#39;file&#39;</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span>
+                <span class="n">pentrc</span><span class="p">[</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">pentrc</span><span class="p">[</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
+    
+    <span class="c"># submit the scaled runs</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scale</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">omega</span><span class="o">+</span><span class="s">&#39;{0:.5}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">_newloc</span><span class="p">(</span><span class="n">base</span><span class="o">+</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">pentrc</span><span class="p">[</span><span class="s">&#39;PENT_CONTROL&#39;</span><span class="p">][</span><span class="n">omega</span><span class="o">+</span><span class="s">&#39;fac&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="n">run</span><span class="p">(</span><span class="n">pentrc</span><span class="o">=</span><span class="n">pentrc</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">nustarscan</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mi">10</span><span class="o">**</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">11</span><span class="p">),</span><span class="n">pentfile</span><span class="o">=</span><span class="s">&#39;pent.in&#39;</span><span class="p">,</span>
+           <span class="n">scalen</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">scalet</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run pent for series of *approximately* scaled collisionality values.</span>
+<span class="sd">    Default scaling holds P=NT constant (NTV~P), but this is broken using</span>
+<span class="sd">    scalen or scalet (scalet=False, for example, scales only density).</span>
+<span class="sd">    </span>
+<span class="sd">    User may want to include a non-zero ximag if going to low collisionality.</span>
+<span class="sd">    </span>
+<span class="sd">    User must specify full path to all files named in the pent input.</span>
+<span class="sd">    </span>
+<span class="sd">    Kinetic file must have header with &#39;n&#39; and &#39;i&#39; in the ion density label</span>
+<span class="sd">    but no other label, both &#39;t&#39; and &#39;e&#39; in only the electron temperature label,</span>
+<span class="sd">    &#39;omega&#39; omega_EXB label, etc.</span>
+<span class="sd">    </span>
+<span class="sd">    .. note:: Approximate scaling ignores log-Lambda dependence, and uses</span>
+<span class="sd">       nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.</span>
+
+<span class="sd">    Key Word Arguments:</span>
+<span class="sd">      base    : str. </span>
+<span class="sd">       Top level directory containing dcon and ipec runs.</span>
+<span class="sd">       Must contain euler.bin and vacuum.bin file.</span>
+<span class="sd">      scale   : ndarray. </span>
+<span class="sd">        The scale factors iterated over.</span>
+<span class="sd">      pentfile: str. </span>
+<span class="sd">        Original input file.</span>
+<span class="sd">      scalen : bool.</span>
+<span class="sd">        Use density scaling to change nu_star.</span>
+<span class="sd">      scalet : bool.</span>
+<span class="sd">        Use temperature scaling to change nu_star.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      bool. </span>
+<span class="sd">        True.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># setup</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">base</span><span class="p">)</span> <span class="o">+</span><span class="s">&#39;/&#39;</span>
+    <span class="n">pent</span> <span class="o">=</span> <span class="n">namelist</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">pentfile</span><span class="p">)</span>
+    <span class="n">kfile</span> <span class="o">=</span> <span class="n">pent</span><span class="p">[</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;kinetic_file&#39;</span><span class="p">]</span>
+    <span class="n">kin</span><span class="p">,</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">pent</span><span class="p">[</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;kinetic_file&#39;</span><span class="p">])</span>
+    <span class="n">markers</span> <span class="o">=</span> <span class="p">[[</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">],[</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="s">&#39;e&#39;</span><span class="p">],[</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="s">&#39;i&#39;</span><span class="p">],[</span><span class="s">&#39;t&#39;</span><span class="p">,</span><span class="s">&#39;e&#39;</span><span class="p">],[</span><span class="s">&#39;omega&#39;</span><span class="p">]]</span>
+    <span class="n">ynames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ms</span> <span class="ow">in</span> <span class="n">markers</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kin</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">unitless</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;eV&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;m3&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;rads&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">m</span> <span class="ow">in</span> <span class="n">unitless</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ms</span><span class="p">]):</span> <span class="n">ynames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="c"># make sure names arent poluted</span>
+    <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ynames</span><span class="p">)</span><span class="o">==</span><span class="mi">5</span><span class="p">)</span>
+    <span class="c">#ynames = [&#39;nim3&#39;, &#39;nem3&#39;,  &#39;tieV&#39;, &#39;teeV&#39;, &#39;wexbrads&#39;]</span>
+    <span class="c">#for name in ynames:</span>
+    <span class="c">#    assert(name in kin.y)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">scalen</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">scalet</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Must scale density, temperature, or both.&#39;</span><span class="p">)</span>
+
+    <span class="c">#loop through the scan</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span><span class="n">scale</span><span class="p">):</span>
+        <span class="c"># distribute nu scale to N and T (keeping NT constant if allowed)</span>
+        <span class="n">nscale</span> <span class="o">=</span> <span class="n">scalen</span><span class="o">*</span><span class="n">s</span><span class="o">**</span><span class="p">(</span><span class="n">scalet</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">+</span><span class="mf">1.0</span><span class="o">*</span><span class="p">(</span><span class="ow">not</span> <span class="n">scalet</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="ow">not</span> <span class="n">scalen</span><span class="p">)</span>
+        <span class="n">tscale</span> <span class="o">=</span> <span class="n">scalet</span><span class="o">*</span><span class="n">s</span><span class="o">**</span><span class="p">(</span><span class="n">scalen</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="ow">not</span> <span class="n">scalen</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="ow">not</span> <span class="n">scalet</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;nuscale = {:.3e} </span><span class="se">\n</span><span class="s"> tscale = {:.3e}, nscale = {:.3e}, 1/tscale = {:.3e}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">nscale</span><span class="p">,</span><span class="n">tscale</span><span class="p">,</span><span class="mf">1.0</span><span class="o">/</span><span class="n">tscale</span><span class="p">))</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">nscale</span> <span class="ow">and</span> <span class="n">tscale</span><span class="p">):</span> <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">nscale</span><span class="p">,</span><span class="mf">1.0</span><span class="o">/</span><span class="n">tscale</span><span class="p">))</span> <span class="c"># double check NT constant scaling</span>
+        <span class="n">newkfile</span> <span class="o">=</span> <span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">kfile</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
+                <span class="o">+</span><span class="s">&#39;_nustar{:.2e}.dat&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+        <span class="n">kcop</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kin</span><span class="p">)</span>
+        <span class="n">kcop</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">ynames</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">*=</span><span class="n">nscale</span>
+        <span class="n">kcop</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">ynames</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">*=</span><span class="n">nscale</span>
+        <span class="n">kcop</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">ynames</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span><span class="o">*=</span><span class="n">tscale</span>
+        <span class="n">kcop</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">ynames</span><span class="p">[</span><span class="mi">3</span><span class="p">]]</span><span class="o">*=</span><span class="n">tscale</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">kcop</span><span class="p">,</span><span class="n">fname</span><span class="o">=</span><span class="n">newkfile</span><span class="p">,</span><span class="n">ynames</span><span class="o">=</span><span class="n">ynames</span><span class="p">)</span>
+
+        <span class="c"># run pent with new kinetic profile</span>
+        <span class="n">pent</span><span class="p">[</span><span class="s">&#39;PENT_INPUT&#39;</span><span class="p">][</span><span class="s">&#39;kinetic_file&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">newkfile</span><span class="p">)</span>
+        
+        <span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">base</span><span class="o">+</span><span class="s">&#39;nustar{:.2e}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">),</span><span class="n">rundcon</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">runipec</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">pent</span><span class="o">=</span><span class="n">pent</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">gui</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">home</a>|&nbsp;</li>
+        <li><a href="../../search.html">search</a>|&nbsp;</li>
+
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, PPPL.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

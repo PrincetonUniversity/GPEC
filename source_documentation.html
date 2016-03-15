@@ -442,7 +442,7 @@ data is interpolated to the wider spaced axis.</p>
 <dl class="docutils">
 <dt>Arguments:</dt>
 <dd><dl class="first last docutils">
-<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">ndarray shape (npts,ndim). </span></dt>
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">ndarray shape (npts,ndim).</span></dt>
 <dd>Point(s) on dependent axis(axes).</dd>
 </dl>
 </dd>
@@ -547,7 +547,7 @@ A float stretches a circle to hight=aspect*width.</dd>
 
 <dl class="method">
 <dt id="pypec.data.DataBase.plot3d">
-<tt class="descname">plot3d</tt><big>(</big><em>ynames=None</em>, <em>filter={'psi': 1}</em>, <em>cbar=False</em>, <em>size=(600</em>, <em>600)</em>, <em>plot_type=''</em>, <em>center=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/data.html#DataBase.plot3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.data.DataBase.plot3d" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">plot3d</tt><big>(</big><em>ynames=None</em>, <em>filter={'psi': 1}</em>, <em>cbar=False</em>, <em>size=(600</em>, <em>600)</em>, <em>plot_type=''</em>, <em>phi=None</em>, <em>center=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/data.html#DataBase.plot3d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.data.DataBase.plot3d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Three dimensional plots. Data with xnames r,z will be plotted
 with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).</p>
 <blockquote>
@@ -569,6 +569,8 @@ with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).</p>
 <dt>plot_type <span class="classifier-delimiter">:</span> <span class="classifier">str. </span></dt>
 <dd>Valid mayavi.mlab function name. 
 Overrides default function choices (plot3d,mesh,quiver3d).</dd>
+<dt>phi <span class="classifier-delimiter">:</span> <span class="classifier">ndarray.</span></dt>
+<dd>Toroidal angle grid for complex 2D data. Default is 360 degrees, 180 pts.</dd>
 <dt>center <span class="classifier-delimiter">:</span> <span class="classifier">float.</span></dt>
 <dd>Center colormap on this value.</dd>
 </dl>
@@ -895,13 +897,13 @@ class-type objects using numpy.genfromtxt.</p>
 <dd>Set independent data labels.</dd>
 <dt>forcedim <span class="classifier-delimiter">:</span> <span class="classifier">list.</span></dt>
 <dd>Set dimensionality of each x.</dd>
-<dt>maxnumber <span class="classifier-delimiter">:</span> <span class="classifier">int. </span></dt>
+<dt>maxnumber <span class="classifier-delimiter">:</span> <span class="classifier">int.</span></dt>
 <dd>Reads only first maxnumber of tables.</dd>
-<dt>maxlength <span class="classifier-delimiter">:</span> <span class="classifier">int. </span></dt>
+<dt>maxlength <span class="classifier-delimiter">:</span> <span class="classifier">int.</span></dt>
 <dd>Tables with more rows than this are downsampled for speed.</dd>
 <dt>auto_complex <span class="classifier-delimiter">:</span> <span class="classifier">bool.</span></dt>
 <dd>Include amplitude and phase of complex data as variables.</dd>
-<dt>quiet <span class="classifier-delimiter">:</span> <span class="classifier">bool. </span></dt>
+<dt>quiet <span class="classifier-delimiter">:</span> <span class="classifier">bool.</span></dt>
 <dd>Prevent non-warning messages printed to terminal.</dd>
 </dl>
 </dd>
