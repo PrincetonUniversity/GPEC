@@ -1,4 +1,6 @@
 
+include ../install/DEFAULTS.inc
+
 FFLAGS = -I../equil -I../coil -I../harvest -I$(NETCDFHOME)/include
 
 F90 = $(FC) $(FFLAGS)
@@ -7,7 +9,7 @@ F90 = $(FC) $(FFLAGS)
 	$(F90) -c $*.f
 
 LIBDIR = \
-	-L$(LAPACKHOME) \
+	-L$(MATHHOME) \
 	-L$(NETCDFHOME)/lib \
 	-L../lib
 
@@ -18,10 +20,8 @@ LIBS = \
 	-lvac \
 	-lcoil \
 	-lharvest \
-	-llapack \
-	-lblas \
-	-lnetcdf \
-	-lnetcdff
+	$(MATHLIBS) \
+	$(NETCDFLIBS)
 
 OBJS = \
 	ipglobal.o \
@@ -36,7 +36,6 @@ OBJS = \
 	ipec.o
 
 ipec: $(OBJS)
-	@echo $(PLATFORM)
 	$(F90) -o ipec $(OBJS) $(LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libipec.a *.o

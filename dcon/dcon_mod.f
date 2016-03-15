@@ -88,11 +88,26 @@ c-----------------------------------------------------------------------
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
-      INTEGER :: msing
+      INTEGER :: msing,kmsing
       TYPE(sing_type), DIMENSION(:), POINTER :: sing
+      TYPE(sing_type), DIMENSION(:), POINTER :: kinsing
 
       LOGICAL :: sas_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3
+
+      INTEGER :: nl,zi,mi
+      REAL(r8) :: wdfac,divxfac,
+     $     kinfac1=1.0,kinfac2=1.0,ktc=0.1,ktw=50
+      LOGICAL :: kin_flag = .FALSE.
+      LOGICAL :: con_flag = .FALSE.
+      LOGICAL :: ktanh_flag = .FALSE.
+      LOGICAL :: passing_flag = .FALSE.
+      LOGICAL :: electron_flag = .FALSE.
+      LOGICAL :: fkg_kmats_flag = .FALSE.
+      LOGICAL :: electron = .FALSE.
+      LOGICAL :: keq_out = .FALSE.
+      LOGICAL :: theta_out = .FALSE.
+      LOGICAL :: xlmda_out = .FALSE.
 
       END MODULE dcon_mod

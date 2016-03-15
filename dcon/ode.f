@@ -10,12 +10,13 @@ c     1. ode_run.
 c     2. ode_axis_init.
 c     3. ode_sing_init.
 c     4. ode_ideal_cross.
-c     5. ode_resist_cross.
-c     6. ode_step.
-c     7. ode_unorm.
-c     8. ode_fixup.
-c     9. ode_test.
-c     10. ode_test_fixup.
+c     5. ode_kin_cross.
+c     6. ode_resist_cross.
+c     7. ode_step.
+c     8. ode_unorm.
+c     9. ode_fixup.
+c     10. ode_test.
+c     11. ode_test_fixup.
 c-----------------------------------------------------------------------
 c     subprogram 0. ode_mod.
 c     module declarations.
@@ -24,6 +25,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE ode_mod
+      USE fourfit_mod
       USE ode_output_mod
       USE debug_mod
       IMPLICIT NONE
@@ -89,7 +91,11 @@ c-----------------------------------------------------------------------
             IF(res_flag)THEN
                CALL ode_resist_cross
             ELSE
-               CALL ode_ideal_cross
+               IF(kin_flag)THEN
+                  CALL ode_kin_cross
+               ELSE
+                  CALL ode_ideal_cross
+               ENDIF
             ENDIF
          ELSE
             EXIT
@@ -129,18 +135,37 @@ c-----------------------------------------------------------------------
 c     find next singular surface.
 c-----------------------------------------------------------------------
       ising=0
-      DO
-         ising=ising+1
-         IF(ising > msing .OR. psilim < sing(ising)%psifac)EXIT
-         q=sing(ising)%q
-         IF(mlow <= nn*q .AND. mhigh >= nn*q)EXIT
-      ENDDO
-      IF(ising > msing .OR. psilim < sing(ising)%psifac)THEN
-         psimax=psilim*(1-eps)
-         next="finish"
+      IF(kin_flag)THEN
+         DO
+            ising=ising+1
+            IF(ising > kmsing.OR.psilim<kinsing(ising)%psifac)EXIT
+            q=kinsing(ising)%q
+            IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
+         ENDDO
+         IF(ising>kmsing.OR.psilim<kinsing(ising)%psifac
+     $        .OR.singfac_min==0)THEN
+            psimax=psilim*(1-eps)
+            next="finish"
+         ELSE
+            psimax=kinsing(ising)%psifac-
+     $           singfac_min/ABS(nn*kinsing(ising)%q1)
+            next="cross"
+         ENDIF         
       ELSE
-         psimax=sing(ising)%psifac-singfac_min/ABS(nn*sing(ising)%q1)
-         next="cross"
+         DO
+            ising=ising+1
+            IF(ising > msing.OR.psilim<sing(ising)%psifac)EXIT
+            q=sing(ising)%q
+            IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
+         ENDDO
+         IF(ising>msing.OR.psilim<sing(ising)%psifac
+     $        .OR.singfac_min==0)THEN
+            psimax=psilim*(1-eps)
+            next="finish"
+         ELSE
+            psimax=sing(ising)%psifac-singfac_min/ABS(nn*sing(ising)%q1)
+            next="cross"
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     allocate and sort solutions by increasing value of |m-ms1|.
@@ -185,10 +210,18 @@ c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
       q=sq%fs(0,4)
-      IF(msing > 0)THEN
-         m1=NINT(nn*sing(ising)%q)
+      IF(kin_flag)THEN
+         IF(kmsing > 0)THEN
+            m1=NINT(nn*kinsing(ising)%q)
+         ELSE
+            m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         ENDIF
       ELSE
-         m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         IF(msing > 0)THEN
+            m1=NINT(nn*sing(ising)%q)
+         ELSE
+            m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         ENDIF
       ENDIF
       singfac=ABS(m1-nn*q)
 c-----------------------------------------------------------------------
@@ -288,11 +321,11 @@ c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
       DO
          ising=ising+1
-         IF(ising > msing .OR. psilim < sing(ising)%psifac)EXIT
+         IF(ising>msing.OR.psilim<sing(ising)%psifac)EXIT
          q=sing(ising)%q
-         IF(mlow <= nn*q .AND. mhigh >= nn*q)EXIT
+         IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
       ENDDO
-      IF(ising > msing .OR. psilim < sing(ising)%psifac)THEN
+      IF(ising>msing.OR.psilim<sing(ising)%psifac)THEN
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          psimax=psilim*(1-eps)
          next="finish"
@@ -398,12 +431,16 @@ c-----------------------------------------------------------------------
       dpsi=sing(ising)%psifac-psifac
       psifac=sing(ising)%psifac+dpsi
       CALL sing_get_ua(ising,psifac,ua)
-      u(ipert0,:,:)=0
+      IF (.NOT. con_flag) THEN
+         u(:,index(1),:)=0
+      ENDIF
       CALL sing_der(neq,psi_old,u,du1)
       CALL sing_der(neq,psifac,u,du2)
       u=u+(du1+du2)*dpsi
-      u(ipert0,:,:)=0
-      u(:,index(1),:)=ua(:,ipert0+mpert,:)
+      IF (.NOT. con_flag) THEN 
+         u(ipert0,:,:)=0
+         u(:,index(1),:)=ua(:,ipert0+mpert,:)
+      ENDIF
 c-----------------------------------------------------------------------
 c     diagnose solution after reinitialization.
 c-----------------------------------------------------------------------
@@ -441,14 +478,14 @@ c     find next ising.
 c-----------------------------------------------------------------------
       DO
          ising=ising+1
-         IF(ising > msing .OR. psilim < sing(ising)%psifac)EXIT
+         IF(ising>msing .OR.psilim<sing(ising)%psifac)EXIT
          q=sing(ising)%q
-         IF(mlow <= nn*q .AND. mhigh >= nn*q)EXIT
+         IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
       ENDDO
 c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
-      IF(ising > msing .OR. psilim < sing(ising)%psifac)THEN
+      IF(ising>msing.OR.psilim<sing(ising)%psifac)THEN
          psimax=psilim*(1-eps)
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          next="finish"
@@ -478,7 +515,110 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_ideal_cross
 c-----------------------------------------------------------------------
-c     subprogram 5. ode_resist_cross.
+c     subprogram 5. ode_kin_cross.
+c     re-initializes kinetic solutions across singular surface.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE ode_kin_cross
+
+      INTEGER :: ipert0,jsol,ipert,ipert1,jpert,iqty,info
+      INTEGER, DIMENSION(mpert) :: iperts
+      REAL(r8) :: dpsi,psi_old
+      COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua
+      COMPLEX(r8), DIMENSION(mpert,mpert,2) :: du1,du2
+
+
+      COMPLEX(r8), PARAMETER :: ione=1
+      INTEGER, DIMENSION(mpert) :: ipiv,fpiv
+      COMPLEX(r8), DIMENSION(mpert*mpert) :: work
+      CHARACTER(128) :: message
+c-----------------------------------------------------------------------
+c     format statements.
+c-----------------------------------------------------------------------
+ 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
+     $     3x,"im alpha"//i6,1p,5e11.3/)
+ 30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
+     $     "eval1"/)
+ 40   FORMAT(a,1p,e11.3/)
+ 50   FORMAT(1x,2(a,i3))
+ 60   FORMAT(/2x,"i",4x,"re ca1",5x,"im ca1",4x,"abs ca1",5x,"re ca2",
+     $     5x,"im ca2",4x,"abs ca2"/)
+ 70   FORMAT(i3,1p,6e11.3)
+c-----------------------------------------------------------------------
+c     fixup solution at singular surface.
+c-----------------------------------------------------------------------
+      WRITE(*,10)"psi = ",kinsing(ising)%psifac,", q = ",
+     $     kinsing(ising)%q
+      CALL ode_unorm(.TRUE.)
+c-----------------------------------------------------------------------
+c     re-initialize.
+c-----------------------------------------------------------------------
+      psi_old=psifac
+      ipert0=NINT(nn*kinsing(ising)%q)-mlow+1
+      iperts=MAXLOC(ABS(u(:,index(1),1)))
+      ipert1=iperts(1)
+      dpsi=kinsing(ising)%psifac-psifac
+
+      IF (con_flag) THEN
+         CALL sing_der(neq,psi_old,u,du1)
+         psifac=kinsing(ising)%psifac+dpsi  
+         CALL sing_der(neq,psifac,u,du2)
+         u=u+(du1+du2)*dpsi 
+      ELSE
+         u(ipert1,:,:)=0
+         CALL sing_der(neq,psi_old,u,du1)
+         psifac=kinsing(ising)%psifac+dpsi 
+         CALL sing_der(neq,psifac,u,du2)
+         u=u+(du1+du2)*dpsi 
+         u(ipert1,:,:)=0
+         u(:,index(1),:)=0
+         u(ipert1,index(1),:)=1
+      ENDIF
+c-----------------------------------------------------------------------
+c     find next ising.
+c-----------------------------------------------------------------------
+      DO
+         ising=ising+1
+         IF(ising>kmsing.OR.psilim<kinsing(ising)%psifac)EXIT
+         q=kinsing(ising)%q
+         IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
+      ENDDO
+c-----------------------------------------------------------------------
+c     compute conditions at next singular surface.
+c-----------------------------------------------------------------------
+      IF(ising>kmsing.OR.psilim<kinsing(ising)%psifac)THEN
+         psimax=psilim*(1-eps)
+         m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         next="finish"
+      ELSE
+         psimax=kinsing(ising)%psifac-
+     $        singfac_min/ABS(nn*kinsing(ising)%q1)
+         m1=NINT(nn*kinsing(ising)%q)
+      ENDIF
+c-----------------------------------------------------------------------
+c     restart ode solver.
+c-----------------------------------------------------------------------
+      istate=1
+      istep=istep+1
+      rwork(1)=psimax
+      new=.TRUE.
+      u_save=u
+      psi_save=psifac
+c-----------------------------------------------------------------------
+c     write to files.
+c-----------------------------------------------------------------------
+      WRITE(crit_out_unit,30)
+      IF(crit_break)WRITE(crit_bin_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ode_kin_cross
+c-----------------------------------------------------------------------
+c     subprogram 6. ode_resist_cross.
 c     re-initializes resistive solutions across singular surface.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -697,9 +837,9 @@ c-----------------------------------------------------------------------
 c     compute relative tolerances.
 c-----------------------------------------------------------------------
       singfac=HUGE(singfac)
-      IF(ising <= msing)singfac=ABS(sing(ising)%m-nn*q)
-      IF(ising > 1)singfac=MIN(singfac,ABS(sing(ising-1)%m-nn*q))
-      IF(singfac < crossover)THEN
+      IF(ising<=msing)singfac=ABS(sing(ising)%m-nn*q)
+      IF(ising>1)singfac=MIN(singfac,ABS(sing(ising-1)%m-nn*q))
+      IF(singfac<crossover)THEN
          tol=tol_r
       ELSE
          tol=tol_nr

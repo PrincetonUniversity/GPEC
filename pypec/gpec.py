@@ -312,9 +312,6 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     return True
 
 
-
-
-
 ##################################################### COMMON LOOP FUNCTIONS
 
 

@@ -5,7 +5,7 @@
 
 The data module is a very generalized tool for visualizing and manipulating scientific data from netcdf and ascii files.
 
-GPEC data is migrating to netcdf, and this module uses the xarray module for its python netcdf interface. The xarray module is very powerful and well documented `here <http://xarray.readthedocs.org/>`_. 
+GPEC data is migrating to netcdf, and this module uses the xarray module for its python netcdf interface. The xarray module is very powerful and well documented `here <http://xarray.readthedocs.org/>`_.
 
 Previous GPEC results and some current outputs are still writen to ascii. This module contains a custom I/O for converting ascii data to python objects. A custom Data object was created for this purpose, and conversion to the xarray Dataset is automated in the open_dataset function to facilitate migration to netcdf. The only requirement for creating a data object from an ascii file is that the file have one or more tables of data, with appropriate labels in a header line directly above the data.
 
@@ -14,7 +14,7 @@ Here, we show some examples using common outputs from both IPEC and PENT.
 Beginners
 ---------
 
-First, add your release of GPEC to your PYTHONPATH environment variable. 
+First, add your release of GPEC to your PYTHONPATH environment variable.
 
 In an open ipython session, import the data module
 
@@ -202,7 +202,7 @@ The read function creates a list of data objects corresponding to the tables in 
 >>> mydata = read('examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin')[0]
 Casting table 1 into Data object.
 
-At its heart, the data object consists of independent data and dependent data. This are stored differently, namely as a list in the pts attribute and as a dictionary in y. The x attribute is a dictionary if the data is 1 dimensional or a regular grid is found in the first n columns of the data (n=2,3), and left empty if the n>1 dependent data is irregular. 
+At its heart, the data object consists of independent data and dependent data. This are stored differently, namely as a list in the pts attribute and as a dictionary in y. The x attribute is a dictionary if the data is 1 dimensional or a regular grid is found in the first n columns of the data (n=2,3), and left empty if the n>1 dependent data is irregular.
 
 Explore the data using the corresponding python tools.
 
@@ -256,7 +256,7 @@ given in the documentation "Definition" line (watch out for inconsistent
 "Docstring" listings).
 
 
-.. note:: 
+.. note::
   These examples can be tested by developers using ipython 
   in this directory as follows:
 
@@ -331,7 +331,7 @@ def _set_color_defaults(calc_data,center=None,**kwargs):
     vmin = kwargs.get('vmin',None)
     vmax = kwargs.get('vmax',None)
     cmap = kwargs.get('cmap',None)
-    
+
     if vmin is None:
         vmin = np.percentile(calc_data, 2)
     if vmax is None:
@@ -354,11 +354,11 @@ def _set_color_defaults(calc_data,center=None,**kwargs):
             cmap = "RdBu_r"
         else:
             cmap = "viridis"
-            
+
     kwargs['vmin'] = vmin
     kwargs['vmax'] = vmax
     kwargs['cmap'] = cmap
-    
+
     return kwargs
 
 ######################################################## IO FOR DATA OBJECTs
@@ -367,13 +367,13 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
     """
     Wrapper for xarray.open_dataset that allows automated reduction of
     a dimension destinguishing real and imaginary components.
-    
+
     New Parameter
     -------------
     complex_dim : str, Dimension designating real/imaginary (0,1)
-    
+
     """
-    
+
     try:
         ds = xarray.open_dataset(filename_or_obj,**kwargs)
     except:
@@ -387,7 +387,7 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
                 raise ValueError("No regular grid for dataset")
             for yk,yv in d.y.iteritems():
                 ds[yk] = xarray.DataArray(yv.reshape(d.shape),coords=d.x,dims=d.xnames,attrs=d.params)
-    
+
     if complex_dim in ds.dims:
         for k,v in ds.data_vars.iteritems():
             if complex_dim in v.dims:
@@ -415,13 +415,13 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
         Set independent data labels.
       forcedim : list.
         Set dimensionality of each x.
-      maxnumber : int. 
+      maxnumber : int.
         Reads only first maxnumber of tables.
-      maxlength : int. 
+      maxlength : int.
         Tables with more rows than this are downsampled for speed.
       auto_complex : bool.
         Include amplitude and phase of complex data as variables.
-      quiet   : bool. 
+      quiet   : bool.
         Prevent non-warning messages printed to terminal.
     
     Returns:
@@ -756,7 +756,7 @@ class DataBase(object):
             Include amplitude and phase of complex data as variables.
           quiet : bool.
             Supress printed information and warnings.
-        
+
         """
         #debug start_time = time.time()
         names = list(fromtxt.dtype.names)
@@ -923,7 +923,7 @@ class DataBase(object):
         Interpolate data to point(s).
         
         Arguments:
-          x  : ndarray shape (npts,ndim). 
+          x  : ndarray shape (npts,ndim).
             Point(s) on dependent axis(axes).
         
         Key Word Arguments:
@@ -971,7 +971,7 @@ class DataBase(object):
                 for n in range(self.nd):
                     args.append(self.pts[::step,n])
                 return LinearNDInterpolator(zip(*args),self.y[name][::step])
-                           
+
         # for each name check if interpolator is up to date and get values
         values={}
         for name in ynames:
@@ -1217,7 +1217,7 @@ class DataBase(object):
             #        plotter = a.pcolormesh
             #    else:
             #        plotter = a.tripcolor
-            
+
             # convert to reals and grid if necessary
             reducedname = name.replace('real ','').replace('imag ','')
             if 'imag ' in name:
@@ -1232,9 +1232,9 @@ class DataBase(object):
                 y = griddata(self.pts,np.nan_to_num(raw),(x1,x2),method='linear')
             if swap:
                 x1,x2,y = x2.T,x1.T,y.T
-            
+
             kwargs = _set_color_defaults(y,center=center,**kwargs)
-            
+
             # plot type specifics
             if plotter==a.imshow:
                 kwargs.setdefault('origin','lower')
@@ -1259,7 +1259,7 @@ class DataBase(object):
         return f
 
     def plot3d(self,ynames=None,filter={'psi':1},cbar=False,size=(600,600),
-               plot_type='',center=None,**kwargs):
+               plot_type='',phi=None,center=None,**kwargs):
         """
         Three dimensional plots. Data with xnames r,z will be plotted
         with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).
@@ -1282,6 +1282,8 @@ class DataBase(object):
           plot_type : str. 
             Valid mayavi.mlab function name. 
             Overrides default function choices (plot3d,mesh,quiver3d).
+          phi : ndarray.
+            Toroidal angle grid for complex 2D data. Default is 360 degrees, 180 pts.
           center : float.
             Center colormap on this value.
 
@@ -1340,6 +1342,7 @@ class DataBase(object):
         # Extra work to convert the cylindrical axes
         if self.xnames==['r','z']:
             r,z,p = self.pts[:,0][fltr],self.pts[:,1][fltr],np.linspace(0,2*np.pi,180)
+            if phi!=None: p = np.array(phi) # Added for more custamization
             XY = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
             Z = z.reshape(-1,1)*np.ones_like(XY.real)
             X = [XY.real,XY.imag,Z]
@@ -1362,7 +1365,6 @@ class DataBase(object):
             cmap = mapper.get(cmap,cmap)
             reverse = cmap.endswith('_r')
             kwargs['colormap'] = cmap.rstrip('_r')
-            print(kwargs)
             plotobj = plotfunc(*XYZ,name=name,**kwargs)
             if reverse: plotobj.module_manager.scalar_lut_manager.reverse_lut = True
             if cbar: mmlab.colorbar(title=name,orientation='vertical')
@@ -1709,15 +1711,15 @@ def getshot(path='.',full_name=False):
 def add_control_geometry(ds,overwrite=False):
     """
     Add geometric dimensions to dataset from ipec_control_output_n#.nc.
-    
+
     **Arguments:**
         ds : Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-        
+
     **Key Word Arguments:**
         overwrite : bool. Overwrite geometric quantities if they already exist.
-    
+
     **Examples:**
-    
+
     After opening, and adding geometry,
     >>> ds = open_dataset('examples/DIIID_example/ipec_control_output_n1.nc')
     >>> ds = add_control_geometry(ds)
@@ -1753,7 +1755,7 @@ def add_control_geometry(ds,overwrite=False):
         ds['X'] = xy.apply(np.real)['xy']
         ds['Y'] = xy.apply(np.imag)['xy']
         ds['Z'] = ds['z']*(1+0*ds['phi'])
-    
+
     # Normal vectors
     if 'z_n' not in ds or 'R_n' not in ds or overwrite:
         dr = np.roll(ds['R'],1)-np.roll(ds['R'],-1)
@@ -1761,7 +1763,7 @@ def add_control_geometry(ds,overwrite=False):
         norm = np.sqrt(dr**2+dz**2)
         ds['z_n'] = xarray.DataArray(dr/norm,coords=ds['theta'].to_dataset())
         ds['R_n'] =-xarray.DataArray(dz/norm,coords=ds['theta'].to_dataset())
-    
+
     return ds
 
 ######################################################## Developer functions

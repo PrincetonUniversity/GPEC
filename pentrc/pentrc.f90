@@ -17,7 +17,7 @@ program pentrc
     !-----------------------------------------------------------------------
     
     use params, only: r8,xj
-    use utilities, only: timer
+    use utilities, only: timer,to_upper
     use special, only: set_fymnl,set_ellip
     use inputs, only : read_kin,read_equil,nn,read_peq,&
                        read_ipec_peq,read_fnml,verbose
@@ -36,7 +36,7 @@ program pentrc
         tdebug,&                          ! logical
         mpert,mfac                    !! hacked for test writting
     use global_mod, only: version       ! GPEC package
-    
+
     implicit none
 
     ! declarations and defaults
@@ -116,15 +116,15 @@ program pentrc
         f0type = "maxwellian",&
         jac_in = "default",&
         moment = "pressure"
-    
+
     ! harvest variables
     include 'harvest_lib.inc'
     integer :: ierr
     CHARACTER(LEN=50000) :: hnml
     character(len=65507) :: hlog
     character, parameter :: nul = char(0)
-    
-    ! namelists 
+
+    ! namelists
     namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
@@ -141,7 +141,7 @@ program pentrc
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug
 
-    
+
     ! read interface and set modules
     open(unit=1,file="pentrc.in",status="old")
     read(unit=1,nml=pent_input)
@@ -149,7 +149,7 @@ program pentrc
     read(unit=1,nml=pent_output)
     read(unit=1,nml=pent_admin)
     close(1)
-    
+
     ! warnings if using deprecated inputs
     if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
     if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out."
@@ -177,7 +177,7 @@ program pentrc
     else
         stop "ERROR: Input moment must be 'pressure' or 'heat'"
     endif
-    
+
     ! start timer
     call timer(mode=0)
     ! clear working directory
@@ -185,14 +185,14 @@ program pentrc
         if(verbose) print *, "clearing working directory"
         call system ('rm pentrc_*.out')
     endif
-    
+
     ! administrative setup/diagnostics/debugging.
     if(fnml_flag) call set_fymnl
     if(ellip_flag) call set_ellip
     if(diag_flag)then
         call diagnose_all
     else
-    
+
     ! run models
         ! start log with harvest
         ierr=init_harvest('CODEDB_PENT'//nul,hlog,len(hlog))
@@ -208,13 +208,13 @@ program pentrc
         ierr=set_harvest_payload_nam(hlog,'PENT_CONTROL'//nul,trim(hnml)//nul)
         write(hnml,nml=pent_output)
         ierr=set_harvest_payload_nam(hlog,'PENT_OUTPUT'//nul,trim(hnml)//nul)
-        
+
         ! read & log (perturbed) equilibrium inputs
         call read_equil(idconfile,hlog)
         call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
         call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug)
         !call read_ipec_peq(ipec_file,tdebug)
-        
+
         ! explicit matrix calculations
         if(wxyz_flag)then
             if(verbose) print *,"PENTRC - euler-lagrange matrix calculation"
@@ -334,9 +334,9 @@ program pentrc
                 endif
             endif
         enddo
-        
+
     endif
-    
+
     ! send harvest record
     ierr=harvest_send(hlog)
     

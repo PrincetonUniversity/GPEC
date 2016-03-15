@@ -11,6 +11,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE global_mod
       USE bicube_mod
+      USE cspline_mod
       IMPLICIT NONE
 
       CHARACTER(32), PARAMETER :: version = "GPEC version 0.3.1"
@@ -33,9 +34,12 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6
       REAL(r8) :: newq0=0
+      REAL(r8) :: etol=1e-7
 
       INTEGER :: mex
       REAL(r8), DIMENSION(:), POINTER :: qex,psiex
+      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: ud
+      ! obsolete  COMPLEX(r8), DIMENSION(:), POINTER :: f1mats,k1mats,k1aats,g1aats
 
       CHARACTER(16) :: jac_type="hamada"
       INTEGER :: power_bp=0,power_b=0,power_r=0,jac_method=1
@@ -48,6 +52,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: shotnum=0, shottime=0
       REAL(r8), DIMENSION(2) :: rext,rsep,zsep
       TYPE(spline_type) :: sq,sq_in
-      TYPE(bicube_type) :: rzphi
+      TYPE(bicube_type) :: rzphi,eqfun
+      TYPE(cspline_type) :: amats,bmats,cmats,
+     $     smats,tmats,xmats,ymats,zmats
 
       END MODULE global_mod

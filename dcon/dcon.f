@@ -8,7 +8,7 @@ c-----------------------------------------------------------------------
 c     1. dcon.
 c     2. dcon_dealloc.
 c-----------------------------------------------------------------------
-c     subprogram 1. dcon.
+c     subprogram 1. kinetic dcon.
 c     performs ideal MHD stability analysis.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -22,11 +22,18 @@ c-----------------------------------------------------------------------
       USE ode_mod
       USE free_mod
       USE resist_mod
+      USE pentrc_interface, only : get_pentrc
+      USE dcon_interface, only : set_eq
+      USE inputs, only : set_peq
       IMPLICIT NONE
 
       LOGICAL :: cyl_flag=.FALSE.
-      INTEGER :: mmin,ipsi
-      REAL(r8) :: plasma1,vacuum1,total1
+      INTEGER :: mmin,ipsi,m,kingridtype
+      COMPLEX(r8) :: plasma1,vacuum1,total1
+
+      INTEGER, DIMENSION(:), ALLOCATABLE :: mtmp
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psitmp
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xtmp
 
       ! harvest variables
       INCLUDE 'harvest_lib.inc77'
@@ -43,7 +50,9 @@ c-----------------------------------------------------------------------
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
-     $     termbycross_flag,qhigh
+     $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
+     $     kingridtype,ktanh_flag,passing_flag,
+     $     electron_flag,ktc,ktw
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -61,6 +70,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
+      kingridtype=0
       IF(verbose) WRITE(*,*)""
       IF(verbose) WRITE(*,*)"DCON START => "//TRIM(version)
       IF(verbose) WRITE(*,*)"__________________________________________"
@@ -162,32 +172,60 @@ c-----------------------------------------------------------------------
          CALL fourfit_make_matrix
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
+         IF(kin_flag)THEN
+            ! obsolete diagnostics.
+c            ALLOCATE(f1mats(mpert**2),k1mats(mpert**2),
+c     $           k1aats(mpert**2),g1aats(mpert**2))
+            CALL fourfit_action_matrix
+            CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
+     $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert)
+            PRINT *, 'set_eq completed'
+            CALL get_pentrc(nl,zi,mi,wdfac,divxfac,electron,
+     $          keq_out,theta_out,xlmda_out)
+            ! set flat displacement spectrum
+            ! as well as false flat psi derivative for equal weighting
+            ALLOCATE(psitmp(sq%mx+1),mtmp(mpert),xtmp(sq%mx+1,mpert))
+            psitmp(:) = sq%xs(0:)
+            mtmp = (/(m,m=mlow,mhigh)/)
+            xtmp = 1e-4
+            CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,.false.)
+            DEALLOCATE(xtmp,mtmp,psitmp)
+            IF(verbose) WRITE(*,*)"Computing Kinetic Matrices"
+            CALL fourfit_kinetic_matrix(kingridtype,.TRUE.)
+         ENDIF
          CALL sing_scan
          DO ising=1,msing
             CALL resist_eval(sing(ising))
          ENDDO
+         IF (kin_flag)THEN
+            CALL ksing_find
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     integrate main ODE's.
 c-----------------------------------------------------------------------
+      ALLOCATE(ud(mpert,mpert,2))
       IF(ode_flag)THEN
          IF(verbose) WRITE(*,*)"Starting integration of ODE's"
          CALL ode_run
       ENDIF
+      DEALLOCATE(ud)
 c-----------------------------------------------------------------------
 c     compute free boundary energies.
 c-----------------------------------------------------------------------
       IF(vac_flag .AND. .NOT.
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          IF(verbose) WRITE(*,*)"Computing free boundary energies"
+         ALLOCATE(ud(mpert,mpert,2))
          CALL free_run(plasma1,vacuum1,total1,nzero)
+         DEALLOCATE(ud)
       ELSE
          plasma1=0
          vacuum1=0
          total1=0
          CALL dcon_dealloc
       ENDIF
-      IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
+      IF(mat_flag .OR. ode_flag)DEALLOCATE(asmat,bsmat,csmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)
 c-----------------------------------------------------------------------
 c     the bottom line.
@@ -198,7 +236,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(vac_flag .AND. .NOT.
      $        (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
-         IF(total1 < 0)THEN
+         IF(REAL(total1) < 0)THEN
             IF(verbose) WRITE(*,'(1x,a,i2,".")')
      $           "Free-boundary mode unstable for nn = ",nn
          ELSE
@@ -292,9 +330,19 @@ c-----------------------------------------------------------------------
       CALL spline_dealloc(locstab)
       CALL bicube_dealloc(rzphi)
       IF(mat_flag .OR. ode_flag)THEN
+         CALL cspline_dealloc(amats)
+         CALL cspline_dealloc(bmats)
+         CALL cspline_dealloc(cmats)
+         CALL cspline_dealloc(dmats)
+         CALL cspline_dealloc(emats)
+         CALL cspline_dealloc(hmats)
+         CALL cspline_dealloc(dbats)
+         CALL cspline_dealloc(ebats)
+         CALL cspline_dealloc(fbats)
          CALL cspline_dealloc(fmats)
          CALL cspline_dealloc(gmats)
          CALL cspline_dealloc(kmats)
+
          DO ising=1,msing
             DEALLOCATE(sing(ising)%vmat)
             DEALLOCATE(sing(ising)%mmat)

@@ -1,106 +1,12 @@
-#------------------------------------------------------------------
-# General GNU make for portal, venus, or OSX platforms
-# - Conditionals used to determine platform 
-# - This defines platform specific defaults for FC,LAPACKHOME,NETCDFHOME
-#
-# On portal.pppl.gov (or portalr6.pppl.gov for more up-to-date libraries)
-#   Must load compiler and basic libraries (These modify LD_LIBRARY_PATH).
-#   Choose one of the following
-#	$ module load lff95 lapack-blas netcdf
-#	$ module load gcc4 lapack-blas netcdf
-#	$ module load intel acml netcdf
-#	Defaults will try to use gcc4
-#
-# On venus.gat.com
-# - All paths are hardcoded at this point (08/2015).
-#   -- We are waiting on a upgrade that will enable "module load" standardization
-#
-# On mac OSX
-#   Prerequisites
-#   - Install gfortran in your path.
-#	  -- Available from macports or sourceforge
-#   - Install lapack, blas, and netcdf libraries in usr/lib.
-#
-#
-# If your platform is not properly included in this make file
-# contact nlogan@pppl.gov with your operating system, compiler, and
-# library installation details.
-#
-#------------------------------------------------------------------
 
-# set platform dependent defaults
-
-ifneq ($(shell echo $(HOSTNAME) | grep sunfire),)
-	PLATFORM = portal
-
-ifndef FC
-ifndef F90
-	FC = /usr/pppl/gcc/4.6.3/bin/gfortran4
-else
-	FC = $(F90)
-endif
-endif
-ifndef LAPACKHOME
-ifndef ACML_HOME
-	LAPACKHOME = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
-else
-	LAPACKHOME = $(ACML_HOME)
-endif
-endif
-ifndef NETCDFHOME
-	NETCDFHOME = /usr/pppl/gcc/4.6-pkgs/netcdf-4.1.2
-endif
-endif
-
-ifneq ($(shell echo $(HOSTNAME) | grep venus),)
-	PLATFORM = venus
-ifndef FC
-	FC = /task/imd/local64/bin/mpif90
-endif
-ifndef LAPACKHOME
-	LAPACKHOME = /opt/pgi/linux86-64/12.10/lib #pgf
-endif
-ifndef NETCDFHOME
-	NETCDFHOME = /task/imd/local64/lib #mpif90
-endif
-endif
-
-ifneq ($(shell echo $(MACHTYPE) | grep apple),)
-	PLATFORM = osx
-ifndef FC
-	FC = gfortran
-endif
-ifndef LAPACKHOME
-	LAPACKHOME = /usr/lib
-endif
-ifndef NETCDFHOME
-	NETCDFHOME = /usr/lib
-endif
-endif
-
-# set the environment for intel compiler on PPPL cluster
-# use 'make cflag=pintel'
-
-ifdef cflag
-	ifeq ($(cflag),pintel)
-		PLATFORM = PPPL_Portal_Cluster_with_Intel_Compiler
-		FC = /usr/pppl/intel/2013.1.3/bin/ifort
-		CC = /usr/pppl/intel/2013.1.3/bin/icc
-		LAPACKHOME = /u/zwang/numericalLib/lapack_3.4.2
-		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
-	else
-$(error No corresponding option of cflag to set compile environment.)
-	endif
-
-endif
-
+include DEFAULTS.inc
 
 # compile package
 
 .IGNORE:
 
-all: v harvest lsode equil orbit vacuum dcon match multi sum \
-	xdraw coil ipec pentrc mkbin
+all: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
+	xdraw coil ipec mkbin
 
 # executables:
 
@@ -111,40 +17,40 @@ harvest:
 	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
-	cd ../xdraw; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../xdraw;  make -f makefile cflag=$(cflag)
 
 lsode:
-	cd ../lsode; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../lsode;  make -f makefile cflag=$(cflag)
 
 equil:
-	cd ../equil; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../equil;  make -f makefile cflag=$(cflag)
 
 orbit:
-	cd ../orbit; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../orbit;  make -f makefile cflag=$(cflag)
 
 vacuum:
-	cd ../vacuum; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../vacuum; make -f makefile cflag=$(cflag)
 
 dcon:
-	cd ../dcon; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../dcon;   make -f makefile cflag=$(cflag)
 
 match:
-	cd ../match; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../match;  make -f makefile cflag=$(cflag)
 
 multi:
-	cd ../multi; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../multi;  make -f makefile cflag=$(cflag)
 
 sum:
-	cd ../sum; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../sum;    make -f makefile cflag=$(cflag)
 
 coil:
-	cd ../coil; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../coil;   make -f makefile cflag=$(cflag)
 
 ipec:  
-	cd ../ipec; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) NETCDFHOME=$(NETCDFHOME)
+	cd ../ipec;   make -f makefile cflag=$(cflag)
 
 pentrc:  
-	cd ../pentrc; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME)
+	cd ../pentrc; make -f makefile cflag=$(cflag)
 
 mkbin:
 	mkdir -p ../bin
@@ -160,12 +66,14 @@ mkbin:
 
 # print verbose info
 
-v: 
+v:
 	@echo "------------------------------------------------------------"
 	@echo "Defaults tailored for $(PLATFORM)"
 	@echo "Compiling with FC = $(FC)"
-	@echo "   using lapack libraries from $(LAPACKHOME)"
-	@echo "   using netcdf libraries from $(NETCDFHOME)"
+	@echo "   using libraries $(MATHLIBS)"
+	@echo "   from $(MATHHOME)"
+	@echo "   and libraries $(NETCDFLIBS)"
+	@echo "   from $(NETCDFHOME)"
 	@echo
 	@echo "Set environement FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
@@ -176,18 +84,18 @@ endif
 # cleaning
 
 clean:
-	cd ../xdraw; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../lsode; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../equil; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../orbit; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../vacuum; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../dcon; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../match; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../multi; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../sum; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../coil; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../ipec; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
-	cd ../pentrc; make -f makefile FC=$(FC) LAPACKHOME=$(LAPACKHOME) clean
+	cd ../xdraw;  make -f makefile clean
+	cd ../lsode;  make -f makefile clean
+	cd ../equil;  make -f makefile clean
+	cd ../orbit;  make -f makefile clean
+	cd ../vacuum; make -f makefile clean
+	cd ../dcon;   make -f makefile clean
+	cd ../match;  make -f makefile clean
+	cd ../multi;  make -f makefile clean
+	cd ../sum;    make -f makefile clean
+	cd ../coil;   make -f makefile clean
+	cd ../ipec;   make -f makefile clean
+	cd ../pentrc; make -f makefile clean
 
 realclean: clean
 	rm -rf ../lib ../bin

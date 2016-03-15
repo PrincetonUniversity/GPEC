@@ -144,7 +144,7 @@ module torque
     integer :: nlmda=128, ntheta=128
     
     complex(r8), dimension(:,:,:), allocatable :: elems ! temperary variable
-    TYPE(cspline_type) :: akmm,bkmm,ckmm,dkmm,ekmm,hkmm ! kinetic euler lagrange eq. matrices
+    TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
 
     contains
     
@@ -241,6 +241,14 @@ module torque
         
         if(tdebug) print *,"torque - tpsi function, psi = ",psi
         if(tdebug) print *,"  electron ",electron
+        if(tdebug) print *,"  mpert ",mpert
+        if(tdebug) print *,"  mfac ",mfac
+        if(tdebug) print *,"  sq   psi ",sq%xs
+        if(tdebug) print *,"  dbdx psi ",dbdx_m(1)%xs
+        if(tdebug) print *,"  db ",dbdx_m(1)%f
+        if(tdebug) print *,"  xs ",xs_m(1)%f
+
+        ! enforce bounds
         if(psi>1) then
             tpsi = 0
             return
@@ -259,7 +267,7 @@ module torque
         
         ! Get perturbations
         call cspline_eval(dbdx_m(1),psi,0)
-        
+
         !Poloidal functions - note ABS(A*clebsch) = ABS(A)
         allocate(dbfun(0:eqfun%my),dxfun(0:eqfun%my))
         call spline_alloc(tspl,eqfun%my,5)
@@ -486,8 +494,9 @@ module torque
         
         
         ! full general aspect ratio, trapped general aspect ratio
-            case("fgar","tgar","pgar","fkmm","tkmm","pkmm", &
-                 "fwmm","twmm","pwmm","ftmm","ttmm","ptmm")
+            case("fgar","tgar","pgar", &
+                 "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
+                 "fkmm","tkmm","pkmm","frmm","trmm","prmm")
                 ! set up
                 call cspline_eval(dbdx_m(1),psi,0)
                 call cspline_eval(dbdx_m(2),psi,0)
@@ -777,15 +786,15 @@ module torque
                 
                 ! energy space integrations
                 allocate(lxint(fbnce%nqty-2))
-                wtwnorm = 2*xj*n ! euler-lagrange real energy metrices (default)
+                wtwnorm = 1.0 ! euler-lagrange real energy metrices (default)
                 rex = 1.0 ! include real part of resonance operator (default)
                 imx = 1.0 ! include imag part of resonance operator (default)
                 if(method(2:4)=='wmm' .or. method(2:4)=='kmm')then
                     rex = 0.0
                 endif
-                if(method(2:4)=='tmm')then
+                if(method(2:4)=='tmm' .or. method(2:4)=='rmm')then
                     imx = 0.0
-                    wtwnorm = 1.0
+                    wtwnorm = -1.0
                 endif
                 if(write_espace)then
                     lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
@@ -809,7 +818,7 @@ module torque
                         do j=1,mpert
                             do i=1,mpert
                                 iqty = ((k-1)*mpert+j-1)*mpert + i + 1
-                                wtw(i,j,k) = wtwnorm*lxint(iqty)/fbnce_norm(iqty) &
+                                wtw(i,j,k) = (1/(2*xj*n))*lxint(iqty)/fbnce_norm(iqty) &
                                     *kin%f(s)*kin%f(s+2) &
                                     *(-n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
                             enddo
@@ -818,9 +827,12 @@ module torque
                     call cspline_dealloc(bwspl(1))
                     call cspline_dealloc(bwspl(2))
                     
-                    
-                    
-                    if(index(method,'kmm')>0)then ! Euler-Lagrange Matrix norms indep xi 
+                    ! DCON norms
+                    wtw = 2*mu0*wtw
+                    wtw(:,:,1:3) = wtw(:,:,1:3)/chi1
+                    wtw(:,:,1) = wtw(:,:,1)/chi1
+
+                    if(method(2:4)=='kmm' .or. method(2:4)=='rmm')then ! Euler-Lagrange Matrix norms indep xi
                         xix(:,1) = 1.0/sqrt(1.0*mpert) ! ||xix||=1
                         tpsi = 0
                         do i=1,6
@@ -839,7 +851,7 @@ module torque
                             if(tdebug) print *,i,maxval(svals)
                             tpsi = tpsi + maxval(svals) ! euclidean (spectral) norm
                         enddo
-                        tpsi = (1+xj)*sqrt(tpsi) ! euclidean norm of the 6 norms
+                        tpsi = (rex+imx*xj)*sqrt(tpsi) ! euclidean norm of the 6 norms
                     elseif(index(method,'mm')>0)then ! Mode-coupled dW of T_phi 
                         call cspline_eval(xs_m(1),psi,0)
                         call cspline_eval(xs_m(2),psi,0)
@@ -847,16 +859,15 @@ module torque
                         xix(:,1) = xs_m(1)%f(:)
                         xiy(:,1) = xs_m(2)%f(:)
                         xiz(:,1) = xs_m(3)%f(:)
-                        t_zz = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,1),xiz))
-                        t_zx = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,2),xix))
-                        t_zy = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,3),xiy))
+                        t_zz = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,1),xiz))*chi1**2
+                        t_zx = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,2),xix))*chi1
+                        t_zy = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,3),xiy))*chi1
                         t_xx = matmul(conjg(transpose(xix)),matmul(wtw(:,:,4),xix))
                         t_xy = matmul(conjg(transpose(xix)),matmul(wtw(:,:,5),xiy))
                         t_yy = matmul(conjg(transpose(xiy)),matmul(wtw(:,:,6),xiy))
-                        tpsi = (1/wtwnorm) & ! convert energy to real torque convention
-                                  *(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
+                        tpsi = (2*n*xj/(2*mu0))*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
                             +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
-                            +conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
+                            +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
                         if(tdebug)then
                             print *," -> WxWx ~ ",wtw(20:25,20,1)
                             print *,"expected to be all real (wmm) or all imag (tmm):"
@@ -886,26 +897,9 @@ module torque
         return
     end function tpsi
 
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
     !=======================================================================
-    function tintgrl_grid(gtype,psilim,n,nl,zi,mi,wdfac,divxfac,electron,method,&
-        write_flux)
+    function tintgrl_grid(gtype,psilim,n,nl,zi,mi,wdfac,divxfac,electron,&
+                          method,write_flux)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Torque integratal over psi. This function forms a cubic spline of tpsi
@@ -946,7 +940,7 @@ module torque
     !-----------------------------------------------------------------------
         implicit none
         ! declare function
-        complex(r8) :: tintgrl_grid        
+        complex(r8) :: tintgrl_grid
         ! declare arguments
         integer, intent(in) :: n,nl,zi,mi
         logical, intent(in) :: electron,write_flux!,write_theta,write_espace
@@ -955,22 +949,27 @@ module torque
         character(*) :: method,gtype
         ! declare variables
         logical :: fexists
-        integer :: i,j,l,unit1,unit2,s,mx
-        real(r8) :: x,xlast,chrg,drive
+        integer :: i, j, l, unit1, unit2, s, mx, istrt = -1, istop=-1
+        real(r8) :: x,xlast,chrg,drive,wdcom,dxcom
         real(r8), dimension(:), allocatable :: xs,tmppsi
-        complex(r8), dimension(:,:), allocatable :: tmpak,tmpbk,tmpck, &
-            tmpdk,tmpek,tmphk
         complex(r8), dimension(:), allocatable :: gam,chi
         character(64) ::file1,file2
-        character(8) :: nstring
+        character(8) :: nstring,methcom
         ! lsode type variables
         integer  neqarray(9),neq
         real*8, dimension(:), allocatable ::  y,dky
         ! declare new spline
         TYPE(cspline_type) :: tphi_spl
-        
+
+        common /tcom/ wdcom,dxcom,methcom
+
         ! set module variables
         psi_warned = 0.0
+        ! set common variables
+        wdcom = wdfac
+        dxcom = divxfac
+        methcom = method
+
         ! setup
         neq = 2*(1+2*nl)
         allocate(y(neq),dky(neq))
@@ -1059,41 +1058,67 @@ module torque
             xs = sq%xs
         elseif (gtype=='input')then
             mx = xs_m(1)%mx
-            allocate(xs(0:mx),tmppsi(0:mx),tmpak(mx+1,mpert**2),tmpbk(mx+1,mpert**2), &
-                tmpck(mx+1,mpert**2),tmpdk(mx+1,mpert**2),tmpek(mx+1,mpert**2),tmphk(mx+1,mpert**2))
+            allocate(xs(0:mx))
             xs = xs_m(1)%xs
         endif
-        
-        ! integration
+
+        ! enforce integration bounds
+        psilim(1) = max(psilim(1),xs(0))
+        psilim(2) = min(psilim(2),xs(mx))
+        do i=0,mx
+            if(istrt<0 .and. xs(i)>=psilim(1)) exit
+        enddo
+        istrt = i
+        do i=mx,0,-1
+            if(sq%xs(i)<=xs(mx)) exit
+        enddo
+        istop = i
+        mx = istop-istrt
+
+        ! prep allocations
         CALL cspline_alloc(tphi_spl,mx,2*nl+1)
+        if(index(method,'mm')>0)then
+            do j=1,6
+                if(kelmm(j)%nqty/=0) call cspline_dealloc(kelmm(j))
+                call cspline_alloc(kelmm(j),mx,mpert**2)
+            enddo
+        endif
+        CALL cspline_alloc(tphi_spl,mx,2*nl+1)
+
+        ! loop forming integrand
         xlast = 0
         do i=0,mx
-            x = xs(i)
+            x = xs(i+istrt)
             CALL tintgrnd(neqarray,x,y,dky)
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
 
             if(mod(x,.1)<mod(xlast,.1) .or. xlast==xs(0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
-                    " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'                
+                    " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'
             endif
 
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
-                if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",i+1
-                tmppsi(i+1) = x
-                tmpak(i+1,:) = RESHAPE(elems(:,:,1),(/mpert**2/))
-                tmpbk(i+1,:) = RESHAPE(elems(:,:,2),(/mpert**2/))
-                tmpck(i+1,:) = RESHAPE(elems(:,:,3),(/mpert**2/))
-                tmpdk(i+1,:) = RESHAPE(elems(:,:,4),(/mpert**2/))
-                tmpek(i+1,:) = RESHAPE(elems(:,:,5),(/mpert**2/))
-                tmphk(i+1,:) = RESHAPE(elems(:,:,6),(/mpert**2/))
+                if(tdebug) print *, "Euler-Lagrange tmp vars, index=",i
+                do j=1,6
+                    kelmm(j)%xs(i) = x
+                    kelmm(j)%fs(i,:) = RESHAPE(elems(:,:,j),(/mpert**2/))
+                enddo
             endif
+
             xlast = x
         enddo
+        ! fit and integrate torque density spline
         CALL cspline_fit(tphi_spl,"extrap")
         CALL cspline_int(tphi_spl)
-        
+        ! optionally fit global euler-lagrange coefficient splines
+        if(index(method,'mm')>0)then
+            do j=1,6
+                call cspline_fit(kelmm(j),"extrap")
+            enddo
+        endif
+
         ! write profiles
         do i=0,mx
             x = xs(i)
@@ -1123,50 +1148,13 @@ module torque
         close(unit1)
         close(unit2)
         
-        ! optionally set global euler-lagrange coefficient splines
-        if(index(method,'mm')>0)then
-            call cspline_alloc(akmm,mx,mpert**2)
-            call cspline_alloc(bkmm,mx,mpert**2)
-            call cspline_alloc(ckmm,mx,mpert**2)
-            call cspline_alloc(dkmm,mx,mpert**2)
-            call cspline_alloc(ekmm,mx,mpert**2)
-            call cspline_alloc(hkmm,mx,mpert**2)
-            akmm%xs(:) = tmppsi(1:mx+1)
-            bkmm%xs(:) = tmppsi(1:mx+1)
-            ckmm%xs(:) = tmppsi(1:mx+1)
-            dkmm%xs(:) = tmppsi(1:mx+1)
-            ekmm%xs(:) = tmppsi(1:mx+1)
-            hkmm%xs(:) = tmppsi(1:mx+1)
-            akmm%fs(:,:) = tmpak(1:mx+1,:)
-            bkmm%fs(:,:) = tmpbk(1:mx+1,:)
-            ckmm%fs(:,:) = tmpck(1:mx+1,:)
-            dkmm%fs(:,:) = tmpdk(1:mx+1,:)
-            ekmm%fs(:,:) = tmpek(1:mx+1,:)
-            hkmm%fs(:,:) = tmphk(1:mx+1,:)
-            call cspline_fit(akmm,"extrap")
-            call cspline_fit(bkmm,"extrap")
-            call cspline_fit(ckmm,"extrap")
-            call cspline_fit(dkmm,"extrap")
-            call cspline_fit(ekmm,"extrap")
-            call cspline_fit(hkmm,"extrap")
-            deallocate(elems)
-        endif
-        
-        ! convert to complex space if integrations successful
+        ! sum for ultimate result
         tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
         deallocate(y,dky,gam,chi)
-        
+
         return
     end function tintgrl_grid
-
-
-
-
-
-
-
-
 
     !=======================================================================
     function tintgrl_lsode(psilim,n,nl,zi,mi,wdfac,divxfac,electron,method,&
@@ -1216,13 +1204,12 @@ module torque
         character(*) :: method
         ! declare variables
         logical :: fexists
-        logical, dimension(:), allocatable :: maskr,maski
+        integer, parameter :: maxsteps = 10000
         integer :: i,j,l,unit1,unit2,s
         real(r8) :: xlast,wdcom,dxcom,chrg,drive
         real(r8), dimension(:), allocatable :: gam,chi
-        real(r8), dimension(1000) :: tmppsi
-        complex(r8), dimension(1000,mpert**2) :: tmpak,tmpbk,tmpck, &
-            tmpdk,tmpek,tmphk
+        real(r8), dimension(maxsteps) :: tmppsi
+        complex(r8), dimension(maxsteps,mpert**2,6) :: tmpmats
         character(64) ::file1,file2,file3
         character(8) :: nstring,methcom
         ! declare lsode input variables
@@ -1260,26 +1247,20 @@ module torque
         iwork(:) = 0              ! defaults
         rwork(:) = 0              ! defaults
         rwork(1) = xout           ! only used if itask 4,5
-        iwork(6) = 10000          ! max number steps
+        iwork(6) = maxsteps       ! max number steps
         mf = 10                   ! not stiff with unknown J 
         ! enforce integration bounds
         x = max(psilim(1),x)
         xout = min(psilim(2),xout)
         rwork(1) = xout
+        if(tdebug) print *,"psilim = ",psilim
+        if(tdebug) print *,"sq lim = ",sq%xs(0),sq%xs(sq%mx)
+        if(tdebug) print *,"xs lim = ",xs_m(1)%xs(0),xs_m(1)%xs(xs_m(1)%mx)
+        if(tdebug) print *,"x,xout = ",x,xout
 
         ! steup
-        allocate(maski(neq))
-        allocate(maskr(neq))
-        do i=1,neq-1,2
-            maskr(i:i+1) = (/.true.,.false./)
-            maski(i:i+1) = (/.false.,.true./)
-        enddo
         if(electron) neqarray(6)=1
         if(write_flux) neqarray(7)=1
-        if(index(method,'mm')>0) then
-            iwork(6) = 1000 ! equilibrium grid
-            allocate(elems(mpert,mpert,6))
-        endif
 
         ! for flux calculation
         if(electron)then
@@ -1373,33 +1354,30 @@ module torque
             endif
             chi = -gam/(drive)
             write(unit1,'(11(es18.8e3))') x,&
-                sum(gam,dim=1,mask=maskr),sum(gam,dim=1,mask=maski),&
-                sum(chi,dim=1,mask=maskr),sum(chi,dim=1,mask=maski),&
-                sum(dky,dim=1,mask=maskr),sum(dky,dim=1,mask=maski),&
-                sum(y,dim=1,mask=maskr),sum(y,dim=1,mask=maski),&
+                sum(gam(1:neq:2),dim=1),sum(gam(2:neq:2),dim=1),&
+                sum(chi(1:neq:2),dim=1),sum(chi(2:neq:2),dim=1),&
+                sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),&
+                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1),&
                 sq%f(3)
             do l=-nl,nl
                 write(unit2,'(es18.8e3,i5,8es18.8e3)') x,l,&
                     gam(2*(nl+l)+1:2*(nl+l)+2),chi(2*(nl+l)+1:2*(nl+l)+2),&
                     dky(2*(nl+l)+1:2*(nl+l)+2),y(2*(nl+l)+1:2*(nl+l)+2)
             enddo
-            
+
             ! print progress
             if(mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
-                    " -> T_phi = ",sum(y,dim=1,mask=maskr),sum(y,dim=1,mask=maski),'j'                
+                    " -> T_phi = ",sum(y(1:neq:2),dim=1),sum(y(2:neq:2),dim=1),'j'
             endif
             
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
                 tmppsi(iwork(11)) = x
-                tmpak(iwork(11),:) = RESHAPE(elems(:,:,1),(/mpert**2/))
-                tmpbk(iwork(11),:) = RESHAPE(elems(:,:,2),(/mpert**2/))
-                tmpck(iwork(11),:) = RESHAPE(elems(:,:,3),(/mpert**2/))
-                tmpdk(iwork(11),:) = RESHAPE(elems(:,:,4),(/mpert**2/))
-                tmpek(iwork(11),:) = RESHAPE(elems(:,:,5),(/mpert**2/))
-                tmphk(iwork(11),:) = RESHAPE(elems(:,:,6),(/mpert**2/))
+                do j=1,6
+                    tmpmats(iwork(11),:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
+                enddo
             endif
         enddo
         close(unit1)
@@ -1407,43 +1385,22 @@ module torque
         
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
-            call cspline_alloc(akmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(bkmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(ckmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(dkmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(ekmm,iwork(11)-1,mpert**2)
-            call cspline_alloc(hkmm,iwork(11)-1,mpert**2)
-            akmm%xs(:) = tmppsi(1:iwork(11))
-            bkmm%xs(:) = tmppsi(1:iwork(11))
-            ckmm%xs(:) = tmppsi(1:iwork(11))
-            dkmm%xs(:) = tmppsi(1:iwork(11))
-            ekmm%xs(:) = tmppsi(1:iwork(11))
-            hkmm%xs(:) = tmppsi(1:iwork(11))
-            akmm%fs(:,:) = tmpak(1:iwork(11),:)
-            bkmm%fs(:,:) = tmpbk(1:iwork(11),:)
-            ckmm%fs(:,:) = tmpck(1:iwork(11),:)
-            dkmm%fs(:,:) = tmpdk(1:iwork(11),:)
-            ekmm%fs(:,:) = tmpek(1:iwork(11),:)
-            hkmm%fs(:,:) = tmphk(1:iwork(11),:)
-            call cspline_fit(akmm,"extrap")
-            call cspline_fit(bkmm,"extrap")
-            call cspline_fit(ckmm,"extrap")
-            call cspline_fit(dkmm,"extrap")
-            call cspline_fit(ekmm,"extrap")
-            call cspline_fit(hkmm,"extrap")
-            deallocate(elems)
+            do j=1,6
+                if(kelmm(j)%nqty/=0) call cspline_dealloc(kelmm(j))
+                call cspline_alloc(kelmm(j),iwork(11)-1,mpert**2)
+                kelmm(j)%xs(:) = tmppsi(1:iwork(11))
+                kelmm(j)%fs(:,:) = tmpmats(1:iwork(11),:,j)
+                call cspline_fit(kelmm(j),"extrap")
+            enddo
         endif
         
         ! convert to complex space if integrations successful
-        tintgrl_lsode = sum(y,mask=maskr)+xj*sum(y,mask=maski)
+        tintgrl_lsode = sum(y(1:neq:2),dim=1)+xj*sum(y(2:neq:2),dim=1)
 
-        deallocate(iwork,rwork,atol,rtol,y,dky,maskr,maski,gam,chi)
+        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi)
         
         return
     end function tintgrl_lsode
-
-
-
 
 
 
@@ -1478,7 +1435,7 @@ module torque
         complex(r8) trq
         integer :: n,l,zi,mi,ee,wf,wt,we,nl
         logical :: electron=.false.,write_flux=.false.,&
-            write_theta=.false.,write_espace=.false.
+            write_theta=.false.,write_espace=.false.,first=.true.
         character(8) :: method
         
         logical :: fexists
@@ -1508,6 +1465,12 @@ module torque
         if(wt>0) write_theta = .true.
         if(we>0) write_espace = .true.
         
+        if(first) then
+            allocate(elems(mpert,mpert,6))
+            first = .false.
+        endif
+        elems = 0
+
         psi = 1.0*x
         do l=-nl,nl
             if(l==0)then

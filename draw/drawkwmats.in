@@ -1,0 +1,32 @@
+Type (G=Graph, C=Contour):	G
+
+filename(s)
+kwmats.bin
+
+graph title:	Solutions
+
+variable names
+0	psifac
+1	Real Ak
+2	Imag Ak
+3	Real Bk
+4	Imag Bk
+5	Real Ck
+6	Imag Ck
+7	Real Dk
+8	Imag Dk
+9	Real Ek
+10	Imag Ek
+11	Real Hk
+12	Imag Hk
+
+
+ix	iy	title
+0	1	"Re Ak
+0	2	"Im Ak
+0	3	"Re Bk
+0	4	"Im Bk
+0	5	"Re Ck
+0	6	"Im Ck
+
+

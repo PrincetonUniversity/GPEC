@@ -53,9 +53,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE coil_read(cdconfile)
+      SUBROUTINE coil_read(cdconfile,icoil_num,icoil_name,icoil_cur)
       
       CHARACTER(128), INTENT(IN) :: cdconfile
+      INTEGER, OPTIONAL :: icoil_num
+      REAL(r8), DIMENSION(10,48), OPTIONAL :: icoil_cur
+      CHARACTER(24), DIMENSION(10), OPTIONAL :: icoil_name
 
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
      $     data_dir,machine,ip_direction,bt_direction,
@@ -63,7 +66,7 @@ c-----------------------------------------------------------------------
       NAMELIST/coil_output/ipec_interface
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4
-      REAL(r8) :: cr1
+      REAL(r8) :: cr1,cr2
 c-----------------------------------------------------------------------
 c     initialize and read input data.
 c-----------------------------------------------------------------------
@@ -78,6 +81,9 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=coil_control)
       READ(UNIT=in_unit,NML=coil_output)
       CALL ascii_close(in_unit)
+      IF (present(icoil_num)) coil_num=icoil_num
+      IF (present(icoil_name)) coil_name=icoil_name
+      IF (present(icoil_cur)) coil_cur=icoil_cur
 c-----------------------------------------------------------------------
 c     read coils for each machine.
 c-----------------------------------------------------------------------
@@ -110,7 +116,8 @@ c     read equilibrium information.
 c-----------------------------------------------------------------------
       CALL bin_open(in_unit,cdconfile,"OLD","REWIND","none")
       READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
-      READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim
+      READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim,cr2
+      READ(in_unit)
       READ(in_unit)
       READ(in_unit)
 
@@ -142,5 +149,26 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE coil_read
+c-----------------------------------------------------------------------
+c     subprogram 2. coil_dealloc.
+c     read coils.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE coil_dealloc
+
+      INTEGER :: i
+
+      DO i=1,coil_num
+         DEALLOCATE(coil(i)%cur,coil(i)%x,coil(i)%y,coil(i)%z)
+      ENDDO
+      DEALLOCATE(coil)
+      DEALLOCATE(cmfac)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE coil_dealloc
 
       END MODULE coil_mod

@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       USE idcon_mod
  
       IMPLICIT NONE
-      
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. ipeq_sol.
@@ -47,17 +47,19 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,iqty
 
       INTEGER, DIMENSION(mpert) :: ipiva
+      COMPLEX(r8), DIMENSION(mpert) :: xspfac
+
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
 
-      COMPLEX(r8), DIMENSION(mpert) :: xspfac
-      
       IF(debug_flag) PRINT *, "Entering ipeq_sol"
 c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,1)
-      CALL cspline_eval(u1,psi,1)
+      CALL cspline_eval(u1,psi,0)
       CALL cspline_eval(u2,psi,0)
+      CALL cspline_eval(u3,psi,0)
+      CALL cspline_eval(u4,psi,0)
 
       q=sq%f(4)
       q1=sq%f1(4)
@@ -71,16 +73,20 @@ c-----------------------------------------------------------------------
 c     compute preliminary quantities.
 c-----------------------------------------------------------------------
       xsp_mn=u1%f
-      xspfac=u2%f/singfac
-      CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
-     $     2*mband+1,u1%f,1,ione,xspfac,1)
-      CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
-      xsp1_mn=xspfac/singfac
-      !xsp1_mn=u1%f1
-      CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
-      CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
-      CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
-      xss_mn=-MATMUL(bmat,xsp1_mn)-MATMUL(cmat,xsp_mn)
+      IF (kin_flag) THEN
+         xsp1_mn=u3%f
+         xss_mn=u4%f
+      ELSE
+         xspfac=u2%f/singfac
+         CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
+     $        2*mband+1,u1%f,1,ione,xspfac,1)
+         CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
+         xsp1_mn=xspfac/singfac
+         CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
+         xss_mn=-MATMUL(bmat,xsp1_mn)-MATMUL(cmat,xsp_mn)
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute contravariant b fields.
 c-----------------------------------------------------------------------
@@ -97,7 +103,11 @@ c     compute modified quantities.
 c-----------------------------------------------------------------------
       IF (reg_flag) THEN
          xmp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
-         xms_mn=-MATMUL(bmat,xmp1_mn)-MATMUL(cmat,xsp_mn)
+         IF (kin_flag) THEN
+            xms_mn=xss_mn*(singfac**2/(singfac**2+reg_spot**2))
+         ELSE
+            xms_mn=-MATMUL(bmat,xmp1_mn)-MATMUL(cmat,xsp_mn)
+         ENDIF
          bmt_mn=-(chi1*xmp1_mn+twopi*ifac*nn*xms_mn)
          bmz_mn=-(chi1*(q1*xsp_mn+sq%f(4)*xmp1_mn)+
      $        twopi*ifac*mfac*xms_mn)
@@ -431,7 +441,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
      $     xwt_fun,bwt_fun,xvz_fun,bvz_fun,xrr_fun,brr_fun,
      $     xrz_fun,brz_fun,xrp_fun,brp_fun
-     
+
       IF(debug_flag) PRINT *, "Entering ipeq_rzphi"
 c-----------------------------------------------------------------------
 c     compute necessary components.
@@ -626,7 +636,7 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *, "Entering ipeq_fcoords"
       
       ! global sq may have been eval'd elsewhere inbetween bcoords calls
-      CALL spline_eval(sq,psi,0) 
+      CALL spline_eval(sq,psi,0)
       ! expensive spline formation, do only if asking for new coords or surface
       itmp = (/ri,bpi,bi,rci,ti,ji/)
       IF(.NOT.ALL(itmp==isave).OR. (psave/=psi))THEN
@@ -638,7 +648,7 @@ c-----------------------------------------------------------------------
 
          CALL spline_alloc(spl,mthsurf,2)
          spl%xs=theta
-         
+
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psi,theta(itheta),1)
             rfac=SQRT(rzphi%f(1))
@@ -657,12 +667,12 @@ c-----------------------------------------------------------------------
      $           bpfac**bpi*bfac**bi
             ! jacobian for coordinate angle at dcon angle
             spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**ri*rfac**rci/
-     $           (bpfac**bpi*bfac**bi)  
+     $           (bpfac**bpi*bfac**bi)
             IF (ti .EQ. 0) THEN
                dphi(itheta)=rzphi%f(3)
             ENDIF
-         ENDDO      
-         
+         ENDDO
+
          CALL spline_fit(spl,"periodic")
          CALL spline_int(spl)
 
@@ -738,7 +748,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), DIMENSION(lmpert), INTENT(IN) :: fmi
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: fmo
-      
+
       INTEGER :: i,tout,jout
 c-----------------------------------------------------------------------
 c     Defaults.
@@ -798,7 +808,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
 
       TYPE(spline_type) :: spl       
-      
+
       ! note automatic arrays are allocated and deallocated on entry/exit
       ! instead, we use allocatables and just allocate once for all
       SAVE :: first,psave,isave,jarea,spl,dphi,thetas,jacfac
@@ -809,7 +819,7 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *, "Entering ipeq_bcoords"
       
       ! global sq may have been eval'd elsewhere inbetween bcoords calls
-      CALL spline_eval(sq,psi,0) 
+      CALL spline_eval(sq,psi,0)
       ! expensive spline formation, do only if asking for new bcoords
       itmp = (/ri,bpi,bi,rci,ti,ji/)
       IF(.NOT.ALL(itmp==isave).OR. psave/=psi)THEN
@@ -821,7 +831,7 @@ c-----------------------------------------------------------------------
 
          CALL spline_alloc(spl,mthsurf,2)
          spl%xs=theta
-         
+
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psi,theta(itheta),1)
             rfac=SQRT(rzphi%f(1))
@@ -844,7 +854,7 @@ c-----------------------------------------------------------------------
                dphi(itheta)=rzphi%f(3)
             ENDIF
          ENDDO
-         
+
          CALL spline_fit(spl,"periodic")
          CALL spline_int(spl)
 
@@ -925,7 +935,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: fmi
       COMPLEX(r8), DIMENSION(lmpert), INTENT(OUT) :: fmo
-      
+
       INTEGER :: i,tout,jout
 c-----------------------------------------------------------------------
 c     Defaults.
@@ -980,7 +990,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: delpsi,wgtfun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: ftnfun
-      
+
       ! note automatic arrays are allocated and deallocated on entry/exit
       ! instead, we use allocatables and just allocate once for all
       SAVE :: psave,wgtfun,delpsi
@@ -1051,7 +1061,7 @@ c-----------------------------------------------------------------------
 
       ALLOCATE(gdr(0:nr,0:nz),gdz(0:nr,0:nz),gdl(0:nr,0:nz),
      $     gdpsi(0:nr,0:nz),gdthe(0:nr,0:nz),gdphi(0:nr,0:nz))
-     
+
       IF(debug_flag) WRITE(*,*) "Entering ipeq_rzgrid"
       IF(debug_flag) WRITE(*,*) "  ",nr,nz
 c-----------------------------------------------------------------------
@@ -1063,9 +1073,9 @@ c-----------------------------------------------------------------------
       gdpsi=0
       gdthe=0
       gdphi=0
-      
+
       IF(psixy<1)THEN
-         DO i=0,nr 
+         DO i=0,nr
             DO j=0,nz
                gdr(i,j) = rmin+i*(rmax-rmin)/nr
                gdz(i,j) = -zlim+j*2.0*zlim/nz
