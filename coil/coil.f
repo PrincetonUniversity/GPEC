@@ -66,7 +66,7 @@ c-----------------------------------------------------------------------
       NAMELIST/coil_output/ipec_interface
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4
-      REAL(r8) :: cr1
+      REAL(r8) :: cr1,cr2
 c-----------------------------------------------------------------------
 c     initialize and read input data.
 c-----------------------------------------------------------------------
@@ -116,7 +116,8 @@ c     read equilibrium information.
 c-----------------------------------------------------------------------
       CALL bin_open(in_unit,cdconfile,"OLD","REWIND","none")
       READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
-      READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim
+      READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim,cr2
+      READ(in_unit)
       READ(in_unit)
       READ(in_unit)
 
