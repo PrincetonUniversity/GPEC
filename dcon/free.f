@@ -69,9 +69,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,"Energies: plasma = ",1p,e10.3,", vacuum = ",e10.3,
-     $     ", real = ",e10.3,", imaginary = ",e10.3)
- 20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",5x,"total"/)
+ 10   FORMAT(1x,"Energies: plasma = ",es10.3,", vacuum = ",es10.3,
+     $     ", real = ",es10.3,", imaginary = ",es10.3)
+ 20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",2x,"re total",2x,
+     $     "im total"/)
  30   FORMAT(i6,1p,4e11.3,a)
  40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",5x,"vacuum",5x,"total"/)
  50   FORMAT(2i6,1p,4e11.3,a)
@@ -203,7 +204,8 @@ c-----------------------------------------------------------------------
       plasma1=REAL(ep(1))
       vacuum1=REAL(ev(1))
       total1=REAL(et(1))
-      IF(verbose) WRITE(*,10) plasma1,vacuum1,total1,AIMAG(et(1))
+      IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
+     $     REAL(et(1)),AIMAG(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
 c-----------------------------------------------------------------------
