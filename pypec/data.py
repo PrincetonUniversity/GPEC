@@ -460,9 +460,9 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
             if 'dcon.out' in fname:
                 lines = f.read()
                 lines=lines.replace('mu0 p','mu0p')
-                lines=lines.replace('re w','realw')
-                lines=lines.replace('im w','imagw')
-                lines=lines.replace('abs w','absw')
+                lines=lines.replace(' abs ',' abs')
+                lines=lines.replace(' re ',' real')
+                lines=lines.replace(' im ',' imag')
                 lines=lines.replace('*','')
                 lines = StringIO(lines).readlines()
             else:
