@@ -1,18 +1,22 @@
-# FC, LIBDIR and FCLIBS are set in the platform-specific included file
-include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -I../equil -g
+include ../install/DEFAULTS.inc
+
+FFLAGS = -I../equil
 F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
+LIBDIR = \
+	-L$(MATHHOME) \
+	-L../lib
+
 LIBS = \
 	$(LIBDIR) \
 	-llsode \
 	-lequil \
-	$(FCLIBS)
-
+	$(MATHLIBS)
+	
 OBJS = \
 	orbit_mod.o \
 	restart.o \
@@ -23,8 +27,14 @@ OBJS = \
 	outer_gc.o \
 	orbit.o
 
+all: v orbit
+
 orbit: $(OBJS)
 	$(F90) -o orbit $(OBJS) $(LIBS)
+
+v:
+    @echo "cflag  = $(cflag)"
+
 
 # dependencies
 

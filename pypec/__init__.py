@@ -21,7 +21,7 @@ To set up python on portal at PPPL, insert the
 following lines into your .bashrc file:
 
   export PYTHONPATH=$PYTHONPATH:/path/to/gpec
-  module load anaconda
+  module load anaconda/2.3.0
   
 ..note: Anaconda is the most complete and current python distribution
 available at pppl. Users can also use locally built python/2.7.2, but

@@ -1,1 +1,54 @@
-makefile_LinuxLahey
+
+include ../install/DEFAULTS.inc
+
+FFLAGS = -I../equil -I../harvest -I../pentrc
+F90 = $(FC) $(FFLAGS)
+
+.f.o:
+	$(F90) -c $*.f
+
+LIBDIR = \
+	-L$(MATHHOME) \
+	-L../lib
+
+LIBS = \
+	$(LIBDIR) \
+	-llsode \
+	-lequil \
+	-lvac \
+	-lharvest \
+	-lpentrc \
+	$(MATHLIBS)
+
+OBJS = \
+	debug.o \
+	dcon_mod.o \
+	mercier.o \
+	bal.o \
+	fourfit.o \
+	sing.o \
+	ode_output.o \
+	ode.o \
+	free.o \
+	resist.o \
+	dcon.o
+
+dcon: $(OBJS)
+	$(F90) -o dcon $(OBJS) $(LIBS)
+
+# dependencies
+
+dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
+	../equil/equil_mod.mod ../equil/equil_out_mod.mod
+mercier.o: dcon_mod.o
+bal.o: dcon_mod.o
+fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
+sing.o: fourfit.o
+ode_output.o: dcon_mod.o sing.o debug.o
+ode.o: ode_output.o
+free.o: ode.o
+resist.o: dcon_mod.o
+dcon.o: bal.o mercier.o ode.o free.o resist.o ../pentrc/inputs.o ../pentrc/dcon_interface.o ../pentrc/pentrc_interface.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff dcon

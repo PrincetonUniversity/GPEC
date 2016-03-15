@@ -606,15 +606,17 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_efit
 
-      INTEGER :: i,j,nw,nh,ia,mr,mz,ma
+      INTEGER :: e,i,j,nw,nh,ia,mr,mz,ma
       INTEGER :: ios
       REAL(r8) :: bcentr,cpasma,rgrid,rmaxis,rzero,ssibry1,
      $     ssibry2,ssimag1,ssimag2,xdim,xdum,zdim,zmaxis,zmid
+      REAL(r8) :: tmp
+      CHARACTER(LEN=7) :: shotstr, timestr
 c-----------------------------------------------------------------------
 c     read equilibrium data.
 c-----------------------------------------------------------------------
       CALL ascii_open(in_unit,TRIM(eq_filename),'OLD')
-      READ(in_unit,'(52x,2i4)')nw,nh
+      READ(in_unit,'(26x,a7,a7,12x,2i4)') shotstr,timestr,nw,nh
       READ(in_unit,'(5e16.9)')xdim,zdim,rzero,rgrid,zmid
       READ(in_unit,'(5e16.9)')rmaxis,zmaxis,ssimag1,ssibry1,bcentr
       READ(in_unit,'(5e16.9)')cpasma,ssimag2,xdum,rmaxis,xdum
@@ -632,6 +634,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     translate to internal quantities.
 c-----------------------------------------------------------------------
+      DO i=2,7
+         READ(shotstr(:i),*,IOSTAT=e) tmp
+         IF(e==0) shotnum = tmp
+         READ(timestr(:i),*,IOSTAT=e) tmp
+         IF(e==0) shottime= tmp
+      ENDDO
       mr=nw-1
       mz=nh-1
       ma=nw-1

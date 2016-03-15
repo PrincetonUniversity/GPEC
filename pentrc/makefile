@@ -1,7 +1,7 @@
-# FC, LIBDIR and FCLIBS are set in the platform-specific included file
-include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -I../equil
+include ../install/DEFAULTS.inc
+
+FFLAGS = -I../equil -I../harvest -I$(NETCDFHOME)/include
 
 F90 = $(FC) $(FFLAGS)
 
@@ -11,11 +11,18 @@ F90 = $(FC) $(FFLAGS)
 %.o: %.f90
 	$(F90) -c $<
 
+LIBDIR = \
+	-L$(MATHHOME) \
+	-L$(NETCDFHOME)/lib \
+	-L../lib
+
 LIBS = \
 	$(LIBDIR) \
 	-llsode \
 	-lequil \
-	$(FCLIBS)
+	-lharvest \
+	$(MATHLIBS) \
+	$(NETCDFLIBS)
 
 OBJS = \
 	dcon_interface.o \
@@ -50,7 +57,7 @@ dcon_interface.o: params.o utilities.o
 inputs.o:  params.o utilities.o special.o dcon_interface.o
 energy.o:  params.o utilities.o lsode2.o
 pitch.o:   params.o utilities.o lsode1.o energy.o special.o
-torque.o:  params.o utilities.o special.o inputs.o energy.o pitch.o
+torque.o:  params.o utilities.o special.o dcon_interface.o inputs.o energy.o pitch.o
 diagnostics.o: params.o special.o energy.o pitch.o
 pentrc.o:  utilities.o special.o energy.o pitch.o torque.o inputs.o diagnostics.o 
 pentrc_interface.o: params.o utilities.o inputs.o energy.o pitch.o torque.o

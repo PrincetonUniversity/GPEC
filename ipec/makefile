@@ -1,12 +1,17 @@
-# FC, LIBDIR and FCLIBS are set in the platform-specific included file
-include ../install/make.inc.${GPEC_PLATFORM}
 
-FFLAGS = -I../equil -I../coil
+include ../install/DEFAULTS.inc
+
+FFLAGS = -I../equil -I../coil -I../harvest -I$(NETCDFHOME)/include
 
 F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
+
+LIBDIR = \
+	-L$(MATHHOME) \
+	-L$(NETCDFHOME)/lib \
+	-L../lib
 
 LIBS = \
 	$(LIBDIR) \
@@ -14,7 +19,9 @@ LIBS = \
 	-lequil \
 	-lvac \
 	-lcoil \
-	$(FCLIBS)
+	-lharvest \
+	$(MATHLIBS) \
+	$(NETCDFLIBS)
 
 OBJS = \
 	ipglobal.o \

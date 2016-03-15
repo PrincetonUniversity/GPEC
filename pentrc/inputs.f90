@@ -38,8 +38,8 @@ module inputs
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
     
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
-        idcon_action_matrix,idcon_build,&
-        eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
+        idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
+        geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         mfac,psifac,mpert,mstep,&
         idcon_coords
@@ -55,7 +55,7 @@ module inputs
         read_equil, &
         read_fnml, &
         kin, xs_m, dbdx_m, fnml, &
-        eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
+        geom,eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
         chi1,ro,zo,bo,nn,mfac,mpert, &
         verbose
     
@@ -68,7 +68,7 @@ module inputs
     contains
     
     !=======================================================================
-    subroutine read_equil(file)
+    subroutine read_equil(file,hlog)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Read dcon binary and form all the equilibrium splines.
@@ -82,25 +82,30 @@ module inputs
         implicit none
         ! declare arguments
         character(*), intent(in) :: file
-        
+        character(len=65507), optional :: hlog
+
         ! set idconfile
         idconfile = file
         if(verbose) print *,"Set idconfile:"
         if(verbose) print *,"  "//TRIM(idconfile)
         ! prepare ideal solutions. (psixy=0)
         CALL idcon_read(0)
+        if(present(hlog)) CALL idcon_harvest(hlog)
         CALL idcon_transform
         ! reconstruct metric tensors.
         CALL idcon_metric
         ! read vacuum data.
         !CALL idcon_vacuum
         ! form action matrices (this will move !!)
-        call idcon_action_matrix!(egnum,xspmn)
+        call idcon_action_matrices!(egnum,xspmn)
         
         ! evaluate field on axis
         call spline_eval(sq,0.0_r8,0)
         bo = abs(sq%f(1))/(twopi*ro)
         
+        ! set additional geometry spline
+        call set_geom
+
     end subroutine read_equil
     
     
@@ -301,7 +306,7 @@ module inputs
         endif
         
         ! convert to chebyshev coordinates
-        if(jac_in=="")then
+        if(jac_in=="" .or. jac_in=="default")then
             jac_in = jac_type
             if(verbose) print *,"  -> WARNING: Assuming DCON "//trim(jac_type)//" coordinates"
         endif
@@ -316,7 +321,7 @@ module inputs
                 powin=(/2,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
-            CASE("other")
+            CASE("park")
                 powin=(/1,0,0,0/)
             CASE DEFAULT
                 stop "ERROR: inputs - jac_in must be 'hamada','pest',&
@@ -378,7 +383,7 @@ module inputs
         complex(r8), dimension(:,:), intent(in) :: xmp1mns,xspmns,xmsmns
         ! declare local variables
         logical :: debug,set_dbdx
-        integer :: i,j,ims,npsi,nm, out_unit
+        integer :: i,j,ims,istrt_psi,istop_psi,npsi,nm, out_unit
         real(r8) :: r_mjr,r_mnr,jac,g12,g13,g22,g23,g33,gfac
         complex(r8), dimension(:), allocatable :: lagb_mn,divx_mn,&
             expm
@@ -391,6 +396,8 @@ module inputs
         if(present(op_debug)) debug = op_debug
         if(present(op_set_dbdx)) set_dbdx = op_set_dbdx
         ! get dimensions
+        istrt_psi = LBOUND(psi,1)
+        istop_psi = UBOUND(psi,1)
         npsi = size(psi)
         nm = size(ms)
         
@@ -400,8 +407,8 @@ module inputs
         if(debug) print *,"  mfac = ",mfac
         if(debug) print *,"  ms   = ",ms
         if(debug) print *,"  npsi = ",npsi
-        if(debug) print *,"  psi lim = ",psi(0),psi(npsi)
-    
+        if(debug) print *,"  psi lim = ",psi(1),psi(npsi)
+
         ! fill dcon m modes from available input
         do i=1,3
             if(associated(xs_m(i)%xs)) call cspline_dealloc(xs_m(i))
@@ -439,8 +446,9 @@ module inputs
             allocate(xmat(mpert,mpert),ymat(mpert,mpert),zmat(mpert,mpert),&
                     smat(mpert,mpert),tmat(mpert,mpert))
             !call ipeq_alloc
-            do i=1,npsi
-                if(verbose) call progressbar(i,1,npsi,op_percent=20)
+            do i=istrt_psi,istop_psi
+                j = i-istrt_psi+1
+                if(verbose) call progressbar(j,1,npsi,op_percent=20)
                 call spline_eval(sq,psi(i),0)
                 call cspline_eval(xs_m(1),psi(i),0)
                 call cspline_eval(xs_m(2),psi(i),0)
@@ -466,8 +474,8 @@ module inputs
                 !    +MATMUL(zmat,xms_mn)/chi1
                 !lagb_mn(:)=-(divx_mn+MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1)
                 
-                dbdx_m(1)%fs(i-1,:) = lagb_mn(:)
-                dbdx_m(2)%fs(i-1,:) = divx_mn(:)
+                dbdx_m(1)%fs(j-1,:) = lagb_mn(:)
+                dbdx_m(2)%fs(j-1,:) = divx_mn(:)
             enddo
             
             !call ipeq_dealloc
