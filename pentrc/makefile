@@ -3,7 +3,7 @@ include ../install/DEFAULTS.inc
 
 FFLAGS = -I../equil -I../harvest -I$(NETCDFHOME)/include
 
-F90 = $(FC) $(FFLAGS)
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f

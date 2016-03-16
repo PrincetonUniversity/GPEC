@@ -2,7 +2,7 @@
 include ../install/DEFAULTS.inc
 
 FFLAGS = -I../equil -I../harvest -I../pentrc
-F90 = $(FC) $(FFLAGS)
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f

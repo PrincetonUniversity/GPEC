@@ -17,40 +17,40 @@ harvest:
 	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
-	cd ../xdraw;  make -f makefile cflag=$(cflag)
+	cd ../xdraw;  make -f makefile cflag=$(cflag) options=$(options)
 
 lsode:
-	cd ../lsode;  make -f makefile cflag=$(cflag)
+	cd ../lsode;  make -f makefile cflag=$(cflag) options=$(options)
 
 equil:
-	cd ../equil;  make -f makefile cflag=$(cflag)
+	cd ../equil;  make -f makefile cflag=$(cflag) options=$(options)
 
 orbit:
-	cd ../orbit;  make -f makefile cflag=$(cflag)
+	cd ../orbit;  make -f makefile cflag=$(cflag) options=$(options)
 
 vacuum:
-	cd ../vacuum; make -f makefile cflag=$(cflag)
+	cd ../vacuum; make -f makefile cflag=$(cflag) options=$(options)
 
 dcon:
-	cd ../dcon;   make -f makefile cflag=$(cflag)
+	cd ../dcon;   make -f makefile cflag=$(cflag) options=$(options)
 
 match:
-	cd ../match;  make -f makefile cflag=$(cflag)
+	cd ../match;  make -f makefile cflag=$(cflag) options=$(options)
 
 multi:
-	cd ../multi;  make -f makefile cflag=$(cflag)
+	cd ../multi;  make -f makefile cflag=$(cflag) options=$(options)
 
 sum:
-	cd ../sum;    make -f makefile cflag=$(cflag)
+	cd ../sum;    make -f makefile cflag=$(cflag) options=$(options)
 
 coil:
-	cd ../coil;   make -f makefile cflag=$(cflag)
+	cd ../coil;   make -f makefile cflag=$(cflag) options=$(options)
 
 ipec:  
-	cd ../ipec;   make -f makefile cflag=$(cflag)
+	cd ../ipec;   make -f makefile cflag=$(cflag) options=$(options)
 
 pentrc:  
-	cd ../pentrc; make -f makefile cflag=$(cflag)
+	cd ../pentrc; make -f makefile cflag=$(cflag) options=$(options)
 
 mkbin:
 	mkdir -p ../bin
