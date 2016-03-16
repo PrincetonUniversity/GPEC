@@ -18,6 +18,10 @@ c     9. sing_get_ua.
 c     10. sing_get_ca.
 c     11. sing_der.
 c     12. sing_ua_diagnose.
+c     13. sing_get_f_det.
+c     14. ksing_find.
+c     15. sing_adp_find_sing.
+c     16. sing_newton.
 c-----------------------------------------------------------------------
 c     subprogram 0. sing_mod.
 c     module declarations.
@@ -30,6 +34,7 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER :: msol,sing_order=2
+      REAL(r8) :: det_max
       INTEGER, DIMENSION(:), POINTER :: r1,r2,n1,n2
       COMPLEX(r8), DIMENSION(2,2) :: m0mat
 
@@ -814,8 +819,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE sing_get_ca
 c-----------------------------------------------------------------------
 c     subprogram 11. sing_der.
-c     evaluates the differential equations of DCON.
-c     this is the key routines to get xwp_mn and xwp1_mn (u,du)
+c     evaluates euler-lagrange differential equation.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -824,72 +828,389 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: neq
       REAL(r8), INTENT(IN) :: psifac
+      CHARACTER(128) :: message
       COMPLEX(r8), DIMENSION(mpert,msol,2), INTENT(IN) :: u
       COMPLEX(r8), DIMENSION(mpert,msol,2), INTENT(OUT) :: du
 
-      INTEGER :: ipert,jpert,isol,iqty,info
-      REAL(r8) :: q
+      INTEGER :: ipert,jpert,isol,iqty,info,m1,m2,dm,i
+      INTEGER, DIMENSION(mpert) :: ipiv
+      REAL(r8) :: q,singfac1,singfac2,chi1
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), PARAMETER :: one=1
+      COMPLEX(r8), DIMENSION(mpert*mpert) :: work
       COMPLEX(r8), DIMENSION(mband+1,mpert) :: fmatb,gmatb
-      COMPLEX(r8), DIMENSION(2*mband+1,mpert) :: kmatb
+      COMPLEX(r8), DIMENSION(2*mband+1,mpert) :: kmatb,kaatb,gaatb
+      COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu,fmatlu
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,
+     $     amat,bmat,cmat,dmat,emat,hmat,baat,caat,eaat,dbat,ebat,
+     $     fmat,kmat,gmat,kaat,gaat,pmat,paat,umat,aamat,b1mat,bkmat,
+     $     bkaat,kkmat,kkaat,r1mat,r2mat,r3mat,f0mat
+      COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kwmat,ktmat
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psifac,0)
-      CALL cspline_eval(fmats,psifac,0)
-      CALL cspline_eval(gmats,psifac,0)
-      CALL cspline_eval(kmats,psifac,0)
-c-----------------------------------------------------------------------
-c     define local scalars.
-c-----------------------------------------------------------------------
       q=sq%f(4)
       singfac=mlow-nn*q+(/(ipert,ipert=0,mpert-1)/)
       singfac=1/singfac
-c-----------------------------------------------------------------------
-c     copy Hermitian banded matrices F and G.
-c-----------------------------------------------------------------------
-      fmatb=0
-      gmatb=0
-      iqty=1
-      DO jpert=1,mpert
-         DO ipert=jpert,MIN(mpert,jpert+mband)
-            fmatb(1+ipert-jpert,jpert)=fmats%f(iqty)
-            gmatb(1+ipert-jpert,jpert)=gmats%f(iqty)
-            iqty=iqty+1
+      chi1=twopi*psio
+
+      IF (kin_flag) THEN
+         CALL cspline_eval(amats,psifac,0)
+         CALL cspline_eval(bmats,psifac,0)
+         CALL cspline_eval(cmats,psifac,0)
+         CALL cspline_eval(dmats,psifac,0)
+         CALL cspline_eval(emats,psifac,0)
+         CALL cspline_eval(hmats,psifac,0)
+         CALL cspline_eval(dbats,psifac,0)
+         CALL cspline_eval(ebats,psifac,0)
+         CALL cspline_eval(fbats,psifac,0)
+
+         amat=RESHAPE(amats%f,(/mpert,mpert/))
+         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
+         cmat=RESHAPE(cmats%f,(/mpert,mpert/))
+         dmat=RESHAPE(dmats%f,(/mpert,mpert/))
+         emat=RESHAPE(emats%f,(/mpert,mpert/))
+         hmat=RESHAPE(hmats%f,(/mpert,mpert/))
+         dbat=RESHAPE(dbats%f,(/mpert,mpert/))
+         ebat=RESHAPE(ebats%f,(/mpert,mpert/))
+         fmat=RESHAPE(fbats%f,(/mpert,mpert/))
+
+         DO i=1,6
+            CALL cspline_eval(kwmats(i),psifac,0)
+            CALL cspline_eval(ktmats(i),psifac,0)
+            kwmat(:,:,i)=RESHAPE(kwmats(i)%f,(/mpert,mpert/))
+            ktmat(:,:,i)=RESHAPE(ktmats(i)%f,(/mpert,mpert/))
          ENDDO
-      ENDDO
 c-----------------------------------------------------------------------
-c     copy non-Hermitian banded matrix K.
+c     compute kinetic matrices.
 c-----------------------------------------------------------------------
-      kmatb=0
-      iqty=1
-      DO jpert=1,mpert
-         DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
-            kmatb(1+mband+ipert-jpert,jpert)=kmats%f(iqty)
-            iqty=iqty+1
+         IF (fkg_kmats_flag) THEN
+            CALL cspline_eval(akmats,psifac,0)
+            CALL cspline_eval(bkmats,psifac,0)
+            CALL cspline_eval(ckmats,psifac,0)
+            CALL cspline_eval(f0mats,psifac,0)
+            CALL cspline_eval(pmats,psifac,0)
+            CALL cspline_eval(paats,psifac,0)
+            CALL cspline_eval(kkmats,psifac,0)
+            CALL cspline_eval(kkaats,psifac,0)
+            CALL cspline_eval(r1mats,psifac,0)
+            CALL cspline_eval(r2mats,psifac,0)
+            CALL cspline_eval(r3mats,psifac,0)
+            CALL cspline_eval(gaats,psifac,0)
+
+            amat=RESHAPE(akmats%f,(/mpert,mpert/))
+            bmat=RESHAPE(bkmats%f,(/mpert,mpert/))
+            cmat=RESHAPE(ckmats%f,(/mpert,mpert/))
+            f0mat=RESHAPE(f0mats%f,(/mpert,mpert/))
+            pmat=RESHAPE(pmats%f,(/mpert,mpert/))
+            paat=RESHAPE(paats%f,(/mpert,mpert/))
+            kkmat=RESHAPE(kkmats%f,(/mpert,mpert/))
+            kkaat=RESHAPE(kkaats%f,(/mpert,mpert/))
+            r1mat=RESHAPE(r1mats%f,(/mpert,mpert/))
+            r2mat=RESHAPE(r2mats%f,(/mpert,mpert/))
+            r3mat=RESHAPE(r3mats%f,(/mpert,mpert/))
+
+            amatlu=0
+            DO jpert=1,mpert
+               DO ipert=1,mpert
+                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
+               ENDDO
+            ENDDO
+            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
+     $           ipiv,info)
+            IF(info /= 0)THEN
+               WRITE(message,'(a,e16.9,a,i2)')
+     $              "zgbtrf: amat singular at psifac = ",psifac,
+     $              ", ipert = ",info,", reduce delta_mband"
+               CALL program_stop(message)
+            ENDIF
+c-----------------------------------------------------------------------
+c     obsolete diagnostics.
+c-----------------------------------------------------------------------
+c            DO jpert=1,mpert
+c               DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+c                  gaat(ipert,jpert)=gaats%f(iqty)
+c                  iqty=iqty+1
+c               ENDDO
+c            ENDDO
+         ELSE
+            amat=amat+kwmat(:,:,1)+ktmat(:,:,1)
+            bmat=bmat+kwmat(:,:,2)+ktmat(:,:,2)
+            cmat=cmat+kwmat(:,:,3)+ktmat(:,:,3)
+            dmat=dmat+kwmat(:,:,4)+ktmat(:,:,4)
+            emat=emat+kwmat(:,:,5)+ktmat(:,:,5)
+            hmat=hmat+kwmat(:,:,6)+ktmat(:,:,6)
+            baat=bmat-2*ktmat(:,:,2)
+            caat=cmat-2*ktmat(:,:,3)
+            eaat=emat-2*ktmat(:,:,5)
+            b1mat=ifac*dbat
+c-----------------------------------------------------------------------
+c     factor kinetic non-Hermitian matrix A.
+c----------------------------------------------------------------------- 
+            amatlu=0
+            umat=0
+            DO jpert=1,mpert
+               DO ipert=1,mpert
+                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
+                  IF(ipert==jpert)umat(ipert,jpert)=1
+               ENDDO
+            ENDDO            
+            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
+     $           ipiv,info)
+            IF(info /= 0)THEN
+               WRITE(message,'(a,e16.9,a,i2)')
+     $              "zgbtrf: amat singular at psifac = ",psifac,
+     $              ", ipert = ",info,", reduce delta_mband"
+               CALL program_stop(message)
+            ENDIF
+
+            temp1=dbat 
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp1,mpert,info)
+            f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
+c-----------------------------------------------------------------------
+c     prepare matrices to separate Q factors.
+c-----------------------------------------------------------------------  
+            temp2=amat
+            CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info) ! close to unit matrix.
+            aamat=CONJG(TRANSPOSE(temp2))
+            umat=umat-aamat
+            
+            bkmat=kwmat(:,:,2)+ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,1)+ktmat(:,:,1))
+            bkaat=kwmat(:,:,2)-ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,1)+ktmat(:,:,1))
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            pmat=MATMUL(CONJG(TRANSPOSE(b1mat)),temp2)
+            
+            temp2=b1mat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            paat=MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+     $           -ifac*chi1/(twopi*nn)*MATMUL(umat,b1mat)
+            paat=CONJG(TRANSPOSE(paat))
+            
+            temp1=kwmat(:,:,1)+ktmat(:,:,1)
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            r1mat=kwmat(:,:,4)+ktmat(:,:,4)-
+     $           (chi1/(twopi*nn))**2*CONJG(TRANSPOSE(temp1))+
+     $           ifac*chi1/(twopi*nn)*CONJG(TRANSPOSE(bkaat))-
+     $           ifac*chi1/(twopi*nn)*MATMUL(aamat,bkmat)-
+     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2) 
+            
+            temp1=kwmat(:,:,5)+ktmat(:,:,5)-ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,3)+ktmat(:,:,3))
+            temp2=cmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            r2mat=temp1+ifac*chi1/(twopi*nn)*MATMUL(umat,cmat)-
+     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+            
+            temp1=kwmat(:,:,5)-ktmat(:,:,5)-ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,3)-ktmat(:,:,3))
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            r3mat=CONJG(TRANSPOSE(temp1))-
+     $           MATMUL(CONJG(TRANSPOSE(caat)),temp2)
+           
+            temp1=cmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp1,mpert,info)
+            kkmat=ebat-MATMUL(CONJG(TRANSPOSE(b1mat)),temp1)
+            
+            temp1=b1mat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp1,mpert,info)
+            kkaat=CONJG(TRANSPOSE(ebat))-
+     $           MATMUL(CONJG(TRANSPOSE(caat)),temp1)
+
+            temp2=cmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2)    
+      
+            iqty=1
+            DO jpert=1,mpert
+               DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+                  gaats%f(iqty)=gaat(ipert,jpert)
+                  iqty=iqty+1
+               ENDDO
+            ENDDO
+         ENDIF
+         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,3*mband+1,
+     $        ipiv,bmat,mpert,info)
+         CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,3*mband+1,
+     $        ipiv,cmat,mpert,info)
+c-----------------------------------------------------------------------
+c     obsolete method for non-Hermitian FK.
+c-----------------------------------------------------------------------
+c            temp1=bmat
+c            temp2=cmat
+c            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+c     $           3*mband+1,ipiv,temp1,mpert,info)
+c            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+c     $           3*mband+1,ipiv,temp2,mpert,info)
+c            fmat=dmat-MATMUL(CONJG(TRANSPOSE(baat)),temp1)
+c            kmat=emat-MATMUL(CONJG(TRANSPOSE(baat)),temp2)
+c            kaat=CONJG(TRANSPOSE(eaat))-
+c     $           MATMUL(CONJG(TRANSPOSE(caat)),temp1)
+c-----------------------------------------------------------------------
+c     calculate kinetic non-Hermitian FK.
+c-----------------------------------------------------------------------  
+         DO ipert=1,mpert
+            m1=mlow+ipert-1
+            singfac1=m1-nn*q
+            DO jpert=1,mpert
+               m2=mlow+jpert-1
+               singfac2=m2-nn*q
+               fmat(ipert,jpert)=singfac1*f0mat(ipert,jpert)*
+     $              singfac2-singfac1*pmat(ipert,jpert)-
+     $              CONJG(paat(jpert,ipert))*singfac2+
+     $              r1mat(ipert,jpert)
+               kmat(ipert,jpert)=singfac1*kkmat(ipert,jpert)+
+     $              r2mat(ipert,jpert)  
+               kaat(ipert,jpert)=kkaat(ipert,jpert)*singfac2+
+     $              r3mat(ipert,jpert)  
+            ENDDO
          ENDDO
-      ENDDO
 c-----------------------------------------------------------------------
-c     compute du1.
+c     obsolete diagnostics.
+c----------------------------------------------------------------------- 
+c         f1mats=RESHAPE(fmat,(/mpert**2/))
+c         k1mats=RESHAPE(kmat,(/mpert**2/))
+c         k1aats=RESHAPE(kaat,(/mpert**2/))
+c         g1aats=RESHAPE(gaat,(/mpert**2/))     
+c-----------------------------------------------------------------------
+c    store FKG in banded matrix forms.
+c-----------------------------------------------------------------------
+         fmatlu=0
+         DO jpert=1,mpert
+            DO ipert=1,mpert
+               fmatlu(2*mband+1+ipert-jpert,jpert)=fmat(ipert,jpert)
+            ENDDO
+         ENDDO
+
+         iqty=1
+         DO jpert=1,mpert
+            DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+               kmats%f(iqty)=kmat(ipert,jpert)
+               kaats%f(iqty)=kaat(ipert,jpert)
+               iqty=iqty+1
+            ENDDO
+         ENDDO
+
+         kmatb=0
+         kaatb=0
+         iqty=1
+         DO jpert=1,mpert
+            DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+               kmatb(1+mband+ipert-jpert,jpert)=kmats%f(iqty)
+               kaatb(1+mband+ipert-jpert,jpert)=kaats%f(iqty)
+               iqty=iqty+1
+            ENDDO
+         ENDDO
+
+         gaatb=0
+         iqty=1
+         DO jpert=1,mpert
+            DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+               gaatb(1+mband+ipert-jpert,jpert)=gaats%f(iqty)
+               iqty=iqty+1
+            ENDDO
+         ENDDO
+      ELSE
+         CALL cspline_eval(amats,psifac,0)
+         CALL cspline_eval(bmats,psifac,0)
+         CALL cspline_eval(cmats,psifac,0)
+         CALL cspline_eval(fmats,psifac,0)
+         CALL cspline_eval(kmats,psifac,0)
+         CALL cspline_eval(gmats,psifac,0)
+         amat=RESHAPE(amats%f,(/mpert,mpert/))
+         bmat=RESHAPE(bmats%f,(/mpert,mpert/))
+         cmat=RESHAPE(cmats%f,(/mpert,mpert/))
+         CALL zhetrf('L',mpert,amat,mpert,ipiv,work,mpert*mpert,info)
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiv,bmat,mpert,info)
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiv,cmat,mpert,info)
+c-----------------------------------------------------------------------
+c     copy ideal Hermitian banded matrices F and G.
+c-----------------------------------------------------------------------
+         fmatb=0
+         gmatb=0
+         iqty=1
+         DO jpert=1,mpert
+            DO ipert=jpert,MIN(mpert,jpert+mband)
+               fmatb(1+ipert-jpert,jpert)=fmats%f(iqty)
+               gmatb(1+ipert-jpert,jpert)=gmats%f(iqty)
+               iqty=iqty+1
+            ENDDO
+         ENDDO
+c-----------------------------------------------------------------------
+c     copy ideal non-Hermitian banded matrix K.
+c-----------------------------------------------------------------------
+         kmatb=0
+         iqty=1
+         DO jpert=1,mpert
+            DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
+               kmatb(1+mband+ipert-jpert,jpert)=kmats%f(iqty)
+               iqty=iqty+1
+            ENDDO
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     compute du1 and du2.
 c-----------------------------------------------------------------------
       du=0
-      DO isol=1,msol
-         du(:,isol,1)=u(:,isol,2)*singfac
-         CALL zgbmv('N',mpert,mpert,mband,mband,-one,kmatb,
-     $        2*mband+1,u(:,isol,1),1,one,du(:,isol,1),1)
-      ENDDO
-      CALL zpbtrs('L',mpert,mband,msol,fmatb,mband+1,du,mpert,info)
+      IF(kin_flag) THEN
+         DO isol=1,msol
+            du(:,isol,1)=u(:,isol,2)
+            CALL zgbmv('N',mpert,mpert,mband,mband,-one,kmatb,
+     $           2*mband+1,u(:,isol,1),1,one,du(:,isol,1),1)
+         ENDDO
+         
+         CALL zgbtrf(mpert,mpert,mband,mband,fmatlu,3*mband+1,
+     $        ipiv,info)
+         IF(info /= 0)THEN
+            WRITE(message,'(a,e16.9,a,i2,a)')
+     $           "zgbtrf: fmat singular at psifac = ",psifac,
+     $           ", ipert = ",info,", reduce delta_mband"
+            CALL program_stop(message)
+         ENDIF
+         CALL zgbtrs("N",mpert,mband,mband,msol,fmatlu,
+     $        3*mband+1,ipiv,du,mpert,info)
+
+         DO isol=1,msol
+            CALL zgbmv('N',mpert,mpert,mband,mband,one,gaatb,
+     $           2*mband+1,u(:,isol,1),1,one,du(:,isol,2),1)
+            CALL zgbmv('N',mpert,mpert,mband,mband,one,kaatb,
+     $           2*mband+1,du(:,isol,1),1,one,du(:,isol,2),1)
+         ENDDO   
+      ELSE
+         DO isol=1,msol
+            du(:,isol,1)=u(:,isol,2)*singfac
+            CALL zgbmv('N',mpert,mpert,mband,mband,-one,kmatb,
+     $           2*mband+1,u(:,isol,1),1,one,du(:,isol,1),1)
+         ENDDO
+         CALL zpbtrs('L',mpert,mband,msol,fmatb,mband+1,du,mpert,info) 
+         DO isol=1,msol
+            CALL zhbmv('L',mpert,mband,one,gmatb,
+     $           mband+1,u(:,isol,1),1,one,du(:,isol,2),1 )
+            CALL zgbmv('C',mpert,mpert,mband,mband,one,kmatb,
+     $           2*mband+1,du(:,isol,1),1,one,du(:,isol,2),1)
+            du(:,isol,1)=du(:,isol,1)*singfac
+         ENDDO         
+      ENDIF
 c-----------------------------------------------------------------------
-c     compute du2.
+c     calculate and store u-derivative and xss.
 c-----------------------------------------------------------------------
-      DO isol=1,msol
-         CALL zhbmv('L',mpert,mband,one,gmatb,
-     $        mband+1,u(:,isol,1),1,one,du(:,isol,2),1 )
-         CALL zgbmv('C',mpert,mpert,mband,mband,one,kmatb,
-     $        2*mband+1,du(:,isol,1),1,one,du(:,isol,2),1)
-         du(:,isol,1)=du(:,isol,1)*singfac
-      ENDDO
+      ud(:,:,1)=du(:,:,1)
+      ud(:,:,2)=-MATMUL(bmat,du(:,:,1))-MATMUL(cmat,u(:,:,1)) 
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -941,4 +1262,485 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing_ua_diagnose
+c-----------------------------------------------------------------------
+c     subprogram 13. sing_get_f_det.
+c     find determinant of non-Hermitian F matrix.
+c-----------------------------------------------------------------------
+      FUNCTION sing_get_f_det(psifac) RESULT(det)
+
+      REAL(r8), INTENT(IN) :: psifac
+      COMPLEX(r8) :: det
+      
+      INTEGER :: ipert,jpert,iqty,isol,m1,m2,dm
+      INTEGER :: ldab,kl,ku,info,m,n,i
+
+      REAL(r8) :: q,nq,singfac1,singfac2,chi1
+
+      INTEGER, DIMENSION(mpert) :: ipiv
+      INTEGER,DIMENSION(:),ALLOCATABLE:: fpiv
+      REAL(r8), DIMENSION(mpert) :: singfac
+      COMPLEX(r8) :: d
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE:: lumat
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: f,temp1,temp2,f0mat,
+     $     amat,dbat,fmat,pmat,paat,umat,aamat,b1mat,bkmat,bkaat,r1mat
+      COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu
+      COMPLEX(r8), DIMENSION(mpert,mpert,4) :: kwmat,ktmat
+      COMPLEX(r8), DIMENSION(mpert*mpert) :: work
+      CHARACTER(128) :: message
+c-----------------------------------------------------------------------
+c     compute q and singfac.
+c-----------------------------------------------------------------------
+      CALL spline_eval(sq,psifac,0)
+      q=sq%f(4)
+      nq=nn*q
+      singfac=mlow-nn*q+(/(ipert,ipert=0,mpert-1)/)
+      chi1=twopi*psio
+c-----------------------------------------------------------------------
+c     compute F matrix.
+c-----------------------------------------------------------------------      
+      IF (kin_flag) THEN
+         IF (fkg_kmats_flag) THEN
+            CALL cspline_eval(f0mats,psifac,0)
+            CALL cspline_eval(pmats,psifac,0)
+            CALL cspline_eval(paats,psifac,0)
+            CALL cspline_eval(r1mats,psifac,0)
+            f0mat=RESHAPE(f0mats%f,(/mpert,mpert/))
+            pmat=RESHAPE(pmats%f,(/mpert,mpert/))
+            paat=RESHAPE(paats%f,(/mpert,mpert/))
+            r1mat=RESHAPE(r1mats%f,(/mpert,mpert/))
+         ELSE
+            CALL cspline_eval(amats,psifac,0)
+            CALL cspline_eval(dbats,psifac,0)
+            CALL cspline_eval(fbats,psifac,0)
+            amat=RESHAPE(amats%f,(/mpert,mpert/))
+            dbat=RESHAPE(dbats%f,(/mpert,mpert/))
+            fmat=RESHAPE(fbats%f,(/mpert,mpert/))
+            DO i=1,4
+               CALL cspline_eval(kwmats(i),psifac,0)
+               CALL cspline_eval(ktmats(i),psifac,0)
+               kwmat(:,:,i)=RESHAPE(kwmats(i)%f,(/mpert,mpert/))
+               ktmat(:,:,i)=RESHAPE(ktmats(i)%f,(/mpert,mpert/))
+            ENDDO
+            amat=amat+kwmat(:,:,1)+ktmat(:,:,1)
+            b1mat=ifac*dbat
+c-----------------------------------------------------------------------
+c     factor kinetic non-Hermitian matrix A.
+c----------------------------------------------------------------------- 
+            amatlu=0
+            umat=0
+            DO jpert=1,mpert
+               DO ipert=1,mpert
+                  amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
+                  IF(ipert==jpert)umat(ipert,jpert)=1
+               ENDDO
+            ENDDO
+         
+            CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
+     $           ipiv,info)
+            IF(info /= 0)THEN
+               WRITE(message,'(a,e16.9,a,i2)')
+     $              "zgbtrf: amat singular at psifac = ",psifac,
+     $              ", ipert = ",info,", reduce delta_mband"
+               CALL program_stop(message)
+            ENDIF
+            temp1=dbat 
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp1,mpert,info)
+            f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
+            
+            temp2=amat
+            CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info) ! close to unit matrix.
+            aamat=CONJG(TRANSPOSE(temp2))
+            umat=umat-aamat
+            
+            bkmat=kwmat(:,:,2)+ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,1)+ktmat(:,:,1))
+            bkaat=kwmat(:,:,2)-ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
+     $           (kwmat(:,:,1)+ktmat(:,:,1))
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            pmat=MATMUL(CONJG(TRANSPOSE(b1mat)),temp2)
+            
+            temp2=b1mat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            paat=MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+     $           -ifac*chi1/(twopi*nn)*MATMUL(umat,b1mat)
+            paat=CONJG(TRANSPOSE(paat))
+            
+            temp1=kwmat(:,:,1)+ktmat(:,:,1)
+            temp2=bkmat
+            CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
+     $           3*mband+1,ipiv,temp2,mpert,info)
+            r1mat=kwmat(:,:,4)+ktmat(:,:,4)-
+     $           (chi1/(twopi*nn))**2*CONJG(TRANSPOSE(temp1))+
+     $           ifac*chi1/(twopi*nn)*CONJG(TRANSPOSE(bkaat))-
+     $           ifac*chi1/(twopi*nn)*MATMUL(aamat,bkmat)-
+     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+         ENDIF         
+         DO ipert=1,mpert
+            m1=mlow+ipert-1
+            singfac1=m1-nn*q
+            DO jpert=1,mpert
+               m2=mlow+jpert-1
+               singfac2=m2-nn*q
+               f(ipert,jpert)=singfac1*f0mat(ipert,jpert)*
+     $              singfac2-singfac1*pmat(ipert,jpert)-
+     $              CONJG(paat(jpert,ipert))*singfac2+
+     $              r1mat(ipert,jpert)
+            ENDDO
+         ENDDO
+      ELSE
+         CALL cspline_eval(amats,psifac,0)
+         CALL cspline_eval(dbats,psifac,0)
+         CALL cspline_eval(fbats,psifac,0)
+         amat=RESHAPE(amats%f,(/mpert,mpert/))
+         dbat=RESHAPE(dbats%f,(/mpert,mpert/))
+         fmat=RESHAPE(fbats%f,(/mpert,mpert/))
+
+         CALL zhetrf('L',mpert,amat,mpert,ipiv,work,mpert*mpert,info)
+         IF(info /= 0)THEN
+            WRITE(message,'(a,e16.9,a,i2)')
+     $           "zhetrf: amat singular at psifac = ",psifac,
+     $           ", ipert = ",info,", increase delta_mband"
+            CALL program_stop(message)
+         ENDIF
+
+         temp1=dbat
+         CALL zhetrs('L',mpert,mpert,amat,mpert,ipiv,temp1,mpert,info)
+         fmat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
+
+         DO ipert=1,mpert
+            m1=mlow+ipert-1
+            singfac1=m1-nn*q
+            DO jpert=1,mpert
+               m2=mlow+jpert-1
+               singfac2=m2-nn*q
+               f(ipert,jpert)=singfac1*fmat(ipert,jpert)*singfac2
+            ENDDO
+         ENDDO
+      ENDIF
+
+      kl=mpert-1
+      ku=mpert-1
+      ldab=2*kl+ku+1 
+      m=mpert
+      n=mpert
+      ALLOCATE(lumat(ldab,n),fpiv(min(m,n))) 
+      DO jpert=1,mpert
+         DO ipert=1,mpert
+            lumat(kl+ku+1+ipert-jpert,jpert)=f(ipert,jpert)
+         ENDDO
+      ENDDO
+      CALL zgbtrf(m,n,kl,ku,lumat,ldab,ipiv,info)
+      IF (info.NE.0) THEN
+         PRINT *,"zgbtrf info=",info
+         CALL program_stop("Termination by galerkin_solve_equation")
+      ENDIF
+c-----------------------------------------------------------------------
+c     calculate the determinant of A.
+c-----------------------------------------------------------------------
+      d=1.0
+      DO i=1,m
+         IF (ipiv(i).ne.i) d=-d
+      ENDDO
+      det=PRODUCT(lumat(kl+kl+1,:))*d
+      DEALLOCATE (lumat,fpiv)
+
+      END FUNCTION sing_get_f_det
+c-----------------------------------------------------------------------
+c     subprogram 14. ksing_find.
+c     find new singular surfaces.
+c-----------------------------------------------------------------------
+      SUBROUTINE ksing_find
+
+      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,keps1=1e-10,keps2=1e-4
+      INTEGER, PARAMETER :: nsing=1000
+      REAL(r8), DIMENSION(nsing) :: psising,psising_check
+
+      LOGICAL :: sing_flag
+      INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check
+      REAL(r8) :: x0,x1,eps,reps
+      COMPLEX(r8) :: det0,det1,sing_det
+
+      singnum=0
+      psising=-1
+      i_recur=0
+      i_depth=0
+      x0=psilow
+      x1=psihigh
+c-----------------------------------------------------------------------
+c     adapatively search the singular point.
+c-----------------------------------------------------------------------
+      sing_flag=.FALSE.
+      det0=sing_get_f_det(x0)
+      det1=sing_get_f_det(x1)
+      IF (ABS(det0)>ABS(det1)) THEN
+         det_max=det0
+      ELSE
+         det_max=det1
+      ENDIF
+      singnum=singnum+1
+      psising(singnum)=x0
+      sing_det=det0
+      sing_flag=.TRUE.
+      OPEN(UNIT=100,FILE="grid.out",STATUS="UNKNOWN")
+      CALL bin_open(bin_unit,"grid.bin","UNKNOWN","REWIND","none")
+      CALL sing_adp_find_sing(x0,x1,det0,det1,nsing,psising,singnum,
+     $     i_recur,i_depth,tol,sing_det,sing_flag)
+      CLOSE (UNIT=100)
+      CALL bin_close(bin_unit)
+      
+      IF (psising(1)>psilow) THEN
+         psising(2:singnum+1)=psising(1:singnum)
+         psising(1)=psilow
+         singnum=singnum+1
+         
+      ENDIF
+      IF (psising(singnum)<psihigh) THEN
+         singnum=singnum+1
+         psising(singnum)=psihigh
+      ENDIF
+c-----------------------------------------------------------------------
+c     Newton method to find the accurate local minium point.
+c-----------------------------------------------------------------------           
+      DO i=2,singnum-1
+         x1=psising(i)
+         CALL sing_newton(sing_get_f_det,x1,psising(i-1),psising(i+1))
+         det0=sing_get_f_det(psising(i))
+         det1=sing_get_f_det(x1)
+         IF (ABS(det0)>ABS(det1)) THEN
+            psising(i)=x1
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     check the singular point.
+c-----------------------------------------------------------------------
+      singnum_check=singnum
+      psising_check=psising
+      psising=-1
+      singnum=1
+      WRITE (*,*) 'ABS(det_max)=',ABS(det_max),'eps=',keps1
+      psising(1)=psising_check(1)
+      DO i=2,singnum_check-1
+         det0=sing_get_f_det(psising_check(i))
+         WRITE (*,*) 'psising_check(',i,')=',psising_check(i),
+     $               'det0=',ABS(det0)
+         reps=keps1/keps2
+         eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
+         IF (ABS(det0)<=ABS(det_max)*eps) THEN
+            singnum=singnum+1
+            psising(singnum)=psising_check(i)
+         ENDIF
+      ENDDO
+      singnum=singnum+1
+      psising(singnum)=psising_check(singnum_check)
+      OPEN(UNIT=100,FILE="sing_find.out",STATUS="UNKNOWN")
+         DO i=1,singnum
+            det0=sing_get_f_det(psising(i))
+            WRITE (100,*) "singfac=",psising(i),'ABS(det)=',ABS(det0),
+     $           'Real(det)=',REAL(det0),'Imag(det)=',IMAG(det0)
+         ENDDO
+      CLOSE (UNIT=100)
+      kmsing=singnum-2
+      ALLOCATE(kinsing(kmsing))
+      DO ising=1,kmsing
+         kinsing(ising)%m=ising
+         kinsing(ising)%psifac=psising(ising+1)
+         kinsing(ising)%rho=SQRT(psising(ising+1))
+         CALL spline_eval(sq,psising(ising+1),1)
+         kinsing(ising)%q=sq%f(4)
+         kinsing(ising)%q1=sq%f1(4)
+         WRITE(*,*)kinsing(ising)%psifac,kinsing(ising)%q
+      ENDDO
+ 
+      END SUBROUTINE ksing_find
+c-----------------------------------------------------------------------
+c     subprogram 15. sing_adp_find_sing.
+c     adaptive finder.
+c-----------------------------------------------------------------------
+      RECURSIVE SUBROUTINE sing_adp_find_sing(x0,x1,det0,det1,
+     $     m_singpos,singpos,singnum,i_recur,i_depth,
+     $     tol,sing_det,sing_flag)
+      LOGICAL,INTENT(INOUT) :: sing_flag
+      INTEGER,INTENT(IN) :: m_singpos
+      INTEGER,INTENT(INOUT) :: singnum
+      INTEGER,INTENT(INOUT) :: i_recur,i_depth
+      REAL(r8),INTENT(IN) :: x0,x1,tol
+      REAL(r8),DIMENSION(m_singpos),INTENT(INOUT) :: singpos 
+      REAL(r8),PARAMETER :: grid_tol =1e-6
+      COMPLEX(r8),INTENT(IN) :: det0,det1
+      COMPLEX(r8),INTENT(INOUT) :: sing_det
+      
+      INTEGER :: i
+      REAL(r8) :: tmp1,tmpm,tmp2
+      REAL(r8),DIMENSION(3) :: x
+      COMPLEX(r8),DIMENSION(3) :: det
+
+      i_depth=i_depth+1            
+      i_recur=i_recur+1
+      x(1)=x0
+      x(3)=x1
+      x(2)=0.5*(x(1)+x(3))
+      det(1)=det0
+      det(2)=sing_get_f_det(x(2))
+      det(3)=det1 
+      IF (ABS(det(2))>ABS(det_max)) det_max=det(2)
+c-----------------------------------------------------------------------
+c     criteria of grid partition.
+c-----------------------------------------------------------------------      
+      tmp1=ABS(det(1)+det(3))
+      tmpm=ABS(det(2))*2
+      IF (ABS(tmpm-tmp1)>tol*tmp1 .AND. x(3)-x(1)>grid_tol ) THEN
+         CALL sing_adp_find_sing(x(1),x(2),det(1),det(2),
+     $   m_singpos,singpos,singnum,i_recur,i_depth
+     $   ,tol,sing_det,sing_flag)
+     
+         CALL sing_adp_find_sing(x(2),x(3),det(2),det(3),
+     $   m_singpos,singpos,singnum,i_recur,i_depth
+     $   ,tol,sing_det,sing_flag)
+      ELSE
+c-----------------------------------------------------------------------
+c     judge the local singularity with the gradient of ABS(det).
+c-----------------------------------------------------------------------      
+         tmp1 = ABS(det(2))-ABS(det(1))
+         tmp2 = ABS(det(3))-ABS(det(2))
+         IF (tmp1<0.AND.tmp2<0)THEN
+            IF (sing_flag) THEN
+               IF (ABS(sing_det)>ABS(det(3))) THEN
+                  sing_det=det(3)
+                  singpos(singnum)=x(3)
+               ENDIF
+            ELSE
+               singnum=singnum+1
+               IF (singnum+3>m_singpos) THEN
+                  CALL program_stop("Increase singpos array.")
+               ENDIF
+               singpos(singnum)=x(3)
+               sing_det=det(3)
+               sing_flag=.TRUE.
+            ENDIF
+         ENDIF
+         
+         IF (tmp1<0.AND.tmp2>0)THEN
+            IF (sing_flag) THEN
+               IF (ABS(sing_det)>ABS(det(2))) THEN
+                  sing_det=det(2)
+                  singpos(singnum)=x(2)
+               ENDIF
+            ELSE
+               singnum=singnum+1
+               IF (singnum+3>m_singpos) THEN
+                  CALL program_stop("Increase singpos array.")
+               ENDIF
+               singpos(singnum)=x(2)
+               sing_det=det(2)
+               sing_flag=.TRUE.
+            ENDIF
+         ENDIF
+         
+         IF (tmp1>0.AND.tmp2>0)THEN
+            IF (sing_flag) THEN
+               sing_flag=.FALSE.
+            ENDIF
+            IF (ABS(sing_det)>ABS(det(1))) THEN
+               sing_det=det(1)
+               singpos(singnum)=x(1)
+            ENDIF
+         ENDIF
+         
+         IF (tmp1>0.AND.tmp2<0)THEN
+            IF (sing_flag) THEN
+               sing_flag=.FALSE.
+            ENDIF
+            IF (ABS(sing_det)>ABS(det(1))) THEN
+               sing_det=det(1)
+               singpos(singnum)=x(1)
+            ENDIF
+         ENDIF
+         
+         IF (tmp1==0.OR.tmp2==0) THEN
+            CALL program_stop("det(2)-det(1)=0 or det(3)-det(2)=0")
+         ENDIF
+         WRITE(100,*) x(2),ABS(det(2)),REAL(det(2)),IMAG(det(2))
+         WRITE(100,*) x(3),ABS(det(3)),REAL(det(3)),IMAG(det(3))
+         WRITE(bin_unit)REAL(x(2),4),REAL(LOG10(ABS(det(2))),4),
+     $        REAL(REAL(det(2)),4),REAL(AIMAG(det(2)),4)
+         WRITE(bin_unit)REAL(x(3),4),REAL(LOG10(ABS(det(3))),4),
+     $        REAL(REAL(det(3)),4),REAL(AIMAG(det(3)),4)
+         
+      ENDIF
+      i_depth=i_depth-1      
+      END SUBROUTINE sing_adp_find_sing      
+c-----------------------------------------------------------------------
+c     subprogram 16. sing_newton.
+c     newton iteration for singular surface finder.
+c-----------------------------------------------------------------------
+      SUBROUTINE sing_newton(ff,z,bo0,bo1)
+      
+      COMPLEX(r8) :: ff
+      REAL(r8), INTENT(INOUT) :: z
+      REAL(r8), INTENT(IN) :: bo0,bo1
+      REAL(r8) :: err
+      INTEGER :: it
+
+      INTEGER :: ising,info
+      REAL(r8) :: dzfac=1e-6,dfac=1e-2, tol=1e-15, itmax=1000,dz,dz1,dz2
+      REAL(r8) :: z_old,f_old,f,b0,b1,zopt,fopt
+c-----------------------------------------------------------------------
+c     find initial guess.
+c-----------------------------------------------------------------------
+      b0=z-(z-bo0)*dfac
+      b1=z+(bo1-z)*dfac
+      f=ABS(ff(z))
+      zopt=z
+      fopt=f
+      
+      dz=(b0+b1)*0.5-z
+      dz1=(b0+z)*0.5-z
+      dz2=(b1+z)*0.5-z
+      IF (ABS(dz)<ABS(dz1)) dz=dz1
+      IF (ABS(dz)<ABS(dz2)) dz=dz2
+      it=0
+c-----------------------------------------------------------------------
+c     iterate.
+c-----------------------------------------------------------------------
+      DO
+         it=it+1
+         err=ABS(dz/z)
+         IF(err < tol) THEN
+            z=zopt
+            EXIT
+         ENDIF
+         IF(it > itmax) THEN
+            it=-1
+            WRITE(*,*) "Solution is not well converged."
+            z=zopt
+            EXIT
+         ENDIF
+         IF (z+dz<=b0.OR.z+dz>=b1) THEN
+            dz=dz*0.5
+         ELSE
+            z_old=z         
+            z=z+dz
+            f_old=f
+            f=ABS(ff(z))
+            If (f<fopt) THEN
+               fopt=f
+               zopt=z
+            ENDIF
+            dz=-f*(z-z_old)/(f-f_old)
+         ENDIF
+      ENDDO
+      IF (f<fopt) THEN
+         fopt=f
+         zopt=z
+      ENDIF      
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE sing_newton
       END MODULE sing_mod

@@ -58,7 +58,7 @@
 	vbnormal_flag=f				! Outputs vacuum normal displacement and field in plasma
 
 	eqbrzphi_flag=f				! Outputs equilibrium field on regular (r,z) grid
-	brzphi_flag=f				! Outputs perturbed field on regular (r,z) grid
+	brzphi_flag=t				! Outputs perturbed field on regular (r,z) grid
 	xrzphi_flag=f				! Outputs displacement on regular (r,z) grid
 	vbrzphi_flag=f				! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
 	vvbrzphi_flag=f				! Outputs field on regular (r,z) grid due to exeternal perturbation surface current (not a real field)
@@ -67,6 +67,8 @@
 	xbrzphifun_flag=f			! Outputs r,z, and perturbation vectors on psi,theta grid 
 	arzphifun_flag=f			! Outputs r,z, and vector potential on psi,theta grid
 
+	nr = 124
+	nz = 124
 	fun_flag=t					! Write outputs to (r,z) in addition to default (psi,m)
 	flux_flag=f					! Write outputs to (psi,theta) in addition to default (psi,m)
 	bin_flag=f					! Write binary outputs for use with xdraw

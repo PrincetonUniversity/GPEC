@@ -38,14 +38,17 @@ c-----------------------------------------------------------------------
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
-      LOGICAL :: ideal_flag=.FALSE.,res_flag=.FALSE.
+      LOGICAL :: ideal_flag=.FALSE.,res_flag=.FALSE.,
+     $     kin_flag=.FALSE.,con_flag=.FALSE.
       LOGICAL, DIMENSION(:), POINTER :: sing_flag
       INTEGER :: mfix,mhigh,mlow,mpert,mstep,nn,msing,mmatch,mbit,mterm
       INTEGER, DIMENSION(:), POINTER :: fixstep
       REAL(r8) :: sfac0=1
-      REAL(r8), DIMENSION(:), POINTER :: psifac,rho,q,et
-      COMPLEX(r8), DIMENSION(:), POINTER :: deltap1,deltap2,ff
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,match,bmatch
+      REAL(r8), DIMENSION(:), POINTER :: psifac,rho,q
+
+      REAL(r8), DIMENSION(:), POINTER :: ebt,ebp
+      COMPLEX(r8), DIMENSION(:), POINTER :: deltap1,deltap2,ff,et,ep
+      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wt0,wbt,match,bmatch
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: v
 
       TYPE(solution_type), DIMENSION(:), POINTER :: soltype

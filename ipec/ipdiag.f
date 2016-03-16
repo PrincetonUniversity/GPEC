@@ -570,7 +570,7 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,ipert
       COMPLEX(r8), DIMENSION(mpert) :: xwd_mn,bwd_mn
 
-      TYPE(cspline_type) :: u3         
+      TYPE(cspline_type) :: u5         
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -599,21 +599,21 @@ c-----------------------------------------------------------------------
      $     "xwp1(real)","xwp1(imag)","bwd(real)","bwd(imag)",
      $     "bwp1(real)","bwp1(imag)","xsp(real)","xsp(imag)"
 
-      CALL cspline_alloc(u3,mstep,mpert)
-      u3%xs=psifac
+      CALL cspline_alloc(u5,mstep,mpert)
+      u5%xs=psifac
       DO istep=0,mstep
          CALL ipeq_sol(psifac(istep))
-         u3%fs(istep,:)=bwp_mn
+         u5%fs(istep,:)=bwp_mn
       ENDDO
-      CALL cspline_fit(u3,"extrap")
+      CALL cspline_fit(u5,"extrap")
 
       DO istep=0,mstep
          CALL ipeq_sol(psifac(istep))
          CALL ipeq_contra(psifac(istep))
          CALL cspline_eval(u1,psifac(istep),1)
-         CALL cspline_eval(u3,psifac(istep),1)
+         CALL cspline_eval(u5,psifac(istep),1)
          xwd_mn(:)=u1%f1(:)
-         bwd_mn(:)=u3%f1(:)
+         bwd_mn(:)=u5%f1(:)
          IF (jac_type /= jac_out) THEN 
             CALL ipeq_bcoords(psifac(istep),xwp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
@@ -658,7 +658,7 @@ c-----------------------------------------------------------------------
       ENDDO
 
       CALL ipeq_dealloc
-      CALL cspline_dealloc(u3)
+      CALL cspline_dealloc(u5)
       CALL ascii_close(out_unit)
 
       RETURN

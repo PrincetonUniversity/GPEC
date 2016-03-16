@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
 
       NAMELIST/equil_control/eq_filename,eq_type,grid_type,mpsi,mtheta,
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
-     $     power_b,jac_method,convert_type,power_flag
+     $     power_b,jac_method,convert_type,power_flag,etol
       NAMELIST/equil_output/bin_2d,bin_eq_1d,bin_eq_2d,out_2d,out_eq_1d,
      $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose
 c-----------------------------------------------------------------------

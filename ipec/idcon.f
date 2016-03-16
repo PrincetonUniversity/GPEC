@@ -12,6 +12,7 @@ c     3. idcon_build
 c     4. idcon_metric
 c     5. idcon_matrix
 c     6. idcon_vacuum
+c     7. idcon_action_matrices
 c-----------------------------------------------------------------------
 c     subprogram 0. idcon_mod.
 c     module declarations.
@@ -49,6 +50,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      READ(in_unit)kin_flag,con_flag
       READ(in_unit) amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
      $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
@@ -114,11 +116,13 @@ c-----------------------------------------------------------------------
             mstep=mstep+1
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE(2)
             mfix=mfix+1
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
          CASE(3)
+            READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
@@ -155,7 +159,11 @@ c-----------------------------------------------------------------------
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
-      ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
+      ALLOCATE(et(mpert),ep(mpert),ee(mpert))
+      ALLOCATE(wt(mpert,mpert),wt0(mpert,mpert))
+      ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert)) !LOGAN
+      eft = -1 ! LOGAN - used to tell if it is read (actual vals >0)
+      wft = 0
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       CALL bin_open(in_unit,idconfile,"OLD","REWIND","none")
@@ -163,6 +171,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      READ(in_unit)kin_flag,con_flag
       istep=-1
       ifix=0
       ising=0
@@ -177,8 +186,9 @@ c-----------------------------------------------------------------------
             istep=istep+1
             READ(UNIT=in_unit)psifac(istep),qfac(istep),
      $           soltype(istep)%msol
-            ALLOCATE(soltype(istep)%u(mpert,soltype(istep)%msol,2))
-            READ(UNIT=in_unit)soltype(istep)%u
+            ALLOCATE(soltype(istep)%u(mpert,soltype(istep)%msol,4))
+            READ(UNIT=in_unit)soltype(istep)%u(:,:,1:2)
+            READ(UNIT=in_unit)soltype(istep)%u(:,:,3:4)
          CASE(2)
             ifix=ifix+1
             fixstep(ifix)=istep
@@ -191,6 +201,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
+            READ(UNIT=in_unit)wt0
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix
@@ -220,7 +231,7 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
          CASE(5)
-            ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert)) 
+            ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert))
             ALLOCATE(wtraw(mpert,mpert))
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
@@ -237,12 +248,13 @@ c-----------------------------------------------------------------------
       ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
-c     normalize plasma/vacuum eigenenergy and eigenfunctions.
+c     normalize plasma/vacuum eigenvalues and eigenfunctions.
 c-----------------------------------------------------------------------
       et=et/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
+      wt0=wt0/(mu0*2.0)*psio**2
       IF(data_type==5)THEN
          wtraw=wtraw*(chi1*1e-3)
          eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
@@ -337,7 +349,7 @@ c-----------------------------------------------------------------------
             ENDDO
             fixtype(ifix)%gauss=MATMUL(fixtype(ifix)%gauss,temp)
          ENDDO
-         IF(sing_flag(ifix))
+         IF(sing_flag(ifix).AND.(.NOT.con_flag))
      $        fixtype(ifix)%gauss(:,fixtype(ifix)%index(1))=0
       ENDDO
 c-----------------------------------------------------------------------
@@ -359,6 +371,8 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL cspline_alloc(u1,mstep,mpert)
       CALL cspline_alloc(u2,mstep,mpert)
+      CALL cspline_alloc(u3,mstep,mpert)
+      CALL cspline_alloc(u4,mstep,mpert)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -404,10 +418,10 @@ c-----------------------------------------------------------------------
          temp1=MATMUL(fixtype(ifix)%transform,uedge)
          kfix=fixstep(ifix+1)
          DO istep=jfix,kfix
-            u1%fs(istep,:)
-     $           =MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
-            u2%fs(istep,:)
-     $           =MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+            u1%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
+            u2%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+            u3%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,3),temp1)
+            u4%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,4),temp1)
          ENDDO         
          jfix=kfix+1
       ENDDO
@@ -416,8 +430,12 @@ c     fit the functions.
 c-----------------------------------------------------------------------
       u1%xs=psifac
       u2%xs=psifac
+      u3%xs=psifac
+      u4%xs=psifac
       CALL cspline_fit(u1,"extrap")
       CALL cspline_fit(u2,"extrap")
+      CALL cspline_fit(u3,"extrap")
+      CALL cspline_fit(u4,"extrap")
       IF(debug_flag) PRINT *, "->Leaving idcon_build"
 c-----------------------------------------------------------------------
 c     terminate.
@@ -817,8 +835,8 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_vacuum
 c-----------------------------------------------------------------------
-c     subprogram 6. idcon_action_matrices.
-c     Equilibrium matrices nexessary to calc perturbed mod b for gpec.
+c     subprogram 7. idcon_action_matrices.
+c     Equilibrium matrices necessary to calc perturbed mod b for gpec.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_action_matrices()!(egnum,xspmn)
 c-----------------------------------------------------------------------
@@ -925,7 +943,6 @@ c-----------------------------------------------------------------------
       ENDIF
 
       DO ipsi=0,mpsi
-         
          q=sq%fs(ipsi,4)
          sband(0:-mband:-1)=fmodb%cs%fs(ipsi,1:mband+1)
          tband(0:-mband:-1)=fmodb%cs%fs(ipsi,mband+2:2*mband+2)
@@ -963,13 +980,11 @@ c-----------------------------------------------------------------------
      $              ifac*(m2*zband2(dm)+nn*zband3(dm))
             ENDDO
          ENDDO
-
          smats%fs(ipsi,:)=RESHAPE(smat,(/mpert**2/))
          tmats%fs(ipsi,:)=RESHAPE(tmat,(/mpert**2/))
          xmats%fs(ipsi,:)=RESHAPE(xmat,(/mpert**2/))
          ymats%fs(ipsi,:)=RESHAPE(ymat,(/mpert**2/))
          zmats%fs(ipsi,:)=RESHAPE(zmat,(/mpert**2/))
-
       ENDDO
 
       ! global splines like sq,rzphi,eqfun etc.
@@ -979,7 +994,6 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(ymats,"extrap")
       CALL cspline_fit(zmats,"extrap")
 
-      !CALL ipeq_dealloc
       CALL fspline_dealloc(fmodb)
 c-----------------------------------------------------------------------
 c     terminate.

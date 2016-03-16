@@ -11,12 +11,12 @@ c     declarations.
 c-----------------------------------------------------------------------
       LOGICAL :: power_flag,fft_flag,edge_flag,pbrzphi_flag,
      $     eqbrzphi_flag,brzphi_flag,xrzphi_flag,divzero_flag,
-     $     vbrzphi_flag,vvbrzphi_flag,div_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,div_flag,surface_flag,
      $     data_flag,harmonic_flag,mode_flag,resp_flag,
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
-     $     debug_flag,timeit
+     $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
@@ -52,16 +52,15 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: permeabindex,gdl
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,rhofac,qfac,singfac,
-     $     r,z,theta,et,ep,ee,surfee,surfei,rpsifac,
+     $     r,z,theta,ee,surfee,surfei,rpsifac,
      $     surf_indev,vsurf_indev,fsurf_indev,surf_indinvev
      $     ,eft,efp
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: surfet,surfep,
-     $     chperr,chpsqr,plas_indev,reluctev,plas_indinvev,permeabsv,
-     $     indrelev,grri,grre,gdr,gdz,gdpsi,gdthe,gdphi
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
+     $     chperr,chpsqr,grri,grre,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
 
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE ::
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: et,ep,
      $     xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,xmp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
@@ -69,10 +68,11 @@ c-----------------------------------------------------------------------
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,chp_mn,kap_mn,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
+     $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
-     $     surf_indinvmats,surf_indinvevmats,
+     $     surf_indinvmats,surf_indinvevmats,surfet,surfep,
      $     amat,bmat,cmat,fmats,gmats,kmats
      $     ,wft,wtraw
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: chpmats,kapmats,
@@ -83,7 +83,7 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: sq
       TYPE(bicube_type) :: psi_in,eqfun,rzphi
-      TYPE(cspline_type) :: u1,u2
+      TYPE(cspline_type) :: u1,u2,u3,u4,u5
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
 
@@ -192,21 +192,21 @@ c-----------------------------------------------------------------------
       END SUBROUTINE ipec_stop
 c-----------------------------------------------------------------------
 c     subprogram 3. ipec_timer.
-!----------------------------------------------------------------------- 
-c     *DESCRIPTION: 
+!-----------------------------------------------------------------------
+c     *DESCRIPTION:
 c        Handles machine-dependent timing statistics.
-c     
+c
 c     *ARGUMENTS:
 c        mode : integer, in
 c            mode = 0 starts timer
 c            mode = 1 writes total time from last start
 c            mode = 2 writes split & total time from start
-c            mode = -2 resets the split without writting 
-c     
+c            mode = -2 resets the split without writting
+c
 c     *OPTIONAL ARGUMENTS:
 c        opunit : integer, in
 c            Output written to this unit (default to terminal)
-c     
+c
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -215,15 +215,15 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: mode
       INTEGER, INTENT(IN), OPTIONAL :: opunit
-    
+
       CHARACTER(10) :: date,time,zone
       INTEGER, DIMENSION(8) :: values
       REAL(4), SAVE :: start,split
       INTEGER :: hrs,mins,secs,msec
-      
+
       ! get time
       CALL DATE_AND_TIME(date,time,zone,values)
-      
+
       IF(mode==0)THEN ! start timer
          start=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
          split=0

@@ -701,6 +701,45 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
     
     return coils
 
+def _coil_to_netcdf(name,machine):
+    """
+    Read the data file for a coil set and make a python object with the relevant data.
+    
+    *Arguments:*
+        - coil : str. Coil set name.
+        - machine : str. Machine name
+    
+    Reads machine_coil.dat
+    
+    """
+    # set up
+    r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84,'rfxmod':0.46}
+    
+    cfile = '{:}_{:}.dat'.format(machine,name)
+    with open(packagedir+'coil/'+cfile,'r') as f:
+        line1 = f.readline()
+        ncoil,s,nsec,nw = map(int,map(float,line1.split()))
+    x,y,z = np.genfromtxt(packagedir+'coil/'+cfile,skip_header=1).T.reshape(3,ncoil,s,nsec)
+    cur = [coil['COIL_CONTROL']['coil_cur({:},{:})'.format(i,j+1)] for j in range(ncoil)]
+    # store info
+    coils[name]={}
+    coils[name]['x'] = x
+    coils[name]['y'] = y
+    coils[name]['z'] = z
+    coils[name]['r']     = np.sqrt(x**2+y**2)
+    coils[name]['phi']   = np.angle(x+1j*y)
+    if machine in r0:
+        coils[name]['theta'] = np.angle(coils[name]['r']-r0[machine]+1j*z)
+    else:
+        print('WARNING: {:} major radius unknown... no 2D plots available.'.format(machine))
+    coils[name]['cur']   = cur
+    coils[name]['ncoil'] = ncoil
+    coils[name]['s']     = s
+    coils[name]['nsec']  = nsec
+    coils[name]['nw']    = nw
+    
+    return coils
+
 
 ############################################################ Magnetic Diagnostics
 

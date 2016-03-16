@@ -34,7 +34,8 @@ first two lines, for instance, contain only their original 10 points
 """
 
 #standard matplotlib modules
-import matplotlib                       # standard ploting library
+import matplotlib                       # standard plotting library
+from matplotlib import pyplot
 from mpl_toolkits.axes_grid1 import make_axes_locatable	#for splitting axes
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.gridspec as gridspec
@@ -71,7 +72,6 @@ matplotlib.rcParams['figure.autolayout']=True # Necessary for tight_layout
 matplotlib.rcParams['legend.frameon']=False
 matplotlib.rcParams['legend.loc']='best'
 
-pyplot = matplotlib.pyplot
 linestyles = [ '-' , '--' , '-.' , ':' , 'None' , ' ' ,'' ]
 show = pyplot.show
 draw = pyplot.draw
@@ -94,12 +94,12 @@ pyplot.close(f)
 
 ########################################### default colormaps
 
-def png_to_gif(files,gif_file,delay=20,clean=False):
+def png_to_gif(files,gif_file,delay=20,loop=0,clean=False):
 	"""gif_file should end in .gif"""
 	gif_file = gif_file.rstrip('.gif')
-	os.system('convert -delay {} -loop 0 {} {}'.format(delay, ' '.join(files), gif_file+'.gif'))
-	os.system('zip -j {zipfile} {files}'.format(zipfile=gif_file+'.zip', files=' '.join(files)))
+	os.system('convert -delay {d} -loop {l} {i} {o}'.format(d=delay,l=loop,i=' '.join(files),o=gif_file+'.gif'))
 	if clean:
+		os.system('zip -j {zipfile} {files}'.format(zipfile=gif_file+'.zip', files=' '.join(files)))
 		os.system('rm {files}'.format(files=' '.join(files)))
 		
 	return

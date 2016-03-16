@@ -22,6 +22,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE ideal_mod
       USE match_mod
+      USE cspline_mod
       USE bicube_mod
       IMPLICIT NONE
 
@@ -47,23 +48,27 @@ c-----------------------------------------------------------------------
       CHARACTER(*), INTENT(IN) :: filename
 
       CHARACTER(128) :: message
-      INTEGER :: data_type,ifix,ios,msol,istep,ising
+      INTEGER :: data_type,ifix,ios,mband,msol,istep,ising,ipert
 
       INTEGER :: i1,i2,i3,i4,i5,i6
       REAL(r8) :: r1,r2,r3,r4,r5
-      REAL(r8), DIMENSION(:), POINTER :: ep
 
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
+      ! obsolete iagnostics.
+c      COMPLEX(r8), DIMENSION(:,:), POINTER :: f1mats,k1mats,
+c     $     k1aats,g1aats
 c-----------------------------------------------------------------------
 c     open data file and read header.
 c-----------------------------------------------------------------------
       CALL bin_open(in_unit,filename,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
-      READ(in_unit)i1,i2,i3,r1,r2,r3,r4,r5
+      READ(in_unit)mband,i2,i3,r1,r2,r3,r4,r5
       READ(in_unit)i4,i5,i6
+      READ(in_unit)kin_flag,con_flag
 
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
+
       rzphi%periodic(2)=.TRUE.
       READ(in_unit)sq%xs,sq%fs,sq%fs1
       READ(in_unit)rzphi%xs,rzphi%ys,
@@ -84,6 +89,12 @@ c-----------------------------------------------------------------------
             mstep=mstep+1
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            ! obsolete diagnostics.
+c            READ(UNIT=in_unit)
+c            READ(UNIT=in_unit)
+c            READ(UNIT=in_unit)
+c            READ(UNIT=in_unit)
          CASE(2)
             mfix=mfix+1
             READ(UNIT=in_unit)
@@ -92,8 +103,16 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE(4)
             msing=msing+1
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
+         CASE(5)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
@@ -114,18 +133,23 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh," mpert = ",mpert
       WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
       ALLOCATE(psifac(0:mstep),rho(0:mstep),q(0:mstep),
-     $     soltype(0:mstep),v(mpert,2,0:mstep),singtype(msing))
+     $     soltype(0:mstep),v(mpert,4,0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
       ALLOCATE(ep(mpert),et(mpert),wt(mpert,mpert))
+      ALLOCATE(ebp(mpert),ebt(mpert),wbt(mpert,mpert))
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       CALL bin_open(in_unit,filename,"OLD","REWIND","none")
       READ(in_unit)mlow,mhigh,nn
       READ(in_unit)i1,i2,i3,r1,r2,r3,r4,r5
       READ(in_unit)i4,i5,i6
+      READ(in_unit)kin_flag,con_flag
       istep=-1
       ifix=0
       ising=0
+      ! obsolete diagnostics.
+c      ALLOCATE(f1mats(0:mstep,mpert**2),k1mats(0:mstep,mpert**2),
+c     $     k1aats(0:mstep,mpert**2),g1aats(0:mstep,mpert**2))
       WRITE(*,*)"Read solutions."
 c-----------------------------------------------------------------------
 c     read data.
@@ -137,9 +161,15 @@ c-----------------------------------------------------------------------
          CASE(1)
             istep=istep+1
             READ(UNIT=in_unit)psifac(istep),q(istep),soltype(istep)%msol
-            ALLOCATE(soltype(istep)%u(mpert,soltype(istep)%msol,2))
+            ALLOCATE(soltype(istep)%u(mpert,soltype(istep)%msol,4))
             u => soltype(istep)%u
-            READ(UNIT=in_unit)soltype(istep)%u
+            READ(UNIT=in_unit)soltype(istep)%u(:,:,1:2)
+            READ(UNIT=in_unit)soltype(istep)%u(:,:,3:4)
+            ! obsolete diagnostics.
+c            READ(UNIT=in_unit)f1mats(istep,:)
+c            READ(UNIT=in_unit)k1mats(istep,:)
+c            READ(UNIT=in_unit)k1aats(istep,:)
+c            READ(UNIT=in_unit)g1aats(istep,:)
          CASE(2)
             ifix=ifix+1
             fixstep(ifix)=istep
@@ -152,6 +182,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
+            READ(UNIT=in_unit)wt0
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix
@@ -177,6 +208,13 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%rho,
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
+         CASE(5)
+            READ(UNIT=in_unit)ep
+            READ(UNIT=in_unit)et
+            READ(UNIT=in_unit)wt
+            READ(UNIT=in_unit)ebp
+            READ(UNIT=in_unit)ebt
+            READ(UNIT=in_unit)wbt
          END SELECT
       ENDDO
 c-----------------------------------------------------------------------
@@ -203,6 +241,25 @@ c-----------------------------------------------------------------------
       ELSE
          res_flag=.FALSE.
       ENDIF
+c-----------------------------------------------------------------------
+c     obsolete diagnostics.
+c----------------------------------------------------------------------- 
+c      CALL bin_open(bin_unit,"fss.bin","UNKNOWN","REWIND","none")
+c      DO ipert=1,mpert**2
+c         DO istep=0,mstep
+c            WRITE(bin_unit)   REAL(psifac(istep),4),
+c     $           REAL(REAL(f1mats(istep,ipert)),4),
+c     $           REAL(AIMAG(f1mats(istep,ipert)),4),
+c     $           REAL(REAL(k1mats(istep,ipert)),4),
+c     $           REAL(AIMAG(k1mats(istep,ipert)),4),
+c     $           REAL(REAL(k1aats(istep,ipert)),4),
+c     $           REAL(AIMAG(k1aats(istep,ipert)),4),
+c     $           REAL(REAL(g1aats(istep,ipert)),4),
+c     $           REAL(AIMAG(g1aats(istep,ipert)),4)
+c         ENDDO
+c         WRITE(bin_unit)
+c      ENDDO
+c      CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -245,8 +302,9 @@ c-----------------------------------------------------------------------
             ENDDO
             fixtype(ifix)%gauss=MATMUL(fixtype(ifix)%gauss,temp)
          ENDDO
-         IF(sing_flag(ifix))
-     $        fixtype(ifix)%gauss(:,fixtype(ifix)%index(1))=0
+         IF(sing_flag(ifix).AND.(.NOT.con_flag)) THEN
+            fixtype(ifix)%gauss(:,fixtype(ifix)%index(1))=0
+         ENDIF
       ENDDO
 c-----------------------------------------------------------------------
 c     concatenate gaussian reduction matrices.
@@ -303,7 +361,7 @@ c-----------------------------------------------------------------------
       DO ifix=0,mfix
          temp1=MATMUL(fixtype(ifix)%transform,uedge)
          kfix=fixstep(ifix+1)
-         DO ieq=1,2
+         DO ieq=1,4
             DO istep=jfix,kfix
                v(:,ieq,istep)
      $              =MATMUL(soltype(istep)%u(:,1:mpert,ieq),temp1)
@@ -354,8 +412,8 @@ c-----------------------------------------------------------------------
      $           REAL(q(istep),4),
      $           REAL(REAL(v(ipert,1,istep)),4),
      $           REAL(AIMAG(v(ipert,1,istep)),4),
-     $           REAL(REAL(b(ipert,istep)),4),
-     $           REAL(AIMAG(b(ipert,istep)),4)
+     $           REAL(REAL(v(ipert,4,istep)),4),
+     $           REAL(AIMAG(v(ipert,4,istep)),4)
          ENDDO
          WRITE(bin_unit)
       ENDDO

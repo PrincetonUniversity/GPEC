@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
-     $     d3_flag,xbst_flag,pmodbrz_flag,rzphibx_flag,
+     $     d3_flag,xbst_flag,pmodbrz_flag,rzphibx_flag,dw_flag,
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
@@ -47,12 +47,12 @@ c-----------------------------------------------------------------------
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
      $     filter_types,filter_modes
       NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz
+     $     chebyshev_flag,nche,nchr,nchz,resp_induct_flag
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
-     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
@@ -101,6 +101,7 @@ c-----------------------------------------------------------------------
       filter_types = '   '
 
       resp_index=0
+      resp_induct_flag=.TRUE.
       sing_spot=5e-4
       reg_flag=.TRUE.
       reg_spot=5e-2
@@ -144,6 +145,7 @@ c-----------------------------------------------------------------------
       arzphifun_flag=.FALSE.
       xbrzphifun_flag=.FALSE.
       bwp_pest_flag=.FALSE.
+      dw_flag = .FALSE.
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.
@@ -463,6 +465,10 @@ c-----------------------------------------------------------------------
       IF (xclebsch_flag) THEN
          CALL ipout_xclebsch(mode,xspmn)
       ENDIF
+      IF (kin_flag .AND. dw_flag) THEN
+         CALL ipout_dw(mode,xspmn)
+         CALL ipout_dw_matrix
+      ENDIF
       IF (pmodb_flag) THEN
          CALL ipout_pmodb(mode,xspmn,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
@@ -631,7 +637,7 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
          CALL iscdftb(mfac,mpert,fxfun,mthsurf,fxmn)
          CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
-         
+
          ! test orthoganality of permeabev eigenvectors
          CALL ipdiag_permeabev_orthogonality
          ! Test coordinate independence of power eigenvectors

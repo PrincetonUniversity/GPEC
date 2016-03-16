@@ -1,12 +1,14 @@
 
-FFLAGS = -I../equil -I../harvest
-F90 = $(FC) $(FFLAGS)
+include ../install/DEFAULTS.inc
+
+FFLAGS = -I../equil -I../harvest -I../pentrc
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
 LIBDIR = \
-	-L${LAPACKHOME} \
+	-L$(MATHHOME) \
 	-L../lib
 
 LIBS = \
@@ -15,8 +17,8 @@ LIBS = \
 	-lequil \
 	-lvac \
 	-lharvest \
-	-llapack \
-	-lblas
+	-lpentrc \
+	$(MATHLIBS)
 
 OBJS = \
 	debug.o \
@@ -46,7 +48,7 @@ ode_output.o: dcon_mod.o sing.o debug.o
 ode.o: ode_output.o
 free.o: ode.o
 resist.o: dcon_mod.o
-dcon.o: bal.o mercier.o ode.o free.o resist.o
+dcon.o: bal.o mercier.o ode.o free.o resist.o ../pentrc/inputs.o ../pentrc/dcon_interface.o ../pentrc/pentrc_interface.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff dcon

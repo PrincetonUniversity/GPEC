@@ -1,7 +1,9 @@
 
-FFLAGS = -I../equil -I../harvest
+include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS)
+FFLAGS = -I../equil -I../harvest -I$(NETCDFHOME)/include
+
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
@@ -10,7 +12,8 @@ F90 = $(FC) $(FFLAGS)
 	$(F90) -c $<
 
 LIBDIR = \
-	-L${LAPACKHOME} \
+	-L$(MATHHOME) \
+	-L$(NETCDFHOME)/lib \
 	-L../lib
 
 LIBS = \
@@ -18,8 +21,8 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lharvest \
-	-llapack \
-	-lblas
+	$(MATHLIBS) \
+	$(NETCDFLIBS)
 
 OBJS = \
 	dcon_interface.o \

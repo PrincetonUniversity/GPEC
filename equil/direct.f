@@ -45,8 +45,9 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ir,iz,itheta,ipsi
       INTEGER, PARAMETER :: nstep=2048
-      REAL(r8) :: f0fac,f0,ffac
+      REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
       REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
+      REAL(r8), DIMENSION(3,3) :: v
 
       TYPE(direct_bfield_type) :: bf
       TYPE(spline_type) :: ff
@@ -124,8 +125,11 @@ c-----------------------------------------------------------------------
          IF(ipsi == mpsi)THEN
             IF(mtheta == 0)mtheta=istep
             CALL bicube_alloc(rzphi,mpsi,mtheta,4)
+            CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
             rzphi%xs=sq%xs
             rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
+            eqfun%xs=sq%xs            
+            eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
          ENDIF
 c-----------------------------------------------------------------------
 c     interpolate to uniform grid.
@@ -179,6 +183,38 @@ c-----------------------------------------------------------------------
       IF(power_flag)rzphi%xpower(1,:)=(/1._r8,0._r8,.5_r8,0._r8/)
       CALL bicube_fit(rzphi,"extrap","periodic")
       CALL spline_dealloc(sq_in)
+c-----------------------------------------------------------------------
+c     evaluate eqfun.
+c-----------------------------------------------------------------------
+      DO ipsi=0,mpsi
+         CALL spline_eval(sq,sq%xs(ipsi),0)
+         q=sq%f(4)
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(itheta/REAL(mtheta,r8)+rzphi%f(2))
+            r=ro+rfac*COS(eta)
+            jacfac=rzphi%f(4)
+            v(1,1)=rzphi%fx(1)/(2*rfac)
+            v(1,2)=rzphi%fx(2)*twopi*rfac
+            v(1,3)=rzphi%fx(3)*r
+            v(2,1)=rzphi%fy(1)/(2*rfac)
+            v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+            v(2,3)=rzphi%fy(3)*r
+            v(3,3)=twopi*r
+            w11=(1+rzphi%fy(2))*twopi**2*rfac*r/jacfac
+            w12=-rzphi%fy(1)*pi*r/(rfac*jacfac)
+            
+            delpsi=SQRT(w11**2+w12**2)
+            eqfun%fs(ipsi,itheta,1)=SQRT(((twopi*psio*delpsi)**2+
+     $           sq%f(1)**2)/(twopi*r)**2)
+            eqfun%fs(ipsi,itheta,2)=(SUM(v(1,:)*v(2,:))+q*v(3,3)*v(1,3))
+     $           /(jacfac*eqfun%fs(ipsi,itheta,1)**2)
+            eqfun%fs(ipsi,itheta,3)=(v(2,3)*v(3,3)+q*v(3,3)*v(3,3))
+     $           /(jacfac*eqfun%fs(ipsi,itheta,1)**2)
+         ENDDO
+      ENDDO
+      CALL bicube_fit(eqfun,"extrap","periodic")
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -334,8 +370,8 @@ c-----------------------------------------------------------------------
       INTEGER :: iopt,istate,itask,itol,jac,mf
       INTEGER, DIMENSION(liw) :: iwork
       INTEGER, PARAMETER :: nstep=2048
-      REAL(r8), PARAMETER :: tol0=1e-6,eps=1e-12
-      REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
+      REAL(r8), PARAMETER :: eps=1e-14
+      REAL(r8) :: tol0,atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork
 c-----------------------------------------------------------------------
@@ -349,6 +385,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     find flux surface.
 c-----------------------------------------------------------------------
+      tol0=etol
       psifac=sq%xs(ipsi)
       psi0=psio*(1-psifac)
       r=ro+SQRT(psifac)*(rs2-ro)

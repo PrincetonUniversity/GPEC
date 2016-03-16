@@ -81,7 +81,7 @@ IPEC_OUTPUT
   Coordinates of IPEC output files.  Choose from hamada, pest, boozer, equal_arc or other
 
 **jsurf_out** = 0
-  Set to 1 for a surface weighted spectrum b_{mn}=\oint\left(\delta\mathbf{B}\cdot\hat{n}ight)\left(	heta,\phiight)e^{-i\left(m	heta-n\phiight)}J\cdot|\nabla\psi|d	heta d\phi (an invariant flux on rational surfaces). Set to 0 for unweighted spectrum b_{mn}=\oint\left(\delta\mathbf{B}\cdot\hat{n}ight)\left(	heta,\phiight)e^{-i\left(m	heta-n\phiight)}d	heta d\phi. 
+  Set to 1 for a surface weighted spectrum b_{mn}=\oint\left(\delta\mathbf{B}\cdot\hat{n}\right)\left(\theta,\phi \right)e^{-i\left(m\theta-n\phi \right)}J\cdot|\nabla\psi|d\theta d\phi (an invariant flux on rational surfaces). Set to 0 for unweighted spectrum b_{mn}=\oint\left(\delta\mathbf{B}\cdot\hat{n} \right)\left(\theta,\phi \right)e^{-i\left(m\theta-n\phi \right)}d\theta d\phi.
 
 **tmag_out** = 1
   0 for ordinary toroidal angle. 1 for magnetic coordinate angle
@@ -99,7 +99,7 @@ IPEC_OUTPUT
   Output the \psi_{N}, resonant \mathbf{B}, singular current, island width and Chirikov parameter at rational surfaces inside the plasma, using vacuum calculations.  Requires coil_flag=True.
 
 **pmodb_flag** = .FALSE.
-  Plasma |\delta B| on flux surfaces.
+  Plasma | \delta B | on flux surfaces.
 
 **xbnormal_flag** = .FALSE.
   Output the normal components of the displacement, covarient perturbed magnetic field, and contravarient perturbed field (area weighted -> can compare between coordinates)  with plasma response included.
