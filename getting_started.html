@@ -59,6 +59,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Getting started</a><ul>
+<li><a class="reference internal" href="#gpec-user-agreement">GPEC User Agreement</a></li>
 <li><a class="reference internal" href="#install">Install</a></li>
 <li><a class="reference internal" href="#run-process">Run Process</a></li>
 <li><a class="reference internal" href="#a-word-on-coordinates">A Word On Coordinates</a></li>
@@ -103,15 +104,34 @@
   <div class="section" id="getting-started">
 <span id="id1"></span><h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
 <p>This section provides the basic structure of the IPEC code and the processes necessary to run it. Although it is not a tutorial, the user should be able to run a sample of the code after reading this chapter.</p>
+<div class="section" id="gpec-user-agreement">
+<span id="installing"></span><h2>GPEC User Agreement<a class="headerlink" href="#gpec-user-agreement" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Date:</th><td class="field-body">2016.03.15</td>
+</tr>
+</tbody>
+</table>
+<p>GPEC development is funded by the US Department of Energy (DoE) through the Princeton Plasma Physics Laboratory (PPPL), and distribution is subject to DoE and PPPL requirements and restrictions.</p>
+<p>The scientific results from the use of GPEC are intended for publication and sharing in the open scientific community.</p>
+<p>In order to acquire access to the code sources and/or executables, the user must agree to the following:</p>
+<ol class="arabic simple">
+<li>The user will not rename, modify or redistribute the code, in whole or in part, to 3rd parties without consent of the authors, although the code may be imbedded unmodified and shared within a larger software project.</li>
+<li>If modifications or improvements are needed, these will be developed in collaboration with the authors, so that they may be redistributed through the GPEC git versioning distributions to the benefit of all GPEC users.</li>
+<li>The users will include the proper code name(s) and appropriate references in published results and presentations. The will must email a draft of any article/report/presentation/etc. using GPEC results to the authors prior to publishing.</li>
+</ol>
+</div>
 <div class="section" id="install">
-<span id="installing"></span><h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
-<p>Public installations should be downloaded and kept up to date from the releases on Github. The releases remain private for now, so only those with access to the repository will be able to install/update the site package.</p>
-<p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory&#8217;s makefile references the make.inc file, also in install. A basic compiling is as simple as executing:</p>
+<h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
+<p>Public installations should be downloaded and kept up to date from the <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">releases on Github</a>. The releases remain private for now, so only those with access to the repository will be able to install/update the site package. Contact <a class="reference external" href="mailto:nlogan&#37;&#52;&#48;pppl&#46;gov">nlogan<span>&#64;</span>pppl<span>&#46;</span>gov</a> for access.</p>
+<p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory&#8217;s makefile references the DEFAULTS.inc file, also in install. A basic compiling is as simple as executing:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">make</span>
 </pre></div>
 </div>
-<p>in the install directory. The exicutables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
-<p>The make.inc sets a number of variables based on conditionals that determine the archetecture on which GPEC is being compiled. If you are installing in a new or recently changed environment these can be over-riden at the individual level. For example, at PPPL this might be done in pentrc using:</p>
+<p>in the install directory. The executables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
+<p>The DEFAULTS.inc sets a number of variables based on conditionals that determine the architecture on which GPEC is being compiled. If you are installing in a new or recently changed environment these can be over-ridden at the individual level. For example, at PPPL this might be done in pentrc using:</p>
 <div class="highlight-python"><div class="highlight"><pre>make FC=lfc
 </pre></div>
 </div>
