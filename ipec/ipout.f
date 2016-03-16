@@ -5170,7 +5170,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,w_id,RESHAPE((/REAL(wveco),
      $               AIMAG(wveco)/),(/lmpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,we_id,wvals) )
-         CALL check( nf90_put_var(mncid,wa_id,avals) )s_id
+         CALL check( nf90_put_var(mncid,wa_id,avals) )
          CALL check( nf90_put_var(mncid,r_id,RESHAPE((/REAL(rveco),
      $               AIMAG(rveco)/),(/lmpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,re_id,rvals) )
@@ -5385,7 +5385,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
       CALL check( nf90_def_dim(fncid,"m",lmpert,  fmdid) )
       CALL check( nf90_def_var(fncid,"m",NF90_INT,fmdid,fmvid) )
-      CALL check( nf90_def_dim(fncid,"psi_n",mstep+1,    fpdid) )
+      CALL check( nf90_def_dim(fncid,"psi_n",mstep,    fpdid) )
       CALL check( nf90_def_var(fncid,"psi_n",nf90_double,fpdid,fpvid) )
       CALL check( nf90_def_dim(fncid,"theta",mthsurf+1,  ftdid) )
       CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
@@ -5407,7 +5407,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(cncid,"l",nf90_double,
      $                         (/crdid,czdid/),clvid) )
 
-      # Add common global attributes
+      ! Add common global attributes
       fileids = (/mncid,fncid,cncid/)
       DO i=1,3
          id = fileids(i)
@@ -5434,7 +5434,7 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
       CALL check( nf90_put_var(fncid,fivid,(/0,1/)) )
       CALL check( nf90_put_var(fncid,fmvid,lmfac) )
-      CALL check( nf90_put_var(fncid,fpvid,psifac) )
+      CALL check( nf90_put_var(fncid,fpvid,psifac(1:)) )
       CALL check( nf90_put_var(fncid,ftvid,theta) )
 
       IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
