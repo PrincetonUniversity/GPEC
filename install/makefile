@@ -12,7 +12,7 @@ all: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
 
 harvest:
 	cd ../; git submodule init; git submodule update
-	cd ../harvest; export GACODE_ROOT=;make CC=$(CC) -f Makefile libharvest.a
+	cd ../harvest; make FC=$(FC) CC=$(CC) GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/
 
@@ -84,6 +84,7 @@ endif
 # cleaning
 
 clean:
+	cd ../harvest; make -f makefile clean
 	cd ../xdraw;  make -f makefile clean
 	cd ../lsode;  make -f makefile clean
 	cd ../equil;  make -f makefile clean
