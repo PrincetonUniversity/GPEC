@@ -144,7 +144,7 @@ should be done with a little care to look right. Lets look at b_z for example,
 >>> xtks = ax.set_xticks([1,1.7,2.4])
 >>> xtxt = ax.set_xlabel('R (m)')
 >>> ytxt = ax.set_ylabel('z (m)')
->>> f2.savefig('examples/example_pbrzphi.png')
+>>> f.savefig('examples/example_pbrzphi.png')
 
 .. image:: examples/example_pbrzphi.png
    :width: 600px
