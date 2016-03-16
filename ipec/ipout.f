@@ -2466,7 +2466,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
       REAL(r8), DIMENSION(cmpsi) :: qs
       REAL(r8), DIMENSION(cmpsi,mpert) :: xmns,ymns
-      COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vmn
+      COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vnmn,vmn
       COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: pmn
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
@@ -2483,9 +2483,9 @@ c-----------------------------------------------------------------------
       DO ipsi=1,cmpsi
          CALL spline_eval(sq,psi(ipsi),0)
          qs(ipsi)=sq%f(4)
+         CALL field_bs_psi(psi(ipsi),vcmn,0)
 
          IF (bwp_pest_flag) THEN
-            CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
                IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
                   pmn(ipsi,cmlow-lmlow+i)=vcmn(i)
@@ -2499,29 +2499,21 @@ c-----------------------------------------------------------------------
          ENDIF
          
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-            CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
                   vmn(ipsi,cmlow-mlow+i)=vcmn(i)
                ENDIF
             ENDDO
+            vnmn(ipsi,:)=vmn(ipsi,:)
             vwpmn=0
             vwpmn=vmn(ipsi,:)
             CALL ipeq_bcoords(psi(ipsi),vwpmn,mfac,mpert,
      $           rout,bpout,bout,rcout,tout,1)  
             vmn(ipsi,:)=vwpmn         
-         ELSE
-            CALL field_bs_psi(psi(ipsi),vcmn,2)
-            DO i=1,cmpert
-               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  vmn(ipsi,cmlow-mlow+i)=vcmn(i)
-               ENDIF
-            ENDDO
          ENDIF
       ENDDO
 
       DEALLOCATE(vcmn)
-
       
       ! append to netcdf file once this is (mstep,mpert)
 c      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
@@ -2559,13 +2551,14 @@ c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $     "mpsi =",cmpsi,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
-      WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
-     $     "real(bno)","imag(bno)"
+      WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
+     $     "real(bno)","imag(bno)","real(bwp)","imag(bwp)"
 
       DO ipsi=1,cmpsi
          DO ipert=1,mpert
-            WRITE(out_unit,'(2(es17.8e3),1x,I4,2(es17.8e3))')
+            WRITE(out_unit,'(2(es17.8e3),1x,I4,4(es17.8e3))')
      $           psi(ipsi),qs(ipsi),mfac(ipert),
+     $           REAL(vnmn(ipsi,ipert)),AIMAG(vnmn(ipsi,ipert)), 
      $           REAL(vmn(ipsi,ipert)),AIMAG(vmn(ipsi,ipert)) 
          ENDDO
       ENDDO
@@ -2582,7 +2575,7 @@ c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
      $        "mpsi =",cmpsi,"mpert =",lmpert,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
-     $        "real(vb)","imag(vb)"
+     $        "real(bwp)","imag(bwp)"
          
          DO ipsi=1,cmpsi
             DO ipert=1,lmpert
