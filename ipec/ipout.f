@@ -1212,7 +1212,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(mncid,xm_id,RESHAPE((/REAL(templ),
      $          AIMAG(templ)/),(/lmpert,2/))) )
       templ = MATMUL(coordmat,xoutmn)
-      CALL check( nf90_put_var(mncid,bm_id,RESHAPE((/REAL(templ),
+      CALL check( nf90_put_var(mncid,xxm_id,RESHAPE((/REAL(templ),
      $          AIMAG(templ)/),(/lmpert,2/))) )
       CALL check( nf90_close(mncid) )
 
@@ -2336,7 +2336,7 @@ c         curvmout(istep,:)  =curv_mn
       IF(debug_flag) PRINT *,"  Inquiring about dimensions"
       CALL check( nf90_inq_dimid(fncid,"i",i_id) )
       CALL check( nf90_inq_dimid(fncid,"m",m_id) )
-      CALL check( nf90_inq_dimid(fncid,"psi_N",p_id) )
+      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
       CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
       IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(fncid))
@@ -2368,13 +2368,11 @@ c         curvmout(istep,:)  =curv_mn
       CALL check( nf90_put_att(fncid,bme_id,"long_name",
      $            "Eulerian Perturbed Field") )
       CALL check( nf90_put_att(fncid,bme_id,"units","Tesla") )
-      CALL check( nf90_put_att(fncid,bme_id,"Jacobian",jac_out) )
       CALL check( nf90_def_var(fncid, "b_m-lag", nf90_double,
      $            (/p_id,m_id,i_id/),bml_id) )
       CALL check( nf90_put_att(fncid,bml_id,"long_name",
      $            "Lagrangian Perturbed Field") )
       CALL check( nf90_put_att(fncid,bml_id,"units","Tesla") )
-      CALL check( nf90_put_att(fncid,bml_id,"Jacobian",jac_out) )
       CALL check( nf90_def_var(fncid, "Bdivxi_perp", nf90_double,
      $            (/p_id,t_id,i_id/),x_id) )
       CALL check( nf90_put_att(fncid,x_id,"long_name",
@@ -2383,7 +2381,6 @@ c         curvmout(istep,:)  =curv_mn
      $            (/p_id,m_id,i_id/),xm_id) )
       CALL check( nf90_put_att(fncid,xm_id,"long_name",
      $            "Divergence of the normal displacement") )
-      CALL check( nf90_put_att(fncid,xm_id,"Jacobian",jac_out) )
       CALL check( nf90_def_var(fncid, "Bkappaxi_perp", nf90_double,
      $            (/p_id,t_id,i_id/),k_id) )
       CALL check( nf90_put_att(fncid,k_id,"long_name",
@@ -2392,7 +2389,6 @@ c         curvmout(istep,:)  =curv_mn
      $            (/p_id,m_id,i_id/),km_id) )
       CALL check( nf90_put_att(fncid,km_id,"long_name",
      $            "Divergence of the normal displacement") )
-      CALL check( nf90_put_att(fncid,km_id,"Jacobian",jac_out) )
       CALL check( nf90_def_var(fncid, "B", nf90_double,
      $            (/p_id,t_id/),b_id) )
       CALL check( nf90_put_att(fncid,b_id,"long_name",
@@ -2897,7 +2893,7 @@ c         bwpmns(istep,:)=bwp_mn
       IF(debug_flag) PRINT *,"  Inquiring about dimensions"
       CALL check( nf90_inq_dimid(fncid,"i",i_id) )
       CALL check( nf90_inq_dimid(fncid,"m",m_id) )
-      CALL check( nf90_inq_dimid(fncid,"psi_N",p_id) )
+      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
       CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
       IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(fncid))
@@ -2924,7 +2920,6 @@ c         bwpmns(istep,:)=bwp_mn
       CALL check( nf90_put_att(fncid,bm_id,"long_name",
      $            "Perturbed Field Normal to the Flux Surface") )
       CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
-      CALL check( nf90_put_att(fncid,bm_id,"Jacobian",jac_out) )
       CALL check( nf90_def_var(fncid, "xi_n", nf90_double,
      $            (/p_id,t_id,i_id/),x_id) )
       CALL check( nf90_put_att(fncid,x_id,"long_name",
@@ -2935,7 +2930,6 @@ c         bwpmns(istep,:)=bwp_mn
       CALL check( nf90_put_att(fncid,xm_id,"long_name",
      $            "Displacement Normal to the Flux Surface") )
       CALL check( nf90_put_att(fncid,xm_id,"units","m") )
-      CALL check( nf90_put_att(fncid,bm_id,"Jacobian",jac_out) )
       CALL check( nf90_def_var(fncid, "R_n", nf90_double,
      $            (/p_id,t_id/),rv_id) )
       CALL check( nf90_put_att(fncid,rv_id,"long_name",
@@ -3104,7 +3098,7 @@ c      CALL check( nf90_open(fncfile,nf90_write,fncid) )
 c      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
 c      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
 c      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
-c      CALL check( nf90_inq_dimid(fncid,"psi_N",p_id) )
+c      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
 c      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
 c      IF(debug_flag) PRINT *,"  Defining variables"
 c      CALL check( nf90_redef(fncid))
@@ -3115,7 +3109,6 @@ c     $            (/p_id,m_id,i_id/),bm_id) )
 c      CALL check( nf90_put_att(fncid,bm_id,"long_name",
 c     $            "Vacuum Field Normal to the Flux Surface") )
 c      CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
-c      CALL check( nf90_put_att(fncid,bm_id,"Jacobian",jac_out) )
 c      CALL check( nf90_enddef(fncid) )
 c      IF(debug_flag) PRINT *,"  Writting variables"
 c      CALL check( nf90_put_var(fncid,bm_id,qs) )
@@ -4594,7 +4587,7 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *,"  Inquiring about dimensions"
       CALL check( nf90_inq_dimid(fncid,"i",i_id) )
       CALL check( nf90_inq_dimid(fncid,"m",m_id) )
-      CALL check( nf90_inq_dimid(fncid,"psi_N",p_id) )
+      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
       IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(fncid))
       CALL check( nf90_def_var(fncid, "derxi_m_contrapsi", nf90_double,
@@ -4612,7 +4605,6 @@ c-----------------------------------------------------------------------
       ids = (/xp_id,dp_id,xa_id/)
       DO i=1,3
          CALL check( nf90_put_att(fncid,ids(i),"units","m") )
-         CALL check( nf90_put_att(fncid,ids(i),"Jacobian",jac_type) )
       ENDDO
       CALL check( nf90_enddef(fncid) )
       IF(debug_flag) PRINT *,"  Writting variables"
@@ -4666,7 +4658,7 @@ c-----------------------------------------------------------------------
      $   we_id,re_id,pe_id,se_id,
      $   w_id,r_id,p_id,s_id, wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,ra_id,rl_id,
-     $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,
+     $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,sm_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(mpert) :: singfac
@@ -4973,7 +4965,6 @@ c-----------------------------------------------------------------------
      $    "Total displacement energy eigenmode index") )
          CALL check( nf90_def_var(mncid,"X_EDT",nf90_double,
      $               (/mdid,xdid,idid/),x_id) )
-         CALL check( nf90_put_att(mncid,x_id,"Jacobian",jac_type) )
          CALL check( nf90_put_att(mncid,x_id,"long_name",
      $    "Total displacement energy eigendecomposition") )
          CALL check( nf90_def_var(mncid,"X_EVT",nf90_double,
@@ -4990,7 +4981,6 @@ c-----------------------------------------------------------------------
      $               (/mdid,wdid,idid/),w_id) )
          CALL check( nf90_put_att(mncid,w_id,"long_name",
      $    "Energy-norm external flux energy eigendecomposition") )
-         CALL check( nf90_put_att(mncid,w_id,"Jacobian",jac_out) )
          CALL check( nf90_def_var(mncid,"W_EVX",nf90_double,
      $               (/wdid/),we_id) )
          CALL check( nf90_put_att(mncid,we_id,"units","J/(Wb/m)^2") )
@@ -5021,7 +5011,6 @@ c-----------------------------------------------------------------------
      $               (/mdid,rdid,idid/),r_id) )
          CALL check( nf90_put_att(mncid,r_id,"long_name",
      $    "Energy-norm external flux reluctance eigendecomposition") )
-         CALL check( nf90_put_att(mncid,r_id,"Jacobian",jac_out) )
          CALL check( nf90_def_var(mncid,"R_EVX",nf90_double,
      $                         (/rdid/),re_id) )
          CALL check( nf90_put_att(mncid,re_id,"long_name",
@@ -5052,7 +5041,6 @@ c-----------------------------------------------------------------------
      $               (/mdid,pdid,idid/),p_id) )
          CALL check( nf90_put_att(mncid,p_id,"long_name",
      $    "Energy-norm external flux permeability eigendecomposition") )
-         CALL check( nf90_put_att(mncid,p_id,"Jacobian",jac_out) )
          CALL check( nf90_def_var(mncid,"P_EVX",nf90_double,
      $               (/pdid/),pe_id) )
          CALL check( nf90_put_att(mncid,pe_id,"long_name",
@@ -5089,6 +5077,11 @@ c-----------------------------------------------------------------------
      $  "rmalized external flux decomposed in permeability eigenmodes"))
 
          IF(singcoup_set)THEN
+            CALL check( nf90_def_var(mncid,"C",nf90_double,
+     $                  (/mdid,sdid,idid/),sm_id) )
+            CALL check( nf90_put_att(mncid,sm_id,"long_name",
+     $       "Energy normalized external flux singular-coupling "//
+     $       "matrix") )
             CALL check( nf90_def_var(mncid,"C_EDX",nf90_double,
      $                  (/mdid,sdid,idid/),s_id) )
             CALL check( nf90_put_att(mncid,s_id,"long_name",
@@ -5152,10 +5145,12 @@ c-----------------------------------------------------------------------
      $               (/tdid,rdid,idid/),rf_id) )
             CALL check( nf90_put_att(mncid,rf_id,"long_name",
      $         "Energy-norm external flux reluctance eigenmodes") )
-            CALL check( nf90_def_var(mncid,"C_EDX_FUN",nf90_double,
-     $               (/tdid,sdid,idid/),sf_id) )
-            CALL check( nf90_put_att(mncid,sf_id,"long_name",
-     $         "Energy-norm external flux resonant-coupling modes") )
+            IF(singcoup_set)THEN
+               CALL check( nf90_def_var(mncid,"C_EDX_FUN",nf90_double,
+     $                  (/tdid,sdid,idid/),sf_id) )
+               CALL check( nf90_put_att(mncid,sf_id,"long_name",
+     $            "Energy-norm external flux resonant-coupling modes") )
+            ENDIF
          ENDIF
          ! End definitions
          CALL check( nf90_enddef(mncid) )
@@ -5175,7 +5170,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,w_id,RESHAPE((/REAL(wveco),
      $               AIMAG(wveco)/),(/lmpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,we_id,wvals) )
-         CALL check( nf90_put_var(mncid,wa_id,avals) )
+         CALL check( nf90_put_var(mncid,wa_id,avals) )s_id
          CALL check( nf90_put_var(mncid,r_id,RESHAPE((/REAL(rveco),
      $               AIMAG(rveco)/),(/lmpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,re_id,rvals) )
@@ -5183,6 +5178,8 @@ c-----------------------------------------------------------------------
      $               AIMAG(pveco)/),(/lmpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,pe_id,pvals) )
          IF(singcoup_set) THEN
+            CALL check( nf90_put_var(mncid,sm_id,RESHAPE( (/REAL(
+     $       singcoup1mat),AIMAG(singcoup1mat)/),(/lmpert,msing,2/))))
             CALL check( nf90_put_var(mncid,s_id,RESHAPE(
      $       (/REAL(sveco),AIMAG(sveco)/),(/lmpert,msing,2/))))
             CALL check( nf90_put_var(mncid,se_id,svals) )
@@ -5341,7 +5338,7 @@ c-----------------------------------------------------------------------
       INTEGER:: i,midid,mmdid,medid,mvdid,msdid,mtdid,
      $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
      $   mivid,mmvid,mevid,mvvid,msvid,mtvid,fivid,fmvid,fpvid,ftvid,
-     $   civid,crvid,czvid
+     $   civid,crvid,czvid,id,fileids(3)
       INTEGER, DIMENSION(mpert) :: mmodes
 c-----------------------------------------------------------------------
 c     set variables
@@ -5377,12 +5374,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"mode_SC",nf90_int,msdid,msvid))
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
       CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
-      CALL check( nf90_put_att(mncid,nf90_global,"shot",INT(shotnum)) )
-      CALL check( nf90_put_att(mncid,nf90_global,"time",INT(shottime)) )
-      CALL check( nf90_put_att(mncid,nf90_global,"machine",machine) )
-      CALL check( nf90_put_att(mncid,nf90_global,"n",nn) )
-      CALL check( nf90_put_att(mncid,nf90_global,"jac_type",jac_type))
-      CALL check( nf90_put_att(mncid,nf90_global,"version",version))
+      CALL check( nf90_put_att(mncid,nf90_global,"Jacobian",jac_out))
+      CALL check( nf90_put_att(mncid,nf90_global,"q_lim",qlim))
+      CALL check( nf90_put_att(mncid,nf90_global,"psi_n_lim",psilim))
 
       IF(debug_flag) PRINT *," - Defining flux netcdf globals"
       CALL check( nf90_put_att(fncid,nf90_global,"title",
@@ -5391,16 +5385,13 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
       CALL check( nf90_def_dim(fncid,"m",lmpert,  fmdid) )
       CALL check( nf90_def_var(fncid,"m",NF90_INT,fmdid,fmvid) )
-      CALL check( nf90_def_dim(fncid,"psi_N",mstep+1,    fpdid) )
-      CALL check( nf90_def_var(fncid,"psi_N",nf90_double,fpdid,fpvid) )
+      CALL check( nf90_def_dim(fncid,"psi_n",mstep+1,    fpdid) )
+      CALL check( nf90_def_var(fncid,"psi_n",nf90_double,fpdid,fpvid) )
       CALL check( nf90_def_dim(fncid,"theta",mthsurf+1,  ftdid) )
       CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
-      CALL check( nf90_put_att(fncid,nf90_global,"shot",INT(shotnum)) )
-      CALL check( nf90_put_att(fncid,nf90_global,"time",INT(shottime)) )
-      CALL check( nf90_put_att(fncid,nf90_global,"machine",machine) )
-      CALL check( nf90_put_att(fncid,nf90_global,"n",nn) )
-      CALL check( nf90_put_att(fncid,nf90_global,"jac_type",jac_type))
-      CALL check( nf90_put_att(fncid,nf90_global,"version",version))
+      CALL check( nf90_put_att(fncid,nf90_global,"Jacobian",jac_type))
+      CALL check( nf90_put_att(fncid,nf90_global,"q_lim",qlim))
+      CALL check( nf90_put_att(fncid,nf90_global,"psi_n_lim",psilim))
 
       IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
       CALL check( nf90_put_att(cncid,nf90_global,"title",
@@ -5415,11 +5406,17 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(cncid,czvid,"units","m") )
       CALL check( nf90_def_var(cncid,"l",nf90_double,
      $                         (/crdid,czdid/),clvid) )
-      CALL check( nf90_put_att(cncid,nf90_global,"shot",INT(shotnum)) )
-      CALL check( nf90_put_att(cncid,nf90_global,"time",INT(shottime)) )
-      CALL check( nf90_put_att(cncid,nf90_global,"machine",machine) )
-      CALL check( nf90_put_att(cncid,nf90_global,"n",nn) )
-      CALL check( nf90_put_att(cncid,nf90_global,"version",version))
+
+      # Add common global attributes
+      fileids = (/mncid,fncid,cncid/)
+      DO i=1,3
+         id = fileids(i)
+         CALL check( nf90_put_att(id,nf90_global,"shot",INT(shotnum)) )
+         CALL check( nf90_put_att(id,nf90_global,"time",INT(shottime)) )
+         CALL check( nf90_put_att(id,nf90_global,"machine",machine) )
+         CALL check( nf90_put_att(id,nf90_global,"n",nn) )
+         CALL check( nf90_put_att(id,nf90_global,"version",version))
+      ENDDO
 
       CALL check( nf90_enddef(mncid) )
       CALL check( nf90_enddef(fncid) )
