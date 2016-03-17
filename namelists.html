@@ -106,96 +106,102 @@
 <div class="section" id="the-equil-namelist">
 <h2>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Permalink to this headline">¶</a></h2>
 <p>This namelist specifies the equilibrium inputs and how equilibrium quantities are splined for use in the various executables.</p>
-<pre class="literal-block">
-&amp;equil_control
-        eq_type=&quot;efit&quot;
-        eq_filename = &quot;/p/gpec/users/jpark/data/equilibria/efit/142301_C94/EQDSK.OUT.CHEASE.NSTX_142301_C94_7800_7950.06&quot;
-        eq_filename=&quot;/p/gpec/users/jpark/data/equilibria/efit/g144182.03750.qo105_d3d&quot;
-        eq_filename=&quot;/u/jpark/data/equilibria/efit/g126006.03600_d3d_osborne&quot;
-        jac_type=&quot;hamada&quot;
-        power_bp=0
-        power_b=0
-        power_r=0
+<div class="highlight-python"><div class="highlight"><pre>&amp;equil_control
+    eq_type=&quot;efit&quot;       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
+    eq_filename = &quot;../docs/examples/DIIID_example/g147131.02300_DIIID_KEFIT&quot; ! Path to input file
 
-        grid_type=&quot;ldp&quot;
-        psilow=1e-2
-        psihigh=0.99
-        mpsi=64
-        mtheta=256
-        newq0=0
-        input_only=f
-        etol=1e-7               ! controls tolerance in equilibrium field integrations
+    jac_type=&quot;hamada&quot;    ! Working coordinate system for all DCON and GPEC calculations. Overrides individual powers. Accepts hamada, pest, boozer, equal_arc
+    power_bp=0           ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+    power_b=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+    power_r=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+
+    grid_type=&quot;ldp&quot;      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp or original. ldp packs points near the core and edge.
+    psilow=1e-2          ! Minimum value of psi, normalized from 0 to 1
+    psihigh=0.99         ! Maximum value of psi, normalized from 0 to 1
+    mpsi=64              ! Number of radial grid intervals for equilibrium quantities
+    mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
+    newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
+    etol=1e-7            ! Tolerance in equilibrium field integrations
+
+    input_only=f         ! Generate information about the input and then quit with no further calculation
 /
 &amp;equil_output
-        gse_flag=t
-        out_eq_1d=f
-        bin_eq_1d=f
-        out_eq_2d=f
-        bin_eq_2d=t
-        out_2d=f
-        bin_2d=t
-        dump_flag=f
+    gse_flag=f           ! Produces diagnostic output for accuracy of solution to Grad-Shafranov equation
+    out_eq_1d=f          ! Ascii output of 1D equilibrium file data
+    bin_eq_1d=f          ! Binary output of 1D equilibrium file data
+    out_eq_2d=f          ! Ascii output of 2D equilibrium file data
+    bin_eq_2d=f          ! Binary output of 2D equilibrium file data
+    out_2d=f             ! Ascii output of processed 2D data
+    bin_2d=f             ! Binary output of processed 2D data
+    dump_flag=f          ! Binary dump of basic equilibrium data and 2D rzphi spline
 /
-
-</pre>
+</pre></div>
+</div>
 </div>
 <div class="section" id="the-dcon-namelist">
 <h2>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Permalink to this headline">¶</a></h2>
 <p>This namelist controls the behavior of the DCON code and determines its outputs.</p>
-<pre class="literal-block">
-&amp;dcon_control
-        bal_flag=t
-        mat_flag=t
-        ode_flag=t
-        vac_flag=t
+<div class="highlight-python"><div class="highlight"><pre>&amp;dcon_control
+    bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
+    mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
+    ode_flag=t           ! Integrate ODE&#39;s for determining stability of internal long-wavelength mode (must be true for GPEC)
+    vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
 
-        sas_flag=t                      ! q limit determined as q_ir +dmlim where q_ir is the equil outermost rational
-        dmlim=0.2                       ! See sas_flag
-        qhigh=1e3                       ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
-        sing_start=0            ! Start integration at the sing_start'th rational from the axis (psilow)
+    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    dmlim=0.2            ! See sas_flag
+    qhigh=1e3            ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
+    sing_start=0         ! Start integration at the sing_start&#39;th rational from the axis (psilow)
 
-        nn=1                            ! toroidal mode number
-        delta_mlow=12           ! Expands lower bound of Fourier harmonics
-        delta_mhigh=12          ! Expands upper bound of  Fourier harmonics
-        delta_mband=0           ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
-        mthvac=512                      ! Number of points used in splines over poloidal angle
+    nn=1                 ! Toroidal mode number
+    delta_mlow=12        ! Expands lower bound of Fourier harmonics
+    delta_mhigh=12       ! Expands upper bound of  Fourier harmonics
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m&#39;
+    mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
-        kin_flag = t            ! kinetic EL equation (default: false)
-        con_flag = t            ! continue integration through layers (default: false)
-        kinfac1 = 1.0           ! scale factor for energy contribution (default : 1.0)
-        kinfac2 = 1.0           ! scale factor for torque contribution (default : 1.0)
-        kingridtype = 0     ! regular grid method (default : 0)
-        passing_flag = t    ! includes passing particle effects (default: false)
-        ktanh_flag = t      ! ignore kinetic effects in the core smoothly (default: false)
-        ktc = 0.1                   ! parameter activiated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
-        ktw = 50.0                  ! parameter activiated by ktanh_flag: width of hypertangential functions (default: 50.0)
-        electron_flag = f   ! calculates electron contributions
-        thmax0=1
-        tol_nr=1e-5                     ! Relative tolerance of dynamic integration steps away from rationals
-        tol_r=1e-6                      ! Relative tolerance of dynamic integration steps near rationals
-        crossover=1e-2          ! Fractional distance from rational q at which tolerance is switched to tol_r
-        singfac_min=1e-4        ! Fractional distance from rational q at which ideal jump condition is enforced
-        ucrit=1e4                       ! Maximum fraction of solutions allowed before renormalized
+    kin_flag = t         ! Kinetic EL equation (default: false)
+    con_flag = t         ! Continue integration through layers (default: false)
+    kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
+    kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
+    kingridtype = 0      ! Regular grid method (default : 0)
+    passing_flag = t     ! Includes passing particle effects (default: false)
+    ktanh_flag = t       ! Ignore kinetic effects in the core smoothly (default: false)
+    ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
+    ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
+    electron_flag = f    ! Calculates electron contributions
+
+    tol_nr=1e-5          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-6           ! Relative tolerance of dynamic integration steps near rationals
+    crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
+    singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
+    ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
 /
 &amp;dcon_output
-        crit_break=t
-        ahb_flag=f              ! needs to be set false
-        msol_ahb=1
-        mthsurf0=1
-        bin_euler=t
-        euler_stride=1
-/
+    crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
-</pre>
+    ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
+    msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
+    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
+
+    bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    euler_stride=1       ! Output only every euler_stride&#39;th psi step to binary file
+
+    out_bal1             ! Ascii output for bal_flag poloidal functions
+    bin_bal1             ! Binary output for bal_flag poloidal functions
+    out_bal2             ! Ascii output for bal_flag functions
+    bin_bal2             ! Binary output for bal_flag functions
+/
+</pre></div>
+</div>
 </div>
 <div class="section" id="the-ipec-namelist">
 <h2>The IPEC Namelist<a class="headerlink" href="#the-ipec-namelist" title="Permalink to this headline">¶</a></h2>
 <p>This namelist sets the inputs, controls the behavior, and determines the outputs of the IPEC code.</p>
 <div class="highlight-python"><div class="highlight"><pre>&amp;IPEC_INPUT
-   dcon_dir   = &#39;&#39;             ! Path to DCON outputs. Individual file paths are appended to this
-   idconfile  = &#39;euler.bin&#39;    ! Eigenfunctions output by DCON run
-   ieqfile    = &#39;psi_in.bin&#39;   ! Flux surfaces output by DCON run
-   ivacuumfile= &#39;vacuum.bin&#39;   ! Vacuum info output by DCON run
+   dcon_dir   = &#39;&#39;                   ! Path to DCON outputs. Individual file paths are appended to this
+   idconfile  = &#39;euler.bin&#39;          ! Eigenfunctions output by DCON run
+   ieqfile    = &#39;psi_in.bin&#39;         ! Flux surfaces output by DCON run
+   ivacuumfile= &#39;vacuum.bin&#39;         ! Vacuum info output by DCON run
    rdconfile  = &#39;gal_solution.bin&#39;   ! Galkin functions output by resistive DCON run
 
    jac_in=&quot;pest&quot;            ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada

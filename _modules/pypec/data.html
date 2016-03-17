@@ -226,16 +226,38 @@
 
 <span class="sd">There we go. That looks publication ready!</span>
 
-<span class="sd">Note, one of the many cool additions to matplotlib in the pypec package is the ability to</span>
-<span class="sd">write line plots to tables. Lets look at a 1D mode spectrum plot for example,</span>
+<span class="sd">Another common plot of GPEC outputs is the (psi,m) spectrogram plot. Lets quickly make a</span>
+<span class="sd">nice one,</span>
 
 <span class="sd">&gt;&gt;&gt; prof = data.open_dataset(&#39;examples/DIIID_example/ipec_profile_output_n1.nc&#39;)</span>
+<span class="sd">&gt;&gt;&gt; f,ax = plt.subplots()</span>
+<span class="sd">&gt;&gt;&gt; extent = [prof[&#39;m&#39;].min(),prof[&#39;m&#39;].max(),prof[&#39;psi_n&#39;].min(),prof[&#39;psi_n&#39;].max()]</span>
+<span class="sd">&gt;&gt;&gt; im = ax.imshow(np.abs(prof[&#39;xi_m_contrapsi&#39;]).T,origin=&#39;lower&#39;,cmap=&#39;viridis&#39;,</span>
+<span class="sd">...                interpolation=&#39;nearest&#39;,aspect=&#39;auto&#39;,extent=extent)</span>
+<span class="sd">&gt;&gt;&gt; cb = f.colorbar(im)</span>
+<span class="sd">&gt;&gt;&gt; cb.set_label(r&#39;$\\xi^\psi_m$&#39;)</span>
+<span class="sd">&gt;&gt;&gt; lim = ax.set_xlim(-20,20)</span>
+<span class="sd">&gt;&gt;&gt; xtxt = ax.set_xlabel(&#39;m&#39;)</span>
+<span class="sd">&gt;&gt;&gt; ytxt = ax.set_ylabel(r&#39;$\psi$&#39;)</span>
+
+<span class="sd">&gt;&gt;&gt; f.savefig(&#39;examples/example_xispectrogram.png&#39;)</span>
+
+<span class="sd">.. image:: examples/example_xispectrogram.png</span>
+<span class="sd">   :width: 600px</span>
+
+<span class="sd">Note that the choice of interpolation resulted in discrete bands in m, which is true</span>
+<span class="sd">to the the discrete fourier decomposition used in the codes and provides a more intuitive</span>
+<span class="sd">connection between what the user sees and what the code is calculating.</span>
+
+<span class="sd">One of the many cool additions to matplotlib in the pypec package is the ability to</span>
+<span class="sd">write line plots to tables. Lets look at a 1D mode spectrum plot for example,</span>
+
 <span class="sd">&gt;&gt;&gt; f,ax = plt.subplots()</span>
 <span class="sd">&gt;&gt;&gt; for m in range(1,9):</span>
 <span class="sd">...     lines = ax.plot(prof[&#39;psi_n&#39;],np.abs(prof[&#39;xi_m_contrapsi&#39;].sel(m=m)),label=r&#39;m={:}&#39;.format(m))</span>
 <span class="sd">&gt;&gt;&gt; mappable = plt.set_linearray(ax.lines,cmap=&#39;viridis&#39;)</span>
-<span class="sd">&gt;&gt;&gt; xtxt = ax.set_ylabel(r&#39;$\\xi^\psi_m$&#39;)</span>
-<span class="sd">&gt;&gt;&gt; ytxt = ax.set_xlabel(r&#39;$\psi$&#39;)</span>
+<span class="sd">&gt;&gt;&gt; ytxt = ax.set_ylabel(r&#39;$\\xi^\psi_m$&#39;)</span>
+<span class="sd">&gt;&gt;&gt; xtxt = ax.set_xlabel(r&#39;$\psi$&#39;)</span>
 <span class="sd">&gt;&gt;&gt; leg = ax.legend(ncol=2)</span>
 <span class="sd">&gt;&gt;&gt; f.savefig(&#39;examples/example_xim.png&#39;)</span>
 <span class="sd">&gt;&gt;&gt; f.printlines(&#39;examples/example_xim.dat&#39;,squeeze=True)</span>
@@ -399,7 +421,7 @@
                      <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">assume_sorted</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="n">bounds_error</span><span class="p">,</span>
                      <span class="n">fill_value</span><span class="o">=</span><span class="n">fill_value</span><span class="p">,</span> <span class="n">assume_sorted</span><span class="o">=</span><span class="n">assume_sorted</span><span class="p">)</span></div>
-<span class="n">interp1d_unbound</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">interp1d</span><span class="o">.</span><span class="n">__doc__</span>
+<span class="n">interp1d_unbound</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">interp1d</span><span class="o">.</span><span class="n">__doc__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;Examples&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># Examples fail doctest</span>
 
 <span class="c">######################################################## Helper functions</span>
 
@@ -1804,22 +1826,33 @@
 <span class="sd">    &gt;&gt;&gt; ds = add_control_geometry(ds)</span>
 <span class="sd">    </span>
 <span class="sd">    it is easy to make 3D surface plots using mayavi,</span>
-<span class="sd">    &gt;&gt;&gt; mesh = mmlab.mesh(ds[&#39;X&#39;].values,ds[&#39;Y&#39;].values,ds[&#39;Z&#39;].values,scalars=np.real(ds[&#39;b_n&#39;]*ds[&#39;expn&#39;]))</span>
+<span class="sd">    &gt;&gt;&gt; fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))</span>
+<span class="sd">    &gt;&gt;&gt; mesh = mmlab.mesh(ds[&#39;X&#39;].values,ds[&#39;Y&#39;].values,ds[&#39;Z&#39;].values,</span>
+<span class="sd">    ...                   scalars=np.real(ds[&#39;b_n&#39;]*ds[&#39;expn&#39;]),colormap=&#39;RdBu&#39;,figure=fig)</span>
+<span class="sd">    &gt;&gt;&gt; mmlab.savefig(filename=&#39;example/example_3d_bn.png&#39;,figure=fig)</span>
+
+<span class="sd">    .. image:: examples/example_3d_bn.png</span>
+<span class="sd">       :width: 600px</span>
 
 <span class="sd">    Make 2D perturbed last-closed-flux-surface plots quickly using,</span>
 <span class="sd">    &gt;&gt;&gt; fac = 1e-1 # good for DIII-D unit eigenmodes</span>
 <span class="sd">    &gt;&gt;&gt; f,ax = plt.subplots()</span>
-<span class="sd">    &gt;&gt;&gt; for i in range(4):</span>
-<span class="sd">    ...     v = np.real(ds[&#39;W_EDX_FUN&#39;][0,i]*fac)</span>
+<span class="sd">    &gt;&gt;&gt; ax.set_aspect(&#39;equal&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; l, = ax.plot(ds[&#39;R&#39;],ds[&#39;z&#39;],color=&#39;k&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; for i in range(4): # most and least stable modes</span>
+<span class="sd">    ...     v = np.real(ds[&#39;R_EDX_FUN&#39;][i]*fac)</span>
 <span class="sd">    ...     l, = ax.plot(ds[&#39;R&#39;]+v*ds[&#39;R_n&#39;],ds[&#39;z&#39;]+v*ds[&#39;z_n&#39;])</span>
-<span class="sd">    &gt;&gt;&gt; sm = plt.set_linearray(ax.lines[-4:],range(1,5))</span>
-<span class="sd">    &gt;&gt;&gt; cb = f.colorbar(sm)</span>
+<span class="sd">    &gt;&gt;&gt; sm = plt.set_linearray(ax.lines[-4:],cmap=&#39;viridis&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; cb = f.colorbar(sm,ticks=range(4))</span>
 <span class="sd">    &gt;&gt;&gt; cb.set_label(&#39;Mode Index&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; xtl = ax.set_xticks([1,1.7,2.4])</span>
 <span class="sd">    &gt;&gt;&gt; txt = ax.set_xlabel(&#39;R (m)&#39;)</span>
 <span class="sd">    &gt;&gt;&gt; txt = ax.set_ylabel(&#39;z (m)&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; f.savefig(&#39;examples/example_boundary_wiggle.png&#39;)</span>
 
+<span class="sd">    .. image:: examples/example_boundary_wiggle.png</span>
+<span class="sd">       :width: 600px</span>
 
-<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c"># Toroidal angle</span>
     <span class="k">if</span> <span class="s">&#39;phi&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
