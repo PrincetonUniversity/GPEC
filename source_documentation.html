@@ -691,30 +691,36 @@ so beware of loosing accuracy near rational surfaces.</p>
 <dd>overwrite : bool. Overwrite geometric quantities if they already exist.</dd>
 </dl>
 <p><strong>Examples:</strong></p>
-<p>After opening, and adding geometry,
-&gt;&gt;&gt; ds = open_dataset(&#8216;examples/DIIID_example/ipec_control_output_n1.nc&#8217;)
-&gt;&gt;&gt; ds = add_control_geometry(ds)</p>
-<p>it is easy to make 3D surface plots using mayavi,
-&gt;&gt;&gt; fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))
-&gt;&gt;&gt; mesh = mmlab.mesh(ds[&#8216;X&#8217;].values,ds[&#8216;Y&#8217;].values,ds[&#8216;Z&#8217;].values,
-...                   scalars=np.real(ds[&#8216;b_n&#8217;]*ds[&#8216;expn&#8217;]),colormap=&#8217;RdBu&#8217;,figure=fig)
-&gt;&gt;&gt; mmlab.savefig(filename=&#8217;example/example_3d_bn.png&#8217;,figure=fig)</p>
-<a class="reference internal image-reference" href="examples/example_3d_bn.png"><img alt="examples/example_3d_bn.png" src="examples/example_3d_bn.png" style="width: 600px;" /></a>
-<p>Make 2D perturbed last-closed-flux-surface plots quickly using,
-&gt;&gt;&gt; fac = 1e-1 # good for DIII-D unit eigenmodes
-&gt;&gt;&gt; f,ax = plt.subplots()
-&gt;&gt;&gt; ax.set_aspect(&#8216;equal&#8217;)
-&gt;&gt;&gt; l, = ax.plot(ds[&#8216;R&#8217;],ds[&#8216;z&#8217;],color=&#8217;k&#8217;)
-&gt;&gt;&gt; for i in range(4): # most and least stable modes
-...     v = np.real(ds[&#8216;R_EDX_FUN&#8217;][i]*fac)
-...     l, = ax.plot(ds[&#8216;R&#8217;]+v*ds[&#8216;R_n&#8217;],ds[&#8216;z&#8217;]+v*ds[&#8216;z_n&#8217;])
-&gt;&gt;&gt; sm = plt.set_linearray(ax.lines[-4:],cmap=&#8217;viridis&#8217;)
-&gt;&gt;&gt; cb = f.colorbar(sm,ticks=range(4))
-&gt;&gt;&gt; cb.set_label(&#8216;Mode Index&#8217;)
-&gt;&gt;&gt; xtl = ax.set_xticks([1,1.7,2.4])
-&gt;&gt;&gt; txt = ax.set_xlabel(&#8216;R (m)&#8217;)
-&gt;&gt;&gt; txt = ax.set_ylabel(&#8216;z (m)&#8217;)
-&gt;&gt;&gt; f.savefig(&#8216;examples/example_boundary_wiggle.png&#8217;)</p>
+<p>After opening, and adding geometry,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">add_control_geometry</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>it is easy to make 3D surface plots using mayavi,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span><span class="mi">600</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;Z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+<span class="gp">... </span>                  <span class="n">scalars</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;b_n&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;expn&#39;</span><span class="p">]),</span><span class="n">colormap</span><span class="o">=</span><span class="s">&#39;RdBu&#39;</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mmlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;examples/example_3d_bn.png&#39;</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/example_3d_bn.png"><img alt="_images/example_3d_bn.png" src="_images/example_3d_bn.png" style="width: 600px;" /></a>
+<p>Make 2D perturbed last-closed-flux-surface plots quickly using,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fac</span> <span class="o">=</span> <span class="mf">1e-1</span> <span class="c"># good for DIII-D unit eigenmodes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s">&#39;equal&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">],</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">],</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;k&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span> <span class="c"># most and least stable modes</span>
+<span class="gp">... </span>    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R_EDX_FUN&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">fac</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">v</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R_n&#39;</span><span class="p">],</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">v</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z_n&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">set_linearray</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:],</span><span class="n">cmap</span><span class="o">=</span><span class="s">&#39;viridis&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span><span class="n">ticks</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s">&#39;Mode Index&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">xtl</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mf">1.7</span><span class="p">,</span><span class="mf">2.4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&#39;R (m)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;z (m)&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/example_boundary_wiggle.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 <a class="reference internal image-reference" href="_images/example_boundary_wiggle.png"><img alt="_images/example_boundary_wiggle.png" src="_images/example_boundary_wiggle.png" style="width: 600px;" /></a>
 </dd></dl>
 

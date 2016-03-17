@@ -1822,19 +1822,22 @@
 <span class="sd">    **Examples:**</span>
 
 <span class="sd">    After opening, and adding geometry,</span>
+
 <span class="sd">    &gt;&gt;&gt; ds = open_dataset(&#39;examples/DIIID_example/ipec_control_output_n1.nc&#39;)</span>
 <span class="sd">    &gt;&gt;&gt; ds = add_control_geometry(ds)</span>
 <span class="sd">    </span>
 <span class="sd">    it is easy to make 3D surface plots using mayavi,</span>
+
 <span class="sd">    &gt;&gt;&gt; fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))</span>
 <span class="sd">    &gt;&gt;&gt; mesh = mmlab.mesh(ds[&#39;X&#39;].values,ds[&#39;Y&#39;].values,ds[&#39;Z&#39;].values,</span>
 <span class="sd">    ...                   scalars=np.real(ds[&#39;b_n&#39;]*ds[&#39;expn&#39;]),colormap=&#39;RdBu&#39;,figure=fig)</span>
-<span class="sd">    &gt;&gt;&gt; mmlab.savefig(filename=&#39;example/example_3d_bn.png&#39;,figure=fig)</span>
+<span class="sd">    &gt;&gt;&gt; mmlab.savefig(filename=&#39;examples/example_3d_bn.png&#39;,figure=fig)</span>
 
 <span class="sd">    .. image:: examples/example_3d_bn.png</span>
 <span class="sd">       :width: 600px</span>
 
 <span class="sd">    Make 2D perturbed last-closed-flux-surface plots quickly using,</span>
+
 <span class="sd">    &gt;&gt;&gt; fac = 1e-1 # good for DIII-D unit eigenmodes</span>
 <span class="sd">    &gt;&gt;&gt; f,ax = plt.subplots()</span>
 <span class="sd">    &gt;&gt;&gt; ax.set_aspect(&#39;equal&#39;)</span>
