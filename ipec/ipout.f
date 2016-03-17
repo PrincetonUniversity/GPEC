@@ -3040,9 +3040,9 @@ c-----------------------------------------------------------------------
       DO ipsi=1,cmpsi
          CALL spline_eval(sq,psi(ipsi),0)
          qs(ipsi)=sq%f(4)
+         CALL field_bs_psi(psi(ipsi),vcmn,0)
 
          IF (bwp_pest_flag) THEN
-            CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
                IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
                   pwpmns(ipsi,cmlow-lmlow+i)=vcmn(i)
@@ -3056,7 +3056,6 @@ c-----------------------------------------------------------------------
          ENDIF
          
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-            CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
                   vwpmns(ipsi,cmlow-mlow+i)=vcmn(i)
@@ -3090,8 +3089,6 @@ c-----------------------------------------------------------------------
       ENDDO
 
       DEALLOCATE(vcmn)
-
-
       ! append to netcdf file once this is (mstep,mpert)
 c      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
 c      CALL check( nf90_open(fncfile,nf90_write,fncid) )
@@ -3151,7 +3148,7 @@ c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
      $        "mpsi =",cmpsi,"mpert =",lmpert,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
-     $        "real(vb)","imag(vb)"
+     $        "real(bwp)","imag(bwp)"
          
          DO ipsi=1,cmpsi
             DO ipert=1,lmpert
