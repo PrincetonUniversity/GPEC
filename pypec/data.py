@@ -152,16 +152,38 @@ should be done with a little care to look right. Lets look at b_z for example,
 
 There we go. That looks publication ready!
 
-Note, one of the many cool additions to matplotlib in the pypec package is the ability to
-write line plots to tables. Lets look at a 1D mode spectrum plot for example,
+Another common plot of GPEC outputs is the (psi,m) spectrogram plot. Lets quickly make a
+nice one,
 
 >>> prof = data.open_dataset('examples/DIIID_example/ipec_profile_output_n1.nc')
+>>> f,ax = plt.subplots()
+>>> extent = [prof['m'].min(),prof['m'].max(),prof['psi_n'].min(),prof['psi_n'].max()]
+>>> im = ax.imshow(np.abs(prof['xi_m_contrapsi']).T,origin='lower',cmap='viridis',
+...                interpolation='nearest',aspect='auto',extent=extent)
+>>> cb = f.colorbar(im)
+>>> cb.set_label(r'$\\xi^\psi_m$')
+>>> lim = ax.set_xlim(-20,20)
+>>> xtxt = ax.set_xlabel('m')
+>>> ytxt = ax.set_ylabel(r'$\psi$')
+
+>>> f.savefig('examples/example_xispectrogram.png')
+
+.. image:: examples/example_xispectrogram.png
+   :width: 600px
+
+Note that the choice of interpolation resulted in discrete bands in m, which is true
+to the the discrete fourier decomposition used in the codes and provides a more intuitive
+connection between what the user sees and what the code is calculating.
+
+One of the many cool additions to matplotlib in the pypec package is the ability to
+write line plots to tables. Lets look at a 1D mode spectrum plot for example,
+
 >>> f,ax = plt.subplots()
 >>> for m in range(1,9):
 ...     lines = ax.plot(prof['psi_n'],np.abs(prof['xi_m_contrapsi'].sel(m=m)),label=r'm={:}'.format(m))
 >>> mappable = plt.set_linearray(ax.lines,cmap='viridis')
->>> xtxt = ax.set_ylabel(r'$\\xi^\psi_m$')
->>> ytxt = ax.set_xlabel(r'$\psi$')
+>>> ytxt = ax.set_ylabel(r'$\\xi^\psi_m$')
+>>> xtxt = ax.set_xlabel(r'$\psi$')
 >>> leg = ax.legend(ncol=2)
 >>> f.savefig('examples/example_xim.png')
 >>> f.printlines('examples/example_xim.dat',squeeze=True)
@@ -325,7 +347,7 @@ def interp1d_unbound(x, y, kind='linear', axis=-1, copy=True, bounds_error=False
                      fill_value=np.nan, assume_sorted=False):
     return interp1d(x, y, kind=kind, axis=axis, copy=copy, bounds_error=bounds_error,
                      fill_value=fill_value, assume_sorted=assume_sorted)
-interp1d_unbound.__doc__ = interp1d.__doc__
+interp1d_unbound.__doc__ = interp1d.__doc__.split('Examples')[0] # Examples fail doctest
 
 ######################################################## Helper functions
 
@@ -1726,26 +1748,40 @@ def add_control_geometry(ds,overwrite=False):
     **Examples:**
 
     After opening, and adding geometry,
+
     >>> ds = open_dataset('examples/DIIID_example/ipec_control_output_n1.nc')
     >>> ds = add_control_geometry(ds)
     
     it is easy to make 3D surface plots using mayavi,
-    >>> mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,scalars=np.real(ds['b_n']*ds['expn']))
+
+    >>> fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))
+    >>> mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,
+    ...                   scalars=np.real(ds['b_n']*ds['expn']),colormap='RdBu',figure=fig)
+    >>> mmlab.savefig(filename='examples/example_3d_bn.png',figure=fig)
+
+    .. image:: examples/example_3d_bn.png
+       :width: 600px
 
     Make 2D perturbed last-closed-flux-surface plots quickly using,
+
     >>> fac = 1e-1 # good for DIII-D unit eigenmodes
     >>> f,ax = plt.subplots()
-    >>> for i in range(4):
-    ...     v = np.real(ds['W_EDX_FUN'][0,i]*fac)
+    >>> ax.set_aspect('equal')
+    >>> l, = ax.plot(ds['R'],ds['z'],color='k')
+    >>> for i in range(4): # most and least stable modes
+    ...     v = np.real(ds['R_EDX_FUN'][i]*fac)
     ...     l, = ax.plot(ds['R']+v*ds['R_n'],ds['z']+v*ds['z_n'])
-    >>> sm = plt.set_linearray(ax.lines[-4:],range(1,5))
-    >>> cb = f.colorbar(sm)
+    >>> sm = plt.set_linearray(ax.lines[-4:],cmap='viridis')
+    >>> cb = f.colorbar(sm,ticks=range(4))
     >>> cb.set_label('Mode Index')
+    >>> xtl = ax.set_xticks([1,1.7,2.4])
     >>> txt = ax.set_xlabel('R (m)')
     >>> txt = ax.set_ylabel('z (m)')
+    >>> f.savefig('examples/example_boundary_wiggle.png')
 
+    .. image:: examples/example_boundary_wiggle.png
+       :width: 600px
 
-    
     """
     # Toroidal angle
     if 'phi' not in ds or overwrite:
