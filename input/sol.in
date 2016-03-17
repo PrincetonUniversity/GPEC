@@ -1,4 +1,4 @@
-
+! Construct Soloviev equilibrium
 &SOL_INPUT
    mr = 128      ! number of radial grid zones
    mz = 128      ! number of axial grid zones
