@@ -54,7 +54,7 @@
 	eigm_flag=t					! Outputs DCON eigmode displacement on control surface
 	pmodb_flag=f				! Outputs delta-B_Lagrangian
 	xclebsch_flag=t				! Outputs plasma displacement in clebsch coordinates (input for PENT)
-	xbnormal_flag=f				! Outputs normal displacement and field in plasma
+	xbnormal_flag=t				! Outputs normal displacement and field in plasma
 	vbnormal_flag=f				! Outputs vacuum normal displacement and field in plasma
 
 	eqbrzphi_flag=f				! Outputs equilibrium field on regular (r,z) grid

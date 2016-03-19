@@ -108,16 +108,16 @@ For quick visualization, we can use xarray's built in plotting routines,
 >>> import xarray.plot as xplot
 >>> f1,a1 = plt.subplots()
 >>> l1 = xplot.plot(con['W_EVX']) # 1D data, returns a list of lines
->>> f1.savefig('examples/example_eigenvalues.png')
+>>> f1.savefig('examples/figures/example_eigenvalues.png')
 
-.. image:: examples/example_eigenvalues.png
+.. image:: examples/figures/example_eigenvalues.png
    :width: 600px
 
 >>> f2,a2 = plt.subplots()
 >>> l2 = xplot.plot(con['W_EDX']) # This is 2D, returns Quadmesh
->>> f2.savefig('examples/example_eigenvectors.png')
+>>> f2.savefig('examples/figures/example_eigenvectors.png')
 
-.. image:: examples/example_eigenvectors.png
+.. image:: examples/figures/example_eigenvectors.png
    :width: 600px
 
 Note this uses matplotlib, and the plots are fully interactive. Navigate and zoom using the toolbar below plots.
@@ -145,9 +145,9 @@ should be done with a little care to look right. Lets look at b_z for example,
 >>> xtks = ax.set_xticks([1,1.7,2.4])
 >>> xtxt = ax.set_xlabel('R (m)')
 >>> ytxt = ax.set_ylabel('z (m)')
->>> f.savefig('examples/example_pbrzphi.png')
+>>> f.savefig('examples/figures/example_pbrzphi.png')
 
-.. image:: examples/example_pbrzphi.png
+.. image:: examples/figures/example_pbrzphi.png
    :width: 600px
 
 There we go. That looks publication ready!
@@ -166,9 +166,9 @@ nice one,
 >>> xtxt = ax.set_xlabel('m')
 >>> ytxt = ax.set_ylabel(r'$\psi$')
 
->>> f.savefig('examples/example_xispectrogram.png')
+>>> f.savefig('examples/figures/example_xispectrogram.png')
 
-.. image:: examples/example_xispectrogram.png
+.. image:: examples/figures/example_xispectrogram.png
    :width: 600px
 
 Note that the choice of interpolation resulted in discrete bands in m, which is true
@@ -185,16 +185,59 @@ write line plots to tables. Lets look at a 1D mode spectrum plot for example,
 >>> ytxt = ax.set_ylabel(r'$\\xi^\psi_m$')
 >>> xtxt = ax.set_xlabel(r'$\psi$')
 >>> leg = ax.legend(ncol=2)
->>> f.savefig('examples/example_xim.png')
->>> f.printlines('examples/example_xim.dat',squeeze=True)
-Wrote lines to examples/example_xim.dat
+>>> f.savefig('examples/figures/example_xim.png')
+>>> f.printlines('examples/figures/example_xim.txt',squeeze=True)
+Wrote lines to examples/figures/example_xim.txt
 True
 
-.. image:: examples/example_xim.png
+.. image:: examples/figures/example_xim.png
    :width: 600px
 
 That's it! Read the table with your favorite editor. It will probably need a little
 cleaning at the top since it tries to use the lengthy legend labels as column headers.
+
+Finally, 3D equilibrium calculations lend themselves naturally to 3D figures. This module
+has a helpful function for forming the necessary x,y,z meshes to quickly plot the
+3D plasma using mayavi.
+
+After adding the requisite geometry to the control surface output,
+
+>>> con = add_control_geometry(con,phi_lim=np.pi*3/2)
+
+it is easy to make 3D surface plots using mayavi,
+
+>>> x,y,z = con['X'].values,con['Y'].values,con['Z'].values
+>>> b_n_3d = np.real(con['b_n']*con['expn'])
+>>> fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))
+>>> mesh = mmlab.mesh(x,y,z,scalars=b_n_3d,colormap='RdBu',vmin=-2e-3,vmax=2e-3,figure=fig)
+
+Note that mayavi explicitly requires numpy.ndarray objects so we had to
+use the values of each xarray DataArray.
+
+Now, lets cap the ends with our full profile information. This is a little
+more involved. For the toroidal angle of each end, we need to rotate the
+2D arrays for the mesh and the field values.
+
+>>> for phi in [0,np.pi*3/2]:
+...     b = np.real(prof['b_n']*np.exp(1j*phi)) # poloidal cross section at phi
+...     xy = prof['R']*np.exp(1j*phi) # rotate the plane
+...     x,y,z = np.real(xy),np.imag(xy),np.real(prof['z'])
+...     x,y,z,b = np.array([x,y,z,b])[:,:,::10] # downsample psi by 10 to speed up mayavi
+...     cap = mmlab.mesh(x,y,z,scalars=b,colormap='RdBu',vmin=-2e-3,vmax=2e-3,figure=fig)
+>>> mmlab.savefig(filename='examples/figures/example_bn_3d_capped.png',figure=fig)
+
+.. image:: examples/figures/example_bn_3d_capped.png
+   :width: 600px
+
+That looks awesome!
+
+There are, of course, plenty more outputs and important ways of visualizing
+them intuitively. See, for example, the 2D plots in the add_control_geometry
+function's documentation. At this point we have outlined the basics. Using
+the modules and similar commands to those used here the user should be able
+to fully interact with and visually explore the GP
+EC output.
+
 
 
 Advanced Users
@@ -243,9 +286,9 @@ You would access the ion density data using mydata.y['nim3'] for example.
 The data object, however, is more that just a place holder for parced text files. It contains visualization and data manipulation tools. Plotting functions return interactive matplotlib Figure objects.
 
 >>> fig = mydata.plot1d()
->>> fig.savefig('examples/example_profiles.png')
+>>> fig.savefig('examples/figures/example_profiles.png')
 
-.. image:: examples/example_profiles.png
+.. image:: examples/figures/example_profiles.png
    :width: 600px
 
 Interpolation returns a new Data object of the desired data, which can be one, multiple, or all of the dependent variables found in y.
@@ -257,9 +300,9 @@ Forming interpolator for tieV.
 Interpolating values for tieV.
 >>> f = mydata.plot1d('nim^3')
 >>> f = myinterp.plot1d('nim^3',marker='s',lw=0,figure=f)
->>> f.savefig('examples/example_profiles2.png')
+>>> f.savefig('examples/figures/example_profiles2.png')
 
-.. image:: examples/example_profiles2.png
+.. image:: examples/figures/example_profiles2.png
    :width: 400px
 
 Note that the interpolator initialized the interpolation function on the first call, this is saved internally for subsequent calls.
@@ -270,9 +313,9 @@ the full functionality of the data instances' plot1d function.
 >>> xc, = read('examples/DIIID_example/ipec_xclebsch_n1.out')
 Casting table 1 into Data object.
 >>> f = xc.plot1d('xi^psi','psi',x2rng=(1,3))
->>> f.savefig('examples/example_spectrum.png')
+>>> f.savefig('examples/figures/example_spectrum.png')
 
-.. image:: examples/example_spectrum.png
+.. image:: examples/figures/example_spectrum.png
    :width: 600px
 
 We knew it was one table, so we used the "," to automatically
@@ -1735,15 +1778,18 @@ def getshot(path='.',full_name=False):
                 break
     return shot
 
-def add_control_geometry(ds,overwrite=False):
+
+def add_control_geometry(ds, phi_lim=2*np.pi, overwrite=False):
     """
     Add geometric dimensions to dataset from ipec_control_output_n#.nc.
 
-    **Arguments:**
-        ds : Dataset. xarray Dataset opened from ipec_control_output_n#.nc
+    Args:
+        ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
+        phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
+        overwrite: bool. Overwrite geometric quantities if they already exist.
 
-    **Key Word Arguments:**
-        overwrite : bool. Overwrite geometric quantities if they already exist.
+    Returns:
+        Dataset. New dataset with additional dimensions.
 
     **Examples:**
 
@@ -1757,9 +1803,9 @@ def add_control_geometry(ds,overwrite=False):
     >>> fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))
     >>> mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,
     ...                   scalars=np.real(ds['b_n']*ds['expn']),colormap='RdBu',figure=fig)
-    >>> mmlab.savefig(filename='examples/example_3d_bn.png',figure=fig)
+    >>> mmlab.savefig(filename='examples/figures/example_bn_3d.png',figure=fig)
 
-    .. image:: examples/example_3d_bn.png
+    .. image:: examples/figures/example_bn_3d.png
        :width: 600px
 
     Make 2D perturbed last-closed-flux-surface plots quickly using,
@@ -1777,15 +1823,15 @@ def add_control_geometry(ds,overwrite=False):
     >>> xtl = ax.set_xticks([1,1.7,2.4])
     >>> txt = ax.set_xlabel('R (m)')
     >>> txt = ax.set_ylabel('z (m)')
-    >>> f.savefig('examples/example_boundary_wiggle.png')
+    >>> f.savefig('examples/figures/example_boundary_wiggle.png')
 
-    .. image:: examples/example_boundary_wiggle.png
+    .. image:: examples/figures/example_boundary_wiggle.png
        :width: 600px
 
     """
     # Toroidal angle
     if 'phi' not in ds or overwrite:
-        phi = np.linspace(0,2*np.pi,180)
+        phi = np.linspace(0,phi_lim,180)
         phi = xarray.DataArray(phi,coords={'phi':phi})
         ds['phi'] = phi
         ds['expn'] = np.exp(-1j*ds.attrs['n']*ds['phi'])
@@ -1798,7 +1844,7 @@ def add_control_geometry(ds,overwrite=False):
         ds['Z'] = ds['z']*(1+0*ds['phi'])
 
     # Normal vectors
-    if 'z_n' not in ds or 'R_n' not in ds or overwrite:
+    if False and ('z_n' not in ds or 'R_n' not in ds or overwrite):
         dr = np.roll(ds['R'],1)-np.roll(ds['R'],-1)
         dz = np.roll(ds['z'],1)-np.roll(ds['z'],-1)
         norm = np.sqrt(dr**2+dz**2)
