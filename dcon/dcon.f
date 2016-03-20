@@ -178,7 +178,7 @@ c            ALLOCATE(f1mats(mpert**2),k1mats(mpert**2),
 c     $           k1aats(mpert**2),g1aats(mpert**2))
             CALL fourfit_action_matrix
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
-     $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert)
+     $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
             PRINT *, 'set_eq completed'
             CALL get_pentrc(nl,zi,mi,wdfac,divxfac,electron,
      $          keq_out,theta_out,xlmda_out)

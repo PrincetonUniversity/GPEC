@@ -140,9 +140,7 @@ c-----------------------------------------------------------------------
       IF (mlow<mmin) lmlow=mlow
       IF (mhigh>mmax) lmhigh=mhigh
       lmpert=lmhigh-lmlow+1
-      IF (mthsurf <=0) mthsurf=mthvac
-      IF (mthsurf < 4*(2*MAX(ABS(mlow),mhigh)))
-     $    mthsurf = 4*(2*MAX(ABS(mlow),mhigh)) ! 4 times the nyquist limit
+      mthsurf=mthvac
       ALLOCATE(r(0:mthsurf),z(0:mthsurf),theta(0:mthsurf))
       ALLOCATE(mfac(mpert),singfac(mpert))
       ALLOCATE(lmfac(lmpert))
@@ -1270,7 +1268,7 @@ c-----------------------------------------------------------------------
       subroutine set_eq(set_eqfun,set_sq,set_rzphi,
      $              set_smats,set_tmats,set_xmats,set_ymats,set_zmats,
      $              set_chi1,set_ro,set_nn,set_jac_type,
-     $              set_mlow,set_mhigh,set_mpert)
+     $              set_mlow,set_mhigh,set_mpert,set_mthsurf)
       !----------------------------------------------------------------------- 
       !*DESCRIPTION: 
       !   Set the dcon equilibrium global variables directly. For internal use
@@ -1296,13 +1294,15 @@ c-----------------------------------------------------------------------
       !   set_mpert : integer
       !       Number of poloidal modes
       !   set_mstep : integer
-      !       Number grid points in psi
+      !       Number grid intervals in psi
+      !   set_mthsurf : integer
+      !       Number grid intervals in theta
       !
       !-----------------------------------------------------------------------
     
         implicit none
         ! declare arguments
-        integer :: set_mlow,set_mhigh,set_mpert,set_nn
+        integer :: set_mlow,set_mhigh,set_mpert,set_nn,set_mthsurf
         real(r8) :: set_ro,set_chi1
         !real(r8), dimension(:) :: set_psifac
         character(*), intent(in) :: set_jac_type
@@ -1337,7 +1337,8 @@ c-----------------------------------------------------------------------
         mpert   =set_mpert
         allocate(mfac(mpert))
         mfac    =(/(m,m=set_mlow,set_mhigh)/)
-        
+        mthsurf = set_mthsurf
+
         ! evaluate field on axis
         call spline_eval(sq,0.0_r8,0)
         bo = abs(sq%f(1))/(twopi*ro)
