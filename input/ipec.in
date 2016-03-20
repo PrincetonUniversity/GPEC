@@ -27,7 +27,7 @@
    displacement_flag=f      ! Perturbations are displacement (m). Default is field (T).
    fixed_boundary_flag=f    ! Total perturbation = external perturbation
 
-   mode_flag = .F.          ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
+   mode_flag = f            ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
    mode  = 0                ! DCON eigen function index (1 is least stable)
    filter_types = 'w'       ! Isolate the filter_modes of energy (w), reluctance (r), permiability (p) or singular coupling (s) eigenvectors/singular-vectors
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
@@ -46,7 +46,7 @@
    tmag_out=0               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
-   filter_flag=t            ! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
+   filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
@@ -61,7 +61,7 @@
    brzphi_flag=f            ! Outputs perturbed field on regular (r,z) grid
    xrzphi_flag=f            ! Outputs displacement on regular (r,z) grid
    vbrzphi_flag=f           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
-   vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to exeternal perturbation surface current (not a real field)
+   vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to external perturbation surface current (not a real field)
    vsbrzphi_flag=f          ! Outputs the field on regular (r,z) grid due to singular surface currents
    ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
    xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
