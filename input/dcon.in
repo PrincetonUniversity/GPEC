@@ -1,4 +1,4 @@
-&dcon_control
+&DCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
@@ -33,7 +33,7 @@
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
 /
-&dcon_output
+&DCON_OUTPUT
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)

@@ -5,7 +5,7 @@
    ivacuumfile= 'vacuum.bin'         ! Vacuum info output by DCON run
    rdconfile  = 'gal_solution.bin'   ! Galkin functions output by resistive DCON run
 
-   jac_in="pest"            ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
+   jac_in="hamada"          ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
    jsurf_in=1               ! True(1) if external perturbation is area weighted (i.e. flux)
    tmag_in =0               ! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
    mthsurf =0               ! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
@@ -67,6 +67,8 @@
    xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
    arzphifun_flag=f         ! Outputs r,z, and vector potential on psi,theta grid
 
+   nr = 64                  ! Number of radial grid points in rzphi outputs
+   nz = 124                 ! Number of vertical grid points in rzphi outputs
    fun_flag=f               ! Write outputs to (r,z) in addition to default (psi,m)
    flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
    bin_flag=f               ! Write binary outputs for use with xdraw
