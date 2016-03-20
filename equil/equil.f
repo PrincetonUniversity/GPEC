@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=equil_control)
       READ(UNIT=in_unit,NML=equil_output)
       CALL ascii_close(in_unit)
-      IF(verbose) WRITE(*,'(1x,a,1p,e9.3)')"psihigh = ",psihigh
+      IF(verbose) WRITE(*,'(1x,a,es10.3)')"psihigh =",psihigh
       psihigh=MIN(psihigh,1._r8)
 c-----------------------------------------------------------------------
 c     define Jacobian.
