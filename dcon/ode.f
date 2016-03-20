@@ -659,9 +659,9 @@ c     write to crit.out.
 c-----------------------------------------------------------------------
       IF(verbose)
      $  WRITE(*,10)"psi =",sing(ising)%psifac,", q = ",sing(ising)%q
-      WRITE(crit_out_unit,'(/1x,a,i6,a,1p,e9.3,0p,a,f6.3,a,i2)')
+      WRITE(crit_out_unit,'(/1x,a,i6,a,es10.3,a,f6.3,a,i2)')
      $     "Gaussian Reduction at istep = ",istep,
-     $     ", psi = ",sing(ising)%psifac,", q = ",sing(ising)%q,
+     $     ", psi =",sing(ising)%psifac,", q = ",sing(ising)%q,
      $     ", index1 = ",index(1)
 c-----------------------------------------------------------------------
 c     initialize fixfac.
@@ -889,12 +889,12 @@ c-----------------------------------------------------------------------
          ipert=errloc(1)
          isol=errloc(2)
          ieq=errloc(3)
-         WRITE(message,'(4(a,i3),1p,3(a,e9.3))')
+         WRITE(message,'(4(a,i3),1p,3(a,es10.3))')
      $        "Termination by ode_step"//CHAR(10)
      $        //" ipert = ",ipert,", ieq = ",ieq,", isol = ",isol,
      $        ", msol = ",msol,CHAR(10)
-     $        //" errmax = ",errmax,", ewt = ",ewtmax,
-     $        ", atol = ",ABS(atol(ipert,isol,ieq))
+     $        //" errmax =",errmax,", ewt =",ewtmax,
+     $        ", atol =",ABS(atol(ipert,isol,ieq))
          CALL program_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
