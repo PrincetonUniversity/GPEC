@@ -24,7 +24,7 @@ Explore the data module by typing 'data.' and hitting tab. For information on an
 
 Lets use it! To get a typical GPEC output into python, use the open_dataset function.
 
->>> con = data.open_dataset('examples/DIIID_example/ipec_control_output_n1.nc')
+>>> con = data.open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
 
 Printing to the terminal is intelegent, giving a conviniently human readable summary of the data.
 
@@ -129,7 +129,7 @@ inevitably need tweaking.
 
 For a common example of more customized plots, lets look at some 2d data
 
->>> cyl = data.open_dataset('examples/DIIID_example/ipec_cylindrical_output_n1.nc')
+>>> cyl = data.open_dataset('examples/DIIID_ideal_example/ipec_cylindrical_output_n1.nc')
 
 We could use the built in plotting methods like ds['b_z'].plot), but these are (R,z) figures
 should be done with a little care to look right. Lets look at b_z for example,
@@ -155,7 +155,7 @@ There we go. That looks publication ready!
 Another common plot of GPEC outputs is the (psi,m) spectrogram plot. Lets quickly make a
 nice one,
 
->>> prof = data.open_dataset('examples/DIIID_example/ipec_profile_output_n1.nc')
+>>> prof = data.open_dataset('examples/DIIID_ideal_example/ipec_profile_output_n1.nc')
 >>> f,ax = plt.subplots()
 >>> extent = [prof['m'].min(),prof['m'].max(),prof['psi_n'].min(),prof['psi_n'].max()]
 >>> im = ax.imshow(np.abs(prof['xi_m_contrapsi']).T,origin='lower',cmap='viridis',
@@ -262,14 +262,14 @@ ascii interface for context, and motivates the move to netcdf.
 
 Data in ascii tables can be read into a custom Data object using the read function,
 
->>> mydata = read('examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin')
+>>> mydata = read('examples/DIIID_ideal_example/g147131.02300_DIIID_KEFIT.kin')
 Casting table 1 into Data object.
 >>> type(mydata),len(mydata)
 (<type 'list'>, 1)
 
 The read function creates a list of data objects corresponding to the tables in the text file. In this case, there is only one table. If we knew this ahead of time, we could have gotten the data object directly by splitting the list.
 
->>> mydata = read('examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin')[0]
+>>> mydata = read('examples/DIIID_ideal_example/g147131.02300_DIIID_KEFIT.kin')[0]
 Casting table 1 into Data object.
 
 At its heart, the data object consists of independent data and dependent data. This are stored differently, namely as a list in the pts attribute and as a dictionary in y. The x attribute is a dictionary if the data is 1 dimensional or a regular grid is found in the first n columns of the data (n=2,3), and left empty if the n>1 dependent data is irregular.
@@ -310,7 +310,7 @@ Note that the interpolator initialized the interpolation function on the first c
 One common need is to look at spectra. For this we want to utilize
 the full functionality of the data instances' plot1d function.
 
->>> xc, = read('examples/DIIID_example/ipec_xclebsch_n1.out')
+>>> xc, = read('examples/DIIID_ideal_example/ipec_xclebsch_n1.out')
 Casting table 1 into Data object.
 >>> f = xc.plot1d('xi^psi','psi',x2rng=(1,3))
 >>> f.savefig('examples/figures/example_spectrum.png')
@@ -1363,7 +1363,7 @@ class DataBase(object):
           
         *Example:*
         
-        xb, = data.read('examples/DIIID_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
+        xb, = data.read('examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
         xb.plot3d('bno')
         
         ..note: I think what we usually want out of IPEC is
@@ -1795,7 +1795,7 @@ def add_control_geometry(ds, phi_lim=2*np.pi, overwrite=False):
 
     After opening, and adding geometry,
 
-    >>> ds = open_dataset('examples/DIIID_example/ipec_control_output_n1.nc')
+    >>> ds = open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
     >>> ds = add_control_geometry(ds)
     
     it is easy to make 3D surface plots using mayavi,
@@ -1982,7 +1982,7 @@ def _plot3d_dev(self,ynames=None,filter={'psi':1},cbar=False,plot_type='',**kwar
       
     *Example:*
     
-    xb, = data.read('examples/DIIID_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
+    xb, = data.read('examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
     xb.plot3d('bno')
     
     ..note: I think what we usually want out of IPEC is
