@@ -33,18 +33,11 @@
 
 # use acml or lapack based on what is loaded
 ifndef ACML_HOME
-    MATHHOME = $(LAPACKHOME)
+    MATHDIR = $(LAPACKHOME)
     MATHLIBS = -llapack -lblas
 else
-    MATHHOME = $(ACML_HOME)
+    MATHDIR = $(ACML_HOME)
     MATHLIBS = -lacml
-endif
-
-# check if netcdfhome has netcdff library
-ifneq ($(shell ls $(NETCDFHOME) | grep netcdff),)
-    NETCDFLIBS = -lnetcdf -lnetcdff
-else
-    NETCDFLIBS = -lnetcdf
 endif
 
 
@@ -54,74 +47,110 @@ endif
 # force default if necessary compiler/libraries not specified
 ifneq ($(shell echo $(HOSTNAME) | grep sunfire),)
     PLATFORM = portal
-    ifeq "$(or $(cflag), $(and $(FC), $(MATHHOME), $(NETCDFHOME)))" ""
-        cflag = portal_gfortran
+    ifeq "$(or $(cflag), $(and $(FC), $(MATHDIR), $(NETCDFHOME)))" ""
+        cflag = portal_lfc
     endif
 else ifneq ($(shell echo $(HOSTNAME) | grep venus),)
     PLATFORM = venus
-    ifeq "$(or $(cflag), $(and $(FC), $(MATHHOME), $(NETCDFHOME)))" ""
+    ifeq "$(or $(cflag), $(and $(FC), $(MATHDIR), $(NETCDFHOME)))" ""
         cflag = venus_mpi
     endif
 else ifneq ($(shell echo $(MACHTYPE) | grep apple),)
     PLATFORM = osx
-    ifeq "$(or $(cflag), $(and $(FC), $(MATHHOME), $(NETCDFHOME)))" ""
+    ifeq "$(or $(cflag), $(and $(FC), $(MATHDIR), $(NETCDFHOME)))" ""
         cflag = osx_gfortran
     endif
 endif
+
 
 # set compiler and libraries based on cflag
 #-----------------------------------------------
 
 ifdef cflag
 	ifeq ($(cflag),zwang_intel)
+	    # module load intel/2013.1.3 lapack netcdf
 		PLATFORM = portal
 		FC = /usr/pppl/intel/2013.1.3/bin/ifort
 		CC = /usr/pppl/intel/2013.1.3/bin/icc
-		MATHHOME = /u/zwang/numericalLib/lapack_3.4.2
-		MATHLIBS = -llapack -lblas
+		MATHDIR = /u/zwang/numericalLib/lapack_3.4.2
 		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
-		NETCDFLIBS = -lnetcdf -lnetcdff
-	else ifeq ($(cflag),portal_intel)
+	else ifeq ($(cflag),portal_intel) # currently fails
+	    #  module load intel acml netcdf
 		PLATFORM = portal
 		FC = /usr/pppl/intel/11.0/081/bin/intel64/ifort
-		MATHHOME = /usr/pppl/intel/11-pkgs/acml-4.3.0/ifort64/lib
-		MATHLIBS = -lacml
+		CC = /usr/pppl/intel/11.0/081/bin/intel64/icc
+		MATHDIR = /usr/pppl/intel/11-pkgs/acml-4.3.0/ifort64
 		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
-		NETCDFLIBS = -lnetcdf -lnetcdff
-	else ifeq ($(cflag),portalr6_intel)
+	else ifeq ($(cflag),portal_intel13)
+	    #  module load intel/2013.1.3 acml netcdf
+	    # status: fails to compile with "for_init.c:(.text+0x8ce): undefined reference to `_intel_fast_memmove'"
+		PLATFORM = portal
+		FC = /usr/pppl/intel/2013.1.3/bin/ifort
+		CC = /usr/pppl/intel/2013.1.3/bin/icc
+		MATHDIR = /usr/pppl/intel/2013-pkgs/acml-5.3.1/ifort64
+		#MATHDIR = /usr/pppl/lapack/3.3.1
+		NETCDFHOME = /usr/pppl/intel/2013-pkgs/netcdf-4.3.2
+		#NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
+	else ifeq ($(cflag),portalr6_intel) # currently fails
+	    # module load intel/2015.u1 acml netcdf
 		PLATFORM = portal
 		FC = /usr/pppl/intel/2015.u1/bin/ifort
-		MATHHOME = /usr/pppl/intel/2015-pkgs/acml-5.3.1/ifort64/lib
-		MATHLIBS = -lacml
+		CC = /usr/pppl/intel/2015.u1/bin/icc
+		MATHDIR = /usr/pppl/intel/2015-pkgs/acml-5.3.1/ifort64
 		NETCDFHOME = /usr/pppl/intel/2015-pkgs/netcdf-4.3.2
-		NETCDFLIBS = -lnetcdf -lnetcdff
-	else ifeq ($(cflag),portal_gfortran)
+	else ifeq ($(cflag),portalr6_gfortran)
+	    # module load gcc4 lapack-blas netcdf
+	    # status: compiles, but dcon fails with "error while loading shared libraries: liblapack.so: cannot open shared object file: No such file or directory"
 		PLATFORM = portal
 		FC = /usr/pppl/gcc/4.6.3/bin/gfortran4
-		MATHHOME = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
-		MATHLIBS = -llapack -lblas
+		CC = /usr/pppl/gcc/4.6.3/bin/gcc4
+		MATHDIR = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
 		NETCDFHOME = /usr/pppl/gcc/4.6-pkgs/netcdf-4.1.2
-		NETCDFLIBS = -lnetcdf -lnetcdff
 	else ifeq ($(cflag),portal_lfc)
+	    # module load lff95 lapack-blas netcdf
 		PLATFORM = portal
 		FC = /usr/pppl/lf64x/lf6480/bin/lfc
-		MATHHOME = /usr/pppl/lff95/8.x86_64-pkgs/lapack-3.1.1.x86_64
-		MATHLIBS = -llapack -lblas
+		CC = /usr/pppl/gcc/4.6.3/bin/gcc4
+		MATHDIR = /usr/pppl/lff95/8.x86_64-pkgs/lapack-3.1.1.x86_64
 		NETCDFHOME = /usr/pppl/lff95/8.x86_64-pkgs/netcdf-3.6.2.x86_64
-		NETCDFLIBS = -lnetcdf
 	else ifeq ($(cflag),venus_mpi)
         FC = /task/imd/local64/bin/mpif90
-        MATHHOME = /opt/pgi/linux86-64/12.10/lib #pgf
-        MATHLIBS = -llapack -lblas
+        MATHDIR = /opt/pgi/linux86-64/12.10/lib #pgf
         NETCDFHOME = /task/imd/local64/lib #mpif90
-        NETCDFLIBS = -lnetcdf
 	else ifeq ($(cflag),osx_gfortran)
         FC = gfortran
-        MATHHOME = /usr/lib
-        MATHLIBS = -llapack -lblas
+        MATHDIR = /usr/lib
         NETCDFHOME = /usr/lib
-        NETCDFLIBS = -lnetcdf
 	else
 #$(error No corresponding option of cflag $(cflag) to set compile environment.)
 	endif
+endif
+
+
+# specifics of which libraries are used
+#---------------------------------------
+
+# tack on lib dir to home dirs if necessary
+ifneq ($(wildcard $(MATHDIR)/lib/.),)
+    MATHDIR := $(MATHDIR)/lib
+endif
+NETCDFDIR = $(NETCDFHOME)
+ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
+    NETCDFDIR = $(NETCDFHOME)/lib
+else
+    NETCDFDIR = $(NETCDFHOME)
+endif
+
+# check if math dir has lapack or acml library
+ifneq ($(shell ls $(MATHDIR) | grep liblapack),)
+    MATHLIBS = -llapack -lblas
+else
+    MATHLIBS = -lacml
+endif
+
+# check if netcdf dir has netcdff library
+ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
+    NETCDFLIBS = -lnetcdf -lnetcdff
+else
+    NETCDFLIBS = -lnetcdf
 endif

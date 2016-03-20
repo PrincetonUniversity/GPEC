@@ -8,7 +8,7 @@ F90 = $(FC) $(options) $(FFLAGS)
 	$(F90) -c $*.f
 
 LIBDIR = \
-	-L$(MATHHOME) \
+	-L$(MATHDIR) \
 	-L../lib
 
 LIBS = \
@@ -31,6 +31,8 @@ OBJS = \
 
 match: $(OBJS)
 	$(F90) -o match $(OBJS) $(LIBS)
+	mkdir -p ../bin
+	cp -f match ../bin
 
 # dependencies
 
