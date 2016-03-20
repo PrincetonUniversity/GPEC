@@ -33,7 +33,7 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: edge_flag=.FALSE.,fft_flag=.FALSE.,
-     $     kin_flag=.FALSE.,con_flag=.FALSE.
+     $     kin_flag=.FALSE.,con_flag=.FALSE.,verbose=.TRUE.
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,
@@ -103,7 +103,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: lpsixy
       CHARACTER(128) :: message
       CHARACTER(2) :: sn
-      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,in_unit
+      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,i,in_unit
       REAL(r8) :: sfac0
 
       REAL(r4), DIMENSION(:,:), POINTER :: rgarr,zgarr,psigarr
@@ -118,29 +118,31 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,mthsurf0,mthvac,psio,psilow,psilim,qlim,
      $     singfac_min
       READ(in_unit)power_b,power_r,power_bp
+      READ(in_unit)kin_flag,con_flag
       READ(in_unit) amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
      $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
-      READ(in_unit)kin_flag,con_flag
       IF ((power_b==0).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="hamada"
       ELSE IF ((power_b==0).AND.(power_bp==0).AND.(power_r==2)) THEN
          jac_type="pest"
       ELSE IF ((power_b==0).AND.(power_bp==1).AND.(power_r==0)) THEN
          jac_type="equal_arc"
-      ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN  
+      ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="boozer"
-      ELSE 
+      ELSE
          jac_type="other"
       ENDIF
       chi1=twopi*psio
       mpert=mhigh-mlow+1
       lmlow=mmin
       lmhigh=mmax
-      IF (mlow<mmin) lmlow=mlow 
+      IF (mlow<mmin) lmlow=mlow
       IF (mhigh>mmax) lmhigh=mhigh
       lmpert=lmhigh-lmlow+1
-      mthsurf=mthvac
+      IF (mthsurf <=0) mthsurf=mthvac
+      IF (mthsurf < 4*(2*MAX(ABS(mlow),mhigh)))
+     $    mthsurf = 4*(2*MAX(ABS(mlow),mhigh)) ! 4 times the nyquist limit
       ALLOCATE(r(0:mthsurf),z(0:mthsurf),theta(0:mthsurf))
       ALLOCATE(mfac(mpert),singfac(mpert))
       ALLOCATE(lmfac(lmpert))
@@ -177,7 +179,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     count solutions in euler.bin.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Counting and reading dcon solutions"
+      IF(verbose) WRITE(*,*)"Counting and reading dcon solutions"
       DO
          READ(UNIT=in_unit,IOSTAT=ios)data_type
          IF(ios /= 0)EXIT
@@ -204,7 +206,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
-        CASE(5)
+         CASE(5)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
@@ -223,12 +225,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
-      WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
+      IF(verbose)THEN
+        WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
+        WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
+      ENDIF
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
-      ALLOCATE(et(mpert),ep(mpert),ee(mpert),wt(mpert,mpert))
+      ALLOCATE(et(mpert),ep(mpert),ee(mpert))
+      ALLOCATE(wt(mpert,mpert),wt0(mpert,mpert))
+      ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert)) !LOGAN
+      eft = -1 ! LOGAN - used to tell if it is read (actual vals >0)
+      wft = 0
       fixstep(0)=0
       fixstep(mfix+1)=mstep
       in_unit = get_free_file_unit(-1)
@@ -298,7 +306,7 @@ c-----------------------------------------------------------------------
      $           singtype(ising)%restype%taua,
      $           singtype(ising)%restype%taur
          CASE(5)
-            ALLOCATE(eft(mpert),efp(mpert),wft(mpert,mpert))
+            ALLOCATE(wft(mpert,mpert),eft(mpert),efp(mpert))
             ALLOCATE(wtraw(mpert,mpert))
             READ(UNIT=in_unit)ep
             READ(UNIT=in_unit)et
@@ -315,12 +323,13 @@ c-----------------------------------------------------------------------
       ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
-c     normalize plasma/vacuum eigenenergy and eigenfunctions.
+c     normalize plasma/vacuum eigenvalues and eigenfunctions.
 c-----------------------------------------------------------------------
       et=et/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ee=et-ep
       wt=wt*(chi1*1e-3)
+      wt0=wt0/(mu0*2.0)*psio**2
       IF(data_type==5)THEN
          wtraw=wtraw*(chi1*1e-3)
          eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
@@ -337,7 +346,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     close data file.
 c-----------------------------------------------------------------------
-      !CALL bin_close(in_unit)
       CLOSE(in_unit)
 c-----------------------------------------------------------------------
 c     terminate.

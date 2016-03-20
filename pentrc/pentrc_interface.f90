@@ -31,7 +31,7 @@ module pentrc_interface
     
     use params, only: r8,xj
     use utilities, only : get_free_file_unit
-    use inputs, only : read_kin
+    use inputs, only : read_kin,verbose
     use energy_integration, only: &
         xatol,xrtol,xmax,ximag,xnufac,& ! reals
         xnutype,xf0type,        &       ! character(32)
@@ -51,6 +51,7 @@ module pentrc_interface
         get_pentrc
 
     ! declarations and defaults
+    integer, parameter :: nflags=18
     logical :: &
         fgar_flag=.true.,&
         tgar_flag=.false.,&
@@ -62,6 +63,9 @@ module pentrc_interface
         fkmm_flag=.false.,&
         tkmm_flag=.false.,&
         pkmm_flag=.false.,&
+        frmm_flag=.false.,&
+        trmm_flag=.false.,&
+        prmm_flag=.false.,&
         fwmm_flag=.false.,&
         twmm_flag=.false.,&
         pwmm_flag=.false.,&
@@ -73,21 +77,25 @@ module pentrc_interface
         theta_out=.false.,&
         xlmda_out=.false.,&
         eqpsi_out=.false.,&
+        equil_grid=.false.,&
+        input_grid=.false.,&
         fnml_flag=.false.,&
         ellip_flag=.false.,&
         diag_flag=.false.,&
-        term_flag=.true.,&
-        clean=.true.
-        
-    integer :: i, &
+        term_flag=.false.,&
+        clean=.true.,&
+        flags(nflags)=.false.
+
+    integer :: i,j,k,l,m, &
         mi=2, &
         zi=1, &
         zimp=6, &
         mimp=12, &
         nl=0, &
         tmag_in = 1,&
-        jsurf_in = 0
-        
+        jsurf_in = 0,&
+        nout = 30
+
     real(r8) ::     &
         atol=1e-6, &
         rtol=1e-3,  &
@@ -100,37 +108,45 @@ module pentrc_interface
         divxfac=1.0,&
         diag_psi = 0.7, &
         psilim(2) = (/0,1/),&
-        psiout(10)= (/0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/)
-        
+        psiout(30)= 0, &
+        psi_out(30)= (/(i,i=1,30)/)/30.6
+
+    complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
+    complex(r8), dimension(:,:,:), allocatable :: wtw
+
+    character(4) :: nstring,method,methods(nflags)
     character(512) :: &
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
         ipec_file  ="ipec_order1_n1.bin", &
         peq_file ="ipec_xclebsch_n1.out", &
-        data_dir ="."
+        data_dir =".",&
+        docs(nflags)=""
     character(32) :: &
         nutype = "harmonic",&
         f0type = "maxwellian",&
-        jac_in = ""
-      
+        jac_in = "default",&
+        moment = "pressure"
+
+    ! namelists
     namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
-        
+
     namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
         atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
-        
-    namelist/pent_output/eq_out,theta_out,xlmda_out,eqpsi_out,&
+
+    namelist/pent_output/moment,eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&
         fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
-        wxyz_flag,psiout,fkmm_flag,tkmm_flag,pkmm_flag,&
+        wxyz_flag,psiout,psi_out,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
         fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
-        term_flag,clean
-        
+        term_flag,verbose,clean
+
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug
         
     contains    
-        
+
     !=======================================================================
     subroutine get_pentrc(get_nl,get_zi,get_mi,get_wdfac,get_divxfac,&
                         get_electron,get_eq_out,get_theta_out,get_xlmda_out)
