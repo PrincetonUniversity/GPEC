@@ -12,8 +12,8 @@ F90 = $(FC) $(options) $(FFLAGS)
 	$(F90) -c $<
 
 LIBDIR = \
-	-L$(MATHHOME) \
-	-L$(NETCDFHOME)/lib \
+	-L$(MATHDIR) \
+	-L$(NETCDFDIR) \
 	-L../lib
 
 LIBS = \
@@ -44,6 +44,8 @@ pentrc: $(OBJS)
 	$(F90) -o pentrc $(OBJS) $(LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
+	mkdir -p ../bin
+	cp -f pentrc ../bin
 
 # dependencies
 

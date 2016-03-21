@@ -4,7 +4,7 @@
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
 
-    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
     qhigh=1e3            ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
@@ -21,7 +21,7 @@
     kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
     kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
     kingridtype = 0      ! Regular grid method (default : 0)
-    passing_flag = t     ! Includes passing particle effects (default: false)
+    passing_flag = f     ! Includes passing particle effects (default: false)
     ktanh_flag = t       ! Ignore kinetic effects in the core smoothly (default: false)
     ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)

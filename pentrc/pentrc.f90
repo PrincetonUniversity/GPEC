@@ -5,11 +5,11 @@ program pentrc
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Main program. Interfaces with input file, sets corresponding
-    !   global variables, and runs requested subproccesses.
+    !   global variables, and runs requested subprocess.
     !
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
@@ -71,7 +71,7 @@ program pentrc
         fnml_flag=.false.,&
         ellip_flag=.false.,&
         diag_flag=.false.,&
-        term_flag=.true.,&
+        term_flag=.false.,&
         clean=.true.,&
         flags(nflags)=.false.
         
@@ -136,7 +136,7 @@ program pentrc
         fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
         wxyz_flag,psiout,psi_out,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
         fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
-        term_flag,clean
+        term_flag,verbose,clean
         
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug
@@ -153,7 +153,8 @@ program pentrc
     ! warnings if using deprecated inputs
     if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
     if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out."
-    
+    if(term_flag) print *, "WARNING: term_flag has been deprecated. Use verbose."
+
     ! distribute some simplified inputs to module circles
     xatol = atol
     xrtol = rtol
@@ -162,7 +163,6 @@ program pentrc
     xf0type= f0type 
     lambdaatol = atol
     lambdartol = rtol    
-    verbose = term_flag
     if(verbose) print *,''
     if(verbose) print *,"PENTRC START => "//trim(version)
     if(verbose) print *,"______________________________"

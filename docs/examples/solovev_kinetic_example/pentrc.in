@@ -8,7 +8,7 @@
     zi = 1                              ! Main ion charge (e)
     mimp = 12                           ! Impurity mass (u)
     zimp = 6                            ! Impurity charge (e)
-    nl = 0                              ! Bounce harmonic range (-nl to nl)
+    nl = 6                              ! Bounce harmonic range (-nl to nl)
     electron = .false.                  ! Electron contribution
     nutype = "harmonic"                 ! Collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! Distribution function: "maxwellian"
@@ -39,7 +39,7 @@
     tgar_flag = .true.                  ! Trapped general aspect ratio calculation
     pgar_flag = .false.                 ! Passing general aspect ratio calculation
     clar_flag = .false.                 ! Circular large aspect ratio calculation
-    rlar_flag = .false.                 ! Reduced large aspect ratio calculation
+    rlar_flag = .true.                  ! Reduced large aspect ratio calculation
     fcgl_flag = .false.                 ! Fluid Chew-Goldberger-Low limit
     wxyz_flag = .false.                 ! Euler-lagrange equation matrix output at psiout
     fkmm_flag = .false.                 ! Full euler-lagrange matrix calculation (t,p also available)
@@ -57,7 +57,7 @@
     verbose = .true.                    ! Print progress to terminal
     clean = .false.                     ! Remove pentrc_*.out before running
 /
-&PENT_ADMIN                             
+&PENT_ADMIN
     fnml_flag = .false.                 ! Special function matrix [JKP PRL 2009]
     ellip_flag = .false.                ! Elliptic integral functions
     diag_flag = .false.                 ! Diagnostic module
@@ -65,4 +65,3 @@
     lambdadebug = .false.               ! Debug pitch integration
     xdebug = .false.                    ! Debug energy integration
 /
-

@@ -377,7 +377,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -391,7 +391,7 @@ c-----------------------------------------------------------------------
 c     fixup solution at singular surface.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,10)
-     $  "psi = ",sing(ising)%psifac,", q = ",sing(ising)%q
+     $  "psi =",sing(ising)%psifac,", q = ",sing(ising)%q
       CALL ode_unorm(.TRUE.)
 c-----------------------------------------------------------------------
 c     diagnose solution before reinitialization.
@@ -537,7 +537,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -550,7 +550,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     fixup solution at singular surface.
 c-----------------------------------------------------------------------
-      WRITE(*,10)"psi = ",kinsing(ising)%psifac,", q = ",
+      WRITE(*,10)"psi =",kinsing(ising)%psifac,", q = ",
      $     kinsing(ising)%q
       CALL ode_unorm(.TRUE.)
 c-----------------------------------------------------------------------
@@ -633,7 +633,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -658,10 +658,10 @@ c-----------------------------------------------------------------------
 c     write to crit.out.
 c-----------------------------------------------------------------------
       IF(verbose)
-     $  WRITE(*,10)"psi = ",sing(ising)%psifac,", q = ",sing(ising)%q
-      WRITE(crit_out_unit,'(/1x,a,i6,a,1p,e9.3,0p,a,f6.3,a,i2)')
+     $  WRITE(*,10)"psi =",sing(ising)%psifac,", q = ",sing(ising)%q
+      WRITE(crit_out_unit,'(/1x,a,i6,a,es10.3,a,f6.3,a,i2)')
      $     "Gaussian Reduction at istep = ",istep,
-     $     ", psi = ",sing(ising)%psifac,", q = ",sing(ising)%q,
+     $     ", psi =",sing(ising)%psifac,", q = ",sing(ising)%q,
      $     ", index1 = ",index(1)
 c-----------------------------------------------------------------------
 c     initialize fixfac.
@@ -889,12 +889,12 @@ c-----------------------------------------------------------------------
          ipert=errloc(1)
          isol=errloc(2)
          ieq=errloc(3)
-         WRITE(message,'(4(a,i3),1p,3(a,e9.3))')
+         WRITE(message,'(4(a,i3),1p,3(a,es10.3))')
      $        "Termination by ode_step"//CHAR(10)
      $        //" ipert = ",ipert,", ieq = ",ieq,", isol = ",isol,
      $        ", msol = ",msol,CHAR(10)
-     $        //" errmax = ",errmax,", ewt = ",ewtmax,
-     $        ", atol = ",ABS(atol(ipert,isol,ieq))
+     $        //" errmax =",errmax,", ewt =",ewtmax,
+     $        ", atol =",ABS(atol(ipert,isol,ieq))
          CALL program_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
@@ -968,7 +968,7 @@ c     format statements.
 c-----------------------------------------------------------------------
  10   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
- 20   FORMAT(1x,a,i6,a,1p,e9.3,0p,a,f6.3)
+ 20   FORMAT(1x,a,i6,a,es10.3,a,f6.3)
  40   FORMAT(2(a,i3))
  30   FORMAT(3x,"mlow",1x,"mhigh",1x,"mpert",2x,"msol",3x,"psifac",
      $     6x,"q"//4i6,1p,2e11.3/)
@@ -998,7 +998,7 @@ c-----------------------------------------------------------------------
       WRITE(crit_out_unit,10)
       WRITE(crit_out_unit,20)
      $     "Gaussian Reduction at istep = ",istep,
-     $     ", psi = ",psifac,", q = ",q
+     $     ", psi =",psifac,", q = ",q
       IF(.NOT. sing_flag)WRITE(crit_out_unit,10)
       istate=1
       flag_count=0

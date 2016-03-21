@@ -13,6 +13,8 @@ OBJS = \
 
 sum: $(OBJS)
 	$(F90) -o sum $(OBJS)
+	mkdir -p ../bin
+	cp -f sum ../bin
 
 # dependencies
 

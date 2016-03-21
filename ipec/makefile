@@ -9,8 +9,8 @@ F90 = $(FC) $(options) $(FFLAGS)
 	$(F90) -c $*.f
 
 LIBDIR = \
-	-L$(MATHHOME) \
-	-L$(NETCDFHOME)/lib \
+	-L$(MATHDIR) \
+	-L$(NETCDFDIR) \
 	-L../lib
 
 LIBS = \
@@ -39,6 +39,8 @@ ipec: $(OBJS)
 	$(F90) -o ipec $(OBJS) $(LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libipec.a *.o
+	mkdir -p ../bin
+	cp -f ipec ../bin
 
 # dependencies
 

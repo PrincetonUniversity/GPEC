@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
  30   FORMAT(3x,"mlow",4x,"m",2x,"mhigh",2x,"isol",2x,"msol"//5i6/)
- 40   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 40   FORMAT(1x,a,es10.3,a,f6.3)
 c-----------------------------------------------------------------------
 c     allocate space for asymptotic coefficients.
 c-----------------------------------------------------------------------
@@ -147,7 +147,7 @@ c     print initial point of integration.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psifac,0)
       q=sq%f(4)
-      IF(verbose) WRITE(*,40)"psi = ",psifac,", q = ",q
+      IF(verbose) WRITE(*,40)"psi =",psifac,", q = ",q
 c-----------------------------------------------------------------------
 c     open file for error output.
 c-----------------------------------------------------------------------
@@ -215,13 +215,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
 c-----------------------------------------------------------------------
 c     close crit files.
 c-----------------------------------------------------------------------
-      WRITE(term_unit,10)"psi = ",psifac,", q = ",q
+      WRITE(term_unit,10)"psi =",psifac,", q = ",q
       WRITE(crit_out_unit,20)
       CALL ascii_close(crit_out_unit)
       WRITE(crit_bin_unit)
@@ -273,7 +273,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(/a,i4,1p,2(a,e9.3))
+ 10   FORMAT(/a,i4,1p,2(a,es10.3))
  20   FORMAT(/5x,"i",5x,"eval",7x,"evali",7x,"err"/)
  30   FORMAT(i6,1p,3e11.3)
 c-----------------------------------------------------------------------
@@ -306,7 +306,7 @@ c     write ascii eigenvalues.
 c-----------------------------------------------------------------------
       IF(out_evals .AND. istep > 0)THEN
          WRITE(evals_out_unit,10)"istep = ",istep,
-     $        ", psifac = ",psifac,", q = ",q
+     $        ", psifac =",psifac,", q = ",q
          WRITE(evals_out_unit,20)
          WRITE(evals_out_unit,30)(ipert,
      $        evalsi(indexi(ipert)),evals(index(ipert)),

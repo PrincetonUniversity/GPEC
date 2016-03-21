@@ -10,14 +10,14 @@
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
-    delta_mlow=12        ! Expands lower bound of Fourier harmonics
-    delta_mhigh=12       ! Expands upper bound of  Fourier harmonics
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
     delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
-    kin_flag = t         ! Kinetic EL equation (default: false)
-    con_flag = t         ! Continue integration through layers (default: false)
+    kin_flag = f         ! Kinetic EL equation (default: false)
+    con_flag = f         ! Continue integration through layers (default: false)
     kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
     kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
     kingridtype = 0      ! Regular grid method (default : 0)
@@ -27,8 +27,8 @@
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     electron_flag = f    ! Calculates electron contributions
 
-    tol_nr=1e-5          ! Relative tolerance of dynamic integration steps away from rationals
-    tol_r=1e-6           ! Relative tolerance of dynamic integration steps near rationals
+    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized

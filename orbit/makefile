@@ -8,7 +8,7 @@ F90 = $(FC) $(options) $(FFLAGS)
 	$(F90) -c $*.f
 
 LIBDIR = \
-	-L$(MATHHOME) \
+	-L$(MATHDIR) \
 	-L../lib
 
 LIBS = \
@@ -31,6 +31,8 @@ all: v orbit
 
 orbit: $(OBJS)
 	$(F90) -o orbit $(OBJS) $(LIBS)
+	mkdir -p ../bin
+	cp -f orbit ../bin
 
 v:
     @echo "cflag  = $(cflag)"

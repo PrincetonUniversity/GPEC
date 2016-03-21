@@ -71,9 +71,9 @@ v:
 	@echo "Defaults tailored for $(PLATFORM)"
 	@echo "Compiling with FC = $(FC)"
 	@echo "   using libraries $(MATHLIBS)"
-	@echo "   from $(MATHHOME)"
+	@echo "   from $(MATHDIR)"
 	@echo "   and libraries $(NETCDFLIBS)"
-	@echo "   from $(NETCDFHOME)"
+	@echo "   from $(NETCDFDIR)"
 	@echo
 	@echo "Set environement FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
@@ -84,19 +84,19 @@ endif
 # cleaning
 
 clean:
-	cd ../harvest; make -f makefile clean
-	cd ../xdraw;  make -f makefile clean
-	cd ../lsode;  make -f makefile clean
-	cd ../equil;  make -f makefile clean
-	cd ../orbit;  make -f makefile clean
-	cd ../vacuum; make -f makefile clean
-	cd ../dcon;   make -f makefile clean
-	cd ../match;  make -f makefile clean
-	cd ../multi;  make -f makefile clean
-	cd ../sum;    make -f makefile clean
-	cd ../coil;   make -f makefile clean
-	cd ../ipec;   make -f makefile clean
-	cd ../pentrc; make -f makefile clean
+	cd ../harvest; make clean
+	cd ../xdraw;  make clean
+	cd ../lsode;  make clean
+	cd ../equil;  make clean
+	cd ../orbit;  make clean
+	cd ../vacuum; make clean
+	cd ../dcon;   make clean
+	cd ../match;  make clean
+	cd ../multi;  make clean
+	cd ../sum;    make clean
+	cd ../coil;   make clean
+	cd ../ipec;   make clean
+	cd ../pentrc; make clean
 
 realclean: clean
 	rm -rf ../lib ../bin
