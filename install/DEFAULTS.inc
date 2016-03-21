@@ -34,10 +34,8 @@
 # use acml or lapack based on what is loaded
 ifndef ACML_HOME
     MATHDIR = $(LAPACKHOME)
-    MATHLIBS = -llapack -lblas
 else
     MATHDIR = $(ACML_HOME)
-    MATHLIBS = -lacml
 endif
 
 
@@ -69,6 +67,7 @@ endif
 ifdef cflag
 	ifeq ($(cflag),zwang_intel)
 	    # module load intel/2013.1.3 lapack netcdf
+	    # ipec exec fails with "error while loading shared libraries: libnetcdf.so.4: cannot open shared object file: No such file or directory"
 		PLATFORM = portal
 		FC = /usr/pppl/intel/2013.1.3/bin/ifort
 		CC = /usr/pppl/intel/2013.1.3/bin/icc
