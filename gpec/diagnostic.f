@@ -1,45 +1,45 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERALIZED PERTURBED EQUILIBRIUM CODE
 c     diagnose various features.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. ipdiag_mod
-c      1. ipdiag_eigen
-c      2. ipdiag_magpot
-c      3. ipdiag_arbsurf
-c      4. ipdiag_angles
-c      5. ipdiag_surfmode
-c      6. ipdiag_singcurs
-c      7. ipdiag_xbcontra
-c      8. ipdiag_xbnobo
-c      9. ipdiag_xbst
-c     10. ipdiag_pmodbrz
-c     11. ipdiag_rzphibx
-c     12. ipdiag_rzpgrid
-c     13. ipdiag_rzpdiv
-c     14. ipdiag_radvar
-c     15. ipdiag_permeabev_orthogonality
+c      0. gpec_diagnostic
+c      1. diagnose_eigen
+c      2. diagnose_magpot
+c      3. diagnose_arbsurf
+c      4. diagnose_angles
+c      5. diagnose_surfmode
+c      6. diagnose_singcurs
+c      7. diagnose_xbcontra
+c      8. diagnose_xbnobo
+c      9. diagnose_xbst
+c     10. diagnose_pmodbrz
+c     11. diagnose_rzphibx
+c     12. diagnose_rzpgrid
+c     13. diagnose_rzpdiv
+c     14. diagnose_radvar
+c     15. diagnose_permeabev_orthogonality
 c-----------------------------------------------------------------------
-c     subprogram 0. ipdiag_mod.
+c     subprogram 0. gpec_diagnostic.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ipdiag_mod
-      USE ipresp_mod
+      MODULE gpec_diagnostic
+      USE gpec_response
       USE ipvacuum_mod
 
       IMPLICIT NONE
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipdiag_eigen.
+c     subprogram 1. diagnose_eigen.
 c     diagnose eigenvectors and eigenenergies.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_eigen
+      SUBROUTINE diagnose_eigen
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -50,7 +50,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_eigen.out","UNKNOWN")
+      CALL ascii_open(out_unit,"diagnose_eigen.out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_EIGEN: "//
      $     "Diagnose DCON eigenvalues for eigenvectors"
       WRITE(out_unit,'(2(1x,a3),1x,a16)')"m","m","pot energy"
@@ -73,18 +73,18 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_eigen
+      END SUBROUTINE diagnose_eigen
 c-----------------------------------------------------------------------
-c     subprogram 2. ipdiag_magpot.
+c     subprogram 2. diagnose_magpot.
 c     diagnose magnetic potential errors.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_magpot
+      SUBROUTINE diagnose_magpot
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i,j
 
-      CALL ascii_open(out_unit,"ipdiag_magpot_n"//
+      CALL ascii_open(out_unit,"diagnose_magpot_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_MAGPOT: Magnetic potential errors"
       WRITE(out_unit,'(1x,a8,1x,I4)')"mpert=",mpert
@@ -103,12 +103,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_magpot
+      END SUBROUTINE diagnose_magpot
 c-----------------------------------------------------------------------
-c     subprogram 3. ipdiag_arbsurf.
+c     subprogram 3. diagnose_arbsurf.
 c     diagnose surface inductance.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_arbsurf(majr,minr)
+      SUBROUTINE diagnose_arbsurf(majr,minr)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -123,7 +123,7 @@ c-----------------------------------------------------------------------
       
       WRITE(UNIT=smajr, FMT='(I4)')INT(100*majr)
       WRITE(UNIT=sminr, FMT='(I4)')INT(100*minr)
-      CALL ascii_open(out_unit,"ipdiag_arbsurf_R"//smajr//"_r"//sminr//
+      CALL ascii_open(out_unit,"diagnose_arbsurf_R"//smajr//"_r"//sminr//
      $     ".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_VACUUM: "//
      $     "Diagnose surface inductances for arbitrary shape"
@@ -137,12 +137,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_arbsurf
+      END SUBROUTINE diagnose_arbsurf
 c-----------------------------------------------------------------------
-c     subprogram 4. ipdiag_angles.
+c     subprogram 4. diagnose_angles.
 c     diagnose and visualize magnetic angles.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_angles
+      SUBROUTINE diagnose_angles
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -237,7 +237,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------      
-      CALL ascii_open(out_unit,"ipdiag_angles.out","UNKNOWN")
+      CALL ascii_open(out_unit,"diagnose_angles.out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_ANGLES: "//
      $     "Diagnose and visualize magnetic angles"
       WRITE(out_unit,'(1x,a8,1x,I6)')"angnum=",angnum
@@ -279,12 +279,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_angles
+      END SUBROUTINE diagnose_angles
 c-----------------------------------------------------------------------
-c     subprogram 5. ipdiag_surfmode.
+c     subprogram 5. diagnose_surfmode.
 c     response to fourier modes for the control surface.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_surfmode(lowmode,highmode,
+      SUBROUTINE diagnose_surfmode(lowmode,highmode,
      $     rin,bpin,bin,rcin,tin,jin)
 c-----------------------------------------------------------------------
 c     declaration.
@@ -306,23 +306,23 @@ c-----------------------------------------------------------------------
          binmn(j,i-mlow+1)=1
          finmn(j,:)=binmn(j,:)
          CALL iscdftb(mfac,mpert,binfun(j,:),mthsurf,finmn(j,:))         
-         CALL ipeq_fcoords(psilim,finmn(j,:),mfac,mpert,
+         CALL peq_fcoords(psilim,finmn(j,:),mfac,mpert,
      $        rin,bpin,bin,rcin,tin,jin)
-         CALL ipeq_weight(psilim,finmn(j,:),mfac,mpert,1)  
+         CALL peq_weight(psilim,finmn(j,:),mfac,mpert,1)
          IF (fixed_boundary_flag) THEN
             boutmn(j,:)=finmn(j,:)
          ELSE
             boutmn(j,:)=MATMUL(permeabmats(resp_index,:,:),finmn(j,:))
          ENDIF       
-         CALL ipeq_weight(psilim,finmn(j,:),mfac,mpert,0)  
-         CALL ipeq_bcoords(psilim,boutmn(j,:),mfac,mpert,
+         CALL peq_weight(psilim,finmn(j,:),mfac,mpert,0)
+         CALL peq_bcoords(psilim,boutmn(j,:),mfac,mpert,
      $        rin,bpin,bin,rcin,tin,jin)
          CALL iscdftb(mfac,mpert,boutfun(j,:),mthsurf,boutmn(j,:))
       ENDDO
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_surfmode.out","UNKNOWN")
+      CALL ascii_open(out_unit,"diagnose_surfmode.out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_SURFMODE: Plasma response for the "//
      $     "fourier modes on the control surface"
       WRITE(out_unit,*)"MODES"
@@ -353,9 +353,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_surfmode
+      END SUBROUTINE diagnose_surfmode
 c-----------------------------------------------------------------------
-c     subprogram 6. ipdiag_singcurs.
+c     subprogram 6. diagnose_singcurs.
 c     diagnose asymtotic values of singular currents.
 c     __________________________________________________________________
 c     egnum      : eigenmode number without edge_flag
@@ -364,7 +364,7 @@ c     rsing      : number of rational surfaces
 c     resol      : resolution by number of grid points
 c     smallwidth : closest point to approach
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_singcurs(egnum,xspmn,rsing,resol,smallwidth)
+      SUBROUTINE diagnose_singcurs(egnum,xspmn,rsing,resol,smallwidth)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -392,7 +392,7 @@ c-----------------------------------------------------------------------
       delcurs=0
       corcurs=0
       singcurs=0
-      CALL ipeq_alloc
+      CALL peq_alloc
       CALL idcon_build(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     compute singular currents with logarithmic approach.
@@ -450,7 +450,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate delta and correction term at lpsi.
 c-----------------------------------------------------------------------
-            CALL ipeq_sol(lpsi)
+            CALL peq_sol(lpsi)
             lbwp1mn=bwp1_mn(resnum)
             CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
             CALL spline_eval(sq,lpsi,0)
@@ -476,7 +476,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate delta and correction term at rpsi.
 c-----------------------------------------------------------------------
-            CALL ipeq_sol(rpsi)
+            CALL peq_sol(rpsi)
             rbwp1mn=bwp1_mn(resnum)
             CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
             CALL spline_eval(sq,rpsi,0)
@@ -511,11 +511,11 @@ c-----------------------------------------------------------------------
 
          WRITE(*,*)"Finished the analysis for the q =",singtype(ising)%q
       ENDDO
-      CALL ipeq_dealloc
+      CALL peq_dealloc
 c-----------------------------------------------------------------------
 c     write the results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_deltas_n"//
+      CALL ascii_open(out_unit,"diagnose_deltas_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_DELTAS: "//
      $     "Asymtotic analysis for deltas at rational surfaces"
@@ -531,7 +531,7 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-      CALL ascii_open(out_unit,"ipdiag_singcurs_n"//
+      CALL ascii_open(out_unit,"diagnose_singcurs_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_SINGCURS: "//
      $     "asymtotic analysis for singular currents at "//
@@ -555,12 +555,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_singcurs
+      END SUBROUTINE diagnose_singcurs
 c-----------------------------------------------------------------------
-c     subprogram 7. ipdiag_xbcontra.
+c     subprogram 7. diagnose_xbcontra.
 c     diagnose various components of xi and b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbcontra(egnum,xspmn,rin,bpin,bin,rcin,tin)    
+      SUBROUTINE diagnose_xbcontra(egnum,xspmn,rin,bpin,bin,rcin,tin)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -577,7 +577,7 @@ c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xspmn)
 
       WRITE(*,*)"Computing contravariant components in detail"
-      CALL ascii_open(out_unit,"ipdiag_xbcontra_n"//
+      CALL ascii_open(out_unit,"diagnose_xbcontra_n"//
      $        TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XBCONTRA: "//
      $     "Contravariant components of displacement and field"
@@ -585,7 +585,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a8,1x,I6)')"mlow = ",mlow
       WRITE(out_unit,'(1x,a8,1x,I6,1/)')"mhigh = ",mhigh
       WRITE(out_unit,'(2(1x,a16))')"psifac","qfac"
-      CALL ipeq_alloc
+      CALL peq_alloc
       DO istep=0,mstep
          WRITE(out_unit,'(2(1x,es16.8))')psifac(istep),qfac(istep)
       ENDDO
@@ -602,42 +602,42 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(u5,mstep,mpert)
       u5%xs=psifac
       DO istep=0,mstep
-         CALL ipeq_sol(psifac(istep))
+         CALL peq_sol(psifac(istep))
          u5%fs(istep,:)=bwp_mn
       ENDDO
       CALL cspline_fit(u5,"extrap")
 
       DO istep=0,mstep
-         CALL ipeq_sol(psifac(istep))
-         CALL ipeq_contra(psifac(istep))
+         CALL peq_sol(psifac(istep))
+         CALL peq_contra(psifac(istep))
          CALL cspline_eval(u1,psifac(istep),1)
          CALL cspline_eval(u5,psifac(istep),1)
          xwd_mn(:)=u1%f1(:)
          bwd_mn(:)=u5%f1(:)
          IF (jac_type /= jac_out) THEN 
-            CALL ipeq_bcoords(psifac(istep),xwp_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),xwp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xwt_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),xwt_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xwz_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),xwz_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xsp_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),xsp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwt_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),bwt_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwz_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),bwz_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xss_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),xss_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xwd_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),xwd_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xsp1_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),xsp1_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwd_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),bwd_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwp1_mn,mfac,mpert,
+            CALL peq_bcoords(psifac(istep),bwp1_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
          ENDIF
          DO ipert=1,mpert
@@ -657,17 +657,17 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 
-      CALL ipeq_dealloc
+      CALL peq_dealloc
       CALL cspline_dealloc(u5)
       CALL ascii_close(out_unit)
 
       RETURN
-      END SUBROUTINE ipdiag_xbcontra
+      END SUBROUTINE diagnose_xbcontra
 c-----------------------------------------------------------------------
-c     subprogram 8. ipdiag_xbnobo.
+c     subprogram 8. diagnose_xbnobo.
 c     write normal perturbed quantities on the boundary.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbnobo(egnum,xspmn,d3_flag)
+      SUBROUTINE diagnose_xbnobo(egnum,xspmn,d3_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -713,17 +713,17 @@ c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xspmn)
-      CALL ipeq_alloc
-      CALL ipeq_sol(psilim)
-      CALL ipeq_contra(psilim)
-      CALL ipeq_normal(psilim)
-      CALL ipeq_bcoords(psilim,xno_mn,mfac,mpert,
+      CALL peq_alloc
+      CALL peq_sol(psilim)
+      CALL peq_contra(psilim)
+      CALL peq_normal(psilim)
+      CALL peq_bcoords(psilim,xno_mn,mfac,mpert,
      $     power_r,power_bp,power_b,0,0,0)
-      CALL ipeq_bcoords(psilim,bno_mn,mfac,mpert,
+      CALL peq_bcoords(psilim,bno_mn,mfac,mpert,
      $     power_r,power_bp,power_b,0,0,0)
       CALL iscdftb(mfac,mpert,xno_fun,mthnum,xno_mn)
       CALL iscdftb(mfac,mpert,bno_fun,mthnum,bno_mn)
-      CALL ipeq_dealloc
+      CALL peq_dealloc
       
       xnorvc=xno_fun*norvec
       xnozvc=xno_fun*nozvec
@@ -732,7 +732,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_xnobo_n"//
+      CALL ascii_open(out_unit,"diagnose_xnobo_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XNOBO: "//
      $     "Perturbed normal displacement vectors on the boundary"      
@@ -743,7 +743,7 @@ c-----------------------------------------------------------------------
      $        REAL(xnorvc(ithnum)),REAL(xnozvc(ithnum)),
      $        AIMAG(xnorvc(ithnum)),AIMAG(xnozvc(ithnum))
       ENDDO
-      CALL ascii_open(out_unit,"ipdiag_bnobo_n"//
+      CALL ascii_open(out_unit,"diagnose_bnobo_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_BNOBO: "//
      $     "perturbed normal field vectors on the boundary"      
@@ -799,12 +799,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_xbnobo
+      END SUBROUTINE diagnose_xbnobo
 c-----------------------------------------------------------------------
-c     subprogram 9. ipdiag_xbst.
+c     subprogram 9. diagnose_xbst.
 c     diagnose strength of x and b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbst(egnum,xspmn)
+      SUBROUTINE diagnose_xbst(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -828,15 +828,15 @@ c-----------------------------------------------------------------------
 
       CALL idcon_build(egnum,xspmn)
       
-      CALL ipeq_alloc
+      CALL peq_alloc
       DO istep=1,mstep
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces.
 c-----------------------------------------------------------------------
-         CALL ipeq_sol(psifac(istep))
-         CALL ipeq_contra(psifac(istep))
-         CALL ipeq_cova(psifac(istep))
-         CALL ipeq_rzphi(psifac(istep))
+         CALL peq_sol(psifac(istep))
+         CALL peq_contra(psifac(istep))
+         CALL peq_cova(psifac(istep))
+         CALL peq_rzphi(psifac(istep))
 
          CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
          CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
@@ -875,11 +875,11 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,b1(istep,:),mthsurf,b1mns(istep,:))
          CALL iscdftf(mfac,mpert,b2(istep,:),mthsurf,b2mns(istep,:))
       ENDDO
-      CALL ipeq_dealloc
+      CALL peq_dealloc
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------      
-      CALL ascii_open(out_unit,"ipdiag_xbst_n"//
+      CALL ascii_open(out_unit,"diagnose_xbst_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_XBST: "//
      $     "Perturbed x and b strength on flux surfaces"
@@ -910,12 +910,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_xbst
+      END SUBROUTINE diagnose_xbst
 c-----------------------------------------------------------------------
-c     subprogram 10. ipdiag_pmodbrz.
+c     subprogram 10. diagnose_pmodbrz.
 c     plot perturbed mod b at rz coordinates.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_pmodbrz(egnum,xspmn)
+      SUBROUTINE diagnose_pmodbrz(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -964,15 +964,15 @@ c-----------------------------------------------------------------------
       cspl%xs=theta
 
       CALL idcon_build(egnum,xspmn)
-      CALL ipeq_alloc
+      CALL peq_alloc
       DO istep=1,mstep
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces with regulation.
 c-----------------------------------------------------------------------
          CALL spline_eval(sq,psifac(istep),1)
-         CALL ipeq_sol(psifac(istep))
-         CALL ipeq_contra(psifac(istep))
-         CALL ipeq_cova(psifac(istep))
+         CALL peq_sol(psifac(istep))
+         CALL peq_contra(psifac(istep))
+         CALL peq_cova(psifac(istep))
 c-----------------------------------------------------------------------
 c     compute mod b variations.
 c-----------------------------------------------------------------------
@@ -1102,7 +1102,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_pmodb_n"//
+      CALL ascii_open(out_unit,"diagnose_pmodb_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IDIAG_PMODB: "//
      $     "Components in perturbed mod b"
@@ -1139,7 +1139,7 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
 
-      CALL ipeq_dealloc
+      CALL peq_dealloc
       DEALLOCATE(rs,zs,eulbparmns,lagbparmns,llagbparmns,cdeltamns,
      $     eulbparfun,lagbparfun,llagbparfun,eqfunx,eqfuny,eqfuns,
      $     xspmns,xmsmns,bvtmns,bvzmns,xmzmns,xvtmns,xvzmns,xmp1mns)
@@ -1147,12 +1147,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_pmodbrz
+      END SUBROUTINE diagnose_pmodbrz
 c-----------------------------------------------------------------------
-c     subprogram 10. ipdiag_pmodbmn.
+c     subprogram 10. diagnose_pmodbmn.
 c     test and plot perturbed mod b for gpec.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_pmodbmn(egnum,xspmn)
+      SUBROUTINE diagnose_pmodbmn(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1177,7 +1177,7 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"Computing perturbed b field for gpec"
 
       CALL idcon_build(egnum,xspmn)
-      CALL ipeq_alloc
+      CALL peq_alloc
 c-----------------------------------------------------------------------
 c     set up fourier-spline type.
 c-----------------------------------------------------------------------
@@ -1315,7 +1315,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces with regulation.
 c-----------------------------------------------------------------------
-         CALL ipeq_sol(psifac(istep))
+         CALL peq_sol(psifac(istep))
          CALL cspline_eval(smats,psifac(istep),0)
          CALL cspline_eval(tmats,psifac(istep),0)
          CALL cspline_eval(xmats,psifac(istep),0)
@@ -1336,7 +1336,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_pmodbmn_n"//
+      CALL ascii_open(out_unit,"diagnose_pmodbmn_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IDIAG_PMODBMN: "//
      $     "Components in perturbed mod b"
@@ -1360,18 +1360,18 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
 
-      CALL ipeq_dealloc
+      CALL peq_dealloc
       CALL fspline_dealloc(fmodb)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_pmodbmn
+      END SUBROUTINE diagnose_pmodbmn
 c-----------------------------------------------------------------------
-c     subprogram 11. ipdiag_rzphibx.
+c     subprogram 11. diagnose_rzphibx.
 c     write r,z,phi,b,x on hamada coordinates.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_rzphibx(egnum,xspmn)
+      SUBROUTINE diagnose_rzphibx(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1415,12 +1415,12 @@ c-----------------------------------------------------------------------
 c     computation.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing rzphibx components"
-      CALL ipeq_alloc
+      CALL peq_alloc
       DO istep=1,rstep
          CALL spline_eval(sq,psis(istep),0)
-         CALL ipeq_sol(psis(istep))
-         CALL ipeq_contra(psis(istep))
-         CALL ipeq_cova(psis(istep))
+         CALL peq_sol(psis(istep))
+         CALL peq_contra(psis(istep))
+         CALL peq_cova(psis(istep))
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -1473,11 +1473,11 @@ c-----------------------------------------------------------------------
          xps(istep,:)=t33*xvz_fun
          bps(istep,:)=t33*bvz_fun
       ENDDO
-      CALL ipeq_dealloc
+      CALL peq_dealloc
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_rzphibx_n"//
+      CALL ascii_open(out_unit,"diagnose_rzphibx_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RZPHIBX: "//
      $     "Give rzphibx information in hamada coordinates"
@@ -1507,12 +1507,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_rzphibx
+      END SUBROUTINE diagnose_rzphibx
 c-----------------------------------------------------------------------
-c     subprogram 12. ipdiag_rzpgrid.
+c     subprogram 12. diagnose_rzpgrid.
 c     diagnose hamada coordinates inverted from rzphi.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_rzpgrid(nr,nz)
+      SUBROUTINE diagnose_rzpgrid(nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1553,7 +1553,7 @@ c-----------------------------------------------------------------------
       xint=(x2-x1)/nr
       zint=(z2-z1)/nz
 
-      CALL ascii_open(out_unit,"ipdiag_rzpgrid.out","UNKNOWN")
+      CALL ascii_open(out_unit,"diagnose_rzpgrid.out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RZPGRID: "//
      $     "Give hamada coordinates as functions of rzphi"
       WRITE(out_unit,'(6(1x,a12))')"r","z","limit","psi","theta","phi"
@@ -1618,12 +1618,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_rzpgrid
+      END SUBROUTINE diagnose_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 13. ipdiag_rzpdiv.
+c     subprogram 13. diagnose_rzpdiv.
 c     check divergence of rzphi functions.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
+      SUBROUTINE diagnose_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1684,10 +1684,10 @@ c-----------------------------------------------------------------------
       CALL bicube_dealloc(rfz)
       CALL bicube_dealloc(ifz)
 
-      CALL ascii_open(out_unit,"ipdiag_rzpdiv_n"//
+      CALL ascii_open(out_unit,"diagnose_rzpdiv_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       
-      WRITE(out_unit,*)"IPEC_RZPDIV: Divergence in rzphi grid"
+      WRITE(out_unit,*)"GPEC_RZPDIV: Divergence in rzphi grid"
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
      $     "re(div)","im(div)","abs(div)"
       
@@ -1703,12 +1703,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_rzpdiv     
+      END SUBROUTINE diagnose_rzpdiv
 c-----------------------------------------------------------------------
-c     subprogram 14. ipdiag_radvar.
+c     subprogram 14. diagnose_radvar.
 c     generate various radial variables.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_radvar
+      SUBROUTINE diagnose_radvar
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1726,7 +1726,7 @@ c-----------------------------------------------------------------------
       psitor(:)=qs%fsi(:,1)/qintb
       rhotor(:)=SQRT(psitor(:))
       CALL spline_dealloc(qs)
-      CALL ascii_open(out_unit,"ipdiag_radvar_n"//
+      CALL ascii_open(out_unit,"diagnose_radvar_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RADVAR: "//
      $     "Various radial variables"
@@ -1742,12 +1742,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_radvar
+      END SUBROUTINE diagnose_radvar
 c-----------------------------------------------------------------------
-c     subprogram 15. ipdiag_permeabev_orthogonality.
+c     subprogram 15. diagnose_permeabev_orthogonality.
 c     diagnose orhtogonality of eigenvectors.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_permeabev_orthogonality
+      SUBROUTINE diagnose_permeabev_orthogonality
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1758,7 +1758,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_permeabevorthogonality_n"//
+      CALL ascii_open(out_unit,"diagnose_permeabevorthogonality_n"//
      $                         TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_PERMEABEVORTHOGONALITY: "//
      $     "Diagnose orhtogonality of permeability eigenvectors"
@@ -1781,13 +1781,13 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_permeabev_orthogonality
+      END SUBROUTINE diagnose_permeabev_orthogonality
       
 c-----------------------------------------------------------------------
-c     subprogram 16. ipdiag_reluctpowout.
+c     subprogram 16. diagnose_reluctpowout.
 c     diagnose coordinate independence of power normalized eigenvalues.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_reluctpowout(rout,bpout,bout,rcout)
+      SUBROUTINE diagnose_reluctpowout(rout,bpout,bout,rcout)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1812,10 +1812,10 @@ c-----------------------------------------------------------------------
       DO i=1,mpert
          temp = 0
          temp(i) = 1.0
-         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
+         CALL peq_weight(psilim,temp,mfac,mpert,2)
          sqrta(:,i) = temp
       ENDDO
-      ! start with IPEC flux matrix
+      ! start with GPEC flux matrix
       mat = reluctmats(resp_index,:,:)
       ! convert to bsqrt(A)
       mat=MATMUL(MATMUL(sqrta,mat),sqrta)
@@ -1831,19 +1831,19 @@ c      (while bcoords fills the rows)
 c-----------------------------------------------------------------------
       mato = reluctmats(resp_index,:,:)
       DO j=1,mpert
-         CALL ipeq_bcoords(psilim,mato(:,j),mfac,
+         CALL peq_bcoords(psilim,mato(:,j),mfac,
      $        mpert,rout,bpout,bout,rcout,0,1)
-         !CALL ipeq_weight_out(psilim,mato(j,:),mfac,mpert,1) ! field to flux
+         !CALL peq_weight_out(psilim,mato(j,:),mfac,mpert,1) ! field to flux
       ENDDO
       ! convert to bsqrt(A)
-      sqrtao = 0 ! Need easy way to get fldflxmat from ipout
+      sqrtao = 0 ! Need easy way to get fldflxmat from output modules
       mato=MATMUL(MATMUL(sqrtao,mato),sqrtao)
       work = 0
       rwork = 0
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,mato,mpert,evo,work,lwork,rwork,info)
       
-      CALL ascii_open(out_unit,"ipdiag_reluctpowout_n"//
+      CALL ascii_open(out_unit,"diagnose_reluctpowout_n"//
      $	   TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RELUCTPOWOUT: Reluctance matrix "//
      $     "power eigenvalue calculation in output coordinates."
@@ -1878,6 +1878,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_reluctpowout
+      END SUBROUTINE diagnose_reluctpowout
 
-      END MODULE ipdiag_mod
+      END MODULE gpec_diagnostic

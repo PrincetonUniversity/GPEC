@@ -1,44 +1,44 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERALIZED PERTURBED EQUILIBRIUM CODE
 c     IPEQ: calculate functions for perturbed equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. ipeq_mod
-c      1. ipeq_sol
-c      2. ipeq_contra
-c      3. ipeq_cova
-c      4. ipeq_normal
-c      5. ipeq_tangent
-c      6. ipeq_parallel
-c      7. ipeq_rzphi
-c      8. ipeq_surface
-c      9. ipeq_fcoords
-c     10. ipeq_bcoords
-c     11. ipeq_weight
-c     12. ipeq_rzpgrid
-c     13. ipeq_rzpdiv
-c     14. ipeq_alloc
-c     15. ipeq_dealloc
+c      0. gpec_equilibrium
+c      1. peq_sol
+c      2. peq_contra
+c      3. peq_cova
+c      4. peq_normal
+c      5. peq_tangent
+c      6. peq_parallel
+c      7. peq_rzphi
+c      8. peq_surface
+c      9. peq_fcoords
+c     10. peq_bcoords
+c     11. peq_weight
+c     12. peq_rzpgrid
+c     13. peq_rzpdiv
+c     14. peq_alloc
+c     15. peq_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 0. ipeq_mod.
+c     subprogram 0. gpec_equilibrium.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ipeq_mod
-      USE idcon_mod
+      MODULE gpec_equilibrium
+      USE gpec_dcon_interface
  
       IMPLICIT NONE
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipeq_sol.
+c     subprogram 1. peq_sol.
 c     obtain solutions of perturbed quantities.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_sol(psi)
+      SUBROUTINE peq_sol(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -51,7 +51,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
 
-      IF(debug_flag) PRINT *, "Entering ipeq_sol"
+      IF(debug_flag) PRINT *, "Entering peq_sol"
 c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
@@ -119,17 +119,17 @@ c-----------------------------------------------------------------------
       ENDIF
 
       DEALLOCATE(amat,bmat,cmat,fmats,gmats,kmats)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_sol"      
+      IF(debug_flag) PRINT *, "->Leaving peq_sol"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_sol
+      END SUBROUTINE peq_sol
 c-----------------------------------------------------------------------
-c     subprogram 2. ipeq_contra.
+c     subprogram 2. peq_contra.
 c     compute contravariant components of perturbed quantities.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_contra(psi)
+      SUBROUTINE peq_contra(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -138,7 +138,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,m1,m2,dm
       COMPLEX(r8), DIMENSION(-mband:mband) ::jmat,jmat1
 
-      IF(debug_flag) PRINT *, "Entering ipeq_contra"
+      IF(debug_flag) PRINT *, "Entering peq_contra"
 
       CALL spline_eval(sq,psi,1)
       CALL cspline_eval(metric%cs,psi,0)
@@ -204,17 +204,17 @@ c-----------------------------------------------------------------------
          xmt_mn=xwt_mn
          xmz_mn=xwz_mn
       ENDIF
-      IF(debug_flag) PRINT *, "->Leaving ipeq_contra"      
+      IF(debug_flag) PRINT *, "->Leaving peq_contra"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_contra
+      END SUBROUTINE peq_contra
 c-----------------------------------------------------------------------
-c     subprogram 3. ipeq_cova.
+c     subprogram 3. peq_cova.
 c     compute covariant components.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_cova(psi)
+      SUBROUTINE peq_cova(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -223,7 +223,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipert,jpert,m1,m2,dm
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
 
-      IF(debug_flag) PRINT *, "Entering ipeq_cova"
+      IF(debug_flag) PRINT *, "Entering peq_cova"
       
       CALL spline_eval(sq,psi,1)
       CALL cspline_eval(metric%cs,psi,0)
@@ -275,17 +275,17 @@ c-----------------------------------------------------------------------
      $           g23(dm)*bmt_mn(jpert)+g33(dm)*bmz_mn(jpert)
          ENDDO
       ENDDO
-      IF(debug_flag) PRINT *, "->Leaving ipeq_cova"      
+      IF(debug_flag) PRINT *, "->Leaving peq_cova"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_cova
+      END SUBROUTINE peq_cova
 c-----------------------------------------------------------------------
-c     subprogram 4. ipeq_normal.
+c     subprogram 4. peq_normal.
 c     compute normal components.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_normal(psi)
+      SUBROUTINE peq_normal(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -296,7 +296,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
      $     xno_fun,bno_fun
-      IF(debug_flag) PRINT *, "Entering ipeq_normal"      
+      IF(debug_flag) PRINT *, "Entering peq_normal"
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -321,17 +321,17 @@ c-----------------------------------------------------------------------
       bno_fun=bwp_fun/(jacs*delpsi)
       CALL iscdftf(mfac,mpert,xno_fun,mthsurf,xno_mn)
       CALL iscdftf(mfac,mpert,bno_fun,mthsurf,bno_mn)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_normal"      
+      IF(debug_flag) PRINT *, "->Leaving peq_normal"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_normal
+      END SUBROUTINE peq_normal
 c-----------------------------------------------------------------------
-c     subprogram 5. ipeq_tangent.
+c     subprogram 5. peq_tangent.
 c     compute tangent components.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_tangent(psi)
+      SUBROUTINE peq_tangent(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -342,7 +342,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,bs,rfun,zfun
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwt_fun,xvt_fun,xvz_fun,
      $     bwt_fun,bvt_fun,bvz_fun,xta_fun,bta_fun
-      IF(debug_flag) PRINT *, "Entering ipeq_tangent"
+      IF(debug_flag) PRINT *, "Entering peq_tangent"
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -377,17 +377,17 @@ c-----------------------------------------------------------------------
       bta_fun=bta_fun*sqrt(rfun**2+zfun**2)
       CALL iscdftf(mfac,mpert,xta_fun,mthsurf,xta_mn)
       CALL iscdftf(mfac,mpert,bta_fun,mthsurf,bta_mn)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_tangent"
+      IF(debug_flag) PRINT *, "->Leaving peq_tangent"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_tangent
+      END SUBROUTINE peq_tangent
 c-----------------------------------------------------------------------
-c     subprogram 6. ipeq_parallel.
+c     subprogram 6. peq_parallel.
 c     compute parallel components for xi and b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_parallel(psi)
+      SUBROUTINE peq_parallel(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -398,7 +398,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: eqb
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xvt_fun,bvt_fun,
      $     xvz_fun,bvz_fun,xpa_fun,bpa_fun
-      IF(debug_flag) PRINT *, "Entering ipeq_parallel"
+      IF(debug_flag) PRINT *, "Entering peq_parallel"
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -419,17 +419,17 @@ c-----------------------------------------------------------------------
       bpa_fun=(bvt_fun+q*bvz_fun)/eqb
       CALL iscdftf(mfac,mpert,xpa_fun,mthsurf,xpa_mn)
       CALL iscdftf(mfac,mpert,bpa_fun,mthsurf,bpa_mn)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_parallel"
+      IF(debug_flag) PRINT *, "->Leaving peq_parallel"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_parallel
+      END SUBROUTINE peq_parallel
 c-----------------------------------------------------------------------
-c     subprogram 7. ipeq_rzphi.
+c     subprogram 7. peq_rzphi.
 c     compute rzphi components.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_rzphi(psi)
+      SUBROUTINE peq_rzphi(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -442,7 +442,7 @@ c-----------------------------------------------------------------------
      $     xwt_fun,bwt_fun,xvz_fun,bvz_fun,xrr_fun,brr_fun,
      $     xrz_fun,brz_fun,xrp_fun,brp_fun
 
-      IF(debug_flag) PRINT *, "Entering ipeq_rzphi"
+      IF(debug_flag) PRINT *, "Entering peq_rzphi"
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -486,17 +486,17 @@ c-----------------------------------------------------------------------
       CALL iscdftf(mfac,mpert,brz_fun,mthsurf,brz_mn)
       CALL iscdftf(mfac,mpert,xrp_fun,mthsurf,xrp_mn)
       CALL iscdftf(mfac,mpert,brp_fun,mthsurf,brp_mn)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_rzphi"
+      IF(debug_flag) PRINT *, "->Leaving peq_rzphi"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_rzphi
+      END SUBROUTINE peq_rzphi
 c-----------------------------------------------------------------------
-c     subprogram 8. ipeq_surface.
+c     subprogram 8. peq_surface.
 c     compute surface currents and potentials.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_surface(psi)
+      SUBROUTINE peq_surface(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -515,7 +515,7 @@ c-----------------------------------------------------------------------
 
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
      $     grre_real(nths2),grre_imag(nths2))
-      IF(debug_flag) PRINT *, "Entering ipeq_surface"
+      IF(debug_flag) PRINT *, "Entering peq_surface"
 c-----------------------------------------------------------------------
 c     take into account reverse-theta in vacuum code.
 c-----------------------------------------------------------------------
@@ -596,17 +596,17 @@ c-----------------------------------------------------------------------
       CALL iscdftf(mfac,mpert,kax_fun,mthsurf,kax_mn)
      
       DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_surface"
+      IF(debug_flag) PRINT *, "->Leaving peq_surface"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_surface
+      END SUBROUTINE peq_surface
 c-----------------------------------------------------------------------
-c     subprogram 9. ipeq_fcoords.
+c     subprogram 9. peq_fcoords.
 c     transform coordinates to dcon coordinates. 
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_fcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
+      SUBROUTINE peq_fcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -633,7 +633,7 @@ c-----------------------------------------------------------------------
      $      jacfac(0:mthsurf))
       first  = .FALSE.
 
-      IF(debug_flag) PRINT *, "Entering ipeq_fcoords"
+      IF(debug_flag) PRINT *, "Entering peq_fcoords"
       
       ! global sq may have been eval'd elsewhere inbetween bcoords calls
       CALL spline_eval(sq,psi,0)
@@ -730,17 +730,17 @@ c-----------------------------------------------------------------------
       ENDIF
 
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_fcoords"
+      IF(debug_flag) PRINT *, "->Leaving peq_fcoords"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_fcoords
+      END SUBROUTINE peq_fcoords
 c-----------------------------------------------------------------------
-c     subprogram 9.1 ipeq_fcoordsout.
+c     subprogram 9.1 peq_fcoordsout.
 c     transform to dcon coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_fcoordsout(fmo,fmi,psi,ti,ji)
+      SUBROUTINE peq_fcoordsout(fmo,fmi,psi,ti,ji)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -776,19 +776,19 @@ c-----------------------------------------------------------------------
 c     transform new vector.
 c-----------------------------------------------------------------------
       IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
-         CALL ipeq_fcoords(psi,fmo,mfac,mpert,power_rout,power_bpout,
+         CALL peq_fcoords(psi,fmo,mfac,mpert,power_rout,power_bpout,
      $      power_bout,power_rcout,ti,ji)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_fcoordsout
+      END SUBROUTINE peq_fcoordsout
 c-----------------------------------------------------------------------
-c     subprogram 10. ipeq_bcoords.
+c     subprogram 10. peq_bcoords.
 c     transform dcon coordinates to other coordinates.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_bcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
+      SUBROUTINE peq_bcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -816,7 +816,7 @@ c-----------------------------------------------------------------------
      $   jacfac(0:mthsurf))
       first = .FALSE.
 
-      IF(debug_flag) PRINT *, "Entering ipeq_bcoords"
+      IF(debug_flag) PRINT *, "Entering peq_bcoords"
       
       ! global sq may have been eval'd elsewhere inbetween bcoords calls
       CALL spline_eval(sq,psi,0)
@@ -917,17 +917,17 @@ c-----------------------------------------------------------------------
       ENDIF
       ! forward transform function to coordinate fourier spectrum
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_bcoords"
+      IF(debug_flag) PRINT *, "->Leaving peq_bcoords"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_bcoords
+      END SUBROUTINE peq_bcoords
 c-----------------------------------------------------------------------
-c     subprogram 10.1 ipeq_bcoordsout.
+c     subprogram 10.1 peq_bcoordsout.
 c     transform dcon to other coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_bcoordsout(fmo,fmi,psi,ti,ji)
+      SUBROUTINE peq_bcoordsout(fmo,fmi,psi,ti,ji)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -963,19 +963,19 @@ c-----------------------------------------------------------------------
 c     transform new vector.
 c-----------------------------------------------------------------------
       IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
-         CALL ipeq_bcoords(psi,fmo,lmfac,lmpert,power_rout,power_bpout,
+         CALL peq_bcoords(psi,fmo,lmfac,lmpert,power_rout,power_bpout,
      $      power_bout,power_rcout,tout,jout)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_bcoordsout
+      END SUBROUTINE peq_bcoordsout
 c-----------------------------------------------------------------------
-c     subprogram 11. ipeq_weight.
+c     subprogram 11. peq_weight.
 c     switch between a function and a weighted function.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_weight(psi,ftnmn,amf,amp,wegt)
+      SUBROUTINE peq_weight(psi,ftnmn,amf,amp,wegt)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -995,7 +995,7 @@ c-----------------------------------------------------------------------
       ! instead, we use allocatables and just allocate once for all
       SAVE :: psave,wgtfun,delpsi
 
-      IF(debug_flag) PRINT *, "Entering ipeq_weight"
+      IF(debug_flag) PRINT *, "Entering peq_weight"
 
       ! form expensive geometry factors if called on new surface
       IF(psave/=psi) THEN
@@ -1036,17 +1036,17 @@ c-----------------------------------------------------------------------
          ftnfun=ftnfun*sqrt(wgtfun)
       END SELECT
       CALL iscdftf(amf,amp,ftnfun,mthsurf,ftnmn)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_weight"
+      IF(debug_flag) PRINT *, "->Leaving peq_weight"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_weight
+      END SUBROUTINE peq_weight
 c-----------------------------------------------------------------------
-c     subprogram 12. ipeq_rzpgrid.
+c     subprogram 12. peq_rzpgrid.
 c     find magnetic coordinates for given rz coords.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_rzpgrid(nr,nz,psixy)
+      SUBROUTINE peq_rzpgrid(nr,nz,psixy)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1062,7 +1062,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(gdr(0:nr,0:nz),gdz(0:nr,0:nz),gdl(0:nr,0:nz),
      $     gdpsi(0:nr,0:nz),gdthe(0:nr,0:nz),gdphi(0:nr,0:nz))
 
-      IF(debug_flag) WRITE(*,*) "Entering ipeq_rzgrid"
+      IF(debug_flag) WRITE(*,*) "Entering peq_rzgrid"
       IF(debug_flag) WRITE(*,*) "  ",nr,nz
 c-----------------------------------------------------------------------
 c     invert given rzphi to magnetic coordinates.
@@ -1137,17 +1137,17 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL spline_dealloc(rbeta)
-      IF(debug_flag) WRITE(*,*) "Leaving ipeq_rzgrid"
+      IF(debug_flag) WRITE(*,*) "Leaving peq_rzgrid"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_rzpgrid
+      END SUBROUTINE peq_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 13. ipeq_rzpdiv.
+c     subprogram 13. peq_rzpdiv.
 c     make zero divergence of rzphi functions.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
+      SUBROUTINE peq_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1209,13 +1209,13 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_rzpdiv     
+      END SUBROUTINE peq_rzpdiv
 c-----------------------------------------------------------------------
-c     subprogram 14. ipeq_alloc.
+c     subprogram 14. peq_alloc.
 c     allocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_alloc
-      IF(debug_flag) PRINT *, "Entering ipeq_alloc"      
+      SUBROUTINE peq_alloc
+      IF(debug_flag) PRINT *, "Entering peq_alloc"
 
       ALLOCATE(xsp_mn(mpert),xsp1_mn(mpert),xss_mn(mpert),xms_mn(mpert),
      $     xwp_mn(mpert),xwt_mn(mpert),xwz_mn(mpert),xmt_mn(mpert),
@@ -1227,29 +1227,29 @@ c-----------------------------------------------------------------------
      $     bno_mn(mpert),bta_mn(mpert),bpa_mn(mpert),
      $     xrr_mn(mpert),xrz_mn(mpert),xrp_mn(mpert),
      $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert))
-      IF(debug_flag) PRINT *, "->Leaving ipeq_alloc"      
+      IF(debug_flag) PRINT *, "->Leaving peq_alloc"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_alloc
+      END SUBROUTINE peq_alloc
 c-----------------------------------------------------------------------
-c     subprogram 15. ipeq_dealloc.
+c     subprogram 15. peq_dealloc.
 c     deallocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_dealloc
-      IF(debug_flag) PRINT *, "Entering ipeq_dealloc"      
+      SUBROUTINE peq_dealloc
+      IF(debug_flag) PRINT *, "Entering peq_dealloc"
 
       DEALLOCATE(xsp_mn,xsp1_mn,xss_mn,xms_mn,bwp1_mn,xmp1_mn,
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn)
-      IF(debug_flag) PRINT *, "->Leaving ipeq_dealloc"      
+      IF(debug_flag) PRINT *, "->Leaving peq_dealloc"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipeq_dealloc
+      END SUBROUTINE peq_dealloc
 
-      END MODULE ipeq_mod
+      END MODULE gpec_equilibrium

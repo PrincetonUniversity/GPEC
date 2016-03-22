@@ -1,35 +1,35 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     IPRESP: computation of plasma response
+c     GENERALIZED PERTURBED EQUILIBRIUM CODE
+c     RESP: computation of plasma response
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. ipresp_mod
-c      1. ipresp_eigen
-c      2. ipresp_pinduct
-c      3. ipresp_sinduct
-c      4. ipresp_permeab
-c      5. ipresp_reluct
-c      6. ipresp_indrel
+c      0. gpec_response
+c      1. response_eigen
+c      2. response_pinduct
+c      3. response_sinduct
+c      4. response_permeab
+c      5. response_reluct
+c      6. response_indrel
 c-----------------------------------------------------------------------
-c     subprogram 0. ipresp_mod.
+c     subprogram 0. gpec_response.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ipresp_mod
-      USE ipeq_mod
+      MODULE gpec_response
+      USE gpec_equilibrium
 
       IMPLICIT NONE
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipresp_eigen.
+c     subprogram 1. response_eigen.
 c     construct flux and current matrices from eigenmodes.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_eigen
+      SUBROUTINE response_eigen
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -38,7 +38,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(2,mpert) :: chpwmn,chpdif,chpwif
       CHARACTER(32) :: emessage
-      IF(debug_flag) PRINT *, "Entering ipresp_eigen"
+      IF(debug_flag) PRINT *, "Entering response_eigen"
 c-----------------------------------------------------------------------
 c     build ideal solutions.
 c-----------------------------------------------------------------------
@@ -57,13 +57,13 @@ c     compute the perturbed quantities and contruct hermitian matrices.
 c-----------------------------------------------------------------------
          ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
      $        kap_mn(4,mpert),kax_mn(mpert))
-         CALL ipeq_alloc
+         CALL peq_alloc
          surface_flag=.FALSE.
-         CALL ipeq_sol(psilim)
+         CALL peq_sol(psilim)
          surface_flag=.FALSE.
-         CALL ipeq_contra(psilim)
-         CALL ipeq_cova(psilim)
-         CALL ipeq_surface(psilim)
+         CALL peq_contra(psilim)
+         CALL peq_cova(psilim)
+         CALL peq_surface(psilim)
 c-----------------------------------------------------------------------
 c     compute each fourier component.
 c-----------------------------------------------------------------------
@@ -82,8 +82,8 @@ c-----------------------------------------------------------------------
          chpdif(2,:)=chp_mn(3,:)-chp_mn(4,:)
          chpwif=chpdif
          DO j=1,2
-            CALL ipeq_weight(psilim,chpwmn(j,:),mfac,mpert,1)
-            CALL ipeq_weight(psilim,chpwif(j,:),mfac,mpert,1)
+            CALL peq_weight(psilim,chpwmn(j,:),mfac,mpert,1)
+            CALL peq_weight(psilim,chpwif(j,:),mfac,mpert,1)
             chptsq=SUM(REAL(CONJG(chpwmn(j,:))*chp_mn(2*j-1,:),r8))
             chpdsq=SUM(REAL(CONJG(chpwif(j,:))*chpdif(j,:),r8))
             chperr(j,i)=SQRT(chpdsq/chptsq)
@@ -136,21 +136,21 @@ c     $           ABS(1-surfet(2,i)/surfet(1,i))
      $           ", error = ",ABS(1-surfet(2,i)/surfet(1,i))
          ENDIF
 
-         CALL ipeq_dealloc
+         CALL peq_dealloc
          DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
       ENDDO
       DEALLOCATE(grri,grre)
-      IF(debug_flag) PRINT *, "->Leaving ipresp_eigen"      
+      IF(debug_flag) PRINT *, "->Leaving response_eigen"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_eigen
+      END SUBROUTINE response_eigen
 c-----------------------------------------------------------------------
-c     subprogram 2. ipresp_pinduct.
+c     subprogram 2. response_pinduct.
 c     construct plasma inductance matrices.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_pinduct
+      SUBROUTINE response_pinduct
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -238,12 +238,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_pinduct
+      END SUBROUTINE response_pinduct
 c-----------------------------------------------------------------------
-c     subprogram 3. ipresp_sinduct.
+c     subprogram 3. response_sinduct.
 c     construct surface inductance matrix.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_sinduct
+      SUBROUTINE response_sinduct
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -290,12 +290,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_sinduct
+      END SUBROUTINE response_sinduct
 c-----------------------------------------------------------------------
-c     subprogram 4. ipresp_permeab.
+c     subprogram 4. response_permeab.
 c     construct permeability matrix.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_permeab
+      SUBROUTINE response_permeab
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -381,12 +381,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_permeab
+      END SUBROUTINE response_permeab
 c-----------------------------------------------------------------------
-c     subprogram 5. ipresp_reluct.
+c     subprogram 5. response_reluct.
 c     construct reluctance matrix.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_reluct
+      SUBROUTINE response_reluct
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -423,12 +423,12 @@ c-----------------------------------------------------------------------
          reluctevmats(j,:,:)=vr
       ENDDO
       RETURN
-      END SUBROUTINE ipresp_reluct
+      END SUBROUTINE response_reluct
 c-----------------------------------------------------------------------
-c     subprogram 6. ipresp_indrel.
+c     subprogram 6. response_indrel.
 c     construct combined matrix with surface inductance and reluctance.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_indrel
+      SUBROUTINE response_indrel
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -465,6 +465,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_indrel
+      END SUBROUTINE response_indrel
 
-      END MODULE ipresp_mod
+      END MODULE gpec_response

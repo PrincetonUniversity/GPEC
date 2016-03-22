@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERALIZED PERTURBED EQUILIBRIUM CODE
 c     ISMATH: simple math routines
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
       USE local_mod
       USE bicube_mod
       USE fspline_mod
-      USE ipglobal_mod
+      USE gpec_global
       IMPLICIT NONE
 
       CONTAINS

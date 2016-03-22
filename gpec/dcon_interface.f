@@ -1,11 +1,11 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERALIZED PERTURBED EQUILIBRIUM CODE
 c     read and preprocess ideal DCON/VACUUM data
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. idcon_mod.
+c     0. gpec_dcon_interface.
 c     1. idcon_read.
 c     2. idcon_transform
 c     3. idcon_build
@@ -14,14 +14,14 @@ c     5. idcon_matrix
 c     6. idcon_vacuum
 c     7. idcon_action_matrices
 c-----------------------------------------------------------------------
-c     subprogram 0. idcon_mod.
+c     subprogram 0. gpec_dcon_interface.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE idcon_mod
-      USE ipglobal_mod
+      MODULE gpec_dcon_interface
+      USE gpec_global
       USE ismath_mod
       IMPLICIT NONE
 
@@ -145,7 +145,7 @@ c-----------------------------------------------------------------------
          CASE DEFAULT
             WRITE(message,'(a,i1,a,i4)')"Cannot recognize data_type = ",
      $           data_type,", at istep = ",istep
-            CALL ipec_stop(message)
+            CALL gpec_stop(message)
          END SELECT
       ENDDO
       CALL bin_close(in_unit)
@@ -244,7 +244,7 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
          WRITE(message,'(a)')"Terminated by zero crossing"
-         CALL ipec_stop(message)
+         CALL gpec_stop(message)
       ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
@@ -708,7 +708,7 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zhetrf: amat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         CALL ipec_stop(message)
+         CALL gpec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     compute composite matrices fgk, different from dcon notes.
@@ -736,7 +736,7 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zpbtrf: fmat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         CALL ipec_stop(message)
+         CALL gpec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     store hermitian matrices fg.
@@ -861,8 +861,8 @@ c     compute necessary components.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing perturbed b field for gpec"
 
-      !CALL idcon_build(egnum,xspmn)   !! Only needed for ipeq_sol for xi's
-      !CALL ipeq_alloc                 !! displacements now in pentrc inputs
+      !CALL idcon_build(egnum,xspmn)   !! Only needed for peq_sol for xi's
+      !CALL peq_alloc                 !! displacements now in pentrc inputs
 c-----------------------------------------------------------------------
 c     set up fourier-spline type.
 c-----------------------------------------------------------------------
@@ -1001,4 +1001,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_action_matrices
 
-      END MODULE idcon_mod
+      END MODULE gpec_dcon_interface

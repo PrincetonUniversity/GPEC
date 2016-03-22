@@ -5,18 +5,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. rdcon_mod.
+c     0. gpec_rdcon_interface.
 c     1. rdcon_read.
 c-----------------------------------------------------------------------
-c     subprogram 0. rdcon_mod.
+c     subprogram 0. gpec_rdcon_interface.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE rdcon_mod
-      USE ipglobal_mod
-      USE idcon_mod
+      MODULE gpec_rdcon_interface
+      USE gpec_global
+      USE gpec_dcon_interface
       USE ismath_mod
       IMPLICIT NONE
 
@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)rsing,rnqty,rnx
       IF (rsing /= msing) THEN
          WRITE(message,'(a)')"GPEC needs the same msing number"
-         CALL ipec_stop(message)
+         CALL gpec_stop(message)
       ENDIF
       ALLOCATE(rsoltype(rsing),rpsifac(0:rnx)) 
       rsoltype(:)%msol=rsing
@@ -82,4 +82,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE rdcon_read
 
-      END MODULE rdcon_mod
+      END MODULE gpec_rdcon_interface

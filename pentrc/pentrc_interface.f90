@@ -118,8 +118,8 @@ module pentrc_interface
     character(512) :: &
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
-        ipec_file  ="ipec_order1_n1.bin", &
-        peq_file ="ipec_xclebsch_n1.out", &
+        gpec_file  ="gpec_order1_n1.bin", &
+        peq_file ="gpec_xclebsch_n1.out", &
         data_dir =".",&
         docs(nflags)=""
     character(32) :: &
@@ -129,7 +129,7 @@ module pentrc_interface
         moment = "pressure"
 
     ! namelists
-    namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
+    namelist/pent_input/kinetic_file,gpec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
 

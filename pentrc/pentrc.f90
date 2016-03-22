@@ -20,7 +20,7 @@ program pentrc
     use utilities, only: timer,to_upper
     use special, only: set_fymnl,set_ellip
     use inputs, only : read_kin,read_equil,nn,read_peq,&
-                       read_ipec_peq,read_fnml,verbose
+                       read_gpec_peq,read_fnml,verbose
     use diagnostics, only: diagnose_all
     
     use energy_integration, only: &
@@ -107,8 +107,8 @@ program pentrc
     character(512) :: &
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
-        ipec_file  ="ipec_order1_n1.bin", &
-        peq_file ="ipec_xclebsch_n1.out", &
+        gpec_file  ="gpec_order1_n1.bin", &
+        peq_file ="gpec_xclebsch_n1.out", &
         data_dir =".",&
         docs(nflags)=""
     character(32) :: &
@@ -125,7 +125,7 @@ program pentrc
     character, parameter :: nul = char(0)
 
     ! namelists
-    namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
+    namelist/pent_input/kinetic_file,gpec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in
         
@@ -213,7 +213,7 @@ program pentrc
         call read_equil(idconfile,hlog)
         call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
         call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug)
-        !call read_ipec_peq(ipec_file,tdebug)
+        !call read_gpec_peq(gpec_file,tdebug)
 
         ! explicit matrix calculations
         if(wxyz_flag)then

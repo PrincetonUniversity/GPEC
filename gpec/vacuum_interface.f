@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERALIZED PERTURBED EQUILIBRIUM CODE
 c     IPVACUUM: manipulate vacuum code separately.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -17,7 +17,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE ipvacuum_mod
-      USE ipeq_mod
+      USE gpec_equilibrium
 
       IMPLICIT NONE
       

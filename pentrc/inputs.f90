@@ -51,7 +51,7 @@ module inputs
         read_kin, &
         read_peq, &
         set_peq, &
-        read_ipec_peq,&
+        read_gpec_peq,&
         read_equil, &
         read_fnml, &
         kin, xs_m, dbdx_m, fnml, &
@@ -268,7 +268,7 @@ module inputs
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
-        !npsi = nunique(table(:,1)) !! computationally expensive + ipec n=3's can have repeates
+        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeates
         nm = nunique(table(:,2),op_sorted=.True.)
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
@@ -445,7 +445,7 @@ module inputs
             allocate(expm(mpert))
             allocate(xmat(mpert,mpert),ymat(mpert,mpert),zmat(mpert,mpert),&
                     smat(mpert,mpert),tmat(mpert,mpert))
-            !call ipeq_alloc
+            !call peq_alloc
             do i=istrt_psi,istop_psi
                 j = i-istrt_psi+1
                 if(verbose) call progressbar(j,1,npsi,op_percent=20)
@@ -469,7 +469,7 @@ module inputs
                 lagb_mn(:)=-(divx_mn+MATMUL(smat,xs_m(2)%f(:))+MATMUL(tmat,xs_m(3)%f(:)))
                 
                 !call idcon_build(1,xspmn)
-                !call ipeq_sol(psi(i))
+                !call peq_sol(psi(i))
                 !divx_mn(:)=MATMUL(xmat,xmp1_mn)+MATMUL(ymat,xsp_mn) &
                 !    +MATMUL(zmat,xms_mn)/chi1
                 !lagb_mn(:)=-(divx_mn+MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1)
@@ -478,7 +478,7 @@ module inputs
                 dbdx_m(2)%fs(j-1,:) = divx_mn(:)
             enddo
             
-            !call ipeq_dealloc
+            !call peq_dealloc
             call cspline_fit(dbdx_m(1),"extrap")
             call cspline_fit(dbdx_m(2),"extrap")
             deallocate(lagb_mn,divx_mn,expm,xmat,ymat,zmat,smat,tmat)
@@ -561,7 +561,7 @@ module inputs
 
       
     !=======================================================================
-    subroutine read_ipec_peq(file,write_log)
+    subroutine read_gpec_peq(file,write_log)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Read pmodb and divxprp fourier components (psi,m) from input file.
@@ -607,7 +607,7 @@ module inputs
         ! write log - designed as check of reading routines
         if(write_log)then
             out_unit = get_free_file_unit(-1)
-            print *, "Writing ipec lagb spline to pentrc_lagb.out"
+            print *, "Writing gpec lagb spline to pentrc_lagb.out"
             print *,"mpert = ",mpert
             print *,"mfac range = ",mfac(1),mfac(mpert)
             print *,"psifac range = ",psifac(1),psifac(mstep)
@@ -631,7 +631,7 @@ module inputs
             call cspline_write(outspl,.true.,.false.,out_unit,0,.true.)
             close(out_unit)
         endif
-    end subroutine read_ipec_peq
+    end subroutine read_gpec_peq
 
     
 end module inputs
