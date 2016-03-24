@@ -1112,7 +1112,7 @@ c-----------------------------------------------------------------------
          CALL ipeq_bcoords(psilim,coutmn,lmfac,lmpert,
      $        rout,bpout,bout,rcout,tout,jout)
          CALL ipeq_bcoords(psilim,acinmn,lmfac,lmpert,
-     $        rin,bpin,bin,rcin,tin,1)
+     $        rout,bpout,bout,rcout,tout,1)
          WRITE(out_unit,'(1x,a13,a8,1x,2(a12,I2))')"jac_out = ",jac_out,
      $        "jsurf_out =",jout,"tmag_out =",tout  
          WRITE(out_unit,*)          
@@ -4137,7 +4137,7 @@ c-----------------------------------------------------------------------
      $   we_id,re_id,pe_id,se_id,
      $   w_id,r_id,p_id,s_id, wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,ra_id,rl_id,
-     $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,
+     $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,ex_id,et_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(mpert) :: singfac
@@ -4604,16 +4604,26 @@ c-----------------------------------------------------------------------
          ENDIF
 
          CALL check( nf90_def_var(mncid,"Phi_EX",nf90_double,
-     $               (/mdid,idid/),fx_id) )
-         CALL check( nf90_put_att(mncid,fx_id,"units","Wb/m") )
-         CALL check( nf90_put_att(mncid,fx_id,"long_name",
+     $               (/mdid,idid/),ex_id) )
+         CALL check( nf90_put_att(mncid,ex_id,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,ex_id,"long_name",
      $    "Energy-norm external flux") )
+         CALL check( nf90_def_var(mncid,"Phi_X",nf90_double,
+     $               (/mdid,idid/),fx_id) )
+         CALL check( nf90_put_att(mncid,fx_id,"units","Wb") )
+         CALL check( nf90_put_att(mncid,fx_id,"long_name",
+     $    "External flux") )
          CALL check( nf90_def_var(mncid,"Phi_ET",nf90_double,
-     $               (/mdid,idid/),ft_id) )
-         CALL check( nf90_put_att(mncid,ft_id,"units","Wb/m") )
-         CALL check( nf90_put_att(mncid,ft_id,"long_name",
+     $               (/mdid,idid/),et_id) )
+         CALL check( nf90_put_att(mncid,et_id,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,et_id,"long_name",
      $    "Energy-norm total flux") )
-         
+         CALL check( nf90_def_var(mncid,"Phi_T",nf90_double,
+     $               (/mdid,idid/),ft_id) )
+         CALL check( nf90_put_att(mncid,ft_id,"units","Wb") )
+         CALL check( nf90_put_att(mncid,ft_id,"long_name",
+     $    "Total flux") )
+
          IF(fun_flag)THEN
             CALL check( nf90_def_var(mncid,"W_EDX_FUN",nf90_double,
      $               (/tdid,wdid,idid/),wf_id) )
@@ -4724,14 +4734,20 @@ c-----------------------------------------------------------------------
          temp = foutmn
          CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
          templ = MATMUL(coordmat,temp) ! output coords
+         CALL check( nf90_put_var(mncid,et_id,RESHAPE((/REAL(templ),
+     $               AIMAG(templ)/),(/lmpert,2/))) )
+         templ = MATMUL(coordmat,foutmn) ! output coords
          CALL check( nf90_put_var(mncid,ft_id,RESHAPE((/REAL(templ),
      $               AIMAG(templ)/),(/lmpert,2/))) )
          temp = finmn
          CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
          templ = MATMUL(coordmat,temp) ! output coords
+         CALL check( nf90_put_var(mncid,ex_id,RESHAPE((/REAL(templ),
+     $               AIMAG(templ)/),(/lmpert,2/))) )
+         templ = MATMUL(coordmat,finmn) ! output coords
          CALL check( nf90_put_var(mncid,fx_id,RESHAPE((/REAL(templ),
      $               AIMAG(templ)/),(/lmpert,2/))) )
-     
+
          ! Decomposition of the applied flux
          temp = finmn
          tempm = MATMUL(CONJG(TRANSPOSE(wvecs)),temp)
