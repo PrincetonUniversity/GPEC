@@ -20,8 +20,7 @@ LIBS = \
 	-lharvest \
 	-llapack \
 	-lblas \
-	-lnetcdf \
-	-lnetcdff
+	-lnetcdf
 
 OBJS = \
 	ipglobal.o \
