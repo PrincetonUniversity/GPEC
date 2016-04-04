@@ -449,7 +449,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,tmag_out,
-     $        filter_types,filter_modes,filter_flag)
+     $        jsurf_out,filter_types,filter_modes,filter_flag)
       ELSE IF (mode_flag) THEN
          edge_flag=.FALSE.
       ENDIF
@@ -585,7 +585,7 @@ c-----------------------------------------------------------------------
          fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
          CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
          CALL ipout_control(infile,fxmn,foutmn,xspmn,
-     $        0,0,0,0,1,0,0,0,0,0,1,'   ',0,.FALSE.)
+     $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xspmn,sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out,.FALSE.)
@@ -600,7 +600,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
-     $        tmag_out,'   ',0,.FALSE.)
+     $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xspmn,sing_spot,0,0,0,0,1,.FALSE.)
          CALL ipdiag_xbcontra(mode,xspmn,0,0,0,0,1)
