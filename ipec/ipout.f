@@ -5079,13 +5079,13 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(mncid,sm_id,"long_name",
      $       "Energy normalized external flux singular-coupling "//
      $       "matrix") )
-            CALL check( nf90_def_var(mncid,"C_xe_eigenvector",nf90_double,
-     $                  (/mdid,sdid,idid/),s_id) )
+            CALL check( nf90_def_var(mncid,"C_xe_eigenvector",
+     $                  nf90_double,(/mdid,sdid,idid/),s_id) )
             CALL check( nf90_put_att(mncid,s_id,"long_name",
      $       "Energy normalized external flux singular-coupling "//
      $       "SVD right-singular vectors") )
-            CALL check( nf90_def_var(mncid,"C_xe_eigenvalue",nf90_double,
-     $                            (/sdid/),se_id) )
+            CALL check( nf90_def_var(mncid,"C_xe_eigenvalue",
+     $                            nf90_double,(/sdid/),se_id) )
             CALL check( nf90_put_att(mncid,se_id,"long_name",
      $       "Energy normalized external flux singular-coupling "//
      $       "SVD singular values") )
