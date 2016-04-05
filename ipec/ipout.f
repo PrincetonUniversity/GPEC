@@ -916,7 +916,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,xinmn,xoutmn,tempmn,
      $      abinmn
-      COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,cawmn,acinmn,templ
+      COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,cawmn,templ
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun,xinfun,xoutfun
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
 
@@ -1086,30 +1086,25 @@ c-----------------------------------------------------------------------
       IF ((jac_in /= jac_type).OR.(tin==0).OR.(jin/=0)) THEN
          cinmn=0
          coutmn=0
-         acinmn=0
          DO i=1,mpert
             IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
                cinmn(mlow-lmlow+i)=binmn(i)
                coutmn(mlow-lmlow+i)=boutmn(i)
-               acinmn(mlow-lmlow+i)=finmn(i)
             ENDIF
          ENDDO
          CALL ipeq_bcoords(psilim,cinmn,lmfac,lmpert,
      $        rin,bpin,bin,rcin,tin,jin) 
          CALL ipeq_bcoords(psilim,coutmn,lmfac,lmpert,
      $        rin,bpin,bin,rcin,tin,jin)
-         CALL ipeq_bcoords(psilim,acinmn,lmfac,lmpert,
-     $        rin,bpin,bin,rcin,tin,jin)
          WRITE(out_unit,'(1x,a13,a8,1x,2(a12,I2))')"jac_in = ",jac_in,
      $        "jsurf_in =",jin,"tmag_in =",tin
          WRITE(out_unit,*)             
-         WRITE(out_unit,'(1x,a4,6(1x,a16))')"m","real(bin)","imag(bin)",
-     $     "real(bout)","imag(bout)","real(Phi^x)","imag(Phi^x)"
+         WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(bin)","imag(bin)",
+     $     "real(bout)","imag(bout)"
          DO i=1,lmpert
-            WRITE(out_unit,'(1x,I4,6(es17.8e3))')lmfac(i),
+            WRITE(out_unit,'(1x,I4,4(es17.8e3))')lmfac(i),
      $           REAL(cinmn(i)),AIMAG(cinmn(i)),
-     $           REAL(coutmn(i)),AIMAG(coutmn(i)),
-     $           REAL(acinmn(i)),AIMAG(acinmn(i))
+     $           REAL(coutmn(i)),AIMAG(coutmn(i))
          ENDDO 
          WRITE(out_unit,*)       
       ENDIF
@@ -1117,30 +1112,25 @@ c-----------------------------------------------------------------------
       IF ((jac_out /= jac_type).OR.(tout==0).OR.(jout/=0)) THEN
          cinmn=0
          coutmn=0
-         acinmn=0
          DO i=1,mpert
             IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
                cinmn(mlow-lmlow+i)=binmn(i)
                coutmn(mlow-lmlow+i)=boutmn(i)
-               acinmn(mlow-lmlow+i)=finmn(i)
             ENDIF
          ENDDO
          CALL ipeq_bcoords(psilim,cinmn,lmfac,lmpert,
      $        rout,bpout,bout,rcout,tout,jout) 
          CALL ipeq_bcoords(psilim,coutmn,lmfac,lmpert,
      $        rout,bpout,bout,rcout,tout,jout)
-         CALL ipeq_bcoords(psilim,acinmn,lmfac,lmpert,
-     $        rout,bpout,bout,rcout,tout,jout)
          WRITE(out_unit,'(1x,a13,a8,1x,2(a12,I2))')"jac_out = ",jac_out,
      $        "jsurf_out =",jout,"tmag_out =",tout  
          WRITE(out_unit,*)          
-         WRITE(out_unit,'(1x,a4,6(1x,a16))')"m","real(bin)","imag(bin)",
-     $        "real(bout)","imag(bout)","real(Phi^x)","imag(Phi^x)"
+         WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(bin)","imag(bin)",
+     $        "real(bout)","imag(bout)"
          DO i=1,lmpert
             WRITE(out_unit,'(1x,I4,6(es17.8e3))')lmfac(i),
      $           REAL(cinmn(i)),AIMAG(cinmn(i)),
-     $           REAL(coutmn(i)),AIMAG(coutmn(i)),
-     $           REAL(acinmn(i)),AIMAG(acinmn(i))
+     $           REAL(coutmn(i)),AIMAG(coutmn(i))
          ENDDO 
          WRITE(out_unit,*)
          IF (singcoup_set) THEN
@@ -2695,7 +2685,6 @@ c-----------------------------------------------------------------------
          bnofuns(istep,:)=bwp_fun/(jacs*delpsi)
          CALL iscdftf(mfac,mpert,xnofuns(istep,:),mthsurf,xno_mn)
          CALL iscdftf(mfac,mpert,bnofuns(istep,:),mthsurf,bno_mn)
-         bwp_mn=bwp_mn/area
          IF (bwp_pest_flag) THEN
             pwpmn=0
             DO i=1,mpert
@@ -2708,21 +2697,14 @@ c-----------------------------------------------------------------------
             pwpmns(istep,:)=pwpmn
          ENDIF            
 
-         CALL ipeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep))
-         CALL ipeq_bcoordsout(bnomns(istep,:),xno_mn,psifac(istep))
-         CALL ipeq_bcoordsout(bwpmns(istep,:),xno_mn,psifac(istep),ji=1)
-c         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-c            bwp_mn=bno_mn
-c            CALL ipeq_bcoords(psifac(istep),xno_mn,mfac,mpert,
-c     $           rout,bpout,bout,rcout,tout,0)
-c            CALL ipeq_bcoords(psifac(istep),bno_mn,mfac,mpert,
-c     $           rout,bpout,bout,rcout,tout,0)
-c            CALL ipeq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
-c     $           rout,bpout,bout,rcout,tout,1)
-c         ENDIF
-c         xnomns(istep,:)=xno_mn
-c         bnomns(istep,:)=bno_mn
-c         bwpmns(istep,:)=bwp_mn
+         CALL ipeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep),ji=0)
+         CALL ipeq_bcoordsout(bnomns(istep,:),bno_mn,psifac(istep),ji=0)
+         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+            CALL ipeq_bcoordsout(bwpmns(istep,:),bno_mn,psifac(istep),
+     $                           ji=1)
+         ELSE ! no need to re-weight bno_mn with expensive invfft and fft
+            bwp_mn = bwp_mn/area
+         ENDIF
          xnofuns(istep,:)=xnofuns(istep,:)*EXP(ifac*nn*dphi)
          bnofuns(istep,:)=bnofuns(istep,:)*EXP(ifac*nn*dphi)
       ENDDO
