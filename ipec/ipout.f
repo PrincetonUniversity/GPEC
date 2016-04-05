@@ -2158,7 +2158,6 @@ c-----------------------------------------------------------------------
          bnofuns(istep,:)=bwp_fun/(jacs*delpsi)
          CALL iscdftf(mfac,mpert,xnofuns(istep,:),mthsurf,xno_mn)
          CALL iscdftf(mfac,mpert,bnofuns(istep,:),mthsurf,bno_mn)
-         bwp_mn=bwp_mn/area ! is this and ji=1 double counting?
          IF (bwp_pest_flag) THEN
             pwpmn=0
             DO i=1,mpert
@@ -2173,7 +2172,12 @@ c-----------------------------------------------------------------------
 
          CALL ipeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep),ji=0)
          CALL ipeq_bcoordsout(bnomns(istep,:),bno_mn,psifac(istep),ji=0)
-         CALL ipeq_bcoordsout(bwpmns(istep,:),bwp_mn,psifac(istep),ji=1)
+         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+            CALL ipeq_bcoordsout(bwpmns(istep,:),bno_mn,psifac(istep),
+     $                           ji=1)
+         ELSE ! no need to re-weight bno_mn with expensive invfft and fft
+            bwp_mn = bwp_mn/area
+         ENDIF
          xnofuns(istep,:)=xnofuns(istep,:)*EXP(ifac*nn*dphi)
          bnofuns(istep,:)=bnofuns(istep,:)*EXP(ifac*nn*dphi)
       ENDDO
