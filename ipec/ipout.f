@@ -1704,7 +1704,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: jarea,ileft
       COMPLEX(r8) :: t1,t2
       LOGICAL :: diagnose1=.FALSE.,diagnose2=.TRUE.
-      LOGICAL :: kstar_coil_optimization=.TRUE.
+      LOGICAL :: kstar_coil_optimization=.FALSE.
 
       INTEGER, DIMENSION(mpert) :: ipiv
       REAL(r8), DIMENSION(mpert) :: teigen
