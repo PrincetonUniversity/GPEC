@@ -109,7 +109,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      INTEGER :: lwork,i,j,k,rout,bpout,bout,rcout,tout,jout
+      INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout,jout
+      INTEGER :: lwork,i,j,k
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(mpert) :: sts,s,ev
       COMPLEX(r8), DIMENSION(mpert) :: cev
@@ -890,21 +891,21 @@ c     subprogram 3. ipout_control
 c     calculate response from external field on the control surface.
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_control(ifile,finmn,foutmn,xspmn,
-     $     rin,bpin,bin,rcin,tin,jin,rout,bpout,bout,rcout,tout,
+     $     rin,bpin,bin,rcin,tin,jin,rout,bpout,bout,rcout,tout,jout,
      $     filter_types,filter_modes,filter_out)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       CHARACTER(128), INTENT(IN) :: ifile
       INTEGER, INTENT(IN) :: rin,bpin,bin,rcin,tin,jin,
-     $     rout,bpout,bout,rcout,tout,filter_modes
+     $     rout,bpout,bout,rcout,tout,jout,filter_modes
       LOGICAL, INTENT(IN) :: filter_out
       CHARACTER(len=*), INTENT(IN) :: filter_types
       
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn,xspmn
 
-      INTEGER :: i,j,i1,i2,i3,ms,itheta,jout
+      INTEGER :: i,j,i1,i2,i3,ms,itheta
       INTEGER, DIMENSION(mpert) :: ipiv
       REAL(r8) :: vengy,sengy,pengy,area,thetai,scale,norm
       COMPLEX(r8) :: vy,sy,py
@@ -1082,22 +1083,23 @@ c-----------------------------------------------------------------------
       ENDDO
       WRITE(out_unit,*)
 
-      IF ((jac_in /= jac_type).OR.(tin==0).OR.(jin==1)) THEN
+      IF ((jac_in /= jac_type).OR.(tin==0).OR.(jin/=0)) THEN
          cinmn=0
          coutmn=0
+         acinmn=0
          DO i=1,mpert
             IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
                cinmn(mlow-lmlow+i)=binmn(i)
                coutmn(mlow-lmlow+i)=boutmn(i)
+               acinmn(mlow-lmlow+i)=finmn(i)
             ENDIF
-         ENDDO         
-         acinmn = cinmn
+         ENDDO
          CALL ipeq_bcoords(psilim,cinmn,lmfac,lmpert,
      $        rin,bpin,bin,rcin,tin,jin) 
          CALL ipeq_bcoords(psilim,coutmn,lmfac,lmpert,
      $        rin,bpin,bin,rcin,tin,jin)
          CALL ipeq_bcoords(psilim,acinmn,lmfac,lmpert,
-     $        rin,bpin,bin,rcin,tin,1)      
+     $        rin,bpin,bin,rcin,tin,jin)
          WRITE(out_unit,'(1x,a13,a8,1x,2(a12,I2))')"jac_in = ",jac_in,
      $        "jsurf_in =",jin,"tmag_in =",tin
          WRITE(out_unit,*)             
@@ -1112,23 +1114,23 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)       
       ENDIF
 
-      IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+      IF ((jac_out /= jac_type).OR.(tout==0).OR.(jout/=0)) THEN
          cinmn=0
          coutmn=0
+         acinmn=0
          DO i=1,mpert
             IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
                cinmn(mlow-lmlow+i)=binmn(i)
                coutmn(mlow-lmlow+i)=boutmn(i)
+               acinmn(mlow-lmlow+i)=finmn(i)
             ENDIF
-         ENDDO  
-         jout=0
-         acinmn = cinmn
+         ENDDO
          CALL ipeq_bcoords(psilim,cinmn,lmfac,lmpert,
      $        rout,bpout,bout,rcout,tout,jout) 
          CALL ipeq_bcoords(psilim,coutmn,lmfac,lmpert,
      $        rout,bpout,bout,rcout,tout,jout)
          CALL ipeq_bcoords(psilim,acinmn,lmfac,lmpert,
-     $        rin,bpin,bin,rcin,tin,1)
+     $        rout,bpout,bout,rcout,tout,jout)
          WRITE(out_unit,'(1x,a13,a8,1x,2(a12,I2))')"jac_out = ",jac_out,
      $        "jsurf_out =",jout,"tmag_out =",tout  
          WRITE(out_unit,*)          
@@ -4655,7 +4657,7 @@ c-----------------------------------------------------------------------
      $   we_id,re_id,pe_id,se_id,
      $   w_id,r_id,p_id,s_id, wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,ra_id,rl_id,
-     $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,sm_id,
+     $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,sm_id,ex_id,et_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(mpert) :: singfac
@@ -5123,15 +5125,25 @@ c-----------------------------------------------------------------------
          ENDIF
 
          CALL check( nf90_def_var(mncid,"Phi_xe_m",nf90_double,
-     $               (/mdid,idid/),fx_id) )
-         CALL check( nf90_put_att(mncid,fx_id,"units","Wb/m") )
-         CALL check( nf90_put_att(mncid,fx_id,"long_name",
+     $               (/mdid,idid/),ex_id) )
+         CALL check( nf90_put_att(mncid,ex_id,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,ex_id,"long_name",
      $    "Energy-norm external flux") )
+         CALL check( nf90_def_var(mncid,"Phi_x_m",nf90_double,
+     $               (/mdid,idid/),fx_id) )
+         CALL check( nf90_put_att(mncid,fx_id,"units","Wb") )
+         CALL check( nf90_put_att(mncid,fx_id,"long_name",
+     $    "External flux") )
          CALL check( nf90_def_var(mncid,"Phi_e_m",nf90_double,
-     $               (/mdid,idid/),ft_id) )
-         CALL check( nf90_put_att(mncid,ft_id,"units","Wb/m") )
-         CALL check( nf90_put_att(mncid,ft_id,"long_name",
+     $               (/mdid,idid/),et_id) )
+         CALL check( nf90_put_att(mncid,et_id,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,et_id,"long_name",
      $    "Energy-norm total flux") )
+         CALL check( nf90_def_var(mncid,"Phi_m",nf90_double,
+     $               (/mdid,idid/),ft_id) )
+         CALL check( nf90_put_att(mncid,ft_id,"units","Wb") )
+         CALL check( nf90_put_att(mncid,ft_id,"long_name",
+     $    "Total flux") )
 
          IF(fun_flag)THEN
             CALL check( nf90_def_var(mncid,"W_xe_eigenvector_fun",
@@ -5247,11 +5259,21 @@ c-----------------------------------------------------------------------
          temp = foutmn
          CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
          templ = MATMUL(coordmat,temp) ! output coords
+         !CALL ipeq_bcoordsout(templ,temp,psilim,tout,0)
+         CALL check( nf90_put_var(mncid,et_id,RESHAPE((/REAL(templ),
+     $               AIMAG(templ)/),(/lmpert,2/))) )
+         templ = MATMUL(coordmat,foutmn) ! output coords
+         !CALL ipeq_bcoordsout(templ,foutmn,psilim,tout,0)
          CALL check( nf90_put_var(mncid,ft_id,RESHAPE((/REAL(templ),
      $               AIMAG(templ)/),(/lmpert,2/))) )
          temp = finmn
          CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
          templ = MATMUL(coordmat,temp) ! output coords
+         !CALL ipeq_bcoordsout(templ,temp,psilim,tout,0)
+         CALL check( nf90_put_var(mncid,ex_id,RESHAPE((/REAL(templ),
+     $               AIMAG(templ)/),(/lmpert,2/))) )
+         templ = MATMUL(coordmat,finmn) ! output coords
+         !CALL ipeq_bcoordsout(templ,finmn,psilim,tout,0)
          CALL check( nf90_put_var(mncid,fx_id,RESHAPE((/REAL(templ),
      $               AIMAG(templ)/),(/lmpert,2/))) )
 
