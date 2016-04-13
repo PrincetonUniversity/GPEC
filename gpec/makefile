@@ -20,43 +20,44 @@ LIBS = \
 	-lvac \
 	-lcoil \
 	-lharvest \
+	-lpentrc \
 	$(MATHLIBS) \
 	$(NETCDFLIBS)
 
 OBJS = \
 	gpec_global.o \
-	math.o \
+	gpec_math.o \
 	dcon_interface.o \
 	rdcon_interface.o \
 	peq.o \
-	resp.o \
-	diagnostic.o \
+	response.o \
 	vacuum_interface.o \
+	diagnostics.o \
 	output_control.o \
 	output_profile.o \
 	output_cylindrical.o \
-	ipec.o
+	gpec.o
 
-ipec: $(OBJS)
-	$(F90) -o ipec $(OBJS) $(LIBS)
+gpec: $(OBJS)
+	$(F90) -o gpec $(OBJS) $(LIBS)
 	mkdir -p ../lib
-	ar -r ../lib/libipec.a *.o
+	ar -r ../lib/libgpec.a *.o
 	mkdir -p ../bin
-	cp -f ipec ../bin
+	cp -f gpec ../bin
 
 # dependencies
 
-ismath.o : ipglobal.o
-dcon_interface.o: ismath.o
-rdcon_interface.o: ipglobal.o dcon_interface.o ismath.o
-peq.o: dcon_interface.o ismath.o
-resp.o: peq.o
-vacuum_interface.o : peq.o
-diagnostic.o: resp.o vacuum_interface.o
-output_control.o: resp.o vacuum_interface.o ../coil/field.o ../coil/coil.o
-output_profile.o: resp.o vacuum_interface.o ../coil/field.o ../coil/coil.o
-output_cylindrical.o: resp.o vacuum_interface.o ../coil/field.o ../coil/coil.o
-ipec.o: diagnostic.o output_control.o rdcon_interface.o
+gpec_math.o : gpec_global.o
+dcon_interface.o: gpec_global.o
+rdcon_interface.o: gpec_global.o
+peq.o: gpec_global.o gpec_math.o dcon_interface.o
+response.o: gpec_global.o peq.o dcon_interface.o
+vacuum_interface.o : gpec_global.o gpec_math.o peq.o
+diagnostic.o: gpec_global.o gpec_math.o peq.o dcon_interface.o vacuum_interface.o
+output_control.o: gpec_global.o gpec_math.o peq.o dcon_interface.o vacuum_interface.o ../coil/field.o
+output_profile.o: gpec_global.o gpec_math.o peq.o dcon_interface.o ../coil/field.o ../coil/coil.o
+output_cylindrical.o: gpec_global.o gpec_math.o peq.o dcon_interface.o vacuum_interface.o diagnostic.o ../coil/field.o
+gpec.o: gpec_global.o response.o peq.o dcon_interface.o rdcon_interface.o diagnostics.o output_control.o output_cylindrical.o output_profile.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin ipec

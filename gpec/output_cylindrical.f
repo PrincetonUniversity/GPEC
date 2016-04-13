@@ -18,10 +18,19 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE output_cylindrical
-      USE gpec_response
-      USE ipvacuum_mod
-      USE gpec_diagnostic
-      USE field_mod
+      USE gpec_global
+      USE local_mod, ONLY: ascii_open, ascii_close, bin_open, bin_close
+      USE spline_mod, ONLY: spline_type, spline_alloc, spline_eval,
+     $    spline_fit, spline_int
+      USE bicube_mod, ONLY: bicube_eval
+      USE gpec_math, ONLY : iscdftb
+      USE peq, ONLY: peq_sol, peq_contra, peq_cova, peq_alloc,
+     $    peq_dealloc, peq_rzpdiv, peq_rzpgrid
+      USE dcon_interface, ONLY: dcon_build
+      USE vacuum_interface, ONLY: vacuum_bnormal
+      USE diagnostics, ONLY: diagnose_rzpdiv
+      USE coil_mod, ONLY : ipd,btd,helicity,machine
+      USE field_mod, ONLY: field_bs_rzphi
       USE netcdf
 
       IMPLICIT NONE
@@ -118,7 +127,7 @@ c-----------------------------------------------------------------------
       vvbz = 0
       vvbp = 0
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
 
       IF (eqbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing equilibrium magnetic fields"
@@ -227,7 +236,7 @@ c-----------------------------------------------------------------------
       IF (brzphi_flag .AND. vbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)
      $      "Computing vacuum fields by surface currents"
-         CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
+         CALL vacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
          IF (helicity<0) THEN
@@ -259,7 +268,7 @@ c-----------------------------------------------------------------------
       IF (brzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing total perturbed fields"
          bnomn=bnomn-bnimn
-         CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
+         CALL vacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (helicity<0) THEN
@@ -442,7 +451,7 @@ c-----------------------------------------------------------------------
       IF (pbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing total perturbed fields"
          bnomn=bnomn-bnimn
-         CALL ipvacuum_bnormal(psilim,bnomn,nr,nz)
+         CALL vacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (helicity<0) THEN
@@ -455,7 +464,7 @@ c-----------------------------------------------------------------------
       IF (vvbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)
      $      "Computing vacuum fields without plasma response"
-         CALL ipvacuum_bnormal(psilim,bnimn,nr,nz)
+         CALL vacuum_bnormal(psilim,bnimn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp)
          IF (helicity<0) THEN
@@ -860,7 +869,7 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing vacuum fields by "//
      $     TRIM(ss)//"th resonant field"
-      CALL ipvacuum_bnormal(singtype(snum)%psifac,
+      CALL vacuum_bnormal(singtype(snum)%psifac,
      $     singbno_mn(:,snum),nr,nz)
       CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $     nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
@@ -925,7 +934,7 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(2)
       IF(verbose) WRITE(*,*)"Computing x and b rzphi functions"
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
 
       CALL peq_alloc
       DO istep=1,mstep
@@ -1062,7 +1071,7 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing vector potential rzphi functions"
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
 
       CALL peq_alloc
       DO istep=1,mstep

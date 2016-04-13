@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. gpec_equilibrium
+c      0. peq
 c      1. peq_sol
 c      2. peq_contra
 c      3. peq_cova
@@ -22,14 +22,20 @@ c     13. peq_rzpdiv
 c     14. peq_alloc
 c     15. peq_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 0. gpec_equilibrium.
+c     subprogram 0. peq.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE gpec_equilibrium
-      USE gpec_dcon_interface
+      MODULE peq
+      USE gpec_global
+      USE spline_mod, ONLY: spline_type, spline_alloc, spline_eval,
+     $    spline_fit, spline_int
+      USE cspline_mod, ONLY: cspline_eval
+      USE bicube_mod, ONLY: bicube_alloc, bicube_eval, bicube_fit
+      USE gpec_math, ONLY : iscdftf,iscdftb,issect
+      USE dcon_interface, ONLY: dcon_matrix
  
       IMPLICIT NONE
 
@@ -68,7 +74,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(amat(mpert,mpert),bmat(mpert,mpert),cmat(mpert,mpert))
       ALLOCATE(fmats(mband+1,mpert),gmats(mband+1,mpert))
       ALLOCATE(kmats(2*mband+1,mpert))
-      CALL idcon_matrix(psi)
+      CALL dcon_matrix(psi)
 c-----------------------------------------------------------------------
 c     compute preliminary quantities.
 c-----------------------------------------------------------------------
@@ -1252,4 +1258,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE peq_dealloc
 
-      END MODULE gpec_equilibrium
+      END MODULE peq

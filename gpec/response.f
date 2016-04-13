@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. gpec_response
+c      0. response
 c      1. response_eigen
 c      2. response_pinduct
 c      3. response_sinduct
@@ -13,14 +13,17 @@ c      4. response_permeab
 c      5. response_reluct
 c      6. response_indrel
 c-----------------------------------------------------------------------
-c     subprogram 0. gpec_response.
+c     subprogram 0. response.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE gpec_response
-      USE gpec_equilibrium
+      MODULE response
+      USE gpec_global
+      USE peq, ONLY: peq_alloc, peq_dealloc, peq_sol,
+     $    peq_contra, peq_cova, peq_weight, peq_surface
+      USE dcon_interface, ONLY: dcon_build
 
       IMPLICIT NONE
 
@@ -51,7 +54,7 @@ c-----------------------------------------------------------------------
       DO i=1,mpert
          edge_mn=0
          edge_flag=.FALSE.
-         CALL idcon_build(i,edge_mn)
+         CALL dcon_build(i,edge_mn)
 c-----------------------------------------------------------------------
 c     compute the perturbed quantities and contruct hermitian matrices.
 c-----------------------------------------------------------------------
@@ -467,4 +470,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE response_indrel
 
-      END MODULE gpec_response
+      END MODULE response

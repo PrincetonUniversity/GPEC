@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. gpec_diagnostic
+c      0. diagnostics
 c      1. diagnose_eigen
 c      2. diagnose_magpot
 c      3. diagnose_arbsurf
@@ -22,15 +22,28 @@ c     13. diagnose_rzpdiv
 c     14. diagnose_radvar
 c     15. diagnose_permeabev_orthogonality
 c-----------------------------------------------------------------------
-c     subprogram 0. gpec_diagnostic.
+c     subprogram 0. diagnostics.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE gpec_diagnostic
-      USE gpec_response
-      USE ipvacuum_mod
+      MODULE diagnostics
+      USE gpec_global
+      USE local_mod, ONLY: ascii_open, ascii_close, bin_open, bin_close
+      USE spline_mod, ONLY: spline_type, spline_alloc, spline_eval,
+     $    spline_fit, spline_int
+      USE cspline_mod, ONLY: cspline_alloc, cspline_eval, cspline_fit
+      USE fspline_mod, ONLY: fspline_alloc, fspline_eval, fspline_fit_1,
+     $    fspline_fit_2
+      USE bicube_mod, ONLY: bicube_type, bicube_alloc, bicube_dealloc,
+     $    bicube_fit, bicube_eval
+      USE gpec_math, ONLY : iscdftf,iscdftb,issect,issurfint,idl_3dsurf
+      USE peq, ONLY: peq_sol, peq_contra, peq_cova, peq_weight,
+     $    peq_alloc, peq_dealloc, peq_bcoords, peq_fcoords, peq_rzphi,
+     $    peq_normal
+      USE dcon_interface, ONLY: dcon_build
+      USE vacuum_interface, ONLY: vacuum_arbsurf
 
       IMPLICIT NONE
 
@@ -51,7 +64,7 @@ c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"diagnose_eigen.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_EIGEN: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_EIGEN: "//
      $     "Diagnose DCON eigenvalues for eigenvectors"
       WRITE(out_unit,'(2(1x,a3),1x,a16)')"m","m","pot energy"
 
@@ -86,7 +99,8 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"diagnose_magpot_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_MAGPOT: Magnetic potential errors"
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_MAGPOT: Magnetic potential "//
+     $     "errors"
       WRITE(out_unit,'(1x,a8,1x,I4)')"mpert=",mpert
       WRITE(out_unit,'(1x,a4,2(1x,a16))')"mode","chperr1","chperr2"
       DO i=1,mpert
@@ -118,14 +132,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL ipvacuum_arbsurf(majr,minr)
+      CALL vacuum_arbsurf(majr,minr)
       vmpert=SIZE(vsurf_indev)
       
       WRITE(UNIT=smajr, FMT='(I4)')INT(100*majr)
       WRITE(UNIT=sminr, FMT='(I4)')INT(100*minr)
-      CALL ascii_open(out_unit,"diagnose_arbsurf_R"//smajr//"_r"//sminr//
-     $     ".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_VACUUM: "//
+      CALL ascii_open(out_unit,"diagnose_arbsurf_R"//smajr//"_r"//sminr
+     $     //".out","UNKNOWN")
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_VACUUM: "//
      $     "Diagnose surface inductances for arbitrary shape"
       WRITE(out_unit,'(1x,a4,1x,a16)')"mode","surf_ind"
       DO i=1,vmpert
@@ -238,7 +252,7 @@ c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------      
       CALL ascii_open(out_unit,"diagnose_angles.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_ANGLES: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_ANGLES: "//
      $     "Diagnose and visualize magnetic angles"
       WRITE(out_unit,'(1x,a8,1x,I6)')"angnum=",angnum
       WRITE(out_unit,'(1x,a8,1x,I6)')"rstep=",rstep
@@ -323,8 +337,8 @@ c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"diagnose_surfmode.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_SURFMODE: Plasma response for the "//
-     $     "fourier modes on the control surface"
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_SURFMODE: Plasma response for"//
+     $     " the fourier modes on the control surface"
       WRITE(out_unit,*)"MODES"
       WRITE(out_unit,'(1x,a4,4(1x,a16))')"m",
      $     "rebin","imbin","rebout","imbout"
@@ -393,7 +407,7 @@ c-----------------------------------------------------------------------
       corcurs=0
       singcurs=0
       CALL peq_alloc
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     compute singular currents with logarithmic approach.
 c-----------------------------------------------------------------------
@@ -517,7 +531,7 @@ c     write the results.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"diagnose_deltas_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_DELTAS: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_DELTAS: "//
      $     "Asymtotic analysis for deltas at rational surfaces"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rsing=",rsing
       WRITE(out_unit,'(1x,a8,1x,I6)')"resol=",resol
@@ -533,7 +547,7 @@ c-----------------------------------------------------------------------
       CALL ascii_close(out_unit)
       CALL ascii_open(out_unit,"diagnose_singcurs_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_SINGCURS: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_SINGCURS: "//
      $     "asymtotic analysis for singular currents at "//
      $     "rational surfaces"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rsing=",rsing
@@ -574,12 +588,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
 
       WRITE(*,*)"Computing contravariant components in detail"
       CALL ascii_open(out_unit,"diagnose_xbcontra_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_XBCONTRA: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_XBCONTRA: "//
      $     "Contravariant components of displacement and field"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep = ",mstep
       WRITE(out_unit,'(1x,a8,1x,I6)')"mlow = ",mlow
@@ -712,7 +726,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       CALL peq_alloc
       CALL peq_sol(psilim)
       CALL peq_contra(psilim)
@@ -734,7 +748,7 @@ c     write results.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"diagnose_xnobo_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_XNOBO: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_XNOBO: "//
      $     "Perturbed normal displacement vectors on the boundary"      
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(xnor)","real(xnoz)","imag(xnor)","imag(xnoz)"
@@ -745,7 +759,7 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_open(out_unit,"diagnose_bnobo_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_BNOBO: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_BNOBO: "//
      $     "perturbed normal field vectors on the boundary"      
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(bnor)","real(bnoz)","imag(bnor)","imag(bnoz)"
@@ -768,14 +782,14 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
          
          filein="iptemp.txt"
-         file1="ipidl_3dsurf_xnobo_n"//TRIM(sn)//".out"
+         file1="diagnose_idl_3dsurf_xnobo_n"//TRIM(sn)//".out"
 
          ddist=0.2
          mmtheta=mthnum
          nnn=nn
          np=144
          nt=144
-         CALL ipidl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1)
+         CALL idl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1)
 
          CALL ascii_open(out_unit,"iptemp.txt","UNKNOWN")
          WRITE(out_unit,'(1p,5es16.8)')rs
@@ -785,14 +799,14 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
          
          filein="iptemp.txt"
-         file1="ipidl_3dsurf_bnobo_n"//TRIM(sn)//".out"
+         file1="diagnose_idl_3dsurf_bnobo_n"//TRIM(sn)//".out"
 
          ddist=0.2
          mmtheta=mthnum
          nnn=nn
          np=144
          nt=144
-         CALL ipidl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1) 
+         CALL idl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1)
       ENDIF
       DEALLOCATE(rs,zs,xno_fun,bno_fun)
 c-----------------------------------------------------------------------
@@ -826,7 +840,7 @@ c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing x and b field strength"
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       
       CALL peq_alloc
       DO istep=1,mstep
@@ -881,7 +895,7 @@ c     write data.
 c-----------------------------------------------------------------------      
       CALL ascii_open(out_unit,"diagnose_xbst_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_XBST: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_XBST: "//
      $     "Perturbed x and b strength on flux surfaces"
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -963,7 +977,7 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(cspl,mthsurf,3)
       cspl%xs=theta
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       CALL peq_alloc
       DO istep=1,mstep
 c-----------------------------------------------------------------------
@@ -1176,7 +1190,7 @@ c     compute necessary components.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing perturbed b field for gpec"
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       CALL peq_alloc
 c-----------------------------------------------------------------------
 c     set up fourier-spline type.
@@ -1405,7 +1419,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       IF (rstep == mstep) THEN
          psis=psifac
       ELSE
@@ -1479,7 +1493,7 @@ c     write results.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"diagnose_rzphibx_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_RZPHIBX: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_RZPHIBX: "//
      $     "Give rzphibx information in hamada coordinates"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rstep=",rstep
       WRITE(out_unit,'(1x,a8,1x,I6)')"mthsurf=",mthsurf
@@ -1554,7 +1568,7 @@ c-----------------------------------------------------------------------
       zint=(z2-z1)/nz
 
       CALL ascii_open(out_unit,"diagnose_rzpgrid.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_RZPGRID: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_RZPGRID: "//
      $     "Give hamada coordinates as functions of rzphi"
       WRITE(out_unit,'(6(1x,a12))')"r","z","limit","psi","theta","phi"
 
@@ -1728,7 +1742,7 @@ c-----------------------------------------------------------------------
       CALL spline_dealloc(qs)
       CALL ascii_open(out_unit,"diagnose_radvar_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_RADVAR: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_RADVAR: "//
      $     "Various radial variables"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep
       WRITE(out_unit,'(1x,a8,1x,es16.8)')"qintb=",qintb
@@ -1760,7 +1774,7 @@ c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"diagnose_permeabevorthogonality_n"//
      $                         TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_PERMEABEVORTHOGONALITY: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_PERMEABEVORTHOGONALITY: "//
      $     "Diagnose orhtogonality of permeability eigenvectors"
       WRITE(out_unit,*)
       WRITE(out_unit,'(2(1x,a3),4(1x,a16))')"m1","m2","A1","A2",
@@ -1845,8 +1859,8 @@ c-----------------------------------------------------------------------
       
       CALL ascii_open(out_unit,"diagnose_reluctpowout_n"//
      $	   TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_RELUCTPOWOUT: Reluctance matrix "//
-     $     "power eigenvalue calculation in output coordinates."
+      WRITE(out_unit,*)"GPEC_DIAGNOSTIC_RELUCTPOWOUT: Reluctance "//
+     $     "matrix power eigenvalue calculation in output coordinates."
       WRITE(out_unit,*)
       WRITE(out_unit,*)"jac_out=",jac_out,"tmag_out=",0,"jsurf_out=",0
       WRITE(out_unit,*)"resp_index=",resp_index
@@ -1880,4 +1894,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE diagnose_reluctpowout
 
-      END MODULE gpec_diagnostic
+      END MODULE diagnostics

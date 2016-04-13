@@ -6,7 +6,7 @@ c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
 c      0. output_control
-c      1. response
+c      1. response_matrices
 c      2. singcoup
 c      3. control
 c      4. singfld
@@ -19,10 +19,18 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE output_control
-      USE gpec_response
-      USE ipvacuum_mod
-      USE gpec_diagnostic
-      USE field_mod
+      USE gpec_global
+      USE local_mod, ONLY: ascii_open, ascii_close, bin_open, bin_close
+      USE spline_mod, ONLY: spline_type, spline_alloc, spline_eval,
+     $    spline_fit, spline_int
+      USE bicube_mod, ONLY: bicube_eval
+      USE gpec_math, ONLY : iscdftf,iscdftb,issect,issurfint,isbubble
+      USE peq, ONLY: peq_sol, peq_alloc, peq_dealloc, peq_bcoords,
+     $    peq_fcoords, peq_weight
+      USE dcon_interface, ONLY: dcon_build
+      USE vacuum_interface, ONLY: vacuum_flxsurf
+      USE coil_mod, ONLY : helicity,cmlow,cmpert,machine
+      USE field_mod, ONLY: field_bs_psi
       USE netcdf
 
       IMPLICIT NONE
@@ -48,56 +56,11 @@ c-----------------------------------------------------------------------
 
       CONTAINS
       
-      !-----------------------------------------------------------------
-      function str(k,fmt)
-      !-----------------------------------------------------------------
-      !*DESCRIPTION:
-      !   Convert an integer to string.
-      !*ARGUMENTS:
-      !   k : integer. Maximum unit.
-      !   fmt : str. Format specification.
-      !*RETURNS:
-      !     str. length 20.
-      !-----------------------------------------------------------------
-          character(len=20) str
-          integer, intent(in) :: k
-          character(*),intent(in) :: fmt
-          
-          write (str, trim(fmt)) k
-          str = adjustl(str)
-      end function str
-      !-----------------------------------------------------------------
-      function to_upper(strIn) result(strOut)
-      !-----------------------------------------------------------------
-      !*DESCRIPTION:
-      !   Capitalize a string.
-      !   Adapted from http://www.star.le.ac.uk/~cgp/fortran.html
-      !   Original author: Clive Page
-      !*ARGUMENTS:
-      !   strIn : str. Original string.
-      !*RETURNS:
-      !   strOut : str. New capitalized string.
-      !-----------------------------------------------------------------
-         implicit none
-         character(len=*), intent(in) :: strIn
-         character(len=len(strIn)) :: strOut
-         integer :: i,j
-
-         do i = 1, len(strIn)
-              j = iachar(strIn(i:i))
-              if (j>= iachar("a") .and. j<=iachar("z") ) then
-                   strOut(i:i) = achar(iachar(strIn(i:i))-32)
-              else
-                   strOut(i:i) = strIn(i:i)
-              end if
-         end do
-      end function to_upper
-
 c-----------------------------------------------------------------------
-c     subprogram 1. response.
+c     subprogram 1. response_matrices.
 c     write basic information.
 c-----------------------------------------------------------------------
-      SUBROUTINE response(rout,bpout,bout,rcout,tout,jout)
+      SUBROUTINE response_matrices(rout,bpout,bout,rcout,tout,jout)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -136,7 +99,7 @@ c-----------------------------------------------------------------------
          s(i)=-1/s(i)
       ENDDO
 
-      CALL ascii_open(out_unit,"gpec_response_n"//
+      CALL ascii_open(out_unit,"gpec_response_matrices_n"//
      $	   TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"GPEC_RESPONSE: Response parameters"
       WRITE(out_unit,*)version
@@ -340,7 +303,7 @@ c-----------------------------------------------------------------------
           r(i)=ro+rfac*COS(eta)
           z(i)=zo+rfac*SIN(eta) 
         ENDDO
-        CALL ascii_open(out_unit,"gpec_response_fun_n"//
+        CALL ascii_open(out_unit,"gpec_response_matrices_fun_n"//
      $    TRIM(sn)//".out","UNKNOWN")
         WRITE(out_unit,*)"GPEC_RESPONSE_FUN: "//
      $    "Eigenmodes on control surface in functions"
@@ -435,7 +398,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(2)
       RETURN
-      END SUBROUTINE response
+      END SUBROUTINE response_matrices
 c-----------------------------------------------------------------------
 c     subprogram 2. singcoup.
 c     compute coupling between singular surfaces and external fields.
@@ -525,7 +488,7 @@ c-----------------------------------------------------------------------
          shear(ising)=mfac(resnum)*sq%f1(4)/sq%f(4)**2
 
          ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
-         CALL ipvacuum_flxsurf(respsi)
+         CALL vacuum_flxsurf(respsi)
          fsurfindmats(ising,:,:)=fsurf_indmats
          DEALLOCATE(fsurf_indev,fsurf_indmats)
       ENDDO
@@ -548,7 +511,7 @@ c-----------------------------------------------------------------------
          singfac=mfac-nn*qlim
          edge_mn=foutmn/(chi1*singfac*twopi*ifac)
          edge_flag=.TRUE.
-         CALL idcon_build(0,edge_mn)
+         CALL dcon_build(0,edge_mn)
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
 c-----------------------------------------------------------------------
@@ -1375,7 +1338,7 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing total resonant fields"
       CALL peq_alloc
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
@@ -1428,7 +1391,7 @@ c-----------------------------------------------------------------------
          fkaxmn(resnum(ising))=singcur(ising)/(twopi*nn)
          
          ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
-         CALL ipvacuum_flxsurf(respsi)
+         CALL vacuum_flxsurf(respsi)
          singflx_mn(:,ising)=MATMUL(fsurf_indmats,fkaxmn)
          DEALLOCATE(fsurf_indmats,fsurf_indev)
 c-----------------------------------------------------------------------

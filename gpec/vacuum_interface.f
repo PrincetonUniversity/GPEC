@@ -5,28 +5,32 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. ipvacuum
-c      1. ipvacuum_arbsurf
-c      2. ipvacuum_flxsurf
-c      3. ipvacuum_bnormal
+c      0. vacuum_interface
+c      1. vacuum_arbsurf
+c      2. vacuum_flxsurf
+c      3. vacuum_bnormal
 c-----------------------------------------------------------------------
-c     subprogram 0. ipvacuum_mod.
+c     subprogram 0. vacuum_interface.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ipvacuum_mod
-      USE gpec_equilibrium
+      MODULE vacuum_interface
+      USE gpec_global
+      USE local_mod, ONLY: ascii_open, ascii_close, bin_open, bin_close
+      USE spline_mod, ONLY: spline_eval
+      USE bicube_mod, ONLY: bicube_eval
+      USE gpec_math, ONLY: iscdftb, iscdftf
 
       IMPLICIT NONE
       
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipvacuum_arbsurf.
+c     subprogram 1. vacuum_arbsurf.
 c     compute arbitrary surface inductance.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_arbsurf(majr,minr)
+      SUBROUTINE vacuum_arbsurf(majr,minr)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -201,12 +205,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipvacuum_arbsurf
+      END SUBROUTINE vacuum_arbsurf
 c-----------------------------------------------------------------------
-c     subprogram 2. ipvacuum_flxsurf.
+c     subprogram 2. vacuum_flxsurf.
 c     compute flux surface inductances.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_flxsurf(psi)
+      SUBROUTINE vacuum_flxsurf(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -358,12 +362,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipvacuum_flxsurf
+      END SUBROUTINE vacuum_flxsurf
 c-----------------------------------------------------------------------
-c     subprogram 3. ipvacuum_bnormal.
+c     subprogram 3. vacuum_bnormal.
 c     create bnormal input for vacuum code.  
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_bnormal(psi,finmn,nr,nz)
+      SUBROUTINE vacuum_bnormal(psi,finmn,nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -467,7 +471,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipvacuum_bnormal
+      END SUBROUTINE vacuum_bnormal
 
-      END MODULE ipvacuum_mod
+      END MODULE vacuum_interface
       

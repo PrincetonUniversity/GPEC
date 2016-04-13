@@ -20,10 +20,21 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE output_profile
-      USE gpec_response
-      USE ipvacuum_mod
-      USE gpec_diagnostic
-      USE field_mod
+      USE gpec_global
+      USE local_mod, ONLY: ascii_open, ascii_close, bin_open, bin_close
+      USE spline_mod, ONLY: spline_type, spline_alloc, spline_eval,
+     $    spline_fit, spline_int
+      USE cspline_mod, ONLY: cspline_alloc, cspline_eval, cspline_fit,
+     $    cspline_int
+      USE bicube_mod, ONLY: bicube_eval
+      USE gpec_math, ONLY : iscdftf,iscdftb,issurfint
+      USE peq, ONLY: peq_sol, peq_contra, peq_cova, peq_alloc,
+     $    peq_dealloc, peq_bcoords, peq_fcoords, peq_bcoordsout,
+     $    peq_weight
+      USE dcon_interface, ONLY: dcon_build
+      USE coil_mod, ONLY : helicity, cmlow, cmhigh, cmpert, cmpsi,
+     $    machine, coil_read, coil_dealloc
+      USE field_mod, ONLY: field_bs_psi
       USE netcdf
 
       IMPLICIT NONE
@@ -53,7 +64,7 @@ c-----------------------------------------------------------------------
 c     subprogram 6. w_profile.
 c     restore energy and torque profiles from solutions.
 c-----------------------------------------------------------------------
-      SUBROUTINE w_profile(egnum,xspmn)
+      SUBROUTINE dw_profile(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -65,7 +76,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     build and spline energy and torque profiles.
 c-----------------------------------------------------------------------
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       CALL cspline_alloc(dwk,mstep,1)
       dwk%xs=psifac
       DO istep=0,mstep
@@ -97,7 +108,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE w_profile
+      END SUBROUTINE dw_profile
 c-----------------------------------------------------------------------
 c     subprogram 7. dw_matrix.
 c     restore energy and torque response matrix from solutions.
@@ -163,7 +174,7 @@ c-----------------------------------------------------------------------
       DO ipert=1,mpert
          edge_mn=0
          edge_mn(ipert)=1.0
-         CALL idcon_build(0,edge_mn)
+         CALL dcon_build(0,edge_mn)
          DO istep=0,mstep
             bsurfmat(istep,:,ipert)=u1%fs(istep,:)
          ENDDO
@@ -607,7 +618,7 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(cspl,mthsurf,2)
       cspl%xs=theta
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       CALL peq_alloc
 
       DO istep=1,mstep
@@ -1060,7 +1071,7 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing x and b normal components"
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
 
       CALL peq_alloc
       DO istep=1,mstep
@@ -1629,7 +1640,7 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing x and b tangential components"
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
 
       CALL peq_alloc
       DO istep=1,mstep
@@ -1799,7 +1810,7 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing Clebsch displacements"
 
-      CALL idcon_build(egnum,xspmn)
+      CALL dcon_build(egnum,xspmn)
       CALL peq_alloc
 
       DO istep=1,mstep

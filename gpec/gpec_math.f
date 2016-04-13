@@ -1,24 +1,24 @@
 c-----------------------------------------------------------------------
 c     GENERALIZED PERTURBED EQUILIBRIUM CODE
-c     ISMATH: simple math routines
+c     MATH: simple math routines
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. ismath_mod
+c     0. gpec_math
 c     1. iscdftf
 c     2. iscdftb
 c     3. issect
 c     4. issurfint
-c     5. ipidl_3dsurf
+c     5. idl_3dsurf
 c-----------------------------------------------------------------------
-c     subprogram 0. ismath_mod.
+c     subprogram 0. gpec_math.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ismath_mod
+      MODULE gpec_math
       USE local_mod
       USE bicube_mod
       USE fspline_mod
@@ -265,7 +265,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE isbubble
 c-----------------------------------------------------------------------
-c     subprogram 6. ipidl_3dsurf.
+c     subprogram 6. idl_3dsurf.
 c     convert 2d data into 3d data.
 c-----------------------------------------------------------------------
 C     SIMPLE CODE TO READ/ECHO GLASSER DCON DATA
@@ -282,7 +282,7 @@ C     MODIFIED OCT 2004  PRODUCE DATA FOR IDL PLOTS
 C     MODIFIED DEC 2004, PRODUCE PLOTS OF BN AT SEL.PHI FOR POLAR LIKE PLTS
 C     LAST ALTERED MARCH 2007, PRODUCE DATA FOR IDL PLOTS (UNWRAPPED SURFACE)
 c-----------------------------------------------------------------------
-      SUBROUTINE ipidl_3dsurf(FILEIN,NNN,MMTHETA,NP,NT,DIST,FILE1)
+      SUBROUTINE idl_3dsurf(FILEIN,NNN,MMTHETA,NP,NT,DIST,FILE1)
 
       IMPLICIT NONE
 C
@@ -493,7 +493,7 @@ C
       CLOSE ( 11 )
 
       RETURN
-      END SUBROUTINE ipidl_3dsurf
+      END SUBROUTINE idl_3dsurf
 
       SUBROUTINE SPLINE ( x, y, n, yp1, ypn, y2)
 C     
@@ -608,4 +608,4 @@ C
       END SUBROUTINE SPLINTD
 c-----------------------------------------------------------------------
 
-      END MODULE ismath_mod
+      END MODULE gpec_math

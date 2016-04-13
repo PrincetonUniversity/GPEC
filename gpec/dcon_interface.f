@@ -5,35 +5,41 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. gpec_dcon_interface.
-c     1. idcon_read.
-c     2. idcon_transform
-c     3. idcon_build
-c     4. idcon_metric
-c     5. idcon_matrix
-c     6. idcon_vacuum
-c     7. idcon_action_matrices
+c     0. dcon_interface.
+c     1. dcon_read.
+c     2. dcon_transform
+c     3. dcon_build
+c     4. dcon_metric
+c     5. dcon_matrix
+c     6. dcon_vacuum
+c     7. dcon_action_matrices
 c-----------------------------------------------------------------------
-c     subprogram 0. gpec_dcon_interface.
+c     subprogram 0. dcon_interface.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE gpec_dcon_interface
+      MODULE dcon_interface
       USE gpec_global
-      USE ismath_mod
+      USE local_mod, ONLY: ascii_open, ascii_close, bin_open, bin_close
+      USE spline_mod, ONLY: spline_type, spline_alloc, spline_eval,
+     $    spline_fit, spline_int
+      USE cspline_mod, ONLY: cspline_alloc, cspline_eval, cspline_fit
+      USE fspline_mod, ONLY: fspline_alloc, fspline_eval, fspline_fit_1,
+     $    fspline_fit_2
+      USE bicube_mod, ONLY: bicube_alloc, bicube_eval, bicube_fit
       IMPLICIT NONE
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. idcon_read.
+c     subprogram 1. dcon_read.
 c     reads dcon output, psi_in.bin and euler.bin.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_read(lpsixy)
+      SUBROUTINE dcon_read(lpsixy)
 
       INTEGER, INTENT(IN) :: lpsixy
       CHARACTER(128) :: message
@@ -312,15 +318,15 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_read
+      END SUBROUTINE dcon_read
 c-----------------------------------------------------------------------
-c     subprogram 2. idcon_transform.
+c     subprogram 2. dcon_transform.
 c     build fixup matrices.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_transform
+      SUBROUTINE dcon_transform
 
       INTEGER :: ifix,isol,jsol,ksol
       LOGICAL, DIMENSION(mpert) :: mask
@@ -377,9 +383,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_transform
+      END SUBROUTINE dcon_transform
 c-----------------------------------------------------------------------
-c     subprogram 3. idcon_build.
+c     subprogram 3. dcon_build.
 c     builds ideal euler-Lagrange solutions.
 c     __________________________________________________________________
 c     egnum  : a label of eigenmode
@@ -389,7 +395,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_build(egnum,xspmn)
+      SUBROUTINE dcon_build(egnum,xspmn)
 
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
@@ -398,7 +404,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert) :: ipiv
       COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
-      IF(debug_flag) PRINT *, "Entering idcon_build"
+      IF(debug_flag) PRINT *, "Entering dcon_build"
 c-----------------------------------------------------------------------
 c     construct uedge.
 c-----------------------------------------------------------------------
@@ -436,17 +442,17 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(u2,"extrap")
       CALL cspline_fit(u3,"extrap")
       CALL cspline_fit(u4,"extrap")
-      IF(debug_flag) PRINT *, "->Leaving idcon_build"
+      IF(debug_flag) PRINT *, "->Leaving dcon_build"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_build
+      END SUBROUTINE dcon_build
 c-----------------------------------------------------------------------
-c     subprogram 4. idcon_matric.
+c     subprogram 4. dcon_matric.
 c     reconstructs metric tensors from dcon.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_metric
+      SUBROUTINE dcon_metric
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -563,7 +569,7 @@ c-----------------------------------------------------------------------
       psitor(:)=qs%fsi(1:mpsi+1,1)/qintb
       CALL spline_dealloc(qs)
 
-      CALL ascii_open(out_unit,"idcon_equil.out","UNKNOWN")
+      CALL ascii_open(out_unit,"dcon_equil.out","UNKNOWN")
       WRITE(out_unit,*)"IDCON_EQUIL: "//
      $     "Various equilibrium quantities"
       WRITE(out_unit,*)     
@@ -607,12 +613,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_metric
+      END SUBROUTINE dcon_metric
 c-----------------------------------------------------------------------
-c     subprogram 5. idcon_matrix
+c     subprogram 5. dcon_matrix
 c     compute abcfgk matrix.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_matrix(psi)
+      SUBROUTINE dcon_matrix(psi)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -790,12 +796,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_matrix
+      END SUBROUTINE dcon_matrix
 c-----------------------------------------------------------------------
-c     subprogram 6. idcon_vacuum.
+c     subprogram 6. dcon_vacuum.
 c     read vacuum.bin from vacuum code.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_vacuum
+      SUBROUTINE dcon_vacuum
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
       REAL(r8) :: kernelsignin
@@ -833,12 +839,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_vacuum
+      END SUBROUTINE dcon_vacuum
 c-----------------------------------------------------------------------
-c     subprogram 7. idcon_action_matrices.
+c     subprogram 7. dcon_action_matrices.
 c     Equilibrium matrices necessary to calc perturbed mod b for gpec.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_action_matrices()!(egnum,xspmn)
+      SUBROUTINE dcon_action_matrices()!(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -861,7 +867,7 @@ c     compute necessary components.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing perturbed b field for gpec"
 
-      !CALL idcon_build(egnum,xspmn)   !! Only needed for peq_sol for xi's
+      !CALL dcon_build(egnum,xspmn)   !! Only needed for peq_sol for xi's
       !CALL peq_alloc                 !! displacements now in pentrc inputs
 c-----------------------------------------------------------------------
 c     set up fourier-spline type.
@@ -999,6 +1005,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE idcon_action_matrices
+      END SUBROUTINE dcon_action_matrices
 
-      END MODULE gpec_dcon_interface
+      END MODULE dcon_interface

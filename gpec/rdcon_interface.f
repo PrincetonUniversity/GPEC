@@ -5,19 +5,20 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. gpec_rdcon_interface.
+c     0. rdcon_interface.
 c     1. rdcon_read.
 c-----------------------------------------------------------------------
-c     subprogram 0. gpec_rdcon_interface.
+c     subprogram 0. rdcon_interface.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE gpec_rdcon_interface
+      MODULE rdcon_interface
       USE gpec_global
-      USE gpec_dcon_interface
-      USE ismath_mod
+      USE local_mod, ONLY: ascii_open, ascii_close, bin_open, bin_close
+      USE spline_mod, ONLY: spline_eval
+
       IMPLICIT NONE
 
       CONTAINS
@@ -82,4 +83,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE rdcon_read
 
-      END MODULE gpec_rdcon_interface
+      END MODULE rdcon_interface

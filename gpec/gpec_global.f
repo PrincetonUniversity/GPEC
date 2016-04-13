@@ -3,9 +3,15 @@ c     GENERALIZED PERTURBED EQUILIBRIUM CODE
 c     GPEC_GLOBAL: global definition
 c-----------------------------------------------------------------------
       MODULE gpec_global
-      USE bicube_mod
-      USE fspline_mod
+      ! from equil
+      USE bicube_mod, ONLY: bicube_type, bicube_dealloc
+      USE spline_mod, ONLY: spline_type, spline_dealloc
+      USE cspline_mod, ONLY: cspline_type, cspline_dealloc
+      USE fspline_mod, ONLY: fspline_type, fspline_dealloc
       USE global_mod, ONLY: version
+      USE io_mod, ONLY: in_unit, out_unit, bin_unit, bin_2d_unit
+      USE local_mod, ONLY: r4,r8,pi,twopi,pisq,mu0,rtod,dtor,alog10,
+     $    e,mp,me,c,jzero,ev,zero,one,ifac
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------

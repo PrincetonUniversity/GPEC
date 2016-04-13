@@ -11,14 +11,25 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       PROGRAM gpec_main
-      USE gpec_diagnostic
-      USE output_control, only : response, singcoup, control, singfld,
-     $    vsingfld
-      USE output_control, only : xbrzphi, vsbrzphi, xbrzphifun,
+
+      USE diagnostics
+      USE gpec_global
+      USE local_mod, ONLY: ascii_open, ascii_close, bin_open, bin_close
+      USE response
+      USE peq
+      USE dcon_interface, ONLY: dcon_read, dcon_build, dcon_metric,
+     $    dcon_transform, dcon_vacuum
+      USE rdcon_interface, ONLY: rdcon_read
+      USE coil_mod, ONLY : ipd,btd,helicity,cmlow,cmhigh,cmpert,
+     $    machine,ip_direction,bt_direction,
+     $    coil_read
+      USE field_mod, ONLY : field_bs_psi
+      USE output_control, only : response_matrices, singcoup, control,
+     $    singfld, vsingfld, init_netcdf
+      USE output_cylindrical, only : xbrzphi, vsbrzphi, xbrzphifun,
      $    arzphifun
-      USE output_control, only : dw_profile, dw_matrix, pmodb,
-     $    xbnormal, vbnormal, xtangent
-      USE gpec_rdcon_interface
+      USE output_profile, only : dw_profile, dw_matrix, pmodb,
+     $    xbnormal, vbnormal, xbtangent, xclebsch
 
       IMPLICIT NONE
 
@@ -42,6 +53,14 @@ c-----------------------------------------------------------------------
      $     fxmn,fxfun,coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
+      ! harvest variables
+      INCLUDE 'harvest_lib.inc77'
+      INTEGER  :: ierr
+      CHARACTER(LEN=50000) :: hnml
+      CHARACTER(LEN=65507) :: hlog
+      CHARACTER, PARAMETER :: nul = char(0)
+
+      ! input file namelists
       NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
@@ -301,16 +320,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare ideal solutions.
 c-----------------------------------------------------------------------
-      CALL idcon_read(psixy)
-      CALL idcon_transform
+      CALL dcon_read(psixy)
+      CALL dcon_transform
 c-----------------------------------------------------------------------
 c     reconstruct metric tensors.
 c-----------------------------------------------------------------------
-      CALL idcon_metric
+      CALL dcon_metric
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
-      CALL idcon_vacuum
+      CALL dcon_vacuum
       IF(timeit) CALL gpec_timer(2)
 c-----------------------------------------------------------------------
 c     set parameters from dcon.
@@ -355,7 +374,7 @@ c-----------------------------------------------------------------------
       ELSEIF (machine=='d3d') then
          machine = "DIII-D"
       ENDIF
-      machine = to_upper(machine)
+      !machine = to_upper(machine)
       ierr=set_harvest_payload_str(hlog,'MACHINE'//nul,
      $                             trim(machine)//nul)
       ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
@@ -436,7 +455,7 @@ c     full analysis.
 c-----------------------------------------------------------------------
       CALL init_netcdf
       IF (resp_flag) THEN
-         CALL response(power_rout,power_bpout,
+         CALL response_matrices(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
       DO i=1,LEN_TRIM(filter_types)
@@ -505,7 +524,7 @@ c-----------------------------------------------------------------------
             CALL zgetrs('N',mpert,mpert,temp1,mpert,
      $           ipiv,invmats,mpert,info)
             invmats=TRANSPOSE(invmats)
-            CALL idcon_build(mode,xspmn)
+            CALL dcon_build(mode,xspmn)
             CALL peq_alloc
             CALL peq_sol(psilim)
             CALL peq_contra(psilim)
