@@ -34,10 +34,8 @@
 # use acml or lapack based on what is loaded
 ifndef ACML_HOME
     MATHDIR = $(LAPACKHOME)
-    MATHLIBS = -llapack -lblas
 else
     MATHDIR = $(ACML_HOME)
-    MATHLIBS = -lacml
 endif
 
 
@@ -69,6 +67,7 @@ endif
 ifdef cflag
 	ifeq ($(cflag),zwang_intel)
 	    # module load intel/2013.1.3 lapack netcdf
+	    # status: success!
 		PLATFORM = portal
 		FC = /usr/pppl/intel/2013.1.3/bin/ifort
 		CC = /usr/pppl/intel/2013.1.3/bin/icc
@@ -99,15 +98,16 @@ ifdef cflag
 		MATHDIR = /usr/pppl/intel/2015-pkgs/acml-5.3.1/ifort64
 		NETCDFHOME = /usr/pppl/intel/2015-pkgs/netcdf-4.3.2
 	else ifeq ($(cflag),portalr6_gfortran)
-	    # module load gcc4 lapack-blas netcdf
-	    # status: compiles, but dcon fails with "error while loading shared libraries: liblapack.so: cannot open shared object file: No such file or directory"
+	    # module load gcc4/4.6.3; module load lapack-blas/3.3.1 netcdf/4.1.2
+	    # status: success! (executor must have gcc4 modules loaded to use libs)
 		PLATFORM = portal
 		FC = /usr/pppl/gcc/4.6.3/bin/gfortran4
 		CC = /usr/pppl/gcc/4.6.3/bin/gcc4
 		MATHDIR = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
 		NETCDFHOME = /usr/pppl/gcc/4.6-pkgs/netcdf-4.1.2
 	else ifeq ($(cflag),portal_lfc)
-	    # module load lff95 lapack-blas netcdf
+	    # module load lff95/8.00a_64bit lapack-blas/3.1.1 netcdf/3.6.2
+		# status: success! (executor does not need same environment)
 		PLATFORM = portal
 		FC = /usr/pppl/lf64x/lf6480/bin/lfc
 		CC = /usr/pppl/gcc/4.6.3/bin/gcc4

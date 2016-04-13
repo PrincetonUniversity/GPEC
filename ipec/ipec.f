@@ -394,16 +394,24 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
       ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
       ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
-      ! ipec inputs
-      write(hnml,nml=ipec_input)
-      ierr=set_harvest_payload_nam(hlog,'IPEC_INPUT'//nul,
-     $                             trim(hnml)//nul)
-      write(hnml,nml=ipec_control)
-      ierr=set_harvest_payload_nam(hlog,'IPEC_CONTROL'//nul,
-     $                             trim(hnml)//nul)
-      write(hnml,nml=ipec_output)
-      ierr=set_harvest_payload_nam(hlog,'IPEC_OUTPUT'//nul,
-     $                             trim(hnml)//nul)
+      ! ipec_input
+      ierr=set_harvest_payload_bol(hlog,'fixed_boundary_flag'//nul,
+     $                             fixed_boundary_flag)
+      ierr=set_harvest_payload_bol(hlog,'mode_flag'//nul,mode_flag)
+      ierr=set_harvest_payload_int(hlog,'mode'//nul,mode)
+      ierr=set_harvest_payload_str(hlog,'filter_types'//nul,
+     $                             filter_types//nul)
+      ierr=set_harvest_payload_int(hlog,'filter_modes'//nul,
+     $                             filter_modes)
+      ! ipec_control
+      ierr=set_harvest_payload_int(hlog,'resp_index'//nul,resp_index)
+      ierr=set_harvest_payload_dbl(hlog,'sing_spot'//nul,sing_spot)
+      ierr=set_harvest_payload_bol(hlog,'reg_flag'//nul,reg_flag)
+      ierr=set_harvest_payload_dbl(hlog,'reg_spot'//nul,reg_spot)
+      ! ipec_output
+      ierr=set_harvest_payload_str(hlog,'jac_out'//nul,jac_out//nul)
+      ierr=set_harvest_payload_int(hlog,'jsurf_out'//nul,jsurf_out)
+      ierr=set_harvest_payload_int(hlog,'tmag_out'//nul,jsurf_out)
 c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
@@ -449,7 +457,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,tmag_out,
-     $        filter_types,filter_modes,filter_flag)
+     $        jsurf_out,filter_types,filter_modes,filter_flag)
       ELSE IF (mode_flag) THEN
          edge_flag=.FALSE.
       ENDIF
@@ -585,7 +593,7 @@ c-----------------------------------------------------------------------
          fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
          CALL ipeq_weight(psilim,fxmn,mfac,mpert,0)
          CALL ipout_control(infile,fxmn,foutmn,xspmn,
-     $        0,0,0,0,1,0,0,0,0,0,1,'   ',0,.FALSE.)
+     $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xspmn,sing_spot,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out,.FALSE.)
@@ -600,7 +608,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
-     $        tmag_out,'   ',0,.FALSE.)
+     $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL ipout_singfld(mode,xspmn,sing_spot,0,0,0,0,1,.FALSE.)
          CALL ipdiag_xbcontra(mode,xspmn,0,0,0,0,1)
