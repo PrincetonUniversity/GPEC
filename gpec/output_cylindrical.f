@@ -29,6 +29,7 @@ c-----------------------------------------------------------------------
       USE dcon_interface, ONLY: dcon_build
       USE vacuum_interface, ONLY: vacuum_bnormal
       USE diagnostics, ONLY: diagnose_rzpdiv
+      USE output_control, ONLY: cncid, cncfile
       USE coil_mod, ONLY : ipd,btd,helicity,machine
       USE field_mod, ONLY: field_bs_rzphi
       USE netcdf
@@ -44,15 +45,6 @@ c-----------------------------------------------------------------------
       CHARACTER(LEN=50000) :: hnml
       CHARACTER(LEN=65507) :: hlog
       CHARACTER, PARAMETER :: nul = char(0)
-
-      ! netcdf ids
-      INTEGER :: mncid,fncid,cncid
-      CHARACTER(64) :: mncfile,fncfile,cncfile
-
-      ! module wide output variables
-      LOGICAL :: singcoup_set = .FALSE.
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: singcoup1mat,
-     $   w1v,w2v,w3v,t1v,t2v,t3v,fldflxmat
 
       CONTAINS
 
@@ -1202,146 +1194,5 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE check
-c-----------------------------------------------------------------------
-c     subprogram 6. init_netcdf.
-c     Initialize the netcdf files used for module outputs.
-c-----------------------------------------------------------------------
-      SUBROUTINE init_netcdf
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER:: i,midid,mmdid,medid,mvdid,msdid,mtdid,
-     $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
-     $   mivid,mmvid,mevid,mvvid,msvid,mtvid,fivid,fmvid,fpvid,ftvid,
-     $   civid,crvid,czvid,id,fileids(3)
-      INTEGER, DIMENSION(mpert) :: mmodes
-c-----------------------------------------------------------------------
-c     set variables
-c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *,"Initializing NETCDF files"
-      mmodes = (/(i,i=1,mpert)/)
-      mncfile = "gpec_control_output_n"//TRIM(sn)//".nc"
-      fncfile = "gpec_profile_output_n"//TRIM(sn)//".nc"
-      cncfile = "gpec_cylindrical_output_n"//TRIM(sn)//".nc"
-c-----------------------------------------------------------------------
-c     open files
-c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Creating netcdf files"
-      CALL check( nf90_create(mncfile,
-     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=mncid) )
-      CALL check( nf90_create(fncfile,
-     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=fncid) )
-      CALL check( nf90_create(cncfile,
-     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=cncid) )
-c-----------------------------------------------------------------------
-c     define global file attributes
-c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Defining modal netcdf globals"
-      CALL check( nf90_put_att(mncid,nf90_global,"title",
-     $     "GPEC outputs in Fourier or alternate modal bases"))
-      CALL check( nf90_def_dim(mncid,"i",2,       midid) )
-      CALL check( nf90_def_var(mncid,"i",nf90_int,midid,mivid) )
-      CALL check( nf90_def_dim(mncid,"m",lmpert,  mmdid) )
-      CALL check( nf90_def_var(mncid,"m",nf90_int,mmdid,mmvid) )
-      CALL check( nf90_def_dim(mncid,"mode",mpert,   medid) )
-      CALL check( nf90_def_var(mncid,"mode",nf90_int,medid,mevid))
-      CALL check( nf90_def_dim(mncid,"mode_SC",msing,   msdid) )
-      CALL check( nf90_def_var(mncid,"mode_SC",nf90_int,msdid,msvid))
-      CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
-      CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
-      CALL check( nf90_put_att(mncid,nf90_global,"Jacobian",jac_out))
-      CALL check( nf90_put_att(mncid,nf90_global,"q_lim",qlim))
-      CALL check( nf90_put_att(mncid,nf90_global,"psi_n_lim",psilim))
-
-      IF(debug_flag) PRINT *," - Defining flux netcdf globals"
-      CALL check( nf90_put_att(fncid,nf90_global,"title",
-     $     "GPEC outputs in magnetic coordinate systems"))
-      CALL check( nf90_def_dim(fncid,"i",2,       fidid) )
-      CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
-      CALL check( nf90_def_dim(fncid,"m",lmpert,  fmdid) )
-      CALL check( nf90_def_var(fncid,"m",NF90_INT,fmdid,fmvid) )
-      CALL check( nf90_def_dim(fncid,"psi_n",mstep,    fpdid) )
-      CALL check( nf90_def_var(fncid,"psi_n",nf90_double,fpdid,fpvid) )
-      CALL check( nf90_def_dim(fncid,"theta",mthsurf+1,  ftdid) )
-      CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
-      CALL check( nf90_put_att(fncid,nf90_global,"Jacobian",jac_type))
-      CALL check( nf90_put_att(fncid,nf90_global,"q_lim",qlim))
-      CALL check( nf90_put_att(fncid,nf90_global,"psi_n_lim",psilim))
-
-      IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
-      CALL check( nf90_put_att(cncid,nf90_global,"title",
-     $     "GPEC outputs in (R,z) coordinates"))
-      CALL check( nf90_def_dim(cncid,"i",2,       cidid) )
-      CALL check( nf90_def_var(cncid,"i",nf90_int,cidid,civid) )
-      CALL check( nf90_def_dim(cncid,"R",nr+1,crdid) )
-      CALL check( nf90_def_var(cncid,"R",nf90_double,crdid,crvid) )
-      CALL check( nf90_put_att(cncid,crvid,"units","m") )
-      CALL check( nf90_def_dim(cncid,"z",nz+1,czdid) )
-      CALL check( nf90_def_var(cncid,"z",nf90_double,czdid,czvid) )
-      CALL check( nf90_put_att(cncid,czvid,"units","m") )
-      CALL check( nf90_def_var(cncid,"l",nf90_double,
-     $                         (/crdid,czdid/),clvid) )
-
-      ! Add common global attributes
-      fileids = (/mncid,fncid,cncid/)
-      DO i=1,3
-         id = fileids(i)
-         CALL check( nf90_put_att(id,nf90_global,"shot",INT(shotnum)) )
-         CALL check( nf90_put_att(id,nf90_global,"time",INT(shottime)) )
-         CALL check( nf90_put_att(id,nf90_global,"machine",machine) )
-         CALL check( nf90_put_att(id,nf90_global,"n",nn) )
-         CALL check( nf90_put_att(id,nf90_global,"version",version))
-      ENDDO
-
-      CALL check( nf90_enddef(mncid) )
-      CALL check( nf90_enddef(fncid) )
-      CALL check( nf90_enddef(cncid) )
-c-----------------------------------------------------------------------
-c     set dimensional variables
-c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Putting coordinates in control netcdfs"
-      CALL check( nf90_put_var(mncid,mivid,(/0,1/)) )
-      CALL check( nf90_put_var(mncid,mmvid,lmfac) )
-      CALL check( nf90_put_var(mncid,mevid,mmodes) )
-      CALL check( nf90_put_var(mncid,msvid,mmodes(:msing)) )
-      CALL check( nf90_put_var(mncid,mtvid,theta) )
-
-      IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
-      CALL check( nf90_put_var(fncid,fivid,(/0,1/)) )
-      CALL check( nf90_put_var(fncid,fmvid,lmfac) )
-      CALL check( nf90_put_var(fncid,fpvid,psifac(1:)) )
-      CALL check( nf90_put_var(fncid,ftvid,theta) )
-
-      IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
-      CALL check( nf90_put_var(cncid,civid,(/0,1/)) )
-      CALL check( nf90_put_var(cncid,crvid,gdr(:,0)) )
-      CALL check( nf90_put_var(cncid,czvid,gdz(0,:)) )
-      CALL check( nf90_put_var(cncid,clvid,gdl(:,:)) )
-
-      IF(debug_flag) PRINT *," - Closing netcdf files"
-      CALL check( nf90_close(mncid) )
-      CALL check( nf90_close(fncid) )
-      CALL check( nf90_close(cncid) )
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE init_netcdf
-c-----------------------------------------------------------------------
-c     subprogram 17. close_netcdf.
-c     Close the netcdf files used for module outputs.
-c-----------------------------------------------------------------------
-      SUBROUTINE close_netcdf
-c-----------------------------------------------------------------------
-c     close files
-c-----------------------------------------------------------------------
-      CALL check( nf90_close(mncid) )
-      CALL check( nf90_close(fncid) )
-      CALL check( nf90_close(cncid) )
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE close_netcdf
 
       END MODULE output_cylindrical

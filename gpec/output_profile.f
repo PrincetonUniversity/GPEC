@@ -27,6 +27,7 @@ c-----------------------------------------------------------------------
       USE cspline_mod, ONLY: cspline_alloc, cspline_eval, cspline_fit,
      $    cspline_int
       USE bicube_mod, ONLY: bicube_eval
+      !USE utilities, ONLY: progressbar
       USE gpec_math, ONLY : iscdftf,iscdftb,issurfint
       USE peq, ONLY: peq_sol, peq_contra, peq_cova, peq_alloc,
      $    peq_dealloc, peq_bcoords, peq_fcoords, peq_bcoordsout,
@@ -39,29 +40,36 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      ! harvest variables
-      INCLUDE 'harvest_lib.inc77'
-      INTEGER  :: ierr
-      INTEGER  :: hint = 0
-      REAL(r8) :: hdbl = 0
-      CHARACTER(LEN=16)    :: hkey
-      CHARACTER(LEN=50000) :: hnml
-      CHARACTER(LEN=65507) :: hlog
-      CHARACTER, PARAMETER :: nul = char(0)
+      ! public variables
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: qs
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs, zs, rvecs, zvecs
 
-      ! netcdf ids
-      INTEGER :: mncid,fncid,cncid
-      CHARACTER(64) :: mncfile,fncfile,cncfile
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::
+     $   xtamns, xtafuns, btamns, btafuns
 
-      ! module wide output variables
-      LOGICAL :: singcoup_set = .FALSE.
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: singcoup1mat,
-     $   w1v,w2v,w3v,t1v,t2v,t3v,fldflxmat
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: equilbfun
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::
+     $   eulbparmout, lagbparmout, divxprpmout, curvmout,
+     $   eulbparfout, lagbparfout, divxprpfout, curvfout
+
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xnofuns, bnofuns,
+     $   xnomns,bnomns, bwpmns, pwpmns
+
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: vnomns,vwpmns,vpwpmns
+
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::
+     $   xmp1out, xspout, xmsout,
+     $   xmp1funs, xspfuns, xmsfuns
+
+      TYPE(cspline_type) :: dwk
+
+      ! private things that might have namespace clashes if used elsewhere
+      PRIVATE :: ascii_header
 
       CONTAINS
 
 c-----------------------------------------------------------------------
-c     subprogram 6. w_profile.
+c     subprogram 1. dw_profile.
 c     restore energy and torque profiles from solutions.
 c-----------------------------------------------------------------------
       SUBROUTINE dw_profile(egnum,xspmn)
@@ -72,10 +80,12 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: istep
-      TYPE(cspline_type) :: dwk
+
 c-----------------------------------------------------------------------
 c     build and spline energy and torque profiles.
 c-----------------------------------------------------------------------
+      WRITE(*,*)"Restoring energy and torque profiles"
+
       CALL dcon_build(egnum,xspmn)
       CALL cspline_alloc(dwk,mstep,1)
       dwk%xs=psifac
@@ -84,33 +94,13 @@ c-----------------------------------------------------------------------
      $        SUM(CONJG(u1%fs(istep,:))*u2%fs(istep,:))/(2.0*mu0)
       ENDDO
       CALL cspline_fit(dwk,"extrap")
-
-      WRITE(*,*)"Restoring energy and torque profiles"
-
-      CALL ascii_open(out_unit,"gpec_dw_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_dw: "//
-     $     "Energy and torque profiles by self-consistent solutions."
-      WRITE(out_unit,*)
-
-      WRITE(out_unit,'(6(1x,a16))')"psi","T_phi","2ndeltaW",
-     $     "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
-      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-         CALL cspline_eval(dwk,psifac(istep),1)
-         CALL spline_eval(sq,psifac(istep),0)
-         WRITE(out_unit,'(6(1x,es16.8))')
-     $        psifac(istep),REAL(dwk%f1(1)),AIMAG(dwk%f1(1)),
-     $        REAL(dwk%fs(istep,1)),AIMAG(dwk%fs(istep,1)),sq%f(3)
-      ENDDO
-      CALL ascii_close(out_unit)
-      CALL cspline_dealloc(dwk)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE dw_profile
 c-----------------------------------------------------------------------
-c     subprogram 7. dw_matrix.
+c     subprogram 2. dw_matrix.
 c     restore energy and torque response matrix from solutions.
 c-----------------------------------------------------------------------
       SUBROUTINE dw_matrix
@@ -575,7 +565,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE dw_matrix
 c-----------------------------------------------------------------------
-c     subprogram 6. pmodb.
+c     subprogram 3. pmodb.
 c     compute perturbed mod b.
 c-----------------------------------------------------------------------
       SUBROUTINE pmodb(egnum,xspmn,rout,bpout,bout,rcout,tout)
@@ -592,24 +582,29 @@ c-----------------------------------------------------------------------
      $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,equilbfun
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
      $     divxprp_mn,curv_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
      $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun,xmt_fun,xsp1_fun
       COMPLEX(r8), DIMENSION(mstep,mpert) :: eulbparmns,lagbparmns,
      $     divxprpmns,curvmns,xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: eulbparmout,lagbparmout,
-     $     divxprpmout,curvmout
       COMPLEX(r8), DIMENSION(mstep,0:mthsurf) ::eulbparfun,lagbparfun,
-     $     divxprpfun,curvfun,eulbparfout,lagbparfout,divxprpfout,
-     $     curvfout
+     $     divxprpfun,curvfun
 
       REAL(r8), DIMENSION(:), POINTER :: psis,ches,chex
       COMPLEX(r8), DIMENSION(:,:), POINTER ::chea,chelagbmns,chelagbmout
       COMPLEX(r8), DIMENSION(mpert) :: chelagb_mn
 
       TYPE(cspline_type) :: cspl,chespl
+c-----------------------------------------------------------------------
+c     allocation of module wide variables.
+c-----------------------------------------------------------------------
+      ALLOCATE( eulbparmout(mstep,lmpert), lagbparmout(mstep,lmpert),
+     $   divxprpmout(mstep,lmpert), curvmout(mstep,lmpert) )
+      ALLOCATE( eulbparfout(mstep,0:mthsurf), curvfout(mstep,0:mthsurf),
+     $   lagbparfout(mstep,0:mthsurf), divxprpfout(mstep,0:mthsurf),
+     $   equilbfun(mstep,0:mthsurf),
+     $   rs(mstep,0:mthsurf), zs(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -724,23 +719,9 @@ c-----------------------------------------------------------------------
          i = istep
          psi = psifac(istep)
          CALL peq_bcoordsout(eulbparmout(i,:),eulbpar_mn,psi,tout,0)
-         CALL peq_bcoordsout(lagbparmout(i,:),eulbpar_mn,psi,tout,0)
-         CALL peq_bcoordsout(divxprpmout(i,:),eulbpar_mn,psi,tout,0)
-         CALL peq_bcoordsout(curvmout(i,:)   ,eulbpar_mn,psi,tout,0)
-c         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-c            CALL peq_bcoords(psifac(istep),eulbpar_mn,
-c     $           mfac,mpert,rout,bpout,bout,rcout,tout,0)
-c            CALL peq_bcoords(psifac(istep),lagbpar_mn,
-c     $           mfac,mpert,rout,bpout,bout,rcout,tout,0)
-c            CALL peq_bcoords(psifac(istep),divxprp_mn,
-c     $           mfac,mpert,rout,bpout,bout,rcout,tout,0)
-c            CALL peq_bcoords(psifac(istep),curv_mn,
-c     $           mfac,mpert,rout,bpout,bout,rcout,tout,0)
-c         ENDIF
-c         eulbparmout(istep,:)=eulbpar_mn
-c         lagbparmout(istep,:)=lagbpar_mn
-c         divxprpmout(istep,:)=divxprp_mn
-c         curvmout(istep,:)  =curv_mn
+         CALL peq_bcoordsout(lagbparmout(i,:),lagbpar_mn,psi,tout,0)
+         CALL peq_bcoordsout(divxprpmout(i,:),divxprp_mn,psi,tout,0)
+         CALL peq_bcoordsout(curvmout(i,:),curv_mn,psi,tout,0)
          eulbparfout(istep,:)=eulbparfun(istep,:)*EXP(ifac*nn*dphi)
          lagbparfout(istep,:)=lagbparfun(istep,:)*EXP(ifac*nn*dphi)
          divxprpfout(istep,:)=divxprpfun(istep,:)*EXP(ifac*nn*dphi)
@@ -748,289 +729,6 @@ c         curvmout(istep,:)  =curv_mn
       ENDDO
 
       CALL cspline_dealloc(cspl)
-
-      ! append to netcdf file
-      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
-      CALL check( nf90_open(fncfile,nf90_write,fncid) )
-      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
-      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
-      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
-      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
-      IF(debug_flag) PRINT *,"  Defining variables"
-      CALL check( nf90_redef(fncid))
-      rzstat = nf90_inq_varid(fncid, "R", r_id) ! check if R,z already stored
-      IF(rzstat/=nf90_noerr)THEN
-         CALL check( nf90_def_var(fncid, "R", nf90_double,
-     $               (/p_id,t_id/),r_id) )
-         CALL check( nf90_put_att(fncid,r_id,"long_name",
-     $               "Major Radius") )
-         CALL check( nf90_put_att(fncid,r_id,"units","m") )
-         CALL check( nf90_def_var(fncid, "z", nf90_double,
-     $               (/p_id,t_id/),z_id) )
-         CALL check( nf90_put_att(fncid,z_id,"long_name",
-     $               "Vertical Position") )
-         CALL check( nf90_put_att(fncid,z_id,"units","m") )
-      ENDIF
-      CALL check( nf90_def_var(fncid, "b_eul", nf90_double,
-     $            (/p_id,t_id,i_id/),be_id) )
-      CALL check( nf90_put_att(fncid,be_id,"long_name",
-     $            "Eulerian Perturbed Field") )
-      CALL check( nf90_put_att(fncid,be_id,"units","Tesla") )
-      CALL check( nf90_def_var(fncid, "b_lag", nf90_double,
-     $            (/p_id,t_id,i_id/),bl_id) )
-      CALL check( nf90_put_att(fncid,bl_id,"long_name",
-     $            "Lagrangian Perturbed Field") )
-      CALL check( nf90_put_att(fncid,bl_id,"units","Tesla") )
-      CALL check( nf90_def_var(fncid, "b_m-eul", nf90_double,
-     $            (/p_id,m_id,i_id/),bme_id) )
-      CALL check( nf90_put_att(fncid,bme_id,"long_name",
-     $            "Eulerian Perturbed Field") )
-      CALL check( nf90_put_att(fncid,bme_id,"units","Tesla") )
-      CALL check( nf90_def_var(fncid, "b_m-lag", nf90_double,
-     $            (/p_id,m_id,i_id/),bml_id) )
-      CALL check( nf90_put_att(fncid,bml_id,"long_name",
-     $            "Lagrangian Perturbed Field") )
-      CALL check( nf90_put_att(fncid,bml_id,"units","Tesla") )
-      CALL check( nf90_def_var(fncid, "Bdivxi_perp", nf90_double,
-     $            (/p_id,t_id,i_id/),x_id) )
-      CALL check( nf90_put_att(fncid,x_id,"long_name",
-     $            "Divergence of the normal displacement") )
-      CALL check( nf90_def_var(fncid, "Bdivxi_m-perp", nf90_double,
-     $            (/p_id,m_id,i_id/),xm_id) )
-      CALL check( nf90_put_att(fncid,xm_id,"long_name",
-     $            "Divergence of the normal displacement") )
-      CALL check( nf90_def_var(fncid, "Bkappaxi_perp", nf90_double,
-     $            (/p_id,t_id,i_id/),k_id) )
-      CALL check( nf90_put_att(fncid,k_id,"long_name",
-     $            "Divergence of the normal displacement") )
-      CALL check( nf90_def_var(fncid, "Bkappaxi_m-perp", nf90_double,
-     $            (/p_id,m_id,i_id/),km_id) )
-      CALL check( nf90_put_att(fncid,km_id,"long_name",
-     $            "Divergence of the normal displacement") )
-      CALL check( nf90_def_var(fncid, "B", nf90_double,
-     $            (/p_id,t_id/),b_id) )
-      CALL check( nf90_put_att(fncid,b_id,"long_name",
-     $            "Equilibrium Field Strength") )
-      CALL check( nf90_enddef(fncid) )
-      IF(debug_flag) PRINT *,"  Writting variables"
-      IF(rzstat/=nf90_noerr)THEN
-         CALL check( nf90_put_var(fncid,r_id,rs) )
-         CALL check( nf90_put_var(fncid,z_id,zs) )
-      ENDIF
-      CALL check( nf90_put_var(fncid,bme_id,RESHAPE((/REAL(eulbparmout),
-     $             AIMAG(eulbparmout)/),(/mstep,lmpert,2/))) )
-      CALL check( nf90_put_var(fncid,bml_id,RESHAPE((/REAL(lagbparmout),
-     $             AIMAG(lagbparmout)/),(/mstep,lmpert,2/))) )
-      CALL check( nf90_put_var(fncid,xm_id,RESHAPE((/REAL(-divxprpmout),
-     $             AIMAG(-divxprpmout)/),(/mstep,lmpert,2/))) )
-      CALL check( nf90_put_var(fncid,km_id,RESHAPE((/REAL(-curvmout),
-     $             AIMAG(-curvmout)/),(/mstep,lmpert,2/))) )
-      CALL check( nf90_put_var(fncid,be_id,RESHAPE((/REAL(eulbparfout),
-     $            -helicity*AIMAG(eulbparfout)/),(/mstep,mthsurf,2/))) )
-      CALL check( nf90_put_var(fncid,bl_id,RESHAPE((/REAL(lagbparfout),
-     $            -helicity*AIMAG(lagbparfout)/),(/mstep,mthsurf,2/))) )
-      CALL check( nf90_put_var(fncid,x_id,RESHAPE((/REAL(-divxprpfout),
-     $            -helicity*AIMAG(-divxprpfout)/),(/mstep,mthsurf,2/))))
-      CALL check( nf90_put_var(fncid,k_id,RESHAPE((/REAL(-curvfout),
-     $            -helicity*AIMAG(-curvfout)/),(/mstep,mthsurf,2/))) )
-      CALL check( nf90_put_var(fncid,b_id,equilbfun) )
-
-      CALL check( nf90_close(fncid) )
-      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
-
-
-      CALL ascii_open(out_unit,"gpec_pmodb_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_PMODB: "//
-     $     "Components in perturbed mod b and del.x_prp"
-      WRITE(out_unit,*)version
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-      WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
-      WRITE(out_unit,*)     
-
-      WRITE(out_unit,'(1x,a16,1x,a4,10(1x,a16))')"psi","m",
-     $     "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
-     $     "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
-     $     "imag(Bkxprp)"
-      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-         DO ipert=1,lmpert
-            WRITE(out_unit,'(es17.8e3,1x,I4,8(es17.8e3))')
-     $           psifac(istep),lmfac(ipert),
-     $           REAL(eulbparmout(istep,ipert)),
-     $           AIMAG(eulbparmout(istep,ipert)),
-     $           REAL(lagbparmout(istep,ipert)),
-     $           AIMAG(lagbparmout(istep,ipert)),
-     $           REAL(-divxprpmout(istep,ipert)),
-     $           AIMAG(-divxprpmout(istep,ipert)),
-     $           REAL(-curvmout(istep,ipert)),
-     $           AIMAG(-curvmout(istep,ipert))
-         ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
-
-      IF (chebyshev_flag) THEN
-         IF(verbose) WRITE(*,*)"Computing chebyshev for pmodb"
-         ALLOCATE(chea(mpert,0:nche),chex(0:mstep))
-         CALL cspline_alloc(chespl,mstep,1)
-         chespl%xs=psifac
-         chex=2.0*(psifac-0.5)
-         DO ipert=1,mpert
-            DO i=0,nche
-               chespl%fs(:,1)=cos(REAL(i,r8)*acos(chex))/
-     $              sqrt(1.0-chex**2.0)*lagbparmns(:,ipert)*4.0/pi
-               CALL cspline_fit(chespl,"extrap")
-               CALL cspline_int(chespl)
-               chea(ipert,i)=chespl%fsi(mstep,1)
-            ENDDO
-         ENDDO
-	 
-	 chea(:,0)=chea(:,0)/2.0
-
-         CALL ascii_open(out_unit,"gpec_pmodb_chebyshev_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_PMODB_CHEBYSHEV: "//
-     $        "Chebyshev coefficients for perturbed mod b"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(2(1x,a12,I4))')
-     $        "nche =",nche,"mpert =",mpert
-         WRITE(out_unit,*)     
-         
-         DO ipert=1,mpert
-            WRITE(out_unit,'(1x,a6,1x,I4)')"mfac =",mfac(ipert)
-            WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a6,2(1x,a16))')"chea",
-     $           "real(chea)","imag(chea)"
-            DO i=0,nche
-               WRITE(out_unit,'(1x,I6,2(es17.8e3))')i,
-     $              REAL(chea(ipert,i)),AIMAG(chea(ipert,i))
-            ENDDO
-            WRITE(out_unit,*)
-         ENDDO
-         CALL ascii_close(out_unit)
-
-         cstep=200
-         ALLOCATE(psis(cstep),ches(cstep))
-         ALLOCATE(chelagbmns(cstep,mpert))
-         chelagbmns=0
-         psis=(/(istep,istep=0,cstep-1)/)/REAL(cstep-1,r8)*
-     $        (psilim-psilow)+psilow
-         ches=2.0*(psis-0.5)
-         
-         DO ipert=1,mpert
-            DO i=0,nche
-               chelagbmns(:,ipert)=chelagbmns(:,ipert)+
-     $              chea(ipert,i)*cos(REAL(i,r8)*acos(ches))
-            ENDDO
-         ENDDO
-
-         CALL ascii_open(out_unit,"gpec_chepmodb_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_CHEPMODB: "//
-     $        "Reconstructed perturbed mod b by chebyshev"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $        "cstep =",cstep,"mpert =",mpert,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
-         
-         WRITE(out_unit,'(1x,a16,1x,a4,2(1x,a16))')"psi","m",
-     $        "real(lagb)","imag(lagb)"
-         DO istep=1,cstep
-            DO ipert=1,mpert
-               WRITE(out_unit,'(es17.8e3,1x,I4,2(es17.8e3))')
-     $              psis(istep),mfac(ipert),
-     $              REAL(chelagbmns(istep,ipert)),
-     $              AIMAG(chelagbmns(istep,ipert))
-            ENDDO
-         ENDDO
-         CALL ascii_close(out_unit)
-
-         CALL cspline_dealloc(chespl)
-      ENDIF
-
-      IF (fun_flag) THEN
-         CALL ascii_open(out_unit,"gpec_pmodb_fun_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_PMODB_FUN: "//
-     $        "Components in perturbed mod b in functions"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8,a13,es17.8e3)')
-     $        "jac_out = ",jac_out,"R0 = ",ro
-         WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $        "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
-         
-         WRITE(out_unit,'(17(1x,a16))')"psi","theta","r","z",
-     $        "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
-     $        "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
-     $        "imag(Bkxprp)","equilb","dequilbdpsi","dequilbdtheta",
-     $        "real(xms)","imag(xms)"
-         DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
-            CALL peq_sol(psifac(istep))
-            CALL peq_contra(psifac(istep))
-            CALL peq_cova(psifac(istep))
-            CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
-            DO itheta=0,mthsurf
-               CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
-               WRITE(out_unit,'(17(es17.8e3))')
-     $              psifac(istep),theta(itheta),
-     $              rs(istep,itheta),zs(istep,itheta),
-     $              REAL(eulbparfout(istep,itheta)),
-     $              -helicity*AIMAG(eulbparfout(istep,itheta)),
-     $              REAL(lagbparfout(istep,itheta)),
-     $              -helicity*AIMAG(lagbparfout(istep,itheta)),
-     $              REAL(-divxprpfout(istep,itheta)),
-     $              -helicity*AIMAG(-divxprpfout(istep,itheta)),
-     $              REAL(-curvfout(istep,itheta)),
-     $              -helicity*AIMAG(-curvfout(istep,itheta)),
-     $              equilbfun(istep,itheta),
-     $              eqfun%fx(1),eqfun%fy(1),
-     $              REAL(xms_fun(itheta)),
-     $              -helicity*AIMAG(xms_fun(itheta))
-            ENDDO
-         ENDDO
-         CALL ascii_close(out_unit)
-      ENDIF
-      
-      IF (bin_flag) THEN
-         CALL bin_open(bin_unit,
-     $        "pmodb.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,lmpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(eulbparmout(istep,ipert)),4),
-     $              REAL(AIMAG(eulbparmout(istep,ipert)),4),
-     $              REAL(REAL(lagbparmout(istep,ipert)),4),
-     $              REAL(AIMAG(lagbparmout(istep,ipert)),4)     
-            ENDDO
-            WRITE(bin_unit)
-         ENDDO
-         CALL bin_close(bin_unit)
-      ENDIF
-
-      IF (bin_2d_flag) THEN
-         CALL bin_open(bin_2d_unit,"pmodb_2d.bin","UNKNOWN","REWIND",
-     $        "none")
-         WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)mstep-9,mthsurf-1
-         WRITE(bin_2d_unit)REAL(rs(9:mstep,1:mthsurf),4),
-     $        REAL(zs(9:mstep,1:mthsurf),4)
-         WRITE(bin_2d_unit)REAL(REAL(eulbparfout(9:mstep,1:mthsurf)),4)
-         WRITE(bin_2d_unit)
-     $        REAL(-helicity*AIMAG(eulbparfout(9:mstep,1:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(REAL(lagbparfout(9:mstep,1:mthsurf)),4)
-         WRITE(bin_2d_unit)
-     $        REAL(-helicity*AIMAG(lagbparfout(9:mstep,1:mthsurf)),4)
-         CALL bin_close(bin_2d_unit)
-      ENDIF
-
       CALL peq_dealloc
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1039,7 +737,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE pmodb
 c-----------------------------------------------------------------------
-c     subprogram 7. xbnormal.
+c     subprogram 4. xbnormal.
 c-----------------------------------------------------------------------
       SUBROUTINE xbnormal(egnum,xspmn,rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
@@ -1048,23 +746,27 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,xm_id,x_id,
-     $   rv_id,zv_id,rzstat
-
       INTEGER :: i,istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax,area
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
 
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: xmns,ymns,
-     $     xnomns,bnomns,bwpmns
+      COMPLEX(r8), DIMENSION(mstep,lmpert) :: xmns,ymns
       COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: pwpmns
 
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,rvecs,zvecs
-      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
-     $     xnofuns,bnofuns
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: psis
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss
+c-----------------------------------------------------------------------
+c     allocation of module wide variables.
+c-----------------------------------------------------------------------
+      ALLOCATE( xnomns(mstep,lmpert), bnomns(mstep,lmpert),
+     $   bwpmns(mstep,lmpert), pwpmns(mstep,lmpert) )
+      ALLOCATE( xnofuns(mstep,lmpert), bnofuns(mstep,lmpert) )
+      IF ( .NOT. ALLOCATED(rs) )
+     $   ALLOCATE(rs(mstep,0:mthsurf), zs(mstep,0:mthsurf))
+      IF ( .NOT. ALLOCATED(rvecs) )
+     $   ALLOCATE(rvecs(mstep,0:mthsurf), zvecs(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -1144,278 +846,6 @@ c         bwpmns(istep,:)=bwp_mn
          bnofuns(istep,:)=bnofuns(istep,:)*EXP(ifac*nn*dphi)
       ENDDO
       CALL peq_dealloc
-
-      CALL ascii_open(out_unit,"gpec_xbnormal_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_XBNORMAL: "//
-     $     "Normal components of displacement and field"
-      WRITE(out_unit,*)version
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-      WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
-      WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "mstep =",mstep,"mpert =",lmpert,"mthsurf =",mthsurf
-      WRITE(out_unit,*)     
-      WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
-     $     "real(xno)","imag(xno)","real(bno)","imag(bno)",
-     $     "real(bwp)","imag(bwp)"
-
-      DO istep=1,mstep,MAX(1,(mstep*lmpert-1)/max_linesout+1)
-         DO ipert=1,lmpert
-            WRITE(out_unit,'(2(es17.8e3),1x,I4,6(es17.8e3))')
-     $           psifac(istep),qfac(istep),lmfac(ipert),
-     $           REAL(xnomns(istep,ipert)),AIMAG(xnomns(istep,ipert)),
-     $           REAL(bnomns(istep,ipert)),AIMAG(bnomns(istep,ipert)),
-     $           REAL(bwpmns(istep,ipert)),AIMAG(bwpmns(istep,ipert))        
-         ENDDO
-      ENDDO
-
-      IF (bwp_pest_flag) THEN
-         CALL ascii_open(out_unit,"gpec_bnormal_pest_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_BNORMAL_PEST: "//
-     $        "Normal components of field in pest coordinates"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $        "mstep =",mstep,"mpert =",lmpert,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
-         WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
-     $        "real(bwp)","imag(bwp)"
-         
-         DO istep=1,mstep,MAX(1,(mstep*lmpert-1)/max_linesout+1)
-            DO ipert=1,lmpert
-               WRITE(out_unit,'(2(es17.8e3),1x,I4,6(es17.8e3))')
-     $              psifac(istep),qfac(istep),lmfac(ipert),
-     $              REAL(pwpmns(istep,ipert)),AIMAG(pwpmns(istep,ipert))        
-            ENDDO
-         ENDDO
-      ENDIF
-
-      IF (fun_flag) THEN
-         CALL ascii_open(out_unit,"gpec_xbnormal_fun_n"//
-     $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"GPEC_XBNORMAL_FUN: "//
-     $        "Normal components of displacement and field in functions"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-         WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
-     $        "mstep =",mstep,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
-         WRITE(out_unit,'(10(1x,a16))')"psi","theta","r","z","rvec",
-     $        "zvec","real(xno)","imag(xno)","real(bno)","imag(bno)"
-         
-         DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
-            DO itheta=0,mthsurf
-               WRITE(out_unit,'(10(es17.8e3))')
-     $              psifac(istep),theta(itheta),
-     $              rs(istep,itheta),zs(istep,itheta),
-     $              rvecs(istep,itheta),zvecs(istep,itheta),
-     $              REAL(xnofuns(istep,itheta)),
-     $              -helicity*AIMAG(xnofuns(istep,itheta)),
-     $              REAL(bnofuns(istep,itheta)),
-     $              -helicity*AIMAG(bnofuns(istep,itheta))        
-            ENDDO
-         ENDDO
-         CALL ascii_close(out_unit)
-      ENDIF
-
-      IF (bin_flag) THEN
-         CALL bin_open(bin_unit,
-     $        "xbnormal.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,lmpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(xnomns(istep,ipert)),4),
-     $              REAL(AIMAG(xnomns(istep,ipert)),4),
-     $              REAL(REAL(bnomns(istep,ipert)),4),
-     $              REAL(AIMAG(bnomns(istep,ipert)),4),
-     $              REAL(REAL(bwpmns(istep,ipert)),4),
-     $              REAL(AIMAG(bwpmns(istep,ipert)),4)    
-            ENDDO
-            WRITE(bin_unit)
-         ENDDO
-         CALL bin_close(bin_unit)
-      ENDIF
-
-      IF (bin_2d_flag) THEN
-         CALL bin_open(bin_2d_unit,"xbnormal_2d.bin","UNKNOWN","REWIND",
-     $        "none")
-         WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)mstep-9,mthsurf
-         WRITE(bin_2d_unit)REAL(rs(9:mstep,0:mthsurf),4),
-     $        REAL(zs(9:mstep,0:mthsurf),4)
-         WRITE(bin_2d_unit)REAL(REAL(xnofuns(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)
-     $        REAL(-helicity*AIMAG(xnofuns(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(REAL(bnofuns(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)
-     $        REAL(-helicity*AIMAG(bnofuns(9:mstep,0:mthsurf)),4)
-
-         CALL bin_close(bin_2d_unit)
-         
-         ximax=MAXVAL(ABS(xnofuns))
-         CALL bicube_eval(rzphi,psilim,theta(0),0)
-         rmax=SQRT(rzphi%f(1))
-         xnofuns=xnofuns/ximax*rmax/6.0
-
-         IF(verbose) WRITE(*,'(1x,a,es10.3)')
-     $     "Maximum displacement = ",ximax
-         IF(verbose) WRITE(*,'(1x,a,es10.3)')
-     $     "Scale factor for 2d plots = ",rmax/(ximax*6.0)
-
-         rss=CMPLX(rs,rs)+xnofuns*rvecs
-         zss=CMPLX(zs,zs)+xnofuns*zvecs
-         DO itheta=0,mthsurf
-            psis(:,itheta)=psifac(:)
-         ENDDO
-
-         CALL bin_open(bin_2d_unit,
-     $        "pflux_re_2d.bin","UNKNOWN","REWIND","none")
-         WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)mstep-9,mthsurf
-         WRITE(bin_2d_unit)REAL(REAL(rss(9:mstep,0:mthsurf)),4),
-     $        REAL(REAL(zss(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(psis(9:mstep,0:mthsurf),4)
-         CALL bin_close(bin_2d_unit)
-
-         CALL bin_open(bin_2d_unit,
-     $        "pflux_im_2d.bin","UNKNOWN","REWIND","none")
-         WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)mstep-9,mthsurf
-         WRITE(bin_2d_unit)
-     $        REAL(-helicity*AIMAG(rss(9:mstep,0:mthsurf)),4),
-     $        REAL(-helicity*AIMAG(zss(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(psis(9:mstep,0:mthsurf),4)
-         CALL bin_close(bin_2d_unit)
-
-         DO istep=1,mstep
-            xmns(istep,:)=lmfac
-            ymns(istep,:)=psifac(istep)
-         ENDDO
-         CALL bin_open(bin_2d_unit,"bnormal_spectrum.bin",
-     $        "UNKNOWN","REWIND","none")
-         WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)mstep-9,lmpert-1
-         WRITE(bin_2d_unit)REAL(xmns(9:mstep,:),4),
-     $        REAL(ymns(9:mstep,:),4)
-         WRITE(bin_2d_unit)REAL(ABS(bwpmns(9:mstep,:)),4)
-         CALL bin_close(bin_2d_unit)
-      ENDIF
-
-      ! append to netcdf file
-      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
-      CALL check( nf90_open(fncfile,nf90_write,fncid) )
-      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
-      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
-      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
-      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
-      IF(debug_flag) PRINT *,"  Defining variables"
-      CALL check( nf90_redef(fncid))
-      rzstat = nf90_inq_varid(fncid, "R", r_id) ! check if R,z already stored
-      IF(rzstat/=nf90_noerr)THEN
-         CALL check( nf90_def_var(fncid, "R", nf90_double,
-     $               (/p_id,t_id/),r_id) )
-         CALL check( nf90_put_att(fncid,r_id,"long_name",
-     $               "Major Radius") )
-         CALL check( nf90_put_att(fncid,r_id,"units","m") )
-         CALL check( nf90_def_var(fncid, "z", nf90_double,
-     $               (/p_id,t_id/),z_id) )
-         CALL check( nf90_put_att(fncid,z_id,"long_name",
-     $               "Vertical Position") )
-         CALL check( nf90_put_att(fncid,z_id,"units","m") )
-      ENDIF
-      CALL check( nf90_def_var(fncid, "b_n", nf90_double,
-     $            (/p_id,t_id,i_id/),b_id) )
-      CALL check( nf90_put_att(fncid,b_id,"long_name",
-     $            "Perturbed Field Normal to the Flux Surface") )
-      CALL check( nf90_put_att(fncid,b_id,"units","Tesla") )
-      CALL check( nf90_def_var(fncid, "b_nm", nf90_double,
-     $            (/p_id,m_id,i_id/),bm_id) )
-      CALL check( nf90_put_att(fncid,bm_id,"long_name",
-     $            "Perturbed Field Normal to the Flux Surface") )
-      CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
-      CALL check( nf90_def_var(fncid, "xi_n", nf90_double,
-     $            (/p_id,t_id,i_id/),x_id) )
-      CALL check( nf90_put_att(fncid,x_id,"long_name",
-     $            "Displacement Normal to the Flux Surface") )
-      CALL check( nf90_put_att(fncid,x_id,"units","m") )
-      CALL check( nf90_def_var(fncid, "xi_nm", nf90_double,
-     $            (/p_id,m_id,i_id/),xm_id) )
-      CALL check( nf90_put_att(fncid,xm_id,"long_name",
-     $            "Displacement Normal to the Flux Surface") )
-      CALL check( nf90_put_att(fncid,xm_id,"units","m") )
-      CALL check( nf90_def_var(fncid, "R_n", nf90_double,
-     $            (/p_id,t_id/),rv_id) )
-      CALL check( nf90_put_att(fncid,rv_id,"long_name",
-     $            "Radial unit normal: R_3D = R_sym+x_n*R_n") )
-      CALL check( nf90_def_var(fncid, "z_n", nf90_double,
-     $            (/p_id,t_id/),zv_id) )
-      CALL check( nf90_put_att(fncid,zv_id,"long_name",
-     $            "Vertical unit normal: z_3D = z_sym+x_n*z_n") )
-      CALL check( nf90_enddef(fncid) )
-      IF(debug_flag) PRINT *,"  Writting variables"
-      IF(rzstat/=nf90_noerr)THEN
-         CALL check( nf90_put_var(fncid,r_id,rs) )
-         CALL check( nf90_put_var(fncid,z_id,zs) )
-      ENDIF
-      CALL check( nf90_put_var(fncid,xm_id,RESHAPE((/REAL(xnomns),
-     $             AIMAG(xnomns)/),(/mstep,lmpert,2/))) )
-      CALL check( nf90_put_var(fncid,bm_id,RESHAPE((/REAL(bnomns),
-     $             AIMAG(bnomns)/),(/mstep,lmpert,2/))) )
-      CALL check( nf90_put_var(fncid,x_id,RESHAPE((/REAL(xnofuns),
-     $             -helicity*AIMAG(xnofuns)/),(/mstep,mthsurf+1,2/))) )
-      CALL check( nf90_put_var(fncid,b_id,RESHAPE((/REAL(bnofuns),
-     $             -helicity*AIMAG(bnofuns)/),(/mstep,mthsurf+1,2/))) )
-      CALL check( nf90_put_var(fncid,rv_id,rvecs) )
-      CALL check( nf90_put_var(fncid,zv_id,zvecs) )
-      CALL check( nf90_close(fncid) )
-      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
-
-      IF (flux_flag) THEN
-         IF (.NOT. bin_2d_flag) THEN
-            ximax=MAXVAL(ABS(xnofuns))
-            CALL bicube_eval(rzphi,psilim,theta(0),0)
-            rmax=SQRT(rzphi%f(1))
-            xnofuns=xnofuns/ximax*rmax/6.0
-         ENDIF
-            
-         rss=xnofuns*rvecs
-         zss=xnofuns*zvecs
-         DO itheta=0,mthsurf
-            psis(:,itheta)=psifac(:)
-         ENDDO
-         
-         CALL ascii_open(out_unit,"gpec_xbnormal_flux_n"//
-     $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"GPEC_XBNROMAL_FLUX: "//
-     $        "Perturbed flux surfaces"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
-     $        "mstep =",mstep,"mthsurf =",mthsurf
-         WRITE(out_unit,'(1x,a12,es17.8e3)')"scale =",rmax/(ximax*6.0)
-         WRITE(out_unit,*)  
-         WRITE(out_unit,'(7(1x,a16))')"r","z","real(r)","imag(r)",
-     $        "real(z)","imag(z)","psi"   
-         
-         DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
-            DO itheta=0,mthsurf
-               WRITE(out_unit,'(7(es17.8e3))')
-     $              rs(istep,itheta),zs(istep,itheta),
-     $              REAL(rss(istep,itheta)),AIMAG(rss(istep,itheta)),
-     $              REAL(zss(istep,itheta)),AIMAG(zss(istep,itheta)),
-     $              psis(istep,itheta)
-            ENDDO
-         ENDDO
-         
-         CALL ascii_close(out_unit)
-      ENDIF         
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1423,7 +853,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE xbnormal
 c-----------------------------------------------------------------------
-c     subprogram 8. vbnormal.
+c     subprogram 5. vbnormal.
 c-----------------------------------------------------------------------
       SUBROUTINE vbnormal(rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
@@ -1435,14 +865,15 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:cmpsi) :: psi
       COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
 
-      INTEGER :: p_id,t_id,i_id,m_id,bm_id,q_id
-
       COMPLEX(r8), DIMENSION(mpert) :: vwpmn
       COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
       REAL(r8), DIMENSION(cmpsi) :: qs
       REAL(r8), DIMENSION(cmpsi,mpert) :: xmns,ymns
-      COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vnomns,vwpmns
-      COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: pwpmns
+c-----------------------------------------------------------------------
+c     allocation of module wide variables.
+c-----------------------------------------------------------------------
+      ALLOCATE( vnomns(cmpsi,mpert), vwpmns(cmpsi,mpert),
+     $   vpwpmns(cmpsi,lmpert) )
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -1454,7 +885,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(vcmn(cmpert))
       vnomns = 0
       vwpmns = 0
-      pwpmns = 0
+      vpwpmns = 0
 
       DO ipsi=1,cmpsi
          CALL spline_eval(sq,psi(ipsi),0)
@@ -1464,14 +895,14 @@ c-----------------------------------------------------------------------
          IF (bwp_pest_flag) THEN
             DO i=1,cmpert
                IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
-                  pwpmns(ipsi,cmlow-lmlow+i)=vcmn(i)
+                  vpwpmns(ipsi,cmlow-lmlow+i)=vcmn(i)
                ENDIF
             ENDDO
             pwpmn=0
-            pwpmn=pwpmns(ipsi,:)
+            pwpmn=vpwpmns(ipsi,:)
             CALL peq_bcoords(psi(ipsi),pwpmn,lmfac,lmpert,
      $           2,0,0,0,0,1)             
-            pwpmns(ipsi,:)=pwpmn
+            vpwpmns(ipsi,:)=pwpmn
          ENDIF
          
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
@@ -1508,105 +939,6 @@ c-----------------------------------------------------------------------
       ENDDO
 
       DEALLOCATE(vcmn)
-      ! append to netcdf file once this is (mstep,mpert)
-c      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
-c      CALL check( nf90_open(fncfile,nf90_write,fncid) )
-c      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
-c      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-c      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
-c      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
-c      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
-c      IF(debug_flag) PRINT *,"  Defining variables"
-c      CALL check( nf90_redef(fncid))
-c      CALL check( nf90_def_var(fncid, "q", nf90_double,(/p_id/),q_id) )
-c      CALL check( nf90_put_att(fncid,q_id,"long_name","Safety Factor") )
-c      CALL check( nf90_def_var(fncid, "b_m-vperp", nf90_double,
-c     $            (/p_id,m_id,i_id/),bm_id) )
-c      CALL check( nf90_put_att(fncid,bm_id,"long_name",
-c     $            "Vacuum Field Normal to the Flux Surface") )
-c      CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
-c      CALL check( nf90_enddef(fncid) )
-c      IF(debug_flag) PRINT *,"  Writting variables"
-c      CALL check( nf90_put_var(fncid,bm_id,qs) )
-c      CALL check( nf90_put_var(fncid,bm_id,RESHAPE((/REAL(vnomns),
-c     $             AIMAG(vnomns)/),(/mstep,mpert,2/))) )
-c      CALL check( nf90_close(fncid) )
-c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
-
-      CALL ascii_open(out_unit,"gpec_vbnormal_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_VBNROMAL: "//
-     $     "Normal components of coil field"
-      WRITE(out_unit,*)version
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-      WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "mpsi =",cmpsi,"mpert =",mpert,"mthsurf =",mthsurf
-      WRITE(out_unit,*)     
-      WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
-     $     "real(bno)","imag(bno)","real(bwp)","imag(bwp)"
-
-      DO ipsi=1,cmpsi
-         DO ipert=1,mpert
-            WRITE(out_unit,'(2(1x,es16.8),1x,I4,4(1x,es16.8))')
-     $           psi(ipsi),qs(ipsi),mfac(ipert),
-     $           REAL(vnomns(ipsi,ipert)),AIMAG(vnomns(ipsi,ipert)),
-     $           REAL(vwpmns(ipsi,ipert)),AIMAG(vwpmns(ipsi,ipert))
-         ENDDO
-      ENDDO
-
-      IF (bwp_pest_flag) THEN
-         CALL ascii_open(out_unit,"gpec_vbnormal_pest_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_VBNROMAL_PEST: "//
-     $        "Normal components of coil field in pest coordinates"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $        "mpsi =",cmpsi,"mpert =",lmpert,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
-         WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
-     $        "real(bwp)","imag(bwp)"
-         
-         DO ipsi=1,cmpsi
-            DO ipert=1,lmpert
-               WRITE(out_unit,'(2(es17.8e3),1x,I4,2(es17.8e3))')
-     $              psi(ipsi),qs(ipsi),lmfac(ipert),
-     $              REAL(pwpmns(ipsi,ipert)),AIMAG(pwpmns(ipsi,ipert))
-            ENDDO
-         ENDDO
-      ENDIF
-
-      IF (bin_flag) THEN
-         CALL bin_open(bin_unit,
-     $        "vbnormal.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,mpert
-            DO ipsi=1,cmpsi
-               WRITE(bin_unit)REAL(psi(ipsi),4),
-     $              REAL(REAL(vnomns(ipsi,ipert)),4),
-     $              REAL(AIMAG(vnomns(ipsi,ipert)),4),
-     $              REAL(REAL(vwpmns(ipsi,ipert)),4),
-     $              REAL(AIMAG(vwpmns(ipsi,ipert)),4)
-               
-            ENDDO
-            WRITE(bin_unit)
-         ENDDO
-         CALL bin_close(bin_unit)
-
-         DO ipsi=1,cmpsi
-            xmns(ipsi,:)=mfac
-            ymns(ipsi,:)=psi(ipsi)
-         ENDDO
-         CALL bin_open(bin_2d_unit,"vbnormal_spectrum.bin",
-     $        "UNKNOWN","REWIND","none")
-         WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)cmpsi-1,mpert-1
-         WRITE(bin_2d_unit)REAL(xmns(1:cmpsi,:),4),
-     $        REAL(ymns(1:cmpsi,:),4)
-         WRITE(bin_2d_unit)REAL(ABS(vwpmns(1:cmpsi,:)),4)
-         CALL bin_close(bin_2d_unit)
-      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1614,7 +946,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE vbnormal
 c-----------------------------------------------------------------------
-c     subprogram 9. xbtangent.
+c     subprogram 6. xbtangent.
 c-----------------------------------------------------------------------
       SUBROUTINE xbtangent(egnum,xspmn,rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
@@ -1626,14 +958,20 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax
 
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,
-     $     rvecs,zvecs,vecs
+      REAL(r8), DIMENSION(mstep,0:mthsurf) :: vecs
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,bs,dphi
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: xmns,ymns,xtamns,btamns
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: xmns,ymns
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwt_fun,xvt_fun,xvz_fun,
      $     bwt_fun,bvt_fun,bvz_fun,xta_fun,bta_fun
-      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
-     $     xtafuns,btafuns
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss
+c-----------------------------------------------------------------------
+c     allocation of module wide variables.
+c-----------------------------------------------------------------------
+      ALLOCATE(xtamns(mstep,lmpert),btamns(mstep,lmpert))
+      ALLOCATE(xtafuns(mstep,0:mthsurf),btafuns(mstep,0:mthsurf))
+      ALLOCATE(rvecs(mstep,0:mthsurf),zvecs(mstep,0:mthsurf))
+      IF ( .NOT. ALLOCATED(rs) )
+     $   ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -1687,100 +1025,13 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,xtafuns(istep,:),mthsurf,xta_mn)
          CALL iscdftf(mfac,mpert,btafuns(istep,:),mthsurf,bta_mn)
 
-         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-            CALL peq_bcoords(psifac(istep),xta_mn,mfac,mpert,
-     $           rout,bpout,bout,rcout,tout,0)
-            CALL peq_bcoords(psifac(istep),bta_mn,mfac,mpert,
-     $           rout,bpout,bout,rcout,tout,0)
-         ENDIF
-         xtamns(istep,:)=xta_mn
-         btamns(istep,:)=bta_mn
+         ! convert to output coordinates
+         CALL peq_bcoordsout(xtamns(istep,:),xta_mn,psifac(istep))
+         CALL peq_bcoordsout(btamns(istep,:),xta_mn,psifac(istep))
          xtafuns(istep,:)=xtafuns(istep,:)*EXP(ifac*nn*dphi)
          btafuns(istep,:)=btafuns(istep,:)*EXP(ifac*nn*dphi)
       ENDDO
       CALL peq_dealloc
-
-      CALL ascii_open(out_unit,"gpec_xbtangent_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_XBNROMAL: "//
-     $     "Tangential components of displacement and field"
-      WRITE(out_unit,*)version
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-      WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
-      WRITE(out_unit,*)     
-      WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
-     $     "real(xta)","imag(xta)","real(bta)","imag(bta)"
-
-      DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-         DO ipert=1,mpert
-            WRITE(out_unit,'(2(es17.8e3),1x,I4,4(es17.8e3))')
-     $           psifac(istep),qfac(istep),mfac(ipert),
-     $           REAL(xtamns(istep,ipert)),AIMAG(xtamns(istep,ipert)),
-     $           REAL(btamns(istep,ipert)),AIMAG(btamns(istep,ipert))
-         ENDDO
-      ENDDO
-
-      IF (fun_flag) THEN
-         CALL ascii_open(out_unit,"gpec_xbtangent_fun_n"//
-     $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"GPEC_XBTANGENT_FUN: "//
-     $        "Tangential components of displacement "//
-     $        "and field in functions"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
-         WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
-         WRITE(out_unit,'(1x,a12,1x,I6,1x,a12,I4)')
-     $        "mstep =",mstep,"mthsurf =",mthsurf
-         WRITE(out_unit,*)     
-         WRITE(out_unit,'(8(1x,a16))')"r","z","rvec","zvec",
-     $        "real(xta)","imag(xta)","real(bta)","imag(bta)"
-         
-         DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
-            DO itheta=0,mthsurf
-               WRITE(out_unit,'(8(es17.8e3))')
-     $              rs(istep,itheta),zs(istep,itheta),
-     $              rvecs(istep,itheta),zvecs(istep,itheta),
-     $              REAL(xtafuns(istep,itheta)),
-     $              AIMAG(xtafuns(istep,itheta)),
-     $              REAL(btafuns(istep,itheta)),
-     $              AIMAG(btafuns(istep,itheta))        
-            ENDDO
-         ENDDO
-         CALL ascii_close(out_unit)
-      ENDIF
-
-      IF (bin_flag) THEN
-         CALL bin_open(bin_unit,
-     $        "xbtangent.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,mpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(xtamns(istep,ipert)),4),
-     $              REAL(AIMAG(xtamns(istep,ipert)),4),
-     $              REAL(REAL(btamns(istep,ipert)),4),
-     $              REAL(AIMAG(btamns(istep,ipert)),4)
-            ENDDO
-            WRITE(bin_unit)
-         ENDDO
-         CALL bin_close(bin_unit)
-      ENDIF
-
-      IF (bin_2d_flag) THEN
-         CALL bin_open(bin_2d_unit,"xbtangent_2d.bin",
-     $        "UNKNOWN","REWIND","none")
-         WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)mstep-9,mthsurf
-         WRITE(bin_2d_unit)REAL(rs(9:mstep,0:mthsurf),4),
-     $        REAL(zs(9:mstep,0:mthsurf),4)
-         WRITE(bin_2d_unit)REAL(REAL(xtafuns(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(xtafuns(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(REAL(btafuns(9:mstep,0:mthsurf)),4)
-         WRITE(bin_2d_unit)REAL(AIMAG(btafuns(9:mstep,0:mthsurf)),4)
-         CALL bin_close(bin_2d_unit)
-      ENDIF         
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1788,7 +1039,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE xbtangent
 c-----------------------------------------------------------------------
-c     subprogram 13. xclebsch.
+c     subprogram 7. xclebsch.
 c     Write Clebsch coordinate displacements.
 c-----------------------------------------------------------------------
       SUBROUTINE xclebsch(egnum,xspmn)
@@ -1798,113 +1049,50 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i,j,istep,ipert,iindex,ids(3)
-      INTEGER :: i_id,m_id,p_id,dp_id,xp_id,xa_id
-      REAL(r8) :: ileft
+      INTEGER :: istep, iindex
+      REAL(r8) :: psi, ileft
 
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: xmp1mns,xspmns,xmsmns
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: xmp1out,xspout,xmsout
 c-----------------------------------------------------------------------
-c     compute necessary components.
+c     start calculations if not already already calculated
 c-----------------------------------------------------------------------
-      IF(timeit) CALL gpec_timer(-2)
+      IF( ALLOCATED(xmp1out) ) RETURN
       IF(verbose) WRITE(*,*)"Computing Clebsch displacements"
-
+      IF(timeit) CALL gpec_timer(-2)
+c-----------------------------------------------------------------------
+c     allocation.
+c-----------------------------------------------------------------------
+      ALLOCATE( xmp1out(mstep,lmpert), xspout(mstep,lmpert),
+     $    xmsout(mstep,lmpert) )
+      ALLOCATE( xmp1funs(mstep,0:mthsurf), xspfuns(mstep,0:mthsurf),
+     $    xmsfuns(mstep,0:mthsurf) )
+c-----------------------------------------------------------------------
+c     compute functions on magnetic surfaces with regulation.
+c-----------------------------------------------------------------------
       CALL dcon_build(egnum,xspmn)
       CALL peq_alloc
 
       DO istep=1,mstep
+         !IF(verbose) call progressbar(istep,1,mstep)
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
          ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
          IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
      $        WRITE(*,'(1x,a9,i3,a23)')
      $        "volume = ",iindex,"% Clebsch decomposition"
-c-----------------------------------------------------------------------
-c     compute functions on magnetic surfaces with regulation.
-c-----------------------------------------------------------------------
-         CALL spline_eval(sq,psifac(istep),1)
-         CALL peq_sol(psifac(istep))
-         CALL peq_contra(psifac(istep))
-c-----------------------------------------------------------------------
-c     compute mod b variations in hamada.
-c-----------------------------------------------------------------------
-         xmp1mns(istep,:) = xmp1_mn
-         xspmns(istep,:) = xsp_mn
-         xmsmns(istep,:) = xms_mn
+         psi = psifac(istep)
+         CALL spline_eval(sq,psi,1)
+         CALL peq_sol(psi)
+         CALL peq_contra(psi) ! not necessary ??
+         ! convert to real space
+         !IF (fun_flag) THEN
+         !   CALL iscdftb(mfac,mpert,xmp1funs(istep,:),mthsurf,xmp1_mn)
+         !   CALL iscdftb(mfac,mpert,xspfuns(istep,:),mthsurf,xsp_mn)
+         !   CALL iscdftb(mfac,mpert,xmsfuns(istep,:),mthsurf,xms_mn)
+         !ENDIF
+         ! convert to jac_out
+         CALL peq_bcoordsout(xmp1out(istep,:),xmp1_mn,psi)
+         CALL peq_bcoordsout(xspout(istep,:),xsp_mn,psi)
+         CALL peq_bcoordsout(xmsout(istep,:),xms_mn,psi)
       ENDDO
-         
-      CALL ascii_open(out_unit,"gpec_xclebsch_n"//
-     $   TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_PMODB: "//
-     $   "Clebsch Components of the displacement."
-      WRITE(out_unit,*)version
-      WRITE(out_unit,'(1/,1x,a13,a8)')"jac_type = ",jac_type
-      WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,2(a12,I4),1/)')
-     $   "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
-      WRITE(out_unit,'(1x,a23,1x,a4,6(1x,a16))')"psi","m",
-     $   "real(derxi^psi)","imag(derxi^psi)",
-     $   "real(xi^psi)","imag(xi^psi)",
-     $   "real(xi^alpha)","imag(xi^alpha)"
-      DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
-         DO ipert=1,mpert
-            WRITE(out_unit,'(1x,es23.15,1x,I4,6(es17.8e3))')
-     $         psifac(istep),mfac(ipert),xmp1mns(istep,ipert),
-     $         xspmns(istep,ipert),xmsmns(istep,ipert)/chi1
-         ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
-
-      ! convert to jac_out
-      xmp1out = 0
-      xspout = 0
-      xmsout = 0
-      DO istep=1,mstep
-         DO i=1,mpert
-            IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-               xmp1out(istep,mlow-lmlow+i) = xmp1mns(istep,i)
-               xspout(istep,mlow-lmlow+i) = xspmns(istep,i)
-               xmsout(istep,mlow-lmlow+i) = xmsmns(istep,i)
-            ENDIF
-         ENDDO
-      ENDDO
-
-      ! append to netcdf file
-      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
-      CALL check( nf90_open(fncfile,nf90_write,fncid) )
-      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
-      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
-      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
-      IF(debug_flag) PRINT *,"  Defining variables"
-      CALL check( nf90_redef(fncid))
-      CALL check( nf90_def_var(fncid, "derxi_m_contrapsi", nf90_double,
-     $            (/p_id,m_id,i_id/),dp_id) )
-      CALL check( nf90_put_att(fncid,dp_id,"long_name",
-     $            "Psi derivative of contravarient psi displacement") )
-      CALL check( nf90_def_var(fncid, "xi_m_contrapsi", nf90_double,
-     $            (/p_id,m_id,i_id/),xp_id) )
-      CALL check( nf90_put_att(fncid,xp_id,"long_name",
-     $            "Contravarient psi displacement") )
-      CALL check( nf90_def_var(fncid, "xi_m_contraalpha", nf90_double,
-     $            (/p_id,m_id,i_id/),xa_id) )
-      CALL check( nf90_put_att(fncid,xa_id,"long_name",
-     $            "Contravarient clebsch angle displacement") )
-      ids = (/xp_id,dp_id,xa_id/)
-      DO i=1,3
-         CALL check( nf90_put_att(fncid,ids(i),"units","m") )
-      ENDDO
-      CALL check( nf90_enddef(fncid) )
-      IF(debug_flag) PRINT *,"  Writting variables"
-      CALL check( nf90_put_var(fncid,dp_id,RESHAPE((/REAL(xmp1out),
-     $             AIMAG(xmp1out)/),(/mstep,lmpert,2/))) )
-      CALL check( nf90_put_var(fncid,xp_id,RESHAPE((/REAL(xspout),
-     $             AIMAG(xspout)/),(/mstep,lmpert,2/))) )
-      CALL check( nf90_put_var(fncid,xa_id,RESHAPE((/REAL(xmsout),
-     $             AIMAG(xmsout)/),(/mstep,lmpert,2/))) )
-
-      CALL check( nf90_close(fncid) )
-      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
-
 
       CALL peq_dealloc
 c-----------------------------------------------------------------------
@@ -1913,167 +1101,556 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE xclebsch
+
+
 c-----------------------------------------------------------------------
-c     subprogram 15. check.
-c     Check status of netcdf file.
+      SUBROUTINE ascii_header( op_jac )
+c-----------------------------------------------------------------------
+c     *DESCRIPTION:
+c        Write common profile ascii file headers.
+c        Having this in one place makes it easier to modify consistently.
+c     *ARGUMENTS:
+c        op_jac: character(16) optional. Jacobian of file variables
+c                (default is jac_out)
+c
+c-----------------------------------------------------------------------
+      CHARACTER(16), INTENT(IN), OPTIONAL :: op_jac
+      CHARACTER(16) :: jac
+
+      IF(PRESENT(OP_JAC))THEN
+         jac = op_jac
+      ELSE
+         jac = jac_out
+      ENDIF
+
+      WRITE(out_unit,*) version
+      WRITE(out_unit,'(1/,1x,a13,a8)') "jacobian = ", TRIM(jac)
+      WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
+      WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,2(a12,I4),1/)')
+     $   "mstep =", mstep, "mpert =", mpert, "mthsurf =", mthsurf
+
+      RETURN
+      END SUBROUTINE ascii_header
+
+
+c-----------------------------------------------------------------------
+      SUBROUTINE output_profile_ascii( )
+c-----------------------------------------------------------------------
+c     *DESCRIPTION:
+c        Write profile ascii files.
+c     *ARGUMENTS:
+c        None.
+c
+c-----------------------------------------------------------------------
+      INTEGER :: istep, ipert, itheta, ipsi,  stepsize, funsize
+      REAL(r8), DIMENSION(0:cmpsi) :: psi
+      LOGICAL :: debug = .TRUE.
+
+      ! start timer
+      IF(verbose) WRITE(*,*)"Writing profile ascii output"
+      IF(timeit) CALL gpec_timer(-2)
+
+      ! common variables
+      stepsize = MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
+      funsize = MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
+      psi = (/(ipsi,ipsi=0,cmpsi)/)/REAL(cmpsi,r8)
+
+      ! write dw_profile
+      IF ( dwk%mx>0 ) THEN
+         IF(debug) WRITE(*,*) "Writing dw"
+         CALL ascii_open(out_unit,"gpec_dw_n"//TRIM(sn)//".out",
+     $      "UNKNOWN")
+         WRITE(out_unit,*)"GPEC_DW_PROFILE: "//
+     $        "Energy and torque profiles by self-consistent solutions."
+         CALL ascii_header
+         WRITE(out_unit,'(6(1x,a16))')"psi","T_phi","2ndeltaW",
+     $        "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
+         DO istep=1,mstep,stepsize
+            WRITE(out_unit,'(6(1x,es16.8))') psifac(istep),
+     $         dwk%fs1(istep,1),dwk%fs(istep,1),sq%fs(istep,3)
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
+
+      ! write pmodb
+      IF ( ALLOCATED(eulbparmout) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing pmodb"
+         CALL ascii_open(out_unit,"gpec_pmodb_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_PMODB: "//
+     $        "Components in perturbed mod b and del.x_prp"
+         CALL ascii_header
+         WRITE(out_unit,'(1x,a16,1x,a4,10(1x,a16))')"psi","m",
+     $        "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
+     $        "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
+     $        "imag(Bkxprp)"
+         DO istep=1,mstep,stepsize
+            DO ipert=1,lmpert
+               WRITE(out_unit,'(es17.8e3,1x,I4,8(es17.8e3))')
+     $              psifac(istep),lmfac(ipert),
+     $              REAL(eulbparmout(istep,ipert)),
+     $              AIMAG(eulbparmout(istep,ipert)),
+     $              REAL(lagbparmout(istep,ipert)),
+     $              AIMAG(lagbparmout(istep,ipert)),
+     $              REAL(-divxprpmout(istep,ipert)),
+     $              AIMAG(-divxprpmout(istep,ipert)),
+     $              REAL(-curvmout(istep,ipert)),
+     $              AIMAG(-curvmout(istep,ipert))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         IF (fun_flag) THEN
+            IF(debug) WRITE(*,*) "  > Writing pmodb functions"
+            CALL ascii_open(out_unit,"gpec_pmodb_fun_n"//
+     $           TRIM(sn)//".out","UNKNOWN")
+            WRITE(out_unit,*)"GPEC_PMODB_FUN: "//
+     $           "Components in perturbed mod b in functions"
+            CALL ascii_header
+            WRITE(out_unit,'(15(1x,a16))')"psi","theta","r","z",
+     $           "real(eulb)","imag(eulb)","real(lagb)","imag(lagb)",
+     $           "real(Bdivxprp)","imag(Bdivxprp)","real(Bkxprp)",
+     $           "imag(Bkxprp)","equilb","dequilbdpsi","dequilbdtheta"
+            DO istep=1,mstep,funsize
+               DO itheta=0,mthsurf
+                  CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
+                  WRITE(out_unit,'(15(es17.8e3))')
+     $                 psifac(istep),theta(itheta),
+     $                 rs(istep,itheta),zs(istep,itheta),
+     $                 REAL(eulbparfout(istep,itheta)),
+     $                 -helicity*AIMAG(eulbparfout(istep,itheta)),
+     $                 REAL(lagbparfout(istep,itheta)),
+     $                 -helicity*AIMAG(lagbparfout(istep,itheta)),
+     $                 REAL(-divxprpfout(istep,itheta)),
+     $                 -helicity*AIMAG(-divxprpfout(istep,itheta)),
+     $                 REAL(-curvfout(istep,itheta)),
+     $                 -helicity*AIMAG(-curvfout(istep,itheta)),
+     $                 equilbfun(istep,itheta),
+     $                 eqfun%fx(1),eqfun%fy(1)
+               ENDDO
+            ENDDO
+            CALL ascii_close(out_unit)
+         ENDIF
+      ENDIF
+
+      ! write xbnormal
+      IF ( ALLOCATED(bnomns) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing xbnormal"
+         CALL ascii_open(out_unit,"gpec_xbnormal_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_XBNORMAL: "//
+     $        "Normal components of displacement and field"
+         CALL ascii_header
+         WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
+     $        "real(xno)","imag(xno)","real(bno)","imag(bno)",
+     $        "real(bwp)","imag(bwp)"
+         DO istep=1,mstep,stepsize
+            DO ipert=1,lmpert
+               WRITE(out_unit,'(2(es17.8e3),1x,I4,6(es17.8e3))')
+     $            psifac(istep),qfac(istep),lmfac(ipert),
+     $            REAL(xnomns(istep,ipert)),AIMAG(xnomns(istep,ipert)),
+     $            REAL(bnomns(istep,ipert)),AIMAG(bnomns(istep,ipert)),
+     $            REAL(bwpmns(istep,ipert)),AIMAG(bwpmns(istep,ipert))
+            ENDDO
+         ENDDO
+      ENDIF
+      IF (bwp_pest_flag .AND. ALLOCATED(pwpmns) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing pest bnormal"
+         CALL ascii_open(out_unit,"gpec_bnormal_pest_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_BNORMAL_PEST: "//
+     $        "Normal components of field in pest coordinates"
+         CALL ascii_header
+         WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
+     $        "real(bwp)","imag(bwp)"
+         DO istep=1,mstep,stepsize
+            DO ipert=1,lmpert
+               WRITE(out_unit,'(2(es17.8e3),1x,I4,6(es17.8e3))')
+     $              psifac(istep),qfac(istep),lmfac(ipert),
+     $              REAL(pwpmns(istep,ipert)),AIMAG(pwpmns(istep,ipert))
+            ENDDO
+         ENDDO
+      ENDIF
+      IF (fun_flag .AND. ALLOCATED(bnofuns) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing xbnormal functions"
+         CALL ascii_open(out_unit,"gpec_xbnormal_fun_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_XBNORMAL_FUN: "//
+     $        "Normal components of displacement and field in functions"
+         CALL ascii_header
+         WRITE(out_unit,'(10(1x,a16))')"psi","theta","r","z","rvec",
+     $        "zvec","real(xno)","imag(xno)","real(bno)","imag(bno)"
+         DO istep=1,mstep,funsize
+            DO itheta=0,mthsurf
+               WRITE(out_unit,'(10(es17.8e3))')
+     $              psifac(istep),theta(itheta),
+     $              rs(istep,itheta),zs(istep,itheta),
+     $              rvecs(istep,itheta),zvecs(istep,itheta),
+     $              REAL(xnofuns(istep,itheta)),
+     $              -helicity*AIMAG(xnofuns(istep,itheta)),
+     $              REAL(bnofuns(istep,itheta)),
+     $              -helicity*AIMAG(bnofuns(istep,itheta))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
+
+      ! write xbtangent
+      IF ( ALLOCATED(xtamns) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing xbtangent"
+         CALL ascii_open(out_unit,"gpec_xbtangent_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_XBNROMAL: "//
+     $        "Tangential components of displacement and field"
+         CALL ascii_header
+         WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
+     $        "real(xta)","imag(xta)","real(bta)","imag(bta)"
+         DO istep=1,mstep,stepsize
+            DO ipert=1,mpert
+               WRITE(out_unit,'(2(es17.8e3),1x,I4,4(es17.8e3))')
+     $            psifac(istep),qfac(istep),mfac(ipert),
+     $            REAL(xtamns(istep,ipert)),AIMAG(xtamns(istep,ipert)),
+     $            REAL(btamns(istep,ipert)),AIMAG(btamns(istep,ipert))
+            ENDDO
+         ENDDO
+      ENDIF
+      IF ( fun_flag .AND. ALLOCATED(xtafuns) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing xbtangent functions"
+         CALL ascii_open(out_unit,"gpec_xbtangent_fun_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_XBTANGENT_FUN: "//
+     $        "Tangential components of displacement "//
+     $        "and field in functions"
+         CALL ascii_header
+         WRITE(out_unit,'(8(1x,a16))')"r","z","rvec","zvec",
+     $        "real(xta)","imag(xta)","real(bta)","imag(bta)"
+         DO istep=1,mstep,funsize
+            DO itheta=0,mthsurf
+               WRITE(out_unit,'(8(es17.8e3))')
+     $              rs(istep,itheta),zs(istep,itheta),
+     $              rvecs(istep,itheta),zvecs(istep,itheta),
+     $              REAL(xtafuns(istep,itheta)),
+     $              AIMAG(xtafuns(istep,itheta)),
+     $              REAL(btafuns(istep,itheta)),
+     $              AIMAG(btafuns(istep,itheta))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
+
+      ! write vbnormal
+      IF ( ALLOCATED(vnomns) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing vbnormal"
+         CALL ascii_open(out_unit,"gpec_vbnormal_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_VBNROMAL: "//
+     $        "Normal components of coil field"
+         CALL ascii_header
+         WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
+     $        "real(bno)","imag(bno)","real(bwp)","imag(bwp)"
+         DO ipsi=1,cmpsi
+            CALL spline_eval(sq,psi(ipsi),0)
+            DO ipert=1,mpert
+               WRITE(out_unit,'(2(1x,es16.8),1x,I4,4(1x,es16.8))')
+     $              psi(ipsi),sq%f(4),mfac(ipert),
+     $              REAL(vnomns(ipsi,ipert)),AIMAG(vnomns(ipsi,ipert)),
+     $              REAL(vwpmns(ipsi,ipert)),AIMAG(vwpmns(ipsi,ipert))
+            ENDDO
+         ENDDO
+      ENDIF
+      IF ( ALLOCATED(vpwpmns) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing vbnormal pest"
+         CALL ascii_open(out_unit,"gpec_vbnormal_pest_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_VBNROMAL_PEST: "//
+     $        "Normal components of coil field in pest coordinates"
+         CALL ascii_header
+         WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
+     $        "real(bwp)","imag(bwp)"
+         DO ipsi=1,cmpsi
+            CALL spline_eval(sq,psi(ipsi),0)
+            DO ipert=1,lmpert
+               WRITE(out_unit,'(2(es17.8e3),1x,I4,2(es17.8e3))')
+     $              psi(ipsi),sq%f(4),lmfac(ipert),
+     $              REAL(vpwpmns(ipsi,ipert)),AIMAG(vpwpmns(ipsi,ipert))
+            ENDDO
+         ENDDO
+      ENDIF
+
+      ! write xclebsch
+      IF ( ALLOCATED(xmp1out) ) THEN
+         IF(debug) WRITE(*,*) "  > Writing xclebsch"
+         CALL ascii_open(out_unit,"gpec_xclebsch_n"//
+     $      TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_XCLEBSCH: "//
+     $      "Clebsch Components of the displacement."
+         CALL ascii_header
+         WRITE(out_unit,'(1x,a23,1x,a4,6(1x,a16))')"psi","m",
+     $      "real(derxi^psi)","imag(derxi^psi)",
+     $      "real(xi^psi)","imag(xi^psi)",
+     $      "real(xi^alpha)","imag(xi^alpha)"
+         DO istep=1,mstep,stepsize
+            DO ipert=1,lmpert
+               WRITE(out_unit,'(1x,es23.15,1x,I4,6(es17.8e3))')
+     $            psifac(istep),mfac(ipert),xmp1out(istep,ipert),
+     $            xspout(istep,ipert),xmsout(istep,ipert)/chi1
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
+
+      ! end timer
+      IF(timeit) CALL gpec_timer(2)
+      RETURN
+      END SUBROUTINE output_profile_ascii
+
+
+c-----------------------------------------------------------------------
+      SUBROUTINE output_profile_netcdf( )
+c-----------------------------------------------------------------------
+c     *DESCRIPTION:
+c        Write netcdf file with all calculated profiles.
+c     *ARGUMENTS:
+c        None.
+c
+c-----------------------------------------------------------------------
+      INTEGER :: ncid
+      CHARACTER(64) :: ncfile
+      INTEGER :: idid, mdid, pdid, tdid, i_id, m_id, p_id, t_id
+
+      INTEGER :: x1_id, xp_id, xa_id
+      INTEGER :: r_id, z_id, rv_id, zv_id
+      INTEGER :: be_id, bme_id, bl_id, bml_id, eb_id,
+     $   dx_id, dxm_id, k_id, km_id
+      INTEGER :: b_id, bm_id, x_id, xm_id
+
+      ! the usual messages
+      IF(verbose) WRITE(*,*)"Writing profile netcdf output"
+      IF(timeit) CALL gpec_timer(-2)
+
+      ! initialize file
+      IF(debug_flag) PRINT *,"Initializing profile NETCDF file"
+      ncfile = "gpec_profile_output_n"//TRIM(sn)//".nc"
+      CALL check( nf90_create(ncfile,
+     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=ncid) )
+     
+      ! define global file attributes
+      IF(debug_flag) PRINT *," - Defining profile netcdf globals"
+      CALL check( nf90_put_att(ncid,nf90_global,"title",
+     $     "GPEC profile outputs in magnetic coordinate system"))
+      CALL check( nf90_put_att(ncid,nf90_global,"Jacobian",jac_type))
+      CALL check( nf90_put_att(ncid,nf90_global,"q_lim",qlim))
+      CALL check( nf90_put_att(ncid,nf90_global,"psi_n_lim",psilim))
+      CALL check( nf90_put_att(ncid,nf90_global,"shot",INT(shotnum)) )
+      CALL check( nf90_put_att(ncid,nf90_global,"time",INT(shottime)) )
+      CALL check( nf90_put_att(ncid,nf90_global,"machine",machine) )
+      CALL check( nf90_put_att(ncid,nf90_global,"n",nn) )
+      CALL check( nf90_put_att(ncid,nf90_global,"version",version))
+      
+      ! define dimensions
+      CALL check( nf90_def_dim(ncid,"i",2,       idid) )
+      CALL check( nf90_def_var(ncid,"i",nf90_int,idid,i_id) )
+      CALL check( nf90_def_dim(ncid,"m",lmpert,  mdid) )
+      CALL check( nf90_def_var(ncid,"m",NF90_INT,mdid,m_id) )
+      CALL check( nf90_def_dim(ncid,"psi_n",mstep,      pdid) )
+      CALL check( nf90_def_var(ncid,"psi_n",nf90_double,pdid,p_id) )
+      CALL check( nf90_def_dim(ncid,"theta",mthsurf+1,  tdid) )
+      CALL check( nf90_def_var(ncid,"theta",nf90_double,tdid,t_id) )
+
+      ! define variables
+      IF(debug_flag) PRINT *,"  Defining variables"
+      IF ( ALLOCATED(xmp1out) ) THEN
+         CALL check( nf90_def_var(ncid, "derxi_m_contrapsi",
+     $        nf90_double, (/p_id,m_id,i_id/), x1_id) )
+         CALL check( nf90_put_att(ncid, x1_id, "units", "m") )
+         CALL check( nf90_put_att(ncid, x1_id, "long_name",
+     $        "Psi derivative of contravarient psi displacement") )
+         CALL check( nf90_def_var(ncid, "xi_m_contrapsi", nf90_double,
+     $        (/p_id,m_id,i_id/), xp_id) )
+         CALL check( nf90_put_att(ncid, xp_id, "units", "m") )
+         CALL check( nf90_put_att(ncid, xp_id, "long_name",
+     $        "Contravarient psi displacement") )
+         CALL check( nf90_def_var(ncid, "xi_m_contraalpha", nf90_double,
+     $        (/p_id,m_id,i_id/), xa_id) )
+         CALL check( nf90_put_att(ncid, xa_id, "units", "m") )
+         CALL check( nf90_put_att(ncid, xa_id, "long_name",
+     $        "Contravarient clebsch angle displacement") )
+      ENDIF
+
+      IF( ALLOCATED(rs) )THEN
+         CALL check( nf90_def_var(ncid, "R", nf90_double,
+     $               (/p_id,t_id/),r_id) )
+         CALL check( nf90_put_att(ncid,r_id,"long_name",
+     $               "Major Radius") )
+         CALL check( nf90_put_att(ncid,r_id,"units","m") )
+         CALL check( nf90_def_var(ncid, "z", nf90_double,
+     $               (/p_id,t_id/),z_id) )
+         CALL check( nf90_put_att(ncid,z_id,"long_name",
+     $               "Vertical Position") )
+         CALL check( nf90_put_att(ncid,z_id,"units","m") )
+      ENDIF
+
+      IF ( ALLOCATED(rvecs) ) THEN
+         CALL check( nf90_def_var(ncid, "R_n", nf90_double,
+     $               (/p_id,t_id/),rv_id) )
+         CALL check( nf90_put_att(ncid,rv_id,"long_name",
+     $               "Radial unit normal: R_3D = R_sym+x_n*R_n") )
+         CALL check( nf90_def_var(ncid, "z_n", nf90_double,
+     $               (/p_id,t_id/),zv_id) )
+         CALL check( nf90_put_att(ncid,zv_id,"long_name",
+     $               "Vertical unit normal: z_3D = z_sym+x_n*z_n") )
+      ENDIF
+
+      IF( ALLOCATED(eulbparmout) ) THEN
+         CALL check( nf90_def_var(ncid, "b_eul", nf90_double,
+     $               (/p_id,t_id,i_id/),be_id) )
+         CALL check( nf90_put_att(ncid,be_id,"long_name",
+     $               "Eulerian Perturbed Field") )
+         CALL check( nf90_put_att(ncid,be_id,"units","Tesla") )
+         CALL check( nf90_def_var(ncid, "b_lag", nf90_double,
+     $               (/p_id,t_id,i_id/),bl_id) )
+         CALL check( nf90_put_att(ncid,bl_id,"long_name",
+     $               "Lagrangian Perturbed Field") )
+         CALL check( nf90_put_att(ncid,bl_id,"units","Tesla") )
+         CALL check( nf90_def_var(ncid, "b_m-eul", nf90_double,
+     $               (/p_id,m_id,i_id/),bme_id) )
+         CALL check( nf90_put_att(ncid,bme_id,"long_name",
+     $               "Eulerian Perturbed Field") )
+         CALL check( nf90_put_att(ncid,bme_id,"units","Tesla") )
+         CALL check( nf90_def_var(ncid, "b_m-lag", nf90_double,
+     $               (/p_id,m_id,i_id/),bml_id) )
+         CALL check( nf90_put_att(ncid,bml_id,"long_name",
+     $               "Lagrangian Perturbed Field") )
+         CALL check( nf90_put_att(ncid,bml_id,"units","Tesla") )
+         CALL check( nf90_def_var(ncid, "Bdivxi_perp", nf90_double,
+     $               (/p_id,t_id,i_id/),dx_id) )
+         CALL check( nf90_put_att(ncid,dx_id,"long_name",
+     $               "Divergence of the normal displacement") )
+         CALL check( nf90_def_var(ncid, "Bdivxi_m-perp", nf90_double,
+     $               (/p_id,m_id,i_id/),dxm_id) )
+         CALL check( nf90_put_att(ncid,dxm_id,"long_name",
+     $               "Divergence of the normal displacement") )
+         CALL check( nf90_def_var(ncid, "Bkappaxi_perp", nf90_double,
+     $               (/p_id,t_id,i_id/),k_id) )
+         CALL check( nf90_put_att(ncid,k_id,"long_name",
+     $               "Divergence of the normal displacement") )
+         CALL check( nf90_def_var(ncid, "Bkappaxi_m-perp", nf90_double,
+     $               (/p_id,m_id,i_id/),km_id) )
+         CALL check( nf90_put_att(ncid,km_id,"long_name",
+     $               "Divergence of the normal displacement") )
+         CALL check( nf90_def_var(ncid, "B", nf90_double,
+     $               (/p_id,t_id/),eb_id) )
+         CALL check( nf90_put_att(ncid,eb_id,"long_name",
+     $               "Equilibrium Field Strength") )
+      ENDIF
+
+      IF ( ALLOCATED(bnomns) ) THEN
+         CALL check( nf90_def_var(ncid, "b_n", nf90_double,
+     $               (/p_id,t_id,i_id/),b_id) )
+         CALL check( nf90_put_att(ncid,b_id,"long_name",
+     $               "Perturbed Field Normal to the Flux Surface") )
+         CALL check( nf90_put_att(ncid,b_id,"units","Tesla") )
+         CALL check( nf90_def_var(ncid, "b_nm", nf90_double,
+     $               (/p_id,m_id,i_id/),bm_id) )
+         CALL check( nf90_put_att(ncid,bm_id,"long_name",
+     $               "Perturbed Field Normal to the Flux Surface") )
+         CALL check( nf90_put_att(ncid,bm_id,"units","Tesla") )
+         CALL check( nf90_def_var(ncid, "xi_n", nf90_double,
+     $               (/p_id,t_id,i_id/),x_id) )
+         CALL check( nf90_put_att(ncid,x_id,"long_name",
+     $               "Displacement Normal to the Flux Surface") )
+         CALL check( nf90_put_att(ncid,x_id,"units","m") )
+         CALL check( nf90_def_var(ncid, "xi_nm", nf90_double,
+     $               (/p_id,m_id,i_id/),xm_id) )
+         CALL check( nf90_put_att(ncid,xm_id,"long_name",
+     $               "Displacement Normal to the Flux Surface") )
+         CALL check( nf90_put_att(ncid,xm_id,"units","m") )
+      ENDIF
+
+      ! end of definitions
+      CALL check( nf90_enddef(ncid) )
+      
+      ! put coordinate dimensions in file
+      IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
+      CALL check( nf90_put_var(ncid,i_id,(/0,1/)) )
+      CALL check( nf90_put_var(ncid,m_id,lmfac) )
+      CALL check( nf90_put_var(ncid,p_id,psifac(1:)) )
+      CALL check( nf90_put_var(ncid,t_id,theta) )
+
+      ! put variables in file
+      IF ( ALLOCATED(xmp1out) ) THEN
+         CALL check( nf90_put_var(ncid, x1_id, RESHAPE((/REAL(xmp1out),
+     $        AIMAG(xmp1out)/), (/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(ncid, xp_id, RESHAPE((/REAL(xspout),
+     $        AIMAG(xspout)/), (/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(ncid, xa_id, RESHAPE((/REAL(xmsout),
+     $        AIMAG(xmsout)/), (/mstep,lmpert,2/))) )
+      ENDIF
+      IF ( ALLOCATED(rs) ) THEN
+         CALL check( nf90_put_var(ncid,r_id,rs) )
+         CALL check( nf90_put_var(ncid,z_id,zs) )
+      ENDIF
+      IF ( ALLOCATED(eulbparmout) ) THEN
+         CALL check( nf90_put_var(ncid,bme_id,RESHAPE((/
+     $      REAL(eulbparmout),AIMAG(eulbparmout)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(ncid,bml_id,RESHAPE((/
+     $      REAL(lagbparmout),AIMAG(lagbparmout)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(ncid,dxm_id,RESHAPE((/REAL(
+     $      -divxprpmout),AIMAG(-divxprpmout)/),(/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(ncid,km_id,RESHAPE((/
+     $      REAL(-curvmout),AIMAG(-curvmout)/),(/mstep,lmpert,2/))) )
+         CALL check(nf90_put_var(ncid,be_id,RESHAPE((/REAL(eulbparfout),
+     $      -helicity*AIMAG(eulbparfout)/),(/mstep,mthsurf,2/))) )
+         CALL check(nf90_put_var(ncid,bl_id,RESHAPE((/REAL(lagbparfout),
+     $      -helicity*AIMAG(lagbparfout)/),(/mstep,mthsurf,2/))) )
+         CALL check(nf90_put_var(ncid,dx_id,RESHAPE((/REAL(-divxprpfout)
+     $      ,-helicity*AIMAG(-divxprpfout)/),(/mstep,mthsurf,2/))))
+         CALL check( nf90_put_var(ncid,k_id,RESHAPE((/REAL(-curvfout),
+     $      -helicity*AIMAG(-curvfout)/),(/mstep,mthsurf,2/))) )
+         CALL check( nf90_put_var(ncid,eb_id,equilbfun) )
+      ENDIF
+      IF ( ALLOCATED(rvecs) ) THEN
+         CALL check( nf90_put_var(ncid,rv_id,rvecs) )
+         CALL check( nf90_put_var(ncid,zv_id,zvecs) )
+      ENDIF
+      IF ( ALLOCATED(bnomns) ) THEN
+         CALL check( nf90_put_var(ncid,xm_id,RESHAPE((/REAL(xnomns),
+     $        AIMAG(xnomns)/),(/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(ncid,bm_id,RESHAPE((/REAL(bnomns),
+     $        AIMAG(bnomns)/),(/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(ncid,x_id,RESHAPE((/REAL(xnofuns),
+     $        -helicity*AIMAG(xnofuns)/),(/mstep,mthsurf+1,2/))) )
+         CALL check( nf90_put_var(ncid,b_id,RESHAPE((/REAL(bnofuns),
+     $        -helicity*AIMAG(bnofuns)/),(/mstep,mthsurf+1,2/))) )
+      ENDIF
+
+      ! close file
+      IF(debug_flag) PRINT *," - Closing "//TRIM(ncfile)
+      CALL check( nf90_close(ncid) )
+
+      ! end timer
+      IF(timeit) CALL gpec_timer(2)
+      RETURN
+      END SUBROUTINE output_profile_netcdf
+
 c-----------------------------------------------------------------------
       SUBROUTINE check(stat)
 c-----------------------------------------------------------------------
-c     declaration.
+c     *DESCRIPTION:
+c        Check status of netcdf file and stop program if there is an 
+c        error.
+c     *ARGUMENTS:
+c        stat: integer. Status returned by a netcdf module function.
 c-----------------------------------------------------------------------
       INTEGER, INTENT (IN) :: stat
-c-----------------------------------------------------------------------
-c     stop if it is an error.
-c-----------------------------------------------------------------------
+      
+      ! stop if it is an error.
       IF(stat /= nf90_noerr) THEN
          PRINT *, TRIM(nf90_strerror(stat))
          STOP "ERROR: failed to write/read netcdf file"
       ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
+      
       RETURN
       END SUBROUTINE check
-c-----------------------------------------------------------------------
-c     subprogram 16. init_netcdf.
-c     Initialize the netcdf files used for module outputs.
-c-----------------------------------------------------------------------
-      SUBROUTINE init_netcdf
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER:: i,midid,mmdid,medid,mvdid,msdid,mtdid,
-     $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
-     $   mivid,mmvid,mevid,mvvid,msvid,mtvid,fivid,fmvid,fpvid,ftvid,
-     $   civid,crvid,czvid,id,fileids(3)
-      INTEGER, DIMENSION(mpert) :: mmodes
-c-----------------------------------------------------------------------
-c     set variables
-c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *,"Initializing NETCDF files"
-      mmodes = (/(i,i=1,mpert)/)
-      mncfile = "gpec_control_output_n"//TRIM(sn)//".nc"
-      fncfile = "gpec_profile_output_n"//TRIM(sn)//".nc"
-      cncfile = "gpec_cylindrical_output_n"//TRIM(sn)//".nc"
-c-----------------------------------------------------------------------
-c     open files
-c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Creating netcdf files"
-      CALL check( nf90_create(mncfile,
-     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=mncid) )
-      CALL check( nf90_create(fncfile,
-     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=fncid) )
-      CALL check( nf90_create(cncfile,
-     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=cncid) )
-c-----------------------------------------------------------------------
-c     define global file attributes
-c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Defining modal netcdf globals"
-      CALL check( nf90_put_att(mncid,nf90_global,"title",
-     $     "GPEC outputs in Fourier or alternate modal bases"))
-      CALL check( nf90_def_dim(mncid,"i",2,       midid) )
-      CALL check( nf90_def_var(mncid,"i",nf90_int,midid,mivid) )
-      CALL check( nf90_def_dim(mncid,"m",lmpert,  mmdid) )
-      CALL check( nf90_def_var(mncid,"m",nf90_int,mmdid,mmvid) )
-      CALL check( nf90_def_dim(mncid,"mode",mpert,   medid) )
-      CALL check( nf90_def_var(mncid,"mode",nf90_int,medid,mevid))
-      CALL check( nf90_def_dim(mncid,"mode_SC",msing,   msdid) )
-      CALL check( nf90_def_var(mncid,"mode_SC",nf90_int,msdid,msvid))
-      CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
-      CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
-      CALL check( nf90_put_att(mncid,nf90_global,"Jacobian",jac_out))
-      CALL check( nf90_put_att(mncid,nf90_global,"q_lim",qlim))
-      CALL check( nf90_put_att(mncid,nf90_global,"psi_n_lim",psilim))
 
-      IF(debug_flag) PRINT *," - Defining flux netcdf globals"
-      CALL check( nf90_put_att(fncid,nf90_global,"title",
-     $     "GPEC outputs in magnetic coordinate systems"))
-      CALL check( nf90_def_dim(fncid,"i",2,       fidid) )
-      CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
-      CALL check( nf90_def_dim(fncid,"m",lmpert,  fmdid) )
-      CALL check( nf90_def_var(fncid,"m",NF90_INT,fmdid,fmvid) )
-      CALL check( nf90_def_dim(fncid,"psi_n",mstep,    fpdid) )
-      CALL check( nf90_def_var(fncid,"psi_n",nf90_double,fpdid,fpvid) )
-      CALL check( nf90_def_dim(fncid,"theta",mthsurf+1,  ftdid) )
-      CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
-      CALL check( nf90_put_att(fncid,nf90_global,"Jacobian",jac_type))
-      CALL check( nf90_put_att(fncid,nf90_global,"q_lim",qlim))
-      CALL check( nf90_put_att(fncid,nf90_global,"psi_n_lim",psilim))
-
-      IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
-      CALL check( nf90_put_att(cncid,nf90_global,"title",
-     $     "GPEC outputs in (R,z) coordinates"))
-      CALL check( nf90_def_dim(cncid,"i",2,       cidid) )
-      CALL check( nf90_def_var(cncid,"i",nf90_int,cidid,civid) )
-      CALL check( nf90_def_dim(cncid,"R",nr+1,crdid) )
-      CALL check( nf90_def_var(cncid,"R",nf90_double,crdid,crvid) )
-      CALL check( nf90_put_att(cncid,crvid,"units","m") )
-      CALL check( nf90_def_dim(cncid,"z",nz+1,czdid) )
-      CALL check( nf90_def_var(cncid,"z",nf90_double,czdid,czvid) )
-      CALL check( nf90_put_att(cncid,czvid,"units","m") )
-      CALL check( nf90_def_var(cncid,"l",nf90_double,
-     $                         (/crdid,czdid/),clvid) )
-
-      ! Add common global attributes
-      fileids = (/mncid,fncid,cncid/)
-      DO i=1,3
-         id = fileids(i)
-         CALL check( nf90_put_att(id,nf90_global,"shot",INT(shotnum)) )
-         CALL check( nf90_put_att(id,nf90_global,"time",INT(shottime)) )
-         CALL check( nf90_put_att(id,nf90_global,"machine",machine) )
-         CALL check( nf90_put_att(id,nf90_global,"n",nn) )
-         CALL check( nf90_put_att(id,nf90_global,"version",version))
-      ENDDO
-
-      CALL check( nf90_enddef(mncid) )
-      CALL check( nf90_enddef(fncid) )
-      CALL check( nf90_enddef(cncid) )
-c-----------------------------------------------------------------------
-c     set dimensional variables
-c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Putting coordinates in control netcdfs"
-      CALL check( nf90_put_var(mncid,mivid,(/0,1/)) )
-      CALL check( nf90_put_var(mncid,mmvid,lmfac) )
-      CALL check( nf90_put_var(mncid,mevid,mmodes) )
-      CALL check( nf90_put_var(mncid,msvid,mmodes(:msing)) )
-      CALL check( nf90_put_var(mncid,mtvid,theta) )
-
-      IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
-      CALL check( nf90_put_var(fncid,fivid,(/0,1/)) )
-      CALL check( nf90_put_var(fncid,fmvid,lmfac) )
-      CALL check( nf90_put_var(fncid,fpvid,psifac(1:)) )
-      CALL check( nf90_put_var(fncid,ftvid,theta) )
-
-      IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
-      CALL check( nf90_put_var(cncid,civid,(/0,1/)) )
-      CALL check( nf90_put_var(cncid,crvid,gdr(:,0)) )
-      CALL check( nf90_put_var(cncid,czvid,gdz(0,:)) )
-      CALL check( nf90_put_var(cncid,clvid,gdl(:,:)) )
-
-      IF(debug_flag) PRINT *," - Closing netcdf files"
-      CALL check( nf90_close(mncid) )
-      CALL check( nf90_close(fncid) )
-      CALL check( nf90_close(cncid) )
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE init_netcdf
-c-----------------------------------------------------------------------
-c     subprogram 17. close_netcdf.
-c     Close the netcdf files used for module outputs.
-c-----------------------------------------------------------------------
-      SUBROUTINE close_netcdf
-c-----------------------------------------------------------------------
-c     close files
-c-----------------------------------------------------------------------
-      CALL check( nf90_close(mncid) )
-      CALL check( nf90_close(fncid) )
-      CALL check( nf90_close(cncid) )
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE close_netcdf
 
       END MODULE output_profile

@@ -29,7 +29,8 @@ c-----------------------------------------------------------------------
       USE output_cylindrical, only : xbrzphi, vsbrzphi, xbrzphifun,
      $    arzphifun
       USE output_profile, only : dw_profile, dw_matrix, pmodb,
-     $    xbnormal, vbnormal, xbtangent, xclebsch
+     $    xbnormal, vbnormal, xbtangent, xclebsch,
+     $    output_profile_ascii, output_profile_netcdf
 
       IMPLICIT NONE
 
@@ -468,6 +469,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
 c-----------------------------------------------------------------------
+      ! control surface quantities
       IF (data_flag.OR.harmonic_flag.OR.coil_flag)THEN
          edge_flag=.TRUE.
          CALL control(infile,finmn,foutmn,xspmn,power_rin,
@@ -486,6 +488,8 @@ c-----------------------------------------------------------------------
          CALL vsingfld(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out)
       ENDIF
+
+      ! profile quantities
       IF (xclebsch_flag) THEN
          CALL xclebsch(mode,xspmn)
       ENDIF
@@ -509,6 +513,10 @@ c-----------------------------------------------------------------------
          CALL vbnormal(power_rout,power_bpout,power_bout,
      $        power_rcout,tmag_out)
       ENDIF
+      CALL output_profile_ascii
+      CALL output_profile_netcdf
+
+      ! quantities on cylindrical coordinate grid
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag) THEN
          IF (.NOT.mode_flag) THEN
