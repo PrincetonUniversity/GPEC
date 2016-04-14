@@ -1,7 +1,7 @@
 GPEC DIII-D Example
 ====================
 
-This example uses a baseline H-mode Error Field Correction (EFC) plasma from a n=1 EFC study done in 2013. The equilibrium used is a kinetic EFIT from DIII-D shot 147131 at 2300ms, and the profiles are self consistent with the equilibrium. Pre-GPEC results using a combination of IPEC and PENT for this calculation are published in `[C. Paz-Soldan, M. J. Lanctot, N. C. Logan, et al., Phys. Plasmas 21, 072503 (2014).] <http://scitation.aip.org/content/aip/journal/pop/21/7/10.1063/1.4886795>`_.
+This example uses a baseline H-mode Error Field Correction (EFC) plasma from a n=1 EFC study done in 2013. The equilibrium used is a kinetic EFIT from DIII-D shot 147131 at 2300ms, and the profiles are self consistent with the equilibrium. Pre-GPEC results using a combination of GPEC and PENT for this calculation are published in `[C. Paz-Soldan, M. J. Lanctot, N. C. Logan, et al., Phys. Plasmas 21, 072503 (2014).] <http://scitation.aip.org/content/aip/journal/pop/21/7/10.1063/1.4886795>`_.
 
 Note that the coil and pentrc input namelists use relative paths to the package's data files. If you would like to run the example in a different location, you must change the input appropriately.
 
@@ -40,11 +40,11 @@ Following a typical workflow we first cd to the example's directory, then run DC
 From the positive total energy, we see that the plasma is reasonably stable for n=1 perturbations. Totals are often of this order 1e0-1e-2, while numbers of order 1e-3 or smaller might be considered approching instability and require some investigation. It is
 always a good idea to check any solution, using xdraw or just skimming dcon.out.
 
-Satisfied with the DCON result, we run IPEC::
+Satisfied with the DCON result, we run GPEC::
 
-  ipec
+  gpec
    
-   IPEC START => GPEC version 0.1.0
+   GPEC START => GPEC version 0.1.0
    __________________________________________
    Reading dcon eigenfuctions
    Counting and reading dcon solutions
@@ -109,11 +109,11 @@ Satisfied with the DCON result, we run IPEC::
    volume =  80% Clebsch decomposition
    volume =  90% Clebsch decomposition
    volume = 100% Clebsch decomposition
-   Total cpu time for IPEC =  27  seconds
-   IPEC STOP => Normal termination.
+   Total cpu time for GPEC =  27  seconds
+   GPEC STOP => Normal termination.
 
 
-Here we see the plasma has a single mode permeability ~8, meaning that the application of the first permeability eigenmode on the plasma control surface would result in a total flux (external + plasma response) 8 times the applied mode. The full permeability eigenmode and eigevector information can be found in ipec_response_n1.out. We also see a preview of the resonant field information, a more detailed collection of which is in ipec_singfld_n1.out. Finally, we have told IPEC to calculate and output the clebsch coordinate displacments in ipec_xclebsch_n1.out. This becomes an input for PENT.
+Here we see the plasma has a single mode permeability ~8, meaning that the application of the first permeability eigenmode on the plasma control surface would result in a total flux (external + plasma response) 8 times the applied mode. The full permeability eigenmode and eigevector information can be found in gpec_response_n1.out. We also see a preview of the resonant field information, a more detailed collection of which is in gpec_singfld_n1.out. Finally, we have told GPEC to calculate and output the clebsch coordinate displacments in gpec_xclebsch_n1.out. This becomes an input for PENT.
 
 Finally, we run PENT::
 
@@ -134,7 +134,7 @@ Finally, we run PENT::
    Reading table from file: 
      g147131.02300_DIIID_KEFIT.kin
    Reading table from file: 
-     ipec_xclebsch_n1.out
+     gpec_xclebsch_n1.out
      -> WARNING: Assuming DCON hamada coordinates
      -> calculating deltaB/B, divxi_prp
      |----------|   0% iterations complete

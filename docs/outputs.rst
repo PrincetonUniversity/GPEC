@@ -4,46 +4,46 @@ Outputs and Post-Processing
 Output Files
 ============
 
-The IPEC outputs are entirely specified by flags (bool types t or f) set in the IPEC_output section of IPEC.in. All outputs are ASCII files, and can be grouped into two major categories.
+The GPEC outputs are entirely specified by flags (bool types t or f) set in the GPEC_output section of GPEC.in. All outputs are ASCII files, and can be grouped into two major categories.
 
 ASCII File Outputs
 ------------------
 
-A number of the flag options in IPEC.in instruct IPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.
+A number of the flag options in GPEC.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.
 
 Outputs Always Available
 
-These IPEC outputs can always be obtained from a equil.bin file output from DCON. 
+These GPEC outputs can always be obtained from a equil.bin file output from DCON.
 
-IPEC_response_n#.out
+GPEC_response_n#.out
 
     **Flag** resp_flag
 
     **Info** Energy for DCON eigenmodes and stability indices. Eigenvalues and eigenvectors for vacuum and plasma inductance (virtual casing currents to fields), plasma permeability (external fields to total fields), and plasma reluctance.
 
-IPEC_singcoup_matrix_n#.out
+GPEC_singcoup_matrix_n#.out
 
     **Flag** singcoup_flag
 
     **Info** The coupling matrix to resonant fields, coupling matrix to singular currents, and to island half-widths is given for each rational surface within the plasma (q=2, 3, etc) for each surface the real and imaginary coupling constants are given for each poloidal mode number on the control surface.
 
-IPEC_singcoup_svd_n#.out
+GPEC_singcoup_svd_n#.out
 
     **Flag** singcoup_flag
 
-    **Info** The SVD singular values (s) and eigen vectors for each coupling matrix in IPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.
+    **Info** The SVD singular values (s) and eigen vectors for each coupling matrix in GPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.
 
 Outputs Available When Error Field is Provided
 
-These outputs are only available when an external error field file is provided as an input to IPEC. This means IPEC.in must have the data_flag turned on and a infile specified.
+These outputs are only available when an external error field file is provided as an input to GPEC. This means GPEC.in must have the data_flag turned on and a infile specified.
 
-IPEC_control_n#.out
+GPEC_control_n#.out
 
     **Flag** 
 
     **Info** The Plasma response for an external perturbation on the control surface. This includes the vacuum energy, surface energy, plasma energy, real and imaginary vacuum input \mathbf{B}_{in} and total field on plasma boundary\mathbf{B}_{out}as a function of poloidal mode number.
 
-IPEC_singfld_n#.out
+GPEC_singfld_n#.out
 
     **Flag** singfld_flag
 
@@ -53,21 +53,21 @@ IPEC_singfld_n#.out
 
     **Info** Additional section showing the overlap field and overlap percentage for each eigenmode in the singcoup_svd output.
 
-IPEC_pmod_n#.out
+GPEC_pmod_n#.out
 
     **Flag** pmodb_flag
 
     **Info** Eulerian and Lagrangian \left|\mathbf{B}\right|(real and imaginary) for each poloidal mode number at each value of \Psi_{N} output. This output is necessary for NTV post processing.
 
-IPEC_xbnormal_n#.out
+GPEC_xbnormal_n#.out
 
     **Flag** xbnormal_flag
 
     **Info** The normal components of the displacement, magnetic field without the plasma response, and magnetic field with the plasma response included for each poloidal mode number at each value of \Psi_{N} output.??
 
-IPEC_*rzphi_n#.out
+GPEC_*rzphi_n#.out
 
-A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a IPEC_xrzphi_n1.out file. some common properties of these files are:
+A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a GPEC_xrzphi_n1.out file. some common properties of these files are:
 
 • real and imaginary components: Output files contain two dimensional data on an \left(r,z\right) grid for a single toroidal harmonic. To translate into three dimensions, perform the transformationB\left(r,z,\phi\right)=B_{real}\left(r,z\right)\cos\left(n\phi\right)+B_{imag}\left(r,z\right)\sin\left(n\phi\right)
  
@@ -88,7 +88,7 @@ A number of output files have a similar structure. Here the * in the file name i
 
     **Flag** vbrzphi_flag
 
-    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the IPEC boundary surface current composed of both the vacuum component and the plasma response.
+    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current composed of both the vacuum component and the plasma response.
 
     **Flag** vpbrzphi_flag
 
@@ -96,11 +96,11 @@ A number of output files have a similar structure. Here the * in the file name i
 
     **Flag** vvbrzphi_flag
 
-    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the IPEC boundary surface current from the external fields alone.
+    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current from the external fields alone.
 
     **Flag** ssbrzphi_flag
 
-    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the IPEC boundary surface current from the external fields alone.
+    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current from the external fields alone.
 
 Binary File Outputs
 -------------------
@@ -134,13 +134,13 @@ bnormal_spectrum.bin
 xdraw
 =====
 
-The binary IPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by IPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.
+The binary GPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by GPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.
 
 IDL NTV Post Processing
 =======================
 
 The calculation of neoclassical toroidal viscosity (NTV) requires knowledge of many plasma properties. These the 3D magnetic field within the plasma \delta B
-  given by IPEC, as well as external variables such as pressure profiles, velocity profiles, and more that are not included in IPEC itself. To calculate an estimate of the NTV torque it is necessary to specify additional profile information with either measured data or analytical formulae. Either way, it should be emphasized that the calculation is a post-processing of IPEC data that is not self consistent with the IPEC solution. This is a reasonable estimate as long as the torque is not great enough to significantly effect the equilibrium.
+  given by GPEC, as well as external variables such as pressure profiles, velocity profiles, and more that are not included in GPEC itself. To calculate an estimate of the NTV torque it is necessary to specify additional profile information with either measured data or analytical formulae. Either way, it should be emphasized that the calculation is a post-processing of GPEC data that is not self consistent with the GPEC solution. This is a reasonable estimate as long as the torque is not great enough to significantly effect the equilibrium.
 
 A review of the NTV calculation and definitions of the involved variables can be found in Ref. [Park, 2009]. For the detailed mathematics, although important, are not the subject of this manual. The important highlights for the user to keep in mind are the following: 
 
@@ -162,9 +162,9 @@ A review of the NTV calculation and definitions of the involved variables can be
 Run Instructions
 ----------------
 
-The first step in an NTV calculation for any given shot is to run the corresponding IPEC calculation. The output files necessary are the control, singfld, and pmodb, files. These should use the functional outputs. 
+The first step in an NTV calculation for any given shot is to run the corresponding GPEC calculation. The output files necessary are the control, singfld, and pmodb, files. These should use the functional outputs.
 
-Having obtained the required output files, the user should enter the IDL environment and run one of the two NTV routines. These routines are 'total_energy_torque.pro' and 'simple_energy_torque.pro'. The first requires full experimental data and should be initialized in the package script found at '/u/jpark/analysis/lib/init_routines_jkp.idl', while the second defines analytic profiles for the necessary variables in order to calculate results from IPEC outputs and can be used on its own. 
+Having obtained the required output files, the user should enter the IDL environment and run one of the two NTV routines. These routines are 'total_energy_torque.pro' and 'simple_energy_torque.pro'. The first requires full experimental data and should be initialized in the package script found at '/u/jpark/analysis/lib/init_routines_jkp.idl', while the second defines analytic profiles for the necessary variables in order to calculate results from GPEC outputs and can be used on its own.
 
 An example of the run process within the IDL environment is shown here::
 
@@ -172,7 +172,7 @@ An example of the run process within the IDL environment is shown here::
   IDL> gfile='g145117.03600_d3d_kinetic' ;efit equilibrium
   IDL> kdir = 'samplepath' ;directory of GA kinetic file 
   IDL> path1 = 'samplepath' ;directory of equilibrium file
-  IDL> path2 = 'samplepath' ;directory of IPEC outputs 
+  IDL> path2 = 'samplepath' ;directory of GPEC outputs
   IDL> numstr = '145117.03600'	;shot.time
   IDL> t = total_energy_torque(nn=3,/adata,/atime, kdir=kdir,gfile=gfile,/diamag,/magpre,/counter,path1=path1,path2=path2,nl=8,numstr=numstr)
 

@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c     !! SELECT ROUTINES FROM GENERALIZED PERTURBED EQUILIBRIUM CODE !!
 c     Subroutines by Jong-Kyu Park for interfacing with DCON outputs.
 c     For the majority, these are identical to counterparts in the
-c     IPEC idcon module. There are a few additions from ipeq and ismath
+c     GPEC idcon module. There are a few additions from ipeq and ismath
 c     modules.
 c     Major changes are:
 c     - psixy=1 IF statement that optionally read psi_in.bin removed (no ieqfile)

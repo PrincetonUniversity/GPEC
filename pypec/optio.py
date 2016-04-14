@@ -1,10 +1,10 @@
 #!/usr/local/env python
 """
-:mod:`pypec.optio` -- Interfacing Tools for IPECOPT
+:mod:`pypec.optio` -- Interfacing Tools for GPECOPT
 ===================================================
 
 The optio module is a specialized tool for manipulating data 
-from IPEC standard ascii output files into IPECOPT standard input files.
+from GPEC standard ascii output files into GPECOPT standard input files.
 
 Here, we show some examples using common workflows.
 
@@ -12,10 +12,10 @@ Here, we show some examples using common workflows.
 Examples
 ---------
 
-First, the user is expected to run DCON and IPEC for the equilibrium of interest.
+First, the user is expected to run DCON and GPEC for the equilibrium of interest.
 The applied surface perturbation is of no consequence in this run, as it will
-be varied according to the IPECOPT optimizer. The important thing is to have
-set the singcoup_flag true. This produces the ipec_singcoup_svd_n#.out output file.
+be varied according to the GPECOPT optimizer. The important thing is to have
+set the singcoup_flag true. This produces the gpec_singcoup_svd_n#.out output file.
 
 Assuming nn=1 in the dcon.in namelist:
 
@@ -60,17 +60,17 @@ default_quiet = False
 
 ######################################################## IO FOR DATA OBJECTs
 
-def svd_transform(ipec_file,opt_file,phi=False,nperp=np.inf,
+def svd_transform(gpec_file,opt_file,phi=False,nperp=np.inf,
                   mlow=-np.inf,mhigh=np.inf,quiet=default_quiet):
     """
-    Transform IPEC singcoup output file to form usable as IPECOPT
+    Transform GPEC singcoup output file to form usable as GPECOPT
     input.
 
     **Arguments:**
-        ipec_file : str.
-            IPEC output file.
+        gpec_file : str.
+            GPEC output file.
         opt_file : str.
-            File writen for use in IPECOPT.
+            File writen for use in GPECOPT.
 
     **Key Word Arguments:**
         phi : bool.
@@ -84,7 +84,7 @@ def svd_transform(ipec_file,opt_file,phi=False,nperp=np.inf,
 
     """
     # read data
-    allsvd = data.read(ipec_file,quiet=quiet)
+    allsvd = data.read(gpec_file,quiet=quiet)
     svd = allsvd[0]
     nperp = int(min(nperp,svd.params['msing']))
     mpert = int(svd.params['mpert'])
@@ -127,7 +127,7 @@ def svd_transform(ipec_file,opt_file,phi=False,nperp=np.inf,
 
 def eigenvectors(opt_file,ms=range(-30,30),ortho=None,phi=False,**kwargs):
     """
-    Write simple IPECOPT eigenvector file corresponding to 
+    Write simple GPECOPT eigenvector file corresponding to
     unit m vectors. If ortho vector supplied, the eigenvectors
     are perpendicular components using 
     v_prp = v_m-|v_m dot ortho_m| ortho_m/|ortho_m|.

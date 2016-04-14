@@ -8,7 +8,7 @@ COIL_CONTROL
   This should be identical to the eq_type specified in equil.in
 
 **machine** = "d3d"
-  As of IPEC 3.00 supported machines include 'nstx', 'd3d', 'kstar', and 'iter'.
+  As of GPEC 3.00 supported machines include 'nstx', 'd3d', 'kstar', and 'iter'.
 
 **ip_direction** = "positive"
   Set as 'positive' (default) or 'negative' for CCW or CW from a top down view respectively.
@@ -29,7 +29,7 @@ COIL_CONTROL
 
 
 **coil_name(1)** = "iu"
-  Array values should be specified for each of the coil arrays to be activated. For example "coil_name(1) = c". The supported coil sets (and number of coils in each) as of IPEC 3.00 include,  - for nstx: "rwmef" (6), "tfef" (12), "pf5ef" (2), "ppu" (12), "ppl" (12), "psu" (12), "psl" (12), "vpu" (12), "vpl" (12), "vsu" (12), "vsl" (12), "hhfw" (24)  - for d3d: "iu" (6), "il" (6), "c" (6), "tbm_solenoid" (1), "tbm_racetrack" (1)  - for kstar: "fecu" (4), "fecm" (4), "fecl" (4)  -  for iter: "efcu" (6), "efcm" (6), "efcl" (6), "bl2u" (9), "bl2m" (9), "bl2l" (9), "avvu" (9), "avvm" (9), "avvl" (9)
+  Array values should be specified for each of the coil arrays to be activated. For example "coil_name(1) = c". The supported coil sets (and number of coils in each) as of GPEC 3.00 include,  - for nstx: "rwmef" (6), "tfef" (12), "pf5ef" (2), "ppu" (12), "ppl" (12), "psu" (12), "psl" (12), "vpu" (12), "vpl" (12), "vsu" (12), "vsl" (12), "hhfw" (24)  - for d3d: "iu" (6), "il" (6), "c" (6), "tbm_solenoid" (1), "tbm_racetrack" (1)  - for kstar: "fecu" (4), "fecm" (4), "fecl" (4)  -  for iter: "efcu" (6), "efcm" (6), "efcl" (6), "bl2u" (9), "bl2m" (9), "bl2l" (9), "avvu" (9), "avvm" (9), "avvl" (9)
 
 **coil_cur(1,1)** = 2178.0
   Array of Ampere coil current for the nc-th coil in the set corresponding to coil_name(nc) (default  = 0).
@@ -96,7 +96,7 @@ COIL_CONTROL
 COIL_OUTPUT
 ===========
 
-**ipec_interface** = .TRUE.
+**gpec_interface** = .TRUE.
 
 
 

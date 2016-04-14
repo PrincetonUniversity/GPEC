@@ -9,7 +9,7 @@ GPEC data is migrating to netcdf, and this module uses the xarray module for its
 
 Previous GPEC results and some current outputs are still writen to ascii. This module contains a custom I/O for converting ascii data to python objects. A custom Data object was created for this purpose, and conversion to the xarray Dataset is automated in the open_dataset function to facilitate migration to netcdf. The only requirement for creating a data object from an ascii file is that the file have one or more tables of data, with appropriate labels in a header line directly above the data.
 
-Here, we show some examples using common outputs from both IPEC and PENT.
+Here, we show some examples using common outputs from both GPEC and PENT.
 
 Beginners
 ---------
@@ -24,7 +24,7 @@ Explore the data module by typing 'data.' and hitting tab. For information on an
 
 Lets use it! To get a typical GPEC output into python, use the open_dataset function.
 
->>> con = data.open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
+>>> con = data.open_dataset('examples/DIIID_ideal_example/gpec_control_output_n1.nc')
 
 Printing to the terminal is intelegent, giving a conviniently human readable summary of the data.
 
@@ -87,7 +87,7 @@ Data variables:
     z_n            (theta) float64 0.003568 0.03241 0.06134 0.09036 0.1195 ...
     dphi           (theta) float64 0.0 -0.039 -0.078 -0.117 -0.1559 -0.1948 ...
 Attributes:
-    title: IPEC outputs in Fourier or alternate modal bases
+    title: GPEC outputs in Fourier or alternate modal bases
     Jacobian: pest
     q_lim: 5.2
     psi_n_lim: 0.991536136179
@@ -129,7 +129,7 @@ inevitably need tweaking.
 
 For a common example of more customized plots, lets look at some 2d data
 
->>> cyl = data.open_dataset('examples/DIIID_ideal_example/ipec_cylindrical_output_n1.nc')
+>>> cyl = data.open_dataset('examples/DIIID_ideal_example/gpec_cylindrical_output_n1.nc')
 
 We could use the built in plotting methods like ds['b_z'].plot), but these are (R,z) figures
 should be done with a little care to look right. Lets look at b_z for example,
@@ -155,7 +155,7 @@ There we go. That looks publication ready!
 Another common plot of GPEC outputs is the (psi,m) spectrogram plot. Lets quickly make a
 nice one,
 
->>> prof = data.open_dataset('examples/DIIID_ideal_example/ipec_profile_output_n1.nc')
+>>> prof = data.open_dataset('examples/DIIID_ideal_example/gpec_profile_output_n1.nc')
 >>> f,ax = plt.subplots()
 >>> extent = [prof['m'].min(),prof['m'].max(),prof['psi_n'].min(),prof['psi_n'].max()]
 >>> im = ax.imshow(np.abs(prof['xi_m_contrapsi']).T,origin='lower',cmap='viridis',
@@ -310,7 +310,7 @@ Note that the interpolator initialized the interpolation function on the first c
 One common need is to look at spectra. For this we want to utilize
 the full functionality of the data instances' plot1d function.
 
->>> xc, = read('examples/DIIID_ideal_example/ipec_xclebsch_n1.out')
+>>> xc, = read('examples/DIIID_ideal_example/gpec_xclebsch_n1.out')
 Casting table 1 into Data object.
 >>> f = xc.plot1d('xi^psi','psi',x2rng=(1,3))
 >>> f.savefig('examples/figures/example_spectrum.png')
@@ -471,12 +471,12 @@ open_dataset.__doc__+= xarray.open_dataset.__doc__
 def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
          auto_complex=True,quiet=default_quiet):
     """
-    Get the data from any ipec output as a list of python 
+    Get the data from any gpec output as a list of python
     class-type objects using numpy.genfromtxt.
 
     Arguments
       fname      : str. 
-        Path of ipec output file.
+        Path of gpec output file.
     
     Key Word Arguments:
       squeeze : bool. 
@@ -791,7 +791,7 @@ def plotall(results,xfun,yfun,label='',axes=None,**kwargs):
     return f
 
 
-######################################################## THE BASE IPEC DATA OBJECTS
+######################################################## THE BASE GPEC DATA OBJECTS
 
 class DataBase(object):
     """
@@ -1363,12 +1363,12 @@ class DataBase(object):
           
         *Example:*
         
-        xb, = data.read('examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
+        xb, = data.read('examples/DIIID_ideal_example/gpec_xbnormal_fun_n1.out',forcex=['r','z'])
         xb.plot3d('bno')
         
-        ..note: I think what we usually want out of IPEC is
+        ..note: I think what we usually want out of GPEC is
         the 3D surface perturbation. If we run with fun_flag
-        xn, = data.read('ipec_xbnormal_fun_n2.out')
+        xn, = data.read('gpec_xbnormal_fun_n2.out')
         psi = 1.0
         n = 2
         fltr= xb.y['psi']==xb.y['psi'][np.abs(xb.y['psi']-psi).argmin()]
@@ -1781,10 +1781,10 @@ def getshot(path='.',full_name=False):
 
 def add_control_geometry(ds, phi_lim=2*np.pi, overwrite=False):
     """
-    Add geometric dimensions to dataset from ipec_control_output_n#.nc.
+    Add geometric dimensions to dataset from gpec_control_output_n#.nc.
 
     Args:
-        ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
+        ds: Dataset. xarray Dataset opened from gpec_control_output_n#.nc
         phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
         overwrite: bool. Overwrite geometric quantities if they already exist.
 
@@ -1795,7 +1795,7 @@ def add_control_geometry(ds, phi_lim=2*np.pi, overwrite=False):
 
     After opening, and adding geometry,
 
-    >>> ds = open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
+    >>> ds = open_dataset('examples/DIIID_ideal_example/gpec_control_output_n1.nc')
     >>> ds = add_control_geometry(ds)
     
     it is easy to make 3D surface plots using mayavi,
@@ -1982,12 +1982,12 @@ def _plot3d_dev(self,ynames=None,filter={'psi':1},cbar=False,plot_type='',**kwar
       
     *Example:*
     
-    xb, = data.read('examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
+    xb, = data.read('examples/DIIID_ideal_example/gpec_xbnormal_fun_n1.out',forcex=['r','z'])
     xb.plot3d('bno')
     
-    ..note: I think what we usually want out of IPEC is
+    ..note: I think what we usually want out of GPEC is
     the 3D surface perturbation. If we run with fun_flag
-    xn, = data.read('ipec_xbnormal_fun_n2.out')
+    xn, = data.read('gpec_xbnormal_fun_n2.out')
     psi = 1.0
     n = 2
     fltr= xb.y['psi']==xb.y['psi'][np.abs(xb.y['psi']-psi).argmin()]

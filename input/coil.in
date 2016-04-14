@@ -8,8 +8,8 @@
     coil_num=2                  ! Total number of coil sets activated
 
     cmpsi=64                    ! Number of psi_n grid points in vacuum field outputs
-    cmtheta=480                 ! Number of poloidal grid-points. Uses IPEC jac_type.
-    cmzeta=40                   ! Number of toroidal grid-points. Uses IPEC jac_type.
+    cmtheta=480                 ! Number of poloidal grid-points. Uses GPEC jac_type.
+    cmzeta=40                   ! Number of toroidal grid-points. Uses GPEC jac_type.
 
 ! Array values should be specified for each of the coil arrays to be activated.
 ! The supported coil sets (number of coils) include...
@@ -38,5 +38,5 @@
 
 /
 &COIL_OUTPUT
-    ipec_interface=t             ! Provides external field to GPEC
+    gpec_interface=t             ! Provides external field to GPEC
 /

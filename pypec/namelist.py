@@ -15,22 +15,22 @@ parameter is thus stored two levels deep in the dictionary.
 
 >>> nl=read('examples/example_namelist.in')
 >>> nl.keys()
-['IPEC_INPUT', 'IPEC_CONTROL', 'IPEC_OUTPUT', 'IPEC_DIAGNOSE']
->>> nl['IPEC_CONTROL'].keys()
+['GPEC_INPUT', 'GPEC_CONTROL', 'GPEC_OUTPUT', 'GPEC_DIAGNOSE']
+>>> nl['GPEC_CONTROL'].keys()
 ['resp_index', 'sing_spot', 'reg_flag', 'reg_spot', 'chebyshev_flag', 'nche']
->>> nl['IPEC_CONTROL']['reg_spot']
+>>> nl['GPEC_CONTROL']['reg_spot']
 0.05
 
 The parameters can be changed, added, or deleted as in any python
 dictionary.
 
->>> nl['IPEC_CONTROL']['reg_spot'] = 0.01
->>> nl['IPEC_CONTROL']['reg_spot']
+>>> nl['GPEC_CONTROL']['reg_spot'] = 0.01
+>>> nl['GPEC_CONTROL']['reg_spot']
 0.01
->>> del nl['IPEC_CONTROL']['nche']
->>> nl['IPEC_CONTROL'].keys()
+>>> del nl['GPEC_CONTROL']['nche']
+>>> nl['GPEC_CONTROL'].keys()
 ['resp_index', 'sing_spot', 'reg_flag', 'reg_spot', 'chebyshev_flag']
->>> nl['IPEC_CONTROL']['nche'] = 30     
+>>> nl['GPEC_CONTROL']['nche'] = 30
 
 The resulting namelists can then be re-written in ASCII format
 for use with the FORTAN codes.
@@ -47,7 +47,7 @@ True
 
 """
 """
-    @package ipec
+    @package gpec
     @author NC Logan
     @email nlogan@pppl.gov
 """

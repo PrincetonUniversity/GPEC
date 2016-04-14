@@ -60,4 +60,4 @@ output_cylindrical.o: gpec_global.o gpec_math.o peq.o dcon_interface.o vacuum_in
 gpec.o: gpec_global.o response.o peq.o dcon_interface.o rdcon_interface.o diagnostics.o output_control.o output_cylindrical.o output_profile.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin ipec
+	rm -f *.o *.mod *.out *.bin gpec

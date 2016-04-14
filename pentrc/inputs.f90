@@ -4,7 +4,7 @@ module inputs
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Input interface for PENTRC. Includes DCON interface developed by
-    !   J.-K. Park in IPEC package, as well as ascii interfaces for
+    !   J.-K. Park in GPEC package, as well as ascii interfaces for
     !   kinetic profiles and perturbed equilibrium files.
     !
     !*PUBLIC MEMBER FUNCTIONS:
@@ -588,7 +588,7 @@ module inputs
         open(unit=in_unit,file=file,status="old",position="rewind",form="unformatted")
         read(in_unit) ms,mp
         if((ms .ne. mstep) .or. (mp .ne. mpert)) then
-            stop "ERROR: inputs - IPEC perturbations don't match equilibrium"
+            stop "ERROR: inputs - GPEC perturbations don't match equilibrium"
         endif
         read(in_unit)lagbpar
         read(in_unit)divxprp

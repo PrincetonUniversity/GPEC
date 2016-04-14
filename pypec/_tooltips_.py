@@ -36,7 +36,7 @@ dcon = {
 "crossover" : ""
 }
 
-ipec = {
+gpec = {
 "jac_in" : 
 "Coordinate system of 3D field input.\n  Choose from hamada, pest, boozer, equal_arc or other",
 "power_rin" : 
@@ -68,7 +68,7 @@ ipec = {
 "harmonic_flag" :
 "If true Tesla amplitudes must be assigned to variables cosmn(int) and sinmn(int), where int is the applied 3D field m  harmonic on the plasma surface. The toroidal mode number of the applied field is set by the DCON mode being analyzed." ,
 "fixed_boundary_flag" : 
-"Sets the plasma boundary as defined in the equilibrium input file fixed in all IPEC calculations.",
+"Sets the plasma boundary as defined in the equilibrium input file fixed in all GPEC calculations.",
 "displacement_flag" : 
 "Take all boundary inputs as normal displacements rather than magnetic fields",
 
@@ -82,7 +82,7 @@ ipec = {
 "Number of coefficients used in the chebyshev polynomials (typicaly ~30).",
 
 "jac_out" : 
-"Coordinates of IPEC output files.\n  Choose from hamada, pest, boozer, equal_arc or other",
+"Coordinates of GPEC output files.\n  Choose from hamada, pest, boozer, equal_arc or other",
 
 "jsurf_out" :
 "Set to 1 for a surface weighted spectrum b_{mn}=\oint\left(\delta\mathbf{B}\cdot\hat{n}\right)\left(\theta,\phi\right)e^{-i\left(m\theta-n\phi\right)}J\cdot|\\nabla\psi|d\theta d\phi (an invariant flux on rational surfaces). Set to 0 for unweighted spectrum b_{mn}=\oint\left(\delta\mathbf{B}\cdot\hat{n}\right)\left(\theta,\phi\right)e^{-i\left(m\theta-n\phi\right)}d\theta d\phi. ",
@@ -109,7 +109,7 @@ ipec = {
 "Output binary files containing 2D contours for use with the xdraw command  when appropriate.",
 
 "resp_flag" :
-"Output ipec_response_n#.out file.",
+"Output gpec_response_n#.out file.",
 
 "singfld_flag" :
 "Output the q, \Psi_{N}, resonant \mathbf{B}, singular current, island width and Chirikov parameter at rational surfaces inside the plasma, including the plasma response.",
@@ -130,16 +130,16 @@ ipec = {
 "Output the original equilibrium field on a (r,z,\phi) grid.",
 
 "brzphi_flag" :
-"Output the (r,z,\phi) components of the perturbed magnetic fields everywhere on the (r,z,\phi) grid.\n  - IPEC 1 only outputs perturbed magnetic fields valid inside the plasma on the (r,z,\phi) grid.\n  - IPEC 2.0 and later includes the plasma response and vacuum fields when the coil_flag is the vacuum input.",
+"Output the (r,z,\phi) components of the perturbed magnetic fields everywhere on the (r,z,\phi) grid.\n  - GPEC 1 only outputs perturbed magnetic fields valid inside the plasma on the (r,z,\phi) grid.\n  - GPEC 2.0 and later includes the plasma response and vacuum fields when the coil_flag is the vacuum input.",
 
 "xrzphi_flag" :
 "Output the plasma displacement on a (r,z,\phi) grid.",
 
 "vbrzphi_flag" :
-"Output the field due to the surface current defining the IPEC final solution boundary condition at the plasma surface (original external field boundary condition and plasma response) on an r,z grid. This does not represent a true field.",
+"Output the field due to the surface current defining the GPEC final solution boundary condition at the plasma surface (original external field boundary condition and plasma response) on an r,z grid. This does not represent a true field.",
 
 "vpbrzphi_flag" :
-"OBSOLETE.\n  - For IPEC 1. this output the plasma response field in the vacuum region on a (r,z,\phi) grid.",
+"OBSOLETE.\n  - For GPEC 1. this output the plasma response field in the vacuum region on a (r,z,\phi) grid.",
 
 "vvbrzphi_flag" :
 "Outputs the field due to the surface current defining the external 3D field boundary condition on a (r,z,\phi) grid. This field does not represent a true field.",
@@ -153,7 +153,7 @@ coil = {
 "ceq_type" :
 "This should be identical to the eq_type specified in equil.in",
 "machine" :
-"As of IPEC 3.00 supported machines include 'nstx', 'd3d', 'kstar', and 'iter'.",
+"As of GPEC 3.00 supported machines include 'nstx', 'd3d', 'kstar', and 'iter'.",
 "ip_direction" :
 "Set as 'positive' (default) or 'negative' for CCW or CW from a top down view respectively.",
 'bt_direction' :
@@ -161,16 +161,16 @@ coil = {
 'coil_num' :
 'Total number of coil sets to be activated.',
 'coil_name(1)' :
-'Array values should be specified for each of the coil arrays to be activated. For example "coil_name(1) = c". The supported coil sets (and number of coils in each) as of IPEC 3.00 include,\n  - for nstx: "rwmef" (6), "tfef" (12), "pf5ef" (2), "ppu" (12), "ppl" (12), "psu" (12), "psl" (12), "vpu" (12), "vpl" (12), "vsu" (12), "vsl" (12), "hhfw" (24)\n  - for d3d: "iu" (6), "il" (6), "c" (6), "tbm_solenoid" (1), "tbm_racetrack" (1)\n  - for kstar: "fecu" (4), "fecm" (4), "fecl" (4)\n  -  for iter: "efcu" (6), "efcm" (6), "efcl" (6), "bl2u" (9), "bl2m" (9), "bl2l" (9), "avvu" (9), "avvm" (9), "avvl" (9)',
+'Array values should be specified for each of the coil arrays to be activated. For example "coil_name(1) = c". The supported coil sets (and number of coils in each) as of GPEC 3.00 include,\n  - for nstx: "rwmef" (6), "tfef" (12), "pf5ef" (2), "ppu" (12), "ppl" (12), "psu" (12), "psl" (12), "vpu" (12), "vpl" (12), "vsu" (12), "vsl" (12), "hhfw" (24)\n  - for d3d: "iu" (6), "il" (6), "c" (6), "tbm_solenoid" (1), "tbm_racetrack" (1)\n  - for kstar: "fecu" (4), "fecm" (4), "fecl" (4)\n  -  for iter: "efcu" (6), "efcm" (6), "efcl" (6), "bl2u" (9), "bl2m" (9), "bl2l" (9), "avvu" (9), "avvm" (9), "avvl" (9)',
 "coil_cur(1,1)" :
 "Array of Ampere coil current for the nc-th coil in the set corresponding to coil_name(nc) (default  = 0).",
 }
 
 pent = {
 "kinetic_file" : "1 header line followed by column data \nfor psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_E(rad/s).",
-"o1fun_file" : "IPEC output generated using ntv_flag or ascii B(psi,theta).",
-"o1mn_file" : "IPEC output generated using ntv_flag, or ascii B(m,n).",
-"o1native" : "o1fun_file and o1mn_file are IPEC output bin files.",
+"o1fun_file" : "GPEC output generated using ntv_flag or ascii B(psi,theta).",
+"o1mn_file" : "GPEC output generated using ntv_flag, or ascii B(m,n).",
+"o1native" : "o1fun_file and o1mn_file are GPEC output bin files.",
 "imass" : "Mass of main species in atomic mass units (0 for electrons).",
 "icharge" : "Charge of main species in elementry charge units.",
 "zimp" : "Charge of impurity species in elementry charge units.",
@@ -227,7 +227,7 @@ for k,v in equil.iteritems():
 	alltips[k] = v
 for k,v in dcon.iteritems():
 	alltips[k] = v
-for k,v in ipec.iteritems():
+for k,v in gpec.iteritems():
 	alltips[k] = v
 for k,v in coil.iteritems():
 	alltips[k] = v

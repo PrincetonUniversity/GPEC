@@ -1,7 +1,7 @@
-IPEC Namelist Inputs
+GPEC Namelist Inputs
 ********************
 
-IPEC_INPUT
+GPEC_INPUT
 ==========
 
 **jac_in** = "pest"
@@ -44,14 +44,14 @@ IPEC_INPUT
   Take all boundary inputs as normal displacements rather than magnetic fields
 
 **fixed_boundary_flag** = .FALSE.
-  Sets the plasma boundary as defined in the equilibrium input file fixed in all IPEC calculations.
+  Sets the plasma boundary as defined in the equilibrium input file fixed in all GPEC calculations.
 
 **coil_flag** = .TRUE.
 
 
 
 
-IPEC_CONTROL
+GPEC_CONTROL
 ============
 
 **resp_index** = 0
@@ -74,11 +74,11 @@ IPEC_CONTROL
 
 
 
-IPEC_OUTPUT
+GPEC_OUTPUT
 ===========
 
 **jac_out** = "hamada"
-  Coordinates of IPEC output files.  Choose from hamada, pest, boozer, equal_arc or other
+  Coordinates of GPEC output files.  Choose from hamada, pest, boozer, equal_arc or other
 
 **jsurf_out** = 0
   Set to 1 for a surface weighted spectrum b_{mn}=\oint\left(\delta\mathbf{B}\cdot\hat{n}\right)\left(\theta,\phi \right)e^{-i\left(m\theta-n\phi \right)}J\cdot|\nabla\psi|d\theta d\phi (an invariant flux on rational surfaces). Set to 0 for unweighted spectrum b_{mn}=\oint\left(\delta\mathbf{B}\cdot\hat{n} \right)\left(\theta,\phi \right)e^{-i\left(m\theta-n\phi \right)}d\theta d\phi.
@@ -87,7 +87,7 @@ IPEC_OUTPUT
   0 for ordinary toroidal angle. 1 for magnetic coordinate angle
 
 **resp_flag** = .FALSE.
-  Output ipec_response_n#.out file.
+  Output gpec_response_n#.out file.
 
 **singcoup_flag** = .FALSE.
 
@@ -117,13 +117,13 @@ IPEC_OUTPUT
   Output the original equilibrium field on a (r,z,\phi) grid.
 
 **brzphi_flag** = .FALSE.
-  Output the (r,z,\phi) components of the perturbed magnetic fields everywhere on the (r,z,\phi) grid.  - IPEC 1 only outputs perturbed magnetic fields valid inside the plasma on the (r,z,\phi) grid.  - IPEC 2.0 and later includes the plasma response and vacuum fields when the coil_flag is the vacuum input.
+  Output the (r,z,\phi) components of the perturbed magnetic fields everywhere on the (r,z,\phi) grid.  - GPEC 1 only outputs perturbed magnetic fields valid inside the plasma on the (r,z,\phi) grid.  - GPEC 2.0 and later includes the plasma response and vacuum fields when the coil_flag is the vacuum input.
 
 **xrzphi_flag** = .FALSE.
   Output the plasma displacement on a (r,z,\phi) grid.
 
 **vbrzphi_flag** = .FALSE.
-  Output the field due to the surface current defining the IPEC final solution boundary condition at the plasma surface (original external field boundary condition and plasma response) on an r,z grid. This does not represent a true field.
+  Output the field due to the surface current defining the GPEC final solution boundary condition at the plasma surface (original external field boundary condition and plasma response) on an r,z grid. This does not represent a true field.
 
 **vvbrzphi_flag** = .FALSE.
   Outputs the field due to the surface current defining the external 3D field boundary condition on a (r,z,\phi) grid. This field does not represent a true field.
@@ -154,7 +154,7 @@ IPEC_OUTPUT
 
 
 
-IPEC_DIAGNOSE
+GPEC_DIAGNOSE
 =============
 
 **div_flag** = .FALSE.

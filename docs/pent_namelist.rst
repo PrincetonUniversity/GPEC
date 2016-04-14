@@ -7,17 +7,17 @@ PENT_INPUT
 **kinetic_file** = "/p/gpec/users/nlogan/data/a10/kinetics/kinetic_a10_MARSbenchmark.dat"
   1 header line followed by column data for psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_E(rad/s).
 
-**o1fun_file** = "ipec_order1_fun_n1.bin"
-  IPEC output generated using ntv_flag or ascii B(psi,theta).
+**o1fun_file** = "gpec_order1_fun_n1.bin"
+  GPEC output generated using ntv_flag or ascii B(psi,theta).
 
-**o1mn_file** = "ipec_order1_n1.bin"
-  IPEC output generated using ntv_flag, or ascii B(m,n).
+**o1mn_file** = "gpec_order1_n1.bin"
+  GPEC output generated using ntv_flag, or ascii B(m,n).
 
 **idconfile** = "euler.bin"
 
 
 **o1native** = .TRUE.
-  o1fun_file and o1mn_file are IPEC output bin files.
+  o1fun_file and o1mn_file are GPEC output bin files.
 
 **imass** = 2
   Mass of main species in atomic mass units (0 for electrons).
