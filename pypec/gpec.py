@@ -152,7 +152,7 @@ def _newloc(loc):
 
 
 def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=False,
-        rundcon=True,runipec=True,runpentrc=True,fill_inputs=False,
+        rundcon=True,runipec=True,runpentrc=True,cleandcon=False,fill_inputs=False,
         mailon='ae',email='',mem=1e4,
         runpent=False,optpentrc=False,pent_tol=0,**kwargs):
     """
@@ -175,6 +175,8 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         Run ipec.
       runpentrc : bool.
         Run pentrc.
+      cleandcon : bool.
+        Remove euler.bin file after run is complete.
       fill_inputs : bool. 
         Use inputs from rundir (see kwargs).
       mailon   : str. 
@@ -282,6 +284,7 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         if runipec: exelist+=rundir+'/ipec \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
         if optpentrc: exelist+=rundir+'/OPENTRC \n'
+        if cleandcon: exelist+='rm euler.in \n'
         jobstr = bashjob.replace('jobnamehere',jobname)
         if mailon: jobstr = jobstr.replace('# --- emailoptionhere','#PBS -m '+mailon)
         if email:  jobstr = jobstr.replace('# --- emailhere','#PBS -M '+email)
@@ -307,6 +310,7 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         if runpentrc: os.system(rundir+'/pentrc')
         if optpentrc: os.system(rundir+'/OPENTRC')
         # clean up
+        if cleandcon: os.system('rm euler.bin')
         os.system('rm *.dat')
 
     return True
