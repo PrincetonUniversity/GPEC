@@ -621,6 +621,104 @@ module utilities
     end function  cpnorm
     
     !=======================================================================
+    function ri(c)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Return the real and imaginary components of a complex value as a tuple.
+    !
+    !*ARGUMENTS:
+    !    c : complex
+    !       Complex value.
+    !
+    !-----------------------------------------------------------------------
+        implicit  none
+        complex(r8), intent(in) :: c
+
+        real(r8), dimension(2) :: ri
+
+        ri = (/ REAL(c), AIMAG(c) /)
+    end function  ri
+
+    !=======================================================================
+    subroutine append_1d(list, element)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Append a 1D allocatable array.
+    !
+    !*ARGUMENTS:
+    !    list : real, allocatable
+    !       1D array to be appended.
+    !    element: real
+    !       Number appended to end of list.
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        ! declarations
+        integer :: i, isize
+        real(r8), intent(in) :: element
+        real(r8), dimension(:), allocatable, intent(inout) :: list
+        real(r8), dimension(:), allocatable :: tmp
+
+        if(allocated(list)) then
+            isize = size(list)
+            allocate(tmp(isize+1))
+            tmp(1:isize) = list(:)
+            tmp(isize+1) = element
+            deallocate(list)
+            !call move_alloc(tmp, list) ! fortran 2003 standard
+            allocate(list(isize+1))
+            list(:) = tmp(:)
+            deallocate(tmp)
+        else
+            allocate(list(1))
+            list(1) = element
+        end if
+
+      end subroutine append_1d
+
+    !=======================================================================
+    subroutine append_2d(list, elements)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Append a 2D allocatable array.
+    !
+    !*ARGUMENTS:
+    !    list : real, allocatable
+    !       2D array to be appended.
+    !    elements: real
+    !       1D array appended to 1st dimension of list.
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        ! declarations
+
+        integer :: isize,jsize
+        real(r8), intent(in) :: elements(:)
+        real(r8), dimension(:,:), allocatable, intent(inout) :: list
+        real(r8), dimension(:,:), allocatable :: tmp
+
+        if(allocated(list)) then
+            isize = size(list,dim=1)
+            jsize = size(list,dim=2)
+            if (isize /= size(elements,dim=1)) stop "Cannot append arrays without matched dimensions"
+            allocate(tmp(isize,jsize+1))
+            tmp(:,1:jsize) = list(:,:)
+            tmp(:,jsize+1) = elements(1:isize)
+            deallocate(list)
+            !call move_alloc(tmp, list) ! fortran 2003 standard
+            allocate(list(isize,jsize+1))
+            list(:,:) = tmp(:,:)
+            deallocate(tmp)
+        else
+            isize = size(elements,dim=1)
+            jsize = 1
+            allocate(list(isize,jsize))
+            list(:,1) = elements(1:isize)
+        end if
+
+      end subroutine append_2d
+
+    !=======================================================================
     subroutine iscdftf(m,ms,func,fs,funcm)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
