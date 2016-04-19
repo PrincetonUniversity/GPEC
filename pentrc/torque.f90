@@ -117,7 +117,7 @@ module torque
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,pi,twopi
-    use utilities, only : get_free_file_unit,median
+    use utilities, only : get_free_file_unit,median, append_2d, ri
     use special, only : ellipk,ellipe
     use grid, only : powspace,linspace
     ! use lsode_mod just a subroutine in the lsode directory...
@@ -145,6 +145,11 @@ module torque
     
     complex(r8), dimension(:,:,:), allocatable :: elems ! temperary variable
     TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
+    TYPE(cspline_type) :: trans ! nonambipolar transport and torque profile
+
+    integer :: nfluxfuns,nthetafuns
+    real(r8), dimension(:,:), allocatable :: fluxfuns, thetafuns
+    character(17), dimension(:), allocatable :: fluxfunlabels, thetafunlabels
 
     contains
     
@@ -205,7 +210,6 @@ module torque
         character(*) :: method
         complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: wtw
         ! declare local variables
-        logical :: fexists
         character(8) :: nstring,lstring
         character(32):: file
         integer :: i,j,k,s,ibmin,ibmax,out_unit,sigma,ilmda,iqty
@@ -339,32 +343,34 @@ module torque
         
         ! optional record of flux functions
         if(write_flux) then
-            if(tdebug) print *, "Writing to eqprofiles file"
-            ! open and prepare file as needed
-            out_unit = get_free_file_unit(-1)
-            write(lstring,'(I8)') l
-            write(nstring,'(I8)') n
-            file = "pentrc_"//trim(method)//"_eqprofiles.out"
-            inquire(file=trim(file),exist=fexists)
-            if(fexists) then
-                open(unit=out_unit,file=file,status="old",position="append")
-            else
-                open(unit=out_unit,file=file,status="new",action="write")
-                write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-                write(out_unit,*) " Equilibrium profiles."
-                write(out_unit,*) " - All energy dependent quantities are taken at E/T unity."
-                write(out_unit,'(1/,2(a10,es16.8E3))') "     Ze = ",zi*e,"   mass = ",mi*mp
-                write(out_unit,'(3(a10,es16.8E3))')"     R0 = ",ro,"     B0 = ",bo,"   chi1 = ",chi1
-                !write(out_unit,'(1/,a26,2(a10,es16.8E3),1/)') " Common normalizations:",&
-                !    "    bbar = ",ro/sqrt(2.0/(mi*mp)),"    dbar = ",zi*e*bo*ro**2 ! needs T_is
-                write(out_unit,'(1/,21(a18))') "psi_n","eps_r","n_i","n_e",&
-                    "T_i","T_e","omega_E","logLambda","nu_i","nu_e","q","dconPmu_0","dvdpsi_n",&
-                    "omega_N","omega_T","omega_trans","omega_gyro","RLARomega_b","RLARomega_d",&
-                    "<(deltaB_L/B)^2>","<(divxprp)^2>"!/J??
+            if(tdebug) print *, "appending to flux functions"
+            if(.not. allocated(fluxfunlabels)) then
+                nfluxfuns = 21
+                allocate(fluxfunlabels(nfluxfuns))
+                fluxfunlabels = (/  "            psi_n", &
+                                    "            eps_r", &
+                                    "              n_i", &
+                                    "              n_e", &
+                                    "              T_i", &
+                                    "              T_e", &
+                                    "          omega_E", &
+                                    "        logLambda", &
+                                    "             nu_i", &
+                                    "             nu_e", &
+                                    "                q", &
+                                    "        dconPmu_0", &
+                                    "         dvdpsi_n", &
+                                    "          omega_N", &
+                                    "          omega_T", &
+                                    "      omega_trans", &
+                                    "       omega_gyro", &
+                                    "      RLARomega_b", &
+                                    "      RLARomega_d", &
+                                    " <(deltaB_L/B)^2>", &
+                                    "    <(divxprp)^2>" /) ! <(divxprp)^2>/J??
             endif
-            WRITE(out_unit,'(21(es18.8E3))') psi,epsr,kin%f(1:8),q,sq%f(2),sq%f(3),&
-                wdian,wdiat,wtran,wgyro,wbhat,wdhat,dbave,dxave
-            close(out_unit)
+            call append_2d(fluxfuns,(/ psi, epsr, kin%f(1:8), q,sq%f(2), sq%f(3),&
+                wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /) )
         endif
         
         
@@ -735,32 +741,36 @@ module torque
                 
                     ! optional deeply trapped bounce motion output
                     if(write_theta .and. (ilmda==1 .or. ilmda==nlmda/2 .or.ilmda==nlmda))then
-                        out_unit = get_free_file_unit(-1)
-                        write(lstring,'(SPI3.2)') l
-                        write(nstring,'(I3)') n
-                        file = "pentrc_"//trim(method)//"_bounce_n"//trim(adjustl(nstring))&
-                             //"_l"//trim(adjustl(lstring))//".out"
-                        inquire(file=trim(file),exist=fexists)
-                        if(fexists) then
-                           open(unit=out_unit,file=file,status="old",position="append")
-                        else
-                           open(unit=out_unit,file=file,status="new")
-                           write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-                           write(out_unit,*) "Bounce average functions"
-                           write(out_unit,'(1/,4x,2(a4,i4),1/)') "n = ",n," l = ",l
-                           write(out_unit,'(15(1x,a16))') "psi_n","Lambda","theta_n","theta",&
-                                "dtheta","omega_b","omega_D","real(deltaJ)","imag(deltaJ)",&
-                                "h_E","h_D","real(deltaB)","imag(deltaB)","real(divxprp)","imag(divxprp)"
+                        if(tdebug) print *, "appending to flux functions"
+                        if(.not. allocated(thetafunlabels)) then
+                            nthetafuns = 15
+                            allocate(thetafunlabels(nthetafuns))
+                            thetafunlabels = (/ "            psi_n", &
+                                                "           Lambda", &
+                                                "          theta_n", &
+                                                "            theta", &
+                                                "           dtheta", &
+                                                "          omega_b", &
+                                                "          omega_D", &
+                                                "     real(deltaJ)", &
+                                                "     imag(deltaJ)", &
+                                                "              h_E", &
+                                                "              h_D", &
+                                                "     real(deltaB)", &
+                                                "     imag(deltaB)", &
+                                                "    real(divxprp)", &
+                                                "    imag(divxprp)" /)
                         endif
                         do i=1,ntheta
                             expm = exp(xj*twopi*mfac*tdt(1,i))
                             db  = sum(dbdx_m(1)%f(:)*expm)*(bo/tspl%f(1))
                             divx= sum(dbdx_m(2)%f(:)*expm)*(bo/tspl%f(1))*divxfac
-                            write(out_unit,'(15(1x,es16.8e3))') psi,lmda,bjspl%xs(i-1),tdt(:,i),&
-                                 bspl%fs(i-1,:),bjspl%fs(i-1,1),bspl%fsi(i-1,1)/((2-sigma)*bspl%fsi(bspl%mx,1)),&
-                                 bspl%fsi(i-1,2)/((2-sigma)*bspl%fsi(bspl%mx,2)),db,divx
+                            call append_2d(thetafuns,(/ psi, lmda, bjspl%xs(i-1), tdt(:,i), &
+                                 bspl%fs(i-1,:), REAL(bjspl%fs(i-1,1)), AIMAG((bjspl%fs(i-1,1))), &
+                                 bspl%fsi(i-1,1)/((2-sigma)*bspl%fsi(bspl%mx,1)), &
+                                 bspl%fsi(i-1,2)/((2-sigma)*bspl%fsi(bspl%mx,2)), &
+                                 REAL(db), AIMAG(db), REAL(divx), AIMAG(divx) /) )
                         enddo
-                        close(out_unit)
                     endif
                 
                 
@@ -948,12 +958,12 @@ module torque
         real(r8), intent(inout) :: psilim(2)
         character(*) :: method,gtype
         ! declare variables
-        logical :: fexists
-        integer :: i, j, l, unit1, unit2, s, mx, istrt = -1, istop=-1
+        integer :: i, j, l, s, mx, istrt = -1, istop=-1
         real(r8) :: x,xlast,chrg,drive,wdcom,dxcom
-        real(r8), dimension(:), allocatable :: xs,tmppsi
+        real(r8), dimension(:), allocatable :: xs
+        real(r8), dimension(:,:), allocatable :: tmp,tmpl
         complex(r8), dimension(:), allocatable :: gam,chi
-        character(64) ::file1,file2
+        character(64) :: file3
         character(8) :: nstring,methcom
         ! lsode type variables
         integer  neqarray(9),neq
@@ -989,67 +999,6 @@ module torque
         if(index(method,'mm')>0) then
             allocate(elems(mpert,mpert,6))
         endif
-        
-        ! open and prepare files as needed
-        write(nstring,'(I8)') n
-        if(electron)then
-            file1 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
-        else
-            file1 = "pentrc_"//trim(method)//"_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
-        endif
-        if(qt)then
-            file1 = file1(:7)//"heat_"//file1(8:)
-            file2 = file2(:7)//"heat_"//file2(8:)
-        endif
-        unit1 = get_free_file_unit(-1)
-        open(unit=unit1,file=file1,status="unknown")
-            write(unit1,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(unit1,*) "Neoclassical nonambipolar flux profile."
-            write(unit1,*)
-            if(qt)then
-                write(unit1,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
-                write(unit1,*) " chi = Heat diffusivity in m^2/s"
-                write(unit1,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
-                write(unit1,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
-            else
-                write(unit1,*) " Gamma = Particle flux in 1/(sm^2)"
-                write(unit1,*) " chi = Particle diffusivity in m^2/s"
-                write(unit1,*) " T_phi = Torque in Nm"
-                write(unit1,*) " 2ndeltaW = Kinetic energy in J"
-            endif
-            write(unit1,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
-                " zi = ",zi," mi = ",mi
-            write(unit1,'(3(a8,es18.8e3),1/)') "  R0 = ",ro,"  B0 = ",bo,&
-                " chi1 = ",chi1
-            write(unit1,'(10(a18))') "psi_n","real(Gamma)","imag(Gamma)",&
-                    "real(chi)","imag(chi)","T_phi","2ndeltaW", &
-                    "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
-        unit2 = get_free_file_unit(-1)
-        open(unit=unit2,file=file2,status="unknown")
-            write(unit2,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(unit2,*) "Neoclassical transport profiles &
-                &for each bounce harmonic."
-            write(unit2,*)
-            if(qt)then
-                write(unit2,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
-                write(unit2,*) " chi = Heat diffusivity in m^2/s"
-                write(unit2,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
-                write(unit2,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
-            else
-                write(unit2,*) " Gamma = Particle flux in 1/(sm^2)"
-                write(unit2,*) " chi = Particle diffusivity in m^2/s"
-                write(unit2,*) " T_phi = Torque in Nm"
-                write(unit2,*) " 2ndeltaW = Kinetic energy in J"
-            endif
-            write(unit2,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
-                " zi = ",zi," mi = ",mi
-            write(unit2,'(3(a8,es18.8e3),1/)') "  R0 = ",ro,"  B0 = ",bo,&
-                " chi1 = ",chi1
-            write(unit2,'(a18,a5,8(a18))') "psi_n","ell",&
-                "real(Gamma)","imag(Gamma)","real(chi)","imag(chi)",&
-                "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
 
         ! set grid based on requested type
         if (gtype=='equil')then
@@ -1083,20 +1032,15 @@ module torque
                 call cspline_alloc(kelmm(j),mx,mpert**2)
             enddo
         endif
-        CALL cspline_alloc(tphi_spl,mx,2*nl+1)
 
         ! loop forming integrand
         xlast = 0
         do i=0,mx
             x = xs(i+istrt)
+            ! torque profile
             CALL tintgrnd(neqarray,x,y,dky)
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
-
-            if(mod(x,.1)<mod(xlast,.1) .or. xlast==xs(0) .and. verbose)then
-                print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
-                    " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'
-            endif
 
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
@@ -1107,21 +1051,23 @@ module torque
                 enddo
             endif
 
+            ! log progress
+            if(mod(x,.1)<mod(xlast,.1) .or. xlast==xs(0) .and. verbose)then
+                print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
+                    " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'
+            endif
             xlast = x
         enddo
         ! fit and integrate torque density spline
         CALL cspline_fit(tphi_spl,"extrap")
         CALL cspline_int(tphi_spl)
-        ! optionally fit global euler-lagrange coefficient splines
-        if(index(method,'mm')>0)then
-            do j=1,6
-                call cspline_fit(kelmm(j),"extrap")
-            enddo
-        endif
 
-        ! write profiles
+        ! flux/diffusivity profiles
+        allocate(tmp(mx+1,10),tmpl(neq*(mx+1),10))
         do i=0,mx
-            x = xs(i)
+            x = xs(i+istrt)
+            dky = tphi_spl%fs(i,:)
+            y = tphi_spl%fsi(i,:)
             call spline_eval(sq,x,0)
             call spline_eval(kin,x,1)
             call spline_eval(geom,x,1)
@@ -1133,25 +1079,52 @@ module torque
                        +(chrg*kin%f(s)/kin%f(s+2))*((kin%f(5)/twopi)/geom%f1(2)) ! (en/T)*dPhi/dr
             endif
             chi = -gam/(drive)
-            write(unit1,'(10(es18.8e3))') x,&
-                sum(gam(:),dim=1),&
-                sum(chi(:),dim=1),&
-                sum(tphi_spl%fs(i,:),dim=1),&
-                sum(tphi_spl%fsi(i,:),dim=1),&
-                sq%f(3)
+
+            ! save tables for ascii output
+            tmp(i+1,:) = (/ x, sq%f(3), &
+                ri(sum(gam(:),dim=1)), &
+                ri(sum(chi(:),dim=1)), &
+                ri(sum(tphi_spl%fs(i,:),dim=1)), &
+                ri(sum(tphi_spl%fsi(i,:),dim=1)) /)
             do l=-nl,nl
-                write(unit2,'(es18.8e3,i5,8(es18.8e3))') x,l,&
-                    gam(2*(nl+l)+1),chi(2*(nl+l)+1),&
-                    tphi_spl%fs(i,2*(nl+l)+1),tphi_spl%fsi(i,2*(nl+l)+1)
+                tmpl(i*neq + (nl+l) + 1, :) = (/ x, l*1.0_r8, &
+                    ri(gam(2*(nl+l)+1)), &
+                    ri(chi(2*(nl+l)+1)), &
+                    ri(tphi_spl%fs(i,2*(nl+l)+1)), &
+                    ri(tphi_spl%fsi(i,2*(nl+l)+1)) /)
             enddo
         enddo
-        close(unit1)
-        close(unit2)
         
+        ! (re-)set global transport and torque spline
+        if(trans%nqty /= 0) call cspline_dealloc(trans)
+        call cspline_alloc(trans,mx,2)
+        trans%xs = tmp(:,1)
+        trans%fs(:,1) = tmp(:,2)+xj*tmp(:,3) ! particle/heat flux gamma
+        trans%fs(:,2) = tmp(:,4)+xj*tmp(:,5) ! troque & energy
+        call cspline_fit(trans,"extrap")
+
+        ! optionally fit global euler-lagrange coefficient splines
+        if(index(method,'mm')>0)then
+            do j=1,6
+                call cspline_fit(kelmm(j),"extrap")
+            enddo
+        endif
+
+        ! ascii output
+        print *,trim(method)//"_"//gtype//"_grid"
+        call torque_ascii(n,trim(method)//"_"//gtype//"_grid",electron,tmp(:,:),tmpl(:,:),zi,mi)
+        if(write_flux)then
+            write(nstring,'(I8)') n
+            file3 = "pentrc_"//trim(method)//"_"//gtype//"_grid_eqprofiles_n"//trim(adjustl(nstring))//".out"
+            call ascii_table(trim(file3),TRANSPOSE(fluxfuns),fluxfunlabels,"equil",zi,mi)
+            deallocate(fluxfuns,fluxfunlabels)
+        endif
+
         ! sum for ultimate result
         tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
-        deallocate(y,dky,gam,chi)
+        deallocate(xs,y,dky,gam,chi,tmp,tmpl)
+        call cspline_dealloc(tphi_spl)
 
         return
     end function tintgrl_grid
@@ -1181,7 +1154,7 @@ module torque
     !       Add-hock multiplier on divergence of perpendicular displacement.
     !   electron : logical
     !       Calculate quantities for electrons (zi,mi ignored)
-    !    write_flux : logical
+    !   write_flux : logical
     !       Write flux function quantities to file at each step.
     !   method : string
     !       Choose from 'RLAR', 'CLAR', 'FGAR', 'TGAR', 'PGAR', 'FWMM',
@@ -1203,14 +1176,15 @@ module torque
         real(r8), intent(inout) :: psilim(2)
         character(*) :: method
         ! declare variables
-        logical :: fexists
         integer, parameter :: maxsteps = 10000
-        integer :: i,j,l,unit1,unit2,s
+        integer :: i,j,l,s
         real(r8) :: xlast,wdcom,dxcom,chrg,drive
         real(r8), dimension(:), allocatable :: gam,chi
+        real(r8), dimension(maxsteps,10) :: tmp
+        real(r8), dimension(:,:), allocatable :: tmpl
         real(r8), dimension(maxsteps) :: tmppsi
         complex(r8), dimension(maxsteps,mpert**2,6) :: tmpmats
-        character(64) ::file1,file2,file3
+        character(64) :: file3
         character(8) :: nstring,methcom
         ! declare lsode input variables
         integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(9),&
@@ -1235,6 +1209,7 @@ module torque
         allocate(iwork(liw))
         allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
         allocate(gam(neq),chi(neq))
+        allocate(tmpl((2*nl+1)*maxsteps,10))
         neqarray(:) = (/neq,n,nl,zi,mi,0,0,0,0/)
         y(:) = 0
         x = sq%xs(0)
@@ -1270,68 +1245,6 @@ module torque
             chrg = zi*e
             s = 1
         endif
-
-        
-        ! open and prepare files as needed
-        write(nstring,'(I8)') n
-        if(electron)then
-            file1 = "pentrc_"//trim(method)//"_e_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_e_ell_n"//trim(adjustl(nstring))//".out"
-        else
-            file1 = "pentrc_"//trim(method)//"_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_ell_n"//trim(adjustl(nstring))//".out"
-        endif
-        if(qt)then
-            file1 = file1(:7)//"heat_"//file1(8:)
-            file2 = file2(:7)//"heat_"//file2(8:)
-        endif
-        unit1 = get_free_file_unit(-1)
-        open(unit=unit1,file=file1,status="unknown")
-            write(unit1,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(unit1,*) "Neoclassical nonambipolar flux profile."
-            write(unit1,*)
-            if(qt)then
-                write(unit1,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
-                write(unit1,*) " chi = Heat diffusivity in m^2/s"
-                write(unit1,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
-                write(unit1,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
-            else
-                write(unit1,*) " Gamma = Particle flux in 1/(sm^2)"
-                write(unit1,*) " chi = Particle diffusivity in m^2/s"
-                write(unit1,*) " T_phi = Torque in Nm"
-                write(unit1,*) " 2ndeltaW = Kinetic energy in J"
-            endif
-            write(unit1,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
-                " zi = ",zi," mi = ",mi
-            write(unit1,'(3(a8,es18.8e3),1/)') "  R0 = ",ro,"  B0 = ",bo,&
-                " chi1 = ",chi1
-            write(unit1,'(10(a18))') "psi_n","real(Gamma)","imag(Gamma)",&
-                    "real(chi)","imag(chi)","T_phi","2ndeltaW", &
-                    "int(T_phi)","int(2ndeltaW)","dv/dpsi_n"
-        unit2 = get_free_file_unit(-1)
-        open(unit=unit2,file=file2,status="unknown")
-            write(unit2,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(unit2,*) "Neoclassical transport profiles &
-                &for each bounce harmonic."
-            write(unit2,*)
-            if(qt)then
-                write(unit2,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
-                write(unit2,*) " chi = Heat diffusivity in m^2/s"
-                write(unit2,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
-                write(unit2,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
-            else
-                write(unit2,*) " Gamma = Particle flux in 1/(sm^2)"
-                write(unit2,*) " chi = Particle diffusivity in m^2/s"
-                write(unit2,*) " T_phi = Torque in Nm"
-                write(unit2,*) " 2ndeltaW = Kinetic energy in J"
-            endif
-            write(unit2,'(1/,4(a7,i4),1/)') " n = ",n," nl = ",nl,&
-                " zi = ",zi," mi = ",mi
-            write(unit2,'(3(a8,es18.8e3),1/)') "  R0 = ",ro,"  B0 = ",bo,&
-                " chi1 = ",chi1
-            write(unit2,'(a18,a5,8(a18))') "psi_n","ell",&
-                "real(Gamma)","imag(Gamma)","real(chi)","imag(chi)",&
-                "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
                 
         ! integration
         itask = 5              ! single step without passing rwork(1)
@@ -1341,7 +1254,7 @@ module torque
                 atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
             call dintdy(x, 1, rwork(21), neq, dky, iflag)
             
-            ! write profiles
+            ! flux/diffusivity profiles
             call spline_eval(sq,x,0)
             call spline_eval(kin,x,1)
             call spline_eval(geom,x,1)
@@ -1353,23 +1266,20 @@ module torque
                        +(chrg*kin%f(s)/kin%f(s+2))*((kin%f(5)/twopi)/geom%f1(2)) ! (en/T)*dPhi/dr
             endif
             chi = -gam/(drive)
-            write(unit1,'(11(es18.8e3))') x,&
+
+            ! save tables for ascii output
+            tmp(iwork(11),:) = (/ x, sq%f(3), &
                 sum(gam(1:neq:2),dim=1),sum(gam(2:neq:2),dim=1),&
                 sum(chi(1:neq:2),dim=1),sum(chi(2:neq:2),dim=1),&
                 sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),&
-                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1),&
-                sq%f(3)
+                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1) /)
             do l=-nl,nl
-                write(unit2,'(es18.8e3,i5,8es18.8e3)') x,l,&
-                    gam(2*(nl+l)+1:2*(nl+l)+2),chi(2*(nl+l)+1:2*(nl+l)+2),&
-                    dky(2*(nl+l)+1:2*(nl+l)+2),y(2*(nl+l)+1:2*(nl+l)+2)
+                tmpl((iwork(11)-1)*(2*nl+1) + (nl+l) + 1, :) = (/ x, l*1.0_r8, &
+                    gam(2*(nl+l)+1:2*(nl+l)+2), &
+                    chi(2*(nl+l)+1:2*(nl+l)+2), &
+                    dky(2*(nl+l)+1:2*(nl+l)+2), &
+                      y(2*(nl+l)+1:2*(nl+l)+2) /)
             enddo
-
-            ! print progress
-            if(mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0) .and. verbose)then
-                print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
-                    " -> T_phi = ",sum(y(1:neq:2),dim=1),sum(y(2:neq:2),dim=1),'j'
-            endif
             
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
@@ -1379,10 +1289,22 @@ module torque
                     tmpmats(iwork(11),:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
                 enddo
             endif
+
+            ! print progress
+            if(mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0) .and. verbose)then
+                print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
+                    " -> T_phi = ",sum(y(1:neq:2),dim=1),sum(y(2:neq:2),dim=1),'j'
+            endif
         enddo
-        close(unit1)
-        close(unit2)
         
+        ! (re-)set global transport and torque spline
+        if(trans%nqty /= 0) call cspline_dealloc(trans)
+        call cspline_alloc(trans,iwork(11)-1,2)
+        trans%xs = tmp(:iwork(11),1)
+        trans%fs(:,1) = tmp(:iwork(11),2)+xj*tmp(:iwork(11),3) ! particle/heat flux gamma
+        trans%fs(:,2) = tmp(:iwork(11),4)+xj*tmp(:iwork(11),5) ! troque & energy
+        call cspline_fit(trans,"extrap")
+
         ! optionally set global euler-lagrange coefficient splines
         if(index(method,'mm')>0)then
             do j=1,6
@@ -1394,10 +1316,19 @@ module torque
             enddo
         endif
         
+        ! ascii output
+        call torque_ascii(n,trim(method),electron,tmp(:iwork(11),:),tmpl(:iwork(11)*(2*nl+1),:),zi,mi)
+        if(write_flux)then
+            write(nstring,'(I8)') n
+            file3 = "pentrc_"//trim(method)//"_eqprofiles_n"//trim(adjustl(nstring))//".out"
+            call ascii_table(trim(file3),TRANSPOSE(fluxfuns),fluxfunlabels,"equil",zi,mi)
+            deallocate(fluxfuns,fluxfunlabels)
+        endif
+
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y(1:neq:2),dim=1)+xj*sum(y(2:neq:2),dim=1)
 
-        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi)
+        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi,tmpl)
         
         return
     end function tintgrl_lsode
@@ -1438,8 +1369,7 @@ module torque
             write_theta=.false.,write_espace=.false.,first=.true.
         character(8) :: method
         
-        logical :: fexists
-        integer :: i,j,out_unit
+        integer :: i,j
         !complex(r8), dimension (mpert,mpert,6,-neq(3):neq(3)) :: wtw_l
         complex(r8), dimension (mpert,mpert,6) :: wtw_l
         character(3) :: nstring,lstring
@@ -1564,6 +1494,184 @@ module torque
         pd(:,:) = 0
         return
     end subroutine noj
+
+
+    !=======================================================================
+    subroutine ascii_table(file,list,labels,op_header,op_zi,op_mi)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii files.
+    !
+    !*ARGUMENTS:
+    !    list : real 2D
+    !       Table of values
+    !    labels : character(17) 1D
+    !       Column labels
+    !
+    !*OPTIONAL ARGUMENTS:
+    !    header : character(5)
+    !       "equil" -> Write flux function definition header
+    !       "pentq" -> Write non-ambipolar heat transport header
+    !       "pentt" -> Write non-ambipolar momentum transport header
+    !       "theta" -> Write poloidal function definition header
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        real(r8), dimension(:,:), intent(in) :: list
+        character(17), dimension(:), intent(in) :: labels
+        character(128), intent(in) :: file
+        character(5), optional, intent(in) :: op_header
+        integer, optional :: op_zi, op_mi
+
+        integer :: i,nrow,ncol,out_unit
+        character(5) :: header = '     '
+        character(32) :: label_fmt, table_fmt
+
+        ! learn sizes
+        nrow = size(list,dim=1)
+        ncol = size(list,dim=2)
+
+        ! open file
+        out_unit = get_free_file_unit(-1)
+        open(unit=out_unit,file=trim(file),status="unknown",action="write")
+        ! default header
+        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
+
+        ! optional headers
+        if (present(op_header)) header = op_header
+        if(header=='equil')then
+            write(out_unit,*) " Equilibrium profiles."
+            write(out_unit,*) " - All energy dependent quantities are taken at E/T unity."
+        elseif(header=='theta')then
+            write(out_unit,*) " Bounce average functions"
+        elseif(header=='pentq')then
+            write(out_unit,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
+            write(out_unit,*) " chi = Heat diffusivity in m^2/s"
+            write(out_unit,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
+            write(out_unit,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
+        elseif(header=='pentt')then
+            write(out_unit,*) " Gamma = Particle flux in 1/(sm^2)"
+            write(out_unit,*) " chi = Particle diffusivity in m^2/s"
+            write(out_unit,*) " T_phi = Torque in Nm"
+            write(out_unit,*) " 2ndeltaW = Kinetic energy in J"
+        endif
+
+        write(out_unit,*)
+        if(present(op_zi)) write(out_unit,'((a10,es17.8E3))') "     Ze = ",op_zi*e
+        if(present(op_mi)) write(out_unit,'((a10,es17.8E3))') "   mass = ",op_mi*mp
+        write(out_unit,'(3(a10,es16.8E3))') "     R0 = ",ro,"     B0 = ",bo,"   chi1 = ",chi1
+
+        ! write labels and table
+        write(label_fmt,*) '(1/,',ncol,'(a17))'
+        write(table_fmt,*) '(',ncol,'(es17.8E3))'
+        write(out_unit,trim(label_fmt)) labels
+        do i=1,nrow
+            write(out_unit,trim(table_fmt)) list(i,:)
+        enddo
+
+        close(out_unit)
+        return
+    end subroutine ascii_table
+
+    !=======================================================================
+    subroutine torque_ascii(n,method,electron,prof,profl,op_zi,op_mi)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii torque profile files.
+    !
+    !*ARGUMENTS:
+    !    prof : real 2D
+    !        Table of values
+    !    op_profl : real 2D
+    !        Table of (psi,ell) profiles
+    !
+    !*OPTIONAL ARGUMENTS:
+    !    op_zi : integer
+    !        Ion charge for header
+    !    op_mi : integer
+    !        Ion mass for header
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n
+        character(*), intent(in) :: method
+        logical :: electron
+        real(r8), dimension(:,:), intent(in) :: prof,profl
+        integer, optional :: op_zi, op_mi
+
+        integer :: i,nrow,ncol,out_unit,unit1,unit2
+        character(8) :: nstring
+        character(128) :: file1,file2
+
+        print *,"writting ascii"
+        ! learn sizes
+        nrow = size(prof,dim=1)
+        ncol = size(prof,dim=2)
+
+        ! open files
+        write(nstring,'(I8)') n
+        file1 = "pentrc_"//trim(method)//"_n"//trim(adjustl(nstring))//".out"
+        file2 = "pentrc_"//trim(method)//"_ell_n"//trim(adjustl(nstring))//".out"
+        if(electron)then
+            file1 = file1(:7)//"e_"//file1(8:)
+            file2 = file2(:7)//"e_"//file2(8:)
+        endif
+        if(qt)then
+            file1 = file1(:7)//"heat_"//file1(8:)
+            file2 = file2(:7)//"heat_"//file2(8:)
+        endif
+        unit1 = get_free_file_unit(-1)
+        open(unit=unit1,file=trim(file1),status="unknown",action="write")
+        unit2 = get_free_file_unit(-1)
+        open(unit=unit2,file=trim(file2),status="unknown",action="write")
+
+        ! write common header material
+        do i=1,2
+            if(i==1)then
+                out_unit=unit1
+            else
+                out_unit=unit2
+            endif
+            write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
+            write(out_unit,*)
+            if(qt)then
+                write(out_unit,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
+                write(out_unit,*) " chi = Heat diffusivity in m^2/s"
+                write(out_unit,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
+                write(out_unit,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
+            else
+                write(out_unit,*) " Gamma = Particle flux in 1/(sm^2)"
+                write(out_unit,*) " chi = Particle diffusivity in m^2/s"
+                write(out_unit,*) " T_phi = Torque in Nm"
+                write(out_unit,*) " 2ndeltaW = Kinetic energy in J"
+            endif
+            write(out_unit,*)
+            if(present(op_zi)) write(out_unit,'((a10,es17.8E3))') "     Ze = ",op_zi*e
+            if(present(op_mi)) write(out_unit,'((a10,es17.8E3))') "   mass = ",op_mi*mp
+            write(out_unit,'(3(a10,es16.8E3))') "     R0 = ",ro,"     B0 = ",bo,"   chi1 = ",chi1
+        enddo
+
+        ! label columns
+        write(unit1,'(1/,10(a17))') "psi_n",  "dv/dpsi_n",  "real(Gamma)",  "imag(Gamma)", &
+            "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)"
+        write(unit2,'(1/,10(a17))') "psi_n",  "ell",  "real(Gamma)",  "imag(Gamma)", &
+            "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)"
+
+        ! write tables
+        do i=1,size(prof,dim=1)
+            write(unit1,'(10(es17.8E3))') prof(i,:)
+        enddo
+        do i=1,size(profl,dim=1)
+            write(unit2,'(10(es17.8E3))') profl(i,:)
+        enddo
+
+        close(unit1)
+        close(unit2)
+        return
+    end subroutine torque_ascii
+
+
+
 
 end module torque
 
