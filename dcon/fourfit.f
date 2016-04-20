@@ -27,7 +27,6 @@ c-----------------------------------------------------------------------
      $    pentrc_verbose=>verbose,  ! should get a more fundemental fix
      $    pentrc_mpert=>mpert,
      $    pentrc_nn=>nn,
-     $    pentrc_psilim=>psilim,
      $    pentrc_r8=>r8,
      $    pentrc_timer=>timer
       USE torque, only : kelmm      ! cspline Euler-Lagrange mats for local use

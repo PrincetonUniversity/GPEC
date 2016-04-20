@@ -26,7 +26,6 @@ c-----------------------------------------------------------------------
      $    pentrc_verbose=>verbose,  ! should get a more fundemental fix
      $    pentrc_mpert=>mpert,
      $    pentrc_nn=>nn,
-     $    pentrc_psilim=>psilim,
      $    pentrc_r8=>r8,
      $    pentrc_timer=>timer
       IMPLICIT NONE
@@ -176,9 +175,6 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
          IF(kin_flag)THEN
-            ! obsolete diagnostics.
-c            ALLOCATE(f1mats(mpert**2),k1mats(mpert**2),
-c     $           k1aats(mpert**2),g1aats(mpert**2))
             CALL fourfit_action_matrix
             IF(verbose) WRITE(*,*) "Initializing PENTRC"
             ! call the automatic reading and distributing of inputs

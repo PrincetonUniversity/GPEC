@@ -114,7 +114,7 @@ module pentrc_interface
         nufac=1.0, &
         divxfac=1.0, &
         diag_psi = 0.7, &
-        psilim(2) = (/0,1/), &
+        psilims(2) = (/0,1/), &
         psi_out(30)= (/(i,i=1,30)/)/30.6
     real(r8), dimension(:,:,:,:), allocatable :: tfuns
     complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
@@ -140,7 +140,7 @@ module pentrc_interface
         jac_in,jsurf_in,tmag_in
 
     namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
-        atol_xlmda,rtol_xlmda,atol_psi,rtol_psi,nlmda,ntheta,ximag,xmax,psilim
+        atol_xlmda,rtol_xlmda,atol_psi,rtol_psi,nlmda,ntheta,ximag,xmax,psilims
 
     namelist/pent_output/moment,output_ascii,output_netcdf,&
         eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&

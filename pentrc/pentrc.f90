@@ -151,7 +151,7 @@ program pentrc
                 if ((method=="clar" .or. method=="rlar")) then ! .and. fnml%nqty==0) then
                     call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
                 endif
-                tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
+                tphi = tintgrl_lsode(psilims,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
                 if(verbose) then
                     print "(a24,es11.3E3)", "Total torque = ", real(tphi)
                     print "(a24,es11.3E3)", "Total Kinetic Energy = ", aimag(tphi)/(2*nn)
@@ -161,7 +161,7 @@ program pentrc
                 ierr=set_harvest_payload_dbl(hlog,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
                 if(equil_grid)then
                     if(verbose) print *,method//" - "//"Recalculating on equilibrium grid"
-                    teq = tintgrl_grid('equil',psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
+                    teq = tintgrl_grid('equil',psilims,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
                     if(verbose)then
                         print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
                             ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
@@ -172,7 +172,7 @@ program pentrc
                 endif
                 if(input_grid)then
                     if(verbose) print *,method//" - "//"Recalculating on input displacements' grid"
-                    teq = tintgrl_grid('input',psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
+                    teq = tintgrl_grid('input',psilims,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
                     if(verbose)then
                         print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
                             ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
