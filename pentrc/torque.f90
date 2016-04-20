@@ -133,14 +133,14 @@ module torque
     use dcon_interface, only : issurfint
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
         kin,xs_m,dbdx_m,fnml,&                  ! equilib and pert. equilib splines
-        chi1,ro,zo,bo,mfac,mpert,&                 ! reals
+        chi1,ro,zo,bo,mfac,mpert,&              ! reals
         verbose                                 ! logical
     
     implicit none
     
     real(r8) :: tatol = 1e-3, trtol= 1e-6
     real(r8) :: psi_warned = 0.0
-    logical :: tdebug
+    logical :: tdebug,output_ascii,output_netcdf
     integer :: nlmda=128, ntheta=128
     
     complex(r8), dimension(:,:,:), allocatable :: elems ! temperary variable
@@ -1081,9 +1081,10 @@ module torque
         endif
 
         ! ascii output
-        print *,trim(method)//"_"//gtype//"_grid"
-        call torque_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmp,tmpl)
-        call output_fluxfun_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmpf)
+        if(output_ascii)then
+            call torque_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmp,tmpl)
+            call output_fluxfun_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmpf)
+        endif
 
         ! sum for ultimate result
         tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
@@ -1274,8 +1275,10 @@ module torque
         endif
         
         ! ascii output
-        call torque_ascii(n,zi,mi,electron,trim(method),tmp,tmpl)
-        call output_fluxfun_ascii(n,zi,mi,electron,trim(method),tmpf)
+        if(output_ascii)then
+            call torque_ascii(n,zi,mi,electron,trim(method),tmp,tmpl)
+            call output_fluxfun_ascii(n,zi,mi,electron,trim(method),tmpf)
+        endif
 
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y(1:neq:2),dim=1)+xj*sum(y(2:neq:2),dim=1)

@@ -37,7 +37,7 @@ program pentrc
         output_bouncefun_ascii,&                    ! subroutines
         ntheta,nlmda,nthetafuns,&                   ! integers
         tatol,trtol,&                               ! reals
-        tdebug,&                                    ! logical
+        tdebug,output_ascii,output_netcdf,&         ! logical
         mpert,mfac                                  !! hacked for test writting
     use global_mod, only: version                   ! GPEC package
 
@@ -136,7 +136,8 @@ program pentrc
     namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
         atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
         
-    namelist/pent_output/moment,eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&
+    namelist/pent_output/moment,output_ascii,output_netcdf,&
+        eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&
         fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
         wxyz_flag,psiout,psi_out,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
         fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
@@ -221,7 +222,7 @@ program pentrc
         !call read_ipec_peq(ipec_file,tdebug)
 
         ! explicit matrix calculations
-        if(wxyz_flag)then
+        if(wxyz_flag and output_ascii)then
             if(verbose) print *,"PENTRC - euler-lagrange matrix calculation"
             !! HACK - this should have its own flag
             allocate(wtw(mpert,mpert,6))
@@ -335,10 +336,12 @@ program pentrc
                             endif
                         enddo
                     enddo
-                    if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),&
-                        reshape(tfuns,(/nout*3*ntheta*3,nthetafuns/)))
-                    if(xlmda_out) call output_pitch_record(nn,zi,mi,electron,methods(m))
-                    if(xlmda_out) call output_energy_record(nn,zi,mi,electron,methods(m))
+                    if(output_ascii)then
+                        if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),&
+                            reshape(tfuns,(/nout*3*ntheta*3,nthetafuns/)))
+                        if(xlmda_out) call output_pitch_record(nn,zi,mi,electron,methods(m))
+                        if(xlmda_out) call output_energy_record(nn,zi,mi,electron,methods(m))
+                    endif
                     deallocate(tfuns)
                 endif
                 if(verbose)then
