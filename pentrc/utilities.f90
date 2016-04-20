@@ -90,6 +90,56 @@ module utilities
     end function to_upper
 
     !=======================================================================
+    function btoi(bool) result(ibool)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Convert logical variable to integer.
+    !
+    !*ARGUMENTS:
+    !   bool : logical.
+    !       True of False.
+    !
+    !*RETURNS:
+    !     integer.
+    !        0 or 1.
+    !-----------------------------------------------------------------------
+
+         implicit none
+
+         logical, intent(in) :: bool
+         integer :: ibool
+
+         ibool = 0
+         if(bool) ibool=1
+
+    end function btoi
+
+    !=======================================================================
+    function itob(ibool) result(bool)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Convert integer variable to logical.
+    !
+    !*ARGUMENTS:
+    !   ibool : integer.
+    !       Any integer variable
+    !
+    !*RETURNS:
+    !     logical.
+    !        True if ibool>0.
+    !-----------------------------------------------------------------------
+
+         implicit none
+
+         integer, intent(in) :: ibool
+         logical :: bool
+
+         bool = .false.
+         if(ibool>0) bool=.true.
+
+    end function itob
+
+    !=======================================================================
     subroutine progressbar (j,jstart,jstop,op_step,op_percent)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
