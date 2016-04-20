@@ -24,8 +24,8 @@ module energy_integration
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only : r8
-    use utilities, only : get_free_file_unit
+    use params, only : r8,mp,e
+    use utilities, only : get_free_file_unit,append_2d
     
     use lsode2_mod
     
@@ -36,7 +36,8 @@ module energy_integration
         xatol,xrtol,xmax,ximag,xnufac, &    ! reals
         xnutype,xf0type, &                  ! characters
         qt,xdebug, &                        ! logical
-        xintgrl_lsode                       ! functions
+        xintgrl_lsode, &                    ! functions
+        output_energy_record                ! subroutines
     
     ! global variables with defaults
     real(r8) :: &
@@ -45,6 +46,7 @@ module energy_integration
         xmax  = 72.0, &
         ximag = 0.00, &
         xnufac = 1.00
+    real(r8), dimension(:,:), allocatable :: energy_record
     character(32) :: &
         xnutype = "harmonic", &
         xf0type = "maxwellian"
@@ -59,7 +61,7 @@ module energy_integration
     contains
 
     !=======================================================================
-    function xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda,lbl)
+    function xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Dynamic energy integration using lsode. Module global variabls
@@ -99,10 +101,7 @@ module energy_integration
     !*OPTIONAL ARGUMENTS:
     !   psilmda : real(2).
     !       normalized flux and normalized pitch angle (muB0/E). If this
-    !       variable is used, integrand and integral are output to a
-    !       file pentrc_<lbl>_energy_n<n>_l<l>.out.
-    !   lbl : character(32).
-    !       output file modification
+    !       variable is used, integrand and integral are recorded in memory
     !
     !*RETURNS:
     !     complex.
@@ -114,13 +113,9 @@ module energy_integration
         real(r8), intent(in) :: wn,wt,we,wd,wb,nuk,l
         integer, intent(in) :: n
         real(r8), dimension(2), intent(in), optional :: psilmda
-        character(16), intent(in), optional :: lbl
         ! declare variables
         integer :: xout_unit
         real(r8) :: wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
-        character(64) :: xfile
-        character(8) :: nstring,lstring
-        logical :: fexists
         ! declare lsode input variables
         INTEGER  IOPT, IOUT, ISTATE, ITASK, ITOL, MF, IFLAG, i
         INTEGER, PARAMETER ::   &
@@ -164,34 +159,13 @@ module energy_integration
         ! integration to xmax
         imaxis_g = .false.
         if(present(psilmda)) then
-            ! open and prepare file as needed
-            xout_unit = get_free_file_unit(-1)
-            write(lstring,'(F8.2)') l
-            write(nstring,'(I8)') n
-            xfile = "pentrc_"//trim(lbl)//"_energy_n"//trim(adjustl(nstring))//".out"
-            inquire(file=trim(xfile),exist=fexists)
-            if(fexists) then
-                open(unit=xout_unit,file=xfile,status="old",position="append")
-            else
-                open(unit=xout_unit,file=xfile,status="new")!,action="write")
-                write(xout_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-                write(xout_unit,*) "Energy integrand"
-                write(xout_unit,*) "  variables are:   lambda =  m*v_perp^2/(2b),  x = E/T"
-                write(xout_unit,*) "  normalization is: 1/(-2n^2tn*chi'/sqrt(pi))"
-                write(xout_unit,*)
-                write(xout_unit,*) "n = ",n
-                write(xout_unit,*)
-                write(xout_unit,'(8(1x,a16))') "psi_n","Lambda","x","l_eff","T_phi", &
-                    "2ndeltaW","int(T_phi)","int(2ndeltaW)"
-            endif
             itask = 2              ! single step
             do while (x<xout)
                 call lsode2(xintgrnd, neq, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                 call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
-                write(xout_unit,'(1x,8(1x,es16.8e3))') psilmda(:),x,l,dky(1:2),y(1:2)
+                call append_2d(energy_record, (/psilmda(:),x,0.0_r8,l,dky(1:2),y(1:2)/) )
             enddo
-            close(xout_unit)
         else
             itask = 1              ! full integral
             call lsode2(xintgrnd, neq, y, x, xout, itol, rtol,atol, &
@@ -240,35 +214,13 @@ module energy_integration
             rwork(1) = ximag       ! only relavent if using crit task
             istate = 1
             if(present(psilmda)) then
-                ! open and prepare file as needed
-                xout_unit = get_free_file_unit(-1)
-                write(lstring,'(F8.2)') l
-                write(nstring,'(I8)') n
-                xfile = "pentrc_"//trim(lbl)//"_energy_imag_n"//trim(adjustl(nstring))//".out"
-                inquire(file=trim(xfile),exist=fexists)
-                if(fexists) then
-                    open(unit=xout_unit,file=xfile,status="old",position="append")
-                else
-                    open(unit=xout_unit,file=xfile,status="new")!,action="write")
-                    write(xout_unit,*) "perturbed equilibrium nonambipolar transport code: &
-                        &energy integration on imaginary axis"
-                    write(xout_unit,*)
-                    write(xout_unit,*) "variables are:   lambda =  m*v_perp^2/(2b),  x = e/t"
-                    write(xout_unit,*) "normalization is: 1/(-2n^2tn*chi'/sqrt(pi))"
-                    write(xout_unit,*)
-                    write(xout_unit,*) "n = ",n
-                    write(xout_unit,*)
-                    write(xout_unit,'(8(1x,a16))') "psi_n","Lambda","xj","l_eff","T_phi", &
-                        "2ndeltaW","int(T_phi)","int(2ndeltaW)"
-                endif
                 itask = 2              ! single step
                 do while (x<xout)
                     call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,&
                         atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                     call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
-                    write(xout_unit,'(1x,8(1x,es16.8e3))') psilmda(:),x,l,dky(1:2),y(1:2)
+                    call append_2d(energy_record, (/psilmda(:),0.0_r8,x,l,dky(1:2),y(1:2)/) )
                 enddo
-                close(xout_unit)
             else
                 itask = 1              ! full integral
                 call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,atol, &
@@ -499,6 +451,65 @@ module energy_integration
         pd(:,:) = 0
         return
     end subroutine noj
+
+    !=======================================================================
+    subroutine output_energy_record(n,zi,mi,electron,method)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii bounce function files.
+    !
+    !*ARGUMENTS:
+    !    n : integer.
+    !       mode number
+    !    zi : integer (in)
+    !       Ion charge in fundemental units (e).
+    !    mi : integer (in)
+    !       Ion mass (units of proton mass).
+    !    electron : logical
+    !       Calculate quantities for electrons (zi,mi ignored)
+    !    method : string
+    !       Label inserted in output file names.
+    !    table : real 2D
+    !       Table of values writen to file
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n, zi, mi
+        character(*), intent(in) :: method
+        logical :: electron
+
+        integer :: i,out_unit
+        character(8) :: nstring
+        character(128) :: file
+
+        ! open and prepare file as needed
+        out_unit = get_free_file_unit(-1)
+        write(nstring,'(I8)') n
+        file = "pentrc_"//trim(method)//"_energy_n"//trim(adjustl(nstring))//".out"
+        if(electron) file = file(:7)//"e_"//file(8:)
+        open(unit=out_unit,file=file,status="unknown",action="write")
+
+        ! write header material
+        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
+        write(out_unit,*) " Energy integrand"
+        write(out_unit,*) " - variables are:   lambda =  B0*m*v_perp^2/(2B),  x = E/T"
+        write(out_unit,*) " - normalization is: 1/(-2n^2tn*chi'/sqrt(pi))"
+        write(out_unit,'(1/,1(a10,I4))') "n =",n
+        write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
+
+        ! write column headers
+        write(out_unit,'(9(a17))') "psi_n","Lambda","real(x)","imag(x)","l_eff", &
+            "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
+
+        ! write tables
+        do i=1,size(energy_record,dim=1)
+            write(out_unit,'(9(es17.8E3))') energy_record(i,:)
+        enddo
+
+        close(out_unit)
+        deallocate(energy_record)
+        return
+    end subroutine output_energy_record
 
 end module energy_integration
 

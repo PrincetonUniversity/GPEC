@@ -23,8 +23,8 @@ module pitch_integration
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only : r8,xj
-    use utilities, only : get_free_file_unit
+    use params, only : r8,xj,mp,e
+    use utilities, only : get_free_file_unit,append_2d
     use special, only : ellipk
     use cspline_mod, only: cspline_type,cspline_eval
     use spline_mod, only: spline_type,spline_eval,spline_alloc,&
@@ -40,13 +40,15 @@ module pitch_integration
     public &
         lambdaatol,lambdartol, &                            ! reals
         lambdadebug, &                                      ! logical
-        lambdaintgrl_lsode,kappaintgrl,kappaintgnd          ! functions
+        lambdaintgrl_lsode,kappaintgrl,kappaintgnd, &       ! functions
+        output_pitch_record                                 ! subroutines
     
     ! global variables with defaults
     logical :: lambdadebug = .false.
     real(r8) :: &
         lambdaatol = 1e-12, &
         lambdartol = 1e-9
+    real(r8), dimension(:,:), allocatable :: pitch_record
     ! global variables for internal use
     !real(r8) :: wn_g,wt_g,we_g,nuk_g,l_g,n_g,&
     !    bobmax_g,epsr_g
@@ -57,7 +59,7 @@ module pitch_integration
 
     !=======================================================================
     function lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,eq_spl,l,n,&
-                                op_rex,op_imx,op_psi,op_lbl,op_turns)
+                                op_rex,op_imx,op_psi,op_turns)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Dynamic pitch integration using lsode. Module global variabls
@@ -106,8 +108,6 @@ module pitch_integration
     !   op_psi : real.
     !       normalized flux. If this variable is used, integrand and
     !       integral are output to a file pentrc_<op_lbl>_lambda_n<n>_l<l>.out.
-    !   op_lbl : character(32).
-    !       output file modification
     !   op_turns : spline_type.
     !       If included with op_psi the bounce points are recorded.
     !           t1(Lambda) : Lower bounce theta
@@ -127,16 +127,11 @@ module pitch_integration
         type(cspline_type) eq_spl      
         type(spline_type), optional :: op_turns      
         real(r8), intent(in), optional :: op_psi,op_rex,op_imx
-        character(4), optional :: op_lbl
         ! declare variables
-        integer :: out_unit,i,l_g,n_g
+        integer :: i,l_g,n_g,out_unit
         real(r8) :: lmda,wb,wd,nueff,lnq,wn_g,wt_g,we_g,nuk_g,&
             bobmax_g,epsr_g,q_g,rex_g,imx_g
         complex(r8) :: xint
-        character(16) :: flbl = ''
-        character(64) ::file
-        character(8) :: nstring,lstring
-        logical :: fexists
         ! declare lsode input variables
         integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(1),&
             neq,liw,lrw
@@ -200,33 +195,6 @@ module pitch_integration
         endif
         
         if(present(op_psi)) then
-            ! open and prepare file as needed
-            out_unit = get_free_file_unit(-1)
-            write(lstring,'(SPI3.2)') l
-            write(nstring,'(I3)') n
-            if(present(op_lbl)) flbl = trim(op_lbl)//"_l"//trim(adjustl(lstring))
-            file = "pentrc_"//trim(flbl)//"_pitch_n"//trim(adjustl(nstring))//".out"
-            inquire(file=trim(file),exist=fexists)
-            if(fexists) then
-                open(unit=out_unit,file=file,status="old",position="append")
-            else
-                open(unit=out_unit,file=file,status="new")!,action="write")
-                write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-                write(out_unit,*) "Pitch angle integrand and functions"
-                write(out_unit,*) "  variables are:   lambda =  B0*m*v_perp^2/(2B),  x = E/T"
-                write(out_unit,*) "  frequencies are taken at x unity"
-                write(out_unit,*) "n = ",int(n)," l = ",l
-                write(out_unit,*)
-                if(present(op_turns))then
-                    write(out_unit,'(8(1x,a16),1x,a19,6(1x,a16))') "psi_n","Lambda","T_phi", &
-                    "2ndeltaW","int(T_phi)","int(2ndeltaW)","omega_b","omega_D",&
-                    "deltaJdeltaJomega_b","theta_l","r_l","z_l","theta_u","r_u","z_u"
-                else
-                    write(out_unit,'(8(1x,a16),1x,a19)') "psi_n","Lambda","T_phi", &
-                    "2ndeltaW","int(T_phi)","int(2ndeltaW)","omega_b","omega_D",&
-                    "deltaJdeltaJomega_b"
-                endif
-            endif
             itask = 5              ! single step
             do while (x<xout)
                 call lsode1(lintgrnd, neqarray, y, x, xout, itol, rtol,&
@@ -234,15 +202,13 @@ module pitch_integration
                 call dintdy1(x, 1, rwork(21), neqarray(1), dky, iflag)
                 if(present(op_turns))then
                     call spline_eval(turns_g,x,0)
-                    write(out_unit,'(8(1x,es16.8e3),1x,es19.8e3,6(1x,es16.8e3))') &
-                        op_psi,x,dky(1:2),y(1:2),real(eqspl_g%f(1:2)),real(eqspl_g%f(eqspl_g%nqty)),&
-                        turns_g%f(:)
+                    call append_2d(pitch_record, (/op_psi,l*1.0_r8,x,dky(1:2),y(1:2), &
+                        real(eqspl_g%f(1:2)),real(eqspl_g%f(eqspl_g%nqty)),turns_g%f(:)/) )
                 else
-                    write(out_unit,'(8(1x,es16.8e3),1x,es19.8e3)') &
-                        op_psi,x,dky(1:2),y(1:2),real(eqspl_g%f(1:2)),real(eqspl_g%f(eqspl_g%nqty))
+                    call append_2d(pitch_record, (/op_psi,l*1.0_r8,x,dky(1:2),y(1:2), &
+                        real(eqspl_g%f(1:2)),real(eqspl_g%f(eqspl_g%nqty))/) )
                 endif
             enddo
-            close(out_unit)
             ! write select energy integral output files
             do i = 0,4
                 lmda = eq_spl%xs(0) + (i/4.0)*(xout-eq_spl%xs(0))
@@ -257,7 +223,7 @@ module pitch_integration
                     lnq = l+n*q
                 endif
                 ! note: currently ignores -wb case for trapped
-                xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,lnq,n,(/op_psi,lmda/),flbl)
+                xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,lnq,n,(/op_psi,lmda/))
             enddo
         else
             itask = 4              ! full integral
@@ -626,6 +592,69 @@ module pitch_integration
         return
     end function kappaintgnd
     
+    !=======================================================================
+    subroutine output_pitch_record(n,zi,mi,electron,method)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii bounce function files.
+    !
+    !*ARGUMENTS:
+    !    n : integer.
+    !       mode number
+    !    zi : integer (in)
+    !       Ion charge in fundemental units (e).
+    !    mi : integer (in)
+    !       Ion mass (units of proton mass).
+    !    electron : logical
+    !       Calculate quantities for electrons (zi,mi ignored)
+    !    method : string
+    !       Label inserted in output file names.
+    !    table : real 2D
+    !       Table of values writen to file
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n, zi, mi
+        character(*), intent(in) :: method
+        logical :: electron
+
+        integer :: i,out_unit
+        real(r8), dimension(:,:), allocatable :: table
+        character(8) :: nstring
+        character(128) :: file
+
+        ! some methods don't have the turn information, but I don't want to re-format file
+        allocate(table(size(pitch_record,dim=1),16))
+        table(:,1:size(pitch_record,dim=2)) = pitch_record
+
+        ! open and prepare file as needed
+        out_unit = get_free_file_unit(-1)
+        write(nstring,'(I8)') n
+        file = "pentrc_"//trim(method)//"_pitch_n"//trim(adjustl(nstring))//".out"
+        if(electron) file = file(:7)//"e_"//file(8:)
+        open(unit=out_unit,file=file,status="unknown",action="write")
+
+        ! write header material
+        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
+        write(out_unit,*) " Pitch angle integrand and functions"
+        write(out_unit,*) " - variables are:   lambda =  B0*m*v_perp^2/(2B),  x = E/T"
+        write(out_unit,*) " - frequencies are taken at x unity"
+        write(out_unit,'(1/,1(a10,I4))') "n =",n
+        write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
+
+        ! write column headers
+        write(out_unit,'(1/,16(a17))') "psi_n","ell","Lambda","T_phi", &
+                    "2ndeltaW","int(T_phi)","int(2ndeltaW)","omega_b","omega_D",&
+                    "dJdJomega_b","theta_l","r_l","z_l","theta_u","r_u","z_u"
+
+        ! write tables
+        do i=1,size(table,dim=1)
+            write(out_unit,'(16(es17.8E3))') table(i,:)
+        enddo
+
+        close(out_unit)
+        deallocate(table,pitch_record)
+        return
+    end subroutine output_pitch_record
 
 end module pitch_integration
-

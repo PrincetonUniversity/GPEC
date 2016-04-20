@@ -69,7 +69,7 @@ module diagnostics
         character(32) :: lbl = "diagnostic_"
         real(r8) :: zr,zi,wr,wi
         complex(r8) :: xint,analytic,omegan,omegastara,omegastarb,zfun,z
-        logical wflag
+        logical :: wflag,electron=.false.
         
         print *,"------------------------------------------------------"
         print *,"Enery integration diagnostics"
@@ -77,7 +77,8 @@ module diagnostics
         
         ! We have a analytic solution for the CGL limit: 15 sqrt(pi)/8
         xf0type = "cgl"
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda,lbl)
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda)
+        call output_energy_record(n,0,0,electron,"diagnostic_cgl")
         analytic = -xj*15.0*sqrt(pi)/8.0
         print *,"CGL limit: "
         print *," -> numerical  ",xint
@@ -88,7 +89,8 @@ module diagnostics
         ! ** note I changed the sign of nuk compared to MISK mdc2 document **
         xf0type = "maxwellian"
         xnutype = "krook"
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda,lbl)
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda)
+        call output_energy_record(n,0,0,electron,"diagnostic_krook")
         omegan = (n*we+xj*nuk)/(n*wd)
         omegastara = (n*wn-1.5*n*wt-xj*nuk)/(n*wd)
         omegastarb = wt/wd
@@ -118,7 +120,8 @@ module diagnostics
         xf0type = "maxwellian"
         xnutype = 'krook'
         wd = 0
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda,lbl)
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda)
+        call output_energy_record(n,0,0,electron,"diagnostic_wd0")
         analytic = -xj*(15*sqrt(pi)/8) * (n*(wn+2*wt + we)) / (n*we+xj*nuk)
         print *,"Krook, omegaD=0 limit:"
         print *," -> numerical  ",xint
@@ -149,7 +152,8 @@ module diagnostics
         integer, parameter :: nlmda = 1000
         real(r8) :: wn=0.0, wt=0.0, we=1e4, wd=1e2,wb=1e4,nuk=1e2, &
             bobmax,epsr,lmax,q,psi
-        integer :: n=1,l=0,i
+        logical :: electron=.false.
+        integer :: i,n=1,l=0,mi=2,zi=1
         real(r8), dimension(0:nlmda) :: kappa2,lmda
         character(32) :: lbl = "diagnostic_"
         complex(r8), dimension(:), allocatable :: lint
@@ -185,8 +189,8 @@ module diagnostics
         bdf_spl%fs(:,3) = lmda(:)**2
         call cspline_fit(bdf_spl,'extrap')
         !print *,wn,wt,we,nuk,bobmax,epsr,l,n,psi,lbl
-        lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n,&
-                                  op_psi=psi,op_lbl=lbl)
+        lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n,op_psi=psi)
+        call output_energy_record(n,zi,mi,electron,"diagnostic_rlar")
         print *,"Reduced LAR approximations: "
         print *," -> numerical  ",lint
         
@@ -198,8 +202,8 @@ module diagnostics
             bdf_spl%fs(i,2) = (q**3*lmda(i)/epsr)*(ellipe(kappa2(i))/ellipk(kappa2(i))-0.5)
         enddo
         call cspline_fit(bdf_spl,'extrap')
-        lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n,&
-                                  op_psi=psi,op_lbl=lbl)
+        lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n,op_psi=psi)
+        call output_energy_record(n,zi,mi,electron,"diagnostic_clar")
         print *,"Circular LAR approximations: "
         print *," -> numerical  ",lint
         
