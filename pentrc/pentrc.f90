@@ -24,18 +24,22 @@ program pentrc
     use diagnostics, only: diagnose_all
     
     use energy_integration, only: &
-        xatol,xrtol,xmax,ximag,xnufac,&  ! reals
-        xnutype,xf0type,        &       ! character(32)
-        qt,xdebug                          ! logical
+        output_energy_record,&                       ! subroutines
+        xatol,xrtol,xmax,ximag,xnufac,&             ! reals
+        xnutype,xf0type,&                           ! character(32)
+        qt,xdebug                                   ! logical
     use pitch_integration, only: &
-        lambdaatol,lambdartol,&         ! reals
-        lambdadebug                     ! logical
-    use torque, only : tintgrl_lsode,tintgrl_grid,tpsi,&
-        ntheta,nlmda,&                  ! integers
-        tatol,trtol,&                   ! reals
-        tdebug,&                          ! logical
-        mpert,mfac                    !! hacked for test writting
-    use global_mod, only: version       ! GPEC package
+        output_pitch_record,&                       ! subroutines
+        lambdaatol,lambdartol,&                     ! reals
+        lambdadebug                                 ! logical
+    use torque, only : &
+        tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
+        output_bouncefun_ascii,&                    ! subroutines
+        ntheta,nlmda,nthetafuns,&                   ! integers
+        tatol,trtol,&                               ! reals
+        tdebug,&                                    ! logical
+        mpert,mfac                                  !! hacked for test writting
+    use global_mod, only: version                   ! GPEC package
 
     implicit none
 
@@ -99,7 +103,7 @@ program pentrc
         psilim(2) = (/0,1/),&
         psiout(30)= 0, &
         psi_out(30)= (/(i,i=1,30)/)/30.6
-        
+    real(r8), dimension(:,:,:,:), allocatable :: tfuns
     complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
     complex(r8), dimension(:,:,:), allocatable :: wtw
         
@@ -151,6 +155,7 @@ program pentrc
     close(1)
 
     ! warnings if using deprecated inputs
+    if(eq_out) print *, "WARNING: eq_out has been deprecated. Behavior is always true."
     if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
     if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out."
     if(term_flag) print *, "WARNING: term_flag has been deprecated. Use verbose."
@@ -236,7 +241,7 @@ program pentrc
                 do l=0,0!! should be all
                     if(psi_out(i)>0 .and. psi_out(i)<=1)then
                         tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
-                            .false.,theta_out,xlmda_out,wtw)
+                            op_wmats=wtw)
                         do j=1,mpert
                             do k=1,mpert
                                 write(1,'(1x,i4,i4,12(1x,es16.8e3))') &
@@ -288,7 +293,7 @@ program pentrc
                 if ((method=="clar" .or. method=="rlar")) then ! .and. fnml%nqty==0) then
                     call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
                 endif
-                tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
+                tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
                 if(verbose) then
                     print "(a24,es11.3E3)", "Total torque = ", real(tphi)
                     print "(a24,es11.3E3)", "Total Kinetic Energy = ", aimag(tphi)/(2*nn)
@@ -298,7 +303,7 @@ program pentrc
                 ierr=set_harvest_payload_dbl(hlog,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
                 if(equil_grid)then
                     if(verbose) print *,method//" - "//"Recalculating on equilibrium grid"
-                    teq = tintgrl_grid('equil',psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
+                    teq = tintgrl_grid('equil',psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
                     if(verbose)then
                         print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
                             ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
@@ -309,7 +314,7 @@ program pentrc
                 endif
                 if(input_grid)then
                     if(verbose) print *,method//" - "//"Recalculating on input displacements' grid"
-                    teq = tintgrl_grid('input',psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
+                    teq = tintgrl_grid('input',psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
                     if(verbose)then
                         print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
                             ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
@@ -319,15 +324,23 @@ program pentrc
                     endif
                 endif
                 ! run select surfaces with detailed output
-                if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
-                do i=1,nout
-                    do l=-nl,nl,max(1,nl)
-                        if(psi_out(i)>0 .and. psi_out(i)<=1)then
-                            tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
-                                .false.,theta_out,xlmda_out)
-                        endif
+                if(theta_out .or. xlmda_out)then
+                    if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
+                    allocate(tfuns(ntheta*3,3,nout,nthetafuns))
+                    do i=1,nout
+                        do l=-nl,nl,max(1,nl)
+                            if(psi_out(i)>0 .and. psi_out(i)<=1)then
+                                tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
+                                             op_tfuns=tfuns(:,1+nl/l,i,:))
+                            endif
+                        enddo
                     enddo
-                enddo
+                    if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),&
+                        reshape(tfuns,(/nout*3*ntheta*3,nthetafuns/)))
+                    if(xlmda_out) call output_pitch_record(nn,zi,mi,electron,methods(m))
+                    if(xlmda_out) call output_energy_record(nn,zi,mi,electron,methods(m))
+                    deallocate(tfuns)
+                endif
                 if(verbose)then
                     print *, method//" - Finished"
                     print *, "---------------------------------------------"

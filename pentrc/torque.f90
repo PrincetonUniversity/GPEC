@@ -117,7 +117,7 @@ module torque
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,pi,twopi
-    use utilities, only : get_free_file_unit,median, append_2d, ri
+    use utilities, only : get_free_file_unit,median, append_2d, ri, btoi, itob
     use special, only : ellipk,ellipe
     use grid, only : powspace,linspace
     ! use lsode_mod just a subroutine in the lsode directory...
@@ -147,15 +147,13 @@ module torque
     TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
     TYPE(cspline_type) :: trans ! nonambipolar transport and torque profile
 
-    integer :: nfluxfuns,nthetafuns
-    real(r8), dimension(:,:), allocatable :: fluxfuns, thetafuns
-    character(17), dimension(:), allocatable :: fluxfunlabels, thetafunlabels
+    integer, parameter :: nfluxfuns = 21, nthetafuns = 18
 
     contains
     
     !=======================================================================
     function tpsi(psi,n,l,zi,mi,wdfac,divxfac,electron,method,&
-                    write_flux,write_theta,write_espace,wtw)
+                    op_erecord,op_ffuns,op_tfuns,op_wmats)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Toroidal torque resulting from nonambipolar transport in perturbed
@@ -175,12 +173,6 @@ module torque
     !       Ion mass (units of proton mass).
     !   electron : logical
     !       Calculate quantities for electrons (zi,mi ignored)
-    !   write_flux : logical
-    !       Write flux function quantities to file
-    !   write_theta : logical
-    !       Write bounce integrand quantities to file
-    !   write_espace : logical
-    !       Write energy space integrands to files
     !   method : string
     !       Choose from
     !           'RLAR' - Reduced Large-Aspect-Ratio,
@@ -194,7 +186,16 @@ module torque
     !       Note, these labels are also inserted in output file names.
     !
     !*OPTIONAL ARGUMENTS:
-    !   wtw : complex array dim (mxmx6)
+    !   op_erecord : logical
+    !       Store energy space integrands in memory in the energy and pitch modules
+    !   op_ffuns : real allocatable
+    !       Store a record of relavent flux function quantities in this variable
+    !   op_tfuns : real allocatable
+    !       Store a record of bounce integrand quantities in this variable
+    !       (requires extra computation)
+    !   op_wmats : complex MxMx6
+    !       Store a record of the 6 DCON matrice elements in this variable
+    !       (requires extra computation)
     !
     !*RETURNS:
     !     complex.
@@ -204,12 +205,16 @@ module torque
         !declare function
         complex(r8) :: tpsi
         ! declare arguments
-        logical, intent(in) :: electron,write_flux,write_theta,write_espace
+        logical, intent(in) :: electron
         integer, intent(in) :: l,n,zi,mi
         real(r8), intent(in) :: psi,wdfac,divxfac
         character(*) :: method
-        complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: wtw
+        logical, optional :: op_erecord
+        real(r8), dimension(nfluxfuns), optional, intent(out) :: op_ffuns
+        real(r8), dimension(ntheta,nthetafuns), optional, intent(out) :: op_tfuns
+        complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: op_wmats
         ! declare local variables
+        logical :: erecord
         character(8) :: nstring,lstring
         character(32):: file
         integer :: i,j,k,s,ibmin,ibmax,out_unit,sigma,ilmda,iqty
@@ -242,15 +247,23 @@ module torque
         real(r8), dimension(5*mpert) :: rwork
         complex(r8), dimension(3*mpert) :: work
         
-        
+        ! debug initiation
         if(tdebug) print *,"torque - tpsi function, psi = ",psi
         if(tdebug) print *,"  electron ",electron
+        if(tdebug) print *,"  ell ",l
         if(tdebug) print *,"  mpert ",mpert
         if(tdebug) print *,"  mfac ",mfac
-        if(tdebug) print *,"  sq   psi ",sq%xs
-        if(tdebug) print *,"  dbdx psi ",dbdx_m(1)%xs
-        if(tdebug) print *,"  db ",dbdx_m(1)%f
-        if(tdebug) print *,"  xs ",xs_m(1)%f
+        if(tdebug) print *,"  sq   psi ",sq%xs(0:sq%mx:sq%mx/5)
+        if(tdebug) print *,"  dbdx psi ",dbdx_m(1)%xs(0:dbdx_m(1)%mx:dbdx_m(1)%mx/5)
+        if(tdebug) print *,"  db ",dbdx_m(1)%f(0:dbdx_m(1)%mx:dbdx_m(1)%mx/5)
+        if(tdebug) print *,"  xs ",xs_m(1)%f(0:xs_m(1)%mx:xs_m(1)%mx/5)
+
+        ! defaults of optional arguments
+        if(present(op_erecord))then
+            erecord = op_erecord
+        else
+            erecord = .false.
+        endif
 
         ! enforce bounds
         if(psi>1) then
@@ -342,37 +355,11 @@ module torque
                         wdiat,welec,wdhat,wbhat,nueff,q
         
         ! optional record of flux functions
-        if(write_flux) then
-            if(tdebug) print *, "appending to flux functions"
-            if(.not. allocated(fluxfunlabels)) then
-                nfluxfuns = 21
-                allocate(fluxfunlabels(nfluxfuns))
-                fluxfunlabels = (/  "            psi_n", &
-                                    "            eps_r", &
-                                    "              n_i", &
-                                    "              n_e", &
-                                    "              T_i", &
-                                    "              T_e", &
-                                    "          omega_E", &
-                                    "        logLambda", &
-                                    "             nu_i", &
-                                    "             nu_e", &
-                                    "                q", &
-                                    "        dconPmu_0", &
-                                    "         dvdpsi_n", &
-                                    "          omega_N", &
-                                    "          omega_T", &
-                                    "      omega_trans", &
-                                    "       omega_gyro", &
-                                    "      RLARomega_b", &
-                                    "      RLARomega_d", &
-                                    " <(deltaB_L/B)^2>", &
-                                    "    <(divxprp)^2>" /) ! <(divxprp)^2>/J??
-            endif
-            call append_2d(fluxfuns,(/ psi, epsr, kin%f(1:8), q,sq%f(2), sq%f(3),&
-                wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /) )
+        if(present(op_ffuns)) then
+            if(tdebug) print *, "  storing ",nfluxfuns," flux functions in ",size(op_ffuns,dim=1)
+            op_ffuns = (/ psi, epsr, kin%f(1:8), q,sq%f(2), sq%f(3), &
+                wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /)
         endif
-        
         
         
         
@@ -415,9 +402,9 @@ module torque
                 ! independent energy integration
                 if(tdebug) print *,'  rlar integrations. modes = ',n,l
                 ! energy space integrations
-                if(write_espace)then
+                if(erecord)then
                     xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,lnq,n,&
-                        (/psi,0.0_r8/),trim(method)//"                ")
+                        (/psi,0.0_r8/))
                 else
                     xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,lnq,n)
                 endif
@@ -476,9 +463,9 @@ module torque
                 
                 ! energy space integrations
                 allocate(lxint(1))
-                if(write_espace)then
+                if(erecord)then
                     lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n,op_psi=psi,op_lbl=method)
+                        epsr,q,fbnce,l,n,op_psi=psi)
                 else
                     lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
                         epsr,q,fbnce,l,n)
@@ -513,7 +500,7 @@ module torque
                 bspl%xs(:) = linspace(0.0_r8,1.0_r8,ntheta)
                 bjspl%xs(:)= bspl%xs(:)
                 call spline_alloc(turns,nlmda-1,6) ! (theta,r,z) of lower and upper turns               
-                if(present(wtw))then
+                if(present(op_wmats))then
                     call cspline_alloc(fbnce,nlmda-1,3+mpert*mpert*6) ! <omegab,d>, <dJdJ>, <wtw> Lambda functions
                     do i=1,2
                         call cspline_alloc(bwspl(i),ntheta-1,mpert)
@@ -663,7 +650,7 @@ module torque
                             stop
                         endif
                         ! euler lagrange matrix vectors
-                        if(present(wtw))then
+                        if(present(op_wmats))then
                             !! chi1 comes from jac in s,t,x,y,zmats unconverted
                             wmu_mt(:,i) = tdt(2,i)*(lmda/bo)*expm/sqrt(vpar) &
                                 *exp(-twopi*xj*n*q*(tdt(1,i)-tdt(1,1))) &
@@ -701,7 +688,7 @@ module torque
                     fbnce%fs(ilmda-1,3) = wbbar*abs(bjspl%fsi(bjspl%mx,1))**2/ro**2
                     
                     ! mxmx6 bounce averaged euler lagrange matrix elements
-                    if(present(wtw))then
+                    if(present(op_wmats))then
                         ! bounce integrate vectors W_mu,m and W_E,m
                         do i=1,mpert
                             bwspl(1)%fs(0:,i) = conjg(wmu_mt(i,:))*(pl(:)+(1-sigma)/pl(:))
@@ -721,17 +708,17 @@ module torque
                         wxmc= conjg(transpose(wxmt))
                         wymc= conjg(transpose(wymt))
                         wzmc= conjg(transpose(wzmt))
-                        wtw(:,:,1) = matmul(wzmc,wzmt)  !A
-                        wtw(:,:,2) = matmul(wzmc,wxmt)  !B
-                        wtw(:,:,3) = matmul(wzmc,wymt)  !C
-                        wtw(:,:,4) = matmul(wxmc,wxmt)  !D
-                        wtw(:,:,5) = matmul(wxmc,wymt)  !E
-                        wtw(:,:,6) = matmul(wymc,wymt)  !H
+                        op_wmats(:,:,1) = matmul(wzmc,wzmt)  !A
+                        op_wmats(:,:,2) = matmul(wzmc,wxmt)  !B
+                        op_wmats(:,:,3) = matmul(wzmc,wymt)  !C
+                        op_wmats(:,:,4) = matmul(wxmc,wxmt)  !D
+                        op_wmats(:,:,5) = matmul(wxmc,wymt)  !E
+                        op_wmats(:,:,6) = matmul(wymc,wymt)  !H
                         do k=1,6
                             do j=1,mpert
                                 do i=1,mpert
                                     iqty = ((k-1)*mpert+j-1)*mpert + i + 3
-                                    fbnce%fs(ilmda-1,iqty) = wbbar*wtw(i,j,k)/ro**2
+                                    fbnce%fs(ilmda-1,iqty) = wbbar*op_wmats(i,j,k)/ro**2
                                 enddo
                             enddo
                         enddo
@@ -740,36 +727,20 @@ module torque
                 
                 
                     ! optional deeply trapped bounce motion output
-                    if(write_theta .and. (ilmda==1 .or. ilmda==nlmda/2 .or.ilmda==nlmda))then
-                        if(tdebug) print *, "appending to flux functions"
-                        if(.not. allocated(thetafunlabels)) then
-                            nthetafuns = 15
-                            allocate(thetafunlabels(nthetafuns))
-                            thetafunlabels = (/ "            psi_n", &
-                                                "           Lambda", &
-                                                "          theta_n", &
-                                                "            theta", &
-                                                "           dtheta", &
-                                                "          omega_b", &
-                                                "          omega_D", &
-                                                "     real(deltaJ)", &
-                                                "     imag(deltaJ)", &
-                                                "              h_E", &
-                                                "              h_D", &
-                                                "     real(deltaB)", &
-                                                "     imag(deltaB)", &
-                                                "    real(divxprp)", &
-                                                "    imag(divxprp)" /)
-                        endif
+                    if(present(op_tfuns) .and. (ilmda==1 .or. ilmda==nlmda/2 .or.ilmda==nlmda))then
+                        if(tdebug) print *, "  recording bounce functions"
+                        j = (ilmda*2)/nlmda ! 0,1,2
                         do i=1,ntheta
                             expm = exp(xj*twopi*mfac*tdt(1,i))
                             db  = sum(dbdx_m(1)%f(:)*expm)*(bo/tspl%f(1))
                             divx= sum(dbdx_m(2)%f(:)*expm)*(bo/tspl%f(1))*divxfac
-                            call append_2d(thetafuns,(/ psi, lmda, bjspl%xs(i-1), tdt(:,i), &
-                                 bspl%fs(i-1,:), REAL(bjspl%fs(i-1,1)), AIMAG((bjspl%fs(i-1,1))), &
-                                 bspl%fsi(i-1,1)/((2-sigma)*bspl%fsi(bspl%mx,1)), &
-                                 bspl%fsi(i-1,2)/((2-sigma)*bspl%fsi(bspl%mx,2)), &
-                                 REAL(db), AIMAG(db), REAL(divx), AIMAG(divx) /) )
+                            op_tfuns(j*ntheta+i,:) = (/ &
+                                real(i,r8), real(j+1,r8), real(l,r8), psi, lmda, &
+                                bjspl%xs(i-1), tdt(:,i), bspl%fs(i-1,:), &
+                                real(bjspl%fs(i-1,1)), aimag((bjspl%fs(i-1,1))), &
+                                bspl%fsi(i-1,1)/((2-sigma)*bspl%fsi(bspl%mx,1)), &
+                                bspl%fsi(i-1,2)/((2-sigma)*bspl%fsi(bspl%mx,2)), &
+                                real(db), aimag(db), real(divx), aimag(divx) /)
                         enddo
                     endif
                 
@@ -806,10 +777,10 @@ module torque
                     imx = 0.0
                     wtwnorm = -1.0
                 endif
-                if(write_espace)then
+                if(erecord)then
                     lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
                         epsr,q,fbnce,l,n,op_rex=rex,op_imx=imx,&
-                        op_psi=psi,op_lbl=method,op_turns=turns)
+                        op_psi=psi,op_turns=turns)
                 else
                     lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
                         epsr,q,fbnce,l,n,op_rex=rex,op_imx=imx)
@@ -822,13 +793,13 @@ module torque
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
 
                 ! Euler lagrange matrices (wtw ~ dW ~ T/i)
-                if(present(wtw))then
-                    wtw(:,:,:) = 0
+                if(present(op_wmats))then
+                    op_wmats(:,:,:) = 0
                     do k=1,6
                         do j=1,mpert
                             do i=1,mpert
                                 iqty = ((k-1)*mpert+j-1)*mpert + i + 1
-                                wtw(i,j,k) = (1/(2*xj*n))*lxint(iqty)/fbnce_norm(iqty) &
+                                op_wmats(i,j,k) = (1/(2*xj*n))*lxint(iqty)/fbnce_norm(iqty) &
                                     *kin%f(s)*kin%f(s+2) &
                                     *(-n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
                             enddo
@@ -838,18 +809,18 @@ module torque
                     call cspline_dealloc(bwspl(2))
                     
                     ! DCON norms
-                    wtw = 2*mu0*wtw
-                    wtw(:,:,1:3) = wtw(:,:,1:3)/chi1
-                    wtw(:,:,1) = wtw(:,:,1)/chi1
+                    op_wmats = 2*mu0*op_wmats
+                    op_wmats(:,:,1:3) = op_wmats(:,:,1:3)/chi1
+                    op_wmats(:,:,1) = op_wmats(:,:,1)/chi1
 
                     if(method(2:4)=='kmm' .or. method(2:4)=='rmm')then ! Euler-Lagrange Matrix norms indep xi
                         xix(:,1) = 1.0/sqrt(1.0*mpert) ! ||xix||=1
                         tpsi = 0
                         do i=1,6
-                            !tpsi = tpsi + maxval(wtw(:,:,i))**2 ! Max m,m' couplings
-                            !tpsi = tpsi + maxval(matmul(wtw(:,:,i),xix))**2 ! L_1 induced norms
-                            !tpsi = tpsi + maxval(matmul(transpose(xix),wtw(:,:,i)))**2 ! L_inf induced norms
-                            a=matmul(transpose(wtw(:,:,i)),wtw(:,:,i))
+                            !tpsi = tpsi + maxval(op_wmats(:,:,i))**2 ! Max m,m' couplings
+                            !tpsi = tpsi + maxval(matmul(op_wmats(:,:,i),xix))**2 ! L_1 induced norms
+                            !tpsi = tpsi + maxval(matmul(transpose(xix),op_wmats(:,:,i)))**2 ! L_inf induced norms
+                            a=matmul(transpose(op_wmats(:,:,i)),op_wmats(:,:,i))
                             work=0
                             rwork=0
                             s=0
@@ -869,17 +840,17 @@ module torque
                         xix(:,1) = xs_m(1)%f(:)
                         xiy(:,1) = xs_m(2)%f(:)
                         xiz(:,1) = xs_m(3)%f(:)
-                        t_zz = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,1),xiz))*chi1**2
-                        t_zx = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,2),xix))*chi1
-                        t_zy = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,3),xiy))*chi1
-                        t_xx = matmul(conjg(transpose(xix)),matmul(wtw(:,:,4),xix))
-                        t_xy = matmul(conjg(transpose(xix)),matmul(wtw(:,:,5),xiy))
-                        t_yy = matmul(conjg(transpose(xiy)),matmul(wtw(:,:,6),xiy))
+                        t_zz = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,1),xiz))*chi1**2
+                        t_zx = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,2),xix))*chi1
+                        t_zy = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,3),xiy))*chi1
+                        t_xx = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,4),xix))
+                        t_xy = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,5),xiy))
+                        t_yy = matmul(conjg(transpose(xiy)),matmul(op_wmats(:,:,6),xiy))
                         tpsi = (2*n*xj/(2*mu0))*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
                             +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
                             +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
                         if(tdebug)then
-                            print *," -> WxWx ~ ",wtw(20:25,20,1)
+                            print *," -> WxWx ~ ",op_wmats(20:25,20,1)
                             print *,"expected to be all real (wmm) or all imag (tmm):"
                             print *,"  xx = ",t_xx
                             print *,"  yy = ",t_yy
@@ -909,7 +880,7 @@ module torque
 
     !=======================================================================
     function tintgrl_grid(gtype,psilim,n,nl,zi,mi,wdfac,divxfac,electron,&
-                          method,write_flux)
+                          method)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Torque integratal over psi. This function forms a cubic spline of tpsi
@@ -936,8 +907,6 @@ module torque
     !       Add-hock multiplier on divergence of perpendicular displacement.
     !   electron : logical
     !       Calculate quantities for electrons (zi,mi ignored)
-    !    write_flux : logical
-    !       Write flux function quantities to file at each step.
     !   method : string
     !       Choose from 'RLAR', 'CLAR', 'FGAR', 'TGAR', 'PGAR', 'FWMM',
     !       'TWMM' or 'RWMM'.
@@ -953,25 +922,25 @@ module torque
         complex(r8) :: tintgrl_grid
         ! declare arguments
         integer, intent(in) :: n,nl,zi,mi
-        logical, intent(in) :: electron,write_flux!,write_theta,write_espace
+        logical, intent(in) :: electron
         real(r8), intent(in) :: wdfac,divxfac
         real(r8), intent(inout) :: psilim(2)
         character(*) :: method,gtype
         ! declare variables
         integer :: i, j, l, s, mx, istrt = -1, istop=-1
         real(r8) :: x,xlast,chrg,drive,wdcom,dxcom
+        real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: xs
-        real(r8), dimension(:,:), allocatable :: tmp,tmpl
+        real(r8), dimension(:,:), allocatable :: tmp,tmpl,tmpf
         complex(r8), dimension(:), allocatable :: gam,chi
-        character(64) :: file3
-        character(8) :: nstring,methcom
+        character(8) :: methcom
         ! lsode type variables
-        integer  neqarray(9),neq
+        integer  neqarray(6),neq
         real*8, dimension(:), allocatable ::  y,dky
         ! declare new spline
         TYPE(cspline_type) :: tphi_spl
 
-        common /tcom/ wdcom,dxcom,methcom
+        common /tcom/ wdcom,dxcom,methcom,fcom
 
         ! set module variables
         psi_warned = 0.0
@@ -983,9 +952,7 @@ module torque
         ! setup
         neq = 2*(1+2*nl)
         allocate(y(neq),dky(neq))
-        neqarray(:) = (/neq,n,nl,zi,mi,0,0,0,0/)
-        if(electron) neqarray(6)=1
-        if(write_flux) neqarray(7)=1
+        neqarray(:) = (/neq,n,nl,zi,mi,btoi(electron)/)
 
         ! for flux calculations
         allocate(gam(2*nl+1),chi(2*nl+1))
@@ -1025,6 +992,7 @@ module torque
         mx = istop-istrt
 
         ! prep allocations
+        allocate(tmp(mx+1,10),tmpl(neq*(mx+1),10),tmpf(mx+1,nfluxfuns))
         CALL cspline_alloc(tphi_spl,mx,2*nl+1)
         if(index(method,'mm')>0)then
             do j=1,6
@@ -1041,6 +1009,9 @@ module torque
             CALL tintgrnd(neqarray,x,y,dky)
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
+
+            ! save flux functions
+            tmpf(i+1,:) = fcom
 
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
@@ -1063,7 +1034,6 @@ module torque
         CALL cspline_int(tphi_spl)
 
         ! flux/diffusivity profiles
-        allocate(tmp(mx+1,10),tmpl(neq*(mx+1),10))
         do i=0,mx
             x = xs(i+istrt)
             dky = tphi_spl%fs(i,:)
@@ -1112,26 +1082,20 @@ module torque
 
         ! ascii output
         print *,trim(method)//"_"//gtype//"_grid"
-        call torque_ascii(n,trim(method)//"_"//gtype//"_grid",electron,tmp(:,:),tmpl(:,:),zi,mi)
-        if(write_flux)then
-            write(nstring,'(I8)') n
-            file3 = "pentrc_"//trim(method)//"_"//gtype//"_grid_eqprofiles_n"//trim(adjustl(nstring))//".out"
-            call ascii_table(trim(file3),TRANSPOSE(fluxfuns),fluxfunlabels,"equil",zi,mi)
-            deallocate(fluxfuns,fluxfunlabels)
-        endif
+        call torque_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmp,tmpl)
+        call output_fluxfun_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmpf)
 
         ! sum for ultimate result
         tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
-        deallocate(xs,y,dky,gam,chi,tmp,tmpl)
+        deallocate(xs,y,dky,gam,chi,tmp,tmpl,tmpf)
         call cspline_dealloc(tphi_spl)
 
         return
     end function tintgrl_grid
 
     !=======================================================================
-    function tintgrl_lsode(psilim,n,nl,zi,mi,wdfac,divxfac,electron,method,&
-        write_flux)
+    function tintgrl_lsode(psilim,n,nl,zi,mi,wdfac,divxfac,electron,method)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Torque integratal over psi. Integration boundes are set by the dcon
@@ -1154,8 +1118,6 @@ module torque
     !       Add-hock multiplier on divergence of perpendicular displacement.
     !   electron : logical
     !       Calculate quantities for electrons (zi,mi ignored)
-    !   write_flux : logical
-    !       Write flux function quantities to file at each step.
     !   method : string
     !       Choose from 'RLAR', 'CLAR', 'FGAR', 'TGAR', 'PGAR', 'FWMM',
     !       'TWMM' or 'RWMM'.
@@ -1171,7 +1133,7 @@ module torque
         complex(r8) :: tintgrl_lsode        
         ! declare arguments
         integer, intent(in) :: n,nl,zi,mi
-        logical, intent(in) :: electron,write_flux!,write_theta,write_espace
+        logical, intent(in) :: electron
         real(r8), intent(in) :: wdfac,divxfac
         real(r8), intent(inout) :: psilim(2)
         character(*) :: method
@@ -1179,21 +1141,19 @@ module torque
         integer, parameter :: maxsteps = 10000
         integer :: i,j,l,s
         real(r8) :: xlast,wdcom,dxcom,chrg,drive
+        real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: gam,chi
-        real(r8), dimension(maxsteps,10) :: tmp
-        real(r8), dimension(:,:), allocatable :: tmpl
-        real(r8), dimension(maxsteps) :: tmppsi
+        real(r8), dimension(:,:), allocatable :: tmp,tmpl,tmpf
         complex(r8), dimension(maxsteps,mpert**2,6) :: tmpmats
-        character(64) :: file3
-        character(8) :: nstring,methcom
+        character(8) :: methcom
         ! declare lsode input variables
-        integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(9),&
+        integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(6),&
             neq,liw,lrw
         integer, dimension(:), allocatable :: iwork
         real*8 :: x,xout
         real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
         
-        common /tcom/ wdcom,dxcom,methcom
+        common /tcom/ wdcom,dxcom,methcom,fcom
         
         ! set module variables
         psi_warned = 0.0
@@ -1209,8 +1169,7 @@ module torque
         allocate(iwork(liw))
         allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
         allocate(gam(neq),chi(neq))
-        allocate(tmpl((2*nl+1)*maxsteps,10))
-        neqarray(:) = (/neq,n,nl,zi,mi,0,0,0,0/)
+        neqarray(:) = (/neq,n,nl,zi,mi,btoi(electron)/)
         y(:) = 0
         x = sq%xs(0)
         xout = min(xs_m(1)%xs(xs_m(1)%mx),sq%xs(sq%mx)) ! psilim, psihigh
@@ -1232,10 +1191,6 @@ module torque
         if(tdebug) print *,"sq lim = ",sq%xs(0),sq%xs(sq%mx)
         if(tdebug) print *,"xs lim = ",xs_m(1)%xs(0),xs_m(1)%xs(xs_m(1)%mx)
         if(tdebug) print *,"x,xout = ",x,xout
-
-        ! steup
-        if(electron) neqarray(6)=1
-        if(write_flux) neqarray(7)=1
 
         ! for flux calculation
         if(electron)then
@@ -1268,23 +1223,25 @@ module torque
             chi = -gam/(drive)
 
             ! save tables for ascii output
-            tmp(iwork(11),:) = (/ x, sq%f(3), &
+            call append_2d(tmp, (/ x, sq%f(3), &
                 sum(gam(1:neq:2),dim=1),sum(gam(2:neq:2),dim=1),&
                 sum(chi(1:neq:2),dim=1),sum(chi(2:neq:2),dim=1),&
                 sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),&
-                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1) /)
+                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1) /) )
             do l=-nl,nl
-                tmpl((iwork(11)-1)*(2*nl+1) + (nl+l) + 1, :) = (/ x, l*1.0_r8, &
+                call append_2d(tmpl, (/ x, l*1.0_r8, &
                     gam(2*(nl+l)+1:2*(nl+l)+2), &
                     chi(2*(nl+l)+1:2*(nl+l)+2), &
                     dky(2*(nl+l)+1:2*(nl+l)+2), &
-                      y(2*(nl+l)+1:2*(nl+l)+2) /)
+                      y(2*(nl+l)+1:2*(nl+l)+2) /) )
             enddo
             
+            ! save flux functions
+            call append_2d(tmpf,fcom)
+
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
-                tmppsi(iwork(11)) = x
                 do j=1,6
                     tmpmats(iwork(11),:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
                 enddo
@@ -1310,25 +1267,20 @@ module torque
             do j=1,6
                 if(kelmm(j)%nqty/=0) call cspline_dealloc(kelmm(j))
                 call cspline_alloc(kelmm(j),iwork(11)-1,mpert**2)
-                kelmm(j)%xs(:) = tmppsi(1:iwork(11))
+                kelmm(j)%xs(:) = tmp(1:iwork(11),1)
                 kelmm(j)%fs(:,:) = tmpmats(1:iwork(11),:,j)
                 call cspline_fit(kelmm(j),"extrap")
             enddo
         endif
         
         ! ascii output
-        call torque_ascii(n,trim(method),electron,tmp(:iwork(11),:),tmpl(:iwork(11)*(2*nl+1),:),zi,mi)
-        if(write_flux)then
-            write(nstring,'(I8)') n
-            file3 = "pentrc_"//trim(method)//"_eqprofiles_n"//trim(adjustl(nstring))//".out"
-            call ascii_table(trim(file3),TRANSPOSE(fluxfuns),fluxfunlabels,"equil",zi,mi)
-            deallocate(fluxfuns,fluxfunlabels)
-        endif
+        call torque_ascii(n,zi,mi,electron,trim(method),tmp,tmpl)
+        call output_fluxfun_ascii(n,zi,mi,electron,trim(method),tmpf)
 
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y(1:neq:2),dim=1)+xj*sum(y(2:neq:2),dim=1)
 
-        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi,tmpl)
+        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi,tmp,tmpl,tmpf)
         
         return
     end function tintgrl_lsode
@@ -1363,37 +1315,27 @@ module torque
         real*8 x, y(*), ydot(neq(1))
     
         real(r8) :: wdfac,xfac,psi
+        real(r8), dimension(nfluxfuns) :: ffuns
         complex(r8) trq
-        integer :: n,l,zi,mi,ee,wf,wt,we,nl
-        logical :: electron=.false.,write_flux=.false.,&
-            write_theta=.false.,write_espace=.false.,first=.true.
+        integer :: n,l,zi,mi,ee,nl
+        logical :: electron=.false.,first=.true.
         character(8) :: method
         
         integer :: i,j
         !complex(r8), dimension (mpert,mpert,6,-neq(3):neq(3)) :: wtw_l
         complex(r8), dimension (mpert,mpert,6) :: wtw_l
-        character(3) :: nstring,lstring
-        character(64) :: file
                 
-        common /tcom/ wdfac,xfac,method
+        common /tcom/ wdfac,xfac,method,ffuns
         if(tdebug .and. x<1e-2) print *, "torque - lsode subroutine wdfac ",wdfac
         if(tdebug .and. x<1e-2) print *, "torque - lsode subroutine method "//method
-
-        
         
         n = neq(2)
         nl = neq(3)
         zi= neq(4)
         mi= neq(5)
         ee= neq(6)
-        wf= neq(7)
-        wt= neq(8)
-        we= neq(9)
 
-        if(ee>0) electron = .true.
-        if(wf>0) write_flux = .true.
-        if(wt>0) write_theta = .true.
-        if(we>0) write_espace = .true.
+        electron = itob(ee)
         
         if(first) then
             allocate(elems(mpert,mpert,6))
@@ -1404,23 +1346,21 @@ module torque
         psi = 1.0*x
         do l=-nl,nl
             if(l==0)then
-                if(ee>0) electron = .true.
-                if(wf>0) write_flux = .true.
-                if(wt>0) write_theta = .true.
-                if(we>0) write_espace = .true.
+                if(index(method,'mm')>0)then
+                    trq = tpsi(psi,n,l,zi,mi,wdfac,xfac,electron,method,&
+                               op_ffuns=ffuns,op_wmats=wtw_l)
+                    elems = elems+wtw_l
+                else
+                    trq = tpsi(psi,n,l,zi,mi,wdfac,xfac,electron,method,&
+                               op_ffuns=ffuns)
+                endif
             else
-                if(ee>0) electron = .false.
-                if(wf>0) write_flux = .false.
-                if(wt>0) write_theta = .false.
-                if(we>0) write_espace = .false.
-            endif
-            if(index(method,'mm')>0)then
-                trq = tpsi(psi,n,l,zi,mi,wdfac,xfac,electron,method,&
-                            write_flux,write_theta,write_espace,wtw_l)
-                elems = elems+wtw_l
-            else
-                trq = tpsi(psi,n,l,zi,mi,wdfac,xfac,electron,method,&
-                            write_flux,write_theta,write_espace)
+                if(index(method,'mm')>0)then
+                    trq = tpsi(psi,n,l,zi,mi,wdfac,xfac,electron,method,op_wmats=wtw_l)
+                    elems = elems+wtw_l
+                else
+                    trq = tpsi(psi,n,l,zi,mi,wdfac,xfac,electron,method)
+                endif
             endif
             ! decouple two real space solutions
             ydot(2*(l+nl)+1) = real(trq)
@@ -1574,22 +1514,28 @@ module torque
     end subroutine ascii_table
 
     !=======================================================================
-    subroutine torque_ascii(n,method,electron,prof,profl,op_zi,op_mi)
+    subroutine torque_ascii(n,zi,mi,electron,method,prof,profl)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Write ascii torque profile files.
     !
     !*ARGUMENTS:
+    !    n : integer
+    !        Toroidal mode number for header
+    !    zi : integer
+    !        Ion charge for header
+    !    mi : integer
+    !        Ion mass for header
+    !    electron : logical
+    !        Modifies file name to indicate run was for electrons
+    !    method : character
+    !        Inserted into file name
     !    prof : real 2D
     !        Table of values
     !    op_profl : real 2D
     !        Table of (psi,ell) profiles
     !
     !*OPTIONAL ARGUMENTS:
-    !    op_zi : integer
-    !        Ion charge for header
-    !    op_mi : integer
-    !        Ion mass for header
     !
     !-----------------------------------------------------------------------
         implicit none
@@ -1597,13 +1543,12 @@ module torque
         character(*), intent(in) :: method
         logical :: electron
         real(r8), dimension(:,:), intent(in) :: prof,profl
-        integer, optional :: op_zi, op_mi
+        integer :: zi, mi
 
         integer :: i,nrow,ncol,out_unit,unit1,unit2
         character(8) :: nstring
         character(128) :: file1,file2
 
-        print *,"writting ascii"
         ! learn sizes
         nrow = size(prof,dim=1)
         ncol = size(prof,dim=2)
@@ -1645,10 +1590,9 @@ module torque
                 write(out_unit,*) " T_phi = Torque in Nm"
                 write(out_unit,*) " 2ndeltaW = Kinetic energy in J"
             endif
-            write(out_unit,*)
-            if(present(op_zi)) write(out_unit,'((a10,es17.8E3))') "     Ze = ",op_zi*e
-            if(present(op_mi)) write(out_unit,'((a10,es17.8E3))') "   mass = ",op_mi*mp
-            write(out_unit,'(3(a10,es16.8E3))') "     R0 = ",ro,"     B0 = ",bo,"   chi1 = ",chi1
+            write(out_unit,'(1/,1(a10,I4))') "n =",n
+            write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass = ",mi*mp
+            write(out_unit,'(3(a10,es17.8E3))') "R0 =",ro,"B0 =",bo,"chi1 = ",chi1
         enddo
 
         ! label columns
@@ -1670,8 +1614,132 @@ module torque
         return
     end subroutine torque_ascii
 
+    !=======================================================================
+    subroutine output_fluxfun_ascii(n,zi,mi,electron,method,table)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii flux function profile files.
+    !
+    !*ARGUMENTS:
+    !    n : integer
+    !        Toroidal mode number for header
+    !    zi : integer
+    !        Ion charge for header
+    !    mi : integer
+    !        Ion mass for header
+    !    electron : logical
+    !        Modifies file name to indicate run was for electrons
+    !    method : character
+    !        Inserted into file name
+    !    table : real 2D
+    !       Table of values writen to file
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n, zi, mi
+        character(*), intent(in) :: method
+        logical :: electron
+        real(r8), dimension(:,:), intent(in) :: table
 
+        integer :: i,out_unit
+        character(32) :: nstring,table_fmt,label_fmt
+        character(128) :: file
 
+        ! open and prepare file as needed
+        out_unit = get_free_file_unit(-1)
+        write(nstring,'(I8)') n
+        file = "pentrc_"//trim(method)//"_eqprofiles_n"//trim(adjustl(nstring))//".out"
+        if(electron) file = file(:7)//"e_"//file(8:)
+        open(unit=out_unit,file=file,status="unknown",action="write")
+
+        ! write header material
+        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
+        write(out_unit,*) " Equilibrium profiles."
+        write(out_unit,*) " - All energy dependent quantities are taken at E/T unity."
+        write(out_unit,'(1/,1(a10,I4))') "n =",n
+        write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
+        write(out_unit,'(3(a10,es17.8E3))') "R0 =",ro,"B0 =",bo,"chi1 =",chi1
+        !write(out_unit,'(1/,a26,2(a10,es16.8E3),1/)') " Common normalizations:",&
+        !    "    bbar = ",ro/sqrt(2.0/(mi*mp)),"    dbar = ",zi*e*bo*ro**2 ! needs T_is
+
+        ! write column headers
+        write(label_fmt,*) '(1/,',nfluxfuns,'(a17))'
+        write(out_unit,label_fmt) "psi_n","eps_r","n_i","n_e",&
+            "T_i","T_e","omega_E","logLambda","nu_i","nu_e","q","dconPmu_0","dvdpsi_n",&
+            "omega_N","omega_T","omega_trans","omega_gyro","RLARomega_b","RLARomega_d",&
+            "<(deltaB_L/B)^2>","<(divxprp)^2>"!/J??
+
+        ! write tables
+        write(table_fmt,*) '(',nfluxfuns,'(es17.8E3))'
+        do i=1,size(table,dim=1)
+            write(out_unit,table_fmt) table(i,:)
+        enddo
+
+        close(out_unit)
+        return
+    end subroutine output_fluxfun_ascii
+
+    !=======================================================================
+    subroutine output_bouncefun_ascii(n,zi,mi,electron,method,table)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii bounce function files.
+    !
+    !*ARGUMENTS:
+    !    n : integer
+    !        Toroidal mode number for header
+    !    zi : integer
+    !        Ion charge for header
+    !    mi : integer
+    !        Ion mass for header
+    !    electron : logical
+    !        Modifies file name to indicate run was for electrons
+    !    method : character
+    !        Inserted into file name
+    !    table : real 2D
+    !       Table of values writen to file
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n, zi, mi
+        character(*), intent(in) :: method
+        logical :: electron
+        real(r8), dimension(:,:), intent(in) :: table
+
+        integer :: i,out_unit
+        character(32) :: nstr,lstr,label_fmt,table_fmt
+        character(128) :: file
+
+        ! open and prepare file as needed
+        out_unit = get_free_file_unit(-1)
+        write(nstr,'(I8)') n
+        file = "pentrc_"//trim(method)//"_bounce_n"//trim(adjustl(nstr))//".out"
+        if(electron) file = file(:7)//"e_"//file(8:)
+        open(unit=out_unit,file=file,status="unknown",action="write")
+
+        ! write header material
+        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
+        write(out_unit,*) " Bounce average functions"
+        write(out_unit,'(1/,1(a10,I4))') "n =",n
+        write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
+        write(out_unit,'(3(a10,es17.8E3))') "R0 =",ro,"B0 =",bo,"chi1 =",chi1
+
+        ! write column headers
+        write(label_fmt,*) '(1/,',nthetafuns,'(a17))'
+        write(out_unit,label_fmt) "i_theta","i_Lambda","ell","psi_n", &
+            "Lambda","theta_n","theta","dtheta", &
+            "omega_b","omega_D","real(deltaJ)","imag(deltaJ)","h_E","h_D", &
+            "real(deltaB)","imag(deltaB)","real(divxprp)","imag(divxprp)"
+
+        ! write tables
+        write(table_fmt,*) '(',nthetafuns,'(es17.8E3))'
+        do i=1,size(table,dim=1)
+            write(out_unit,table_fmt) table(i,:)
+        enddo
+
+        close(out_unit)
+        return
+    end subroutine output_bouncefun_ascii
 
 end module torque
 
