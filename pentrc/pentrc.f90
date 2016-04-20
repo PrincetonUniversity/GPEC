@@ -15,111 +15,10 @@ program pentrc
     ! AUTHOR: Logan
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
-    
-    use params, only: r8,xj
-    use utilities, only: timer,to_upper
-    use special, only: set_fymnl,set_ellip
-    use inputs, only : read_kin,read_equil,nn,read_peq,&
-                       read_ipec_peq,read_fnml,verbose
-    use diagnostics, only: diagnose_all
-    
-    use energy_integration, only: &
-        output_energy_record,&                       ! subroutines
-        xatol,xrtol,xmax,ximag,xnufac,&             ! reals
-        xnutype,xf0type,&                           ! character(32)
-        qt,xdebug                                   ! logical
-    use pitch_integration, only: &
-        output_pitch_record,&                       ! subroutines
-        lambdaatol,lambdartol,&                     ! reals
-        lambdadebug                                 ! logical
-    use torque, only : &
-        tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
-        output_bouncefun_ascii,&                    ! subroutines
-        ntheta,nlmda,nthetafuns,&                   ! integers
-        tatol,trtol,&                               ! reals
-        tdebug,output_ascii,output_netcdf,&         ! logical
-        mpert,mfac                                  !! hacked for test writting
-    use global_mod, only: version                   ! GPEC package
+    use pentrc_interface
 
-    implicit none
-
-    ! declarations and defaults
-    integer, parameter :: nflags=18
-    logical :: &
-        fgar_flag=.true.,&
-        tgar_flag=.false.,&
-        pgar_flag=.false.,&
-        rlar_flag=.false.,&
-        clar_flag=.false.,&
-        fcgl_flag=.false.,&
-        wxyz_flag=.false.,&
-        fkmm_flag=.false.,&
-        tkmm_flag=.false.,&
-        pkmm_flag=.false.,&
-        frmm_flag=.false.,&
-        trmm_flag=.false.,&
-        prmm_flag=.false.,&
-        fwmm_flag=.false.,&
-        twmm_flag=.false.,&
-        pwmm_flag=.false.,&
-        ftmm_flag=.false.,&
-        ttmm_flag=.false.,&
-        ptmm_flag=.false.,&
-        electron = .false.,&
-        eq_out=.false.,&
-        theta_out=.false.,&
-        xlmda_out=.false.,&
-        eqpsi_out=.false.,&
-        equil_grid=.false.,&
-        input_grid=.false.,&
-        fnml_flag=.false.,&
-        ellip_flag=.false.,&
-        diag_flag=.false.,&
-        term_flag=.false.,&
-        clean=.true.,&
-        flags(nflags)=.false.
-        
-    integer :: i,j,k,l,m, &
-        mi=2, &
-        zi=1, &
-        zimp=6, &
-        mimp=12, &
-        nl=0, &
-        tmag_in = 1,&
-        jsurf_in = 0,&
-        nout = 30
-        
-    real(r8) ::     &
-        atol=1e-6, &
-        rtol=1e-3,  &
-        nfac=1.0,  &
-        tfac=1.0,  &
-        wefac=1.0,  &
-        wdfac=1.0,  &
-        wpfac=1.0,  &
-        nufac=1.0,  &
-        divxfac=1.0,&
-        diag_psi = 0.7, &
-        psilim(2) = (/0,1/),&
-        psiout(30)= 0, &
-        psi_out(30)= (/(i,i=1,30)/)/30.6
-    real(r8), dimension(:,:,:,:), allocatable :: tfuns
-    complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
-    complex(r8), dimension(:,:,:), allocatable :: wtw
-        
-    character(4) :: nstring,method,methods(nflags)
-    character(512) :: &
-        idconfile="euler.bin", &
-        kinetic_file='kin.dat', &
-        ipec_file  ="ipec_order1_n1.bin", &
-        peq_file ="ipec_xclebsch_n1.out", &
-        data_dir =".",&
-        docs(nflags)=""
-    character(32) :: &
-        nutype = "harmonic",&
-        f0type = "maxwellian",&
-        jac_in = "default",&
-        moment = "pressure"
+    ! local variables
+    integer :: i,j,k,l,m
 
     ! harvest variables
     include 'harvest_lib.inc'
@@ -128,47 +27,8 @@ program pentrc
     character(len=65507) :: hlog
     character, parameter :: nul = char(0)
 
-    ! namelists
-    namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
-        data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
-        jac_in,jsurf_in,tmag_in
-        
-    namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
-        atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
-        
-    namelist/pent_output/moment,output_ascii,output_netcdf,&
-        eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&
-        fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
-        wxyz_flag,psiout,psi_out,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
-        fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
-        term_flag,verbose,clean
-        
-    namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
-        tdebug,xdebug,lambdadebug
+    call initialize_pentrc
 
-
-    ! read interface and set modules
-    open(unit=1,file="pentrc.in",status="old")
-    read(unit=1,nml=pent_input)
-    read(unit=1,nml=pent_control)
-    read(unit=1,nml=pent_output)
-    read(unit=1,nml=pent_admin)
-    close(1)
-
-    ! warnings if using deprecated inputs
-    if(eq_out) print *, "WARNING: eq_out has been deprecated. Behavior is always true."
-    if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
-    if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out."
-    if(term_flag) print *, "WARNING: term_flag has been deprecated. Use verbose."
-
-    ! distribute some simplified inputs to module circles
-    xatol = atol
-    xrtol = rtol
-    xnufac= nufac
-    xnutype= nutype
-    xf0type= f0type 
-    lambdaatol = atol
-    lambdartol = rtol    
     if(verbose) print *,''
     if(verbose) print *,"PENTRC START => "//trim(version)
     if(verbose) print *,"______________________________"
@@ -215,14 +75,11 @@ program pentrc
         write(hnml,nml=pent_output)
         ierr=set_harvest_payload_nam(hlog,'PENT_OUTPUT'//nul,trim(hnml)//nul)
 
-        ! read & log (perturbed) equilibrium inputs
-        call read_equil(idconfile,hlog)
-        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
-        call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug)
-        !call read_ipec_peq(ipec_file,tdebug)
+        ! record dcon equilibrium basics
+        call idcon_harvest(hlog)
 
         ! explicit matrix calculations
-        if(wxyz_flag and output_ascii)then
+        if(wxyz_flag .and. output_ascii)then
             if(verbose) print *,"PENTRC - euler-lagrange matrix calculation"
             !! HACK - this should have its own flag
             allocate(wtw(mpert,mpert,6))

@@ -138,7 +138,7 @@ module torque
     
     implicit none
     
-    real(r8) :: tatol = 1e-3, trtol= 1e-6
+    real(r8) :: atol_psi = 1e-3, rtol_psi= 1e-6
     real(r8) :: psi_warned = 0.0
     logical :: tdebug,output_ascii,output_netcdf
     integer :: nlmda=128, ntheta=128
@@ -1175,8 +1175,8 @@ module torque
         x = sq%xs(0)
         xout = min(xs_m(1)%xs(xs_m(1)%mx),sq%xs(sq%mx)) ! psilim, psihigh
         itol = 2                  ! rtol and atol are arrays
-        rtol(:) = trtol              !1.d-7!9              ! 14
-        atol(:) = tatol              !1.d-7!9              ! 15
+        rtol(:) = rtol_psi              !1.d-7!9              ! 14
+        atol(:) = atol_psi              !1.d-7!9              ! 15
         istate = 1                ! first step
         iopt = 1                  ! optional inputs
         iwork(:) = 0              ! defaults

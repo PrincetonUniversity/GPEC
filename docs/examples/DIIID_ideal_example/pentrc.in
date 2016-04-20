@@ -21,16 +21,16 @@
     nufac = 1                           ! artificial factor applied to collision operator
     divxfac = 1                         ! artificial factor applied to div xi_perp
 
-    atol = 1e-12                        ! absolute tolerance in energy and pitch integration
-    rtol = 1e-6                         ! relative tolerance in energy and pitch integration
-    tatol = 1e-6                        ! absolute tolerance in psi_n integration
-    trtol = 1e-4                        ! relative tolerance in psi_n integration
+    atol_xlmda = 1e-12                  ! absolute tolerance in energy and pitch integration
+    rtol_xlmda = 1e-6                   ! relative tolerance in energy and pitch integration
+    atol_psi = 1e-6                     ! absolute tolerance in psi_n integration
+    rtol_psi = 1e-4                     ! relative tolerance in psi_n integration
     ntheta = 128                        ! poloidal angle grid for bounce integration
     nlmda = 128                         ! pitch grid for omega_D, oemga_b, dJdJ
 
     xmax = 128                          ! upper bound of energy integral (x=E/T)
     ximag = 0.0                         ! step off real energy axis (use to avoid zero collisionality singularities)
-    psilim = 0 1                        ! range in psi_n
+    psilims = 0 1                        ! range in psi_n
 /
 &PENT_OUTPUT
     moment = "pressure"                 ! 'pressure' for torque and particle transport, 'heat' for heat transport
