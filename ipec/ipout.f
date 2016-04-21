@@ -970,8 +970,8 @@ c-----------------------------------------------------------------------
          DEALLOCATE(dcosmn,dsinmn,rawmn)
       ELSE IF (harmonic_flag) THEN
          DO i=-hmnum,hmnum
-            IF ((-mmin+i>=1).AND.(-mmin+i<=impert)) THEN
-               cawmn(-mmin+i)=cosmn(i)+ifac*sinmn(i) ! removed a -mmin+i+1
+            IF ((-mmin+i+1>=1).AND.(-mmin+i+1<=impert)) THEN
+               cawmn(-mmin+i+1)=cosmn(i)+ifac*sinmn(i)
             ENDIF
          ENDDO
       ENDIF
