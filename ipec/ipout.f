@@ -2186,7 +2186,8 @@ c-----------------------------------------------------------------------
      $                           ji=1)
          ELSE ! no need to re-weight bno_mn with expensive invfft and fft
             bwp_mn=bwp_mn/area
-            bwpmns(istep,:)=bwp_mn
+            bwpmns(istep,:)=0
+            bwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwp_mn
          ENDIF
          xnofuns(istep,:)=xnofuns(istep,:)*EXP(ifac*nn*dphi)
          bnofuns(istep,:)=bnofuns(istep,:)*EXP(ifac*nn*dphi)
@@ -2547,8 +2548,7 @@ c-----------------------------------------------------------------------
 
       DEALLOCATE(vcmn)
 
-      
-      ! append to netcdf file once this is (mstep,mpert)
+       ! append to netcdf file once this is (mstep,mpert)
 c      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
 c      CALL check( nf90_open(fncfile,nf90_write,fncid) )
 c      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
@@ -4028,7 +4028,7 @@ c-----------------------------------------------------------------------
       DO istep=1,mstep,MAX(1,(mstep*(lmpert)-1)/max_linesout+1)
          DO ipert=1,lmpert
             WRITE(out_unit,'(1x,es23.15,1x,I4,6(es17.8e3))')
-     $         psifac(istep),mfac(ipert),xmp1out(istep,ipert),
+     $         psifac(istep),lmfac(ipert),xmp1out(istep,ipert),
      $         xspout(istep,ipert),xmsout(istep,ipert)
          ENDDO
       ENDDO
