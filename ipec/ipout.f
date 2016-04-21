@@ -2185,7 +2185,8 @@ c-----------------------------------------------------------------------
             CALL ipeq_bcoordsout(bwpmns(istep,:),bno_mn,psifac(istep),
      $                           ji=1)
          ELSE ! no need to re-weight bno_mn with expensive invfft and fft
-            bwp_mn = bwp_mn/area
+            bwp_mn=bwp_mn/area
+            bwpmns(istep,:)=bwp_mn
          ENDIF
          xnofuns(istep,:)=xnofuns(istep,:)*EXP(ifac*nn*dphi)
          bnofuns(istep,:)=bnofuns(istep,:)*EXP(ifac*nn*dphi)
