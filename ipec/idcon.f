@@ -67,24 +67,17 @@ c-----------------------------------------------------------------------
       IF (jac_out=="") jac_out=jac_type
       chi1=twopi*psio
       mpert=mhigh-mlow+1
-      ! output m's (maybe "ompert" would be better)
-      IF(mlim_out<=0)THEN   ! default outputs on mfac
-          lmlow = mlow
-          lmhigh = mhigh
-          lmpert = mpert
-      ELSE                  ! user specifies range of output m
-          lmlow=-mlim_out
-          lmhigh=mlim_out
-          lmpert=lmhigh-lmlow+1
-      ENDIF
-      ! input m's (Note: do not change based on mlow,mhigh)
-      impert = mmax-mmin+1
+      lmlow=mmin
+      lmhigh=mmax
+      IF (mlow<mmin) lmlow=mlow
+      IF (mhigh>mmax) lmhigh=mhigh
+      lmpert=lmhigh-lmlow+1
       IF (mthsurf <=0) mthsurf=mthvac
       IF (mthsurf < 4*(2*MAX(ABS(mlow),mhigh)))
      $    mthsurf = 4*(2*MAX(ABS(mlow),mhigh)) ! 4 times the nyquist limit
       ALLOCATE(r(0:mthsurf),z(0:mthsurf),theta(0:mthsurf))
       ALLOCATE(mfac(mpert),singfac(mpert))
-      ALLOCATE(lmfac(lmpert),imfac(impert))
+      ALLOCATE(lmfac(lmpert))
       ALLOCATE(edge_mn(mpert),edge_fun(0:mthsurf))
       theta=(/(itheta,itheta=0,mthsurf)/)/REAL(mthsurf,r8)
       mfac=(/(m,m=mlow,mhigh)/)

@@ -911,8 +911,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,xinmn,xoutmn,tempmn,
      $      abinmn
-      COMPLEX(r8), DIMENSION(impert) :: cawmn
-      COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,templ
+      COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,cawmn,templ
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun,xinfun,xoutfun
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: tempml
@@ -970,7 +969,7 @@ c-----------------------------------------------------------------------
          DEALLOCATE(dcosmn,dsinmn,rawmn)
       ELSE IF (harmonic_flag) THEN
          DO i=-hmnum,hmnum
-            IF ((-mmin+i+1>=1).AND.(-mmin+i+1<=impert)) THEN
+            IF ((-mmin+i+1>=1).AND.(-mmin+i+1<=lmpert)) THEN
                cawmn(-mmin+i+1)=cosmn(i)+ifac*sinmn(i)
             ENDIF
          ENDDO
@@ -979,12 +978,12 @@ c-----------------------------------------------------------------------
 c     convert coordinates.
 c-----------------------------------------------------------------------
       IF (data_flag .OR. harmonic_flag) THEN
-         CALL ipeq_fcoords(psilim,cawmn,imfac,impert,
+         CALL ipeq_fcoords(psilim,cawmn,lmfac,lmpert,
      $        rin,bpin,bin,rcin,tin,jin)             
          binmn=0
-         DO i=1,impert
-            IF ((mmin-mlow+i>=1).AND.(mmin-mlow+i<=mpert)) THEN
-               binmn(mmin-mlow+i)=cawmn(i)
+         DO i=1,lmpert
+            IF ((lmlow-mlow+i>=1).AND.(lmlow-mlow+i<=mpert)) THEN
+               binmn(lmlow-mlow+i)=cawmn(i)
             ENDIF
          ENDDO   
 c-----------------------------------------------------------------------
