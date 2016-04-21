@@ -144,7 +144,7 @@ c-----------------------------------------------------------------------
       ENDDO
       arzphifun_flag=.FALSE.
       xbrzphifun_flag=.FALSE.
-      bwp_pest_flag=.FALSE.
+      bwp_pest_flag=.TRUE.
 
       singcurs_flag=.FALSE.
       xbcontra_flag=.FALSE.

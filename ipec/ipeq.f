@@ -15,12 +15,14 @@ c      6. ipeq_parallel
 c      7. ipeq_rzphi
 c      8. ipeq_surface
 c      9. ipeq_fcoords
-c     10. ipeq_bcoords
-c     11. ipeq_weight
-c     12. ipeq_rzpgrid
-c     13. ipeq_rzpdiv
-c     14. ipeq_alloc
-c     15. ipeq_dealloc
+c     10. ipeq_fcoordsout    
+c     11. ipeq_bcoords
+c     12. ipeq_bcoordsout
+c     13. ipeq_weight
+c     14. ipeq_rzpgrid
+c     15. ipeq_rzpdiv
+c     16. ipeq_alloc
+c     17. ipeq_dealloc
 c-----------------------------------------------------------------------
 c     subprogram 0. ipeq_mod.
 c     module declarations.
@@ -727,7 +729,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_fcoords
 c-----------------------------------------------------------------------
-c     subprogram 9.1 ipeq_fcoordsout.
+c     subprogram 10. ipeq_fcoordsout.
 c     transform to dcon coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_fcoordsout(fmo,fmi,psi,ti,ji)
@@ -775,7 +777,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_fcoordsout
 c-----------------------------------------------------------------------
-c     subprogram 10. ipeq_bcoords.
+c     subprogram 11. ipeq_bcoords.
 c     transform dcon coordinates to other coordinates.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_bcoords(psi,ftnmn,amf,amp,ri,bpi,bi,rci,ti,ji)
@@ -914,7 +916,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_bcoords
 c-----------------------------------------------------------------------
-c     subprogram 10.1 ipeq_bcoordsout.
+c     subprogram 12. ipeq_bcoordsout.
 c     transform dcon to other coordinates. Assumes mpert,lmpert,jac_out
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_bcoordsout(fmo,fmi,psi,ti,ji)
@@ -962,7 +964,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_bcoordsout
 c-----------------------------------------------------------------------
-c     subprogram 11. ipeq_weight.
+c     subprogram 13. ipeq_weight.
 c     switch between a function and a weighted function.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_weight(psi,ftnmn,amf,amp,wegt)
@@ -1033,7 +1035,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_weight
 c-----------------------------------------------------------------------
-c     subprogram 12. ipeq_rzpgrid.
+c     subprogram 14. ipeq_rzpgrid.
 c     find magnetic coordinates for given rz coords.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_rzpgrid(nr,nz,psixy)
@@ -1134,7 +1136,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 13. ipeq_rzpdiv.
+c     subprogram 15. ipeq_rzpdiv.
 c     make zero divergence of rzphi functions.
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
@@ -1201,7 +1203,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_rzpdiv     
 c-----------------------------------------------------------------------
-c     subprogram 14. ipeq_alloc.
+c     subprogram 16. ipeq_alloc.
 c     allocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_alloc
@@ -1224,7 +1226,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipeq_alloc
 c-----------------------------------------------------------------------
-c     subprogram 15. ipeq_dealloc.
+c     subprogram 17. ipeq_dealloc.
 c     deallocate essential vectors in fourier space 
 c-----------------------------------------------------------------------
       SUBROUTINE ipeq_dealloc
