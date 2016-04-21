@@ -1219,131 +1219,127 @@ c-----------------------------------------------------------------------
      $          AIMAG(tempml)/),(/mpert,lmpert,2/))) )
       CALL check( nf90_close(mncid) )
 
-
-      IF (fun_flag) THEN
-         CALL ipeq_bcoords(psilim,binmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,boutmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,xinmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-         CALL ipeq_bcoords(psilim,xoutmn,mfac,mpert,
-     $        power_r,power_bp,power_b,0,0,0)
-
-         CALL iscdftb(mfac,mpert,binfun,mthsurf,binmn)     
-         CALL iscdftb(mfac,mpert,boutfun,mthsurf,boutmn)    
-         CALL iscdftb(mfac,mpert,xinfun,mthsurf,xinmn)    
-         CALL iscdftb(mfac,mpert,xoutfun,mthsurf,xoutmn)     
-         
-         DO itheta=0,mthsurf
-            CALL bicube_eval(rzphi,psilim,theta(itheta),0)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(theta(itheta)+rzphi%f(2))
-            r(itheta)=ro+rfac*COS(eta)
-            z(itheta)=zo+rfac*SIN(eta)
-            dphi(itheta)=rzphi%f(3)
-            jacs(itheta)=rzphi%f(4)
-            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jacs(itheta)
-            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jacs(itheta))
-            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-            rvecs(itheta)=
-     $           (cos(eta)*w(1,1)-sin(eta)*w(1,2))/delpsi(itheta)
-            zvecs(itheta)=
-     $           (sin(eta)*w(1,1)+cos(eta)*w(1,2))/delpsi(itheta)
-         ENDDO
-         
-         CALL ascii_open(out_unit,"ipec_control_fun_n"//
+      CALL ipeq_bcoords(psilim,binmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,boutmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,xinmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      CALL ipeq_bcoords(psilim,xoutmn,mfac,mpert,
+     $     power_r,power_bp,power_b,0,0,0)
+      
+      CALL iscdftb(mfac,mpert,binfun,mthsurf,binmn)     
+      CALL iscdftb(mfac,mpert,boutfun,mthsurf,boutmn)    
+      CALL iscdftb(mfac,mpert,xinfun,mthsurf,xinmn)    
+      CALL iscdftb(mfac,mpert,xoutfun,mthsurf,xoutmn)     
+      
+      DO itheta=0,mthsurf
+         CALL bicube_eval(rzphi,psilim,theta(itheta),0)
+         rfac=SQRT(rzphi%f(1))
+         eta=twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta)=ro+rfac*COS(eta)
+         z(itheta)=zo+rfac*SIN(eta)
+         dphi(itheta)=rzphi%f(3)
+         jacs(itheta)=rzphi%f(4)
+         w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jacs(itheta)
+         w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jacs(itheta))
+         delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+         rvecs(itheta)=
+     $        (cos(eta)*w(1,1)-sin(eta)*w(1,2))/delpsi(itheta)
+         zvecs(itheta)=
+     $        (sin(eta)*w(1,1)+cos(eta)*w(1,2))/delpsi(itheta)
+      ENDDO
+      
+      CALL ascii_open(out_unit,"ipec_control_fun_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
-     $        "Plasma response for an external perturbation on the "//
-     $        "control surface in functions"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
-         WRITE(out_unit,'(1x,a12,I4)')"mthsurf =",mthsurf
-         WRITE(out_unit,'(1x,a16,es17.8e3)')"vacuum energy =",vengy
-         WRITE(out_unit,'(1x,a16,es17.8e3)')"surface energy =",sengy
-         WRITE(out_unit,'(1x,a16,es17.8e3)')"plasma energy =",pengy
-         WRITE(out_unit,*)
-         WRITE(out_unit,*)"jac_type = "//jac_type
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(12(1x,a16))')
-     $        "r","z","theta","dphi",
-     $        "real(xin)","imag(xin)","real(xout)","imag(xout)",
-     $        "real(bin)","imag(bin)","real(bout)","imag(bout)"
-         DO itheta=0,mthsurf
-            WRITE(out_unit,'(12(es17.8e3))')r(itheta),z(itheta),
-     $           theta(itheta),dphi(itheta),
+      WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
+     $     "Plasma response for an external perturbation on the "//
+     $     "control surface in functions"
+      WRITE(out_unit,*)version
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
+      WRITE(out_unit,'(1x,a12,I4)')"mthsurf =",mthsurf
+      WRITE(out_unit,'(1x,a16,es17.8e3)')"vacuum energy =",vengy
+      WRITE(out_unit,'(1x,a16,es17.8e3)')"surface energy =",sengy
+      WRITE(out_unit,'(1x,a16,es17.8e3)')"plasma energy =",pengy
+      WRITE(out_unit,*)
+      WRITE(out_unit,*)"jac_type = "//jac_type
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(12(1x,a16))')
+     $     "r","z","theta","dphi",
+     $     "real(xin)","imag(xin)","real(xout)","imag(xout)",
+     $     "real(bin)","imag(bin)","real(bout)","imag(bout)"
+      DO itheta=0,mthsurf
+         WRITE(out_unit,'(12(es17.8e3))')r(itheta),z(itheta),
+     $        theta(itheta),dphi(itheta),
      $        REAL(xinfun(itheta)),-helicity*AIMAG(xinfun(itheta)),
      $        REAL(xoutfun(itheta)),-helicity*AIMAG(xoutfun(itheta)),
      $        REAL(binfun(itheta)),-helicity*AIMAG(binfun(itheta)),
      $        REAL(boutfun(itheta)),-helicity*AIMAG(boutfun(itheta))
-         ENDDO
-         CALL ascii_close(out_unit)
+      ENDDO
+      CALL ascii_close(out_unit)
       
-         IF(debug_flag) PRINT *,"Opening "//TRIM(mncfile)
-         CALL check( nf90_open(mncfile,nf90_write,mncid) )
-         IF(debug_flag) PRINT *,"  Inquiring about dimensions"
-         CALL check( nf90_inq_dimid(mncid,"i",i_id) )
-         CALL check( nf90_inq_dimid(mncid,"theta",t_id) )
-         IF(debug_flag) PRINT *,"  Defining variables"
-         CALL check( nf90_redef(mncid))
-         CALL check( nf90_def_var(mncid, "xi_n", nf90_double,
-     $                    (/t_id,i_id/),x_id) )
-         CALL check( nf90_put_att(mncid,x_id,"long_name",
-     $               "Displacement") )
-         CALL check( nf90_put_att(mncid,x_id,"units","m") )
-         CALL check( nf90_def_var(mncid, "xi_xn", nf90_double,
-     $                    (/t_id,i_id/),xx_id) )
-         CALL check( nf90_put_att(mncid,xx_id,"long_name",
-     $               "Externally Applied Displacement") )
-         CALL check( nf90_put_att(mncid,xx_id,"units","m") )
-         CALL check( nf90_def_var(mncid, "b_n", nf90_double,
-     $                    (/t_id,i_id/),b_id) )
-         CALL check( nf90_put_att(mncid,b_id,"long_name",
-     $               "Field") )
-         CALL check( nf90_put_att(mncid,x_id,"units","Tesla") )
-         CALL check( nf90_def_var(mncid, "b_xn", nf90_double,
-     $                    (/t_id,i_id/),bx_id) )
-         CALL check( nf90_put_att(mncid,bx_id,"long_name",
-     $               "Externally Applied Field") )
-         CALL check( nf90_put_att(mncid,bx_id,"units","Tesla") )
-         CALL check( nf90_def_var(mncid, "R", nf90_double,t_id,r_id) )
-         CALL check( nf90_put_att(mncid,r_id,"long_name",
-     $               "Major Radius") )
-         CALL check( nf90_put_att(mncid,r_id,"units","m") )
-         CALL check( nf90_def_var(mncid, "z", nf90_double,t_id,z_id) )
-         CALL check( nf90_put_att(mncid,z_id,"long_name",
-     $               "Vertical Position") )
-         CALL check( nf90_put_att(mncid,z_id,"units","m") )
-         CALL check( nf90_def_var(mncid, "R_n", nf90_double,t_id,rn_id))
-         CALL check( nf90_put_att(mncid,rn_id,"long_name",
-     $               "Major radius component of normal unit vector") )
-         CALL check( nf90_put_att(mncid,rn_id,"units","m") )
-         CALL check( nf90_def_var(mncid, "z_n", nf90_double,t_id,zn_id))
-         CALL check( nf90_put_att(mncid,zn_id,"long_name",
-     $               "Vertical component of normal unit vector") )
-         CALL check( nf90_put_att(mncid,zn_id,"units","m") )
-         CALL check( nf90_def_var(mncid, "dphi", nf90_double,t_id,p_id))
-         CALL check( nf90_put_att(mncid,p_id,"long_name",
-     $               "Toroidal - Magnetic Angle") )
-         CALL check( nf90_enddef(mncid) )
-         CALL check( nf90_put_var(mncid,xx_id,RESHAPE((/REAL(xinfun),
-     $             -helicity*AIMAG(xinfun)/),(/mthsurf+1,2/))) )      
-         CALL check( nf90_put_var(mncid,x_id,RESHAPE((/REAL(xoutfun),
-     $             -helicity*AIMAG(xoutfun)/),(/mthsurf+1,2/))) )      
-         CALL check( nf90_put_var(mncid,bx_id,RESHAPE((/REAL(binfun),
-     $             -helicity*AIMAG(binfun)/),(/mthsurf+1,2/))) )      
-         CALL check( nf90_put_var(mncid,b_id,RESHAPE((/REAL(boutfun),
-     $             -helicity*AIMAG(boutfun)/),(/mthsurf+1,2/))) )      
-         CALL check( nf90_put_var(mncid,r_id,r) )
-         CALL check( nf90_put_var(mncid,z_id,z) )
-         CALL check( nf90_put_var(mncid,rn_id,rvecs) )
-         CALL check( nf90_put_var(mncid,zn_id,zvecs) )
-         CALL check( nf90_put_var(mncid,p_id,dphi) )
-         CALL check( nf90_close(mncid) )
-
-      ENDIF
+      IF(debug_flag) PRINT *,"Opening "//TRIM(mncfile)
+      CALL check( nf90_open(mncfile,nf90_write,mncid) )
+      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+      CALL check( nf90_inq_dimid(mncid,"i",i_id) )
+      CALL check( nf90_inq_dimid(mncid,"theta",t_id) )
+      IF(debug_flag) PRINT *,"  Defining variables"
+      CALL check( nf90_redef(mncid))
+      CALL check( nf90_def_var(mncid, "xi_n", nf90_double,
+     $     (/t_id,i_id/),x_id) )
+      CALL check( nf90_put_att(mncid,x_id,"long_name",
+     $     "Displacement") )
+      CALL check( nf90_put_att(mncid,x_id,"units","m") )
+      CALL check( nf90_def_var(mncid, "xi_xn", nf90_double,
+     $     (/t_id,i_id/),xx_id) )
+      CALL check( nf90_put_att(mncid,xx_id,"long_name",
+     $     "Externally Applied Displacement") )
+      CALL check( nf90_put_att(mncid,xx_id,"units","m") )
+      CALL check( nf90_def_var(mncid, "b_n", nf90_double,
+     $     (/t_id,i_id/),b_id) )
+      CALL check( nf90_put_att(mncid,b_id,"long_name",
+     $     "Field") )
+      CALL check( nf90_put_att(mncid,x_id,"units","Tesla") )
+      CALL check( nf90_def_var(mncid, "b_xn", nf90_double,
+     $     (/t_id,i_id/),bx_id) )
+      CALL check( nf90_put_att(mncid,bx_id,"long_name",
+     $     "Externally Applied Field") )
+      CALL check( nf90_put_att(mncid,bx_id,"units","Tesla") )
+      CALL check( nf90_def_var(mncid, "R", nf90_double,t_id,r_id) )
+      CALL check( nf90_put_att(mncid,r_id,"long_name",
+     $     "Major Radius") )
+      CALL check( nf90_put_att(mncid,r_id,"units","m") )
+      CALL check( nf90_def_var(mncid, "z", nf90_double,t_id,z_id) )
+      CALL check( nf90_put_att(mncid,z_id,"long_name",
+     $     "Vertical Position") )
+      CALL check( nf90_put_att(mncid,z_id,"units","m") )
+      CALL check( nf90_def_var(mncid, "R_n", nf90_double,t_id,rn_id))
+      CALL check( nf90_put_att(mncid,rn_id,"long_name",
+     $     "Major radius component of normal unit vector") )
+      CALL check( nf90_put_att(mncid,rn_id,"units","m") )
+      CALL check( nf90_def_var(mncid, "z_n", nf90_double,t_id,zn_id))
+      CALL check( nf90_put_att(mncid,zn_id,"long_name",
+     $     "Vertical component of normal unit vector") )
+      CALL check( nf90_put_att(mncid,zn_id,"units","m") )
+      CALL check( nf90_def_var(mncid, "dphi", nf90_double,t_id,p_id))
+      CALL check( nf90_put_att(mncid,p_id,"long_name",
+     $     "Toroidal - Magnetic Angle") )
+      CALL check( nf90_enddef(mncid) )
+      CALL check( nf90_put_var(mncid,xx_id,RESHAPE((/REAL(xinfun),
+     $     -helicity*AIMAG(xinfun)/),(/mthsurf+1,2/))) )      
+      CALL check( nf90_put_var(mncid,x_id,RESHAPE((/REAL(xoutfun),
+     $     -helicity*AIMAG(xoutfun)/),(/mthsurf+1,2/))) )      
+      CALL check( nf90_put_var(mncid,bx_id,RESHAPE((/REAL(binfun),
+     $     -helicity*AIMAG(binfun)/),(/mthsurf+1,2/))) )      
+      CALL check( nf90_put_var(mncid,b_id,RESHAPE((/REAL(boutfun),
+     $     -helicity*AIMAG(boutfun)/),(/mthsurf+1,2/))) )      
+      CALL check( nf90_put_var(mncid,r_id,r) )
+      CALL check( nf90_put_var(mncid,z_id,z) )
+      CALL check( nf90_put_var(mncid,rn_id,rvecs) )
+      CALL check( nf90_put_var(mncid,zn_id,zvecs) )
+      CALL check( nf90_put_var(mncid,p_id,dphi) )
+      CALL check( nf90_close(mncid) )      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
