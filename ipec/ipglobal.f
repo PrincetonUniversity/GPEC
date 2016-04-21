@@ -18,8 +18,8 @@ c-----------------------------------------------------------------------
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
      $     debug_flag,timeit
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
-     $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
-     $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
+     $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,impert,
+     $     power_b,power_r,power_bp,jsurf_in,jsurf_out,mlim_out,
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,
@@ -48,7 +48,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(8) :: values
 
       LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
-      INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
+      INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac,imfac
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: permeabindex,gdl
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,rhofac,qfac,singfac,

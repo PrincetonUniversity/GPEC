@@ -51,7 +51,7 @@ c-----------------------------------------------------------------------
       NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
-     $     tmag_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
+     $     tmag_out,mlim_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
      $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
@@ -111,6 +111,7 @@ c-----------------------------------------------------------------------
 
       jsurf_out=0
       tmag_out=1
+      mlim_out=0
       jac_out=""
       resp_flag=.TRUE.
       singcoup_flag=.FALSE.
