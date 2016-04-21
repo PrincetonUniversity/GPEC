@@ -3964,15 +3964,13 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i,j,istep,ipert,iindex,ids(3)
+      INTEGER :: i,j,istep,ipert,itheta,iindex,ids(3)
       INTEGER :: i_id,m_id,p_id,dp_id,xp_id,xa_id
-      REAL(r8) :: ileft
+      REAL(r8) :: ileft, psi
 
-      COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
-     $     xmz_fun,xmt_fun,xsp1_fun
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: 
-     $     xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
       COMPLEX(r8), DIMENSION(mstep,lmpert) :: xmp1out,xspout,xmsout
+      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: xmp1funs,xspfuns,
+     $    xmsfuns
 
 c-----------------------------------------------------------------------
 c     compute necessary components.
@@ -3989,68 +3987,73 @@ c-----------------------------------------------------------------------
          IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
      $        WRITE(*,'(1x,a9,i3,a23)')
      $        "volume = ",iindex,"% Clebsch decomposition"
-c-----------------------------------------------------------------------
-c     compute functions on magnetic surfaces with regulation.
-c-----------------------------------------------------------------------
-         CALL spline_eval(sq,psifac(istep),1)
-         CALL ipeq_sol(psifac(istep))
-         CALL ipeq_contra(psifac(istep))         
-         CALL ipeq_cova(psifac(istep))
-c-----------------------------------------------------------------------
-c     compute mod b variations in hamada.
-c-----------------------------------------------------------------------
-         CALL iscdftb(mfac,mpert,xsp_fun,mthsurf,xsp_mn)
-         CALL iscdftb(mfac,mpert,xms_fun,mthsurf,xms_mn)
-         CALL iscdftb(mfac,mpert,xmt_fun,mthsurf,xmt_mn)
-         CALL iscdftb(mfac,mpert,xmz_fun,mthsurf,xmz_mn)
+         ! compute contravarient displacement on surface with regulation
+         psi = psifac(istep)
+         CALL spline_eval(sq,psi,1)
+         CALL ipeq_sol(psi)
 
-        ! regularize singularities
-         CALL spline_eval(sq,psifac(istep),1)
-         singfac=mfac-nn*sq%f(4)
-         xsp1_mn=xsp1_mn*(singfac**2/(singfac**2+reg_spot**2))
-         CALL iscdftb(mfac,mpert,xsp1_fun,mthsurf,xsp1_mn)
+         ! convert to jac_out
+         CALL ipeq_bcoordsout(xmp1out(istep,:),xmp1_mn,psi)
+         CALL ipeq_bcoordsout(xspout(istep,:),xsp_mn,psi)
+         CALL ipeq_bcoordsout(xmsout(istep,:),xms_mn,psi)
 
-         xmp1mns(istep,:) = xmp1_mn
-         xspmns(istep,:) = xsp_mn
-         xmsmns(istep,:) = xms_mn
-         xmtmns(istep,:) = xmt_mn
-         xmzmns(istep,:) = xmz_mn   
+         ! convert to real space
+         IF (fun_flag) THEN
+            CALL iscdftb(mfac,mpert,xmp1funs(istep,:),mthsurf,xmp1_mn)
+            CALL iscdftb(mfac,mpert,xspfuns(istep,:),mthsurf,xsp_mn)
+            CALL iscdftb(mfac,mpert,xmsfuns(istep,:),mthsurf,xms_mn)
+         ENDIF
+
       ENDDO
-         
+
+      ! remove DCON normalization
+      xmsout = xmsout/chi1
+      IF(fun_flag) xmsfuns = xmsfuns/chi1
+
+
+      ! write ascii file(s)
       CALL ascii_open(out_unit,"ipec_xclebsch_n"//
      $   TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_PMODB: "//
+      WRITE(out_unit,*)"IPEC_XCLEBSCH: "//
      $   "Clebsch Components of the displacement."
       WRITE(out_unit,*)version
-      WRITE(out_unit,'(1/,1x,a13,a8)')"jac_type = ",jac_type
+      WRITE(out_unit,'(1/,1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,2(a12,I4),1/)')
-     $   "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
+     $   "mstep =",mstep,"mpert =",lmpert,"mthsurf =",mthsurf
       WRITE(out_unit,'(1x,a23,1x,a4,6(1x,a16))')"psi","m",
      $   "real(derxi^psi)","imag(derxi^psi)",
      $   "real(xi^psi)","imag(xi^psi)",
      $   "real(xi^alpha)","imag(xi^alpha)"
-      DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
-         DO ipert=1,mpert
+      DO istep=1,mstep,MAX(1,(mstep*(lmpert)-1)/max_linesout+1)
+         DO ipert=1,lmpert
             WRITE(out_unit,'(1x,es23.15,1x,I4,6(es17.8e3))')
-     $         psifac(istep),mfac(ipert),xmp1mns(istep,ipert),
-     $         xspmns(istep,ipert),xmsmns(istep,ipert)/chi1
+     $         psifac(istep),mfac(ipert),xmp1out(istep,ipert),
+     $         xspout(istep,ipert),xmsout(istep,ipert)
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-      
-      ! convert to jac_out
-      xmp1out = 0
-      xspout = 0
-      xmsout = 0
-      DO istep=1,mstep
-         DO i=1,mpert
-            IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-               xmp1out(istep,mlow-lmlow+i) = xmp1mns(istep,i)
-               xspout(istep,mlow-lmlow+i) = xspmns(istep,i)
-               xmsout(istep,mlow-lmlow+i) = xmsmns(istep,i)
-            ENDIF
-         ENDDO
-      ENDDO
+      IF(fun_flag)THEN
+          CALL ascii_open(out_unit,"ipec_xclebsch_fun_n"//
+     $       TRIM(sn)//".out","UNKNOWN")
+          WRITE(out_unit,*)"IPEC_XCLEBSCH: "//
+     $       "Clebsch Components of the displacement."
+          WRITE(out_unit,*)version
+          WRITE(out_unit,'(1/,1x,a13,a8)')"jac_out = ",jac_out
+          WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,2(a12,I4),1/)')
+     $       "mstep =",mstep,"mpert =",lmpert,"mthsurf =",mthsurf
+          WRITE(out_unit,'(1x,a23,1x,a4,6(1x,a16))')"psi","theta",
+     $       "real(derxi^psi)","imag(derxi^psi)",
+     $       "real(xi^psi)","imag(xi^psi)",
+     $       "real(xi^alpha)","imag(xi^alpha)"
+          DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
+             DO itheta=0,mthsurf
+                WRITE(out_unit,'(8(es17.8e3))')
+     $             psifac(istep),theta(itheta),xmp1funs(istep,itheta),
+     $             xspfuns(istep,itheta),xmsfuns(istep,itheta)
+             ENDDO
+          ENDDO
+          CALL ascii_close(out_unit)
+      ENDIF
       
       ! append to netcdf file
       IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
@@ -4076,7 +4079,7 @@ c-----------------------------------------------------------------------
       ids = (/xp_id,dp_id,xa_id/)
       DO i=1,3
          CALL check( nf90_put_att(fncid,ids(i),"units","m") )
-         CALL check( nf90_put_att(fncid,ids(i),"jacobian",jac_type) )
+         CALL check( nf90_put_att(fncid,ids(i),"jacobian",jac_out) )
       ENDDO
       CALL check( nf90_enddef(fncid) )
       IF(debug_flag) PRINT *,"  Writting variables"
@@ -4891,7 +4894,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
       CALL check( nf90_def_dim(fncid,"m",lmpert,  fmdid) )
       CALL check( nf90_def_var(fncid,"m",NF90_INT,fmdid,fmvid) )
-      CALL check( nf90_def_dim(fncid,"psi_N",mstep+1,    fpdid) )
+      CALL check( nf90_def_dim(fncid,"psi_N",mstep,    fpdid) )
       CALL check( nf90_def_var(fncid,"psi_N",nf90_double,fpdid,fpvid) )
       CALL check( nf90_def_dim(fncid,"theta",mthsurf+1,  ftdid) )
       CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
@@ -4935,7 +4938,7 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
       CALL check( nf90_put_var(fncid,fivid,(/0,1/)) )
       CALL check( nf90_put_var(fncid,fmvid,lmfac) )
-      CALL check( nf90_put_var(fncid,fpvid,psifac) )
+      CALL check( nf90_put_var(fncid,fpvid,psifac(1:mstep)) )
       CALL check( nf90_put_var(fncid,ftvid,theta) )
 
       IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
