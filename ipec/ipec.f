@@ -166,7 +166,6 @@ c-----------------------------------------------------------------------
       cas3d_flag=.FALSE.
       test_flag=.FALSE.
       eigm_flag=.FALSE.
-      bwp_pest_flag=.FALSE.
 
       majr=10.0
       minr=1.0
