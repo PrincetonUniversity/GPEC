@@ -973,15 +973,11 @@ c-----------------------------------------------------------------------
          cawmn=rawmn(:,nn) ! note this was wrong when using lmpert based on mlow,mhigh
          DEALLOCATE(dcosmn,dsinmn,rawmn)
       ELSE IF (harmonic_flag) THEN
-         print *,"harmonic"
-         print *,-hmnum,hmnum,mmin,mmax
          DO i=-hmnum,hmnum
             IF ((-mmin+i+1>=1).AND.(-mmin+i+1<=mpert_in)) THEN
                cawmn(-mmin+i+1)=cosmn(i)+ifac*sinmn(i)
             ENDIF
          ENDDO
-         print *,mfac_in(64:74)
-         print *,cawmn(64:74)
       ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.
@@ -989,16 +985,12 @@ c-----------------------------------------------------------------------
       IF (data_flag .OR. harmonic_flag) THEN
          CALL ipeq_fcoords(psilim,cawmn,mfac_in,mpert_in,
      $        rin,bpin,bin,rcin,tin,jin)
-         print *,mfac_in(64:74)
-         print *,cawmn(64:74)
          binmn=0
          DO i=1,mpert_in
             IF ((mmin-mlow+i>=1).AND.(mmin-mlow+i<=mpert)) THEN
                binmn(mmin-mlow+i)=cawmn(i)
             ENDIF
          ENDDO
-         print *,mfac(12:22)
-         print *,binmn(12:22)
 c-----------------------------------------------------------------------
 c     convert to field if displacement is given.
 c-----------------------------------------------------------------------
@@ -1008,8 +1000,6 @@ c-----------------------------------------------------------------------
             CALL ipeq_weight(psilim,binmn,mfac,mpert,0)
          ENDIF 
          binmn=binmn*scale
-         print *,mfac(12:22)
-         print *,binmn(12:22)
          tempmn=binmn
          CALL ipeq_weight(psilim,tempmn,mfac,mpert,1)              
       ENDIF
@@ -1030,13 +1020,7 @@ c-----------------------------------------------------------------------
       xspmn=foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
       binmn=finmn
       boutmn=foutmn
-         print *,"-----"
-         print *,mfac(12:22)
-         print *,binmn(12:22)
-         print *,"-----"
       CALL ipeq_weight(psilim,binmn,mfac,mpert,0)
-         print *,mfac(12:22)
-         print *,binmn(12:22)
       CALL ipeq_weight(psilim,boutmn,mfac,mpert,0)
       xinmn=finmn/(chi1*twopi*ifac*(mfac-nn*qlim))
       xoutmn=xspmn
