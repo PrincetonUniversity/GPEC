@@ -900,8 +900,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn,xspmn
 
-      INTEGER :: i,j,i1,i2,i3,ms,itheta
+      INTEGER :: i,j,i1,i2,i3,ms,itheta,mpert_in
       INTEGER, DIMENSION(mpert) :: ipiv
+      INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_in
       REAL(r8) :: vengy,sengy,pengy,area,thetai,scale,norm
       COMPLEX(r8) :: vy,sy,py
       CHARACTER(128) :: message
@@ -911,10 +912,11 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,xinmn,xoutmn,tempmn,
      $      abinmn
-      COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,cawmn,templ
+      COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,templ
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun,xinfun,xoutfun
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: tempml
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: cawmn
 
       REAL(r8), DIMENSION(:,:), POINTER :: dcosmn,dsinmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: rawmn
@@ -926,6 +928,9 @@ c     compute control surface area.
 c-----------------------------------------------------------------------
       units = (/(1.0,itheta=0,mthsurf)/)
       jarea = issurfint(units,mthsurf,psilim,0,0)
+      mpert_in = ABS(mmax)+ABS(mmin)+1
+      ALLOCATE(mfac_in(mpert_in),cawmn(mpert_in))
+      mfac_in = (/(i,i=mmin,mmax)/)
 c-----------------------------------------------------------------------
 c     check data_type and read data.
 c-----------------------------------------------------------------------
@@ -968,24 +973,32 @@ c-----------------------------------------------------------------------
          cawmn=rawmn(:,nn) ! note this was wrong when using lmpert based on mlow,mhigh
          DEALLOCATE(dcosmn,dsinmn,rawmn)
       ELSE IF (harmonic_flag) THEN
+         print *,"harmonic"
+         print *,-hmnum,hmnum,mmin,mmax
          DO i=-hmnum,hmnum
-            IF ((-mmin+i+1>=1).AND.(-mmin+i+1<=lmpert)) THEN
+            IF ((-mmin+i+1>=1).AND.(-mmin+i+1<=mpert_in)) THEN
                cawmn(-mmin+i+1)=cosmn(i)+ifac*sinmn(i)
             ENDIF
          ENDDO
+         print *,mfac_in(64:74)
+         print *,cawmn(64:74)
       ENDIF
 c-----------------------------------------------------------------------
 c     convert coordinates.
 c-----------------------------------------------------------------------
       IF (data_flag .OR. harmonic_flag) THEN
-         CALL ipeq_fcoords(psilim,cawmn,lmfac,lmpert,
-     $        rin,bpin,bin,rcin,tin,jin)             
+         CALL ipeq_fcoords(psilim,cawmn,mfac_in,mpert_in,
+     $        rin,bpin,bin,rcin,tin,jin)
+         print *,mfac_in(64:74)
+         print *,cawmn(64:74)
          binmn=0
-         DO i=1,lmpert
-            IF ((lmlow-mlow+i>=1).AND.(lmlow-mlow+i<=mpert)) THEN
-               binmn(lmlow-mlow+i)=cawmn(i)
+         DO i=1,mpert_in
+            IF ((mmin-mlow+i>=1).AND.(mmin-mlow+i<=mpert)) THEN
+               binmn(mmin-mlow+i)=cawmn(i)
             ENDIF
-         ENDDO   
+         ENDDO
+         print *,mfac(12:22)
+         print *,binmn(12:22)
 c-----------------------------------------------------------------------
 c     convert to field if displacement is given.
 c-----------------------------------------------------------------------
@@ -995,6 +1008,8 @@ c-----------------------------------------------------------------------
             CALL ipeq_weight(psilim,binmn,mfac,mpert,0)
          ENDIF 
          binmn=binmn*scale
+         print *,mfac(12:22)
+         print *,binmn(12:22)
          tempmn=binmn
          CALL ipeq_weight(psilim,tempmn,mfac,mpert,1)              
       ENDIF
@@ -1015,7 +1030,13 @@ c-----------------------------------------------------------------------
       xspmn=foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
       binmn=finmn
       boutmn=foutmn
+         print *,"-----"
+         print *,mfac(12:22)
+         print *,binmn(12:22)
+         print *,"-----"
       CALL ipeq_weight(psilim,binmn,mfac,mpert,0)
+         print *,mfac(12:22)
+         print *,binmn(12:22)
       CALL ipeq_weight(psilim,boutmn,mfac,mpert,0)
       xinmn=finmn/(chi1*twopi*ifac*(mfac-nn*qlim))
       xoutmn=xspmn
@@ -2106,7 +2127,7 @@ c-----------------------------------------------------------------------
       INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,xm_id,x_id,
      $   rv_id,zv_id,rzstat
       
-      INTEGER :: i,istep,ipert,iindex,itheta
+      INTEGER :: i,j,istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax,area
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
@@ -2114,8 +2135,10 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(mstep,lmpert) :: xmns,ymns,
      $     xnomns,bnomns,bwpmns
-      COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: pwpmns
+
+      INTEGER :: mlow_pest,mhigh_pest,mpert_pest
+      INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_pest
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: pwpmns
 
       REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,rvecs,zvecs
       COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
@@ -2127,6 +2150,19 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing x and b normal components"
 
       CALL idcon_build(egnum,xspmn)
+
+      ! set up pest grid
+      IF(TRIM(jac_out)=="pest")THEN ! will be mlow,mhigh if jac_type pest
+        mlow_pest = lmlow
+        mhigh_pest = lmhigh
+      ELSE
+        mlow_pest = MIN(lmlow,-64)
+        mlow_pest = MAX(lmhigh,64)
+      ENDIF
+      mpert_pest = ABS(mhigh_pest)+ABS(mlow_pest)+1
+      ALLOCATE(mfac_pest(mpert_pest),pwpmns(mstep,mpert_pest))
+      mfac_pest = (/(i,i=mlow_pest,mhigh_pest)/)
+      pwpmns = 0
 
       CALL ipeq_alloc
       DO istep=1,mstep
@@ -2168,15 +2204,14 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,xnofuns(istep,:),mthsurf,xno_mn)
          CALL iscdftf(mfac,mpert,bnofuns(istep,:),mthsurf,bno_mn)
          IF (bwp_pest_flag) THEN
-            pwpmn=0
+            ! distribute working decomposition on pest mrange
             DO i=1,mpert
-               IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-                  pwpmn(mlow-lmlow+i)=bno_mn(i)
-               ENDIF
+               j = mlow-mlow_pest+i
+               IF ((j>=1).AND.(j<=mpert_pest)) pwpmns(istep,j)=bno_mn(i)
             ENDDO
-            CALL ipeq_bcoords(psifac(istep),pwpmn,lmfac,lmpert,
-     $           2,0,0,0,0,1)
-            pwpmns(istep,:)=pwpmn
+            ! convert to pest with magnetic angle
+            CALL ipeq_bcoords(psifac(istep),pwpmns(istep,:),
+     $           mfac_pest,mpert_pest,2,0,0,0,0,1)
          ENDIF            
 
          CALL ipeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep),ji=0)
@@ -2228,15 +2263,15 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $        "mstep =",mstep,"mpert =",lmpert,"mthsurf =",mthsurf
+     $        "mstep =",mstep,"mpert =",mpert_pest,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          WRITE(out_unit,'(2(1x,a16),1x,a4,6(1x,a16))')"psi","q","m",
      $        "real(bwp)","imag(bwp)"
          
          DO istep=1,mstep,MAX(1,(mstep*lmpert-1)/max_linesout+1)
-            DO ipert=1,lmpert
+            DO ipert=1,mpert_pest
                WRITE(out_unit,'(2(es17.8e3),1x,I4,6(es17.8e3))')
-     $              psifac(istep),qfac(istep),lmfac(ipert),
+     $              psifac(istep),qfac(istep),mfac_pest(ipert),
      $              REAL(pwpmns(istep,ipert)),AIMAG(pwpmns(istep,ipert))        
             ENDDO
          ENDDO
