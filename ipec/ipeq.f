@@ -626,9 +626,9 @@ c-----------------------------------------------------------------------
       first  = .FALSE.
 
       IF(debug_flag) PRINT *, "Entering ipeq_fcoords"
-      
+
       ! global sq may have been eval'd elsewhere inbetween bcoords calls
-      CALL spline_eval(sq,psi,0) 
+      CALL spline_eval(sq,psi,0)
       ! expensive spline formation, do only if asking for new coords or surface
       itmp = (/ri,bpi,bi,rci,ti,ji/)
       IF(.NOT.ALL(itmp==isave).OR. (psave/=psi))THEN
@@ -769,7 +769,7 @@ c     transform new vector.
 c-----------------------------------------------------------------------
       IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
          CALL ipeq_fcoords(psi,fmo,mfac,mpert,power_rout,power_bpout,
-     $      power_bout,power_rcout,ti,ji)
+     $      power_bout,power_rcout,tout,jout)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
