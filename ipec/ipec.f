@@ -111,7 +111,7 @@ c-----------------------------------------------------------------------
 
       jsurf_out=0
       tmag_out=1
-      mlim_out=0
+      mlim_out=64
       jac_out=""
       resp_flag=.TRUE.
       singcoup_flag=.FALSE.

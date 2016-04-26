@@ -43,8 +43,8 @@
 &IPEC_OUTPUT
    jac_out="hamada"         ! Coordinate system of outputs
    jsurf_out=0              ! True(1) for area weighted outputs (only appends standard ipec_control output)
-   tmag_out=0               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
-   mlim_out=0               ! If positive, Fourier decomposed outputs will span -mlim_out<=m<=mlim_out. Default (<=0) outputs on internal m range.
+   tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
+   mlim_out=64              ! Fourier decomposed outputs will span -mlim_out<=m<=mlim_out when jac_out/=jac_type or tmag_out/=tmag_in
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
