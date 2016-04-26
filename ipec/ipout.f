@@ -2141,7 +2141,7 @@ c-----------------------------------------------------------------------
         mhigh_pest = lmhigh
       ELSE
         mlow_pest = MIN(lmlow,-64)
-        mlow_pest = MAX(lmhigh,64)
+        mhigh_pest = MAX(lmhigh,64)
       ENDIF
       mpert_pest = ABS(mhigh_pest)+ABS(mlow_pest)+1
       ALLOCATE(mfac_pest(mpert_pest),pwpmns(mstep,mpert_pest))
