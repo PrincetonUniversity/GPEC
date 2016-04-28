@@ -740,7 +740,8 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), DIMENSION(lmpert), INTENT(IN) :: fmi
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: fmo
-      
+
+      COMPLEX(r8), DIMENSION(lmpert) :: tmp
       INTEGER :: i,tout,jout
 c-----------------------------------------------------------------------
 c     Defaults.
@@ -755,21 +756,35 @@ c-----------------------------------------------------------------------
       ELSE
          jout = 0
       ENDIF
-c-----------------------------------------------------------------------
-c     Form new vector in mi space.
-c-----------------------------------------------------------------------
       fmo = 0
-      DO i=1,mpert
-        IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-           fmo(i) = fmi(mlow-lmlow+i)
-        ENDIF
-      ENDDO
 c-----------------------------------------------------------------------
-c     transform new vector.
+c     Transform new vector in larger m space and then transfer to mo
 c-----------------------------------------------------------------------
-      IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
-         CALL ipeq_fcoords(psi,fmo,mfac,mpert,power_rout,power_bpout,
-     $      power_bout,power_rcout,tout,jout)
+      IF(mpert>lmpert)THEN
+         ! transfer to mo space
+         DO i=1,mpert
+            IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+               fmo(i) = fmi(mlow-lmlow+i)
+            ENDIF
+         ENDDO
+         ! transform new vector
+         IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
+            CALL ipeq_fcoords(psi,fmo,mfac,mpert,power_rout,power_bpout,
+     $         power_bout,power_rcout,tout,jout)
+         ENDIF
+      ELSE
+         ! transform in mi space
+         tmp = fmi
+         IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
+            CALL ipeq_fcoords(psi,tmp,lmfac,lmpert,power_rout,
+     $         power_bpout,power_bout,power_rcout,tout,jout)
+         ENDIF
+         ! transfer to mo space
+         DO i=1,mpert
+            IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+               fmo(i) = tmp(mlow-lmlow+i)
+            ENDIF
+         ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -928,6 +943,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: fmi
       COMPLEX(r8), DIMENSION(lmpert), INTENT(OUT) :: fmo
       
+      COMPLEX(r8), DIMENSION(mpert) :: tmp
       INTEGER :: i,tout,jout
 c-----------------------------------------------------------------------
 c     Defaults.
@@ -942,21 +958,35 @@ c-----------------------------------------------------------------------
       ELSE
          jout = 0
       ENDIF
-c-----------------------------------------------------------------------
-c     Form new vector in mi space.
-c-----------------------------------------------------------------------
       fmo = 0
-      DO i=1,mpert
-        IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
-           fmo(mlow-lmlow+i) = fmi(i)
-        ENDIF
-      ENDDO
 c-----------------------------------------------------------------------
-c     transform new vector.
+c     Transform vector in larger m space and then transfer to mo
 c-----------------------------------------------------------------------
-      IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
-         CALL ipeq_bcoords(psi,fmo,lmfac,lmpert,power_rout,power_bpout,
-     $      power_bout,power_rcout,tout,jout)
+      IF(mpert<lmpert)THEN
+         ! transfer to mo space
+         DO i=1,mpert
+           IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+              fmo(mlow-lmlow+i) = fmi(i)
+           ENDIF
+         ENDDO
+         ! transform new vector
+         IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
+            CALL ipeq_bcoords(psi,fmo,lmfac,lmpert,power_rout,
+     $         power_bpout,power_bout,power_rcout,tout,jout)
+         ENDIF
+      ELSE
+         ! transform in mi space
+         tmp = fmi
+         IF((jac_out/=jac_type).OR.(tout==0).OR.(jout/=0))THEN
+            CALL ipeq_bcoords(psi,tmp,mfac,mpert,power_rout,
+     $         power_bpout,power_bout,power_rcout,tout,jout)
+         ENDIF
+         ! transfer to mo space
+         DO i=1,mpert
+           IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+              fmo(mlow-lmlow+i) = tmp(i)
+           ENDIF
+         ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
