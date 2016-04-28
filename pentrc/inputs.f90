@@ -265,12 +265,32 @@ module inputs
         character(512), intent(in) :: file
         ! declare local variables
         logical :: ncheck
-        integer :: i,j,npsi,nm,firstnm, powin(4)
+        integer :: i,j,npsi,nm,ndigit,firstnm, powin(4)
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
         complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns
+        character(3) :: nstr
         character(32), dimension(:), allocatable :: titles
+
+        ! file consistency check (requires naming convention)
+        write(nstr,'(i3)') nn
+        if(nn<-9)then
+            ndigit = 3
+        elseif(nn>=0 .and. nn<10)then
+            ndigit = 1
+        else ! assume only running with -99 to 99
+            ndigit = 2
+        endif
+        ncheck = .false.
+        DO i=1,512-ndigit
+            if(file(i:i+ndigit)=='n'//trim(adjustl(nstr))) ncheck = .true.
+        ENDDO
+        if(.not. ncheck)then
+            print *,"** Toroidal mode number determined from idconfile is",nn
+            print *,"** Corresponding label 'n"//trim(adjustl(nstr))//"' must be in peq_file name"
+            stop "ERROR: Inconsistent toroidal mode numbers"
+        endif
 
         ! read file
         call readtable(file,table,titles,verbose,debug)
