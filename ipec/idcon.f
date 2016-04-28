@@ -63,12 +63,25 @@ c-----------------------------------------------------------------------
       ELSE 
          jac_type="other"
       ENDIF
-      IF (jac_in=="") jac_in=jac_type
-      IF (jac_out=="") jac_out=jac_type
+      IF (jac_in=="") THEN
+         jac_in=jac_type
+         power_bin=power_b
+         power_bpin=power_bp
+         power_rin=power_r
+         power_rcin=0
+      ENDIF
+      IF (jac_out=="") THEN
+         jac_out=jac_type
+         power_bout=power_b
+         power_bpout=power_bp
+         power_rout=power_r
+         power_rcout=0
+      ENDIF
       chi1=twopi*psio
       mpert=mhigh-mlow+1
-      ! output m's (maybe "ompert" would be better)
-      IF(mlim_out<=0 .OR. jac_out==jac_type)THEN   ! default outputs on mfac
+      
+      IF ((mlim_out<MAX(ABS(mlow),ABS(mhigh))).OR.
+     $     ((jac_out==jac_type).AND.(tmag_out==1))) THEN ! default outputs on mfac
           lmlow = mlow
           lmhigh = mhigh
           lmpert = mpert

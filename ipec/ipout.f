@@ -2141,7 +2141,7 @@ c-----------------------------------------------------------------------
         mhigh_pest = lmhigh
       ELSE
         mlow_pest = MIN(lmlow,-64)
-        mlow_pest = MAX(lmhigh,64)
+        mhigh_pest = MAX(lmhigh,64)
       ENDIF
       mpert_pest = ABS(mhigh_pest)+ABS(mlow_pest)+1
       ALLOCATE(mfac_pest(mpert_pest),pwpmns(mstep,mpert_pest))
@@ -2190,8 +2190,9 @@ c-----------------------------------------------------------------------
          IF (bwp_pest_flag) THEN
             ! distribute working decomposition on pest mrange
             DO i=1,mpert
-               j = mlow-mlow_pest+i
-               IF ((j>=1).AND.(j<=mpert_pest)) pwpmns(istep,j)=bno_mn(i)
+               IF ((mlow-mlow_pest+i>=1).AND.
+     $              (mlow-mlow_pest+i<=mpert_pest)) 
+     $              pwpmns(istep,mlow-mlow_pest+i)=bno_mn(i)
             ENDDO
             ! convert to pest with magnetic angle
             CALL ipeq_bcoords(psifac(istep),pwpmns(istep,:),
@@ -2501,65 +2502,87 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
       
-      INTEGER :: ipsi,ipert,i
+      INTEGER :: ipsi,ipert,i,iindex
+      REAL(r8) :: ileft
       REAL(r8), DIMENSION(0:cmpsi) :: psi
       COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
 
       INTEGER :: p_id,t_id,i_id,m_id,bm_id,q_id
 
-      COMPLEX(r8), DIMENSION(mpert) :: vwpmn
-      COMPLEX(r8), DIMENSION(lmpert) :: pwpmn
       REAL(r8), DIMENSION(cmpsi) :: qs
-      REAL(r8), DIMENSION(cmpsi,mpert) :: xmns,ymns
-      COMPLEX(r8), DIMENSION(cmpsi,mpert) :: vmn
-      COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: pmn
+      REAL(r8), DIMENSION(cmpsi,lmpert) :: xmns,ymns
+      COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: vnomns,vwpmns
+
+      INTEGER :: mlow_pest,mhigh_pest,mpert_pest
+      INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_pest
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: pwpmns
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       IF(timeit) CALL ipec_timer(-2)
-      IF(verbose) WRITE(*,*)"Computing b normal components from coils"
+      IF(verbose) WRITE(*,*)"Computing vb normal components from coils"
+
+      IF(TRIM(jac_out)=="pest")THEN ! will be mlow,mhigh if jac_type pest
+        mlow_pest = lmlow
+        mhigh_pest = lmhigh
+      ELSE
+        mlow_pest = MIN(lmlow,-64)
+        mhigh_pest = MAX(lmhigh,64)
+      ENDIF
+      mpert_pest = ABS(mhigh_pest)+ABS(mlow_pest)+1
+      ALLOCATE(mfac_pest(mpert_pest),pwpmns(cmpsi,mpert_pest))
+      mfac_pest = (/(i,i=mlow_pest,mhigh_pest)/)
+      pwpmns=0
 
       psi=(/(ipsi,ipsi=0,cmpsi)/)/REAL(cmpsi,r8)
       psi=psilow+(psilim-psilow)*SIN(psi*pi/2)**2
       ALLOCATE(vcmn(cmpert))
-      vmn = 0
-      pmn = 0
+      vcmn=0
+      vnomns=0
+      vwpmns=0
 
       DO ipsi=1,cmpsi
+         iindex = FLOOR(REAL(ipsi,8)/FLOOR(cmpsi/10.0))*10
+         ileft = REAL(ipsi,8)/FLOOR(cmpsi/10.0)*10-iindex
+         IF ((ipsi-1 /= 0) .AND. (ileft == 0) .AND. verbose)
+     $        WRITE(*,'(1x,a9,i3,a17)')
+     $        "volume = ",iindex,"% vb computations"
          CALL spline_eval(sq,psi(ipsi),0)
          qs(ipsi)=sq%f(4)
+         CALL field_bs_psi(psi(ipsi),vcmn,0)
 
          IF (bwp_pest_flag) THEN
-            CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
-               IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
-                  pmn(ipsi,cmlow-lmlow+i)=vcmn(i)
+               IF ((cmlow-mlow_pest+i>=1).AND.
+     $              (cmlow-mlow_pest+i<=mpert_pest)) THEN
+                  pwpmns(ipsi,cmlow-mlow_pest+i)=vcmn(i)
                ENDIF
             ENDDO
-            pwpmn=0
-            pwpmn=pmn(ipsi,:)
-            CALL ipeq_bcoords(psi(ipsi),pwpmn,lmfac,lmpert,
-     $           2,0,0,0,0,1)             
-            pmn(ipsi,:)=pwpmn            
+            CALL ipeq_bcoords(psi(ipsi),pwpmns(ipsi,:),mfac_pest,
+     $           mpert_pest,2,0,0,0,0,1)             
          ENDIF
          
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-            CALL field_bs_psi(psi(ipsi),vcmn,0)
             DO i=1,cmpert
-               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  vmn(ipsi,cmlow-mlow+i)=vcmn(i)
+               IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
+                  vwpmns(ipsi,cmlow-lmlow+i)=vcmn(i)
                ENDIF
             ENDDO
-            vwpmn=0
-            vwpmn=vmn(ipsi,:)
-            CALL ipeq_bcoords(psi(ipsi),vwpmn,mfac,mpert,
+            vnomns(ipsi,:)=vwpmns(ipsi,:)
+            CALL ipeq_bcoords(psi(ipsi),vnomns(ipsi,:),lmfac,lmpert,
+     $           rout,bpout,bout,rcout,tout,0)  
+            CALL ipeq_bcoords(psi(ipsi),vwpmns(ipsi,:),lmfac,lmpert,
      $           rout,bpout,bout,rcout,tout,1)  
-            vmn(ipsi,:)=vwpmn         
          ELSE
+            DO i=1,cmpert
+               IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
+                  vnomns(ipsi,cmlow-lmlow+i)=vcmn(i)
+               ENDIF
+            ENDDO
             CALL field_bs_psi(psi(ipsi),vcmn,2)
             DO i=1,cmpert
-               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  vmn(ipsi,cmlow-mlow+i)=vcmn(i)
+               IF ((cmlow-lmlow+i>=1).AND.(cmlow-lmlow+i<=lmpert)) THEN
+                  vwpmns(ipsi,cmlow-lmlow+i)=vcmn(i)
                ENDIF
             ENDDO
          ENDIF
@@ -2601,16 +2624,17 @@ c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "mpsi =",cmpsi,"mpert =",mpert,"mthsurf =",mthsurf
+     $     "mpsi =",cmpsi,"mpert =",lmpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
-      WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
-     $     "real(bno)","imag(bno)"
+      WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
+     $     "real(bno)","imag(bno)","real(bwp)","imag(bwp)"
 
       DO ipsi=1,cmpsi
-         DO ipert=1,mpert
-            WRITE(out_unit,'(2(es17.8e3),1x,I4,2(es17.8e3))')
-     $           psi(ipsi),qs(ipsi),mfac(ipert),
-     $           REAL(vmn(ipsi,ipert)),AIMAG(vmn(ipsi,ipert)) 
+         DO ipert=1,lmpert
+            WRITE(out_unit,'(2(es17.8e3),1x,I4,4(es17.8e3))')
+     $           psi(ipsi),qs(ipsi),lmfac(ipert),
+     $           REAL(vnomns(ipsi,ipert)),AIMAG(vnomns(ipsi,ipert)), 
+     $           REAL(vwpmns(ipsi,ipert)),AIMAG(vwpmns(ipsi,ipert)) 
          ENDDO
       ENDDO
 
@@ -2623,16 +2647,16 @@ c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
          WRITE(out_unit,*)     
          WRITE(out_unit,'(1x,a13,a8)')"jac_out = ","pest"
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $        "mpsi =",cmpsi,"mpert =",lmpert,"mthsurf =",mthsurf
+     $        "mpsi =",cmpsi,"mpert =",mpert_pest,"mthsurf =",mthsurf
          WRITE(out_unit,*)     
          WRITE(out_unit,'(2(1x,a16),1x,a4,2(1x,a16))')"psi","q","m",
      $        "real(vb)","imag(vb)"
          
          DO ipsi=1,cmpsi
-            DO ipert=1,lmpert
+            DO ipert=1,mpert_pest
                WRITE(out_unit,'(2(es17.8e3),1x,I4,2(es17.8e3))')
-     $              psi(ipsi),qs(ipsi),lmfac(ipert),
-     $              REAL(pmn(ipsi,ipert)),AIMAG(pmn(ipsi,ipert)) 
+     $              psi(ipsi),qs(ipsi),mfac_pest(ipert),
+     $              REAL(pwpmns(ipsi,ipert)),AIMAG(pwpmns(ipsi,ipert)) 
             ENDDO
          ENDDO
       ENDIF
@@ -2640,11 +2664,13 @@ c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
       IF (bin_flag) THEN
          CALL bin_open(bin_unit,
      $        "vbnormal.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,mpert
+         DO ipert=1,lmpert
             DO ipsi=1,cmpsi
                WRITE(bin_unit)REAL(psi(ipsi),4),
-     $              REAL(REAL(vmn(ipsi,ipert)),4),
-     $              REAL(AIMAG(vmn(ipsi,ipert)),4)
+     $              REAL(REAL(vnomns(ipsi,ipert)),4),
+     $              REAL(AIMAG(vnomns(ipsi,ipert)),4),
+     $              REAL(REAL(vwpmns(ipsi,ipert)),4),
+     $              REAL(AIMAG(vwpmns(ipsi,ipert)),4)
                
             ENDDO
             WRITE(bin_unit)
@@ -2652,16 +2678,16 @@ c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
          CALL bin_close(bin_unit)
 
          DO ipsi=1,cmpsi
-            xmns(ipsi,:)=mfac
+            xmns(ipsi,:)=lmfac
             ymns(ipsi,:)=psi(ipsi)
          ENDDO
          CALL bin_open(bin_2d_unit,"vbnormal_spectrum.bin",
      $        "UNKNOWN","REWIND","none")
          WRITE(bin_2d_unit)1,0
-         WRITE(bin_2d_unit)cmpsi-1,mpert-1
+         WRITE(bin_2d_unit)cmpsi-1,lmpert-1
          WRITE(bin_2d_unit)REAL(xmns(1:cmpsi,:),4),
      $        REAL(ymns(1:cmpsi,:),4)
-         WRITE(bin_2d_unit)REAL(ABS(vmn(1:cmpsi,:)),4)
+         WRITE(bin_2d_unit)REAL(ABS(vwpmns(1:cmpsi,:)),4)
          CALL bin_close(bin_2d_unit)
       ENDIF
 c-----------------------------------------------------------------------
@@ -2686,7 +2712,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,
      $     rvecs,zvecs,vecs
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,bs,dphi
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: xmns,ymns,xtamns,btamns
+      COMPLEX(r8), DIMENSION(mstep,lmpert) :: xtamns,btamns
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwt_fun,xvt_fun,xvz_fun,
      $     bwt_fun,bvt_fun,bvz_fun,xta_fun,bta_fun
       COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
@@ -2743,11 +2769,10 @@ c-----------------------------------------------------------------------
          btafuns(istep,:)=bta_fun*vecs(istep,:)
          CALL iscdftf(mfac,mpert,xtafuns(istep,:),mthsurf,xta_mn)
          CALL iscdftf(mfac,mpert,btafuns(istep,:),mthsurf,bta_mn)
-
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-            CALL ipeq_bcoords(psifac(istep),xta_mn,mfac,mpert,
+            CALL ipeq_bcoords(psifac(istep),xta_mn,mfac,lmpert,
      $           rout,bpout,bout,rcout,tout,0)
-            CALL ipeq_bcoords(psifac(istep),bta_mn,mfac,mpert,
+            CALL ipeq_bcoords(psifac(istep),bta_mn,mfac,lmpert,
      $           rout,bpout,bout,rcout,tout,0)
          ENDIF
          xtamns(istep,:)=xta_mn
@@ -2765,15 +2790,15 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
-     $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
+     $     "mstep =",mstep,"mpert =",lmpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
       WRITE(out_unit,'(2(1x,a16),1x,a4,4(1x,a16))')"psi","q","m",
      $     "real(xta)","imag(xta)","real(bta)","imag(bta)"
 
       DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
-         DO ipert=1,mpert
+         DO ipert=1,lmpert
             WRITE(out_unit,'(2(es17.8e3),1x,I4,4(es17.8e3))')
-     $           psifac(istep),qfac(istep),mfac(ipert),
+     $           psifac(istep),qfac(istep),lmfac(ipert),
      $           REAL(xtamns(istep,ipert)),AIMAG(xtamns(istep,ipert)),
      $           REAL(btamns(istep,ipert)),AIMAG(btamns(istep,ipert))
          ENDDO
@@ -2812,7 +2837,7 @@ c-----------------------------------------------------------------------
       IF (bin_flag) THEN
          CALL bin_open(bin_unit,
      $        "xbtangent.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,mpert
+         DO ipert=1,lmpert
             DO istep=1,mstep
                WRITE(bin_unit)REAL(psifac(istep),4),
      $              REAL(REAL(xtamns(istep,ipert)),4),
