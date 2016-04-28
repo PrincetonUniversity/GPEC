@@ -231,13 +231,13 @@ module inputs
     
     
     !=======================================================================
-    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug)
+    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug,op_powin)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Read psi,m matrix of displacements.
     !
     !*ARGUMENTS:
-    !    file : character(512) (in)
+    !   file : character(512) (in)
     !       File path.
     !   jac_in : character
     !       Input file jacobian.
@@ -248,6 +248,11 @@ module inputs
     !   debug : logical
     !       Print intermidient messages to terminal.
     !
+    !*OPTIONAL ARGUMENTS:
+    !   op_powin : int(4)
+    !       User specified powers of B, Bp, R, and Rc that define a Jacobian.
+    !       Only used if jac_in is 'other'.
+    !
     !-----------------------------------------------------------------------
     
         implicit none
@@ -255,16 +260,18 @@ module inputs
         ! declare arguments
         logical, intent(in) :: debug
         integer, intent(in) :: jsurf_in,tmag_in
+        integer, dimension(4), intent(in), optional :: op_powin
         character(32), intent(inout) :: jac_in
         character(512), intent(in) :: file
         ! declare local variables
+        logical :: ncheck
         integer :: i,j,npsi,nm,firstnm, powin(4)
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
         complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns
         character(32), dimension(:), allocatable :: titles
-        
+
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
@@ -310,6 +317,7 @@ module inputs
             jac_in = jac_type
             if(verbose) print *,"  -> WARNING: Assuming DCON "//trim(jac_type)//" coordinates"
         endif
+        powin = -1
         SELECT CASE(jac_in) ! set B,Bp,R, and Rc powers
             CASE("hamada")
                 powin=(/0,0,0,0/)
@@ -321,15 +329,22 @@ module inputs
                 powin=(/2,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
-            CASE("park")
-                powin=(/1,0,0,0/)
+            CASE("other")
+                if(present(op_powin)) powin=op_powin
+                if(powin(1)<0 .or. powin(2)<0 .or. powin(3)<0 .or. powin(4)<0)then
+                    stop "ERROR: Did not receive all four powers for jac_in 'other'"
+                endif
             CASE DEFAULT
-                stop "ERROR: inputs - jac_in must be 'hamada','pest',&
-                    & 'equal_arc','boozer', or 'polar'"
+                stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
+                    & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
         END SELECT
-        if(jac_in/=jac_type)then
-            if(verbose) print *,'  -> Converting to working coordinates'
+        if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
+        if(jac_in/=jac_type .or. tmag_in/=1)then
+            if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
+            if(verbose) print *,'  -> Converting to '//trim(jac_type)//' coordinates used by DCON'
+            ! convert spectrum on each surface
             do i=1,npsi
+                if(verbose) call progressbar(i,1,npsi,op_percent=20)
                 CALL idcon_coords(psi(i),xmp1mns(i,:),ms,nm,&
                     powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                 CALL idcon_coords(psi(i),xspmns(i,:),ms,nm,&
@@ -508,7 +523,7 @@ module inputs
                 'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)'
             do i=0,npsi-1
                 call spline_eval(sq,psi(i),0)
-                do j=1,nm
+                do j=1,mpert
                     write(out_unit,'(1x,es16.8e3,i5,10(1x,es16.8e3))') &
                         xs_m(1)%xs(i),mfac(j),&
                         xs_m(1)%fs(i,j),xs_m(2)%fs(i,j),xs_m(3)%fs(i,j),&

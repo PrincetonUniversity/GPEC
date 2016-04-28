@@ -12,7 +12,9 @@
     electron = .false.                  ! electron contribution
     nutype = "harmonic"                 ! collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! distribution function: "maxwellian"
-    jac_in = ""                         ! jacobian of peq_file harmonic decomposition
+    jac_in = "default"                  ! jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
+    jsurf_in=0                          ! true(1) if peq_file is area weighted
+    tmag_in =0                          ! true(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
 /                                       
 &PENT_CONTROL
     wefac = 1                           ! artificial factor applied to omega_EXB
