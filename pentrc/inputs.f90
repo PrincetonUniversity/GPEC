@@ -265,11 +265,12 @@ module inputs
         character(512), intent(in) :: file
         ! declare local variables
         logical :: ncheck
-        integer :: i,j,npsi,nm,ndigit,firstnm, powin(4)
+        integer :: i,j,ii,jj,npsi,nm,ndigit,firstnm, powin(4)
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
         complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns
+        complex(r8), dimension(:,:,:), allocatable :: tmp
         character(3) :: nstr
         character(32), dimension(:), allocatable :: titles
 
@@ -361,7 +362,32 @@ module inputs
         if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
         if(jac_in/=jac_type .or. tmag_in/=1)then
             if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
-            if(verbose) print *,'  -> Converting to '//trim(jac_type)//' coordinates used by DCON'
+            if(verbose) print *,'Converting to '//trim(jac_type)//' coordinates used by DCON'
+            ! make sure to use the larger of the input and working spectra
+            if(mpert>nm)then
+                i = MAX(ABS(mfac(1))-ABS(ms(1))+1,1)
+                ii = MAX(ABS(mfac(mpert))-ABS(ms(nm)),0)
+                j = MAX(ABS(ms(1))-ABS(mfac(1))+1,1)
+                jj = MAX(ABS(ms(nm))-ABS(mfac(mpert)),0)
+                if(verbose)then
+                    print *,'  -> Converting on DCON m-space',mfac(1),'to',mfac(mpert),&
+                        'filling',mfac(i),'to',mfac(mpert-ii),'from inputs'
+                endif
+                if(mfac(i)/=ms(j) .or. mfac(mpert-ii)/=ms(nm-jj)) stop "ERROR: Misalignment in m-spaces"
+                ! transfer
+                allocate(tmp(npsi,mpert,3))
+                tmp(:,i:mpert-ii,1) = xmp1mns(:,j:nm-jj)
+                tmp(:,i:mpert-ii,2) = xspmns(:,j:nm-jj)
+                tmp(:,i:mpert-ii,3) = xmsmns(:,j:nm-jj)
+                deallocate(ms,xmp1mns,xspmns,xmsmns)
+                nm = mpert
+                allocate(ms(nm),xmp1mns(npsi,nm),xspmns(npsi,nm),xmsmns(npsi,nm))
+                ms = mfac
+                xmp1mns = tmp(:,:,1)
+                xspmns = tmp(:,:,2)
+                xmsmns = tmp(:,:,3)
+                deallocate(tmp)
+            endif
             ! convert spectrum on each surface
             do i=1,npsi
                 if(verbose) call progressbar(i,1,npsi,op_percent=20)
@@ -464,7 +490,7 @@ module inputs
         call cspline_fit(xs_m(3),"extrap")
 
         if(set_dbdx)then
-            if(verbose) print *,'  -> calculating deltaB/B, divxi_prp'
+            if(verbose) print *,'Calculating deltaB/B, divxi_prp'
             if(associated(dbdx_m(1)%xs)) call cspline_dealloc(dbdx_m(1))
             if(associated(dbdx_m(2)%xs)) call cspline_dealloc(dbdx_m(2))
             call cspline_alloc(dbdx_m(1),npsi-1,mpert)     ! JB^2 (dB/B)
