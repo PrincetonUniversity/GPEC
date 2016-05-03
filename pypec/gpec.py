@@ -72,7 +72,7 @@ try:
 except ImportError: # not supported at GA
     print('Failed to import gui - must have enthought.traits')
     
-if os.getenv('HOST').startswith('sunfire'):
+if os.getenv('HOST',default='').startswith('sunfire'):
     print 'WARNING: USING PORTAL - "use -w 24:00:00 -l mem=8gb" recomended for heavy computation'
 
 # make sure package is in path
