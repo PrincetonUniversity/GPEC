@@ -226,8 +226,8 @@ module torque
             rex,imx
         real(r8), dimension(mpert) :: expm
         real(r8), dimension(2,nlmda) :: ldl
-        real(r8), dimension(2,nlmda/2) :: ldl_c
-        real(r8), dimension(2,nlmda+1-nlmda/2) :: ldl_t
+        real(r8), dimension(2,1+nlmda/2) :: ldl_c
+        real(r8), dimension(2,1+nlmda-nlmda/2) :: ldl_t
         real(r8), dimension(2,ntheta) :: tdt
         real(r8), dimension(:), allocatable :: bpts,dbfun,dxfun
         complex(r8) :: db,divx,kx,xint,wtwnorm
@@ -255,8 +255,8 @@ module torque
         if(tdebug) print *,"  mfac ",mfac
         if(tdebug) print *,"  sq   psi ",sq%xs(0:sq%mx:sq%mx/5)
         if(tdebug) print *,"  dbdx psi ",dbdx_m(1)%xs(0:dbdx_m(1)%mx:dbdx_m(1)%mx/5)
-        if(tdebug) print *,"  db ",dbdx_m(1)%f(0:dbdx_m(1)%mx:dbdx_m(1)%mx/5)
-        if(tdebug) print *,"  xs ",xs_m(1)%f(0:xs_m(1)%mx:xs_m(1)%mx/5)
+        if(tdebug) print *,"  db ",dbdx_m(1)%fs(0:dbdx_m(1)%mx:dbdx_m(1)%mx/5,1)
+        if(tdebug) print *,"  xs ",xs_m(1)%fs(0:xs_m(1)%mx:xs_m(1)%mx/5,1)
 
         ! defaults of optional arguments
         if(present(op_erecord))then
@@ -284,6 +284,7 @@ module torque
         
         ! Get perturbations
         call cspline_eval(dbdx_m(1),psi,0)
+        call cspline_eval(dbdx_m(2),psi,0)
 
         !Poloidal functions - note ABS(A*clebsch) = ABS(A)
         allocate(dbfun(0:eqfun%my),dxfun(0:eqfun%my))
@@ -350,7 +351,7 @@ module torque
         nueff = kin%f(s+6)/(2*epsr)                 ! if trapped
         dbave = issurfint(dbfun,eqfun%my,psi,0,1)
         dxave = issurfint(dxfun,eqfun%my,psi,0,1)
-        DEALLOCATE(dbfun,dxfun)
+        deallocate(dbfun,dxfun)
         if(tdebug) print('(a14,7(es10.1E2),i4)'), "  eq values = ",wdian,&
                         wdiat,welec,wdhat,wbhat,nueff,q
         
@@ -533,7 +534,7 @@ module torque
                     ldl = powspace(lmdamin,lmdatpb,1,nlmda,"both") ! circulating space
                 else
                     ldl_c = powspace(lmdamin,lmdatpb,2,1+nlmda/2,"upper") ! circulating space
-                    ldl_t = powspace(lmdatpb,lmdamax,2,nlmda+1-nlmda/2,"lower") ! trapped space
+                    ldl_t = powspace(lmdatpb,lmdamax,2,1+nlmda-nlmda/2,"lower") ! trapped space
                     ldl(1,:) = (/ldl_c(1,:nlmda/2),ldl_t(1,2:)/)
                     ldl(2,:) = (/ldl_c(2,:nlmda/2),ldl_t(2,2:)/)
                 endif
@@ -561,7 +562,7 @@ module torque
                         ! find deepest magnetic well ** not precise **
                         t1 = bpts(size(bpts))-1.0  
                         t2 = bpts(1)
-                        call spline_eval(vspl,modulo((t1+t2)/2,1.0),0)
+                        call spline_eval(vspl,modulo((t1+t2)/2,1.0_r8),0)
                         vpar = vspl%f(1) ! bpts centered around 0 (standard)
                         do i=1,size(bpts)-1
                            call spline_eval(vspl,sum(bpts(i:i+1))/2,0)
@@ -601,8 +602,8 @@ module torque
                     jvtheta(:) = 0
                     bspl%fs(:,:) = 0
                     do i=2,ntheta-1 ! edge dts are 0
-                        call spline_eval(tspl,modulo(tdt(1,i),1.0),0)
-                        call spline_eval(vspl,modulo(tdt(1,i),1.0),0)
+                        call spline_eval(tspl,modulo(tdt(1,i),1.0_r8),0)
+                        call spline_eval(vspl,modulo(tdt(1,i),1.0_r8),0)
                         vpar = vspl%f(1) ! more consistent w/ bnce pts than direct from tspl
                         if(vpar<=0)then ! local zero between nodes
                             if(lmda>lmdatpe .or. lmda<(2*lmdatpb-lmdatpe))then ! expected near t/p bounry
@@ -874,7 +875,7 @@ module torque
         end select
         
         if(tdebug) print *,"torque - end function, psi = ",psi
-        
+
         return
     end function tpsi
 
@@ -1023,7 +1024,7 @@ module torque
             endif
 
             ! log progress
-            if(mod(x,.1)<mod(xlast,.1) .or. xlast==xs(0) .and. verbose)then
+            if(mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==xs(0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'
             endif
@@ -1155,7 +1156,7 @@ module torque
         real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
         
         common /tcom/ wdcom,dxcom,methcom,fcom
-        
+
         ! set module variables
         psi_warned = 0.0
         ! set common variables
@@ -1209,7 +1210,7 @@ module torque
             call lsode(tintgrnd, neqarray, y, x, xout, itol, rtol,&
                 atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
             call dintdy(x, 1, rwork(21), neq, dky, iflag)
-            
+
             ! flux/diffusivity profiles
             call spline_eval(sq,x,0)
             call spline_eval(kin,x,1)
@@ -1236,7 +1237,7 @@ module torque
                     dky(2*(nl+l)+1:2*(nl+l)+2), &
                       y(2*(nl+l)+1:2*(nl+l)+2) /) )
             enddo
-            
+
             ! save flux functions
             call append_2d(tmpf,fcom)
 
@@ -1249,7 +1250,7 @@ module torque
             endif
 
             ! print progress
-            if(mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0) .and. verbose)then
+            if(mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==sq%xs(0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> T_phi = ",sum(y(1:neq:2),dim=1),sum(y(2:neq:2),dim=1),'j'
             endif
