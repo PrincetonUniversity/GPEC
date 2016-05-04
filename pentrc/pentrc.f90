@@ -27,19 +27,22 @@ program pentrc
     character(len=65507) :: hlog
     character, parameter :: nul = char(0)
 
-    call initialize_pentrc
-
     if(verbose) print *,''
     if(verbose) print *,"PENTRC START => "//trim(version)
-    if(verbose) print *,"______________________________"
+    if(verbose) print *,"_____________________________________________"
+
+    call initialize_pentrc
+
     if(moment=="heat")then
         qt = .true.
-        if(verbose) print *,"Heat transport calculation"
-        if(verbose) print *,"------------------------------"
+        if(verbose) print *,"---------------------------------------------"
+        if(verbose) print *,"Calculating heat transport"
+        if(verbose) print *,"---------------------------------------------"
     elseif(moment=="pressure")then
         qt = .false.
-        if(verbose) print *,"Particle transport and torque"
-        if(verbose) print *,"------------------------------"
+        if(verbose) print *,"---------------------------------------------"
+        if(verbose) print *,"Calculating particle transport and torque"
+        if(verbose) print *,"---------------------------------------------"
     else
         stop "ERROR: Input moment must be 'pressure' or 'heat'"
     endif

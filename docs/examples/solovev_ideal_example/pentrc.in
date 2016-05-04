@@ -46,7 +46,6 @@
     ftmm_flag = .false.                 ! Full torque mxm matrix calculation (t,p also available)
     fwmm_flag = .false.                 ! Full dW mxm matrix calculation (t,p also available)
 
-    eq_out = .true.                     ! Output kinetic profiles at each psi
     xlmda_out = .false.                 ! Output energy and pitch integrands on psi_out
     theta_out = .false.                 ! Output bounce integrands on psi_out
     psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs

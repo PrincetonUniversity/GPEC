@@ -86,8 +86,6 @@ module inputs
 
         ! set idconfile
         idconfile = file
-        if(verbose) print *,"Set idconfile:"
-        if(verbose) print *,"  "//TRIM(idconfile)
         ! prepare ideal solutions. (psixy=0)
         CALL idcon_read(0)
         if(present(hlog)) CALL idcon_harvest(hlog)
