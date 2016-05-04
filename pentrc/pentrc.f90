@@ -66,14 +66,15 @@ program pentrc
         ! standard CODEDB records
         ierr=set_harvest_payload_str(hlog,'CODE'//nul,'PENT'//nul)
         ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
-        ! PENT input records
-        if(jac_in=="") jac_in = "default" ! harvest can't parse empty strings
-        write(hnml,nml=pent_input)
-        ierr=set_harvest_payload_nam(hlog,'PENT_INPUT'//nul,trim(hnml)//nul)
-        write(hnml,nml=pent_control)
-        ierr=set_harvest_payload_nam(hlog,'PENT_CONTROL'//nul,trim(hnml)//nul)
-        write(hnml,nml=pent_output)
-        ierr=set_harvest_payload_nam(hlog,'PENT_OUTPUT'//nul,trim(hnml)//nul)
+        ! record PENT input
+        ierr=set_harvest_payload_int(hlog,'zi'//nul,zi)
+        ierr=set_harvest_payload_int(hlog,'zimp'//nul,zimp)
+        ierr=set_harvest_payload_int(hlog,'mi'//nul,mi)
+        ierr=set_harvest_payload_int(hlog,'mimp'//nul,mimp)
+        ierr=set_harvest_payload_int(hlog,'mimp'//nul,mimp)
+        ierr=set_harvest_payload_bol(hlog,'electron'//nul,electron)
+        ierr=set_harvest_payload_str(hlog,'nutype'//nul,trim(nutype)//nul)
+        ierr=set_harvest_payload_str(hlog,'f0type'//nul,trim(f0type)//nul)
 
         ! record dcon equilibrium basics
         call idcon_harvest(hlog)
