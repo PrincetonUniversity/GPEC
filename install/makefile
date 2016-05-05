@@ -8,6 +8,10 @@ include DEFAULTS.inc
 all: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
 	xdraw coil ipec mkbin
 
+allf: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
+	coil ipec mkbin
+
+
 # executables:
 
 harvest:
