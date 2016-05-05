@@ -140,7 +140,7 @@ module torque
     
     real(r8) :: atol_psi = 1e-3, rtol_psi= 1e-6
     real(r8) :: psi_warned = 0.0
-    logical :: tdebug,output_ascii,output_netcdf
+    logical :: tdebug=.false., output_ascii =.true., output_netcdf=.true.
     integer :: nlmda=128, ntheta=128
     
     complex(r8), dimension(:,:,:), allocatable :: elems ! temperary variable
@@ -211,7 +211,7 @@ module torque
         character(*) :: method
         logical, optional :: op_erecord
         real(r8), dimension(nfluxfuns), optional, intent(out) :: op_ffuns
-        real(r8), dimension(ntheta,nthetafuns), optional, intent(out) :: op_tfuns
+        real(r8), dimension(ntheta*3,nthetafuns), optional, intent(out) :: op_tfuns
         complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: op_wmats
         ! declare local variables
         logical :: erecord
