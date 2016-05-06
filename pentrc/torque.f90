@@ -217,8 +217,9 @@ module torque
             rex,imx
         real(r8), dimension(mpert) :: expm
         real(r8), dimension(2,nlmda) :: ldl
-        real(r8), dimension(2,nlmda/2) :: ldl_c
-        real(r8), dimension(2,nlmda+1-nlmda/2) :: ldl_t
+        real(r8), dimension(2,1+nlmda) :: ldl_inc
+        real(r8), dimension(2,1+nlmda/2) :: ldl_p
+        real(r8), dimension(2,1+nlmda-nlmda/2) :: ldl_t
         real(r8), dimension(2,ntheta) :: tdt
         real(r8), dimension(:), allocatable :: bpts,dbfun,dxfun
         complex(r8) :: db,divx,kx,xint,wtwnorm
@@ -524,16 +525,17 @@ module torque
                 lmdatpb = bo/bmax
                 lmdatpe = min(bo/(tspl%fs(ibmax+1,1)),bo/(tspl%fs(ibmax-1,1)))
                 lmdamax = bo/bmin ! has been reduced by 8 grid pts
-                !lmdatpb = lmdatpb+1e-3*(lmdamax-lmdatpb)
                 if(method(1:1)=='t')then
-                    ldl = powspace(lmdatpb,lmdamax,1,nlmda,"both") ! trapped space                    
+                    ldl_inc = powspace(lmdatpb,lmdamax,1,1+nlmda,"both") ! trapped space including boundary
+                    ldl = ldl_inc(:,2:) ! exclude boundary
                 elseif(method(1:1)=='p')then
-                    ldl = powspace(lmdamin,lmdatpb,1,nlmda,"both") ! circulating space
+                    ldl_inc = powspace(lmdamin,lmdatpb,1,1+nlmda,"both") ! passing space including boundary
+                    ldl = ldl_inc(:,:nlmda) ! exclude boundary
                 else
-                    ldl_c = powspace(lmdamin,lmdatpb,2,1+nlmda/2,"upper") ! circulating space
-                    ldl_t = powspace(lmdatpb,lmdamax,2,nlmda+1-nlmda/2,"lower") ! trapped space
-                    ldl(1,:) = (/ldl_c(1,:nlmda/2),ldl_t(1,2:)/)
-                    ldl(2,:) = (/ldl_c(2,:nlmda/2),ldl_t(2,2:)/)
+                    ldl_p = powspace(lmdamin,lmdatpb,2,1+nlmda/2,"upper") ! passing space including boundary
+                    ldl_t = powspace(lmdatpb,lmdamax,2,1+nlmda-nlmda/2,"lower") ! trapped space including boundary
+                    ldl(1,:) = (/ldl_p(1,:nlmda/2),ldl_t(1,2:)/) ! full space with no point on boundary
+                    ldl(2,:) = (/ldl_p(2,:nlmda/2),ldl_t(2,2:)/)
                 endif
                 if(tdebug) print *," Lambda space ",ldl(1,1),ldl(1,nlmda),", t/p bounry = ",lmdatpb
                 ! form smooth pitch angle functions
