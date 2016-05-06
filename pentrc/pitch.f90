@@ -348,11 +348,11 @@ module pitch_integration
             nueff = nuk
             lnq = l+n*q
             xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,lnq,n)
+            xint = xint + xintgrl_lsode(wn,wt,we,wd,-wb,nueff,lnq,n)
         else                        ! trapped particles
             nueff = nuk/(2*epsr)    ! effective collisionality
             lnq = 1.0*l
             xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,lnq,n)
-            xint = xint + xintgrl_lsode(wn,wt,we,wd,-wb,nueff,lnq,n)
         endif
         
         if(lambdadebug) print *,"lnq, nueff = ",lnq,nueff
