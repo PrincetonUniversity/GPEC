@@ -115,8 +115,8 @@ module pentrc_interface
         divxfac=1.0, &
         diag_psi = 0.7, &
         psilims(2) = (/0,1/), &
-        psi_out(30)= (/(i,i=1,30)/)/30.6
-    real(r8), dimension(:,:,:,:), allocatable :: tfuns
+        psi_out(30)= -1
+    real(r8), dimension(:,:), allocatable :: thetatable,thetafuns
     complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
     complex(r8), dimension(:,:,:), allocatable :: wtw
 
@@ -198,6 +198,9 @@ module pentrc_interface
         read(unit=i,nml=pent_output)
         read(unit=i,nml=pent_admin)
         close(i)
+
+        ! defaults
+        if(all(psi_out==-1)) psi_out = (/(i,i=1,30)/)/30.6 ! even spread if user doesn't pick any
 
         ! warnings if using deprecated inputs
         if(eq_out) print *, "WARNING: eq_out has been deprecated. Behavior is always true."

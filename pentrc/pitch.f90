@@ -265,7 +265,7 @@ module pitch_integration
         if(allocated(lambdaintgrl_lsode)) deallocate(lambdaintgrl_lsode)
         allocate(lambdaintgrl_lsode(neq/2))
         if(lambdadebug) print *,"...allocated lambdaintgrl",neq/2,"..."        
-        lambdaintgrl_lsode(:) = y(1::2)+xj*y(2::2)!(/(y(2*i-1)+xj*y(2*i),i=1,neq/2)/)
+        lambdaintgrl_lsode(:) = y(1::2)+xj*y(2::2)
 
         deallocate(iwork,atol,rtol,rwork,y,dky)
         if(lambdadebug) print *,"Returning."        
@@ -623,9 +623,16 @@ module pitch_integration
         character(8) :: nstring
         character(128) :: file
 
+        ! safety net
+        if(.not. allocated(pitch_record))then
+            print *,'WARNING: No pitch angle integrand record available'
+            return
+        endif
+
         ! some methods don't have the turn information, but I don't want to re-format file
-        allocate(table(size(pitch_record,dim=1),16))
-        table(:,1:size(pitch_record,dim=2)) = pitch_record
+        allocate(table(16,size(pitch_record,dim=2)))
+        table = 0
+        table(1:size(pitch_record,dim=1),:) = pitch_record(:,:)
 
         ! open and prepare file as needed
         out_unit = get_free_file_unit(-1)
@@ -648,8 +655,8 @@ module pitch_integration
                     "dJdJomega_b","theta_l","r_l","z_l","theta_u","r_u","z_u"
 
         ! write tables
-        do i=1,size(table,dim=1)
-            write(out_unit,'(16(es17.8E3))') table(i,:)
+        do i=1,size(table,dim=2)
+            write(out_unit,'(16(es17.8E3))') table(:,i)
         enddo
 
         close(out_unit)

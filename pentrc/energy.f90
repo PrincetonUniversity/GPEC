@@ -482,6 +482,12 @@ module energy_integration
         character(8) :: nstring
         character(128) :: file
 
+        ! safety net
+        if(.not. allocated(energy_record))then
+            print *,'WARNING: No energy integrand record available'
+            return
+        endif
+
         ! open and prepare file as needed
         out_unit = get_free_file_unit(-1)
         write(nstring,'(I8)') n
@@ -502,8 +508,8 @@ module energy_integration
             "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
 
         ! write tables
-        do i=1,size(energy_record,dim=1)
-            write(out_unit,'(9(es17.8E3))') energy_record(i,:)
+        do i=1,size(energy_record,dim=2)
+            write(out_unit,'(9(es17.8E3))') energy_record(:,i)
         enddo
 
         close(out_unit)

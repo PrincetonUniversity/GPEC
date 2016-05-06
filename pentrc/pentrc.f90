@@ -16,9 +16,12 @@ program pentrc
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     use pentrc_interface
+    use utilities, only: append_1d, append_2d, progressbar
 
     ! local variables
-    integer :: i,j,k,l,m
+    integer :: i,j,k,l,m,nvalid
+    real(r8), dimension(:), allocatable ::  psi_out_valid
+
 
     ! harvest variables
     include 'harvest_lib.inc'
@@ -188,22 +191,31 @@ program pentrc
                 ! run select surfaces with detailed output
                 if(theta_out .or. xlmda_out)then
                     if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
-                    allocate(tfuns(ntheta*3,3,nout,nthetafuns))
+                    ! only use valid output surfaces
                     do i=1,nout
-                        do l=-nl,nl,max(1,nl)
-                            if(psi_out(i)>0 .and. psi_out(i)<=1)then
-                                tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
-                                             op_tfuns=tfuns(:,1+nl/l,i,:))
-                            endif
-                        enddo
+                        if(psi_out(i)>0 .and. psi_out(i)<=1) call append_1d(psi_out_valid,psi_out(i))
                     enddo
-                    if(output_ascii)then
-                        if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),&
-                            reshape(tfuns,(/nout*3*ntheta*3,nthetafuns/)))
-                        if(xlmda_out) call output_pitch_record(nn,zi,mi,electron,methods(m))
-                        if(xlmda_out) call output_energy_record(nn,zi,mi,electron,methods(m))
+                    if(allocated(psi_out_valid))then
+                        nvalid = size(psi_out_valid,dim=1)
+                        allocate(thetafuns(ntheta*3,nthetafuns))
+                        do i=1,nvalid
+                            if(nvalid>10) call progressbar(i,1,nvalid,op_percent=20)
+                            print *,psi_out_valid(i)
+                            do l=-nl,nl,max(1,nl)
+                                tsurf = tpsi(psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
+                                             op_erecord=xlmda_out,op_tfuns=thetafuns)
+                                do j=1,ntheta*3
+                                    call append_2d(thetatable,thetafuns(j,:))
+                                enddo
+                            enddo
+                        enddo
+                        if(output_ascii)then
+                            if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),transpose(thetatable))
+                            if(xlmda_out) call output_pitch_record(nn,zi,mi,electron,methods(m))
+                            if(xlmda_out) call output_energy_record(nn,zi,mi,electron,methods(m))
+                        endif
+                        deallocate(thetafuns,thetatable,psi_out_valid)
                     endif
-                    deallocate(tfuns)
                 endif
                 if(verbose)then
                     print *, method//" - Finished"
