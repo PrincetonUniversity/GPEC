@@ -4986,7 +4986,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(mncid,"mode_W",nf90_int,wdid,mw_id))
          CALL check( nf90_put_att(mncid, mw_id ,"long_name",
      $    "Energy-norm external flux energy eigenmode index") )
-         CALL check( nf90_def_var(mncid,"W_x_eiegenvector",
+         CALL check( nf90_def_var(mncid,"W_x_eigenvector",
      $               nf90_double,(/mdid,wdid,idid/),w_id) )
          CALL check( nf90_put_att(mncid,w_id,"long_name",
      $    "Energy-norm external flux energy eigendecomposition") )
