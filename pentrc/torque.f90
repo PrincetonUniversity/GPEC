@@ -997,10 +997,10 @@ module torque
         write(nstring,'(I8)') n
         if(electron)then
             file1 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
+            file2 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_ell_n"//trim(adjustl(nstring))//".out"
         else
             file1 = "pentrc_"//trim(method)//"_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
+            file2 = "pentrc_"//trim(method)//"_"//gtype//"_grid_ell_n"//trim(adjustl(nstring))//".out"
         endif
         if(qt)then
             file1 = file1(:7)//"heat_"//file1(8:)
