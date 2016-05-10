@@ -324,15 +324,17 @@ program pentrc
                     endif
                 endif
                 ! run select surfaces with detailed output
-                if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
-                do i=1,nout
-                    do l=-nl,nl,max(1,nl)
-                        if(psi_out(i)>0 .and. psi_out(i)<=1)then
-                            tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
-                                .false.,theta_out,xlmda_out)
-                        endif
+                if(theta_out .or. xlmda_out)then
+                    if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
+                    do i=1,nout
+                        do l=-nl,nl,max(1,nl)
+                            if(psi_out(i)>0 .and. psi_out(i)<=1)then
+                                tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
+                                    .false.,theta_out,xlmda_out)
+                            endif
+                        enddo
                     enddo
-                enddo
+                endif
                 if(verbose)then
                     print *, method//" - Finished"
                     print *, "---------------------------------------------"
