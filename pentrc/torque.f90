@@ -957,7 +957,7 @@ module torque
         character(*) :: method,gtype
         ! declare variables
         logical :: fexists
-        integer :: i,j,l,unit1,unit2,s,mx
+        integer :: i,j,l,unit1,unit2,s,mx,istrt,istop
         real(r8) :: x,xlast,chrg,drive
         real(r8), dimension(:), allocatable :: xs,tmppsi
         complex(r8), dimension(:,:), allocatable :: tmpak,tmpbk,tmpck, &
@@ -989,10 +989,41 @@ module torque
             chrg = zi*e
             s = 1
         endif
-        if(index(method,'mm')>0) then
-            allocate(elems(mpert,mpert,6))
+
+        ! set grid based on requested type
+        if (gtype=='equil')then
+            mx = sq%mx
+            allocate(xs(0:mx))
+            xs = sq%xs
+        elseif (gtype=='input')then
+            mx = xs_m(1)%mx
+            allocate(xs(0:mx))
+            xs = xs_m(1)%xs
         endif
-        
+        ! enforce integration bounds
+        psilim(1) = max(psilim(1),xs(0))
+        psilim(2) = min(psilim(2),xs(mx))
+        do i=0,mx
+            if(xs(i)>=psilim(1)) exit
+        enddo
+        istrt = i
+        do i=mx,0,-1
+            if(xs(i)<=psilim(2)) exit
+        enddo
+        istop = i
+        mx = istop-istrt
+        allocate(tmppsi(0:mx))
+        tmppsi(:) = xs(istrt:istop)
+        deallocate(xs)
+        allocate(xs(0:mx))
+        xs(:) = tmppsi(:)
+
+        ! allocate memory for kinetic DCON matrix profiles
+        if(index(method,'mm')>0) then
+            allocate(elems(mpert,mpert,6),tmpak(mx+1,mpert**2),tmpbk(mx+1,mpert**2), &
+                tmpck(mx+1,mpert**2),tmpdk(mx+1,mpert**2),tmpek(mx+1,mpert**2),tmphk(mx+1,mpert**2))
+        endif
+
         ! open and prepare files as needed
         write(nstring,'(I8)') n
         if(electron)then
@@ -1054,18 +1085,6 @@ module torque
                 "real(Gamma)","imag(Gamma)","real(chi)","imag(chi)",&
                 "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
 
-        ! set grid based on requested type
-        if (gtype=='equil')then
-            mx = sq%mx
-            allocate(xs(0:mx))
-            xs = sq%xs
-        elseif (gtype=='input')then
-            mx = xs_m(1)%mx
-            allocate(xs(0:mx),tmppsi(0:mx),tmpak(mx+1,mpert**2),tmpbk(mx+1,mpert**2), &
-                tmpck(mx+1,mpert**2),tmpdk(mx+1,mpert**2),tmpek(mx+1,mpert**2),tmphk(mx+1,mpert**2))
-            xs = xs_m(1)%xs
-        endif
-        
         ! integration
         CALL cspline_alloc(tphi_spl,mx,2*nl+1)
         xlast = 0
@@ -1118,8 +1137,8 @@ module torque
                 sq%f(3)
             do l=-nl,nl
                 write(unit2,'(es18.8e3,i5,8(es18.8e3))') x,l,&
-                    gam(2*(nl+l)+1),chi(2*(nl+l)+1),&
-                    tphi_spl%fs(i,2*(nl+l)+1),tphi_spl%fsi(i,2*(nl+l)+1)
+                    gam((nl+l)+1),chi((nl+l)+1),&
+                    tphi_spl%fs(i,(nl+l)+1),tphi_spl%fsi(i,(nl+l)+1)
             enddo
         enddo
         close(unit1)
@@ -1151,13 +1170,13 @@ module torque
             call cspline_fit(dkmm,"extrap")
             call cspline_fit(ekmm,"extrap")
             call cspline_fit(hkmm,"extrap")
-            deallocate(elems)
+            deallocate(elems,tmpak,tmpbk,tmpck,tmpdk,tmpek,tmphk)
         endif
         
         ! convert to complex space if integrations successful
         tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
-        deallocate(y,dky,gam,chi)
+        deallocate(y,dky,gam,chi,tmppsi)
         
         return
     end function tintgrl_grid
@@ -1435,7 +1454,7 @@ module torque
             call cspline_fit(hkmm,"extrap")
             deallocate(elems)
         endif
-        
+
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y,mask=maskr)+xj*sum(y,mask=maski)
 
