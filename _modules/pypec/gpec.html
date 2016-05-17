@@ -226,7 +226,7 @@
 
 
 <div class="viewcode-block" id="run"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">rundir</span><span class="p">,</span><span class="n">qsub</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">return_on_complete</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">rerun</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-        <span class="n">rundcon</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runipec</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runpentrc</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">fill_inputs</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">rundcon</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runipec</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">runpentrc</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">cleandcon</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">fill_inputs</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
         <span class="n">mailon</span><span class="o">=</span><span class="s">&#39;ae&#39;</span><span class="p">,</span><span class="n">email</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">mem</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span>
         <span class="n">runpent</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">optpentrc</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">pent_tol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -249,6 +249,8 @@
 <span class="sd">        Run ipec.</span>
 <span class="sd">      runpentrc : bool.</span>
 <span class="sd">        Run pentrc.</span>
+<span class="sd">      cleandcon : bool.</span>
+<span class="sd">        Remove euler.bin file after run is complete.</span>
 <span class="sd">      fill_inputs : bool. </span>
 <span class="sd">        Use inputs from rundir (see kwargs).</span>
 <span class="sd">      mailon   : str. </span>
@@ -356,6 +358,7 @@
         <span class="k">if</span> <span class="n">runipec</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/ipec </span><span class="se">\n</span><span class="s">&#39;</span>
         <span class="k">if</span> <span class="n">runpentrc</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/pentrc </span><span class="se">\n</span><span class="s">&#39;</span>
         <span class="k">if</span> <span class="n">optpentrc</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/OPENTRC </span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="k">if</span> <span class="n">cleandcon</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="s">&#39;rm euler.in </span><span class="se">\n</span><span class="s">&#39;</span>
         <span class="n">jobstr</span> <span class="o">=</span> <span class="n">bashjob</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;jobnamehere&#39;</span><span class="p">,</span><span class="n">jobname</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">mailon</span><span class="p">:</span> <span class="n">jobstr</span> <span class="o">=</span> <span class="n">jobstr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;# --- emailoptionhere&#39;</span><span class="p">,</span><span class="s">&#39;#PBS -m &#39;</span><span class="o">+</span><span class="n">mailon</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">email</span><span class="p">:</span>  <span class="n">jobstr</span> <span class="o">=</span> <span class="n">jobstr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;# --- emailhere&#39;</span><span class="p">,</span><span class="s">&#39;#PBS -M &#39;</span><span class="o">+</span><span class="n">email</span><span class="p">)</span>
@@ -381,6 +384,7 @@
         <span class="k">if</span> <span class="n">runpentrc</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/pentrc&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">optpentrc</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">rundir</span><span class="o">+</span><span class="s">&#39;/OPENTRC&#39;</span><span class="p">)</span>
         <span class="c"># clean up</span>
+        <span class="k">if</span> <span class="n">cleandcon</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm euler.bin&#39;</span><span class="p">)</span>
         <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;rm *.dat&#39;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="bp">True</span>

@@ -106,7 +106,7 @@
 <div class="section" id="the-equil-namelist">
 <h2>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Permalink to this headline">¶</a></h2>
 <p>This namelist specifies the equilibrium inputs and how equilibrium quantities are splined for use in the various executables.</p>
-<div class="highlight-python"><div class="highlight"><pre>&amp;equil_control
+<div class="highlight-python"><div class="highlight"><pre>&amp;EQUIL_CONTROL
     eq_type=&quot;efit&quot;       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
     eq_filename = &quot;../docs/examples/DIIID_example/g147131.02300_DIIID_KEFIT&quot; ! Path to input file
 
@@ -125,12 +125,12 @@
 
     input_only=f         ! Generate information about the input and then quit with no further calculation
 /
-&amp;equil_output
+&amp;EQUIL_OUTPUT
     gse_flag=f           ! Produces diagnostic output for accuracy of solution to Grad-Shafranov equation
     out_eq_1d=f          ! Ascii output of 1D equilibrium file data
     bin_eq_1d=f          ! Binary output of 1D equilibrium file data
     out_eq_2d=f          ! Ascii output of 2D equilibrium file data
-    bin_eq_2d=f          ! Binary output of 2D equilibrium file data
+    bin_eq_2d=t          ! Binary output of 2D equilibrium file data (set true for GPEC)
     out_2d=f             ! Ascii output of processed 2D data
     bin_2d=f             ! Binary output of processed 2D data
     dump_flag=f          ! Binary dump of basic equilibrium data and 2D rzphi spline
@@ -141,7 +141,7 @@
 <div class="section" id="the-dcon-namelist">
 <h2>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Permalink to this headline">¶</a></h2>
 <p>This namelist controls the behavior of the DCON code and determines its outputs.</p>
-<div class="highlight-python"><div class="highlight"><pre>&amp;dcon_control
+<div class="highlight-python"><div class="highlight"><pre>&amp;DCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE&#39;s for determining stability of internal long-wavelength mode (must be true for GPEC)
@@ -176,7 +176,7 @@
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
 /
-&amp;dcon_output
+&amp;DCON_OUTPUT
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
@@ -204,7 +204,7 @@
    ivacuumfile= &#39;vacuum.bin&#39;         ! Vacuum info output by DCON run
    rdconfile  = &#39;gal_solution.bin&#39;   ! Galkin functions output by resistive DCON run
 
-   jac_in=&quot;pest&quot;            ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
+   jac_in=&quot;hamada&quot;          ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
    jsurf_in=1               ! True(1) if external perturbation is area weighted (i.e. flux)
    tmag_in =0               ! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
    mthsurf =0               ! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
@@ -226,7 +226,7 @@
    displacement_flag=f      ! Perturbations are displacement (m). Default is field (T).
    fixed_boundary_flag=f    ! Total perturbation = external perturbation
 
-   mode_flag = .F.          ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
+   mode_flag = f            ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
    mode  = 0                ! DCON eigen function index (1 is least stable)
    filter_types = &#39;w&#39;       ! Isolate the filter_modes of energy (w), reluctance (r), permiability (p) or singular coupling (s) eigenvectors/singular-vectors
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
@@ -245,7 +245,7 @@
    tmag_out=0               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
-   filter_flag=t            ! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
+   filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
@@ -260,12 +260,14 @@
    brzphi_flag=f            ! Outputs perturbed field on regular (r,z) grid
    xrzphi_flag=f            ! Outputs displacement on regular (r,z) grid
    vbrzphi_flag=f           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
-   vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to exeternal perturbation surface current (not a real field)
+   vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to external perturbation surface current (not a real field)
    vsbrzphi_flag=f          ! Outputs the field on regular (r,z) grid due to singular surface currents
    ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
    xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
    arzphifun_flag=f         ! Outputs r,z, and vector potential on psi,theta grid
 
+   nr = 64                  ! Number of radial grid points in rzphi outputs
+   nz = 124                 ! Number of vertical grid points in rzphi outputs
    fun_flag=f               ! Write outputs to (r,z) in addition to default (psi,m)
    flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
    bin_flag=f               ! Write binary outputs for use with xdraw
@@ -284,71 +286,73 @@
 <h2>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Permalink to this headline">¶</a></h2>
 <p>This namelist sets the inputs, controls the behavior, and determines the outputs of the IPEC code.</p>
 <div class="highlight-python"><div class="highlight"><pre>&amp;PENT_INPUT
-    kinetic_file=&quot;kinetic.txt&quot;          ! ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
-    peq_file  = &quot;ipec_xclebsch_n1.out&quot;  ! ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha) 
-    idconfile = &quot;euler.bin&quot;             ! dcon output
+    kinetic_file=&quot;kinetic.txt&quot;          ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
+    peq_file  = &quot;ipec_xclebsch_n1.out&quot;  ! Ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha)
+    idconfile = &quot;euler.bin&quot;             ! Dcon output
     data_dir = &quot;.&quot;                      ! Location of pre-formed fnml matrix used in rlar and clar methods (check release package)
 
-    mi = 2                              ! main ion mass (u)
-    zi = 1                              ! main ion charge (e)
-    mimp = 12                           ! impurity mass (u)
-    zimp = 6                            ! impurity charge (e)
-    nl = 0                              ! bounce harmonic range (-nl to nl)
-    electron = .false.                  ! electron contribution
-    nutype = &quot;harmonic&quot;                 ! collision operator: &quot;zero&quot;, &quot;krook&quot;, &quot;harmonic&quot;
-    f0type = &quot;maxwellian&quot;               ! distribution function: &quot;maxwellian&quot;
-    jac_in = &quot;&quot;                         ! jacobian of peq_file harmonic decomposition
-/                                       
+    mi = 2                              ! Main ion mass (u)
+    zi = 1                              ! Main ion charge (e)
+    mimp = 12                           ! Impurity mass (u)
+    zimp = 6                            ! Impurity charge (e)
+    nl = 0                              ! Bounce harmonic range (-nl to nl)
+    electron = .false.                  ! Electron contribution
+    nutype = &quot;harmonic&quot;                 ! Collision operator: &quot;zero&quot;, &quot;krook&quot;, &quot;harmonic&quot;
+    f0type = &quot;maxwellian&quot;               ! Distribution function: &quot;maxwellian&quot;
+    jac_in = &quot;&quot;                         ! Jacobian of peq_file harmonic decomposition
+/
 &amp;PENT_CONTROL
-    wefac = 1                           ! artificial factor applied to omega_EXB
-    wdfac = 1                           ! artificial factor applied to omega_b
-    wpfac = 1                           ! artificial factor applied to omega_phi
-    nufac = 1                           ! artificial factor applied to collision operator
-    divxfac = 1                         ! artificial factor applied to div xi_perp
+    wefac = 1                           ! Artificial factor applied to omega_EXB
+    wdfac = 1                           ! Artificial factor applied to omega_b
+    wpfac = 1                           ! Artificial factor applied to omega_phi
+    nufac = 1                           ! Artificial factor applied to collision operator
+    divxfac = 1                         ! Artificial factor applied to div xi_perp
 
-    atol = 1e-12                        ! absolute tolerance in energy and pitch integration
-    rtol = 1e-6                         ! relative tolerance in energy and pitch integration
-    tatol = 1e-12                       ! absolute tolerance in psi_n integration
-    trtol = 1e-4                        ! relative tolerance in psi_n integration
-    ntheta = 128                        ! poloidal angle grid for bounce integration
-    nlmda = 128                         ! pitch grid for omega_D, oemga_b, dJdJ
+    atol_xlmda = 1e-12                  ! Absolute tolerance in energy and pitch integration
+    rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
+    atol_psi = 1e-6                     ! Absolute tolerance in psi_n integration
+    rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
+    ntheta = 128                        ! Poloidal angle grid for bounce integration
+    nlmda = 128                         ! Pitch grid for omega_D, oemga_b, dJdJ
 
-    xmax = 128                          ! upper bound of energy integral (x=E/T)
-    ximag = 0.0                         ! step off real energy axis (use to avoid zero collisionality singularities)
-    psilim = 0 1                        ! range in psi_n
-/                                       
+    xmax = 128                          ! Upper bound of energy integral (x=E/T)
+    ximag = 0.0                         ! Step off real energy axis (use to avoid zero collisionality singularities)
+    psilims = 0 1                       ! Range in psi_n
+/
 &amp;PENT_OUTPUT
-    moment = &quot;pressure&quot;                 ! &#39;pressure&#39; for torque and particle transport, &#39;heat&#39; for heat transport
+    moment = &quot;pressure&quot;                 ! Use &#39;pressure&#39; for torque and particle transport, &#39;heat&#39; for heat transport
 
-    fgar_flag = .true.                  ! full    general aspect ratio calculation
-    tgar_flag = .true.                  ! trapped general aspect ratio calculation
-    pgar_flag = .false.                 ! passing general aspect ratio calculation
-    clar_flag = .false.                 ! circular large aspect ratio calculation
-    rlar_flag = .false.                 ! reduced large aspect ratio calculation
-    fcgl_flag = .false.                 ! fluid Chew-Goldberger-Low limit
-    wxyz_flag = .false.                 ! euler-lagrange equation matrix output at psiout
-    fkmm_flag = .false.                 ! full euler-lagrange matrix calculation (t,p also available)
-    ftmm_flag = .false.                 ! full torque mxm matrix calculation (t,p also available)
-    fwmm_flag = .false.                 ! full dW mxm matrix calculation (t,p also available)
+    fgar_flag = .true.                  ! Full    general aspect ratio calculation
+    tgar_flag = .true.                  ! Trapped general aspect ratio calculation
+    pgar_flag = .false.                 ! Passing general aspect ratio calculation
+    clar_flag = .false.                 ! Circular large aspect ratio calculation
+    rlar_flag = .false.                 ! Reduced large aspect ratio calculation
+    fcgl_flag = .false.                 ! Fluid Chew-Goldberger-Low limit
+    wxyz_flag = .false.                 ! Euler-lagrange equation matrix output at psiout
+    fkmm_flag = .false.                 ! Full euler-lagrange matrix calculation (t,p also available)
+    ftmm_flag = .false.                 ! Full torque mxm matrix calculation (t,p also available)
+    fwmm_flag = .false.                 ! Full dW mxm matrix calculation (t,p also available)
 
-    eq_out = .true.                     ! output kinetic profiles at each psi
-    xlmda_out = .false.                 ! output energy and pitch integrands on psi_out
-    theta_out = .false.                 ! output bounce integrands on psi_out
+    output_ascii = .true.               ! Write ascii output files
+    output_netcdf = .true.              ! Write netcdf output files
+
+    xlmda_out = .false.                 ! Output energy and pitch integrands on psi_out
+    theta_out = .false.                 ! Output bounce integrands on psi_out
     psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs
 
-    equil_grid = .false.                ! recalculate each requested method on equilibrium grid from DCON
-    input_grid = .false.                ! recalculate each requested method on input displacements&#39; grid
+    equil_grid = .false.                ! Recalculate each requested method on equilibrium grid from DCON
+    input_grid = .false.                ! Recalculate each requested method on input displacements&#39; grid
 
-    term_flag = .true.                  ! print progress to terminal
-    clean = .false.                     ! remove pentrc_*.out before running
-/                                       
+    verbose = .true.                    ! Print progress to terminal
+    clean = .false.                     ! Remove pentrc_*.out before running
+/
 &amp;PENT_ADMIN                             
-    fnml_flag = .false.                 ! special function matrix [JKP PRL 2009]
-    ellip_flag = .false.                ! elliptic integral functions
-    diag_flag = .false.                 ! diagnostic module
-    tdebug = .false.                    ! debug psi integration
-    lambdadebug = .false.               ! debug pitch integration
-    xdebug = .false.                    ! debug energy integration
+    fnml_flag = .false.                 ! Special function matrix [JKP PRL 2009]
+    ellip_flag = .false.                ! Elliptic integral functions
+    diag_flag = .false.                 ! Diagnostic module
+    tdebug = .false.                    ! Debug psi integration
+    lambdadebug = .false.               ! Debug pitch integration
+    xdebug = .false.                    ! Debug energy integration
 /
 </pre></div>
 </div>

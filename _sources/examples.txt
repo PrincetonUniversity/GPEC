@@ -5,6 +5,6 @@
 Tutorial Examples
 *******************
 
-This section provides some useful tutorial examples for runing the GPEC package codes together to produce relavent, publication worthy results.
+This section provides some useful tutorial examples for running the GPEC package codes together to produce relavent, publication worthy results.
 
 .. include:: examples/DIIID_example/README

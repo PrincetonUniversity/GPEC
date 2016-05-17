@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" />
-    <link rel="next" title="Developers Corner" href="developers.html" />
+    <link rel="next" title="Accessing Releases" href="releases.html" />
     <link rel="prev" title="Tutorial Examples" href="examples.html" /> 
   </head>
   <body>
@@ -43,7 +43,7 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="developers.html" title="Developers Corner"
+          <a href="releases.html" title="Accessing Releases"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="examples.html" title="Tutorial Examples"
@@ -89,8 +89,8 @@
   <p class="topless"><a href="examples.html"
                         title="previous chapter">Tutorial Examples</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="developers.html"
-                        title="next chapter">Developers Corner</a></p>
+  <p class="topless"><a href="releases.html"
+                        title="next chapter">Accessing Releases</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/source_documentation.txt"
@@ -210,7 +210,7 @@ are recomended to edit ~/.matplotlib/matplotlibrc and
 </div>
 <p>Explore the data module by typing &#8216;data.&#8217; and hitting tab. For information on any particular object in the module, use the &#8216;?&#8217; syntax or &#8216;help&#8217; function. For example, enter &#8216;data.read?&#8217;. You will see that it has a lot of metadata on this function, but the important things to look at for now are the arguments and key word arguments. These are passed to the function as shown in the Definition line... you can either pass a single string, or a string and specification for squeeze. If this confuses you, consult any of the many great python tutorials online.</p>
 <p>Lets use it! To get a typical GPEC output into python, use the open_dataset function.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Printing to the terminal is intelegent, giving a conviniently human readable summary of the data.</p>
@@ -309,7 +309,7 @@ recommended that the user familiarise themselves with matplotlib (there are many
 tutorials) and write their own scripts for plotting the data of interest, as details will
 inevitably need tweaking.</p>
 <p>For a common example of more customized plots, lets look at some 2d data</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cyl</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_cylindrical_output_n1.nc&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">cyl</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/ipec_cylindrical_output_n1.nc&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>We could use the built in plotting methods like ds[&#8216;b_z&#8217;].plot), but these are (R,z) figures
@@ -332,7 +332,7 @@ should be done with a little care to look right. Lets look at b_z for example,</
 <p>There we go. That looks publication ready!</p>
 <p>Another common plot of GPEC outputs is the (psi,m) spectrogram plot. Lets quickly make a
 nice one,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prof</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_profile_output_n1.nc&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prof</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/ipec_profile_output_n1.nc&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">extent</span> <span class="o">=</span> <span class="p">[</span><span class="n">prof</span><span class="p">[</span><span class="s">&#39;m&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span><span class="n">prof</span><span class="p">[</span><span class="s">&#39;m&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span><span class="n">prof</span><span class="p">[</span><span class="s">&#39;psi_n&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span><span class="n">prof</span><span class="p">[</span><span class="s">&#39;psi_n&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">prof</span><span class="p">[</span><span class="s">&#39;xi_m_contrapsi&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">origin</span><span class="o">=</span><span class="s">&#39;lower&#39;</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="s">&#39;viridis&#39;</span><span class="p">,</span>
@@ -421,14 +421,14 @@ EC output.</p>
 be used to create xarray Dataset objects whenever possible. This section describes the deprecated
 ascii interface for context, and motivates the move to netcdf.</p>
 <p>Data in ascii tables can be read into a custom Data object using the read function,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/g147131.02300_DIIID_KEFIT.kin&#39;</span><span class="p">)</span>
 <span class="go">Casting table 1 into Data object.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">mydata</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">mydata</span><span class="p">)</span>
 <span class="go">(&lt;type &#39;list&#39;&gt;, 1)</span>
 </pre></div>
 </div>
 <p>The read function creates a list of data objects corresponding to the tables in the text file. In this case, there is only one table. If we knew this ahead of time, we could have gotten the data object directly by splitting the list.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/g147131.02300_DIIID_KEFIT.kin&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mydata</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/g147131.02300_DIIID_KEFIT.kin&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <span class="go">Casting table 1 into Data object.</span>
 </pre></div>
 </div>
@@ -462,7 +462,7 @@ ascii interface for context, and motivates the move to netcdf.</p>
 <p>Note that the interpolator initialized the interpolation function on the first call, this is saved internally for subsequent calls.</p>
 <p>One common need is to look at spectra. For this we want to utilize
 the full functionality of the data instances&#8217; plot1d function.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xc</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_xclebsch_n1.out&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">xc</span><span class="p">,</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/ipec_xclebsch_n1.out&#39;</span><span class="p">)</span>
 <span class="go">Casting table 1 into Data object.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">xc</span><span class="o">.</span><span class="n">plot1d</span><span class="p">(</span><span class="s">&#39;xi^psi&#39;</span><span class="p">,</span><span class="s">&#39;psi&#39;</span><span class="p">,</span><span class="n">x2rng</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/figures/example_spectrum.png&#39;</span><span class="p">)</span>
@@ -640,7 +640,7 @@ Overrides default function choices (plot3d,mesh,quiver3d).</dd>
 <dd>figure.</dd>
 </dl>
 <p><em>Example:</em></p>
-<p>xb, = data.read(&#8216;examples/DIIID_example/ipec_xbnormal_fun_n1.out&#8217;,forcex=[&#8216;r&#8217;,&#8217;z&#8217;])
+<p>xb, = data.read(&#8216;examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out&#8217;,forcex=[&#8216;r&#8217;,&#8217;z&#8217;])
 xb.plot3d(&#8216;bno&#8217;)</p>
 <p>..note: I think what we usually want out of IPEC is
 the 3D surface perturbation. If we run with fun_flag
@@ -730,7 +730,7 @@ overwrite: bool. Overwrite geometric quantities if they already exist.</dd>
 </dl>
 <p><strong>Examples:</strong></p>
 <p>After opening, and adding geometry,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">add_control_geometry</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1287,7 +1287,7 @@ a search for the normalized spectrum that maximizes NTV.</p>
 
 <dl class="function">
 <dt id="pypec.gpec.run">
-<tt class="descclassname">pypec.gpec.</tt><tt class="descname">run</tt><big>(</big><em>loc='.'</em>, <em>rundir='/p/gpec/users/nlogan/gpec/bin/'</em>, <em>qsub=True</em>, <em>return_on_complete=False</em>, <em>rerun=False</em>, <em>rundcon=True</em>, <em>runipec=True</em>, <em>runpentrc=True</em>, <em>fill_inputs=False</em>, <em>mailon='ae'</em>, <em>email=''</em>, <em>mem=10000.0</em>, <em>runpent=False</em>, <em>optpentrc=False</em>, <em>pent_tol=0</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/gpec.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.run" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pypec.gpec.</tt><tt class="descname">run</tt><big>(</big><em>loc='.'</em>, <em>rundir='/p/gpec/users/nlogan/gpec/bin/'</em>, <em>qsub=True</em>, <em>return_on_complete=False</em>, <em>rerun=False</em>, <em>rundcon=True</em>, <em>runipec=True</em>, <em>runpentrc=True</em>, <em>cleandcon=False</em>, <em>fill_inputs=False</em>, <em>mailon='ae'</em>, <em>email=''</em>, <em>mem=10000.0</em>, <em>runpent=False</em>, <em>optpentrc=False</em>, <em>pent_tol=0</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/gpec.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Python wrapper for running ipec package.</p>
 <dl class="docutils">
 <dt>Key Word Arguments:</dt>
@@ -1308,6 +1308,8 @@ a search for the normalized spectrum that maximizes NTV.</p>
 <dd>Run ipec.</dd>
 <dt>runpentrc <span class="classifier-delimiter">:</span> <span class="classifier">bool.</span></dt>
 <dd>Run pentrc.</dd>
+<dt>cleandcon <span class="classifier-delimiter">:</span> <span class="classifier">bool.</span></dt>
+<dd>Remove euler.bin file after run is complete.</dd>
 <dt>fill_inputs <span class="classifier-delimiter">:</span> <span class="classifier">bool. </span></dt>
 <dd>Use inputs from rundir (see kwargs).</dd>
 <dt>mailon <span class="classifier-delimiter">:</span> <span class="classifier">str. </span></dt>
@@ -2026,7 +2028,7 @@ keyword, see above.</li>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="developers.html" title="Developers Corner"
+          <a href="releases.html" title="Accessing Releases"
              >next</a> |</li>
         <li class="right" >
           <a href="examples.html" title="Tutorial Examples"

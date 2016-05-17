@@ -1,0 +1,270 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Accessing Releases &mdash; GPEC 3.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" />
+    <link rel="next" title="Developers Corner" href="developers.html" />
+    <link rel="prev" title="PYPEC Source documentation" href="source_documentation.html" /> 
+  </head>
+  <body>
+
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="developers.html" title="Developers Corner"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="source_documentation.html" title="PYPEC Source documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Accessing Releases</a></li>
+<li><a class="reference internal" href="#release-notes">Release Notes</a><ul>
+<li><a class="reference internal" href="#gpec-v0-3-3">GPEC v0.3.3</a></li>
+<li><a class="reference internal" href="#gpec-v0-3-2">GPEC v0.3.2</a></li>
+<li><a class="reference internal" href="#gpec-v0-3-1">GPEC v0.3.1</a><ul>
+<li><a class="reference internal" href="#bugfixes">Bugfixes</a></li>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#performance">Performance</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v0-3-0">GPEC v0.3.0</a><ul>
+<li><a class="reference internal" href="#id1">Bugfixes</a></li>
+<li><a class="reference internal" href="#id2">Features</a></li>
+<li><a class="reference internal" href="#id3">Performance</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="source_documentation.html"
+                        title="previous chapter">PYPEC Source documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="developers.html"
+                        title="next chapter">Developers Corner</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/releases.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="accessing-releases">
+<h1>Accessing Releases<a class="headerlink" href="#accessing-releases" title="Permalink to this headline">¶</a></h1>
+<p>Official releases are available for download from the <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC/releases">github release page</a>.</p>
+<p>On the PPPL portal computers, releases are available at /p/gpec. To use a release,:</p>
+<div class="highlight-python"><div class="highlight"><pre>module use /p/gpec/modules
+</pre></div>
+</div>
+<p>will give you access to the official gpec modules. Use,:</p>
+<div class="highlight-python"><div class="highlight"><pre>module avail
+</pre></div>
+</div>
+<p>to see the available releases, or simply,:</p>
+<div class="highlight-python"><div class="highlight"><pre>module load gpec
+</pre></div>
+</div>
+<p>to load the current default. This will add the appropriate directories to your path, such that you can simply
+call the executables (i.e. dcon, etc.).</p>
+<p>On the General Atomics iris computer, releases are available at /fusion/projects/codes/gpec. To use a release, simply load the publicly available gpec module.</p>
+</div>
+<div class="section" id="release-notes">
+<h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC/releases">github release notes</a> are reproduced below.</p>
+<div class="section" id="gpec-v0-3-3">
+<h2>GPEC v0.3.3<a class="headerlink" href="#gpec-v0-3-3" title="Permalink to this headline">¶</a></h2>
+<p>This release features a critical bug fix for control surface netcdf output and pmodb/xbnormal outputs</p>
+<blockquote>
+<div><ul class="simple">
+<li>All area normalized or energy normalized quantities were incorrectly converted to the users specified jac_out coordinates. All quantities are now in the DCON jac_type coordinate system unless specifically noted otherwise.</li>
+<li>The jacobian and surface area have been added to the control netcdf as global attributes</li>
+<li>The filtering of singular coupling modes is now done entirely within the DCON coordinate system, for which a new singular coupling matrix is formed and SVD&#8217;d.</li>
+<li>Bugs in the use of bcoordsout for pmodb and xbnormal profile quantities that wrote the first variable to multiple variables (i.e. eulb to lagb) were fixed.</li>
+<li>A Bug in the weighting of the bwp profile was fixed</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="gpec-v0-3-2">
+<h2>GPEC v0.3.2<a class="headerlink" href="#gpec-v0-3-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>This release features a critical bug fix for control surface ascii output Phi^x.
+- If the jac_out was not the working jac_type Phi^x outputs in the jac_out table were mistakenly in the jac_in coordinate system.</li>
+<li>The external and total flux have been added to the control netcdf alongside their previously stored energy normalized values.</li>
+</ul>
+</div>
+<div class="section" id="gpec-v0-3-1">
+<h2>GPEC v0.3.1<a class="headerlink" href="#gpec-v0-3-1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="bugfixes">
+<h3>Bugfixes<a class="headerlink" href="#bugfixes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>IPEC fixed mistaken use of Hermitian lapack subroutines for permeability matrix</li>
+<li>PYPEC synthetics properly closes synthetic surfaces that cover the full poloidal angle (vessel wall, etc.)</li>
+<li>PYPEC coil plotting bug fixes for axes and color key words</li>
+<li>PYPEC updated to reflect move from xray to xarray</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="features">
+<h3>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>IPEC netcdf additions, including control surface matrices, profile quantities, shot/time/machine, and more</li>
+<li>IPEC netcdf names conform to netcdf conventions</li>
+<li>IPEC all netcdf outputs converted to jac_out</li>
+<li>IPEC filter decomposition modes are now all in ascending order (SVD convention)</li>
+<li>IPEC added amplification to filter modes</li>
+<li>COIL added MAST coils</li>
+<li>PENTRC added new grid options, which now include equil_grid or input_grid (i.e. the DCON grid)</li>
+<li>PYPEC improved ascii/netcdf interface using data.open_dataset</li>
+<li>PYPEC synthetics now includes magnetic sensors</li>
+<li>PYPEC add_control_geometry function expands control surface geometry for 2D and 3D plots</li>
+<li>PYPEC improved colormaps and automatic colormap choices</li>
+<li>PYPEC now uses seaborn for context/palettes, has custom set_context function</li>
+<li>PYPEC custom subplots automatically re-size figure to keep axes size</li>
+<li>PYPEC now has png_to_gif function for making movies</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="performance">
+<h3>Performance<a class="headerlink" href="#performance" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Improved speed of ipeq_bcoordsout/ipeq_fcoordsout by checking for unnecessary calls to ipeq_fcoords/ipeq_bcoords</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="gpec-v0-3-0">
+<h2>GPEC v0.3.0<a class="headerlink" href="#gpec-v0-3-0" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>Bugfixes<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>DCON qhigh is enforced independent of sas_flag</li>
+<li>IPEC longstanding bug that caused crashes when brzphi was requested without eqbrzphi is fixed</li>
+<li>IPEC mthsurf bug fixed
+- Benchmarks show perfect recovery of excessively high DCON mthsurf results using mthsurf=1</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="id2">
+<h3>Features<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>COIL now includes 4x48 RFX-mod coils</li>
+<li>IPEC netCDF output is now available for major output flags (more will be transitioned soon)
+- Currently netCDF files include: filter_flag, x/brzphi_flag, xbnormal_flag, pmodb_flag, and control surface fun_flag outputs</li>
+<li>IPEC output subroutines can now be individually timed using the timeit flag</li>
+<li>IPEC mode filtering has a new filter_type, filter_modes interface in IPEC_INPUT</li>
+<li>IPEC reduced terminal printing - no longer is every eigenmode printed to the terminal</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="id3">
+<h3>Performance<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>IPEC speed was increased by saving coordinate transformation information on a surface when performing multiple transformations on one surface</li>
+<li>IPEC brzphi speed was increase by 1-2 orders of magnitude by calculating (r,z,phi) quantities on the requested grid points instead of across surfaces</li>
+<li>IPEC speed can now be confidently increased by a large factor using the mthsurf flag (see bug fix)</li>
+<li>IPEC compiler optimizability increased with the switch from pointers to allocatable arrays</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="developers.html" title="Developers Corner"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="source_documentation.html" title="PYPEC Source documentation"
+             >previous</a> |</li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, PPPL.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
