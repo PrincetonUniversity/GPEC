@@ -4,10 +4,10 @@
 module pentrc_interface
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
-    !   Input interface for PENTRC. Specifically designed for use in kinetic
-    !   DCON, the subprogram in this module essentially emulates a PENTRC
-    !   program run without any of the calculations. It should be regularly
-    !   synced with the PENTRC program for new input variables and defaults.
+    !   Top level interface for PENTRC.
+    !   This was essentially the PENTRC program without any of the calculations,
+    !   and was moved to an independent module in order to allow kinetic DCON
+    !   to inteface with and use the top-tier PENTRC functions / routines.
     !
     !*PUBLIC MEMBER SUBPROGRAMS:
     !   set_pentrc           - Read input namelists and distribute module variables
@@ -30,25 +30,32 @@ module pentrc_interface
     !-----------------------------------------------------------------------
     
     use params, only: r8,xj
-    use utilities, only : get_free_file_unit
-    use inputs, only : read_kin,verbose
+    use utilities, only: timer,to_upper,get_free_file_unit
+    use special, only: set_fymnl,set_ellip
+    use dcon_interface, only: set_eq, idcon_harvest
+    use inputs, only : read_kin,read_equil,nn,read_peq,&
+                       set_peq,read_fnml,verbose
+    use diagnostics, only: diagnose_all
+
     use energy_integration, only: &
-        xatol,xrtol,xmax,ximag,xnufac,& ! reals
-        xnutype,xf0type,        &       ! character(32)
-        xdebug                          ! logical
+        output_energy_record,&                       ! subroutines
+        xatol,xrtol,xmax,ximag,xnufac,&             ! reals
+        xnutype,xf0type,&                           ! character(32)
+        qt,xdebug                                   ! logical
     use pitch_integration, only: &
-        lambdaatol,lambdartol,&         ! reals
-        lambdadebug                     ! logical
-    use torque, only : tintgrl_lsode,tpsi,&
-        ntheta,nlmda,&                  ! integers
-        tatol,trtol,&                   ! reals
-        tdebug,&                        ! logical
-        mpert,mfac                      !! hacked for test writting
+        output_pitch_record,&                       ! subroutines
+        lambdaatol,lambdartol,&                     ! reals
+        lambdadebug                                 ! logical
+    use torque, only : &
+        tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
+        output_bouncefun_ascii,&                    ! subroutines
+        ntheta,nlmda,nthetafuns,&                   ! integers
+        atol_psi,rtol_psi,&                               ! reals
+        tdebug,output_ascii,output_netcdf,&         ! logical
+        mpert,mfac                                  !! hacked for test writting
+    use global_mod, only: version                   ! GPEC package
 
     implicit none
-    private
-    public &
-        get_pentrc
 
     ! declarations and defaults
     integer, parameter :: nflags=18
@@ -86,7 +93,7 @@ module pentrc_interface
         clean=.true.,&
         flags(nflags)=.false.
 
-    integer :: i,j,k,l,m, &
+    integer :: i, &
         mi=2, &
         zi=1, &
         zimp=6, &
@@ -96,21 +103,20 @@ module pentrc_interface
         jsurf_in = 0,&
         nout = 30
 
-    real(r8) ::     &
-        atol=1e-6, &
-        rtol=1e-3,  &
+    real(r8) ::    &
+        atol_xlmda=1e-6, &
+        rtol_xlmda=1e-3, &
         nfac=1.0,  &
         tfac=1.0,  &
-        wefac=1.0,  &
-        wdfac=1.0,  &
-        wpfac=1.0,  &
-        nufac=1.0,  &
-        divxfac=1.0,&
+        wefac=1.0, &
+        wdfac=1.0, &
+        wpfac=1.0, &
+        nufac=1.0, &
+        divxfac=1.0, &
         diag_psi = 0.7, &
-        psilim(2) = (/0,1/),&
-        psiout(30)= 0, &
-        psi_out(30)= (/(i,i=1,30)/)/30.6
-
+        psilims(2) = (/0,1/), &
+        psi_out(30)= -1
+    real(r8), dimension(:,:), allocatable :: thetatable,thetafuns
     complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
     complex(r8), dimension(:,:,:), allocatable :: wtw
 
@@ -134,18 +140,92 @@ module pentrc_interface
         jac_in,jsurf_in,tmag_in
 
     namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
-        atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
+        atol_xlmda,rtol_xlmda,atol_psi,rtol_psi,nlmda,ntheta,ximag,xmax,psilims
 
-    namelist/pent_output/moment,eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&
+    namelist/pent_output/moment,output_ascii,output_netcdf,&
+        eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&
         fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
-        wxyz_flag,psiout,psi_out,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
+        wxyz_flag,psi_out,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
         fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
         term_flag,verbose,clean
 
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug
         
+    private :: i ! these conflict with the dcon namespace
+
     contains    
+
+    !=======================================================================
+    subroutine initialize_pentrc(op_kin,op_deq,op_peq)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Read the pentrc namelists and distribute the necessary variables
+    !   to the appropriate module circles.
+    !   Optionally, read the other standard input files (otherwise they must be set)
+    !
+    !*ARGUMENTS:
+    !
+    !*OPTIONAL ARGUMENTS:
+    !   op_kin : logical (default true)
+    !       Read ascii table of kinetic profiles
+    !   op_deq : logical (default true)
+    !       Read dcon euler.bin description of the equilibrium
+    !   op_peq : logical (default true)
+    !       Read ascii table of clesch displacement profiles
+    !
+    !*RETURNS:
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        logical, optional, intent(in) :: op_kin,op_deq,op_peq
+        logical :: in_kin,in_deq,in_peq
+        integer :: i
+
+        ! defaults
+        in_kin = .true.
+        in_deq = .true.
+        in_peq = .true.
+        if(present(op_kin)) in_kin = op_kin
+        if(present(op_deq)) in_deq = op_deq
+        if(present(op_peq)) in_peq = op_peq
+
+        ! read interface and set modules
+        i = get_free_file_unit(-1)
+        open(unit=i,file="pentrc.in",status="old")
+        read(unit=i,nml=pent_input)
+        read(unit=i,nml=pent_control)
+        read(unit=i,nml=pent_output)
+        read(unit=i,nml=pent_admin)
+        close(i)
+
+        ! defaults
+        if(all(psi_out==-1)) psi_out = (/(i,i=1,30)/)/30.6 ! even spread if user doesn't pick any
+
+        ! warnings if using deprecated inputs
+        if(eq_out) print *, "WARNING: eq_out has been deprecated. Behavior is always true."
+        if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
+        if(term_flag) print *, "WARNING: term_flag has been deprecated. Use verbose."
+        !if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out." !! officially removed
+        !if(any(psilim/=0)) print *, "WARNING: psilim has been deprecated. Use psilims."
+
+        ! distribute some simplified inputs to module circles
+        xatol = atol_xlmda
+        xrtol = rtol_xlmda
+        xnufac= nufac
+        xnutype= nutype
+        xf0type= f0type
+        lambdaatol = atol_xlmda
+        lambdartol = rtol_xlmda
+
+        ! read (perturbed) equilibrium inputs
+        if(tdebug .and. in_kin) print *,"  read_kin args: ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
+        if(in_deq) call read_equil(idconfile)
+        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
+        if(in_peq) call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug)
+        !call read_ipec_peq(ipec_file,tdebug)
+
+    end subroutine initialize_pentrc
 
     !=======================================================================
     subroutine get_pentrc(get_nl,get_zi,get_mi,get_wdfac,get_divxfac,&
@@ -167,7 +247,8 @@ module pentrc_interface
         real(r8), intent(inout) :: get_wdfac,get_divxfac
         logical, intent(inout) :: get_electron,get_eq_out,get_theta_out,&
             get_xlmda_out
-    
+        integer :: i
+
         ! read interface and set modules
         print *,"Interfacing with PENTRC => v3.00"
         i = get_free_file_unit(-1)
@@ -179,13 +260,13 @@ module pentrc_interface
         close(i)
         
         ! distribute inputs to PENTRC module circles
-        xatol = atol
-        xrtol = rtol
+        xatol = atol_xlmda
+        xrtol = rtol_xlmda
         xnufac= nufac
         xnutype= nutype
         xf0type= f0type 
-        lambdaatol = atol
-        lambdartol = rtol
+        lambdaatol = atol_xlmda
+        lambdartol = rtol_xlmda
         
         ! set the kinetic spline
         if(tdebug)THEN

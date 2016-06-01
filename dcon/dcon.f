@@ -22,13 +22,16 @@ c-----------------------------------------------------------------------
       USE ode_mod
       USE free_mod
       USE resist_mod
-      USE pentrc_interface, only : get_pentrc
-      USE dcon_interface, only : set_eq
-      USE inputs, only : set_peq
+      USE pentrc_interface,         ! rename overlapping names
+     $    pentrc_verbose=>verbose,  ! should get a more fundemental fix
+     $    pentrc_mpert=>mpert,
+     $    pentrc_nn=>nn,
+     $    pentrc_r8=>r8,
+     $    pentrc_timer=>timer
       IMPLICIT NONE
 
       LOGICAL :: cyl_flag=.FALSE.
-      INTEGER :: mmin,ipsi,m,kingridtype
+      INTEGER :: mmin,ipsi,m
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mtmp
@@ -70,7 +73,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
-      kingridtype=0
       IF(verbose) WRITE(*,*)""
       IF(verbose) WRITE(*,*)"DCON START => "//TRIM(version)
       IF(verbose) WRITE(*,*)"__________________________________________"
@@ -173,22 +175,26 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
          IF(kin_flag)THEN
-            ! obsolete diagnostics.
-c            ALLOCATE(f1mats(mpert**2),k1mats(mpert**2),
-c     $           k1aats(mpert**2),g1aats(mpert**2))
             CALL fourfit_action_matrix
+            IF(verbose) WRITE(*,*) "Initializing PENTRC"
+            ! call the automatic reading and distributing of inputs
+            CALL initialize_pentrc(op_kin=.FALSE.,op_deq=.FALSE.,
+     $          op_peq=.FALSE.)
+            ! manually set the pentrc equilibrium description
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
      $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
-            PRINT *, 'set_eq completed'
-            CALL get_pentrc(nl,zi,mi,wdfac,divxfac,electron,
-     $          keq_out,theta_out,xlmda_out)
-            ! set flat displacement spectrum
-            ! as well as false flat psi derivative for equal weighting
+            ! manually set the kinetic profiles
+            print *,kinetic_file,zi,zimp,mi,mimp,nfac,
+     $          tfac,wefac,wpfac,tdebug
+            CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
+     $          tfac,wefac,wpfac,tdebug)
+            ! manually set the perturbed equilibrium displacements
+            ! use false flat xi and xi' for equal weighting
             ALLOCATE(psitmp(sq%mx+1),mtmp(mpert),xtmp(sq%mx+1,mpert))
             psitmp(:) = sq%xs(0:)
             mtmp = (/(m,m=mlow,mhigh)/)
             xtmp = 1e-4
-            CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,.false.)
+            CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,.true.)
             DEALLOCATE(xtmp,mtmp,psitmp)
             IF(verbose) WRITE(*,*)"Computing Kinetic Matrices"
             CALL fourfit_kinetic_matrix(kingridtype,.TRUE.)

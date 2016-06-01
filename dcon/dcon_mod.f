@@ -96,9 +96,8 @@ c-----------------------------------------------------------------------
       EQUIVALENCE (sas_flag,lim_flag)
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3
 
-      INTEGER :: nl,zi,mi
-      REAL(r8) :: wdfac,divxfac,
-     $     kinfac1=1.0,kinfac2=1.0,ktc=0.1,ktw=50
+      INTEGER :: kingridtype=0
+      REAL(r8) :: kinfac1=1.0,kinfac2=1.0,ktc=0.1,ktw=50
       LOGICAL :: kin_flag = .FALSE.
       LOGICAL :: con_flag = .FALSE.
       LOGICAL :: ktanh_flag = .FALSE.

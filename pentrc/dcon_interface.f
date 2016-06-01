@@ -110,7 +110,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     open euler.bin and read header.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Reading dcon eigenfuctions"
+      IF(verbose) WRITE(*,*)"Reading dcon eigenfuctions from file:"
+      IF(verbose) WRITE(*,*)"  "//trim(idconfile)
       in_unit = get_free_file_unit(-1)
       OPEN(UNIT=in_unit,FILE=idconfile,STATUS="OLD",POSITION="REWIND",
      $        FORM="UNFORMATTED")
@@ -177,7 +178,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     count solutions in euler.bin.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,*)"Counting and reading dcon solutions"
       DO
          READ(UNIT=in_unit,IOSTAT=ios)data_type
          IF(ios /= 0)EXIT
@@ -224,8 +224,10 @@ c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
 c-----------------------------------------------------------------------
       IF(verbose)THEN
-        WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
-        WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
+        WRITE(*,'(1x,3(a2,a8,I6))')"  ","mpert = ",mpert,", ","mlow = ",
+     $      mlow,", ","mhigh = ",mhigh
+        WRITE(*,'(1x,3(a2,a8,I6))')"  ","mstep = ",mstep,", ","mfix = ",
+     $      mfix,", ","msing = ",msing
       ENDIF
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
@@ -494,7 +496,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(3,3) :: w,v
       TYPE(spline_type) :: qs
 
-      WRITE(*,*)"Recontructing flux functions and metric tensors"
+      WRITE(*,*)"  Reconstructing flux functions and metric tensors"
 c-----------------------------------------------------------------------
 c     set up fourier-spline type for metric tensors.
 c-----------------------------------------------------------------------
@@ -852,7 +854,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"Computing perturbed b field for gpec"
+      IF(verbose) WRITE(*,*)"  Computing action matrices"
 c-----------------------------------------------------------------------
 c     set up fourier-spline type.
 c-----------------------------------------------------------------------

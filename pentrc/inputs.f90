@@ -86,8 +86,6 @@ module inputs
 
         ! set idconfile
         idconfile = file
-        if(verbose) print *,"Set idconfile:"
-        if(verbose) print *,"  "//TRIM(idconfile)
         ! prepare ideal solutions. (psixy=0)
         CALL idcon_read(0)
         if(present(hlog)) CALL idcon_harvest(hlog)
@@ -486,7 +484,7 @@ module inputs
         
         ! default dbdx is unit energy norm flat spectrum
         if(.not. associated(dbdx_m(1)%xs))then
-            if(verbose) print *,"Forming constant mod B, div xi"
+            if(verbose) print *,"  forming constant mod B, div xi"
             call cspline_alloc(dbdx_m(1),npsi-1,mpert)     ! JB^2 (dB/B)
             call cspline_alloc(dbdx_m(2),npsi-1,mpert)     ! JB^2 div(xi_prp)
             dbdx_m(1)%xs(0:) = psi(1:)

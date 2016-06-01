@@ -21,16 +21,16 @@
     nufac = 1                           ! artificial factor applied to collision operator
     divxfac = 1                         ! artificial factor applied to div xi_perp
 
-    atol = 1e-12                        ! absolute tolerance in energy and pitch integration
-    rtol = 1e-6                         ! relative tolerance in energy and pitch integration
-    tatol = 1e-6                        ! absolute tolerance in psi_n integration
-    trtol = 1e-4                        ! relative tolerance in psi_n integration
+    atol_xlmda = 1e-12                  ! absolute tolerance in energy and pitch integration
+    rtol_xlmda = 1e-6                   ! relative tolerance in energy and pitch integration
+    atol_psi = 1e-6                     ! absolute tolerance in psi_n integration
+    rtol_psi = 1e-4                     ! relative tolerance in psi_n integration
     ntheta = 128                        ! poloidal angle grid for bounce integration
     nlmda = 128                         ! pitch grid for omega_D, oemga_b, dJdJ
 
     xmax = 128                          ! upper bound of energy integral (x=E/T)
     ximag = 0.0                         ! step off real energy axis (use to avoid zero collisionality singularities)
-    psilim = 0 1                        ! range in psi_n
+    psilims = 0 1                        ! range in psi_n
 /
 &PENT_OUTPUT
     moment = "pressure"                 ! 'pressure' for torque and particle transport, 'heat' for heat transport
@@ -46,7 +46,6 @@
     ftmm_flag = .false.                 ! full torque mxm matrix calculation (t,p also available)
     fwmm_flag = .false.                 ! full dW mxm matrix calculation (t,p also available)
 
-    eq_out = .true.                     ! output kinetic profiles at each psi
     xlmda_out = .false.                 ! output energy and pitch integrands on psi_out
     theta_out = .false.                 ! output bounce integrands on psi_out
     psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs

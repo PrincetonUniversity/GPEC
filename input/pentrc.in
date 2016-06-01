@@ -21,16 +21,16 @@
     nufac = 1                           ! Artificial factor applied to collision operator
     divxfac = 1                         ! Artificial factor applied to div xi_perp
 
-    atol = 1e-12                        ! Absolute tolerance in energy and pitch integration
-    rtol = 1e-6                         ! Relative tolerance in energy and pitch integration
-    tatol = 1e-12                       ! Absolute tolerance in psi_n integration
-    trtol = 1e-4                        ! Relative tolerance in psi_n integration
+    atol_xlmda = 1e-12                  ! Absolute tolerance in energy and pitch integration
+    rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
+    atol_psi = 1e-6                     ! Absolute tolerance in psi_n integration
+    rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration
     nlmda = 128                         ! Pitch grid for omega_D, oemga_b, dJdJ
 
     xmax = 128                          ! Upper bound of energy integral (x=E/T)
     ximag = 0.0                         ! Step off real energy axis (use to avoid zero collisionality singularities)
-    psilim = 0 1                        ! Range in psi_n
+    psilims = 0 1                       ! Range in psi_n
 /
 &PENT_OUTPUT
     moment = "pressure"                 ! Use 'pressure' for torque and particle transport, 'heat' for heat transport
@@ -46,7 +46,9 @@
     ftmm_flag = .false.                 ! Full torque mxm matrix calculation (t,p also available)
     fwmm_flag = .false.                 ! Full dW mxm matrix calculation (t,p also available)
 
-    eq_out = .true.                     ! Output kinetic profiles at each psi
+    output_ascii = .true.               ! Write ascii output files
+    output_netcdf = .true.              ! Write netcdf output files
+
     xlmda_out = .false.                 ! Output energy and pitch integrands on psi_out
     theta_out = .false.                 ! Output bounce integrands on psi_out
     psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs

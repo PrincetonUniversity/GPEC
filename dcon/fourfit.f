@@ -23,8 +23,13 @@ c-----------------------------------------------------------------------
       MODULE fourfit_mod
       USE fspline_mod
       USE dcon_mod
-      USE torque, only : tpsi,tintgrl_lsode,tintgrl_grid, ! functions
-     $     kelmm             ! cspline Euler-Lagrange mats for local use
+      USE pentrc_interface,         ! rename overlapping names
+     $    pentrc_verbose=>verbose,  ! should get a more fundemental fix
+     $    pentrc_mpert=>mpert,
+     $    pentrc_nn=>nn,
+     $    pentrc_r8=>r8,
+     $    pentrc_timer=>timer
+      USE torque, only : kelmm      ! cspline Euler-Lagrange mats for local use
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
@@ -877,7 +882,7 @@ c-----------------------------------------------------------------------
       LOGICAL, OPTIONAL :: writein
       INTEGER, OPTIONAL :: methodin
 
-      LOGICAL :: output=.TRUE.,write_flux = .TRUE.
+      LOGICAL :: output
       INTEGER :: ipsi,ipert,l,i,j,iindex,method = 0
       CHARACTER(1) :: ft
       INTEGER, DIMENSION(mpert) :: mfac
@@ -901,6 +906,7 @@ c-----------------------------------------------------------------------
 c     some basic variables
 c-----------------------------------------------------------------------
       IF(PRESENT(methodin)) method = methodin
+      output=.TRUE.
       IF(PRESENT(writein)) output = writein
       chi1=twopi*psio
       plim = (/0.0,1.0/)
@@ -975,15 +981,15 @@ c-----------------------------------------------------------------------
             kwmat = 0
             ktmat = 0
             psifac=rzphi%xs(ipsi)
-            ! get matrices for all ell at this one psi
+            ! get ion matrices for all ell at this one psi
             DO l=-nl,nl
                kwmat_l = 0
                ktmat_l = 0
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
+     $              ft//"wmm",op_wmats=kwmat_l)
                kwmat = kwmat+kwmat_l
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
+     $              ft//"tmm",op_wmats=ktmat_l)
                ktmat = ktmat+ktmat_l
             ENDDO
             IF (electron_flag) THEN
@@ -991,10 +997,10 @@ c-----------------------------------------------------------------------
                   kwmat_l = 0
                   ktmat_l = 0
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
-     $                 ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
+     $                 ft//"wmm",op_wmats=ktmat_l)
                   kwmat = kwmat+kwmat_l
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
-     $                 ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
+     $                 ft//"tmm",op_wmats=ktmat_l)
                   ktmat = ktmat+ktmat_l
                ENDDO
             ENDIF
@@ -1198,10 +1204,10 @@ c-----------------------------------------------------------------------
                kwmat_l = 0
                ktmat_l = 0
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
+     $              ft//"wmm",op_wmats=ktmat_l)
                kwmat = kwmat+kwmat_l
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
+     $              ft//"tmm",op_wmats=ktmat_l)
                ktmat = ktmat+ktmat_l
             ENDDO
             IF (electron_flag) THEN
@@ -1209,10 +1215,10 @@ c-----------------------------------------------------------------------
                   kwmat_l = 0
                   ktmat_l = 0
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
-     $                 ft//"wmm",keq_out,theta_out,xlmda_out,kwmat_l)
+     $                 ft//"wmm",op_wmats=kwmat_l)
                   kwmat = kwmat+kwmat_l
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
-     $                 ft//"tmm",keq_out,theta_out,xlmda_out,ktmat_l)
+     $                 ft//"tmm",op_wmats=ktmat_l)
                   ktmat = ktmat+ktmat_l
                ENDDO
             ENDIF
@@ -1241,7 +1247,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $        "lagrange matrix on equilibrium grid"
          tphi = tintgrl_grid('equil',plim,nn,nl,zi,mi,wdfac,divxfac,
-     $        .FALSE.,ft//"wmm",write_flux)
+     $        .FALSE.,ft//"wmm")
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),kwmats(i))
@@ -1260,7 +1266,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*) " Kinetic torque calculation using MXM euler "//
      $      "lagrange matrix on equilibrium grid"
          tphi = tintgrl_grid('equil',plim,nn,nl,zi,mi,wdfac,divxfac,
-     $        .FALSE.,ft//"tmm",write_flux)
+     $        .FALSE.,ft//"tmm")
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),ktmats(i))
@@ -1284,7 +1290,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*) " Kinetic energy calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
-     $        ft//"wmm",write_flux)
+     $        ft//"wmm")
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),kwmats(i))
@@ -1303,7 +1309,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*) " Kinetic torque calculation using MXM euler "//
      $      "lagrange matrix"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
-     $        ft//"tmm",write_flux)
+     $        ft//"tmm")
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),ktmats(i))
@@ -1327,7 +1333,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*) " Kinetic MXM euler lagrange energy matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
-     $        ft//"kmm",write_flux)
+     $        ft//"kmm")
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),kwmats(i))
@@ -1346,7 +1352,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*) " Kinetic MXM euler lagrange torque matrix norm "
      $      //"calculation"
          tphi = tintgrl_lsode(plim,nn,nl,zi,mi,wdfac,divxfac,.FALSE.,
-     $        ft//"rmm",write_flux)
+     $        ft//"rmm")
          ! copy and apply factor to splines
          DO i=1,6
             CALL cspline_copy(kelmm(i),ktmats(i))

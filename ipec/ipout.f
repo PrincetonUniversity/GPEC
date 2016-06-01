@@ -4986,7 +4986,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(mncid,"mode_W",nf90_int,wdid,mw_id))
          CALL check( nf90_put_att(mncid, mw_id ,"long_name",
      $    "Energy-norm external flux energy eigenmode index") )
-         CALL check( nf90_def_var(mncid,"W_x_eiegenvector",
+         CALL check( nf90_def_var(mncid,"W_x_eigenvector",
      $               nf90_double,(/mdid,wdid,idid/),w_id) )
          CALL check( nf90_put_att(mncid,w_id,"long_name",
      $    "Energy-norm external flux energy eigendecomposition") )
@@ -5260,8 +5260,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,wr_id,ABS(mat)) )
          mat = MATMUL(CONJG(TRANSPOSE(wvecs)),pvecs)
          CALL check( nf90_put_var(mncid,wp_id,ABS(mat)) )
-         matms = MATMUL(CONJG(TRANSPOSE(rvecs)),pvecs)
-         CALL check( nf90_put_var(mncid,rp_id,ABS(matms)) )
+         mat = MATMUL(CONJG(TRANSPOSE(rvecs)),pvecs)
+         CALL check( nf90_put_var(mncid,rp_id,ABS(mat)) )
          IF(singcoup_set) THEN
             matms = MATMUL(CONJG(TRANSPOSE(wvecs)),svecs)
             CALL check( nf90_put_var(mncid,ws_id,ABS(matms)) )

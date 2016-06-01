@@ -120,7 +120,7 @@ ifdef cflag
 	else ifeq ($(cflag),osx_gfortran)
         FC = gfortran
         MATHDIR = /usr/lib
-        NETCDFHOME = /usr/lib
+        NETCDFHOME = /opt/local/lib
 	else
 #$(error No corresponding option of cflag $(cflag) to set compile environment.)
 	endif
