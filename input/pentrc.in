@@ -51,7 +51,7 @@
     eq_out = .true.                     ! output kinetic profiles at each psi
     xlmda_out = .false.                 ! output energy and pitch integrands on psi_out
     theta_out = .false.                 ! output bounce integrands on psi_out
-    psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs
+    psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! Up to 30 surfaces for energy, pitch, and poloidal outputs
     
     equil_grid = .false.                ! recalculate each requested method on equilibrium grid from DCON
     input_grid = .false.                ! recalculate each requested method on input displacements' grid
