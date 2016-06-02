@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
-     $     d3_flag,xbst_flag,pmodbrz_flag,rzphibx_flag,
+     $     d3_flag,xbst_flag,rzphibx_flag,
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag
       NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
-     $     xbnobo_flag,d3_flag,div_flag,xbst_flag,pmodbrz_flag,
+     $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
@@ -152,7 +152,6 @@ c-----------------------------------------------------------------------
       d3_flag=.FALSE.
       div_flag=.FALSE.
       xbst_flag=.FALSE.
-      pmodbrz_flag=.FALSE.
       pmodbmn_flag=.FALSE.
       rzphibx_flag=.FALSE.
       radvar_flag=.TRUE.
@@ -536,8 +535,8 @@ c-----------------------------------------------------------------------
       IF (xbst_flag) THEN
          CALL ipdiag_xbst(mode,xspmn)
       ENDIF
-      IF (pmodbrz_flag) THEN
-         CALL ipdiag_pmodbrz(mode,xspmn)
+      IF (pmodbmn_flag) THEN
+         CALL ipdiag_pmodb(mode,xspmn)
          CALL ipdiag_pmodbmn(mode,xspmn)
       ENDIF            
       IF (rzphibx_flag) THEN
@@ -609,34 +608,40 @@ c     various simple test.
 c-----------------------------------------------------------------------
       IF (test_flag) THEN
          fxmn=0
-         fxmn(7-mlow+1)=1.0
+         fxmn(3-mlow+1)=1.0
+         fxmn(7-mlow+1)=-3.0*ifac
          CALL ascii_open(out_unit,"iptest_coordtrans_n3.out","UNKNOWN")
          WRITE(out_unit,*)
-     $        "IPTEST_COORDTRANS: cotoha to hatoco, co(0,0)"
-         WRITE(out_unit,'(5(1x,a16))')"normpsi","mfac","fxmn",
-     $        "real","imag"
-         DO i=1,100
+     $        "IPTEST_COORDTRANS: hamada to pest and to hamada back"
+         WRITE(out_unit,'(6(1x,a16))')"normpsi","mfac","real1",
+     $        "real2","imag1","imag2"
+         DO i=1,99
+            WRITE(*,*)i
             foutmn=fxmn 
             normpsi = REAL(i)/100.0
-            CALL ipeq_bcoords(normpsi,foutmn,mfac,mpert,0,0,0,0,1,0)
+            CALL ipeq_bcoords(normpsi,foutmn,mfac,mpert,2,0,0,0,0,0)
+            CALL ipeq_fcoords(normpsi,foutmn,mfac,mpert,2,0,0,0,0,0)
             DO in=1,mpert
-               WRITE(out_unit,'(5(1x,es16.8))')
+               WRITE(out_unit,'(6(1x,es16.8))')
      $              REAL(normpsi),REAL(mfac(in)),
-     $              REAL(fxmn(in)),REAL(foutmn(in)),AIMAG(foutmn(in))
-            ENDDO            
+     $              REAL(fxmn(in)),REAL(foutmn(in)),
+     $              AIMAG(fxmn(in)),AIMAG(foutmn(in))
+               WRITE(*,*)REAL(fxmn(in)),REAL(foutmn(in)),
+     $              AIMAG(fxmn(in)),AIMAG(foutmn(in))
+            ENDDO
          ENDDO
          CALL ascii_close(out_unit)
-        
-         fxfun=cos(twopi*3*theta)
-         CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
-         CALL iscdftb(mfac,mpert,fxfun,mthsurf,fxmn)
-         CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
          
+c         fxfun=cos(twopi*3*theta)
+c         CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
+c         CALL iscdftb(mfac,mpert,fxfun,mthsurf,fxmn)
+c         CALL iscdftf(mfac,mpert,fxfun,mthsurf,fxmn)
+c         
          ! test orthoganality of permeabev eigenvectors
-         CALL ipdiag_permeabev_orthogonality
-         ! Test coordinate independence of power eigenvectors
-         CALL ipdiag_reluctpowout(power_rout,power_bpout,power_bout,
-     $        power_rcout)
+c         CALL ipdiag_permeabev_orthogonality
+c         ! Test coordinate independence of power eigenvectors
+c         CALL ipdiag_reluctpowout(power_rout,power_bpout,power_bout,
+c     $        power_rcout)
       ENDIF
 c-----------------------------------------------------------------------
 c     send harvest record.
