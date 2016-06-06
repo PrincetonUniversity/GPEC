@@ -371,28 +371,33 @@ module torque
         
             case('fcgl')
                 if(tdebug) print *,'  fcgl integrand. modes = ',n,l
-                call cspline_eval(dbdx_m(1),psi,0)
-                call cspline_eval(dbdx_m(2),psi,0)
-                ! Poloidal functions (with jacobian!)
-                call spline_alloc(cglspl,eqfun%my,2)
-                cglspl%xs(:) = eqfun%ys(:)
-                do i=0,eqfun%my
-                    call bicube_eval(eqfun,psi,eqfun%ys(i),1)
-                    call bicube_eval(rzphi,psi,eqfun%ys(i),1)
-                    expm = exp(xj*twopi*mfac*eqfun%ys(i))
-                    db = sum(dbdx_m(1)%f(:)*expm)
-                    divx = sum(dbdx_m(2)%f(:)*expm)
-                    kx = -0.5*(db+divx)
-                    cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
-                    cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kx)*CONJG(divx+3.0*kx)                    
-                 enddo
-                CALL spline_fit(cglspl,"periodic")
-                CALL spline_int(cglspl)
-                ! torque
-                tpsi = 2.0*n*xj*kin%f(s)*kin%f(s+2) &       ! T = 2nidW
-                    *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
-                    + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
-                call spline_dealloc(cglspl)
+                if(l==0)then
+                    call cspline_eval(dbdx_m(1),psi,0)
+                    call cspline_eval(dbdx_m(2),psi,0)
+                    ! Poloidal functions (with jacobian!)
+                    call spline_alloc(cglspl,eqfun%my,2)
+                    cglspl%xs(:) = eqfun%ys(:)
+                    do i=0,eqfun%my
+                        call bicube_eval(eqfun,psi,eqfun%ys(i),1)
+                        call bicube_eval(rzphi,psi,eqfun%ys(i),1)
+                        expm = exp(xj*twopi*mfac*eqfun%ys(i))
+                        jbb = (rzphi%f(4) * eqfun%f(1)**2)
+                        db = sum(dbdx_m(1)%f(:)*expm) / jbb
+                        divx = sum(dbdx_m(2)%f(:)*expm) / jbb
+                        kx = -0.5*(db+divx)
+                        cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
+                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kx)*CONJG(divx+3.0*kx)
+                     enddo
+                    CALL spline_fit(cglspl,"periodic")
+                    CALL spline_int(cglspl)
+                    ! torque
+                    tpsi = 2.0*n*xj*kin%f(s)*kin%f(s+2) &       ! T = 2nidW
+                        *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
+                        + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
+                    call spline_dealloc(cglspl)
+                   else
+                    tpsi=0
+                   endif
      
      
      
