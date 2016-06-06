@@ -30,7 +30,7 @@ module inputs
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,twopi
-    use utilities, only : get_free_file_unit,readtable,nunique,progressbar
+    use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf
     use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1
     use cspline_mod, only : cspline_type,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_write,cspline_eval
@@ -449,6 +449,7 @@ module inputs
         complex(r8), dimension(:), allocatable :: lagb_mn,divx_mn,&
             expm
         complex(r8), dimension(:,:), allocatable :: smat,tmat,xmat,ymat,zmat
+        complex(r8), dimension(:,:), allocatable :: lagbfun,lagbmns,divxfun,divxmns
         character(3) :: istring
         
         ! defaults for optional args
@@ -555,31 +556,54 @@ module inputs
         
         ! write log to check reading/allocating routines
         if(debug)then
-            out_unit = get_free_file_unit(-1)
             print *,"  inputs: mlow = ",mfac(1)," mhigh = ",mfac(mpert)," nm = ",nm
             print *,"  inputs: psilow = ",xs_m(1)%xs(0)," psihigh = ",xs_m(1)%xs(xs_m(1)%mx)," npsi = ",npsi
+            ! calculate pmodb like quantities for direct comparison to IPEC
+            allocate(lagbfun(0:npsi-1,0:eqfun%my), divxfun(0:npsi-1,0:eqfun%my))
+            allocate(lagbmns(0:npsi-1,mpert), divxmns(0:npsi-1,mpert))
+            allocate(expm(mpert))
+            call spline_eval(sq,0.0_r8,0)
+            print *,"bo =",abs(sq%f(1))/(twopi*ro)
+            do i=1,npsi
+                call progressbar(i,1,npsi,op_step=1,op_percent=10)
+                call cspline_eval(dbdx_m(1),psi(i),0)
+                call cspline_eval(dbdx_m(2),psi(i),0)
+                do j=0,eqfun%my
+                    call bicube_eval(eqfun,psi(i),eqfun%ys(j),0)
+                    call bicube_eval(rzphi,psi(i),eqfun%ys(j),0)
+                    expm = exp(xj*mfac*eqfun%ys(j))
+                    lagbfun(i-1,j) = sum(dbdx_m(1)%f(:)*expm) / (eqfun%f(1) * rzphi%f(4) )!dB
+                    divxfun(i-1,j) = sum(dbdx_m(2)%f(:)*expm) / (eqfun%f(1) * rzphi%f(4) )!B div.xi_perp
+                enddo
+                call iscdftf(mfac,mpert,lagbfun(i-1,:),eqfun%my,lagbmns(i-1,:))
+                call iscdftf(mfac,mpert,divxfun(i-1,:),eqfun%my,divxmns(i-1,:))
+            enddo
+
+            out_unit = get_free_file_unit(-1)
             write(istring,'(i3)') nn
             open(unit=out_unit,file="pentrc_peq_n"//trim(adjustl(istring))//".out",&
                 status="unknown")
             write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
             write(out_unit,'(a43,2/)') " Debuging log file for set_peq subroutine."
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
-            write(out_unit,'(1x,a16,a5,10(1x,a16))')"psi_n","m",&
+            write(out_unit,'(1x,a16,a5,14(1x,a16))')"psi_n","m",&
                 "real(xi^psi1)","imag(xi^psi1)","real(xi^psi)","imag(xi^psi)","real(xi^alpha)","imag(xi^alpha)",&
-                'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)'
-            do i=0,npsi-1
+                'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)',&
+                'real(deltaB_L)','imag(deltaB_L)','real(Bdivxprp)','imag(Bdivxprp)'
+            do i=0,npsi-1,1
                 call spline_eval(sq,psi(i),0)
                 do j=1,mpert
-                    write(out_unit,'(1x,es16.8e3,i5,10(1x,es16.8e3))') &
+                    write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
                         xs_m(1)%xs(i),mfac(j),&
                         xs_m(1)%fs(i,j),xs_m(2)%fs(i,j),xs_m(3)%fs(i,j),&
-                        dbdx_m(1)%fs(i,j),dbdx_m(2)%fs(i,j)
+                        dbdx_m(1)%fs(i,j),dbdx_m(2)%fs(i,j),lagbmns(i,j),divxmns(i,j)
                 enddo
             enddo
             close(out_unit)
+            deallocate(expm,lagbfun,lagbmns,divxfun,divxmns)
         endif
         
-        
+
     end subroutine set_peq
 
 
