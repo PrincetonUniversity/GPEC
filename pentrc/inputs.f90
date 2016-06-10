@@ -55,15 +55,15 @@ module inputs
         read_ipec_peq,&
         read_equil, &
         read_fnml, &
-        kin, xs_m, dbdx_m, fnml, &
+        kin, xs_m, dbob_m, divx_m, fnml, &
         geom,eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
-        chi1,ro,zo,bo,nn,mfac,mpert, &
+        chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
         verbose
     
     ! global variables with defaults
     logical :: verbose
     type(spline_type) :: kin
-    type(cspline_type) :: dbdx_m(2),xs_m(3)
+    type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
         
     contains
@@ -319,9 +319,9 @@ module inputs
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
-        complex(r8), dimension(:), allocatable :: lagbfun,divxfun
         complex(r8), dimension(:,:), allocatable :: lagbmni,divxmni,kapxmni,&
             lagbmns,divxmns
+        complex(r8), dimension(0:mthsurf) :: lagbfun,divxfun
         character(3) :: nstr
         character(32), dimension(:), allocatable :: titles
 
@@ -382,7 +382,7 @@ module inputs
         endif
 
         ! For consistency with IPEC-0.3.0 and smaller values near rationals
-        if(verbose) print *,"  -> Using Bnabla.x = -(dB+Bkappa.x)"
+        if(verbose) print *,"  -> Using div(xi_perp) = -(dB/B+kappa.xi_perp)"
         divxmni = -(lagbmni+kapxmni)
 
         ! convert to chebyshev coordinates
@@ -446,61 +446,34 @@ module inputs
             enddo
         endif
 
-        ! additional JB weighting for consistency with STXYZ method
-        if(verbose) print *,"  -> Weighting by JB"
-        allocate(lagbfun(0:eqfun%my),divxfun(0:eqfun%my))
+        ! (re-)set global perturbation splines with 1/B weighting
+        if(verbose) print *,"  -> Weighting by 1/B"
+        if(associated(dbob_m%xs)) call cspline_dealloc(dbob_m)
+        if(associated(divx_m%xs)) call cspline_dealloc(divx_m)
+        call cspline_alloc(dbob_m,npsi-1,mpert)     ! (dB/B)
+        call cspline_alloc(divx_m,npsi-1,mpert)     ! div(xi_prp)
+        dbob_m%xs(0:) = psi(1:)
+        divx_m%xs(0:) = psi(1:)
         do i=1,npsi
-            !if(verbose) call progressbar(i,1,npsi,op_step=1,op_percent=20)
-            call iscdftb(mfac,mpert,lagbfun,eqfun%my,lagbmns(i,:))
-            call iscdftb(mfac,mpert,divxfun,eqfun%my,divxmns(i,:))
-            do j=0,eqfun%my
-                call bicube_eval(eqfun,psi(i),eqfun%ys(j),0)
-                call bicube_eval(rzphi,psi(i),eqfun%ys(j),0)
-                lagbfun(j) = lagbfun(j) * (eqfun%f(1) * rzphi%f(4)) !JB * dB
-                divxfun(j) = divxfun(j) * (eqfun%f(1) * rzphi%f(4)) !JB * B div.xi_perp
+            if(verbose) call progressbar(i,1,npsi,op_step=1,op_percent=20)
+            call iscdftb(mfac,mpert,lagbfun,mthsurf,lagbmns(i,:))
+            call iscdftb(mfac,mpert,divxfun,mthsurf,divxmns(i,:))
+            do j=0,mthsurf
+                call bicube_eval(eqfun,psi(i),theta(j),0)
+                lagbfun(j) = lagbfun(j) / eqfun%f(1) ! dB/B
+                divxfun(j) = divxfun(j) / eqfun%f(1) ! nabla.xi_perp
             enddo
-            call iscdftf(mfac,mpert,lagbfun,eqfun%my,lagbmns(i,:))
-            call iscdftf(mfac,mpert,divxfun,eqfun%my,divxmns(i,:))
+            call iscdftf(mfac,mpert,lagbfun,mthsurf,dbob_m%fs(i-1,:))
+            call iscdftf(mfac,mpert,divxfun,mthsurf,divx_m%fs(i-1,:))
         enddo
-        deallocate(lagbfun,divxfun)
-
-        ! (re-)set global dbdx_m splines
-        if(associated(dbdx_m(1)%xs)) call cspline_dealloc(dbdx_m(1))
-        if(associated(dbdx_m(2)%xs)) call cspline_dealloc(dbdx_m(2))
-        call cspline_alloc(dbdx_m(1),npsi-1,mpert)     ! JB^2 (dB/B)
-        call cspline_alloc(dbdx_m(2),npsi-1,mpert)     ! JB^2 div(xi_prp)
-        dbdx_m(1)%xs(0:) = psi(1:)
-        dbdx_m(2)%xs(0:) = psi(1:)
-        dbdx_m(1)%fs(0:,:) = lagbmns(1:,:)
-        dbdx_m(2)%fs(0:,:) = divxmns(1:,:)
-        call cspline_fit(dbdx_m(1),"extrap")
-        call cspline_fit(dbdx_m(2),"extrap")
-
-        deallocate(ms,psi,lagbmns,divxmns,lagbmni,divxmni,kapxmni)
+        call cspline_fit(dbob_m,"extrap")
+        call cspline_fit(divx_m,"extrap")
 
         ! write log to check reading/allocating routines
         if(debug)then
             print *,"  Writing log of pmodb splines"
             print *,"  inputs: mlow = ",mfac(1)," mhigh = ",mfac(mpert)," nm = ",nm
-            print *,"  inputs: psilow = ",dbdx_m(1)%xs(0)," psihigh = ",dbdx_m(1)%xs(xs_m(1)%mx)," npsi = ",npsi
-            print *,"  Removing JB weight for direct comparison with GPEC output"
-            ! calculate pmodb like quantities for direct comparison to IPEC
-            allocate(lagbfun(0:mthsurf), divxfun(0:mthsurf))
-            allocate(lagbmns(0:npsi-1,mpert), divxmns(0:npsi-1,mpert))
-            do i=0,npsi-1
-                call progressbar(i,1,npsi,op_step=1,op_percent=10)
-                call iscdftb(mfac,mpert,lagbfun,mthsurf,dbdx_m(1)%fs(i,:))
-                call iscdftb(mfac,mpert,divxfun,mthsurf,dbdx_m(2)%fs(i,:))
-                do j=0,mthsurf
-                    call bicube_eval(eqfun,dbdx_m(1)%xs(i),theta(j),0)
-                    call bicube_eval(rzphi,dbdx_m(1)%xs(i),theta(j),0)
-                    lagbfun(j) = lagbfun(j) / (eqfun%f(1) * rzphi%f(4) )!dB
-                    divxfun(j) = divxfun(j) / (eqfun%f(1) * rzphi%f(4) )!B div.xi_perp
-                enddo
-                call iscdftf(mfac,mpert,lagbfun,mthsurf,lagbmns(i,:))
-                call iscdftf(mfac,mpert,divxfun,mthsurf,divxmns(i,:))
-            enddo
-
+            print *,"  inputs: psilow = ",dbob_m%xs(0)," psihigh = ",dbob_m%xs(dbob_m%mx)," npsi = ",npsi
             out_unit = get_free_file_unit(-1)
             open(unit=out_unit,file="pentrc_pmodb_n"//trim(adjustl(nstr))//".out",&
                 status="unknown")
@@ -508,18 +481,19 @@ module inputs
             write(out_unit,'(a43,2/)') " Debuging log file for set_peq subroutine."
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
             write(out_unit,'(1x,a16,a5,8(1x,a16))')"psi_n","m",&
-                'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)',&
-                'real(deltaB_L)','imag(deltaB_L)','real(Bdivxprp)','imag(Bdivxprp)'
+                'real(deltaB/B)','imag(deltaB/B)','real(divxprp)','imag(divxprp)',&
+                'real(deltaB)','imag(deltaB)','real(Bdivxprp)','imag(Bdivxprp)'
             do i=0,npsi-1
                 do j=1,mpert
                     write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
-                        dbdx_m(1)%xs(i),mfac(j),&
-                        dbdx_m(1)%fs(i,j),dbdx_m(2)%fs(i,j),lagbmns(i,j),divxmns(i,j)
+                        psi(i+1),mfac(j),&
+                        dbob_m%fs(i,j),divx_m%fs(i,j),lagbmns(i,j),divxmns(i,j)
                 enddo
             enddo
             close(out_unit)
-            deallocate(lagbfun,lagbmns,divxfun,divxmns)
         endif
+
+        deallocate(ms,psi,lagbmni,divxmni,kapxmni,lagbmns,divxmns)
 
     end subroutine read_pmodb
 
@@ -695,7 +669,7 @@ module inputs
             enddo
         endif
         
-        ! set global variables (xs_m and dbdx_m)
+        ! set global variables (perturbed quantity csplines)
         call set_peq(psi,mfac,xmp1mns,xspmns,xmsmns,.true.,debug)
         
         deallocate(ms,psi,xmp1mns,xspmns,xmsmns)
@@ -709,7 +683,7 @@ module inputs
     !*DESCRIPTION: 
     !   Set m quantity xs_m complex splines in psi for the 2 Clebsch
     !   displacement components from 2D (psi,m) distributions.
-    !   **This routine sets global variables xs_m and dbdx_m**
+    !   **This routine sets global variables xs_m dbob_m and divx_m**
     !
     !*ARGUMENTS:
     !    psi : real rank 1
@@ -724,7 +698,7 @@ module inputs
     !*OPTIONAL ARGUMENTS:
     !   op_set_dbdx : logical
     !       Calculate lagrangian mod-B and divergence of xi_perp and set
-    !       them to global complex spline variable dbdx_m. (Defaut True)
+    !       them to global complex spline variable dbob_m,divx_m. (Defaut True)
     !   op_debug : logical
     !       Print intermidient messages to terminal. (Default False)
     !       
@@ -735,15 +709,15 @@ module inputs
         ! declare arguments
         logical, intent(in), optional :: op_debug,op_set_dbdx
         integer,  dimension(:), intent(in) :: ms        
-        real(r8), dimension(:), intent(in) :: psi     
+        real(r8), dimension(:), intent(in) :: psi
         complex(r8), dimension(:,:), intent(in) :: xmp1mns,xspmns,xmsmns
         ! declare local variables
         logical :: debug,set_dbdx
         integer :: i,j,ims,npsi,nm, out_unit
         real(r8) :: r_mjr,r_mnr,jac,g12,g13,g22,g23,g33,gfac
-        complex(r8), dimension(:), allocatable :: lagb_mn,divx_mn
-        complex(r8), dimension(:,:), allocatable :: smat,tmat,xmat,ymat,zmat
-        complex(r8), dimension(:,:), allocatable :: lagbfun,lagbmns,divxfun,divxmns
+        complex(r8), dimension(0:mthsurf) :: divxfun,dbobfun
+        complex(r8), dimension(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
+        complex(r8), dimension(:,:), allocatable :: jbbkapxmns,jbbdivxmns,jbbdbobmns
         character(3) :: istring
         
         ! defaults for optional args
@@ -784,22 +758,19 @@ module inputs
         call cspline_fit(xs_m(2),"extrap")
         call cspline_fit(xs_m(3),"extrap")
 
+        ! calculate db/b and divx to plug into old action integral formulation
+        allocate(jbbkapxmns(npsi,mpert),jbbdivxmns(npsi,mpert),jbbdbobmns(npsi,mpert))
+        if(associated(dbob_m%xs)) call cspline_dealloc(dbob_m)
+        if(associated(divx_m%xs)) call cspline_dealloc(divx_m)
+        call cspline_alloc(dbob_m,npsi-1,mpert)     ! dB/B
+        call cspline_alloc(divx_m,npsi-1,mpert)     ! nabla.xi_perp
+        dbob_m%xs(0:) = psi(1:)
+        divx_m%xs(0:) = psi(1:)
         if(set_dbdx)then
             if(verbose) print *,'Calculating deltaB/B, divxi_prp'
-            if(associated(dbdx_m(1)%xs)) call cspline_dealloc(dbdx_m(1))
-            if(associated(dbdx_m(2)%xs)) call cspline_dealloc(dbdx_m(2))
-            call cspline_alloc(dbdx_m(1),npsi-1,mpert)     ! JB^2 (dB/B)
-            call cspline_alloc(dbdx_m(2),npsi-1,mpert)     ! JB^2 div(xi_prp)
-            dbdx_m(1)%xs(0:) = psi(1:)
-            dbdx_m(2)%xs(0:) = psi(1:)
-            
-            allocate(lagb_mn(mpert),divx_mn(mpert))
-            allocate(xmat(mpert,mpert),ymat(mpert,mpert),zmat(mpert,mpert),&
-                    smat(mpert,mpert),tmat(mpert,mpert))
             !call ipeq_alloc
             do i=1,npsi
                 if(verbose) call progressbar(i,1,npsi,op_percent=20)
-                call spline_eval(sq,psi(i),0)
                 call cspline_eval(xs_m(1),psi(i),0)
                 call cspline_eval(xs_m(2),psi(i),0)
                 call cspline_eval(xs_m(3),psi(i),0)
@@ -813,88 +784,59 @@ module inputs
                 xmat=RESHAPE(xmats%f,(/mpert,mpert/))
                 ymat=RESHAPE(ymats%f,(/mpert,mpert/))
                 zmat=RESHAPE(zmats%f,(/mpert,mpert/))
-                
-                divx_mn(:)=MATMUL(xmat,xs_m(1)%f(:))+MATMUL(ymat,xs_m(2)%f(:)) &
+                ! matrices give JBB weighted values
+                jbbkapxmns(i,:) = MATMUL(smat,xs_m(2)%f(:))+MATMUL(tmat,xs_m(3)%f(:))
+                jbbdivxmns(i,:) = MATMUL(xmat,xs_m(1)%f(:))+MATMUL(ymat,xs_m(2)%f(:)) &
                                 +MATMUL(zmat,xs_m(3)%f(:))
-                lagb_mn(:)=-(divx_mn+MATMUL(smat,xs_m(2)%f(:))+MATMUL(tmat,xs_m(3)%f(:)))
-                
-                !call idcon_build(1,xspmn)
-                !call ipeq_sol(psi(i))
-                !divx_mn(:)=MATMUL(xmat,xmp1_mn)+MATMUL(ymat,xsp_mn) &
-                !    +MATMUL(zmat,xms_mn)/chi1
-                !lagb_mn(:)=-(divx_mn+MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1)
-                
-                dbdx_m(1)%fs(i-1,:) = lagb_mn(:)
-                dbdx_m(2)%fs(i-1,:) = divx_mn(:)
+                jbbdbobmns(i,:) = -(jbbdivxmns(i,:)+jbbkapxmns(i,:))
+                ! remove weighting to get 1st order quantities
+                call iscdftb(mfac,mpert,divxfun,mthsurf,jbbdivxmns(i,:))
+                call iscdftb(mfac,mpert,dbobfun,mthsurf,jbbdbobmns(i,:))
+                do j=0,mthsurf
+                    call bicube_eval(eqfun,psi(i),theta(j),0)
+                    call bicube_eval(rzphi,psi(i),theta(j),0)
+                    divxfun(j) = divxfun(j) / (rzphi%f(4) * eqfun%f(1)**2) ! nabla.xi_perp
+                    dbobfun(j) = dbobfun(j) / (rzphi%f(4) * eqfun%f(1)**2) ! dB/B
+                enddo
+                call iscdftf(mfac,mpert,divxfun,mthsurf,divx_m%fs(i-1,:))
+                call iscdftf(mfac,mpert,dbobfun,mthsurf,dbob_m%fs(i-1,:))
             enddo
-            
-            !call ipeq_dealloc
-            call cspline_fit(dbdx_m(1),"extrap")
-            call cspline_fit(dbdx_m(2),"extrap")
-            deallocate(lagb_mn,divx_mn,xmat,ymat,zmat,smat,tmat)
+        else
+            ! default dbdx is a flat spectrum
+            if(verbose) print *,"Forming constant dB/B, div xi"
+            dbob_m%fs(:,:) = 1.0/sqrt(1.0*mpert)
+            divx_m%fs(:,:) = 1.0/sqrt(1.0*mpert)
         endif
-        
-        ! default dbdx is unit energy norm flat spectrum
-        if(.not. associated(dbdx_m(1)%xs))then
-            if(verbose) print *,"Forming constant mod B, div xi"
-            call cspline_alloc(dbdx_m(1),npsi-1,mpert)     ! JB^2 (dB/B)
-            call cspline_alloc(dbdx_m(2),npsi-1,mpert)     ! JB^2 div(xi_prp)
-            dbdx_m(1)%xs(0:) = psi(1:)
-            dbdx_m(2)%xs(0:) = psi(1:)
-            dbdx_m(1)%fs(:,:) = 1.0/sqrt(1.0*mpert)
-            dbdx_m(2)%fs(:,:) = 1.0/sqrt(1.0*mpert)
-            call cspline_fit(dbdx_m(1),"extrap")
-            call cspline_fit(dbdx_m(2),"extrap")
-        endif
-        
+        call cspline_fit(dbob_m,"extrap")
+        call cspline_fit(divx_m,"extrap")
+
         ! write log to check reading/allocating routines
         if(debug)then
             print *,"  inputs: mlow = ",mfac(1)," mhigh = ",mfac(mpert)," nm = ",nm
             print *,"  inputs: psilow = ",xs_m(1)%xs(0)," psihigh = ",xs_m(1)%xs(xs_m(1)%mx)," npsi = ",npsi
-            ! calculate pmodb like quantities for direct comparison to IPEC
-            allocate(lagbfun(0:npsi-1,0:mthsurf), divxfun(0:npsi-1,0:mthsurf))
-            allocate(lagbmns(0:npsi-1,mpert), divxmns(0:npsi-1,mpert))
-            call spline_eval(sq,0.0_r8,0)
-            print *,"bo =",abs(sq%f(1))/(twopi*ro)
-            do i=0,npsi-1
-                call progressbar(i,1,npsi,op_step=1,op_percent=10)
-                call iscdftb(mfac,mpert,lagbfun(i,:),mthsurf,dbdx_m(1)%fs(i,:))
-                call iscdftb(mfac,mpert,divxfun(i,:),mthsurf,dbdx_m(2)%fs(i,:))
-                do j=0,mthsurf
-                    call bicube_eval(eqfun,psi(i),theta(j),0)
-                    call bicube_eval(rzphi,psi(i),theta(j),0)
-                    lagbfun(i,j) = lagbfun(i,j) / (eqfun%f(1) * rzphi%f(4) )!dB
-                    divxfun(i,j) = divxfun(i,j) / (eqfun%f(1) * rzphi%f(4) )!B div.xi_perp
-                enddo
-                call iscdftf(mfac,mpert,lagbfun(i,:),mthsurf,lagbmns(i,:))
-                call iscdftf(mfac,mpert,divxfun(i,:),mthsurf,divxmns(i,:))
-            enddo
-
             out_unit = get_free_file_unit(-1)
             write(istring,'(i3)') nn
             open(unit=out_unit,file="pentrc_peq_n"//trim(adjustl(istring))//".out",&
                 status="unknown")
             write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(out_unit,'(a43,2/)') " Debuging log file for set_peq subroutine."
+            write(out_unit,'(a43,2/)') " Debugging log file for set_peq subroutine."
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
             write(out_unit,'(1x,a16,a5,14(1x,a16))')"psi_n","m",&
                 "real(xi^psi1)","imag(xi^psi1)","real(xi^psi)","imag(xi^psi)","real(xi^alpha)","imag(xi^alpha)",&
                 'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)',&
                 'real(deltaB_L)','imag(deltaB_L)','real(Bdivxprp)','imag(Bdivxprp)'
-            do i=0,npsi-1,1
-                call spline_eval(sq,psi(i),0)
+            do i=0,npsi-1
                 do j=1,mpert
                     write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
                         xs_m(1)%xs(i),mfac(j),&
                         xs_m(1)%fs(i,j),xs_m(2)%fs(i,j),xs_m(3)%fs(i,j),&
-                        dbdx_m(1)%fs(i,j),dbdx_m(2)%fs(i,j),lagbmns(i,j),divxmns(i,j)
+                        dbob_m%fs(i,j),divx_m%fs(i,j),jbbdbobmns(i+1,j),jbbdivxmns(i+1,j)
                 enddo
             enddo
             close(out_unit)
-            deallocate(lagbfun,lagbmns,divxfun,divxmns)
         endif
         
-
+        deallocate(jbbkapxmns,jbbdivxmns,jbbdbobmns)
     end subroutine set_peq
 
 
@@ -966,14 +908,14 @@ module inputs
         close(in_unit)
         
         ! form splines
-        do i=1,2
-            call cspline_alloc(dbdx_m(i),mstep-1,mpert)
-            dbdx_m(i)%xs(0:) = psifac(1:)
-        enddo
-        dbdx_m(1)%fs(0:,:) = lagbpar(:,:)
-        dbdx_m(2)%fs(0:,:) = divxprp(:,:)
-        call cspline_fit(dbdx_m(1),"extrap")
-        call cspline_fit(dbdx_m(2),"extrap")
+        call cspline_alloc(dbob_m,mstep-1,mpert)
+        call cspline_alloc(divx_m,mstep-1,mpert)
+        dbob_m%xs(0:) = psifac(1:)
+        divx_m%xs(0:) = psifac(1:)
+        dbob_m%fs(0:,:) = lagbpar(:,:)
+        divx_m%fs(0:,:) = divxprp(:,:)
+        call cspline_fit(dbob_m,"extrap")
+        call cspline_fit(divx_m,"extrap")
         
         ! write log - designed as check of reading routines
         if(write_log)then
@@ -985,10 +927,10 @@ module inputs
             iout = min(6,mpert)
             istep = mpert/iout
             call cspline_alloc(outspl,mstep-1,iout) ! reduced number for output
-            outspl%xs = dbdx_m(1)%xs
+            outspl%xs = dbob_m%xs
             outspl%title(0) = "psi_n"
             do i=1,iout
-                outspl%fs(:,i) = dbdx_m(1)%fs(:,i*istep)
+                outspl%fs(:,i) = dbob_m%fs(:,i*istep)
                 if(mfac(i*istep)<0)then
                     write(outspl%title(i),'(a1,i3.2)') 'm',mfac(i*istep)
                 else
