@@ -767,7 +767,7 @@ module inputs
         dbob_m%xs(0:) = psi(1:)
         divx_m%xs(0:) = psi(1:)
         if(set_dbdx)then
-            if(verbose) print *,'Calculating deltaB/B, divxi_prp'
+            if(verbose) print *,'Calculating dB/B, div(xi_prp)'
             !call ipeq_alloc
             do i=1,npsi
                 if(verbose) call progressbar(i,1,npsi,op_percent=20)
@@ -803,7 +803,7 @@ module inputs
             enddo
         else
             ! default dbdx is a flat spectrum
-            if(verbose) print *,"Forming constant dB/B, div xi"
+            if(verbose) print *,"Forming constant dB/B, div(xi_perp)"
             dbob_m%fs(:,:) = 1.0/sqrt(1.0*mpert)
             divx_m%fs(:,:) = 1.0/sqrt(1.0*mpert)
         endif
@@ -823,8 +823,8 @@ module inputs
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
             write(out_unit,'(1x,a16,a5,14(1x,a16))')"psi_n","m",&
                 "real(xi^psi1)","imag(xi^psi1)","real(xi^psi)","imag(xi^psi)","real(xi^alpha)","imag(xi^alpha)",&
-                'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)',&
-                'real(deltaB_L)','imag(deltaB_L)','real(Bdivxprp)','imag(Bdivxprp)'
+                'real(deltaB/B)','imag(deltaB/B)','real(divxprp)','imag(divxprp)',&
+                'real(JBdeltaB)','imag(JBdeltaB)','real(JBBdivxprp)','imag(JBBdivxprp)'
             do i=0,npsi-1
                 do j=1,mpert
                     write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
@@ -835,7 +835,7 @@ module inputs
             enddo
             close(out_unit)
         endif
-        
+
         deallocate(jbbkapxmns,jbbdivxmns,jbbdbobmns)
     end subroutine set_peq
 
