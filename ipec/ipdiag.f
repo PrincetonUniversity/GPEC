@@ -1167,8 +1167,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(-mband:mband) :: 
      $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
       COMPLEX(r8), DIMENSION(mpert) :: curv_mn,divx_mn
+      COMPLEX(r8), DIMENSION(0:mtheta) :: divxfun,curvfun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: divxmns,curvmns
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: divxmns,curvmns,
+     $     divx1mns,curv1mns
 
       TYPE(fspline_type) :: fmodb
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
@@ -1333,6 +1335,19 @@ c-----------------------------------------------------------------------
          curvmns(istep,:)=MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1
          divxmns(istep,:)=MATMUL(xmat,xmp1_mn)+
      $        MATMUL(ymat,xsp_mn)+MATMUL(zmat,xms_mn)/chi1            
+c-----------------------------------------------------------------------
+c     compute mod b variations for direct comparison to ipout_pmodb
+c-----------------------------------------------------------------------
+         call iscdftb(mfac,mpert,curvfun,mtheta,curvmns(istep,:))
+         call iscdftb(mfac,mpert,divxfun,mtheta,divxmns(istep,:))
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,psifac(istep),rzphi%ys(itheta),0)
+            CALL bicube_eval(eqfun,psifac(istep),rzphi%ys(itheta),0)
+            curvfun(itheta) = curvfun(itheta)/(rzphi%f(4)*eqfun%f(1))
+            divxfun(itheta) = divxfun(itheta)/(rzphi%f(4)*eqfun%f(1))
+         ENDDO
+         call iscdftf(mfac,mpert,curvfun,mtheta,curv1mns(istep,:))
+         call iscdftf(mfac,mpert,divxfun,mtheta,divx1mns(istep,:))
       ENDDO
 c-----------------------------------------------------------------------
 c     write data.
@@ -1347,16 +1362,15 @@ c-----------------------------------------------------------------------
      $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
 
-      WRITE(out_unit,'(1x,a16,1x,a4,4(1x,a16))')"psi","m",
-     $     "real(JBBkx)","imag(JBBkx)","real(JBBdivx)","imag(JBBdivx)"
+      WRITE(out_unit,'(1x,a16,1x,a4,8(1x,a16))')"psi","m",
+     $     "real(JBBkx)","imag(JBBkx)","real(JBBdivx)","imag(JBBdivx)",
+     $     "real(Bkx)","imag(Bkx)","real(Bdivx)","imag(Bdivx)"
       DO istep=1,mstep
          DO ipert=1,mpert
-            WRITE(out_unit,'(1x,es16.8,1x,I4,4(1x,es16.8))')
+            WRITE(out_unit,'(1x,es16.8,1x,I4,8(1x,es16.8))')
      $           psifac(istep),mfac(ipert),
-     $           REAL(curvmns(istep,ipert)),
-     $           AIMAG(curvmns(istep,ipert)),
-     $           REAL(divxmns(istep,ipert)),
-     $           AIMAG(divxmns(istep,ipert))
+     $           curvmns(istep,ipert),divxmns(istep,ipert),
+     $           curv1mns(istep,ipert),divx1mns(istep,ipert)
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
