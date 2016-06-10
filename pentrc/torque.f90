@@ -800,7 +800,7 @@ module torque
                 endif
                 
                 ! dT/dpsi
-                tpsi = (-n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
+                tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
                     *lxint(1)/fbnce_norm(1) &       ! lsode normalization
                     *(chi1/twopi) ! unit conversion from psi to psi_n, theta_n to theta
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
