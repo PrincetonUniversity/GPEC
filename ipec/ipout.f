@@ -4930,6 +4930,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(mncid,nf90_global,"machine",machine) )
       CALL check( nf90_put_att(mncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(mncid,nf90_global,"jacobian",jac_type))
+      CALL check( nf90_put_att(mncid,nf90_global,"helicity",helicity))
+      CALL check( nf90_put_att(mncid,nf90_global,"q_lim",qlim))
+      CALL check( nf90_put_att(mncid,nf90_global,"psi_n_lim",psilim))
       CALL check( nf90_put_att(mncid,nf90_global,"version",version))
       
       IF(debug_flag) PRINT *," - Defining flux netcdf globals"
@@ -4947,6 +4950,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(fncid,nf90_global,"time",INT(shottime)) )
       CALL check( nf90_put_att(fncid,nf90_global,"machine",machine) )
       CALL check( nf90_put_att(fncid,nf90_global,"n",nn) )
+      CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
       CALL check( nf90_put_att(fncid,nf90_global,"version",version))
 
       IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
