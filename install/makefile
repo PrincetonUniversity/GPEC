@@ -75,11 +75,14 @@ v:
 	@echo "Defaults tailored for $(PLATFORM)"
 	@echo "Compiling with FC = $(FC)"
 	@echo "   using math libraries $(MATHLIBS)"
-	@echo "   from $(MATHDIR) including $(MATHINC)"
+	@echo "   from $(MATHDIR)"
+	@echo "   including $(MATHINC)"
 	@echo "   and netcdf libraries $(NETCDFLIBS)"
-	@echo "   from $(NETCDFDIR) including $(NETCDFINC)"
+	@echo "   from $(NETCDFDIR)"
+	@echo "   including $(NETCDFINC)"
 	@echo "   and compiler libraries $(FCLIBS)"
-	@echo "   from $(FCDIR) including $(FCINC)"
+	@echo "   from $(FCDIR)"
+	@echo "   including $(FCINC)"
 	@echo
 	@echo "Set environement FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
