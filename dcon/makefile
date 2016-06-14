@@ -1,24 +1,20 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil -I../harvest -I../pentrc
+FFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC)
 F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
-LIBDIR = \
-	-L$(MATHDIR) \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-llsode \
 	-lequil \
 	-lvac \
 	-lharvest \
-	-lpentrc \
-	$(MATHLIBS)
+	-lpentrc
 
 OBJS = \
 	debug.o \
@@ -34,7 +30,7 @@ OBJS = \
 	dcon.o
 
 dcon: $(OBJS)
-	$(F90) -o dcon $(OBJS) $(LIBS)
+	$(F90) -o dcon $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(LIBDIR) $(LIBS)
 	mkdir -p ../bin
 	cp -f dcon ../bin
 
