@@ -108,7 +108,7 @@ ifdef cflag
 		CC = /usr/pppl/gcc/4.6.3/bin/gcc4
 		MATHHOME = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
 		NETCDFHOME = /usr/pppl/gcc/4.6-pkgs/netcdf-4.1.2
-	else ($(cflag),zwang_intel)
+	else ifeq ($(cflag),zwang_intel)
 	    # $ module load intel/2013.1.3 lapack netcdf
 	    # status: Success.
 		PLATFORM = portal
@@ -125,7 +125,7 @@ ifdef cflag
         MATHHOME = /usr/lib
         NETCDFHOME = /opt/local/lib
 	else
-#$(error No corresponding option of cflag $(cflag) to set compile environment.)
+        $(error No corresponding option of cflag $(cflag) to set compile environment.)
 	endif
 endif
 
@@ -162,10 +162,14 @@ ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
     FCLIBS = -lirc -limf
     FCINC = $(F90HOME)/include/intel64
+#else ifdef F90HOME
+#    FCDIR = $(F90HOME)
+#    FCLIBS =
+#    FCINC = $(F90HOME)
 else
-    FCDIR = $(F90HOME)
-    FCLIBS =
-    FCINC = $(F90HOME)
+    FCDIR = .
+    FCLIBS = 
+    FCINC = .
 endif
 
 # check if math dir has lapack or acml library
