@@ -1,4 +1,6 @@
 
+include ../install/DEFAULTS.inc
+
 FFLAGS = 
 F90 = $(FC) $(options) $(FFLAGS)
 
@@ -12,7 +14,7 @@ OBJS = \
 	sum.o
 
 sum: $(OBJS)
-	$(F90) -o sum $(OBJS)
+	$(F90) -o sum $(OBJS)  -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../bin
 	cp -f sum ../bin
 

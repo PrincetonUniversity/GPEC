@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil -I../harvest -I$(NETCDFHOME)/include
+FFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 
 F90 = $(FC) $(options) $(FFLAGS)
 
@@ -11,18 +11,12 @@ F90 = $(FC) $(options) $(FFLAGS)
 %.o: %.f90
 	$(F90) -c $<
 
-LIBDIR = \
-	-L$(MATHDIR) \
-	-L$(NETCDFDIR) \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-llsode \
 	-lequil \
-	-lharvest \
-	$(MATHLIBS) \
-	$(NETCDFLIBS)
+	-lharvest
 
 OBJS = \
 	dcon_interface.o \
@@ -41,7 +35,7 @@ OBJS = \
 	pentrc.o
 
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) $(LIBS)
+	$(F90) -o pentrc $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(LIBDIR) $(LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
 	mkdir -p ../bin

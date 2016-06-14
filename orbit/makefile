@@ -1,22 +1,18 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil
+FFLAGS = -I../equil -I$(MATHINC)
 F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
-LIBDIR = \
-	-L$(MATHDIR) \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-llsode \
-	-lequil \
-	$(MATHLIBS)
-	
+	-lequil
+
 OBJS = \
 	orbit_mod.o \
 	restart.o \
@@ -30,7 +26,7 @@ OBJS = \
 all: v orbit
 
 orbit: $(OBJS)
-	$(F90) -o orbit $(OBJS) $(LIBS)
+	$(F90) -o orbit $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(LIBDIR) $(LIBS)
 	mkdir -p ../bin
 	cp -f orbit ../bin
 
