@@ -4825,7 +4825,7 @@ c-----------------------------------------------------------------------
          IF(singcoup_set) THEN
             temps =MATMUL(CONJG(TRANSPOSE(svecs)),temp)
             CALL check( nf90_put_var(mncid,sx_id,RESHAPE((/REAL(temps),
-     $               AIMAG(tempm)/),(/msing,2/))) )
+     $               AIMAG(temps)/),(/msing,2/))) )
          ENDIF
 
          ! Decomposition of displacement
