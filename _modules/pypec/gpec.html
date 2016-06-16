@@ -146,7 +146,7 @@
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span> <span class="c"># not supported at GA</span>
     <span class="k">print</span><span class="p">(</span><span class="s">&#39;Failed to import gui - must have enthought.traits&#39;</span><span class="p">)</span>
     
-<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s">&#39;HOST&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;sunfire&#39;</span><span class="p">):</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s">&#39;HOST&#39;</span><span class="p">,</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;sunfire&#39;</span><span class="p">):</span>
     <span class="k">print</span> <span class="s">&#39;WARNING: USING PORTAL - &quot;use -w 24:00:00 -l mem=8gb&quot; recomended for heavy computation&#39;</span>
 
 <span class="c"># make sure package is in path</span>

@@ -1,6 +1,28 @@
 Outputs and Post-Processing
 ***************************
 
+Spectra
+========
+
+Helicity
+---------
+
+The GPEC package uses a right handed magnetic coordinate system decomposed in exp(-i(m*theta+n*phi)). This means that the pitch-aligned field will always be positive m. For example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface.
+
+.. image:: examples/figures/example_bnm_positiveamplified.png
+
+This convention makes in-house analysis nice and easy. For example, one can *always* plot the m=2 perturbed field profile and see the resonant surface behavior at q=2. The convention does require some awareness from the user when interfacing with other codes though.
+
+To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the ipec_control_output_n#.nc file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed. As a practical example, interfacing with the right-handed SURFMN code would require using m_surfmn=-m and b_surfmn=(Re(b_m),helicity*Im(b_m)).
+
+Coordinates
+-----------
+
+The DCON working coordinate system is used for nearly all calculations in the GPEC package, but the results may be converted to different coordinates specified by jac_out, tmag_out, and jsurf_out.
+
+The ipec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the 'jacobian' attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the ipec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.
+
+
 Output Files
 ============
 
@@ -135,54 +157,3 @@ xdraw
 =====
 
 The binary IPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by IPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.
-
-IDL NTV Post Processing
-=======================
-
-The calculation of neoclassical toroidal viscosity (NTV) requires knowledge of many plasma properties. These the 3D magnetic field within the plasma \delta B
-  given by IPEC, as well as external variables such as pressure profiles, velocity profiles, and more that are not included in IPEC itself. To calculate an estimate of the NTV torque it is necessary to specify additional profile information with either measured data or analytical formulae. Either way, it should be emphasized that the calculation is a post-processing of IPEC data that is not self consistent with the IPEC solution. This is a reasonable estimate as long as the torque is not great enough to significantly effect the equilibrium.
-
-A review of the NTV calculation and definitions of the involved variables can be found in Ref. [Park, 2009]. For the detailed mathematics, although important, are not the subject of this manual. The important highlights for the user to keep in mind are the following: 
-
-• Necessary profiles include the toroidal rotationV_{\phi}, pressure P, and magnetic field B.
-
-– Force balance and the neoclassical value of the poloidal velocity are used to calculate the radial electric field.qn\left(E_{r}-v_{\phi}B_{\theta}+v_{\theta}B_{\phi}\right)	=	\frac{\partial P}{\partial r}  v_{\theta}	=	\frac{c_{p}}{eB_{\theta}}\frac{\partial T_{i}}{\partial r}\approx\frac{1.17}{eB_{\theta}}\frac{\partial T_{i}}{\partial r}
- 
-
-– Specifically, the experimental profiles used are ion temperature T_{i}, electron temperature T_{e}, electron density n_{e}, impurity density n_{iz}, the effective charge Z_{eff}, and toroidal rotation V_{\phi}. Optionally the E\times B rotation and deuterium rotation can be specified as well.
-
-• The integral over \kappa^{2}=\left[E-\mu B_{0}\left(1-\epsilon\right)\right]/2\mu B_{0}\epsilon is approximated away. ?
-
-• There are multiple distinct regimes of collisional and methods of dealing with them. In the post processing these are output as variables with the prefixes
-
-– CP \rightarrow Collisional Plateau regimes transport estimated by Shaing [Zhu2006, and references therein].
-
-– IN \rightarrow Generalized combination of the 1/\nu and \nu regimes. This is the most trusted result at the time of this manual's writing.
-
-Run Instructions
-----------------
-
-The first step in an NTV calculation for any given shot is to run the corresponding IPEC calculation. The output files necessary are the control, singfld, and pmodb, files. These should use the functional outputs. 
-
-Having obtained the required output files, the user should enter the IDL environment and run one of the two NTV routines. These routines are 'total_energy_torque.pro' and 'simple_energy_torque.pro'. The first requires full experimental data and should be initialized in the package script found at '/u/jpark/analysis/lib/init_routines_jkp.idl', while the second defines analytic profiles for the necessary variables in order to calculate results from IPEC outputs and can be used on its own. 
-
-An example of the run process within the IDL environment is shown here::
-
-  IDL> @/u/jpark/analysis/lib/init_routines_jkp.idl
-  IDL> gfile='g145117.03600_d3d_kinetic' ;efit equilibrium
-  IDL> kdir = 'samplepath' ;directory of GA kinetic file 
-  IDL> path1 = 'samplepath' ;directory of equilibrium file
-  IDL> path2 = 'samplepath' ;directory of IPEC outputs 
-  IDL> numstr = '145117.03600'	;shot.time
-  IDL> t = total_energy_torque(nn=3,/adata,/atime, kdir=kdir,gfile=gfile,/diamag,/magpre,/counter,path1=path1,path2=path2,nl=8,numstr=numstr)
-
-The result can be saved using::
-
-  IDL> save,file='t145117.03600_d3d_kinetic_ievenc1_counter.tsav',t
-
-or the user's choice of save file path. The result holds a huge amount of information. The structure can be found using the command::
-
-  IDL> help, /str, tor 
-  IDL> help, /str, t.TOT.L.NTVetc.
-
-This example uses a number of specific call words, and there are many more that can be examined by looking into the nuts and bolts of the script 'total_energy_torque.pro'. So as not to leave the reader hanging, we will quickly review the calls used above. The keywords '/adata' and '/atime' tell the routine that it will be using data from Andrea Garofalo, the structure of which has been hard-coded into the routine and would need to be edited for any new data format. The keyword '/counter' changes the sign of some of Andrea Garofalo's data to be consistent with other conventions. The keywords '/diamag' and '/magpre' tell the routine to use the diamagnetic rotation and magnetic precession respectively, and should be called for almost all non-debugging calculation purposes. Finally, the variable 'nl' specifies the number of bounce harmonics to include in the calculation. There are many other arguments that could be passed to the total_energy_torque such as specifying a separate machine, or individual profiles. However, the user will be required to familiarize themselves with the internal structures of the function and the data before extending themselves to use its full functionality.
