@@ -9,7 +9,7 @@ Helicity
 
 The GPEC package uses a right handed magnetic coordinate system decomposed in exp(-i(m*theta+n*phi)). This means that the pitch-aligned field will always be positive m. For example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface.
 
-.. image:: examples/figures/example_bnm_positiveamplified.png
+.. image:: _static/example_bnm_positiveamplified.png
 
 This convention makes in-house analysis nice and easy. For example, one can *always* plot the m=2 perturbed field profile and see the resonant surface behavior at q=2. The convention does require some awareness from the user when interfacing with other codes though.
 
