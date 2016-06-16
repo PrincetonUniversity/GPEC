@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Outputs and Post-Processing &mdash; GPEC 3.0.0 documentation</title>
+    <title>Outputs and Post-Processing &mdash; GPEC 0.3.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.0.0',
+        VERSION:     '0.3.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="GPEC 3.0.0 documentation" href="index.html" />
+    <link rel="top" title="GPEC 0.3.4 documentation" href="index.html" />
     <link rel="next" title="DCON README" href="dcon_readme.html" />
     <link rel="prev" title="Getting started" href="getting_started.html" /> 
   </head>
@@ -59,16 +59,13 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Outputs and Post-Processing</a><ul>
-<li><a class="reference internal" href="#spectra">Spectra</a><ul>
-<li><a class="reference internal" href="#helicity">Helicity</a><ul>
+<li><a class="reference internal" href="#choice-of-spectral-decomposition">Choice of Spectral Decomposition</a><ul>
 <li><a class="reference internal" href="#comparing-to-real-space-quantities">Comparing to Real Space Quantities</a></li>
 <li><a class="reference internal" href="#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
 <li><a class="reference internal" href="#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#coordinates">Coordinates</a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#output-files">Output Files</a><ul>
 <li><a class="reference internal" href="#ascii-file-outputs">ASCII File Outputs</a></li>
 <li><a class="reference internal" href="#binary-file-outputs">Binary File Outputs</a></li>
@@ -113,10 +110,8 @@
             
   <div class="section" id="outputs-and-post-processing">
 <h1>Outputs and Post-Processing<a class="headerlink" href="#outputs-and-post-processing" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="spectra">
-<h2>Spectra<a class="headerlink" href="#spectra" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="helicity">
-<h3>Helicity<a class="headerlink" href="#helicity" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="choice-of-spectral-decomposition">
+<h2>Choice of Spectral Decomposition<a class="headerlink" href="#choice-of-spectral-decomposition" title="Permalink to this headline">¶</a></h2>
 <p>When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember</p>
 <ol class="arabic simple">
 <li>GPEC uses a right handed magnetic coordinate system decomposed in .</li>
@@ -127,26 +122,30 @@
 <a class="reference internal image-reference" href="_images/example_bnm_positiveamplified.png"><img alt="_images/example_bnm_positiveamplified.png" src="_images/example_bnm_positiveamplified.png" style="width: 600px;" /></a>
 <p>To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the ipec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.</p>
 <div class="section" id="comparing-to-real-space-quantities">
-<h4>Comparing to Real Space Quantities<a class="headerlink" href="#comparing-to-real-space-quantities" title="Permalink to this headline">¶</a></h4>
+<h3>Comparing to Real Space Quantities<a class="headerlink" href="#comparing-to-real-space-quantities" title="Permalink to this headline">¶</a></h3>
 <p>In the real space representation decomposed in  with CCW , GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW  (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by , the complex conjugate operation does not simply restore CCW phi for RH configurations. It will also flip up and down.</p>
-<p>So we should be careful about this operation. IPEC has this operation only in ipvacuum.f, because of 3.</p>
 </div>
 <div class="section" id="interfacing-with-surfmn">
-<h4>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this headline">¶</a></h4>
+<h3>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this headline">¶</a></h3>
 <p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard . However, it expands in  and always uses a CCW . In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
 <p>As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,</p>
 <p>For LH configurations only the sign of m is flipped (according to 1). For RH configurations, m remains unchanged but the complex conjugate is taken (the combined effect of to 1 &amp; 2).</p>
 </div>
 <div class="section" id="interfacing-with-vacuum">
-<h4>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Permalink to this headline">¶</a></h4>
+<h3>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Permalink to this headline">¶</a></h3>
 <p>Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW  and downward outboard . We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.</p>
 </div>
 </div>
 <div class="section" id="coordinates">
-<h3>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this headline">¶</a></h3>
-<p>The DCON working coordinate system is used for nearly all calculations in the GPEC package, but the results may be converted to different coordinates specified by jac_out, tmag_out, and jsurf_out.</p>
+<h2>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this headline">¶</a></h2>
+<p>There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,</p>
+<ol class="arabic simple">
+<li>The &#8216;working coordinates&#8217; defined by jac_type in equil.in.</li>
+<li>The &#8216;input coordinates&#8217; defined by jac_in, tmag_in, and jsurf_in when applicable.</li>
+<li>The &#8216;output coordinates&#8217; defined by jac_out, tmag_out, and jsurf_out when applicable.</li>
+</ol>
+<p>The DCON working coordinate system is used for nearly all internal calculations in the GPEC package, but the external drive may be prescribed in input coordinates (2) and the final perturbed equilibrium results may be converted to output coordinates (3). The working coordinates are magnetic cooridinates. The input and output coordinates may be converted to cylindrical  using the tmag_in or tmag_out variables.</p>
 <p>The ipec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the &#8216;jacobian&#8217; attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the ipec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.</p>
-</div>
 </div>
 <div class="section" id="output-files">
 <h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
