@@ -115,7 +115,7 @@
 <h2>Choice of Spectral Decomposition<a class="headerlink" href="#choice-of-spectral-decomposition" title="Permalink to this headline">¶</a></h2>
 <p>When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember</p>
 <ol class="arabic simple">
-<li>GPEC uses a right handed magnetic coordinate system decomposed in <span class="math">\(exp(im\theta-in\phi)\)</span>.</li>
+<li>GPEC uses a right handed magnetic coordinate system decomposed in <span class="math">\(\exp(im\theta-in\phi)\)</span>.</li>
 <li>GPEC effectively uses CCW <span class="math">\(\phi\)</span> for left-handed (LH) configurations, but CW <span class="math">\(\phi\)</span> for right-handed (RH) configurations.</li>
 <li>GPEC always uses upward outboard <span class="math">\(\theta\)</span>.</li>
 </ol>
@@ -127,11 +127,11 @@
 <p>To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the ipec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.</p>
 <div class="section" id="comparing-to-real-space-quantities">
 <h3>Comparing to Real Space Quantities<a class="headerlink" href="#comparing-to-real-space-quantities" title="Permalink to this headline">¶</a></h3>
-<p>In the real space representation decomposed in <span class="math">\(exp(-in\phi)\)</span> with CCW <span class="math">\(\phi\)</span>, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW <span class="math">\(\phi\)</span> (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by <span class="math">\(exp(im\theta-in\phi)\)</span>, the complex conjugate operation does not simply restore CCW phi for RH configurations. It will also flip up and down.</p>
+<p>In the real space representation decomposed in <span class="math">\(\exp(-in\phi)\)</span> with CCW <span class="math">\(\phi\)</span>, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW <span class="math">\(\phi\)</span> (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by <span class="math">\(\exp(im\theta-in\phi)\)</span>, the complex conjugate operation does not simply restore CCW phi for RH configurations. It will also flip up and down.</p>
 </div>
 <div class="section" id="interfacing-with-surfmn">
 <h3>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this headline">¶</a></h3>
-<p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard <span class="math">\(\theta\)</span>. However, it expands in <span class="math">\(exp(-im\theta-in\phi)\)</span> and always uses a CCW <span class="math">\(\phi\)</span>. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
+<p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard <span class="math">\(\theta\)</span>. However, it expands in <span class="math">\(\exp(-im\theta-in\phi)\)</span> and always uses a CCW <span class="math">\(\phi\)</span>. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
 <p>As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">m_surfmn</span> <span class="o">=</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">m_gpec</span>
 <span class="n">b_surfmn</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">*</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">imag</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span><span class="o">.</span>
