@@ -1,27 +1,78 @@
 Outputs and Post-Processing
 ***************************
 
-Spectra
-========
 
-Helicity
----------
 
-The GPEC package uses a right handed magnetic coordinate system decomposed in exp(-i(m*theta+n*phi)). This means that the pitch-aligned field will always be positive m. For example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface.
+Choice of Spectral Decomposition
+=================================
+
+When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember
+
+1. GPEC uses a right handed magnetic coordinate system decomposed in :math:`\exp(im\theta-in\phi)`.
+2. GPEC effectively uses CCW :math:`\phi` for left-handed (LH) configurations, but CW :math:`\phi` for right-handed (RH) configurations.
+3. GPEC always uses upward outboard :math:`\theta`.
+
+The result of this is that the pitch-aligned field will always be positive m. This convention makes in-house analysis nice and easy. For example, one can *always* plot the m=2 perturbed normal displacement profile and see the resonant surface behavior at q=2. The m=-2 normal displacement will always be nonresonant. This is shown in the figure below from the package DIII-D example, which is a LH plasma.
+
+.. image:: _static/example_xno_kinkprofile.png
+   :width: 400px
+   :align: center
+
+For another example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface. We always look here for kink amplification.
 
 .. image:: _static/example_bnm_positiveamplified.png
-   :width: 600px
+   :width: 400px
+   :align: center
 
-This convention makes in-house analysis nice and easy. For example, one can *always* plot the m=2 perturbed field profile and see the resonant surface behavior at q=2. The convention does require some awareness from the user when interfacing with other codes though.
+The convention does require some awareness from the user when interfacing with real-space quantities and/or other codes though. For example, the user does need to know that the spectrum rotates by :math:`-\phi` if real space coil rotates by :math:`\phi` in a RH configuration.
 
-To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the ipec_control_output_n#.nc file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed. As a practical example, interfacing with the right-handed SURFMN code would require using m_surfmn=-m and b_surfmn=(Re(b_m),helicity*Im(b_m)).
+To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the ipec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.
+
+
+Comparing to Real Space Quantities
+-----------------------------------
+
+In the real space representation decomposed in :math:`\exp(-in\phi)` with CCW :math:`\phi`, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW :math:`\phi` (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by :math:`\exp(im\theta-in\phi)`, the complex conjugate operation does not simply restore CCW \phi for RH configurations. It will also flip up and down.
+
+
+Interfacing with SURFMN
+------------------------
+
+SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard :math:`\theta`. However, it expands in :math:`\exp(-im\theta-in\phi)` and always uses a CCW :math:`\phi`. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.
+
+As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,
+
+.. code-block:: python
+
+   m_surfmn = helicity * m_gpec
+   b_surfmn = real(b_m) - i * helicity * imag(b_m).
+
+For LH configurations only the sign of m is flipped (according to 1). For RH configurations, m remains unchanged but the complex conjugate is taken (the combined effect of to 1 & 2).
+
+
+Interfacing with VACUUM
+------------------------
+
+Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW :math:`\phi` and downward outboard :math:`\theta`. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.
+
 
 Coordinates
------------
+============
 
-The DCON working coordinate system is used for nearly all calculations in the GPEC package, but the results may be converted to different coordinates specified by jac_out, tmag_out, and jsurf_out.
+There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,
+
+1. The 'working coordinates' defined by jac_type in equil.in.
+2. The 'input coordinates' defined by jac_in, tmag_in, and jsurf_in when applicable.
+3. The 'output coordinates' defined by jac_out, tmag_out, and jsurf_out when applicable.
+
+The DCON working coordinate system is used for nearly all internal calculations in the GPEC package, but the external drive may be prescribed in input coordinates (2) and the final perturbed equilibrium results may be converted to output coordinates (3). The working coordinates are magnetic cooridinates. The input and output coordinates may be converted to cylindrical :math:`\phi` using the tmag_in or tmag_out variables.
 
 The ipec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the 'jacobian' attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the ipec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.
+
+
+
+
+
 
 
 Output Files
