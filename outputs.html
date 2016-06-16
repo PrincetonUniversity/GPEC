@@ -113,7 +113,7 @@
 <div class="section" id="helicity">
 <h3>Helicity<a class="headerlink" href="#helicity" title="Permalink to this headline">¶</a></h3>
 <p>The GPEC package uses a right handed magnetic coordinate system decomposed in exp(-i(m*theta+n*phi)). This means that the pitch-aligned field will always be positive m. For example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface.</p>
-<img alt="_images/example_bnm_positiveamplified.png" src="_images/example_bnm_positiveamplified.png" />
+<a class="reference internal image-reference" href="_images/example_bnm_positiveamplified.png"><img alt="_images/example_bnm_positiveamplified.png" src="_images/example_bnm_positiveamplified.png" style="width: 600px;" /></a>
 <p>This convention makes in-house analysis nice and easy. For example, one can <em>always</em> plot the m=2 perturbed field profile and see the resonant surface behavior at q=2. The convention does require some awareness from the user when interfacing with other codes though.</p>
 <p>To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the ipec_control_output_n#.nc file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed. As a practical example, interfacing with the right-handed SURFMN code would require using m_surfmn=-m and b_surfmn=(Re(b_m),helicity*Im(b_m)).</p>
 </div>
