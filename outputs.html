@@ -133,6 +133,10 @@
 <h3>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this headline">¶</a></h3>
 <p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard <span class="math">\(\theta\)</span>. However, it expands in <span class="math">\(exp(-im\theta-in\phi)\)</span> and always uses a CCW <span class="math">\(\phi\)</span>. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
 <p>As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">m_surfmn</span> <span class="o">=</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">m_gpec</span>
+<span class="n">b_surfmn</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">*</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">imag</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
 <p>For LH configurations only the sign of m is flipped (according to 1). For RH configurations, m remains unchanged but the complex conjugate is taken (the combined effect of to 1 &amp; 2).</p>
 </div>
 <div class="section" id="interfacing-with-vacuum">

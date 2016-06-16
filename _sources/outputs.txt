@@ -39,6 +39,7 @@ SURFMN is a popular vacuum spectrum code. It calculates the field from experimen
 As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,
 
 .. code-block:: python
+
    m_surfmn = helicity * m_gpec
    b_surfmn = real(b_m) - i * helicity * imag(b_m).
 
