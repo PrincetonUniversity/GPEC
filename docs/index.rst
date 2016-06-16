@@ -19,6 +19,7 @@ Contents:
    namelists.rst
    examples.rst
    source_documentation.rst
+   releases.rst
    developers.rst
    contact.rst
    references.rst

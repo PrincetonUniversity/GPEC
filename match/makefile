@@ -7,15 +7,11 @@ F90 = $(FC) $(options) $(FFLAGS)
 .f.o:
 	$(F90) -c $*.f
 
-LIBDIR = \
-	-L$(MATHDIR) \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-lequil \
-	-llsode \
-	$(MATHLIBS)
+	-llsode
 
 OBJS = \
 	qsort.o \
@@ -30,7 +26,7 @@ OBJS = \
 	match.o
 
 match: $(OBJS)
-	$(F90) -o match $(OBJS) $(LIBS)
+	$(F90) -o match $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(LIBDIR) $(LIBS)
 	mkdir -p ../bin
 	cp -f match ../bin
 
