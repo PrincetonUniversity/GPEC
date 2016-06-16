@@ -1,6 +1,8 @@
 Outputs and Post-Processing
 ***************************
 
+
+
 Choice of Spectral Decomposition
 =================================
 
@@ -13,12 +15,14 @@ When comparing spectral GPEC outputs to real space quantities or to other codes,
 The result of this is that the pitch-aligned field will always be positive m. This convention makes in-house analysis nice and easy. For example, one can *always* plot the m=2 perturbed normal field profile and see the resonant surface behavior at q=2. The m=-2 normal field will always be nonresonant. This is shown in the figure below from the package DIII-D example, which is a LH plasma.
 
 .. image:: _static/example_bnm_kinkprofile.png
-   :width: 600px
+   :width: 400px
+   :align: center
 
 For another example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface. We always look here for kink amplification.
 
 .. image:: _static/example_bnm_positiveamplified.png
-   :width: 600px
+   :width: 400px
+   :align: center
 
 The convention does require some awareness from the user when interfacing with real-space quantities and/or other codes though. For example, the user does need to know that the spectrum rotates by :math:`-\phi` if real space coil rotates by :math:`\phi` in a RH configuration.
 
