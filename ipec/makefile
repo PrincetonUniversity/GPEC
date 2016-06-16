@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil -I../coil -I../harvest -I$(NETCDINC) -I$(MATHINC)
+FFLAGS = -I../equil -I../coil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 
 F90 = $(FC) $(options) $(FFLAGS)
 
