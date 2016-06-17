@@ -6,11 +6,11 @@
 # On portal.pppl.gov (or portalr6.pppl.gov for more up-to-date libraries)
 #   Must load compiler and basic libraries (These modify LD_LIBRARY_PATH).
 #   Choose one of the following
-#    $ module load gcc4 lapack-blas netcdf
 #    $ module load intel acml netcdf; export $ACML_HOME=$ACML_HOME/ifort64
+#    $ module load gcc4 lapack-blas netcdf
+#    $ module load lff95 lapack-blas netcdf
 #   Note, PGF and Lahay (i.e. module below) are not currently supported on portal
 #    $ module load pgf acml netcdf; export $ACML_HOME=$ACML_HOME/pgi64
-#    $ module load lff95 lapack-blas netcdf
 #   Defaults will try to use gcc4
 #
 # On venus.gat.com
@@ -69,8 +69,8 @@ endif
 ifdef cflag
 	ifeq ($(cflag),portal_intel)
 	    # $ module load intel acml netcdf
+        # make options=-vec_report0 2>&1 | tee log.txt
         # status: Success 06/14/2016, solovev_ideal_example DCON 9s, IPEC segfault in netcdf saving of xclebsch.
-        # note: -vec_report0 option is recomended
 		PLATFORM = portal
 		FC = /usr/pppl/intel/11.0/081/bin/intel64/ifort
 		CC = /usr/pppl/intel/11.0/081/bin/intel64/icc
@@ -86,8 +86,8 @@ ifdef cflag
 		NETCDFHOME = /usr/pppl/gcc/4.6-pkgs/netcdf-4.1.2
     else ifeq ($(cflag),portal_pgf)
 	    # $ module load pgf acml netcdf; export ACML_HOME=$ACML_HOME/pgi64
-        # $ make CFLAGS='-tp px-64' options="'-tp px-64'" 2>&1 | tee log.txt
-        # status: acml error: undefined reference to `pgf90_alloc04_i8'
+        # $ make CFLAGS="'-tp px-64'" options="'-tp px-64'" 2>&1 | tee log.txt
+        # status: Success 06/17/2016. solovev_ideal_example DCON 29s, IPEC 12m 41s.
 		PLATFORM = portal
 		FC = /usr/pppl/pgi/11.10/linux86-64/11.10/bin/pgf90
 		CC = /usr/pppl/pgi/11.10/linux86-64/11.10/bin/pgcc
@@ -95,8 +95,7 @@ ifdef cflag
 		NETCDFHOME = /usr/pppl/pgi/11-pkgs/netcdf-4.1.1
 	else ifeq ($(cflag),portal_lfc)
 	    # $ module load lff95/8.00a_64bit lapack-blas/3.1.1 netcdf/3.6.2
-		# status: Broke when moved to proper ordering of L and l's in linker
-        # -> Must have previously been using references in default /lib64
+		# status: Success 06/17/2016. solovev_ideal_example DCON 15s, IPEC 15m 36s.
 		PLATFORM = portal
 		FC = /usr/pppl/lf64x/lf6480/bin/lfc
 		CC = /usr/pppl/gcc/4.6.3/bin/gcc4

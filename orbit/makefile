@@ -26,7 +26,7 @@ OBJS = \
 all: v orbit
 
 orbit: $(OBJS)
-	$(F90) -o orbit $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(LIBDIR) $(LIBS)
+	$(F90) -o orbit $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../bin
 	cp -f orbit ../bin
 

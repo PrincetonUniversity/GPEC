@@ -35,7 +35,7 @@ OBJS = \
 	pentrc.o
 
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(LIBDIR) $(LIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
 	mkdir -p ../bin

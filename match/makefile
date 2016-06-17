@@ -26,7 +26,7 @@ OBJS = \
 	match.o
 
 match: $(OBJS)
-	$(F90) -o match $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(LIBDIR) $(LIBS)
+	$(F90) -o match $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../bin
 	cp -f match ../bin
 
