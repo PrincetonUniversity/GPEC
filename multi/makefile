@@ -1,6 +1,6 @@
 
 FFLAGS = 
-F90 = $(FC) $(FFLAGS)
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
@@ -12,6 +12,8 @@ OBJS = \
 
 multi: $(OBJS)
 	$(F90) -o multi $(OBJS)
+	mkdir -p ../bin
+	cp -f multi ../bin
 
 # dependencies
 
