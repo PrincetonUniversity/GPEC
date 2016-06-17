@@ -30,7 +30,7 @@ OBJS = \
 	ipec.o
 
 ipec: $(OBJS)
-	$(F90) -o ipec $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(LIBDIR) $(LIBS)
+	$(F90) -o ipec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libipec.a *.o
 	mkdir -p ../bin

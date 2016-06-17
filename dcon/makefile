@@ -30,7 +30,7 @@ OBJS = \
 	dcon.o
 
 dcon: $(OBJS)
-	$(F90) -o dcon $(OBJS) -L$(FCDIR) $(FCLIBS) -L$(MATHDIR) $(MATHLIBS) -L$(LIBDIR) $(LIBS)
+	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../bin
 	cp -f dcon ../bin
 
