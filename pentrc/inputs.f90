@@ -22,7 +22,7 @@ module inputs
     !   rzphi, bicube_type      - (psi,theta) Cylindrical coordinate & Jacobian
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
@@ -30,7 +30,7 @@ module inputs
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,twopi
-    use utilities, only : get_free_file_unit,readtable,nunique,progressbar
+    use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf,iscdftb
     use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1
     use cspline_mod, only : cspline_type,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_write,cspline_eval
@@ -41,7 +41,7 @@ module inputs
         idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
-        mfac,psifac,mpert,mstep,&
+        mfac,psifac,mpert,mstep,mthsurf,theta,&
         idcon_coords
     
     implicit none
@@ -49,24 +49,74 @@ module inputs
     private
     public &
         read_kin, &
+        read_pmodb, &
         read_peq, &
         set_peq, &
         read_ipec_peq,&
         read_equil, &
         read_fnml, &
-        kin, xs_m, dbdx_m, fnml, &
+        kin, xs_m, dbob_m, divx_m, fnml, &
         geom,eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
-        chi1,ro,zo,bo,nn,mfac,mpert, &
+        chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
         verbose
     
     ! global variables with defaults
     logical :: verbose=.TRUE.
     type(spline_type) :: kin
-    type(cspline_type) :: dbdx_m(2),xs_m(3)
+    type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
         
     contains
-    
+
+    !=======================================================================
+    function newm(len_i,m_i,fm_i,len_o,m_o)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Simply transfer the fm spectrum on m_i to the new modes m_o.
+    !
+    !*ARGUMENTS:
+    !    len_i : integer (in)
+    !       Length of initial spectrum array.
+    !    m_i : integer array (in)
+    !       Initial modes.
+    !    fm_i : complex array (in)
+    !       Initial spectrum array.
+    !    len_o : integer (in)
+    !       Length of output spectrum array.
+    !    m_o : integer array (in)
+    !       Output modes.
+    !
+    !-----------------------------------------------------------------------
+
+        implicit none
+        ! declare arguments
+        logical :: debug = .false.
+        integer :: len_i,len_o,i,ii,j,jj
+        integer, dimension(len_i) :: m_i
+        integer, dimension(len_o) :: m_o
+        complex(r8), dimension(len_i) :: fm_i
+        complex(r8), dimension(len_o) :: newm
+
+        ! index the new range in the old range
+        i = MAX(ABS(m_i(1))-ABS(m_o(1))+1,1)
+        ii = len_i - MAX(ABS(m_i(len_i))-ABS(m_o(len_o)),0)
+        j = MAX(ABS(m_o(1))-ABS(m_i(1))+1,1)
+        jj = len_o - MAX(ABS(m_o(len_o))-ABS(m_i(len_i)),0)
+
+        ! check alignment
+        if(debug)then
+            print *,'  -> Converting to DCON m-space',m_o(1),'to',m_o(len_o),&
+                'filling',m_o(j),'to',m_o(jj),'from inputs'
+        endif
+        if(m_o(j)/=m_i(i) .or. m_o(jj)/=m_i(ii)) stop "ERROR: Misalignment in m-spaces"
+
+        ! transfer
+        newm = 0
+        newm(j:jj) = fm_i(i:ii)
+
+    end function newm
+
+
     !=======================================================================
     subroutine read_equil(file,hlog)
     !----------------------------------------------------------------------- 
@@ -202,7 +252,7 @@ module inputs
     
         ! manipulation of rotation variables
         welec(:) = wefac*kin%fs(:,5) ! direct manipulation of omegae
-        if(wefac/=1.0) print('(a55,es10.2e3)'),'  -> applying direct manipulation of omegaE by factor ',wefac
+        if(wefac/=1.0 .and. verbose) print('(a55,es10.2e3)'),'  -> applying direct manipulation of omegaE by factor ',wefac
         wdian =-twopi*kin%fs(:,3)*kin%fs1(:,1)/(e*zi*chi1*kin%fs(:,1))
         wdiat =-twopi*kin%fs1(:,3)/(e*zi*chi1)
         wpefac= (wpfac*(welec+wdian+wdiat) - (wdian+wdiat))/welec
@@ -226,16 +276,16 @@ module inputs
         endif
     
     end subroutine read_kin
-    
-    
+
+
     !=======================================================================
-    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug)
-    !----------------------------------------------------------------------- 
-    !*DESCRIPTION: 
+    subroutine read_pmodb(file,jac_in,jsurf_in,tmag_in,debug,op_powin)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
     !   Read psi,m matrix of displacements.
     !
     !*ARGUMENTS:
-    !    file : character(512) (in)
+    !   file : character(512) (in)
     !       File path.
     !   jac_in : character
     !       Input file jacobian.
@@ -246,23 +296,52 @@ module inputs
     !   debug : logical
     !       Print intermidient messages to terminal.
     !
+    !*OPTIONAL ARGUMENTS:
+    !   op_powin : int(4)
+    !       User specified powers of B, Bp, R, and Rc that define a Jacobian.
+    !       Only used if jac_in is 'other'.
+    !
     !-----------------------------------------------------------------------
-    
+
         implicit none
-        
+
         ! declare arguments
         logical, intent(in) :: debug
         integer, intent(in) :: jsurf_in,tmag_in
+        integer, dimension(4), intent(in), optional :: op_powin
         character(32), intent(inout) :: jac_in
         character(512), intent(in) :: file
         ! declare local variables
-        integer :: i,j,npsi,nm,firstnm, powin(4)
+        logical :: ncheck
+        integer :: i,j,npsi,nm,ndigit,firstnm, powin(4), out_unit
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
-        complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns
+        complex(r8), dimension(:,:), allocatable :: lagbmni,divxmni,kapxmni,&
+            lagbmns,divxmns
+        complex(r8), dimension(0:mthsurf) :: lagbfun,divxfun
+        character(3) :: nstr
         character(32), dimension(:), allocatable :: titles
-        
+
+        ! file consistency check (requires naming convention)
+        write(nstr,'(i3)') nn
+        if(nn<-9)then
+            ndigit = 3
+        elseif(nn>=0 .and. nn<10)then
+            ndigit = 1
+        else ! assume only running with -99 to 99
+            ndigit = 2
+        endif
+        ncheck = .false.
+        DO i=1,512-ndigit
+            if(file(i:i+ndigit)=='n'//trim(adjustl(nstr))) ncheck = .true.
+        ENDDO
+        if(.not. ncheck)then
+            print *,"** Toroidal mode number determined from idconfile is",nn
+            print *,"** Corresponding label 'n"//trim(adjustl(nstr))//"' must be in peq_file name"
+            stop "ERROR: Inconsistent toroidal mode numbers"
+        endif
+
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
@@ -273,41 +352,43 @@ module inputs
             stop "ERROR - inputs - size of table not equal to product of unique psi & m"
         endif
         if(debug) print *,"  -> found ",npsi," steps in psi and ",nm," modes"
-        
+
         allocate(ms(nm),psi(npsi))
-        allocate(xmp1mns(npsi,nm),xspmns(npsi,nm),xmsmns(npsi,nm))
+        allocate(lagbmni(npsi,nm),divxmni(npsi,nm),kapxmni(npsi,nm))
+        allocate(lagbmns(npsi,mpert),divxmns(npsi,mpert))
         firstnm = nunique(table(1:nm,2))
         if(firstnm==nm)then ! written with psi as outer loop
             ms = table(1:nm,2)
             psi = (/(table(j,1),j=1,npsi*nm,nm)/)
             if(debug) print *,"psi outerloop"
-            !if(debug) print *,"ms = ",ms
-            !if(debug) print *,"psi range = ",psi(1),psi(npsi)
-            xmp1mns(:,:) = reshape(table(:,3),(/npsi,nm/),order=(/2,1/))&
-                    +xj*reshape(table(:,4),(/npsi,nm/),order=(/2,1/))
-            xspmns(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/2,1/))&
+            lagbmni(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/2,1/))&
                     +xj*reshape(table(:,6),(/npsi,nm/),order=(/2,1/))
-            xmsmns(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/2,1/))&
+            divxmni(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/2,1/))&
                     +xj*reshape(table(:,8),(/npsi,nm/),order=(/2,1/))
+            kapxmni(:,:) = reshape(table(:,9),(/npsi,nm/),order=(/2,1/))&
+                    +xj*reshape(table(:,10),(/npsi,nm/),order=(/2,1/))
         else ! written with m as outer loop
             ms = (/(table(i,2),i=1,npsi*nm,npsi)/)
             psi = table(1:npsi,1)
             if(debug) print *,"m outerloop"
-            !if(debug) print *,"ms = ",ms
-            !if(debug) print *,"psi range = ",psi(1),psi(npsi)
-            xmp1mns(:,:) = reshape(table(:,3),(/npsi,nm/),order=(/1,2/))&
-                    +xj*reshape(table(:,4),(/npsi,nm/),order=(/1,2/))
-            xspmns(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/1,2/))&
+            lagbmni(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/1,2/))&
                     +xj*reshape(table(:,6),(/npsi,nm/),order=(/1,2/))
-            xmsmns(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/1,2/))&
+            divxmni(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/1,2/))&
                     +xj*reshape(table(:,8),(/npsi,nm/),order=(/1,2/))
+            kapxmni(:,:) = reshape(table(:,9),(/npsi,nm/),order=(/1,2/))&
+                    +xj*reshape(table(:,10),(/npsi,nm/),order=(/1,2/))
         endif
-        
+
+        ! For consistency with IPEC-0.3.0 and smaller values near rationals
+        if(verbose) print *,"  -> Using div(xi_perp) = -(dB/B+kappa.xi_perp)"
+        divxmni = -(lagbmni+kapxmni)
+
         ! convert to chebyshev coordinates
         if(jac_in=="" .or. jac_in=="default")then
             jac_in = jac_type
             if(verbose) print *,"  -> WARNING: Assuming DCON "//trim(jac_type)//" coordinates"
         endif
+        powin = -1
         SELECT CASE(jac_in) ! set B,Bp,R, and Rc powers
             CASE("hamada")
                 powin=(/0,0,0,0/)
@@ -319,26 +400,275 @@ module inputs
                 powin=(/2,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
-            CASE("park")
-                powin=(/1,0,0,0/)
+            CASE("other")
+                if(present(op_powin)) powin=op_powin
+                if(powin(1)<0 .or. powin(2)<0 .or. powin(3)<0 .or. powin(4)<0)then
+                    stop "ERROR: Did not receive all four powers for jac_in 'other'"
+                endif
             CASE DEFAULT
-                stop "ERROR: inputs - jac_in must be 'hamada','pest',&
-                    & 'equal_arc','boozer', or 'polar'"
+                stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
+                    & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
         END SELECT
-        if(jac_in/=jac_type)then
-            if(verbose) print *,'  -> Converting to working coordinates'
+        if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
+        if(jac_in/=jac_type .or. tmag_in/=1)then
+            if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
+            if(verbose) print *,'Converting to '//trim(jac_type)//' coordinates used by DCON'
+            ! make sure to use the larger of the input and working spectra
+            if(mpert>nm)then
+                ! convert spectrum on each surface
+                do i=1,npsi
+                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
+                    lagbmns(i,:) = newm(nm,ms,lagbmni(i,:),mpert,mfac)
+                    divxmns(i,:) = newm(nm,ms,divxmni(i,:),mpert,mfac)
+                    CALL idcon_coords(psi(i),lagbmns(i,:),mfac,mpert,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    CALL idcon_coords(psi(i),divxmns(i,:),mfac,mpert,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                enddo
+            else
+                ! convert spectrum on each surface
+                do i=1,npsi
+                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
+                    CALL idcon_coords(psi(i),lagbmni(i,:),ms,nm,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    CALL idcon_coords(psi(i),divxmni(i,:),ms,nm,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    lagbmns(i,:) = newm(nm,ms,lagbmni(i,:),mpert,mfac)
+                    divxmns(i,:) = newm(nm,ms,divxmni(i,:),mpert,mfac)
+                enddo
+            endif
+        else
             do i=1,npsi
-                CALL idcon_coords(psi(i),xmp1mns(i,:),ms,nm,&
-                    powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
-                CALL idcon_coords(psi(i),xspmns(i,:),ms,nm,&
-                    powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
-                CALL idcon_coords(psi(i),xmsmns(i,:),ms,nm,&
-                    powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                lagbmns(i,:) = newm(nm,ms,lagbmni(i,:),mpert,mfac)
+                divxmns(i,:) = newm(nm,ms,divxmni(i,:),mpert,mfac)
+            enddo
+        endif
+
+        ! (re-)set global perturbation splines with 1/B weighting
+        if(verbose) print *,"  -> Weighting by 1/B"
+        if(associated(dbob_m%xs)) call cspline_dealloc(dbob_m)
+        if(associated(divx_m%xs)) call cspline_dealloc(divx_m)
+        call cspline_alloc(dbob_m,npsi-1,mpert)     ! (dB/B)
+        call cspline_alloc(divx_m,npsi-1,mpert)     ! div(xi_prp)
+        dbob_m%xs(0:) = psi(1:)
+        divx_m%xs(0:) = psi(1:)
+        do i=1,npsi
+            if(verbose) call progressbar(i,1,npsi,op_step=1,op_percent=20)
+            call iscdftb(mfac,mpert,lagbfun,mthsurf,lagbmns(i,:))
+            call iscdftb(mfac,mpert,divxfun,mthsurf,divxmns(i,:))
+            do j=0,mthsurf
+                call bicube_eval(eqfun,psi(i),theta(j),0)
+                lagbfun(j) = lagbfun(j) / eqfun%f(1) ! dB/B
+                divxfun(j) = divxfun(j) / eqfun%f(1) ! nabla.xi_perp
+            enddo
+            call iscdftf(mfac,mpert,lagbfun,mthsurf,dbob_m%fs(i-1,:))
+            call iscdftf(mfac,mpert,divxfun,mthsurf,divx_m%fs(i-1,:))
+        enddo
+        call cspline_fit(dbob_m,"extrap")
+        call cspline_fit(divx_m,"extrap")
+
+        ! write log to check reading/allocating routines
+        if(debug)then
+            print *,"  Writing log of pmodb splines"
+            print *,"  inputs: mlow = ",mfac(1)," mhigh = ",mfac(mpert)," nm = ",nm
+            print *,"  inputs: psilow = ",dbob_m%xs(0)," psihigh = ",dbob_m%xs(dbob_m%mx)," npsi = ",npsi
+            out_unit = get_free_file_unit(-1)
+            open(unit=out_unit,file="pentrc_pmodb_n"//trim(adjustl(nstr))//".out",&
+                status="unknown")
+            write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
+            write(out_unit,'(a43,2/)') " Debuging log file for set_peq subroutine."
+            write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
+            write(out_unit,'(1x,a16,a5,8(1x,a16))')"psi_n","m",&
+                'real(deltaB/B)','imag(deltaB/B)','real(divxprp)','imag(divxprp)',&
+                'real(deltaB)','imag(deltaB)','real(Bdivxprp)','imag(Bdivxprp)'
+            do i=0,npsi-1
+                do j=1,mpert
+                    write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
+                        psi(i+1),mfac(j),&
+                        dbob_m%fs(i,j),divx_m%fs(i,j),lagbmns(i,j),divxmns(i,j)
+                enddo
+            enddo
+            close(out_unit)
+        endif
+
+        deallocate(ms,psi,lagbmni,divxmni,kapxmni,lagbmns,divxmns)
+
+    end subroutine read_pmodb
+
+
+    !=======================================================================
+    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug,op_powin)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Read psi,m matrix of displacements.
+    !
+    !*ARGUMENTS:
+    !   file : character(512) (in)
+    !       File path.
+    !   jac_in : character
+    !       Input file jacobian.
+    !   jsurf_in : int.
+    !       Surface weigted inputs should be 1
+    !   tmag_in : int.
+    !       Input toroidal angle specification: 1 = magnetic, 0 = cylindrical
+    !   debug : logical
+    !       Print intermidient messages to terminal.
+    !
+    !*OPTIONAL ARGUMENTS:
+    !   op_powin : int(4)
+    !       User specified powers of B, Bp, R, and Rc that define a Jacobian.
+    !       Only used if jac_in is 'other'.
+    !
+    !-----------------------------------------------------------------------
+
+        implicit none
+
+        ! declare arguments
+        logical, intent(in) :: debug
+        integer, intent(in) :: jsurf_in,tmag_in
+        integer, dimension(4), intent(in), optional :: op_powin
+        character(32), intent(inout) :: jac_in
+        character(512), intent(in) :: file
+        ! declare local variables
+        logical :: ncheck
+        integer :: i,j,npsi,nm,ndigit,firstnm, powin(4)
+        integer, dimension(:), allocatable :: ms
+        real(r8), dimension(:), allocatable :: psi
+        real(r8), dimension(:,:), allocatable :: table
+        complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns,xmp1mni,xspmni,xmsmni
+        character(3) :: nstr
+        character(32), dimension(:), allocatable :: titles
+
+        ! file consistency check (requires naming convention)
+        write(nstr,'(i3)') nn
+        if(nn<-9)then
+            ndigit = 3
+        elseif(nn>=0 .and. nn<10)then
+            ndigit = 1
+        else ! assume only running with -99 to 99
+            ndigit = 2
+        endif
+        ncheck = .false.
+        DO i=1,512-ndigit
+            if(file(i:i+ndigit)=='n'//trim(adjustl(nstr))) ncheck = .true.
+        ENDDO
+        if(.not. ncheck)then
+            print *,"** Toroidal mode number determined from idconfile is",nn
+            print *,"** Corresponding label 'n"//trim(adjustl(nstr))//"' must be in peq_file name"
+            stop "ERROR: Inconsistent toroidal mode numbers"
+        endif
+
+        ! read file
+        call readtable(file,table,titles,verbose,debug)
+        ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
+        !npsi = nunique(table(:,1)) !! computationally expensive + ipec n=3's can have repeats
+        nm = nunique(table(:,2),op_sorted=.True.)
+        npsi = size(table,1)/nm
+        if(npsi*nm/=size(table,1))then
+            stop "ERROR - inputs - size of table not equal to product of unique psi & m"
+        endif
+        if(debug) print *,"  -> found ",npsi," steps in psi and ",nm," modes"
+
+        allocate(ms(nm),psi(npsi))
+        allocate(xmp1mni(npsi,nm),xspmni(npsi,nm),xmsmni(npsi,nm))
+        allocate(xmp1mns(npsi,mpert),xspmns(npsi,mpert),xmsmns(npsi,mpert))
+        firstnm = nunique(table(1:nm,2))
+        if(firstnm==nm)then ! written with psi as outer loop
+            ms = table(1:nm,2)
+            psi = (/(table(j,1),j=1,npsi*nm,nm)/)
+            if(debug) print *,"psi outerloop"
+            !if(debug) print *,"ms = ",ms
+            !if(debug) print *,"psi range = ",psi(1),psi(npsi)
+            xmp1mni(:,:) = reshape(table(:,3),(/npsi,nm/),order=(/2,1/))&
+                    +xj*reshape(table(:,4),(/npsi,nm/),order=(/2,1/))
+            xspmni(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/2,1/))&
+                    +xj*reshape(table(:,6),(/npsi,nm/),order=(/2,1/))
+            xmsmni(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/2,1/))&
+                    +xj*reshape(table(:,8),(/npsi,nm/),order=(/2,1/))
+        else ! written with m as outer loop
+            ms = (/(table(i,2),i=1,npsi*nm,npsi)/)
+            psi = table(1:npsi,1)
+            if(debug) print *,"m outerloop"
+            !if(debug) print *,"ms = ",ms
+            !if(debug) print *,"psi range = ",psi(1),psi(npsi)
+            xmp1mni(:,:) = reshape(table(:,3),(/npsi,nm/),order=(/1,2/))&
+                    +xj*reshape(table(:,4),(/npsi,nm/),order=(/1,2/))
+            xspmni(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/1,2/))&
+                    +xj*reshape(table(:,6),(/npsi,nm/),order=(/1,2/))
+            xmsmni(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/1,2/))&
+                    +xj*reshape(table(:,8),(/npsi,nm/),order=(/1,2/))
+        endif
+        
+        ! convert to chebyshev coordinates
+        if(jac_in=="" .or. jac_in=="default")then
+            jac_in = jac_type
+            if(verbose) print *,"  -> WARNING: Assuming DCON "//trim(jac_type)//" coordinates"
+        endif
+        powin = -1
+        SELECT CASE(jac_in) ! set B,Bp,R, and Rc powers
+            CASE("hamada")
+                powin=(/0,0,0,0/)
+            CASE("pest")
+                powin=(/0,0,2,0/)
+            CASE("equal_arc")
+                powin=(/0,1,0,0/)
+            CASE("boozer")
+                powin=(/2,0,0,0/)
+            CASE("polar")
+                powin=(/0,1,0,1/)
+            CASE("other")
+                if(present(op_powin)) powin=op_powin
+                if(powin(1)<0 .or. powin(2)<0 .or. powin(3)<0 .or. powin(4)<0)then
+                    stop "ERROR: Did not receive all four powers for jac_in 'other'"
+                endif
+            CASE DEFAULT
+                stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
+                    & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
+        END SELECT
+        if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
+        if(jac_in/=jac_type .or. tmag_in/=1)then
+            if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
+            if(verbose) print *,'Converting to '//trim(jac_type)//' coordinates used by DCON'
+            ! make sure to use the larger of the input and working spectra
+            if(mpert>nm)then
+                ! convert spectrum on each surface
+                do i=1,npsi
+                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
+                    xmp1mns(i,:) = newm(nm,ms,xmp1mni(i,:),mpert,mfac)
+                    xspmns(i,:) = newm(nm,ms,xspmni(i,:),mpert,mfac)
+                    xmsmns(i,:) = newm(nm,ms,xmsmni(i,:),mpert,mfac)
+                    CALL idcon_coords(psi(i),xmp1mns(i,:),mfac,mpert,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    CALL idcon_coords(psi(i),xspmns(i,:),mfac,mpert,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    CALL idcon_coords(psi(i),xmsmns(i,:),mfac,mpert,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                enddo
+            else
+                ! convert spectrum on each surface
+                do i=1,npsi
+                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
+                    CALL idcon_coords(psi(i),xmp1mns(i,:),ms,nm,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    CALL idcon_coords(psi(i),xspmns(i,:),ms,nm,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    CALL idcon_coords(psi(i),xmsmns(i,:),ms,nm,&
+                        powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    xmp1mns(i,:) = newm(nm,ms,xmp1mni(i,:),mpert,mfac)
+                    xspmns(i,:) = newm(nm,ms,xspmni(i,:),mpert,mfac)
+                    xmsmns(i,:) = newm(nm,ms,xmsmni(i,:),mpert,mfac)
+                enddo
+            endif
+        else
+            do i=1,npsi
+                xmp1mns(i,:) = newm(nm,ms,xmp1mni(i,:),mpert,mfac)
+                xspmns(i,:) = newm(nm,ms,xspmni(i,:),mpert,mfac)
+                xmsmns(i,:) = newm(nm,ms,xmsmni(i,:),mpert,mfac)
             enddo
         endif
         
-        ! set global variables (xs_m and dbdx_m)
-        call set_peq(psi,ms,xmp1mns,xspmns,xmsmns,.true.,debug)
+        ! set global variables (perturbed quantity csplines)
+        call set_peq(psi,mfac,xmp1mns,xspmns,xmsmns,.true.,debug)
         
         deallocate(ms,psi,xmp1mns,xspmns,xmsmns)
         
@@ -351,7 +681,7 @@ module inputs
     !*DESCRIPTION: 
     !   Set m quantity xs_m complex splines in psi for the 2 Clebsch
     !   displacement components from 2D (psi,m) distributions.
-    !   **This routine sets global variables xs_m and dbdx_m**
+    !   **This routine sets global variables xs_m dbob_m and divx_m**
     !
     !*ARGUMENTS:
     !    psi : real rank 1
@@ -366,7 +696,7 @@ module inputs
     !*OPTIONAL ARGUMENTS:
     !   op_set_dbdx : logical
     !       Calculate lagrangian mod-B and divergence of xi_perp and set
-    !       them to global complex spline variable dbdx_m. (Defaut True)
+    !       them to global complex spline variable dbob_m,divx_m. (Defaut True)
     !   op_debug : logical
     !       Print intermidient messages to terminal. (Default False)
     !       
@@ -377,15 +707,15 @@ module inputs
         ! declare arguments
         logical, intent(in), optional :: op_debug,op_set_dbdx
         integer,  dimension(:), intent(in) :: ms        
-        real(r8), dimension(:), intent(in) :: psi     
+        real(r8), dimension(:), intent(in) :: psi
         complex(r8), dimension(:,:), intent(in) :: xmp1mns,xspmns,xmsmns
         ! declare local variables
         logical :: debug,set_dbdx
         integer :: i,j,ims,istrt_psi,istop_psi,npsi,nm, out_unit
         real(r8) :: r_mjr,r_mnr,jac,g12,g13,g22,g23,g33,gfac
-        complex(r8), dimension(:), allocatable :: lagb_mn,divx_mn,&
-            expm
-        complex(r8), dimension(:,:), allocatable :: smat,tmat,xmat,ymat,zmat
+        complex(r8), dimension(0:mthsurf) :: divxfun,dbobfun
+        complex(r8), dimension(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
+        complex(r8), dimension(:,:), allocatable :: jbbkapxmns,jbbdivxmns,jbbdbobmns
         character(3) :: istring
         
         ! defaults for optional args
@@ -430,24 +760,20 @@ module inputs
         call cspline_fit(xs_m(2),"extrap")
         call cspline_fit(xs_m(3),"extrap")
 
+        ! calculate db/b and divx to plug into old action integral formulation
+        allocate(jbbkapxmns(npsi,mpert),jbbdivxmns(npsi,mpert),jbbdbobmns(npsi,mpert))
+        if(associated(dbob_m%xs)) call cspline_dealloc(dbob_m)
+        if(associated(divx_m%xs)) call cspline_dealloc(divx_m)
+        call cspline_alloc(dbob_m,npsi-1,mpert)     ! dB/B
+        call cspline_alloc(divx_m,npsi-1,mpert)     ! nabla.xi_perp
+        dbob_m%xs(0:) = psi(1:)
+        divx_m%xs(0:) = psi(1:)
         if(set_dbdx)then
-            if(verbose) print *,'  -> calculating deltaB/B, divxi_prp'
-            if(associated(dbdx_m(1)%xs)) call cspline_dealloc(dbdx_m(1))
-            if(associated(dbdx_m(2)%xs)) call cspline_dealloc(dbdx_m(2))
-            call cspline_alloc(dbdx_m(1),npsi-1,mpert)     ! JB^2 (dB/B)
-            call cspline_alloc(dbdx_m(2),npsi-1,mpert)     ! JB^2 div(xi_prp)
-            dbdx_m(1)%xs(0:) = psi(1:)
-            dbdx_m(2)%xs(0:) = psi(1:)
-            
-            allocate(lagb_mn(mpert),divx_mn(mpert))
-            allocate(expm(mpert))
-            allocate(xmat(mpert,mpert),ymat(mpert,mpert),zmat(mpert,mpert),&
-                    smat(mpert,mpert),tmat(mpert,mpert))
+            if(verbose) print *,'Calculating dB/B, div(xi_prp)'
             !call ipeq_alloc
             do i=istrt_psi,istop_psi
                 j = i-istrt_psi+1
                 if(verbose) call progressbar(j,1,npsi,op_percent=20)
-                call spline_eval(sq,psi(i),0)
                 call cspline_eval(xs_m(1),psi(i),0)
                 call cspline_eval(xs_m(2),psi(i),0)
                 call cspline_eval(xs_m(3),psi(i),0)
@@ -461,67 +787,59 @@ module inputs
                 xmat=RESHAPE(xmats%f,(/mpert,mpert/))
                 ymat=RESHAPE(ymats%f,(/mpert,mpert/))
                 zmat=RESHAPE(zmats%f,(/mpert,mpert/))
-                
-                divx_mn(:)=MATMUL(xmat,xs_m(1)%f(:))+MATMUL(ymat,xs_m(2)%f(:)) &
+                ! matrices give JBB weighted values
+                jbbkapxmns(i,:) = MATMUL(smat,xs_m(2)%f(:))+MATMUL(tmat,xs_m(3)%f(:))
+                jbbdivxmns(i,:) = MATMUL(xmat,xs_m(1)%f(:))+MATMUL(ymat,xs_m(2)%f(:)) &
                                 +MATMUL(zmat,xs_m(3)%f(:))
-                lagb_mn(:)=-(divx_mn+MATMUL(smat,xs_m(2)%f(:))+MATMUL(tmat,xs_m(3)%f(:)))
-                
-                !call idcon_build(1,xspmn)
-                !call ipeq_sol(psi(i))
-                !divx_mn(:)=MATMUL(xmat,xmp1_mn)+MATMUL(ymat,xsp_mn) &
-                !    +MATMUL(zmat,xms_mn)/chi1
-                !lagb_mn(:)=-(divx_mn+MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1)
-                
-                dbdx_m(1)%fs(j-1,:) = lagb_mn(:)
-                dbdx_m(2)%fs(j-1,:) = divx_mn(:)
+                jbbdbobmns(i,:) = -(jbbdivxmns(i,:)+jbbkapxmns(i,:))
+                ! remove weighting to get 1st order quantities
+                call iscdftb(mfac,mpert,divxfun,mthsurf,jbbdivxmns(i,:))
+                call iscdftb(mfac,mpert,dbobfun,mthsurf,jbbdbobmns(i,:))
+                do j=0,mthsurf
+                    call bicube_eval(eqfun,psi(i),theta(j),0)
+                    call bicube_eval(rzphi,psi(i),theta(j),0)
+                    divxfun(j) = divxfun(j) / (rzphi%f(4) * eqfun%f(1)**2) ! nabla.xi_perp
+                    dbobfun(j) = dbobfun(j) / (rzphi%f(4) * eqfun%f(1)**2) ! dB/B
+                enddo
+                call iscdftf(mfac,mpert,divxfun,mthsurf,divx_m%fs(i-1,:))
+                call iscdftf(mfac,mpert,dbobfun,mthsurf,dbob_m%fs(i-1,:))
             enddo
-            
-            !call ipeq_dealloc
-            call cspline_fit(dbdx_m(1),"extrap")
-            call cspline_fit(dbdx_m(2),"extrap")
-            deallocate(lagb_mn,divx_mn,expm,xmat,ymat,zmat,smat,tmat)
+        else
+            ! default dbdx is a flat spectrum
+            if(verbose) print *,"Forming constant dB/B, div(xi_perp)"
+            dbob_m%fs(:,:) = 1.0/sqrt(1.0*mpert)
+            divx_m%fs(:,:) = 1.0/sqrt(1.0*mpert)
         endif
-        
-        ! default dbdx is unit energy norm flat spectrum
-        if(.not. associated(dbdx_m(1)%xs))then
-            if(verbose) print *,"  forming constant mod B, div xi"
-            call cspline_alloc(dbdx_m(1),npsi-1,mpert)     ! JB^2 (dB/B)
-            call cspline_alloc(dbdx_m(2),npsi-1,mpert)     ! JB^2 div(xi_prp)
-            dbdx_m(1)%xs(0:) = psi(1:)
-            dbdx_m(2)%xs(0:) = psi(1:)
-            dbdx_m(1)%fs(:,:) = 1.0/sqrt(1.0*mpert)
-            dbdx_m(2)%fs(:,:) = 1.0/sqrt(1.0*mpert)
-            call cspline_fit(dbdx_m(1),"extrap")
-            call cspline_fit(dbdx_m(2),"extrap")
-        endif
-        
+        call cspline_fit(dbob_m,"extrap")
+        call cspline_fit(divx_m,"extrap")
+
         ! write log to check reading/allocating routines
         if(debug)then
-            out_unit = get_free_file_unit(-1)
             print *,"  inputs: mlow = ",mfac(1)," mhigh = ",mfac(mpert)," nm = ",nm
             print *,"  inputs: psilow = ",xs_m(1)%xs(0)," psihigh = ",xs_m(1)%xs(xs_m(1)%mx)," npsi = ",npsi
+            out_unit = get_free_file_unit(-1)
             write(istring,'(i3)') nn
             open(unit=out_unit,file="pentrc_peq_n"//trim(adjustl(istring))//".out",&
                 status="unknown")
             write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-            write(out_unit,'(a43,2/)') " Debuging log file for set_peq subroutine."
+            write(out_unit,'(a43,2/)') " Debugging log file for set_peq subroutine."
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
-            write(out_unit,'(1x,a16,a5,10(1x,a16))')"psi_n","m",&
+            write(out_unit,'(1x,a16,a5,14(1x,a16))')"psi_n","m",&
                 "real(xi^psi1)","imag(xi^psi1)","real(xi^psi)","imag(xi^psi)","real(xi^alpha)","imag(xi^alpha)",&
-                'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)'
+                'real(deltaB/B)','imag(deltaB/B)','real(divxprp)','imag(divxprp)',&
+                'real(JBdeltaB)','imag(JBdeltaB)','real(JBBdivxprp)','imag(JBBdivxprp)'
             do i=0,npsi-1
-                call spline_eval(sq,psi(i),0)
-                do j=1,nm
-                    write(out_unit,'(1x,es16.8e3,i5,10(1x,es16.8e3))') &
+                do j=1,mpert
+                    write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
                         xs_m(1)%xs(i),mfac(j),&
                         xs_m(1)%fs(i,j),xs_m(2)%fs(i,j),xs_m(3)%fs(i,j),&
-                        dbdx_m(1)%fs(i,j),dbdx_m(2)%fs(i,j)
+                        dbob_m%fs(i,j),divx_m%fs(i,j),jbbdbobmns(i+1,j),jbbdivxmns(i+1,j)
                 enddo
             enddo
             close(out_unit)
         endif
-        
-        
+
+        deallocate(jbbkapxmns,jbbdivxmns,jbbdbobmns)
     end subroutine set_peq
 
 
@@ -593,14 +911,14 @@ module inputs
         close(in_unit)
         
         ! form splines
-        do i=1,2
-            call cspline_alloc(dbdx_m(i),mstep-1,mpert)
-            dbdx_m(i)%xs(0:) = psifac(1:)
-        enddo
-        dbdx_m(1)%fs(0:,:) = lagbpar(:,:)
-        dbdx_m(2)%fs(0:,:) = divxprp(:,:)
-        call cspline_fit(dbdx_m(1),"extrap")
-        call cspline_fit(dbdx_m(2),"extrap")
+        call cspline_alloc(dbob_m,mstep-1,mpert)
+        call cspline_alloc(divx_m,mstep-1,mpert)
+        dbob_m%xs(0:) = psifac(1:)
+        divx_m%xs(0:) = psifac(1:)
+        dbob_m%fs(0:,:) = lagbpar(:,:)
+        divx_m%fs(0:,:) = divxprp(:,:)
+        call cspline_fit(dbob_m,"extrap")
+        call cspline_fit(divx_m,"extrap")
         
         ! write log - designed as check of reading routines
         if(write_log)then
@@ -612,10 +930,10 @@ module inputs
             iout = min(6,mpert)
             istep = mpert/iout
             call cspline_alloc(outspl,mstep-1,iout) ! reduced number for output
-            outspl%xs = dbdx_m(1)%xs
+            outspl%xs = dbob_m%xs
             outspl%title(0) = "psi_n"
             do i=1,iout
-                outspl%fs(:,i) = dbdx_m(1)%fs(:,i*istep)
+                outspl%fs(:,i) = dbob_m%fs(:,i*istep)
                 if(mfac(i*istep)<0)then
                     write(outspl%title(i),'(a1,i3.2)') 'm',mfac(i*istep)
                 else

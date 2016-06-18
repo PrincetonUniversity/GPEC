@@ -15,12 +15,13 @@ c      6. ipdiag_singcurs
 c      7. ipdiag_xbcontra
 c      8. ipdiag_xbnobo
 c      9. ipdiag_xbst
-c     10. ipdiag_pmodbrz
-c     11. ipdiag_rzphibx
-c     12. ipdiag_rzpgrid
-c     13. ipdiag_rzpdiv
-c     14. ipdiag_radvar
-c     15. ipdiag_permeabev_orthogonality
+c     10. ipdiag_pmodb
+c     11. ipdiag_pmodbmn
+c     12. ipdiag_rzphibx
+c     13. ipdiag_rzpgrid
+c     14. ipdiag_rzpdiv
+c     15. ipdiag_radvar
+c     16. ipdiag_permeabev_orthogonality
 c-----------------------------------------------------------------------
 c     subprogram 0. ipdiag_mod.
 c     module declarations.
@@ -912,10 +913,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_xbst
 c-----------------------------------------------------------------------
-c     subprogram 10. ipdiag_pmodbrz.
-c     plot perturbed mod b at rz coordinates.
+c     subprogram 10. ipdiag_pmodb.
+c     plot perturbed mod b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_pmodbrz(egnum,xspmn)
+      SUBROUTINE ipdiag_pmodb(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1087,14 +1088,14 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,curv2fun(istep,:),
      $        mthsurf,curv2_mn)
 
-         eulbparmns(istep,:)=eulbpar_mn !p'xsp_mn+bxcdeltamn
-         lagbparmns(istep,:)=lagbpar_mn
-         llagbparmns(istep,:)=llagbpar_mn
-         divxmns(istep,:)=divx_mn
-         curvmns(istep,:)=curv_mn
-         divx2mns(istep,:)=divx2_mn
-         curv2mns(istep,:)=curv2_mn
-         lllagbparmns(istep,:)=divx_mn+curv_mn
+         eulbparmns(istep,:)=eulbpar_mn ! p'xsp_mn+bxcdeltamn
+         lagbparmns(istep,:)=lagbpar_mn ! with parallel components
+         llagbparmns(istep,:)=llagbpar_mn ! without parallel components
+         divxmns(istep,:)=-divx_mn ! Bdivxprp
+         curvmns(istep,:)=-curv_mn ! Bkxprp
+         divx2mns(istep,:)=divx2_mn ! jb-weighting
+         curv2mns(istep,:)=curv2_mn ! jb-weighting
+         lllagbparmns(istep,:)=divx_mn+curv_mn ! llagbparmns reconstruction
          cdeltamns(istep,:)=divx_mn+2*curv_mn
       ENDDO
 
@@ -1114,9 +1115,9 @@ c-----------------------------------------------------------------------
 
       WRITE(out_unit,'(1x,a16,1x,a4,14(1x,a16))')"psi","m",
      $     "real(lagb)","imag(lagb)","real(llagb)","imag(llagb)",
-     $     "real(lllagb)","imag(lllagb)","real(divx)","imag(divx)",
-     $     "real(divx2)","imag(divx2)","real(curv)","imag(curv)",
-     $     "real(curv2)","imag(curv2)"
+     $     "real(lllagb)","imag(lllagb)","real(Bdivx)",
+     $     "imag(Bdivx)","real(JBBdivx)","imag(JBBdivx)",
+     $     "real(Bkx)","imag(Bkx)","real(JBBkx)","imag(JBBkx)"
       DO istep=1,mstep
          DO ipert=1,mpert
             WRITE(out_unit,'(1x,es16.8,1x,I4,14(1x,es16.8))')
@@ -1147,9 +1148,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_pmodbrz
+      END SUBROUTINE ipdiag_pmodb
 c-----------------------------------------------------------------------
-c     subprogram 10. ipdiag_pmodbmn.
+c     subprogram 11. ipdiag_pmodbmn.
 c     test and plot perturbed mod b for gpec.
 c-----------------------------------------------------------------------
       SUBROUTINE ipdiag_pmodbmn(egnum,xspmn)
@@ -1166,8 +1167,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(-mband:mband) :: 
      $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
       COMPLEX(r8), DIMENSION(mpert) :: curv_mn,divx_mn
+      COMPLEX(r8), DIMENSION(0:mtheta) :: divxfun,curvfun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: divxmns,curvmns
+      COMPLEX(r8), DIMENSION(mstep,mpert) :: divxmns,curvmns,
+     $     divx1mns,curv1mns
 
       TYPE(fspline_type) :: fmodb
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
@@ -1332,6 +1335,19 @@ c-----------------------------------------------------------------------
          curvmns(istep,:)=MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1
          divxmns(istep,:)=MATMUL(xmat,xmp1_mn)+
      $        MATMUL(ymat,xsp_mn)+MATMUL(zmat,xms_mn)/chi1            
+c-----------------------------------------------------------------------
+c     compute mod b variations for direct comparison to ipout_pmodb
+c-----------------------------------------------------------------------
+         call iscdftb(mfac,mpert,curvfun,mtheta,curvmns(istep,:))
+         call iscdftb(mfac,mpert,divxfun,mtheta,divxmns(istep,:))
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,psifac(istep),rzphi%ys(itheta),0)
+            CALL bicube_eval(eqfun,psifac(istep),rzphi%ys(itheta),0)
+            curvfun(itheta) = curvfun(itheta)/(rzphi%f(4)*eqfun%f(1))
+            divxfun(itheta) = divxfun(itheta)/(rzphi%f(4)*eqfun%f(1))
+         ENDDO
+         call iscdftf(mfac,mpert,curvfun,mtheta,curv1mns(istep,:))
+         call iscdftf(mfac,mpert,divxfun,mtheta,divx1mns(istep,:))
       ENDDO
 c-----------------------------------------------------------------------
 c     write data.
@@ -1346,16 +1362,15 @@ c-----------------------------------------------------------------------
      $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
       WRITE(out_unit,*)     
 
-      WRITE(out_unit,'(1x,a16,1x,a4,4(1x,a16))')"psi","m",
-     $     "real(curv)","imag(curv)","real(divx)","imag(divx)"
+      WRITE(out_unit,'(1x,a16,1x,a4,8(1x,a16))')"psi","m",
+     $     "real(JBBkx)","imag(JBBkx)","real(JBBdivx)","imag(JBBdivx)",
+     $     "real(Bkx)","imag(Bkx)","real(Bdivx)","imag(Bdivx)"
       DO istep=1,mstep
          DO ipert=1,mpert
-            WRITE(out_unit,'(1x,es16.8,1x,I4,4(1x,es16.8))')
+            WRITE(out_unit,'(1x,es16.8,1x,I4,8(1x,es16.8))')
      $           psifac(istep),mfac(ipert),
-     $           REAL(curvmns(istep,ipert)),
-     $           AIMAG(curvmns(istep,ipert)),
-     $           REAL(divxmns(istep,ipert)),
-     $           AIMAG(divxmns(istep,ipert))
+     $           curvmns(istep,ipert),divxmns(istep,ipert),
+     $           curv1mns(istep,ipert),divx1mns(istep,ipert)
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
@@ -1368,7 +1383,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_pmodbmn
 c-----------------------------------------------------------------------
-c     subprogram 11. ipdiag_rzphibx.
+c     subprogram 12. ipdiag_rzphibx.
 c     write r,z,phi,b,x on hamada coordinates.
 c-----------------------------------------------------------------------
       SUBROUTINE ipdiag_rzphibx(egnum,xspmn)
@@ -1509,7 +1524,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_rzphibx
 c-----------------------------------------------------------------------
-c     subprogram 12. ipdiag_rzpgrid.
+c     subprogram 13. ipdiag_rzpgrid.
 c     diagnose hamada coordinates inverted from rzphi.
 c-----------------------------------------------------------------------
       SUBROUTINE ipdiag_rzpgrid(nr,nz)
@@ -1620,7 +1635,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 13. ipdiag_rzpdiv.
+c     subprogram 14. ipdiag_rzpdiv.
 c     check divergence of rzphi functions.
 c-----------------------------------------------------------------------
       SUBROUTINE ipdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
@@ -1705,7 +1720,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ipdiag_rzpdiv     
 c-----------------------------------------------------------------------
-c     subprogram 14. ipdiag_radvar.
+c     subprogram 15. ipdiag_radvar.
 c     generate various radial variables.
 c-----------------------------------------------------------------------
       SUBROUTINE ipdiag_radvar
