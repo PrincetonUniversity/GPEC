@@ -132,8 +132,8 @@ module torque
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
-        kin,xs_m,dbdx_m,fnml,&                  ! equilib and pert. equilib splines
-        chi1,ro,zo,bo,mfac,mpert,&                 ! reals
+        kin,xs_m,dbob_m,divx_m,fnml,&                  ! equilib and pert. equilib splines
+        chi1,ro,zo,bo,mfac,mpert,mthsurf,&                 ! reals
         verbose                                 ! logical
     
     implicit none
@@ -215,14 +215,14 @@ module torque
             wbbar,wdbar,bhat,dhat,dbave,dxave,&
             vpar,kappaint,kappa,kk,djdj,jbb,&
             rex,imx
-        real(r8), dimension(mpert) :: expm
         real(r8), dimension(2,nlmda) :: ldl
         real(r8), dimension(2,1+nlmda) :: ldl_inc
         real(r8), dimension(2,1+nlmda/2) :: ldl_p
         real(r8), dimension(2,1+nlmda-nlmda/2) :: ldl_t
         real(r8), dimension(2,ntheta) :: tdt
         real(r8), dimension(:), allocatable :: bpts,dbfun,dxfun
-        complex(r8) :: db,divx,kx,xint,wtwnorm
+        complex(r8) :: dbob,divx,kapx,xint,wtwnorm
+        complex(r8), dimension(mpert) :: expm
         complex(r8), dimension(ntheta) :: jvtheta,pl
         complex(r8), dimension(1,1) :: t_zz,t_xx,t_yy,t_zx,t_zy,t_xy
         complex(r8), dimension(mpert,ntheta) :: wmu_mt,wen_mt
@@ -259,8 +259,9 @@ module torque
         endif
         
         ! Get perturbations
-        call cspline_eval(dbdx_m(1),psi,0)
-        
+        call cspline_eval(dbob_m,psi,0)
+        call cspline_eval(divx_m,psi,0)
+
         !Poloidal functions - note ABS(A*clebsch) = ABS(A)
         allocate(dbfun(0:eqfun%my),dxfun(0:eqfun%my))
         call spline_alloc(tspl,eqfun%my,5)
@@ -276,8 +277,8 @@ module torque
            ! for flux fun outputs
            expm = exp(xj*twopi*mfac*eqfun%ys(i))
            jbb  = rzphi%f(4)*eqfun%f(1)**2 ! chi1 cuz its the DCON working J
-           dbfun(i) = ABS(sum(dbdx_m(1)%f(:)*expm)/jbb)**2
-           dxfun(i) = ABS((sum(dbdx_m(2)%f(:)*expm)/jbb)*divxfac)**2
+           dbfun(i) = ABS( sum(dbob_m%f(:)*expm) )**2
+           dxfun(i) = ABS( sum(divx_m%f(:)*expm) * divxfac )**2
         enddo
         ! clebsch conversion now in djdt o1*exp(-twopi*ifac*nn*q*theta)
         call spline_fit(tspl,"periodic")
@@ -326,7 +327,7 @@ module torque
         nueff = kin%f(s+6)/(2*epsr)                 ! if trapped
         dbave = issurfint(dbfun,eqfun%my,psi,0,1)
         dxave = issurfint(dxfun,eqfun%my,psi,0,1)
-        DEALLOCATE(dbfun,dxfun)
+        deallocate(dbfun,dxfun)
         if(tdebug) print('(a14,7(es10.1E2),i4)'), "  eq values = ",wdian,&
                         wdiat,welec,wdhat,wbhat,nueff,q
         
@@ -372,22 +373,21 @@ module torque
             case('fcgl')
                 if(tdebug) print *,'  fcgl integrand. modes = ',n,l
                 if(l==0)then
-                    call cspline_eval(dbdx_m(1),psi,0)
-                    call cspline_eval(dbdx_m(2),psi,0)
                     ! Poloidal functions (with jacobian!)
-                    call spline_alloc(cglspl,eqfun%my,2)
-                    cglspl%xs(:) = eqfun%ys(:)
-                    do i=0,eqfun%my
-                        call bicube_eval(eqfun,psi,eqfun%ys(i),1)
-                        call bicube_eval(rzphi,psi,eqfun%ys(i),1)
-                        expm = exp(xj*twopi*mfac*eqfun%ys(i))
+                    call spline_alloc(cglspl,mthsurf,2)
+                    do i=0,mthsurf
+                        theta = i/real(mthsurf,r8)
+                        call bicube_eval(eqfun,psi,theta,0)
+                        call bicube_eval(rzphi,psi,theta,0)
+                        expm = exp(xj*twopi*mfac*theta)
                         jbb = (rzphi%f(4) * eqfun%f(1)**2)
-                        db = sum(dbdx_m(1)%f(:)*expm) / jbb
-                        divx = sum(dbdx_m(2)%f(:)*expm) / jbb
-                        kx = -0.5*(db+divx)
+                        dbob = sum( dbob_m%f(:)*expm )   ! dB/B
+                        divx = sum( divx_m%f(:)*expm ) ! nabla.xi_perp
+                        kapx = -0.5*(dbob+divx)
+                        cglspl%xs(i) = theta
                         cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
-                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kx)*CONJG(divx+3.0*kx)
-                     enddo
+                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)
+                    enddo
                     CALL spline_fit(cglspl,"periodic")
                     CALL spline_int(cglspl)
                     ! torque
@@ -395,9 +395,9 @@ module torque
                         *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
                         + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
                     call spline_dealloc(cglspl)
-                   else
+               else
                     tpsi=0
-                   endif
+               endif
      
      
      
@@ -414,9 +414,8 @@ module torque
                     xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,lnq,n)
                 endif
                 ! kappa integration
-                call cspline_eval(dbdx_m(1),psi,0)
-                if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbdx_m(1)%f(:)))
-                kappaint = kappaintgrl(n,l,q,mfac,dbdx_m(1)%f(:),fnml)
+                if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbob_m%f(:))/mpert)
+                kappaint = kappaintgrl(n,l,q,mfac,dbob_m%f(:),fnml)
                 ! dT/dpsi
                 tpsi = sq%f(3)*kappaint*0.5*(-xint) &
                     *SQRT(epsr/(2*pi**3))*n*n*kin%f(s)*kin%f(s+2)
@@ -432,7 +431,6 @@ module torque
             case("clar")
                 ! set up
                 call cspline_alloc(fbnce,nlmda-1,3) ! <omegab,d> Lambda functions
-                call cspline_eval(dbdx_m(1),psi,0)
                 lmdatpb = bo/bmax
                 lmdamin = max(1.0/(1+epsr),bo/bmax)
                 lmdamax = min(1.0/(1-epsr),bo/bmin) ! kappa 0 to 1
@@ -457,7 +455,7 @@ module torque
                     bhat = SQRT(2*kin%f(s+2)/mass)
                     dhat = (kin%f(s+2)/chrg)
                     ! JKP PRL 2009 perturbed action
-                    djdj = kappaintgnd(kappa,n,l,q,mfac,dbdx_m(1)%f(:),fnml)
+                    djdj = kappaintgnd(kappa,n,l,q,mfac,dbob_m%f(:),fnml)
                     ! Lambda functions
                     fbnce%xs(ilmda-1) = lmda
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
@@ -495,8 +493,6 @@ module torque
             case("fgar","tgar","pgar","fkmm","tkmm","pkmm", &
                  "fwmm","twmm","pwmm","ftmm","ttmm","ptmm")
                 ! set up
-                call cspline_eval(dbdx_m(1),psi,0)
-                call cspline_eval(dbdx_m(2),psi,0)
                 call spline_alloc(vspl,tspl%mx,1) ! vparallel(theta) -> roots are bounce pts
                 call spline_alloc(bspl,ntheta-1,2) ! omegab,d bounce integration
                 call cspline_alloc(bjspl,ntheta-1,1) ! action bounce integration
@@ -639,18 +635,18 @@ module torque
                             +tdt(2,i)*tspl%f(5)*tspl%f(1)*sqrt(vpar)
                         expm = exp(xj*twopi*mfac*tdt(1,i))
                         jbb = chi1*tspl%f(4)*tspl%f(1)**2 ! chi1 cuz its the DCON working J
-                        db  = sum(dbdx_m(1)%f(:)*expm)/jbb !*(bo/tspl%f(1)) ! mns just div'd by bo
-                        divx= sum(dbdx_m(2)%f(:)*expm)/jbb *divxfac!*(bo/tspl%f(1))*divxfac
+                        dbob = sum(dbob_m%f(:)*expm)
+                        divx = sum(divx_m%f(:)*expm) * divxfac
                         jvtheta(i) = tdt(2,i)*tspl%f(4)*tspl%f(1) &
-                            *(divx*sqrt(vpar)+db*(1-1.5*lmda*tspl%f(1)/bo)/sqrt(vpar))&
+                            *(divx*sqrt(vpar)+dbob*(1-1.5*lmda*tspl%f(1)/bo)/sqrt(vpar))&
                             *exp(-twopi*xj*n*q*(tdt(1,i)-tdt(1,1))) 
                             ! theta0 doesn't really matter since |dj|^2
                         ! debuging
                         if(jvtheta(i)/=jvtheta(i))then
                             print *,'itheta,ntheta,theta',i,ntheta,tdt(1,i)
                             print *,'psi ',psi
-                            print *,'dbdx_m(1) = ',dbdx_m(1)%f(:)
-                            print *,'dbdx_m(2) = ',dbdx_m(2)%f(:)
+                            print *,'dbob_m = ',dbob_m%f(:)
+                            print *,'divx_m = ',divx_m%f(:)
                             print *,jvtheta(i)
                             stop
                         endif
@@ -752,11 +748,11 @@ module torque
                         endif
                         do i=1,ntheta
                             expm = exp(xj*twopi*mfac*tdt(1,i))
-                            db  = sum(dbdx_m(1)%f(:)*expm)*(bo/tspl%f(1))
-                            divx= sum(dbdx_m(2)%f(:)*expm)*(bo/tspl%f(1))*divxfac
+                            dbob = sum(dbob_m%f(:)*expm)
+                            divx = sum(divx_m%f(:)*expm) * divxfac
                             write(out_unit,'(15(1x,es16.8e3))') psi,lmda,bjspl%xs(i-1),tdt(:,i),&
                                  bspl%fs(i-1,:),bjspl%fs(i-1,1),bspl%fsi(i-1,1)/((2-sigma)*bspl%fsi(bspl%mx,1)),&
-                                 bspl%fsi(i-1,2)/((2-sigma)*bspl%fsi(bspl%mx,2)),db,divx
+                                 bspl%fsi(i-1,2)/((2-sigma)*bspl%fsi(bspl%mx,2)),dbob,divx
                         enddo
                         close(out_unit)
                     endif
@@ -804,7 +800,7 @@ module torque
                 endif
                 
                 ! dT/dpsi
-                tpsi = (-n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
+                tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
                     *lxint(1)/fbnce_norm(1) &       ! lsode normalization
                     *(chi1/twopi) ! unit conversion from psi to psi_n, theta_n to theta
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
@@ -1099,7 +1095,7 @@ module torque
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
 
-            if(mod(x,.1)<mod(xlast,.1) .or. xlast==xs(0) .and. verbose)then
+            if((mod(x,.1)<mod(xlast,.1) .or. xlast==xs(0)) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'                
             endif
@@ -1411,7 +1407,7 @@ module torque
             enddo
             
             ! print progress
-            if(mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0) .and. verbose)then
+            if((mod(x,.1)<mod(xlast,.1) .or. xlast==sq%xs(0)) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> T_phi = ",sum(y,dim=1,mask=maskr),sum(y,dim=1,mask=maski),'j'                
             endif

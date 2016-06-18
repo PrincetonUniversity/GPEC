@@ -1,22 +1,20 @@
 
-FFLAGS = -I../equil -I../harvest
-F90 = $(FC) $(FFLAGS)
+include ../install/DEFAULTS.inc
+
+FFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC)
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
-LIBDIR = \
-	-L${LAPACKHOME} \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-llsode \
 	-lequil \
 	-lvac \
 	-lharvest \
-	-llapack \
-	-lblas
+	-lpentrc
 
 OBJS = \
 	debug.o \
@@ -32,7 +30,9 @@ OBJS = \
 	dcon.o
 
 dcon: $(OBJS)
-	$(F90) -o dcon $(OBJS) $(LIBS)
+	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	mkdir -p ../bin
+	cp -f dcon ../bin
 
 # dependencies
 

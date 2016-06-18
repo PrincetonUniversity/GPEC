@@ -1155,11 +1155,13 @@ c-----------------------------------------------------------------------
       ! netcdf output
       ! Convert to output coords
       DO i=1,mpert
-        templ = 0
-        templ(mlow-lmlow+i) = 1.0
-        IF((jac_out /= jac_type).OR.(tout==0)) CALL ipeq_bcoords(
-     $     psilim,templ,lmfac,lmpert,rout,bpout,bout,rcout,tout,jout)
-        coordmat(:,i) = templ
+         IF ((mlow-lmlow+i>=1).AND.(mlow-lmlow+i<=lmpert)) THEN
+            templ = 0
+            templ(mlow-lmlow+i) = 1.0
+            IF((jac_out /= jac_type).OR.(tout==0)) CALL ipeq_bcoords(
+     $        psilim,templ,lmfac,lmpert,rout,bpout,bout,rcout,tout,jout)
+            coordmat(:,i) = templ
+         ENDIF
       ENDDO
       
       IF(debug_flag) PRINT *,"Opening "//TRIM(mncfile)
@@ -1213,10 +1215,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(mncid,bm_id,RESHAPE((/REAL(boutmn),
      $          AIMAG(boutmn)/),(/mpert,2/))) )
       templ = MATMUL(coordmat,xinmn)
-      CALL check( nf90_put_var(mncid,xm_id,RESHAPE((/REAL(xinmn),
+      CALL check( nf90_put_var(mncid,xxm_id,RESHAPE((/REAL(xinmn),
      $          AIMAG(xinmn)/),(/mpert,2/))) )
       templ = MATMUL(coordmat,xoutmn)
-      CALL check( nf90_put_var(mncid,bm_id,RESHAPE((/REAL(xoutmn),
+      CALL check( nf90_put_var(mncid,xm_id,RESHAPE((/REAL(xoutmn),
      $          AIMAG(xoutmn)/),(/mpert,2/))) )
       CALL check( nf90_put_var(mncid,mo_id,lmfac) )
       tempml = TRANSPOSE(coordmat)
@@ -4825,7 +4827,7 @@ c-----------------------------------------------------------------------
          IF(singcoup_set) THEN
             temps =MATMUL(CONJG(TRANSPOSE(svecs)),temp)
             CALL check( nf90_put_var(mncid,sx_id,RESHAPE((/REAL(temps),
-     $               AIMAG(tempm)/),(/msing,2/))) )
+     $               AIMAG(temps)/),(/msing,2/))) )
          ENDIF
 
          ! Decomposition of displacement
@@ -4930,6 +4932,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(mncid,nf90_global,"machine",machine) )
       CALL check( nf90_put_att(mncid,nf90_global,"n",nn) )
       CALL check( nf90_put_att(mncid,nf90_global,"jacobian",jac_type))
+      CALL check( nf90_put_att(mncid,nf90_global,"helicity",helicity))
+      CALL check( nf90_put_att(mncid,nf90_global,"q_lim",qlim))
+      CALL check( nf90_put_att(mncid,nf90_global,"psi_n_lim",psilim))
       CALL check( nf90_put_att(mncid,nf90_global,"version",version))
       
       IF(debug_flag) PRINT *," - Defining flux netcdf globals"
@@ -4947,6 +4952,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(fncid,nf90_global,"time",INT(shottime)) )
       CALL check( nf90_put_att(fncid,nf90_global,"machine",machine) )
       CALL check( nf90_put_att(fncid,nf90_global,"n",nn) )
+      CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
       CALL check( nf90_put_att(fncid,nf90_global,"version",version))
 
       IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"

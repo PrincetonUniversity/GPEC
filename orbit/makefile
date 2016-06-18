@@ -1,21 +1,18 @@
 
-FFLAGS = -I../equil
-F90 = $(FC) $(FFLAGS)
+include ../install/DEFAULTS.inc
+
+FFLAGS = -I../equil -I$(MATHINC)
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
-LIBDIR = \
-	-L${LAPACKHOME} \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-llsode \
-	-lequil \
-	-llapack \
-	-lblas
-	
+	-lequil
+
 OBJS = \
 	orbit_mod.o \
 	restart.o \
@@ -26,8 +23,16 @@ OBJS = \
 	outer_gc.o \
 	orbit.o
 
+all: v orbit
+
 orbit: $(OBJS)
-	$(F90) -o orbit $(OBJS) $(LIBS)
+	$(F90) -o orbit $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	mkdir -p ../bin
+	cp -f orbit ../bin
+
+v:
+    @echo "cflag  = $(cflag)"
+
 
 # dependencies
 

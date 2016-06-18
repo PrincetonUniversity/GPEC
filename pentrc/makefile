@@ -1,7 +1,9 @@
 
-FFLAGS = -I../equil -I../harvest
+include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS)
+FFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
+
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
@@ -9,17 +11,12 @@ F90 = $(FC) $(FFLAGS)
 %.o: %.f90
 	$(F90) -c $<
 
-LIBDIR = \
-	-L${LAPACKHOME} \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-llsode \
 	-lequil \
-	-lharvest \
-	-llapack \
-	-lblas
+	-lharvest
 
 OBJS = \
 	dcon_interface.o \
@@ -38,9 +35,11 @@ OBJS = \
 	pentrc.o
 
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) $(LIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
+	mkdir -p ../bin
+	cp -f pentrc ../bin
 
 # dependencies
 

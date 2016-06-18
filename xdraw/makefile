@@ -42,6 +42,8 @@ all: xdraw pspack
 
 xdraw: $(OBJS1)
 	$(CC) -o xdraw $(OBJS1) $(LIBS)
+	mkdir -p ../bin
+	cp -f xdraw ../bin
 
 pspack: $(OBJS2)
 	$(CC) -o pspack $(OBJS2)

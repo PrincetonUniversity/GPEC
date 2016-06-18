@@ -1,20 +1,17 @@
 
+include ../install/DEFAULTS.inc
+
 FFLAGS = -I../equil
-F90 = $(FC) $(FFLAGS)
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
-LIBDIR = \
-	-L${LAPACKHOME} \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-lequil \
-	-llsode \
-	-llapack \
-	-lblas
+	-llsode
 
 OBJS = \
 	qsort.o \
@@ -29,7 +26,9 @@ OBJS = \
 	match.o
 
 match: $(OBJS)
-	$(F90) -o match $(OBJS) $(LIBS)
+	$(F90) -o match $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	mkdir -p ../bin
+	cp -f match ../bin
 
 # dependencies
 
