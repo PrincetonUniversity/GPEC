@@ -83,6 +83,10 @@ program pentrc
         nl=0, &
         tmag_in = 1,&
         jsurf_in = 0,&
+        power_bin = -1,&
+        power_bpin = -1,&
+        power_rin = -1,&
+        power_rcin = -1,&
         nout = 30
         
     real(r8) ::     &
@@ -127,7 +131,7 @@ program pentrc
     ! namelists 
     namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
-        jac_in,jsurf_in,tmag_in
+        jac_in,jsurf_in,tmag_in,power_bin,power_bpin,power_rin,power_rcin
         
     namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
         atol,rtol,tatol,trtol,nlmda,ntheta,ximag,xmax,psilim
@@ -212,7 +216,8 @@ program pentrc
         ! read & log (perturbed) equilibrium inputs
         call read_equil(idconfile,hlog)
         call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
-        call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug)
+        call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug,&
+                      op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
         !call read_ipec_peq(ipec_file,tdebug)
         
         ! explicit matrix calculations
@@ -319,15 +324,17 @@ program pentrc
                     endif
                 endif
                 ! run select surfaces with detailed output
-                if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
-                do i=1,nout
-                    do l=-nl,nl,max(1,nl)
-                        if(psi_out(i)>0 .and. psi_out(i)<=1)then
-                            tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
-                                .false.,theta_out,xlmda_out)
-                        endif
+                if(theta_out .or. xlmda_out)then
+                    if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
+                    do i=1,nout
+                        do l=-nl,nl,max(1,nl)
+                            if(psi_out(i)>0 .and. psi_out(i)<=1)then
+                                tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
+                                    .false.,theta_out,xlmda_out)
+                            endif
+                        enddo
                     enddo
-                enddo
+                endif
                 if(verbose)then
                     print *, method//" - Finished"
                     print *, "---------------------------------------------"

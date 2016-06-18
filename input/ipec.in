@@ -5,7 +5,7 @@
    ivacuumfile= 'vacuum.bin'   ! Vacuum info output by DCON run
    rdconfile  = 'gal_solution.bin'   ! Galkin functions output by resistive DCON run
    
-   jac_in="pest"            ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
+   jac_in="hamada"          ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
    jsurf_in=1               ! True(1) if external perturbation is area weighted (i.e. flux)
    tmag_in =0               ! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
    mthsurf =0               ! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
@@ -43,8 +43,9 @@
 &IPEC_OUTPUT
    jac_out="hamada"         ! Coordinate system of outputs
    jsurf_out=0              ! True(1) for area weighted outputs (only appends standard ipec_control output)
-   tmag_out=0               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
-   
+   tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
+   mlim_out=64              ! Fourier decomposed outputs will span -mlim_out<=m<=mlim_out when jac_out/=jac_type or tmag_out/=tmag_in
+
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
@@ -68,8 +69,8 @@
 
    fun_flag=f               ! Write outputs to (r,z) in addition to default (psi,m)
    flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
-   bin_flag=t               ! Write binary outputs for use with xdraw
-   bin_2d_flag=t            ! Write 2D binary outputs for use with xdraw
+   bin_flag=f               ! Write binary outputs for use with xdraw
+   bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    verbose=t                ! Print run log to terminal 
 /

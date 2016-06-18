@@ -5,8 +5,8 @@
 	vac_flag=t
 	sas_flag=t			! q limit determined as q_ir +dmlim where q_ir is the equil outermost rational
 	nn=1				! toroidal mode number
-	delta_mlow=12		! Expands lower bound of Fourier harmonics 
-	delta_mhigh=12		! Expands upper bound of  Fourier harmonics
+	delta_mlow=8		! Expands lower bound of Fourier harmonics 
+	delta_mhigh=8		! Expands upper bound of  Fourier harmonics
 	delta_mband=0		! Integration keeps only this wide a band of solutions along the diagonal in m,m'
 	sing_start=0		! Start integration at the sing_start'th rational from the axis (psilow)
 	dmlim=0.2			! See sas_flag 

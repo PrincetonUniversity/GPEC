@@ -12,7 +12,9 @@
     electron = .false.                  ! electron contribution
     nutype = "harmonic"                 ! collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! distribution function: "maxwellian"
-    jac_in = ""                         ! jacobian of peq_file harmonic decomposition
+    jac_in = "default"                  ! jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
+    jsurf_in=0                          ! true(1) if peq_file is area weighted
+    tmag_in =0                          ! true(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
 /                                       
 &PENT_CONTROL
     wefac = 1                           ! artificial factor applied to omega_EXB
@@ -49,7 +51,7 @@
     eq_out = .true.                     ! output kinetic profiles at each psi
     xlmda_out = .false.                 ! output energy and pitch integrands on psi_out
     theta_out = .false.                 ! output bounce integrands on psi_out
-    psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs
+    psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! Up to 30 surfaces for energy, pitch, and poloidal outputs
     
     equil_grid = .false.                ! recalculate each requested method on equilibrium grid from DCON
     input_grid = .false.                ! recalculate each requested method on input displacements' grid

@@ -217,8 +217,9 @@ module torque
             rex,imx
         real(r8), dimension(mpert) :: expm
         real(r8), dimension(2,nlmda) :: ldl
-        real(r8), dimension(2,nlmda/2) :: ldl_c
-        real(r8), dimension(2,nlmda+1-nlmda/2) :: ldl_t
+        real(r8), dimension(2,1+nlmda) :: ldl_inc
+        real(r8), dimension(2,1+nlmda/2) :: ldl_p
+        real(r8), dimension(2,1+nlmda-nlmda/2) :: ldl_t
         real(r8), dimension(2,ntheta) :: tdt
         real(r8), dimension(:), allocatable :: bpts,dbfun,dxfun
         complex(r8) :: db,divx,kx,xint,wtwnorm
@@ -370,28 +371,33 @@ module torque
         
             case('fcgl')
                 if(tdebug) print *,'  fcgl integrand. modes = ',n,l
-                call cspline_eval(dbdx_m(1),psi,0)
-                call cspline_eval(dbdx_m(2),psi,0)
-                ! Poloidal functions (with jacobian!)
-                call spline_alloc(cglspl,eqfun%my,2)
-                cglspl%xs(:) = eqfun%ys(:)
-                do i=0,eqfun%my
-                    call bicube_eval(eqfun,psi,eqfun%ys(i),1)
-                    call bicube_eval(rzphi,psi,eqfun%ys(i),1)
-                    expm = exp(xj*twopi*mfac*eqfun%ys(i))
-                    db = sum(dbdx_m(1)%f(:)*expm)
-                    divx = sum(dbdx_m(2)%f(:)*expm)
-                    kx = -0.5*(db+divx)
-                    cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
-                    cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kx)*CONJG(divx+3.0*kx)                    
-                 enddo
-                CALL spline_fit(cglspl,"periodic")
-                CALL spline_int(cglspl)
-                ! torque
-                tpsi = 2.0*n*xj*kin%f(s)*kin%f(s+2) &       ! T = 2nidW
-                    *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
-                    + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
-                call spline_dealloc(cglspl)
+                if(l==0)then
+                    call cspline_eval(dbdx_m(1),psi,0)
+                    call cspline_eval(dbdx_m(2),psi,0)
+                    ! Poloidal functions (with jacobian!)
+                    call spline_alloc(cglspl,eqfun%my,2)
+                    cglspl%xs(:) = eqfun%ys(:)
+                    do i=0,eqfun%my
+                        call bicube_eval(eqfun,psi,eqfun%ys(i),1)
+                        call bicube_eval(rzphi,psi,eqfun%ys(i),1)
+                        expm = exp(xj*twopi*mfac*eqfun%ys(i))
+                        jbb = (rzphi%f(4) * eqfun%f(1)**2)
+                        db = sum(dbdx_m(1)%f(:)*expm) / jbb
+                        divx = sum(dbdx_m(2)%f(:)*expm) / jbb
+                        kx = -0.5*(db+divx)
+                        cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
+                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kx)*CONJG(divx+3.0*kx)
+                     enddo
+                    CALL spline_fit(cglspl,"periodic")
+                    CALL spline_int(cglspl)
+                    ! torque
+                    tpsi = 2.0*n*xj*kin%f(s)*kin%f(s+2) &       ! T = 2nidW
+                        *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
+                        + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
+                    call spline_dealloc(cglspl)
+                   else
+                    tpsi=0
+                   endif
      
      
      
@@ -524,16 +530,17 @@ module torque
                 lmdatpb = bo/bmax
                 lmdatpe = min(bo/(tspl%fs(ibmax+1,1)),bo/(tspl%fs(ibmax-1,1)))
                 lmdamax = bo/bmin ! has been reduced by 8 grid pts
-                !lmdatpb = lmdatpb+1e-3*(lmdamax-lmdatpb)
                 if(method(1:1)=='t')then
-                    ldl = powspace(lmdatpb,lmdamax,1,nlmda,"both") ! trapped space                    
+                    ldl_inc = powspace(lmdatpb,lmdamax,1,1+nlmda,"both") ! trapped space including boundary
+                    ldl = ldl_inc(:,2:) ! exclude boundary
                 elseif(method(1:1)=='p')then
-                    ldl = powspace(lmdamin,lmdatpb,1,nlmda,"both") ! circulating space
+                    ldl_inc = powspace(lmdamin,lmdatpb,1,1+nlmda,"both") ! passing space including boundary
+                    ldl = ldl_inc(:,:nlmda) ! exclude boundary
                 else
-                    ldl_c = powspace(lmdamin,lmdatpb,2,1+nlmda/2,"upper") ! circulating space
-                    ldl_t = powspace(lmdatpb,lmdamax,2,nlmda+1-nlmda/2,"lower") ! trapped space
-                    ldl(1,:) = (/ldl_c(1,:nlmda/2),ldl_t(1,2:)/)
-                    ldl(2,:) = (/ldl_c(2,:nlmda/2),ldl_t(2,2:)/)
+                    ldl_p = powspace(lmdamin,lmdatpb,2,1+nlmda/2,"upper") ! passing space including boundary
+                    ldl_t = powspace(lmdatpb,lmdamax,2,1+nlmda-nlmda/2,"lower") ! trapped space including boundary
+                    ldl(1,:) = (/ldl_p(1,:nlmda/2),ldl_t(1,2:)/) ! full space with no point on boundary
+                    ldl(2,:) = (/ldl_p(2,:nlmda/2),ldl_t(2,2:)/)
                 endif
                 if(tdebug) print *," Lambda space ",ldl(1,1),ldl(1,nlmda),", t/p bounry = ",lmdatpb
                 ! form smooth pitch angle functions
@@ -955,7 +962,7 @@ module torque
         character(*) :: method,gtype
         ! declare variables
         logical :: fexists
-        integer :: i,j,l,unit1,unit2,s,mx
+        integer :: i,j,l,unit1,unit2,s,mx,istrt,istop
         real(r8) :: x,xlast,chrg,drive
         real(r8), dimension(:), allocatable :: xs,tmppsi
         complex(r8), dimension(:,:), allocatable :: tmpak,tmpbk,tmpck, &
@@ -987,18 +994,49 @@ module torque
             chrg = zi*e
             s = 1
         endif
-        if(index(method,'mm')>0) then
-            allocate(elems(mpert,mpert,6))
+
+        ! set grid based on requested type
+        if (gtype=='equil')then
+            mx = sq%mx
+            allocate(xs(0:mx))
+            xs = sq%xs
+        elseif (gtype=='input')then
+            mx = xs_m(1)%mx
+            allocate(xs(0:mx))
+            xs = xs_m(1)%xs
         endif
-        
+        ! enforce integration bounds
+        psilim(1) = max(psilim(1),xs(0))
+        psilim(2) = min(psilim(2),xs(mx))
+        do i=0,mx
+            if(xs(i)>=psilim(1)) exit
+        enddo
+        istrt = i
+        do i=mx,0,-1
+            if(xs(i)<=psilim(2)) exit
+        enddo
+        istop = i
+        mx = istop-istrt
+        allocate(tmppsi(0:mx))
+        tmppsi(:) = xs(istrt:istop)
+        deallocate(xs)
+        allocate(xs(0:mx))
+        xs(:) = tmppsi(:)
+
+        ! allocate memory for kinetic DCON matrix profiles
+        if(index(method,'mm')>0) then
+            allocate(elems(mpert,mpert,6),tmpak(mx+1,mpert**2),tmpbk(mx+1,mpert**2), &
+                tmpck(mx+1,mpert**2),tmpdk(mx+1,mpert**2),tmpek(mx+1,mpert**2),tmphk(mx+1,mpert**2))
+        endif
+
         ! open and prepare files as needed
         write(nstring,'(I8)') n
         if(electron)then
             file1 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
+            file2 = "pentrc_"//trim(method)//"_e_"//gtype//"_grid_ell_n"//trim(adjustl(nstring))//".out"
         else
             file1 = "pentrc_"//trim(method)//"_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
-            file2 = "pentrc_"//trim(method)//"_"//gtype//"_grid_n"//trim(adjustl(nstring))//".out"
+            file2 = "pentrc_"//trim(method)//"_"//gtype//"_grid_ell_n"//trim(adjustl(nstring))//".out"
         endif
         if(qt)then
             file1 = file1(:7)//"heat_"//file1(8:)
@@ -1052,18 +1090,6 @@ module torque
                 "real(Gamma)","imag(Gamma)","real(chi)","imag(chi)",&
                 "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
 
-        ! set grid based on requested type
-        if (gtype=='equil')then
-            mx = sq%mx
-            allocate(xs(0:mx))
-            xs = sq%xs
-        elseif (gtype=='input')then
-            mx = xs_m(1)%mx
-            allocate(xs(0:mx),tmppsi(0:mx),tmpak(mx+1,mpert**2),tmpbk(mx+1,mpert**2), &
-                tmpck(mx+1,mpert**2),tmpdk(mx+1,mpert**2),tmpek(mx+1,mpert**2),tmphk(mx+1,mpert**2))
-            xs = xs_m(1)%xs
-        endif
-        
         ! integration
         CALL cspline_alloc(tphi_spl,mx,2*nl+1)
         xlast = 0
@@ -1116,8 +1142,8 @@ module torque
                 sq%f(3)
             do l=-nl,nl
                 write(unit2,'(es18.8e3,i5,8(es18.8e3))') x,l,&
-                    gam(2*(nl+l)+1),chi(2*(nl+l)+1),&
-                    tphi_spl%fs(i,2*(nl+l)+1),tphi_spl%fsi(i,2*(nl+l)+1)
+                    gam((nl+l)+1),chi((nl+l)+1),&
+                    tphi_spl%fs(i,(nl+l)+1),tphi_spl%fsi(i,(nl+l)+1)
             enddo
         enddo
         close(unit1)
@@ -1149,13 +1175,13 @@ module torque
             call cspline_fit(dkmm,"extrap")
             call cspline_fit(ekmm,"extrap")
             call cspline_fit(hkmm,"extrap")
-            deallocate(elems)
+            deallocate(elems,tmpak,tmpbk,tmpck,tmpdk,tmpek,tmphk)
         endif
         
         ! convert to complex space if integrations successful
         tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
-        deallocate(y,dky,gam,chi)
+        deallocate(y,dky,gam,chi,tmppsi)
         
         return
     end function tintgrl_grid
@@ -1433,7 +1459,7 @@ module torque
             call cspline_fit(hkmm,"extrap")
             deallocate(elems)
         endif
-        
+
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y,mask=maskr)+xj*sum(y,mask=maski)
 

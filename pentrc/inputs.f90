@@ -30,7 +30,7 @@ module inputs
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,twopi
-    use utilities, only : get_free_file_unit,readtable,nunique,progressbar
+    use utilities, only : get_free_file_unit,readtable,nunique,progressbar,iscdftf
     use spline_mod, only : spline_type,spline_alloc,spline_fit,spline_eval,spline_write1
     use cspline_mod, only : cspline_type,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_write,cspline_eval
@@ -231,13 +231,13 @@ module inputs
     
     
     !=======================================================================
-    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug)
+    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug,op_powin)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Read psi,m matrix of displacements.
     !
     !*ARGUMENTS:
-    !    file : character(512) (in)
+    !   file : character(512) (in)
     !       File path.
     !   jac_in : character
     !       Input file jacobian.
@@ -248,6 +248,11 @@ module inputs
     !   debug : logical
     !       Print intermidient messages to terminal.
     !
+    !*OPTIONAL ARGUMENTS:
+    !   op_powin : int(4)
+    !       User specified powers of B, Bp, R, and Rc that define a Jacobian.
+    !       Only used if jac_in is 'other'.
+    !
     !-----------------------------------------------------------------------
     
         implicit none
@@ -255,16 +260,39 @@ module inputs
         ! declare arguments
         logical, intent(in) :: debug
         integer, intent(in) :: jsurf_in,tmag_in
+        integer, dimension(4), intent(in), optional :: op_powin
         character(32), intent(inout) :: jac_in
         character(512), intent(in) :: file
         ! declare local variables
-        integer :: i,j,npsi,nm,firstnm, powin(4)
+        logical :: ncheck
+        integer :: i,j,ii,jj,npsi,nm,ndigit,firstnm, powin(4)
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
         complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns
+        complex(r8), dimension(:,:,:), allocatable :: tmp
+        character(3) :: nstr
         character(32), dimension(:), allocatable :: titles
-        
+
+        ! file consistency check (requires naming convention)
+        write(nstr,'(i3)') nn
+        if(nn<-9)then
+            ndigit = 3
+        elseif(nn>=0 .and. nn<10)then
+            ndigit = 1
+        else ! assume only running with -99 to 99
+            ndigit = 2
+        endif
+        ncheck = .false.
+        DO i=1,512-ndigit
+            if(file(i:i+ndigit)=='n'//trim(adjustl(nstr))) ncheck = .true.
+        ENDDO
+        if(.not. ncheck)then
+            print *,"** Toroidal mode number determined from idconfile is",nn
+            print *,"** Corresponding label 'n"//trim(adjustl(nstr))//"' must be in peq_file name"
+            stop "ERROR: Inconsistent toroidal mode numbers"
+        endif
+
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
@@ -310,6 +338,7 @@ module inputs
             jac_in = jac_type
             if(verbose) print *,"  -> WARNING: Assuming DCON "//trim(jac_type)//" coordinates"
         endif
+        powin = -1
         SELECT CASE(jac_in) ! set B,Bp,R, and Rc powers
             CASE("hamada")
                 powin=(/0,0,0,0/)
@@ -321,15 +350,47 @@ module inputs
                 powin=(/2,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
-            CASE("park")
-                powin=(/1,0,0,0/)
+            CASE("other")
+                if(present(op_powin)) powin=op_powin
+                if(powin(1)<0 .or. powin(2)<0 .or. powin(3)<0 .or. powin(4)<0)then
+                    stop "ERROR: Did not receive all four powers for jac_in 'other'"
+                endif
             CASE DEFAULT
-                stop "ERROR: inputs - jac_in must be 'hamada','pest',&
-                    & 'equal_arc','boozer', or 'polar'"
+                stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
+                    & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
         END SELECT
-        if(jac_in/=jac_type)then
-            if(verbose) print *,'  -> Converting to working coordinates'
+        if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
+        if(jac_in/=jac_type .or. tmag_in/=1)then
+            if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
+            if(verbose) print *,'Converting to '//trim(jac_type)//' coordinates used by DCON'
+            ! make sure to use the larger of the input and working spectra
+            if(mpert>nm)then
+                i = MAX(ABS(mfac(1))-ABS(ms(1))+1,1)
+                ii = MAX(ABS(mfac(mpert))-ABS(ms(nm)),0)
+                j = MAX(ABS(ms(1))-ABS(mfac(1))+1,1)
+                jj = MAX(ABS(ms(nm))-ABS(mfac(mpert)),0)
+                if(verbose)then
+                    print *,'  -> Converting on DCON m-space',mfac(1),'to',mfac(mpert),&
+                        'filling',mfac(i),'to',mfac(mpert-ii),'from inputs'
+                endif
+                if(mfac(i)/=ms(j) .or. mfac(mpert-ii)/=ms(nm-jj)) stop "ERROR: Misalignment in m-spaces"
+                ! transfer
+                allocate(tmp(npsi,mpert,3))
+                tmp(:,i:mpert-ii,1) = xmp1mns(:,j:nm-jj)
+                tmp(:,i:mpert-ii,2) = xspmns(:,j:nm-jj)
+                tmp(:,i:mpert-ii,3) = xmsmns(:,j:nm-jj)
+                deallocate(ms,xmp1mns,xspmns,xmsmns)
+                nm = mpert
+                allocate(ms(nm),xmp1mns(npsi,nm),xspmns(npsi,nm),xmsmns(npsi,nm))
+                ms = mfac
+                xmp1mns = tmp(:,:,1)
+                xspmns = tmp(:,:,2)
+                xmsmns = tmp(:,:,3)
+                deallocate(tmp)
+            endif
+            ! convert spectrum on each surface
             do i=1,npsi
+                if(verbose) call progressbar(i,1,npsi,op_percent=20)
                 CALL idcon_coords(psi(i),xmp1mns(i,:),ms,nm,&
                     powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                 CALL idcon_coords(psi(i),xspmns(i,:),ms,nm,&
@@ -388,6 +449,7 @@ module inputs
         complex(r8), dimension(:), allocatable :: lagb_mn,divx_mn,&
             expm
         complex(r8), dimension(:,:), allocatable :: smat,tmat,xmat,ymat,zmat
+        complex(r8), dimension(:,:), allocatable :: lagbfun,lagbmns,divxfun,divxmns
         character(3) :: istring
         
         ! defaults for optional args
@@ -429,7 +491,7 @@ module inputs
         call cspline_fit(xs_m(3),"extrap")
 
         if(set_dbdx)then
-            if(verbose) print *,'  -> calculating deltaB/B, divxi_prp'
+            if(verbose) print *,'Calculating deltaB/B, divxi_prp'
             if(associated(dbdx_m(1)%xs)) call cspline_dealloc(dbdx_m(1))
             if(associated(dbdx_m(2)%xs)) call cspline_dealloc(dbdx_m(2))
             call cspline_alloc(dbdx_m(1),npsi-1,mpert)     ! JB^2 (dB/B)
@@ -494,31 +556,54 @@ module inputs
         
         ! write log to check reading/allocating routines
         if(debug)then
-            out_unit = get_free_file_unit(-1)
             print *,"  inputs: mlow = ",mfac(1)," mhigh = ",mfac(mpert)," nm = ",nm
             print *,"  inputs: psilow = ",xs_m(1)%xs(0)," psihigh = ",xs_m(1)%xs(xs_m(1)%mx)," npsi = ",npsi
+            ! calculate pmodb like quantities for direct comparison to IPEC
+            allocate(lagbfun(0:npsi-1,0:eqfun%my), divxfun(0:npsi-1,0:eqfun%my))
+            allocate(lagbmns(0:npsi-1,mpert), divxmns(0:npsi-1,mpert))
+            allocate(expm(mpert))
+            call spline_eval(sq,0.0_r8,0)
+            print *,"bo =",abs(sq%f(1))/(twopi*ro)
+            do i=1,npsi
+                call progressbar(i,1,npsi,op_step=1,op_percent=10)
+                call cspline_eval(dbdx_m(1),psi(i),0)
+                call cspline_eval(dbdx_m(2),psi(i),0)
+                do j=0,eqfun%my
+                    call bicube_eval(eqfun,psi(i),eqfun%ys(j),0)
+                    call bicube_eval(rzphi,psi(i),eqfun%ys(j),0)
+                    expm = exp(xj*mfac*eqfun%ys(j))
+                    lagbfun(i-1,j) = sum(dbdx_m(1)%f(:)*expm) / (eqfun%f(1) * rzphi%f(4) )!dB
+                    divxfun(i-1,j) = sum(dbdx_m(2)%f(:)*expm) / (eqfun%f(1) * rzphi%f(4) )!B div.xi_perp
+                enddo
+                call iscdftf(mfac,mpert,lagbfun(i-1,:),eqfun%my,lagbmns(i-1,:))
+                call iscdftf(mfac,mpert,divxfun(i-1,:),eqfun%my,divxmns(i-1,:))
+            enddo
+
+            out_unit = get_free_file_unit(-1)
             write(istring,'(i3)') nn
             open(unit=out_unit,file="pentrc_peq_n"//trim(adjustl(istring))//".out",&
                 status="unknown")
             write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
             write(out_unit,'(a43,2/)') " Debuging log file for set_peq subroutine."
             write(out_unit,'(a8,es16.8e3,2/)') " chi1 = ",chi1
-            write(out_unit,'(1x,a16,a5,10(1x,a16))')"psi_n","m",&
+            write(out_unit,'(1x,a16,a5,14(1x,a16))')"psi_n","m",&
                 "real(xi^psi1)","imag(xi^psi1)","real(xi^psi)","imag(xi^psi)","real(xi^alpha)","imag(xi^alpha)",&
-                'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)'
-            do i=0,npsi-1
+                'real(JBdeltaB_L)','imag(JBdeltaB_L)','real(JBBdivxprp)','imag(JBBdivxprp)',&
+                'real(deltaB_L)','imag(deltaB_L)','real(Bdivxprp)','imag(Bdivxprp)'
+            do i=0,npsi-1,1
                 call spline_eval(sq,psi(i),0)
-                do j=1,nm
-                    write(out_unit,'(1x,es16.8e3,i5,10(1x,es16.8e3))') &
+                do j=1,mpert
+                    write(out_unit,'(1x,es16.8e3,i5,14(1x,es16.8e3))') &
                         xs_m(1)%xs(i),mfac(j),&
                         xs_m(1)%fs(i,j),xs_m(2)%fs(i,j),xs_m(3)%fs(i,j),&
-                        dbdx_m(1)%fs(i,j),dbdx_m(2)%fs(i,j)
+                        dbdx_m(1)%fs(i,j),dbdx_m(2)%fs(i,j),lagbmns(i,j),divxmns(i,j)
                 enddo
             enddo
             close(out_unit)
+            deallocate(expm,lagbfun,lagbmns,divxfun,divxmns)
         endif
         
-        
+
     end subroutine set_peq
 
 
