@@ -255,8 +255,8 @@ module torque
         if(tdebug) print *,"  mpert ",mpert
         if(tdebug) print *,"  mfac ",mfac
         if(tdebug) print *,"  sq   psi ",sq%xs(0:sq%mx:sq%mx/5)
-        if(tdebug) print *,"  dbdx psi ",dbdx_m(1)%xs(0:dbdx_m(1)%mx:dbdx_m(1)%mx/5)
-        if(tdebug) print *,"  db ",dbdx_m(1)%fs(0:dbdx_m(1)%mx:dbdx_m(1)%mx/5,1)
+        if(tdebug) print *,"  dbob psi ",dbob_m%xs(0:dbob_m%mx:dbob_m%mx/5)
+        if(tdebug) print *,"  db ",dbob_m%fs(0:dbob_m%mx:dbob_m%mx/5,1)
         if(tdebug) print *,"  xs ",xs_m(1)%fs(0:xs_m(1)%mx:xs_m(1)%mx/5,1)
 
         ! defaults of optional arguments
@@ -1065,7 +1065,7 @@ module torque
                 tmpl(i*neq + (nl+l) + 1, :) = (/ x, l*1.0_r8, &
                     ri(gam(nl+l+1)), &
                     ri(chi(nl+l+1)), &
-                    ri(tphi_spl%fs(i,nl+l)+1)), &
+                    ri(tphi_spl%fs(i,nl+l+1)), &
                     ri(tphi_spl%fsi(i,nl+l+1)) /)
             enddo
         enddo

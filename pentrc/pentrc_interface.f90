@@ -33,7 +33,7 @@ module pentrc_interface
     use utilities, only: timer,to_upper,get_free_file_unit
     use special, only: set_fymnl,set_ellip
     use dcon_interface, only: set_eq, idcon_harvest
-    use inputs, only : read_kin,read_equil,nn,read_peq,&
+    use inputs, only : read_kin,read_equil,nn,read_peq,read_pmodb,&
                        set_peq,read_fnml,verbose
     use diagnostics, only: diagnose_all
 
@@ -101,6 +101,10 @@ module pentrc_interface
         nl=0, &
         tmag_in = 1,&
         jsurf_in = 0,&
+        power_bin = -1,&
+        power_bpin = -1,&
+        power_rin = -1,&
+        power_rcin = -1,&
         nout = 30
 
     real(r8) ::    &
@@ -126,6 +130,7 @@ module pentrc_interface
         kinetic_file='kin.dat', &
         ipec_file  ="ipec_order1_n1.bin", &
         peq_file ="ipec_xclebsch_n1.out", &
+        pmodb_file ="none", &
         data_dir =".",&
         docs(nflags)=""
     character(32) :: &
@@ -135,9 +140,9 @@ module pentrc_interface
         moment = "pressure"
 
     ! namelists
-    namelist/pent_input/kinetic_file,ipec_file,peq_file,idconfile, &
+    namelist/pent_input/kinetic_file,ipec_file,peq_file,pmodb_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
-        jac_in,jsurf_in,tmag_in
+        jac_in,jsurf_in,tmag_in,power_bin,power_bpin,power_rin,power_rcin
 
     namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
         atol_xlmda,rtol_xlmda,atol_psi,rtol_psi,nlmda,ntheta,ximag,xmax,psilims
@@ -222,8 +227,14 @@ module pentrc_interface
         if(tdebug .and. in_kin) print *,"  read_kin args: ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
         if(in_deq) call read_equil(idconfile)
         if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
-        if(in_peq) call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug)
-        !call read_ipec_peq(ipec_file,tdebug)
+        if(in_peq)then
+            call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug,&
+                          op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
+            !call read_ipec_peq(ipec_file,tdebug)
+            if(trim(pmodb_file)/="" .and. trim(pmodb_file)/="none")&
+                call read_pmodb(pmodb_file,jac_in,jsurf_in,tmag_in,tdebug,&
+                                op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
+        endif
 
     end subroutine initialize_pentrc
 
