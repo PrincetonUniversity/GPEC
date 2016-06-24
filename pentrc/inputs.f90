@@ -146,11 +146,7 @@ module inputs
         !CALL idcon_vacuum
         ! form action matrices (this will move !!)
         call idcon_action_matrices!(egnum,xspmn)
-        
-        ! evaluate field on axis
-        call spline_eval(sq,0.0_r8,0)
-        bo = abs(sq%f(1))/(twopi*ro)
-        
+
         ! set additional geometry spline
         call set_geom
 

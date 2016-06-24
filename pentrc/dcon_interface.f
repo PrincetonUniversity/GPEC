@@ -1250,11 +1250,15 @@ c-----------------------------------------------------------------------
         real(r8) :: psifac
         real(r8), dimension(0:mthsurf) :: unitfun
 
+        ! double check that sq equilibrium spline is defined
+        if(.not. sq%allocated)
+     $      stop 'ERROR: Cannot define geometric splines without sq'
+
         unitfun = 1
-        call spline_alloc(geom,mpsi,3)
+        call spline_alloc(geom,sq%mx,3)
         geom%title=(/"area  ","<r>   ","<R>   "/)
         geom%xs = sq%xs
-        do ipsi=0,mpsi
+        do ipsi=0,sq%mx
             psifac = geom%xs(ipsi)
             geom%fs(ipsi,1) = issurfint(unitfun,mthsurf,psifac,0,0)
             geom%fs(ipsi,2) = issurfint(unitfun,mthsurf,psifac,3,1)
@@ -1262,6 +1266,10 @@ c-----------------------------------------------------------------------
         enddo
         call spline_fit(geom,"extrap")
         !call spline_int(geom) ! not necessary yet
+
+        ! evaluate field on axis
+        call spline_eval(sq,0.0_r8,0)
+        bo = abs(sq%f(1))/(twopi*ro)
 
       end subroutine set_geom
 
@@ -1295,8 +1303,6 @@ c-----------------------------------------------------------------------
       !       psi grid
       !   set_mpert : integer
       !       Number of poloidal modes
-      !   set_mstep : integer
-      !       Number grid intervals in psi
       !   set_mthsurf : integer
       !       Number grid intervals in theta
       !
@@ -1320,6 +1326,7 @@ c-----------------------------------------------------------------------
         eqfun   =set_eqfun
         sq      =set_sq
         rzphi   =set_rzphi
+        mpsi = sq%mx
         
         ! needed to create w_i^T*w_j coefficient matices
         smats   =set_smats 
@@ -1331,7 +1338,7 @@ c-----------------------------------------------------------------------
         !mstep   =set_mstep
         !allocate(psifac(0:mstep))
         !psifac(:) = set_psifac(:)
-        
+
         chi1    =set_chi1
         ro      =set_ro
         nn      =set_nn

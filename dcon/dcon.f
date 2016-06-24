@@ -184,8 +184,6 @@ c-----------------------------------------------------------------------
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
      $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
             ! manually set the kinetic profiles
-            print *,kinetic_file,zi,zimp,mi,mimp,nfac,
-     $          tfac,wefac,wpfac,tdebug
             CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
      $          tfac,wefac,wpfac,tdebug)
             ! manually set the perturbed equilibrium displacements
@@ -194,7 +192,7 @@ c-----------------------------------------------------------------------
             psitmp(:) = sq%xs(0:)
             mtmp = (/(m,m=mlow,mhigh)/)
             xtmp = 1e-4
-            CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,.true.)
+            CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,tdebug)
             DEALLOCATE(xtmp,mtmp,psitmp)
             IF(verbose) WRITE(*,*)"Computing Kinetic Matrices"
             CALL fourfit_kinetic_matrix(kingridtype,.TRUE.)
