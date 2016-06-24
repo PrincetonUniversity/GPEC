@@ -154,8 +154,8 @@
     sing_start=0         ! Start integration at the sing_start&#39;th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
-    delta_mlow=12        ! Expands lower bound of Fourier harmonics
-    delta_mhigh=12       ! Expands upper bound of  Fourier harmonics
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
     delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m&#39;
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
@@ -244,6 +244,7 @@
    jac_out=&quot;hamada&quot;         ! Coordinate system of outputs
    jsurf_out=0              ! True(1) for area weighted outputs (only appends standard ipec_control output)
    tmag_out=0               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
+   mlim_out=64              ! Fourier decomposed outputs will span -mlim_out&lt;=m&lt;=mlim_out when jac_out/=jac_type or tmag_out/=tmag_in
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
@@ -292,16 +293,18 @@
     idconfile = &quot;euler.bin&quot;             ! Dcon output
     data_dir = &quot;.&quot;                      ! Location of pre-formed fnml matrix used in rlar and clar methods (check release package)
 
-    mi = 2                              ! Main ion mass (u)
-    zi = 1                              ! Main ion charge (e)
-    mimp = 12                           ! Impurity mass (u)
-    zimp = 6                            ! Impurity charge (e)
-    nl = 0                              ! Bounce harmonic range (-nl to nl)
-    electron = .false.                  ! Electron contribution
-    nutype = &quot;harmonic&quot;                 ! Collision operator: &quot;zero&quot;, &quot;krook&quot;, &quot;harmonic&quot;
-    f0type = &quot;maxwellian&quot;               ! Distribution function: &quot;maxwellian&quot;
-    jac_in = &quot;&quot;                         ! Jacobian of peq_file harmonic decomposition
-/
+    mi = 2                              ! main ion mass (u)
+    zi = 1                              ! main ion charge (e)
+    mimp = 12                           ! impurity mass (u)
+    zimp = 6                            ! impurity charge (e)
+    nl = 6                              ! bounce harmonic range (-nl to nl)
+    electron = .false.                  ! electron contribution
+    nutype = &quot;harmonic&quot;                 ! collision operator: &quot;zero&quot;, &quot;krook&quot;, &quot;harmonic&quot;
+    f0type = &quot;maxwellian&quot;               ! distribution function: &quot;maxwellian&quot;
+    jac_in = &quot;default&quot;                  ! jacobian of peq_file harmonic decomposition. &#39;default&#39; uses jac_type of idconfile.
+    jsurf_in=0                          ! true(1) if peq_file is area weighted
+    tmag_in =0                          ! true(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
+/                                       
 &amp;PENT_CONTROL
     wefac = 1                           ! Artificial factor applied to omega_EXB
     wdfac = 1                           ! Artificial factor applied to omega_b

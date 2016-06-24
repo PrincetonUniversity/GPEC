@@ -30,6 +30,49 @@ Release Notes
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
 
+GPEC v0.3.4
+===========
+
+This release includes a number of critical bug fixes found and fixed in a general review of the ideal MHD package in preparation of the move to kinetic MHD version 0.4.0 under development. It also includes a few (re-)standardizations of features.
+
+Bug Fixes
+--------------
+ - PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques
+  - **All previous 0.3 version torques should be considered incorrect**
+ - PENTRC fixed bug in inverse Fourier transformation of perturbed quantities and fixed (removed) JBB normalization of perturbed quantity splines for consistent treatment in GAR, LAR, and GCL methods (now benchmarked with PENT).
+  - **All previous 0.3 version LAR and CGL torques should be considered incorrect**
+ - PENTRC returned factor of 2 to all GAR methods (now benchmarked against PENT for MDC2 cases)
+ - PENTRC fixed radial grid outputs from (over)writing sum and individual ell profiles to same file
+ - PENTRC enforce psi limits on grid outputs
+ - IPEC fixed bug in writing O_CX, b_nm, b_xnm, xi_nm, and xi_xnm to control netcdf file
+  - **All previous 0.3 version values should be considered incorrect**
+ - IPEC working jacobian power factors are explicitly enforced when jac_in or jac_out re not specified
+ - IPEC fixed bug using wrong jacobian and angle in ipeq_fcoordsout conversions (not used in any previous version)
+ - IPEC ipeq_fcoordsout and ipeq_bcoordsout always perform transformation on larger of the working/output m grids (not expected to be an issue for previous versions)
+
+Features
+-------------
+ - IPEC output coordinate m range is now determined by a new IPEC_OUTPUT variable mlim_out
+ - IPEC the control surface theta-space function values are now always calculated and output
+ - IPEC bwp_pest_flag is now true by default and produces pest ouputs for both xbnormal and vbnormal
+ - IPEC xclebsch outputs are now converted to output coordinates and theta-space outputs are available
+ -  PENTRC now accepts jsurf_in, tmag_in and all individual powers of the jac_in, allowing it to interface with IPEC's new xclebsch outputs that are transformed from the working to ipec output coordinates
+   - Coordinate transformation back to the DCON working coordinates is done on the large of the working/input m grids
+- IPEC added helicity to control and profile netcdf outputs
+- PENTRC now has the option to override the perturbed quantities calculated using the xclebsch interface with a direct ipec_pmodb ascii interface (when the user specifies a pmodb_file)
+- PENTRC now enforces that a substring of the form 'n#' where # is the DCON toroidal mode number be in the peq_file file name
+
+Speed and Stability
+---------------------------
+ - PENTRC only runs the psi_out surfaces if detailed outputs are actually requested
+ - PENTRC exclude trapped/passing boundary from pitch-space splines using power-grids approaching from either side
+ - INSTALL and all individual makefiles have updated from the develop branch, reorganizing the linking order and allowing diverse machine/compiler options.
+
+Documentation
+----------------------
+ - Updated input and example namelists and their annotation
+
+
 GPEC v0.3.3
 ===========
 
