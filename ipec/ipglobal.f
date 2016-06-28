@@ -19,7 +19,7 @@ c-----------------------------------------------------------------------
      $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
-     $     power_b,power_r,power_bp,jsurf_in,jsurf_out,
+     $     power_b,power_r,power_bp,jsurf_in,jsurf_out,mlim_out,
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
      $     nn,info,resp_index,rstep,resp,psixy,nmin,nmax,mmin,mmax,

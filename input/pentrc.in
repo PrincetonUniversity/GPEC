@@ -4,16 +4,18 @@
     idconfile = "euler.bin"             ! Dcon output
     data_dir = "."                      ! Location of pre-formed fnml matrix used in rlar and clar methods (check release package)
 
-    mi = 2                              ! Main ion mass (u)
-    zi = 1                              ! Main ion charge (e)
-    mimp = 12                           ! Impurity mass (u)
-    zimp = 6                            ! Impurity charge (e)
-    nl = 0                              ! Bounce harmonic range (-nl to nl)
-    electron = .false.                  ! Electron contribution
-    nutype = "harmonic"                 ! Collision operator: "zero", "krook", "harmonic"
-    f0type = "maxwellian"               ! Distribution function: "maxwellian"
-    jac_in = ""                         ! Jacobian of peq_file harmonic decomposition
-/
+    mi = 2                              ! main ion mass (u)
+    zi = 1                              ! main ion charge (e)
+    mimp = 12                           ! impurity mass (u)
+    zimp = 6                            ! impurity charge (e)
+    nl = 6                              ! bounce harmonic range (-nl to nl)
+    electron = .false.                  ! electron contribution
+    nutype = "harmonic"                 ! collision operator: "zero", "krook", "harmonic"
+    f0type = "maxwellian"               ! distribution function: "maxwellian"
+    jac_in = "default"                  ! jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
+    jsurf_in=0                          ! true(1) if peq_file is area weighted
+    tmag_in =0                          ! true(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
+/                                       
 &PENT_CONTROL
     wefac = 1                           ! Artificial factor applied to omega_EXB
     wdfac = 1                           ! Artificial factor applied to omega_b

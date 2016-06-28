@@ -6,11 +6,10 @@
 # On portal.pppl.gov (or portalr6.pppl.gov for more up-to-date libraries)
 #   Must load compiler and basic libraries (These modify LD_LIBRARY_PATH).
 #   Choose one of the following
-#    $ module load intel acml netcdf; export $ACML_HOME=$ACML_HOME/ifort64
 #    $ module load gcc4 lapack-blas netcdf
 #    $ module load lff95 lapack-blas netcdf
-#   Note, PGF and Lahay (i.e. module below) are not currently supported on portal
-#    $ module load pgf acml netcdf; export $ACML_HOME=$ACML_HOME/pgi64
+#    $ module load pgf acml netcdf; export ACML_HOME=$ACML_HOME/pgi64
+#    $ module load intel acml netcdf; export ACML_HOME=$ACML_HOME/ifort64
 #   Defaults will try to use gcc4
 #
 # On venus.gat.com
