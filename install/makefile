@@ -72,8 +72,10 @@ mkbin:
 	mkdir -p ../bin
 	cp -f ../orbit/orbit ../bin
 	cp -f ../dcon/dcon ../bin
-	cp -f ../xdraw/xdraw ../bin
 	cp -f ../match/match ../bin
+	cp -f ../rdcon/rdcon ../bin
+	cp -f ../rmatch/rmatch ../bin
+	cp -f ../xdraw/xdraw ../bin
 	cp -f ../multi/multi ../bin
 	cp -f ../sum/sum ../bin
 	cp -f ../gpec/gpec ../bin

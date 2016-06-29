@@ -1226,14 +1226,14 @@ c-----------------------------------------------------------------------
       write(*,*) 'Load wall geometry from file.'
       open(unit=41,file="wall_geo.dat",status='old',
      $             form='FORMATTED')
-      read(41,'(I)') npots0
+      read(41,'(I4)') npots0
       read(41,'(F30.20)') wcentr
 c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       npots=npots0+5-1
       allocate (thetatmp(npots),xwaltmp(npots),zwaltmp(npots),rioptmp(2)
      $   ,xpptmp(npots),ww1tmp(npots),ww2tmp(npots),ww3tmp(npots),
      $   tabtmp(3))
-            do i = 1, npots0
+      do i = 1, npots0
          read (41,'(F30.20)')thetatmp(i)
          read (41,'(F30.20)')xwaltmp(i)
          read (41,'(F30.20)')zwaltmp(i)

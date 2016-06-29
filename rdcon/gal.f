@@ -1790,7 +1790,7 @@ c-----------------------------------------------------------------------
       IF (x.LT.psilow.OR.x.GT.psihigh) THEN
          CALL program_stop("x is out of range.")
       ENDIF
-      DO WHILE(1)
+      DO
          cell=>gal%intvl(iintvl)%cell(icell)
          IF (x.GE.cell%x(1).AND.x.LE.cell%x(2)) THEN
             EXIT
@@ -2027,7 +2027,7 @@ c     output solution for ascii.
 c-----------------------------------------------------------------------
       IF (out_galsol) THEN
          DO ising=1,msing
-            WRITE (filename(2),"(I)")ising  
+            WRITE (filename(2),"(I4)")ising
             filename(2)=ADJUSTL(filename(2))
             WRITE(filename(1),*) 'galsol_left_'
      $                          //TRIM(filename(2))//'.out'
@@ -2039,7 +2039,7 @@ c-----------------------------------------------------------------------
      $              "REPLACE")
                WRITE (gal_out_unit,10) 'psifac'
                DO m=mlow,mhigh
-                  WRITE (tmp,"(I)") m
+                  WRITE (tmp,"(I4)") m
                   tmp=ADJUSTL(tmp)
                   WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
                   WRITE (gal_out_unit,10) TRIM(comp_tittle)
@@ -2071,7 +2071,7 @@ c     xdraw output.
 c-----------------------------------------------------------------------
       IF (bin_galsol) THEN
          DO ising=1,msing
-            WRITE (filename(2),"(I)")ising  
+            WRITE (filename(2),"(I4)")ising
             filename(2)=ADJUSTL(filename(2))
             WRITE(filename(1),*) 'galsol_left_'
      $                           //TRIM(filename(2))//'.bin'
@@ -2103,7 +2103,7 @@ c-----------------------------------------------------------------------
          
          IF (coil%rpec_flag) THEN
             DO isol=coil%m1,coil%m2
-               WRITE (filename(2),"(I)")isol-2*msing  
+               WRITE (filename(2),"(I4)")isol-2*msing
                filename(2)=ADJUSTL(filename(2))
                WRITE(filename(1),*) 'coilsol_'
      $                              //TRIM(filename(2))//'.bin'

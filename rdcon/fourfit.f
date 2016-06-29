@@ -180,7 +180,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     define flux surface quantities.
 c-----------------------------------------------------------------------
-      IF (dpsi_intvl>0 .and. 0) THEN
+      IF (dpsi_intvl>0 .AND. .FALSE.) THEN
          CALL ascii_open(preflat_unit,"flat_prof.out","UNKNOWN")
          DO ipsi=0,mpsi
             psifac=sq%xs(ipsi)
