@@ -54,7 +54,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(3*mpert-1) :: rwork
       COMPLEX(r8) :: phase,norm
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wt,temp,wpt,wvt,wv
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wt,wt0,temp,wpt,wvt,wv
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.FALSE.
@@ -157,8 +157,10 @@ c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
       IF(bin_euler)THEN
          WRITE(euler_bin_unit)3
+         WRITE(euler_bin_unit)ep
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
+         WRITE(euler_bin_unit)wt0
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.

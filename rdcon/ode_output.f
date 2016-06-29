@@ -74,7 +74,19 @@ c-----------------------------------------------------------------------
          CALL bin_open(euler_bin_unit,"euler.bin","UNKNOWN","REWIND",
      $        "none")
          WRITE(euler_bin_unit)mlow,mhigh,nn,mpsi,mtheta,ro,zo
-         WRITE(euler_bin_unit)sq%xs,sq%fs,sq%fs1
+c-----------------------------------------------------------------------
+c     <MODIFIED>
+c-----------------------------------------------------------------------
+         WRITE(euler_bin_unit)mband,mthsurf0,mthvac,psio,
+     $        psilow,psilim,qlim,singfac_min
+         WRITE(euler_bin_unit)power_b,power_r,power_bp
+         WRITE(euler_bin_unit)kin_flag,con_flag
+         ! from sum1 equilibrium descriptions
+         WRITE(euler_bin_unit) amean,rmean,aratio,kappa,delta1,delta2,
+     $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
+     $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
+c-----------------------------------------------------------------------
+         WRITE(euler_bin_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
          WRITE(euler_bin_unit)rzphi%xs,rzphi%ys,
      $        rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $        rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
