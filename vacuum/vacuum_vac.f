@@ -1739,8 +1739,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine adjustb(betin,betout,a_,bw_,cw_,dw_,xmaj,plrad,ishape_)
-     $     
+      subroutine adjustb(betin,betout,a_,bw_,cw_,dw_,xmaj_,plrad_,
+     $   ishape_)
       USE vglobal_mod
       IMPLICIT REAL*8 (a-h,o-z)
 c-----------------------------------------------------------------------
@@ -1751,8 +1751,8 @@ c-----------------------------------------------------------------------
          r  = a_
       endif
       if ( ishape_ .eq. 21 ) then
-         r0 = xmaj + cw_*plrad
-         r  = plrad * ( 1.0 + a_ - cw_ )
+         r0 = xmaj_ + cw_*plrad_
+         r  = plrad_ * ( 1.0 + a_ - cw_ )
       endif
       bet2 = betin
       betout = abs ( atan ( tan(bet2) / bw_ ) )

@@ -4,47 +4,47 @@ FFLAGS = -I../equil -I$(MATHINC)
 F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
-    $(F90) -c $*.f
+	$(F90) -c $*.f
 
 LIBDIR = ../lib
 
 LIBS = \
-    -lpthread \
-    -llsode \
-    -lequil \
-    -lvac
+	-lpthread \
+	-llsode \
+	-lequil \
+	-lvac
 
 OBJS = \
-    debug.o \
-    dcon_mod.o \
-    toolbox.o \
-    jacobi.o  \
-    gal.o \
-    mercier.o \
-    bal.o \
-    fourfit.o \
-    sing1.o \
-    sing.o \
-    ode_output.o \
-    ode.o \
-    free.o \
-    resist.o \
-    dcon.o
+	debug.o \
+	dcon_mod.o \
+	toolbox.o \
+	jacobi.o  \
+	gal.o \
+	mercier.o \
+	bal.o \
+	fourfit.o \
+	sing1.o \
+	sing.o \
+	ode_output.o \
+	ode.o \
+	free.o \
+	resist.o \
+	dcon.o
 
 all: rdcon
 
 equil:
-    cd ../equil; make
+	cd ../equil; make
 
 rdcon: $(OBJS)
-    $(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
-    mkdir -p ../bin
-    cp -f rdcon ../bin
+	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	mkdir -p ../bin
+	cp -f rdcon ../bin
 
 # dependencies
 
 dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
-    ../equil/equil_mod.mod ../equil/equil_out_mod.mod
+	../equil/equil_mod.mod ../equil/equil_out_mod.mod
 toolbox.o: dcon_mod.o
 jacobi.o: ../equil/local.o
 mercier.o: dcon_mod.o
@@ -60,7 +60,7 @@ gal.o: jacobi.o sing.o free.o
 dcon.o: bal.o mercier.o ode.o resist.o gal.o
 
 clean:
-    rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff rdcon
+	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff rdcon
 
 rclean: clean
-    cd ../equil; make clean
+	cd ../equil; make clean
