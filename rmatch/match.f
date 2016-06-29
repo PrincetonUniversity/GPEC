@@ -119,7 +119,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: rho,eta1,err
       COMPLEX(r8) :: eigval
       
-      NAMELIST/match_input/ deltabin_filename,galsol_filename,
+      NAMELIST/rmatch_input/ deltabin_filename,galsol_filename,
      $                         galsol_filename_cut,
      $                         initguess,msing,eta,sol_flag,
      $                         nstep,rtol,atol,fmin,fmax,lam,
@@ -142,8 +142,8 @@ c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"match.out","REPLACE")
       CALL timer(0,out_unit)
       CALL match_init
-      OPEN(UNIT=in_unit,FILE="match.in",STATUS="OLD")
-      READ(in_unit,NML=match_input)
+      OPEN(UNIT=in_unit,FILE="rmatch.in",STATUS="OLD")
+      READ(in_unit,NML=rmatch_input)
       REWIND(in_unit)
       READ(in_unit,NML=nyquist_input)
       REWIND(in_unit)
@@ -151,7 +151,7 @@ c-----------------------------------------------------------------------
       OPEN(UNIT=bin_unit,FILE=deltabin_filename,STATUS="UNKNOWN",
      $     FORM="UNFORMATTED")
       READ(bin_unit)totmsing,totnsol,coil%rpec_flag
-      CALL deltac_read_parameters("match.in")
+      CALL deltac_read_parameters("rmatch.in")
       ALLOCATE (delta(totnsol,2*totmsing))
       ALLOCATE (deltar(totmsing,2),restype(totmsing))
       ALLOCATE (deltaf(totmsing,2,2))

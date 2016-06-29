@@ -1110,7 +1110,7 @@ c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------
       WRITE(*,*)"start galerkin"
-      OPEN(UNIT=in_unit,FILE="dcon.in",STATUS="OLD")
+      OPEN(UNIT=in_unit,FILE="rdcon.in",STATUS="OLD")
       READ(UNIT=in_unit,NML=gal_input)
       CLOSE(UNIT=in_unit)
 c-----------------------------------------------------------------------

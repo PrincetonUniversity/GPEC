@@ -1,44 +1,37 @@
-# This is the makefile for DELTAR on LinuxIntel computers.
+include ../install/DEFAULTS.inc
 
-FFLAGS = -I ../equil -m64 -g
-F90 = ifort $(FFLAGS)
+FFLAGS = -I../equil
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
-	$(F90) -c $*.f
+    $(F90) -c $*.f
 
-LIBDIR = \
-	-L../lib/LinuxIntel \
-	-L /usr/local/lib \
-        -L$(HOME)/lib \
-
-LAPACKDIR = -L /u/zwang/numericalLib/lapack_3.4.2
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
-	-llsode \
-        $(LAPACKDIR) \
-	-llapack \
-        -lequil \
-	-lblas \
+    -llsode \
+    -lequil
 
 OBJS = \
-	io.o \
-	local.o \
-	gamma.o \
-	deltar.o \
-	inner.o  \
-	jacobi.o \
-	deltac.o \
-	msing.o \
-	match.o
+    io.o \
+    local.o \
+    gamma.o \
+    deltar.o \
+    inner.o  \
+    jacobi.o \
+    deltac.o \
+    msing.o \
+    match.o
 
-all: equil match
+all: rmatch
 
 equil:
-	cd ../equil; make
+    cd ../equil; make
 
-match: $(OBJS)
-	$(F90) -o match $(OBJS) $(LIBS)
+rdcon: $(OBJS)
+    $(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+    mkdir -p ../bin
+    cp -f rmatch ../bin
 
 # dependencies
 
@@ -50,4 +43,4 @@ inner.o: deltac.o
 match.o: deltar.o deltac.o inner.o msing.o
 
 clean:
-	rm -f *.o *.mod *.out  *~ match
+    rm -f *.o *.mod *.out  *~ match

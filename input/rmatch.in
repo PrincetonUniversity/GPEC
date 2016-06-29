@@ -1,94 +1,94 @@
-&match_input
-	galsol_filename = "../dcon/gal_solution.dat"
-	galsol_filename_cut = "../dcon/gal_solution_cut.dat"
-        deltabin_filename = "../dcon/delta_gw.dat"
+&rmatch_input
+    galsol_filename = "../dcon/gal_solution.dat"
+    galsol_filename_cut = "../dcon/gal_solution_cut.dat"
+    deltabin_filename = "../dcon/delta_gw.dat"
 
-	match_flag=t
-	scan_flag=f
-	qscan_flag=f
-        sol_flag =f
-	deflate=f
-	nroot=5
-        itermax=5000
-	msing=20
-	initguess = ( 0,10)    !n=1
-	eta=8e-8,8e-8,8e-8,8e-8,8e-8,8e-8,8e-8
-	scan_x1 =  1e-9
-	scan_x0 = 1.90E-10
+    match_flag=t
+    scan_flag=f
+    qscan_flag=f
+    sol_flag =f
+    deflate=f
+    nroot=5
+    itermax=5000
+    msing=20
+    initguess = ( 0,10)    !n=1
+    eta=8e-8,8e-8,8e-8,8e-8,8e-8,8e-8,8e-8
+    scan_x1 =  1e-9
+    scan_x0 = 1.90E-10
 
-	scan_nstep = 50
-
-
-	model="deltac"
-	qscan_ising=2
-	deltar_flag=t
-	deltac_flag=t
-	deltaj_flag=t
-	qscan_out=f
+    scan_nstep = 50
 
 
-        match_sol%flag=t
-        match_sol%uniform=t
-        match_sol%qpert=2
-	match_sol%auto_connect=f
-	match_sol%connect_threshold=1e-3
-        match_sol%b_flag=f
-	coil%ideal_flag=f
+    model="deltac"
+    qscan_ising=2
+    deltar_flag=t
+    deltac_flag=t
+    deltaj_flag=t
+    qscan_out=f
+
+
+    match_sol%flag=t
+    match_sol%uniform=t
+    match_sol%qpert=2
+    match_sol%auto_connect=f
+    match_sol%connect_threshold=1e-3
+    match_sol%b_flag=f
+    coil%ideal_flag=f
 /
 
 &deltac_list
-	tid=3,5,6,4
-	deltac_bin_sol=t
-	deltac_out_sol=t
-	xmax_method=1
+    tid=3,5,6,4
+    deltac_bin_sol=t
+    deltac_out_sol=t
+    xmax_method=1
 
-	rescale=t
-	pfac=0.1
-	xfac=10.0
-	gal_method="normal"
-!	gal_method="resonant"
-        noexp=t
-	nx=128
-	nq=5
-	deltac_tol=1e-11
-	dx1dx2_flag=f
-	dx1=0.001
-	dx2=0.002
-	restore_ul=t
-	restore_uh=t
-	restore_us=t
+    rescale=t
+    pfac=0.1
+    xfac=10.0
+    gal_method="normal"
+!    gal_method="resonant"
+    noexp=t
+    nx=128
+    nq=5
+    deltac_tol=1e-11
+    dx1dx2_flag=f
+    dx1=0.001
+    dx2=0.002
+    restore_ul=t
+    restore_uh=t
+    restore_us=t
 
-	cutoff=20
+    cutoff=20
 
-	interp_np=5
-	order_pow=20
-	order_exp=20
+    interp_np=5
+    order_pow=20
+    order_exp=20
 
-	diagnose_res=f
-!	diagnose_sol=f
+    diagnose_res=f
+!    diagnose_sol=f
 
-	x0_ua=0.3
-	x1_ua=1
-	nx_ua=100
-	outt=3
+    x0_ua=0.3
+    x1_ua=1
+    nx_ua=100
+    outt=3
 /
 &nyquist_input
-	nyquist%flag=f
-	nyquist%ns=100
+    nyquist%flag=f
+    nyquist%ns=100
 
-	nyquist%small=.01
-	nyquist%big=300
-	nyquist%narc=32
+    nyquist%small=.01
+    nyquist%big=300
+    nyquist%narc=32
 
-	nyquist%out=t
-	nyquist%bin=t
-/	
+    nyquist%out=t
+    nyquist%bin=t
+/    
 &msing_list
-	msing_diagnose=f
-	vmat_filename="../dcon/vmat.bin"
-	sing_frac=0.2
-	sing_nout=100
-	us_flag=t
-	ul_flag=t
+    msing_diagnose=f
+    vmat_filename="../dcon/vmat.bin"
+    sing_frac=0.2
+    sing_nout=100
+    us_flag=t
+    ul_flag=t
 /
 

@@ -1,58 +1,50 @@
-# This is the makefile for DCON on LinuxIntel computers.
+include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil -g -vec_report0
-F90 = ifort $(FFLAGS)
+FFLAGS = -I../equil -I$(MATHINC)
+F90 = $(FC) $(options) $(FFLAGS)
 
 .f.o:
-	$(F90) -c $*.f
+    $(F90) -c $*.f
 
-
-LIBDIR = \
-        -L../lib/LinuxIntel \
-        -L /usr/local/lib \
-        -L$(HOME)/lib \
-
-LAPACKDIR = -L /u/zwang/numericalLib/lapack_3.4.2
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
-        -lpthread \
-	-llsode \
-	-lequil \
-	-lvac  \
-        $(LAPACKDIR) \
-        -llapack \
-        -lblas
+    -lpthread \
+    -llsode \
+    -lequil \
+    -lvac
 
 OBJS = \
-	debug.o \
-	dcon_mod.o \
-        toolbox.o \
-        jacobi.o  \
-        gal.o \
-	mercier.o \
-	bal.o \
-	fourfit.o \
-        sing1.o \
-	sing.o \
-	ode_output.o \
-	ode.o \
-	free.o \
-	resist.o \
-	dcon.o
+    debug.o \
+    dcon_mod.o \
+    toolbox.o \
+    jacobi.o  \
+    gal.o \
+    mercier.o \
+    bal.o \
+    fourfit.o \
+    sing1.o \
+    sing.o \
+    ode_output.o \
+    ode.o \
+    free.o \
+    resist.o \
+    dcon.o
 
-all: equil dcon
+all: rdcon
 
 equil:
-	cd ../equil; make
+    cd ../equil; make
 
-dcon: $(OBJS)
-	$(F90) -o dcon $(OBJS) $(LIBS)
+rdcon: $(OBJS)
+    $(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+    mkdir -p ../bin
+    cp -f rdcon ../bin
 
 # dependencies
 
 dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
-	../equil/equil_mod.mod ../equil/equil_out_mod.mod
+    ../equil/equil_mod.mod ../equil/equil_out_mod.mod
 toolbox.o: dcon_mod.o
 jacobi.o: ../equil/local.o
 mercier.o: dcon_mod.o
@@ -68,7 +60,7 @@ gal.o: jacobi.o sing.o free.o
 dcon.o: bal.o mercier.o ode.o resist.o gal.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff dcon
+    rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff rdcon
 
 rclean: clean
-	cd ../equil; make clean
+    cd ../equil; make clean

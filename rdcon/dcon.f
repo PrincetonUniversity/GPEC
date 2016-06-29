@@ -214,14 +214,14 @@ c-----------------------------------------------------------------------
       INTEGER :: mmin,ipsi
       REAL(r8) :: plasma1,vacuum1,total1
 
-      NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
+      NAMELIST/rdcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     gal_flag,regrid_flag,sing1_flag,
      $     sing_order_ceiling,degen_tol
-      NAMELIST/dcon_output/interp,crit_break,out_bal1,
+      NAMELIST/rdcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
@@ -239,10 +239,10 @@ c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
       CALL timer(0,out_unit)
-      CALL ascii_open(in_unit,"dcon.in","OLD")
-      READ(UNIT=in_unit,NML=dcon_control)
+      CALL ascii_open(in_unit,"rdcon.in","OLD")
+      READ(UNIT=in_unit,NML=rdcon_control)
       REWIND(UNIT=in_unit)
-      READ(UNIT=in_unit,NML=dcon_output)
+      READ(UNIT=in_unit,NML=rdcon_output)
       REWIND(UNIT=in_unit)
       READ(in_unit,NML=ua_diagnose_list)
       IF(gal_flag .OR. regrid_flag)THEN
