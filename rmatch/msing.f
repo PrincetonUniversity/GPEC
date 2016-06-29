@@ -271,7 +271,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------
-      OPEN(UNIT=in_unit,FILE='match.in',STATUS="OLD")
+      OPEN(UNIT=in_unit,FILE='rmatch.in',STATUS="OLD")
       READ(in_unit,NML=msing_list)
       CLOSE(UNIT=in_unit)
       CALL msing_read(vmat_filename)
