@@ -1,7 +1,7 @@
 &rmatch_input
-    galsol_filename = "../dcon/gal_solution.dat"
-    galsol_filename_cut = "../dcon/gal_solution_cut.dat"
-    deltabin_filename = "../dcon/delta_gw.dat"
+    galsol_filename = "gal_solution.dat"
+    galsol_filename_cut = "gal_solution_cut.dat"
+    deltabin_filename = "delta_gw.dat"
 
     match_flag=t
     scan_flag=f
@@ -85,7 +85,7 @@
 /    
 &msing_list
     msing_diagnose=f
-    vmat_filename="../dcon/vmat.bin"
+    vmat_filename="vmat.bin"
     sing_frac=0.2
     sing_nout=100
     us_flag=t
