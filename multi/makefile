@@ -1,6 +1,6 @@
 
 FFLAGS = 
-F90 = $(FC) $(options) $(FFLAGS)
+F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f

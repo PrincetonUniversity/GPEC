@@ -1,9 +1,10 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil -I../coil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
-
-F90 = $(FC) $(options) $(FFLAGS)
+FFLAGS =
+IFLAGS = -I../equil -I../coil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
+export FFLAGS # for sub-makes
 
 .f.o:
 	$(F90) -c $*.f
@@ -28,6 +29,14 @@ OBJS = \
 	ipvacuum.o \
 	ipout.o \
 	ipec.o
+
+all: dcon coil ipec
+
+dcon:
+	cd ../dcon; make all
+
+coil:
+	cd ../coil; make
 
 ipec: $(OBJS)
 	$(F90) -o ipec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)

@@ -1,8 +1,11 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil
-F90 = $(FC) $(options) $(FFLAGS)
+FFLAGS =
+IFLAGS = -I../equil
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
+export FFLAGS # for sub-makes
+
 
 .f.o:
 	$(F90) -c $*.f
@@ -24,6 +27,14 @@ OBJS = \
 	matrix.o \
 	resist.o \
 	match.o
+
+all: lsode equil
+
+lsode:
+	cd ../lsode; make
+
+equil:
+	cd ../equil; make
 
 match: $(OBJS)
 	$(F90) -o match $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)

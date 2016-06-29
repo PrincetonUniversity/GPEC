@@ -1,6 +1,12 @@
 
 include DEFAULTS.inc
 
+# extend these variables to sub-makes
+FFLAGS ?=
+CFLAGS ?=
+export FFLAGS
+export CFLAGS
+
 # compile package
 
 .IGNORE:
@@ -21,40 +27,40 @@ harvest:
 	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
-	cd ../xdraw;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../xdraw;  make
 
 lsode:
-	cd ../lsode;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../lsode;  make liblsode
 
 equil:
-	cd ../equil;  make -f makefile cflag=$(cflag) options=$(options)
-
-orbit:
-	cd ../orbit;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../equil;  make libequil
 
 vacuum:
-	cd ../vacuum; make -f makefile cflag=$(cflag) options=$(options)
+	cd ../vacuum; make libvac
+
+orbit:
+	cd ../orbit;  make orbit
 
 dcon:
-	cd ../dcon;   make -f makefile cflag=$(cflag) options=$(options)
+	cd ../dcon;   make dcon
 
 match:
-	cd ../match;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../match;  make match
 
 multi:
-	cd ../multi;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../multi;  make multi
 
 sum:
-	cd ../sum;    make -f makefile cflag=$(cflag) options=$(options)
+	cd ../sum;    make sum
 
 coil:
-	cd ../coil;   make -f makefile cflag=$(cflag) options=$(options)
+	cd ../coil;   make libcoil
 
 ipec:  
-	cd ../ipec;   make -f makefile cflag=$(cflag) options=$(options)
+	cd ../ipec;   make ipec
 
 pentrc:  
-	cd ../pentrc; make -f makefile cflag=$(cflag) options=$(options)
+	cd ../pentrc; make pentrc
 
 mkbin:
 	mkdir -p ../bin

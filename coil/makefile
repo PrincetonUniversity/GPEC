@@ -1,7 +1,8 @@
 
-FFLAGS = -I../equil
+FFLGAS =
+IFLAGS = -I../equil
 
-F90 = $(FC) $(options) $(FFLAGS)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
