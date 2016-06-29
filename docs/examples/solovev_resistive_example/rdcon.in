@@ -1,5 +1,5 @@
 &gal_input
-    nx=128
+    nx=256
     pfac=0.001
     gal_tol=1e-10
     dx1dx2_flag=t

@@ -28,6 +28,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: theta,dphi,r,z
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
+      INTEGER :: nfm2,nths2
+      REAL(r8), DIMENSION(:,:), POINTER :: grri
+
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wvac
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: galwt
 
@@ -57,7 +60,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wt,wt0,temp,wpt,wvt,wv
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       CHARACTER(24), DIMENSION(mpert) :: message
-      LOGICAL, PARAMETER :: complex_flag=.FALSE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      REAL(r8) :: kernelsignin
+      INTEGER :: vac_unit
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -87,8 +92,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate vacuum response matrix.
 c-----------------------------------------------------------------------
-      CALL free_get_wvac
-      wv=wvac
+c      CALL free_get_wvac
+c      wv=wvac
       CALL free_write_msc
       IF(ahb_flag)CALL free_ahb_prep(wp,nmat,smat)
       CALL spline_eval(sq,psilim,0)
@@ -96,8 +101,29 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
-      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag)
+      vac_unit=4
+      kernelsignin=-1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
+     $     kernelsignin)
+      ALLOCATE(grri(nths2,nfm2))
+      CALL grrget(nfm2,nths2,grri)
+      CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
+      WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)
+      WRITE(vac_unit)grri
+      DEALLOCATE(grri)
+
+      kernelsignin=1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
+     $     kernelsignin)
+      ALLOCATE(grri(nths2,nfm2))
+      CALL grrget(nfm2,nths2,grri)
+      WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)
+      WRITE(vac_unit)grri
+      DEALLOCATE(grri)
+      CALL bin_close(vac_unit)
+
       CALL system("rm -f ahg2msc.out")
+
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
