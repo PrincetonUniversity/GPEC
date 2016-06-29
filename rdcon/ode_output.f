@@ -80,7 +80,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)mband,mthsurf0,mthvac,psio,
      $        psilow,psilim,qlim,singfac_min
          WRITE(euler_bin_unit)power_b,power_r,power_bp
-         WRITE(euler_bin_unit)kin_flag,con_flag
+         WRITE(euler_bin_unit).FALSE.,.FALSE.
          ! from sum1 equilibrium descriptions
          WRITE(euler_bin_unit) amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
