@@ -1223,7 +1223,6 @@ c-----------------------------------------------------------------------
       close (41)
  320  continue
       if ( ishape .ne. 41 ) go to 325
-      write(*,*) 'Load wall geometry from file.'
       open(unit=41,file="wall_geo.dat",status='old',
      $             form='FORMATTED')
       read(41,'(I4)') npots0
@@ -1262,12 +1261,14 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       zwal1(1)=zwal1(mth1)
       xwal1(mth2)=xwal1(2)
       zwal1(mth2)=zwal1(2)
-      open(unit=41,file="vacuum_used_wall.out",status='unknown',
-     $     form='FORMATTED')
-      do i=1,mth2
-         write(41,*) xwal1(i),zwal1(i)
-      enddo
-      close (41)
+      IF (.FALSE.) THEN
+         open(unit=41,file="vacuum_used_wall.out",status='unknown',
+     $        form='FORMATTED')
+         do i=1,mth2
+            write(41,*) xwal1(i),zwal1(i)
+         enddo
+         close (41)
+      ENDIF
       deallocate(thetatmp,xwaltmp,zwaltmp,xpptmp,ww1tmp,ww2tmp,ww3tmp,
      $           rioptmp,tabtmp)
  325  continue
