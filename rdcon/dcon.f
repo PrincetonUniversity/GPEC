@@ -129,7 +129,7 @@ c-----------------------------------------------------------------------
 c     diagnose sq.
 c-----------------------------------------------------------------------
       IF(diagnose)THEN
-         WRITE(*,*)"Diagnosing regridded sq"
+         IF(verbose) WRITE(*,*)"Diagnosing regridded sq"
          OPEN(UNIT=debug_unit,FILE="sq.out",STATUS="REPLACE")
          OPEN(UNIT=bin_unit,FILE="sq.bin",STATUS="REPLACE",
      $        FORM="UNFORMATTED")
@@ -283,9 +283,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     transfer equilibruim to packed spline grid.
 c-----------------------------------------------------------------------
-      WRITE(*,'(a,l1)')" Regrid_flag = ",regrid_flag
+      IF(verbose) WRITE(*,'(a,l1)')" Regrid_flag = ",regrid_flag
       IF (regrid_flag) THEN
-         WRITE(*,*)"Regriding equilibruim with qpack"
+         IF(verbose) WRITE(*,*)"Regriding equilibruim with qpack"
          CALL dcon_qpack
       ENDIF    
 c-----------------------------------------------------------------------
@@ -302,10 +302,10 @@ c-----------------------------------------------------------------------
       locstab%fs=0
       locstab%name="locstb"
       locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
-      WRITE(*,*)"Evaluating Mercier criterion"
+      IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
       CALL mercier_scan
       IF(bal_flag)THEN
-         WRITE(*,*)"Evaluating ballooning criterion"
+         IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
          CALL bal_scan
       ENDIF
       CALL spline_fit(locstab,"extrap")
@@ -338,17 +338,19 @@ c-----------------------------------------------------------------------
 c     fit equilibrium quantities to Fourier-spline functions.
 c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag .OR. gal_flag)THEN
-         WRITE(*,'(1x,a)')"Fourier analysis of metric tensor components"
-         WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,", qmin = ",qmin,
-     $        ", qmax = ",qmax,", qa = ",qa
-         WRITE(*,'(1x,a,l1,1p,3(a,e10.3))')"sas_flag = ",sas_flag,
-     $        ", dmlim = ",dmlim,", qlim = ",qlim,", psilim = ",psilim
-         WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
+         IF(verbose) WRITE(*,'(1x,a)')
+     $        "Fourier analysis of metric tensor components"
+         IF(verbose) WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,
+     $        ", qmin = ",qmin,", qmax = ",qmax,", qa = ",qa
+         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,e10.3))')
+     $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
+     $        ", qlim = ",qlim,", psilim = ",psilim
+         IF(verbose) WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betaj = ",betaj
-         WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
+         IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
          CALL fourfit_make_metric
-         WRITE(*,*)"Computing F, G, and K Matrices"
+         IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
          CALL fourfit_make_matrix
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
@@ -360,17 +362,21 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     integrate main ODE's.
 c-----------------------------------------------------------------------
+      ALLOCATE(ud(mpert,mpert,2))
       IF(ode_flag)THEN
-         WRITE(*,*)"Starting integration of ODE's"
+         IF(verbose) WRITE(*,*)"Starting integration of ODE's"
          CALL ode_run
       ENDIF
+      DEALLOCATE(ud)
 c-----------------------------------------------------------------------
 c     compute free boundary energies.
 c-----------------------------------------------------------------------
       IF(vac_flag .AND. .NOT.
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
-         WRITE(*,*)"Computing free boundary energies"
+         IF(verbose) WRITE(*,*)"Computing free boundary energies"
+         ALLOCATE(ud(mpert,mpert,2))
          CALL free_run(plasma1,vacuum1,total1,nzero)
+         DEALLOCATE(ud)
       ELSE
          plasma1=0
          vacuum1=0
@@ -382,16 +388,16 @@ c-----------------------------------------------------------------------
 c     the bottom line.
 c-----------------------------------------------------------------------
       IF(nzero /= 0)THEN
-         WRITE(*,'(1x,a,i2,".")')
+         IF(verbose) WRITE(*,'(1x,a,i2,".")')
      $        "Fixed-boundary mode unstable for nn = ",nn
       ENDIF
       IF(vac_flag .AND. .NOT.
-     $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
-         IF(total1 < 0)THEN
-            WRITE(*,'(1x,a,i2,".")')
+     $   (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
+         IF(REAL(total1) < 0)THEN
+            IF(verbose) WRITE(*,'(1x,a,i2,".")')
      $           "Free-boundary mode unstable for nn = ",nn
          ELSE
-            WRITE(*,'(1x,a,i2,".")')
+            IF(verbose) WRITE(*,'(1x,a,i2,".")')
      $           "All free-boundary modes stable for nn = ",nn
          ENDIF
       ENDIF

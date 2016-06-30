@@ -22,6 +22,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE ode_output_mod
       USE sing_mod
+      USE dcon_mod, ONLY : shotnum,shottime
       IMPLICIT NONE
 
       CHARACTER(6), DIMENSION(:), POINTER :: name
@@ -55,7 +56,7 @@ c-----------------------------------------------------------------------
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
  30   FORMAT(3x,"mlow",4x,"m",2x,"mhigh",2x,"isol",2x,"msol"//5i6/)
- 40   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 40   FORMAT(1x,a,es10.3,a,f6.3)
 c-----------------------------------------------------------------------
 c     allocate space for asymptotic coefficients.
 c-----------------------------------------------------------------------
@@ -86,7 +87,8 @@ c-----------------------------------------------------------------------
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
      $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
 c-----------------------------------------------------------------------
-         WRITE(euler_bin_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
+         WRITE(euler_bin_unit)sq%xs,sq%fs(:,1:4),sq%fs1(:,1:4),
+     $        sq%xpower(:,1:4)
          WRITE(euler_bin_unit)rzphi%xs,rzphi%ys,
      $        rzphi%fs,rzphi%fsx,rzphi%fsy,rzphi%fsxy,
      $        rzphi%x0,rzphi%y0,rzphi%xpower,rzphi%ypower
@@ -168,9 +170,11 @@ c-----------------------------------------------------------------------
 c     write solutions.
 c-----------------------------------------------------------------------
       IF(bin_euler .AND. mod(istep,euler_stride) == 0)THEN
+         CALL sing_der(neq,psifac,u,du)
          WRITE(euler_bin_unit)1
          WRITE(euler_bin_unit)psifac,q,msol
          WRITE(euler_bin_unit)u
+         WRITE(euler_bin_unit)ud
       ENDIF
 c-----------------------------------------------------------------------
 c     output solutions components for each time step.
@@ -194,7 +198,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
 c-----------------------------------------------------------------------
@@ -252,7 +256,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(/a,i4,1p,2(a,e9.3))
+ 10   FORMAT(/a,i4,1p,2(a,es10.3))
  20   FORMAT(/5x,"i",5x,"eval",7x,"evali",7x,"err"/)
  30   FORMAT(i6,1p,3e11.3)
 c-----------------------------------------------------------------------

@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
       INTEGER :: nfm2,nths2
-      REAL(r8), DIMENSION(:,:), POINTER :: grri
+      REAL(8), DIMENSION(:,:), POINTER :: grri
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wvac
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: galwt
@@ -54,10 +54,13 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(1,msol) :: imax
       REAL(r8) :: v1
       REAL(r8), DIMENSION(mpert) :: ep,ev,et,singfac
+      ! eigenvalues are complex for gpec
+      COMPLEX(r8), DIMENSION(mpert) :: epc,evc,etc
+
       REAL(r8), DIMENSION(3*mpert-1) :: rwork
       COMPLEX(r8) :: phase,norm
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wt,wt0,temp,wpt,wvt,wv
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,wt0,temp,wpt,wvt
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
@@ -66,7 +69,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,"Energies: plasma = ",1p,e10.3,", vacuum = ",e10.3,
+ 10   FORMAT(1x,"Energies: plasma = ",e10.3,", vacuum = ",e10.3,
      $     ", total = ",e10.3)
  20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",5x,"total"/)
  30   FORMAT(i6,1p,3e11.3,a)
@@ -92,8 +95,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate vacuum response matrix.
 c-----------------------------------------------------------------------
-c      CALL free_get_wvac
-c      wv=wvac
       CALL free_write_msc
       IF(ahb_flag)CALL free_ahb_prep(wp,nmat,smat)
       CALL spline_eval(sq,psilim,0)
@@ -122,8 +123,6 @@ c-----------------------------------------------------------------------
       DEALLOCATE(grri)
       CALL bin_close(vac_unit)
 
-      CALL system("rm -f ahg2msc.out")
-
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -133,6 +132,7 @@ c-----------------------------------------------------------------------
 c     compute energy eigenvalues.
 c-----------------------------------------------------------------------
       wt=wp+wv
+      wt0=wt
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,wt,mpert,et,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
@@ -181,10 +181,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
+      ! gpec assumes complex eigenvalues
+      DO ipert=1,mpert
+        epc(ipert) = DCMPLX(ep(ipert),0)
+        evc(ipert) = DCMPLX(ev(ipert),0)
+        etc(ipert) = DCMPLX(et(ipert),0)
+      ENDDO
       IF(bin_euler)THEN
          WRITE(euler_bin_unit)3
-         WRITE(euler_bin_unit)ep
-         WRITE(euler_bin_unit)et
+         WRITE(euler_bin_unit)epc
+         WRITE(euler_bin_unit)etc
          WRITE(euler_bin_unit)wt
          WRITE(euler_bin_unit)wt0
       ENDIF

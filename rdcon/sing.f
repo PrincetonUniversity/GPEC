@@ -958,6 +958,9 @@ c-----------------------------------------------------------------------
       CALL cspline_eval(fmats,psifac,0)
       CALL cspline_eval(gmats,psifac,0)
       CALL cspline_eval(kmats,psifac,0)
+      ! add for gpec interface
+      !CALL cspline_eval(bmats,psifac,0)
+      !CALL cspline_eval(cmats,psifac,0)
 c-----------------------------------------------------------------------
 c     define local scalars.
 c-----------------------------------------------------------------------
@@ -977,6 +980,9 @@ c-----------------------------------------------------------------------
             iqty=iqty+1
          ENDDO
       ENDDO
+      ! added for gpec interface
+      !bmat=RESHAPE(bmats%f,(/mpert,mpert/))
+      !cmat=RESHAPE(cmats%f,(/mpert,mpert/))
 c-----------------------------------------------------------------------
 c     copy non-Hermitian banded matrix K.
 c-----------------------------------------------------------------------
@@ -1008,6 +1014,11 @@ c-----------------------------------------------------------------------
      $        2*mband+1,du(:,isol,1),1,one,du(:,isol,2),1)
          du(:,isol,1)=du(:,isol,1)*singfac
       ENDDO
+c-----------------------------------------------------------------------
+c     calculate and store u-derivative and xss for gpec interface
+c-----------------------------------------------------------------------
+      ud(:,:,1)=du(:,:,1)
+      ud(:,:,2)=0!-MATMUL(bmat,du(:,:,1))-MATMUL(cmat,u(:,:,1))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
