@@ -211,7 +211,7 @@ module torque
         character(*) :: method
         logical, optional :: op_erecord
         real(r8), dimension(nfluxfuns), optional, intent(out) :: op_ffuns
-        real(r8), dimension(ntheta*3,nthetafuns), optional, intent(out) :: op_tfuns
+        real(r8), dimension(nthetafuns,ntheta*3), optional, intent(out) :: op_tfuns
         complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: op_wmats
         ! declare local variables
         logical :: erecord
@@ -737,7 +737,7 @@ module torque
                             expm = exp(xj*twopi*mfac*tdt(1,i))
                             dbob = sum(dbob_m%f(:)*expm)
                             divx = sum(divx_m%f(:)*expm) * divxfac
-                            op_tfuns(j*ntheta+i,:) = (/ &
+                            op_tfuns(:,j*ntheta+i) = (/ &
                                 real(i,r8), real(j+1,r8), real(l,r8), psi, lmda, &
                                 bjspl%xs(i-1), tdt(:,i), bspl%fs(i-1,:), &
                                 real(bjspl%fs(i-1,1)), aimag((bjspl%fs(i-1,1))), &
