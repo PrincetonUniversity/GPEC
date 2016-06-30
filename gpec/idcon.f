@@ -62,9 +62,9 @@ c-----------------------------------------------------------------------
          jac_type="equal_arc"
       ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN  
          jac_type="boozer"
-      ELSE IF ((power_b==1).AND.(power_bp==0).AND.(power_r==0)) THEN  
+      ELSE IF ((power_b==1).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="park"
-      ELSE 
+      ELSE
          jac_type="other"
       ENDIF
       IF (jac_in=="") THEN
@@ -409,10 +409,22 @@ c-----------------------------------------------------------------------
       DO ifix=1,mfix
          DEALLOCATE(fixtype(ifix)%gauss)
       ENDDO
-      CALL cspline_alloc(u1,mstep,mpert)
-      CALL cspline_alloc(u2,mstep,mpert)
-      CALL cspline_alloc(u3,mstep,mpert)
-      CALL cspline_alloc(u4,mstep,mpert)
+      IF (galsol%gal_flag) THEN
+         IF(galsol%mpert/=mpert) THEN
+            PRINT *,'Galerkin m = ',galsol%mpert
+            PRINT *,'Ideal    m = ',mpert
+            stop "ERROR: Galerkin m not ideal m."
+         ENDIF
+         CALL cspline_alloc(u1,galsol%tot_grids,mpert)
+         CALL cspline_alloc(u2,galsol%tot_grids,mpert)
+         CALL cspline_alloc(u3,galsol%tot_grids,mpert)
+         CALL cspline_alloc(u4,galsol%tot_grids,mpert)
+      ELSE
+         CALL cspline_alloc(u1,mstep,mpert)
+         CALL cspline_alloc(u2,mstep,mpert)
+         CALL cspline_alloc(u3,mstep,mpert)
+         CALL cspline_alloc(u4,mstep,mpert)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -420,7 +432,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE idcon_transform
 c-----------------------------------------------------------------------
 c     subprogram 3. idcon_build.
-c     builds ideal euler-Lagrange solutions.
+c     builds ideal Euler-Lagrange solutions.
 c     __________________________________________________________________
 c     egnum  : a label of eigenmode
 c     xwpimn : arbitrary xipsi function on the control surface.
@@ -434,9 +446,9 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ifix,jfix,kfix,info
+      INTEGER :: istep,ifix,jfix,kfix,info,ipert
       INTEGER, DIMENSION(mpert) :: ipiv
-      COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
+      COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1,tuedge
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
       IF(debug_flag) PRINT *, "Entering idcon_build"
 c-----------------------------------------------------------------------
@@ -447,24 +459,73 @@ c-----------------------------------------------------------------------
       ELSE
          uedge=wt(:,egnum)
       ENDIF
-      temp2=soltype(mstep)%u(:,1:mpert,1)
-      CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
-      CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
 c-----------------------------------------------------------------------
 c     construct eigenfunctions.
 c-----------------------------------------------------------------------
-      jfix=0
-      DO ifix=0,mfix
-         temp1=MATMUL(fixtype(ifix)%transform,uedge)
-         kfix=fixstep(ifix+1)
-         DO istep=jfix,kfix
-            u1%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
-            u2%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
-            u3%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,3),temp1)
-            u4%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,4),temp1)
-         ENDDO         
-         jfix=kfix+1
-      ENDDO
+      IF (galsol%gal_flag) THEN
+         u1%fs=0
+         u2%fs=0
+         IF (.TRUE.) THEN
+            ! convert rdcon solutions with single m at psilim
+            ! to energy ranked solutions with multiple m at psilim
+            istep=galsol%tot_grids
+            DO ipert=1,galsol%mpert
+               temp2(:,ipert)=galsol%u(:,istep,ipert)
+            ENDDO
+            CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+            tuedge=uedge
+            CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,tuedge,mpert,info)
+            DO istep=0,galsol%tot_grids
+               DO ipert=1,galsol%mpert
+                  u1%fs(istep,:)=u1%fs(istep,:)
+     $                          +galsol%u(:,istep,ipert)*tuedge(ipert)
+               ENDDO
+            ENDDO
+            u1%xs=galsol%psifac
+            mstep=galsol%tot_grids
+            DEALLOCATE(psifac)
+            ALLOCATE(psifac(mstep))
+            psifac=u1%xs
+         ELSE
+            DO istep=0,galsol%tot_grids
+               u1%fs(istep,:) = galsol%u(:,istep,egnum)
+            ENDDO
+            u1%xs=galsol%psifac
+         ENDIF
+
+         temp2=soltype(mstep)%u(:,1:mpert,1)
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         tuedge=uedge
+         CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,tuedge,mpert,info)
+
+         jfix=0
+         DO ifix=0,mfix
+            temp1=MATMUL(fixtype(ifix)%transform,tuedge)
+            kfix=fixstep(ifix+1)
+            DO istep=jfix,kfix
+               u2%fs(istep,:)
+     $              =MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+            ENDDO
+            jfix=kfix+1
+         ENDDO
+         u2%xs=psifac
+      ELSE
+         temp2=soltype(mstep)%u(:,1:mpert,1)
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
+         jfix=0
+         DO ifix=0,mfix
+            temp1=MATMUL(fixtype(ifix)%transform,uedge)
+            kfix=fixstep(ifix+1)
+            DO istep=jfix,kfix
+              u1%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
+              u2%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+              u3%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,3),temp1)
+              u4%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,4),temp1)
+            ENDDO
+            jfix=kfix+1
+         ENDDO
+      ENDIF
 c-----------------------------------------------------------------------
 c     fit the functions.
 c-----------------------------------------------------------------------

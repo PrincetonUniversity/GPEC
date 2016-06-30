@@ -7,6 +7,7 @@ c     code organization.
 c-----------------------------------------------------------------------
 c     0. rdcon_mod.
 c     1. rdcon_read.
+c     2. rdcon_read_solution.
 c-----------------------------------------------------------------------
 c     subprogram 0. rdcon_mod.
 c     module declarations.
@@ -81,5 +82,40 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE rdcon_read
-
+c-----------------------------------------------------------------------
+c     subprogram 2. rdcon_read_solution.
+c     reads gal_solution.bin
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE rdcon_read_solution
+      INTEGER isol,ip,ipert
+c-----------------------------------------------------------------------
+c     force the coil matching with option 1.
+c-----------------------------------------------------------------------
+      IF (.NOT.galsol%gal_flag) RETURN
+      resp_index=1
+c-----------------------------------------------------------------------
+c     read solutions for coupling to the coil (final rpec run).
+c-----------------------------------------------------------------------
+      CALL bin_open(bin_unit,rdconfile,"OLD","REWIND","none")
+      READ(bin_unit) galsol%mpert,galsol%tot_grids,galsol%mtot,
+     $                 galsol%mlow,galsol%mhigh
+      ALLOCATE (galsol%psifac(0:galsol%tot_grids),
+     $          galsol%u(galsol%mpert,0:galsol%tot_grids,galsol%mtot))
+      READ(bin_unit) galsol%psifac
+      DO isol=1,galsol%mtot
+         DO ip=0,galsol%tot_grids
+            DO ipert=1,galsol%mpert
+               READ(bin_unit) galsol%u(ipert,ip,isol)
+            ENDDO
+         ENDDO
+      ENDDO
+      CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE rdcon_read_solution
       END MODULE rdcon_mod

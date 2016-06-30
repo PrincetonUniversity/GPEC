@@ -98,6 +98,13 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
       END TYPE solution_type
 
+      TYPE :: galsol_type
+      LOGICAL :: gal_flag
+      INTEGER :: mpert, tot_grids,mlow,mhigh,mtot
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
+      END TYPE galsol_type
+
       TYPE :: fixfac_type
       INTEGER :: msol
       INTEGER, DIMENSION(:), ALLOCATABLE :: index
@@ -111,6 +118,9 @@ c-----------------------------------------------------------------------
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
+      INTEGER :: gal_pert,gal_unit=105
+      LOGICAL :: gal_check
+      TYPE(galsol_type) :: galsol
       TYPE(solution_type), DIMENSION(:), ALLOCATABLE :: soltype,rsoltype
       TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
       TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype

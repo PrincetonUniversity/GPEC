@@ -81,7 +81,11 @@ c-----------------------------------------------------------------------
          CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
      $        2*mband+1,u1%f,1,ione,xspfac,1)
          CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
-         xsp1_mn=xspfac/singfac
+         IF (galsol%gal_flag) THEN
+            xsp1_mn=u1%f1
+         ELSE
+            xsp1_mn=xspfac/singfac
+         ENDIF
          CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
          CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
          CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)

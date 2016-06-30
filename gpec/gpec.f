@@ -31,7 +31,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag
+     $     filter_flag,gal_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -45,7 +45,7 @@ c-----------------------------------------------------------------------
      $     displacement_flag,mode,coil_flag,
      $     ip_direction,bt_direction,rdconfile,
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
-     $     filter_types,filter_modes
+     $     filter_types,filter_modes,gal_flag
       NAMELIST/gpec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz,resp_induct_flag
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
@@ -85,6 +85,7 @@ c-----------------------------------------------------------------------
       harmonic_flag=.FALSE.
       mode_flag=.FALSE.
       displacement_flag=.FALSE.
+      gal_flag=.FALSE.
       mthsurf0=1
       nmin=1
       nmax=1
@@ -200,6 +201,7 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=gpec_output)
       READ(in_unit,NML=gpec_diagnose)
       CALL ascii_close(in_unit)
+      galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
 c-----------------------------------------------------------------------
 c     Deprecated variable errors
