@@ -1476,8 +1476,8 @@ module torque
         character(32) :: label_fmt, table_fmt
 
         ! learn sizes
-        nrow = size(list,dim=1)
-        ncol = size(list,dim=2)
+        ncol = size(list,dim=1)
+        nrow = size(list,dim=2)
 
         ! open file
         out_unit = get_free_file_unit(-1)
@@ -1514,7 +1514,7 @@ module torque
         write(table_fmt,*) '(',ncol,'(es17.8E3))'
         write(out_unit,trim(label_fmt)) labels
         do i=1,nrow
-            write(out_unit,trim(table_fmt)) list(i,:)
+            write(out_unit,trim(table_fmt)) list(:,i)
         enddo
 
         close(out_unit)
@@ -1553,13 +1553,15 @@ module torque
         real(r8), dimension(:,:), intent(in) :: prof,profl
         integer :: zi, mi
 
-        integer :: i,nrow,ncol,out_unit,unit1,unit2
+        integer :: i,nrow,ncol,nrowl,ncoll,out_unit,unit1,unit2
         character(8) :: nstring
         character(128) :: file1,file2
 
         ! learn sizes
-        nrow = size(prof,dim=1)
-        ncol = size(prof,dim=2)
+        ncol = size(prof,dim=1)
+        nrow = size(prof,dim=2)
+        ncoll = size(profl,dim=1)
+        nrowl = size(profl,dim=2)
 
         ! open files
         write(nstring,'(I8)') n
@@ -1604,17 +1606,19 @@ module torque
         enddo
 
         ! label columns
+        if(ncol/=10) stop "ERROR: Torque ascii array dimensions do not match labels"
         write(unit1,'(1/,10(a17))') "psi_n",  "dv/dpsi_n",  "real(Gamma)",  "imag(Gamma)", &
             "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)"
+        if(ncoll/=10) stop "ERROR: Torque ascii ell array dimensions do not match labels"
         write(unit2,'(1/,10(a17))') "psi_n",  "ell",  "real(Gamma)",  "imag(Gamma)", &
             "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)"
 
         ! write tables
-        do i=1,size(prof,dim=1)
-            write(unit1,'(10(es17.8E3))') prof(i,:)
+        do i=1,nrow
+            write(unit1,'(10(es17.8E3))') prof(:,i)
         enddo
-        do i=1,size(profl,dim=1)
-            write(unit2,'(10(es17.8E3))') profl(i,:)
+        do i=1,nrowl
+            write(unit2,'(10(es17.8E3))') profl(:,i)
         enddo
 
         close(unit1)
@@ -1679,8 +1683,8 @@ module torque
 
         ! write tables
         write(table_fmt,*) '(',nfluxfuns,'(es17.8E3))'
-        do i=1,size(table,dim=1)
-            write(out_unit,table_fmt) table(i,:)
+        do i=1,size(table,dim=2)
+            write(out_unit,table_fmt) table(:,i)
         enddo
 
         close(out_unit)
@@ -1741,8 +1745,8 @@ module torque
 
         ! write tables
         write(table_fmt,*) '(',nthetafuns,'(es17.8E3))'
-        do i=1,size(table,dim=1)
-            write(out_unit,table_fmt) table(i,:)
+        do i=1,size(table,dim=2)
+            write(out_unit,table_fmt) table(:,i)
         enddo
 
         close(out_unit)

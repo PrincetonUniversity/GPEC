@@ -204,13 +204,13 @@ program pentrc
                             do l=-nl,nl,max(1,nl)
                                 tsurf = tpsi(psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
                                              op_erecord=xlmda_out,op_tfuns=thetafuns)
-                                do j=1,ntheta*3
-                                    call append_2d(thetatable,thetafuns(j,:))
+                                do j=1,size(thatafuns,dim=2)
+                                    call append_2d(thetatable,thetafuns(:,j))
                                 enddo
                             enddo
                         enddo
                         if(output_ascii)then
-                            if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),transpose(thetatable))
+                            if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),thetatable)
                             if(xlmda_out) call output_pitch_record(nn,zi,mi,electron,methods(m))
                             if(xlmda_out) call output_energy_record(nn,zi,mi,electron,methods(m))
                         endif

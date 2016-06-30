@@ -405,9 +405,12 @@ module inputs
                 stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
                     & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
         END SELECT
-        if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
+        if(verbose) then
+            print *,"  Displacements input in "//trim(jac_in)//" coordinates:"
+            print '(a29,4(I3))',"    -> b, bp, r, rc raised to",powin
+        endif
         if(jac_in/=jac_type .or. tmag_in/=1)then
-            if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
+            if(tmag_in/=1 .and. verbose) print *,'  Displacements input in cylindrical toroidal angle'
             if(verbose) print *,'Converting to '//trim(jac_type)//' coordinates used by DCON'
             ! make sure to use the larger of the input and working spectra
             if(mpert>nm)then
@@ -621,9 +624,12 @@ module inputs
                 stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
                     & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
         END SELECT
-        if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
+        if(verbose) then
+            print *,"  Displacements input in "//trim(jac_in)//" coordinates:"
+            print '(a29,4(I3))',"    -> b, bp, r, rc raised to",powin
+        endif
         if(jac_in/=jac_type .or. tmag_in/=1)then
-            if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
+            if(tmag_in/=1 .and. verbose) print *,'  Displacements input in cylindrical toroidal angle'
             if(verbose) print *,'Converting to '//trim(jac_type)//' coordinates used by DCON'
             ! make sure to use the larger of the input and working spectra
             if(mpert>nm)then
