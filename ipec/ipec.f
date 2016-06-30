@@ -353,7 +353,7 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_str(hlog,'MACHINE'//nul,
      $                             trim(machine)//nul)
       ierr=set_harvest_payload_str(hlog,'VERSION'//nul,version//nul)
-      if(shotnum>0)git config --global pull.rebase true 
+      if(shotnum>0)
      $   ierr=set_harvest_payload_int(hlog,'SHOT'//nul,INT(shotnum))
       if(shottime>0)
      $   ierr=set_harvest_payload_int(hlog,'TIME'//nul,INT(shottime))
