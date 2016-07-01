@@ -65,7 +65,10 @@ module inputs
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
-        
+
+!$OMP THREADPRIVATE(dbob_m,divx_m,eqfun,sq,kin,geom,rzphi, &
+!$OMP smats,tmats,xmats,ymats,zmats,xs_m)
+
     contains
 
     !=======================================================================

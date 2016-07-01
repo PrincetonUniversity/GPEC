@@ -30,6 +30,15 @@ c-----------------------------------------------------------------------
      $    pentrc_r8=>r8,
      $    pentrc_timer=>timer
       USE torque, only : kelmm      ! cspline Euler-Lagrange mats for local use
+      USE inputs, only : dbob_m,divx_m,kin,geom,xs_m,
+     $     inputs_eqfun=>eqfun,
+     $     inputs_sq=>sq,
+     $     inputs_rzphi=>rzphi,
+     $     inputs_smats=>smats,
+     $     inputs_tmats=>tmats,
+     $     inputs_xmats=>xmats,
+     $     inputs_ymats=>ymats,
+     $     inputs_zmats=>zmats
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
@@ -982,6 +991,12 @@ c-----------------------------------------------------------------------
             ktmat = 0
             psifac=rzphi%xs(ipsi)
             ! get ion matrices for all ell at this one psi
+            CALL OMP_SET_NUM_THREADS(2)
+!$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(l,kwmat_l,ktmat_l,tphi)
+!$OMP& COPYIN(dbob_m,divx_m,kin,geom,xs_m,
+!$OMP& inputs_eqfun,inputs_sq,inputs_rzphi,inputs_smats,
+!$OMP& inputs_tmats,inputs_xmats,inputs_ymats,inputs_zmats)
+!$OMP& REDUCTION(+:kwmat,ktmat)
             DO l=-nl,nl
                kwmat_l = 0
                ktmat_l = 0
@@ -992,6 +1007,7 @@ c-----------------------------------------------------------------------
      $              ft//"tmm",op_wmats=ktmat_l)
                ktmat = ktmat+ktmat_l
             ENDDO
+!$OMP END PARALLEL DO
             IF (electron_flag) THEN
                DO l=-nl,nl
                   kwmat_l = 0
