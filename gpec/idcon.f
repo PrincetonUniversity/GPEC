@@ -409,22 +409,10 @@ c-----------------------------------------------------------------------
       DO ifix=1,mfix
          DEALLOCATE(fixtype(ifix)%gauss)
       ENDDO
-      IF (galsol%gal_flag) THEN
-         IF(galsol%mpert/=mpert) THEN
-            PRINT *,'Galerkin m = ',galsol%mpert
-            PRINT *,'Ideal    m = ',mpert
-            stop "ERROR: Galerkin m not ideal m."
-         ENDIF
-         CALL cspline_alloc(u1,galsol%tot_grids,mpert)
-         CALL cspline_alloc(u2,galsol%tot_grids,mpert)
-         CALL cspline_alloc(u3,galsol%tot_grids,mpert)
-         CALL cspline_alloc(u4,galsol%tot_grids,mpert)
-      ELSE
-         CALL cspline_alloc(u1,mstep,mpert)
-         CALL cspline_alloc(u2,mstep,mpert)
-         CALL cspline_alloc(u3,mstep,mpert)
-         CALL cspline_alloc(u4,mstep,mpert)
-      ENDIF
+      CALL cspline_alloc(u1,mstep,mpert)
+      CALL cspline_alloc(u2,mstep,mpert)
+      CALL cspline_alloc(u3,mstep,mpert)
+      CALL cspline_alloc(u4,mstep,mpert)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -462,53 +450,31 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct eigenfunctions.
 c-----------------------------------------------------------------------
+      u1%fs=0
+      u2%fs=0
+      u3%fs=0
+      u4%fs=0
       IF (galsol%gal_flag) THEN
-         u1%fs=0
-         u2%fs=0
-         IF (.TRUE.) THEN
-            ! convert rdcon solutions with single m at psilim
-            ! to energy ranked solutions with multiple m at psilim
-            istep=galsol%tot_grids
-            DO ipert=1,galsol%mpert
-               temp2(:,ipert)=galsol%u(:,istep,ipert)
-            ENDDO
-            CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
-            tuedge=uedge
-            CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,tuedge,mpert,info)
-            DO istep=0,galsol%tot_grids
-               DO ipert=1,galsol%mpert
-                  u1%fs(istep,:)=u1%fs(istep,:)
-     $                          +galsol%u(:,istep,ipert)*tuedge(ipert)
-               ENDDO
-            ENDDO
-            u1%xs=galsol%psifac
-            mstep=galsol%tot_grids
-            DEALLOCATE(psifac)
-            ALLOCATE(psifac(mstep))
-            psifac=u1%xs
-         ELSE
-            DO istep=0,galsol%tot_grids
-               u1%fs(istep,:) = galsol%u(:,istep,egnum)
-            ENDDO
-            u1%xs=galsol%psifac
-         ENDIF
+         ! direct solutions from rmatch (single m at boundary)
+         !DO istep=0,galsol%tot_grids
+         !   u1%fs(istep,:) = galsol%u(:,istep,egnum)
+         !ENDDO
 
-         temp2=soltype(mstep)%u(:,1:mpert,1)
+         ! convert rdcon solutions with single m at psilim
+         ! to energy ranked solutions with multiple m at psilim
+         istep=galsol%tot_grids
+         DO ipert=1,galsol%mpert
+            temp2(:,ipert)=galsol%u(:,istep,ipert)
+         ENDDO
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
          tuedge=uedge
          CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,tuedge,mpert,info)
-
-         jfix=0
-         DO ifix=0,mfix
-            temp1=MATMUL(fixtype(ifix)%transform,tuedge)
-            kfix=fixstep(ifix+1)
-            DO istep=jfix,kfix
-               u2%fs(istep,:)
-     $              =MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+         DO istep=0,galsol%tot_grids
+            DO ipert=1,galsol%mpert
+               u1%fs(istep,:)=u1%fs(istep,:)
+     $                       +galsol%u(:,istep,ipert)*tuedge(ipert)
             ENDDO
-            jfix=kfix+1
          ENDDO
-         u2%xs=psifac
       ELSE
          temp2=soltype(mstep)%u(:,1:mpert,1)
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)

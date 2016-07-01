@@ -153,12 +153,25 @@ c-----------------------------------------------------------------------
       CALL cspline_dealloc(u2)
       CALL fspline_dealloc(metric)
 
-      DO istep=0,mstep
-         DEALLOCATE(soltype(istep)%u)
-      ENDDO
-      DO ifix=1,mfix
-         DEALLOCATE(fixtype(ifix)%fixfac,fixtype(ifix)%index)
-      ENDDO
+      IF(ALLOCATED(soltype))THEN
+         DO istep=0,mstep
+            DEALLOCATE(soltype(istep)%u)
+         ENDDO
+         DEALLOCATE(soltype)
+      ENDIF
+      IF(ALLOCATED(fixtype))THEN
+         DO ifix=0,mfix
+            IF(ALLOCATED(fixtype(ifix)%fixfac))
+     $         DEALLOCATE(fixtype(ifix)%fixfac)
+            IF(ALLOCATED(fixtype(ifix)%index))
+     $         DEALLOCATE(fixtype(ifix)%index)
+            IF(ALLOCATED(fixtype(ifix)%transform))
+     $         DEALLOCATE(fixtype(ifix)%transform)
+            IF(ALLOCATED(fixtype(ifix)%gauss))
+     $         DEALLOCATE(fixtype(ifix)%gauss)
+         ENDDO
+         DEALLOCATE(fixtype)
+      ENDIF
 
       IF (psixy == 1) CALL bicube_dealloc(psi_in)
 c-----------------------------------------------------------------------

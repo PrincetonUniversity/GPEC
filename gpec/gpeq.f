@@ -77,13 +77,14 @@ c-----------------------------------------------------------------------
          xsp1_mn=u3%f
          xss_mn=u4%f
       ELSE
-         xspfac=u2%f/singfac
-         CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
-     $        2*mband+1,u1%f,1,ione,xspfac,1)
-         CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
          IF (galsol%gal_flag) THEN
             xsp1_mn=u1%f1
          ELSE
+            xspfac=u2%f/singfac
+            CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
+     $         2*mband+1,u1%f,1,ione,xspfac,1)
+            CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,
+     $         info)
             xsp1_mn=xspfac/singfac
          ENDIF
          CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)

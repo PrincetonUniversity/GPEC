@@ -84,21 +84,21 @@ c-----------------------------------------------------------------------
       END SUBROUTINE rdcon_read
 c-----------------------------------------------------------------------
 c     subprogram 2. rdcon_read_solution.
-c     reads gal_solution.bin
+c     reads globalsol.bin
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE rdcon_read_solution
-      INTEGER isol,ip,ipert
+      INTEGER isol,ip,ipert,ifix
 c-----------------------------------------------------------------------
-c     force the coil matching with option 1.
+c     Only read if flag is on
 c-----------------------------------------------------------------------
       IF (.NOT.galsol%gal_flag) RETURN
-      resp_index=1
 c-----------------------------------------------------------------------
 c     read solutions for coupling to the coil (final rpec run).
 c-----------------------------------------------------------------------
+      IF(verbose) PRINT *,"Reading RDCON solutions"
       CALL bin_open(bin_unit,rdconfile,"OLD","REWIND","none")
       READ(bin_unit) galsol%mpert,galsol%tot_grids,galsol%mtot,
      $                 galsol%mlow,galsol%mhigh
@@ -113,6 +113,58 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
+c     force global variables
+c-----------------------------------------------------------------------
+      ! deallocate soltype so it forces an error if we ever try to use it
+      IF(ALLOCATED(soltype))THEN
+         DO ip=0,mstep
+            DEALLOCATE(soltype(ip)%u)
+         ENDDO
+         DEALLOCATE(soltype)
+      ENDIF
+      IF(ALLOCATED(fixtype))THEN
+         DO ifix=0,mfix
+            IF(ALLOCATED(fixtype(ifix)%fixfac))
+     $         DEALLOCATE(fixtype(ifix)%fixfac)
+            IF(ALLOCATED(fixtype(ifix)%index))
+     $         DEALLOCATE(fixtype(ifix)%index)
+            IF(ALLOCATED(fixtype(ifix)%transform))
+     $         DEALLOCATE(fixtype(ifix)%transform)
+            IF(ALLOCATED(fixtype(ifix)%gauss))
+     $         DEALLOCATE(fixtype(ifix)%gauss)
+         ENDDO
+         DEALLOCATE(fixtype)
+      ENDIF
+      ! force coil matching to method 1 since we don't have energies (method 0)
+      PRINT *,"WARNING: Forcing resp_index to 1 for use with RDCON"
+      resp_index=1
+      ! force new mstep and all the corresponding radial grids
+      mstep = galsol%tot_grids
+      DEALLOCATE(psifac,rhofac,qfac)
+      ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep))
+      psifac = galsol%psifac
+      rhofac = SQRT(psifac)
+      DO ip=0,mstep
+         CALL spline_eval(sq,psifac(ip),0)
+         qfac(ip) = sq%f(4)
+      ENDDO
+      ! m's must already match
+      IF(galsol%mpert/=mpert) THEN
+         PRINT *,'Galerkin mpert = ',galsol%mpert
+         PRINT *,'Ideal    mpert = ',mpert
+         stop "ERROR: Galerkin mpert not ideal mpert."
+      ENDIF
+      ! These are the solution splines that can actually be used by idcon_build
+      CALL cspline_dealloc(u1)
+      CALL cspline_dealloc(u2)
+      CALL cspline_dealloc(u3)
+      CALL cspline_dealloc(u4)
+      CALL cspline_alloc(u1,mstep,mpert)
+      CALL cspline_alloc(u2,mstep,mpert)
+      CALL cspline_alloc(u3,mstep,mpert)
+      CALL cspline_alloc(u4,mstep,mpert)
+
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

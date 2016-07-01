@@ -77,7 +77,7 @@ c-----------------------------------------------------------------------
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
       ivacuumfile="vacuum.bin"
-      rdconfile="gal_solution.bin"
+      rdconfile="globalsol.bin"
       power_flag=.TRUE.
       fft_flag=.FALSE.
       fixed_boundary_flag=.FALSE.
@@ -312,10 +312,14 @@ c-----------------------------------------------------------------------
       CALL DATE_AND_TIME(date,time,zone,values)
       seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
 c-----------------------------------------------------------------------
-c     prepare ideal solutions.
+c     prepare DCON solutions.
 c-----------------------------------------------------------------------
       CALL idcon_read(psixy)
       CALL idcon_transform
+c-----------------------------------------------------------------------
+c     replace radial grids and u1-u4 with RDON solutions.
+c-----------------------------------------------------------------------
+      IF(gal_flag) CALL rdcon_read_solution
 c-----------------------------------------------------------------------
 c     reconstruct metric tensors.
 c-----------------------------------------------------------------------
@@ -445,10 +449,6 @@ c-----------------------------------------------------------------------
       CALL gpresp_permeab
       CALL gpresp_reluct
       IF(timeit) CALL gpec_timer(2)
-c-----------------------------------------------------------------------
-c     run and test rdcon.
-c-----------------------------------------------------------------------
-c      CALL rdcon_read
 c-----------------------------------------------------------------------
 c     Set parameters for outputs.
 c-----------------------------------------------------------------------
