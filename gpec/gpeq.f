@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,1)
-      CALL cspline_eval(u1,psi,0)
+      CALL cspline_eval(u1,psi,1)
       CALL cspline_eval(u2,psi,0)
       CALL cspline_eval(u3,psi,0)
       CALL cspline_eval(u4,psi,0)
