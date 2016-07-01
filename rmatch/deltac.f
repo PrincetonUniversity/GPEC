@@ -2147,7 +2147,7 @@ c-----------------------------------------------------------------------
       IF (x < xmin .OR. x > xmax) THEN
          CALL program_stop("x is out of range.")
       ENDIF
-      DO WHILE(1)
+      DO
          cell => gal%intvl%cell(icell)
          IF (x >= cell%x(1) .AND. x <= cell%x(2)) THEN
             EXIT
@@ -2274,9 +2274,9 @@ c     output solution for ascii.
 c-----------------------------------------------------------------------
       IF (deltac_out_sol) THEN
          DO isol=1,msol
-            WRITE (filename(2),"(I)")in%ising
+            WRITE (filename(2),"(I4)")in%ising
             filename(2)=ADJUSTL(filename(2))
-            WRITE (filename(3),"(I)")isol
+            WRITE (filename(3),"(I4)")isol
             filename(3)=ADJUSTL(filename(3))
             WRITE(filename(1),*) 'deltac_sur_'
      $           //TRIM(filename(2))//'_sol_'//TRIM(filename(3))//'.out'
@@ -2284,7 +2284,7 @@ c-----------------------------------------------------------------------
      $           STATUS="REPLACE")
             WRITE (deltac_out_unit,10) 'xvar'
             DO m=1,3
-               WRITE (tmp,"(I)") m
+               WRITE (tmp,"(I4)") m
                tmp=ADJUSTL(tmp)
                WRITE (comp_tittle,*) 'REAL(F',TRIM(tmp),')'
                WRITE (deltac_out_unit,10) TRIM(comp_tittle)
@@ -2311,9 +2311,9 @@ c     xdraw output.
 c-----------------------------------------------------------------------
       IF (deltac_bin_sol) THEN
          DO isol=1,msol
-            WRITE (filename(2),"(I)")in%ising
+            WRITE (filename(2),"(I4)")in%ising
             filename(2)=ADJUSTL(filename(2))
-            WRITE (filename(3),"(I)")isol
+            WRITE (filename(3),"(I4)")isol
             filename(3)=ADJUSTL(filename(3))
             WRITE(filename(1),*) 'deltac_sur_'
      $           //TRIM(filename(2))//'_sol_'//TRIM(filename(3))//'.bin'

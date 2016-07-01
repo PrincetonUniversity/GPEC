@@ -219,7 +219,7 @@ c-----------------------------------------------------------------------
 c     do msing diagnostic.
 c-----------------------------------------------------------------------     
       DO ising=1,msing
-         WRITE (filename,"(I)")ising
+         WRITE (filename,"(I4)")ising
          filename=ADJUSTL(filename)
          WRITE(filename,*) 'msing_'
      $                       //TRIM(filename)//'.bin'

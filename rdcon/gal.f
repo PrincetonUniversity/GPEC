@@ -95,7 +95,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: dx0,dx1,dx2,pfac
       REAL(r8) :: gal_tol=1e-10
       TYPE(cell_type), POINTER, PRIVATE :: cell
-      TYPE(coil_type) :: coil
+      TYPE(coil_type), SAVE, PRIVATE :: coil
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. gal_alloc.

@@ -100,8 +100,8 @@ c-----------------------------------------------------------------------
             
       TYPE(resist_type),DIMENSION(:),POINTER :: restype
       TYPE(nyquist_type) :: nyquist
-      TYPE(match_sol_type) :: match_sol
-      TYPE(coil_type) :: coil
+      TYPE(match_sol_type), SAVE :: match_sol
+      TYPE(coil_type), SAVE :: coil
       TYPE(outsol_type),PRIVATE :: outs
       TYPE(insol_type),PRIVATE :: ins
       
@@ -590,7 +590,7 @@ c-----------------------------------------------------------------------
       CALL ascii_open(match_unit,"outsol.out","REPLACE")
       WRITE (match_unit,10) 'psifac'
       DO ipert=mlow,mhigh
-         WRITE (tmp,"(I)") ipert
+         WRITE (tmp,"(I4)") ipert
          tmp=ADJUSTL(tmp)
          WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
          WRITE (match_unit,10) TRIM(comp_tittle)
@@ -839,8 +839,8 @@ c-----------------------------------------------------------------------
          IF(deltar_flag)THEN
             CALL deltar_run(restype(qscan_ising),q_scan,deltar,sol)
             IF(qscan_out .AND. ABS(deltar(2)) < dlim .AND.
-     $      ISNAN(ABS(deltar(1)))==.FALSE. .AND. 
-     $      ISNAN(ABS(deltar(2)))==.FALSE.) THEN
+     $      (ABS(deltar(1))==ABS(deltar(1))) .AND.
+     $      (ABS(deltar(2))==ABS(deltar(2)))) THEN
                  WRITE(out1_unit,10)REAL(qlog),
      $           mylog(deltar(1)),REAL(deltar(2))
                  WRITE(bin1_unit)REAL(qlog,4),
@@ -853,8 +853,8 @@ c-----------------------------------------------------------------------
          IF(deltac_flag)THEN
            CALL deltac_run(restype(qscan_ising),q_scan,deltac,df)
             IF(qscan_out .AND. ABS(deltac(2)) < dlim .AND.
-     $      ISNAN(ABS(deltac(1)))==.FALSE. .AND.
-     $      ISNAN(ABS(deltac(2)))==.FALSE.) THEN
+     $      (ABS(deltac(1))==ABS(deltac(1))) .AND.
+     $      (ABS(deltac(2))==ABS(deltac(2)))) THEN
                 WRITE(out2_unit,10)REAL(qlog),
      $           mylog(deltac(1)),REAL(deltac(2))
                 WRITE(bin2_unit)REAL(qlog,4),
@@ -868,8 +868,8 @@ c-----------------------------------------------------------------------
             CALL match_delta_jardin(restype(qscan_ising),q_scan,
      $                               deltaj,sol)
             IF(qscan_out .AND. ABS(deltaj(2)) < dlim .AND.
-     $      ISNAN(ABS(deltaj(1)))==.FALSE. .AND.
-     $      ISNAN(ABS(deltaj(2)))==.FALSE.) THEN
+     $      (ABS(deltaj(1))==ABS(deltaj(1))) .AND.
+     $      (ABS(deltaj(2))==ABS(deltaj(2)))) THEN
                WRITE(out3_unit,10)REAL(qlog),
      $           mylog(deltaj(1)),REAL(deltaj(2))
                WRITE(bin3_unit)REAL(qlog,4),
@@ -1293,7 +1293,7 @@ c-----------------------------------------------------------------------
       jsol=0
       DO isol=coil%m1,coil%m2
          jsol=jsol+1
-         WRITE (filename(2),"(I)") jsol  
+         WRITE (filename(2),"(I4)") jsol
          filename(2)=ADJUSTL(filename(2))
          WRITE(filename(1),*) 'rpec_sol_'//TRIM(filename(2))
          CALL match_output_solution(cout(:,jsol),cin(:,jsol),isol,
@@ -1548,7 +1548,7 @@ c-----------------------------------------------------------------------
       CALL ascii_open(match_unit,TRIM(filename1),"REPLACE")
       WRITE (match_unit,10) 'psifac'
                DO m=outs%mlow,outs%mhigh
-                  WRITE (tmp,"(I)") m
+                  WRITE (tmp,"(I4)") m
                   tmp=ADJUSTL(tmp)
                   WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
                   WRITE (match_unit,10) TRIM(comp_tittle)
