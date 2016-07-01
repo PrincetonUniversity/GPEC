@@ -1,0 +1,82 @@
+&gal_input
+    nx=256
+    pfac=0.001
+    gal_tol=1e-10
+    dx1dx2_flag=t
+    dx0=5e-4
+    dx1=1.e-3
+    dx2=1.e-3
+    cutoff=10
+    solver="LU"
+    nq=6
+    diagnose_integrand=f 
+    diagnose_map=f
+    diagnose_grid=f
+    diagnose_lsode=t
+    ndiagnose=12
+    diagnose_mat=f
+/
+&gal_output
+    interp_np=3
+    restore_uh=t
+    restore_us=t
+    restore_ul=t
+    bin_delmatch=t
+    out_galsol=t
+    bin_galsol=t
+    b_flag=f
+    coil%rpec_flag=t
+/
+&rdcon_control
+    bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
+    mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
+    ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
+    vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
+    gal_flag=t           ! Compute outer regime using resonant Galerkin method
+
+    sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    dmlim=0.2            ! See sas_flag
+    sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
+
+    nn=1                 ! Toroidal mode number
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
+    mthvac=960           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
+
+    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
+    crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
+    singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
+    ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
+
+    cyl_flag=f
+
+    sing1_flag=f
+    sing_order=6
+    sing_order_ceiling=t
+
+    regrid_flag=f
+/
+
+&rdcon_output
+    crit_break=t         ! Color of the crit curve changes when crossing a singular surface
+
+    ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
+    msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
+    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
+
+    bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    euler_stride=1       ! Output only every euler_stride'th psi step to binary file
+
+    out_bal1=f           ! Ascii output for bal_flag poloidal functions
+    bin_bal1=f           ! Binary output for bal_flag poloidal functions
+    out_bal2=f           ! Ascii output for bal_flag functions
+    bin_bal2=f           ! Binary output for bal_flag functions
+/
+
+&ua_diagnose_list
+    uad%flag=f
+    uad%phase=t
+/
