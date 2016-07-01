@@ -334,6 +334,11 @@ c     set parameters from dcon.
 c-----------------------------------------------------------------------
       ALLOCATE(xspmn(mpert),finmn(mpert),foutmn(mpert),
      $     fxmn(mpert),fxfun(mthsurf))
+      xspmn = 0
+      finmn = 0
+      foutmn = 0
+      fxmn = 0
+      fxfun = 0
 c-----------------------------------------------------------------------
 c     read coil data.
 c-----------------------------------------------------------------------
