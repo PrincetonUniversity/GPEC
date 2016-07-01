@@ -137,9 +137,11 @@ c-----------------------------------------------------------------------
          DEALLOCATE(fixtype)
       ENDIF
       ! force coil matching to method 1 since we don't have energies (method 0)
-      PRINT *,"WARNING: Forcing resp_index to 1 for use with RDCON"
+      IF(verbose) PRINT *,"  -> Forcing resp_index to 1"
       resp_index=1
       ! force new mstep and all the corresponding radial grids
+      IF(verbose) PRINT '(a37,I4)',
+     $   "  -> Redefining radial grid. mstep = ",mstep
       mstep = galsol%tot_grids
       DEALLOCATE(psifac,rhofac,qfac)
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep))
