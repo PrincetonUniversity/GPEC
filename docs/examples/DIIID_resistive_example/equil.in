@@ -1,6 +1,6 @@
 &EQUIL_CONTROL
     eq_type="efit"       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
-    eq_filename = "g147131.02300_DIIID_KEFIT" ! Path to input file
+    eq_filename = "../DIIID_ideal_example/g147131.02300_DIIID_KEFIT" ! Path to input file
 
     jac_type="hamada"    ! Working coordinate system for all DCON and GPEC calculations. Overrides individual powers. Accepts hamada, pest, boozer, equal_arc
     power_bp=0           ! del.B ~ B_p**power_bp * B**power_b / R**power_r
