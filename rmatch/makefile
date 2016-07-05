@@ -1,7 +1,9 @@
 include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil -I$(MATHINC)
-F90 = $(FC) $(options) $(FFLAGS)
+FFLAGS =
+IFLAGS = -I../equil -I$(MATHINC)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
+export FFLAGS # for sub-makes
 
 .f.o:
 	$(F90) -c $*.f
