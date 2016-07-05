@@ -484,14 +484,14 @@ c-----------------------------------------------------------------------
      $     singcurs,islandhwids
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: convmat
       COMPLEX(r8), DIMENSION(msing,mpert,mpert) :: fsurfindmats
-      COMPLEX(r8), DIMENSION(:), POINTER :: fldflxmn,bmn
-      COMPLEX(r8), DIMENSION(:,:), POINTER ::  temp1,temp2,
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: fldflxmn,bmn
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::  temp1,temp2,
      $     t1mat,t2mat,t3mat
 
-      INTEGER, DIMENSION(:), POINTER :: ipiv,tmfac
-      REAL(r8), DIMENSION(:), POINTER :: rwork
-      COMPLEX(r8), DIMENSION(:), POINTER :: work
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: a,vt    
+      INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv,tmfac
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: work
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: a,vt    
 
       TYPE(spline_type) :: spl 
 c-----------------------------------------------------------------------
@@ -930,8 +930,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: tempml
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: cawmn
 
-      REAL(r8), DIMENSION(:,:), POINTER :: dcosmn,dsinmn
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: rawmn
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: dcosmn,dsinmn
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rawmn
       
       INTEGER :: i_id,m_id,modid,mo_id,t_id,r_id,z_id,rn_id,zn_id,p_id,
      $    x_id,xx_id,xm_id,xxm_id,bm_id,bxm_id,b_id,bx_id,jo_id
@@ -1588,7 +1588,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: hdist,shear,area
       INTEGER, DIMENSION(msing) :: resnum
       REAL(r8), DIMENSION(msing) :: visland_hwidth,vchirikov
-      COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
 
       COMPLEX(r8), DIMENSION(msing) :: vflxmn
       REAL(r8), DIMENSION(0:mthsurf) :: unitfun
@@ -1738,17 +1738,17 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: fldflxmn,tvec1,tvec2,reigen
       COMPLEX(r8), DIMENSION(mstep) :: tprof
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,fldflxmat,vr,vl
-      COMPLEX(r8), DIMENSION(mstep,mpert,mpert) :: bsurfmat,dwks,dwk,
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bsurfmat,dwks,dwk,
      $     gind,gindp,gres,gresp
       COMPLEX(r8), DIMENSION(5,mpert) :: tvecs
       COMPLEX(r8), DIMENSION(9,mpert,mpert) :: tgresp
 
       REAL(r8), DIMENSION(10,48) :: icoilcur
       CHARACTER(24), DIMENSION(10) :: icoilname
-      COMPLEX(r8), DIMENSION(:), POINTER :: coilmn
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: coilmns,coil1,
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: coilmn
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: coilmns,coil1,
      $     coil2,coil3,coil4
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: gcoil
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: gcoil
 
       INTEGER, DIMENSION(3) :: cipiv
       REAL(r8), DIMENSION(3) :: ceigen
@@ -1761,6 +1761,13 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(3,3) :: cvr,cvl
 
       TYPE(cspline_type) :: optorq
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
+      ALLOCATE(bsurfmat(mstep,mpert,mpert),dwks(mstep,mpert,mpert),
+     $   dwk(mstep,mpert,mpert),gind(mstep,mpert,mpert),
+     $   gindp(mstep,mpert,mpert),gres(mstep,mpert,mpert),
+     $   gresp(mstep,mpert,mpert))
 c-----------------------------------------------------------------------
 c     call solutions.
 c-----------------------------------------------------------------------
@@ -2174,6 +2181,10 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
       ENDIF
 c-----------------------------------------------------------------------
+c     deallocation cleans memory in heap
+c-----------------------------------------------------------------------
+      DEALLOCATE(bsurfmat,dwks,dwk,gind,gindp,gres,gresp)
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -2196,24 +2207,41 @@ c-----------------------------------------------------------------------
      $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,equilbfun
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,equilbfun
       COMPLEX(r8), DIMENSION(mpert) :: eulbpar_mn,lagbpar_mn,
      $     divxprp_mn,curv_mn
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xms_fun,
      $     bvt_fun,bvz_fun,xmz_fun,xvt_fun,xvz_fun,xmt_fun,xsp1_fun
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: eulbparmns,lagbparmns,
-     $     divxprpmns,curvmns,xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: eulbparmout,lagbparmout,
-     $     divxprpmout,curvmout
-      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) ::eulbparfun,lagbparfun,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparmns,
+     $     lagbparmns,divxprpmns,curvmns,
+     $     xmp1mns,xspmns,xmsmns,xmtmns,xmzmns
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparmout,
+     $     lagbparmout,divxprpmout,curvmout
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: eulbparfun,lagbparfun,
      $     divxprpfun,curvfun,eulbparfout,lagbparfout,divxprpfout,
      $     curvfout
 
-      REAL(r8), DIMENSION(:), POINTER :: psis,ches,chex
-      COMPLEX(r8), DIMENSION(:,:), POINTER ::chea,chelagbmns,chelagbmout
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psis,ches,chex
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::chea,chelagbmns,
+     $     chelagbmout
       COMPLEX(r8), DIMENSION(mpert) :: chelagb_mn
 
       TYPE(cspline_type) :: cspl,chespl
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
+      ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf),
+     $   equilbfun(mstep,0:mthsurf))
+      ALLOCATE(eulbparmns(mstep,mpert),lagbparmns(mstep,mpert),
+     $   divxprpmns(mstep,mpert),curvmns(mstep,mpert),
+     $   xmp1mns(mstep,mpert),xspmns(mstep,mpert),xmsmns(mstep,mpert),
+     $   xmtmns(mstep,mpert),xmzmns(mstep,mpert))
+      ALLOCATE(eulbparmout(mstep,lmpert),lagbparmout(mstep,lmpert),
+     $   divxprpmout(mstep,lmpert),curvmout(mstep,lmpert))
+      ALLOCATE(eulbparfun(mstep,0:mthsurf),lagbparfun(mstep,0:mthsurf),
+     $   divxprpfun(mstep,0:mthsurf),curvfun(mstep,0:mthsurf),
+     $   eulbparfout(mstep,0:mthsurf),lagbparfout(mstep,0:mthsurf),
+     $   divxprpfout(mstep,0:mthsurf),curvfout(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -2627,6 +2655,15 @@ c-----------------------------------------------------------------------
 
       CALL ipeq_dealloc
 c-----------------------------------------------------------------------
+c     deallocation cleans memory in heap
+c-----------------------------------------------------------------------
+      DEALLOCATE(rs,zs,equilbfun)
+      DEALLOCATE(eulbparmns,lagbparmns,divxprpmns,curvmns,
+     $   xmp1mns,xspmns,xmsmns,xmtmns,xmzmns)
+      DEALLOCATE(eulbparmout,lagbparmout,divxprpmout,curvmout)
+      DEALLOCATE(eulbparfun,lagbparfun,divxprpfun,curvfun,
+     $   eulbparfout,lagbparfout,divxprpfout,curvfout)
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       IF(timeit) CALL ipec_timer(2)
@@ -2651,16 +2688,25 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
 
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: xmns,ymns,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmns,ymns,
      $     xnomns,bnomns,bwpmns
 
       INTEGER :: mlow_pest,mhigh_pest,mpert_pest
       INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_pest
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: pwpmns
 
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,rvecs,zvecs
-      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,psis,rvecs,zvecs
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rss,zss,
      $     xnofuns,bnofuns
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
+      ALLOCATE(rvecs(mstep,0:mthsurf),zvecs(mstep,0:mthsurf),
+     $   rs(mstep,0:mthsurf),zs(mstep,0:mthsurf),psis(mstep,0:mthsurf),
+     $   rss(mstep,0:mthsurf),zss(mstep,0:mthsurf),
+     $   xnofuns(mstep,0:mthsurf),bnofuns(mstep,0:mthsurf))
+      ALLOCATE(xmns(mstep,lmpert),ymns(mstep,lmpert),
+     $   xnomns(mstep,lmpert),bnomns(mstep,lmpert),bwpmns(mstep,lmpert))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -3022,6 +3068,11 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
       ENDIF         
 c-----------------------------------------------------------------------
+c     deallocation cleans memory in heap
+c-----------------------------------------------------------------------
+      DEALLOCATE(rvecs,zvecs,rs,zs,psis,rss,zss,xnofuns,bnofuns)
+      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns)
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       IF(timeit) CALL ipec_timer(2)
@@ -3039,7 +3090,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,ipert,i,iindex
       REAL(r8) :: ileft
       REAL(r8), DIMENSION(0:cmpsi) :: psi
-      COMPLEX(r8), DIMENSION(:), POINTER :: vcmn
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
 
       INTEGER :: p_id,t_id,i_id,m_id,bm_id,q_id
 
@@ -3243,14 +3294,23 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax
 
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs,psis,
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,psis,
      $     rvecs,zvecs,vecs
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,bs,dphi
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: xtamns,btamns
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xtamns,btamns
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwt_fun,xvt_fun,xvz_fun,
      $     bwt_fun,bvt_fun,bvz_fun,xta_fun,bta_fun
-      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: rss,zss,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rss,zss,
      $     xtafuns,btafuns
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
+      ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf),
+     $   psis(mstep,0:mthsurf),vecs(mstep,0:mthsurf),
+     $   rvecs(mstep,0:mthsurf),zvecs(mstep,0:mthsurf))
+      ALLOCATE(xtamns(mstep,lmpert),btamns(mstep,lmpert))
+      ALLOCATE(rss(mstep,0:mthsurf),zss(mstep,0:mthsurf),
+     $   xtafuns(mstep,0:mthsurf),btafuns(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -3398,6 +3458,12 @@ c-----------------------------------------------------------------------
          CALL bin_close(bin_2d_unit)
       ENDIF         
 c-----------------------------------------------------------------------
+c     deallocation cleans memory in heap
+c-----------------------------------------------------------------------
+      DEALLOCATE(rs,zs,psis,vecs,rvecs,zvecs)
+      DEALLOCATE(xtamns,btamns)
+      DEALLOCATE(rss,zss,xtafuns,btafuns)
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       IF(timeit) CALL ipec_timer(2)
@@ -3436,8 +3502,8 @@ c-----------------------------------------------------------------------
      $     bpr,bpz,bpp,vbr,vbz,vbp,vpbr,vpbz,vpbp,vvbr,vvbz,vvbp,
      $     btr,btz,btp,vcbr,vcbz,vcbp,xcr,xcz,xcp,bcr,bcz,bcp
 
-      REAL(r8), DIMENSION(:), POINTER :: chex,chey
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: chear,cheaz,
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: chex,chey
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: chear,cheaz,
      $     chxar,chxaz
 
 c-----------------------------------------------------------------------
@@ -4273,12 +4339,19 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,ipert,iindex,itheta
       REAL(r8) :: ileft
 
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,dphi,t11,t12,t21,t22,t33
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun,
      $     xwt_fun,bwt_fun,xvz_fun,bvz_fun
-      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: xrr_fun,brr_fun,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xrr_fun,brr_fun,
      $     xrz_fun,brz_fun,xrp_fun,brp_fun
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
+      ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf))
+      ALLOCATE(xrr_fun(mstep,0:mthsurf),brr_fun(mstep,0:mthsurf),
+     $   xrz_fun(mstep,0:mthsurf),brz_fun(mstep,0:mthsurf),
+     $   xrp_fun(mstep,0:mthsurf),brp_fun(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -4392,6 +4465,11 @@ c-----------------------------------------------------------------------
       
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
+c     deallocation cleans memory in heap
+c-----------------------------------------------------------------------
+      DEALLOCATE(rs,zs)
+      DEALLOCATE(xrr_fun,brr_fun,xrz_fun,brz_fun,xrp_fun,brp_fun)
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       IF(timeit) CALL ipec_timer(2)
@@ -4410,12 +4488,19 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,ipert,iindex,itheta
       REAL(r8) :: ileft,ximax,rmax
 
-      REAL(r8), DIMENSION(mstep,0:mthsurf) :: rs,zs
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xsp_fun,xss_fun,
      $     ear,eat,eap,arr,art,arp
-      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: ear_fun,eaz_fun,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: ear_fun,eaz_fun,
      $     eap_fun,arr_fun,arz_fun,arp_fun
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
+      ALLOCATE(rs(mstep,0:mthsurf),zs(mstep,0:mthsurf))
+      ALLOCATE(ear_fun(mstep,0:mthsurf),eaz_fun(mstep,0:mthsurf),
+     $   eap_fun(mstep,0:mthsurf),arr_fun(mstep,0:mthsurf),
+     $   arz_fun(mstep,0:mthsurf),arp_fun(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -4527,6 +4612,11 @@ c-----------------------------------------------------------------------
       
       CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
+c     deallocation cleans memory in heap
+c-----------------------------------------------------------------------
+      DEALLOCATE(rs,zs)
+      DEALLOCATE(ear_fun,eaz_fun,eap_fun,arr_fun,arz_fun,arp_fun)
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       IF(timeit) CALL ipec_timer(2)
@@ -4547,10 +4637,16 @@ c-----------------------------------------------------------------------
       INTEGER :: i_id,m_id,p_id,dp_id,xp_id,xa_id
       REAL(r8) :: ileft, psi
 
-      COMPLEX(r8), DIMENSION(mstep,lmpert) :: xmp1out,xspout,xmsout
-      COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: xmp1funs,xspfuns,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmp1out,xspout,xmsout
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmp1funs,xspfuns,
      $    xmsfuns
-
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
+      ALLOCATE(xmp1out(mstep,lmpert),xspout(mstep,lmpert),
+     $   xmsout(mstep,lmpert))
+      ALLOCATE(xmp1funs(mstep,0:mthsurf),xspfuns(mstep,0:mthsurf),
+     $   xmsfuns(mstep,0:mthsurf))
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -4674,6 +4770,11 @@ c-----------------------------------------------------------------------
 
 
       CALL ipeq_dealloc
+c-----------------------------------------------------------------------
+c     deallocation cleans memory in heap
+c-----------------------------------------------------------------------
+      DEALLOCATE(xmp1out,xspout,xmsout)
+      DEALLOCATE(xmp1funs,xspfuns,xmsfuns)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
