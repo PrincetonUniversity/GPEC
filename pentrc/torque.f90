@@ -189,7 +189,7 @@ module torque
     !    l : integer (in)
     !       Bounce harmonic number
     !    zi : integer (in)
-    !       Ion charge in fundemental units (e).
+    !       Ion charge in fundamental units (e).
     !    mi : integer (in)
     !       Ion mass (units of proton mass).
     !   electron : logical
@@ -922,7 +922,7 @@ module torque
     !   nl : integer.
     !       Number of bounce harmonics to include (-nl to nl)
     !    zi : integer (in)
-    !       Ion charge in fundemental units (e).
+    !       Ion charge in fundamental units (e).
     !    mi : integer (in)
     !       Ion mass (units of proton mass).
     !    wdfac : real (in)
@@ -1134,7 +1134,7 @@ module torque
     !   nl : integer.
     !       Number of bounce harmonics to include (-nl to nl)
     !    zi : integer (in)
-    !       Ion charge in fundemental units (e).
+    !       Ion charge in fundamental units (e).
     !    mi : integer (in)
     !       Ion mass (units of proton mass).
     !    wdfac : real (in)

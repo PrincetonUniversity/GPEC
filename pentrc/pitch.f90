@@ -16,7 +16,7 @@ module pitch_integration
     !   lrtol               - relative tolerance of lsode
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
@@ -602,7 +602,7 @@ module pitch_integration
     !    n : integer.
     !       mode number
     !    zi : integer (in)
-    !       Ion charge in fundemental units (e).
+    !       Ion charge in fundamental units (e).
     !    mi : integer (in)
     !       Ion mass (units of proton mass).
     !    electron : logical

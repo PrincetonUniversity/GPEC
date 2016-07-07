@@ -22,7 +22,7 @@ module pentrc_interface
     !   rzphi, bicube_type      - (psi,theta) Cylindrical coordinate & Jacobian
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
@@ -52,7 +52,7 @@ module pentrc_interface
         ntheta,nlmda,nthetafuns,&                   ! integers
         atol_psi,rtol_psi,&                         ! real
         tdebug,output_ascii,output_netcdf,&         ! logical
-        mpert,mfac                                  !! hacked for test writting
+        mpert,mfac                                  !! hacked for test writing
     use global_mod, only: version                   ! GPEC package
 
     implicit none

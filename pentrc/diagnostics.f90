@@ -11,7 +11,7 @@ module diagnostics
     !*PUBLIC DATA MEMBERS:
     ! 
     !*REVISION HISTORY:
-    !     2014.03.05 -Logan- initial writting. 
+    !     2014.03.05 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan

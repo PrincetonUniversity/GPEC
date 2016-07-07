@@ -172,13 +172,13 @@ module inputs
     !    file : character(256) (in)
     !       File path.
     !   zi : integer
-    !       Ion charge in fundemental units
+    !       Ion charge in fundamental units
     !   zimp : integer
-    !       Impurity ion charge in fundemental units
+    !       Impurity ion charge in fundamental units
     !   mi : integer
-    !       Ion mass in fundemental units (mass proton)
+    !       Ion mass in fundamental units (mass proton)
     !   mimp : integer
-    !       Impurity ion mass in fundemental units
+    !       Impurity ion mass in fundamental units
     !   wefac : real
     !       Direct multiplier for omegaE profiles
     !   wpfac : real
