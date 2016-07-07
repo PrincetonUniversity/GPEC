@@ -18,6 +18,7 @@ module utilities
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     use params, only: r8,twopi
+    use netcdf
     
     implicit none
     
@@ -839,5 +840,25 @@ module utilities
         func(fs)=func(0)
         return
     end subroutine iscdftb
-    
+
+    !=======================================================================
+    subroutine check(stat)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Check if a netcdf call was successful. If not, raise an error.
+    !
+    !*ARGUMENTS:
+    !    stat : integer
+    !       Status returned by a netcdf library function
+    !
+    !-----------------------------------------------------------------------
+        integer, intent (in) :: stat
+        !stop if it is an error.
+        if(stat /= nf90_noerr) then
+          print *, trim(nf90_strerror(stat))
+          stop "ERROR: failed to write/read netcdf file"
+        endif
+        return
+    end subroutine check
+
 end module utilities

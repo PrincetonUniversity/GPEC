@@ -109,7 +109,7 @@ module torque
     !*PUBLIC DATA MEMBERS:
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
@@ -117,7 +117,8 @@ module torque
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,me,e,mu0,pi,twopi
-    use utilities, only : get_free_file_unit,median, append_2d, ri, btoi, itob
+    use utilities, only : get_free_file_unit, check, median, append_2d, &
+        ri, btoi, itob
     use special, only : ellipk,ellipe
     use grid, only : powspace,linspace
     ! use lsode_mod just a subroutine in the lsode directory...
@@ -132,22 +133,42 @@ module torque
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
-        kin,xs_m,dbob_m,divx_m,fnml,&                  ! equilib and pert. equilib splines
-        chi1,ro,zo,bo,mfac,mpert,mthsurf,&             ! reals or integers
-        verbose                                        ! logical
-    
+        kin,xs_m,dbob_m,divx_m,fnml, &                          ! equilib and pert. equilib splines
+        chi1,ro,zo,bo,mfac,mpert,mthsurf,shotnum,shottime, &    ! reals or integers
+        verbose, &                                              ! logical
+        machine                                                 ! character
+    use global_mod, only : version
+    use netcdf
+
     implicit none
     
     real(r8) :: atol_psi = 1e-3, rtol_psi= 1e-6
     real(r8) :: psi_warned = 0.0
     logical :: tdebug=.false., output_ascii =.true., output_netcdf=.true.
-    integer :: nlmda=128, ntheta=128
+    integer :: nlmda=128, ntheta=128,nrecorded
     
-    complex(r8), dimension(:,:,:), allocatable :: elems ! temperary variable
+    integer, parameter :: nmethods = 5, ngrids = 3, nfluxfuns = 19, nthetafuns = 18
+    character(4), dimension(nmethods) :: methods = (/'fcgl','rlar','clar','tgar','fgar'/)
+    character(5), dimension(ngrids) :: grids = (/'lsode','equil','input'/)
+    logical, dimension(nmethods,ngrids) :: isrecorded = .false.
+    real(r8), dimension(:,:), allocatable, target :: &
+        fcgl_lsode_psi_record, rlar_lsode_psi_record, clar_lsode_psi_record, &
+        tgar_lsode_psi_record, fgar_lsode_psi_record, &
+        fcgl_equil_psi_record, rlar_equil_psi_record, clar_equil_psi_record, &
+        tgar_equil_psi_record, fgar_equil_psi_record, &
+        fcgl_input_psi_record, rlar_input_psi_record, clar_input_psi_record, &
+        tgar_input_psi_record, fgar_input_psi_record
+    real(r8), dimension(:,:,:), allocatable, target :: &
+        fcgl_lsode_ell_record, rlar_lsode_ell_record, clar_lsode_ell_record, &
+        tgar_lsode_ell_record, fgar_lsode_ell_record, &
+        fcgl_equil_ell_record, rlar_equil_ell_record, clar_equil_ell_record, &
+        tgar_equil_ell_record, fgar_equil_ell_record, &
+        fcgl_input_ell_record, rlar_input_ell_record, clar_input_ell_record, &
+        tgar_input_ell_record, fgar_input_ell_record
+
+    complex(r8), dimension(:,:,:), allocatable :: elems
     TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
     TYPE(cspline_type) :: trans ! nonambipolar transport and torque profile
-
-    integer, parameter :: nfluxfuns = 21, nthetafuns = 18
 
     contains
     
@@ -359,7 +380,7 @@ module torque
         ! optional record of flux functions
         if(present(op_ffuns)) then
             if(tdebug) print *, "  storing ",nfluxfuns," flux functions in ",size(op_ffuns,dim=1)
-            op_ffuns = (/ psi, epsr, kin%f(1:8), q,sq%f(2), sq%f(3), &
+            op_ffuns = (/ epsr, kin%f(1:8), q, sq%f(2), &
                 wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /)
         endif
         
@@ -934,7 +955,7 @@ module torque
         real(r8) :: x,xlast,chrg,drive,wdcom,dxcom
         real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: xs
-        real(r8), dimension(:,:), allocatable :: tmp,tmpl,tmpf
+        real(r8), dimension(:,:), allocatable :: profiles,ellprofiles
         complex(r8), dimension(:), allocatable :: gam,chi
         character(8) :: methcom
         ! lsode type variables
@@ -997,7 +1018,7 @@ module torque
         mx = istop-istrt
 
         ! prep allocations
-        allocate(tmp(mx+1,10),tmpl(neq*(mx+1),10),tmpf(mx+1,nfluxfuns))
+        allocate(profiles(mx+1,10+nfluxfuns),ellprofiles(neq*(mx+1),10))
         CALL cspline_alloc(tphi_spl,mx,2*nl+1)
         if(index(method,'mm')>0)then
             do j=1,6
@@ -1014,9 +1035,6 @@ module torque
             CALL tintgrnd(neqarray,x,y,dky)
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
-
-            ! save flux functions
-            tmpf(i+1,:) = fcom
 
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
@@ -1056,13 +1074,14 @@ module torque
             chi = -gam/(drive)
 
             ! save tables for ascii output
-            tmp(i+1,:) = (/ x, sq%f(3), &
+            profiles(i+1,:) = (/ x, sq%f(3), &
                 ri(sum(gam(:),dim=1)), &
                 ri(sum(chi(:),dim=1)), &
                 ri(sum(tphi_spl%fs(i,:),dim=1)), &
-                ri(sum(tphi_spl%fsi(i,:),dim=1)) /)
+                ri(sum(tphi_spl%fsi(i,:),dim=1)), &
+                fcom /)
             do l=-nl,nl
-                tmpl(i*neq + (nl+l) + 1, :) = (/ x, l*1.0_r8, &
+                ellprofiles(i*neq + (nl+l) + 1, :) = (/ x, l*1.0_r8, &
                     ri(gam(nl+l+1)), &
                     ri(chi(nl+l+1)), &
                     ri(tphi_spl%fs(i,nl+l+1)), &
@@ -1073,9 +1092,9 @@ module torque
         ! (re-)set global transport and torque spline
         if(trans%nqty /= 0) call cspline_dealloc(trans)
         call cspline_alloc(trans,mx,2)
-        trans%xs = tmp(:,1)
-        trans%fs(:,1) = tmp(:,2)+xj*tmp(:,3) ! particle/heat flux gamma
-        trans%fs(:,2) = tmp(:,4)+xj*tmp(:,5) ! troque & energy
+        trans%xs = profiles(1,:)
+        trans%fs(:,1) = profiles(3,:)+xj*profiles(4,:) ! particle/heat flux gamma
+        trans%fs(:,2) = profiles(7,:)+xj*profiles(8,:) ! torque & energy
         call cspline_fit(trans,"extrap")
 
         ! optionally fit global euler-lagrange coefficient splines
@@ -1085,16 +1104,16 @@ module torque
             enddo
         endif
 
-        ! ascii output
+        ! record results
+        call record_method(trim(method),trim(gtype),profiles,ellprofiles)
         if(output_ascii)then
-            call torque_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmp,tmpl)
-            call output_fluxfun_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmpf)
+            call output_torque_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",profiles,ellprofiles)
         endif
 
         ! sum for ultimate result
         tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
-        deallocate(xs,y,dky,gam,chi,tmp,tmpl,tmpf)
+        deallocate(xs,y,dky,gam,chi,profiles,ellprofiles)
         call cspline_dealloc(tphi_spl)
 
         return
@@ -1149,8 +1168,8 @@ module torque
         real(r8) :: xlast,wdcom,dxcom,chrg,drive
         real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: gam,chi
-        real(r8), dimension(:,:), allocatable :: tmp,tmpl,tmpf
-        complex(r8), dimension(maxsteps,mpert**2,6) :: tmpmats
+        real(r8), dimension(:,:), allocatable :: profiles,ellprofiles
+        complex(r8), dimension(maxsteps,mpert**2,6) :: kel_flat_mats
         character(8) :: methcom
         ! declare lsode input variables
         integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(6),&
@@ -1229,27 +1248,25 @@ module torque
             chi = -gam/(drive)
 
             ! save tables for ascii output
-            call append_2d(tmp, (/ x, sq%f(3), &
+            call append_2d(profiles, (/ x, sq%f(3), &
                 sum(gam(1:neq:2),dim=1),sum(gam(2:neq:2),dim=1),&
                 sum(chi(1:neq:2),dim=1),sum(chi(2:neq:2),dim=1),&
                 sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),&
-                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1) /) )
+                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1),&
+                fcom/) )
             do l=-nl,nl
-                call append_2d(tmpl, (/ x, l*1.0_r8, &
+                call append_2d(ellprofiles, (/ x, l*1.0_r8, &
                     gam(2*(nl+l)+1:2*(nl+l)+2), &
                     chi(2*(nl+l)+1:2*(nl+l)+2), &
                     dky(2*(nl+l)+1:2*(nl+l)+2), &
                       y(2*(nl+l)+1:2*(nl+l)+2) /) )
             enddo
 
-            ! save flux functions
-            call append_2d(tmpf,fcom)
-
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
                 do j=1,6
-                    tmpmats(iwork(11),:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
+                    kel_flat_mats(iwork(11),:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
                 enddo
             endif
 
@@ -1263,9 +1280,9 @@ module torque
         ! (re-)set global transport and torque spline
         if(trans%nqty /= 0) call cspline_dealloc(trans)
         call cspline_alloc(trans,iwork(11)-1,2)
-        trans%xs = tmp(:iwork(11),1)
-        trans%fs(:,1) = tmp(:iwork(11),2)+xj*tmp(:iwork(11),3) ! particle/heat flux gamma
-        trans%fs(:,2) = tmp(:iwork(11),4)+xj*tmp(:iwork(11),5) ! troque & energy
+        trans%xs = profiles(1,1:iwork(11))
+        trans%fs(:,1) = profiles(3,:iwork(11))+xj*profiles(4,:iwork(11)) ! particle/heat flux gamma
+        trans%fs(:,2) = profiles(7,:iwork(11))+xj*profiles(8,:iwork(11)) ! torque & energy
         call cspline_fit(trans,"extrap")
 
         ! optionally set global euler-lagrange coefficient splines
@@ -1273,22 +1290,25 @@ module torque
             do j=1,6
                 if(kelmm(j)%nqty/=0) call cspline_dealloc(kelmm(j))
                 call cspline_alloc(kelmm(j),iwork(11)-1,mpert**2)
-                kelmm(j)%xs(:) = tmp(1:iwork(11),1)
-                kelmm(j)%fs(:,:) = tmpmats(1:iwork(11),:,j)
+                kelmm(j)%xs(:) = profiles(1,1:iwork(11))
+                kelmm(j)%fs(:,:) = kel_flat_mats(1:iwork(11),:,j)
                 call cspline_fit(kelmm(j),"extrap")
             enddo
         endif
 
-        ! ascii output
+        ! record results
+        call record_method(trim(method),'lsode',profiles,ellprofiles)
         if(output_ascii)then
-            call torque_ascii(n,zi,mi,electron,trim(method),tmp,tmpl)
-            call output_fluxfun_ascii(n,zi,mi,electron,trim(method),tmpf)
+            call output_torque_ascii(n,zi,mi,electron,trim(method),profiles,ellprofiles)
         endif
+        !if(output_netcdf)then
+        !    call output_torque_netcdf(n,zi,mi,electron,trim(method),profiles,ellprofiles)
+        !endif
 
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y(1:neq:2),dim=1)+xj*sum(y(2:neq:2),dim=1)
 
-        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi,tmp,tmpl,tmpf)
+        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi,profiles,ellprofiles)
         
         return
     end function tintgrl_lsode
@@ -1522,7 +1542,141 @@ module torque
     end subroutine ascii_table
 
     !=======================================================================
-    subroutine torque_ascii(n,zi,mi,electron,method,prof,profl)
+    subroutine record_method(method,gridtype,prof,profl)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Store result of a integration to a module variable
+    !
+    !*ARGUMENTS:
+    !    method : character
+    !        Inserted into file name
+    !    prof : real 2D
+    !        Table of values
+    !    profl : real 2D
+    !        Table of (psi,ell) profiles
+    !
+    !*OPTIONAL ARGUMENTS:
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        character(*), intent(in) :: method,gridtype
+        real(r8), dimension(:,:), intent(in) :: prof,profl
+
+        integer :: i,j,nrow,ncol,nrowl,ncoll,nl,np
+        
+        ! learn sizes
+        ncol = size(prof,dim=1)
+        nrow = size(prof,dim=2)
+        ncoll = size(profl,dim=1)
+        nrowl = size(profl,dim=2)
+        np = nrow
+        nl = nrowl/np
+        if(nl*np/=nrowl) stop "ERROR: Unable to reshape torque output into P-by-L"
+
+        select case (method)
+            case ("fcgl")
+                select case (gridtype)
+                    case ('lsode')
+                        allocate(fcgl_lsode_psi_record(ncol,nrow),fcgl_lsode_ell_record(ncoll,np,nl))
+                        fcgl_lsode_psi_record = prof
+                        fcgl_lsode_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('equil')
+                        allocate(fcgl_equil_psi_record(ncol,nrow),fcgl_equil_ell_record(ncoll,np,nl))
+                        fcgl_equil_psi_record = prof
+                        fcgl_equil_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('input')
+                        allocate(fcgl_input_psi_record(ncol,nrow),fcgl_input_ell_record(ncoll,np,nl))
+                        fcgl_input_psi_record = prof
+                        fcgl_input_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case default
+                        Stop "ERROR: fcgl grid type does not have a global record"
+                end select
+            case ("rlar")
+                select case (gridtype)
+                    case ('lsode')
+                        allocate(rlar_lsode_psi_record(ncol,nrow),rlar_lsode_ell_record(ncoll,np,nl))
+                        rlar_lsode_psi_record = prof
+                        rlar_lsode_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('equil')
+                        allocate(rlar_equil_psi_record(ncol,nrow),rlar_equil_ell_record(ncoll,np,nl))
+                        rlar_equil_psi_record = prof
+                        rlar_equil_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('input')
+                        allocate(rlar_input_psi_record(ncol,nrow),rlar_input_ell_record(ncoll,np,nl))
+                        rlar_input_psi_record = prof
+                        rlar_input_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case default
+                        Stop "ERROR: rlar grid type does not have a global record"
+                end select
+            case ("clar")
+                select case (gridtype)
+                    case ('lsode')
+                        allocate(clar_lsode_psi_record(ncol,nrow),clar_lsode_ell_record(ncoll,np,nl))
+                        clar_lsode_psi_record = prof
+                        clar_lsode_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('equil')
+                        allocate(clar_equil_psi_record(ncol,nrow),clar_equil_ell_record(ncoll,np,nl))
+                        clar_equil_psi_record = prof
+                        clar_equil_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('input')
+                        allocate(clar_input_psi_record(ncol,nrow),clar_input_ell_record(ncoll,np,nl))
+                        clar_input_psi_record = prof
+                        clar_input_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case default
+                        Stop "ERROR: clar grid type does not have a global record"
+                end select
+            case ("tgar")
+                select case (gridtype)
+                    case ('lsode')
+                        allocate(tgar_lsode_psi_record(ncol,nrow),tgar_lsode_ell_record(ncoll,np,nl))
+                        tgar_lsode_psi_record = prof
+                        tgar_lsode_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('equil')
+                        allocate(tgar_equil_psi_record(ncol,nrow),tgar_equil_ell_record(ncoll,np,nl))
+                        tgar_equil_psi_record = prof
+                        tgar_equil_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('input')
+                        allocate(tgar_input_psi_record(ncol,nrow),tgar_input_ell_record(ncoll,np,nl))
+                        tgar_input_psi_record = prof
+                        tgar_input_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case default
+                        Stop "ERROR: tgar grid type does not have a global record"
+                end select
+            case ("fgar")
+                select case (gridtype)
+                    case ('lsode')
+                        allocate(fgar_lsode_psi_record(ncol,nrow),fgar_lsode_ell_record(ncoll,np,nl))
+                        fgar_lsode_psi_record = prof
+                        fgar_lsode_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('equil')
+                        allocate(fgar_equil_psi_record(ncol,nrow),fgar_equil_ell_record(ncoll,np,nl))
+                        fgar_equil_psi_record = prof
+                        fgar_equil_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case ('input')
+                        allocate(fgar_input_psi_record(ncol,nrow),fgar_input_ell_record(ncoll,np,nl))
+                        fgar_input_psi_record = prof
+                        fgar_input_ell_record = RESHAPE(profl,(/ncoll,nl,np/))
+                    case default
+                        Stop "ERROR: fgar grid type does not have a global record"
+                end select
+            case default
+                Stop "ERROR: Requested type does not have a global record"
+        end select
+
+        ! keep a key of what has been recorded
+        do i=1,nmethods
+            if (methods(i)==method)then
+                do j=1,ngrids
+                    if(grids(j)==gridtype) isrecorded(i,j) = .true.
+                enddo
+            endif
+        enddo
+
+        return
+    end subroutine record_method
+
+    !=======================================================================
+    subroutine output_torque_ascii(n,zi,mi,electron,method,prof,profl)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Write ascii torque profile files.
@@ -1554,8 +1708,19 @@ module torque
         integer :: zi, mi
 
         integer :: i,nrow,ncol,nrowl,ncoll,out_unit,unit1,unit2
+        real(r8) :: chrg,mass
         character(8) :: nstring
+        character(32) :: fmt
         character(128) :: file1,file2
+
+        ! set species
+        if(electron)then
+            chrg = e
+            mass = me
+        else
+            chrg = zi*e
+            mass = mi*mp
+        endif
 
         ! learn sizes
         ncol = size(prof,dim=1)
@@ -1567,10 +1732,6 @@ module torque
         write(nstring,'(I8)') n
         file1 = "pentrc_"//trim(method)//"_n"//trim(adjustl(nstring))//".out"
         file2 = "pentrc_"//trim(method)//"_ell_n"//trim(adjustl(nstring))//".out"
-        if(electron)then
-            file1 = file1(:7)//"e_"//file1(8:)
-            file2 = file2(:7)//"e_"//file2(8:)
-        endif
         if(qt)then
             file1 = file1(:7)//"heat_"//file1(8:)
             file2 = file2(:7)//"heat_"//file2(8:)
@@ -1600,22 +1761,29 @@ module torque
                 write(out_unit,*) " T_phi = Torque in Nm"
                 write(out_unit,*) " 2ndeltaW = Kinetic energy in J"
             endif
+            write(out_unit,*) " * All energy dependent quantities are taken at E/T unity."
             write(out_unit,'(1/,1(a10,I4))') "n =",n
-            write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass = ",mi*mp
+            write(out_unit,'(2(a10,es17.8E3))') "charge =",chrg,"mass = ",mass
             write(out_unit,'(3(a10,es17.8E3))') "R0 =",ro,"B0 =",bo,"chi1 = ",chi1
         enddo
 
         ! label columns
-        if(ncol/=10) stop "ERROR: Torque ascii array dimensions do not match labels"
-        write(unit1,'(1/,10(a17))') "psi_n",  "dv/dpsi_n",  "real(Gamma)",  "imag(Gamma)", &
-            "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)"
+        if(ncol/=10+nfluxfuns) stop "ERROR: Torque ascii array dimensions do not match labels"
+        write(fmt,*) '(1/,',10+nfluxfuns,'(a17))'
+        write(unit1,fmt) "psi_n",  "dv/dpsi_n",  "real(Gamma)",  "imag(Gamma)", &
+            "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)", &
+            "eps_r","n_i","n_e","T_i","T_e","omega_E","logLambda","nu_i","nu_e","q",&
+            "Pmu_0","omega_N","omega_T","omega_trans","omega_gyro","omega_b_rlar","omega_d_rlar",&
+            "<(deltaB_L/B)^2>","<(divxprp)^2>"!/J??
+
         if(ncoll/=10) stop "ERROR: Torque ascii ell array dimensions do not match labels"
         write(unit2,'(1/,10(a17))') "psi_n",  "ell",  "real(Gamma)",  "imag(Gamma)", &
             "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)"
 
         ! write tables
+        write(fmt,*) '(',10+nfluxfuns,'(es17.8E3))'
         do i=1,nrow
-            write(unit1,'(10(es17.8E3))') prof(:,i)
+            write(unit1,fmt) prof(:,i)
         enddo
         do i=1,nrowl
             write(unit2,'(10(es17.8E3))') profl(:,i)
@@ -1624,7 +1792,232 @@ module torque
         close(unit1)
         close(unit2)
         return
-    end subroutine torque_ascii
+    end subroutine output_torque_ascii
+
+    !=======================================================================
+    subroutine output_torque_netcdf(n,nl,zi,mi,electron)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii torque profile files.
+    !
+    !*ARGUMENTS:
+    !    n : integer
+    !        Toroidal mode number for header
+    !    zi : integer
+    !        Ion charge for header
+    !    mi : integer
+    !        Ion mass for header
+    !    electron : logical
+    !        Modifies file name to indicate run was for electrons
+    !    method : character
+    !        Inserted into file name
+    !    prof : real 2D
+    !        Table of values
+    !    op_profl : real 2D
+    !        Table of (psi,ell) profiles
+    !
+    !*OPTIONAL ARGUMENTS:
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n,nl,zi,mi
+        logical, intent(in) :: electron
+
+        integer :: i,j,nrow,ncol,nrowl,ncoll,np
+        real(r8) :: chrg,mass
+        real(r8), dimension(:,:), pointer :: psi_record
+        real(r8), dimension(:,:,:), pointer :: ell_record
+
+        integer :: ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
+            v_id,g_id,c_id,d_id,t_id
+        character(16) :: nstring,suffix,method,gridtype
+        character(128) :: ncfile
+        
+        print *,"Writing output to netcdf"
+
+        ! set species
+        if(electron)then
+            chrg = e
+            mass = me
+        else
+            chrg = zi*e
+            mass = mi*mp
+        endif
+
+        ! create and open netcdf file
+        write(nstring,'(I8)') n
+        ncfile = "pentrc_output_n"//TRIM(ADJUSTL(nstring))//".nc"
+        CALL check( nf90_create(ncfile, cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=ncid) )
+        ! store attributes
+        CALL check( nf90_put_att(ncid, nf90_global, "title", "PENTRC fundamental outputs") )
+        CALL check( nf90_put_att(ncid, nf90_global, "version", version))
+        CALL check( nf90_put_att(ncid, nf90_global, "shot", INT(shotnum) ) )
+        CALL check( nf90_put_att(ncid, nf90_global, "time", INT(shottime)) )
+        CALL check( nf90_put_att(ncid, nf90_global, "machine", machine) )
+        CALL check( nf90_put_att(ncid, nf90_global, "n", n) )
+        CALL check( nf90_put_att(ncid, nf90_global, "charge", chrg) )
+        CALL check( nf90_put_att(ncid, nf90_global, "mass", mass) )
+        CALL check( nf90_put_att(ncid, nf90_global, "R0", ro) )
+        CALL check( nf90_put_att(ncid, nf90_global, "B0", bo) )
+        CALL check( nf90_put_att(ncid, nf90_global, "chi1", chi1) )
+        ! define dimensions
+        CALL check( nf90_def_dim(ncid, "i", 2, i_did) )
+        CALL check( nf90_def_var(ncid, "i", nf90_int, i_did, i_id) )
+        CALL check( nf90_def_dim(ncid, "ell", nl, l_did) )
+        CALL check( nf90_def_var(ncid, "ell", nf90_int, l_did, l_id) )
+        ! End definitions
+        CALL check( nf90_enddef(ncid) )
+        ! store variables
+        CALL check( nf90_put_var(ncid, i_id, (/0,1/)) )
+        CALL check( nf90_put_var(ncid, l_id, (/(i,i=-nl,nl)/)) )
+
+        do i=1,nmethods
+            method = methods(i)
+            do j=1,ngrids
+                gridtype = grids(j)
+                select case (method)
+                    case ("fcgl")
+                        select case (gridtype)
+                            case ('lsode')
+                                psi_record => fcgl_lsode_psi_record
+                                ell_record => fcgl_lsode_ell_record
+                            case ('equil')
+                                psi_record => fcgl_equil_psi_record
+                                ell_record => fcgl_equil_ell_record
+                            case ('input')
+                                psi_record => fcgl_input_psi_record
+                                ell_record => fcgl_input_ell_record
+                            case default
+                                Stop "ERROR: fcgl grid type does not have a global record"
+                        end select
+                    case ("rlar")
+                        select case (gridtype)
+                            case ('lsode')
+                                psi_record => rlar_lsode_psi_record
+                                ell_record => rlar_lsode_ell_record
+                            case ('equil')
+                                psi_record => rlar_equil_psi_record
+                                ell_record => rlar_equil_ell_record
+                            case ('input')
+                                psi_record => rlar_input_psi_record
+                                ell_record => rlar_input_ell_record
+                            case default
+                                Stop "ERROR: rlar grid type does not have a global record"
+                        end select
+                    case ("clar")
+                        select case (gridtype)
+                            case ('lsode')
+                                psi_record => clar_lsode_psi_record
+                                ell_record => clar_lsode_ell_record
+                            case ('equil')
+                                psi_record => clar_equil_psi_record
+                                ell_record => clar_equil_ell_record
+                            case ('input')
+                                psi_record => clar_input_psi_record
+                                ell_record => clar_input_ell_record
+                            case default
+                                Stop "ERROR: clar grid type does not have a global record"
+                        end select
+                    case ("tgar")
+                        select case (gridtype)
+                            case ('lsode')
+                                psi_record => tgar_lsode_psi_record
+                                ell_record => tgar_lsode_ell_record
+                            case ('equil')
+                                psi_record => tgar_equil_psi_record
+                                ell_record => tgar_equil_ell_record
+                            case ('input')
+                                psi_record => tgar_input_psi_record
+                                ell_record => tgar_input_ell_record
+                            case default
+                                Stop "ERROR: tgar grid type does not have a global record"
+                        end select
+                    case ("fgar")
+                        select case (gridtype)
+                            case ('lsode')
+                                psi_record => tgar_lsode_psi_record
+                                ell_record => fgar_lsode_ell_record
+                            case ('equil')
+                                psi_record => fgar_equil_psi_record
+                                ell_record => fgar_equil_ell_record
+                            case ('input')
+                                psi_record => fgar_input_psi_record
+                                ell_record => fgar_input_ell_record
+                            case default
+                                Stop "ERROR: fgar grid type does not have a global record"
+                        end select
+                    case default
+                        Stop "ERROR: Requested type does not have a global record"
+                end select
+                print *,i,j
+                print *,method,gridtype
+                print *,isrecorded(i,j)
+                ! If this method and gridtype has been recorded, write it to the file
+                if(isrecorded(i,j))then
+                    ! learn sizes
+                    np = size(psi_record,dim=2)
+                    if(np/=size(ell_record,dim=3)) stop "Error: Record sizes are inconsistent"
+                    ! create distinguishing labels
+                    if(gridtype=='lsode')then
+                        suffix = '_'//trim(method)
+                    else
+                        suffix = '_'//trim(method)//'_'//trim(gridtype)
+                    endif
+                    ! Re-open definitions
+                    CALL check( nf90_redef(ncid) )
+                    CALL check( nf90_put_att(ncid, nf90_global, "T_total"//trim(suffix), psi_record(9,np)))
+                    CALL check( nf90_put_att(ncid, nf90_global, "dW_total"//trim(suffix), psi_record(10,np)/(2*n)))
+                    CALL check( nf90_def_dim(ncid, "psi"//trim(suffix), np, p_did) )
+                    CALL check( nf90_def_var(ncid, "psi"//trim(suffix), nf90_double, p_did, p_id) )
+                    CALL check( nf90_def_var(ncid, "Gamma"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), g_id) )
+                    CALL check( nf90_def_var(ncid, "chi"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), c_id) )
+                    CALL check( nf90_def_var(ncid, "t_phi"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), d_id) )
+                    CALL check( nf90_def_var(ncid, "T"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), t_id) )
+                    CALL check( nf90_def_var(ncid, "dvdpsi"//trim(suffix), nf90_double, (/i_did,p_did/), v_id) )
+                    ! Add information
+                    if(qt)then
+                        CALL check( nf90_put_att(ncid, g_id, "long_name", "Nonambipolar Heat Flux") )
+                        CALL check( nf90_put_att(ncid, g_id, "units", "1/sm^2") )
+                        CALL check( nf90_put_att(ncid, c_id, "long_name", "Nonambipolar Heat Diffusivity") )
+                        CALL check( nf90_put_att(ncid, c_id, "units", "m^2/s") )
+                        CALL check( nf90_put_att(ncid, d_id, "long_name", " A*e*psi'*Gamma/2pi profile") )
+                        CALL check( nf90_put_att(ncid, d_id, "units", "Nm per psi") )
+                        CALL check( nf90_put_att(ncid, t_id, "long_name", "Integrated A*e*psi'*Gamma/2pi") )
+                        CALL check( nf90_put_att(ncid, t_id, "units", "Nm") )
+                        CALL check( nf90_put_att(ncid, v_id, "long_name", "Differential Volume") )
+                        CALL check( nf90_put_att(ncid, v_id, "units", "m^3") )
+                    else
+                        CALL check( nf90_put_att(ncid, g_id, "long_name", "Nonambipolar Particle Flux") )
+                        CALL check( nf90_put_att(ncid, g_id, "units", "1/sm^2") )
+                        CALL check( nf90_put_att(ncid, c_id, "long_name", "Nonambipolar Particle Diffusivity") )
+                        CALL check( nf90_put_att(ncid, c_id, "units", "m^2/s") )
+                        CALL check( nf90_put_att(ncid, d_id, "long_name", "Toroidal Torque") )
+                        CALL check( nf90_put_att(ncid, d_id, "units", "Nm per psi") )
+                        CALL check( nf90_put_att(ncid, t_id, "long_name", "Integrated Toroidal Torque") )
+                        CALL check( nf90_put_att(ncid, t_id, "units", "Nm") )
+                        CALL check( nf90_put_att(ncid, v_id, "long_name", "Differential Volume") )
+                        CALL check( nf90_put_att(ncid, v_id, "units", "m^3") )
+                    endif
+                    CALL check( nf90_enddef(ncid) )
+                    ! Put in variables
+                    CALL check( nf90_put_var(ncid, p_id, ell_record(1,1,:)) )
+                    CALL check( nf90_put_var(ncid, g_id, ell_record(3:4,:,:)) )
+                    CALL check( nf90_put_var(ncid, c_id, ell_record(5:6,:,:)) )
+                    CALL check( nf90_put_var(ncid, d_id, ell_record(7:8,:,:)) )
+                    CALL check( nf90_put_var(ncid, t_id, ell_record(9:10,:,:)) )
+                    CALL check( nf90_put_var(ncid, v_id, psi_record(2,:)) )
+                endif
+            enddo
+        enddo
+        
+        ! close file
+        CALL check( nf90_close(ncid) )
+        
+            
+
+
+        return
+    end subroutine output_torque_netcdf
 
     !=======================================================================
     subroutine output_fluxfun_ascii(n,zi,mi,electron,method,table)

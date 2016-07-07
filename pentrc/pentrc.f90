@@ -223,7 +223,7 @@ program pentrc
                 endif
             endif
         enddo
-
+        call output_torque_netcdf(nn,nl,zi,mi,electron)
     endif
 
     ! send harvest record

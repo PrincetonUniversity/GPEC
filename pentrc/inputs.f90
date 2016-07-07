@@ -41,6 +41,7 @@ module inputs
         idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
+        shotnum,shottime,machine,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
         idcon_coords
     
@@ -58,6 +59,7 @@ module inputs
         kin, xs_m, dbob_m, divx_m, fnml, &
         geom,eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
         chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
+        shotnum,shottime,machine,&
         verbose
     
     ! global variables with defaults
