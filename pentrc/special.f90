@@ -297,6 +297,7 @@ module special
                    rmaxgoni = 3.53711887601422d+15
         
         flag = .false.
+        c = 0
         
         xabs = dabs(xi)
         yabs = dabs(yi)
