@@ -229,7 +229,9 @@ program pentrc
                 endif
             endif
         enddo
-        call output_torque_netcdf(nn,nl,zi,mi,electron)
+        if(output_netcdf)then
+            call output_torque_netcdf(nn,nl,zi,mi,electron,wdfac)
+        endif
     endif
 
     ! send harvest record
