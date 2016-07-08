@@ -223,16 +223,16 @@ module utilities
             mins = (secs-hrs*60*60)/60
             secs = secs-hrs*60*60-mins*60
             if(present(unit))then
-                write(unit,"(1x,a,1p,e10.3,a)")"total cpu time = ",seconds," seconds"
+                write(unit,"(1x,a,1p,e10.3,a)")"Total cpu time = ",seconds," seconds"
             else
                 if(hrs>0)then
-                    print *,"total cpu time = ",hrs," hours, ", &
+                    print *,"Total cpu time = ",hrs," hours, ", &
                         mins," minutes, ",secs," seconds"
                 elseif(mins>0)then
-                    print *,"total cpu time = ", &
+                    print *,"Total cpu time = ", &
                         mins," minutes, ",secs," seconds"
                 else
-                    print *,"total cpu time = ",secs," seconds"
+                    print *,"Total cpu time = ",secs," seconds"
                 endif
             endif
         endif
