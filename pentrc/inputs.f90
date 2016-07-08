@@ -257,11 +257,11 @@ module inputs
         welec = wpefac*welec   ! indirect manipulation of rotation
         if(wpfac/=1.0 .and. verbose) then
             print('(a40,es10.2e3)'),'  -> manipulating rotation by factor of ',wpfac
-            print *,'     by indierct manipulation of omegae profile'
+            print *,'     by indirect manipulation of omegae profile'
         endif
         kin%fs(:,5) = welec(:)
         call spline_fit(kin,"extrap")
-        if(write_log) print *,"Reformed kin spline with rotation manipulatins"
+        if(write_log) print *,"Reformed kin spline with rotation manipulations"
 
         ! write log - designed as check of reading routines
         if(write_log)then

@@ -147,24 +147,19 @@ module torque
     logical :: tdebug=.false., output_ascii =.true., output_netcdf=.true.
     integer :: nlmda=128, ntheta=128,nrecorded
     
-    integer, parameter :: nmethods = 5, ngrids = 3, nfluxfuns = 19, nthetafuns = 18
-    character(4), dimension(nmethods) :: methods = (/'fcgl','rlar','clar','tgar','fgar'/)
+    integer, parameter :: nmethods = 18, ngrids = 3, nfluxfuns = 19, nthetafuns = 18
+    character(4), dimension(nmethods) :: methods = (/ &
+        "fgar","tgar","pgar","rlar","clar","fcgl",&
+        "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
+        "fkmm","tkmm","pkmm","frmm","trmm","prmm" /)
     character(5), dimension(ngrids) :: grids = (/'lsode','equil','input'/)
-    logical, dimension(nmethods,ngrids) :: isrecorded = .false.
-    real(r8), dimension(:,:), allocatable, target :: &
-        fcgl_lsode_psi_record, rlar_lsode_psi_record, clar_lsode_psi_record, &
-        tgar_lsode_psi_record, fgar_lsode_psi_record, &
-        fcgl_equil_psi_record, rlar_equil_psi_record, clar_equil_psi_record, &
-        tgar_equil_psi_record, fgar_equil_psi_record, &
-        fcgl_input_psi_record, rlar_input_psi_record, clar_input_psi_record, &
-        tgar_input_psi_record, fgar_input_psi_record
-    real(r8), dimension(:,:,:), allocatable, target :: &
-        fcgl_lsode_ell_record, rlar_lsode_ell_record, clar_lsode_ell_record, &
-        tgar_lsode_ell_record, fgar_lsode_ell_record, &
-        fcgl_equil_ell_record, rlar_equil_ell_record, clar_equil_ell_record, &
-        tgar_equil_ell_record, fgar_equil_ell_record, &
-        fcgl_input_ell_record, rlar_input_ell_record, clar_input_ell_record, &
-        tgar_input_ell_record, fgar_input_ell_record
+
+    type record
+        logical :: is_recorded
+        real(r8), dimension(:,:), allocatable :: psi_record
+        real(r8), dimension(:,:,:), allocatable :: ell_record
+    endtype record
+    type(record) :: torque_record(nmethods,ngrids)
 
     complex(r8), dimension(:,:,:), allocatable :: elems
     TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
@@ -1018,6 +1013,7 @@ module torque
         enddo
         istop = i
         mx = istop-istrt
+        print *,mx
 
         ! prep allocations
         allocate(profiles(10+nfluxfuns,mx+1),ellprofiles(10,(1+2*nl)*(mx+1)))
@@ -1038,6 +1034,8 @@ module torque
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
 
+            ! record of flux functions
+            profiles(11:,i+1) = fcom
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, index=",i
@@ -1076,14 +1074,13 @@ module torque
             chi = -gam/(drive)
 
             ! save tables for ascii output
-            profiles(i+1,:) = (/ x, sq%f(3), &
+            profiles(:10,i+1) = (/ x, sq%f(3), &
                 ri(sum(gam(:),dim=1)), &
                 ri(sum(chi(:),dim=1)), &
                 ri(sum(tphi_spl%fs(i,:),dim=1)), &
-                ri(sum(tphi_spl%fsi(i,:),dim=1)), &
-                fcom /)
+                ri(sum(tphi_spl%fsi(i,:),dim=1)) /)
             do l=-nl,nl
-                ellprofiles(i*neq + (nl+l) + 1, :) = (/ x, l*1.0_r8, &
+                ellprofiles(:,i*(1+2*nl) + (nl+l) + 1) = (/ x, l*1.0_r8, &
                     ri(gam(nl+l+1)), &
                     ri(chi(nl+l+1)), &
                     ri(tphi_spl%fs(i,nl+l+1)), &
@@ -1581,101 +1578,17 @@ module torque
         nl = nrowl/np
         if(nl*np/=nrowl) stop "ERROR: Unable to reshape torque output into P-by-L"
 
-        select case (method)
-            case ("fcgl")
-                select case (gridtype)
-                    case ('lsode')
-                        allocate(fcgl_lsode_psi_record(ncol,nrow),fcgl_lsode_ell_record(ncoll,nl,np))
-                        fcgl_lsode_psi_record = prof
-                        fcgl_lsode_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('equil')
-                        allocate(fcgl_equil_psi_record(ncol,nrow),fcgl_equil_ell_record(ncoll,nl,np))
-                        fcgl_equil_psi_record = prof
-                        fcgl_equil_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('input')
-                        allocate(fcgl_input_psi_record(ncol,nrow),fcgl_input_ell_record(ncoll,nl,np))
-                        fcgl_input_psi_record = prof
-                        fcgl_input_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case default
-                        Stop "ERROR: fcgl grid type does not have a global record"
-                end select
-            case ("rlar")
-                select case (gridtype)
-                    case ('lsode')
-                        allocate(rlar_lsode_psi_record(ncol,nrow),rlar_lsode_ell_record(ncoll,nl,np))
-                        rlar_lsode_psi_record = prof
-                        rlar_lsode_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('equil')
-                        allocate(rlar_equil_psi_record(ncol,nrow),rlar_equil_ell_record(ncoll,nl,np))
-                        rlar_equil_psi_record = prof
-                        rlar_equil_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('input')
-                        allocate(rlar_input_psi_record(ncol,nrow),rlar_input_ell_record(ncoll,nl,np))
-                        rlar_input_psi_record = prof
-                        rlar_input_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case default
-                        Stop "ERROR: rlar grid type does not have a global record"
-                end select
-            case ("clar")
-                select case (gridtype)
-                    case ('lsode')
-                        allocate(clar_lsode_psi_record(ncol,nrow),clar_lsode_ell_record(ncoll,nl,np))
-                        clar_lsode_psi_record = prof
-                        clar_lsode_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('equil')
-                        allocate(clar_equil_psi_record(ncol,nrow),clar_equil_ell_record(ncoll,nl,np))
-                        clar_equil_psi_record = prof
-                        clar_equil_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('input')
-                        allocate(clar_input_psi_record(ncol,nrow),clar_input_ell_record(ncoll,nl,np))
-                        clar_input_psi_record = prof
-                        clar_input_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case default
-                        Stop "ERROR: clar grid type does not have a global record"
-                end select
-            case ("tgar")
-                select case (gridtype)
-                    case ('lsode')
-                        allocate(tgar_lsode_psi_record(ncol,nrow),tgar_lsode_ell_record(ncoll,nl,np))
-                        tgar_lsode_psi_record = prof
-                        tgar_lsode_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('equil')
-                        allocate(tgar_equil_psi_record(ncol,nrow),tgar_equil_ell_record(ncoll,nl,np))
-                        tgar_equil_psi_record = prof
-                        tgar_equil_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('input')
-                        allocate(tgar_input_psi_record(ncol,nrow),tgar_input_ell_record(ncoll,nl,np))
-                        tgar_input_psi_record = prof
-                        tgar_input_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case default
-                        Stop "ERROR: tgar grid type does not have a global record"
-                end select
-            case ("fgar")
-                select case (gridtype)
-                    case ('lsode')
-                        allocate(fgar_lsode_psi_record(ncol,nrow),fgar_lsode_ell_record(ncoll,nl,np))
-                        fgar_lsode_psi_record = prof
-                        fgar_lsode_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('equil')
-                        allocate(fgar_equil_psi_record(ncol,nrow),fgar_equil_ell_record(ncoll,nl,np))
-                        fgar_equil_psi_record = prof
-                        fgar_equil_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case ('input')
-                        allocate(fgar_input_psi_record(ncol,nrow),fgar_input_ell_record(ncoll,nl,np))
-                        fgar_input_psi_record = prof
-                        fgar_input_ell_record = reshape(profl,(/ncoll,nl,np/))
-                    case default
-                        Stop "ERROR: fgar grid type does not have a global record"
-                end select
-            case default
-                Stop "ERROR: Requested type does not have a global record"
-        end select
-
-        ! keep a key of what has been recorded
-        do i=1,nmethods
-            if (methods(i)==method)then
-                do j=1,ngrids
-                    if(grids(j)==gridtype) isrecorded(i,j) = .true.
+        ! allocate and store the method,grid records
+        do i=1,ngrids
+            if(gridtype==grids(i))then
+                do j=1,nmethods
+                    if(method==methods(j))then
+                        torque_record(j,i)%is_recorded=.true.
+                        allocate( torque_record(j,i)%psi_record(ncol,nrow) )
+                        allocate( torque_record(j,i)%ell_record(ncoll,nl,np) )
+                        torque_record(j,i)%psi_record = prof
+                        torque_record(j,i)%ell_record = reshape(profl,(/ncoll,nl,np/))
+                    endif
                 enddo
             endif
         enddo
@@ -1784,7 +1697,7 @@ module torque
             "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)", &
             "eps_r","n_i","n_e","T_i","T_e","omega_E","logLambda","nu_i","nu_e","q",&
             "Pmu_0","omega_N","omega_T","omega_trans","omega_gyro","omega_b_rlar","omega_d_rlar",&
-            "sqdbob_L_SA","sqdivxprp_SA"!/J??
+            "sqdBoB_L_SA","sqdivxi_perp_SA"!/J??
 
         if(ncoll/=10) stop "ERROR: Torque ascii ell array dimensions do not match labels"
         write(unit2,'(1/,10(a17))') "psi_n",  "ell",  "real(Gamma)",  "imag(Gamma)", &
@@ -1842,7 +1755,7 @@ module torque
         real(r8), dimension(:,:), pointer :: psi_record
         real(r8), dimension(:,:,:), pointer :: ell_record
 
-        integer :: ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
+        integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
             v_id,g_id,c_id,d_id,t_id, b_id,x_id, er_id,q_id,mp_id, &
             ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ll_id,we_id, &
             wn_id,wt_id,ws_id,wg_id,wb_id,wd_id
@@ -1914,27 +1827,59 @@ module torque
         call check( nf90_def_var(ncid, "i", nf90_int, i_did, i_id) )
         call check( nf90_def_dim(ncid, "ell", 2*nl+1, l_did) )
         call check( nf90_def_var(ncid, "ell", nf90_int, l_did, l_id) )
-        call check( nf90_def_dim(ncid, "psi_equil", sq%mx+1, p_did) )
-        call check( nf90_def_var(ncid, "psi_equil", nf90_double, p_did, p_id) )
+        call check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_did) )
+        call check( nf90_def_var(ncid, "psi_n", nf90_double, p_did, p_id) )
         ! define variables
         call check( nf90_def_var(ncid, "dvdpsi", nf90_double, p_did, v_id) )
+        call check( nf90_put_att(ncid, v_id, "long_name", "Differential Volume") )
+        call check( nf90_put_att(ncid, v_id, "units", "m^3") )
         call check( nf90_def_var(ncid, "eps_r", nf90_double, p_did, er_id) )
+        call check( nf90_put_att(ncid, er_id, "long_name", "Inverse Aspect Ratio") )
         call check( nf90_def_var(ncid, "q", nf90_double, p_did, q_id) )
+        call check( nf90_put_att(ncid, q_id, "long_name", "Safety Factor") )
         call check( nf90_def_var(ncid, "mu0P", nf90_double, p_did, mp_id) )
+        call check( nf90_put_att(ncid, mp_id, "long_name", "Equilibrium Pressure") )
         call check( nf90_def_var(ncid, "n_i", nf90_double, p_did, ni_id) )
+        call check( nf90_put_att(ncid, ni_id, "long_name", "Ion Density") )
+        call check( nf90_put_att(ncid, ni_id, "units", "m^-3") )
         call check( nf90_def_var(ncid, "n_e", nf90_double, p_did, ne_id) )
+        call check( nf90_put_att(ncid, ne_id, "long_name", "Electron Density") )
+        call check( nf90_put_att(ncid, ne_id, "units", "m^-3") )
         call check( nf90_def_var(ncid, "T_i", nf90_double, p_did, ti_id) )
+        call check( nf90_put_att(ncid, ti_id, "long_name", "Ion Temperature") )
+        call check( nf90_put_att(ncid, ti_id, "units", "eV") )
         call check( nf90_def_var(ncid, "T_e", nf90_double, p_did, te_id) )
+        call check( nf90_put_att(ncid, te_id, "long_name", "Electron Temperature") )
+        call check( nf90_put_att(ncid, te_id, "units", "eV") )
         call check( nf90_def_var(ncid, "logLambda", nf90_double, p_did, ll_id) )
+        call check( nf90_put_att(ncid, ll_id, "long_name", "Logarithm of Plasma Parameter") )
         call check( nf90_def_var(ncid, "nu_i", nf90_double, p_did, vi_id) )
+        call check( nf90_put_att(ncid, vi_id, "long_name", "Ion Collision Rate") )
+        call check( nf90_put_att(ncid, vi_id, "units", "1/s") )
         call check( nf90_def_var(ncid, "nu_e", nf90_double, p_did, ve_id) )
+        call check( nf90_put_att(ncid, ve_id, "long_name", "Electron Collision Rate") )
+        call check( nf90_put_att(ncid, ve_id, "units", "1/s") )
         call check( nf90_def_var(ncid, "omega_E", nf90_double, p_did, we_id) )
+        call check( nf90_put_att(ncid, we_id, "long_name", "Electric Precession Frequency") )
+        call check( nf90_put_att(ncid, we_id, "units", "rad/s") )
         call check( nf90_def_var(ncid, "omega_N", nf90_double, p_did, wn_id) )
+        call check( nf90_put_att(ncid, wn_id, "long_name", "Density Gradient Diamagnetic Frequency") )
+        call check( nf90_put_att(ncid, wn_id, "units", "rad/s") )
         call check( nf90_def_var(ncid, "omega_T", nf90_double, p_did, wt_id) )
+        call check( nf90_put_att(ncid, wt_id, "long_name", "Temperature Gradient Diamagnetic Frequency") )
+        call check( nf90_put_att(ncid, wt_id, "units", "rad/s") )
         call check( nf90_def_var(ncid, "omega_trans", nf90_double, p_did, ws_id) )
+        call check( nf90_put_att(ncid, ws_id, "long_name", "Transit Frequency") )
+        call check( nf90_put_att(ncid, ws_id, "units", "rad/s") )
         call check( nf90_def_var(ncid, "omega_gyro", nf90_double, p_did, wg_id) )
+        call check( nf90_put_att(ncid, wg_id, "long_name", "Gyro-Frequency") )
+        call check( nf90_put_att(ncid, wg_id, "units", "rad/s") )
         call check( nf90_def_var(ncid, "omega_b_rlar", nf90_double, p_did, wb_id) )
+        call check( nf90_put_att(ncid, wb_id, "long_name", "Reduced Bounce Frequency") )
+        call check( nf90_put_att(ncid, wb_id, "units", "rad/s") )
         call check( nf90_def_var(ncid, "omega_d_rlar", nf90_double, p_did, wd_id) )
+        call check( nf90_put_att(ncid, wd_id, "long_name", "Reduced Magnetic Precession Frequency") )
+        call check( nf90_put_att(ncid, wd_id, "units", "rad/s") )
         ! End definitions
         call check( nf90_enddef(ncid) )
         ! store variables
@@ -1947,8 +1892,8 @@ module torque
         call check( nf90_put_var(ncid, er_id, epsr) )
         call check( nf90_put_var(ncid, ni_id, ni) )
         call check( nf90_put_var(ncid, ne_id, ne) )
-        call check( nf90_put_var(ncid, ti_id, ti) )
-        call check( nf90_put_var(ncid, te_id, te) )
+        call check( nf90_put_var(ncid, ti_id, ti/1.602e-19) )
+        call check( nf90_put_var(ncid, te_id, te/1.602e-19) )
         call check( nf90_put_var(ncid, we_id, welec) )
         call check( nf90_put_var(ncid, ll_id, llmda) )
         call check( nf90_put_var(ncid, vi_id, nui) )
@@ -1962,109 +1907,51 @@ module torque
         deallocate(epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
             welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat)
 
-        do i=1,nmethods
-            method = methods(i)
-            do j=1,ngrids
-                gridtype = grids(j)
-                select case (method)
-                    case ("fcgl")
-                        select case (gridtype)
-                            case ('lsode')
-                                psi_record => fcgl_lsode_psi_record
-                                ell_record => fcgl_lsode_ell_record
-                            case ('equil')
-                                psi_record => fcgl_equil_psi_record
-                                ell_record => fcgl_equil_ell_record
-                            case ('input')
-                                psi_record => fcgl_input_psi_record
-                                ell_record => fcgl_input_ell_record
-                            case default
-                                Stop "ERROR: fcgl grid type does not have a global record"
-                        end select
-                    case ("rlar")
-                        select case (gridtype)
-                            case ('lsode')
-                                psi_record => rlar_lsode_psi_record
-                                ell_record => rlar_lsode_ell_record
-                            case ('equil')
-                                psi_record => rlar_equil_psi_record
-                                ell_record => rlar_equil_ell_record
-                            case ('input')
-                                psi_record => rlar_input_psi_record
-                                ell_record => rlar_input_ell_record
-                            case default
-                                Stop "ERROR: rlar grid type does not have a global record"
-                        end select
-                    case ("clar")
-                        select case (gridtype)
-                            case ('lsode')
-                                psi_record => clar_lsode_psi_record
-                                ell_record => clar_lsode_ell_record
-                            case ('equil')
-                                psi_record => clar_equil_psi_record
-                                ell_record => clar_equil_ell_record
-                            case ('input')
-                                psi_record => clar_input_psi_record
-                                ell_record => clar_input_ell_record
-                            case default
-                                Stop "ERROR: clar grid type does not have a global record"
-                        end select
-                    case ("tgar")
-                        select case (gridtype)
-                            case ('lsode')
-                                psi_record => tgar_lsode_psi_record
-                                ell_record => tgar_lsode_ell_record
-                            case ('equil')
-                                psi_record => tgar_equil_psi_record
-                                ell_record => tgar_equil_ell_record
-                            case ('input')
-                                psi_record => tgar_input_psi_record
-                                ell_record => tgar_input_ell_record
-                            case default
-                                Stop "ERROR: tgar grid type does not have a global record"
-                        end select
-                    case ("fgar")
-                        select case (gridtype)
-                            case ('lsode')
-                                psi_record => tgar_lsode_psi_record
-                                ell_record => fgar_lsode_ell_record
-                            case ('equil')
-                                psi_record => fgar_equil_psi_record
-                                ell_record => fgar_equil_ell_record
-                            case ('input')
-                                psi_record => fgar_input_psi_record
-                                ell_record => fgar_input_ell_record
-                            case default
-                                Stop "ERROR: fgar grid type does not have a global record"
-                        end select
-                    case default
-                        Stop "ERROR: Requested type does not have a global record"
-                end select
-                ! If this method and gridtype has been recorded, write it to the file
-                if(isrecorded(i,j))then
-                    ! learn sizes
-                    np = size(psi_record,dim=2)
-                    if(tdebug) print *,shape(psi_record)
-                    if(tdebug) print *,shape(ell_record)
-                    if(np/=size(ell_record,dim=3)) stop "Error: Record sizes are inconsistent"
+        ! store each method, grid combination that has been run
+        do i=1,ngrids
+            do j=1,nmethods
+                if(torque_record(j,i)%is_recorded)then
                     ! create distinguishing labels
-                    if(gridtype=='lsode')then
-                        suffix = '_'//trim(method)
+                    if(grids(i)=='lsode')then
+                        suffix = '_'//trim(methods(j))
                     else
-                        suffix = '_'//trim(method)//'_'//trim(gridtype)
+                        suffix = '_'//trim(methods(j))//'_'//trim(grids(i))
+                    endif
+                    ! check sizes
+                    np = size(torque_record(j,i)%psi_record,dim=2)
+                    if(np/=size(torque_record(j,i)%ell_record,dim=3))then
+                        print *,SHAPE(torque_record(j,i)%psi_record)
+                        print *,SHAPE(torque_record(j,i)%ell_record)
+                        stop "Error: Record sizes are inconsistent"
                     endif
                     ! Re-open definitions
                     call check( nf90_redef(ncid) )
-                    call check( nf90_put_att(ncid, nf90_global, "T_total"//trim(suffix), psi_record(9,np)))
-                    call check( nf90_put_att(ncid, nf90_global, "dW_total"//trim(suffix), psi_record(10,np)/(2*n)))
-                    call check( nf90_def_dim(ncid, "psi"//trim(suffix), np, p_did) )
-                    call check( nf90_def_var(ncid, "psi"//trim(suffix), nf90_double, p_did, p_id) )
+                    call check( nf90_put_att(ncid, nf90_global, "T_total"//trim(suffix), &
+                                             torque_record(j,i)%psi_record(9,np)))
+                    call check( nf90_put_att(ncid, nf90_global, "dW_total"//trim(suffix), &
+                                             torque_record(j,i)%psi_record(10,np)/(2*n)))
+                    if(trim(grids(i))=='lsode')then
+                        call check( nf90_def_dim(ncid, "psi"//trim(suffix), np, p_did) )
+                        call check( nf90_def_var(ncid, "psi"//trim(suffix), nf90_double, p_did, p_id) )
+                        call check( nf90_def_var(ncid, "sqdBoB_L_SA"//trim(suffix), nf90_double, p_did, b_id) )
+                        call check( nf90_def_var(ncid, "sqdivxi_perp_SA"//trim(suffix), nf90_double, p_did, x_id) )
+                    else ! no need to store redundant flux functions on grids
+                        status = nf90_inq_dimid(ncid, "psi_"//trim(grids(i)), p_did)
+                        if(status == nf90_noerr )then ! re-use the psi for the repeat grid type
+                            call check( nf90_inq_varid(ncid, "psi_"//trim(grids(i)), p_id) )
+                            call check( nf90_inq_varid(ncid, "sqdBoB_L_SA_"//trim(grids(i)), b_id) )
+                            call check( nf90_inq_varid(ncid, "sqdivxi_perp_SA_"//trim(grids(i)), x_id) )
+                        else ! create the psi for the grid type
+                            call check( nf90_def_dim(ncid, "psi_"//trim(grids(i)), np, p_did) )
+                            call check( nf90_def_var(ncid, "psi_"//trim(grids(i)), nf90_double, p_did, p_id) )
+                            call check( nf90_def_var(ncid, "sqdBoB_L_SA_"//trim(grids(i)), nf90_double, p_did, b_id) )
+                            call check( nf90_def_var(ncid, "sqdivxi_perp_SA_"//trim(grids(i)), nf90_double, p_did, x_id) )
+                        endif
+                    endif
                     call check( nf90_def_var(ncid, "Gamma"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), g_id) )
                     call check( nf90_def_var(ncid, "chi"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), c_id) )
-                    call check( nf90_def_var(ncid, "t_phi"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), d_id) )
+                    call check( nf90_def_var(ncid, "dTdpsi"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), d_id) )
                     call check( nf90_def_var(ncid, "T"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), t_id) )
-                    call check( nf90_def_var(ncid, "sqdbob_L_SA"//trim(suffix), nf90_double, p_did, b_id) )
-                    call check( nf90_def_var(ncid, "sqdivxprp_SA"//trim(suffix), nf90_double, p_did, x_id) )
                     ! Add metadata
                     if(qt)then
                         call check( nf90_put_att(ncid, g_id, "long_name", "Nonambipolar Heat Flux") )
@@ -2080,8 +1967,8 @@ module torque
                         call check( nf90_put_att(ncid, g_id, "units", "1/sm^2") )
                         call check( nf90_put_att(ncid, c_id, "long_name", "Nonambipolar Particle Diffusivity") )
                         call check( nf90_put_att(ncid, c_id, "units", "m^2/s") )
-                        call check( nf90_put_att(ncid, d_id, "long_name", "Toroidal Torque") )
-                        call check( nf90_put_att(ncid, d_id, "units", "Nm per psi") )
+                        call check( nf90_put_att(ncid, d_id, "long_name", "Toroidal Torque Profile") )
+                        call check( nf90_put_att(ncid, d_id, "units", "Nm per unit normalized flux") )
                         call check( nf90_put_att(ncid, t_id, "long_name", "Integrated Toroidal Torque") )
                         call check( nf90_put_att(ncid, t_id, "units", "Nm") )
                     endif
@@ -2089,22 +1976,19 @@ module torque
                     call check( nf90_put_att(ncid, x_id, "long_name", "Surface Average Divergence of the Perpendicular Displacement") )
                     call check( nf90_enddef(ncid) )
                     ! Put in variables
-                    call check( nf90_put_var(ncid, p_id, ell_record(1,1,:)) )
-                    call check( nf90_put_var(ncid, g_id, ell_record(3:4,:,:)) )
-                    call check( nf90_put_var(ncid, c_id, ell_record(5:6,:,:)) )
-                    call check( nf90_put_var(ncid, d_id, ell_record(7:8,:,:)) )
-                    call check( nf90_put_var(ncid, t_id, ell_record(9:10,:,:)) )
-                    call check( nf90_put_var(ncid, b_id, psi_record(28,:)) )
-                    call check( nf90_put_var(ncid, x_id, psi_record(29,:)) )
+                    call check( nf90_put_var(ncid, p_id, torque_record(j,i)%ell_record(1,1,:)) )
+                    call check( nf90_put_var(ncid, g_id, torque_record(j,i)%ell_record(3:4,:,:)) )
+                    call check( nf90_put_var(ncid, c_id, torque_record(j,i)%ell_record(5:6,:,:)) )
+                    call check( nf90_put_var(ncid, d_id, torque_record(j,i)%ell_record(7:8,:,:)) )
+                    call check( nf90_put_var(ncid, t_id, torque_record(j,i)%ell_record(9:10,:,:)) )
+                    call check( nf90_put_var(ncid, b_id, torque_record(j,i)%psi_record(28,:)) )
+                    call check( nf90_put_var(ncid, x_id, torque_record(j,i)%psi_record(29,:)) )
                 endif
             enddo
         enddo
         
         ! close file
         call check( nf90_close(ncid) )
-        
-            
-
 
         return
     end subroutine output_torque_netcdf
