@@ -51,7 +51,7 @@ c-----------------------------------------------------------------------
       INTEGER :: data_type,ifix,ios,mband,msol,istep,ising,ipert
 
       INTEGER :: i1,i2,i3,i4,i5,i6
-      REAL(r8) :: r1,r2,r3,r4,r5
+      REAL(r8) :: r1,r2,r3,r4,r5,eqrs(23)
 
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
       ! obsolete iagnostics.
@@ -65,6 +65,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,i2,i3,r1,r2,r3,r4,r5
       READ(in_unit)i4,i5,i6
       READ(in_unit)kin_flag,con_flag
+      READ(in_unit) eqrs
 
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
