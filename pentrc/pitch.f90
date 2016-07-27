@@ -23,8 +23,9 @@ module pitch_integration
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only : r8,xj,mp,e, nlambda_out
-    use utilities, only : get_free_file_unit,append_2d
+    use params, only : r8,xj,mp,e, npsi_out, nell_out, nlambda_out, &
+        nmethods, methods
+    use utilities, only : get_free_file_unit,append_2d,check
     use special, only : ellipk
     use cspline_mod, only: cspline_type,cspline_eval
     use spline_mod, only: spline_type,spline_eval,spline_alloc,&
@@ -32,33 +33,45 @@ module pitch_integration
     use bicube_mod, only: bicube_type,bicube_eval
     use energy_integration, only: xintgrl_lsode
     use lsode1_mod
-    use inputs, only: rzphi !added for bounce locations
+    use dcon_interface, only : shotnum, shottime, machine
+    use global_mod, only : version
+    use netcdf
     
     implicit none
     
     private
     public &
-        lambdaatol,lambdartol, &                            ! reals
+        lambdaatol,lambdartol, &                            ! real
         lambdadebug, &                                      ! logical
         lambdaintgrl_lsode,kappaintgrl,kappaintgnd, &       ! functions
-        output_pitch_record                                 ! subroutines
+        output_pitch_netcdf,output_pitch_ascii              ! subroutines
     
     ! global variables with defaults
     logical :: lambdadebug = .false.
     real(r8) :: &
         lambdaatol = 1e-12, &
         lambdartol = 1e-9
-    real(r8), dimension(:,:), allocatable :: pitch_record
+
     ! global variables for internal use
+    integer, parameter :: maxstep = 10000, nfs = 14
     real(r8) :: pitch_psi !wn_g,wt_g,we_g,nuk_g,l_g,n_g,bobmax_g,epsr_g
     character(4) :: pitch_method
     type(cspline_type) :: eqspl_g
     type(spline_type) :: turns_g
+
+    type record
+        logical :: is_recorded
+        integer :: psi_index, ell_index
+        integer, dimension(:), allocatable :: ell
+        real(r8), dimension(:), allocatable :: psi
+        real(r8), dimension(:,:,:,:), allocatable :: fs
+    endtype record
+    type(record) :: pitch_record(nmethods)
     
     contains
 
     !=======================================================================
-    function lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,eq_spl,l,n,&
+    function lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,eq_spl,ell,n,&
                                 rex,imx,psi,turns,method,op_record)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
@@ -92,8 +105,8 @@ module pitch_integration
     !           wb(Lambda) : Bounce frequency
     !           wd(Lambda) : Bounce avaraged magnetic precession /x
     !           f(Lambda)  : Integrand function.
-    !   l : real.
-    !       effective bounce harmonic (i.e. ell-nq for passing)
+    !   ell : integer.
+    !       bounce harmonic
     !   n : integer.
     !       toroidal mode number
     !   rex : real.
@@ -127,7 +140,7 @@ module pitch_integration
         ! declare function
         complex(r8), dimension(:), allocatable :: lambdaintgrl_lsode        
         ! declare arguments
-        integer, intent(in) :: n,l
+        integer, intent(in) :: n,ell
         real(r8), intent(in) :: wn,wt,we,nuk,bobmax,epsr,q,psi,rex,imx
         character(*), intent(in) :: method
         type(cspline_type) eq_spl      
@@ -135,25 +148,18 @@ module pitch_integration
         logical, optional :: op_record
         ! declare variables
         logical :: record_this
-        integer :: i,sigma,l_g,n_g,out_unit
+        integer :: istep, ilambda, j, l_g, n_g, out_unit
         real(r8) :: lmda,wb,wd,nueff,lnq,wn_g,wt_g,we_g,nuk_g,&
             bobmax_g,epsr_g,q_g,rex_g,imx_g
         complex(r8) :: xint
+        real(r8), dimension(nfs,maxstep) :: fs
         ! declare lsode input variables
-        integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(1),&
-            neq,liw,lrw
+        integer  iopt, iout, istate, itask, itol, mf, iflag, neqarray(1), &
+            neq, liw, lrw
         integer, dimension(:), allocatable :: iwork
         real*8 :: x,xout
         real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
-        !integer  iopt, iout, istate, itask, itol, mf, iflag
-        !integer, parameter ::   &
-        !    neq(1) = 2,         &   ! true number of equations
-        !    liw  = 20 + neq(1), &   ! for mf 22 ! only uses 20 if mf 10
-        !    lrw  = 20 + 16*neq(1)   ! for mf 10 
-        !    !lrw = 22+9*neq(1)+neq(1)**2 ! for mf 22
-        !integer iwork(liw)
-        !real*8  atol(1),rtol(1),rwork(lrw),x,xout,y(neq(1)),dky(neq(1))
-        
+
         common /lcom/ wn_g,wt_g,we_g,nuk_g,bobmax_g,epsr_g, &
                     q_g,l_g,n_g,rex_g,imx_g
         
@@ -164,21 +170,21 @@ module pitch_integration
         allocate(iwork(liw))
         allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
         neqarray(:) = (/ neq /)
-        y(:) = 0
-        x = eq_spl%xs(0)
-        xout = eq_spl%xs(eq_spl%mx)
-        itol = 2                  ! rtol and atol are arrays
-        rtol = lambdartol              !1.d-7!9              ! 14
-        atol = lambdaatol              !1.d-7!9              ! 15
-        istate = 1                ! first step
-        iopt = 1                  ! optional inputs
-        iwork(:) = 0              ! defaults
-        rwork(:) = 0              ! defaults
-        rwork(1) = xout           ! only used if itask 4,5
-        iwork(6) = 10000          ! max number steps
-        mf = 10                   ! not stiff with unknown J 
+        y(:) = 0                    ! initial value of integral
+        x = eq_spl%xs(0)            ! lower bound of integration
+        xout = eq_spl%xs(eq_spl%mx) ! upper bound of integration
+        itol = 2                    ! rtol and atol are arrays
+        rtol = lambdartol           !1.d-7!9              ! 14
+        atol = lambdaatol           !1.d-7!9              ! 15
+        istate = 1                  ! first step
+        iopt = 1                    ! optional inputs
+        iwork(:) = 0                ! defaults
+        rwork(:) = 0                ! defaults
+        rwork(1) = xout             ! only used if itask 4,5
+        iwork(6) = maxstep          ! max number steps
+        mf = 10                     ! not stiff with unknown J
     
-        ! set glbl variables for access in integrand
+        ! set module variables for access in integrand
         wn_g = wn
         wt_g = wt
         we_g = we
@@ -186,7 +192,7 @@ module pitch_integration
         bobmax_g = bobmax
         epsr_g = epsr
         q_g = q
-        l_g  = l
+        l_g  = ell
         n_g = n
         eqspl_g = eq_spl
         turns_g = turns
@@ -201,32 +207,31 @@ module pitch_integration
         if(present(op_record)) record_this = op_record
 
         if(record_this) then
+            istep = 0
             itask = 5              ! single step
             do while (x<xout)
                 call lsode1(lintgrnd, neqarray, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                 call dintdy1(x, 1, rwork(21), neqarray(1), dky, iflag)
                 call spline_eval(turns_g,x,0)
-                call append_2d(pitch_record, (/psi,l*1.0_r8,x,dky(1:2),y(1:2), &
-                    real(eqspl_g%f(1:2)),real(eqspl_g%f(eqspl_g%nqty)),turns_g%f(:)/) )
+                istep = istep + 1
+                fs(:,istep) = (/x, dky(1:2), y(1:2), real(eqspl_g%f(1:3)), turns_g%f(1:6)/)
             enddo
             ! write select energy integral output files
-            do i = 0,nlambda_out-1
-                lmda = eq_spl%xs(0) + (i/(nlambda_out-1.0))*(xout-eq_spl%xs(0))
+            do ilambda = 0,nlambda_out-1
+                lmda = eq_spl%xs(0) + (ilambda/(nlambda_out-1.0))*(xout-eq_spl%xs(0))
                 call cspline_eval(eq_spl,lmda,0)
                 wb = real(eq_spl%f(1))
                 wd = real(eq_spl%f(2))
                 if(lmda>bobmax)then
                     nueff = nuk/(2*epsr)
-                    lnq = 1.0*l
-                    sigma = 0
+                    lnq = real(ell,r8)
                 else
                     nueff = nuk
-                    lnq = l+n*q
-                    sigma = 1
+                    lnq = ell+n*q
                 endif
                 ! note: currently ignores -wb case for trapped
-                xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,sigma,n,psi,lmda,method,record_this)
+                xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,ell,lnq,n,psi,lmda,method,record_this)
             enddo
         else
             itask = 4              ! full integral
@@ -250,7 +255,7 @@ module pitch_integration
             iwork(:) = 0           ! defaults
             rwork(:) = 0           ! defaults
             rwork(1) = xout        ! only used if itask 4,5
-            iwork(6) = 10000       ! max number steps
+            iwork(6) = maxstep     ! max number steps
             do while (x<xout .and. iwork(11)<iwork(6))
                 call lsode1(lintgrnd, neqarray, y, x, xout, itol, rtol, &
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
@@ -259,6 +264,15 @@ module pitch_integration
             enddo
             close(out_unit)
             stop "ERROR: lambdaintgrl_lsode - too many steps in lambda required."
+        endif
+
+        ! save integration profile to memory
+        if(record_this) then
+            ! fill in unused x's with the endpoints
+            do j=istep+1,maxstep
+                fs(:,j) = fs(:,istep)
+            enddo
+            call record_method( method, psi, ell, fs )
         endif
 
         ! convert to complex space if integrations successful
@@ -284,8 +298,8 @@ module pitch_integration
     subroutine lintgrnd(neq,x,y,ydot)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
-    !   Dynamic pitch integration using lsode. Module global variabls
-    !   lambdaatol, lambdartol are used for tolerances.
+    !   Pitch integrand for us in LSODE.
+    !   Note: Also uses a number of common variables.
     !
     !*ARGUMENTS:
     !    neq : integer (in)
@@ -297,23 +311,6 @@ module pitch_integration
     !    ydot : real dimension(neq) (inout)
     !       First two elements are real and imaginary integrand.
     !
-    !*OPTIONAL ARGUMENTS: *** CURRENTLY UNAVAILABLE DUE TO LSODE ERROR ***
-    !    wntedbk_ln : real, dimension(8) (in)
-    !       wn : real.
-    !           density gradient diamagnetic drift frequency
-    !       wt : real.
-    !           temperature gradient diamagnetic drift frequency
-    !       we : real.
-    !           electric precession frequency
-    !       nuk : real.
-    !           effective Krook collision frequency (i.e. /2eps for trapped)
-    !       eq_spl : cspline_type.
-    !           Equilibrium lambda functions
-    !       l : real.
-    !           effective bounce harmonic (i.e. ell-nq for passing)
-    !       n : real.
-    !           toroidal mode number
-    !
     !*RETURNS:
     !     complex.
     !        energy integral.
@@ -322,7 +319,7 @@ module pitch_integration
         integer ::  neq
         real*8 x, y(neq), ydot(neq)
     
-        integer :: l,n,i,sigma
+        integer :: l,n,i
         real(r8) :: wn,wt,we,wd,wb,nuk,bobmax,epsr,lnq,q,fl,nueff,rex,imx
         complex(r8) :: xint,fres
     
@@ -348,14 +345,12 @@ module pitch_integration
         if(x<=bobmax)then      ! circulating particles
             nueff = nuk
             lnq = l+n*q
-            sigma = 1
-            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,sigma,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
-            xint = xint + xintgrl_lsode(wn,wt,we,wd,-wb,nueff,l,sigma,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
+            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,lnq,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
+            xint = xint + xintgrl_lsode(wn,wt,we,wd,-wb,nueff,l,lnq,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
         else                        ! trapped particles
             nueff = nuk/(2*epsr)    ! effective collisionality
-            lnq = 1.0*l
-            sigma = 0
-            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,sigma,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
+            lnq = real(l,r8)
+            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,lnq,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
         endif
         
         if(lambdadebug) print *,"lnq, nueff = ",lnq,nueff
@@ -594,54 +589,275 @@ module pitch_integration
         deallocate(fm)
         return
     end function kappaintgnd
-    
+
+
     !=======================================================================
-    subroutine output_pitch_record(n,zi,mi,electron,method)
+    subroutine record_method(method, psi, ell, fs)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Save the energy integrand and integral profiles for this method,
+    !   at this surface and pitch.
+    !
+    !*ARGUMENTS:
+    !
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: ell
+        real(r8), intent(in) :: psi,fs(nfs,maxstep)
+        character(*), intent(in) :: method
+
+        integer :: m, j, k
+        logical, parameter :: debug = .false.
+
+        if(debug) print *,"Recording method"
+
+        ! find the right record
+        do m=1,nmethods
+            if(method==methods(m))then
+                if(debug) print *,"  method "//trim(method)
+                ! initialize the record of this method type if needed
+                if(.not. pitch_record(m)%is_recorded)then
+                    if(debug) print *,"   - is not recorded"
+                    pitch_record(m)%is_recorded = .true.
+                    pitch_record(m)%psi_index = 0
+                    pitch_record(m)%ell_index = 0
+                    allocate( pitch_record(m)%psi(npsi_out), &
+                        pitch_record(m)%ell(nell_out), &
+                        pitch_record(m)%fs(nfs,maxstep,nell_out,npsi_out) )
+                endif
+                ! bump indexes
+                if(debug) print *,"   - psi,ell = ",psi,ell
+                if(debug) print *,"   - old j,k = ",j,k
+                k = pitch_record(m)%psi_index
+                j = pitch_record(m)%ell_index
+                if(psi/=pitch_record(m)%psi(k) .or. k==0) k = k+1
+                if(ell/=pitch_record(m)%ell(j) .or. j==0) j = mod(j,nell_out)+1
+                if(debug) print *,"   - new j,k = ",j,k
+                ! force fail if buggy
+                if(k>npsi_out)then
+                    print *,"ERROR: Too many psi energy records for method "//trim(method)
+                    stop
+                endif
+                ! fill in new profiles
+                pitch_record(m)%fs(:,:,j,k) = fs(:,:)
+                pitch_record(m)%ell(j) = ell
+                pitch_record(m)%psi(k) = psi
+                pitch_record(m)%psi_index = k
+                pitch_record(m)%ell_index = j
+            endif
+        enddo
+        if(debug) print *,"Done recording"
+        return
+    end subroutine record_method
+
+    !=======================================================================
+    subroutine record_reset()
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Deallocate all energy records.
+    !
+    !*ARGUMENTS:
+    !
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+
+        integer :: m
+        logical :: debug = .false.
+
+        if(debug) print *,"Energy record resetting..."
+
+        ! find the right record
+        do m=1,nmethods
+            ! initialize the record of this method type if needed
+            if(pitch_record(m)%is_recorded)then
+                pitch_record(m)%is_recorded = .false.
+                pitch_record(m)%psi_index = 0
+                pitch_record(m)%ell_index = 0
+                deallocate( pitch_record(m)%psi, &
+                    pitch_record(m)%ell, &
+                    pitch_record(m)%fs )
+            endif
+        enddo
+        if(debug) print *,"Energy record reset done"
+        return
+    end subroutine record_reset
+
+
+    !=======================================================================
+    subroutine output_pitch_netcdf(n,op_label)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write recorded pitch angle integrations to a netcdf file.
+    !
+    !*ARGUMENTS:
+    !    n : integer
+    !        Toroidal mode number for filename
+    !
+    !*OPTIONAL ARGUMENTS:
+    !    op_label : character
+    !        Extra label inserted into filename
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n
+        character(*), optional :: op_label
+
+        integer :: i,m,npsi,nell
+        integer, dimension(:), allocatable :: ell_out
+        real(r8), dimension(:), allocatable :: psi_out
+
+        integer :: status, ncid, i_did, i_id, &
+            p_did, p_id, l_did, l_id, a_did, a_id, &
+            aa_id, dt_id, it_id, wb_id, wd_id, jj_id, &
+            tl_id, rl_id, zl_id, tu_id, ru_id, zu_id
+        character(16) :: nstring,suffix,label
+        character(128) :: ncfile
+
+        logical :: debug = .false.
+
+        print *,"Writing pitch record output to netcdf"
+
+        ! optional labeling
+        label = ''
+        if(present(op_label)) label = "_"//trim(adjustl(op_label))
+
+        ! assume all methods on the same psi's and ell's
+        npsi = 0
+        nell = 0
+        do m=1,nmethods
+            if(pitch_record(m)%is_recorded)then
+                if(debug) print *,"  Getting dims from "//trim(methods(m))
+                npsi = pitch_record(m)%psi_index
+                nell = pitch_record(m)%ell_index
+                allocate(psi_out(npsi),ell_out(nell))
+                psi_out = pitch_record(m)%psi(:npsi)
+                ell_out = pitch_record(m)%ell(:nell)
+                exit
+            endif
+        enddo
+
+        ! do nothing if no records
+        if(npsi==0)then
+            print *,"  WARNING: No energy records to output to netcdf"
+            return
+        endif
+
+        ! create and open netcdf file
+        write(nstring,'(I8)') n
+        ncfile = "pentrc_pitch_output"//trim(label)//"_n"//trim(adjustl(nstring))//".nc"
+        if(debug) print *, "  opening "//trim(ncfile)
+        call check( nf90_create(ncfile, cmode=or(nf90_clobber,nf90_64bit_offset), ncid=ncid) )
+        ! store attributes
+        if(debug) print *, "  storing attributes"
+        call check( nf90_put_att(ncid, nf90_global, "title", "PENTRC pitch angle integration profiles") )
+        call check( nf90_put_att(ncid, nf90_global, "version", version))
+        call check( nf90_put_att(ncid, nf90_global, "shot", INT(shotnum) ) )
+        call check( nf90_put_att(ncid, nf90_global, "time", INT(shottime)) )
+        call check( nf90_put_att(ncid, nf90_global, "machine", machine) )
+        call check( nf90_put_att(ncid, nf90_global, "n", n) )
+        ! define dimensions
+        if(debug) print *, "  defining dimensions"
+        if(debug) print *, "  npsi,nell,nlambda = ",npsi,nell,maxstep
+        call check( nf90_def_dim(ncid, "i", 2, i_did) )
+        call check( nf90_def_var(ncid, "i", nf90_int, i_did, i_id) )
+        call check( nf90_def_dim(ncid, "Lambda_index", maxstep, a_did) )
+        call check( nf90_def_var(ncid, "Lambda_index", nf90_double, a_did, a_id) )
+        call check( nf90_def_dim(ncid, "ell", nell, l_did) )
+        call check( nf90_def_var(ncid, "ell", nf90_int, l_did, l_id) )
+        call check( nf90_def_dim(ncid, "psi_n", npsi, p_did) )
+        call check( nf90_def_var(ncid, "psi_n", nf90_double, p_did, p_id) )
+        ! End definitions
+        call check( nf90_enddef(ncid) )
+        ! store dimensions
+        if(debug) print *, "  storing dimensions"
+        call check( nf90_put_var(ncid, i_id, (/0,1/)) )
+        call check( nf90_put_var(ncid, a_id, (/(i,i=1,maxstep)/)) )
+        call check( nf90_put_var(ncid, l_id, ell_out) )
+        call check( nf90_put_var(ncid, p_id, psi_out) )
+
+        ! store each method, grid combination that has been run
+        do m=1,nmethods
+            if(pitch_record(m)%is_recorded)then
+                if(debug) print *, "  defining "//trim(methods(m))
+                ! create distinguishing labels
+                suffix = '_'//trim(methods(m))
+                ! check sizes
+                if(npsi/=pitch_record(m)%psi_index)then
+                    print *,npsi,pitch_record(m)%psi_index
+                    stop "Error: Record sizes are inconsistent"
+                endif
+                ! Re-open definitions
+                call check( nf90_redef(ncid) )
+                call check( nf90_def_var(ncid, "Lambda"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), aa_id) )
+                call check( nf90_def_var(ncid, "T_psi_Lambda"//trim(suffix), nf90_double, (/i_did,a_did,l_did,p_did/), dt_id) )
+                call check( nf90_def_var(ncid, "T_psi"//trim(suffix), nf90_double, (/i_did,a_did,l_did,p_did/), it_id) )
+                call check( nf90_def_var(ncid, "omega_b"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), wb_id) )
+                call check( nf90_def_var(ncid, "omega_D"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), wd_id) )
+                call check( nf90_def_var(ncid, "dJdJomega_b"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), jj_id) )
+                call check( nf90_def_var(ncid, "theta_l"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), tl_id) )
+                call check( nf90_def_var(ncid, "R_l"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), rl_id) )
+                call check( nf90_def_var(ncid, "z_l"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), zl_id) )
+                call check( nf90_def_var(ncid, "theta_u"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), tu_id) )
+                call check( nf90_def_var(ncid, "R_u"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), ru_id) )
+                call check( nf90_def_var(ncid, "z_u"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), zu_id) )
+                call check( nf90_enddef(ncid) )
+                ! Put in variables
+                if(debug) print *, "  storing "//trim(methods(m))
+                call check( nf90_put_var(ncid, aa_id, pitch_record(m)%fs(1,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, dt_id, pitch_record(m)%fs(2:3,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, it_id, pitch_record(m)%fs(4:5,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, wb_id, pitch_record(m)%fs(6,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, wd_id, pitch_record(m)%fs(7,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, jj_id, pitch_record(m)%fs(8,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, tl_id, pitch_record(m)%fs(9,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, rl_id, pitch_record(m)%fs(10,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, zl_id, pitch_record(m)%fs(11,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, tu_id, pitch_record(m)%fs(12,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, ru_id, pitch_record(m)%fs(13,:,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, zu_id, pitch_record(m)%fs(14,:,:nell,:npsi)) )
+            endif
+        enddo
+
+        ! close file
+        call check( nf90_close(ncid) )
+        ! clear the memory
+        call record_reset( )
+        if(debug) print *, "Finished energy netcdf output"
+
+        return
+    end subroutine output_pitch_netcdf
+
+
+    !=======================================================================
+    subroutine output_pitch_ascii(n,op_label)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Write ascii bounce function files.
     !
     !*ARGUMENTS:
     !    n : integer.
-    !       mode number
-    !    zi : integer (in)
-    !       Ion charge in fundamental units (e).
-    !    mi : integer (in)
-    !       Ion mass (units of proton mass).
-    !    electron : logical
-    !       Calculate quantities for electrons (zi,mi ignored)
-    !    method : string
-    !       Label inserted in output file names.
-    !    table : real 2D
-    !       Table of values writen to file
+    !       toroidal mode number for filename
     !
     !-----------------------------------------------------------------------
         implicit none
-        integer, intent(in) :: n, zi, mi
-        character(*), intent(in) :: method
-        logical :: electron
+        integer, intent(in) :: n
+        character(*), optional :: op_label
 
-        integer :: i,out_unit
-        real(r8), dimension(:,:), allocatable :: table
+        integer :: m,i,j,k,out_unit
         character(8) :: nstring
+        character(16) :: label
         character(128) :: file
 
-        ! safety net
-        if(.not. allocated(pitch_record))then
-            print *,'WARNING: No pitch angle integrand record available'
-            return
-        endif
-
-        ! some methods don't have the turn information, but I don't want to re-format file
-        allocate(table(16,size(pitch_record,dim=2)))
-        table = 0
-        table(1:size(pitch_record,dim=1),:) = pitch_record(:,:)
+        ! optional labeling
+        label = ''
+        if(present(op_label)) label = "_"//trim(adjustl(op_label))
 
         ! open and prepare file as needed
         out_unit = get_free_file_unit(-1)
         write(nstring,'(I8)') n
-        file = "pentrc_"//trim(method)//"_pitch_n"//trim(adjustl(nstring))//".out"
-        if(electron) file = file(:7)//"e_"//file(8:)
+        file = "pentrc_pitch_output"//trim(label)//"_n"//trim(adjustl(nstring))//".out"
         open(unit=out_unit,file=file,status="unknown",action="write")
 
         ! write header material
@@ -650,21 +866,27 @@ module pitch_integration
         write(out_unit,*) " - variables are:   lambda =  B0*m*v_perp^2/(2B),  x = E/T"
         write(out_unit,*) " - frequencies are taken at x unity"
         write(out_unit,'(1/,1(a10,I4))') "n =",n
-        write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
 
-        ! write column headers
-        write(out_unit,'(1/,16(a17))') "psi_n","ell","Lambda","T_phi", &
-                    "2ndeltaW","int(T_phi)","int(2ndeltaW)","omega_b","omega_D",&
+        ! write each method in a new table
+        do m=1,nmethods
+            if(pitch_record(m)%is_recorded)then
+                write(out_unit,'(1/,2(a17))')"method =",trim(methods(m))
+                write(out_unit,'(1/,17(a17))') "psi_n","ell","Lambda_index","Lambda", &
+                    "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)","omega_b","omega_D",&
                     "dJdJomega_b","theta_l","r_l","z_l","theta_u","r_u","z_u"
-
-        ! write tables
-        do i=1,size(table,dim=2)
-            write(out_unit,'(16(es17.8E3))') table(:,i)
+                do k=1,pitch_record(m)%psi_index
+                    do j=1,pitch_record(m)%ell_index
+                        do i=1,maxstep
+                            write(out_unit,'(17(es17.8E3))') pitch_record(m)%psi(k), &
+                                1.0*pitch_record(m)%ell(j),1.0*i,pitch_record(m)%fs(:,i,j,k)
+                        enddo
+                    enddo
+                enddo
+            endif
         enddo
-
         close(out_unit)
-        deallocate(table,pitch_record)
+
         return
-    end subroutine output_pitch_record
+    end subroutine output_pitch_ascii
 
 end module pitch_integration

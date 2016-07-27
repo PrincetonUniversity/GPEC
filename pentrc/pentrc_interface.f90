@@ -43,7 +43,7 @@ module pentrc_interface
         xnutype,xf0type,&                           ! character
         qt,xdebug                                   ! logical
     use pitch_integration, only: &
-        output_pitch_record,&                       ! subroutines
+        output_pitch_netcdf,output_pitch_ascii,&                       ! subroutines
         lambdaatol,lambdartol,&                     ! real
         lambdadebug                                 ! logical
     use torque, only : &

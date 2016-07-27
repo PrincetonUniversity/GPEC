@@ -193,7 +193,6 @@ program pentrc
                         enddo
                         if(output_ascii)then
                             if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),thetatable)
-                            if(xlmda_out) call output_pitch_record(nn,zi,mi,electron,methods(m))
                         endif
                         deallocate(thetafuns,thetatable,psi_out_valid)
                     endif
@@ -205,12 +204,12 @@ program pentrc
             endif
         enddo
         if(output_ascii)then
+            if(xlmda_out) call output_pitch_ascii(nn)
             if(xlmda_out) call output_energy_ascii(nn,zi,mi,electron)
         endif
         if(output_netcdf)then
             call output_torque_netcdf(nn,nl,zi,mi,electron,wdfac)
-            !if(theta_out) call output_bouncefun_netcdf(nn)
-            !if(xlmda_out) call output_pitch_netcdf(nn)
+            if(xlmda_out) call output_pitch_netcdf(nn)
             if(xlmda_out) call output_energy_netcdf(nn)
         endif
     endif
