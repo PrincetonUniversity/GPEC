@@ -205,7 +205,7 @@ program pentrc
         enddo
         if(output_ascii)then
             if(xlmda_out) call output_pitch_ascii(nn)
-            if(xlmda_out) call output_energy_ascii(nn,zi,mi,electron)
+            if(xlmda_out) call output_energy_ascii(nn)
         endif
         if(output_netcdf)then
             call output_torque_netcdf(nn,nl,zi,mi,electron,wdfac)

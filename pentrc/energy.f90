@@ -676,7 +676,7 @@ module energy_integration
     end subroutine output_energy_netcdf
 
     !=======================================================================
-    subroutine output_energy_ascii(n,zi,mi,electron)
+    subroutine output_energy_ascii(n, op_label)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Write ascii bounce function files.
@@ -697,17 +697,22 @@ module energy_integration
     !
     !-----------------------------------------------------------------------
         implicit none
-        integer, intent(in) :: n, zi, mi
-        logical :: electron
+        integer, intent(in) :: n
+        character(*), optional :: op_label
 
-        integer :: i,out_unit
-        character(4) :: nstring,method
+        integer :: m,i,j,k,istep,out_unit
+        character(8) :: nstring
+        character(16) :: label
         character(128) :: file
+
+        ! optional labeling
+        label = ''
+        if(present(op_label)) label = "_"//trim(adjustl(op_label))
 
         ! open and prepare file as needed
         out_unit = get_free_file_unit(-1)
-        write(nstring,'(I4)') n
-        file = "pentrc_energy_output_n"//trim(adjustl(nstring))//".out"
+        write(nstring,'(I8)') n
+        file = "pentrc_energy_output"//trim(label)//"_n"//trim(adjustl(nstring))//".out"
         open(unit=out_unit,file=file,status="unknown",action="write")
 
         ! write header material
@@ -716,19 +721,30 @@ module energy_integration
         write(out_unit,*) " - variables are:   lambda =  B0*m*v_perp^2/(2B),  x = E/T"
         write(out_unit,*) " - normalization is: 1/(-2n^2tn*chi'/sqrt(pi))"
         write(out_unit,'(1/,1(a10,I4))') "n =",n
-        write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
-!
-!        ! write column headers
-!        write(out_unit,'(9(a17))') "psi_n","Lambda","real(x)","imag(x)","l_eff", &
-!            "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
-!
-!        ! write tables
-!        do i=1,size(energy_record,dim=2)
-!            write(out_unit,'(9(es17.8E3))') energy_record(:,i)
-!        enddo
-!
-!        close(out_unit)
-!        deallocate(energy_record)
+
+        ! write each method in a new table
+        do m=1,nmethods
+            if(energy_record(m)%is_recorded)then
+                write(out_unit,'(1/,2(a17))')"method =",trim(methods(m))
+                write(out_unit,'(12(a17))') "psi_n","ell","Lambda_index","x_index", &
+                    "Lambda","ell_eff","real(x)","imag(x)", &
+                    "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
+                do k=1,energy_record(m)%psi_index
+                    do j=1,energy_record(m)%ell_index
+                        do i=1,energy_record(m)%lambda_index
+                            do istep=1,maxstep
+                                write(out_unit,'(12(es17.8E3))') energy_record(m)%psi(k), &
+                                    real(energy_record(m)%ell(j)),real(i),real(istep), &
+                                    energy_record(m)%lambda(i,j,k),energy_record(m)%leff(i,j,k),&
+                                    energy_record(m)%fs(:,istep,i,j,k)
+                            enddo
+                        enddo
+                    enddo
+                enddo
+            endif
+        enddo
+        close(out_unit)
+
         return
     end subroutine output_energy_ascii
 
