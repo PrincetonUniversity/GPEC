@@ -43,5 +43,33 @@ module params
         dtor=pi/180
     complex(r8), parameter ::   &
         xj = (0,1)
-    
+
+    ! code
+    integer, parameter :: npsi_out = 30, nlambda_out = 5, nmethods = 18, ngrids = 3
+    character(4), dimension(nmethods), parameter :: methods = (/ &
+        "fgar","tgar","pgar","rlar","clar","fcgl",&
+        "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
+        "fkmm","tkmm","pkmm","frmm","trmm","prmm" /)
+    character(5), dimension(ngrids), parameter :: grids = (/'lsode','equil','input'/)
+    character(64), dimension(nmethods), parameter :: docs = (/&
+        "Full general-aspect-ratio calculation                       ",&
+        "Trapped particle general-aspect-ratio calculation           ",&
+        "Passing particle general-aspect-ratio calculation           ",&
+        "Trapped particle large-aspect-ratio calculation             ",&
+        "Trapped particle cylindrical large-aspect-ratio calculation ",&
+        "Fluid Chew-Goldberger-Low calculation                       ",&
+        "Full    energy calculation using MXM euler lagrange matrix  ",&
+        "Trapped energy calculation using MXM euler lagrange matrix  ",&
+        "Passing energy calculation using MXM euler lagrange matrix  ",&
+        "Full    torque calculation using MXM euler lagrange matrix  ",&
+        "Trapped torque calculation using MXM euler lagrange matrix  ",&
+        "Passing torque calculation using MXM euler lagrange matrix  ",&
+        "Full    MXM euler lagrange energy matrix norm calculation   ",&
+        "Trapped MXM euler lagrange energy matrix norm calculation   ",&
+        "Passing MXM euler lagrange energy matrix norm calculation   ",&
+        "Full    MXM euler lagrange torque matrix norm calculation   ",&
+        "Trapped MXM euler lagrange torque matrix norm calculation   ",&
+        "Passing MXM euler lagrange torque matrix norm calculation   " &
+        /)
+
 end module params

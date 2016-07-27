@@ -24,8 +24,11 @@ module energy_integration
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only : r8,mp,e
-    use utilities, only : get_free_file_unit,append_2d
+    use params, only : r8, mp, me, e, npsi_out, nlambda_out, nmethods, methods
+    use utilities, only : get_free_file_unit,append_2d,check
+    use dcon_interface, only : shotnum, shottime, machine
+    use global_mod, only : version
+    use netcdf
     
     use lsode2_mod
     
@@ -33,20 +36,35 @@ module energy_integration
     
     private
     public &
-        xatol,xrtol,xmax,ximag,xnufac, &    ! reals
-        xnutype,xf0type, &                  ! characters
+        nl_out,nx_out, & ! integer
+        xatol,xrtol,xmax,ximag,xnufac, &    ! real
+        xnutype,xf0type,methods, &                  ! character
         qt,xdebug, &                        ! logical
-        xintgrl_lsode, &                    ! functions
-        output_energy_record                ! subroutines
+        xintgrl_lsode, &                    ! function
+        output_energy_netcdf,output_energy_ascii                ! subroutine
     
     ! global variables with defaults
+    integer :: &
+        nl_out = 3, &
+        nx_out = 10000
     real(r8) :: &
         xatol = 1e-12, &
         xrtol = 1e-9, &
         xmax  = 72.0, &
         ximag = 0.00, &
         xnufac = 1.00
-    real(r8), dimension(:,:), allocatable :: energy_record
+
+    type record
+        logical :: is_recorded
+        integer :: psi_index, lambda_index, ell_index
+        integer, dimension(:), allocatable :: ell
+        real(r8), dimension(:), allocatable :: psi
+        real(r8), dimension(:,:,:), allocatable :: lambda, leff
+        real(r8), dimension(:,:,:,:,:), allocatable :: fs
+    endtype record
+    type(record) :: energy_record(nmethods)
+
+
     character(32) :: &
         xnutype = "harmonic", &
         xf0type = "maxwellian"
@@ -61,7 +79,7 @@ module energy_integration
     contains
 
     !=======================================================================
-    function xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda)
+    function xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,sigma,n,psi,lambda,method,op_record)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Dynamic energy integration using lsode. Module global variabls
@@ -98,10 +116,13 @@ module energy_integration
     !       effective bounce harmonic (i.e. ell-nq for passing)
     !   n : integer.
     !       toroidal mode number
+    !   psi : real.
+    !       Flux surface. Not used in calculation, only for record keeping.
+    !   lmda : real.
+    !       Normalized pitch angle muB0/E. Not used in calculation, only for record keeping.
     !*OPTIONAL ARGUMENTS:
-    !   psilmda : real(2).
-    !       normalized flux and normalized pitch angle (muB0/E). If this
-    !       variable is used, integrand and integral are recorded in memory
+    !   op_record : logical.
+    !       Store integration energy-space profile in memory.
     !
     !*RETURNS:
     !     complex.
@@ -110,14 +131,17 @@ module energy_integration
         implicit none
         ! declare arguments
         complex(r8) :: xintgrl_lsode
-        real(r8), intent(in) :: wn,wt,we,wd,wb,nuk,l
-        integer, intent(in) :: n
-        real(r8), dimension(2), intent(in), optional :: psilmda
+        real(r8), intent(in) :: wn,wt,we,wd,wb,nuk,psi,lambda
+        integer, intent(in) :: ell,sigma,n
+        character(4), intent(in) :: method
+        logical, intent(in), optional :: op_record
         ! declare variables
-        integer :: xout_unit
-        real(r8) :: wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
+        integer :: i, j, xout_unit
+        real(r8) :: l,wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
+        real(r8), dimension(6,nx_out) :: xprofile
+        logical :: record_this
         ! declare lsode input variables
-        INTEGER  IOPT, IOUT, ISTATE, ITASK, ITOL, MF, IFLAG, i
+        INTEGER  IOPT, IOUT, ISTATE, ITASK, ITOL, MF, IFLAG
         INTEGER, PARAMETER ::   &
             NEQ(1) = 2,         &   ! true number of equations
             LIW  = 20 + NEQ(1), &   ! for MF 22 ! only uses 20 if MF 10
@@ -128,25 +152,24 @@ module energy_integration
                 Y(NEQ(1)),YI(NEQ(1)),DKY(NEQ(1))
         
         common /xcom/ wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
-        
+
+        ! set default recording flag
+        i = 0
+        xprofile = 0.0
+        record_this = .false.
+        if(present(op_record)) record_this = op_record
+
         ! set lsode options - see lsode package for documentation
-        Y(:) = 0
-        YI(:) = 0
-        X = 1e-15
-        XOUT = xmax
-        ITOL = 2                  ! RTOL and ATOL are arrays
-        RTOL(:) = xrtol              !1.D-7!9              ! 14
-        ATOL(:) = xatol              !1.D-7!9              ! 15
-        ISTATE = 1                ! first step
-        IOPT = 1                  ! optional inputs
-        IWORK(:) = 0              ! defaults
-        RWORK(:) = 0              ! defaults
-        RWORK(1) = xmax           ! only used if itask 4,5
-        IWORK(6) = 10000          ! max number steps
-        MF = 10                   ! not stiff with unknown J 
-        !MF = 22                   ! stiff with unknown J 
-    
+        y(:) = 0
+        yi(:) = 0
+        itol = 2                  ! rtol and atol are arrays
+        rtol(:) = xrtol           !1.D-7!9              ! 14
+        atol(:) = xatol           !1.D-7!9              ! 15
+        iopt = 1                  ! optional inputs
+        mf = 10                   ! not stiff with unknown J
+
         ! set common variables for access in integrand
+        l = ell-n*sigma
         wn_g = wn
         wt_g = wt
         we_g = we
@@ -156,15 +179,56 @@ module energy_integration
         l_g  = l
         n_g =1.0*n
         
-        ! integration to xmax
+        ! optionally step off real axis to avoid poles
+        if(ximag/=0.0)then
+            imaxis_g = .true.
+            x = 1e-15               ! lower bound of integration
+            xout = ximag            ! upper bound of integration
+            iwork(:) = 0            ! default
+            iwork(6) = nx_out - i   ! max number of steps
+            rwork(:) = 0            ! default
+            rwork(1) = ximag        ! only relevant if using crit task (itask 4,5)
+            istate = 1              ! (re)start initial step
+            if(record_this) then
+                itask = 2              ! single step
+                do while (x<xout)
+                    call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,&
+                        atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+                    call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
+                    i = i+1
+                    xprofile(:,i) = (/real(0,r8), x, dky(1:2), y(1:2)/)
+                enddo
+            else
+                itask = 1              ! full integral
+                call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,atol, &
+                    itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
+            endif
+
+            if(iwork(11)>iwork(6)/2) print *, "WARNING: ",iwork(11)," of ",iwork(6),&
+                " maximum steps used in imaginary x integration."
+            if(istate==-1) then
+                stop "ERROR: xintgrl_lsode - too many steps in x required &
+                    &along imaginary axis. Consider changing ximag."
+            endif
+        endif
+
+        ! integration in real space to xmax
         imaxis_g = .false.
-        if(present(psilmda)) then
+        x = 1e-15               ! lower bound of integration
+        xout = xmax             ! upper bound of integration
+        iwork(:) = 0            ! default
+        iwork(6) = nx_out - i   ! max number of steps
+        rwork(:) = 0            ! default
+        rwork(1) = xmax         ! only relevant if using crit task (itask 4,5)
+        istate = 1              ! (re)start initial step
+        if(record_this) then
             itask = 2              ! single step
             do while (x<xout)
                 call lsode2(xintgrnd, neq, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                 call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
-                call append_2d(energy_record, (/psilmda(:),x,0.0_r8,l,dky(1:2),y(1:2)/) )
+                i = i+1
+                xprofile(:,i) = (/x, real(0,r8), dky(1:2),y(1:2)/)
             enddo
         else
             itask = 1              ! full integral
@@ -172,16 +236,14 @@ module energy_integration
                 itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
         endif
 
-        ! write error file and stop program if integration fials
+        ! write error file and stop program if integration fails
         if(iwork(11)>iwork(6)/2 .and. istate/=-1) then
             print *, "WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in x integration"
         endif
         if(istate==-1) then
             xout_unit = get_free_file_unit(-1)
             open(unit=xout_unit,file="pentrc_xintrgl_lsode.err",status="unknown")
-            if(present(psilmda)) then
-                write(xout_unit,*) "psi = ",psilmda(1)," lambda = ",psilmda(1)
-            endif
+            write(xout_unit,*) "psi = ",psi," lambda = ",lambda
             write(xout_unit,'(5(1x,a16))') "x","T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
             itask = 2
             y(1:2) = (/ 0,0 /)
@@ -190,7 +252,7 @@ module energy_integration
             iwork(:) = 0           ! defaults
             rwork(:) = 0           ! defaults
             rwork(1) = xmax        ! only used if itask 4,5
-            iwork(6) = 10000       ! max number steps
+            iwork(6) = nx_out       ! max number steps
             do while (x<xout .and. iwork(11)<iwork(6))
                 call lsode2(xintgrnd, neq, y, x, xout, itol, rtol, &
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
@@ -202,37 +264,16 @@ module energy_integration
                 &consider complex contour (ximag>0)."
         endif
 
-
-        ! imaginary axis contribution
-        if(ximag/=0.0)then
-            imaxis_g = .true.
-            x = 1e-15
-            xout = ximag
-            iwork(:) = 0 
-            iwork(6) = 5000        ! max number of steps
-            rwork(:) = 0
-            rwork(1) = ximag       ! only relavent if using crit task
-            istate = 1
-            if(present(psilmda)) then
-                itask = 2              ! single step
-                do while (x<xout)
-                    call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,&
-                        atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
-                    call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
-                    call append_2d(energy_record, (/psilmda(:),0.0_r8,x,l,dky(1:2),y(1:2)/) )
-                enddo
-            else
-                itask = 1              ! full integral
-                call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,atol, &
-                    itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
-            endif
-           
-            if(iwork(11)>iwork(6)/2) print *, "WARNING: ",iwork(11)," of ",iwork(6),&
-                " maximum steps used in imaginary x integration."
-            if(istate==-1) then
-                stop "ERROR: xintgrl_lsode - too many steps in x required &
-                    &along imaginary axis. Consider changing ximag."
-            endif
+        ! save integration profile to memory
+        if(record_this) then
+            ! fill in unused x's with the endpoints
+            do j=i+1,nx_out
+                xprofile(1,j) = xprofile(1,i) + 1e-9 ! last little step in real x
+                xprofile(2,j) = 0 ! integral ends on real x axis
+                xprofile(3:4,j) = 0 ! integrand goes to zero
+                xprofile(5:6,j) = xprofile(5:6,i) ! final integral
+            enddo
+            call record_method( method, psi, ell, l, lambda, xprofile )
         endif
 
         ! convert to complex space if integrations successful
@@ -453,7 +494,262 @@ module energy_integration
     end subroutine noj
 
     !=======================================================================
-    subroutine output_energy_record(n,zi,mi,electron,method)
+    subroutine record_method(method,psi,ell, leff, lambda, fs)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Save the energy integrand and integral profiles for this method,
+    !   at this surface and pitch.
+    !
+    !*ARGUMENTS:
+    !
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: ell
+        real(r8), intent(in) :: psi,lambda,leff,fs(6,nx_out)
+        character(*), intent(in) :: method
+
+        integer :: m
+        integer :: i,j,k
+        logical, parameter :: debug = .false.
+
+        if(debug) print *,"Recording method"
+
+        ! find the right record
+        do m=1,nmethods
+            if(method==methods(m))then
+                if(debug) print *,"  method "//trim(method)
+                ! initialize the record of this method type if needed
+                if(.not. energy_record(m)%is_recorded)then
+                    if(debug) print *,"   - is not recorded"
+                    energy_record(m)%is_recorded = .true.
+                    energy_record(m)%psi_index = 0
+                    energy_record(m)%lambda_index = 0
+                    energy_record(m)%ell_index = 0
+                    allocate( energy_record(m)%psi(npsi_out), &
+                        energy_record(m)%ell(nl_out), &
+                        energy_record(m)%leff(nlambda_out,nl_out,npsi_out), &
+                        energy_record(m)%lambda(nlambda_out,nl_out,npsi_out), &
+                        energy_record(m)%fs(6,nx_out,nlambda_out,nl_out,npsi_out) )
+                endif
+                ! bump indexes
+                if(debug) print *,"   - psi,ell,leff,lambda = ",psi,ell,leff,lambda
+                if(debug) print *,"   - old i,j,k = ",i,j,k
+                k = energy_record(m)%psi_index
+                j = energy_record(m)%ell_index
+                i = energy_record(m)%lambda_index
+                if(psi/=energy_record(m)%psi(k) .or. k==0) k = k+1
+                if(leff/=energy_record(m)%leff(i,j,k) .or. j==0) j = mod(j,nl_out)+1
+                if(lambda/=energy_record(m)%lambda(i,j,k) .or. i==0) i = mod(i,nlambda_out)+1
+                if(debug) print *,"   - new i,j,k = ",i,j,k
+                ! force fail if buggy
+                if(k>npsi_out)then
+                    print *,"ERROR: Too many psi energy records for method "//trim(method)
+                    stop
+                elseif(j>nl_out)then
+                    print *,"ERROR: Too many ell energy records for method "//trim(method)
+                    stop
+                elseif(i>nlambda_out)then
+                    print *,"ERROR: Too many lambda energy records for method "//trim(method)
+                    stop
+                endif
+                ! fill in new profiles
+                energy_record(m)%fs(:,:,i,j,k) = fs(:,:)
+                energy_record(m)%lambda(i,j,k) = lambda
+                energy_record(m)%leff(i,j,k) = leff
+                energy_record(m)%ell(j) = ell
+                energy_record(m)%psi(k) = psi
+                energy_record(m)%psi_index = k
+                energy_record(m)%ell_index = j
+                energy_record(m)%lambda_index = i
+            endif
+        enddo
+        if(debug) print *,"Done recording"
+        return
+    end subroutine record_method
+
+    !=======================================================================
+    subroutine record_reset()
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Deallocate all energy records.
+    !
+    !*ARGUMENTS:
+    !
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+
+        integer :: m
+        logical :: debug = .false.
+
+        if(debug) print *,"Energy record resetting..."
+
+        ! find the right record
+        do m=1,nmethods
+            ! initialize the record of this method type if needed
+            if(energy_record(m)%is_recorded)then
+                energy_record(m)%is_recorded = .false.
+                energy_record(m)%psi_index = 0
+                energy_record(m)%lambda_index = 0
+                energy_record(m)%ell_index = 0
+                deallocate( energy_record(m)%psi, &
+                    energy_record(m)%ell, &
+                    energy_record(m)%leff, &
+                    energy_record(m)%lambda, &
+                    energy_record(m)%fs )
+            endif
+        enddo
+        if(debug) print *,"Energy record reset done"
+        return
+    end subroutine record_reset
+
+
+    !=======================================================================
+    subroutine output_energy_netcdf(n,op_label)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii torque profile files.
+    !
+    !*ARGUMENTS:
+    !    n : integer
+    !        Toroidal mode number for header
+    !    zi : integer
+    !        Ion charge for header
+    !    mi : integer
+    !        Ion mass for header
+    !    electron : logical
+    !        Modifies file name to indicate run was for electrons
+    !    method : character
+    !        Inserted into file name
+    !    prof : real 2D
+    !        Table of values
+    !    op_profl : real 2D
+    !        Table of (psi,ell) profiles
+    !
+    !*OPTIONAL ARGUMENTS:
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n
+        character(*), optional :: op_label
+
+        integer :: i,m,npsi,nell,nlambda
+        integer, dimension(:), allocatable :: ell_out
+        real(r8), dimension(:), allocatable :: psi_out
+
+        integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
+            le_id,a_did,a_id,x_did,x_id,aa_id, xx_id,dt_id, it_id
+        character(16) :: nstring,suffix,label
+        character(128) :: ncfile
+
+        logical :: debug = .false.
+
+        print *,"Writing energy record output to netcdf"
+
+        ! optional labeling
+        label = ''
+        if(present(op_label)) label = "_"//trim(adjustl(op_label))
+
+        ! assume all methods on the same psi's and ell's
+        npsi = 0
+        nell = 0
+        nlambda = 0
+        do m=1,nmethods
+            if(energy_record(m)%is_recorded)then
+                if(debug) print *,"  Getting dims from "//trim(methods(m))
+                npsi = energy_record(m)%psi_index
+                nell = energy_record(m)%ell_index
+                nlambda = energy_record(m)%lambda_index
+                allocate(psi_out(npsi),ell_out(nell))
+                psi_out = energy_record(m)%psi(:npsi)
+                ell_out = energy_record(m)%ell(:nell)
+                exit
+            endif
+        enddo
+
+        ! do nothing if no records
+        if(npsi==0)then
+            print *,"  WARNING: No energy records to output to netcdf"
+            return
+        endif
+
+        ! create and open netcdf file
+        write(nstring,'(I8)') n
+        ncfile = "pentrc_energy_output"//trim(label)//"_n"//trim(adjustl(nstring))//".nc"
+        if(debug) print *, "  opening "//trim(ncfile)
+        call check( nf90_create(ncfile, cmode=or(nf90_clobber,nf90_64bit_offset), ncid=ncid) )
+        ! store attributes
+        if(debug) print *, "  storing attributes"
+        call check( nf90_put_att(ncid, nf90_global, "title", "PENTRC energy space outputs") )
+        call check( nf90_put_att(ncid, nf90_global, "version", version))
+        call check( nf90_put_att(ncid, nf90_global, "shot", INT(shotnum) ) )
+        call check( nf90_put_att(ncid, nf90_global, "time", INT(shottime)) )
+        call check( nf90_put_att(ncid, nf90_global, "machine", machine) )
+        call check( nf90_put_att(ncid, nf90_global, "n", n) )
+        ! define dimensions
+        if(debug) print *, "  defining dimensions"
+        if(debug) print *, "  npsi,nell,nlambda,nx = ",npsi,nell,nlambda,nx_out
+        call check( nf90_def_dim(ncid, "i", 2, i_did) )
+        call check( nf90_def_var(ncid, "i", nf90_int, i_did, i_id) )
+        call check( nf90_def_dim(ncid, "ell", nell, l_did) )
+        call check( nf90_def_var(ncid, "ell", nf90_int, l_did, l_id) )
+        call check( nf90_def_dim(ncid, "psi_n", npsi, p_did) )
+        call check( nf90_def_var(ncid, "psi_n", nf90_double, p_did, p_id) )
+        call check( nf90_def_dim(ncid, "Lambda_index", nlambda, a_did) )
+        call check( nf90_def_var(ncid, "Lambda_index", nf90_double, a_did, a_id) )
+        call check( nf90_def_dim(ncid, "x_index", nx_out, x_did) )
+        call check( nf90_def_var(ncid, "x_index", nf90_double, x_did, x_id) )
+        ! End definitions
+        call check( nf90_enddef(ncid) )
+        ! store dimensions
+        if(debug) print *, "  storing dimensions"
+        call check( nf90_put_var(ncid, i_id, (/0,1/)) )
+        call check( nf90_put_var(ncid, x_id, (/(i,i=1,nx_out)/)) )
+        call check( nf90_put_var(ncid, a_id, (/(i,i=1,nlambda)/)) )
+        call check( nf90_put_var(ncid, l_id, ell_out) )
+        call check( nf90_put_var(ncid, p_id, psi_out) )
+
+        ! store each method, grid combination that has been run
+        do m=1,nmethods
+            if(energy_record(m)%is_recorded)then
+                if(debug) print *, "  defining "//trim(methods(m))
+                ! create distinguishing labels
+                suffix = '_'//trim(methods(m))
+                ! check sizes
+                if(npsi/=energy_record(m)%psi_index)then
+                    print *,npsi,energy_record(m)%psi_index
+                    stop "Error: Record sizes are inconsistent"
+                endif
+                ! Re-open definitions
+                call check( nf90_redef(ncid) )
+                call check( nf90_def_var(ncid, "Lambda"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), aa_id) )
+                call check( nf90_def_var(ncid, "ell_eff"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), le_id) )
+                call check( nf90_def_var(ncid, "x"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), xx_id) )
+                call check( nf90_def_var(ncid, "T_psi_Lambda_x"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), dt_id) )
+                call check( nf90_def_var(ncid, "T_psi_Lambda"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), it_id) )
+                call check( nf90_enddef(ncid) )
+                ! Put in variables
+                if(debug) print *, "  storing "//trim(methods(m))
+                call check( nf90_put_var(ncid, aa_id, energy_record(m)%lambda(:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, le_id, energy_record(m)%leff(:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, xx_id, energy_record(m)%fs(1:2,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, dt_id, energy_record(m)%fs(3:4,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, it_id, energy_record(m)%fs(5:6,:,:nlambda,:nell,:npsi)) )
+            endif
+        enddo
+
+        ! close file
+        call check( nf90_close(ncid) )
+        ! clear the memory
+        call record_reset( )
+        if(debug) print *, "Finished energy netcdf output"
+
+        return
+    end subroutine output_energy_netcdf
+
+    !=======================================================================
+    subroutine output_energy_ascii(n,zi,mi,electron)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Write ascii bounce function files.
@@ -475,24 +771,16 @@ module energy_integration
     !-----------------------------------------------------------------------
         implicit none
         integer, intent(in) :: n, zi, mi
-        character(*), intent(in) :: method
         logical :: electron
 
         integer :: i,out_unit
-        character(8) :: nstring
+        character(4) :: nstring,method
         character(128) :: file
-
-        ! safety net
-        if(.not. allocated(energy_record))then
-            print *,'WARNING: No energy integrand record available'
-            return
-        endif
 
         ! open and prepare file as needed
         out_unit = get_free_file_unit(-1)
-        write(nstring,'(I8)') n
-        file = "pentrc_"//trim(method)//"_energy_n"//trim(adjustl(nstring))//".out"
-        if(electron) file = file(:7)//"e_"//file(8:)
+        write(nstring,'(I4)') n
+        file = "pentrc_energy_output_n"//trim(adjustl(nstring))//".out"
         open(unit=out_unit,file=file,status="unknown",action="write")
 
         ! write header material
@@ -502,20 +790,20 @@ module energy_integration
         write(out_unit,*) " - normalization is: 1/(-2n^2tn*chi'/sqrt(pi))"
         write(out_unit,'(1/,1(a10,I4))') "n =",n
         write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
-
-        ! write column headers
-        write(out_unit,'(9(a17))') "psi_n","Lambda","real(x)","imag(x)","l_eff", &
-            "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
-
-        ! write tables
-        do i=1,size(energy_record,dim=2)
-            write(out_unit,'(9(es17.8E3))') energy_record(:,i)
-        enddo
-
-        close(out_unit)
-        deallocate(energy_record)
+!
+!        ! write column headers
+!        write(out_unit,'(9(a17))') "psi_n","Lambda","real(x)","imag(x)","l_eff", &
+!            "T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
+!
+!        ! write tables
+!        do i=1,size(energy_record,dim=2)
+!            write(out_unit,'(9(es17.8E3))') energy_record(:,i)
+!        enddo
+!
+!        close(out_unit)
+!        deallocate(energy_record)
         return
-    end subroutine output_energy_record
+    end subroutine output_energy_ascii
 
 end module energy_integration
 
