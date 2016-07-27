@@ -421,7 +421,7 @@ module torque
                 if(tdebug) print *,'  rlar integrations. modes = ',n,l
                 ! energy space integrations
                 lmdamax = min(1.0/(1-epsr),bo/bmin) ! just for record keeping - not rigorous
-                xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,l,sigma,n,&
+                xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,l,lnq,n,&
                     psi,lmdamax,method,op_record=erecord)
                 ! kappa integration
                 if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbob_m%f(:))/mpert)

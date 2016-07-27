@@ -45,7 +45,8 @@ module params
         xj = (0,1)
 
     ! code
-    integer, parameter :: npsi_out = 30, nlambda_out = 5, nmethods = 18, ngrids = 3
+    integer, parameter :: npsi_out = 30, nlambda_out = 5, nell_out = 3, &
+        nmethods = 18, ngrids = 3
     character(4), dimension(nmethods), parameter :: methods = (/ &
         "fgar","tgar","pgar","rlar","clar","fcgl",&
         "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&

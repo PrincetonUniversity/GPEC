@@ -63,8 +63,9 @@ module diagnostics
         implicit none
         
         ! declare internal variables      
-        real(r8) :: wn=0.0, wt=0.0, we=1e4, wd=1e2, wb=1e4, nuk=1e2, psi=0, lambda=0
-        integer :: n = 1, nl = 0, ell = 0, sigma = 0
+        real(r8) :: wn=0.0, wt=0.0, we=1e4, wd=1e2, wb=1e4, psi=0, lambda=0, &
+            nuk=1e2, lnq = 0
+        integer :: n = 1, nl = 0, ell = 0
         character(32) :: lbl = "diagnostic_"
         real(r8) :: zr,zi,wr,wi
         complex(r8) :: xint,analytic,omegan,omegastara,omegastarb,zfun,z
@@ -76,7 +77,7 @@ module diagnostics
         
         ! We have a analytic solution for the CGL limit: 15 sqrt(pi)/8
         xf0type = "cgl"
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,sigma,n,psi,lambda,"fcgl",op_record=.true.)
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,lnq,n,psi,lambda,"fcgl",op_record=.true.)
         call output_energy_netcdf(n,op_label="diagnostic_cgl")
         analytic = -xj*15.0*sqrt(pi)/8.0
         print *,"CGL limit: "
@@ -88,7 +89,7 @@ module diagnostics
         ! ** note I changed the sign of nuk compared to MISK mdc2 document **
         xf0type = "maxwellian"
         xnutype = "krook"
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,sigma,n,psi,lambda,"fcgl",op_record=.true.)
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,lnq,n,psi,lambda,"fcgl",op_record=.true.)
         !call output_energy_record(n,0,0,electron,"diagnostic_krook")
         call output_energy_netcdf(n,op_label="diagnostic_krook")
         omegan = (n*we+xj*nuk)/(n*wd)
@@ -120,7 +121,7 @@ module diagnostics
         xf0type = "maxwellian"
         xnutype = 'krook'
         wd = 0
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,sigma,n,psi,lambda,"fcgl",op_record=.true.)
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,lnq,n,psi,lambda,"fcgl",op_record=.true.)
         call output_energy_netcdf(n,op_label="diagnostic_wd0")
         analytic = -xj*(15*sqrt(pi)/8) * (n*(wn+2*wt + we)) / (n*we+xj*nuk)
         print *,"Krook, omegaD=0 limit:"
