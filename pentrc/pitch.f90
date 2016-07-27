@@ -23,7 +23,7 @@ module pitch_integration
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only : r8,xj,mp,e
+    use params, only : r8,xj,mp,e, nlambda_out
     use utilities, only : get_free_file_unit,append_2d
     use special, only : ellipk
     use cspline_mod, only: cspline_type,cspline_eval
@@ -50,8 +50,8 @@ module pitch_integration
         lambdartol = 1e-9
     real(r8), dimension(:,:), allocatable :: pitch_record
     ! global variables for internal use
-    !real(r8) :: wn_g,wt_g,we_g,nuk_g,l_g,n_g,&
-    !    bobmax_g,epsr_g
+    real(r8) :: pitch_psi !wn_g,wt_g,we_g,nuk_g,l_g,n_g,bobmax_g,epsr_g
+    character(4) :: pitch_method
     type(cspline_type) :: eqspl_g
     type(spline_type) :: turns_g
     
@@ -59,10 +59,10 @@ module pitch_integration
 
     !=======================================================================
     function lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,eq_spl,l,n,&
-                                op_rex,op_imx,op_psi,op_turns)
+                                rex,imx,psi,turns,method,op_record)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
-    !   Dynamic pitch integration using lsode. Module global variabls
+    !   Dynamic pitch integration using lsode. Module global variables
     !   lambdaatol, lambdartol are used for tolerances.
     !
     !   Integrand is defined by flux functions (wn,wt,we), mode numbers
@@ -96,26 +96,31 @@ module pitch_integration
     !       effective bounce harmonic (i.e. ell-nq for passing)
     !   n : integer.
     !       toroidal mode number
-    !*OPTIONAL ARGUMENTS:
-    !   op_rex : real.
+    !   rex : real.
     !       Multiplier applied to real energy integral. The component
     !       gives the torque, but should be ignored when building Euler-Lagrange
     !       matrices for kinetic DCON.
-    !   op_imx : real.
+    !   imx : real.
     !       Multiplier applied to imaginary energy integral. The component
     !       gives the energy, but should be ignored when building a complex
     !       mode-coupling torque matrix.
-    !   op_psi : real.
-    !       normalized flux. If this variable is used, integrand and
-    !       integral are output to a file pentrc_<op_lbl>_lambda_n<n>_l<l>.out.
-    !   op_turns : spline_type.
-    !       If included with op_psi the bounce points are recorded.
-    !           t1(Lambda) : Lower bounce theta
-    !           t2(Lambda) : Upper bounce theta
+    !   psi : real.
+    !       Normalized flux.
+    !       **Not used in calculation, only in record keeping.**
+    !   turns : spline_type.
+    !       Pitch angle spline of lower (theta,r,z) and upper (theta,r,z) bounce points.
+    !       **Not used in calculation, only in record keeping.**
+    !   method : character.
+    !       Torque psi profile method used.
+    !       **Not used in calculation, only in record keeping.**
+    !*OPTIONAL ARGUMENTS:
+    !   op_record : logical, default .false.
+    !       Record the pitch integral profiles in memory and
+    !       record select energy space profiles in memory.
     !
     !*RETURNS:
     !     complex.
-    !        Integral int{dLambda f(Lambda)*int{dx Rln(x,Lambda)}, where
+    !       Integral int{dLambda f(Lambda)*int{dx Rln(x,Lambda)}, where
     !       f is input in the eq_spl and Rln is the resonance operator.
     !-----------------------------------------------------------------------
         implicit none
@@ -123,12 +128,14 @@ module pitch_integration
         complex(r8), dimension(:), allocatable :: lambdaintgrl_lsode        
         ! declare arguments
         integer, intent(in) :: n,l
-        real(r8), intent(in) :: wn,wt,we,nuk,bobmax,epsr,q
+        real(r8), intent(in) :: wn,wt,we,nuk,bobmax,epsr,q,psi,rex,imx
+        character(*), intent(in) :: method
         type(cspline_type) eq_spl      
-        type(spline_type), optional :: op_turns      
-        real(r8), intent(in), optional :: op_psi,op_rex,op_imx
+        type(spline_type) :: turns
+        logical, optional :: op_record
         ! declare variables
-        integer :: i,l_g,n_g,out_unit
+        logical :: record_this
+        integer :: i,sigma,l_g,n_g,out_unit
         real(r8) :: lmda,wb,wd,nueff,lnq,wn_g,wt_g,we_g,nuk_g,&
             bobmax_g,epsr_g,q_g,rex_g,imx_g
         complex(r8) :: xint
@@ -182,48 +189,44 @@ module pitch_integration
         l_g  = l
         n_g = n
         eqspl_g = eq_spl
-        if(present(op_turns)) turns_g = op_turns
-        if(present(op_rex))then
-            rex_g = op_rex
-        else
-            rex_g = 1.0
-        endif
-        if(present(op_imx))then
-            imx_g = op_imx
-        else
-            imx_g = 1.0
-        endif
-        
-        if(present(op_psi)) then
+        turns_g = turns
+        rex_g = rex
+        imx_g = imx
+
+        pitch_psi = psi
+        pitch_method = method
+
+        ! set default recording flag
+        record_this = .false.
+        if(present(op_record)) record_this = op_record
+
+        if(record_this) then
             itask = 5              ! single step
             do while (x<xout)
                 call lsode1(lintgrnd, neqarray, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                 call dintdy1(x, 1, rwork(21), neqarray(1), dky, iflag)
-                if(present(op_turns))then
-                    call spline_eval(turns_g,x,0)
-                    call append_2d(pitch_record, (/op_psi,l*1.0_r8,x,dky(1:2),y(1:2), &
-                        real(eqspl_g%f(1:2)),real(eqspl_g%f(eqspl_g%nqty)),turns_g%f(:)/) )
-                else
-                    call append_2d(pitch_record, (/op_psi,l*1.0_r8,x,dky(1:2),y(1:2), &
-                        real(eqspl_g%f(1:2)),real(eqspl_g%f(eqspl_g%nqty))/) )
-                endif
+                call spline_eval(turns_g,x,0)
+                call append_2d(pitch_record, (/psi,l*1.0_r8,x,dky(1:2),y(1:2), &
+                    real(eqspl_g%f(1:2)),real(eqspl_g%f(eqspl_g%nqty)),turns_g%f(:)/) )
             enddo
             ! write select energy integral output files
-            do i = 0,4
-                lmda = eq_spl%xs(0) + (i/4.0)*(xout-eq_spl%xs(0))
+            do i = 0,nlambda_out-1
+                lmda = eq_spl%xs(0) + (i/(nlambda_out-1.0))*(xout-eq_spl%xs(0))
                 call cspline_eval(eq_spl,lmda,0)
                 wb = real(eq_spl%f(1))
                 wd = real(eq_spl%f(2))
                 if(lmda>bobmax)then
                     nueff = nuk/(2*epsr)
                     lnq = 1.0*l
+                    sigma = 0
                 else
                     nueff = nuk
                     lnq = l+n*q
+                    sigma = 1
                 endif
                 ! note: currently ignores -wb case for trapped
-                xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,lnq,n,(/op_psi,lmda/))
+                xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,sigma,n,psi,lmda,method,record_this)
             enddo
         else
             itask = 4              ! full integral
@@ -238,9 +241,7 @@ module pitch_integration
         if(istate==-1) then
             out_unit = get_free_file_unit(-1)
             open(unit=out_unit,file="pentrc_lambdaintrgl_lsode.err",status="unknown")
-            if(present(op_psi)) then
-                write(out_unit,*) "psi = ",op_psi
-            endif
+            write(out_unit,*) "psi = ",psi
             write(out_unit,'(5(1x,a16))') "lambda","t_phi","2ndeltaw","int(t_phi)","int(2ndeltaw)"
             itask = 2
             y(1:2) = (/ 0,0 /)
@@ -321,7 +322,7 @@ module pitch_integration
         integer ::  neq
         real*8 x, y(neq), ydot(neq)
     
-        integer :: l,n,i
+        integer :: l,n,i,sigma
         real(r8) :: wn,wt,we,wd,wb,nuk,bobmax,epsr,lnq,q,fl,nueff,rex,imx
         complex(r8) :: xint,fres
     
@@ -343,16 +344,18 @@ module pitch_integration
             print *,'n,l    = ',n,l
        endif
         
-        ! energy integration of resonance opterator
+        ! energy integration of resonance operator
         if(x<=bobmax)then      ! circulating particles
             nueff = nuk
             lnq = l+n*q
-            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,lnq,n)
-            xint = xint + xintgrl_lsode(wn,wt,we,wd,-wb,nueff,lnq,n)
+            sigma = 1
+            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,sigma,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
+            xint = xint + xintgrl_lsode(wn,wt,we,wd,-wb,nueff,l,sigma,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
         else                        ! trapped particles
             nueff = nuk/(2*epsr)    ! effective collisionality
             lnq = 1.0*l
-            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,lnq,n)
+            sigma = 0
+            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,sigma,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
         endif
         
         if(lambdadebug) print *,"lnq, nueff = ",lnq,nueff
