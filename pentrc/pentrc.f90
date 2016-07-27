@@ -96,7 +96,7 @@ program pentrc
             write(1,*) "Kinetic additions to the ideal Euler-Lagrange matrices"
             write(1,'(1/,4x,2(a4,i4),1/)') "n = ",nn," l = ",0
             
-            do i=1,nout
+            do i=1,npsi_out
                 if(verbose) print *," psi = ",psi_out(i)
                 write(1,'(1/,1x,a16,es16.8e3,1/)') "psi = ",psi_out(i)
                 write(1,'(1x,a4,a4,12(1x,a16))') "m_1","m_2","real(A_k)",&
@@ -123,32 +123,8 @@ program pentrc
                 fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
                 fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag &
                 /)
-        methods=(/&
-                "fgar","tgar","pgar","rlar","clar","fcgl",&
-                "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
-                "fkmm","tkmm","pkmm","frmm","trmm","prmm" &
-                /)
-        docs   =(/&
-                "Full general-aspect-ratio calculation                       ",&
-                "Trapped particle general-aspect-ratio calculation           ",&
-                "Passing particle general-aspect-ratio calculation           ",&
-                "Trapped particle large-aspect-ratio calculation             ",&
-                "Trapped particle cylindrical large-aspect-ratio calculation ",&
-                "Fluid Chew-Goldberger-Low calculation                       ",&
-                "Full    energy calculation using MXM euler lagrange matrix  ",&
-                "Trapped energy calculation using MXM euler lagrange matrix  ",&
-                "Passing energy calculation using MXM euler lagrange matrix  ",&
-                "Full    torque calculation using MXM euler lagrange matrix  ",&
-                "Trapped torque calculation using MXM euler lagrange matrix  ",&
-                "Passing torque calculation using MXM euler lagrange matrix  ",&
-                "Full    MXM euler lagrange energy matrix norm calculation   ",&
-                "Trapped MXM euler lagrange energy matrix norm calculation   ",&
-                "Passing MXM euler lagrange energy matrix norm calculation   ",&
-                "Full    MXM euler lagrange torque matrix norm calculation   ",&
-                "Trapped MXM euler lagrange torque matrix norm calculation   ",&
-                "Passing MXM euler lagrange torque matrix norm calculation   " &
-                /)
-        do m=1,nflags
+
+        do m=1,nmethods
             if(flags(m))then
                 method = methods(m) !to_upper(methods(m))
                 if(verbose)then
@@ -198,8 +174,8 @@ program pentrc
                 if(theta_out .or. xlmda_out)then
                     if(verbose) print *,method//" - "//"Recalculating on psi_out grid for detailed outputs"
                     ! only use valid output surfaces
-                    do i=1,nout
-                        if(psi_out(i)>0 .and. psi_out(i)<=1) call append_1d(psi_out_valid,psi_out(i))
+                    do i=1,npsi_out
+                        if(psi_out(i)>0 .and. psi_out(i)<1) call append_1d(psi_out_valid,psi_out(i))
                     enddo
                     if(allocated(psi_out_valid))then
                         nvalid = size(psi_out_valid,dim=1)
@@ -218,7 +194,6 @@ program pentrc
                         if(output_ascii)then
                             if(theta_out) call output_bouncefun_ascii(nn,zi,mi,electron,methods(m),thetatable)
                             if(xlmda_out) call output_pitch_record(nn,zi,mi,electron,methods(m))
-                            if(xlmda_out) call output_energy_record(nn,zi,mi,electron,methods(m))
                         endif
                         deallocate(thetafuns,thetatable,psi_out_valid)
                     endif
@@ -229,8 +204,14 @@ program pentrc
                 endif
             endif
         enddo
+        if(output_ascii)then
+            if(xlmda_out) call output_energy_ascii(nn,zi,mi,electron)
+        endif
         if(output_netcdf)then
             call output_torque_netcdf(nn,nl,zi,mi,electron,wdfac)
+            !if(theta_out) call output_bouncefun_netcdf(nn)
+            !if(xlmda_out) call output_pitch_netcdf(nn)
+            if(xlmda_out) call output_energy_netcdf(nn)
         endif
     endif
 

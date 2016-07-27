@@ -116,7 +116,7 @@ module torque
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only : r8,xj,mp,me,e,mu0,pi,twopi
+    use params, only : r8,xj,mp,me,e,mu0,pi,twopi, nmethods, methods, ngrids, grids
     use utilities, only : get_free_file_unit, check, median, append_2d, &
         ri, btoi, itob
     use special, only : ellipk,ellipe
@@ -147,12 +147,7 @@ module torque
     logical :: tdebug=.false., output_ascii =.true., output_netcdf=.true.
     integer :: nlmda=128, ntheta=128,nrecorded
     
-    integer, parameter :: nmethods = 18, ngrids = 3, nfluxfuns = 19, nthetafuns = 18
-    character(4), dimension(nmethods) :: methods = (/ &
-        "fgar","tgar","pgar","rlar","clar","fcgl",&
-        "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
-        "fkmm","tkmm","pkmm","frmm","trmm","prmm" /)
-    character(5), dimension(ngrids) :: grids = (/'lsode','equil','input'/)
+    integer, parameter :: nfluxfuns = 19, nthetafuns = 18
 
     type record
         logical :: is_recorded
@@ -421,15 +416,13 @@ module torque
         
             case("rlar")
                 lnq = 1.0*l
+                sigma = 0
                 ! independent energy integration
                 if(tdebug) print *,'  rlar integrations. modes = ',n,l
                 ! energy space integrations
-                if(erecord)then
-                    xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,lnq,n,&
-                        (/psi,0.0_r8/))
-                else
-                    xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,lnq,n)
-                endif
+                lmdamax = min(1.0/(1-epsr),bo/bmin) ! just for record keeping - not rigorous
+                xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,l,sigma,n,&
+                    psi,lmdamax,method,op_record=erecord)
                 ! kappa integration
                 if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbob_m%f(:))/mpert)
                 kappaint = kappaintgrl(n,l,q,mfac,dbob_m%f(:),fnml)
@@ -454,6 +447,7 @@ module torque
                 ldl = powspace(lmdamin,lmdamax,1,nlmda,"both") ! trapped space
 
                 ! form smooth pitch angle functions
+                call spline_alloc(turns,nlmda-1,6) ! (theta,r,z) of lower and upper turns
                 do ilmda=1,nlmda
                     lmda = ldl(1,ilmda)
                     kk = (1 - lmda*(1- epsr))/(2*epsr*lmda)
@@ -478,18 +472,41 @@ module torque
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
                     fbnce%fs(ilmda-1,2) = wdbar*dhat
                     fbnce%fs(ilmda-1,3) = djdj
+                    ! bounce locations recorded for optional output
+                    vspl%fs(:,1) = 1.0-(lmda/bo)*tspl%fs(:,1)
+                    call spline_fit(vspl,"extrap")
+                    call spline_roots(bpts,vspl,1)
+                    t1 = bpts(size(bpts))-1.0
+                    t2 = bpts(1)
+                    call spline_eval(vspl,modulo((t1+t2)/2,1.0_r8),0)
+                    vpar = vspl%f(1) ! bpts centered around 0 (standard)
+                    do i=1,size(bpts)-1
+                       call spline_eval(vspl,sum(bpts(i:i+1))/2,0)
+                       if(vspl%f(1)>vpar)then
+                          t1 = bpts(i)
+                          t2 = bpts(i+1)
+                          vpar = vspl%f(1)
+                       endif
+                    enddo
+                    deallocate(bpts)
+                    turns%fs(ilmda-1,1) = t1
+                    call bicube_eval(rzphi,psi,t1,0)
+                    turns%fs(ilmda-1,2)=ro+SQRT(rzphi%f(1))*COS(twopi*(t1+rzphi%f(2)))
+                    turns%fs(ilmda-1,3)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t1+rzphi%f(2)))
+                    turns%fs(ilmda-1,4) = t2
+                    call bicube_eval(rzphi,psi,t2,0)
+                    turns%fs(ilmda-1,5)=ro+SQRT(rzphi%f(1))*COS(twopi*(t2+rzphi%f(2)))
+                    turns%fs(ilmda-1,6)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t2+rzphi%f(2)))
+                    turns%xs(ilmda-1) = lmda
                 enddo
                 call cspline_fit(fbnce,'extrap')
                 
                 ! energy space integrations
                 allocate(lxint(1))
-                if(erecord)then
-                    lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n,op_psi=psi)
-                else
-                    lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n)
-                endif
+                rex = 1.0
+                imx = 1.0
+                lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
+                    epsr,q,fbnce,l,n,rex,imx,psi,turns,method,op_record=erecord)
 
                 ! dT/dpsi
                 tpsi = sq%f(3)*(-1*lxint(1)) & ! may be missing some normalizations from djdj
@@ -791,19 +808,12 @@ module torque
                 imx = 1.0 ! include imag part of resonance operator (default)
                 if(method(2:4)=='wmm' .or. method(2:4)=='kmm')then
                     rex = 0.0
-                endif
-                if(method(2:4)=='tmm' .or. method(2:4)=='rmm')then
+                elseif(method(2:4)=='tmm' .or. method(2:4)=='rmm')then
                     imx = 0.0
                     wtwnorm = -1.0
                 endif
-                if(erecord)then
-                    lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n,op_rex=rex,op_imx=imx,&
-                        op_psi=psi,op_turns=turns)
-                else
-                    lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n,op_rex=rex,op_imx=imx)
-                endif
+                lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
+                    epsr,q,fbnce,l,n,rex,imx,psi,turns,method,op_record=erecord)
                 
                 ! dT/dpsi
                 tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
@@ -1885,7 +1895,7 @@ module torque
         ! store variables
         call check( nf90_put_var(ncid, i_id, (/0,1/)) )
         call check( nf90_put_var(ncid, l_id, (/(i,i=-nl,nl)/)) )
-        call check( nf90_put_var(ncid, p_id, psi) )
+        call check( nf90_put_var(ncid, p_id, sq%xs) )
         call check( nf90_put_var(ncid, v_id, sq%fs(:,3)) )
         call check( nf90_put_var(ncid, q_id, sq%fs(:,4)) )
         call check( nf90_put_var(ncid, mp_id, sq%fs(:,2)) )
