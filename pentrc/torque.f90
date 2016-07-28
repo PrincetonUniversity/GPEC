@@ -223,7 +223,7 @@ module torque
             lmdamin,lmdamax,lmdatpb,lmdatpe,lmda,t1,t2,&
             wbbar,wdbar,bhat,dhat,dbave,dxave,&
             vpar,kappaint,kappa,kk,djdj,jbb,&
-            rex,imx
+            rex,imx,tnorm
         real(r8), dimension(2,nlmda) :: ldl
         real(r8), dimension(2,1+nlmda) :: ldl_inc
         real(r8), dimension(2,1+nlmda/2) :: ldl_p
@@ -790,9 +790,9 @@ module torque
                 endif
                 
                 ! dT/dpsi
-                tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
-                    *lxint(1)/fbnce_norm(1) &       ! lsode normalization
-                    *(chi1/twopi) ! unit conversion from psi to psi_n, theta_n to theta
+                tnorm = (-2*n**2/sqrt(pi))*(ro/bo) * kin%f(s) * kin%f(s+2) & ! Eq (19) [N.C. Logan, et al., Physics of Plasmas 20, (2013)]
+                    * (chi1/twopi) ! unit conversion from psi to psi_n, theta_n to theta
+                tpsi = tnorm * ( lxint(1) / fbnce_norm(1) )       ! remove lsode normalization
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
 
                 ! Euler lagrange matrices (wtw ~ dW ~ T/i)
@@ -802,9 +802,9 @@ module torque
                         do j=1,mpert
                             do i=1,mpert
                                 iqty = ((k-1)*mpert+j-1)*mpert + i + 1
-                                op_wmats(i,j,k) = (1/(2*xj*n))*lxint(iqty)/fbnce_norm(iqty) &
-                                    *kin%f(s)*kin%f(s+2) &
-                                    *(-2*n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
+                                op_wmats(i,j,k) = lxint(iqty)/fbnce_norm(iqty) & ! remove lsode normalization
+                                    * tnorm &               ! psi profile factors
+                                    * (1 / (2*xj*n))        ! convert from torque to energy
                             enddo
                         enddo
                     enddo
