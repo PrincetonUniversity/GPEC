@@ -804,7 +804,7 @@ module torque
                                 iqty = ((k-1)*mpert+j-1)*mpert + i + 1
                                 op_wmats(i,j,k) = (1/(2*xj*n))*lxint(iqty)/fbnce_norm(iqty) &
                                     *kin%f(s)*kin%f(s+2) &
-                                    *(-n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
+                                    *(-2*n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
                             enddo
                         enddo
                     enddo
