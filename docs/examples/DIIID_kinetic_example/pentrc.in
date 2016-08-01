@@ -12,9 +12,9 @@
     electron = .false.                  ! electron contribution
     nutype = "harmonic"                 ! collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! distribution function: "maxwellian"
-    jac_in = "pest"                     ! jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
+    jac_in = "pest"                     ! Jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
     jsurf_in=0                          ! True(1) if peq_file is area weighted
-    tmag_in =1                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
+    tmag_in =0                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
 /                                       
 &PENT_CONTROL                           
     wefac = 1                           ! artificial factor applied to omega_EXB
@@ -32,7 +32,7 @@
 
     xmax = 128                          ! upper bound of energy integral (x=E/T)
     ximag = 0.0                         ! step off real energy axis (use to avoid zero collisionality singularities)
-    psilims = 0 1                        ! range in psi_n
+    psilims = 0 1                       ! range in psi_n
 /
 &PENT_OUTPUT
     moment = "pressure"                 ! 'pressure' for torque and particle transport, 'heat' for heat transport
