@@ -1683,10 +1683,10 @@ c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xspmn)
       CALL cspline_alloc(dwk,mstep,1)
       dwk%xs=psifac
-      DO istep=0,mstep
-         dwk%fs(istep,1)=2*nn*ifac*
-     $        SUM(CONJG(u1%fs(istep,:))*u2%fs(istep,:))/(2.0*mu0)
-      ENDDO
+      ! division by 2 corrects quadratic use of 2A_+n instead of proper A_+n + A_-n
+      dwk%fs(:,1) = SUM(CONJG(u1%fs) * u2%fs, DIM=2) / 2
+     $   / (2 * mu0)        ! convert to Jules
+     $   * 2 * nn * ifac    ! convert from energy to torque
       CALL cspline_fit(dwk,"extrap")
 
       WRITE(*,*)"Restoring energy and torque profiles"
