@@ -290,7 +290,7 @@ module torque
         !Poloidal functions - note ABS(A*clebsch) = ABS(A)
         allocate(dbfun(0:eqfun%my),dxfun(0:eqfun%my))
         call spline_alloc(tspl,eqfun%my,5)
-        tspl%xs(0:) = eqfun%ys(0:)
+        tspl%xs(0:) = eqfun%ys(0:) ! DCON theta normalized to unity
         do i=0,eqfun%my
            call bicube_eval(eqfun,psi,eqfun%ys(i),1)
            call bicube_eval(rzphi,psi,eqfun%ys(i),1)
@@ -540,11 +540,11 @@ module torque
                     ldl(1,:) = (/ldl_p(1,:nlmda/2),ldl_t(1,2:)/) ! full space with no point on boundary
                     ldl(2,:) = (/ldl_p(2,:nlmda/2),ldl_t(2,2:)/)
                 endif
-                if(tdebug) print *," Lambda space ",ldl(1,1),ldl(1,nlmda),", t/p bounry = ",lmdatpb
+                if(tdebug) print *," Lambda space ",ldl(1,1),ldl(1,nlmda),", t/p boundary = ",lmdatpb
                 ! form smooth pitch angle functions
                 do ilmda=1,nlmda
                     lmda = ldl(1,ilmda)
-                    !if(lmda==lmdatpb) lmda = lmda+1e-1*(ldl(1,2)-ldl(1,1)) ! tenth step off boundry
+                    !if(lmda==lmdatpb) lmda = lmda+1e-1*(ldl(1,2)-ldl(1,1)) ! tenth step off boundary
                     if(lmda>(bo/bmax)) then 
                         sigma = 0 !trapped
                     else
@@ -558,8 +558,8 @@ module torque
                     if(sigma==0)then ! find trapped particle bounce pts
                         call spline_roots(bpts,vspl,1)
                         if(size(bpts)>2 .and. ilmda==1) then
-                            print *, "WARNING: using only deepest of &
-                                &multiple magnetic wells at psi ",psi
+                            print *, "WARNING: using only deepest of " &
+                                //"multiple magnetic wells at psi ", psi
                         endif
                         ! find deepest magnetic well ** not precise **
                         t1 = bpts(size(bpts))-1.0  
@@ -614,7 +614,7 @@ module torque
                                             &internal to magnetic well at psi ",psi
                                     print('(2x,es10.3E2,a4,es10.3E2,a4,es10.3E2)'),&
                                         t1," <= ",tdt(1,i)," <= ",t2
-                                    print *, "  -> Lambda, t/p boundry = ",lmda,lmdatpb
+                                    print *, "  -> Lambda, t/p boundary = ", lmda, lmdatpb
                                     print *, "  -> consider changing mtheta in equil.in"
                                     psi_warned = psi
                                 endif
@@ -688,7 +688,8 @@ module torque
                     bjspl%fs(0:,1) =conjg(jvtheta(:))*(pl(:)+(1-sigma)/pl(:))
                     call cspline_fit(bjspl,"extrap")
                     call cspline_int(bjspl)
-                    fbnce%fs(ilmda-1,3) = wbbar*abs(bjspl%fsi(bjspl%mx,1))**2/ro**2
+                    ! division by 2 corrects quadratic use of 2A_+n instead of proper A_+n + A_-n
+                    fbnce%fs(ilmda-1,3) = wbbar * abs(bjspl%fsi(bjspl%mx, 1))**2 / 2 / ro**2
                     
                     ! mxmx6 bounce averaged euler lagrange matrix elements
                     if(present(op_wmats))then
@@ -770,7 +771,7 @@ module torque
                 
                 ! energy space integrations
                 allocate(lxint(fbnce%nqty-2))
-                wtwnorm = 1.0 ! euler-lagrange real energy metrices (default)
+                wtwnorm = 1.0 ! euler-lagrange real energy matrices (default)
                 rex = 1.0 ! include real part of resonance operator (default)
                 imx = 1.0 ! include imag part of resonance operator (default)
                 if(method(2:4)=='wmm' .or. method(2:4)=='kmm')then
@@ -790,8 +791,8 @@ module torque
                 endif
                 
                 ! dT/dpsi
-                tnorm = (-2*n**2/sqrt(pi))*(ro/bo) * kin%f(s) * kin%f(s+2) & ! Eq (19) [N.C. Logan, et al., Physics of Plasmas 20, (2013)]
-                    * (chi1/twopi) ! unit conversion from psi to psi_n, theta_n to theta
+                tnorm = (-2 * n**2 / sqrt(pi)) * (ro / bo) * kin%f(s) * kin%f(s + 2) & ! Eq (19) [N.C. Logan, et al., Physics of Plasmas 20, (2013)]
+                    * (chi1 / twopi) ! unit conversion from psi to psi_n, theta_n to theta
                 tpsi = tnorm * ( lxint(1) / fbnce_norm(1) )       ! remove lsode normalization
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
 
@@ -843,12 +844,13 @@ module torque
                         xix(:,1) = xs_m(1)%f(:)
                         xiy(:,1) = xs_m(2)%f(:)
                         xiz(:,1) = xs_m(3)%f(:)
-                        t_zz = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,1),xiz))*chi1**2
-                        t_zx = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,2),xix))*chi1
-                        t_zy = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,3),xiy))*chi1
-                        t_xx = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,4),xix))
-                        t_xy = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,5),xiy))
-                        t_yy = matmul(conjg(transpose(xiy)),matmul(op_wmats(:,:,6),xiy))
+                        ! division by 2 corrects quadratic use of 2A_+n instead of proper A_+n + A_-n
+                        t_zz = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,1),xiz))/2*chi1**2
+                        t_zx = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,2),xix))/2*chi1
+                        t_zy = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,3),xiy))/2*chi1
+                        t_xx = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,4),xix))/2
+                        t_xy = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,5),xiy))/2
+                        t_yy = matmul(conjg(transpose(xiy)),matmul(op_wmats(:,:,6),xiy))/2
                         tpsi = (2*n*xj/(2*mu0))*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
                             +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
                             +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
