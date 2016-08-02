@@ -91,7 +91,8 @@ module pentrc_interface
         diag_flag=.false.,&
         term_flag=.false.,&
         clean=.true.,&
-        flags(nflags)=.false.
+        flags(nflags)=.false.,&
+        indebug=.false.
 
     integer :: i, &
         mi=2, &
@@ -155,7 +156,7 @@ module pentrc_interface
         term_flag,verbose,clean
 
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
-        tdebug,xdebug,lambdadebug
+        tdebug,xdebug,lambdadebug,indebug
         
     private :: i ! these conflict with the dcon namespace
 
@@ -177,7 +178,7 @@ module pentrc_interface
     !   op_deq : logical (default true)
     !       Read dcon euler.bin description of the equilibrium
     !   op_peq : logical (default true)
-    !       Read ascii table of clesch displacement profiles
+    !       Read ascii table of clebsch displacement profiles
     !
     !*RETURNS:
     !
@@ -224,15 +225,15 @@ module pentrc_interface
         lambdartol = rtol_xlmda
 
         ! read (perturbed) equilibrium inputs
-        if(tdebug .and. in_kin) print *,"  read_kin args: ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
+        if(indebug .and. in_kin) print *,"  read_kin args: ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug
         if(in_deq) call read_equil(idconfile)
-        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
+        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
         if(in_peq)then
-            call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug,&
+            call read_peq(peq_file,jac_in,jsurf_in,tmag_in,indebug,&
                           op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
-            !call read_ipec_peq(ipec_file,tdebug)
+            !call read_ipec_peq(ipec_file,indebug)
             if(trim(pmodb_file)/="" .and. trim(pmodb_file)/="none")&
-                call read_pmodb(pmodb_file,jac_in,jsurf_in,tmag_in,tdebug,&
+                call read_pmodb(pmodb_file,jac_in,jsurf_in,tmag_in,indebug,&
                                 op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
         endif
 
@@ -280,11 +281,11 @@ module pentrc_interface
         lambdartol = rtol_xlmda
         
         ! set the kinetic spline
-        if(tdebug)THEN
+        if(indebug)THEN
             print *,"read_kin args:"
             print *,"  ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
         endif
-        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
+        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
 
         ! transfer torque function variables to external program
         get_nl = nl

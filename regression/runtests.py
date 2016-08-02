@@ -49,6 +49,10 @@ def coordinate_tranformed_io(loc, repo):
     inputs['pentrc']['PENT_INPUT']['data_dir'] = repo + '/pentrc'
     inputs['coil']['COIL_CONTROL']['data_dir'] = repo + '/coil'
 
+    # output diagnostic perturbation profiles
+    inputs['ipec']['IPEC_DIAGNOSE']['pmodbmn_flag'] = True
+    inputs['pentrc']['PENT_ADMIN']['indebug'] = True
+
     for coord in ['pest', 'hamada']:
         for t in [0, 1]:
             inputs['ipec']['IPEC_OUTPUT']['jac_out'] = coord
