@@ -12,7 +12,9 @@
     electron = .false.                  ! Electron contribution
     nutype = "harmonic"                 ! Collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! Distribution function: "maxwellian"
-    jac_in = ""                         ! Jacobian of peq_file harmonic decomposition
+    jac_in = "pest"                     ! Jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
+    jsurf_in=0                          ! True(1) if peq_file is area weighted
+    tmag_in =0                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
 /
 &PENT_CONTROL
     wefac = 1                           ! Artificial factor applied to omega_EXB
@@ -60,6 +62,7 @@
     fnml_flag = .false.                 ! Special function matrix [JKP PRL 2009]
     ellip_flag = .false.                ! Elliptic integral functions
     diag_flag = .false.                 ! Diagnostic module
+    indebug = .false.                   ! Debug input file parsing and manipulations
     tdebug = .false.                    ! Debug psi integration
     lambdadebug = .false.               ! Debug pitch integration
     xdebug = .false.                    ! Debug energy integration

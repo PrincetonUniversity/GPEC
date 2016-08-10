@@ -62,6 +62,7 @@
     fnml_flag = .false.                 ! Special function matrix [JKP PRL 2009]
     ellip_flag = .false.                ! Elliptic integral functions
     diag_flag = .false.                 ! Diagnostic module
+    indebug = .false.                   ! Debug input file parsing and manipulations
     tdebug = .false.                    ! Debug psi integration
     lambdadebug = .false.               ! Debug pitch integration
     xdebug = .false.                    ! Debug energy integration
