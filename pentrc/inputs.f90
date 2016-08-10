@@ -650,11 +650,11 @@ module inputs
                 ! convert spectrum on each surface
                 do i=1,npsi
                     if(verbose) call progressbar(i,1,npsi,op_percent=20)
-                    CALL idcon_coords(psi(i),xmp1mns(i,:),ms,nm,&
+                    CALL idcon_coords(psi(i),xmp1mni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
-                    CALL idcon_coords(psi(i),xspmns(i,:),ms,nm,&
+                    CALL idcon_coords(psi(i),xspmni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
-                    CALL idcon_coords(psi(i),xmsmns(i,:),ms,nm,&
+                    CALL idcon_coords(psi(i),xmsmni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                     xmp1mns(i,:) = newm(nm,ms,xmp1mni(i,:),mpert,mfac)
                     xspmns(i,:) = newm(nm,ms,xspmni(i,:),mpert,mfac)
