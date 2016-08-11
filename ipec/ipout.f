@@ -2372,9 +2372,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_open(fncfile,nf90_write,fncid) )
       IF(debug_flag) PRINT *,"  Inquiring about dimensions"
       CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
+      CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
       CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
-      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
+      CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
       IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(fncid))
       rzstat = nf90_inq_varid(fncid, "R", r_id) ! check if R,z already stored
@@ -2960,9 +2960,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_open(fncfile,nf90_write,fncid) )
       IF(debug_flag) PRINT *,"  Inquiring about dimensions"
       CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
+      CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
       CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
-      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
+      CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
       IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(fncid))
       rzstat = nf90_inq_varid(fncid, "R", r_id) ! check if R,z already stored
@@ -3180,9 +3180,9 @@ c      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
 c      CALL check( nf90_open(fncfile,nf90_write,fncid) )
 c      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
 c      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-c      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
+c      CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
 c      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
-c      CALL check( nf90_inq_dimid(fncid,"theta",t_id) )
+c      CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
 c      IF(debug_flag) PRINT *,"  Defining variables"
 c      CALL check( nf90_redef(fncid))
 c      CALL check( nf90_def_var(fncid, "q", nf90_double,(/p_id/),q_id) )
@@ -4735,7 +4735,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_open(fncfile,nf90_write,fncid) )
       IF(debug_flag) PRINT *,"  Inquiring about dimensions"
       CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-      CALL check( nf90_inq_dimid(fncid,"m",m_id) )
+      CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
       CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
       IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(fncid))
@@ -5568,14 +5568,15 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Defining flux netcdf globals"
       CALL check( nf90_put_att(fncid,nf90_global,"title",
      $     "IPEC outputs in magnetic coordinate systems"))
-      CALL check( nf90_def_dim(fncid,"i",2,       fidid) )
+      CALL check( nf90_def_dim(fncid,"i",2, fidid) )
       CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
-      CALL check( nf90_def_dim(fncid,"m",lmpert,  fmdid) )
-      CALL check( nf90_def_var(fncid,"m",NF90_INT,fmdid,fmvid) )
-      CALL check( nf90_def_dim(fncid,"psi_n",mstep,    fpdid) )
+      CALL check( nf90_def_dim(fncid,"m_out",lmpert, fmdid) )
+      CALL check( nf90_def_var(fncid,"m_out",NF90_INT,fmdid,fmvid) )
+      CALL check( nf90_def_dim(fncid,"psi_n",mstep, fpdid) )
       CALL check( nf90_def_var(fncid,"psi_n",nf90_double,fpdid,fpvid) )
-      CALL check( nf90_def_dim(fncid,"theta",mthsurf+1,  ftdid) )
-      CALL check( nf90_def_var(fncid,"theta",nf90_double,ftdid,ftvid) )
+      CALL check( nf90_def_dim(fncid,"theta_dcon",mthsurf+1, ftdid) )
+      CALL check( nf90_def_var(fncid,"theta_dcon",nf90_double,
+     $     ftdid,ftvid) )
       CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
 
       IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
