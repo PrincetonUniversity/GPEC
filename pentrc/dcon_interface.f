@@ -47,15 +47,15 @@ c-----------------------------------------------------------------------
       CHARACTER(16) :: jac_type,machine
       CHARACTER(128) :: idconfile
 
-      LOGICAL, DIMENSION(:), POINTER :: sing_flag
-      INTEGER, DIMENSION(:), POINTER :: fixstep,mfac,lmfac
+      LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
+      INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
 
-      REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,eft,efp
 
-      COMPLEX(r8), DIMENSION(:), POINTER ::
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE ::
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wt0,wft,wtraw,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,wft,wtraw,
      $     amat,bmat,cmat,fmats,gmats,kmats
 
       TYPE(spline_type) :: sq,geom
@@ -70,25 +70,25 @@ c-----------------------------------------------------------------------
 
       TYPE :: solution_type
       INTEGER :: msol
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
       END TYPE solution_type
 
       TYPE :: fixfac_type
       INTEGER :: msol
-      INTEGER, DIMENSION(:), POINTER :: index
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: fixfac,transform,gauss
+      INTEGER, DIMENSION(:), ALLOCATABLE :: index
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fixfac,transform,gauss
       END TYPE fixfac_type
 
       TYPE :: sing_type
       INTEGER :: msol_l,msol_r,jfix,jpert
       REAL(r8) :: psifac,q,q1
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: ca_l,ca_r
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: ca_l,ca_r
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
-      TYPE(solution_type), DIMENSION(:), POINTER :: soltype
-      TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
-      TYPE(sing_type), DIMENSION(:), POINTER :: singtype
+      TYPE(solution_type), DIMENSION(:), ALLOCATABLE :: soltype
+      TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
+      TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -106,7 +106,7 @@ c-----------------------------------------------------------------------
       INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,i,in_unit
       REAL(r8) :: sfac0
 
-      REAL(r4), DIMENSION(:,:), POINTER :: rgarr,zgarr,psigarr
+      REAL(r4), DIMENSION(:,:), ALLOCATABLE :: rgarr,zgarr,psigarr
 c-----------------------------------------------------------------------
 c     open euler.bin and read header.
 c-----------------------------------------------------------------------
