@@ -288,19 +288,20 @@ module torque
         call cspline_eval(divx_m,psi,0)
 
         !Poloidal functions - note ABS(A*clebsch) = ABS(A)
-        allocate(dbfun(0:eqfun%my),dxfun(0:eqfun%my))
-        call spline_alloc(tspl,eqfun%my,5)
-        tspl%xs(0:) = eqfun%ys(0:) ! DCON theta normalized to unity
-        do i=0,eqfun%my
-           call bicube_eval(eqfun,psi,eqfun%ys(i),1)
-           call bicube_eval(rzphi,psi,eqfun%ys(i),1)
+        allocate(dbfun(0:mthsurf),dxfun(0:mthsurf))
+        call spline_alloc(tspl,mthsurf,5)
+        tspl%xs(0:) = (/(i / real(mthsurf,r8), i=0, mthsurf)/) ! DCON theta normalized to unity
+        do i=0,mthsurf
+           theta = i/real(mthsurf,r8)
+           call bicube_eval(eqfun,psi,theta,1)
+           call bicube_eval(rzphi,psi,theta,1)
            tspl%fs(i,1)= eqfun%f(1)            !b
            tspl%fs(i,2)= eqfun%fx(1)/chi1      !db/dpsi
            tspl%fs(i,3)= eqfun%fy(1)           !db/dtheta
            tspl%fs(i,4)= rzphi%f(4)/chi1       !jac
            tspl%fs(i,5)= rzphi%fx(4)/chi1**2   !dj/dpsi
            ! for flux fun outputs
-           expm = exp(xj*twopi*mfac*eqfun%ys(i))
+           expm = exp(xj*twopi*mfac*theta)
            jbb  = rzphi%f(4)*eqfun%f(1)**2 ! chi1 cuz its the DCON working J
            dbfun(i) = ABS( sum(dbob_m%f(:)*expm) )**2
            dxfun(i) = ABS( sum(divx_m%f(:)*expm) * divxfac )**2
@@ -350,8 +351,8 @@ module torque
         wbhat = (pi/4)*SQRT(epsr/2)*wtran           ! RLAR normalized by x^1/2
         wdhat = q**3*wtran**2/(4*epsr*wgyro)*wdfac  ! RLAR normalized by x
         nueff = kin%f(s+6)/(2*epsr)                 ! if trapped
-        dbave = issurfint(dbfun,eqfun%my,psi,0,1)
-        dxave = issurfint(dxfun,eqfun%my,psi,0,1)
+        dbave = issurfint(dbfun,mthsurf,psi,0,1)
+        dxave = issurfint(dxfun,mthsurf,psi,0,1)
         deallocate(dbfun,dxfun)
         if(tdebug) print('(a14,7(es10.1E2),i4)'), "  eq values = ",wdian,&
                         wdiat,welec,wdhat,wbhat,nueff,q
