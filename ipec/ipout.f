@@ -2436,7 +2436,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(fncid,b_id,"long_name",
      $            "Equilibrium Field Strength") )
       CALL check( nf90_enddef(fncid) )
-      IF(debug_flag) PRINT *,"  Writting variables"
+      IF(debug_flag) PRINT *,"  Writing variables"
       IF(rzstat/=nf90_noerr)THEN
          CALL check( nf90_put_var(fncid,r_id,rs) )
          CALL check( nf90_put_var(fncid,z_id,zs) )
@@ -3010,7 +3010,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(fncid,zv_id,"long_name",
      $            "Vertical unit normal: z_3D = z_sym+x_n*z_n") )
       CALL check( nf90_enddef(fncid) )
-      IF(debug_flag) PRINT *,"  Writting variables"
+      IF(debug_flag) PRINT *,"  Writing variables"
       IF(rzstat/=nf90_noerr)THEN
          CALL check( nf90_put_var(fncid,r_id,rs) )
          CALL check( nf90_put_var(fncid,z_id,zs) )
@@ -3093,15 +3093,21 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:cmpsi) :: psi
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
 
-      INTEGER :: p_id,t_id,i_id,m_id,bm_id,q_id
+      INTEGER :: p_id,m_id,t_id,i_id,mp_id,
+     $    mpv_id,qs_id,vn_id,vw_id,pw_id
 
       REAL(r8), DIMENSION(cmpsi) :: qs
+      REAL(r8), DIMENSION(mstep) :: qs_mstep
       REAL(r8), DIMENSION(cmpsi,lmpert) :: xmns,ymns
       COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: vnomns,vwpmns
+      COMPLEX(r8), DIMENSION(mstep,lmpert) :: vnomns_mstep,vwpmns_mstep
 
       INTEGER :: mlow_pest,mhigh_pest,mpert_pest
       INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_pest
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: pwpmns
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: pwpmns, pwpmns_mstep
+
+      logical :: debug_flag = .true.
+      TYPE(cspline_type) :: vnos, vwps, pwps
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -3116,7 +3122,8 @@ c-----------------------------------------------------------------------
         mhigh_pest = MAX(lmhigh,64)
       ENDIF
       mpert_pest = ABS(mhigh_pest)+ABS(mlow_pest)+1
-      ALLOCATE(mfac_pest(mpert_pest),pwpmns(cmpsi,mpert_pest))
+      ALLOCATE( mfac_pest(mpert_pest), pwpmns(cmpsi,mpert_pest),
+     $    pwpmns_mstep(mstep,mpert_pest) )
       mfac_pest = (/(i,i=mlow_pest,mhigh_pest)/)
       pwpmns=0
 
@@ -3131,8 +3138,8 @@ c-----------------------------------------------------------------------
          iindex = FLOOR(REAL(ipsi,8)/FLOOR(cmpsi/10.0))*10
          ileft = REAL(ipsi,8)/FLOOR(cmpsi/10.0)*10-iindex
          IF ((ipsi-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a17)')
-     $        "volume = ",iindex,"% vb computations"
+     $        WRITE(*,'(1x,a9,i3,a24)')
+     $        "volume = ",iindex,"% vacuum b computations"
          CALL spline_eval(sq,psi(ipsi),0)
          qs(ipsi)=sq%f(4)
          CALL field_bs_psi(psi(ipsi),vcmn,0)
@@ -3176,32 +3183,82 @@ c-----------------------------------------------------------------------
 
       DEALLOCATE(vcmn)
 
-       ! append to netcdf file once this is (mstep,mpert)
-c      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
-c      CALL check( nf90_open(fncfile,nf90_write,fncid) )
-c      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
-c      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-c      CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
-c      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
-c      CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
-c      IF(debug_flag) PRINT *,"  Defining variables"
-c      CALL check( nf90_redef(fncid))
-c      CALL check( nf90_def_var(fncid, "q", nf90_double,(/p_id/),q_id) )
-c      CALL check( nf90_put_att(fncid,q_id,"long_name","Safety Factor") )
-c      CALL check( nf90_def_var(fncid, "b_n_x", nf90_double,
-c     $            (/p_id,m_id,i_id/),bm_id) )
-c      CALL check( nf90_put_att(fncid,bm_id,"long_name",
-c     $            "Vacuum field normal to the flux surface") )
-c      CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
-c      CALL check( nf90_put_att(fncid,bm_id,"jacobian",jac_out) )
-c      CALL check( nf90_enddef(fncid) )
-c      IF(debug_flag) PRINT *,"  Writting variables"
-c      CALL check( nf90_put_var(fncid,bm_id,qs) )
-c      CALL check( nf90_put_var(fncid,bm_id,RESHAPE((/REAL(vnomns),
-c     $             AIMAG(vnomns)/),(/mstep,mpert,2/))) )
-c      CALL check( nf90_close(fncid) )
-c      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
+      ! put onto full radial grid
+      CALL cspline_alloc(vnos,cmpsi-1,lmpert)
+      vnos%xs(0:) = psi(1:)
+      vnos%fs(0:,:) = vnomns(:,:)
+      call cspline_fit(vnos,"extrap")
+      CALL cspline_alloc(vwps,cmpsi-1,lmpert)
+      vwps%xs(0:) = psi(1:)
+      vwps%fs(0:,:) = vwpmns(:,:)
+      call cspline_fit(vwps,"extrap")
+      CALL cspline_alloc(pwps,cmpsi-1,mpert_pest)
+      pwps%xs(0:) = psi(1:)
+      pwps%fs(0:,:) = pwpmns(:,:)
+      call cspline_fit(pwps,"extrap")
+      DO ipsi=1,mstep
+         CALL spline_eval(sq,psifac(ipsi),0)
+         CALL cspline_eval(vnos,psifac(ipsi),0)
+         CALL cspline_eval(vwps,psifac(ipsi),0)
+         CALL cspline_eval(pwps,psifac(ipsi),0)
+         qs_mstep(ipsi) = sq%f(4)
+         vnomns_mstep(ipsi,:) = vnos%f(:)
+         vwpmns_mstep(ipsi,:) = vwps%f(:)
+         pwpmns_mstep(ipsi,:) = pwps%f(:)
+      ENDDO
 
+      ! append to netcdf file
+      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
+      CALL check( nf90_open(fncfile,nf90_write,fncid) )
+      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+      CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
+      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
+      CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
+      IF(debug_flag) PRINT *,"  Defining variables"
+      CALL check( nf90_redef(fncid))
+      CALL check( nf90_def_var(fncid, "q", nf90_double,(/p_id/),qs_id) )
+      CALL check( nf90_put_att(fncid,qs_id,"long_name",
+     $            "Safety Factor") )
+      CALL check( nf90_def_var(fncid, "b_n_x", nf90_double,
+     $            (/p_id,m_id,i_id/),vn_id) )
+      CALL check( nf90_put_att(fncid,vn_id,"long_name",
+     $            "Externally Applied Normal Field") )
+      CALL check( nf90_put_att(fncid,vn_id,"units","Tesla") )
+      CALL check( nf90_put_att(fncid,vn_id,"jacobian",jac_out) )
+      CALL check( nf90_def_var(fncid, "bgradpsi_x", nf90_double,
+     $            (/p_id,m_id,i_id/),vw_id) )
+      CALL check( nf90_put_att(fncid,vw_id,"long_name",
+     $            "Contravariant psi Component of Applied Field") )
+      CALL check( nf90_put_att(fncid,vw_id,"units","Tesla") )
+      CALL check( nf90_put_att(fncid,vw_id,"jacobian",jac_out) )
+      IF(TRIM(jac_out)/="pest" .and. bwp_pest_flag)THEN
+         CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
+         CALL check( nf90_def_var(fncid,"m_pest",nf90_int,mp_id,mpv_id))
+         CALL check( nf90_def_var(fncid, "bgradpsi_x_pest", nf90_double,
+     $               (/p_id,mp_id,i_id/),pw_id) )
+         CALL check( nf90_put_att(fncid,pw_id,"long_name",
+     $               "Contravariant psi Component of Applied Field") )
+         CALL check( nf90_put_att(fncid,pw_id,"units","Tesla") )
+         CALL check( nf90_put_att(fncid,pw_id,"jacobian","pest") )
+      ENDIF
+      CALL check( nf90_enddef(fncid) )
+      IF(debug_flag) PRINT *,"  Writing variables"
+      CALL check( nf90_put_var(fncid,qs_id,qs_mstep) )
+      CALL check( nf90_put_var(fncid,vn_id,RESHAPE((/REAL(vnomns_mstep),
+     $            AIMAG(vnomns_mstep)/),(/mstep,lmpert,2/))) )
+      CALL check( nf90_put_var(fncid,vw_id,RESHAPE((/REAL(vwpmns_mstep),
+     $            AIMAG(vwpmns_mstep)/),(/mstep,lmpert,2/))) )
+      IF(TRIM(jac_out)/="pest")THEN
+         CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
+         CALL check( nf90_put_var(fncid,pw_id,RESHAPE(
+     $       (/REAL(pwpmns_mstep),AIMAG(pwpmns_mstep)/),
+     $       (/mstep,mpert_pest,2/))) )
+      ENDIF
+      CALL check( nf90_close(fncid) )
+      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
+
+      ! write to ascii table
       CALL ascii_open(out_unit,"ipec_vbnormal_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_VBNROMAL: "//
@@ -3964,7 +4021,7 @@ c-----------------------------------------------------------------------
      $            "Toroidal Nonaxisymmetric Displacement") )
       CALL check( nf90_put_att(cncid,bp_id,"units","m") )
       CALL check( nf90_enddef(cncid) )
-      IF(debug_flag) PRINT *,"  Writting variables"
+      IF(debug_flag) PRINT *,"  Writing variables"
       CALL check( nf90_put_var(cncid,bre_id,ebr) )
       CALL check( nf90_put_var(cncid,bze_id,ebz) )
       CALL check( nf90_put_var(cncid,bpe_id,ebp) )
@@ -4740,25 +4797,25 @@ c-----------------------------------------------------------------------
       CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
       IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(fncid))
-      CALL check( nf90_def_var(fncid, "xi_psi_dpsi", nf90_double,
+      CALL check( nf90_def_var(fncid, "xigradpsi_dpsi", nf90_double,
      $            (/p_id,m_id,i_id/),dp_id) )
       CALL check( nf90_put_att(fncid,dp_id,"long_name",
      $            "Psi derivative of contravariant psi displacement") )
-      CALL check( nf90_def_var(fncid, "xi_psi", nf90_double,
+      CALL check( nf90_def_var(fncid, "xigradpsi", nf90_double,
      $            (/p_id,m_id,i_id/),xp_id) )
       CALL check( nf90_put_att(fncid,xp_id,"long_name",
-     $            "contravariant psi displacement") )
-      CALL check( nf90_def_var(fncid, "xi_alpha", nf90_double,
+     $            "Contravariant psi displacement") )
+      CALL check( nf90_def_var(fncid, "xigradalpha", nf90_double,
      $            (/p_id,m_id,i_id/),xa_id) )
       CALL check( nf90_put_att(fncid,xa_id,"long_name",
-     $            "contravariant Clebsch angle displacement") )
+     $            "Contravariant Clebsch angle displacement") )
       ids = (/xp_id,dp_id,xa_id/)
       DO i=1,3
          CALL check( nf90_put_att(fncid,ids(i),"units","m") )
          CALL check( nf90_put_att(fncid,ids(i),"jacobian",jac_out) )
       ENDDO
       CALL check( nf90_enddef(fncid) )
-      IF(debug_flag) PRINT *,"  Writting variables"
+      IF(debug_flag) PRINT *,"  Writing variables"
       CALL check( nf90_put_var(fncid,dp_id,RESHAPE((/REAL(xmp1out),
      $             AIMAG(xmp1out)/),(/mstep,lmpert,2/))) )
       CALL check( nf90_put_var(fncid,xp_id,RESHAPE((/REAL(xspout),
