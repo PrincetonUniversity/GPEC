@@ -49,10 +49,10 @@ vacuum:
 	cd ../vacuum; make
 
 pentrc:
-	cd ../vacuum; make
+	cd ../pentrc; make
 
 dcon: $(OBJS)
-	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../bin
 	cp -f dcon ../bin
 

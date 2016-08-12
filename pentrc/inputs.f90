@@ -41,6 +41,7 @@ module inputs
         idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
+        shotnum,shottime,machine,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
         idcon_coords
     
@@ -58,6 +59,7 @@ module inputs
         kin, xs_m, dbob_m, divx_m, fnml, &
         geom,eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
         chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
+        shotnum,shottime,machine,&
         verbose
     
     ! global variables with defaults
@@ -170,13 +172,13 @@ module inputs
     !    file : character(256) (in)
     !       File path.
     !   zi : integer
-    !       Ion charge in fundemental units
+    !       Ion charge in fundamental units
     !   zimp : integer
-    !       Impurity ion charge in fundemental units
+    !       Impurity ion charge in fundamental units
     !   mi : integer
-    !       Ion mass in fundemental units (mass proton)
+    !       Ion mass in fundamental units (mass proton)
     !   mimp : integer
-    !       Impurity ion mass in fundemental units
+    !       Impurity ion mass in fundamental units
     !   wefac : real
     !       Direct multiplier for omegaE profiles
     !   wpfac : real
@@ -255,11 +257,11 @@ module inputs
         welec = wpefac*welec   ! indirect manipulation of rotation
         if(wpfac/=1.0 .and. verbose) then
             print('(a40,es10.2e3)'),'  -> manipulating rotation by factor of ',wpfac
-            print *,'     by indierct manipulation of omegae profile'
+            print *,'     by indirect manipulation of omegae profile'
         endif
         kin%fs(:,5) = welec(:)
         call spline_fit(kin,"extrap")
-        if(write_log) print *,"Reformed kin spline with rotation manipulatins"
+        if(write_log) print *,"Reformed kin spline with rotation manipulations"
 
         ! write log - designed as check of reading routines
         if(write_log)then

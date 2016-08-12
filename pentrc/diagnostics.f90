@@ -11,7 +11,7 @@ module diagnostics
     !*PUBLIC DATA MEMBERS:
     ! 
     !*REVISION HISTORY:
-    !     2014.03.05 -Logan- initial writting. 
+    !     2014.03.05 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
@@ -63,22 +63,22 @@ module diagnostics
         implicit none
         
         ! declare internal variables      
-        real(r8) :: wn=0.0, wt=0.0, we=1e4, wd=1e2,wb=1e4,nuk=1e2,l=0.0
-        real(r8), dimension(2) :: psilmda = (/0,0/)
-        integer :: n = 1
+        real(r8) :: wn=0.0, wt=0.0, we=1e4, wd=1e2, wb=1e4, psi=0, lambda=0, &
+            nuk=1e2, lnq = 0
+        integer :: n = 1, nl = 0, ell = 0
         character(32) :: lbl = "diagnostic_"
         real(r8) :: zr,zi,wr,wi
         complex(r8) :: xint,analytic,omegan,omegastara,omegastarb,zfun,z
         logical :: wflag,electron=.false.
         
         print *,"------------------------------------------------------"
-        print *,"Enery integration diagnostics"
+        print *,"Energy integration diagnostics"
         print *,"------------------------------------------------------"
         
         ! We have a analytic solution for the CGL limit: 15 sqrt(pi)/8
         xf0type = "cgl"
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda)
-        call output_energy_record(n,0,0,electron,"diagnostic_cgl")
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,lnq,n,psi,lambda,"fcgl",op_record=.true.)
+        call output_energy_netcdf(n,op_label="diagnostic_cgl")
         analytic = -xj*15.0*sqrt(pi)/8.0
         print *,"CGL limit: "
         print *," -> numerical  ",xint
@@ -89,8 +89,9 @@ module diagnostics
         ! ** note I changed the sign of nuk compared to MISK mdc2 document **
         xf0type = "maxwellian"
         xnutype = "krook"
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda)
-        call output_energy_record(n,0,0,electron,"diagnostic_krook")
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,lnq,n,psi,lambda,"fcgl",op_record=.true.)
+        !call output_energy_record(n,0,0,electron,"diagnostic_krook")
+        call output_energy_netcdf(n,op_label="diagnostic_krook")
         omegan = (n*we+xj*nuk)/(n*wd)
         omegastara = (n*wn-1.5*n*wt-xj*nuk)/(n*wd)
         omegastarb = wt/wd
@@ -120,8 +121,8 @@ module diagnostics
         xf0type = "maxwellian"
         xnutype = 'krook'
         wd = 0
-        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,l,n,psilmda)
-        call output_energy_record(n,0,0,electron,"diagnostic_wd0")
+        xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,lnq,n,psi,lambda,"fcgl",op_record=.true.)
+        call output_energy_netcdf(n,op_label="diagnostic_wd0")
         analytic = -xj*(15*sqrt(pi)/8) * (n*(wn+2*wt + we)) / (n*we+xj*nuk)
         print *,"Krook, omegaD=0 limit:"
         print *," -> numerical  ",xint
@@ -151,13 +152,14 @@ module diagnostics
         ! declare internal variables      
         integer, parameter :: nlmda = 1000
         real(r8) :: wn=0.0, wt=0.0, we=1e4, wd=1e2,wb=1e4,nuk=1e2, &
-            bobmax,epsr,lmax,q,psi
+            bobmax,epsr,lmax,q,psi,rex,imx
         logical :: electron=.false.
-        integer :: i,n=1,l=0,mi=2,zi=1
+        integer :: i,n=1,l=0,mi=2,zi=1,nl=0
         real(r8), dimension(0:nlmda) :: kappa2,lmda
         character(32) :: lbl = "diagnostic_"
         complex(r8), dimension(:), allocatable :: lint
         type(cspline_type) :: bdf_spl
+        type(spline_type) :: turns
         
         print *,"------------------------------------------------------"
         print *,"Lambda integration diagnostics"
@@ -170,6 +172,8 @@ module diagnostics
         lmax = 1/(1-epsr)
         q = 1.0
         wd = q**3*wd
+        rex = 1.0
+        imx = 1.0
         !lmda = (/ bobmax+i*(lmax-bobmax)/nlmda,i=0,nlmda /) ! trapped only
         do i=0,nlmda
             lmda(i) = bobmax+i*(lmax-bobmax)/nlmda
@@ -188,9 +192,14 @@ module diagnostics
         bdf_spl%fs(:,2) = wd
         bdf_spl%fs(:,3) = lmda(:)**2
         call cspline_fit(bdf_spl,'extrap')
+        ! placeholder for turn point info
+        call spline_alloc(turns,nlmda,6)
+        turns%xs(:) = lmda(:)
+        turns%fs = 0
+        call spline_fit(turns,'extrap')
         !print *,wn,wt,we,nuk,bobmax,epsr,l,n,psi,lbl
-        lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n,op_psi=psi)
-        call output_energy_record(n,zi,mi,electron,"diagnostic_rlar")
+        lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n, &
+            rex,imx,psi,turns,'rlar',op_record=.true.)
         print *,"Reduced LAR approximations: "
         print *," -> numerical  ",lint
         
@@ -202,8 +211,10 @@ module diagnostics
             bdf_spl%fs(i,2) = (q**3*lmda(i)/epsr)*(ellipe(kappa2(i))/ellipk(kappa2(i))-0.5)
         enddo
         call cspline_fit(bdf_spl,'extrap')
-        lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n,op_psi=psi)
-        call output_energy_record(n,zi,mi,electron,"diagnostic_clar")
+        lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n, &
+            rex,imx,psi,turns,'clar',op_record=.true.)
+        call output_energy_netcdf(n,op_label="diagnostic_pitch")
+        !call output_pitch_netcdf(n,nl,zi,mi,electron,"diagnostic_pitch")
         print *,"Circular LAR approximations: "
         print *," -> numerical  ",lint
         

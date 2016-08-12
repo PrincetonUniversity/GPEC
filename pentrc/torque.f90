@@ -109,15 +109,16 @@ module torque
     !*PUBLIC DATA MEMBERS:
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only : r8,xj,mp,me,e,mu0,pi,twopi
-    use utilities, only : get_free_file_unit,median, append_2d, ri, btoi, itob
+    use params, only : r8,xj,mp,me,e,mu0,pi,twopi, nmethods, methods, ngrids, grids
+    use utilities, only : get_free_file_unit, check, median, append_2d, &
+        ri, btoi, itob
     use special, only : ellipk,ellipe
     use grid, only : powspace,linspace
     ! use lsode_mod just a subroutine in the lsode directory...
@@ -132,22 +133,32 @@ module torque
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
-        kin,xs_m,dbob_m,divx_m,fnml,&                  ! equilib and pert. equilib splines
-        chi1,ro,zo,bo,mfac,mpert,mthsurf,&             ! reals or integers
-        verbose                                        ! logical
-    
+        kin,xs_m,dbob_m,divx_m,fnml, &                          ! equilib and pert. equilib splines
+        chi1,ro,zo,bo,mfac,mpert,mthsurf,shotnum,shottime, &    ! reals or integers
+        verbose, &                                              ! logical
+        machine                                                 ! character
+    use global_mod, only : version
+    use netcdf
+
     implicit none
     
     real(r8) :: atol_psi = 1e-3, rtol_psi= 1e-6
     real(r8) :: psi_warned = 0.0
     logical :: tdebug=.false., output_ascii =.true., output_netcdf=.true.
-    integer :: nlmda=128, ntheta=128
+    integer :: nlmda=128, ntheta=128,nrecorded
     
-    complex(r8), dimension(:,:,:), allocatable :: elems ! temperary variable
+    integer, parameter :: nfluxfuns = 19, nthetafuns = 18
+
+    type record
+        logical :: is_recorded
+        real(r8), dimension(:,:), allocatable :: psi_record
+        real(r8), dimension(:,:,:), allocatable :: ell_record
+    endtype record
+    type(record) :: torque_record(nmethods,ngrids)
+
+    complex(r8), dimension(:,:,:), allocatable :: elems
     TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
     TYPE(cspline_type) :: trans ! nonambipolar transport and torque profile
-
-    integer, parameter :: nfluxfuns = 21, nthetafuns = 18
 
     contains
     
@@ -168,7 +179,7 @@ module torque
     !    l : integer (in)
     !       Bounce harmonic number
     !    zi : integer (in)
-    !       Ion charge in fundemental units (e).
+    !       Ion charge in fundamental units (e).
     !    mi : integer (in)
     !       Ion mass (units of proton mass).
     !   electron : logical
@@ -321,7 +332,7 @@ module torque
            &Equilibirum field maximum not consistent with index"
         if(tdebug) print *,"  bmin,bo,bmax = ",bmin,bo,bmax
         
-        ! flux function variables
+        ! flux function variables  !!WARNING WHEN MODIFYING: THESE ARE CALCULATED SEPARATELY FOR I/O!!
         call spline_eval(sq,psi,1)
         call spline_eval(kin,psi,1)
         call spline_eval(geom,psi,0)
@@ -360,7 +371,7 @@ module torque
         ! optional record of flux functions
         if(present(op_ffuns)) then
             if(tdebug) print *, "  storing ",nfluxfuns," flux functions in ",size(op_ffuns,dim=1)
-            op_ffuns = (/ psi, epsr, kin%f(1:8), q,sq%f(2), sq%f(3), &
+            op_ffuns = (/ epsr, kin%f(1:8), q, sq%f(2), &
                 wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /)
         endif
         
@@ -390,8 +401,8 @@ module torque
                         cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
                         cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)
                     enddo
-                    CALL spline_fit(cglspl,"periodic")
-                    CALL spline_int(cglspl)
+                    call spline_fit(cglspl,"periodic")
+                    call spline_int(cglspl)
                     ! torque
                     tpsi = 2.0*n*xj*kin%f(s)*kin%f(s+2) &       ! T = 2nidW
                         *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
@@ -406,15 +417,13 @@ module torque
         
             case("rlar")
                 lnq = 1.0*l
+                sigma = 0
                 ! independent energy integration
                 if(tdebug) print *,'  rlar integrations. modes = ',n,l
                 ! energy space integrations
-                if(erecord)then
-                    xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,lnq,n,&
-                        (/psi,0.0_r8/))
-                else
-                    xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,lnq,n)
-                endif
+                lmdamax = min(1.0/(1-epsr),bo/bmin) ! just for record keeping - not rigorous
+                xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,l,lnq,n,&
+                    psi,lmdamax,method,op_record=erecord)
                 ! kappa integration
                 if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbob_m%f(:))/mpert)
                 kappaint = kappaintgrl(n,l,q,mfac,dbob_m%f(:),fnml)
@@ -439,6 +448,7 @@ module torque
                 ldl = powspace(lmdamin,lmdamax,1,nlmda,"both") ! trapped space
 
                 ! form smooth pitch angle functions
+                call spline_alloc(turns,nlmda-1,6) ! (theta,r,z) of lower and upper turns
                 do ilmda=1,nlmda
                     lmda = ldl(1,ilmda)
                     kk = (1 - lmda*(1- epsr))/(2*epsr*lmda)
@@ -463,18 +473,41 @@ module torque
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
                     fbnce%fs(ilmda-1,2) = wdbar*dhat
                     fbnce%fs(ilmda-1,3) = djdj
+                    ! bounce locations recorded for optional output
+                    vspl%fs(:,1) = 1.0-(lmda/bo)*tspl%fs(:,1)
+                    call spline_fit(vspl,"extrap")
+                    call spline_roots(bpts,vspl,1)
+                    t1 = bpts(size(bpts))-1.0
+                    t2 = bpts(1)
+                    call spline_eval(vspl,modulo((t1+t2)/2,1.0_r8),0)
+                    vpar = vspl%f(1) ! bpts centered around 0 (standard)
+                    do i=1,size(bpts)-1
+                       call spline_eval(vspl,sum(bpts(i:i+1))/2,0)
+                       if(vspl%f(1)>vpar)then
+                          t1 = bpts(i)
+                          t2 = bpts(i+1)
+                          vpar = vspl%f(1)
+                       endif
+                    enddo
+                    deallocate(bpts)
+                    turns%fs(ilmda-1,1) = t1
+                    call bicube_eval(rzphi,psi,t1,0)
+                    turns%fs(ilmda-1,2)=ro+SQRT(rzphi%f(1))*COS(twopi*(t1+rzphi%f(2)))
+                    turns%fs(ilmda-1,3)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t1+rzphi%f(2)))
+                    turns%fs(ilmda-1,4) = t2
+                    call bicube_eval(rzphi,psi,t2,0)
+                    turns%fs(ilmda-1,5)=ro+SQRT(rzphi%f(1))*COS(twopi*(t2+rzphi%f(2)))
+                    turns%fs(ilmda-1,6)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t2+rzphi%f(2)))
+                    turns%xs(ilmda-1) = lmda
                 enddo
-                CALL cspline_fit(fbnce,'extrap')
+                call cspline_fit(fbnce,'extrap')
                 
                 ! energy space integrations
                 allocate(lxint(1))
-                if(erecord)then
-                    lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n,op_psi=psi)
-                else
-                    lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n)
-                endif
+                rex = 1.0
+                imx = 1.0
+                lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
+                    epsr,q,fbnce,l,n,rex,imx,psi,turns,method,op_record=erecord)
 
                 ! dT/dpsi
                 tpsi = sq%f(3)*(-1*lxint(1)) & ! may be missing some normalizations from djdj
@@ -510,16 +543,16 @@ module torque
                         bwspl(i)%xs(:) = bjspl%xs(:)
                     enddo
                     ! build equilibrium geometric matrices 
-                    CALL cspline_eval(smats,psi,0)
-                    CALL cspline_eval(tmats,psi,0)
-                    CALL cspline_eval(xmats,psi,0)
-                    CALL cspline_eval(ymats,psi,0)
-                    CALL cspline_eval(zmats,psi,0)
-                    smat=RESHAPE(smats%f,(/mpert,mpert/))
-                    tmat=RESHAPE(tmats%f,(/mpert,mpert/))
-                    xmat=RESHAPE(xmats%f,(/mpert,mpert/))
-                    ymat=RESHAPE(ymats%f,(/mpert,mpert/))
-                    zmat=RESHAPE(zmats%f,(/mpert,mpert/))
+                    call cspline_eval(smats,psi,0)
+                    call cspline_eval(tmats,psi,0)
+                    call cspline_eval(xmats,psi,0)
+                    call cspline_eval(ymats,psi,0)
+                    call cspline_eval(zmats,psi,0)
+                    smat=reshape(smats%f,(/mpert,mpert/))
+                    tmat=reshape(tmats%f,(/mpert,mpert/))
+                    xmat=reshape(xmats%f,(/mpert,mpert/))
+                    ymat=reshape(ymats%f,(/mpert,mpert/))
+                    zmat=reshape(zmats%f,(/mpert,mpert/))
                 else                
                     call cspline_alloc(fbnce,nlmda-1,3) ! <omegab,d>, <dJdJ> Lambda functions
                 endif
@@ -590,11 +623,11 @@ module torque
                     endif
                     ! bounce locations recorded for optional output
                     turns%fs(ilmda-1,1) = t1
-                    CALL bicube_eval(rzphi,psi,t1,0)
+                    call bicube_eval(rzphi,psi,t1,0)
                     turns%fs(ilmda-1,2)=ro+SQRT(rzphi%f(1))*COS(twopi*(t1+rzphi%f(2)))
                     turns%fs(ilmda-1,3)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t1+rzphi%f(2)))
                     turns%fs(ilmda-1,4) = t2
-                    CALL bicube_eval(rzphi,psi,t2,0)
+                    call bicube_eval(rzphi,psi,t2,0)
                     turns%fs(ilmda-1,5)=ro+SQRT(rzphi%f(1))*COS(twopi*(t2+rzphi%f(2)))
                     turns%fs(ilmda-1,6)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t2+rzphi%f(2)))
                     turns%xs(ilmda-1) = lmda
@@ -757,8 +790,8 @@ module torque
                     fbnce_norm(i) = 1.0/median(abs(fbnce%fs(:,i+2)))!maxval(abs(fbnce%fs(:,i+2)),1)!median(fbnce%fs(:,i+2))!
                     fbnce%fs(:,i+2) = fbnce%fs(:,i+2)*fbnce_norm(i)
                 enddo
-                CALL cspline_fit(fbnce,'extrap')
-                CALL spline_fit(turns,'extrap')
+                call cspline_fit(fbnce,'extrap')
+                call spline_fit(turns,'extrap')
                 
                 if(tdebug)then
                     print *,"lambda ~ ",ldl(1,::10),ldl(1,nlmda)
@@ -777,19 +810,12 @@ module torque
                 imx = 1.0 ! include imag part of resonance operator (default)
                 if(method(2:4)=='wmm' .or. method(2:4)=='kmm')then
                     rex = 0.0
-                endif
-                if(method(2:4)=='tmm' .or. method(2:4)=='rmm')then
+                elseif(method(2:4)=='tmm' .or. method(2:4)=='rmm')then
                     imx = 0.0
                     wtwnorm = -1.0
                 endif
-                if(erecord)then
-                    lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n,op_rex=rex,op_imx=imx,&
-                        op_psi=psi,op_turns=turns)
-                else
-                    lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
-                        epsr,q,fbnce,l,n,op_rex=rex,op_imx=imx)
-                endif
+                lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
+                    epsr,q,fbnce,l,n,rex,imx,psi,turns,method,op_record=erecord)
                 
                 ! dT/dpsi
                 tnorm = (-2 * n**2 / sqrt(pi)) * (ro / bo) * kin%f(s) * kin%f(s + 2) & ! Eq (19) [N.C. Logan, et al., Physics of Plasmas 20, (2013)]
@@ -832,7 +858,7 @@ module torque
                             u=0
                             vt=0
                             lwork=3*mpert
-                            CALL zgesvd('S','S',mpert,mpert,a,mpert,svals,u, &
+                            call zgesvd('S','S',mpert,mpert,a,mpert,svals,u, &
                                 mpert,vt,mpert,work,lwork,rwork,info)
                             if(tdebug) print *,i,maxval(svals)
                             tpsi = tpsi + maxval(svals) ! euclidean (spectral) norm
@@ -904,7 +930,7 @@ module torque
     !   nl : integer.
     !       Number of bounce harmonics to include (-nl to nl)
     !    zi : integer (in)
-    !       Ion charge in fundemental units (e).
+    !       Ion charge in fundamental units (e).
     !    mi : integer (in)
     !       Ion mass (units of proton mass).
     !    wdfac : real (in)
@@ -933,11 +959,11 @@ module torque
         real(r8), intent(inout) :: psilim(2)
         character(*) :: method,gtype
         ! declare variables
-        integer :: i, j, l, s, mx, istrt = -1, istop=-1
+        integer :: i, j, l, s, mx, istrt, istop
         real(r8) :: x,xlast,chrg,drive,wdcom,dxcom
         real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: xs
-        real(r8), dimension(:,:), allocatable :: tmp,tmpl,tmpf
+        real(r8), dimension(:,:), allocatable :: profiles,ellprofiles
         complex(r8), dimension(:), allocatable :: gam,chi
         character(8) :: methcom
         ! lsode type variables
@@ -989,19 +1015,22 @@ module torque
         ! enforce integration bounds
         psilim(1) = max(psilim(1),xs(0))
         psilim(2) = min(psilim(2),xs(mx))
+        istrt = -1
+        istop = -1
         do i=0,mx
-            if(istrt<0 .and. xs(i)>=psilim(1)) exit
+            if(xs(i)>=psilim(1)) exit
         enddo
         istrt = i
         do i=mx,0,-1
-            if(sq%xs(i)<=xs(mx)) exit
+            if(xs(i)<=psilim(2)) exit
         enddo
         istop = i
         mx = istop-istrt
+        print *,mx
 
         ! prep allocations
-        allocate(tmp(mx+1,10),tmpl(neq*(mx+1),10),tmpf(mx+1,nfluxfuns))
-        CALL cspline_alloc(tphi_spl,mx,2*nl+1)
+        allocate(profiles(10+nfluxfuns,mx+1),ellprofiles(10,(1+2*nl)*(mx+1)))
+        call cspline_alloc(tphi_spl,mx,2*nl+1)
         if(index(method,'mm')>0)then
             do j=1,6
                 if(kelmm(j)%nqty/=0) call cspline_dealloc(kelmm(j))
@@ -1014,19 +1043,18 @@ module torque
         do i=0,mx
             x = xs(i+istrt)
             ! torque profile
-            CALL tintgrnd(neqarray,x,y,dky)
+            call tintgrnd(neqarray,x,y,dky)
             tphi_spl%fs(i,:) = dky(1:neq:2)+dky(2:neq:2)*xj
             tphi_spl%xs(i) = x
 
-            ! save flux functions
-            tmpf(i+1,:) = fcom
-
+            ! record of flux functions
+            profiles(11:,i+1) = fcom
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, index=",i
                 do j=1,6
                     kelmm(j)%xs(i) = x
-                    kelmm(j)%fs(i,:) = RESHAPE(elems(:,:,j),(/mpert**2/))
+                    kelmm(j)%fs(i,:) = reshape(elems(:,:,j),(/mpert**2/))
                 enddo
             endif
 
@@ -1038,8 +1066,8 @@ module torque
             xlast = x
         enddo
         ! fit and integrate torque density spline
-        CALL cspline_fit(tphi_spl,"extrap")
-        CALL cspline_int(tphi_spl)
+        call cspline_fit(tphi_spl,"extrap")
+        call cspline_int(tphi_spl)
 
         ! flux/diffusivity profiles
         do i=0,mx
@@ -1059,13 +1087,13 @@ module torque
             chi = -gam/(drive)
 
             ! save tables for ascii output
-            tmp(i+1,:) = (/ x, sq%f(3), &
+            profiles(:10,i+1) = (/ x, sq%f(3), &
                 ri(sum(gam(:),dim=1)), &
                 ri(sum(chi(:),dim=1)), &
                 ri(sum(tphi_spl%fs(i,:),dim=1)), &
                 ri(sum(tphi_spl%fsi(i,:),dim=1)) /)
             do l=-nl,nl
-                tmpl(i*neq + (nl+l) + 1, :) = (/ x, l*1.0_r8, &
+                ellprofiles(:,i*(1+2*nl) + (nl+l) + 1) = (/ x, l*1.0_r8, &
                     ri(gam(nl+l+1)), &
                     ri(chi(nl+l+1)), &
                     ri(tphi_spl%fs(i,nl+l+1)), &
@@ -1076,9 +1104,9 @@ module torque
         ! (re-)set global transport and torque spline
         if(trans%nqty /= 0) call cspline_dealloc(trans)
         call cspline_alloc(trans,mx,2)
-        trans%xs = tmp(:,1)
-        trans%fs(:,1) = tmp(:,2)+xj*tmp(:,3) ! particle/heat flux gamma
-        trans%fs(:,2) = tmp(:,4)+xj*tmp(:,5) ! troque & energy
+        trans%xs = profiles(1,:)
+        trans%fs(:,1) = profiles(3,:)+xj*profiles(4,:) ! particle/heat flux gamma
+        trans%fs(:,2) = profiles(7,:)+xj*profiles(8,:) ! torque & energy
         call cspline_fit(trans,"extrap")
 
         ! optionally fit global euler-lagrange coefficient splines
@@ -1088,16 +1116,16 @@ module torque
             enddo
         endif
 
-        ! ascii output
+        ! record results
+        call record_method(trim(method),trim(gtype),profiles,ellprofiles)
         if(output_ascii)then
-            call torque_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmp,tmpl)
-            call output_fluxfun_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",tmpf)
+            call output_torque_ascii(n,zi,mi,electron,trim(method)//"_"//gtype//"_grid",profiles,ellprofiles)
         endif
 
         ! sum for ultimate result
         tintgrl_grid = sum(tphi_spl%fsi(mx,:),dim=1)
 
-        deallocate(xs,y,dky,gam,chi,tmp,tmpl,tmpf)
+        deallocate(xs,y,dky,gam,chi,profiles,ellprofiles)
         call cspline_dealloc(tphi_spl)
 
         return
@@ -1118,7 +1146,7 @@ module torque
     !   nl : integer.
     !       Number of bounce harmonics to include (-nl to nl)
     !    zi : integer (in)
-    !       Ion charge in fundemental units (e).
+    !       Ion charge in fundamental units (e).
     !    mi : integer (in)
     !       Ion mass (units of proton mass).
     !    wdfac : real (in)
@@ -1152,8 +1180,8 @@ module torque
         real(r8) :: xlast,wdcom,dxcom,chrg,drive
         real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: gam,chi
-        real(r8), dimension(:,:), allocatable :: tmp,tmpl,tmpf
-        complex(r8), dimension(maxsteps,mpert**2,6) :: tmpmats
+        real(r8), dimension(:,:), allocatable :: profiles,ellprofiles
+        complex(r8), dimension(maxsteps,mpert**2,6) :: kel_flat_mats
         character(8) :: methcom
         ! declare lsode input variables
         integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(6),&
@@ -1232,27 +1260,25 @@ module torque
             chi = -gam/(drive)
 
             ! save tables for ascii output
-            call append_2d(tmp, (/ x, sq%f(3), &
+            call append_2d(profiles, (/ x, sq%f(3), &
                 sum(gam(1:neq:2),dim=1),sum(gam(2:neq:2),dim=1),&
                 sum(chi(1:neq:2),dim=1),sum(chi(2:neq:2),dim=1),&
                 sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),&
-                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1) /) )
+                sum(  y(1:neq:2),dim=1),sum(  y(2:neq:2),dim=1),&
+                fcom/) )
             do l=-nl,nl
-                call append_2d(tmpl, (/ x, l*1.0_r8, &
+                call append_2d(ellprofiles, (/ x, l*1.0_r8, &
                     gam(2*(nl+l)+1:2*(nl+l)+2), &
                     chi(2*(nl+l)+1:2*(nl+l)+2), &
                     dky(2*(nl+l)+1:2*(nl+l)+2), &
                       y(2*(nl+l)+1:2*(nl+l)+2) /) )
             enddo
 
-            ! save flux functions
-            call append_2d(tmpf,fcom)
-
             ! save matrix of coefficients
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
                 do j=1,6
-                    tmpmats(iwork(11),:,j) = RESHAPE(elems(:,:,j),(/mpert**2/))
+                    kel_flat_mats(iwork(11),:,j) = reshape(elems(:,:,j),(/mpert**2/))
                 enddo
             endif
 
@@ -1266,9 +1292,9 @@ module torque
         ! (re-)set global transport and torque spline
         if(trans%nqty /= 0) call cspline_dealloc(trans)
         call cspline_alloc(trans,iwork(11)-1,2)
-        trans%xs = tmp(:iwork(11),1)
-        trans%fs(:,1) = tmp(:iwork(11),2)+xj*tmp(:iwork(11),3) ! particle/heat flux gamma
-        trans%fs(:,2) = tmp(:iwork(11),4)+xj*tmp(:iwork(11),5) ! troque & energy
+        trans%xs = profiles(1,1:iwork(11))
+        trans%fs(:,1) = profiles(3,:iwork(11))+xj*profiles(4,:iwork(11)) ! particle/heat flux gamma
+        trans%fs(:,2) = profiles(7,:iwork(11))+xj*profiles(8,:iwork(11)) ! torque & energy
         call cspline_fit(trans,"extrap")
 
         ! optionally set global euler-lagrange coefficient splines
@@ -1276,22 +1302,25 @@ module torque
             do j=1,6
                 if(kelmm(j)%nqty/=0) call cspline_dealloc(kelmm(j))
                 call cspline_alloc(kelmm(j),iwork(11)-1,mpert**2)
-                kelmm(j)%xs(:) = tmp(1:iwork(11),1)
-                kelmm(j)%fs(:,:) = tmpmats(1:iwork(11),:,j)
+                kelmm(j)%xs(:) = profiles(1,1:iwork(11))
+                kelmm(j)%fs(:,:) = kel_flat_mats(1:iwork(11),:,j)
                 call cspline_fit(kelmm(j),"extrap")
             enddo
         endif
 
-        ! ascii output
+        ! record results
+        call record_method(trim(method),'lsode',profiles,ellprofiles)
         if(output_ascii)then
-            call torque_ascii(n,zi,mi,electron,trim(method),tmp,tmpl)
-            call output_fluxfun_ascii(n,zi,mi,electron,trim(method),tmpf)
+            call output_torque_ascii(n,zi,mi,electron,trim(method),profiles,ellprofiles)
         endif
+        !if(output_netcdf)then
+        !    call output_torque_netcdf(n,zi,mi,electron,trim(method),profiles,ellprofiles)
+        !endif
 
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y(1:neq:2),dim=1)+xj*sum(y(2:neq:2),dim=1)
 
-        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi,tmp,tmpl,tmpf)
+        deallocate(iwork,rwork,atol,rtol,y,dky,gam,chi,profiles,ellprofiles)
         
         return
     end function tintgrl_lsode
@@ -1525,7 +1554,63 @@ module torque
     end subroutine ascii_table
 
     !=======================================================================
-    subroutine torque_ascii(n,zi,mi,electron,method,prof,profl)
+    subroutine record_method(method,gridtype,prof,profl)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Store result of a integration to a module variable
+    !
+    !*ARGUMENTS:
+    !    method : character
+    !        Inserted into file name
+    !    prof : real 2D
+    !        Table of values
+    !    profl : real 2D
+    !        Table of (psi,ell) profiles
+    !
+    !*OPTIONAL ARGUMENTS:
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        character(*), intent(in) :: method,gridtype
+        real(r8), dimension(:,:), intent(in) :: prof,profl
+
+        integer :: i,j,nrow,ncol,nrowl,ncoll,nl,np
+
+        if(tdebug) print *,"... Recording "//trim(method)//" on "//trim(gridtype)//" grid"
+
+        ! learn sizes
+        ncol = size(prof,dim=1)
+        nrow = size(prof,dim=2)
+        ncoll = size(profl,dim=1)
+        nrowl = size(profl,dim=2)
+        np = nrow
+        if(np==0)then
+            print *,"... failed attempt to record "//trim(method)//" on "//trim(gridtype)//" grid"
+            return
+        endif
+        nl = nrowl/np
+        if(nl*np/=nrowl) stop "ERROR: Unable to reshape torque output into P-by-L"
+
+        ! allocate and store the method,grid records
+        do i=1,ngrids
+            if(gridtype==grids(i))then
+                do j=1,nmethods
+                    if(method==methods(j))then
+                        torque_record(j,i)%is_recorded=.true.
+                        allocate( torque_record(j,i)%psi_record(ncol,nrow) )
+                        allocate( torque_record(j,i)%ell_record(ncoll,nl,np) )
+                        torque_record(j,i)%psi_record = prof
+                        torque_record(j,i)%ell_record = reshape(profl,(/ncoll,nl,np/))
+                    endif
+                enddo
+            endif
+        enddo
+
+        return
+    end subroutine record_method
+
+    !=======================================================================
+    subroutine output_torque_ascii(n,zi,mi,electron,method,prof,profl)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Write ascii torque profile files.
@@ -1556,9 +1641,22 @@ module torque
         real(r8), dimension(:,:), intent(in) :: prof,profl
         integer :: zi, mi
 
-        integer :: i,nrow,ncol,nrowl,ncoll,out_unit,unit1,unit2
+        integer :: i,s,nrow,ncol,nrowl,ncoll,out_unit,unit1,unit2
+        real(r8) :: chrg,mass
         character(8) :: nstring
+        character(32) :: fmt
         character(128) :: file1,file2
+
+        ! set species
+        if(electron)then
+            chrg = e
+            mass = me
+            s = 2
+        else
+            chrg = zi*e
+            mass = mi*mp
+            s = 2
+        endif
 
         ! learn sizes
         ncol = size(prof,dim=1)
@@ -1570,10 +1668,6 @@ module torque
         write(nstring,'(I8)') n
         file1 = "pentrc_"//trim(method)//"_n"//trim(adjustl(nstring))//".out"
         file2 = "pentrc_"//trim(method)//"_ell_n"//trim(adjustl(nstring))//".out"
-        if(electron)then
-            file1 = file1(:7)//"e_"//file1(8:)
-            file2 = file2(:7)//"e_"//file2(8:)
-        endif
         if(qt)then
             file1 = file1(:7)//"heat_"//file1(8:)
             file2 = file2(:7)//"heat_"//file2(8:)
@@ -1603,22 +1697,29 @@ module torque
                 write(out_unit,*) " T_phi = Torque in Nm"
                 write(out_unit,*) " 2ndeltaW = Kinetic energy in J"
             endif
+            write(out_unit,*) " * All energy dependent quantities are taken at E/T unity."
             write(out_unit,'(1/,1(a10,I4))') "n =",n
-            write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass = ",mi*mp
+            write(out_unit,'(2(a10,es17.8E3))') "charge =",chrg,"mass = ",mass
             write(out_unit,'(3(a10,es17.8E3))') "R0 =",ro,"B0 =",bo,"chi1 = ",chi1
         enddo
 
         ! label columns
-        if(ncol/=10) stop "ERROR: Torque ascii array dimensions do not match labels"
-        write(unit1,'(1/,10(a17))') "psi_n",  "dv/dpsi_n",  "real(Gamma)",  "imag(Gamma)", &
-            "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)"
+        if(ncol/=10+nfluxfuns) stop "ERROR: Torque ascii array dimensions do not match labels"
+        write(fmt,*) '(1/,',10+nfluxfuns,'(a17))'
+        write(unit1,fmt) "psi_n",  "dv/dpsi_n",  "real(Gamma)",  "imag(Gamma)", &
+            "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)", &
+            "eps_r","n_i","n_e","T_i","T_e","omega_E","logLambda","nu_i","nu_e","q",&
+            "Pmu_0","omega_N","omega_T","omega_trans","omega_gyro","omega_b_rlar","omega_d_rlar",&
+            "sqdBoB_L_SA","sqdivxi_perp_SA"!/J??
+
         if(ncoll/=10) stop "ERROR: Torque ascii ell array dimensions do not match labels"
         write(unit2,'(1/,10(a17))') "psi_n",  "ell",  "real(Gamma)",  "imag(Gamma)", &
             "real(chi)",  "imag(chi)",  "T_phi",  "2ndeltaW",  "int(T_phi)",  "int(2ndeltaW)"
 
         ! write tables
+        write(fmt,*) '(',10+nfluxfuns,'(es17.8E3))'
         do i=1,nrow
-            write(unit1,'(10(es17.8E3))') prof(:,i)
+            write(unit1,fmt) prof(:,i)
         enddo
         do i=1,nrowl
             write(unit2,'(10(es17.8E3))') profl(:,i)
@@ -1627,7 +1728,283 @@ module torque
         close(unit1)
         close(unit2)
         return
-    end subroutine torque_ascii
+    end subroutine output_torque_ascii
+
+    !=======================================================================
+    subroutine output_torque_netcdf(n,nl,zi,mi,electron,wdfac)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii torque profile files.
+    !
+    !*ARGUMENTS:
+    !    n : integer
+    !        Toroidal mode number for header
+    !    zi : integer
+    !        Ion charge for header
+    !    mi : integer
+    !        Ion mass for header
+    !    electron : logical
+    !        Modifies file name to indicate run was for electrons
+    !    method : character
+    !        Inserted into file name
+    !    prof : real 2D
+    !        Table of values
+    !    op_profl : real 2D
+    !        Table of (psi,ell) profiles
+    !
+    !*OPTIONAL ARGUMENTS:
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        real(r8), intent(in) :: wdfac
+        integer, intent(in) :: n,nl,zi,mi
+        logical, intent(in) :: electron
+
+        integer :: i,j,s,nrow,ncol,nrowl,ncoll,np
+        real(r8) :: chrg,mass,psi,q
+        real(r8), dimension(:), allocatable :: &
+            epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
+            welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat
+        real(r8), dimension(:,:), pointer :: psi_record
+        real(r8), dimension(:,:,:), pointer :: ell_record
+
+        integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
+            v_id,g_id,c_id,d_id,t_id, b_id,x_id, er_id,q_id,mp_id, &
+            ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ll_id,we_id, &
+            wn_id,wt_id,ws_id,wg_id,wb_id,wd_id
+        character(16) :: nstring,suffix,method,gridtype
+        character(128) :: ncfile
+        
+        print *,"Writing output to netcdf"
+
+        ! set species
+        if(electron)then
+            chrg = e
+            mass = me
+            s = 2
+        else
+            chrg = zi*e
+            mass = mi*mp
+            s = 2
+        endif
+
+        ! calculate the basic flux functions on the equilibrium grid
+        allocate(epsr(sq%mx+1),nuk(sq%mx+1),nueff(sq%mx+1),nui(sq%mx+1),nue(sq%mx+1),&
+            ni(sq%mx+1),ne(sq%mx+1),ti(sq%mx+1),te(sq%mx+1),llmda(sq%mx+1),&
+            welec(sq%mx+1),wdian(sq%mx+1),wdiat(sq%mx+1),wphi(sq%mx+1),&
+            wtran(sq%mx+1),wgyro(sq%mx+1),wbhat(sq%mx+1),wdhat(sq%mx+1))
+        do i=0,sq%mx
+            psi = sq%xs(i)
+            call spline_eval(sq,psi,1)
+            call spline_eval(kin,psi,1)
+            call spline_eval(geom,psi,0)
+            q = sq%f(4)
+            ni(i) = kin%f(1)
+            ne(i) = kin%f(2)
+            ti(i) = kin%f(3)
+            te(i) = kin%f(4)
+            welec(i) = kin%f(5)                            ! electric precession
+            llmda(i) = kin%f(6)
+            nui(i) = kin%f(7)
+            nue(i) = kin%f(8)
+            wdian(i) =-twopi*kin%f(s+2)*kin%f1(s)/(chrg*chi1*kin%f(s)) ! density gradient drive
+            wdiat(i) =-twopi*kin%f1(s+2)/(chrg*chi1)       ! temperature gradient drive
+            wphi(i)  = welec(i)+wdian(i)+wdiat(i)                    ! toroidal rotation
+            wtran(i) = SQRT(2*kin%f(s+2)/mass)/(q*ro)      ! transit freq
+            wgyro(i) = chrg*bo/mass                        ! gyro frequency
+            nuk(i) = kin%f(s+6)                            ! krook collisionality
+            epsr(i) = geom%f(2)/geom%f(3)
+            wbhat(i) = (pi/4)*SQRT(epsr(i)/2)*wtran(i)           ! RLAR normalized by x^1/2
+            wdhat(i) = q**3*wtran(i)**2/(4*epsr(i)*wgyro(i))*wdfac  ! RLAR normalized by x
+            nueff(i) = kin%f(s+6)/(2*epsr(i))                 ! if trapped
+        enddo
+
+        ! create and open netcdf file
+        write(nstring,'(I8)') n
+        ncfile = "pentrc_output_n"//TRIM(ADJUSTL(nstring))//".nc"
+        call check( nf90_create(ncfile, cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=ncid) )
+        ! store attributes
+        call check( nf90_put_att(ncid, nf90_global, "title", "PENTRC fundamental outputs") )
+        call check( nf90_put_att(ncid, nf90_global, "version", version))
+        call check( nf90_put_att(ncid, nf90_global, "shot", INT(shotnum) ) )
+        call check( nf90_put_att(ncid, nf90_global, "time", INT(shottime)) )
+        call check( nf90_put_att(ncid, nf90_global, "machine", machine) )
+        call check( nf90_put_att(ncid, nf90_global, "n", n) )
+        call check( nf90_put_att(ncid, nf90_global, "charge", chrg) )
+        call check( nf90_put_att(ncid, nf90_global, "mass", mass) )
+        call check( nf90_put_att(ncid, nf90_global, "R0", ro) )
+        call check( nf90_put_att(ncid, nf90_global, "B0", bo) )
+        call check( nf90_put_att(ncid, nf90_global, "chi1", chi1) )
+        ! define dimensions
+        call check( nf90_def_dim(ncid, "i", 2, i_did) )
+        call check( nf90_def_var(ncid, "i", nf90_int, i_did, i_id) )
+        call check( nf90_def_dim(ncid, "ell", 2*nl+1, l_did) )
+        call check( nf90_def_var(ncid, "ell", nf90_int, l_did, l_id) )
+        call check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_did) )
+        call check( nf90_def_var(ncid, "psi_n", nf90_double, p_did, p_id) )
+        ! define variables
+        call check( nf90_def_var(ncid, "dvdpsi", nf90_double, p_did, v_id) )
+        call check( nf90_put_att(ncid, v_id, "long_name", "Differential Volume") )
+        call check( nf90_put_att(ncid, v_id, "units", "m^3") )
+        call check( nf90_def_var(ncid, "eps_r", nf90_double, p_did, er_id) )
+        call check( nf90_put_att(ncid, er_id, "long_name", "Inverse Aspect Ratio") )
+        call check( nf90_def_var(ncid, "q", nf90_double, p_did, q_id) )
+        call check( nf90_put_att(ncid, q_id, "long_name", "Safety Factor") )
+        call check( nf90_def_var(ncid, "mu0P", nf90_double, p_did, mp_id) )
+        call check( nf90_put_att(ncid, mp_id, "long_name", "Equilibrium Pressure") )
+        call check( nf90_def_var(ncid, "n_i", nf90_double, p_did, ni_id) )
+        call check( nf90_put_att(ncid, ni_id, "long_name", "Ion Density") )
+        call check( nf90_put_att(ncid, ni_id, "units", "m^-3") )
+        call check( nf90_def_var(ncid, "n_e", nf90_double, p_did, ne_id) )
+        call check( nf90_put_att(ncid, ne_id, "long_name", "Electron Density") )
+        call check( nf90_put_att(ncid, ne_id, "units", "m^-3") )
+        call check( nf90_def_var(ncid, "T_i", nf90_double, p_did, ti_id) )
+        call check( nf90_put_att(ncid, ti_id, "long_name", "Ion Temperature") )
+        call check( nf90_put_att(ncid, ti_id, "units", "eV") )
+        call check( nf90_def_var(ncid, "T_e", nf90_double, p_did, te_id) )
+        call check( nf90_put_att(ncid, te_id, "long_name", "Electron Temperature") )
+        call check( nf90_put_att(ncid, te_id, "units", "eV") )
+        call check( nf90_def_var(ncid, "logLambda", nf90_double, p_did, ll_id) )
+        call check( nf90_put_att(ncid, ll_id, "long_name", "Logarithm of Plasma Parameter") )
+        call check( nf90_def_var(ncid, "nu_i", nf90_double, p_did, vi_id) )
+        call check( nf90_put_att(ncid, vi_id, "long_name", "Ion Collision Rate") )
+        call check( nf90_put_att(ncid, vi_id, "units", "1/s") )
+        call check( nf90_def_var(ncid, "nu_e", nf90_double, p_did, ve_id) )
+        call check( nf90_put_att(ncid, ve_id, "long_name", "Electron Collision Rate") )
+        call check( nf90_put_att(ncid, ve_id, "units", "1/s") )
+        call check( nf90_def_var(ncid, "omega_E", nf90_double, p_did, we_id) )
+        call check( nf90_put_att(ncid, we_id, "long_name", "Electric Precession Frequency") )
+        call check( nf90_put_att(ncid, we_id, "units", "rad/s") )
+        call check( nf90_def_var(ncid, "omega_N", nf90_double, p_did, wn_id) )
+        call check( nf90_put_att(ncid, wn_id, "long_name", "Density Gradient Diamagnetic Frequency") )
+        call check( nf90_put_att(ncid, wn_id, "units", "rad/s") )
+        call check( nf90_def_var(ncid, "omega_T", nf90_double, p_did, wt_id) )
+        call check( nf90_put_att(ncid, wt_id, "long_name", "Temperature Gradient Diamagnetic Frequency") )
+        call check( nf90_put_att(ncid, wt_id, "units", "rad/s") )
+        call check( nf90_def_var(ncid, "omega_trans", nf90_double, p_did, ws_id) )
+        call check( nf90_put_att(ncid, ws_id, "long_name", "Transit Frequency") )
+        call check( nf90_put_att(ncid, ws_id, "units", "rad/s") )
+        call check( nf90_def_var(ncid, "omega_gyro", nf90_double, p_did, wg_id) )
+        call check( nf90_put_att(ncid, wg_id, "long_name", "Gyro-Frequency") )
+        call check( nf90_put_att(ncid, wg_id, "units", "rad/s") )
+        call check( nf90_def_var(ncid, "omega_b_rlar", nf90_double, p_did, wb_id) )
+        call check( nf90_put_att(ncid, wb_id, "long_name", "Reduced Bounce Frequency") )
+        call check( nf90_put_att(ncid, wb_id, "units", "rad/s") )
+        call check( nf90_def_var(ncid, "omega_d_rlar", nf90_double, p_did, wd_id) )
+        call check( nf90_put_att(ncid, wd_id, "long_name", "Reduced Magnetic Precession Frequency") )
+        call check( nf90_put_att(ncid, wd_id, "units", "rad/s") )
+        ! End definitions
+        call check( nf90_enddef(ncid) )
+        ! store variables
+        call check( nf90_put_var(ncid, i_id, (/0,1/)) )
+        call check( nf90_put_var(ncid, l_id, (/(i,i=-nl,nl)/)) )
+        call check( nf90_put_var(ncid, p_id, sq%xs) )
+        call check( nf90_put_var(ncid, v_id, sq%fs(:,3)) )
+        call check( nf90_put_var(ncid, q_id, sq%fs(:,4)) )
+        call check( nf90_put_var(ncid, mp_id, sq%fs(:,2)) )
+        call check( nf90_put_var(ncid, er_id, epsr) )
+        call check( nf90_put_var(ncid, ni_id, ni) )
+        call check( nf90_put_var(ncid, ne_id, ne) )
+        call check( nf90_put_var(ncid, ti_id, ti/1.602e-19) )
+        call check( nf90_put_var(ncid, te_id, te/1.602e-19) )
+        call check( nf90_put_var(ncid, we_id, welec) )
+        call check( nf90_put_var(ncid, ll_id, llmda) )
+        call check( nf90_put_var(ncid, vi_id, nui) )
+        call check( nf90_put_var(ncid, ve_id, nue) )
+        call check( nf90_put_var(ncid, wn_id, wdian) )
+        call check( nf90_put_var(ncid, wt_id, wdiat) )
+        call check( nf90_put_var(ncid, ws_id, wtran) )
+        call check( nf90_put_var(ncid, wg_id, wgyro) )
+        call check( nf90_put_var(ncid, wb_id, wbhat) )
+        call check( nf90_put_var(ncid, wd_id, wdhat) )
+        deallocate(epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
+            welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat)
+
+        ! store each method, grid combination that has been run
+        do i=1,ngrids
+            do j=1,nmethods
+                if(torque_record(j,i)%is_recorded)then
+                    ! create distinguishing labels
+                    if(grids(i)=='lsode')then
+                        suffix = '_'//trim(methods(j))
+                    else
+                        suffix = '_'//trim(methods(j))//'_'//trim(grids(i))
+                    endif
+                    ! check sizes
+                    np = size(torque_record(j,i)%psi_record,dim=2)
+                    if(np/=size(torque_record(j,i)%ell_record,dim=3))then
+                        print *,SHAPE(torque_record(j,i)%psi_record)
+                        print *,SHAPE(torque_record(j,i)%ell_record)
+                        stop "Error: Record sizes are inconsistent"
+                    endif
+                    ! Re-open definitions
+                    call check( nf90_redef(ncid) )
+                    call check( nf90_put_att(ncid, nf90_global, "T_total"//trim(suffix), &
+                                             torque_record(j,i)%psi_record(9,np)))
+                    call check( nf90_put_att(ncid, nf90_global, "dW_total"//trim(suffix), &
+                                             torque_record(j,i)%psi_record(10,np)/(2*n)))
+                    if(trim(grids(i))=='lsode')then
+                        call check( nf90_def_dim(ncid, "psi"//trim(suffix), np, p_did) )
+                        call check( nf90_def_var(ncid, "psi"//trim(suffix), nf90_double, p_did, p_id) )
+                        call check( nf90_def_var(ncid, "sqdBoB_L_SA"//trim(suffix), nf90_double, p_did, b_id) )
+                        call check( nf90_def_var(ncid, "sqdivxi_perp_SA"//trim(suffix), nf90_double, p_did, x_id) )
+                    else ! no need to store redundant flux functions on grids
+                        status = nf90_inq_dimid(ncid, "psi_"//trim(grids(i)), p_did)
+                        if(status == nf90_noerr )then ! re-use the psi for the repeat grid type
+                            call check( nf90_inq_varid(ncid, "psi_"//trim(grids(i)), p_id) )
+                            call check( nf90_inq_varid(ncid, "sqdBoB_L_SA_"//trim(grids(i)), b_id) )
+                            call check( nf90_inq_varid(ncid, "sqdivxi_perp_SA_"//trim(grids(i)), x_id) )
+                        else ! create the psi for the grid type
+                            call check( nf90_def_dim(ncid, "psi_"//trim(grids(i)), np, p_did) )
+                            call check( nf90_def_var(ncid, "psi_"//trim(grids(i)), nf90_double, p_did, p_id) )
+                            call check( nf90_def_var(ncid, "sqdBoB_L_SA_"//trim(grids(i)), nf90_double, p_did, b_id) )
+                            call check( nf90_def_var(ncid, "sqdivxi_perp_SA_"//trim(grids(i)), nf90_double, p_did, x_id) )
+                        endif
+                    endif
+                    call check( nf90_def_var(ncid, "Gamma"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), g_id) )
+                    call check( nf90_def_var(ncid, "chi"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), c_id) )
+                    call check( nf90_def_var(ncid, "dTdpsi"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), d_id) )
+                    call check( nf90_def_var(ncid, "T"//trim(suffix), nf90_double, (/i_did,l_did,p_did/), t_id) )
+                    ! Add metadata
+                    if(qt)then
+                        call check( nf90_put_att(ncid, g_id, "long_name", "Nonambipolar Heat Flux") )
+                        call check( nf90_put_att(ncid, g_id, "units", "1/sm^2") )
+                        call check( nf90_put_att(ncid, c_id, "long_name", "Nonambipolar Heat Diffusivity") )
+                        call check( nf90_put_att(ncid, c_id, "units", "m^2/s") )
+                        call check( nf90_put_att(ncid, d_id, "long_name", " A*e*psi'*Gamma/2pi profile") )
+                        call check( nf90_put_att(ncid, d_id, "units", "Nm per psi") )
+                        call check( nf90_put_att(ncid, t_id, "long_name", "Integrated A*e*psi'*Gamma/2pi") )
+                        call check( nf90_put_att(ncid, t_id, "units", "Nm") )
+                    else
+                        call check( nf90_put_att(ncid, g_id, "long_name", "Nonambipolar Particle Flux") )
+                        call check( nf90_put_att(ncid, g_id, "units", "1/sm^2") )
+                        call check( nf90_put_att(ncid, c_id, "long_name", "Nonambipolar Particle Diffusivity") )
+                        call check( nf90_put_att(ncid, c_id, "units", "m^2/s") )
+                        call check( nf90_put_att(ncid, d_id, "long_name", "Toroidal Torque Profile") )
+                        call check( nf90_put_att(ncid, d_id, "units", "Nm per unit normalized flux") )
+                        call check( nf90_put_att(ncid, t_id, "long_name", "Integrated Toroidal Torque") )
+                        call check( nf90_put_att(ncid, t_id, "units", "Nm") )
+                    endif
+                    call check( nf90_put_att(ncid, b_id, "long_name", "Surface Average Lagrangian Field Modulation") )
+                    call check( nf90_put_att(ncid, x_id, "long_name", "Surface Average Divergence of the Perpendicular Displacement") )
+                    call check( nf90_enddef(ncid) )
+                    ! Put in variables
+                    call check( nf90_put_var(ncid, p_id, torque_record(j,i)%ell_record(1,1,:)) )
+                    call check( nf90_put_var(ncid, g_id, torque_record(j,i)%ell_record(3:4,:,:)) )
+                    call check( nf90_put_var(ncid, c_id, torque_record(j,i)%ell_record(5:6,:,:)) )
+                    call check( nf90_put_var(ncid, d_id, torque_record(j,i)%ell_record(7:8,:,:)) )
+                    call check( nf90_put_var(ncid, t_id, torque_record(j,i)%ell_record(9:10,:,:)) )
+                    call check( nf90_put_var(ncid, b_id, torque_record(j,i)%psi_record(28,:)) )
+                    call check( nf90_put_var(ncid, x_id, torque_record(j,i)%psi_record(29,:)) )
+                endif
+            enddo
+        enddo
+        
+        ! close file
+        call check( nf90_close(ncid) )
+
+        return
+    end subroutine output_torque_netcdf
 
     !=======================================================================
     subroutine output_fluxfun_ascii(n,zi,mi,electron,method,table)

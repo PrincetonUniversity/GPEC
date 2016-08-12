@@ -11,7 +11,7 @@ module special
     !   All variables are public
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
@@ -297,6 +297,7 @@ module special
                    rmaxgoni = 3.53711887601422d+15
         
         flag = .false.
+        c = 0
         
         xabs = dabs(xi)
         yabs = dabs(yi)

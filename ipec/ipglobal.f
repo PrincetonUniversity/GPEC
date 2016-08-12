@@ -201,7 +201,7 @@ c        mode : integer, in
 c            mode = 0 starts timer
 c            mode = 1 writes total time from last start
 c            mode = 2 writes split & total time from start
-c            mode = -2 resets the split without writting
+c            mode = -2 resets the split without writing
 c
 c     *OPTIONAL ARGUMENTS:
 c        opunit : integer, in

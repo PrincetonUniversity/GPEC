@@ -23,7 +23,7 @@ c-----------------------------------------------------------------------
       USE free_mod
       USE resist_mod
       USE pentrc_interface,         ! rename overlapping names
-     $    pentrc_verbose=>verbose,  ! should get a more fundemental fix
+     $    pentrc_verbose=>verbose,  ! should get a more fundamental fix
      $    pentrc_mpert=>mpert,
      $    pentrc_nn=>nn,
      $    pentrc_r8=>r8,
