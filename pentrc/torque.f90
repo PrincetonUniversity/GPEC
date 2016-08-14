@@ -116,7 +116,8 @@ module torque
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only : r8,xj,mp,me,e,mu0,pi,twopi, nmethods, methods, ngrids, grids
+    use params, only : r8, xj, mp, me, e, mu0, pi, twopi, &
+        npsi_out, nell_out, nlambda_out, nmethods, methods, ngrids, grids
     use utilities, only : get_free_file_unit, check, median, append_2d, &
         ri, btoi, itob
     use special, only : ellipk,ellipe
@@ -147,7 +148,7 @@ module torque
     logical :: tdebug=.false., output_ascii =.true., output_netcdf=.true.
     integer :: nlmda=128, ntheta=128,nrecorded
     
-    integer, parameter :: nfluxfuns = 19, nthetafuns = 18
+    integer, parameter :: nfluxfuns = 19, nthetafuns = 12
 
     type record
         logical :: is_recorded
@@ -155,6 +156,17 @@ module torque
         real(r8), dimension(:,:,:), allocatable :: ell_record
     endtype record
     type(record) :: torque_record(nmethods,ngrids)
+
+    type diagnostic_record
+        logical :: is_recorded
+        integer :: psi_index, lambda_index, ell_index
+        integer, dimension(:), allocatable :: ell
+        real(r8), dimension(:), allocatable :: psi
+        real(r8), dimension(:,:), allocatable :: fpsi
+        real(r8), dimension(:,:,:), allocatable :: lambda
+        real(r8), dimension(:,:,:,:,:), allocatable :: fs
+    endtype diagnostic_record
+    type(diagnostic_record) :: orbit_record(nmethods)
 
     complex(r8), dimension(:,:,:), allocatable :: elems
     TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
@@ -225,16 +237,18 @@ module torque
         real(r8), dimension(nthetafuns,ntheta*3), optional, intent(out) :: op_tfuns
         complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: op_wmats
         ! declare local variables
-        logical :: erecord
+        logical :: erecord, lambda_output_flag
         character(8) :: nstring,lstring
         character(32):: file
         integer :: i,j,k,s,ibmin,ibmax,out_unit,sigma,ilmda,iqty
+        integer, dimension(nlambda_out) :: ilambda_out
         real(r8) :: chrg,mass,welec,wdian,wdiat,wphi,wtran,wgyro,&
             wbhat,wdhat,nuk,nueff,q,epsr,bmin,bmax,lnq,theta,&
             lmdamin,lmdamax,lmdatpb,lmdatpe,lmda,t1,t2,&
             wbbar,wdbar,bhat,dhat,dbave,dxave,&
             vpar,kappaint,kappa,kk,djdj,jbb,&
-            rex,imx,tnorm
+            rex,imx,tnorm,he_t,hd_t,wb_t,wd_t
+        real(r8), dimension(nthetafuns,ntheta) :: orbitfs
         real(r8), dimension(2,nlmda) :: ldl
         real(r8), dimension(2,1+nlmda) :: ldl_inc
         real(r8), dimension(2,1+nlmda/2) :: ldl_p
@@ -375,8 +389,10 @@ module torque
                 wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /)
         endif
         
-        
-        
+        ! optional orbit information at nlambda_out points in pitch angle
+        if(present(op_tfuns))then
+            ilambda_out = (/(nint(ilmda*(nlmda-1)/real(nlambda_out-1))+1,ilmda=0,nlambda_out-1)/)
+        endif
         
         
         
@@ -764,22 +780,23 @@ module torque
                     
                 
                 
-                    ! optional deeply trapped bounce motion output
-                    if(present(op_tfuns) .and. (ilmda==1 .or. ilmda==nlmda/2 .or.ilmda==nlmda))then
+                    ! optional deeply trapped bounce motion output for nlambda_out pitches
+                    if(present(op_tfuns) .and. any(ilambda_out==ilmda))then
                         if(tdebug) print *, "  recording bounce functions"
-                        j = (ilmda*2)/nlmda ! 0,1,2
                         do i=1,ntheta
                             expm = exp(xj*twopi*mfac*tdt(1,i))
                             dbob = sum(dbob_m%f(:)*expm)
                             divx = sum(divx_m%f(:)*expm) * divxfac
-                            op_tfuns(:,j*ntheta+i) = (/ &
-                                real(i,r8), real(j+1,r8), real(l,r8), psi, lmda, &
-                                bjspl%xs(i-1), tdt(:,i), bspl%fs(i-1,:), &
+                            he_t = bspl%fsi(i-1,1)/((2-sigma)*bspl%fsi(bspl%mx,1))
+                            hd_t = bspl%fsi(i-1,2)/((2-sigma)*bspl%fsi(bspl%mx,2))
+                            wb_t = bspl%fs(i-1,1)
+                            wd_t = bspl%fs(i-1,2)
+                            orbitfs(:,i) = (/ tdt(1,i), tdt(2,i), &
                                 real(bjspl%fs(i-1,1)), aimag((bjspl%fs(i-1,1))), &
-                                bspl%fsi(i-1,1)/((2-sigma)*bspl%fsi(bspl%mx,1)), &
-                                bspl%fsi(i-1,2)/((2-sigma)*bspl%fsi(bspl%mx,2)), &
-                                real(dbob), aimag(dbob), real(divx), aimag(divx) /)
+                                real(dbob), aimag(dbob), real(divx), aimag(divx), &
+                                wb_t, wd_t, he_t, hd_t /)
                         enddo
+                        call record_orbit(method,psi,l,lmda,(/q,lmdatpb/),orbitfs)
                     endif
                 
                 
@@ -1608,6 +1625,85 @@ module torque
 
         return
     end subroutine record_method
+    
+    !=======================================================================
+    subroutine record_orbit(method, psi, ell, lambda, fpsi, fs)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Save the bounce orbit theta functions for this method,
+    !   at this surface and pitch.
+    !
+    !*ARGUMENTS:
+    !   method : character
+    !       Torque integrand method
+    !   psi : real
+    !       Normalized flux of integrand call
+    !   ell : integer
+    !       Bounce harmonic
+    !   lambda : real
+    !       Normalized pitch angle
+    !   fpsi : real 2
+    !       safety factor and trapped/Passing boundary for psi
+    !   fs : real array
+    !       Bounce orbit functions
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: ell
+        real(r8), intent(in) :: psi,lambda,fpsi(2),fs(nthetafuns,ntheta)
+        character(*), intent(in) :: method
+
+        integer :: m, i, j, k
+        logical, parameter :: debug = .false.
+
+        if(debug) print *,"Recording method"
+
+        ! find the right record
+        do m=1,nmethods
+            if(method==methods(m))then
+                if(debug) print *,"  method "//trim(method)
+                ! initialize the record of this method type if needed
+                if(.not. orbit_record(m)%is_recorded)then
+                    if(debug) print *,"   - is not recorded"
+                    orbit_record(m)%is_recorded = .true.
+                    orbit_record(m)%psi_index = 0
+                    orbit_record(m)%lambda_index = 0
+                    orbit_record(m)%ell_index = 0
+                    allocate( orbit_record(m)%psi(npsi_out), &
+                        orbit_record(m)%ell(nell_out), &
+                        orbit_record(m)%lambda(nlambda_out,nell_out,npsi_out), &
+                        orbit_record(m)%fpsi(2,npsi_out), &
+                        orbit_record(m)%fs(nthetafuns,ntheta,nlambda_out,nell_out,npsi_out) )
+                endif
+                ! bump indexes
+                if(debug) print *,"   - psi,ell,lambda = ",psi,ell,lambda
+                if(debug) print *,"   - old i,j,k = ",i,j,k
+                k = orbit_record(m)%psi_index
+                j = orbit_record(m)%ell_index
+                i = orbit_record(m)%lambda_index
+                if(psi/=orbit_record(m)%psi(k) .or. k==0) k = k+1
+                if(ell/=orbit_record(m)%ell(j) .or. j==0) j = mod(j,nell_out)+1
+                if(lambda/=orbit_record(m)%lambda(i,j,k) .or. i==0) i = mod(i,nlambda_out)+1
+                if(debug) print *,"   - new i,j,k = ",i,j,k
+                ! force fail if buggy
+                if(k>npsi_out)then
+                    print *,"ERROR: Too many psi energy records for method "//trim(method)
+                    stop
+                endif
+                ! fill in new profiles
+                orbit_record(m)%fpsi(:,k) = fpsi(:)
+                orbit_record(m)%fs(:,:,i,j,k) = fs(:,:)
+                orbit_record(m)%lambda(i,j,k) = lambda
+                orbit_record(m)%ell(j) = ell
+                orbit_record(m)%psi(k) = psi
+                orbit_record(m)%psi_index = k
+                orbit_record(m)%ell_index = j
+                orbit_record(m)%lambda_index = i
+            endif
+        enddo
+        if(debug) print *,"Done recording"
+        return
+    end subroutine record_orbit
 
     !=======================================================================
     subroutine output_torque_ascii(n,zi,mi,electron,method,prof,profl)
@@ -2070,6 +2166,262 @@ module torque
         close(out_unit)
         return
     end subroutine output_fluxfun_ascii
+    
+    !=======================================================================
+    subroutine output_orbit_netcdf(n,op_label)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write recorded orbit functions to a netcdf file.
+    !   Note, this is essentially a copy of output_energy_netcdf and the two
+    !   should be kept consistent as much as possible.
+    !
+    !*ARGUMENTS:
+    !    n : integer
+    !        Toroidal mode number for filename
+    !
+    !*OPTIONAL ARGUMENTS:
+    !    op_label : character
+    !        Extra label inserted into filename
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n
+        character(*), optional :: op_label
+
+        integer :: i,m,npsi,nell,nlambda
+        integer, dimension(:), allocatable :: ell_out
+        real(r8), dimension(:), allocatable :: psi_out
+
+        integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
+            le_id,a_did,a_id,x_did,x_id,aa_id,xx_id,dx_id, &
+            dj_id,db_id,xi_id,wb_id,wd_id,he_id,hd_id,pq_id,at_id
+        character(16) :: nstring,suffix,label
+        character(128) :: ncfile
+
+        logical :: debug = .false.
+
+        print *,"Writing orbit record output to netcdf"
+
+        ! optional labeling
+        label = ''
+        if(present(op_label)) label = "_"//trim(adjustl(op_label))
+
+        ! assume all methods on the same psi's and ell's
+        npsi = 0
+        nell = 0
+        nlambda = 0
+        do m=1,nmethods
+            if(orbit_record(m)%is_recorded)then
+                if(debug) print *,"  Getting dims from "//trim(methods(m))
+                npsi = orbit_record(m)%psi_index
+                nell = orbit_record(m)%ell_index
+                nlambda = orbit_record(m)%lambda_index
+                allocate(psi_out(npsi),ell_out(nell))
+                psi_out = orbit_record(m)%psi(:npsi)
+                ell_out = orbit_record(m)%ell(:nell)
+                exit
+            endif
+        enddo
+
+        ! do nothing if no records
+        if(npsi==0)then
+            print *,"  WARNING: No energy records to output to netcdf"
+            return
+        endif
+
+        ! create and open netcdf file
+        write(nstring,'(I8)') n
+        ncfile = "pentrc_orbit_output"//trim(label)//"_n"//trim(adjustl(nstring))//".nc"
+        if(debug) print *, "  opening "//trim(ncfile)
+        call check( nf90_create(ncfile, cmode=or(nf90_clobber,nf90_64bit_offset), ncid=ncid) )
+        ! store attributes
+        if(debug) print *, "  storing attributes"
+        call check( nf90_put_att(ncid, nf90_global, "title", "PENTRC orbit outputs") )
+        call check( nf90_put_att(ncid, nf90_global, "version", version))
+        call check( nf90_put_att(ncid, nf90_global, "shot", INT(shotnum) ) )
+        call check( nf90_put_att(ncid, nf90_global, "time", INT(shottime)) )
+        call check( nf90_put_att(ncid, nf90_global, "machine", machine) )
+        call check( nf90_put_att(ncid, nf90_global, "n", n) )
+        ! define dimensions
+        if(debug) print *, "  defining dimensions"
+        if(debug) print *, "  npsi,nell,nlambda,nx = ",npsi,nell,nlambda,ntheta
+        call check( nf90_def_dim(ncid, "i", 2, i_did) )
+        call check( nf90_def_var(ncid, "i", nf90_int, i_did, i_id) )
+        call check( nf90_def_dim(ncid, "ell", nell, l_did) )
+        call check( nf90_def_var(ncid, "ell", nf90_int, l_did, l_id) )
+        call check( nf90_def_dim(ncid, "psi_n", npsi, p_did) )
+        call check( nf90_def_var(ncid, "psi_n", nf90_double, p_did, p_id) )
+        call check( nf90_def_dim(ncid, "Lambda_index", nlambda, a_did) )
+        call check( nf90_def_var(ncid, "Lambda_index", nf90_double, a_did, a_id) )
+        call check( nf90_def_dim(ncid, "theta_index", ntheta, x_did) )
+        call check( nf90_def_var(ncid, "theta_index", nf90_double, x_did, x_id) )
+        ! End definitions
+        call check( nf90_enddef(ncid) )
+        ! store dimensions
+        if(debug) print *, "  storing dimensions"
+        call check( nf90_put_var(ncid, i_id, (/0,1/)) )
+        call check( nf90_put_var(ncid, x_id, (/(i,i=1,ntheta)/)) )
+        call check( nf90_put_var(ncid, a_id, (/(i,i=1,nlambda)/)) )
+        call check( nf90_put_var(ncid, l_id, ell_out) )
+        call check( nf90_put_var(ncid, p_id, psi_out) )
+
+        ! store each method, grid combination that has been run
+        do m=1,nmethods
+            if(orbit_record(m)%is_recorded)then
+                if(debug) print *, "  defining "//trim(methods(m))
+                ! create distinguishing labels
+                suffix = '_'//trim(methods(m))
+                ! check sizes
+                if(npsi/=orbit_record(m)%psi_index)then
+                    print *,npsi,orbit_record(m)%psi_index
+                    stop "Error: Record sizes are inconsistent"
+                endif
+                ! Re-open definitions
+                call check( nf90_redef(ncid) )
+                call check( nf90_def_var(ncid, "q"//trim(suffix), nf90_double, (/p_did/), pq_id) )
+                call check( nf90_def_var(ncid, "Lambda_trap"//trim(suffix), nf90_double, (/p_did/), at_id) )
+                call check( nf90_def_var(ncid, "Lambda"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), aa_id) )
+                call check( nf90_def_var(ncid, "theta"//trim(suffix), nf90_double, (/x_did,a_did,l_did,p_did/), xx_id) )
+                call check( nf90_def_var(ncid, "dtheta"//trim(suffix), nf90_double, (/x_did,a_did,l_did,p_did/), dx_id) )
+                call check( nf90_def_var(ncid, "deltaJ"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), dj_id) )
+                call check( nf90_def_var(ncid, "b_lag_frac"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), db_id) )
+                call check( nf90_def_var(ncid, "divxi_perp"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), xi_id) )
+                call check( nf90_def_var(ncid, "omega_b"//trim(suffix), nf90_double, (/x_did,a_did,l_did,p_did/), wb_id) )
+                call check( nf90_def_var(ncid, "omega_D"//trim(suffix), nf90_double, (/x_did,a_did,l_did,p_did/), wd_id) )
+                call check( nf90_def_var(ncid, "h_E"//trim(suffix), nf90_double, (/x_did,a_did,l_did,p_did/), he_id) )
+                call check( nf90_def_var(ncid, "h_D"//trim(suffix), nf90_double, (/x_did,a_did,l_did,p_did/), hd_id) )
+                call check( nf90_enddef(ncid) )
+                ! Put in variables
+                if(debug) print *, "  storing "//trim(methods(m))
+                call check( nf90_put_var(ncid, pq_id, orbit_record(m)%fpsi(1,:npsi)) )
+                call check( nf90_put_var(ncid, at_id, orbit_record(m)%fpsi(2,:npsi)) )
+                call check( nf90_put_var(ncid, aa_id, orbit_record(m)%lambda(:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, aa_id, orbit_record(m)%lambda(:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, xx_id, orbit_record(m)%fs(1,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, dx_id, orbit_record(m)%fs(2,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, dj_id, orbit_record(m)%fs(3:4,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, db_id, orbit_record(m)%fs(5:6,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, xi_id, orbit_record(m)%fs(7:8,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, wb_id, orbit_record(m)%fs(9,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, wd_id, orbit_record(m)%fs(10,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, he_id, orbit_record(m)%fs(11,:,:nlambda,:nell,:npsi)) )
+                call check( nf90_put_var(ncid, hd_id, orbit_record(m)%fs(12,:,:nlambda,:nell,:npsi)) )
+            endif
+        enddo
+
+        ! close file
+        call check( nf90_close(ncid) )
+        ! clear the memory
+        call reset_orbit_record( )
+        if(debug) print *, "Finished energy netcdf output"
+
+        return
+    end subroutine output_orbit_netcdf
+
+
+    !=======================================================================
+    subroutine reset_orbit_record()
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Deallocate records.
+    !
+    !*ARGUMENTS:
+    !
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+
+        integer :: m
+        logical :: debug = .false.
+
+        if(debug) print *,"Energy record resetting..."
+
+        ! find the right record
+        do m=1,nmethods
+            ! initialize the record of this method type if needed
+            if(orbit_record(m)%is_recorded)then
+                orbit_record(m)%is_recorded = .false.
+                orbit_record(m)%psi_index = 0
+                orbit_record(m)%lambda_index = 0
+                orbit_record(m)%ell_index = 0
+                deallocate( orbit_record(m)%psi, &
+                    orbit_record(m)%ell, &
+                    orbit_record(m)%fpsi, &
+                    orbit_record(m)%lambda, &
+                    orbit_record(m)%fs )
+            endif
+        enddo
+        if(debug) print *,"Energy record reset done"
+        return
+    end subroutine reset_orbit_record
+
+
+    !=======================================================================
+    subroutine output_orbit_ascii(n, op_label)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Write ascii bounce function files.
+    !
+    !*ARGUMENTS:
+    !    n : integer.
+    !       mode number
+    !*OPTIONAL ARGUMENTS:
+    !    op_label : string
+    !       Inserted into file name.
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        integer, intent(in) :: n
+        character(*), optional :: op_label
+
+        integer :: m,i,j,k,istep,out_unit
+        character(8) :: nstring
+        character(16) :: label
+        character(128) :: file
+
+        ! optional labeling
+        label = ''
+        if(present(op_label)) label = "_"//trim(adjustl(op_label))
+
+        ! open and prepare file as needed
+        out_unit = get_free_file_unit(-1)
+        write(nstring,'(I8)') n
+        file = "pentrc_orbit_output"//trim(label)//"_n"//trim(adjustl(nstring))//".out"
+        open(unit=out_unit,file=file,status="unknown",action="write")
+
+        ! write header material
+        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
+        write(out_unit,*) " Orbit outputs"
+        write(out_unit,*) " - variables are:   lambda =  B0*m*v_perp^2/(2B)"
+        write(out_unit,'(1/,1(a10,I4))') "n =",n
+
+        ! write each method in a new table
+        do m=1,nmethods
+            if(orbit_record(m)%is_recorded)then
+                write(out_unit,'(1/,2(a17))')"method =",trim(methods(m))
+                write(out_unit,'(19(a17))') "psi_n","ell","Lambda_index","theta_index", &
+                    "q","Lambda_trap","Lambda","theta","dtheta", &
+                    "real(deltaJ)","imag(deltaJ)","real(b_lag_frac)","imag(b_lag_frac)", &
+                    "real(divxi_perp)","imag(divxi_perp)","omega_b","omega_D","h_E","h_D"
+                do k=1,orbit_record(m)%psi_index
+                    do j=1,orbit_record(m)%ell_index
+                        do i=1,orbit_record(m)%lambda_index
+                            do istep=1,ntheta
+                                write(out_unit,'(19(es17.8E3))') orbit_record(m)%psi(k), &
+                                    real(orbit_record(m)%ell(j)),real(i),real(istep), &
+                                    orbit_record(m)%fpsi(1,k),orbit_record(m)%fpsi(2,k), &
+                                    orbit_record(m)%lambda(i,j,k),&
+                                    orbit_record(m)%fs(:,istep,i,j,k)
+                            enddo
+                        enddo
+                    enddo
+                enddo
+            endif
+        enddo
+        close(out_unit)
+
+        return
+    end subroutine output_orbit_ascii
 
     !=======================================================================
     subroutine output_bouncefun_ascii(n,zi,mi,electron,method,table)

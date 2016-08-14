@@ -48,7 +48,8 @@ module pentrc_interface
         lambdadebug                                 ! logical
     use torque, only : &
         tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
-        output_bouncefun_ascii,output_torque_netcdf,& ! subroutines
+        output_bouncefun_ascii,output_orbit_ascii,&
+        output_orbit_netcdf,output_torque_netcdf,&  ! subroutines
         ntheta,nlmda,nthetafuns,&                   ! integers
         atol_psi,rtol_psi,&                         ! real
         tdebug,output_ascii,output_netcdf,&         ! logical

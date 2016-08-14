@@ -204,11 +204,13 @@ program pentrc
             endif
         enddo
         if(output_ascii)then
+            if(theta_out) call output_orbit_ascii(nn)
             if(xlmda_out) call output_pitch_ascii(nn)
             if(xlmda_out) call output_energy_ascii(nn)
         endif
         if(output_netcdf)then
             call output_torque_netcdf(nn,nl,zi,mi,electron,wdfac)
+            if(theta_out) call output_orbit_netcdf(nn)
             if(xlmda_out) call output_pitch_netcdf(nn)
             if(xlmda_out) call output_energy_netcdf(nn)
         endif
