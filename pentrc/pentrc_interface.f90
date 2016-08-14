@@ -48,7 +48,7 @@ module pentrc_interface
         lambdadebug                                 ! logical
     use torque, only : &
         tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
-        output_bouncefun_ascii,output_orbit_ascii,&
+        output_orbit_ascii,&
         output_orbit_netcdf,output_torque_netcdf,&  ! subroutines
         ntheta,nlmda,nthetafuns,&                   ! integers
         atol_psi,rtol_psi,&                         ! real
@@ -121,7 +121,6 @@ module pentrc_interface
         psi_out(npsi_out) = -1, &
         psilims(2) = (/0,1/)
     !real(r8), dimension(npsi_out) :: psi_out
-    real(r8), dimension(:,:), allocatable :: thetatable,thetafuns
     complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
     complex(r8), dimension(:,:,:), allocatable :: wtw
 

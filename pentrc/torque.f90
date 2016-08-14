@@ -145,7 +145,7 @@ module torque
     
     real(r8) :: atol_psi = 1e-3, rtol_psi= 1e-6
     real(r8) :: psi_warned = 0.0
-    logical :: tdebug=.false., output_ascii =.true., output_netcdf=.true.
+    logical :: tdebug=.false., output_ascii =.false., output_netcdf=.true.
     integer :: nlmda=128, ntheta=128,nrecorded
     
     integer, parameter :: nfluxfuns = 19, nthetafuns = 12
@@ -176,7 +176,7 @@ module torque
     
     !=======================================================================
     function tpsi(psi,n,l,zi,mi,wdfac,divxfac,electron,method,&
-                    op_erecord,op_ffuns,op_tfuns,op_wmats)
+                    op_erecord,op_ffuns,op_orecord,op_wmats)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Toroidal torque resulting from nonambipolar transport in perturbed
@@ -211,11 +211,10 @@ module torque
     !*OPTIONAL ARGUMENTS:
     !   op_erecord : logical
     !       Store energy space integrands in memory in the energy and pitch modules
+    !   op_orecord : logical
+    !       Store poloidal orbit functions in memory
     !   op_ffuns : real allocatable
     !       Store a record of relavent flux function quantities in this variable
-    !   op_tfuns : real allocatable
-    !       Store a record of bounce integrand quantities in this variable
-    !       (requires extra computation)
     !   op_wmats : complex MxMx6
     !       Store a record of the 6 DCON matrice elements in this variable
     !       (requires extra computation)
@@ -232,12 +231,11 @@ module torque
         integer, intent(in) :: l,n,zi,mi
         real(r8), intent(in) :: psi,wdfac,divxfac
         character(*) :: method
-        logical, optional :: op_erecord
+        logical, optional :: op_erecord, op_orecord
         real(r8), dimension(nfluxfuns), optional, intent(out) :: op_ffuns
-        real(r8), dimension(nthetafuns,ntheta*3), optional, intent(out) :: op_tfuns
         complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: op_wmats
         ! declare local variables
-        logical :: erecord, lambda_output_flag
+        logical :: erecord, orecord, lambda_output_flag
         character(8) :: nstring,lstring
         character(32):: file
         integer :: i,j,k,s,ibmin,ibmax,out_unit,sigma,ilmda,iqty
@@ -289,6 +287,11 @@ module torque
             erecord = op_erecord
         else
             erecord = .false.
+        endif
+        if(present(op_orecord))then
+            orecord = op_orecord
+        else
+            orecord = .false.
         endif
 
         ! enforce bounds
@@ -390,7 +393,7 @@ module torque
         endif
         
         ! optional orbit information at nlambda_out points in pitch angle
-        if(present(op_tfuns))then
+        if(orecord)then
             ilambda_out = (/(nint(ilmda*(nlmda-1)/real(nlambda_out-1))+1,ilmda=0,nlambda_out-1)/)
         endif
         
@@ -781,7 +784,7 @@ module torque
                 
                 
                     ! optional deeply trapped bounce motion output for nlambda_out pitches
-                    if(present(op_tfuns) .and. any(ilambda_out==ilmda))then
+                    if(orecord .and. any(ilambda_out==ilmda))then
                         if(tdebug) print *, "  recording bounce functions"
                         do i=1,ntheta
                             expm = exp(xj*twopi*mfac*tdt(1,i))
@@ -1330,9 +1333,6 @@ module torque
         if(output_ascii)then
             call output_torque_ascii(n,zi,mi,electron,trim(method),profiles,ellprofiles)
         endif
-        !if(output_netcdf)then
-        !    call output_torque_netcdf(n,zi,mi,electron,trim(method),profiles,ellprofiles)
-        !endif
 
         ! convert to complex space if integrations successful
         tintgrl_lsode = sum(y(1:neq:2),dim=1)+xj*sum(y(2:neq:2),dim=1)
@@ -1494,83 +1494,6 @@ module torque
 
 
     !=======================================================================
-    subroutine ascii_table(file,list,labels,op_header,op_zi,op_mi)
-    !-----------------------------------------------------------------------
-    !*DESCRIPTION:
-    !   Write ascii files.
-    !
-    !*ARGUMENTS:
-    !    list : real 2D
-    !       Table of values
-    !    labels : character(17) 1D
-    !       Column labels
-    !
-    !*OPTIONAL ARGUMENTS:
-    !    header : character(5)
-    !       "equil" -> Write flux function definition header
-    !       "pentq" -> Write non-ambipolar heat transport header
-    !       "pentt" -> Write non-ambipolar momentum transport header
-    !       "theta" -> Write poloidal function definition header
-    !
-    !-----------------------------------------------------------------------
-        implicit none
-        real(r8), dimension(:,:), intent(in) :: list
-        character(17), dimension(:), intent(in) :: labels
-        character(128), intent(in) :: file
-        character(5), optional, intent(in) :: op_header
-        integer, optional :: op_zi, op_mi
-
-        integer :: i,nrow,ncol,out_unit
-        character(5) :: header = '     '
-        character(32) :: label_fmt, table_fmt
-
-        ! learn sizes
-        ncol = size(list,dim=1)
-        nrow = size(list,dim=2)
-
-        ! open file
-        out_unit = get_free_file_unit(-1)
-        open(unit=out_unit,file=trim(file),status="unknown",action="write")
-        ! default header
-        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-
-        ! optional headers
-        if (present(op_header)) header = op_header
-        if(header=='equil')then
-            write(out_unit,*) " Equilibrium profiles."
-            write(out_unit,*) " - All energy dependent quantities are taken at E/T unity."
-        elseif(header=='theta')then
-            write(out_unit,*) " Bounce average functions"
-        elseif(header=='pentq')then
-            write(out_unit,*) " Gamma = Q/T = Heat flux in 1/(sm^2)"
-            write(out_unit,*) " chi = Heat diffusivity in m^2/s"
-            write(out_unit,*) " T_phi = Re[A*e*psi'*Gamma/2pi] in Nm (NOT NTV TORQUE!)"
-            write(out_unit,*) " 2ndeltaW = Im[A*e*psi'*Gamma/2pi] in J (NOT dWk!)"
-        elseif(header=='pentt')then
-            write(out_unit,*) " Gamma = Particle flux in 1/(sm^2)"
-            write(out_unit,*) " chi = Particle diffusivity in m^2/s"
-            write(out_unit,*) " T_phi = Torque in Nm"
-            write(out_unit,*) " 2ndeltaW = Kinetic energy in J"
-        endif
-
-        write(out_unit,*)
-        if(present(op_zi)) write(out_unit,'((a10,es17.8E3))') "     Ze = ",op_zi*e
-        if(present(op_mi)) write(out_unit,'((a10,es17.8E3))') "   mass = ",op_mi*mp
-        write(out_unit,'(3(a10,es16.8E3))') "     R0 = ",ro,"     B0 = ",bo,"   chi1 = ",chi1
-
-        ! write labels and table
-        write(label_fmt,*) '(1/,',ncol,'(a17))'
-        write(table_fmt,*) '(',ncol,'(es17.8E3))'
-        write(out_unit,trim(label_fmt)) labels
-        do i=1,nrow
-            write(out_unit,trim(table_fmt)) list(:,i)
-        enddo
-
-        close(out_unit)
-        return
-    end subroutine ascii_table
-
-    !=======================================================================
     subroutine record_method(method,gridtype,prof,profl)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
@@ -1704,6 +1627,44 @@ module torque
         if(debug) print *,"Done recording"
         return
     end subroutine record_orbit
+
+
+    !=======================================================================
+    subroutine reset_orbit_record()
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Deallocate records.
+    !
+    !*ARGUMENTS:
+    !
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+
+        integer :: m
+        logical :: debug = .false.
+
+        if(debug) print *,"Energy record resetting..."
+
+        ! find the right record
+        do m=1,nmethods
+            ! initialize the record of this method type if needed
+            if(orbit_record(m)%is_recorded)then
+                orbit_record(m)%is_recorded = .false.
+                orbit_record(m)%psi_index = 0
+                orbit_record(m)%lambda_index = 0
+                orbit_record(m)%ell_index = 0
+                deallocate( orbit_record(m)%psi, &
+                    orbit_record(m)%ell, &
+                    orbit_record(m)%fpsi, &
+                    orbit_record(m)%lambda, &
+                    orbit_record(m)%fs )
+            endif
+        enddo
+        if(debug) print *,"Energy record reset done"
+        return
+    end subroutine reset_orbit_record
+
 
     !=======================================================================
     subroutine output_torque_ascii(n,zi,mi,electron,method,prof,profl)
@@ -2102,71 +2063,7 @@ module torque
         return
     end subroutine output_torque_netcdf
 
-    !=======================================================================
-    subroutine output_fluxfun_ascii(n,zi,mi,electron,method,table)
-    !-----------------------------------------------------------------------
-    !*DESCRIPTION:
-    !   Write ascii flux function profile files.
-    !
-    !*ARGUMENTS:
-    !    n : integer
-    !        Toroidal mode number for header
-    !    zi : integer
-    !        Ion charge for header
-    !    mi : integer
-    !        Ion mass for header
-    !    electron : logical
-    !        Modifies file name to indicate run was for electrons
-    !    method : character
-    !        Inserted into file name
-    !    table : real 2D
-    !       Table of values writen to file
-    !
-    !-----------------------------------------------------------------------
-        implicit none
-        integer, intent(in) :: n, zi, mi
-        character(*), intent(in) :: method
-        logical :: electron
-        real(r8), dimension(:,:), intent(in) :: table
 
-        integer :: i,out_unit
-        character(32) :: nstring,table_fmt,label_fmt
-        character(128) :: file
-
-        ! open and prepare file as needed
-        out_unit = get_free_file_unit(-1)
-        write(nstring,'(I8)') n
-        file = "pentrc_"//trim(method)//"_eqprofiles_n"//trim(adjustl(nstring))//".out"
-        if(electron) file = file(:7)//"e_"//file(8:)
-        open(unit=out_unit,file=file,status="unknown",action="write")
-
-        ! write header material
-        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-        write(out_unit,*) " Equilibrium profiles."
-        write(out_unit,*) " - All energy dependent quantities are taken at E/T unity."
-        write(out_unit,'(1/,1(a10,I4))') "n =",n
-        write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
-        write(out_unit,'(3(a10,es17.8E3))') "R0 =",ro,"B0 =",bo,"chi1 =",chi1
-        !write(out_unit,'(1/,a26,2(a10,es16.8E3),1/)') " Common normalizations:",&
-        !    "    bbar = ",ro/sqrt(2.0/(mi*mp)),"    dbar = ",zi*e*bo*ro**2 ! needs T_is
-
-        ! write column headers
-        write(label_fmt,*) '(1/,',nfluxfuns,'(a17))'
-        write(out_unit,label_fmt) "psi_n","eps_r","n_i","n_e",&
-            "T_i","T_e","omega_E","logLambda","nu_i","nu_e","q","dconPmu_0","dvdpsi_n",&
-            "omega_N","omega_T","omega_trans","omega_gyro","RLARomega_b","RLARomega_d",&
-            "<(deltaB_L/B)^2>","<(divxprp)^2>"!/J??
-
-        ! write tables
-        write(table_fmt,*) '(',nfluxfuns,'(es17.8E3))'
-        do i=1,size(table,dim=2)
-            write(out_unit,table_fmt) table(:,i)
-        enddo
-
-        close(out_unit)
-        return
-    end subroutine output_fluxfun_ascii
-    
     !=======================================================================
     subroutine output_orbit_netcdf(n,op_label)
     !-----------------------------------------------------------------------
@@ -2320,43 +2217,6 @@ module torque
 
 
     !=======================================================================
-    subroutine reset_orbit_record()
-    !-----------------------------------------------------------------------
-    !*DESCRIPTION:
-    !   Deallocate records.
-    !
-    !*ARGUMENTS:
-    !
-    !
-    !-----------------------------------------------------------------------
-        implicit none
-
-        integer :: m
-        logical :: debug = .false.
-
-        if(debug) print *,"Energy record resetting..."
-
-        ! find the right record
-        do m=1,nmethods
-            ! initialize the record of this method type if needed
-            if(orbit_record(m)%is_recorded)then
-                orbit_record(m)%is_recorded = .false.
-                orbit_record(m)%psi_index = 0
-                orbit_record(m)%lambda_index = 0
-                orbit_record(m)%ell_index = 0
-                deallocate( orbit_record(m)%psi, &
-                    orbit_record(m)%ell, &
-                    orbit_record(m)%fpsi, &
-                    orbit_record(m)%lambda, &
-                    orbit_record(m)%fs )
-            endif
-        enddo
-        if(debug) print *,"Energy record reset done"
-        return
-    end subroutine reset_orbit_record
-
-
-    !=======================================================================
     subroutine output_orbit_ascii(n, op_label)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
@@ -2423,67 +2283,6 @@ module torque
         return
     end subroutine output_orbit_ascii
 
-    !=======================================================================
-    subroutine output_bouncefun_ascii(n,zi,mi,electron,method,table)
-    !-----------------------------------------------------------------------
-    !*DESCRIPTION:
-    !   Write ascii bounce function files.
-    !
-    !*ARGUMENTS:
-    !    n : integer
-    !        Toroidal mode number for header
-    !    zi : integer
-    !        Ion charge for header
-    !    mi : integer
-    !        Ion mass for header
-    !    electron : logical
-    !        Modifies file name to indicate run was for electrons
-    !    method : character
-    !        Inserted into file name
-    !    table : real 2D
-    !       Table of values writen to file
-    !
-    !-----------------------------------------------------------------------
-        implicit none
-        integer, intent(in) :: n, zi, mi
-        character(*), intent(in) :: method
-        logical :: electron
-        real(r8), dimension(:,:), intent(in) :: table
-
-        integer :: i,out_unit
-        character(32) :: nstr,lstr,label_fmt,table_fmt
-        character(128) :: file
-
-        ! open and prepare file as needed
-        out_unit = get_free_file_unit(-1)
-        write(nstr,'(I8)') n
-        file = "pentrc_"//trim(method)//"_bounce_n"//trim(adjustl(nstr))//".out"
-        if(electron) file = file(:7)//"e_"//file(8:)
-        open(unit=out_unit,file=file,status="unknown",action="write")
-
-        ! write header material
-        write(out_unit,*) "PERTURBED EQUILIBRIUM NONAMBIPOLAR TRANSPORT CODE:"
-        write(out_unit,*) " Bounce average functions"
-        write(out_unit,'(1/,1(a10,I4))') "n =",n
-        write(out_unit,'(2(a10,es17.8E3))') "Ze =",zi*e,"mass =",mi*mp
-        write(out_unit,'(3(a10,es17.8E3))') "R0 =",ro,"B0 =",bo,"chi1 =",chi1
-
-        ! write column headers
-        write(label_fmt,*) '(1/,',nthetafuns,'(a17))'
-        write(out_unit,label_fmt) "i_theta","i_Lambda","ell","psi_n", &
-            "Lambda","theta_n","theta","dtheta", &
-            "omega_b","omega_D","real(deltaJ)","imag(deltaJ)","h_E","h_D", &
-            "real(deltaB)","imag(deltaB)","real(divxprp)","imag(divxprp)"
-
-        ! write tables
-        write(table_fmt,*) '(',nthetafuns,'(es17.8E3))'
-        do i=1,size(table,dim=2)
-            write(out_unit,table_fmt) table(:,i)
-        enddo
-
-        close(out_unit)
-        return
-    end subroutine output_bouncefun_ascii
 
 end module torque
 

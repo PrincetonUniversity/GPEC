@@ -48,7 +48,7 @@
     ftmm_flag = .false.                 ! Full torque mxm matrix calculation (t,p also available)
     fwmm_flag = .false.                 ! Full dW mxm matrix calculation (t,p also available)
 
-    output_ascii = .true.               ! Write ascii output files
+    output_ascii = .false.              ! Write ascii output files
     output_netcdf = .true.              ! Write netcdf output files
 
     xlmda_out = .false.                 ! Output energy and pitch integrands on psi_out
