@@ -238,6 +238,11 @@ c-----------------------------------------------------------------------
          power_bpin=0
          power_rin=0
          power_rcin=0
+      CASE("park")
+         power_bin=1
+         power_bpin=0
+         power_rin=0
+         power_rcin=0
       CASE("polar")
          power_bin=0
          power_bpin=1
@@ -265,6 +270,11 @@ c-----------------------------------------------------------------------
          power_rcout=0
       CASE("boozer")
          power_bout=2
+         power_bpout=0
+         power_rout=0
+         power_rcout=0
+      CASE("park")
+         power_bout=1
          power_bpout=0
          power_rout=0
          power_rcout=0

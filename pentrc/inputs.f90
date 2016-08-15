@@ -400,6 +400,8 @@ module inputs
                 powin=(/0,1,0,0/)
             CASE("boozer")
                 powin=(/2,0,0,0/)
+            CASE("park")
+                powin=(/1,0,0,0/)  
             CASE("polar")
                 powin=(/0,1,0,1/)
             CASE("other")
@@ -409,7 +411,7 @@ module inputs
                 endif
             CASE DEFAULT
                 stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
-                    & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
+                    & 'park','polar', or 'other'. Setting to 'default' uses idconfile jac_type."
         END SELECT
         if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
         if(jac_in/=jac_type .or. tmag_in/=1)then
@@ -616,6 +618,8 @@ module inputs
                 powin=(/0,1,0,0/)
             CASE("boozer")
                 powin=(/2,0,0,0/)
+            CASE("park")
+                powin=(/1,0,0,0/)  
             CASE("polar")
                 powin=(/0,1,0,1/)
             CASE("other")

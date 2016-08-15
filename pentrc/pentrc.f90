@@ -145,7 +145,6 @@ program pentrc
         
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug
-
     
     ! read interface and set modules
     open(unit=1,file="pentrc.in",status="old")
