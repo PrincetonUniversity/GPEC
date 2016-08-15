@@ -201,7 +201,7 @@ module inputs
         integer, parameter :: nkin = 100
         integer :: i,out_unit, tshape(2)
         real(r8) :: psi
-        real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wphi,wpefac
+        real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wpefac
         type(spline_type) :: tmp
         
         call readtable(file,table,titles,verbose,write_log)
@@ -356,7 +356,7 @@ module inputs
         allocate(lagbmns(npsi,mpert),divxmns(npsi,mpert))
         firstnm = nunique(table(1:nm,2))
         if(firstnm==nm)then ! written with psi as outer loop
-            ms = table(1:nm,2)
+            ms = INT(table(1:nm,2))
             psi = (/(table(j,1),j=1,npsi*nm,nm)/)
             if(debug) print *,"psi outerloop"
             lagbmni(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/2,1/))&
@@ -366,7 +366,7 @@ module inputs
             kapxmni(:,:) = reshape(table(:,9),(/npsi,nm/),order=(/2,1/))&
                     +xj*reshape(table(:,10),(/npsi,nm/),order=(/2,1/))
         else ! written with m as outer loop
-            ms = (/(table(i,2),i=1,npsi*nm,npsi)/)
+            ms = (/(INT(table(i,2)),i=1,npsi*nm,npsi)/)
             psi = table(1:npsi,1)
             if(debug) print *,"m outerloop"
             lagbmni(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/1,2/))&
@@ -575,7 +575,7 @@ module inputs
         allocate(xmp1mns(npsi,mpert),xspmns(npsi,mpert),xmsmns(npsi,mpert))
         firstnm = nunique(table(1:nm,2))
         if(firstnm==nm)then ! written with psi as outer loop
-            ms = table(1:nm,2)
+            ms = INT(table(1:nm,2))
             psi = (/(table(j,1),j=1,npsi*nm,nm)/)
             if(debug) print *,"psi outerloop"
             !if(debug) print *,"ms = ",ms
@@ -587,7 +587,7 @@ module inputs
             xmsmni(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/2,1/))&
                     +xj*reshape(table(:,8),(/npsi,nm/),order=(/2,1/))
         else ! written with m as outer loop
-            ms = (/(table(i,2),i=1,npsi*nm,npsi)/)
+            ms = (/(INT(table(i,2)),i=1,npsi*nm,npsi)/)
             psi = table(1:npsi,1)
             if(debug) print *,"m outerloop"
             !if(debug) print *,"ms = ",ms
@@ -716,7 +716,6 @@ module inputs
         ! declare local variables
         logical :: debug,set_dbdx
         integer :: i,j,ims,istrt_psi,istop_psi,npsi,nm, out_unit
-        real(r8) :: r_mjr,r_mnr,jac,g12,g13,g22,g23,g33,gfac
         complex(r8), dimension(0:mthsurf) :: divxfun,dbobfun
         complex(r8), dimension(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
         complex(r8), dimension(:,:), allocatable :: jbbkapxmns,jbbdivxmns,jbbdbobmns
@@ -898,7 +897,6 @@ module inputs
         ! declare variables            
         complex(r8), dimension(mstep,mpert) :: lagbpar,divxprp
         integer :: i,ms,mp,iout,istep,in_unit,out_unit
-        integer, dimension(:), allocatable :: mtemp
         type(cspline_type) :: outspl
     
           

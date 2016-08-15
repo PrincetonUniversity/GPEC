@@ -235,10 +235,8 @@ module torque
         real(r8), dimension(nfluxfuns), optional, intent(out) :: op_ffuns
         complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: op_wmats
         ! declare local variables
-        logical :: erecord, orecord, lambda_output_flag
-        character(8) :: nstring,lstring
-        character(32):: file
-        integer :: i,j,k,s,ibmin,ibmax,out_unit,sigma,ilmda,iqty
+        logical :: erecord, orecord
+        integer :: i,j,k,s,ibmin,ibmax,sigma,ilmda,iqty
         integer, dimension(nlambda_out) :: ilambda_out
         real(r8) :: chrg,mass,welec,wdian,wdiat,wphi,wtran,wgyro,&
             wbhat,wdhat,nuk,nueff,q,epsr,bmin,bmax,lnq,theta,&
@@ -417,8 +415,8 @@ module torque
                         divx = sum( divx_m%f(:)*expm ) ! nabla.xi_perp
                         kapx = -0.5*(dbob+divx)
                         cglspl%xs(i) = theta
-                        cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
-                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)
+                        cglspl%fs(i,1) = rzphi%f(4)*abs(divx)**2
+                        cglspl%fs(i,2) = rzphi%f(4)*abs(divx+3.0*kapx)**2
                     enddo
                     call spline_fit(cglspl,"periodic")
                     call spline_int(cglspl)
@@ -1092,8 +1090,6 @@ module torque
         ! flux/diffusivity profiles
         do i=0,mx
             x = xs(i+istrt)
-            dky = tphi_spl%fs(i,:)
-            y = tphi_spl%fsi(i,:)
             call spline_eval(sq,x,0)
             call spline_eval(kin,x,1)
             call spline_eval(geom,x,1)
@@ -1196,7 +1192,7 @@ module torque
         character(*) :: method
         ! declare variables
         integer, parameter :: maxsteps = 10000
-        integer :: i,j,l,s
+        integer :: j,l,s
         real(r8) :: xlast,wdcom,dxcom,chrg,drive
         real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: gam,chi
@@ -1204,7 +1200,7 @@ module torque
         complex(r8), dimension(maxsteps,mpert**2,6) :: kel_flat_mats
         character(8) :: methcom
         ! declare lsode input variables
-        integer  iopt, iout, istate, itask, itol, mf, iflag,neqarray(6),&
+        integer  iopt, istate, itask, itol, mf, iflag,neqarray(6),&
             neq,liw,lrw
         integer, dimension(:), allocatable :: iwork
         real*8 :: x,xout
@@ -1378,8 +1374,6 @@ module torque
         logical :: electron=.false.,first=.true.
         character(8) :: method
         
-        integer :: i,j
-        !complex(r8), dimension (mpert,mpert,6,-neq(3):neq(3)) :: wtw_l
         complex(r8), dimension (mpert,mpert,6) :: wtw_l
                 
         common /tcom/ wdfac,xfac,method,ffuns
@@ -1817,19 +1811,17 @@ module torque
         integer, intent(in) :: n,nl,zi,mi
         logical, intent(in) :: electron
 
-        integer :: i,j,s,nrow,ncol,nrowl,ncoll,np
+        integer :: i,j,s,np
         real(r8) :: chrg,mass,psi,q
         real(r8), dimension(:), allocatable :: &
             epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
             welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat
-        real(r8), dimension(:,:), pointer :: psi_record
-        real(r8), dimension(:,:,:), pointer :: ell_record
 
         integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
             v_id,g_id,c_id,d_id,t_id, b_id,x_id, er_id,q_id,mp_id, &
             ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ll_id,we_id, &
             wn_id,wt_id,ws_id,wg_id,wb_id,wd_id
-        character(16) :: nstring,suffix,method,gridtype
+        character(16) :: nstring,suffix
         character(128) :: ncfile
         
         print *,"Writing output to netcdf"
@@ -2043,7 +2035,7 @@ module torque
                         call check( nf90_put_att(ncid, t_id, "units", "Nm") )
                     endif
                     call check( nf90_put_att(ncid, b_id, "long_name", "Surface Average Lagrangian Field Modulation") )
-                    call check( nf90_put_att(ncid, x_id, "long_name", "Surface Average Divergence of the Perpendicular Displacement") )
+                    call check( nf90_put_att(ncid, x_id, "long_name", "Surface Average Perp. Displacement Divergence") )
                     call check( nf90_enddef(ncid) )
                     ! Put in variables
                     call check( nf90_put_var(ncid, p_id, torque_record(j,i)%ell_record(1,1,:)) )
@@ -2089,8 +2081,8 @@ module torque
         integer, dimension(:), allocatable :: ell_out
         real(r8), dimension(:), allocatable :: psi_out
 
-        integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
-            le_id,a_did,a_id,x_did,x_id,aa_id,xx_id,dx_id, &
+        integer :: ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
+            a_did,a_id,x_did,x_id,aa_id,xx_id,dx_id, &
             dj_id,db_id,xi_id,wb_id,wd_id,he_id,hd_id,pq_id,at_id
         character(16) :: nstring,suffix,label
         character(128) :: ncfile

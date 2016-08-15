@@ -139,11 +139,11 @@ module energy_integration
         logical, intent(in), optional :: op_record
         ! declare variables
         integer :: i, j, xout_unit
-        real(r8) :: l,wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
+        real(r8) :: wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
         real(r8), dimension(6,maxstep) :: xprofile
         logical :: record_this
         ! declare lsode input variables
-        integer  iopt, iout, istate, itask, itol, mf, iflag
+        integer  iopt, istate, itask, itol, mf, iflag
         integer, parameter ::   &
             neq(1) = 2,         &   ! true number of equations
             liw  = 20 + neq(1), &   ! for mf 22 ! only uses 20 if mf 10
@@ -565,7 +565,7 @@ module energy_integration
         integer, dimension(:), allocatable :: ell_out
         real(r8), dimension(:), allocatable :: psi_out
 
-        integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
+        integer :: ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
             le_id,a_did,a_id,x_did,x_id,aa_id, xx_id,dt_id, it_id
         character(16) :: nstring,suffix,label
         character(128) :: ncfile
@@ -652,9 +652,12 @@ module energy_integration
                 call check( nf90_redef(ncid) )
                 call check( nf90_def_var(ncid, "Lambda"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), aa_id) )
                 call check( nf90_def_var(ncid, "ell_eff"//trim(suffix), nf90_double, (/a_did,l_did,p_did/), le_id) )
-                call check( nf90_def_var(ncid, "x"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), xx_id) )
-                call check( nf90_def_var(ncid, "T_psi_Lambda_x"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), dt_id) )
-                call check( nf90_def_var(ncid, "T_psi_Lambda"//trim(suffix), nf90_double, (/i_did,x_did,a_did,l_did,p_did/), it_id) )
+                call check( nf90_def_var(ncid, "x"//trim(suffix), nf90_double, &
+                    (/i_did,x_did,a_did,l_did,p_did/), xx_id) )
+                call check( nf90_def_var(ncid, "T_psi_Lambda_x"//trim(suffix), nf90_double, &
+                    (/i_did,x_did,a_did,l_did,p_did/), dt_id) )
+                call check( nf90_def_var(ncid, "T_psi_Lambda"//trim(suffix), nf90_double, &
+                    (/i_did,x_did,a_did,l_did,p_did/), it_id) )
                 call check( nf90_enddef(ncid) )
                 ! Put in variables
                 if(debug) print *, "  storing "//trim(methods(m))

@@ -26,7 +26,6 @@ program pentrc
     ! harvest variables
     include 'harvest_lib.inc'
     integer :: ierr
-    CHARACTER(LEN=50000) :: hnml
     character(len=65507) :: hlog
     character, parameter :: nul = char(0)
 

@@ -154,7 +154,7 @@ module pitch_integration
         complex(r8) :: xint
         real(r8), dimension(nfs,maxstep) :: fs
         ! declare lsode input variables
-        integer  iopt, iout, istate, itask, itol, mf, iflag, neqarray(1), &
+        integer  iopt, istate, itask, itol, mf, iflag, neqarray(1), &
             neq, liw, lrw
         integer, dimension(:), allocatable :: iwork
         real*8 :: x,xout
@@ -553,8 +553,7 @@ module pitch_integration
         integer, parameter :: nk = 50
         integer :: i,j,mstart,mpert
         real(r8) :: kappa
-        type(spline_type) :: kspl
-        
+
         kappaintgnd = 0
         mpert = size(marray,1)
         mstart = lbound(marray,1)
@@ -708,7 +707,7 @@ module pitch_integration
         integer, dimension(:), allocatable :: ell_out
         real(r8), dimension(:), allocatable :: psi_out
 
-        integer :: status, ncid, i_did, i_id, &
+        integer :: ncid, i_did, i_id, &
             p_did, p_id, l_did, l_id, a_did, a_id, &
             aa_id, dt_id, it_id, wb_id, wd_id, jj_id, &
             tl_id, rl_id, zl_id, tu_id, ru_id, zu_id

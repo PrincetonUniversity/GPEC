@@ -403,16 +403,14 @@ module utilities
         character(32), dimension(:), allocatable :: titles,dummies
         logical, optional :: verbose,debug
         ! declare local variables
-        integer :: i,j,k,l,in_unit,iostat,startline,endline,ncol
+        integer :: i,j,k,l,in_unit,startline,endline,ncol
         character(1024) :: line
         character(10) :: numbers = '1234567890'
         character(2) :: signs = '+-'
-        logical :: fexists,isnum
+        logical :: isnum
         
         ! setup
         if(.not. present(debug)) debug = .false.
-        !inquire(file=file,exist=fexists)
-        !if(.not. fexists) stop "File does not exist"
         if(verbose) print *, "Reading table from file: "
         if(verbose) print *, '  '//trim(file)
         if(allocated(table)) deallocate(table)
@@ -506,8 +504,7 @@ module utilities
         logical, optional :: op_sorted
         ! declare local variables
         logical,dimension(:), allocatable::mask
-        real(r8),dimension(:), allocatable::tmp
-        integer::i,j,num
+        integer::i,num
         logical :: sorted
         sorted = .FALSE.
         if(present(op_sorted)) sorted=op_sorted
@@ -556,7 +553,7 @@ module utilities
         real(r8), dimension(1:), intent(in) :: array
         real(r8) :: median
         real(r8), dimension(:), allocatable :: temp
-        integer :: i,n
+        integer :: n
         
   
         ! make a copy of array that is sorted min to max
@@ -705,7 +702,7 @@ module utilities
     !-----------------------------------------------------------------------
         implicit none
         ! declarations
-        integer :: i, isize
+        integer :: isize
         real(r8), intent(in) :: element
         real(r8), dimension(:), allocatable, intent(inout) :: list
         real(r8), dimension(:), allocatable :: tmp

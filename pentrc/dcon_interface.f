@@ -103,7 +103,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: lpsixy
       CHARACTER(128) :: message
       CHARACTER(2) :: sn
-      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,i,in_unit
+      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,in_unit
       REAL(r8) :: sfac0
 
       REAL(r4), DIMENSION(:,:), ALLOCATABLE :: rgarr,zgarr,psigarr
@@ -433,7 +433,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ifix,jfix,kfix,ieq,info
+      INTEGER :: istep,ifix,jfix,kfix,info
       INTEGER, DIMENSION(mpert) :: ipiv
       COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
@@ -514,10 +514,10 @@ c-----------------------------------------------------------------------
       CALL bicube_alloc(eqfun,mpsi,mtheta,3)
       eqfun%xs=rzphi%xs
       eqfun%ys=rzphi%ys
-      eqfun%name="equilibrium funs"
-      eqfun%xtitle="psi"
+      eqfun%name="eqfuns" ! 1D equilibrium functions
+      eqfun%xtitle="psi  "
       eqfun%ytitle="theta"
-      eqfun%title=(/" modb  "," divx1 "," divx2 "/)      
+      eqfun%title=(/"modb  ","divx1 ","divx2 "/)
 c-----------------------------------------------------------------------
 c     begin loop over nodes.
 c-----------------------------------------------------------------------
@@ -658,7 +658,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(128) :: message
       INTEGER :: ipert,jpert,m1,m2,m,dm,info,iqty
-      REAL(r8) :: jtheta,nq,singfac1,singfac2,rm
+      REAL(r8) :: jtheta,nq,singfac1,singfac2
       REAL(r8) :: q,q1,p,p1
       INTEGER, DIMENSION(mpert) :: ipiva
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
@@ -841,7 +841,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER :: ipsi,istep,ipert,jpert,itheta,dm,m1,m2
+      INTEGER :: ipsi,ipert,jpert,itheta,dm,m1,m2
       REAL(r8) :: psi,angle,rs,
      $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht,
      $     p1,q,rfac,eta,jac,jac1
@@ -875,8 +875,8 @@ c-----------------------------------------------------------------------
       fmodb%name="fmodb"
       fmodb%xtitle=" psi  "
       fmodb%ytitle="theta "
-      fmodb%title=(/" smat  "," tmat  "," xmat  ",
-     $     " ymat1 "," ymat2 "," zmat1 ", " zmat2 "," zmat3 "/)
+      fmodb%title=(/" smat "," tmat "," xmat ",
+     $     "ymat1 ","ymat2 ","zmat1 ","zmat2 ","zmat3 "/)
 c-----------------------------------------------------------------------
 c     computes fourier series of geometric tensors.
 c-----------------------------------------------------------------------
@@ -1059,7 +1059,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(amp), INTENT(IN) :: amf
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
-      INTEGER :: i,ising,itheta
+      INTEGER :: i,itheta
       REAL(r8) :: thetai,jarea,
      $      rfac,eta,jac,bpfac,btfac,bfac,fac
 

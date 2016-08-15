@@ -22,8 +22,8 @@ module diagnostics
     use special, only: wofz,ellipe,ellipk
     use spline_mod, only: spline_type,spline_alloc,spline_fit
     use cspline_mod, only: cspline_type,cspline_alloc,cspline_fit
-    use energy_integration
-    use pitch_integration, only: lambdaintgrl_lsode
+    use energy_integration, only : xintgrl_lsode,output_energy_netcdf,xf0type,xnutype
+    use pitch_integration, only: lambdaintgrl_lsode, output_pitch_netcdf
     
     implicit none
     private
@@ -65,11 +65,10 @@ module diagnostics
         ! declare internal variables      
         real(r8) :: wn=0.0, wt=0.0, we=1e4, wd=1e2, wb=1e4, psi=0, lambda=0, &
             nuk=1e2, lnq = 0
-        integer :: n = 1, nl = 0, ell = 0
-        character(32) :: lbl = "diagnostic_"
+        integer :: n = 1, ell = 0
         real(r8) :: zr,zi,wr,wi
         complex(r8) :: xint,analytic,omegan,omegastara,omegastarb,zfun,z
-        logical :: wflag,electron=.false.
+        logical :: wflag
         
         print *,"------------------------------------------------------"
         print *,"Energy integration diagnostics"
@@ -90,7 +89,6 @@ module diagnostics
         xf0type = "maxwellian"
         xnutype = "krook"
         xint = xintgrl_lsode(wn,wt,we,wd,wb,nuk,ell,lnq,n,psi,lambda,"fcgl",op_record=.true.)
-        !call output_energy_record(n,0,0,electron,"diagnostic_krook")
         call output_energy_netcdf(n,op_label="diagnostic_krook")
         omegan = (n*we+xj*nuk)/(n*wd)
         omegastara = (n*wn-1.5*n*wt-xj*nuk)/(n*wd)
@@ -153,10 +151,8 @@ module diagnostics
         integer, parameter :: nlmda = 1000
         real(r8) :: wn=0.0, wt=0.0, we=1e4, wd=1e2,wb=1e4,nuk=1e2, &
             bobmax,epsr,lmax,q,psi,rex,imx
-        logical :: electron=.false.
-        integer :: i,n=1,l=0,mi=2,zi=1,nl=0
+        integer :: i,n=1,l=0
         real(r8), dimension(0:nlmda) :: kappa2,lmda
-        character(32) :: lbl = "diagnostic_"
         complex(r8), dimension(:), allocatable :: lint
         type(cspline_type) :: bdf_spl
         type(spline_type) :: turns
@@ -197,7 +193,6 @@ module diagnostics
         turns%xs(:) = lmda(:)
         turns%fs = 0
         call spline_fit(turns,'extrap')
-        !print *,wn,wt,we,nuk,bobmax,epsr,l,n,psi,lbl
         lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n, &
             rex,imx,psi,turns,'rlar',op_record=.true.)
         print *,"Reduced LAR approximations: "
@@ -214,7 +209,7 @@ module diagnostics
         lint = lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,bdf_spl,l,n, &
             rex,imx,psi,turns,'clar',op_record=.true.)
         call output_energy_netcdf(n,op_label="diagnostic_pitch")
-        !call output_pitch_netcdf(n,nl,zi,mi,electron,"diagnostic_pitch")
+        call output_pitch_netcdf(n,op_label="diagnostic_pitch")
         print *,"Circular LAR approximations: "
         print *," -> numerical  ",lint
         
