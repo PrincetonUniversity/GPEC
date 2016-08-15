@@ -294,6 +294,12 @@ program pentrc
                     print *,method//" - "//TRIM(docs(m))
                 ENDIF
                 if ((method=="clar" .or. method=="rlar")) then ! .and. fnml%nqty==0) then
+                    IF (TRIM(data_dir)=='default') THEN
+                        CALL getenv('GPECHOME',data_dir)
+                        IF(LEN(TRIM(data_dir))==0) stop &
+                            "ERROR: Use of fefault data directory requires GPECHOME environment variable"
+                        data_dir = TRIM(data_dir)//'/pentrc'
+                    ENDIF
                     call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
                 endif
                 tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
