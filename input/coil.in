@@ -1,42 +1,42 @@
 &COIL_CONTROL
-	ceq_type="efit"				! eq_type from equil.in used in DCON run
+    ceq_type="efit"             ! eq_type from equil.in used in DCON run
 
-	data_dir="default"			! Directory from which <machine>_<coil_name>.dat files are read
-	machine="d3d"				! Choose from: nstx, d3d, kstar, iter
-	ip_direction="positive"			! Set positive for CCW or negative for CW from a top down view
-	bt_direction="negative"			! Set positive for CCW or negative for CW from a top down view
-	coil_num=2				! Total number of coil sets activated
+    data_dir=""                 ! Directory from which <machine>_<coil_name>.dat files are read
+    machine="d3d"               ! Choose from: nstx, d3d, kstar, iter
+    ip_direction="positive"     ! Set positive for CCW or negative for CW from a top down view
+    bt_direction="negative"     ! Set positive for CCW or negative for CW from a top down view
+    coil_num=2                  ! Total number of coil sets activated
 
-	cmpsi=64				! ?? Why do we need this is only care about psi_lim??
-	cmtheta=480				! Number of poloidal gridpoints (uses DCON jac_type??)
-	cmzeta=40				! Number of toroidal gridpoints (uses DCON jac_type??)
+    cmpsi=64                    ! ?? Why do we need this is only care about psi_lim??
+    cmtheta=480                 ! Number of poloidal gridpoints (uses DCON jac_type??)
+    cmzeta=40                   ! Number of toroidal gridpoints (uses DCON jac_type??)
 
 ! Array values should be specified for each of the coil arrays to be activated.
 ! The supported coil sets (number of coils) include...
-! For nstx:	rwmef(6),tfef(12),pf5ef(2),hhfw(24),[NSTXU/NCC] upf5ef(2),ppu(12),ppl(12),psu(12)
-! For d3d:	iu(6),il(6),c(6),tbm_solenoid(1),tbm_racetrack(1)
+! For nstx:    rwmef(6),tfef(12),pf5ef(2),hhfw(24),[NSTXU/NCC] upf5ef(2),ppu(12),ppl(12),psu(12)
+! For d3d:    iu(6),il(6),c(6),tbm_solenoid(1),tbm_racetrack(1)
 ! For kstar:    fecu(4),fecm(4),fecl(4)
-! For iter:	efcu(6),efcm(6),efcl(6),bl2u(9),bl2m(9),bl2l(9),avvu(9),avvm(9),avvl(9)
+! For iter:    efcu(6),efcm(6),efcl(6),bl2u(9),bl2m(9),bl2l(9),avvu(9),avvm(9),avvl(9)
 ! For mast:     mu(6),ml(12)
 ! For rfxmod:   up(48),down(48),ext(48),int(48)
 
-	coil_name(1)="iu"			! Name of first coil set
-	coil_cur(1,1)= 1000.0			! Current (A) in first coil of first set
-	coil_cur(1,2)= 500.0			! Current (A) in second coil of first set, etc.
-	coil_cur(1,3)=-500.0
-	coil_cur(1,4)=-1000.0
-	coil_cur(1,5)=-500.0
-	coil_cur(1,6)= 500.0
+    coil_name(1)="iu"            ! Name of first coil set
+    coil_cur(1,1)= 1000.0        ! Current (A) in first coil of first set
+    coil_cur(1,2)= 500.0         ! Current (A) in second coil of first set, etc.
+    coil_cur(1,3)=-500.0
+    coil_cur(1,4)=-1000.0
+    coil_cur(1,5)=-500.0
+    coil_cur(1,6)= 500.0
 
-	coil_name(2)="il" 
-	coil_cur(2,2)= 1000.0
-	coil_cur(2,3)= 500.0
-	coil_cur(2,4)=-500.0
-	coil_cur(2,5)=-1000.0
-	coil_cur(2,6)=-500.0
-	coil_cur(2,1)= 500.0
+    coil_name(2)="il" 
+    coil_cur(2,2)= 1000.0
+    coil_cur(2,3)= 500.0
+    coil_cur(2,4)=-500.0
+    coil_cur(2,5)=-1000.0
+    coil_cur(2,6)=-500.0
+    coil_cur(2,1)= 500.0
 
 /
 &COIL_OUTPUT
-	ipec_interface=t			! Provides external field to IPEC
+    ipec_interface=t            ! Provides external field to IPEC
 /
