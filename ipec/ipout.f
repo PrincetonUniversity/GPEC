@@ -4873,7 +4873,7 @@ c-----------------------------------------------------------------------
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,ra_id,rl_id,
      $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,sm_id,ex_id,et_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id,
-     $   etf_id,ftf_id,exf_id,fxf_id
+     $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
       REAL(r8), DIMENSION(mpert) :: singfac
@@ -4895,7 +4895,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(mpert) :: xvals,wvals,rvals,pvals,avals,
      $    rlvals,sengys,vengys,pengys
       REAL(r8), DIMENSION(msing) :: svals
-      COMPLEX(r8), DIMENSION(mpert,mpert)::xvecs,wvecs,rvecs,pvecs,avecs
+      COMPLEX(r8), DIMENSION(mpert,mpert)::xvecs,wvecs,rvecs,pvecs,
+     $    avecs,wmat,rmat,pmat
       COMPLEX(r8), DIMENSION(mpert,msing) :: svecs
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: xveco,wveco,rveco,pveco
       COMPLEX(r8), DIMENSION(lmpert,msing) :: sveco
@@ -4979,7 +4980,8 @@ c-----------------------------------------------------------------------
       mat = permeabmats(resp_index,:,:)
       wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wvecs),mat)
       ! convert to bsqrt(A)
-      wvecs=MATMUL(MATMUL(sqrta,wvecs),sqrta)*2*mu0
+      wmat = MATMUL(MATMUL(sqrta,wvecs),sqrta)*2*mu0
+      wvecs = wmat
       ! get eigenvalues and eigenvectors
       work = 0
       rwork = 0
@@ -5021,7 +5023,8 @@ c-----------------------------------------------------------------------
       rvecs = 0
       rvecs(i:j,i:j) = reluctmats(resp_index,i:j,i:j)
       ! convert to bsqrt(A)
-      rvecs=MATMUL(MATMUL(sqrta,rvecs),sqrta)
+      rmat = MATMUL(MATMUL(sqrta,rvecs),sqrta)
+      rvecs = rmat
       work = 0
       rwork = 0
       lwork=2*mpert-1
@@ -5043,8 +5046,8 @@ c-----------------------------------------------------------------------
       mat = 0
       mat(i:j,i:j) = permeabmats(resp_index,i:j,i:j)
       ! convert to bsqrt(A)
-      mat = MATMUL(MATMUL(sqrta,mat),sqrta)
-      mat = TRANSPOSE(mat)
+      pmat = MATMUL(MATMUL(sqrta,mat),sqrta)
+      mat = TRANSPOSE(pmat)
       worksvd=0
       rworksvd=0
       lwork=3*mpert
@@ -5200,28 +5203,32 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(mncid,"mode_W",nf90_int,wdid,mw_id))
          CALL check( nf90_put_att(mncid, mw_id ,"long_name",
      $    "Energy-norm external flux energy eigenmode index") )
-         CALL check( nf90_def_var(mncid,"W_x_eigenvector",
+         CALL check( nf90_def_var(mncid,"W_xe",
+     $               nf90_double,(/mdid,wdid,idid/),wm_id) )
+         CALL check( nf90_put_att(mncid,wm_id,"long_name",
+     $    "Energy-norm external flux energy matrix") )
+         CALL check( nf90_def_var(mncid,"W_xe_eigenvector",
      $               nf90_double,(/mdid,wdid,idid/),w_id) )
          CALL check( nf90_put_att(mncid,w_id,"long_name",
      $    "Energy-norm external flux energy eigendecomposition") )
-         CALL check( nf90_def_var(mncid,"W_x_eigenvalue",
+         CALL check( nf90_def_var(mncid,"W_xe_eigenvalue",
      $               nf90_double,(/wdid/),we_id) )
          CALL check( nf90_put_att(mncid,we_id,"units","J/(Wb/m)^2") )
          CALL check( nf90_put_att(mncid,we_id,"long_name",
      $    "Energy-norm external flux energy eigenvalues") )
-         CALL check( nf90_def_var(mncid,"W_x_amp",nf90_double,
+         CALL check( nf90_def_var(mncid,"W_xe_amp",nf90_double,
      $                         (/wdid/),wa_id) )
          CALL check( nf90_put_att(mncid,wa_id,"long_name",
      $    "Energy-norm ex. flux energy eigenmode amplifications") )
-         CALL check( nf90_def_var(mncid,"W_x_energyv",nf90_double,
+         CALL check( nf90_def_var(mncid,"W_xe_energyv",nf90_double,
      $                         (/wdid/),wev_id) )
          CALL check( nf90_put_att(mncid,wev_id,"long_name",
      $    "Energy-norm ex. flux energy eigenmode vacuum energy") )
-         CALL check( nf90_def_var(mncid,"W_x_energys",nf90_double,
+         CALL check( nf90_def_var(mncid,"W_xe_energys",nf90_double,
      $                         (/wdid/),wes_id) )
          CALL check( nf90_put_att(mncid,wes_id,"long_name",
      $    "Energy-norm ex. flux energy eigenmode surface energy") )
-         CALL check( nf90_def_var(mncid,"W_x_energyp",nf90_double,
+         CALL check( nf90_def_var(mncid,"W_xe_energyp",nf90_double,
      $                         (/wdid/),wep_id) )
          CALL check( nf90_put_att(mncid,wep_id,"long_name",
      $    "Energy-norm ex. flux energy eigenmode total energy") )
@@ -5230,6 +5237,10 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(mncid,"mode_R",nf90_int,rdid,mr_id))
          CALL check( nf90_put_att(mncid, mr_id ,"long_name",
      $    "Energy-norm external flux reluctance eigenmode index"))
+         CALL check( nf90_def_var(mncid,"R_xe",nf90_double,
+     $               (/mdid,rdid,idid/),rm_id) )
+         CALL check( nf90_put_att(mncid,rm_id,"long_name",
+     $    "Energy-norm external flux reluctance matrix") )
          CALL check( nf90_def_var(mncid,"R_xe_eigenvector",nf90_double,
      $               (/mdid,rdid,idid/),r_id) )
          CALL check( nf90_put_att(mncid,r_id,"long_name",
@@ -5260,6 +5271,10 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(mncid,"mode_P",nf90_int,pdid,mp_id))
          CALL check( nf90_put_att(mncid, mp_id ,"long_name",
      $    "Energy-norm external flux permeability eigenmode index") )
+         CALL check( nf90_def_var(mncid,"P_xe",nf90_double,
+     $               (/mdid,pdid,idid/),pm_id) )
+         CALL check( nf90_put_att(mncid,pm_id,"long_name",
+     $    "Energy-norm external flux permeability matrix") )
          CALL check( nf90_def_var(mncid,"P_xe_eigenvector",nf90_double,
      $               (/mdid,pdid,idid/),p_id) )
          CALL check( nf90_put_att(mncid,p_id,"long_name",
@@ -5305,7 +5320,7 @@ c-----------------------------------------------------------------------
      $                  ms_id) )
             CALL check( nf90_put_att(mncid, ms_id ,"long_name",
      $       "Singular coupling mode index") )
-            CALL check( nf90_def_var(mncid,"C",nf90_double,
+            CALL check( nf90_def_var(mncid,"C_xe",nf90_double,
      $                  (/mdid,sdid,idid/),sc_id) )
             CALL check( nf90_put_att(mncid,sc_id,"long_name",
      $       "Energy normalized external flux singular-coupling") )
@@ -5419,6 +5434,14 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,mw_id,indx) )
          CALL check( nf90_put_var(mncid,mr_id,indx) )
          CALL check( nf90_put_var(mncid,mp_id,indx) )
+
+         ! energy normalized matrices
+         CALL check( nf90_put_var(mncid,wm_id,RESHAPE((/REAL(wmat),
+     $               AIMAG(wmat)/),(/mpert,mpert,2/))) )
+         CALL check( nf90_put_var(mncid,rm_id,RESHAPE((/REAL(rmat),
+     $               AIMAG(rmat)/),(/mpert,mpert,2/))) )
+         CALL check( nf90_put_var(mncid,pm_id,RESHAPE((/REAL(pmat),
+     $               AIMAG(pmat)/),(/mpert,mpert,2/))) )
 
          ! Basis vectors and values
          CALL check( nf90_put_var(mncid,x_id,RESHAPE((/REAL(xvecs),
@@ -5546,6 +5569,7 @@ c-----------------------------------------------------------------------
 
          ! Decomposition of the applied flux
          temp = finmn
+         CALL ipeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
          tempm = MATMUL(CONJG(TRANSPOSE(wvecs)),temp)
          CALL check( nf90_put_var(mncid,wx_id,RESHAPE((/REAL(tempm),
      $               AIMAG(tempm)/),(/mpert,2/))) )
