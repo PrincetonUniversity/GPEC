@@ -19,7 +19,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i,in,resol,
      $     mode,m3mode,lowmode,highmode,filter_modes
-      INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode
+      INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8) :: majr,minr,smallwidth,fp,normpsi
       CHARACTER(8) :: filter_types
@@ -464,12 +464,10 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (singfld_flag) THEN
-         CALL ipout_singfld(mode,xspmn,sing_spot,power_rout,power_bpout,
-     $        power_bout,power_rcout,tmag_out,singcoup_flag)
+         CALL ipout_singfld(mode,xspmn,sing_spot,singcoup_flag)
       ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
-         CALL ipout_vsingfld(power_rout,power_bpout,
-     $        power_bout,power_rcout,tmag_out)
+         CALL ipout_vsingfld()
       ENDIF
       IF (xclebsch_flag) THEN
          CALL ipout_xclebsch(mode,xspmn)
@@ -479,12 +477,10 @@ c-----------------------------------------------------------------------
          CALL ipout_dw_matrix
       ENDIF
       IF (pmodb_flag) THEN
-         CALL ipout_pmodb(mode,xspmn,power_rout,
-     $        power_bpout,power_bout,power_rcout,tmag_out)
+         CALL ipout_pmodb(mode,xspmn)
       ENDIF
       IF (xbnormal_flag) THEN
-         CALL ipout_xbnormal(mode,xspmn,power_rout,
-     $        power_bpout,power_bout,power_rcout,tmag_out)
+         CALL ipout_xbnormal(mode,xspmn)
       ENDIF
       IF (xbtangent_flag) THEN
          CALL ipout_xbtangent(mode,xspmn,power_rout,
@@ -596,8 +592,7 @@ c-----------------------------------------------------------------------
          CALL ipout_control(infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL ipout_singfld(mode,xspmn,sing_spot,power_rout,
-     $        power_bpout,power_bout,power_rcout,tmag_out,.FALSE.)
+         CALL ipout_singfld(mode,xspmn,sing_spot,.FALSE.)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -605,19 +600,31 @@ c-----------------------------------------------------------------------
          
          fxmn=0
          fxmn(m3mode-mlow+1)=fp
+         ! temporary override of output options
+         tmp_outs = (/power_rout,power_bpout,power_bout,power_rcout,
+     $                tmag_out/)
+         power_rout = 0
+         power_bpout = 0
+         power_bout = 2
+         power_rcout = 0
+         tmag_out = 1
          CALL ipeq_fcoords(psilim,fxmn,mfac,mpert,0,0,2,0,1,0)
          CALL ipout_control(infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL ipout_singfld(mode,xspmn,sing_spot,0,0,0,0,1,.FALSE.)
-         CALL ipdiag_xbcontra(mode,xspmn,0,0,0,0,1)
+         CALL ipout_singfld(mode,xspmn,sing_spot,.FALSE.)
          CALL ipdiag_xbcontra(mode,xspmn,0,0,2,0,1)
-         CALL ipout_xbnormal(mode,xspmn,0,0,0,0,1)
-         CALL ipout_xbnormal(mode,xspmn,0,0,2,0,1)
+         CALL ipout_xbnormal(mode,xspmn)
          CALL ipdiag_xbnobo(mode,xspmn,d3_flag)
          CALL ipdiag_radvar
+         ! reset output options
+         power_rout = tmp_outs(1)
+         power_bpout = tmp_outs(2)
+         power_bout = tmp_outs(3)
+         power_rcout = tmp_outs(4)
+         tmag_out = tmp_outs(5)
       ENDIF
 c-----------------------------------------------------------------------
 c     various simple test.

@@ -1373,12 +1373,11 @@ c-----------------------------------------------------------------------
 c     subprogram 4. ipout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_singfld(egnum,xspmn,spot,
-     $     rout,bpout,bout,rcout,tout,svd_flag)
+      SUBROUTINE ipout_singfld(egnum,xspmn,spot,svd_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
+      INTEGER, INTENT(IN) :: egnum
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
       LOGICAL, INTENT(IN) :: svd_flag
@@ -1502,7 +1501,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $     "jac_out = ",jac_out,"tmag_out =",tout 
+     $     "jac_out = ",jac_out,"tmag_out =",tmag_out
       WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
       WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
       WRITE(out_unit,*)
@@ -1577,11 +1576,9 @@ c-----------------------------------------------------------------------
 c     subprogram 5. ipout_vsingfld.
 c     compute resonant field by coils.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_vsingfld(rout,bpout,bout,rcout,tout)
+      SUBROUTINE ipout_vsingfld()
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
-
-      INTEGER :: ipert,ising,i
+      INTEGER :: ising,i
       REAL(r8) :: hdist,shear,area
       INTEGER, DIMENSION(msing) :: resnum
       REAL(r8), DIMENSION(msing) :: visland_hwidth,vchirikov
@@ -1641,7 +1638,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $     "jac_out = ",jac_out,"tmag_out =",tout 
+     $     "jac_out = ",jac_out,"tmag_out =",tmag_out
       WRITE(out_unit,'(1x,a14)')"sweet-spot = 0"
       WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
       WRITE(out_unit,*)
@@ -2190,14 +2187,14 @@ c-----------------------------------------------------------------------
 c     subprogram 6. ipout_pmodb.
 c     compute perturbed mod b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_pmodb(egnum,xspmn,rout,bpout,bout,rcout,tout)
+      SUBROUTINE ipout_pmodb(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
+      INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i,istep,ipert,itheta,iindex,cstep
+      INTEGER :: i,istep,ipert,itheta,iindex,cstep,tout
       REAL(r8) :: ileft,jac,psi
 
       INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,b_id,bme_id,be_id,
@@ -2247,6 +2244,7 @@ c-----------------------------------------------------------------------
 
       CALL idcon_build(egnum,xspmn)
       CALL ipeq_alloc
+      tout = tmag_out
 
       DO istep=1,mstep
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
@@ -2667,17 +2665,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 7. ipout_xbnormal.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipout_xbnormal(egnum,xspmn,rout,bpout,bout,rcout,tout)
+      SUBROUTINE ipout_xbnormal(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
+      INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,xm_id,x_id,
      $   rv_id,zv_id,rzstat
 
-      INTEGER :: i,istep,ipert,iindex,itheta
+      INTEGER :: i,istep,ipert,iindex,itheta,tout
       REAL(r8) :: ileft,ximax,rmax,area
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
@@ -2709,6 +2707,7 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing x and b normal components"
 
       CALL idcon_build(egnum,xspmn)
+      tout = tmag_out
 
       ! set up pest grid
       IF(TRIM(jac_out)=="pest")THEN ! will be mlow,mhigh if jac_type pest
