@@ -5495,6 +5495,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          ! L.rho = -(1+s)/s (Boozer, single mode model)
+         ! We calculate the "effective energy" Phi'.Phi_eff' for each mode where
+         ! Phi_eff' = (W^-1.L.W^-1.W.R.W) .W^-1.Phi
+         ! Note, the () term is unitless as it should be and we use R'.Phi' = e*Phi'
          matmm=MATMUL(MATMUL(sqrtainv,surf_indmats),sqrtainv)
          DO i=1,mpert
             tempm = rvecs(:,i)

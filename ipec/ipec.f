@@ -412,7 +412,7 @@ c-----------------------------------------------------------------------
       ! ipec_output
       ierr=set_harvest_payload_str(hlog,'jac_out'//nul,jac_out//nul)
       ierr=set_harvest_payload_int(hlog,'jsurf_out'//nul,jsurf_out)
-      ierr=set_harvest_payload_int(hlog,'tmag_out'//nul,jsurf_out)
+      ierr=set_harvest_payload_int(hlog,'tmag_out'//nul,tmag_out)
 c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
