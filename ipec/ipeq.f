@@ -46,8 +46,6 @@ c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
 
-      INTEGER :: ipert,jpert,iqty
-
       INTEGER, DIMENSION(mpert) :: ipiva
       COMPLEX(r8), DIMENSION(mpert) :: xspfac
 
@@ -137,7 +135,7 @@ c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       
-      INTEGER :: ipert,jpert,m1,m2,dm
+      INTEGER :: ipert,jpert,m1,dm
       COMPLEX(r8), DIMENSION(-mband:mband) ::jmat,jmat1
 
       IF(debug_flag) PRINT *, "Entering ipeq_contra"
@@ -222,7 +220,7 @@ c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8) ,INTENT(IN) :: psi
 
-      INTEGER :: ipert,jpert,m1,m2,dm
+      INTEGER :: ipert,jpert,m1,dm
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
 
       IF(debug_flag) PRINT *, "Entering ipeq_cova"
@@ -618,7 +616,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
       LOGICAL :: first = .TRUE.
-      INTEGER :: i,ising,itheta
+      INTEGER :: i,itheta
       REAL(r8) :: thetai,jarea,psave=0
       INTEGER, DIMENSION(6) :: isave=0,itmp=0
 
@@ -816,7 +814,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
       LOGICAL :: first = .TRUE.
-      INTEGER :: i,ising,itheta
+      INTEGER :: i,itheta
       INTEGER, DIMENSION(6) :: isave=0,itmp=0
       REAL(r8) :: thetai,jarea,psave=0
 
@@ -1179,12 +1177,11 @@ c-----------------------------------------------------------------------
 c     subprogram 15. ipeq_rzpdiv.
 c     make zero divergence of rzphi functions.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipeq_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
+      SUBROUTINE ipeq_rzpdiv(nr,nz,rval,zval,fr,fz,fp)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: nr,nz
-      INTEGER, DIMENSION(0:nr,0:nz), INTENT(IN) :: lval
       REAL(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: rval,zval
       COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: fr,fz
       COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(INOUT) :: fp

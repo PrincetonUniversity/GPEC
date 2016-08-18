@@ -111,10 +111,8 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout,jout
-      INTEGER :: lwork,i,j,k
-      INTEGER, DIMENSION(mpert):: ipiv
-      REAL(r8), DIMENSION(mpert) :: sts,s,ev
-      COMPLEX(r8), DIMENSION(mpert) :: cev
+      INTEGER :: lwork,i,j
+      REAL(r8), DIMENSION(mpert) :: sts,s
       COMPLEX(r8), DIMENSION(mpert,mpert) :: a,b,u,vt
 
       REAL(r8), DIMENSION(5*mpert) :: rwork
@@ -142,13 +140,13 @@ c-----------------------------------------------------------------------
       CALL zgesvd('S','S',mpert,mpert,a,mpert,s,u,mpert,vt,mpert,
      $     work,lwork,rwork,info)
       DO i=1,mpert 
-         sts(i)=-et(i)/(surfei(i)+surfee(i))
+         sts(i)=-REAL(et(i),r8)/(surfei(i)+surfee(i))
          IF (sts(i) > 0) s(i)=-s(i)
          s(i)=-1/s(i)
       ENDDO
 
       CALL ascii_open(out_unit,"ipec_response_n"//
-     $	   TRIM(sn)//".out","UNKNOWN")
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPEC_RESPONSE: Response parameters"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -465,7 +463,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: s,s1,s2,s3
       COMPLEX(r8), DIMENSION(msing,msing) :: u
 
-      INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,
+      INTEGER :: i,j,itheta,ising,resnum,
      $     tmlow,tmhigh,tmpert,lwork,info
       REAL(r8) :: respsi,lpsi,rpsi,jarea,thetai
       COMPLEX(r8) :: lbwp1mn,rbwp1mn
@@ -912,18 +910,16 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(OUT) :: foutmn,xspmn
 
-      INTEGER :: i,j,i1,i2,i3,ms,itheta,mpert_in
-      INTEGER, DIMENSION(mpert) :: ipiv
+      INTEGER :: i,j,i1,i2,i3,itheta,mpert_in
       INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_in
-      REAL(r8) :: vengy,sengy,pengy,area,thetai,scale,norm
+      REAL(r8) :: vengy,sengy,pengy,scale,norm
       COMPLEX(r8) :: vy,sy,py
       CHARACTER(128) :: message
 
-      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,thetas,jacs,rvecs,
-     $     zvecs,sbinfun,sboutfun,units
+      REAL(r8), DIMENSION(0:mthsurf) :: dphi,delpsi,jacs,rvecs,
+     $     zvecs,units
 
-      COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,xinmn,xoutmn,tempmn,
-     $      abinmn
+      COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,xinmn,xoutmn,tempmn
       COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,templ
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun,xinfun,xoutfun
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
@@ -1020,7 +1016,7 @@ c-----------------------------------------------------------------------
 c     filter external flux
 c-----------------------------------------------------------------------
       CALL ipout_control_filter(finmn,foutmn,filter_types,filter_modes,
-     $           rout,bpout,bout,rcout,tout,jout,filter_out)
+     $           rout,bpout,bout,rcout,tout,filter_out)
 c-----------------------------------------------------------------------
 c     get plasma response on the control surface.
 c-----------------------------------------------------------------------
@@ -1387,7 +1383,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
       LOGICAL, INTENT(IN) :: svd_flag
 
-      INTEGER :: i,itheta,ising
+      INTEGER :: itheta,ising
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
       COMPLEX(r8) :: lbwp1mn,rbwp1mn
 
@@ -2223,9 +2219,7 @@ c-----------------------------------------------------------------------
      $     curvfout
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psis,ches,chex
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::chea,chelagbmns,
-     $     chelagbmout
-      COMPLEX(r8), DIMENSION(mpert) :: chelagb_mn
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::chea,chelagbmns
 
       TYPE(cspline_type) :: cspl,chespl
 c-----------------------------------------------------------------------
@@ -2509,8 +2503,8 @@ c-----------------------------------------------------------------------
                chea(ipert,i)=chespl%fsi(mstep,1)
             ENDDO
          ENDDO
-	 
-	 chea(:,0)=chea(:,0)/2.0
+
+         chea(:,0)=chea(:,0)/2.0
 
          CALL ascii_open(out_unit,"ipec_pmodb_chebyshev_n"//
      $     TRIM(sn)//".out","UNKNOWN")
@@ -2521,7 +2515,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(2(1x,a12,I4))')
      $        "nche =",nche,"mpert =",mpert
          WRITE(out_unit,*)     
-         
+
          DO ipert=1,mpert
             WRITE(out_unit,'(1x,a6,1x,I4)')"mfac =",mfac(ipert)
             WRITE(out_unit,*)
@@ -3350,7 +3344,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: istep,ipert,iindex,itheta
-      REAL(r8) :: ileft,ximax,rmax
+      REAL(r8) :: ileft
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,psis,
      $     rvecs,zvecs,vecs
@@ -3543,9 +3537,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnimn,bnomn
 
-      INTEGER :: i,j,k,l,ipert,iindex,np
+      INTEGER :: i,j,k,l,iindex,np
       REAL(r8) :: mid,btlim,rlim,ileft,delr,delz,cha,chb,chc,chd,
-     $   rij,zij,tij,t11,t12,t21,t22,t33
+     $   rij,zij,t11,t12,t21,t22,t33
       COMPLEX(r8) :: xwp,bwp,xwt,bwt,xvz,bvz
 
       INTEGER :: r_id,z_id,i_id,xr_id,xz_id,xp_id,br_id,bz_id,bp_id,
@@ -3734,7 +3728,7 @@ c-----------------------------------------------------------------------
       ENDIF
       
       IF (divzero_flag) THEN
-         CALL ipeq_rzpdiv(nr,nz,gdl,gdr,gdz,brr,brz,brp)
+         CALL ipeq_rzpdiv(nr,nz,gdr,gdz,brr,brz,brp)
       ENDIF
       IF (div_flag) THEN
          CALL ipdiag_rzpdiv(nr,nz,gdl,gdr,gdz,brr,brz,brp)
@@ -4318,8 +4312,7 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: snum,nr,nz
 
-      INTEGER :: i,j,ipert,iindex
-      REAL(r8) :: mid,bt0,ileft
+      INTEGER :: i,j
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
@@ -4394,7 +4387,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ipert,iindex,itheta
+      INTEGER :: istep,iindex,itheta
       REAL(r8) :: ileft
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs
@@ -4543,8 +4536,8 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ipert,iindex,itheta
-      REAL(r8) :: ileft,ximax,rmax
+      INTEGER :: istep,iindex,itheta
+      REAL(r8) :: ileft
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
@@ -4691,7 +4684,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i,j,istep,ipert,itheta,iindex,ids(3)
+      INTEGER :: i,istep,ipert,itheta,iindex,ids(3)
       INTEGER :: i_id,m_id,p_id,dp_id,xp_id,xa_id
       REAL(r8) :: ileft, psi
 
@@ -4844,11 +4837,11 @@ c     subprogram 14. ipout_control_filter.
 c     Filter control surface flux vector in flux bases with energy norms
 c-----------------------------------------------------------------------
       SUBROUTINE ipout_control_filter(finmn,foutmn,ftypes,fmodes,
-     $           rout,bpout,bout,rcout,tout,jout,op_write)
+     $           rout,bpout,bout,rcout,tout,op_write)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: fmodes,rout,bpout,bout,rcout,tout,jout
+      INTEGER, INTENT(IN) :: fmodes,rout,bpout,bout,rcout,tout
       CHARACTER(len=*), INTENT(IN) :: ftypes
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn,foutmn
       LOGICAL, INTENT(IN), OPTIONAL :: op_write
@@ -4865,20 +4858,18 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(3*mpert) :: worksvd
 
       LOGICAL :: output
-      INTEGER :: i,j,k,ipert,maxmode
+      INTEGER :: i,j,k,maxmode
       INTEGER :: idid,mdid,xdid,wdid,rdid,pdid,sdid,tdid,
      $   mx_id,mw_id,mr_id,mp_id,ms_id,
      $   we_id,re_id,pe_id,se_id,
      $   w_id,r_id,p_id,s_id, sc_id,wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
-     $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,ra_id,rl_id,
-     $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,sm_id,ex_id,et_id,
+     $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,rl_id,
+     $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,ex_id,et_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id,
      $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
       REAL(r8), DIMENSION(mpert) :: singfac
-      REAL(r8), DIMENSION(mpert,2) :: tempmi
-      REAL(r8), DIMENSION(msing,2) :: tempsi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: tempfun
       COMPLEX(r8), DIMENSION(msing) :: temps
       COMPLEX(r8), DIMENSION(mpert) :: temp,tempm,eigmn,filmn
@@ -4891,7 +4882,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
       CHARACTER(64) :: message
 
-      INTEGER,  DIMENSION(mpert) :: aindx,indx,raindx,rlindx
+      INTEGER,  DIMENSION(mpert) :: aindx,indx
       REAL(r8), DIMENSION(mpert) :: xvals,wvals,rvals,pvals,avals,
      $    rlvals,sengys,vengys,pengys
       REAL(r8), DIMENSION(msing) :: svals
@@ -5504,11 +5495,12 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid,sep_id,pengys(1:msing)) )
          ENDIF
 
-         ! L.rho = -(1+s)/s ??
+         ! L.rho = -(1+s)/s (Boozer, single mode model)
          matmm=MATMUL(MATMUL(sqrtainv,surf_indmats),sqrtainv)
          DO i=1,mpert
             tempm = rvecs(:,i)
-            rlvals(i) = rvals(i)*DOT_PRODUCT(tempm,MATMUL(matmm,tempm))
+            rlvals(i) = rvals(i) *
+     $          REAL(DOT_PRODUCT(tempm,MATMUL(matmm,tempm)))
          ENDDO
          CALL check( nf90_put_var(mncid,rl_id,rlvals) )
 
@@ -5649,9 +5641,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER:: i,midid,mmdid,medid,mvdid,msdid,mtdid,
+      INTEGER:: i,midid,mmdid,medid,mtdid,
      $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
-     $   mivid,mmvid,mevid,mvvid,msvid,mtvid,fivid,fmvid,fpvid,ftvid,
+     $   mivid,mmvid,mevid,mtvid,fivid,fmvid,fpvid,ftvid,
      $   civid,crvid,czvid,id,fileids(3)
       INTEGER, DIMENSION(mpert) :: mmodes
 c-----------------------------------------------------------------------

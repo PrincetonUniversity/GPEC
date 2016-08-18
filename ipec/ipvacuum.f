@@ -371,11 +371,11 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn
 
-      INTEGER :: ipert,itheta,rtheta,vn,vac_unit
+      INTEGER :: ipert,itheta,vn,vac_unit
       REAL(r8) :: qa,x1,x2,z1,z2
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
 
-      REAL(r8), DIMENSION(0:mthsurf) :: etas,dphi,delpsi,delte,jacs
+      REAL(r8), DIMENSION(0:mthsurf) :: etas,dphi,delte
 
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
 c-----------------------------------------------------------------------

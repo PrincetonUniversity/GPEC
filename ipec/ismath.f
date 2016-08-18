@@ -206,14 +206,13 @@ c-----------------------------------------------------------------------
       END FUNCTION issurfint
 c-----------------------------------------------------------------------
 c     subprogram 5. issurfave.
-c     surface average by simple method.
+c     surface average by simple method. THIS IS INCORRECT!!
 c-----------------------------------------------------------------------
-      FUNCTION issurfave(func,fs,psi)
+      FUNCTION issurfave(func,fs)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: fs
-      REAL(r8), INTENT(IN) :: psi
       REAL(r8), DIMENSION(0:fs), INTENT(IN) :: func
 
       INTEGER :: itheta

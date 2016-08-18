@@ -33,11 +33,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE idcon_read(lpsixy)
+      SUBROUTINE idcon_read(psixy)
 
-      INTEGER, INTENT(IN) :: lpsixy
+      INTEGER, INTENT(IN) :: psixy
       CHARACTER(128) :: message
-      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,i
+      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta
       REAL(r8) :: sfac0
 
       REAL(r4), DIMENSION(:,:), POINTER :: rgarr,zgarr,psigarr
@@ -270,7 +270,7 @@ c     normalize plasma/vacuum eigenvalues and eigenfunctions.
 c-----------------------------------------------------------------------
       et=et/(mu0*2.0)*psio**2*(chi1*1e-3)**2
       ep=ep/(mu0*2.0)*psio**2*(chi1*1e-3)**2
-      ee=et-ep
+      ee=REAL(et-ep,r8)
       wt=wt*(chi1*1e-3)
       wt0=wt0/(mu0*2.0)*psio**2
       IF(data_type==5)THEN
@@ -300,10 +300,10 @@ c-----------------------------------------------------------------------
          READ(in_unit)
          READ(in_unit)mr,mz
          CALL bicube_alloc(psi_in,mr,mz,1)
-         psi_in%name="equilibrium psi"
+         psi_in%name=" eqpsi" ! equilibrium psi
          psi_in%xtitle="r"
          psi_in%ytitle="z"
-         psi_in%title=" normalized psi "
+         psi_in%title=" psi_n" ! normalized psi
          ALLOCATE(rgarr(0:mr,0:mz),zgarr(0:mr,0:mz),psigarr(0:mr,0:mz))
          READ(in_unit)rgarr,zgarr
          psi_in%xs=rgarr(:,0)
@@ -412,7 +412,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ifix,jfix,kfix,ieq,info
+      INTEGER :: istep,ifix,jfix,kfix,info
       INTEGER, DIMENSION(mpert) :: ipiv
       COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
@@ -495,10 +495,10 @@ c-----------------------------------------------------------------------
       CALL bicube_alloc(eqfun,mpsi,mtheta,3)
       eqfun%xs=rzphi%xs
       eqfun%ys=rzphi%ys
-      eqfun%name="equilibrium funs"
+      eqfun%name="eqfuns" ! 1D equilibrium functions
       eqfun%xtitle="psi"
       eqfun%ytitle="theta"
-      eqfun%title=(/" modb  "," divx1 "," divx2 "/)      
+      eqfun%title=(/" modb "," divx1"," divx2"/)
 c-----------------------------------------------------------------------
 c     begin loop over nodes.
 c-----------------------------------------------------------------------
@@ -637,8 +637,8 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
 
       CHARACTER(128) :: message
-      INTEGER :: ipert,jpert,m1,m2,m,dm,info,iqty
-      REAL(r8) :: jtheta,nq,singfac1,singfac2,rm
+      INTEGER :: ipert,jpert,m1,m2,dm,info,iqty
+      REAL(r8) :: jtheta,nq,singfac1,singfac2
       INTEGER, DIMENSION(mpert) :: ipiva
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
 
@@ -863,15 +863,13 @@ c-----------------------------------------------------------------------
       !INTEGER, INTENT(IN) :: egnum
       !COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: ipsi,istep,ipert,jpert,itheta,dm,m1,m2
+      INTEGER :: ipsi,ipert,jpert,itheta,dm,m1,m2
       REAL(r8) :: psi,angle,rs,
      $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht
 
       COMPLEX(r8), DIMENSION(-mband:mband) :: 
      $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
-      COMPLEX(r8), DIMENSION(mpert) :: curv_mn,divx_mn
       COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
-      COMPLEX(r8), DIMENSION(mstep,mpert) :: divxmns,curvmns
 
       TYPE(fspline_type) :: fmodb
 c-----------------------------------------------------------------------
@@ -901,8 +899,8 @@ c-----------------------------------------------------------------------
       fmodb%name="fmodb"
       fmodb%xtitle=" psi  "
       fmodb%ytitle="theta "
-      fmodb%title=(/" smat  "," tmat  "," xmat  ",
-     $     " ymat1 "," ymat2 "," zmat1 ", " zmat2 "," zmat3 "/)
+      fmodb%title=(/" smat "," tmat "," xmat ",
+     $     " ymat1"," ymat2"," zmat1"," zmat2"," zmat3"/)
 c-----------------------------------------------------------------------
 c     computes fourier series of geometric tensors.
 c-----------------------------------------------------------------------

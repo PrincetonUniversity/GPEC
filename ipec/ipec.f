@@ -17,11 +17,11 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: i,in,osing,resol,angnum,
-     $     mthnumb,meas,mode,m3mode,lowmode,highmode,filter_modes
+      INTEGER :: i,in,resol,
+     $     mode,m3mode,lowmode,highmode,filter_modes
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode
       INTEGER, DIMENSION(:), POINTER :: ipiv
-      REAL(r8) :: majr,minr,rdist,smallwidth,factor,fp,normpsi
+      REAL(r8) :: majr,minr,smallwidth,fp,normpsi
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
@@ -174,13 +174,15 @@ c-----------------------------------------------------------------------
       lowmode=-10
       highmode=10
       m3mode=2
-      resol=1e4
+      resol=INT(1e4)
       smallwidth=1e-6
       
       timeit = .FALSE.
       verbose = .TRUE.
       debug_flag = .FALSE.
       malias=0
+
+      psixy = 0
 c-----------------------------------------------------------------------
 c     read ipec.in.
 c-----------------------------------------------------------------------

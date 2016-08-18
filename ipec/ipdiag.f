@@ -64,7 +64,7 @@ c-----------------------------------------------------------------------
             ximn(j)=1.0
             xinmn=xrmn+ifac*ximn
 
-            potengy(i,j)=SUM(CONJG(xinmn)*MATMUL(wt,xinmn))
+            potengy(i,j)=REAL(SUM(CONJG(xinmn)*MATMUL(wt,xinmn)))
             WRITE(out_unit,'(2(1x,I3),1x,es16.8)')
      $           mfac(i),mfac(j),potengy(i,j)
          ENDDO
@@ -83,7 +83,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER :: i,j
+      INTEGER :: i
 
       CALL ascii_open(out_unit,"ipdiag_magpot_n"//
      $     TRIM(sn)//".out","UNKNOWN")
@@ -1166,7 +1166,6 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(-mband:mband) :: 
      $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
-      COMPLEX(r8), DIMENSION(mpert) :: curv_mn,divx_mn
       COMPLEX(r8), DIMENSION(0:mtheta) :: divxfun,curvfun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
       COMPLEX(r8), DIMENSION(mstep,mpert) :: divxmns,curvmns,
@@ -1201,8 +1200,8 @@ c-----------------------------------------------------------------------
       fmodb%name="fmodb"
       fmodb%xtitle=" psi  "
       fmodb%ytitle="theta "
-      fmodb%title=(/" smat  "," tmat  "," xmat  ",
-     $     " ymat1 "," ymat2 "," zmat1 ", " zmat2 "," zmat3 "/)
+      fmodb%title=(/" smat "," tmat "," xmat ",
+     $     " ymat1"," ymat2"," zmat1"," zmat2"," zmat3"/)
 c-----------------------------------------------------------------------
 c     computes fourier series of geometric tensors.
 c-----------------------------------------------------------------------
@@ -1769,7 +1768,6 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j
       REAL(r8) :: a1,a2
       COMPLEX(r8), DIMENSION(mpert) :: v1,v2
-      REAL(r8), DIMENSION(mpert,mpert) :: potengy
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
@@ -1807,17 +1805,13 @@ c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout
-      INTEGER :: i,j,k,lwork
+      INTEGER :: i,j,lwork
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
       COMPLEX(r8), DIMENSION(mpert) :: temp,ev,evo
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1o,sqrta,mat,mato,
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,mat,mato,
      $   sqrtao
       
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: reluctpoev
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: reluctpomats,
-     $   reluctpoevmats,reluctpmats(:,:,:)
-
       WRITE(*,*) 'Diagnosing reluctance power eigenvalues in out coords'
 c-----------------------------------------------------------------------
 c     calculate sqrt(A) weighting matrix.
@@ -1859,7 +1853,7 @@ c-----------------------------------------------------------------------
       CALL zheev('V','U',mpert,mato,mpert,evo,work,lwork,rwork,info)
       
       CALL ascii_open(out_unit,"ipdiag_reluctpowout_n"//
-     $	   TRIM(sn)//".out","UNKNOWN")
+     $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IPDIAG_RELUCTPOWOUT: Reluctance matrix "//
      $     "power eigenvalue calculation in output coordinates."
       WRITE(out_unit,*)

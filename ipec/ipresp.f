@@ -305,11 +305,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2,vr,vl
       COMPLEX(r8) :: ev
-      COMPLEX(r8), DIMENSION(mpert) :: vec
 
       REAL(r8), DIMENSION(5*mpert) :: rworks
       COMPLEX(r8), DIMENSION(3*mpert) :: works
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: ctp,a,permu
 c-----------------------------------------------------------------------
 c     calculate permeability matrix.
 c-----------------------------------------------------------------------

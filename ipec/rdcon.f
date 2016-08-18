@@ -31,7 +31,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE rdcon_read
 
       CHARACTER(128) :: message
-      INTEGER :: istep,ising,itheta,ipert
+      INTEGER :: istep,ising,ipert
 c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
 c-----------------------------------------------------------------------
