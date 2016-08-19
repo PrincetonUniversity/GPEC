@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 
-Regression Running - Test Coordinate Transformed IO between IPEC and PENTRC
+Regression Test - Test Coordinate Transformed IO between IPEC and PENTRC
 =================================================================================
 
 :Date: 08/02/2016
@@ -22,19 +22,30 @@ import gpec, data
 plt = data.plt
 
 
-def run(loc, repo):
+repo = '/'.join(__file__.split('/')[:-3])
+loc = repo + '/regression/runs'
+
+
+def run(repo=repo, loc=None):
     """
-    Run as a regression test for any repository under development.
+    Run the test cases.
+    By default it tests this version in this repository, but you can use this to
+    run the test for any repository (i.e. older versions that don't have this in pypec)
+    and run it in any location (e.g. /p/gpec/benchmark on portal).
 
     Args:
-        loc: str. Path where runs will be made.
-        repo: str. Path to GPEC repository.
+        repo: str. Path to GPEC repository. Default is this file's repository.
+        loc: str. Path where runs will be made. Default is repo/regression/runs.
 
     Returns:
+        True.
 
     """
-    loc = os.path.abspath(loc)
+    # set up paths
     repo = os.path.abspath(repo)
+    if loc is None:
+        loc = repo + '/regression/runs'
+    loc = os.path.abspath(loc)
     rundir = repo + '/bin'
     exdir = '{:}/docs/examples/DIIID_ideal_example/'.format(repo)
     if not os.path.isdir(exdir):
@@ -75,7 +86,9 @@ def run(loc, repo):
             gpec.run(loc='{l}/{c}{t}'.format(l=loc, c=coord, t=t), rundir=rundir, qsub=True, mem=2e3, mailon='',
                      rundcon=True, runipec=True, runpentrc=True, **inputs)
 
-def check(loc,m=2):
+    return True
+
+def check(loc=loc,m=2):
     """
     Plot results of run for a quick check of the perturbations and torque result.
 
@@ -142,21 +155,27 @@ def check(loc,m=2):
         a.legend()
 
     # print table
+    totals = []
     print('{:24} {:24} {:24}'.format('directory','Re(dW_k)','Im(dW_k)'))
     for k,v in results.iteritems():
         dwk = 0.5*(v['pentrc_fgar_ell_n1']['int2ndeltaW'] + 1j*v['pentrc_fgar_ell_n1']['intT_phi'])
-        totals = dwk.sel(psi_n=1, method='nearest').sum(dim='ell').values[0]
-        print('{:24} {:<+24.4e} {<+24.4e}'.format(k,np.real(totals),np.imag(totals)))
+        totals.append(dwk.sel(psi_n=1, method='nearest').sum(dim='ell').values[0])
+        print('{:24} {:<+24.4e} {<+24.4e}'.format(k,np.real(totals[-1]),np.imag(totals[-1])))
+    totals = np.array(totals)
+    werrs = 100*np.abs(1 - np.real(totals)/np.real(totals[0]))
+    terrs = 100*np.abs(1 - np.imag(totals)/np.imag(totals[0]))
+    success = np.all(werrs<1) and np.all(terrs<1)
 
-    return results
+    return success
 
 
+# this is what will happen if you run the script as an exe
 if __name__ == "__main__":
-    if len(sys.argv[1:]) == 2 and sys.argv[1]=='-c':
-        check(*sys.argv[2])
-    elif len(sys.argv[1:]) == 2:
-        run(*sys.argv[1:])
+    if len(sys.argv[1:]) > 0 and sys.argv[1] == '-c':
+        check(*sys.argv[2:])
+    elif len(sys.argv[1:]) > 0 and sys.argv[1] == '-h':
+        print("Regression test requires two inputs.\n" +
+              "Use <loc> <rundir> to run test.\n" +
+              "Use -c <loc> to check results.")
     else:
-        raise ValueError("Regression test requires two inputs.\n" +
-                         "Use <loc> <rundir> to run test.\n" +
-                         "Use -c <loc> to check results.")
+        run(*sys.argv[1:])
