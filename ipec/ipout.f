@@ -4013,7 +4013,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i,j,istep,ipert,itheta,iindex,ids(3)
       INTEGER :: i_id,m_id,p_id,dp_id,xp_id,xa_id
-      REAL(r8) :: ileft, psi
+      REAL(r8) :: ileft, psi, rfac, eta, rs, zs
 
       COMPLEX(r8), DIMENSION(mstep,lmpert) :: xmp1out,xspout,xmsout
       COMPLEX(r8), DIMENSION(mstep,0:mthsurf) :: xmp1funs,xspfuns,
@@ -4088,14 +4088,19 @@ c-----------------------------------------------------------------------
           WRITE(out_unit,'(1/,1x,a13,a8)')"jac_out = ",jac_out
           WRITE(out_unit,'(1/,1x,a12,1x,I6,1x,2(a12,I4),1/)')
      $       "mstep =",mstep,"mpert =",lmpert,"mthsurf =",mthsurf
-          WRITE(out_unit,'(1x,a23,1x,a4,6(1x,a16))')"psi","theta",
+          WRITE(out_unit,'(1x,a23,9(1x,a16))')"psi","theta","r","z",
      $       "real(derxi^psi)","imag(derxi^psi)",
      $       "real(xi^psi)","imag(xi^psi)",
      $       "real(xi^alpha)","imag(xi^alpha)"
           DO istep=1,mstep,MAX(1,(mstep*(mthsurf+1)-1)/max_linesout+1)
              DO itheta=0,mthsurf
-                WRITE(out_unit,'(8(es17.8e3))')
-     $             psifac(istep),theta(itheta),xmp1funs(istep,itheta),
+                CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
+                rfac = SQRT(rzphi%f(1))
+                eta = twopi * (theta(itheta) + rzphi%f(2))
+                rs = ro + rfac * COS(eta)
+                zs = zo + rfac * SIN(eta)
+                WRITE(out_unit,'(1x,es23.15,9(es17.8e3))')psifac(istep),
+     $             theta(itheta),rs,zs,xmp1funs(istep,itheta),
      $             xspfuns(istep,itheta),xmsfuns(istep,itheta)
              ENDDO
           ENDDO

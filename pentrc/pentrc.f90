@@ -114,7 +114,7 @@ program pentrc
         ipec_file  ="ipec_order1_n1.bin", &
         peq_file ="ipec_xclebsch_n1.out", &
         pmodb_file ="none", &
-        data_dir =".",&
+        data_dir ="default",&
         docs(nflags)=""
     character(32) :: &
         nutype = "harmonic",&
@@ -145,7 +145,6 @@ program pentrc
         
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug
-
     
     ! read interface and set modules
     open(unit=1,file="pentrc.in",status="old")
@@ -295,7 +294,13 @@ program pentrc
                     print *,method//" - "//TRIM(docs(m))
                 ENDIF
                 if ((method=="clar" .or. method=="rlar")) then ! .and. fnml%nqty==0) then
-                    call read_fnml(TRIM(data_dir)//'/fkmnl.dat')
+                    if (trim(data_dir)=='' .or. trim(data_dir)=='default') then
+                        call getenv('GPECHOME',data_dir)
+                        if(len(trim(data_dir))==0) stop &
+                            "ERROR: Use of fefault data directory requires GPECHOME environment variable"
+                        data_dir = TRIM(data_dir)//'/pentrc'
+                    endif
+                    call read_fnml(trim(data_dir)//'/fkmnl.dat')
                 endif
                 tphi = tintgrl_lsode(psilim,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m),eq_out)
                 if(verbose) then

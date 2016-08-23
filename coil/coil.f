@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
      $     ipd,btd,helicity
 
       LOGICAL :: ipec_interface
-      CHARACTER(256) :: data_dir
+      CHARACTER(256) :: data_dir = 'default'
       CHARACTER(512) :: cfile
       INTEGER, DIMENSION(:), POINTER :: cmfac
 
@@ -73,11 +73,16 @@ c-----------------------------------------------------------------------
       cmlow=-64
       cmhigh=64
       coil_cur=0
-      data_dir='.' !#REPLACE-WITH-PATH
       CALL ascii_open(in_unit,"coil.in","OLD")
       READ(UNIT=in_unit,NML=coil_control)
       READ(UNIT=in_unit,NML=coil_output)
       CALL ascii_close(in_unit)
+      IF (TRIM(data_dir)=='' .OR. TRIM(data_dir)=='default') THEN
+         CALL getenv('GPECHOME',data_dir)
+         IF(LEN(TRIM(data_dir))==0) stop
+     $  "ERROR: Default coil dir requires GPECHOME environment variable"
+         data_dir = TRIM(data_dir)//'/coil'
+      ENDIF
 c-----------------------------------------------------------------------
 c     read coils for each machine.
 c-----------------------------------------------------------------------

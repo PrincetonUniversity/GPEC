@@ -108,7 +108,7 @@ module pentrc_interface
         nutype = "harmonic",&
         f0type = "maxwellian",&
         jac_in = ""
-      
+
     namelist/pent_input/kinetic_file,ipec_file,peq_file, &
         idconfile,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in

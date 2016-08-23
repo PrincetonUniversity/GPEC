@@ -71,6 +71,10 @@ c-----------------------------------------------------------------------
          power_b=2
          power_bp=0
          power_r=0
+      CASE("park")
+         power_b=1
+         power_bp=0
+         power_r=0
       CASE("other")
       CASE DEFAULT
          CALL program_stop

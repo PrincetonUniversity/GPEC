@@ -128,7 +128,7 @@ module torque
     use fspline_mod, only : fspline_eval
     use bicube_mod, only : bicube_eval
     use spline_help, only: spline_roots
-    use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappaintgnd
+    use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappadjsum
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
@@ -431,6 +431,8 @@ module torque
             case("clar")
                 ! set up
                 call cspline_alloc(fbnce,nlmda-1,3) ! <omegab,d> Lambda functions
+                call spline_alloc(vspl,tspl%mx,1) ! vparallel(theta) -> roots are bounce pts
+                vspl%xs(:) = tspl%xs(:)
                 lmdatpb = bo/bmax
                 lmdamin = max(1.0/(1+epsr),bo/bmax)
                 lmdamax = min(1.0/(1-epsr),bo/bmin) ! kappa 0 to 1
@@ -454,14 +456,19 @@ module torque
                         /(ro**2*epsr))*wdfac
                     bhat = SQRT(2*kin%f(s+2)/mass)
                     dhat = (kin%f(s+2)/chrg)
-                    ! JKP PRL 2009 perturbed action
-                    djdj = kappaintgnd(kappa,n,l,q,mfac,dbob_m%f(:),fnml)
+                    ! perturbed action Eq. (12) [Park, Phys. Rev. Lett. 2009] divided by 2pi for DCON phi normalization
+                    djdj = kappadjsum(kappa,n,l,q,mfac,dbob_m%f(:),fnml) * (0.5*pi/epsr) * (mass*bhat*q*ro)**2 / (2*pi)
+                    ! bar normalization from [Logan, Phys. Plasmas 2013]
+                    djdj = djdj / (mass*bhat*ro)**2
                     ! Lambda functions
                     fbnce%xs(ilmda-1) = lmda
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
                     fbnce%fs(ilmda-1,2) = wdbar*dhat
-                    fbnce%fs(ilmda-1,3) = djdj
+                    fbnce%fs(ilmda-1,3) = wbbar*djdj
                 enddo
+                allocate(fbnce_norm(1))
+                fbnce_norm(1) = 1/median(abs(fbnce%fs(:,3)))
+                fbnce%fs(:,3) = fbnce%fs(:,3) * fbnce_norm(1)
                 CALL cspline_fit(fbnce,'extrap')
                 
                 ! energy space integrations
@@ -475,12 +482,13 @@ module torque
                 endif
 
                 ! dT/dpsi
-                tpsi = sq%f(3)*(-1*lxint(1)) & ! may be missing some normalizations from djdj
-                    *SQRT(epsr/(2*pi**3))*n*n*kin%f(s)*kin%f(s+2)
+                tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
+                    *lxint(1)/fbnce_norm(1) &       ! lsode normalization
+                    *(chi1/twopi)
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
                 
                 ! wrap up
-                deallocate(lxint)
+                deallocate(fbnce_norm,lxint)
                 call cspline_dealloc(fbnce) ! <omegab,d> Lambda functions
                 
         
