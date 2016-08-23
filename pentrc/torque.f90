@@ -385,8 +385,8 @@ module torque
                         divx = sum( divx_m%f(:)*expm ) ! nabla.xi_perp
                         kapx = -0.5*(dbob+divx)
                         cglspl%xs(i) = theta
-                        cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
-                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)
+                        cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)/2  ! 1/2 correction for quadratic calculations in complex analysis
+                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)/2 ! 1/2 correction factor
                     enddo
                     CALL spline_fit(cglspl,"periodic")
                     CALL spline_int(cglspl)
