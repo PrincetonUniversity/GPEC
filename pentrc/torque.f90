@@ -385,8 +385,8 @@ module torque
                         divx = sum( divx_m%f(:)*expm ) ! nabla.xi_perp
                         kapx = -0.5*(dbob+divx)
                         cglspl%xs(i) = theta
-                        cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
-                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)
+                        cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)/2  ! 1/2 correction for quadratic calculations in complex analysis
+                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)/2 ! 1/2 correction factor
                     enddo
                     CALL spline_fit(cglspl,"periodic")
                     CALL spline_int(cglspl)
@@ -686,7 +686,8 @@ module torque
                     bjspl%fs(0:,1) =conjg(jvtheta(:))*(pl(:)+(1-sigma)/pl(:))
                     call cspline_fit(bjspl,"extrap")
                     call cspline_int(bjspl)
-                    fbnce%fs(ilmda-1,3) = wbbar*abs(bjspl%fsi(bjspl%mx,1))**2/ro**2
+                    ! division by 2 corrects quadratic use of 2A_+n instead of proper A_+n + A_-n
+                    fbnce%fs(ilmda-1,3) = wbbar*abs(bjspl%fsi(bjspl%mx,1))**2/2/ro**2
                     
                     ! mxmx6 bounce averaged euler lagrange matrix elements
                     if(present(wtw))then
@@ -780,7 +781,7 @@ module torque
                 
                 ! energy space integrations
                 allocate(lxint(fbnce%nqty-2))
-                wtwnorm = 2*xj*n ! euler-lagrange real energy metrices (default)
+                wtwnorm = 1.0 ! euler-lagrange real energy metrices (default)
                 rex = 1.0 ! include real part of resonance operator (default)
                 imx = 1.0 ! include imag part of resonance operator (default)
                 if(method(2:4)=='wmm' .or. method(2:4)=='kmm')then
@@ -788,7 +789,7 @@ module torque
                 endif
                 if(method(2:4)=='tmm')then
                     imx = 0.0
-                    wtwnorm = 1.0
+                    wtwnorm = -1.0
                 endif
                 if(write_espace)then
                     lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
@@ -812,9 +813,10 @@ module torque
                         do j=1,mpert
                             do i=1,mpert
                                 iqty = ((k-1)*mpert+j-1)*mpert + i + 1
-                                wtw(i,j,k) = wtwnorm*lxint(iqty)/fbnce_norm(iqty) &
+                                wtw(i,j,k) = lxint(iqty)/fbnce_norm(iqty) &
                                     *kin%f(s)*kin%f(s+2) &
-                                    *(-n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
+                                    *(-2*n**2/sqrt(pi))*(ro/bo)*(chi1/twopi) &
+                                    /(2*xj*n)
                             enddo
                         enddo
                     enddo
@@ -850,16 +852,16 @@ module torque
                         xix(:,1) = xs_m(1)%f(:)
                         xiy(:,1) = xs_m(2)%f(:)
                         xiz(:,1) = xs_m(3)%f(:)
-                        t_zz = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,1),xiz))
-                        t_zx = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,2),xix))
-                        t_zy = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,3),xiy))
-                        t_xx = matmul(conjg(transpose(xix)),matmul(wtw(:,:,4),xix))
-                        t_xy = matmul(conjg(transpose(xix)),matmul(wtw(:,:,5),xiy))
-                        t_yy = matmul(conjg(transpose(xiy)),matmul(wtw(:,:,6),xiy))
-                        tpsi = (1/wtwnorm) & ! convert energy to real torque convention
-                                  *(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
+                        ! division by 2 corrects quadratic use of 2A_+n instead of proper A_+n + A_-n
+                        t_zz = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,1),xiz))/2
+                        t_zx = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,2),xix))/2
+                        t_zy = matmul(conjg(transpose(xiz)),matmul(wtw(:,:,3),xiy))/2
+                        t_xx = matmul(conjg(transpose(xix)),matmul(wtw(:,:,4),xix))/2
+                        t_xy = matmul(conjg(transpose(xix)),matmul(wtw(:,:,5),xiy))/2
+                        t_yy = matmul(conjg(transpose(xiy)),matmul(wtw(:,:,6),xiy))/2
+                        tpsi = (2*n*xj)*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
                             +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
-                            +conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
+                            +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
                         if(tdebug)then
                             print *," -> WxWx ~ ",wtw(20:25,20,1)
                             print *,"expected to be all real (wmm) or all imag (tmm):"
