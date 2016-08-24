@@ -14,7 +14,7 @@
     f0type = "maxwellian"               ! Distribution function: "maxwellian"
     jac_in = "pest"                     ! Jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
     jsurf_in=0                          ! True(1) if peq_file is area weighted
-    tmag_in =0                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
+    tmag_in =1                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
 /
 &PENT_CONTROL
     wefac = 1                           ! Artificial factor applied to omega_EXB
@@ -25,8 +25,8 @@
 
     atol_xlmda = 1e-12                  ! Absolute tolerance in energy and pitch integration
     rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
-    atol_psi = 1e-6                     ! Absolute tolerance in psi_n integration
-    rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
+    atol_psi = 1e4                     ! Absolute tolerance in psi_n integration
+    rtol_psi = 1e-3                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration
     nlmda = 128                         ! Pitch grid for omega_D, oemga_b, dJdJ
 
