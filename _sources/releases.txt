@@ -94,7 +94,7 @@ Bug Fixes
 
 - PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques
 
-  +**All previous 0.3 version torques should be considered incorrect**
+  + **All previous 0.3 version torques should be considered incorrect**
 
 - PENTRC fixed bug in inverse Fourier transformation of perturbed quantities and fixed (removed) JBB normalization of perturbed quantity splines for consistent treatment in GAR, LAR, and GCL methods (now benchmarked with PENT).
 
@@ -118,7 +118,7 @@ Features
 - IPEC the control surface theta-space function values are now always calculated and output
 - IPEC bwp_pest_flag is now true by default and produces pest ouputs for both xbnormal and vbnormal
 - IPEC xclebsch outputs are now converted to output coordinates and theta-space outputs are available
--  PENTRC now accepts jsurf_in, tmag_in and all individual powers of the jac_in, allowing it to interface with IPEC's new xclebsch outputs that are transformed from the working to ipec output coordinates
+- PENTRC now accepts jsurf_in, tmag_in and all individual powers of the jac_in, allowing it to interface with IPEC's new xclebsch outputs that are transformed from the working to ipec output coordinates
 
   + Coordinate transformation back to the DCON working coordinates is done on the large of the working/input m grids
 

@@ -209,32 +209,25 @@ call the executables (i.e. dcon, etc.).</p>
 <p>This release includes a number of critical bug fixes found and fixed in a general review of the ideal MHD package in preparation of the move to kinetic MHD version 0.4.0 under development. It also includes a few (re-)standardizations of features.</p>
 <div class="section" id="id6">
 <h3>Bug Fixes<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
-<ul>
-<li><p class="first">PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques</p>
-<p>+**All previous 0.3 version torques should be considered incorrect**</p>
-</li>
-<li><p class="first">PENTRC fixed bug in inverse Fourier transformation of perturbed quantities and fixed (removed) JBB normalization of perturbed quantity splines for consistent treatment in GAR, LAR, and GCL methods (now benchmarked with PENT).</p>
 <ul class="simple">
+<li>PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques<ul>
+<li><strong>All previous 0.3 version torques should be considered incorrect</strong></li>
+</ul>
+</li>
+<li>PENTRC fixed bug in inverse Fourier transformation of perturbed quantities and fixed (removed) JBB normalization of perturbed quantity splines for consistent treatment in GAR, LAR, and GCL methods (now benchmarked with PENT).<ul>
 <li><strong>All previous 0.3 version LAR and CGL torques should be considered incorrect</strong></li>
 </ul>
 </li>
-<li><p class="first">PENTRC returned factor of 2 to all GAR methods (now benchmarked against PENT for MDC2 cases)</p>
-</li>
-<li><p class="first">PENTRC fixed radial grid outputs from (over)writing sum and individual ell profiles to same file</p>
-</li>
-<li><p class="first">PENTRC enforce psi limits on grid outputs</p>
-</li>
-<li><p class="first">IPEC fixed bug in writing O_CX, b_nm, b_xnm, xi_nm, and xi_xnm to control netcdf file</p>
-<ul class="simple">
+<li>PENTRC returned factor of 2 to all GAR methods (now benchmarked against PENT for MDC2 cases)</li>
+<li>PENTRC fixed radial grid outputs from (over)writing sum and individual ell profiles to same file</li>
+<li>PENTRC enforce psi limits on grid outputs</li>
+<li>IPEC fixed bug in writing O_CX, b_nm, b_xnm, xi_nm, and xi_xnm to control netcdf file<ul>
 <li><strong>All previous 0.3 version values should be considered incorrect</strong></li>
 </ul>
 </li>
-<li><p class="first">IPEC working jacobian power factors are explicitly enforced when jac_in or jac_out re not specified</p>
-</li>
-<li><p class="first">IPEC fixed bug using wrong jacobian and angle in ipeq_fcoordsout conversions (not used in any previous version)</p>
-</li>
-<li><p class="first">IPEC ipeq_fcoordsout and ipeq_bcoordsout always perform transformation on larger of the working/output m grids (not expected to be an issue for previous versions)</p>
-</li>
+<li>IPEC working jacobian power factors are explicitly enforced when jac_in or jac_out re not specified</li>
+<li>IPEC fixed bug using wrong jacobian and angle in ipeq_fcoordsout conversions (not used in any previous version)</li>
+<li>IPEC ipeq_fcoordsout and ipeq_bcoordsout always perform transformation on larger of the working/output m grids (not expected to be an issue for previous versions)</li>
 </ul>
 </div>
 <div class="section" id="id7">
@@ -244,14 +237,10 @@ call the executables (i.e. dcon, etc.).</p>
 <li>IPEC the control surface theta-space function values are now always calculated and output</li>
 <li>IPEC bwp_pest_flag is now true by default and produces pest ouputs for both xbnormal and vbnormal</li>
 <li>IPEC xclebsch outputs are now converted to output coordinates and theta-space outputs are available</li>
-<li>PENTRC now accepts jsurf_in, tmag_in and all individual powers of the jac_in, allowing it to interface with IPEC&#8217;s new xclebsch outputs that are transformed from the working to ipec output coordinates</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
+<li>PENTRC now accepts jsurf_in, tmag_in and all individual powers of the jac_in, allowing it to interface with IPEC&#8217;s new xclebsch outputs that are transformed from the working to ipec output coordinates<ul>
 <li>Coordinate transformation back to the DCON working coordinates is done on the large of the working/input m grids</li>
 </ul>
-</div></blockquote>
-<ul class="simple">
+</li>
 <li>IPEC added helicity to control and profile netcdf outputs</li>
 <li>PENTRC now has the option to override the perturbed quantities calculated using the xclebsch interface with a direct ipec_pmodb ascii interface (when the user specifies a pmodb_file)</li>
 <li>PENTRC now enforces that a substring of the form &#8216;n#&#8217; where # is the DCON toroidal mode number be in the peq_file file name</li>
