@@ -4785,8 +4785,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,wr_id,ABS(mat)) )
          mat = MATMUL(CONJG(TRANSPOSE(wvecs)),pvecs)
          CALL check( nf90_put_var(mncid,wp_id,ABS(mat)) )
-         matms = MATMUL(CONJG(TRANSPOSE(rvecs)),pvecs)
-         CALL check( nf90_put_var(mncid,rp_id,ABS(matms)) )
+         mat = MATMUL(CONJG(TRANSPOSE(rvecs)),pvecs)
+         CALL check( nf90_put_var(mncid,rp_id,ABS(mat)) )
          IF(singcoup_set) THEN
             matms = MATMUL(CONJG(TRANSPOSE(wvecs)),svecs)
             CALL check( nf90_put_var(mncid,ws_id,ABS(matms)) )
