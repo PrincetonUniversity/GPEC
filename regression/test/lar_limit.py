@@ -17,12 +17,13 @@ Result notes:
 
 import os
 import numpy as np
+import xarray
 import gpec, data
 
 plt = data.plt
 
 repo = '/'.join(__file__.split('/')[:-3])
-loc = repo + '/regression/runs'
+loc = repo + '/regression/runs/lar_lim'
 
 
 def run(repo=repo, loc=None):
@@ -65,32 +66,41 @@ def run(repo=repo, loc=None):
         inputs['pentrc']['PENT_INPUT']['kinetic_file'] = os.path.abspath(exmdir + pf)
     inputs['pentrc']['PENT_INPUT']['data_dir'] = repo + '/pentrc'
 
-    # SOL - make sure major radius is unity
+    # SOL - no rationals, no elongation, order unity lengths
+    inputs['sol']['SOL_INPUT']['e'] = 1.0
+    inputs['sol']['SOL_INPUT']['q0'] = 1.2
     inputs['sol']['SOL_INPUT']['r0'] = 1.0
-    # VAC - No wall
-    inputs['vac']['SHAPE']['a'] = 20
+    inputs['sol']['SOL_INPUT']['a'] = 1.0
+    # VAC - close, stabilizing wall
+    inputs['vac']['SHAPE']['a'] = 0.06
     # EQUIL - use example settings
     # DCON - use all example settings
     # IPEC - apply simple m=2 field and minimize output
     inputs['ipec']['IPEC_INPUT']['mode_flag'] = False
     inputs['ipec']['IPEC_INPUT']['harmonic_flag'] = True
     inputs['ipec']['IPEC_INPUT']['cosmn(2)'] = 1e-4
-    inputs['ipec']['IPEC_INPUT']['sinmn(2)'] = -1e4
+    inputs['ipec']['IPEC_INPUT']['sinmn(2)'] = -1e-4
+    #inputs['ipec']['IPEC_CONTROL']['atol_psi'] = 1e-2
+    # turn everything off
     for key, value in inputs['ipec']['IPEC_OUTPUT'].iteritems():
         if type(value) is bool:
-            inputs['ipec']['IPEC_OUTPUT'][key] = key == 'xclebsch_flag'
+            inputs['ipec']['IPEC_OUTPUT'][key] = False
     for key, value in inputs['ipec']['IPEC_DIAGNOSE'].iteritems():
         if type(value) is bool:
             inputs['ipec']['IPEC_DIAGNOSE'][key] = False
+    # turn minimal output on
+    inputs['ipec']['IPEC_OUTPUT']['xclebsch_flag'] = True
+    inputs['ipec']['IPEC_OUTPUT']['verbose'] = True
     # PENTRC - compare RLAR, CLAR, and TGAR. Don't bother running anything else.
     for key, value in inputs['pentrc']['PENT_OUTPUT'].iteritems():
         if key.endswith('_flag'):
             inputs['pentrc']['PENT_OUTPUT'][key] = key in ['rlar_flag', 'clar_flag', 'tgar_flag']
 
     # scan inverse aspect ratio (solovev defined between 0 and 0.5)
-    for a in np.logspace(1e-3, np.log(0.5) / np.log(10), 10, endpoint=False):
+    for a in np.logspace(-3, 0, 6, endpoint=False)[::-1]:
+        qsub = not (a == 1e-3)
         inputs['sol']['SOL_INPUT']['a'] = a
-        gpec.run(loc='{l}/lar_lim/a{a:.2e}'.format(l=loc, a=a), rundir=exedir, qsub=True,
+        gpec.run(loc='{l}/lar_lim/a{a:.2e}'.format(l=loc, a=a), rundir=exedir, qsub=qsub,
                  mem=2e3, mailon='', rundcon=True, runipec=True, runpentrc=True, **inputs)
 
     return True
@@ -118,32 +128,35 @@ def check(loc=loc):
         if os.path.isfile(filename):
             pentrc = data.open_dataset(filename)
             sol = gpec.namelist.read('{l}/{d}/sol.in'.format(l=loc, d=d))
-            if results in None:
+            if results is None:
                 # assign first results
                 results = pentrc.assign_coords(a=[sol['SOL_INPUT']['a']])
             else:
-                # grow the a dimesnion
-                results = xarray.concat((results, pentrc.assign_coords(a=[sol['SOL_INPUT']['a']])), dim='a')
-        else:
-            print('* No file ' + filename)
+                # grow the a dimension
+                #results = xarray.concat((results, pentrc.assign_coords(a=[sol['SOL_INPUT']['a']])), dim='a')
+                results = xarray.auto_combine((results, pentrc.assign_coords(a=[sol['SOL_INPUT']['a']])), concat_dim='a')
+    # make sure order is monotonic
+    results = results.isel(a=results['a'].argsort())
 
     # prep test of success, simple figure and simple table
     success = True
     fig, ax = plt.subplots(2, 1, sharex=True)
-    print('{:24} {:24} {:24}'.format('Method', '% Error', 'Success'))
+    print('{:>24} {:>24} {:>24}'.format('Method', '% Error', 'Success'))
 
     # test each case
-    tgar = results['T_phi_tgar'].sel(psi_n=1, method='nearest').sum(dim=ell)
-    for k in ['tgar', 'clar', 'rlar']:
-        tphi = results['T_phi_' + key].sel(psi_n=1, method='nearest').sum(dim=ell)
-        l, = ax[0].plot(tphi['a'], tphi, marker='o', mec='none', lw=2, label=key)
-        l, = ax[1].plot(tphi['a'], np.real(tphi) / np.real(tgar), marker='o', mec='none', lw=2, label=key + '/tgar')
+    tgar = results['T_tgar'].sel(psi_tgar=1,method='nearest').sum(dim='ell')
+    for key in ['tgar', 'clar', 'rlar']:
+        tphi = results['T_' + key].sel(method='nearest', **{'psi_'+key: 1}).sum(dim='ell')
+        ax[0].plot(tphi['a'], np.real(tphi), marker='o', mec='none', lw=2, label=key)
+        ax[1].plot(tphi['a'], np.real(tphi) / np.real(tgar), marker='o', mec='none', lw=2, label=key + '/tgar')
         perr = 100 * np.abs(1 - tphi / tgar).sel(a=0, method='nearest')
         if perr > 1:
             success = False
-        print('{:24} {:24.2f} {:24}'.format(key, perr, success))
+        print('{:>24} {:>24.2} {:>24}'.format(key, perr.values, success))
     for a in fig.axes:
         a.legend(numpoints=1)
+        a.set_xscale('log')
+        a.set_yscale('log') #'('symlog',ylinthresh=1e-24)
 
     return success
 
