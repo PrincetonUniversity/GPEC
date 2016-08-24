@@ -162,17 +162,14 @@ call the executables (i.e. dcon, etc.).</p>
 <p>This release includes a number of minor I/O changes and convenient default input features as well as a few minor bug fixes.</p>
 <div class="section" id="bug-fixes">
 <h3>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>MATCH updated interface for changes DCON file formats</li>
 <li>IPEC fixed alignment of columns in xclebsch_fun output</li>
 </ul>
-</div></blockquote>
 </div>
 <div class="section" id="features">
 <h3>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>DCON, IPEC, PENTRC all accept the additional Jacobian type &#8216;park&#8217;<ul>
 <li>Sets the power of (b,bp,r) to (1,0,0)</li>
 </ul>
@@ -188,15 +185,12 @@ call the executables (i.e. dcon, etc.).</p>
 </ul>
 </li>
 </ul>
-</div></blockquote>
 </div>
 <div class="section" id="documentation">
 <h3>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>Example namelists updated to use native coordinates throughout for increased speed and clarity</li>
 </ul>
-</div></blockquote>
 </div>
 </div>
 <div class="section" id="gpec-v0-3-5">
@@ -204,12 +198,10 @@ call the executables (i.e. dcon, etc.).</p>
 <p>This release includes critical bug fixes for the nonambipolar transport calculations in PENTRC.</p>
 <div class="section" id="id1">
 <h3>Bug Fixes<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>PENTRC a correction factor of 1/2 has been applied to the fcgl, <a href="#id2"><span class="problematic" id="id3">*</span></a>gar, and <a href="#id4"><span class="problematic" id="id5">*</span></a>mm methods to correctly represent quadratic terms using complex analysis</li>
 <li>PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.</li>
 </ul>
-</div></blockquote>
 </div>
 </div>
 <div class="section" id="gpec-v0-3-4">
@@ -217,45 +209,37 @@ call the executables (i.e. dcon, etc.).</p>
 <p>This release includes a number of critical bug fixes found and fixed in a general review of the ideal MHD package in preparation of the move to kinetic MHD version 0.4.0 under development. It also includes a few (re-)standardizations of features.</p>
 <div class="section" id="id6">
 <h3>Bug Fixes<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
-<li>PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li><strong>All previous 0.3 version torques should be considered incorrect</strong></li>
-</ul>
-</div></blockquote>
+<ul>
+<li><p class="first">PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques</p>
+<p>+**All previous 0.3 version torques should be considered incorrect**</p>
+</li>
+<li><p class="first">PENTRC fixed bug in inverse Fourier transformation of perturbed quantities and fixed (removed) JBB normalization of perturbed quantity splines for consistent treatment in GAR, LAR, and GCL methods (now benchmarked with PENT).</p>
 <ul class="simple">
-<li>PENTRC fixed bug in inverse Fourier transformation of perturbed quantities and fixed (removed) JBB normalization of perturbed quantity splines for consistent treatment in GAR, LAR, and GCL methods (now benchmarked with PENT).</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
 <li><strong>All previous 0.3 version LAR and CGL torques should be considered incorrect</strong></li>
 </ul>
-</div></blockquote>
+</li>
+<li><p class="first">PENTRC returned factor of 2 to all GAR methods (now benchmarked against PENT for MDC2 cases)</p>
+</li>
+<li><p class="first">PENTRC fixed radial grid outputs from (over)writing sum and individual ell profiles to same file</p>
+</li>
+<li><p class="first">PENTRC enforce psi limits on grid outputs</p>
+</li>
+<li><p class="first">IPEC fixed bug in writing O_CX, b_nm, b_xnm, xi_nm, and xi_xnm to control netcdf file</p>
 <ul class="simple">
-<li>PENTRC returned factor of 2 to all GAR methods (now benchmarked against PENT for MDC2 cases)</li>
-<li>PENTRC fixed radial grid outputs from (over)writing sum and individual ell profiles to same file</li>
-<li>PENTRC enforce psi limits on grid outputs</li>
-<li>IPEC fixed bug in writing O_CX, b_nm, b_xnm, xi_nm, and xi_xnm to control netcdf file</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
 <li><strong>All previous 0.3 version values should be considered incorrect</strong></li>
 </ul>
-</div></blockquote>
-<ul class="simple">
-<li>IPEC working jacobian power factors are explicitly enforced when jac_in or jac_out re not specified</li>
-<li>IPEC fixed bug using wrong jacobian and angle in ipeq_fcoordsout conversions (not used in any previous version)</li>
-<li>IPEC ipeq_fcoordsout and ipeq_bcoordsout always perform transformation on larger of the working/output m grids (not expected to be an issue for previous versions)</li>
+</li>
+<li><p class="first">IPEC working jacobian power factors are explicitly enforced when jac_in or jac_out re not specified</p>
+</li>
+<li><p class="first">IPEC fixed bug using wrong jacobian and angle in ipeq_fcoordsout conversions (not used in any previous version)</p>
+</li>
+<li><p class="first">IPEC ipeq_fcoordsout and ipeq_bcoordsout always perform transformation on larger of the working/output m grids (not expected to be an issue for previous versions)</p>
+</li>
 </ul>
-</div></blockquote>
 </div>
 <div class="section" id="id7">
 <h3>Features<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>IPEC output coordinate m range is now determined by a new IPEC_OUTPUT variable mlim_out</li>
 <li>IPEC the control surface theta-space function values are now always calculated and output</li>
 <li>IPEC bwp_pest_flag is now true by default and produces pest ouputs for both xbnormal and vbnormal</li>
@@ -267,7 +251,6 @@ call the executables (i.e. dcon, etc.).</p>
 <li>Coordinate transformation back to the DCON working coordinates is done on the large of the working/input m grids</li>
 </ul>
 </div></blockquote>
-</div></blockquote>
 <ul class="simple">
 <li>IPEC added helicity to control and profile netcdf outputs</li>
 <li>PENTRC now has the option to override the perturbed quantities calculated using the xclebsch interface with a direct ipec_pmodb ascii interface (when the user specifies a pmodb_file)</li>
@@ -276,41 +259,37 @@ call the executables (i.e. dcon, etc.).</p>
 </div>
 <div class="section" id="speed-and-stability">
 <h3>Speed and Stability<a class="headerlink" href="#speed-and-stability" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>PENTRC only runs the psi_out surfaces if detailed outputs are actually requested</li>
 <li>PENTRC exclude trapped/passing boundary from pitch-space splines using power-grids approaching from either side</li>
 <li>INSTALL and all individual makefiles have updated from the develop branch, reorganizing the linking order and allowing diverse machine/compiler options.</li>
 </ul>
-</div></blockquote>
 </div>
 <div class="section" id="id8">
 <h3>Documentation<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>Updated input and example namelists and their annotation</li>
 </ul>
-</div></blockquote>
 </div>
 </div>
 <div class="section" id="gpec-v0-3-3">
 <h2>GPEC v0.3.3<a class="headerlink" href="#gpec-v0-3-3" title="Permalink to this headline">¶</a></h2>
 <p>This release features a critical bug fix for control surface netcdf output and pmodb/xbnormal outputs</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>All area normalized or energy normalized quantities were incorrectly converted to the users specified jac_out coordinates. All quantities are now in the DCON jac_type coordinate system unless specifically noted otherwise.</li>
 <li>The jacobian and surface area have been added to the control netcdf as global attributes</li>
 <li>The filtering of singular coupling modes is now done entirely within the DCON coordinate system, for which a new singular coupling matrix is formed and SVD&#8217;d.</li>
 <li>Bugs in the use of bcoordsout for pmodb and xbnormal profile quantities that wrote the first variable to multiple variables (i.e. eulb to lagb) were fixed.</li>
 <li>A Bug in the weighting of the bwp profile was fixed</li>
 </ul>
-</div></blockquote>
 </div>
 <div class="section" id="gpec-v0-3-2">
 <h2>GPEC v0.3.2<a class="headerlink" href="#gpec-v0-3-2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>This release features a critical bug fix for control surface ascii output Phi^x.
-- If the jac_out was not the working jac_type Phi^x outputs in the jac_out table were mistakenly in the jac_in coordinate system.</li>
+<li>This release features a critical bug fix for control surface ascii output Phi^x.<ul>
+<li>If the jac_out was not the working jac_type Phi^x outputs in the jac_out table were mistakenly in the jac_in coordinate system.</li>
+</ul>
+</li>
 <li>The external and total flux have been added to the control netcdf alongside their previously stored energy normalized values.</li>
 </ul>
 </div>
@@ -318,19 +297,16 @@ call the executables (i.e. dcon, etc.).</p>
 <h2>GPEC v0.3.1<a class="headerlink" href="#gpec-v0-3-1" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="bugfixes">
 <h3>Bugfixes<a class="headerlink" href="#bugfixes" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>IPEC fixed mistaken use of Hermitian lapack subroutines for permeability matrix</li>
 <li>PYPEC synthetics properly closes synthetic surfaces that cover the full poloidal angle (vessel wall, etc.)</li>
 <li>PYPEC coil plotting bug fixes for axes and color key words</li>
 <li>PYPEC updated to reflect move from xray to xarray</li>
 </ul>
-</div></blockquote>
 </div>
 <div class="section" id="id9">
 <h3>Features<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>IPEC netcdf additions, including control surface matrices, profile quantities, shot/time/machine, and more</li>
 <li>IPEC netcdf names conform to netcdf conventions</li>
 <li>IPEC all netcdf outputs converted to jac_out</li>
@@ -346,53 +322,48 @@ call the executables (i.e. dcon, etc.).</p>
 <li>PYPEC custom subplots automatically re-size figure to keep axes size</li>
 <li>PYPEC now has png_to_gif function for making movies</li>
 </ul>
-</div></blockquote>
 </div>
 <div class="section" id="performance">
 <h3>Performance<a class="headerlink" href="#performance" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>Improved speed of ipeq_bcoordsout/ipeq_fcoordsout by checking for unnecessary calls to ipeq_fcoords/ipeq_bcoords</li>
 </ul>
-</div></blockquote>
 </div>
 </div>
 <div class="section" id="gpec-v0-3-0">
 <h2>GPEC v0.3.0<a class="headerlink" href="#gpec-v0-3-0" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id10">
 <h3>Bugfixes<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>DCON qhigh is enforced independent of sas_flag</li>
 <li>IPEC longstanding bug that caused crashes when brzphi was requested without eqbrzphi is fixed</li>
-<li>IPEC mthsurf bug fixed
-- Benchmarks show perfect recovery of excessively high DCON mthsurf results using mthsurf=1</li>
+<li>IPEC mthsurf bug fixed<ul>
+<li>Benchmarks show perfect recovery of excessively high DCON mthsurf results using mthsurf=1</li>
 </ul>
-</div></blockquote>
+</li>
+</ul>
 </div>
 <div class="section" id="id11">
 <h3>Features<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>COIL now includes 4x48 RFX-mod coils</li>
-<li>IPEC netCDF output is now available for major output flags (more will be transitioned soon)
-- Currently netCDF files include: filter_flag, x/brzphi_flag, xbnormal_flag, pmodb_flag, and control surface fun_flag outputs</li>
+<li>IPEC netCDF output is now available for major output flags (more will be transitioned soon)<ul>
+<li>Currently netCDF files include: filter_flag, x/brzphi_flag, xbnormal_flag, pmodb_flag, and control surface fun_flag outputs</li>
+</ul>
+</li>
 <li>IPEC output subroutines can now be individually timed using the timeit flag</li>
 <li>IPEC mode filtering has a new filter_type, filter_modes interface in IPEC_INPUT</li>
 <li>IPEC reduced terminal printing - no longer is every eigenmode printed to the terminal</li>
 </ul>
-</div></blockquote>
 </div>
 <div class="section" id="id12">
 <h3>Performance<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>IPEC speed was increased by saving coordinate transformation information on a surface when performing multiple transformations on one surface</li>
 <li>IPEC brzphi speed was increase by 1-2 orders of magnitude by calculating (r,z,phi) quantities on the requested grid points instead of across surfaces</li>
 <li>IPEC speed can now be confidently increased by a large factor using the mthsurf flag (see bug fix)</li>
 <li>IPEC compiler optimizability increased with the switch from pointers to allocatable arrays</li>
 </ul>
-</div></blockquote>
 </div>
 </div>
 </div>
