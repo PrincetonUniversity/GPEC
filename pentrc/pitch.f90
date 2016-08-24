@@ -43,7 +43,7 @@ module pitch_integration
     public &
         lambdaatol,lambdartol, &                            ! real
         lambdadebug, &                                      ! logical
-        lambdaintgrl_lsode,kappaintgrl,kappaintgnd, &       ! functions
+        lambdaintgrl_lsode,kappaintgrl,kappadjsum, &       ! functions
         output_pitch_netcdf,output_pitch_ascii              ! subroutines
     
     ! global variables with defaults
@@ -67,7 +67,7 @@ module pitch_integration
         real(r8), dimension(:,:,:,:), allocatable :: fs
     endtype record
     type(record) :: pitch_record(nmethods)
-    
+
     contains
 
     !=======================================================================
@@ -488,14 +488,11 @@ module pitch_integration
             enddo
             do i = 1,mpert
                do j = 1,mpert
-                  kspl%fs(k,1) = kspl%fs(k,1)&
-                    +2*kappa*0.25&
-                    *(fm(i,1)*fm(j,1)&
-                    +fm(i,2)*fm(j,1)&
-                    +fm(i,1)*fm(j,2)&
-                    +fm(i,2)*fm(j,2))&
-                    *real(dbarray(i)*conjg(dbarray(j)))&
-                    /(4*ellipk(kappa))
+                  ! 0.5 correcting quadratic use of 2A_+n instead of proper A_+n + A_-n already normalized out in [Park, PRL 2009]
+                  kspl%fs(k,1) = kspl%fs(k,1) + 2 * kappa &
+                    * 0.25 * (fm(i,1)*fm(j,1) + fm(i,2)*fm(j,1) + fm(i,1)*fm(j,2) + fm(i,2)*fm(j,2)) &
+                    * real(dbarray(i)*conjg(dbarray(j))) &
+                    / (4 * ellipk(kappa**2))
                enddo
             enddo
         enddo
@@ -516,10 +513,10 @@ module pitch_integration
     
     
     !=======================================================================
-    function kappaintgnd(kappa,n,l,q,marray,dbarray,fnml)
+    function kappadjsum(kappa,n,l,q,marray,dbarray,fnml)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
-    !   Kappa integrand from Eq. (14) [Park, Phys. Rev. Let. 2009].
+    !   Kappa sum from Eq. (12) [Park, Phys. Rev. Let. 2009].
     !
     !*ARGUMENTS:
     !    n : integer (in)
@@ -541,7 +538,7 @@ module pitch_integration
     !-----------------------------------------------------------------------
         implicit none
         ! declare function
-        real(r8) :: kappaintgnd
+        real(r8) :: kappadjsum
         ! declare arguments
         integer, intent(in) :: n,l
         real(r8), intent(in) :: q
@@ -554,7 +551,7 @@ module pitch_integration
         integer :: i,j,mstart,mpert
         real(r8) :: kappa
 
-        kappaintgnd = 0
+        kappadjsum = 0
         mpert = size(marray,1)
         mstart = lbound(marray,1)
         allocate(fm(mpert,2))
@@ -574,20 +571,15 @@ module pitch_integration
         ! sum over m,m'
         do i = 1,mpert
            do j = 1,mpert
-              kappaintgnd = kappaintgnd&
-                +2*kappa*0.25&
-                *(fm(i,1)*fm(j,1)&
-                +fm(i,2)*fm(j,1)&
-                +fm(i,1)*fm(j,2)&
-                +fm(i,2)*fm(j,2))&
-                *real(dbarray(i)*conjg(dbarray(j)))&
-                /(4*ellipk(kappa))
+              kappadjsum = kappadjsum + &
+                0.25*(fm(i,1)*fm(j,1) + fm(i,2)*fm(j,1) + fm(i,1)*fm(j,2) + fm(i,2)*fm(j,2)) * &
+                real(dbarray(i)*conjg(dbarray(j)))
            enddo
         enddo
         
         deallocate(fm)
         return
-    end function kappaintgnd
+    end function kappadjsum
 
 
     !=======================================================================

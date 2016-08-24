@@ -41,9 +41,9 @@
    nche=20                  ! Number of Chebyshev polynomials used
 /
 &IPEC_OUTPUT
-   jac_out="pest"           ! Coordinate system of outputs
+   jac_out="hamada"         ! Coordinate system of outputs
    jsurf_out=0              ! True(1) for area weighted outputs (only appends standard ipec_control output)
-   tmag_out=0               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
+   tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
    mlim_out=64              ! If positive, Fourier decomposed outputs will span -mlim_out<=m<=mlim_out. Default (<=0) outputs on internal m range.
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
@@ -78,6 +78,6 @@
    verbose=t                ! Print run log to terminal
 /
 &IPEC_DIAGNOSE
-   timeit=t                 ! Print timer splits for major subroutines
-   radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
+   timeit=f                 ! Print timer splits for major subroutines
+   radvar_flag=t            ! Map various radial variables (rho,psi_tor) on psi_N grid
 /

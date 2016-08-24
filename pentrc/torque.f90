@@ -130,7 +130,7 @@ module torque
     use fspline_mod, only : fspline_eval
     use bicube_mod, only : bicube_eval
     use spline_help, only: spline_roots
-    use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappaintgnd
+    use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappadjsum
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
@@ -389,14 +389,14 @@ module torque
             op_ffuns = (/ epsr, kin%f(1:8), q, sq%f(2), &
                 wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /)
         endif
-        
+
         ! optional orbit information at nlambda_out points in pitch angle
         if(orecord)then
             ilambda_out = (/(nint(ilmda*(nlmda-1)/real(nlambda_out-1))+1,ilmda=0,nlambda_out-1)/)
         endif
         
         
-        
+
         if(tdebug) print *,'  method = '//method
         select case(method)
         
@@ -415,8 +415,9 @@ module torque
                         divx = sum( divx_m%f(:)*expm ) ! nabla.xi_perp
                         kapx = -0.5*(dbob+divx)
                         cglspl%xs(i) = theta
-                        cglspl%fs(i,1) = rzphi%f(4)*abs(divx)**2
-                        cglspl%fs(i,2) = rzphi%f(4)*abs(divx+3.0*kapx)**2
+                        ! include 0.5 correction for quadratic calculations in complex analysis
+                        cglspl%fs(i,1) = rzphi%f(4)*0.5*abs(divx)**2
+                        cglspl%fs(i,2) = rzphi%f(4)*0.5*abs(divx+3.0*kapx)**2
                     enddo
                     call spline_fit(cglspl,"periodic")
                     call spline_int(cglspl)
@@ -459,6 +460,8 @@ module torque
             case("clar")
                 ! set up
                 call cspline_alloc(fbnce,nlmda-1,3) ! <omegab,d> Lambda functions
+                call spline_alloc(vspl,tspl%mx,1) ! vparallel(theta) -> roots are bounce pts
+                vspl%xs(:) = tspl%xs(:)
                 lmdatpb = bo/bmax
                 lmdamin = max(1.0/(1+epsr),bo/bmax)
                 lmdamax = min(1.0/(1-epsr),bo/bmin) ! kappa 0 to 1
@@ -483,13 +486,15 @@ module torque
                         /(ro**2*epsr))*wdfac
                     bhat = SQRT(2*kin%f(s+2)/mass)
                     dhat = (kin%f(s+2)/chrg)
-                    ! JKP PRL 2009 perturbed action
-                    djdj = kappaintgnd(kappa,n,l,q,mfac,dbob_m%f(:),fnml)
+                    ! perturbed action Eq. (12) [Park, Phys. Rev. Lett. 2009] divided by 2pi for DCON phi normalization
+                    djdj = kappadjsum(kappa,n,l,q,mfac,dbob_m%f(:),fnml) * (0.5*pi/epsr) * (mass*bhat*q*ro)**2 / (2*pi)
+                    ! bar normalization from [Logan, Phys. Plasmas 2013]
+                    djdj = djdj / (mass*bhat*ro)**2
                     ! Lambda functions
                     fbnce%xs(ilmda-1) = lmda
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
                     fbnce%fs(ilmda-1,2) = wdbar*dhat
-                    fbnce%fs(ilmda-1,3) = djdj
+                    fbnce%fs(ilmda-1,3) = wbbar*djdj
                     ! bounce locations recorded for optional output
                     vspl%fs(:,1) = 1.0-(lmda/bo)*tspl%fs(:,1)
                     call spline_fit(vspl,"extrap")
@@ -517,8 +522,11 @@ module torque
                     turns%fs(ilmda-1,6)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t2+rzphi%f(2)))
                     turns%xs(ilmda-1) = lmda
                 enddo
-                call cspline_fit(fbnce,'extrap')
-                
+                allocate(fbnce_norm(1))
+                fbnce_norm(1) = 1/median(abs(fbnce%fs(:,3)))
+                fbnce%fs(:,3) = fbnce%fs(:,3) * fbnce_norm(1)
+                CALL cspline_fit(fbnce,'extrap')
+
                 ! energy space integrations
                 allocate(lxint(1))
                 rex = 1.0
@@ -527,14 +535,17 @@ module torque
                     epsr,q,fbnce,l,n,rex,imx,psi,turns,method,op_record=erecord)
 
                 ! dT/dpsi
-                tpsi = sq%f(3)*(-1*lxint(1)) & ! may be missing some normalizations from djdj
-                    *SQRT(epsr/(2*pi**3))*n*n*kin%f(s)*kin%f(s+2)
+                tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
+                    *lxint(1)/fbnce_norm(1) &       ! lsode normalization
+                    *(chi1/twopi)
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
                 
                 ! wrap up
-                deallocate(lxint)
+                deallocate(fbnce_norm,lxint)
+                call spline_dealloc(vspl)   ! vparallel(theta)
+                call spline_dealloc(turns) ! bounce points
                 call cspline_dealloc(fbnce) ! <omegab,d> Lambda functions
-                
+
         
         
         
@@ -1373,7 +1384,7 @@ module torque
         integer :: n,l,zi,mi,ee,nl
         logical :: electron=.false.,first=.true.
         character(8) :: method
-        
+
         complex(r8), dimension (mpert,mpert,6) :: wtw_l
                 
         common /tcom/ wdfac,xfac,method,ffuns
@@ -1542,7 +1553,7 @@ module torque
 
         return
     end subroutine record_method
-    
+
     !=======================================================================
     subroutine record_orbit(method, psi, ell, lambda, fpsi, fs)
     !-----------------------------------------------------------------------
@@ -1823,7 +1834,7 @@ module torque
             wn_id,wt_id,ws_id,wg_id,wb_id,wd_id
         character(16) :: nstring,suffix
         character(128) :: ncfile
-        
+
         print *,"Writing output to netcdf"
 
         ! set species
@@ -2048,7 +2059,7 @@ module torque
                 endif
             enddo
         enddo
-        
+
         ! close file
         call check( nf90_close(ncid) )
 
