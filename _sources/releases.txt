@@ -27,7 +27,52 @@ On the General Atomics iris computer, releases are available at /fusion/projects
 Release Notes
 ******************
 
+This is an active, developing scientific research code. The release structure attempt to follow the semantic versioning guidelines. Given a version number MAJOR.MINOR.PATCH,
+
+- MAJOR version is incremented when incompatible API changes are made,
+- MINOR version is incremented when functionality is added in a backwards-compatible manner, and
+- PATCH version is incremented when backwards-compatible bug fixes are made.
+
+Note, backwards compatibility is defined as the ability to return to a previous run and re-run any previously successful executable. This does not guarantee all output file formats are exactly maintained.
+
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
+
+
+GPEC v0.4.0
+===========
+
+This release includes a number of minor I/O changes and convenient default input features as well as a few minor bug fixes.
+
+Bug Fixes
+--------------
+ - MATCH updated interface for changes DCON file formats
+ - IPEC fixed alignment of columns in xclebsch_fun output
+
+Features
+-------------
+ - DCON, IPEC, PENTRC all accept the additional Jacobian type 'park'
+  - Sets the power of (b,bp,r) to (1,0,0)
+ - IPEC includes (r,z) in xclebsch_fun output
+ - COIL, PENTRC the data_dir used to look up hardcoded data now accepts defaults to $GPECHOME/pentrc
+  - This option is used when set to 'default' or ''
+ - PENTRC now includes a valid circular large-aspect-ratio calculation
+  - Calculates Eq. (19) from [Logan, Phys. Plasmas, 2013] using Eqs. (10-12) from [Park, Phys. Rev. Lett. 2009] with the kappa dependence
+  - Previous versions included this flag as a placeholder only and should not be used
+
+Documentation
+----------------------
+ - Example namelists updated to use native coordinates throughout for increased speed and clarity
+
+
+GPEC v0.3.5
+===========
+
+This release includes critical bug fixes for the nonambipolar transport calculations in PENTRC.
+
+Bug Fixes
+--------------
+ - PENTRC a correction factor of 1/2 has been applied to the fcgl, *gar, and *mm methods to correctly represent quadratic terms using complex analysis
+ - PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.
 
 
 GPEC v0.3.4

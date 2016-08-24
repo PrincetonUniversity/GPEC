@@ -1500,6 +1500,18 @@ in will provide you with new points and increased detail until the
 window samples fewer than that many points in the orginal data. The
 first two lines, for instance, contain only their original 10 points
 (not 1000 interpolated points).</p>
+<dl class="class">
+<dt id="pypec.modplot.MidPointNorm">
+<em class="property">class </em><tt class="descclassname">pypec.modplot.</tt><tt class="descname">MidPointNorm</tt><big>(</big><em>midpoint=0</em>, <em>vmin=None</em>, <em>vmax=None</em>, <em>clip=False</em><big>)</big><a class="reference internal" href="_modules/pypec/modplot.html#MidPointNorm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.modplot.MidPointNorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">matplotlib.colors.Normalize</span></tt></p>
+<p>Taken from <a class="reference external" href="http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib">http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib</a></p>
+<dl class="method">
+<dt id="pypec.modplot.MidPointNorm.inverse">
+<tt class="descname">inverse</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/pypec/modplot.html#MidPointNorm.inverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.modplot.MidPointNorm.inverse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="pypec.modplot.colorbar">
 <tt class="descclassname">pypec.modplot.</tt><tt class="descname">colorbar</tt><big>(</big><em>mappable=None</em>, <em>cax=None</em>, <em>ax=None</em>, <em>use_gridspec=True</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/pypec/modplot.html#colorbar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.modplot.colorbar" title="Permalink to this definition">¶</a></dt>
@@ -1761,8 +1773,7 @@ tighten : t                         #Call tight_layout bound method for figure</
 <dl class="function">
 <dt id="pypec.modplot.plot_axes">
 <tt class="descclassname">pypec.modplot.</tt><tt class="descname">plot_axes</tt><big>(</big><em>ax</em>, <em>fig=None</em>, <em>geometry=(1</em>, <em>1</em>, <em>1)</em><big>)</big><a class="reference internal" href="_modules/pypec/modplot.html#plot_axes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.modplot.plot_axes" title="Permalink to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Re-create a given axis in a new figure. This allows, for instance,
+<dd><p>Re-create a given axis in a new figure. This allows, for instance,
 a subplot to be moved to its own figure where it can be manipulated
 and/or saved independent of the original.</p>
 <dl class="docutils">
@@ -1780,9 +1791,6 @@ and/or saved independent of the original.</p>
 <dd>Axes geometry of re-created axis</dd>
 </dl>
 </dd>
-</dl>
-</div></blockquote>
-<dl class="docutils">
 <dt>returns    </dt>
 <dd>Figure.</dd>
 </dl>
@@ -1864,10 +1872,45 @@ ytick.minor.width by 2 (0.5).</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pypec.modplot.shiftedColorMap">
+<tt class="descclassname">pypec.modplot.</tt><tt class="descname">shiftedColorMap</tt><big>(</big><em>cmap</em>, <em>start=0</em>, <em>midpoint=0.5</em>, <em>stop=1.0</em>, <em>name='shiftedcmap'</em><big>)</big><a class="reference internal" href="_modules/pypec/modplot.html#shiftedColorMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.modplot.shiftedColorMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to offset the &#8220;center&#8221; of a colormap. Useful for
+data with a negative min and positive max and you want the
+middle of the colormap&#8217;s dynamic range to be at zero.</p>
+<p>Taken from <a class="reference external" href="http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib">http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib</a></p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><p class="first">cmap: The matplotlib colormap to be altered
+start: Offset from lowest point in the colormap&#8217;s range.</p>
+<blockquote>
+<div>Defaults to 0.0 (no lower ofset). Should be between
+0.0 and <cite>midpoint</cite>.</div></blockquote>
+<dl class="docutils">
+<dt>midpoint: The new center of the colormap. Defaults to</dt>
+<dd>0.5 (no shift). Should be between 0.0 and 1.0. In
+general, this should be  1 - vmax/(vmax + abs(vmin))
+For example if your data range from -15.0 to +5.0 and
+you want the center of the colormap at 0.0, <cite>midpoint</cite>
+should be set to  1 - 5/(5 + 15)) or 0.75</dd>
+<dt>stop: Offset from highets point in the colormap&#8217;s range.</dt>
+<dd>Defaults to 1.0 (no upper ofset). Should be between
+<cite>midpoint</cite> and 1.0.</dd>
+</dl>
+<p class="last">name: str. Added to the name of cmap when creating the new colormap</p>
+</dd>
+<dt>Example:</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">orig_cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">coolwarm</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shifted_cmap</span> <span class="o">=</span> <span class="n">shiftedColorMap</span><span class="p">(</span><span class="n">orig_cmap</span><span class="p">,</span> <span class="n">midpoint</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;shifted&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pypec.modplot.subplots">
 <tt class="descclassname">pypec.modplot.</tt><tt class="descname">subplots</tt><big>(</big><em>nrows=1</em>, <em>ncols=1</em>, <em>sharex=False</em>, <em>sharey=False</em>, <em>squeeze=True</em>, <em>autosize=True</em>, <em>subplot_kw=None</em>, <em>powerlim=(-3</em>, <em>3)</em>, <em>useOffset=False</em>, <em>nybins=None</em>, <em>nxbins=None</em>, <em>**fig_kw</em><big>)</big><a class="reference internal" href="_modules/pypec/modplot.html#subplots"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.modplot.subplots" title="Permalink to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Matplotlib subplots with default figsize = rcp_size*[ncols,nrows]
+<dd><p>Matplotlib subplots with default figsize = rcp_size*[ncols,nrows]
 fig_kw.setdefault(&#8216;figsize&#8217;,figsize).</p>
 <dl class="docutils">
 <dt>Additional Key Word Arguments:</dt>
@@ -1880,7 +1923,6 @@ fig_kw.setdefault(&#8216;figsize&#8217;,figsize).</p>
 </dd>
 </dl>
 <p>Accepts standargs args and kwargs for pyplot.subplots.</p>
-</div></blockquote>
 <p>ORIGINAL DOCUMENTATION</p>
 <p>Create a figure with a set of subplots already made.</p>
 <p>This utility wrapper makes it convenient to create common layouts of

@@ -61,25 +61,35 @@
   <ul>
 <li><a class="reference internal" href="#">Accessing Releases</a></li>
 <li><a class="reference internal" href="#release-notes">Release Notes</a><ul>
-<li><a class="reference internal" href="#gpec-v0-3-4">GPEC v0.3.4</a><ul>
+<li><a class="reference internal" href="#gpec-v0-4-0">GPEC v0.4.0</a><ul>
 <li><a class="reference internal" href="#bug-fixes">Bug Fixes</a></li>
 <li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#speed-and-stability">Speed and Stability</a></li>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v0-3-5">GPEC v0.3.5</a><ul>
+<li><a class="reference internal" href="#id1">Bug Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v0-3-4">GPEC v0.3.4</a><ul>
+<li><a class="reference internal" href="#id6">Bug Fixes</a></li>
+<li><a class="reference internal" href="#id7">Features</a></li>
+<li><a class="reference internal" href="#speed-and-stability">Speed and Stability</a></li>
+<li><a class="reference internal" href="#id8">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-3">GPEC v0.3.3</a></li>
 <li><a class="reference internal" href="#gpec-v0-3-2">GPEC v0.3.2</a></li>
 <li><a class="reference internal" href="#gpec-v0-3-1">GPEC v0.3.1</a><ul>
 <li><a class="reference internal" href="#bugfixes">Bugfixes</a></li>
-<li><a class="reference internal" href="#id1">Features</a></li>
+<li><a class="reference internal" href="#id9">Features</a></li>
 <li><a class="reference internal" href="#performance">Performance</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-0">GPEC v0.3.0</a><ul>
-<li><a class="reference internal" href="#id2">Bugfixes</a></li>
-<li><a class="reference internal" href="#id3">Features</a></li>
-<li><a class="reference internal" href="#id4">Performance</a></li>
+<li><a class="reference internal" href="#id10">Bugfixes</a></li>
+<li><a class="reference internal" href="#id11">Features</a></li>
+<li><a class="reference internal" href="#id12">Performance</a></li>
 </ul>
 </li>
 </ul>
@@ -139,12 +149,84 @@ call the executables (i.e. dcon, etc.).</p>
 </div>
 <div class="section" id="release-notes">
 <h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
+<p>This is an active, developing scientific research code. The release structure attempt to follow the semantic versioning guidelines. Given a version number MAJOR.MINOR.PATCH,</p>
+<ul class="simple">
+<li>MAJOR version is incremented when incompatible API changes are made,</li>
+<li>MINOR version is incremented when functionality is added in a backwards-compatible manner, and</li>
+<li>PATCH version is incremented when backwards-compatible bug fixes are made.</li>
+</ul>
+<p>Note, backwards compatibility is defined as the ability to return to a previous run and re-run any previously successful executable. This does not guarantee all output file formats are exactly maintained.</p>
 <p>The <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC/releases">github release notes</a> are reproduced below.</p>
+<div class="section" id="gpec-v0-4-0">
+<h2>GPEC v0.4.0<a class="headerlink" href="#gpec-v0-4-0" title="Permalink to this headline">¶</a></h2>
+<p>This release includes a number of minor I/O changes and convenient default input features as well as a few minor bug fixes.</p>
+<div class="section" id="bug-fixes">
+<h3>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>MATCH updated interface for changes DCON file formats</li>
+<li>IPEC fixed alignment of columns in xclebsch_fun output</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="features">
+<h3>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>DCON, IPEC, PENTRC all accept the additional Jacobian type &#8216;park&#8217;</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>Sets the power of (b,bp,r) to (1,0,0)</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li>IPEC includes (r,z) in xclebsch_fun output</li>
+<li>COIL, PENTRC the data_dir used to look up hardcoded data now accepts defaults to $GPECHOME/pentrc</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>This option is used when set to &#8216;default&#8217; or &#8216;&#8217;</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li>PENTRC now includes a valid circular large-aspect-ratio calculation</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>Calculates Eq. (19) from [Logan, Phys. Plasmas, 2013] using Eqs. (10-12) from [Park, Phys. Rev. Lett. 2009] with the kappa dependence</li>
+<li>Previous versions included this flag as a placeholder only and should not be used</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</div>
+<div class="section" id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>Example namelists updated to use native coordinates throughout for increased speed and clarity</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="gpec-v0-3-5">
+<h2>GPEC v0.3.5<a class="headerlink" href="#gpec-v0-3-5" title="Permalink to this headline">¶</a></h2>
+<p>This release includes critical bug fixes for the nonambipolar transport calculations in PENTRC.</p>
+<div class="section" id="id1">
+<h3>Bug Fixes<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>PENTRC a correction factor of 1/2 has been applied to the fcgl, <a href="#id2"><span class="problematic" id="id3">*</span></a>gar, and <a href="#id4"><span class="problematic" id="id5">*</span></a>mm methods to correctly represent quadratic terms using complex analysis</li>
+<li>PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
 <div class="section" id="gpec-v0-3-4">
 <h2>GPEC v0.3.4<a class="headerlink" href="#gpec-v0-3-4" title="Permalink to this headline">¶</a></h2>
 <p>This release includes a number of critical bug fixes found and fixed in a general review of the ideal MHD package in preparation of the move to kinetic MHD version 0.4.0 under development. It also includes a few (re-)standardizations of features.</p>
-<div class="section" id="bug-fixes">
-<h3>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id6">
+<h3>Bug Fixes<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques</li>
@@ -180,8 +262,8 @@ call the executables (i.e. dcon, etc.).</p>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="features">
-<h3>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id7">
+<h3>Features<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>IPEC output coordinate m range is now determined by a new IPEC_OUTPUT variable mlim_out</li>
@@ -212,8 +294,8 @@ call the executables (i.e. dcon, etc.).</p>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="documentation">
-<h3>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id8">
+<h3>Documentation<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Updated input and example namelists and their annotation</li>
@@ -255,8 +337,8 @@ call the executables (i.e. dcon, etc.).</p>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id1">
-<h3>Features<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id9">
+<h3>Features<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>IPEC netcdf additions, including control surface matrices, profile quantities, shot/time/machine, and more</li>
@@ -287,8 +369,8 @@ call the executables (i.e. dcon, etc.).</p>
 </div>
 <div class="section" id="gpec-v0-3-0">
 <h2>GPEC v0.3.0<a class="headerlink" href="#gpec-v0-3-0" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id2">
-<h3>Bugfixes<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id10">
+<h3>Bugfixes<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>DCON qhigh is enforced independent of sas_flag</li>
@@ -298,8 +380,8 @@ call the executables (i.e. dcon, etc.).</p>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id3">
-<h3>Features<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id11">
+<h3>Features<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>COIL now includes 4x48 RFX-mod coils</li>
@@ -311,8 +393,8 @@ call the executables (i.e. dcon, etc.).</p>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id4">
-<h3>Performance<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id12">
+<h3>Performance<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>IPEC speed was increased by saving coordinate transformation information on a surface when performing multiple transformations on one surface</li>
