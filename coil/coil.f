@@ -80,7 +80,7 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=coil_control)
       READ(UNIT=in_unit,NML=coil_output)
       CALL ascii_close(in_unit)
-      IF (TRIM(data_dir)=='default') THEN
+      IF (TRIM(data_dir)=='' .OR. TRIM(data_dir)=='default') THEN
          CALL getenv('GPECHOME',data_dir)
          IF(LEN(TRIM(data_dir))==0) stop
      $  "ERROR: Default coil dir requires GPECHOME environment variable"

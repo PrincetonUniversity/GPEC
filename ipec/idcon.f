@@ -62,6 +62,8 @@ c-----------------------------------------------------------------------
          jac_type="equal_arc"
       ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN  
          jac_type="boozer"
+      ELSE IF ((power_b==1).AND.(power_bp==0).AND.(power_r==0)) THEN  
+         jac_type="park"
       ELSE 
          jac_type="other"
       ENDIF

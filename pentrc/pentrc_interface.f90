@@ -155,7 +155,7 @@ module pentrc_interface
 
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
         tdebug,xdebug,lambdadebug,indebug
-        
+
     private :: i ! these conflict with the dcon namespace
 
     contains    
@@ -300,4 +300,4 @@ module pentrc_interface
     
 end module pentrc_interface
     
-    
+

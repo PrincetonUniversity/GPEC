@@ -131,6 +131,8 @@ c-----------------------------------------------------------------------
          jac_type="equal_arc"
       ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="boozer"
+      ELSE IF ((power_b==1).AND.(power_bp==0).AND.(power_r==0)) THEN
+         jac_type="park"
       ELSE
          jac_type="other"
       ENDIF
@@ -1327,7 +1329,7 @@ c-----------------------------------------------------------------------
         sq      =set_sq
         rzphi   =set_rzphi
         mpsi = sq%mx
-        
+
         ! needed to create w_i^T*w_j coefficient matices
         smats   =set_smats 
         tmats   =set_tmats
