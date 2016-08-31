@@ -111,12 +111,12 @@ c-----------------------------------------------------------------------
             ENDIF
             ! surface current needs dP_perp contributions
 c            IF(verbose)WRITE(*,'(1x,a12,i3,2(a7,es10.3),a10,es10.3)')
-c     $           "eigenmode = ",i,", dw = ",REAL(surfet(1,i)),
+c     $           "eigenmode = ",i,", dW = ",REAL(surfet(1,i)),
 c     $           ", T = ",-2*nn*AIMAG(surfet(1,i)),", error = ",
 c     $           ABS(1-surfet(2,i)/surfet(1,i))
             IF(verbose)
      $           WRITE(*,'(1x,a12,i3,2(a7,es10.3))')
-     $           "eigenmode = ",i,", dw = ",REAL(et(i)),
+     $           "eigenmode = ",i,", dW = ",REAL(et(i)),
      $           ", T = ",-2*nn*AIMAG(et(i))
          ELSE
             DO j=1,4
@@ -132,7 +132,7 @@ c     $           ABS(1-surfet(2,i)/surfet(1,i))
             ENDIF
             IF(verbose.AND.((error>1e-6)))
      $           WRITE(*,'(1x,a12,i3,a7,es10.3,a10,es10.3)')
-     $           "eigenmode = ",i,", dw = ",REAL(surfet(1,i)),
+     $           "eigenmode = ",i,", dW = ",REAL(surfet(1,i)),
      $           ", error = ",ABS(1-surfet(2,i)/surfet(1,i))
          ENDIF
 
