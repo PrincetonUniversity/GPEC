@@ -1753,6 +1753,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: gcoil,
      $    gcoilevmatt, gcoilevmats
 
+      INTEGER :: p_id,j_id,m_id,c_id,k_id,i_id,ci_id,cp_id,m1_id,m2_id,
+     $    te_id,tc_id
+
       TYPE(cspline_type) :: optorq
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
@@ -1884,9 +1887,9 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)
 
       WRITE(out_unit,'(1x,a16,2(1x,a4),10(1x,a16))')"psi","i","j",
-     $     "Re(T_x)","Im(T_x)","Re(T_f)","Im(T_f)",
-     $     "Re(T_ef)","Im(T_ef)","Re(T_fp)","Im(T_fp)",
-     $     "Re(T_efp)","Im(T_efp)"
+     $     "real(T_x)","imag(T_x)","real(T_f)","imag(T_f)",
+     $     "real(T_ef)","imag(T_ef)","real(T_fp)","imag(T_fp)",
+     $     "real(T_efp)","imag(T_efp)"
       DO istep=1,mstep,MAX(1,(mstep*mpert-1)/max_linesout+1)
          DO i=1,mpert
             DO j=1,mpert
@@ -1901,6 +1904,33 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
+
+      ! append to netcdf file
+      IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
+      CALL check( nf90_open(fncfile,nf90_write,fncid) )
+      IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+      CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
+      IF(debug_flag) PRINT *,"  Defining variables"
+      CALL check( nf90_redef(fncid))
+      CALL check( nf90_def_dim(fncid, "m", mpert, m_id) )
+      CALL check( nf90_def_var(fncid, "m", nf90_int,m_id,m1_id))
+      CALL check( nf90_def_dim(fncid, "m_prime", mpert, j_id) )
+      CALL check( nf90_def_var(fncid, "m_prime", nf90_int,j_id,m2_id))
+      CALL check( nf90_def_var(fncid, "T_xe", nf90_double,
+     $            (/p_id,m_id,j_id,i_id/), te_id) )
+      CALL check( nf90_put_att(fncid, te_id, "long_name",
+     $            "Energy-norm external flux torque matrix") )
+      CALL check( nf90_put_att(fncid, te_id, "units", "Nm/(Wb/m)") )
+      CALL check( nf90_enddef(fncid) )
+      IF(debug_flag) PRINT *,"  Writing variables"
+      CALL check( nf90_put_var(fncid, m1_id, mfac) )
+      CALL check( nf90_put_var(fncid, m2_id, mfac) )
+      CALL check( nf90_put_var(fncid, te_id, RESHAPE((/REAL(gresp),
+     $            AIMAG(gresp)/), (/mstep,mpert,mpert,2/))) )
+      CALL check( nf90_close(fncid) )
+      IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
+
 c-----------------------------------------------------------------------
 c     calculate maximum torque eigenvalues.
 c-----------------------------------------------------------------------
@@ -2066,6 +2096,37 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
+
+         ! append to netcdf file
+         IF(debug_flag) PRINT *,"Opening "//TRIM(fncfile)
+         CALL check( nf90_open(fncfile,nf90_write,fncid) )
+         IF(debug_flag) PRINT *,"  Inquiring about dimensions"
+         CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+         CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
+         IF(debug_flag) PRINT *,"  Defining variables"
+         CALL check( nf90_redef(fncid))
+         CALL check( nf90_def_dim(fncid, "coil_index", coil_num,c_id) )
+         CALL check( nf90_def_var(fncid, "coil_index", nf90_int,
+     $               (/c_id/),ci_id) )
+         CALL check( nf90_def_dim(fncid, "coil_index_prime", coil_num,
+     $        k_id) )
+         CALL check( nf90_def_var(fncid, "coil_index_prime", nf90_int,
+     $               (/k_id/),cp_id) )
+         CALL check( nf90_def_var(fncid, "T_coil", nf90_double,
+     $               (/p_id,c_id,k_id,i_id/),tc_id) )
+         CALL check( nf90_put_att(fncid,tc_id,"long_name",
+     $               "Coil-space torque matrix") )
+         CALL check( nf90_put_att(fncid,tc_id,"units","~Nm/A^2") )
+         CALL check( nf90_enddef(fncid) )
+         IF(debug_flag) PRINT *,"  Writing variables"
+         CALL check( nf90_put_var(fncid, ci_id, (/(i,i=1,coil_num)/)))
+         CALL check( nf90_put_var(fncid, cp_id, (/(i,i=1,coil_num)/)))
+         CALL check( nf90_put_var(fncid, tc_id, RESHAPE((/REAL(gcoil),
+     $               AIMAG(gcoil)/), (/mstep,coil_num,coil_num,2/))) )
+         CALL check( nf90_close(fncid) )
+         IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
+
 c-----------------------------------------------------------------------
 c     calculate maximum coil eigenvalues.
 c-----------------------------------------------------------------------
@@ -5654,7 +5715,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(fncid,"i",2, fidid) )
       CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
       CALL check( nf90_def_dim(fncid,"m_out",lmpert, fmdid) )
-      CALL check( nf90_def_var(fncid,"m_out",NF90_INT,fmdid,fmvid) )
+      CALL check( nf90_def_var(fncid,"m_out",nf90_int,fmdid,fmvid) )
       CALL check( nf90_def_dim(fncid,"psi_n",mstep, fpdid) )
       CALL check( nf90_def_var(fncid,"psi_n",nf90_double,fpdid,fpvid) )
       CALL check( nf90_def_dim(fncid,"theta_dcon",mthsurf+1, ftdid) )
