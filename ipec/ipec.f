@@ -474,7 +474,13 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (singfld_flag) THEN
-         CALL ipout_singfld(mode,xspmn,sing_spot,singcoup_flag)
+         IF (con_flag) THEN
+            PRINT *,"WARNING: singfld_flag not supported with con_flag"
+            singfld_flag = .FALSE.
+            vsingfld_flag = .FALSE.
+         ELSE
+            CALL ipout_singfld(mode,xspmn,sing_spot,singcoup_flag)
+         ENDIF
       ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
          CALL ipout_vsingfld()
