@@ -370,42 +370,9 @@ write line plots to tables. Lets look at a 1D mode spectrum plot for example,</p
 <a class="reference internal image-reference" href="_images/example_xim.png"><img alt="_images/example_xim.png" src="_images/example_xim.png" style="width: 600px;" /></a>
 <p>That&#8217;s it! Read the table with your favorite editor. It will probably need a little
 cleaning at the top since it tries to use the lengthy legend labels as column headers.</p>
-<p>Finally, 3D equilibrium calculations lend themselves naturally to 3D figures. This module
-has a helpful function for forming the necessary x,y,z meshes to quickly plot the
-3D plasma using mayavi.</p>
-<p>After adding the requisite geometry to the control surface output,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">add_control_geometry</span><span class="p">(</span><span class="n">con</span><span class="p">,</span><span class="n">phi_lim</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">3</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>it is easy to make 3D surface plots using mayavi,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">con</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">con</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">con</span><span class="p">[</span><span class="s">&#39;Z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">b_n_3d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">con</span><span class="p">[</span><span class="s">&#39;b_n&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">con</span><span class="p">[</span><span class="s">&#39;expn&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span><span class="mi">600</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">scalars</span><span class="o">=</span><span class="n">b_n_3d</span><span class="p">,</span><span class="n">colormap</span><span class="o">=</span><span class="s">&#39;RdBu&#39;</span><span class="p">,</span><span class="n">vmin</span><span class="o">=-</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Note that mayavi explicitly requires numpy.ndarray objects so we had to
-use the values of each xarray DataArray.</p>
-<p>Now, lets cap the ends with our full profile information. This is a little
-more involved. For the toroidal angle of each end, we need to rotate the
-2D arrays for the mesh and the field values.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">phi</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">3</span><span class="o">/</span><span class="mi">2</span><span class="p">]:</span>
-<span class="gp">... </span>    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">prof</span><span class="p">[</span><span class="s">&#39;b_n&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1j</span><span class="o">*</span><span class="n">phi</span><span class="p">))</span> <span class="c"># poloidal cross section at phi</span>
-<span class="gp">... </span>    <span class="n">xy</span> <span class="o">=</span> <span class="n">prof</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1j</span><span class="o">*</span><span class="n">phi</span><span class="p">)</span> <span class="c"># rotate the plane</span>
-<span class="gp">... </span>    <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">xy</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">xy</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">prof</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">])</span>
-<span class="gp">... </span>    <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">b</span><span class="p">])[:,:,::</span><span class="mi">10</span><span class="p">]</span> <span class="c"># downsample psi by 10 to speed up mayavi</span>
-<span class="gp">... </span>    <span class="n">cap</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">scalars</span><span class="o">=</span><span class="n">b</span><span class="p">,</span><span class="n">colormap</span><span class="o">=</span><span class="s">&#39;RdBu&#39;</span><span class="p">,</span><span class="n">vmin</span><span class="o">=-</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="mf">2e-3</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mmlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;examples/figures/example_bn_3d_capped.png&#39;</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_bn_3d_capped.png"><img alt="_images/example_bn_3d_capped.png" src="_images/example_bn_3d_capped.png" style="width: 600px;" /></a>
-<p>That looks awesome!</p>
-<p>There are, of course, plenty more outputs and important ways of visualizing
-them intuitively. See, for example, the 2D plots in the add_control_geometry
-function&#8217;s documentation. At this point we have outlined the basics. Using
-the modules and similar commands to those used here the user should be able
-to fully interact with and visually explore the GP
-EC output.</p>
+<p>At this point we have outlined the basics. Using this module and similar commands
+to those used here the user should be able to fully interact with and visually
+explore the GPEC output.</p>
 </div>
 <div class="section" id="advanced-users">
 <h3>Advanced Users<a class="headerlink" href="#advanced-users" title="Permalink to this headline">¶</a></h3>
@@ -715,52 +682,6 @@ so beware of loosing accuracy near rational surfaces.</p>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="function">
-<dt id="pypec.data.add_control_geometry">
-<tt class="descclassname">pypec.data.</tt><tt class="descname">add_control_geometry</tt><big>(</big><em>ds</em>, <em>phi_lim=6.283185307179586</em>, <em>overwrite=False</em><big>)</big><a class="reference internal" href="_modules/pypec/data.html#add_control_geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.data.add_control_geometry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add geometric dimensions to dataset from ipec_control_output_n#.nc.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
-overwrite: bool. Overwrite geometric quantities if they already exist.</dd>
-<dt>Returns:</dt>
-<dd>Dataset. New dataset with additional dimensions.</dd>
-</dl>
-<p><strong>Examples:</strong></p>
-<p>After opening, and adding geometry,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">add_control_geometry</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>it is easy to make 3D surface plots using mayavi,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span><span class="mi">600</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;Z&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-<span class="gp">... </span>                  <span class="n">scalars</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;b_n&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;expn&#39;</span><span class="p">]),</span><span class="n">colormap</span><span class="o">=</span><span class="s">&#39;RdBu&#39;</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mmlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;examples/figures/example_bn_3d.png&#39;</span><span class="p">,</span><span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_bn_3d.png"><img alt="_images/example_bn_3d.png" src="_images/example_bn_3d.png" style="width: 600px;" /></a>
-<p>Make 2D perturbed last-closed-flux-surface plots quickly using,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fac</span> <span class="o">=</span> <span class="mf">1e-1</span> <span class="c"># good for DIII-D unit eigenmodes</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s">&#39;equal&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">],</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">],</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;k&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span> <span class="c"># most and least stable modes</span>
-<span class="gp">... </span>    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R_EDX_FUN&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">fac</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">v</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R_n&#39;</span><span class="p">],</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">v</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">set_linearray</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:],</span><span class="n">cmap</span><span class="o">=</span><span class="s">&#39;viridis&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span><span class="n">ticks</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s">&#39;Mode Index&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">xtl</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mf">1.7</span><span class="p">,</span><span class="mf">2.4</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&#39;R (m)&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;z (m)&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/figures/example_boundary_wiggle.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_boundary_wiggle.png"><img alt="_images/example_boundary_wiggle.png" src="_images/example_boundary_wiggle.png" style="width: 600px;" /></a>
 </dd></dl>
 
 <dl class="function">

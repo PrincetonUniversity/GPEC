@@ -271,47 +271,9 @@
 <span class="sd">That&#39;s it! Read the table with your favorite editor. It will probably need a little</span>
 <span class="sd">cleaning at the top since it tries to use the lengthy legend labels as column headers.</span>
 
-<span class="sd">Finally, 3D equilibrium calculations lend themselves naturally to 3D figures. This module</span>
-<span class="sd">has a helpful function for forming the necessary x,y,z meshes to quickly plot the</span>
-<span class="sd">3D plasma using mayavi.</span>
-
-<span class="sd">After adding the requisite geometry to the control surface output,</span>
-
-<span class="sd">&gt;&gt;&gt; con = add_control_geometry(con,phi_lim=np.pi*3/2)</span>
-
-<span class="sd">it is easy to make 3D surface plots using mayavi,</span>
-
-<span class="sd">&gt;&gt;&gt; x,y,z = con[&#39;X&#39;].values,con[&#39;Y&#39;].values,con[&#39;Z&#39;].values</span>
-<span class="sd">&gt;&gt;&gt; b_n_3d = np.real(con[&#39;b_n&#39;]*con[&#39;expn&#39;])</span>
-<span class="sd">&gt;&gt;&gt; fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))</span>
-<span class="sd">&gt;&gt;&gt; mesh = mmlab.mesh(x,y,z,scalars=b_n_3d,colormap=&#39;RdBu&#39;,vmin=-2e-3,vmax=2e-3,figure=fig)</span>
-
-<span class="sd">Note that mayavi explicitly requires numpy.ndarray objects so we had to</span>
-<span class="sd">use the values of each xarray DataArray.</span>
-
-<span class="sd">Now, lets cap the ends with our full profile information. This is a little</span>
-<span class="sd">more involved. For the toroidal angle of each end, we need to rotate the</span>
-<span class="sd">2D arrays for the mesh and the field values.</span>
-
-<span class="sd">&gt;&gt;&gt; for phi in [0,np.pi*3/2]:</span>
-<span class="sd">...     b = np.real(prof[&#39;b_n&#39;]*np.exp(1j*phi)) # poloidal cross section at phi</span>
-<span class="sd">...     xy = prof[&#39;R&#39;]*np.exp(1j*phi) # rotate the plane</span>
-<span class="sd">...     x,y,z = np.real(xy),np.imag(xy),np.real(prof[&#39;z&#39;])</span>
-<span class="sd">...     x,y,z,b = np.array([x,y,z,b])[:,:,::10] # downsample psi by 10 to speed up mayavi</span>
-<span class="sd">...     cap = mmlab.mesh(x,y,z,scalars=b,colormap=&#39;RdBu&#39;,vmin=-2e-3,vmax=2e-3,figure=fig)</span>
-<span class="sd">&gt;&gt;&gt; mmlab.savefig(filename=&#39;examples/figures/example_bn_3d_capped.png&#39;,figure=fig)</span>
-
-<span class="sd">.. image:: examples/figures/example_bn_3d_capped.png</span>
-<span class="sd">   :width: 600px</span>
-
-<span class="sd">That looks awesome!</span>
-
-<span class="sd">There are, of course, plenty more outputs and important ways of visualizing</span>
-<span class="sd">them intuitively. See, for example, the 2D plots in the add_control_geometry</span>
-<span class="sd">function&#39;s documentation. At this point we have outlined the basics. Using</span>
-<span class="sd">the modules and similar commands to those used here the user should be able</span>
-<span class="sd">to fully interact with and visually explore the GP</span>
-<span class="sd">EC output.</span>
+<span class="sd">At this point we have outlined the basics. Using this module and similar commands</span>
+<span class="sd">to those used here the user should be able to fully interact with and visually</span>
+<span class="sd">explore the GPEC output.</span>
 
 
 
@@ -1853,80 +1815,6 @@
                 <span class="k">break</span>
     <span class="k">return</span> <span class="n">shot</span>
 
-</div>
-<div class="viewcode-block" id="add_control_geometry"><a class="viewcode-back" href="../../source_documentation.html#pypec.data.add_control_geometry">[docs]</a><span class="k">def</span> <span class="nf">add_control_geometry</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">phi_lim</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Add geometric dimensions to dataset from ipec_control_output_n#.nc.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc</span>
-<span class="sd">        phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.</span>
-<span class="sd">        overwrite: bool. Overwrite geometric quantities if they already exist.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        Dataset. New dataset with additional dimensions.</span>
-
-<span class="sd">    **Examples:**</span>
-
-<span class="sd">    After opening, and adding geometry,</span>
-
-<span class="sd">    &gt;&gt;&gt; ds = open_dataset(&#39;examples/DIIID_ideal_example/ipec_control_output_n1.nc&#39;)</span>
-<span class="sd">    &gt;&gt;&gt; ds = add_control_geometry(ds)</span>
-<span class="sd">    </span>
-<span class="sd">    it is easy to make 3D surface plots using mayavi,</span>
-
-<span class="sd">    &gt;&gt;&gt; fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))</span>
-<span class="sd">    &gt;&gt;&gt; mesh = mmlab.mesh(ds[&#39;X&#39;].values,ds[&#39;Y&#39;].values,ds[&#39;Z&#39;].values,</span>
-<span class="sd">    ...                   scalars=np.real(ds[&#39;b_n&#39;]*ds[&#39;expn&#39;]),colormap=&#39;RdBu&#39;,figure=fig)</span>
-<span class="sd">    &gt;&gt;&gt; mmlab.savefig(filename=&#39;examples/figures/example_bn_3d.png&#39;,figure=fig)</span>
-
-<span class="sd">    .. image:: examples/figures/example_bn_3d.png</span>
-<span class="sd">       :width: 600px</span>
-
-<span class="sd">    Make 2D perturbed last-closed-flux-surface plots quickly using,</span>
-
-<span class="sd">    &gt;&gt;&gt; fac = 1e-1 # good for DIII-D unit eigenmodes</span>
-<span class="sd">    &gt;&gt;&gt; f,ax = plt.subplots()</span>
-<span class="sd">    &gt;&gt;&gt; ax.set_aspect(&#39;equal&#39;)</span>
-<span class="sd">    &gt;&gt;&gt; l, = ax.plot(ds[&#39;R&#39;],ds[&#39;z&#39;],color=&#39;k&#39;)</span>
-<span class="sd">    &gt;&gt;&gt; for i in range(4): # most and least stable modes</span>
-<span class="sd">    ...     v = np.real(ds[&#39;R_EDX_FUN&#39;][i]*fac)</span>
-<span class="sd">    ...     l, = ax.plot(ds[&#39;R&#39;]+v*ds[&#39;R_n&#39;],ds[&#39;z&#39;]+v*ds[&#39;z_n&#39;])</span>
-<span class="sd">    &gt;&gt;&gt; sm = plt.set_linearray(ax.lines[-4:],cmap=&#39;viridis&#39;)</span>
-<span class="sd">    &gt;&gt;&gt; cb = f.colorbar(sm,ticks=range(4))</span>
-<span class="sd">    &gt;&gt;&gt; cb.set_label(&#39;Mode Index&#39;)</span>
-<span class="sd">    &gt;&gt;&gt; xtl = ax.set_xticks([1,1.7,2.4])</span>
-<span class="sd">    &gt;&gt;&gt; txt = ax.set_xlabel(&#39;R (m)&#39;)</span>
-<span class="sd">    &gt;&gt;&gt; txt = ax.set_ylabel(&#39;z (m)&#39;)</span>
-<span class="sd">    &gt;&gt;&gt; f.savefig(&#39;examples/figures/example_boundary_wiggle.png&#39;)</span>
-
-<span class="sd">    .. image:: examples/figures/example_boundary_wiggle.png</span>
-<span class="sd">       :width: 600px</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c"># Toroidal angle</span>
-    <span class="k">if</span> <span class="s">&#39;phi&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
-        <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">phi_lim</span><span class="p">,</span><span class="mi">180</span><span class="p">)</span>
-        <span class="n">phi</span> <span class="o">=</span> <span class="n">xarray</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span><span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;phi&#39;</span><span class="p">:</span><span class="n">phi</span><span class="p">})</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s">&#39;phi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">phi</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s">&#39;expn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1j</span><span class="o">*</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;n&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;phi&#39;</span><span class="p">])</span>
-
-    <span class="c"># 3D cartesian coords for 3D plots</span>
-    <span class="k">if</span> <span class="s">&#39;X&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
-        <span class="n">xy</span> <span class="o">=</span> <span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1j</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;phi&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;xy&#39;</span><span class="p">)</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xy</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">)[</span><span class="s">&#39;xy&#39;</span><span class="p">]</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xy</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">)[</span><span class="s">&#39;xy&#39;</span><span class="p">]</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s">&#39;Z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mi">0</span><span class="o">*</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;phi&#39;</span><span class="p">])</span>
-
-    <span class="c"># Normal vectors</span>
-    <span class="k">if</span> <span class="bp">False</span> <span class="ow">and</span> <span class="p">(</span><span class="s">&#39;z_n&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span> <span class="ow">or</span> <span class="s">&#39;R_n&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ds</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">):</span>
-        <span class="n">dr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">],</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">dz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">],</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">],</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dr</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">dz</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s">&#39;z_n&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xarray</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">dr</span><span class="o">/</span><span class="n">norm</span><span class="p">,</span><span class="n">coords</span><span class="o">=</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;theta&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">())</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s">&#39;R_n&#39;</span><span class="p">]</span> <span class="o">=-</span><span class="n">xarray</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">dz</span><span class="o">/</span><span class="n">norm</span><span class="p">,</span><span class="n">coords</span><span class="o">=</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;theta&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">())</span>
-
-    <span class="k">return</span> <span class="n">ds</span>
 
 <span class="c">######################################################## Developer functions</span>
 
