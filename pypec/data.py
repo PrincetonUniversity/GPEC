@@ -196,47 +196,9 @@ True
 That's it! Read the table with your favorite editor. It will probably need a little
 cleaning at the top since it tries to use the lengthy legend labels as column headers.
 
-Finally, 3D equilibrium calculations lend themselves naturally to 3D figures. This module
-has a helpful function for forming the necessary x,y,z meshes to quickly plot the
-3D plasma using mayavi.
-
-After adding the requisite geometry to the control surface output,
-
->>> con = add_control_geometry(con,phi_lim=np.pi*3/2)
-
-it is easy to make 3D surface plots using mayavi,
-
->>> x,y,z = con['X'].values,con['Y'].values,con['Z'].values
->>> b_n_3d = np.real(con['b_n']*con['expn'])
->>> fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))
->>> mesh = mmlab.mesh(x,y,z,scalars=b_n_3d,colormap='RdBu',vmin=-2e-3,vmax=2e-3,figure=fig)
-
-Note that mayavi explicitly requires numpy.ndarray objects so we had to
-use the values of each xarray DataArray.
-
-Now, lets cap the ends with our full profile information. This is a little
-more involved. For the toroidal angle of each end, we need to rotate the
-2D arrays for the mesh and the field values.
-
->>> for phi in [0,np.pi*3/2]:
-...     b = np.real(prof['b_n']*np.exp(1j*phi)) # poloidal cross section at phi
-...     xy = prof['R']*np.exp(1j*phi) # rotate the plane
-...     x,y,z = np.real(xy),np.imag(xy),np.real(prof['z'])
-...     x,y,z,b = np.array([x,y,z,b])[:,:,::10] # downsample psi by 10 to speed up mayavi
-...     cap = mmlab.mesh(x,y,z,scalars=b,colormap='RdBu',vmin=-2e-3,vmax=2e-3,figure=fig)
->>> mmlab.savefig(filename='examples/figures/example_bn_3d_capped.png',figure=fig)
-
-.. image:: examples/figures/example_bn_3d_capped.png
-   :width: 600px
-
-That looks awesome!
-
-There are, of course, plenty more outputs and important ways of visualizing
-them intuitively. See, for example, the 2D plots in the add_control_geometry
-function's documentation. At this point we have outlined the basics. Using
-the modules and similar commands to those used here the user should be able
-to fully interact with and visually explore the GP
-EC output.
+At this point we have outlined the basics. Using this module and similar commands
+to those used here the user should be able to fully interact with and visually
+explore the GPEC output.
 
 
 
@@ -1778,80 +1740,6 @@ def getshot(path='.',full_name=False):
                 break
     return shot
 
-
-def add_control_geometry(ds, phi_lim=2*np.pi, overwrite=False):
-    """
-    Add geometric dimensions to dataset from ipec_control_output_n#.nc.
-
-    Args:
-        ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-        phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
-        overwrite: bool. Overwrite geometric quantities if they already exist.
-
-    Returns:
-        Dataset. New dataset with additional dimensions.
-
-    **Examples:**
-
-    After opening, and adding geometry,
-
-    >>> ds = open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
-    >>> ds = add_control_geometry(ds)
-    
-    it is easy to make 3D surface plots using mayavi,
-
-    >>> fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))
-    >>> mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,
-    ...                   scalars=np.real(ds['b_n']*ds['expn']),colormap='RdBu',figure=fig)
-    >>> mmlab.savefig(filename='examples/figures/example_bn_3d.png',figure=fig)
-
-    .. image:: examples/figures/example_bn_3d.png
-       :width: 600px
-
-    Make 2D perturbed last-closed-flux-surface plots quickly using,
-
-    >>> fac = 1e-1 # good for DIII-D unit eigenmodes
-    >>> f,ax = plt.subplots()
-    >>> ax.set_aspect('equal')
-    >>> l, = ax.plot(ds['R'],ds['z'],color='k')
-    >>> for i in range(4): # most and least stable modes
-    ...     v = np.real(ds['R_EDX_FUN'][i]*fac)
-    ...     l, = ax.plot(ds['R']+v*ds['R_n'],ds['z']+v*ds['z_n'])
-    >>> sm = plt.set_linearray(ax.lines[-4:],cmap='viridis')
-    >>> cb = f.colorbar(sm,ticks=range(4))
-    >>> cb.set_label('Mode Index')
-    >>> xtl = ax.set_xticks([1,1.7,2.4])
-    >>> txt = ax.set_xlabel('R (m)')
-    >>> txt = ax.set_ylabel('z (m)')
-    >>> f.savefig('examples/figures/example_boundary_wiggle.png')
-
-    .. image:: examples/figures/example_boundary_wiggle.png
-       :width: 600px
-
-    """
-    # Toroidal angle
-    if 'phi' not in ds or overwrite:
-        phi = np.linspace(0,phi_lim,180)
-        phi = xarray.DataArray(phi,coords={'phi':phi})
-        ds['phi'] = phi
-        ds['expn'] = np.exp(-1j*ds.attrs['n']*ds['phi'])
-
-    # 3D cartesian coords for 3D plots
-    if 'X' not in ds or overwrite:
-        xy = (ds['R']*np.exp(1j*ds['phi'])).to_dataset(name='xy')
-        ds['X'] = xy.apply(np.real)['xy']
-        ds['Y'] = xy.apply(np.imag)['xy']
-        ds['Z'] = ds['z']*(1+0*ds['phi'])
-
-    # Normal vectors
-    if False and ('z_n' not in ds or 'R_n' not in ds or overwrite):
-        dr = np.roll(ds['R'],1)-np.roll(ds['R'],-1)
-        dz = np.roll(ds['z'],1)-np.roll(ds['z'],-1)
-        norm = np.sqrt(dr**2+dz**2)
-        ds['z_n'] = xarray.DataArray(dr/norm,coords=ds['theta'].to_dataset())
-        ds['R_n'] =-xarray.DataArray(dz/norm,coords=ds['theta'].to_dataset())
-
-    return ds
 
 ######################################################## Developer functions
 
