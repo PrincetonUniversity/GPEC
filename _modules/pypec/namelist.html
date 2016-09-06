@@ -197,11 +197,11 @@
 <div class="viewcode-block" id="read"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.read">[docs]</a><span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">out_type</span><span class="o">=</span><span class="s">&#39;dict&#39;</span><span class="p">,</span><span class="n">comment</span><span class="o">=</span><span class="s">&#39;!&#39;</span><span class="p">,</span><span class="n">old</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Read in a file. Must have namelists in series, not embedded.</span>
-<span class="sd">    Assumes name of list preceded by &#39;&amp;&#39; and list ends with &#39;\&#39;.</span>
+<span class="sd">    Assumes name of list preceded by &#39;&amp;&#39; and list ends with `\`.</span>
 <span class="sd">    </span>
-<span class="sd">    :param filename : str. Path to input namelist.</span>
-<span class="sd">    :param out_type : str. Can be either &#39;dict&#39; or &#39;obj&#39;.</span>
-<span class="sd">    :param comment : str. Lines starting with any of these characters are considerd annotations.</span>
+<span class="sd">    :param filename: str. Path to input namelist.</span>
+<span class="sd">    :param out_type: str. Can be either &#39;dict&#39; or &#39;obj&#39;.</span>
+<span class="sd">    :param comment: str. Lines starting with any of these characters are considerd annotations.</span>
 
 <span class="sd">    :returns: dict (object). Top keys (attributes) are namelists with sub-key(-attribute) parameter values.</span>
 <span class="sd">        </span>
@@ -281,8 +281,8 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write namelist object to file for fortran interface.</span>
 
-<span class="sd">    :param nl       : object. namelist object from read(). Can be dictionary or Objectify type class.</span>
-<span class="sd">    :param filename : str. Path of file to be written.</span>
+<span class="sd">    :param nl: object. namelist object from read(). Can be dictionary or Objectify type class.</span>
+<span class="sd">    :param filename: str. Path of file to be written.</span>
 
 <span class="sd">    :returns: bool. True.</span>
 

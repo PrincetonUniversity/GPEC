@@ -83,7 +83,7 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#pypec-modplot-matplotlib-customizations"><tt class="docutils literal"><span class="pre">pypec.modplot</span></tt> &#8211; matplotlib Customizations</a><ul>
-<li><a class="reference internal" href="#id2">Examples</a></li>
+<li><a class="reference internal" href="#id4">Examples</a></li>
 </ul>
 </li>
 </ul>
@@ -1406,15 +1406,20 @@ for use with the FORTAN codes.</p>
 <dt id="pypec.namelist.read">
 <tt class="descclassname">pypec.namelist.</tt><tt class="descname">read</tt><big>(</big><em>filename</em>, <em>out_type='dict'</em>, <em>comment='!'</em>, <em>old=False</em><big>)</big><a class="reference internal" href="_modules/pypec/namelist.html#read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.namelist.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read in a file. Must have namelists in series, not embedded.
-Assumes name of list preceded by &#8216;&amp;&#8217; and list ends with &#8216;&#8217;.</p>
-<p>:param filename : str. Path to input namelist.
-:param out_type : str. Can be either &#8216;dict&#8217; or &#8216;obj&#8217;.
-:param comment : str. Lines starting with any of these characters are considerd annotations.</p>
+Assumes name of list preceded by &#8216;&amp;&#8217; and list ends with <a href="#id2"><span class="problematic" id="id3">`</span></a>`.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict (object). Top keys (attributes) are namelists with sub-key(-attribute) parameter values.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> &#8211; str. Path to input namelist.</li>
+<li><strong>out_type</strong> &#8211; str. Can be either &#8216;dict&#8217; or &#8216;obj&#8217;.</li>
+<li><strong>comment</strong> &#8211; str. Lines starting with any of these characters are considerd annotations.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dict (object). Top keys (attributes) are namelists with sub-key(-attribute) parameter values.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1430,13 +1435,18 @@ un-ordered.</p>
 <dt id="pypec.namelist.write">
 <tt class="descclassname">pypec.namelist.</tt><tt class="descname">write</tt><big>(</big><em>nl</em>, <em>filename</em>, <em>old=False</em><big>)</big><a class="reference internal" href="_modules/pypec/namelist.html#write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.namelist.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write namelist object to file for fortran interface.</p>
-<p>:param nl       : object. namelist object from read(). Can be dictionary or Objectify type class.
-:param filename : str. Path of file to be written.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">bool. True.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>nl</strong> &#8211; object. namelist object from read(). Can be dictionary or Objectify type class.</li>
+<li><strong>filename</strong> &#8211; str. Path of file to be written.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool. True.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1447,8 +1457,8 @@ un-ordered.</p>
 <span class="target" id="module-pypec.modplot"></span><div class="section" id="pypec-modplot-matplotlib-customizations">
 <h2><a class="reference internal" href="#module-pypec.modplot" title="pypec.modplot"><tt class="xref py py-mod docutils literal"><span class="pre">pypec.modplot</span></tt></a> &#8211; matplotlib Customizations<a class="headerlink" href="#pypec-modplot-matplotlib-customizations" title="Permalink to this headline">¶</a></h2>
 <p>Collection of modified matplotlib functions and objects.</p>
-<div class="section" id="id2">
-<h3>Examples<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id4">
+<h3>Examples<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <p>Plot complex arguments.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">subplots</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">lines</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mf">0.5j</span><span class="p">),</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
