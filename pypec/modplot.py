@@ -500,21 +500,15 @@ def shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shiftedcmap'):
 
     Args:
         cmap: The matplotlib colormap to be altered
-        start: Offset from lowest point in the colormap's range.
-            Defaults to 0.0 (no lower ofset). Should be between
-            0.0 and `midpoint`.
-        midpoint: The new center of the colormap. Defaults to
-            0.5 (no shift). Should be between 0.0 and 1.0. In
-            general, this should be  1 - vmax/(vmax + abs(vmin))
-            For example if your data range from -15.0 to +5.0 and
-            you want the center of the colormap at 0.0, `midpoint`
-            should be set to  1 - 5/(5 + 15)) or 0.75
-        stop: Offset from highets point in the colormap's range.
-            Defaults to 1.0 (no upper ofset). Should be between
-            `midpoint` and 1.0.
-        name: str. Added to the name of cmap when creating the new colormap
+        start: Offset from lowest point in the colormap's range. Should be between 0 and 'midpoint'.
+        midpoint: The new center of the colormap. Should be between 0.0 and 1.0. Recommended is  1 - vmax/(vmax + abs(vmin)).
+        stop: Offset from highest point in the colormap's range. Should be between 'midpoint' and 1.0.
+        name: str. Added to the name of cmap when creating the new colormap.
 
     Example:
+
+    The following creates a shifted colormap that can be used in matplotlib arguments,
+
         >>> orig_cmap = matplotlib.cm.coolwarm
         >>> shifted_cmap = shiftedColorMap(orig_cmap, midpoint=0.75, name='shifted')
 

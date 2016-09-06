@@ -57,15 +57,28 @@ from string import strip
 from collections import OrderedDict
 
 class Objectify(object):
+    """
+    Class base to convert iterable to instance.
+
+    """
     def __init__(self, d):
-        """Class base to convert iterable to instance."""
+        """
+        Recursively convert iterable to instance.
+
+        :param d: iterable. Dictionary that will be converted.
+
+        """
         for a, b in d.iteritems():
             if isinstance(b, (list, tuple)):
                setattr(self, a, [Objectify(x) if isinstance(x, dict) else x for x in b])
             else:
                setattr(self, a, Objectify(b) if isinstance(b, dict) else b)
-    def _todict(self): 
-            """Converts instance back to dictionary."""
+
+    def _todict(self):
+            """
+            Converts instance back to dictionary.
+
+            """
             d = OrderedDict()
             for attr in dir(self):
                 if not attr.startswith('__') and not attr=='_todict':
@@ -83,13 +96,10 @@ def _string_to_type(str):
     Convert a string representing a fortran namelist value
     to the appropriate python type object.
     
-    Arguments:
-      str  : str. 
-        String to convert
+    :param str  : str. String to convert
     
-    Returns: 
-      obj. 
-        Python object of appropriate type.
+    :returns: obj. Python object of appropriate type.
+
     """
     try:
         pyobj=int(str)
@@ -125,22 +135,13 @@ def _string_to_type(str):
 def read(filename,out_type='dict',comment='!',old=False):
     """
     Read in a file. Must have namelists in series, not embedded.
-    Assumes name of list preceded by '&' and list ends with '\'.
+    Assumes name of list preceded by '&' and list ends with a single backslash.
     
-    Arguments:
-      filename : str. 
-        Path to input namelist.
-    Key Word Arguments: 
-      out_type : str. 
-        Can be either 'dict' or 'obj'.
-      comment : str.
-        Lines starting with any of these characters are considerd annotations.
+    :param filename: str. Path to input namelist.
+    :param out_type: str. Can be either 'dict' or 'obj'.
+    :param comment: str. Lines starting with any of these characters are considered annotations.
 
-    Returns: 
-      dict (object). 
-        Top level keys (attributes) are the namelists with 
-        sub-key (sub-attribute) parameters and their associated 
-        values.
+    :returns: dict (object). Top keys (attributes) are namelists with sub-key(-attribute) parameter values.
         
     .. note:: The returned dict is actually "OrderedDict" type from 
         collections module. If returning an object, the object is 
@@ -218,16 +219,10 @@ def write(nl,filename,old=False):
     """
     Write namelist object to file for fortran interface.
 
-    Arguments:
-      nl       : object. 
-        namelist object from read() 
-        can be dictionary or Objectify type class.
-      filename : str. 
-        Path of file to be written.
+    :param nl: object. namelist object from read(). Can be dictionary or Objectify type class.
+    :param filename: str. Path of file to be written.
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     if type(nl) == Objectify:
@@ -270,17 +265,11 @@ def _write_rst(nl,name='',filename='namelist.rst'):
     Write namelist object to rst file for sphinx documentation
     including tooltips.
 
-    Arguments:
-      nl       : object. 
-        namelist object from read.
-      name  : str.
-        Name of namelist file.
-      filename : str. 
-        Path of file to be written.
+    :param nl       : object.  namelist object from read.
+    :param name  : str. Name of namelist file.
+    :param filename : str. Path of file to be written.
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     import _tooltips_
@@ -316,4 +305,3 @@ def _write_rst(nl,name='',filename='namelist.rst'):
             f.write('\n\n')
         
     return True
-                

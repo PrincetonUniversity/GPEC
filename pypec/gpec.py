@@ -28,7 +28,7 @@ change what we want to
 >>> new_inputs['dcon']['DCON_CONTROL']['nn']=2
 >>> new_dir = new_inputs.indir[:-2]+'2'
 
-DOUBLE CHECK THAT ALL IPUTS ARE WHAT YOU EXPECT (not shown here)
+*Double check that all inputs are what you expect* (not shown here)
 and submit the job to the cluster.
 
 >>> gpec.run(loc=new_dir,**new_inputs.infiles)
@@ -90,24 +90,19 @@ class InputSet:
     """
     Class designed to hold the standard inputs for a run.
 
-    Attributes:
-      rundir : str. 
-        Location of executables, .dat files, and extra .in files.
-      indir  : str. 
-        Location of .in files read in and stored here
-      infiles: dict. 
-        Tree like storage of namelist objects.
+    :Attributes:
+
+        - rundir: str. Location of executables, .dat files, and extra .in files.
+        - indir: str. Location of .in files read in and stored here
+        - infiles: dict. Tree like storage of namelist objects.
 
     """
     def __init__(self,rundir=packagedir+'bin',indir=packagedir+'input'):
         """
-        Initializes the intance.
+        Initializes the instance.
 
-        Key Word Arguments: 
-          rundir : str. 
-            Location of IPEC package rundirectory.
-          indir  : str. 
-            Location of .in namelist files to read.
+        :param rundir: str. Location of IPEC package rundirectory.
+        :param indir : str. Location of .in namelist files to read.
 
         """
         self.rundir = rundir.rstrip('/')+'/' # want ending /
@@ -133,9 +128,8 @@ def _newloc(loc):
     Utility function for making and moving to a new location.
     Note: First 2 directories counted pre-/ must exist already.
     
-    Arguments: 
-      loc : str. 
-        Directory to make and/or move to.
+    :param loc: str. Directory to make and/or move to.
+
     """
     dirs = os.path.abspath(loc).split('/')
     for i in range(2,len(dirs)+1):
@@ -158,60 +152,28 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     """
     Python wrapper for running ipec package.
     
-    Key Word Arguments:
-      loc      : str. 
-        Directory location for run.
-      rundir   : str. 
-        IPEC package directory with executables and .dat files.
-      qsub     : bool. 
-        Submit job to cluster.
-      return_on_complete : bool. 
-        Return only after job is finished on cluster (irrelevant if qsub=False).
-      rerun : bool.
-        Does not delete existing .out files.
-      rundcon  : bool. 
-        Run dcon.
-      runipec  : bool. 
-        Run ipec.
-      runpentrc : bool.
-        Run pentrc.
-      cleandcon : bool.
-        Remove euler.bin file after run is complete.
-      fill_inputs : bool. 
-        Use inputs from rundir (see kwargs).
-      mailon   : str. 
-        Any combination of a,b,e for on interruption
-        execution, and termination respectively.
-      email    : str. 
-        Email address.
-      mem : float
-        Memory request of q-submission in megabytes (converted to integer).
-    
-    Deprecated Key Word Arguments:
-      runpent : bool.
-        Run deprecated pent program.
-      optpentrc : bool.
-        Run OPENTRC executable pentrc optimization (under construction).
-      pent_tol : float. 
-        Acceptable torque error. pent_tol>0 tries maskpsi of 32,16,4,2,1 
-        until convergence or 1. Forced to 0 when qsub is true.
-    ..note::
-      Deprecated kwrags are kept for a time so as to avoid incorrect assumption
-      that they are input files.
-    
-    Additional key word arguments:
-      kwargs   : dict. 
-        namelist instance(s) written to <kwarg>.in file(s).
-        
-    .. note:: 
+    :param loc: str. Directory location for run.
+    :param rundir: str. IPEC package directory with executables and .dat files.
+    :param qsub: bool. Submit job to cluster.
+    :param return_on_complete: bool. Return only after job is finished on cluster (irrelevant if qsub=False).
+    :param rerun: bool. Does not delete existing .out files.
+    :param rundcon: bool. Run dcon.
+    :param runipec: bool. Run ipec.
+    :param runpentrc: bool. Run pentrc.
+    :param cleandcon: bool. Remove euler.bin file after run is complete.
+    :param fill_inputs: bool. Use inputs from rundir (see kwargs).
+    :param mailon: str. Any combination of a,b,e for on interruption execution, and termination respectively.
+    :param email: str. Email address.
+    :param mem: floatMemory request of q-submission in megabytes (converted to integer).
+    :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
+
+    .. note::
       Namelists taken from (in order of priority): 
       1) Key word arguments 
       2) .in files from loc
       3) .in files from rundir
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     # housekeeping
@@ -324,19 +286,11 @@ def optntv(mlist,maxiter=50,loc='.',rundir=default.rundir,**kwargs):
     Python wrapper for running ipec package multiple times in
     a search for the normalized spectrum that maximizes NTV.
     
-    Arguments:      
-      mlist    : list. 
-        Integer poloidal modes included on plasma surface.
-    
-    Key Word Arguments:    
-      maxiter  : int.
-        Maximum number of iterations.
-      loc      : str. 
-        Directory location for run.
-      rundir   : str. 
-        IPEC package directory with executables and .dat files.
-      kwargs : dict. 
-        namelist instance(s) written to <kwarg>.in file(s).
+    :param mlist: list. Integer poloidal modes included on plasma surface.
+    :param maxiter: int.Maximum number of iterations.
+    :param loc: str. Directory location for run.
+    :param rundir: str. IPEC package directory with executables and .dat files.
+    :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
         
      .. note::
        Namelists taken from (in order of priority):
@@ -344,9 +298,7 @@ def optntv(mlist,maxiter=50,loc='.',rundir=default.rundir,**kwargs):
        2) .in files from loc
        3) .in files from rundir
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     mlist = map(int,mlist)
@@ -415,33 +367,17 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     - wrapper uses data package to linearly combine ipec_xclebsch outputs
     - Initial guess is the first singcoup_svd mode from IPEC
     
-    Arguments:      
-      ms    : list. 
-        Integer poloidal modes included on plasma surface.
-    
-    Key Word Arguments:
-      ms    : list. 
-        Integer poloidal modes included on plasma surface.
-      ttype : str.
-        PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).
-      tfac : int.
-        Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.
-      perp1 : bool.
-        Optimizes in space perpendicular to 1st IPEC SVD mode.
-      norm : float.
-        Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).
-      qsub : bool.
-        Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.
-      method : str.
-        Method used in scipy.optimize.minimize.
-      maxiter  : int.
-        Maximum number of iterations.
-      loc      : str. 
-        Directory location for run.
-      rundir   : str. 
-        IPEC package directory with executables and .dat files.
-      kwargs : dict. 
-        namelist instance(s) written to <kwarg>.in file(s).
+    :param ms: list. Integer poloidal modes included on plasma surface.
+    :param ttype: str.PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).
+    :param tfac: int.Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.
+    :param perp1: bool.Optimizes in space perpendicular to 1st IPEC SVD mode.
+    :param norm: float.Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).
+    :param qsub: bool.Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.
+    :param method: str.Method used in scipy.optimize.minimize.
+    :param maxiter: int.Maximum number of iterations.
+    :param loc: str. Directory location for run.
+    :param rundir: str. IPEC package directory with executables and .dat files.
+    :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
         
      .. note::
        Namelists taken from (in order of priority):
@@ -449,9 +385,7 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
        2) .in files from loc
        3) .in files from rundir
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     global iteration
@@ -702,30 +636,21 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     
 
 
-def omegascan(omega='wp',base='.',scale=np.linspace(-2,2,20),pentrcfile='pentrc.in',**kwargs):
+def omegascan(omega='wp',base='.',scale=(-2,-1,-0.5,0.5,1,2),pentrcfile='pentrc.in',**kwargs):
     """
     Run pent for series of scaled nu/omega_phi/omega_E/omega_D/gamma_damp values. 
     User must specify full path to all files named in pent.in input file
     located in the base directory.
     Note that the rotation profile is scaled by manipulating omega_E
-    on each surface to obtain the scaled roation.
+    on each surface to obtain the scaled rotation.
 
-    Key Word Arguments:
-      omega     : str. 
-       Choose from nu, wp, we, wd, or ga
-      base    : str. 
-       Top level directory containing dcon and ipec runs.
-       Must contain euler.bin and vacuum.bin file.
-      scale   : ndarray. 
-        The scale factors iterated over.
-      pentfile: str. 
-        Original input file.
-      rundcon : bool
-        Set true if using hybrid kinetic MHD DCON. Will also attempt IPEC + PENT.
+    :param omega: str. Choose from nu, wp, we, wd, or ga
+    :param base: str. Top level directory containing dcon and ipec runs. Must contain euler.bin and vacuum.bin file.
+    :param scale: ndarray. The scale factors iterated over.
+    :param pentfile: str. Original input file.
+    :param rundcon: bool. Set true if using hybrid kinetic MHD DCON. Will also attempt IPEC + PENT.
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     # setup
@@ -758,7 +683,7 @@ def omegascan(omega='wp',base='.',scale=np.linspace(-2,2,20),pentrcfile='pentrc.
         
     return True
 
-def nustarscan(base='.',scale=10**np.linspace(-1,1,11),pentfile='pent.in',
+def nustarscan(base='.',scale=(0.1,1.0,10.0),pentfile='pent.in',
            scalen=True,scalet=True,**kwargs):
     """
     Run pent for series of *approximately* scaled collisionality values.
@@ -776,22 +701,14 @@ def nustarscan(base='.',scale=10**np.linspace(-1,1,11),pentfile='pent.in',
     .. note:: Approximate scaling ignores log-Lambda dependence, and uses
        nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.
 
-    Key Word Arguments:
-      base    : str. 
-       Top level directory containing dcon and ipec runs.
-       Must contain euler.bin and vacuum.bin file.
-      scale   : ndarray. 
-        The scale factors iterated over.
-      pentfile: str. 
-        Original input file.
-      scalen : bool.
-        Use density scaling to change nu_star.
-      scalet : bool.
-        Use temperature scaling to change nu_star.
+    :param base: str. Top level directory containing dcon and ipec runs. Must contain euler.bin and vacuum.bin file.
+    :param scale: ndarray. The scale factors iterated over.
+    :param pentfile: str. Original input file.
+    :param scalen: bool.Use density scaling to change nu_star.
+    :param scalet: bool.Use temperature scaling to change nu_star.
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
+
     """
     # setup
     base = os.path.abspath(base) +'/'

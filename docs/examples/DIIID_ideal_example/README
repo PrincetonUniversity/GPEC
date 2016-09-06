@@ -1,5 +1,5 @@
-GPEC DIII-D Example
-====================
+GPEC DIII-D Ideal Example
+==========================
 
 This example uses a baseline H-mode Error Field Correction (EFC) plasma from a n=1 EFC study done in 2013. The equilibrium used is a kinetic EFIT from DIII-D shot 147131 at 2300ms, and the profiles are self consistent with the equilibrium. Pre-GPEC results using a combination of IPEC and PENT for this calculation are published in `[C. Paz-Soldan, M. J. Lanctot, N. C. Logan, et al., Phys. Plasmas 21, 072503 (2014).] <http://scitation.aip.org/content/aip/journal/pop/21/7/10.1063/1.4886795>`_.
 
@@ -9,7 +9,7 @@ Following a typical workflow we first cd to the example's directory, then run DC
 
   dcon
    
-   DCON START => GPEC version 0.1.0
+   DCON START => GPEC version 1.0.0
    __________________________________________
    psihigh = 9.930E-01
    Equilibrium: g147131.02300_DIIID_KEFIT, Type: efit
@@ -44,7 +44,7 @@ Satisfied with the DCON result, we run IPEC::
 
   ipec
    
-   IPEC START => GPEC version 0.1.0
+   IPEC START => GPEC version 1.0.0
    __________________________________________
    Reading dcon eigenfuctions
    Counting and reading dcon solutions
@@ -119,7 +119,7 @@ Finally, we run PENT::
 
   pentrc
    
-   PENTRC START => GPEC version 0.1.0
+   PENTRC START => GPEC version 1.0.0
    __________________________________________
    clearing working directory
   rm: cannot remove `pentrc_*.out': No such file or directory
@@ -221,7 +221,7 @@ Finally, we run PENT::
   PENTRC STOP => Normal termination.
 
 
-..note:: The warnings about magnetic wells are ok in this case.
+.. note:: The warnings about magnetic wells are ok in this case.
 
 We see that the full and trapped-only calculations of the torque agree reasonably well, which is consistent with the understanding that particles on banana orbits dominate the nonambipolar transport. The RLAR result in this case is orders of magnitude off, but does have generaly the correct qualitative behavior.
 

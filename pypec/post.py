@@ -76,7 +76,7 @@ import numpy as np  # math
 # in this package
 import modplot as plt
 import data
-from data import xarray,mmlab
+from data import xarray, mmlab
 
 ######################################################## Global Variables
 
@@ -97,16 +97,14 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
     Note, this surface uses the machine toroidal angle. It should only by used
     with functions that do the same (tmag_out=0).
 
-    Args:
-        control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-        phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
-        overwrite: bool. Overwrite geometric quantities if they already exist.
-        inplace: bool. Modify dataset inplace. Otherwise, return a new dataset.
+    :param control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
+    :param phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
+    :param overwrite: bool. Overwrite geometric quantities if they already exist.
+    :param inplace: bool. Modify dataset inplace. Otherwise, return a new dataset.
 
-    Returns:
-        Dataset. New dataset with additional dimensions.
+    :returns: Dataset. New dataset with additional dimensions.
 
-    **Examples:**
+    :Examples:
 
     After opening, adding geometry and confirming the functional forms
     are using the machine angle,
@@ -195,10 +193,11 @@ def add_control_geometry(ds, phi_lim=2 * pi, overwrite=False):
     """
     WARNING: This will soon be deprecated. Migrate to using add_3dsurface.
 
+    See add_3dsurface for documentation.
+
     """
 
     return add_3dsurface(ds, phi_lim=2 * pi, overwrite=False)
-add_control_geometry.__doc__+=add_3d.__doc__
 
 
 def add_fun(ds, keys=None, tmag=False, inplace=True):
@@ -207,15 +206,12 @@ def add_fun(ds, keys=None, tmag=False, inplace=True):
     This is helpful when analyzing a GPEC run for which fun_flag was off
     for speed/efficiency.
 
-    Args:
-        ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-        keys: iterable. List of keys for which <key>_fun will be added.
-         Default is all spectral variables.
-        tmag: bool. Keep the magnetic coordinate angle (default is machine angle).
-        inplace: bool. Add to dataset. Otherwise, make a new dataset object.
+    :param ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
+    :param keys: iterable. List of keys for which <key>_fun will be added. Default is all spectral variables.
+    :param tmag: bool. Keep the magnetic coordinate angle (default is machine angle).
+    :param inplace: bool. Add to dataset. Otherwise, make a new dataset object.
 
-    Returns:
-        Dataset. New dataset with real space functions of theta.
+    :returns: Dataset. New dataset with real space functions of theta.
 
     """
     if inplace:
@@ -247,20 +243,17 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
     Calculate the eigenvalue and eigenvector corresponding to maximum the torque
     within the specified range of normalized poloidal flux.
 
-    Args:
-        matrixprofile: DataArray. T_x or T_coil from ipec_profile_output_n#.nc.
-        psilow: float. Lower limit of normalized poloidal flux.
-        psihigh: float. Upper limit of normalized poloidal flux.
-        normalize: bool. Optimize value within psi range normalized to the total.
-        energy: bool. Optimize 2ndW (default is torque).
-        minimize: bool. FInd the minimum (default is maximum).
+    :param matrixprofile: DataArray. T_x or T_coil from ipec_profile_output_n#.nc.
+    :param psilow: float. Lower limit of normalized poloidal flux.
+    :param psihigh: float. Upper limit of normalized poloidal flux.
+    :param normalize: bool. Optimize value within psi range normalized to the total.
+    :param energy: bool. Optimize 2ndW (default is torque).
+    :param minimize: bool. FInd the minimum (default is maximum).
 
-    Returns:
-        w,v. Eigenvalue, eigenvector of optimum.
+    :returns: w,v. Eigenvalue, eigenvector of optimum.
 
 
-    Examples
-    ---------
+    :Examples:
 
     With the output of a kinetic GPEC run in hand,
 
@@ -310,8 +303,8 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
     Th = (Th + Th.conj().T) / 2
     Tl = mprof.sel(method='nearest', psi_n=psilow)
     Tl = (Tl + Tl.conj().T) / 2
-    if psilow==0:
-        Tl *= 0 # explicitly remove lower range
+    if psilow == 0:
+        Tl *= 0  # explicitly remove lower range
 
     # optimal torque within range
     Topt = Th - Tl
