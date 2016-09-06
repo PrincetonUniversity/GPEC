@@ -109,15 +109,15 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
     After opening, adding geometry and confirming the functional forms
     are using the machine angle,
 
-    >>> ds = data.open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
-    >>> ds = add_3dsurface(ds)
-    >>> ds = add_fun(ds,tmag=False)
+    >>> con = data.open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
+    >>> con = add_3dsurface(con)
+    >>> con = add_fun(con,tmag=False)
 
     it is easy to make 3D surface plots using mayavi,
 
     >>> fig = mmlab.figure(bgcolor=(1, 1, 1), fgcolor=(0,0,0), size=(600, 600))
-    >>> mesh = mmlab.mesh(ds['x_surf'].values,ds['y_surf'].values,ds['z_surf'].values,
-    ...                   scalars=np.real(ds['b_n_fun'] * ds['phase_surf']), colormap='RdBu', figure=fig)
+    >>> mesh = mmlab.mesh(con['x_surf'].values,con['y_surf'].values,con['z_surf'].values,
+    ...                   scalars=np.real(con['b_n_fun'] * con['phase_surf']), colormap='RdBu', figure=fig)
     >>> mmlab.savefig(filename='examples/figures/example_bn_3d.png', figure=fig)
 
     .. image:: examples/figures/example_bn_3d.png
@@ -128,10 +128,10 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
     >>> fac = 1e-1 # good for DIII-D unit eigenmodes
     >>> f,ax = plt.subplots()
     >>> ax.set_aspect('equal')
-    >>> l, = ax.plot(ds['R'], ds['z'], color='k')
+    >>> l, = ax.plot(con['R'], con['z'], color='k')
     >>> for i in range(4): # most and least stable modes
-    ...     v = np.real(ds['R_EDX_FUN'][i] * fac)
-    ...     l, = ax.plot(ds['R'] + v * ds['R_n'], ds['z'] + v * ds['z_n'])
+    ...     v = np.real(con['R_xe_eigenvector_fun'][i] * fac)
+    ...     l, = ax.plot(con['R'] + v * con['R_n'], con['z'] + v * con['z_n'])
     >>> sm = plt.set_linearray(ax.lines[-4:], cmap='viridis')
     >>> cb = f.colorbar(sm, ticks=range(4))
     >>> cb.set_label('Mode Index')
@@ -147,11 +147,11 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
     by the normal displacements and colored to show the normal field.
 
     >>> fig = mmlab.figure(bgcolor=(1, 1, 1), fgcolor=(0,0,0), size=(600, 600))
-    >>> xinorm = 10 * ds['phase_surf'] # good for ~cm displacements
-    >>> x = np.real(ds['x_surf'].values + ds['xi_n_fun'] * xinorm * ds['x_surf_n'])
-    >>> y = np.real(ds['y_surf'].values + ds['xi_n_fun'] * xinorm * ds['y_surf_n'])
-    >>> z = np.real(ds['z_surf'].values + ds['xi_n_fun'] * xinorm * ds['z_surf_n'])
-    >>> s = np.real(ds['b_n_fun'] * ds['phase_surf'])
+    >>> xinorm = 10 * con['phase_surf'] # good for ~cm displacements
+    >>> x = np.real(con['x_surf'].values + con['xi_n_fun'] * xinorm * con['x_surf_n'])
+    >>> y = np.real(con['y_surf'].values + con['xi_n_fun'] * xinorm * con['y_surf_n'])
+    >>> z = np.real(con['z_surf'].values + con['xi_n_fun'] * xinorm * con['z_surf_n'])
+    >>> s = np.real(con['b_n_fun'] * con['phase_surf'])
     >>> mesh = mmlab.mesh(x,y,z,scalars=s, colormap='RdBu', figure=fig)
     >>> mmlab.savefig(filename='examples/figures/example_bn_xin_3d.png', figure=fig)
 
@@ -189,28 +189,55 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
     return ds
 
 
-def add_fun(ds, keys=None, tmag=False, inplace=True):
+def add_fun(control_output, keys=None, tmag=False, inplace=True):
     """
     Add real space functions of theta calculated from the spectral outputs.
     This is helpful when analyzing a GPEC run for which fun_flag was off
     for speed/efficiency.
 
-    :param ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
+    :param control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
     :param keys: iterable. List of keys for which <key>_fun will be added. Default is all spectral variables.
     :param tmag: bool. Keep the magnetic coordinate angle (default is machine angle).
     :param inplace: bool. Add to dataset. Otherwise, make a new dataset object.
 
     :returns: Dataset. New dataset with real space functions of theta.
 
+    :Example:
+
+    You can check this against fun_flag outputs,
+
+    >>> con = data.open_dataset('examples/DIIID_kinetic_example/ipec_control_output_n1.nc')
+    >>> con_mag = post.add_fun(con, tmag=True, inplace=False)
+    >>> con_mac = post.add_fun(con, tmag=False, inplace=False)
+    >>> f,ax = plt.subplots(2)
+    >>> l, = ax[0].plot(con['theta'], np.abs(con['xi_n_fun']), label='fun_flag Output')
+    >>> l, = ax[0].plot(con['theta'], np.abs(con_mag['xi_n_fun']), label='Magnetic Angle')
+    >>> l, = ax[0].plot(con['theta'], np.abs(con_mac['xi_n_fun']), ls='--', label='Machine Angle')
+    >>> leg = ax[0].legend()
+    >>> txt = ax[0].set_title('Normal Displacement')
+    >>> txt = ax[0].set_ylabel('Amplitude')
+    >>> l, = ax[1].plot(con['theta'], np.angle(con['xi_n_fun']), label='fun_flag Output')
+    >>> l, = ax[1].plot(con['theta'], np.angle(con_mag['xi_n_fun']), label='Magnetic Angle')
+    >>> l, = ax[1].plot(con['theta'], np.angle(con_mac['xi_n_fun']), ls='--', label='Machine Angle')
+    >>> txt = ax[1].set_ylabel('Phase')
+    >>> txt = ax[1].set_xlabel('theta')
+    >>> f.savefig('examples/figures/example_add_fun.png')
+
+    .. image:: examples/figures/example_add_fun.png
+       :width: 600px
+
+    To see the function is properly recovered. Note that the fun_flag outputs are
+    on the machine coordinate.
+
     """
     if inplace:
-        newds = ds
+        ds = control_output
     else:
-        newds = ds.copy(deep=True)
+        ds = control_output.copy(deep=True)
 
     # default to all spectral variables
     if keys is None:
-        keys = [k for k in k, v in con.data_vars.iteritems() if v.dims == ('m',)]
+        keys = [k for k, v in ds.data_vars.iteritems() if v.dims == ('m',)]
 
     # calculate functions
     for k in keys:
@@ -220,9 +247,9 @@ def add_fun(ds, keys=None, tmag=False, inplace=True):
         if not tmag:
             fun *= np.exp(1j * ds.attrs['n'] * ds['delta_phi'])
         # add to the dataset
-        newds[k + 'fun'] = fun
+        ds[k + '_fun'] = fun
 
-    return newds
+    return ds
 
 
 ######################################################## Post Processing Control Output
@@ -261,12 +288,12 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
 
     >>> f,ax = plt.subplots(2)
     >>> input_power = np.dot(con['Phi_xe'].conj(), con['Phi_xe'])
-    >>> np.abs(con['Phi_xe']).plot(ax=ax[0], label='Input')
-    >>> ax[0].plot(con['m'], np.abs(vo) * np.sqrt(input_power), label='Optimum Torque')
-    >>> ax[0].legend()
-    >>> prof['T'].real.plot(ax=ax[1], label='Input')
-    >>> ax[1].plot(prof['psi_n'], T_opt*input_power, label='Optimized Torque')
-    >>> ax[1].legend()
+    >>> l = np.abs(con['Phi_xe']).plot(ax=ax[0], label='Input')
+    >>> l, = ax[0].plot(con['m'], np.abs(v) * np.sqrt(input_power), label='Optimum Torque')
+    >>> leg = ax[0].legend()
+    >>> l = prof['T'].real.plot(ax=ax[1], label='Input')
+    >>> l, = ax[1].plot(prof['psi_n'], T_opt*input_power, label='Optimized Torque')
+    >>> leg = ax[1].legend()
 
     >>> f.savefig('examples/figures/example_optimize_torque.png')
 
