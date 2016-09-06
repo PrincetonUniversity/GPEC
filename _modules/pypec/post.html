@@ -103,7 +103,7 @@
 <span class="sd">has a helpful function for forming the necessary x,y,z meshes from the 2D boundary.</span>
 <span class="sd">After adding the requisite geometry to the control surface output,</span>
 
-<span class="sd">&gt;&gt;&gt; con = add_3dsurfaces(con, phi_lim=pi * 1.5)</span>
+<span class="sd">&gt;&gt;&gt; con = add_3dsurface(con, phi_lim=pi * 1.5)</span>
 
 <span class="sd">it is easy to make 3D surface plots using mayavi,</span>
 
@@ -120,7 +120,7 @@
 <span class="sd">2D arrays for the mesh and the field values.</span>
 
 <span class="sd">&gt;&gt;&gt; for phi in [0,np.pi*3/2]:</span>
-<span class="sd">...     b = np.real(prof[&#39;b_n_fun&#39;]*np.exp(1j*phi)) # poloidal cross section at phi</span>
+<span class="sd">...     b = np.real(prof[&#39;b_n_fun&#39;]*np.exp(-1j*1*phi)) # poloidal cross section at phi</span>
 <span class="sd">...     xy = prof[&#39;R&#39;]*np.exp(1j*phi) # rotate the plane</span>
 <span class="sd">...     x,y,z = np.real(xy),np.imag(xy),np.real(prof[&#39;z&#39;])</span>
 <span class="sd">...     x,y,z,b = np.array([x,y,z,b])[:,:,::10] # downsample psi by 10 to speed up mayavi</span>
