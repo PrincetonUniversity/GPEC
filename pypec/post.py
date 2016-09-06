@@ -28,7 +28,7 @@ First, 3D equilibrium calculations lend themselves naturally to 3D figures. This
 has a helpful function for forming the necessary x,y,z meshes from the 2D boundary.
 After adding the requisite geometry to the control surface output,
 
->>> con = add_3dsurfaces(con, phi_lim=pi * 1.5)
+>>> con = add_3dsurface(con, phi_lim=pi * 1.5)
 
 it is easy to make 3D surface plots using mayavi,
 
@@ -45,7 +45,7 @@ more involved. For the toroidal angle of each end, we need to rotate the
 2D arrays for the mesh and the field values.
 
 >>> for phi in [0,np.pi*3/2]:
-...     b = np.real(prof['b_n_fun']*np.exp(1j*phi)) # poloidal cross section at phi
+...     b = np.real(prof['b_n_fun']*np.exp(-1j*1*phi)) # poloidal cross section at phi
 ...     xy = prof['R']*np.exp(1j*phi) # rotate the plane
 ...     x,y,z = np.real(xy),np.imag(xy),np.real(prof['z'])
 ...     x,y,z,b = np.array([x,y,z,b])[:,:,::10] # downsample psi by 10 to speed up mayavi
