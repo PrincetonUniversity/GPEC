@@ -132,9 +132,13 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
 <div class="viewcode-block" id="Objectify"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.Objectify">[docs]</a><span class="k">class</span> <span class="nc">Objectify</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class base to convert iterable to instance.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Class base to convert iterable to instance.</span>
+<span class="sd">        Recursively convert iterable to instance.</span>
 
 <span class="sd">        :param d: iterable. Dictionary that will be converted.</span>
 
