@@ -1184,6 +1184,7 @@ minimize: bool. FInd the minimum (default is maximum).</dd>
 <dt>Returns:</dt>
 <dd>w,v. Eigenvalue, eigenvector of optimum.</dd>
 </dl>
+<p>Examples:</p>
 <p>With the output of a kinetic GPEC run in hand,</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_kinetic_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prof</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_kinetic_example/ipec_profile_output_n1.nc&#39;</span><span class="p">)</span>
@@ -2060,32 +2061,18 @@ middle of the colormap&#8217;s dynamic range to be at zero.</p>
 <p>Taken from <a class="reference external" href="http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib">http://stackoverflow.com/questions/7404116/defining-the-midpoint-of-a-colormap-in-matplotlib</a></p>
 <dl class="docutils">
 <dt>Args:</dt>
-<dd><p class="first">cmap: The matplotlib colormap to be altered
-start: Offset from lowest point in the colormap&#8217;s range.</p>
-<blockquote>
-<div>Defaults to 0.0 (no lower offset). Should be between
-0.0 and &#8216;midpoint&#8217;.</div></blockquote>
-<dl class="docutils">
-<dt>midpoint: The new center of the colormap. Defaults to</dt>
-<dd>0.5 (no shift). Should be between 0.0 and 1.0. In
-general, this should be  1 - vmax/(vmax + abs(vmin))
-For example if your data range from -15.0 to +5.0 and
-you want the center of the colormap at 0.0, &#8216;midpoint&#8217;
-should be set to  1 - 5/(5 + 15)) or 0.75</dd>
-<dt>stop: Offset from highets point in the colormap&#8217;s range.</dt>
-<dd>Defaults to 1.0 (no upper ofset). Should be between
-&#8216;midpoint&#8217; and 1.0.</dd>
+<dd>cmap: The matplotlib colormap to be altered
+start: Offset from lowest point in the colormap&#8217;s range. Should be between 0 and &#8216;midpoint&#8217;.
+midpoint: The new center of the colormap. Should be between 0.0 and 1.0. Recommended is  1 - vmax/(vmax + abs(vmin)).
+stop: Offset from highest point in the colormap&#8217;s range. Should be between &#8216;midpoint&#8217; and 1.0.
+name: str. Added to the name of cmap when creating the new colormap.</dd>
 </dl>
-<p class="last">name: str. Added to the name of cmap when creating the new colormap.</p>
-</dd>
-<dt>Example:</dt>
-<dd><p class="first">The following creates a shifted colormap that can be used in matplotlib arguments,</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">orig_cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">coolwarm</span>
+<p>Example:</p>
+<p>The following creates a shifted colormap that can be used in matplotlib arguments,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">orig_cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">coolwarm</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">shifted_cmap</span> <span class="o">=</span> <span class="n">shiftedColorMap</span><span class="p">(</span><span class="n">orig_cmap</span><span class="p">,</span> <span class="n">midpoint</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;shifted&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="function">
