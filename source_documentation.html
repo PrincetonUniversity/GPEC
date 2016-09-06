@@ -67,10 +67,10 @@
 <li><a class="reference internal" href="#using-the-best-environement">Using the Best Environement</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pypec-data-ascii-table-data-turned-pythonic"><tt class="docutils literal"><span class="pre">pypec.data</span></tt> &#8211; ASCII Table Data Turned Pythonic</a><ul>
+<li><a class="reference internal" href="#pypec-data-pythonic-treatment-of-scientific-data"><tt class="docutils literal"><span class="pre">pypec.data</span></tt> &#8211; Pythonic Treatment of Scientific Data</a><ul>
 <li><a class="reference internal" href="#beginners">Beginners</a></li>
 <li><a class="reference internal" href="#advanced-users">Advanced Users</a></li>
-<li><a class="reference internal" href="#deprecated-ascii-interface">Deprecated Ascii Interface</a></li>
+<li><a class="reference internal" href="#deprecated-ascii-interface">Deprecated ASCII Interface</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#pypec-post-post-processing-fundamental-gpec-outputs"><tt class="docutils literal"><span class="pre">pypec.post</span></tt> &#8211; Post-Processing Fundamental GPEC Outputs</a><ul>
@@ -209,8 +209,8 @@ are recomended to edit ~/.matplotlib/matplotlibrc and
 <p>There may be a few warnings/hints... take them or leave them.</p>
 </div>
 </div>
-<span class="target" id="module-pypec.data"></span><div class="section" id="pypec-data-ascii-table-data-turned-pythonic">
-<h2><a class="reference internal" href="#module-pypec.data" title="pypec.data"><tt class="xref py py-mod docutils literal"><span class="pre">pypec.data</span></tt></a> &#8211; ASCII Table Data Turned Pythonic<a class="headerlink" href="#pypec-data-ascii-table-data-turned-pythonic" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-pypec.data"></span><div class="section" id="pypec-data-pythonic-treatment-of-scientific-data">
+<h2><a class="reference internal" href="#module-pypec.data" title="pypec.data"><tt class="xref py py-mod docutils literal"><span class="pre">pypec.data</span></tt></a> &#8211; Pythonic Treatment of Scientific Data<a class="headerlink" href="#pypec-data-pythonic-treatment-of-scientific-data" title="Permalink to this headline">¶</a></h2>
 <p>The data module is a very generalized tool for visualizing and manipulating scientific data from netcdf and ascii files.</p>
 <p>GPEC data is migrating to netcdf, and this module uses the xarray module for its python netcdf interface. The xarray module is very powerful and well documented <a class="reference external" href="http://xarray.readthedocs.org/">here</a>.</p>
 <p>Previous GPEC results and some current outputs are still writen to ascii. This module contains a custom I/O for converting ascii data to python objects. A custom Data object was created for this purpose, and conversion to the xarray Dataset is automated in the open_dataset function to facilitate migration to netcdf. The only requirement for creating a data object from an ascii file is that the file have one or more tables of data, with appropriate labels in a header line directly above the data.</p>
@@ -400,7 +400,7 @@ explore the GPEC output.</p>
 </div>
 </div>
 <div class="section" id="deprecated-ascii-interface">
-<h3>Deprecated Ascii Interface<a class="headerlink" href="#deprecated-ascii-interface" title="Permalink to this headline">¶</a></h3>
+<h3>Deprecated ASCII Interface<a class="headerlink" href="#deprecated-ascii-interface" title="Permalink to this headline">¶</a></h3>
 <p>As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should
 be used to create xarray Dataset objects whenever possible. This section describes the deprecated
 ascii interface for context, and motivates the move to netcdf.</p>
@@ -570,9 +570,12 @@ x - Plot single nearest point.
 <dd><p>Three dimensional plots. Data with xnames r,z will be plotted
 with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).</p>
 <blockquote>
-<div>1D data &gt; lines in a plane in 3-space.
-2D data &gt; z axis becomes y value
-3D data &gt; chosen display type</div></blockquote>
+<div><ul class="simple">
+<li>1D data &gt; lines in a plane in 3-space.</li>
+<li>2D data &gt; z axis becomes y value</li>
+<li>3D data &gt; chosen display type</li>
+</ul>
+</div></blockquote>
 <p>Must have mayavi.mlab module available in pythonpath.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -589,27 +592,11 @@ with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">figure.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">figure.</p>
 </td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"></td>
 </tr>
 </tbody>
 </table>
-<p>xb, = data.read(&#8216;examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out&#8217;,forcex=[&#8216;r&#8217;,&#8217;z&#8217;])
-xb.plot3d(&#8216;bno&#8217;)</p>
-<p>xn, = data.read(&#8216;ipec_xbnormal_fun_n2.out&#8217;)
-psi = 1.0
-n = 2
-fltr= xb.y[&#8216;psi&#8217;]==xb.y[&#8216;psi&#8217;][np.abs(xb.y[&#8216;psi&#8217;]-psi).argmin()]
-r,z,p = xb.pts[:,0][fltr],xb.pts[:,1][fltr],np.linspace(0,2*np.pi,60)
-s = xb.y[&#8216;bno&#8217;][fltr]
-cx = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
-X,Y = cx.real,cx.imag
-Z = z.reshape(-1,1)*np.ones_like(X)
-S = (s.reshape(-1,1)*np.exp(-n*1j*p.reshape(1,-1))).real
-mmlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1))
-mmlab.mesh(X, Y, Z, scalars=S) #, colormap=&#8217;YlGnBu&#8217;</p>
 </dd></dl>
 
 <dl class="method">
@@ -690,12 +677,23 @@ a dimension distinguishing real and imaginary components.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>complex_dim</strong> &#8211; str. Dimension designating real/imaginary (0,1)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filename_or_obj</strong> &#8211; str, file or xarray.backends.DataStore
+Strings are interpreted as a path to a netCDF file or an OpenDAP URL
+and opened with python-netCDF4, unless the filename ends with .gz, in
+which case the file is gunzipped and opened with scipy.io.netcdf
+(only netCDF3 supported). File-like objects are opened with
+scipy.io.netcdf (only netCDF3 supported).</li>
+<li><strong>complex_dim</strong> &#8211; str. Dimension designating real/imaginary (0,1)</li>
+<li><strong>kwargs</strong> &#8211; dict. All other key word arguments are passed to xarray.open_dataset.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
 <p><strong>Original Documentation:</strong></p>
 <p>Load and decode a dataset from a file or file-like object.</p>
+<p>Parameters</p>
 <dl class="docutils">
 <dt>filename_or_obj <span class="classifier-delimiter">:</span> <span class="classifier">str, file or xarray.backends.*DataStore</span></dt>
 <dd>Strings are interpreted as a path to a netCDF file or an OpenDAP URL
@@ -751,6 +749,7 @@ inconsistent values.</dd>
 <dt>dataset <span class="classifier-delimiter">:</span> <span class="classifier">Dataset</span></dt>
 <dd>The newly created dataset.</dd>
 </dl>
+<p>See Also</p>
 <p>open_mfdataset</p>
 </dd></dl>
 
