@@ -502,9 +502,9 @@ data is interpolated to the wider spaced axis.</p>
 <li><strong>ynames</strong> &#8211; list. Strings specifying dependent data displayed.</li>
 <li><strong>xname</strong> &#8211; string. The independent axis if 2D data.</li>
 <li><strong>x1rng</strong> &#8211; optional. Valid formats are,
-x               Plot single nearest point x-axis.
-(xmin,xmax)     Plots all data in range (min,max).
-(xmin,xmax,n)   Plots n evenly spaced points in range.</li>
+x - Plot single nearest point.
+(xmin,xmax) - Plots all data in range (min,max).
+(xmin,xmax,n) - Plots n evenly spaced points in range.</li>
 <li><strong>x2rng</strong> &#8211; Same as x1rng. Applicable to 2D or 3D data.</li>
 <li><strong>x3rng</strong> &#8211; Same as x2rng for 3D data only. Order of x is xnames with xname placed in front if given.</li>
 <li><strong>squeeze</strong> &#8211; bool. Plots all ynames in same axis.</li>
@@ -523,36 +523,30 @@ x               Plot single nearest point x-axis.
 <dt id="pypec.data.DataBase.plot2d">
 <tt class="descname">plot2d</tt><big>(</big><em>ynames=None</em>, <em>aspect='auto'</em>, <em>plot_type='imshow'</em>, <em>cbar=True</em>, <em>center=None</em>, <em>grid_size=(256</em>, <em>256)</em>, <em>swap=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/data.html#DataBase.plot2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.data.DataBase.plot2d" title="Permalink to this definition">¶</a></dt>
 <dd><p>Matplotlib 2D plots of the data.</p>
-<p>:param ynames : list. Strings specifying dependent data displayed.
-:param aspect : str/float. Choose from &#8216;auto&#8217; or &#8216;equal&#8217; (see matplotlib axes.set_aspect). A float stretches a circle to hight=aspect*width.
-:param plot_type: str. Choose one of,</p>
-<blockquote>
-<div>&#8220;imshow&#8221; Use matplotlib imshow to plot on grid.
-&#8220;pcolormesh&#8221; Use matplotlib pcolormesh to plot on grid.
-&#8220;contour&#8221;    Use matplotlib contour to plot on grid.
-&#8220;contourf&#8221;   Use matplotlib contourf to plot on grid.
-&#8220;tripcolor&#8221;  Use matplotlib tripcolor to plot raw points.
-&#8220;tripcontour&#8221;  Use matplotlib tripcontour to plot raw points.
-&#8220;tripcontourf&#8221; Use matplotlib tripcontourf to plot raw points.</div></blockquote>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ynames</strong> &#8211; list. Strings specifying dependent data displayed.</li>
+<li><strong>aspect</strong> &#8211; str/float. Choose from &#8216;auto&#8217; or &#8216;equal&#8217; (see matplotlib axes.set_aspect). A float stretches a circle to hight=aspect*width.</li>
+<li><strong>plot_type</strong> &#8211; str. Choose one of,
+&#8220;imshow&#8221;       - Use matplotlib imshow to plot on grid.
+&#8220;pcolormesh&#8221;   - Use matplotlib pcolormesh to plot on grid.
+&#8220;contour&#8221;      - Use matplotlib contour to plot on grid.
+&#8220;contourf&#8221;     - Use matplotlib contourf to plot on grid.
+&#8220;tripcolor&#8221;    - Use matplotlib tripcolor to plot raw points.
+&#8220;tripcontour&#8221;  - Use matplotlib tripcontour to plot raw points.
+&#8220;tripcontourf&#8221; - Use matplotlib tripcontourf to plot raw points.</li>
 <li><strong>cbar</strong> &#8211; bool. Show colorbar.</li>
 <li><strong>grid_size</strong> &#8211; tuple. Size of grid used if no regular axes x (in order of xnames).</li>
+<li><strong>swap</strong> &#8211; bool. Swap x/y axes.</li>
+<li><strong>kwargs</strong> &#8211; dict. Valid pcolormesh/contour/contourf key arguments.</li>
 </ul>
 </td>
 </tr>
-</tbody>
-</table>
-<p>:param swap   : bool. Swap x/y axes.
-:param kwargs : dict. Valid pcolormesh/contour/contourf key arguments.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">figure.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">figure.</p>
+</td>
 </tr>
 </tbody>
 </table>
