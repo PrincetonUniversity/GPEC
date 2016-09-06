@@ -501,13 +501,10 @@ data is interpolated to the wider spaced axis.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>ynames</strong> &#8211; list. Strings specifying dependent data displayed.</li>
 <li><strong>xname</strong> &#8211; string. The independent axis if 2D data.</li>
-<li><strong>x1rng</strong> &#8211; <p>optional. Valid formats are,</p>
-<ul>
-<li>x               Plot single nearest point x-axis.</li>
-<li>(xmin,xmax)     Plots all data in range (min,max).</li>
-<li>(xmin,xmax,n)   Plots n evenly spaced points in range.</li>
-</ul>
-</li>
+<li><strong>x1rng</strong> &#8211; optional. Valid formats are,
+- x               Plot single nearest point x-axis.
+- (xmin,xmax)     Plots all data in range (min,max). 
+- (xmin,xmax,n)   Plots n evenly spaced points in range.</li>
 <li><strong>x2rng</strong> &#8211; Same as x1rng. Applicable to 2D or 3D data.</li>
 <li><strong>x3rng</strong> &#8211; Same as x2rng for 3D data only. Order of x is xnames with xname placed in front if given.</li>
 <li><strong>squeeze</strong> &#8211; bool. Plots all ynames in same axis.</li>
@@ -1177,12 +1174,8 @@ infiles: dict. Tree like storage of namelist objects.</td>
 </dd></dl>
 
 <dl class="function">
-<dt>
-<tt class="descname">nustarscan(base='.', scale=array([  0.1       ,   0.15848932,   0.25118864,   0.39810717,</tt></dt>
-<dt>
-<tt class="descname">0.63095734,   1.        ,   1.58489319,   2.51188643,</tt></dt>
-<dt>
-<tt class="descname">3.98107171,   6.30957344,  10.        ]), pentfile='pent.in', scalen=True, scalet=True, **kwargs)</tt></dt>
+<dt id="pypec.gpec.nustarscan">
+<tt class="descclassname">pypec.gpec.</tt><tt class="descname">nustarscan</tt><big>(</big><em>base='.'</em>, <em>scale=(0.1</em>, <em>1.0</em>, <em>10.0)</em>, <em>pentfile='pent.in'</em>, <em>scalen=True</em>, <em>scalet=True</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/gpec.html#nustarscan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.nustarscan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run pent for series of <em>approximately</em> scaled collisionality values.
 Default scaling holds P=NT constant (NTV~P), but this is broken using
 scalen or scalet (scalet=False, for example, scales only density).</p>
@@ -1217,14 +1210,8 @@ nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.</p>
 </dd></dl>
 
 <dl class="function">
-<dt>
-<tt class="descname">omegascan(omega='wp', base='.', scale=array([-2.        , -1.78947368, -1.57894737, -1.36842105, -1.15789474,</tt></dt>
-<dt>
-<tt class="descname">-0.94736842, -0.73684211, -0.52631579, -0.31578947, -0.10526316,</tt></dt>
-<dt>
-<tt class="descname">0.10526316,  0.31578947,  0.52631579,  0.73684211,  0.94736842,</tt></dt>
-<dt>
-<tt class="descname">1.15789474,  1.36842105,  1.57894737,  1.78947368,  2.        ]), pentrcfile='pentrc.in', **kwargs)</tt></dt>
+<dt id="pypec.gpec.omegascan">
+<tt class="descclassname">pypec.gpec.</tt><tt class="descname">omegascan</tt><big>(</big><em>omega='wp'</em>, <em>base='.'</em>, <em>scale=(-2</em>, <em>-1</em>, <em>-0.5</em>, <em>0.5</em>, <em>1</em>, <em>2)</em>, <em>pentrcfile='pentrc.in'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/gpec.html#omegascan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.omegascan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run pent for series of scaled nu/omega_phi/omega_E/omega_D/gamma_damp values. 
 User must specify full path to all files named in pent.in input file
 located in the base directory.
