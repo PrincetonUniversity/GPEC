@@ -39,6 +39,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="../../index.html">home</a>|&nbsp;</li>
         <li><a href="../../search.html">search</a>|&nbsp;</li>
 
@@ -470,10 +473,9 @@
 <div class="viewcode-block" id="open_dataset"><a class="viewcode-back" href="../../source_documentation.html#pypec.data.open_dataset">[docs]</a><span class="k">def</span> <span class="nf">open_dataset</span><span class="p">(</span><span class="n">filename_or_obj</span><span class="p">,</span><span class="n">complex_dim</span><span class="o">=</span><span class="s">&#39;i&#39;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wrapper for xarray.open_dataset that allows automated reduction of</span>
-<span class="sd">    a dimension destinguishing real and imaginary components.</span>
+<span class="sd">    a dimension distinguishing real and imaginary components.</span>
 
-<span class="sd">    New Args:</span>
-<span class="sd">        complex_dim : str. Dimension designating real/imaginary (0,1)</span>
+<span class="sd">    :param complex_dim : str. Dimension designating real/imaginary (0,1)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -507,29 +509,16 @@
 <span class="sd">    Get the data from any ipec output as a list of python </span>
 <span class="sd">    class-type objects using numpy.genfromtxt.</span>
 
-<span class="sd">    Arguments</span>
-<span class="sd">      fname      : str. </span>
-<span class="sd">        Path of ipec output file.</span>
+<span class="sd">    :param fname: str. Path of ipec output file.</span>
+<span class="sd">    :param squeeze : bool. Sets all attributes to single data object.</span>
+<span class="sd">    :param forcex  : list. Set independent data labels.</span>
+<span class="sd">    :param forcedim : list. Set dimensionality of each x.</span>
+<span class="sd">    :param maxnumber : int. Reads only first maxnumber of tables.</span>
+<span class="sd">    :param maxlength : int. Tables with more rows than this are downsampled for speed.</span>
+<span class="sd">    :param auto_complex : bool. Include amplitude and phase of complex data as variables.</span>
+<span class="sd">    :param quiet   : bool. Prevent non-warning messages printed to terminal.</span>
 <span class="sd">    </span>
-<span class="sd">    Key Word Arguments:</span>
-<span class="sd">      squeeze : bool. </span>
-<span class="sd">        Sets all attributes to single data object.</span>
-<span class="sd">      forcex  : list. </span>
-<span class="sd">        Set independent data labels.</span>
-<span class="sd">      forcedim : list.</span>
-<span class="sd">        Set dimensionality of each x.</span>
-<span class="sd">      maxnumber : int.</span>
-<span class="sd">        Reads only first maxnumber of tables.</span>
-<span class="sd">      maxlength : int.</span>
-<span class="sd">        Tables with more rows than this are downsampled for speed.</span>
-<span class="sd">      auto_complex : bool.</span>
-<span class="sd">        Include amplitude and phase of complex data as variables.</span>
-<span class="sd">      quiet   : bool.</span>
-<span class="sd">        Prevent non-warning messages printed to terminal.</span>
-<span class="sd">    </span>
-<span class="sd">    Returns:</span>
-<span class="sd">      list. </span>
-<span class="sd">        Class objects for each block of data in the file.</span>
+<span class="sd">    :returns: list. Class objects for each block of data in the file.</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c">#debug start_time = time.time()</span>
@@ -664,17 +653,11 @@
 <span class="sd">    filetype, reads them into python objects, and stores </span>
 <span class="sd">    objects in a dictionary with directory names as keys.</span>
 <span class="sd">    </span>
-<span class="sd">    Key Word Arguments:</span>
-<span class="sd">      base     : str. </span>
-<span class="sd">        Top level directory in which to begin search.</span>
-<span class="sd">      filetype : str. </span>
-<span class="sd">        Files to read.</span>
-<span class="sd">      kwargs :dict. </span>
-<span class="sd">        Passed to appropriate reader function.</span>
+<span class="sd">    :param base     : str. Top level directory in which to begin search.</span>
+<span class="sd">    :param filetype : str. Files to read.</span>
+<span class="sd">    :param kwargs :dict. Passed to appropriate reader function.</span>
 <span class="sd">    </span>
-<span class="sd">    Returns:</span>
-<span class="sd">      dict.</span>
-<span class="sd">        Key-Value pairs are directories and their contained data.</span>
+<span class="sd">    :returns: dict. Key-Value pairs are directories and their contained data.</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -721,18 +704,11 @@
 <span class="sd">    structure... the header text will have been lost in the read however,</span>
 <span class="sd">    as will some column label symbols in the use of genfromtxt.</span>
 <span class="sd">    </span>
-<span class="sd">    Arguments:</span>
-<span class="sd">      dataobj : obj. </span>
-<span class="sd">        Data_Base type object.</span>
-<span class="sd">      fname   : str. </span>
-<span class="sd">        File to write to.</span>
-<span class="sd">    </span>
-<span class="sd">      kwargs  : dict. </span>
-<span class="sd">      Passed to numpy.savetxt</span>
+<span class="sd">    :param dataobj : obj. Data_Base type object.</span>
+<span class="sd">    :param fname   : str. File to write to.</span>
+<span class="sd">    :param kwargs  : dict. Passed to numpy.savetxt</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">      bool. </span>
-<span class="sd">        True.</span>
+<span class="sd">    :returns: bool. True.</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">fname</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
@@ -774,24 +750,13 @@
 <span class="sd">    Line plot of data gethered recursively from a dictionary </span>
 <span class="sd">    containing multiple namelists or data objects.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">      results : dict. </span>
-<span class="sd">        A readall result.</span>
-<span class="sd">      xfun    : func. </span>
-<span class="sd">        A function that takes args (key,val) for each dictionary item </span>
-<span class="sd">        and whose result is appended to the xaxis.</span>
-<span class="sd">      yfun    : func. </span>
-<span class="sd">        A function that takes args (key,val) for each dictionary item </span>
-<span class="sd">        and whose result is appended to the yaxis.</span>
-
-<span class="sd">    Key Word Arguments:</span>
-<span class="sd">      axes    : obj. </span>
-<span class="sd">        matplotlib axes object.</span>
-<span class="sd">      kwargs  : dict. </span>
-<span class="sd">        Passed to matplotlib plot function</span>
+<span class="sd">    :param results : dict. A readall result.</span>
+<span class="sd">    :param xfun    : func. A function that takes args (key,val) for each dictionary item and whose result is appended to the xaxis.</span>
+<span class="sd">    :param yfun    : func. A function that takes args (key,val) for each dictionary item and whose result is appended to the yaxis.</span>
+<span class="sd">    :param axes    : obj. matplotlib axes object.</span>
+<span class="sd">    :param kwargs  : dict. Passed to matplotlib plot function</span>
 <span class="sd">    </span>
-<span class="sd">    Returns:</span>
-<span class="sd">      figure.</span>
+<span class="sd">    :returns: figure.</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
@@ -846,19 +811,12 @@
 <span class="sd">        dictionaries of dependent and independent data. Also breaks</span>
 <span class="sd">        down preamble to find any global parameters.</span>
 <span class="sd">        </span>
-<span class="sd">        **Arguments:**</span>
-<span class="sd">          fromtxt : structured array. </span>
-<span class="sd">          preamble: str.</span>
-<span class="sd">          </span>
-<span class="sd">        **Key Word Arguments:**</span>
-<span class="sd">          forcex  : list.</span>
-<span class="sd">            x-axis labels.</span>
-<span class="sd">          maxlength : int.</span>
-<span class="sd">            Tables with more rows than this are downsampled for speed.</span>
-<span class="sd">          auto_complex : bool.</span>
-<span class="sd">            Include amplitude and phase of complex data as variables.</span>
-<span class="sd">          quiet : bool.</span>
-<span class="sd">            Supress printed information and warnings.</span>
+<span class="sd">        :param fromtxt : structured array.</span>
+<span class="sd">        :param preamble: str. Pre-pending text</span>
+<span class="sd">        :param forcex  : list. x-axis labels.</span>
+<span class="sd">        :param maxlength : int. Tables with more rows than this are downsampled for speed.</span>
+<span class="sd">        :param auto_complex : bool. Include amplitude and phase of complex data as variables.</span>
+<span class="sd">        :param quiet : bool. Supress printed information and warnings.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c">#debug start_time = time.time()</span>
@@ -1025,19 +983,11 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Interpolate data to point(s).</span>
 <span class="sd">        </span>
-<span class="sd">        Arguments:</span>
-<span class="sd">          x  : ndarray shape (npts,ndim).</span>
-<span class="sd">            Point(s) on dependent axis(axes).</span>
-<span class="sd">        </span>
-<span class="sd">        Key Word Arguments:</span>
-<span class="sd">          ynames : list. </span>
-<span class="sd">            Any number of keys from y attribute</span>
-<span class="sd">          quiet  : bool. </span>
-<span class="sd">            Suppres status messages</span>
+<span class="sd">        :param x: ndarray shape (npts,ndim). Point(s) on dependent axis(axes).</span>
+<span class="sd">        :param ynames: list. Any number of keys from y attribute</span>
+<span class="sd">        :param quiet: bool. Suppress status messages</span>
 
-<span class="sd">        Returns:</span>
-<span class="sd">          dict. </span>
-<span class="sd">            Each name contains array of interpolated data.  </span>
+<span class="sd">        :returns: dict. Each name contains array of interpolated data.</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c">#housekeeping</span>
@@ -1095,34 +1045,20 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Line plots of from 1D or 2D data.</span>
 <span class="sd">        </span>
-<span class="sd">        Key Word Arguments:</span>
-
-<span class="sd">          ynames : list</span>
-<span class="sd">            Strings specifying dependent data displayed.</span>
-<span class="sd">          xname  : string</span>
-<span class="sd">            The independent axis if 2D data.</span>
-<span class="sd">          x1rng  : optional</span>
-<span class="sd">            Valid formats are:</span>
+<span class="sd">        :param ynames: list. Strings specifying dependent data displayed.</span>
+<span class="sd">        :param xname: string. The independent axis if 2D data.</span>
+<span class="sd">        :param x1rng: optional. Valid formats are,</span>
 
 <span class="sd">              - x               Plot single nearest point x-axis.</span>
 <span class="sd">              - (xmin,xmax)     Plots all data in range (min,max). </span>
 <span class="sd">              - (xmin,xmax,n)   Plots n evenly spaced points in range.</span>
 
-<span class="sd">          x2rng  : . </span>
-<span class="sd">            Same as x1rng. Applicable to 2D or 3D data.</span>
-<span class="sd">          x3rng  : . </span>
-<span class="sd">            Same as x2rng for 3D data only. Order of x is </span>
-<span class="sd">            xnames with xname placed in front if given.</span>
-<span class="sd">          squeeze : bool</span>
-<span class="sd">            Plots all ynames in same axis.</span>
-<span class="sd">            </span>
-<span class="sd">        kwargs : dict</span>
-<span class="sd">            Valid matplotlib pyplot.plot keyword arguments.</span>
+<span class="sd">        :param x2rng: Same as x1rng. Applicable to 2D or 3D data.</span>
+<span class="sd">        :param x3rng: Same as x2rng for 3D data only. Order of x is xnames with xname placed in front if given.</span>
+<span class="sd">        :param squeeze: bool. Plots all ynames in same axis.</span>
+<span class="sd">        :param kwargs: dict. Valid matplotlib pyplot.plot keyword arguments.</span>
 
-<span class="sd">        Returns:</span>
-
-<span class="sd">          f : figure</span>
-<span class="sd">            poloidal cross sections of plasma response</span>
+<span class="sd">        :returns: figure.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># housekeeping</span>
@@ -1241,14 +1177,9 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Matplotlib 2D plots of the data.</span>
 <span class="sd">        </span>
-<span class="sd">        Key Word Arguments:</span>
-<span class="sd">          ynames : list. </span>
-<span class="sd">            Strings specifying dependent data displayed.</span>
-<span class="sd">          aspect : str/float. </span>
-<span class="sd">            Choose from &#39;auto&#39; or &#39;equal&#39; (see matplotlib axes.set_aspect).</span>
-<span class="sd">            A float stretches a circle to hight=aspect*width. </span>
-<span class="sd">          plot_type: str. </span>
-<span class="sd">            Choose one of:</span>
+<span class="sd">        :param ynames : list. Strings specifying dependent data displayed.</span>
+<span class="sd">        :param aspect : str/float. Choose from &#39;auto&#39; or &#39;equal&#39; (see matplotlib axes.set_aspect). A float stretches a circle to hight=aspect*width.</span>
+<span class="sd">        :param plot_type: str. Choose one of,</span>
 <span class="sd">            </span>
 <span class="sd">            - &quot;imshow&quot; Use matplotlib imshow to plot on grid.</span>
 <span class="sd">            - &quot;pcolormesh&quot; Use matplotlib pcolormesh to plot on grid.</span>
@@ -1258,17 +1189,12 @@
 <span class="sd">            - &quot;tripcontour&quot;  Use matplotlib tripcontour to plot raw points.</span>
 <span class="sd">            - &quot;tripcontourf&quot; Use matplotlib tripcontourf to plot raw points.</span>
 
-<span class="sd">          cbar   : bool. </span>
-<span class="sd">            Show colorbar.</span>
-<span class="sd">          grid_size : tuple. </span>
-<span class="sd">            Size of grid used if no regular axes x (in order of xnames).</span>
-<span class="sd">          swap   : bool. </span>
-<span class="sd">            Swap x/y axes.</span>
-<span class="sd">          kwargs : dict. </span>
-<span class="sd">            Valid pcolormesh/contour/contourf key arguments.</span>
+<span class="sd">        :param cbar: bool. Show colorbar.</span>
+<span class="sd">        :param grid_size: tuple. Size of grid used if no regular axes x (in order of xnames).</span>
+<span class="sd">        :param swap   : bool. Swap x/y axes.</span>
+<span class="sd">        :param kwargs : dict. Valid pcolormesh/contour/contourf key arguments.</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">          figure. </span>
+<span class="sd">        :returns: figure.</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ynames</span><span class="p">:</span> <span class="n">ynames</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -1373,28 +1299,18 @@
 
 <span class="sd">        Must have mayavi.mlab module available in pythonpath.</span>
 <span class="sd">        </span>
-<span class="sd">        *Key Word Arguments:*</span>
-<span class="sd">          ynames   : list. </span>
-<span class="sd">            Strings specifying dependent data displayed.</span>
-<span class="sd">          filter   : dict. </span>
-<span class="sd">            Filter points as only those closest to this y value.</span>
-<span class="sd">          cbar : bool.</span>
-<span class="sd">            Display a vertical colorbar in the Mayavi Scene.</span>
-<span class="sd">          size : tuple.</span>
-<span class="sd">            Size of figure in pixels.</span>
-<span class="sd">          plot_type : str. </span>
-<span class="sd">            Valid mayavi.mlab function name. </span>
-<span class="sd">            Overrides default function choices (plot3d,mesh,quiver3d).</span>
-<span class="sd">          phi : ndarray.</span>
-<span class="sd">            Toroidal angle grid for complex 2D data. Default is 360 degrees, 180 pts.</span>
-<span class="sd">          center : float.</span>
-<span class="sd">            Center colormap on this value.</span>
+<span class="sd">        :param ynames: list. Strings specifying dependent data displayed.</span>
+<span class="sd">        :param filter: dict. Filter points as only those closest to this y value.</span>
+<span class="sd">        :param cbar: bool. Display a vertical colorbar in the Mayavi Scene.</span>
+<span class="sd">        :param size: tuple. Size of figure in pixels.</span>
+<span class="sd">        :param plot_type: str. Valid mayavi.mlab function name. Overrides default function choices (plot3d,mesh,quiver3d).</span>
+<span class="sd">        :param phi: ndarray. Toroidal angle grid for complex 2D data. Default is 360 degrees, 180 pts.</span>
+<span class="sd">        :param center: float. Center colormap on this value.</span>
 
-<span class="sd">        *Returns:*</span>
-<span class="sd">          figure.</span>
+<span class="sd">        :returns: figure.</span>
 <span class="sd">          </span>
 <span class="sd">          </span>
-<span class="sd">        *Example:*</span>
+<span class="sd">        :Example:</span>
 <span class="sd">        </span>
 <span class="sd">        xb, = data.read(&#39;examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out&#39;,forcex=[&#39;r&#39;,&#39;z&#39;])</span>
 <span class="sd">        xb.plot3d(&#39;bno&#39;)</span>
@@ -1483,20 +1399,13 @@
 <span class="sd">        it s represented as the color of the plotted symbols. If the data is 3D </span>
 <span class="sd">        and unsliced, preference if given in order of xnames.</span>
 
-<span class="sd">        Arguments:     </span>
-<span class="sd">          ynames : list.</span>
-<span class="sd">            Dependent data to be displayed. Default is all y data.</span>
-<span class="sd">          xname  : str.</span>
-<span class="sd">            Independent axis used in scatter plots. Default is first in xnames.</span>
-<span class="sd">          x1     : float.</span>
-<span class="sd">            Use only data with first axis clossest to value.</span>
-<span class="sd">          x2     : float.</span>
-<span class="sd">            Use only data with second axis clossest to value.</span>
-<span class="sd">          x3     : float.</span>
-<span class="sd">            Use only data with thrid axis clossest to value.</span>
+<span class="sd">        :param ynames : list. Dependent data to be displayed. Default is all y data.</span>
+<span class="sd">        :param xname  : str. Independent axis used in scatter plots. Default is first in xnames.</span>
+<span class="sd">        :param x1     : float. Use only data with first axis clossest to value.</span>
+<span class="sd">        :param x2     : float. Use only data with second axis clossest to value.</span>
+<span class="sd">        :param x3     : float. Use only data with thrid axis clossest to value.</span>
 <span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">          figure</span>
+<span class="sd">        :returns: figure.</span>
 <span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ynames</span><span class="p">:</span> <span class="n">ynames</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -1782,17 +1691,11 @@
 
 <div class="viewcode-block" id="getshot"><a class="viewcode-back" href="../../source_documentation.html#pypec.data.getshot">[docs]</a><span class="k">def</span> <span class="nf">getshot</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span><span class="n">full_name</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Find 6 digit shot number in path to directory</span>
-<span class="sd">    or file.</span>
+<span class="sd">    Find 6 digit shot number in path to directory or file.</span>
 <span class="sd">    </span>
-<span class="sd">    **Arguments:**</span>
-<span class="sd">      </span>
-<span class="sd">    **Key Word Arguments:**</span>
-<span class="sd">      d : str.</span>
-<span class="sd">        Path.</span>
-<span class="sd">    **Returns:**</span>
-<span class="sd">      str.</span>
-<span class="sd">        Shot number if found, &#39;&#39; if not.</span>
+<span class="sd">    :param d: str. Path.</span>
+
+<span class="sd">    :returns: str. Shot number if found, &#39;&#39; if not.</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">pth</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
@@ -2027,6 +1930,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="../../index.html">home</a>|&nbsp;</li>
         <li><a href="../../search.html">search</a>|&nbsp;</li>
 

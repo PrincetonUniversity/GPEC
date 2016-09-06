@@ -39,6 +39,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="../../index.html">home</a>|&nbsp;</li>
         <li><a href="../../search.html">search</a>|&nbsp;</li>
 
@@ -162,24 +165,18 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class designed to hold the standard inputs for a run.</span>
 
-<span class="sd">    Attributes:</span>
-<span class="sd">      rundir : str. </span>
-<span class="sd">        Location of executables, .dat files, and extra .in files.</span>
-<span class="sd">      indir  : str. </span>
-<span class="sd">        Location of .in files read in and stored here</span>
-<span class="sd">      infiles: dict. </span>
-<span class="sd">        Tree like storage of namelist objects.</span>
+<span class="sd">    :Attributes:</span>
+<span class="sd">      rundir: str. Location of executables, .dat files, and extra .in files.</span>
+<span class="sd">      indir: str. Location of .in files read in and stored here</span>
+<span class="sd">      infiles: dict. Tree like storage of namelist objects.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;bin&#39;</span><span class="p">,</span><span class="n">indir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;input&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the intance.</span>
+<span class="sd">        Initializes the instance.</span>
 
-<span class="sd">        Key Word Arguments: </span>
-<span class="sd">          rundir : str. </span>
-<span class="sd">            Location of IPEC package rundirectory.</span>
-<span class="sd">          indir  : str. </span>
-<span class="sd">            Location of .in namelist files to read.</span>
+<span class="sd">        :param rundir: str. Location of IPEC package rundirectory.</span>
+<span class="sd">        :param indir : str. Location of .in namelist files to read.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rundir</span> <span class="o">=</span> <span class="n">rundir</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;/&#39;</span> <span class="c"># want ending /</span>
@@ -205,9 +202,8 @@
 <span class="sd">    Utility function for making and moving to a new location.</span>
 <span class="sd">    Note: First 2 directories counted pre-/ must exist already.</span>
 <span class="sd">    </span>
-<span class="sd">    Arguments: </span>
-<span class="sd">      loc : str. </span>
-<span class="sd">        Directory to make and/or move to.</span>
+<span class="sd">    :param loc: str. Directory to make and/or move to.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dirs</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">dirs</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
@@ -230,60 +226,28 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Python wrapper for running ipec package.</span>
 <span class="sd">    </span>
-<span class="sd">    Key Word Arguments:</span>
-<span class="sd">      loc      : str. </span>
-<span class="sd">        Directory location for run.</span>
-<span class="sd">      rundir   : str. </span>
-<span class="sd">        IPEC package directory with executables and .dat files.</span>
-<span class="sd">      qsub     : bool. </span>
-<span class="sd">        Submit job to cluster.</span>
-<span class="sd">      return_on_complete : bool. </span>
-<span class="sd">        Return only after job is finished on cluster (irrelevant if qsub=False).</span>
-<span class="sd">      rerun : bool.</span>
-<span class="sd">        Does not delete existing .out files.</span>
-<span class="sd">      rundcon  : bool. </span>
-<span class="sd">        Run dcon.</span>
-<span class="sd">      runipec  : bool. </span>
-<span class="sd">        Run ipec.</span>
-<span class="sd">      runpentrc : bool.</span>
-<span class="sd">        Run pentrc.</span>
-<span class="sd">      cleandcon : bool.</span>
-<span class="sd">        Remove euler.bin file after run is complete.</span>
-<span class="sd">      fill_inputs : bool. </span>
-<span class="sd">        Use inputs from rundir (see kwargs).</span>
-<span class="sd">      mailon   : str. </span>
-<span class="sd">        Any combination of a,b,e for on interruption</span>
-<span class="sd">        execution, and termination respectively.</span>
-<span class="sd">      email    : str. </span>
-<span class="sd">        Email address.</span>
-<span class="sd">      mem : float</span>
-<span class="sd">        Memory request of q-submission in megabytes (converted to integer).</span>
-<span class="sd">    </span>
-<span class="sd">    Deprecated Key Word Arguments:</span>
-<span class="sd">      runpent : bool.</span>
-<span class="sd">        Run deprecated pent program.</span>
-<span class="sd">      optpentrc : bool.</span>
-<span class="sd">        Run OPENTRC executable pentrc optimization (under construction).</span>
-<span class="sd">      pent_tol : float. </span>
-<span class="sd">        Acceptable torque error. pent_tol&gt;0 tries maskpsi of 32,16,4,2,1 </span>
-<span class="sd">        until convergence or 1. Forced to 0 when qsub is true.</span>
-<span class="sd">    ..note::</span>
-<span class="sd">      Deprecated kwrags are kept for a time so as to avoid incorrect assumption</span>
-<span class="sd">      that they are input files.</span>
-<span class="sd">    </span>
-<span class="sd">    Additional key word arguments:</span>
-<span class="sd">      kwargs   : dict. </span>
-<span class="sd">        namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
-<span class="sd">        </span>
-<span class="sd">    .. note:: </span>
+<span class="sd">    :param loc: str. Directory location for run.</span>
+<span class="sd">    :param rundir: str. IPEC package directory with executables and .dat files.</span>
+<span class="sd">    :param qsub: bool. Submit job to cluster.</span>
+<span class="sd">    :param return_on_complete: bool. Return only after job is finished on cluster (irrelevant if qsub=False).</span>
+<span class="sd">    :param rerun: bool. Does not delete existing .out files.</span>
+<span class="sd">    :param rundcon: bool. Run dcon.</span>
+<span class="sd">    :param runipec: bool. Run ipec.</span>
+<span class="sd">    :param runpentrc: bool. Run pentrc.</span>
+<span class="sd">    :param cleandcon: bool. Remove euler.bin file after run is complete.</span>
+<span class="sd">    :param fill_inputs: bool. Use inputs from rundir (see kwargs).</span>
+<span class="sd">    :param mailon: str. Any combination of a,b,e for on interruption execution, and termination respectively.</span>
+<span class="sd">    :param email: str. Email address.</span>
+<span class="sd">    :param mem: floatMemory request of q-submission in megabytes (converted to integer).</span>
+<span class="sd">    :param kwargs: dict. namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
+
+<span class="sd">    .. note::</span>
 <span class="sd">      Namelists taken from (in order of priority): </span>
 <span class="sd">      1) Key word arguments </span>
 <span class="sd">      2) .in files from loc</span>
 <span class="sd">      3) .in files from rundir</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">      bool. </span>
-<span class="sd">        True.</span>
+<span class="sd">    :returns: bool. True.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c"># housekeeping</span>
@@ -396,19 +360,11 @@
 <span class="sd">    Python wrapper for running ipec package multiple times in</span>
 <span class="sd">    a search for the normalized spectrum that maximizes NTV.</span>
 <span class="sd">    </span>
-<span class="sd">    Arguments:      </span>
-<span class="sd">      mlist    : list. </span>
-<span class="sd">        Integer poloidal modes included on plasma surface.</span>
-<span class="sd">    </span>
-<span class="sd">    Key Word Arguments:    </span>
-<span class="sd">      maxiter  : int.</span>
-<span class="sd">        Maximum number of iterations.</span>
-<span class="sd">      loc      : str. </span>
-<span class="sd">        Directory location for run.</span>
-<span class="sd">      rundir   : str. </span>
-<span class="sd">        IPEC package directory with executables and .dat files.</span>
-<span class="sd">      kwargs : dict. </span>
-<span class="sd">        namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
+<span class="sd">    :param mlist: list. Integer poloidal modes included on plasma surface.</span>
+<span class="sd">    :param maxiter: int.Maximum number of iterations.</span>
+<span class="sd">    :param loc: str. Directory location for run.</span>
+<span class="sd">    :param rundir: str. IPEC package directory with executables and .dat files.</span>
+<span class="sd">    :param kwargs: dict. namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
 <span class="sd">        </span>
 <span class="sd">     .. note::</span>
 <span class="sd">       Namelists taken from (in order of priority):</span>
@@ -416,9 +372,7 @@
 <span class="sd">       2) .in files from loc</span>
 <span class="sd">       3) .in files from rundir</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">      bool. </span>
-<span class="sd">        True.</span>
+<span class="sd">    :returns: bool. True.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">mlist</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span><span class="n">mlist</span><span class="p">)</span>
@@ -487,33 +441,17 @@
 <span class="sd">    - wrapper uses data package to linearly combine ipec_xclebsch outputs</span>
 <span class="sd">    - Initial guess is the first singcoup_svd mode from IPEC</span>
 <span class="sd">    </span>
-<span class="sd">    Arguments:      </span>
-<span class="sd">      ms    : list. </span>
-<span class="sd">        Integer poloidal modes included on plasma surface.</span>
-<span class="sd">    </span>
-<span class="sd">    Key Word Arguments:</span>
-<span class="sd">      ms    : list. </span>
-<span class="sd">        Integer poloidal modes included on plasma surface.</span>
-<span class="sd">      ttype : str.</span>
-<span class="sd">        PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).</span>
-<span class="sd">      tfac : int.</span>
-<span class="sd">        Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.</span>
-<span class="sd">      perp1 : bool.</span>
-<span class="sd">        Optimizes in space perpendicular to 1st IPEC SVD mode.</span>
-<span class="sd">      norm : float.</span>
-<span class="sd">        Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).</span>
-<span class="sd">      qsub : bool.</span>
-<span class="sd">        Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.</span>
-<span class="sd">      method : str.</span>
-<span class="sd">        Method used in scipy.optimize.minimize.</span>
-<span class="sd">      maxiter  : int.</span>
-<span class="sd">        Maximum number of iterations.</span>
-<span class="sd">      loc      : str. </span>
-<span class="sd">        Directory location for run.</span>
-<span class="sd">      rundir   : str. </span>
-<span class="sd">        IPEC package directory with executables and .dat files.</span>
-<span class="sd">      kwargs : dict. </span>
-<span class="sd">        namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
+<span class="sd">    :param ms: list. Integer poloidal modes included on plasma surface.</span>
+<span class="sd">    :param ttype: str.PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).</span>
+<span class="sd">    :param tfac: int.Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.</span>
+<span class="sd">    :param perp1: bool.Optimizes in space perpendicular to 1st IPEC SVD mode.</span>
+<span class="sd">    :param norm: float.Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).</span>
+<span class="sd">    :param qsub: bool.Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.</span>
+<span class="sd">    :param method: str.Method used in scipy.optimize.minimize.</span>
+<span class="sd">    :param maxiter: int.Maximum number of iterations.</span>
+<span class="sd">    :param loc: str. Directory location for run.</span>
+<span class="sd">    :param rundir: str. IPEC package directory with executables and .dat files.</span>
+<span class="sd">    :param kwargs: dict. namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
 <span class="sd">        </span>
 <span class="sd">     .. note::</span>
 <span class="sd">       Namelists taken from (in order of priority):</span>
@@ -521,9 +459,7 @@
 <span class="sd">       2) .in files from loc</span>
 <span class="sd">       3) .in files from rundir</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">      bool. </span>
-<span class="sd">        True.</span>
+<span class="sd">    :returns: bool. True.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">iteration</span>
@@ -780,24 +716,15 @@
 <span class="sd">    User must specify full path to all files named in pent.in input file</span>
 <span class="sd">    located in the base directory.</span>
 <span class="sd">    Note that the rotation profile is scaled by manipulating omega_E</span>
-<span class="sd">    on each surface to obtain the scaled roation.</span>
+<span class="sd">    on each surface to obtain the scaled rotation.</span>
 
-<span class="sd">    Key Word Arguments:</span>
-<span class="sd">      omega     : str. </span>
-<span class="sd">       Choose from nu, wp, we, wd, or ga</span>
-<span class="sd">      base    : str. </span>
-<span class="sd">       Top level directory containing dcon and ipec runs.</span>
-<span class="sd">       Must contain euler.bin and vacuum.bin file.</span>
-<span class="sd">      scale   : ndarray. </span>
-<span class="sd">        The scale factors iterated over.</span>
-<span class="sd">      pentfile: str. </span>
-<span class="sd">        Original input file.</span>
-<span class="sd">      rundcon : bool</span>
-<span class="sd">        Set true if using hybrid kinetic MHD DCON. Will also attempt IPEC + PENT.</span>
+<span class="sd">    :param omega: str. Choose from nu, wp, we, wd, or ga</span>
+<span class="sd">    :param base: str. Top level directory containing dcon and ipec runs. Must contain euler.bin and vacuum.bin file.</span>
+<span class="sd">    :param scale: ndarray. The scale factors iterated over.</span>
+<span class="sd">    :param pentfile: str. Original input file.</span>
+<span class="sd">    :param rundcon: bool. Set true if using hybrid kinetic MHD DCON. Will also attempt IPEC + PENT.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">      bool. </span>
-<span class="sd">        True.</span>
+<span class="sd">    :returns: bool. True.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c"># setup</span>
@@ -848,22 +775,14 @@
 <span class="sd">    .. note:: Approximate scaling ignores log-Lambda dependence, and uses</span>
 <span class="sd">       nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.</span>
 
-<span class="sd">    Key Word Arguments:</span>
-<span class="sd">      base    : str. </span>
-<span class="sd">       Top level directory containing dcon and ipec runs.</span>
-<span class="sd">       Must contain euler.bin and vacuum.bin file.</span>
-<span class="sd">      scale   : ndarray. </span>
-<span class="sd">        The scale factors iterated over.</span>
-<span class="sd">      pentfile: str. </span>
-<span class="sd">        Original input file.</span>
-<span class="sd">      scalen : bool.</span>
-<span class="sd">        Use density scaling to change nu_star.</span>
-<span class="sd">      scalet : bool.</span>
-<span class="sd">        Use temperature scaling to change nu_star.</span>
+<span class="sd">    :param base: str. Top level directory containing dcon and ipec runs. Must contain euler.bin and vacuum.bin file.</span>
+<span class="sd">    :param scale: ndarray. The scale factors iterated over.</span>
+<span class="sd">    :param pentfile: str. Original input file.</span>
+<span class="sd">    :param scalen: bool.Use density scaling to change nu_star.</span>
+<span class="sd">    :param scalet: bool.Use temperature scaling to change nu_star.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">      bool. </span>
-<span class="sd">        True.</span>
+<span class="sd">    :returns: bool. True.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c"># setup</span>
     <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">base</span><span class="p">)</span> <span class="o">+</span><span class="s">&#39;/&#39;</span>
@@ -923,6 +842,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="../../index.html">home</a>|&nbsp;</li>
         <li><a href="../../search.html">search</a>|&nbsp;</li>
 
