@@ -1023,16 +1023,25 @@ to do all sorts of post-processing tasks.</p>
 <dd><p>Add 3D geometric dimensions to dataset from ipec_control_output_n#.nc.</p>
 <p>Note, this surface uses the machine toroidal angle. It should only by used
 with functions that do the same (tmag_out=0).</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
-overwrite: bool. Overwrite geometric quantities if they already exist.
-inplace: bool. Modify dataset inplace. Otherwise, return a new dataset.</dd>
-<dt>Returns:</dt>
-<dd>Dataset. New dataset with additional dimensions.</dd>
-</dl>
-<p><strong>Examples:</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>control_output</strong> &#8211; Dataset. xarray Dataset opened from ipec_control_output_n#.nc</li>
+<li><strong>phi_lim</strong> &#8211; float. Toroidal angle extended from 0 to phi_lim radians.</li>
+<li><strong>overwrite</strong> &#8211; bool. Overwrite geometric quantities if they already exist.</li>
+<li><strong>inplace</strong> &#8211; bool. Modify dataset inplace. Otherwise, return a new dataset.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Dataset. New dataset with additional dimensions.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
 <p>After opening, adding geometry and confirming the functional forms
 are using the machine angle,</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
@@ -1086,66 +1095,7 @@ by the normal displacements and colored to show the normal field.</p>
 <dt id="pypec.post.add_control_geometry">
 <tt class="descclassname">pypec.post.</tt><tt class="descname">add_control_geometry</tt><big>(</big><em>ds</em>, <em>phi_lim=6.283185307179586</em>, <em>overwrite=False</em><big>)</big><a class="reference internal" href="_modules/pypec/post.html#add_control_geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.post.add_control_geometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>WARNING: This will soon be deprecated. Migrate to using add_3dsurface.</p>
-<p>Add 3D geometric dimensions to dataset from ipec_control_output_n#.nc.</p>
-<p>Note, this surface uses the machine toroidal angle. It should only by used
-with functions that do the same (tmag_out=0).</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
-overwrite: bool. Overwrite geometric quantities if they already exist.
-inplace: bool. Modify dataset inplace. Otherwise, return a new dataset.</dd>
-<dt>Returns:</dt>
-<dd>Dataset. New dataset with additional dimensions.</dd>
-</dl>
-<p><strong>Examples:</strong></p>
-<p>After opening, adding geometry and confirming the functional forms
-are using the machine angle,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_ideal_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">add_3dsurface</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">add_fun</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span><span class="n">tmag</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>it is easy to make 3D surface plots using mayavi,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;x_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;y_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-<span class="gp">... </span>                  <span class="n">scalars</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;b_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;phase_surf&#39;</span><span class="p">]),</span> <span class="n">colormap</span><span class="o">=</span><span class="s">&#39;RdBu&#39;</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mmlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;examples/figures/example_bn_3d.png&#39;</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_bn_3d.png"><img alt="_images/example_bn_3d.png" src="_images/example_bn_3d.png" style="width: 600px;" /></a>
-<p>Make 2D perturbed last-closed-flux-surface plots quickly using,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fac</span> <span class="o">=</span> <span class="mf">1e-1</span> <span class="c"># good for DIII-D unit eigenmodes</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s">&#39;equal&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;k&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span> <span class="c"># most and least stable modes</span>
-<span class="gp">... </span>    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R_EDX_FUN&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">fac</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="n">l</span><span class="p">,</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;R&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;R_n&#39;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;z_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">set_linearray</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:],</span> <span class="n">cmap</span><span class="o">=</span><span class="s">&#39;viridis&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span> <span class="n">ticks</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cb</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s">&#39;Mode Index&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">xtl</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.7</span><span class="p">,</span> <span class="mf">2.4</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&#39;R (m)&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">txt</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;z (m)&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;examples/figures/example_boundary_wiggle.png&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_boundary_wiggle.png"><img alt="_images/example_boundary_wiggle.png" src="_images/example_boundary_wiggle.png" style="width: 600px;" /></a>
-<p>Combining these two concepts, we can even plot a 3D perturbed surface distorted
-by the normal displacements and colored to show the normal field.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">xinorm</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;phase_surf&#39;</span><span class="p">]</span> <span class="c"># good for ~cm displacements</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;x_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;xi_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">xinorm</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;x_surf_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;y_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;xi_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">xinorm</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;y_surf_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;z_surf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;xi_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">xinorm</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;z_surf_n&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s">&#39;b_n_fun&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ds</span><span class="p">[</span><span class="s">&#39;phase_surf&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mmlab</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">scalars</span><span class="o">=</span><span class="n">s</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="s">&#39;RdBu&#39;</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mmlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s">&#39;examples/figures/example_bn_xin_3d.png&#39;</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference internal image-reference" href="_images/example_bn_xin_3d.png"><img alt="_images/example_bn_xin_3d.png" src="_images/example_bn_xin_3d.png" style="width: 600px;" /></a>
-<p>Fancy!</p>
+<p>See add_3dsurface for documentation.</p>
 </dd></dl>
 
 <dl class="function">
@@ -1154,18 +1104,23 @@ by the normal displacements and colored to show the normal field.</p>
 <dd><p>Add real space functions of theta calculated from the spectral outputs.
 This is helpful when analyzing a GPEC run for which fun_flag was off
 for speed/efficiency.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><p class="first">ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-keys: iterable. List of keys for which &lt;key&gt;_fun will be added.</p>
-<blockquote>
-<div>Default is all spectral variables.</div></blockquote>
-<p class="last">tmag: bool. Keep the magnetic coordinate angle (default is machine angle).
-inplace: bool. Add to dataset. Otherwise, make a new dataset object.</p>
-</dd>
-<dt>Returns:</dt>
-<dd>Dataset. New dataset with real space functions of theta.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ds</strong> &#8211; Dataset. xarray Dataset opened from ipec_control_output_n#.nc</li>
+<li><strong>keys</strong> &#8211; iterable. List of keys for which &lt;key&gt;_fun will be added. Default is all spectral variables.</li>
+<li><strong>tmag</strong> &#8211; bool. Keep the magnetic coordinate angle (default is machine angle).</li>
+<li><strong>inplace</strong> &#8211; bool. Add to dataset. Otherwise, make a new dataset object.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Dataset. New dataset with real space functions of theta.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -1173,18 +1128,27 @@ inplace: bool. Add to dataset. Otherwise, make a new dataset object.</p>
 <tt class="descclassname">pypec.post.</tt><tt class="descname">optimize_torque</tt><big>(</big><em>matrixprofile</em>, <em>psilow=0</em>, <em>psihigh=1</em>, <em>normalize=False</em>, <em>energy=False</em>, <em>minimize=False</em><big>)</big><a class="reference internal" href="_modules/pypec/post.html#optimize_torque"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.post.optimize_torque" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the eigenvalue and eigenvector corresponding to maximum the torque
 within the specified range of normalized poloidal flux.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>matrixprofile: DataArray. T_x or T_coil from ipec_profile_output_n#.nc.
-psilow: float. Lower limit of normalized poloidal flux.
-psihigh: float. Upper limit of normalized poloidal flux.
-normalize: bool. Optimize value within psi range normalized to the total.
-energy: bool. Optimize 2ndW (default is torque).
-minimize: bool. FInd the minimum (default is maximum).</dd>
-<dt>Returns:</dt>
-<dd>w,v. Eigenvalue, eigenvector of optimum.</dd>
-</dl>
-<p>Examples:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>matrixprofile</strong> &#8211; DataArray. T_x or T_coil from ipec_profile_output_n#.nc.</li>
+<li><strong>psilow</strong> &#8211; float. Lower limit of normalized poloidal flux.</li>
+<li><strong>psihigh</strong> &#8211; float. Upper limit of normalized poloidal flux.</li>
+<li><strong>normalize</strong> &#8211; bool. Optimize value within psi range normalized to the total.</li>
+<li><strong>energy</strong> &#8211; bool. Optimize 2ndW (default is torque).</li>
+<li><strong>minimize</strong> &#8211; bool. FInd the minimum (default is maximum).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">w,v. Eigenvalue, eigenvector of optimum.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Examples:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
 <p>With the output of a kinetic GPEC run in hand,</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_kinetic_example/ipec_control_output_n1.nc&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">prof</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s">&#39;examples/DIIID_kinetic_example/ipec_profile_output_n1.nc&#39;</span><span class="p">)</span>

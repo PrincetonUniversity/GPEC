@@ -172,16 +172,14 @@
 <span class="sd">    Note, this surface uses the machine toroidal angle. It should only by used</span>
 <span class="sd">    with functions that do the same (tmag_out=0).</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc</span>
-<span class="sd">        phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.</span>
-<span class="sd">        overwrite: bool. Overwrite geometric quantities if they already exist.</span>
-<span class="sd">        inplace: bool. Modify dataset inplace. Otherwise, return a new dataset.</span>
+<span class="sd">    :param control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc</span>
+<span class="sd">    :param phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.</span>
+<span class="sd">    :param overwrite: bool. Overwrite geometric quantities if they already exist.</span>
+<span class="sd">    :param inplace: bool. Modify dataset inplace. Otherwise, return a new dataset.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        Dataset. New dataset with additional dimensions.</span>
+<span class="sd">    :returns: Dataset. New dataset with additional dimensions.</span>
 
-<span class="sd">    **Examples:**</span>
+<span class="sd">    :Example:</span>
 
 <span class="sd">    After opening, adding geometry and confirming the functional forms</span>
 <span class="sd">    are using the machine angle,</span>
@@ -270,29 +268,25 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    WARNING: This will soon be deprecated. Migrate to using add_3dsurface.</span>
 
+<span class="sd">    See add_3dsurface for documentation.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">return</span> <span class="n">add_3dsurface</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">phi_lim</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 
 </div>
-<span class="n">add_control_geometry</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">+=</span> <span class="n">add_3dsurface</span><span class="o">.</span><span class="n">__doc__</span>
-
-
 <div class="viewcode-block" id="add_fun"><a class="viewcode-back" href="../../source_documentation.html#pypec.post.add_fun">[docs]</a><span class="k">def</span> <span class="nf">add_fun</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tmag</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add real space functions of theta calculated from the spectral outputs.</span>
 <span class="sd">    This is helpful when analyzing a GPEC run for which fun_flag was off</span>
 <span class="sd">    for speed/efficiency.</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc</span>
-<span class="sd">        keys: iterable. List of keys for which &lt;key&gt;_fun will be added.</span>
-<span class="sd">            Default is all spectral variables.</span>
-<span class="sd">        tmag: bool. Keep the magnetic coordinate angle (default is machine angle).</span>
-<span class="sd">        inplace: bool. Add to dataset. Otherwise, make a new dataset object.</span>
+<span class="sd">    :param ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc</span>
+<span class="sd">    :param keys: iterable. List of keys for which &lt;key&gt;_fun will be added. Default is all spectral variables.</span>
+<span class="sd">    :param tmag: bool. Keep the magnetic coordinate angle (default is machine angle).</span>
+<span class="sd">    :param inplace: bool. Add to dataset. Otherwise, make a new dataset object.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        Dataset. New dataset with real space functions of theta.</span>
+<span class="sd">    :returns: Dataset. New dataset with real space functions of theta.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
@@ -324,19 +318,17 @@
 <span class="sd">    Calculate the eigenvalue and eigenvector corresponding to maximum the torque</span>
 <span class="sd">    within the specified range of normalized poloidal flux.</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        matrixprofile: DataArray. T_x or T_coil from ipec_profile_output_n#.nc.</span>
-<span class="sd">        psilow: float. Lower limit of normalized poloidal flux.</span>
-<span class="sd">        psihigh: float. Upper limit of normalized poloidal flux.</span>
-<span class="sd">        normalize: bool. Optimize value within psi range normalized to the total.</span>
-<span class="sd">        energy: bool. Optimize 2ndW (default is torque).</span>
-<span class="sd">        minimize: bool. FInd the minimum (default is maximum).</span>
+<span class="sd">    :param matrixprofile: DataArray. T_x or T_coil from ipec_profile_output_n#.nc.</span>
+<span class="sd">    :param psilow: float. Lower limit of normalized poloidal flux.</span>
+<span class="sd">    :param psihigh: float. Upper limit of normalized poloidal flux.</span>
+<span class="sd">    :param normalize: bool. Optimize value within psi range normalized to the total.</span>
+<span class="sd">    :param energy: bool. Optimize 2ndW (default is torque).</span>
+<span class="sd">    :param minimize: bool. FInd the minimum (default is maximum).</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        w,v. Eigenvalue, eigenvector of optimum.</span>
+<span class="sd">    :returns: w,v. Eigenvalue, eigenvector of optimum.</span>
 
 
-<span class="sd">    Examples:</span>
+<span class="sd">    :Examples:</span>
 
 <span class="sd">    With the output of a kinetic GPEC run in hand,</span>
 
