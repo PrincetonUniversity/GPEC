@@ -158,13 +158,10 @@
 <span class="sd">    Convert a string representing a fortran namelist value</span>
 <span class="sd">    to the appropriate python type object.</span>
 <span class="sd">    </span>
-<span class="sd">    Arguments:</span>
-<span class="sd">      str  : str. </span>
-<span class="sd">        String to convert</span>
+<span class="sd">    :param str  : str. String to convert</span>
 <span class="sd">    </span>
-<span class="sd">    Returns: </span>
-<span class="sd">      obj. </span>
-<span class="sd">        Python object of appropriate type.</span>
+<span class="sd">    :returns: obj. Python object of appropriate type.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">pyobj</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
@@ -202,20 +199,11 @@
 <span class="sd">    Read in a file. Must have namelists in series, not embedded.</span>
 <span class="sd">    Assumes name of list preceded by &#39;&amp;&#39; and list ends with &#39;\&#39;.</span>
 <span class="sd">    </span>
-<span class="sd">    Arguments:</span>
-<span class="sd">      filename : str. </span>
-<span class="sd">        Path to input namelist.</span>
-<span class="sd">    Key Word Arguments: </span>
-<span class="sd">      out_type : str. </span>
-<span class="sd">        Can be either &#39;dict&#39; or &#39;obj&#39;.</span>
-<span class="sd">      comment : str.</span>
-<span class="sd">        Lines starting with any of these characters are considerd annotations.</span>
+<span class="sd">    :param filename : str. Path to input namelist.</span>
+<span class="sd">    :param out_type : str. Can be either &#39;dict&#39; or &#39;obj&#39;.</span>
+<span class="sd">    :param comment : str. Lines starting with any of these characters are considerd annotations.</span>
 
-<span class="sd">    Returns: </span>
-<span class="sd">      dict (object). </span>
-<span class="sd">        Top level keys (attributes) are the namelists with </span>
-<span class="sd">        sub-key (sub-attribute) parameters and their associated </span>
-<span class="sd">        values.</span>
+<span class="sd">    :returns: dict (object). Top keys (attributes) are namelists with sub-key(-attribute) parameter values.</span>
 <span class="sd">        </span>
 <span class="sd">    .. note:: The returned dict is actually &quot;OrderedDict&quot; type from </span>
 <span class="sd">        collections module. If returning an object, the object is </span>
@@ -293,16 +281,10 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write namelist object to file for fortran interface.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">      nl       : object. </span>
-<span class="sd">        namelist object from read() </span>
-<span class="sd">        can be dictionary or Objectify type class.</span>
-<span class="sd">      filename : str. </span>
-<span class="sd">        Path of file to be written.</span>
+<span class="sd">    :param nl       : object. namelist object from read(). Can be dictionary or Objectify type class.</span>
+<span class="sd">    :param filename : str. Path of file to be written.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">      bool. </span>
-<span class="sd">        True.</span>
+<span class="sd">    :returns: bool. True.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">nl</span><span class="p">)</span> <span class="o">==</span> <span class="n">Objectify</span><span class="p">:</span>
@@ -345,17 +327,11 @@
 <span class="sd">    Write namelist object to rst file for sphinx documentation</span>
 <span class="sd">    including tooltips.</span>
 
-<span class="sd">    Arguments:</span>
-<span class="sd">      nl       : object. </span>
-<span class="sd">        namelist object from read.</span>
-<span class="sd">      name  : str.</span>
-<span class="sd">        Name of namelist file.</span>
-<span class="sd">      filename : str. </span>
-<span class="sd">        Path of file to be written.</span>
+<span class="sd">    :param nl       : object.  namelist object from read.</span>
+<span class="sd">    :param name  : str. Name of namelist file.</span>
+<span class="sd">    :param filename : str. Path of file to be written.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">      bool. </span>
-<span class="sd">        True.</span>
+<span class="sd">    :returns: bool. True.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">_tooltips_</span>
@@ -391,7 +367,6 @@
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n\n</span><span class="s">&#39;</span><span class="p">)</span>
         
     <span class="k">return</span> <span class="bp">True</span>
-                
 </pre></div>
 
           </div>

@@ -1417,30 +1417,17 @@ for use with the FORTAN codes.</p>
 <tt class="descclassname">pypec.namelist.</tt><tt class="descname">read</tt><big>(</big><em>filename</em>, <em>out_type='dict'</em>, <em>comment='!'</em>, <em>old=False</em><big>)</big><a class="reference internal" href="_modules/pypec/namelist.html#read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.namelist.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read in a file. Must have namelists in series, not embedded.
 Assumes name of list preceded by &#8216;&amp;&#8217; and list ends with &#8216;&#8217;.</p>
-<dl class="docutils">
-<dt>Arguments:</dt>
-<dd><dl class="first last docutils">
-<dt>filename <span class="classifier-delimiter">:</span> <span class="classifier">str. </span></dt>
-<dd>Path to input namelist.</dd>
-</dl>
-</dd>
-<dt>Key Word Arguments: </dt>
-<dd><dl class="first last docutils">
-<dt>out_type <span class="classifier-delimiter">:</span> <span class="classifier">str. </span></dt>
-<dd>Can be either &#8216;dict&#8217; or &#8216;obj&#8217;.</dd>
-<dt>comment <span class="classifier-delimiter">:</span> <span class="classifier">str.</span></dt>
-<dd>Lines starting with any of these characters are considerd annotations.</dd>
-</dl>
-</dd>
-<dt>Returns: </dt>
-<dd><dl class="first last docutils">
-<dt>dict (object). </dt>
-<dd>Top level keys (attributes) are the namelists with 
-sub-key (sub-attribute) parameters and their associated 
-values.</dd>
-</dl>
-</dd>
-</dl>
+<p>:param filename : str. Path to input namelist.
+:param out_type : str. Can be either &#8216;dict&#8217; or &#8216;obj&#8217;.
+:param comment : str. Lines starting with any of these characters are considerd annotations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict (object). Top keys (attributes) are namelists with sub-key(-attribute) parameter values.</td>
+</tr>
+</tbody>
+</table>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The returned dict is actually &#8220;OrderedDict&#8221; type from 
@@ -1453,23 +1440,16 @@ un-ordered.</p>
 <dt id="pypec.namelist.write">
 <tt class="descclassname">pypec.namelist.</tt><tt class="descname">write</tt><big>(</big><em>nl</em>, <em>filename</em>, <em>old=False</em><big>)</big><a class="reference internal" href="_modules/pypec/namelist.html#write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.namelist.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write namelist object to file for fortran interface.</p>
-<dl class="docutils">
-<dt>Arguments:</dt>
-<dd><dl class="first last docutils">
-<dt>nl <span class="classifier-delimiter">:</span> <span class="classifier">object. </span></dt>
-<dd>namelist object from read() 
-can be dictionary or Objectify type class.</dd>
-<dt>filename <span class="classifier-delimiter">:</span> <span class="classifier">str. </span></dt>
-<dd>Path of file to be written.</dd>
-</dl>
-</dd>
-<dt>Returns:</dt>
-<dd><dl class="first last docutils">
-<dt>bool. </dt>
-<dd>True.</dd>
-</dl>
-</dd>
-</dl>
+<p>:param nl       : object. namelist object from read(). Can be dictionary or Objectify type class.
+:param filename : str. Path of file to be written.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">bool. True.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
