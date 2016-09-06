@@ -836,22 +836,20 @@ class-type objects using numpy.genfromtxt.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fname</strong> &#8211; str. Path of ipec output file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fname</strong> &#8211; str. Path of ipec output file.</li>
+<li><strong>squeeze</strong> &#8211; bool. Sets all attributes to single data object.</li>
+<li><strong>forcex</strong> &#8211; list. Set independent data labels.</li>
+<li><strong>forcedim</strong> &#8211; list. Set dimensionality of each x.</li>
+<li><strong>maxnumber</strong> &#8211; int. Reads only first maxnumber of tables.</li>
+<li><strong>maxlength</strong> &#8211; int. Tables with more rows than this are downsampled for speed.</li>
+<li><strong>auto_complex</strong> &#8211; bool. Include amplitude and phase of complex data as variables.</li>
+<li><strong>quiet</strong> &#8211; bool. Prevent non-warning messages printed to terminal.</li>
+</ul>
+</td>
 </tr>
-</tbody>
-</table>
-<p>:param squeeze : bool. Sets all attributes to single data object.
-:param forcex  : list. Set independent data labels.
-:param forcedim : list. Set dimensionality of each x.
-:param maxnumber : int. Reads only first maxnumber of tables.
-:param maxlength : int. Tables with more rows than this are downsampled for speed.
-:param auto_complex : bool. Include amplitude and phase of complex data as variables.
-:param quiet   : bool. Prevent non-warning messages printed to terminal.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list. Class objects for each block of data in the file.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list. Class objects for each block of data in the file.</p>
+</td>
 </tr>
 </tbody>
 </table>
