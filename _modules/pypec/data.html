@@ -1179,13 +1179,13 @@
 <span class="sd">        :param ynames : list. Strings specifying dependent data displayed.</span>
 <span class="sd">        :param aspect : str/float. Choose from &#39;auto&#39; or &#39;equal&#39; (see matplotlib axes.set_aspect). A float stretches a circle to hight=aspect*width.</span>
 <span class="sd">        :param plot_type: str. Choose one of,</span>
-<span class="sd">            - &quot;imshow&quot; Use matplotlib imshow to plot on grid.</span>
-<span class="sd">            - &quot;pcolormesh&quot; Use matplotlib pcolormesh to plot on grid.</span>
-<span class="sd">            - &quot;contour&quot;    Use matplotlib contour to plot on grid.</span>
-<span class="sd">            - &quot;contourf&quot;   Use matplotlib contourf to plot on grid.</span>
-<span class="sd">            - &quot;tripcolor&quot;  Use matplotlib tripcolor to plot raw points.</span>
-<span class="sd">            - &quot;tripcontour&quot;  Use matplotlib tripcontour to plot raw points.</span>
-<span class="sd">            - &quot;tripcontourf&quot; Use matplotlib tripcontourf to plot raw points.</span>
+<span class="sd">            &quot;imshow&quot; Use matplotlib imshow to plot on grid.</span>
+<span class="sd">            &quot;pcolormesh&quot; Use matplotlib pcolormesh to plot on grid.</span>
+<span class="sd">            &quot;contour&quot;    Use matplotlib contour to plot on grid.</span>
+<span class="sd">            &quot;contourf&quot;   Use matplotlib contourf to plot on grid.</span>
+<span class="sd">            &quot;tripcolor&quot;  Use matplotlib tripcolor to plot raw points.</span>
+<span class="sd">            &quot;tripcontour&quot;  Use matplotlib tripcontour to plot raw points.</span>
+<span class="sd">            &quot;tripcontourf&quot; Use matplotlib tripcontourf to plot raw points.</span>
 <span class="sd">        :param cbar: bool. Show colorbar.</span>
 <span class="sd">        :param grid_size: tuple. Size of grid used if no regular axes x (in order of xnames).</span>
 <span class="sd">        :param swap   : bool. Swap x/y axes.</span>
@@ -1312,8 +1312,6 @@
 <span class="sd">        xb, = data.read(&#39;examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out&#39;,forcex=[&#39;r&#39;,&#39;z&#39;])</span>
 <span class="sd">        xb.plot3d(&#39;bno&#39;)</span>
 <span class="sd">        </span>
-<span class="sd">        ..note: I think what we usually want out of IPEC is</span>
-<span class="sd">        the 3D surface perturbation. If we run with fun_flag</span>
 <span class="sd">        xn, = data.read(&#39;ipec_xbnormal_fun_n2.out&#39;)</span>
 <span class="sd">        psi = 1.0</span>
 <span class="sd">        n = 2</span>

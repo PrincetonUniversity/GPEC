@@ -527,16 +527,13 @@ data is interpolated to the wider spaced axis.</p>
 :param aspect : str/float. Choose from &#8216;auto&#8217; or &#8216;equal&#8217; (see matplotlib axes.set_aspect). A float stretches a circle to hight=aspect*width.
 :param plot_type: str. Choose one of,</p>
 <blockquote>
-<div><ul class="simple">
-<li>&#8220;imshow&#8221; Use matplotlib imshow to plot on grid.</li>
-<li>&#8220;pcolormesh&#8221; Use matplotlib pcolormesh to plot on grid.</li>
-<li>&#8220;contour&#8221;    Use matplotlib contour to plot on grid.</li>
-<li>&#8220;contourf&#8221;   Use matplotlib contourf to plot on grid.</li>
-<li>&#8220;tripcolor&#8221;  Use matplotlib tripcolor to plot raw points.</li>
-<li>&#8220;tripcontour&#8221;  Use matplotlib tripcontour to plot raw points.</li>
-<li>&#8220;tripcontourf&#8221; Use matplotlib tripcontourf to plot raw points.</li>
-</ul>
-</div></blockquote>
+<div>&#8220;imshow&#8221; Use matplotlib imshow to plot on grid.
+&#8220;pcolormesh&#8221; Use matplotlib pcolormesh to plot on grid.
+&#8220;contour&#8221;    Use matplotlib contour to plot on grid.
+&#8220;contourf&#8221;   Use matplotlib contourf to plot on grid.
+&#8220;tripcolor&#8221;  Use matplotlib tripcolor to plot raw points.
+&#8220;tripcontour&#8221;  Use matplotlib tripcontour to plot raw points.
+&#8220;tripcontourf&#8221; Use matplotlib tripcontourf to plot raw points.</div></blockquote>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -595,9 +592,7 @@ with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).</p>
 </table>
 <p>xb, = data.read(&#8216;examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out&#8217;,forcex=[&#8216;r&#8217;,&#8217;z&#8217;])
 xb.plot3d(&#8216;bno&#8217;)</p>
-<p>..note: I think what we usually want out of IPEC is
-the 3D surface perturbation. If we run with fun_flag
-xn, = data.read(&#8216;ipec_xbnormal_fun_n2.out&#8217;)
+<p>xn, = data.read(&#8216;ipec_xbnormal_fun_n2.out&#8217;)
 psi = 1.0
 n = 2
 fltr= xb.y[&#8216;psi&#8217;]==xb.y[&#8216;psi&#8217;][np.abs(xb.y[&#8216;psi&#8217;]-psi).argmin()]
