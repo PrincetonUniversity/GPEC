@@ -83,7 +83,7 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#pypec-modplot-matplotlib-customizations"><tt class="docutils literal"><span class="pre">pypec.modplot</span></tt> &#8211; matplotlib Customizations</a><ul>
-<li><a class="reference internal" href="#id4">Examples</a></li>
+<li><a class="reference internal" href="#id2">Examples</a></li>
 </ul>
 </li>
 </ul>
@@ -608,16 +608,21 @@ hat it displays a single independent axis. If is another independent
 axis exists, and is not sliced using one of the optional keyword arguments, 
 it s represented as the color of the plotted symbols. If the data is 3D 
 and unsliced, preference if given in order of xnames.</p>
-<p>:param ynames : list. Dependent data to be displayed. Default is all y data.
-:param xname  : str. Independent axis used in scatter plots. Default is first in xnames.
-:param x1     : float. Use only data with first axis clossest to value.
-:param x2     : float. Use only data with second axis clossest to value.
-:param x3     : float. Use only data with thrid axis clossest to value.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">figure.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ynames</strong> &#8211; list. Dependent data to be displayed. Default is all y data.</li>
+<li><strong>xname</strong> &#8211; str. Independent axis used in scatter plots. Default is first in xnames.</li>
+<li><strong>x1</strong> &#8211; float. Use only data with first axis clossest to value.</li>
+<li><strong>x2</strong> &#8211; float. Use only data with second axis clossest to value.</li>
+<li><strong>x3</strong> &#8211; float. Use only data with thrid axis clossest to value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">figure.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -626,29 +631,24 @@ and unsliced, preference if given in order of xnames.</p>
 <dl class="method">
 <dt id="pypec.data.DataBase.slice">
 <tt class="descname">slice</tt><big>(</big><em>x</em>, <em>xname=None</em>, <em>ynames=[]</em><big>)</big><a class="reference internal" href="_modules/pypec/data.html#DataBase.slice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.data.DataBase.slice" title="Permalink to this definition">¶</a></dt>
-<dd><p>UNDER CONSTRUCTION</p>
+<dd><p><em>UNDER CONSTRUCTION</em></p>
 <p>Return 1D data object from 2D. Method grids new data, 
 so beware of loosing accuracy near rational surfaces.</p>
-<dl class="docutils">
-<dt>Arguments:    </dt>
-<dd><dl class="first last docutils">
-<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">float. </span></dt>
-<dd>Lower bound of the axis.</dd>
-</dl>
-</dd>
-<dt>Key Word Arguments:</dt>
-<dd><dl class="first last docutils">
-<dt>xname <span class="classifier-delimiter">:</span> <span class="classifier">str. </span></dt>
-<dd>Axis allong which slice is performed.</dd>
-</dl>
-</dd>
-<dt>Returns: </dt>
-<dd><dl class="first last docutils">
-<dt>obj. </dt>
-<dd>New data nd-1 dimensional data object.</dd>
-</dl>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; float. Lower bound of the axis.</li>
+<li><strong>xname</strong> &#8211; str. Axis allong which slice is performed.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">obj. New data nd-1 dimensional data object.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -736,7 +736,15 @@ interp2d : 2-D interpolation</p>
 <tt class="descclassname">pypec.data.</tt><tt class="descname">open_dataset</tt><big>(</big><em>filename_or_obj</em>, <em>complex_dim='i'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/data.html#open_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.data.open_dataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper for xarray.open_dataset that allows automated reduction of
 a dimension distinguishing real and imaginary components.</p>
-<p>:param complex_dim : str. Dimension designating real/imaginary (0,1)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>complex_dim</strong> &#8211; str. Dimension designating real/imaginary (0,1)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Original Documentation:</strong></p>
 <p>Load and decode a dataset from a file or file-like object.</p>
 <dl class="docutils">
 <dt>filename_or_obj <span class="classifier-delimiter">:</span> <span class="classifier">str, file or xarray.backends.*DataStore</span></dt>
@@ -801,16 +809,21 @@ inconsistent values.</dd>
 <tt class="descclassname">pypec.data.</tt><tt class="descname">plotall</tt><big>(</big><em>results</em>, <em>xfun</em>, <em>yfun</em>, <em>label=''</em>, <em>axes=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pypec/data.html#plotall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.data.plotall" title="Permalink to this definition">¶</a></dt>
 <dd><p>Line plot of data gethered recursively from a dictionary 
 containing multiple namelists or data objects.</p>
-<p>:param results : dict. A readall result.
-:param xfun    : func. A function that takes args (key,val) for each dictionary item and whose result is appended to the xaxis.
-:param yfun    : func. A function that takes args (key,val) for each dictionary item and whose result is appended to the yaxis.
-:param axes    : obj. matplotlib axes object.
-:param kwargs  : dict. Passed to matplotlib plot function</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">figure.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>results</strong> &#8211; dict. A readall result.</li>
+<li><strong>xfun</strong> &#8211; func. A function that takes args (key,val) for each dictionary item and whose result is appended to the xaxis.</li>
+<li><strong>yfun</strong> &#8211; func. A function that takes args (key,val) for each dictionary item and whose result is appended to the yaxis.</li>
+<li><strong>axes</strong> &#8211; obj. matplotlib axes object.</li>
+<li><strong>kwargs</strong> &#8211; dict. Passed to matplotlib plot function</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">figure.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -850,14 +863,19 @@ class-type objects using numpy.genfromtxt.</p>
 <dd><p>Recursively searches base directory for files with name
 filetype, reads them into python objects, and stores 
 objects in a dictionary with directory names as keys.</p>
-<p>:param base     : str. Top level directory in which to begin search.
-:param filetype : str. Files to read.
-:param kwargs :dict. Passed to appropriate reader function.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dict. Key-Value pairs are directories and their contained data.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>base</strong> &#8211; str. Top level directory in which to begin search.</li>
+<li><strong>filetype</strong> &#8211; str. Files to read.</li>
+<li><strong>kwargs</strong> &#8211; dict. Passed to appropriate reader function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dict. Key-Value pairs are directories and their contained data.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -869,14 +887,19 @@ objects in a dictionary with directory names as keys.</p>
 <dd><p>Write data object to file. The aim is to replicate the original file
 structure... the header text will have been lost in the read however,
 as will some column label symbols in the use of genfromtxt.</p>
-<p>:param dataobj : obj. Data_Base type object.
-:param fname   : str. File to write to.
-:param kwargs  : dict. Passed to numpy.savetxt</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">bool. True.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dataobj</strong> &#8211; obj. Data_Base type object.</li>
+<li><strong>fname</strong> &#8211; str. File to write to.</li>
+<li><strong>kwargs</strong> &#8211; dict. Passed to numpy.savetxt</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bool. True.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1126,7 +1149,7 @@ steal the settings from a previous run (leaving run director as deafult)</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">new_dir</span> <span class="o">=</span> <span class="n">new_inputs</span><span class="o">.</span><span class="n">indir</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;2&#39;</span>
 </pre></div>
 </div>
-<p>DOUBLE CHECK THAT ALL IPUTS ARE WHAT YOU EXPECT (not shown here)
+<p><em>Double check that all inputs are what you expect</em> (not shown here)
 and submit the job to the cluster.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">gpec</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">new_dir</span><span class="p">,</span><span class="o">**</span><span class="n">new_inputs</span><span class="o">.</span><span class="n">infiles</span><span class="p">)</span>
 </pre></div>
@@ -1406,7 +1429,7 @@ for use with the FORTAN codes.</p>
 <dt id="pypec.namelist.read">
 <tt class="descclassname">pypec.namelist.</tt><tt class="descname">read</tt><big>(</big><em>filename</em>, <em>out_type='dict'</em>, <em>comment='!'</em>, <em>old=False</em><big>)</big><a class="reference internal" href="_modules/pypec/namelist.html#read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.namelist.read" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read in a file. Must have namelists in series, not embedded.
-Assumes name of list preceded by &#8216;&amp;&#8217; and list ends with <a href="#id2"><span class="problematic" id="id3">`</span></a>`.</p>
+Assumes name of list preceded by &#8216;&amp;&#8217; and list ends with a single backslash.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1414,7 +1437,7 @@ Assumes name of list preceded by &#8216;&amp;&#8217; and list ends with <a href=
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>filename</strong> &#8211; str. Path to input namelist.</li>
 <li><strong>out_type</strong> &#8211; str. Can be either &#8216;dict&#8217; or &#8216;obj&#8217;.</li>
-<li><strong>comment</strong> &#8211; str. Lines starting with any of these characters are considerd annotations.</li>
+<li><strong>comment</strong> &#8211; str. Lines starting with any of these characters are considered annotations.</li>
 </ul>
 </td>
 </tr>
@@ -1457,8 +1480,8 @@ un-ordered.</p>
 <span class="target" id="module-pypec.modplot"></span><div class="section" id="pypec-modplot-matplotlib-customizations">
 <h2><a class="reference internal" href="#module-pypec.modplot" title="pypec.modplot"><tt class="xref py py-mod docutils literal"><span class="pre">pypec.modplot</span></tt></a> &#8211; matplotlib Customizations<a class="headerlink" href="#pypec-modplot-matplotlib-customizations" title="Permalink to this headline">¶</a></h2>
 <p>Collection of modified matplotlib functions and objects.</p>
-<div class="section" id="id4">
-<h3>Examples<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id2">
+<h3>Examples<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>Plot complex arguments.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">subplots</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">lines</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mf">0.5j</span><span class="p">),</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">)</span>

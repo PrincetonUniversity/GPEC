@@ -133,14 +133,23 @@
 
 <div class="viewcode-block" id="Objectify"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.Objectify">[docs]</a><span class="k">class</span> <span class="nc">Objectify</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Class base to convert iterable to instance.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Class base to convert iterable to instance.</span>
+
+<span class="sd">        :param d: iterable. Dictionary that will be converted.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="p">[</span><span class="n">Objectify</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">b</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">Objectify</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">b</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_todict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
-            <span class="sd">&quot;&quot;&quot;Converts instance back to dictionary.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_todict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Converts instance back to dictionary.</span>
+
+<span class="sd">            &quot;&quot;&quot;</span>
             <span class="n">d</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">==</span><span class="s">&#39;_todict&#39;</span><span class="p">:</span>
@@ -197,11 +206,11 @@
 <div class="viewcode-block" id="read"><a class="viewcode-back" href="../../source_documentation.html#pypec.namelist.read">[docs]</a><span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">out_type</span><span class="o">=</span><span class="s">&#39;dict&#39;</span><span class="p">,</span><span class="n">comment</span><span class="o">=</span><span class="s">&#39;!&#39;</span><span class="p">,</span><span class="n">old</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Read in a file. Must have namelists in series, not embedded.</span>
-<span class="sd">    Assumes name of list preceded by &#39;&amp;&#39; and list ends with `\`.</span>
+<span class="sd">    Assumes name of list preceded by &#39;&amp;&#39; and list ends with a single backslash.</span>
 <span class="sd">    </span>
 <span class="sd">    :param filename: str. Path to input namelist.</span>
 <span class="sd">    :param out_type: str. Can be either &#39;dict&#39; or &#39;obj&#39;.</span>
-<span class="sd">    :param comment: str. Lines starting with any of these characters are considerd annotations.</span>
+<span class="sd">    :param comment: str. Lines starting with any of these characters are considered annotations.</span>
 
 <span class="sd">    :returns: dict (object). Top keys (attributes) are namelists with sub-key(-attribute) parameter values.</span>
 <span class="sd">        </span>
