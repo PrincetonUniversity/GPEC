@@ -166,9 +166,10 @@
 <span class="sd">    Class designed to hold the standard inputs for a run.</span>
 
 <span class="sd">    :Attributes:</span>
-<span class="sd">      rundir: str. Location of executables, .dat files, and extra .in files.</span>
-<span class="sd">      indir: str. Location of .in files read in and stored here</span>
-<span class="sd">      infiles: dict. Tree like storage of namelist objects.</span>
+<span class="sd">    </span>
+<span class="sd">        - rundir: str. Location of executables, .dat files, and extra .in files.</span>
+<span class="sd">        - indir: str. Location of .in files read in and stored here</span>
+<span class="sd">        - infiles: dict. Tree like storage of namelist objects.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;bin&#39;</span><span class="p">,</span><span class="n">indir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s">&#39;input&#39;</span><span class="p">):</span>
