@@ -149,16 +149,14 @@ following lines into your .bashrc file:</p>
 module load anaconda/2.3.0
 </pre></div>
 </div>
-<p>..note: Anaconda is the most complete and current python distribution
-available at pppl. Users can also use locally built python/2.7.2, but
+<p>available at pppl. Users can also use locally built python/2.7.2, but
 will loose 3D plotting capabilities and may experience problems reading
 large data files.</p>
 <p>Obviously, &#8220;/path/to/gpec&#8221; needs to be replaced with the path
 to your installation of the GPEC package (containing the pypec directory).</p>
 <p>For tcsh shell users, replace export with setenv syntax
 and insert in .cshrc.</p>
-<p>..note: Mayavi&#8217;s default gui api is not consistent with the anaconda
-interactive python default. To enable 3D plotting, you must add
+<p>interactive python default. To enable 3D plotting, you must add
 &#8220;export QT_API=pyqt&#8221; to your .bashrc or a similar line to your .cshrc.</p>
 <p>To put the changes into effect:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ source ~/.bashrc
@@ -385,10 +383,13 @@ explore the GPEC output.</p>
 <h3>Advanced Users<a class="headerlink" href="#advanced-users" title="Permalink to this headline">¶</a></h3>
 <p>In this section, we will assume you have a pretty good hold on both python and the basic ploting functions of these modules.</p>
 <p>Now that you use this module regularly, save yourself some time by placing the line:</p>
-<blockquote>
-<div>from pypec import *</div></blockquote>
-<p>into your autoimport file located at
-~/.ipython/profile_default/startup/autoimports.ipy</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pypec</span> <span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<p>into your autoimport file located at:</p>
+<div class="highlight-python"><div class="highlight"><pre>~/.ipython/profile_default/startup/autoimports.ipy
+</pre></div>
+</div>
 </div>
 <div class="section" id="deprecated-ascii-interface">
 <h3>Deprecated Ascii Interface<a class="headerlink" href="#deprecated-ascii-interface" title="Permalink to this headline">¶</a></h3>
