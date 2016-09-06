@@ -189,17 +189,6 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
     return ds
 
 
-def add_control_geometry(ds, phi_lim=2 * pi, overwrite=False):
-    """
-    WARNING: This will soon be deprecated. Migrate to using add_3dsurface.
-
-    See add_3dsurface for documentation.
-
-    """
-
-    return add_3dsurface(ds, phi_lim=2 * pi, overwrite=False)
-
-
 def add_fun(ds, keys=None, tmag=False, inplace=True):
     """
     Add real space functions of theta calculated from the spectral outputs.
