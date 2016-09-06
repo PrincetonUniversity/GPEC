@@ -149,15 +149,17 @@ following lines into your .bashrc file:</p>
 module load anaconda/2.3.0
 </pre></div>
 </div>
-<p>available at pppl. Users can also use locally built python/2.7.2, but
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Anaconda is the most complete and current python distribution
+available at pppl. Users can also use locally built python/2.7.2, but
 will loose 3D plotting capabilities and may experience problems reading
 large data files.</p>
+</div>
 <p>Obviously, &#8220;/path/to/gpec&#8221; needs to be replaced with the path
 to your installation of the GPEC package (containing the pypec directory).</p>
 <p>For tcsh shell users, replace export with setenv syntax
 and insert in .cshrc.</p>
-<p>interactive python default. To enable 3D plotting, you must add
-&#8220;export QT_API=pyqt&#8221; to your .bashrc or a similar line to your .cshrc.</p>
 <p>To put the changes into effect:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ source ~/.bashrc
 </pre></div>
