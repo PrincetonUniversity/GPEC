@@ -115,13 +115,13 @@ c-----------------------------------------------------------------------
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipec_dealloc.
+c     subprogram 1. gpec_dealloc.
 c     deallocate storage.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipec_dealloc
+      SUBROUTINE gpec_dealloc
 
       INTEGER :: istep,ifix
 c-----------------------------------------------------------------------
@@ -153,15 +153,15 @@ c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipec_dealloc
+      END SUBROUTINE gpec_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 2. ipec_stop.
+c     subprogram 2. gpec_stop.
 c     program termination.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipec_stop(message)
+      SUBROUTINE gpec_stop(message)
 
       CHARACTER(*), INTENT(IN) :: message
       INTEGER :: hrs,mins,secs
@@ -175,23 +175,23 @@ c-----------------------------------------------------------------------
       secs = secs-hrs*60*60-mins*60
       IF (verbose) THEN
          IF(hrs>0)THEN
-             PRINT *,"Total cpu time for IPEC = ",hrs," hours, ",
+             PRINT *,"Total cpu time for GPEC = ",hrs," hours, ",
      $           mins," minutes, ",secs," seconds"
          ELSEIF(mins>0)then
-             PRINT *,"Total cpu time for IPEC = ",
+             PRINT *,"Total cpu time for GPEC = ",
      $           mins," minutes, ",secs," seconds"
          ELSE
-             PRINT *,"Total cpu time for IPEC = ",secs," seconds"
+             PRINT *,"Total cpu time for GPEC = ",secs," seconds"
          ENDIF
-         WRITE(*,'(1x,2a)')'IPEC STOP => ',TRIM(message)
+         WRITE(*,'(1x,2a)')'GPEC STOP => ',TRIM(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
       STOP
-      END SUBROUTINE ipec_stop
+      END SUBROUTINE gpec_stop
 c-----------------------------------------------------------------------
-c     subprogram 3. ipec_timer.
+c     subprogram 3. gpec_timer.
 !-----------------------------------------------------------------------
 c     *DESCRIPTION:
 c        Handles machine-dependent timing statistics.
@@ -211,7 +211,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipec_timer(mode,opunit)
+      SUBROUTINE gpec_timer(mode,opunit)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: mode
       INTEGER, INTENT(IN), OPTIONAL :: opunit
@@ -285,6 +285,6 @@ c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipec_timer
+      END SUBROUTINE gpec_timer
 
       END MODULE ipglobal_mod

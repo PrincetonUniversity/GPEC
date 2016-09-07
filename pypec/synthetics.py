@@ -745,7 +745,7 @@ def _coil_to_netcdf(name,machine):
 
 class _magnetics(object):
     """
-    Class for getting synthetic magnetic diagnostics from IPEC results.
+    Class for getting synthetic magnetic diagnostics from GPEC results.
     """
     def __init__(self):
         """
@@ -785,7 +785,7 @@ class _magnetics(object):
         
         *Arguments:*
             - key : str. Sensor array from mags.
-            - ds : Dataset. Dataset from ipec cylindrical output netcdf.
+            - ds : Dataset. Dataset from gpec cylindrical output netcdf.
     
         *Key Word Arguments:*
             - op : str. Operation applied to the points along the surface

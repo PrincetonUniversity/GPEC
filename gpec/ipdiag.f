@@ -1703,7 +1703,7 @@ c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_rzpdiv_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       
-      WRITE(out_unit,*)"IPEC_RZPDIV: Divergence in rzphi grid"
+      WRITE(out_unit,*)"GPEC_RZPDIV: Divergence in rzphi grid"
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
      $     "re(div)","im(div)","abs(div)"
       
@@ -1826,7 +1826,7 @@ c-----------------------------------------------------------------------
          CALL ipeq_weight(psilim,temp,mfac,mpert,2)
          sqrta(:,i) = temp
       ENDDO
-      ! start with IPEC flux matrix
+      ! start with GPEC flux matrix
       mat = reluctmats(resp_index,:,:)
       ! convert to bsqrt(A)
       mat=MATMUL(MATMUL(sqrta,mat),sqrta)
@@ -2046,7 +2046,7 @@ c-----------------------------------------------------------------------
          CALL cspline_fit(optorq,"extrap")
          CALL ascii_open(out_unit,"ipdiag_dw_matrix_profile_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_dw_diag: "//
+         WRITE(out_unit,*)"GPEC_dw_diag: "//
      $        "Energy and torque profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2067,7 +2067,7 @@ c     write general response matrix functions.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_dw_matrix_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_dw_matrix: "//
+      WRITE(out_unit,*)"GPEC_dw_matrix: "//
      $     "Self-consistent response matrix functions."
       WRITE(out_unit,*)
 
@@ -2094,7 +2094,7 @@ c     calculate maximum torque eigenvalues.
 c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"ipdiag_dw_eigen_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_dw_eigen: "//
+      WRITE(out_unit,*)"GPEC_dw_eigen: "//
      $     "Eigenvalue profiles by self-consistent solutions."
       WRITE(out_unit,*)
 
@@ -2121,7 +2121,7 @@ c-----------------------------------------------------------------------
          ENDDO
          CALL ascii_open(out_unit,"ipdiag_dw_minimum_torque_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_dw_diag: "//
+         WRITE(out_unit,*)"GPEC_dw_diag: "//
      $        "Energy and torque profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2140,7 +2140,7 @@ c-----------------------------------------------------------------------
 
       CALL ascii_open(out_unit,"ipdiag_dw_ratio_eigen_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_dw_ratio_eigen: "//
+      WRITE(out_unit,*)"GPEC_dw_ratio_eigen: "//
      $     "Eigenvalue profiles by self-consistent solutions."
       WRITE(out_unit,*)
 
@@ -2191,7 +2191,7 @@ c-----------------------------------------------------------------------
          CALL cspline_fit(optorq,"extrap")
          CALL ascii_open(out_unit,"ipdiag_dw_optimized_torque_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_dw_diag: "//
+         WRITE(out_unit,*)"GPEC_dw_diag: "//
      $        "Energy and torque profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2238,7 +2238,7 @@ c     write coil response matrix functions.
 c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"ipdiag_coil_matrix_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_coil_matrix: "//
+         WRITE(out_unit,*)"GPEC_coil_matrix: "//
      $        "Self-consistent coil response matrix functions."
          WRITE(out_unit,*)
 
@@ -2260,7 +2260,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*) "Writing coil response eigenvectors and eigenvalues"
          CALL ascii_open(out_unit,"ipdiag_coil_eigen_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_coil_eigen: "//
+         WRITE(out_unit,*)"GPEC_coil_eigen: "//
      $        "Coil eigenvalue profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2288,7 +2288,7 @@ c     calculate maximum torque-ratio TT^{-1}_b coil eigenvalues.
 c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"ipdiag_coil_ratio_eigen_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_coil_ratio_eigen: "//
+         WRITE(out_unit,*)"GPEC_coil_ratio_eigen: "//
      $        "Eigenvalue profiles by self-consistent solutions."
          WRITE(out_unit,*)
 

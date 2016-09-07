@@ -21,18 +21,18 @@ This namelist controls the behavior of the DCON code and determines its outputs.
 .. include:: ../input/dcon.in
    :literal:
 
-The IPEC Namelist
+The GPEC Namelist
 ==================
 
-This namelist sets the inputs, controls the behavior, and determines the outputs of the IPEC code.
+This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.
 
-.. include:: ../input/ipec.in
+.. include:: ../input/gpec.in
    :literal:
 
 The PENTRC Namelist
 ====================
 
-This namelist sets the inputs, controls the behavior, and determines the outputs of the IPEC code.
+This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.
 
 .. include:: ../input/pentrc.in
    :literal:

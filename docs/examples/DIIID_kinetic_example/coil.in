@@ -44,5 +44,5 @@
 
 /
 &COIL_OUTPUT
-	ipec_interface=t			! Provides external field to IPEC
+	gpec_interface=t			! Provides external field to GPEC
 /

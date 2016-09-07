@@ -75,22 +75,22 @@ def run(repo=repo, loc=None):
     inputs['vac']['SHAPE']['a'] = 0.06
     # EQUIL - use example settings
     # DCON - use all example settings
-    # IPEC - apply simple m=2 field and minimize output
-    inputs['ipec']['IPEC_INPUT']['mode_flag'] = False
-    inputs['ipec']['IPEC_INPUT']['harmonic_flag'] = True
-    inputs['ipec']['IPEC_INPUT']['cosmn(2)'] = 1e-4
-    inputs['ipec']['IPEC_INPUT']['sinmn(2)'] = -1e-4
-    #inputs['ipec']['IPEC_CONTROL']['atol_psi'] = 1e-2
+    # GPEC - apply simple m=2 field and minimize output
+    inputs['gpec']['GPEC_INPUT']['mode_flag'] = False
+    inputs['gpec']['GPEC_INPUT']['harmonic_flag'] = True
+    inputs['gpec']['GPEC_INPUT']['cosmn(2)'] = 1e-4
+    inputs['gpec']['GPEC_INPUT']['sinmn(2)'] = -1e-4
+    #inputs['gpec']['GPEC_CONTROL']['atol_psi'] = 1e-2
     # turn everything off
-    for key, value in inputs['ipec']['IPEC_OUTPUT'].iteritems():
+    for key, value in inputs['gpec']['GPEC_OUTPUT'].iteritems():
         if type(value) is bool:
-            inputs['ipec']['IPEC_OUTPUT'][key] = False
-    for key, value in inputs['ipec']['IPEC_DIAGNOSE'].iteritems():
+            inputs['gpec']['GPEC_OUTPUT'][key] = False
+    for key, value in inputs['gpec']['GPEC_DIAGNOSE'].iteritems():
         if type(value) is bool:
-            inputs['ipec']['IPEC_DIAGNOSE'][key] = False
+            inputs['gpec']['GPEC_DIAGNOSE'][key] = False
     # turn minimal output on
-    inputs['ipec']['IPEC_OUTPUT']['xclebsch_flag'] = True
-    inputs['ipec']['IPEC_OUTPUT']['verbose'] = True
+    inputs['gpec']['GPEC_OUTPUT']['xclebsch_flag'] = True
+    inputs['gpec']['GPEC_OUTPUT']['verbose'] = True
     # PENTRC - compare RLAR, CLAR, and TGAR. Don't bother running anything else.
     for key, value in inputs['pentrc']['PENT_OUTPUT'].iteritems():
         if key.endswith('_flag'):
@@ -101,7 +101,7 @@ def run(repo=repo, loc=None):
         qsub = not (a == 1e-3)
         inputs['sol']['SOL_INPUT']['a'] = a
         gpec.run(loc='{l}/lar_lim/a{a:.2e}'.format(l=loc, a=a), rundir=exedir, qsub=qsub,
-                 mem=2e3, mailon='', rundcon=True, runipec=True, runpentrc=True, **inputs)
+                 mem=2e3, mailon='', rundcon=True, rungpec=True, runpentrc=True, **inputs)
 
     return True
 

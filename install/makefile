@@ -12,10 +12,10 @@ export CFLAGS
 .IGNORE:
 
 all: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
-	xdraw coil ipec mkbin
+	xdraw coil gpec mkbin
 
 allf: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
-	coil ipec mkbin
+	coil gpec mkbin
 
 
 # executables:
@@ -56,8 +56,8 @@ sum:
 coil:
 	cd ../coil;   make libcoil
 
-ipec:  
-	cd ../ipec;   make ipec
+gpec:
+	cd ../gpec;   make gpec
 
 pentrc:  
 	cd ../pentrc; make pentrc
@@ -70,7 +70,7 @@ mkbin:
 	cp -f ../match/match ../bin
 	cp -f ../multi/multi ../bin
 	cp -f ../sum/sum ../bin
-	cp -f ../ipec/ipec ../bin
+	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
 	cp -f ../input/mput ../bin
 
@@ -110,7 +110,7 @@ clean:
 	cd ../multi;  make clean
 	cd ../sum;    make clean
 	cd ../coil;   make clean
-	cd ../ipec;   make clean
+	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 
 realclean: clean

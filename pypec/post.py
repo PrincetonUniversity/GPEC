@@ -21,8 +21,8 @@ In an open ipython session, import the data module
 
 To get a typical GPEC output into python, use the open_dataset function.
 
->>> con = data.open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
->>> prof = data.open_dataset('examples/DIIID_ideal_example/ipec_profile_output_n1.nc')
+>>> con = data.open_dataset('examples/DIIID_ideal_example/gpec_control_output_n1.nc')
+>>> prof = data.open_dataset('examples/DIIID_ideal_example/gpec_profile_output_n1.nc')
 
 First, 3D equilibrium calculations lend themselves naturally to 3D figures. This module
 has a helpful function for forming the necessary x,y,z meshes from the 2D boundary.
@@ -92,12 +92,12 @@ dtor = np.pi / 180
 
 def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False):
     """
-    Add 3D geometric dimensions to dataset from ipec_control_output_n#.nc.
+    Add 3D geometric dimensions to dataset from gpec_control_output_n#.nc.
 
     Note, this surface uses the machine toroidal angle. It should only by used
     with functions that do the same (tmag_out=0).
 
-    :param control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
+    :param control_output: Dataset. xarray Dataset opened from gpec_control_output_n#.nc
     :param phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
     :param overwrite: bool. Overwrite geometric quantities if they already exist.
     :param inplace: bool. Modify dataset inplace. Otherwise, return a new dataset.
@@ -109,7 +109,7 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
     After opening, adding geometry and confirming the functional forms
     are using the machine angle,
 
-    >>> con = data.open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
+    >>> con = data.open_dataset('examples/DIIID_ideal_example/gpec_control_output_n1.nc')
     >>> con = add_3dsurface(con)
     >>> con = add_fun(con,tmag=False)
 
@@ -195,7 +195,7 @@ def add_fun(control_output, keys=None, tmag=False, inplace=True):
     This is helpful when analyzing a GPEC run for which fun_flag was off
     for speed/efficiency.
 
-    :param control_output: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
+    :param control_output: Dataset. xarray Dataset opened from gpec_control_output_n#.nc
     :param keys: iterable. List of keys for which <key>_fun will be added. Default is all spectral variables.
     :param tmag: bool. Keep the magnetic coordinate angle (default is machine angle).
     :param inplace: bool. Add to dataset. Otherwise, make a new dataset object.
@@ -206,7 +206,7 @@ def add_fun(control_output, keys=None, tmag=False, inplace=True):
 
     You can check this against fun_flag outputs,
 
-    >>> con = data.open_dataset('examples/DIIID_kinetic_example/ipec_control_output_n1.nc')
+    >>> con = data.open_dataset('examples/DIIID_kinetic_example/gpec_control_output_n1.nc')
     >>> con_mag = post.add_fun(con, tmag=True, inplace=False)
     >>> con_mac = post.add_fun(con, tmag=False, inplace=False)
     >>> f,ax = plt.subplots(2)
@@ -259,7 +259,7 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
     Calculate the eigenvalue and eigenvector corresponding to maximum the torque
     within the specified range of normalized poloidal flux.
 
-    :param matrixprofile: DataArray. T_x or T_coil from ipec_profile_output_n#.nc.
+    :param matrixprofile: DataArray. T_x or T_coil from gpec_profile_output_n#.nc.
     :param psilow: float. Lower limit of normalized poloidal flux.
     :param psihigh: float. Upper limit of normalized poloidal flux.
     :param normalize: bool. Optimize value within psi range normalized to the total.
@@ -273,8 +273,8 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
 
     With the output of a kinetic GPEC run in hand,
 
-    >>> con = data.open_dataset('examples/DIIID_kinetic_example/ipec_control_output_n1.nc')
-    >>> prof = data.open_dataset('examples/DIIID_kinetic_example/ipec_profile_output_n1.nc')
+    >>> con = data.open_dataset('examples/DIIID_kinetic_example/gpec_control_output_n1.nc')
+    >>> prof = data.open_dataset('examples/DIIID_kinetic_example/gpec_profile_output_n1.nc')
 
     This function provides the spectrum that optimizes the integral torque
     and the corresponding profile is easily obtained.

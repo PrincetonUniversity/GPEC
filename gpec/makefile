@@ -28,9 +28,9 @@ OBJS = \
 	ipdiag.o \
 	ipvacuum.o \
 	ipout.o \
-	ipec.o
+	gpec.o
 
-all: dcon coil ipec
+all: dcon coil gpec
 
 dcon:
 	cd ../dcon; make all
@@ -38,12 +38,12 @@ dcon:
 coil:
 	cd ../coil; make
 
-ipec: $(OBJS)
-	$(F90) -o ipec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
+gpec: $(OBJS)
+	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../lib
-	ar -r ../lib/libipec.a *.o
+	ar -r ../lib/libgpec.a *.o
 	mkdir -p ../bin
-	cp -f ipec ../bin
+	cp -f gpec ../bin
 
 # dependencies
 
@@ -55,7 +55,7 @@ ipresp.o: ipeq.o
 ipvacuum.o : ipeq.o
 ipdiag.o: ipresp.o ipvacuum.o
 ipout.o: ipresp.o ipvacuum.o ../coil/field.o ../coil/coil.o
-ipec.o: ipdiag.o ipout.o rdcon.o
+gpec.o: ipdiag.o ipout.o rdcon.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin ipec
+	rm -f *.o *.mod *.out *.bin gpec

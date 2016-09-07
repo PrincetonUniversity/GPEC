@@ -1,16 +1,16 @@
 c-----------------------------------------------------------------------
 c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     IPEC: main program
+c     GPEC: main program
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     ipec_main.
+c     gpec_main.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      PROGRAM ipec_main
+      PROGRAM gpec_main
       USE ipdiag_mod
       USE ipout_mod
       USE rdcon_mod
@@ -37,7 +37,7 @@ c-----------------------------------------------------------------------
      $     fxmn,fxfun,coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
 
-      NAMELIST/ipec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
+      NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
@@ -46,9 +46,9 @@ c-----------------------------------------------------------------------
      $     ip_direction,bt_direction,rdconfile,
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
      $     filter_types,filter_modes
-      NAMELIST/ipec_control/resp_index,sing_spot,reg_flag,reg_spot,
+      NAMELIST/gpec_control/resp_index,sing_spot,reg_flag,reg_spot,
      $     chebyshev_flag,nche,nchr,nchz,resp_induct_flag
-      NAMELIST/ipec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
+      NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,mlim_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
@@ -57,7 +57,7 @@ c-----------------------------------------------------------------------
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag
-      NAMELIST/ipec_diagnose/singcurs_flag,xbcontra_flag,
+      NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
@@ -184,18 +184,18 @@ c-----------------------------------------------------------------------
 
       psixy = 0
 c-----------------------------------------------------------------------
-c     read ipec.in.
+c     read gpec.in.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)""
-      IF(verbose) WRITE(*,*)"IPEC START => "//TRIM(version)
+      IF(verbose) WRITE(*,*)"GPEC START => "//TRIM(version)
       IF(verbose) WRITE(*,*)"__________________________________________"
-      CALL ascii_open(in_unit,"ipec.in","OLD")
-      READ(in_unit,NML=ipec_input)
-      READ(in_unit,NML=ipec_control)  
-      READ(in_unit,NML=ipec_output)
-      READ(in_unit,NML=ipec_diagnose)
+      CALL ascii_open(in_unit,"gpec.in","OLD")
+      READ(in_unit,NML=gpec_input)
+      READ(in_unit,NML=gpec_control)
+      READ(in_unit,NML=gpec_output)
+      READ(in_unit,NML=gpec_diagnose)
       CALL ascii_close(in_unit)
-      IF(timeit) CALL ipec_timer(0)
+      IF(timeit) CALL gpec_timer(0)
 c-----------------------------------------------------------------------
 c     Deprecated variable errors
 c-----------------------------------------------------------------------
@@ -203,7 +203,7 @@ c-----------------------------------------------------------------------
      $   (fmode/=0).or.(rmode/=0).or.(smode/=0))THEN
          PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
          PRINT *,"  Use filter_types to filter external spectrum."
-         CALL ipec_stop("Deprecated input.")
+         CALL gpec_stop("Deprecated input.")
       ENDIF
       IF(malias/=0) THEN
        PRINT *,"WARNING: malias may not be supported in future versions"
@@ -317,7 +317,7 @@ c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
       CALL idcon_vacuum
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
 c-----------------------------------------------------------------------
 c     set parameters from dcon.
 c-----------------------------------------------------------------------
@@ -347,15 +347,15 @@ c-----------------------------------------------------------------------
                finmn(cmlow-mlow+i)=coilmn(i)
             ENDIF
          ENDDO
-         IF(timeit) CALL ipec_timer(2)
+         IF(timeit) CALL gpec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------
 c     log inputs with harvest
 c-----------------------------------------------------------------------
-      ierr=init_harvest('CODEDB_IPEC'//NUL,hlog,len(hlog))
+      ierr=init_harvest('CODEDB_GPEC'//NUL,hlog,len(hlog))
       ierr=set_harvest_verbose(0)
       ! standard CODEDB records
-      ierr=set_harvest_payload_str(hlog,'CODE'//nul,'IPEC'//nul)
+      ierr=set_harvest_payload_str(hlog,'CODE'//nul,'GPEC'//nul)
       IF (machine=='') then
          machine = "UNKNOWN"
       ELSEIF (machine=='d3d') then
@@ -405,7 +405,7 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl(hlog,'betan'//nul,betan)
       ierr=set_harvest_payload_dbl_array(hlog,'et'//nul,et,mpert)
       ierr=set_harvest_payload_dbl_array(hlog,'ep'//nul,ep,mpert)
-      ! ipec_input
+      ! gpec_input
       ierr=set_harvest_payload_bol(hlog,'fixed_boundary_flag'//nul,
      $                             fixed_boundary_flag)
       ierr=set_harvest_payload_bol(hlog,'mode_flag'//nul,mode_flag)
@@ -414,12 +414,12 @@ c-----------------------------------------------------------------------
      $                             filter_types//nul)
       ierr=set_harvest_payload_int(hlog,'filter_modes'//nul,
      $                             filter_modes)
-      ! ipec_control
+      ! gpec_control
       ierr=set_harvest_payload_int(hlog,'resp_index'//nul,resp_index)
       ierr=set_harvest_payload_dbl(hlog,'sing_spot'//nul,sing_spot)
       ierr=set_harvest_payload_bol(hlog,'reg_flag'//nul,reg_flag)
       ierr=set_harvest_payload_dbl(hlog,'reg_spot'//nul,reg_spot)
-      ! ipec_output
+      ! gpec_output
       ierr=set_harvest_payload_str(hlog,'jac_out'//nul,jac_out//nul)
       ierr=set_harvest_payload_int(hlog,'jsurf_out'//nul,jsurf_out)
       ierr=set_harvest_payload_int(hlog,'tmag_out'//nul,tmag_out)
@@ -427,12 +427,12 @@ c-----------------------------------------------------------------------
 c     compute plasma response.
 c-----------------------------------------------------------------------
       CALL ipresp_eigen
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       CALL ipresp_pinduct
       CALL ipresp_sinduct
       CALL ipresp_permeab
       CALL ipresp_reluct
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
 c-----------------------------------------------------------------------
 c     run and test rdcon.
 c-----------------------------------------------------------------------
@@ -689,7 +689,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      CALL ipec_dealloc
-      CALL ipec_stop("Normal termination.")
-      END PROGRAM ipec_main
+      CALL gpec_dealloc
+      CALL gpec_stop("Normal termination.")
+      END PROGRAM gpec_main
 

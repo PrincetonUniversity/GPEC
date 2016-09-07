@@ -4,7 +4,7 @@
 ============================
 
 Python modules for data visualization and postprocessing, 
-as well as python wrappers for IPEC and PENT.
+as well as python wrappers for GPEC and PENT.
 
 :Author: 
   N.C. Logan

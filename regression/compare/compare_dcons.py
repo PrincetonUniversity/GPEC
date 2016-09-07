@@ -47,10 +47,10 @@ def check_control_matrices(*directories):
     Check the W matrix
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     datasets = []
@@ -63,10 +63,10 @@ def check_energies(*directories):
     Check the eigenvalues
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     datasets = []

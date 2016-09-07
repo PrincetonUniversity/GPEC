@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
      $     ismth,lff,lmax1,lpsub,lwrt11,mphi,mx,mz,nloop,nloopr,nminus,
      $     noutv,nph,nphil,nphse,nplus,nsing,ntloop,cdfid,nd1,nd2,nd12,
      $     neqv2,neqv3,neqv4,neqv5,nfmsq,ndimlp,
-     $     nxlpin,nzlpin,lipec,linterior,ixx,ixn,izx
+     $     nxlpin,nzlpin,lgpec,linterior,ixx,ixn,izx
 
       INTEGER, DIMENSION(3) :: nout,nout0
       INTEGER, DIMENSION(5) :: nw

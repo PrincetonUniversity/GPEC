@@ -165,7 +165,7 @@ c-----------------------------------------------------------------------
          CASE DEFAULT
             WRITE(message,'(a,i1,a,i4)')"Cannot recognize data_type = ",
      $           data_type,", at istep = ",istep
-            CALL ipec_stop(message)
+            CALL gpec_stop(message)
          END SELECT
       ENDDO
       CALL bin_close(in_unit)
@@ -264,7 +264,7 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
          WRITE(message,'(a)')"Terminated by zero crossing"
-         CALL ipec_stop(message)
+         CALL gpec_stop(message)
       ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
@@ -728,7 +728,7 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zhetrf: amat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         CALL ipec_stop(message)
+         CALL gpec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     compute composite matrices fgk, different from dcon notes.
@@ -756,7 +756,7 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zpbtrf: fmat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         CALL ipec_stop(message)
+         CALL gpec_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
 c     store hermitian matrices fg.

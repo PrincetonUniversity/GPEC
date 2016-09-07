@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 
-Regression Testing - Testing Standard IPEC Output
+Regression Testing - Testing Standard GPEC Output
 ======================================================
 
 :Date: 07/02/2016
@@ -38,20 +38,20 @@ def _reset_lines(linecycler):
 def check_control_attributes(*directories):
     """
 
-    Check basic global ipec results.
+    Check basic global gpec results.
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     nd = len(directories)
     datasets = []
 
     for i,d in enumerate(directories):
-        ds = data.open_dataset(d+'/ipec_control_output_n1.nc')
+        ds = data.open_dataset(d+'/gpec_control_output_n1.nc')
         datasets.append(ds)
         print('{:} from {:}'.format(ds.attrs['version'],d))
     # check that the basic parameters match
@@ -77,10 +77,10 @@ def check_control_perturbations(*directories):
     Check control surface xi and b outputs.
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     _reset_lines(linecycler)
@@ -90,7 +90,7 @@ def check_control_perturbations(*directories):
 
     for i,d in enumerate(directories):
         ls = next(linecycler)
-        ds = data.open_dataset(d+'/ipec_control_output_n1.nc')
+        ds = data.open_dataset(d+'/gpec_control_output_n1.nc')
         datasets.append(ds)
 
         # spectral plots
@@ -100,7 +100,7 @@ def check_control_perturbations(*directories):
         for ax,key,altkey in zip(maxes,keys,altkeys):
             value = ds.get(key,ds.get(altkey,None))
             if value is None:
-                print("KeyError: {:} not in {:}".format(key,d+'/ipec_control_output_n1.nc'))
+                print("KeyError: {:} not in {:}".format(key,d+'/gpec_control_output_n1.nc'))
             else:
                 l, = np.abs(value).plot(ax=ax)
                 l.set_linestyle(ls)
@@ -112,7 +112,7 @@ def check_control_perturbations(*directories):
         for ax,key,altkey in zip(faxes,keys,altkeys):
             value = ds.get(key,ds.get(altkey,None))
             if value is None or value.dims[0]!='theta':
-                print("KeyError: {:} function not in {:}".format(key,d+'/ipec_control_output_n1.nc'))
+                print("KeyError: {:} function not in {:}".format(key,d+'/gpec_control_output_n1.nc'))
             else:
                 l, = np.abs(value).plot(ax=ax)
                 l.set_linestyle(ls)
@@ -132,10 +132,10 @@ def check_control_matrices(*directories):
     Check control surface L, Lambda, P, and rho matrices.
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     _reset_lines(linecycler)
@@ -147,17 +147,17 @@ def check_control_matrices(*directories):
         if nd==2 and len(datasets)>0: continue
         # compare two directories per figure
         fig,axes = plt.subplots(3,4)
-        ds1 = data.open_dataset(d1+'/ipec_control_output_n1.nc')
-        ds2 = data.open_dataset(d2+'/ipec_control_output_n1.nc')
+        ds1 = data.open_dataset(d1+'/gpec_control_output_n1.nc')
+        ds2 = data.open_dataset(d2+'/gpec_control_output_n1.nc')
         datasets.append(ds1)
         datasets.append(ds2)
 
         keys = ['L','Lambda','P','rho']
         for i,key in enumerate(keys):
             if key not in ds1:
-                print("KeyError: {:} not in {:}".format(key,d1+'/ipec_control_output_n1.nc'))
+                print("KeyError: {:} not in {:}".format(key,d1+'/gpec_control_output_n1.nc'))
             elif key not in ds2:
-                print("KeyError: {:} not in {:}".format(key,d2+'/ipec_control_output_n1.nc'))
+                print("KeyError: {:} not in {:}".format(key,d2+'/gpec_control_output_n1.nc'))
             else:
                 ds1[key].plot(ax=axes[0,i])
                 axes[0,i].set_title(ds2.attrs.get('version','Unknown'))
@@ -176,10 +176,10 @@ def check_xbnormal(*directories):
     Check xbnormal netcdf outputs.
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     _reset_lines(linecycler)
@@ -189,7 +189,7 @@ def check_xbnormal(*directories):
 
     for i,d in enumerate(directories):
         ls = next(linecycler)
-        ds = data.open_dataset(d+'/ipec_profile_output_n1.nc')
+        ds = data.open_dataset(d+'/gpec_profile_output_n1.nc')
         datasets.append(ds)
 
         # 1D plots
@@ -197,7 +197,7 @@ def check_xbnormal(*directories):
         keys = ['b_n','xi_n']
         for ax,key in zip(axes,keys):
             if key not in ds:
-                print("KeyError: {:} not in {:}".format(key,d+'/ipec_profile_output_n1.nc'))
+                print("KeyError: {:} not in {:}".format(key,d+'/gpec_profile_output_n1.nc'))
             else:
                 lines = []
                 for m in ms:
@@ -215,7 +215,7 @@ def check_xbnormal(*directories):
         keys = ['b_n_fun','xi_n_fun']
         for ax,key in zip(afuns,keys):
             if key not in ds:
-                print("KeyError: {:} not in {:}".format(key,d+'/ipec_profile_output_n1.nc'))
+                print("KeyError: {:} not in {:}".format(key,d+'/gpec_profile_output_n1.nc'))
             else:
                 lines = []
                 for theta in thetas:
@@ -246,10 +246,10 @@ def check_pmodb(*directories):
     Check xbnormal netcdf outputs.
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     _reset_lines(linecycler)
@@ -259,7 +259,7 @@ def check_pmodb(*directories):
 
     for i,d in enumerate(directories):
         ls = next(linecycler)
-        ds = data.open_dataset(d+'/ipec_profile_output_n1.nc')
+        ds = data.open_dataset(d+'/gpec_profile_output_n1.nc')
         datasets.append(ds)
 
         # 1D plots
@@ -267,7 +267,7 @@ def check_pmodb(*directories):
         keys = ['b_lag','Bdivxi_perp']
         for ax,key in zip(axes,keys):
             if key not in ds:
-                print("KeyError: {:} not in {:}".format(key,d+'/ipec_profile_output_n1.nc'))
+                print("KeyError: {:} not in {:}".format(key,d+'/gpec_profile_output_n1.nc'))
             else:
                 lines = []
                 for m in ms:
@@ -285,7 +285,7 @@ def check_pmodb(*directories):
         keys = ['b_lag_fun','Bdivxi_perp_fun']
         for ax,key in zip(afuns,keys):
             if key not in ds:
-                print("KeyError: {:} not in {:}".format(key,d+'/ipec_profile_output_n1.nc'))
+                print("KeyError: {:} not in {:}".format(key,d+'/gpec_profile_output_n1.nc'))
             else:
                 lines = []
                 for theta in thetas:
@@ -321,10 +321,10 @@ def check_xclebsch(*directories):
     Check xclebsch netcdf outputs.
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     _reset_lines(linecycler)
@@ -333,7 +333,7 @@ def check_xclebsch(*directories):
 
     for i,d in enumerate(directories):
         ls = next(linecycler)
-        ds = data.open_dataset(d+'/ipec_profile_output_n1.nc')
+        ds = data.open_dataset(d+'/gpec_profile_output_n1.nc')
         datasets.append(ds)
 
         # 1D plots
@@ -343,7 +343,7 @@ def check_xclebsch(*directories):
         for ax,key,altkey in zip(axes,keys,altkeys):
             value = ds.get(key,ds.get(altkey,None))
             if value is None:
-                print("KeyError: {:} not in {:}".format(key,d+'/ipec_profile_output_n1.nc'))
+                print("KeyError: {:} not in {:}".format(key,d+'/gpec_profile_output_n1.nc'))
             else:
                 lines = []
                 for m in ms:

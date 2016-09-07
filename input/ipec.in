@@ -1,4 +1,4 @@
-&IPEC_INPUT
+&GPEC_INPUT
    dcon_dir   = ''                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = 'euler.bin'          ! Eigenfunctions output by DCON run
    ieqfile    = 'psi_in.bin'         ! Flux surfaces output by DCON run
@@ -32,7 +32,7 @@
    filter_types = 'w'       ! Isolate the filter_modes of energy (w), reluctance (r), permiability (p) or singular coupling (s) eigenvectors/singular-vectors
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
 /
-&IPEC_CONTROL
+&GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
    reg_flag=f               ! Regularize the solution near resonant surfaces
@@ -40,10 +40,10 @@
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
    nche=20                  ! Number of Chebyshev polynomials used
 /
-&IPEC_OUTPUT
+&GPEC_OUTPUT
    jac_out=""               ! Coordinate system of outputs
-   jsurf_out=0              ! True(1) for area weighted outputs (only appends standard ipec_control output)
-   tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
+   jsurf_out=0              ! True(1) for area weighted outputs (only appends standard gpec_control output)
+   tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends gpec_control)
    mlim_out=64              ! Fourier decomposed outputs will span -mlim_out<=m<=mlim_out when jac_out/=jac_type or tmag_out/=tmag_in
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
@@ -77,7 +77,7 @@
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    verbose=t                ! Print run log to terminal
 /
-&IPEC_DIAGNOSE
+&GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
    radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
 /

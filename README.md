@@ -1,11 +1,11 @@
 General Perturbed Equilibrium Codes
 ===================================
 
-This package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, IPEC, RPEC, GPEC, and PENTRC.
+This package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, GPEC, RPEC, GPEC, and PENTRC.
 
 The primary purpose of this package is to calculated the nonaxisymmetric force balance in tokamak plasmas.
 
-Note that the DCON code was developed by Allen Glasser at Los Alamos National Laboratory, while IPEC and PENTRC were developed and are maintained by the GPEC team at the Princeton Plasma Physics Laboratory.
+Note that the DCON code was developed by Allen Glasser at Los Alamos National Laboratory, while GPEC and PENTRC were developed and are maintained by the GPEC team at the Princeton Plasma Physics Laboratory.
 
 Development
 ------------

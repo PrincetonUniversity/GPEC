@@ -109,9 +109,9 @@ class ControlPanel(HasTraits):
 	qsub= Bool()
 	roc = Bool()
 	rundcon = Bool(True)
-	runipec = Bool()
+	rungpec = Bool()
 	runpent = Bool()
-	rundir = File("/p/gpec/users/nlogan/ipec_3.00/nlogan/rundir/LinuxLahey64")
+	rundir = File("/p/gpec/users/nlogan/gpec_3.00/nlogan/rundir/LinuxLahey64")
 	location = Directory(".")
 	mailon = Enum(_defaults_.mailon,'','a','b','e','ab','ae','be','abe')
 	email = Str(_defaults_.email)
@@ -135,7 +135,7 @@ class ControlPanel(HasTraits):
 					columns=2,label='New NameList from File',
 					show_border=True),
 			  Group(Item('rundcon',label='DCON'),
-					Item('runipec',label='IPEC'),
+					Item('rungpec',label='GPEC'),
 					Item('runpent',label='PENT'),
 					orientation='horizontal'),
 			  Group(Item('qsub',label='Submit to Cluster'),
@@ -147,13 +147,13 @@ class ControlPanel(HasTraits):
 			  Item('run',show_label=False),
 			  scrollable=True, handler=UpdateHandler(),
 			  resizable=True,height=1000, width=525,
-			  buttons=NoButtons,title='IPEC 3.00 Package')
+			  buttons=NoButtons,title='GPEC 3.00 Package')
 
 	def _run_fired(self):
 		print('runing program(s)')
 		gpec.run(loc=str(self.location),rundir=str(self.rundir),qsub=self.qsub,
 				 return_on_complete=self.roc,mailon=str(self.mailon),email=str(self.email),
-				 rundcon=self.rundcon,runipec=self.runipec,runpent=self.runpent,
+				 rundcon=self.rundcon,rungpec=self.rungpec,runpent=self.runpent,
 				 **self.inputpanel._todict())
 
 	def _load_fired(self):
@@ -172,7 +172,7 @@ class ControlPanel(HasTraits):
 
 	def _emacs_fired(self):
 		gpec.run(loc=_defaults_.tempdir,rundir=str(self.rundir),qsub=False,
-				 return_on_complete=False,rundcon=False,runipec=False,runpent=False,
+				 return_on_complete=False,rundcon=False,rungpec=False,runpent=False,
 				 mailon=str(self.mailon),email=str(self.email),
 				 **self.inputpanel._todict())
 		os.system('emacs '+_defaults_.tempdir+'/*.in')

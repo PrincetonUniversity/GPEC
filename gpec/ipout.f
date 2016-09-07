@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
 c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     write various output results of ipec routines
+c     write various output results of gpec routines
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
@@ -125,7 +125,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert) :: wtfun,ilfun,rfun,pfun
       CHARACTER(2048) :: header
 
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*) "Writing response matrices"
 c-----------------------------------------------------------------------
 c     svd analysis for permeability matrix.
@@ -145,9 +145,9 @@ c-----------------------------------------------------------------------
          s(i)=-1/s(i)
       ENDDO
 
-      CALL ascii_open(out_unit,"ipec_response_n"//
+      CALL ascii_open(out_unit,"gpec_response_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_RESPONSE: Response parameters"
+      WRITE(out_unit,*)"GPEC_RESPONSE: Response parameters"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
       WRITE(out_unit,'(3(1x,a12,I4))')
@@ -349,9 +349,9 @@ c-----------------------------------------------------------------------
           r(i)=ro+rfac*COS(eta)
           z(i)=zo+rfac*SIN(eta) 
         ENDDO
-        CALL ascii_open(out_unit,"ipec_response_fun_n"//
+        CALL ascii_open(out_unit,"gpec_response_fun_n"//
      $    TRIM(sn)//".out","UNKNOWN")
-        WRITE(out_unit,*)"IPEC_RESPONSE_FUN: "//
+        WRITE(out_unit,*)"GPEC_RESPONSE_FUN: "//
      $    "Eigenmodes on control surface in functions"
         WRITE(out_unit,*)version
         WRITE(out_unit,*)" P = Permeability"
@@ -446,7 +446,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_response
 c-----------------------------------------------------------------------
@@ -495,7 +495,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute characteristic currents with normalization.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)
      $     "Computing coupling between total resonant fields and "//
      $     "external fields"
@@ -767,9 +767,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write matrix.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipec_singcoup_matrix_n"//
+      CALL ascii_open(out_unit,"gpec_singcoup_matrix_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_SINGCOUP_MATRIX: Coupling matrices"//
+      WRITE(out_unit,*)"GPEC_SINGCOUP_MATRIX: Coupling matrices"//
      $     " between resonant field and external field"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -825,9 +825,9 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
       
-      CALL ascii_open(out_unit,"ipec_singcoup_svd_n"//
+      CALL ascii_open(out_unit,"gpec_singcoup_svd_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_SINGCOUP_SVD: SVD analysis"//
+      WRITE(out_unit,*)"GPEC_SINGCOUP_SVD: SVD analysis"//
      $     " for coupling matrices"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -888,7 +888,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_singcoup
 c-----------------------------------------------------------------------
@@ -942,7 +942,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     check data_type and read data.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       scale=1.0
       cawmn=0
       tempmn=0
@@ -972,7 +972,7 @@ c-----------------------------------------------------------------------
                READ(in_unit,'(11(1x,e15.8))')(dsinmn(i,j),j=nmin,nmax)
             ELSE
                WRITE(message,'(a)')"Can't recognize data format"
-               CALL ipec_stop(message)
+               CALL gpec_stop(message)
             ENDIF            
          ENDDO
          
@@ -1067,9 +1067,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipec_control_n"//
+      CALL ascii_open(out_unit,"gpec_control_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_CONTROL: "//
+      WRITE(out_unit,*)"GPEC_CONTROL: "//
      $     "Plasma response for an external perturbation on the "//
      $     "control surface"
       WRITE(out_unit,*)version
@@ -1269,9 +1269,9 @@ c-----------------------------------------------------------------------
      $        (sin(eta)*w(1,1)+cos(eta)*w(1,2))/delpsi(itheta)
       ENDDO
 
-      CALL ascii_open(out_unit,"ipec_control_fun_n"//
+      CALL ascii_open(out_unit,"gpec_control_fun_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_CONTROL_FUN: "//
+      WRITE(out_unit,*)"GPEC_CONTROL_FUN: "//
      $     "Plasma response for an external perturbation on the "//
      $     "control surface in functions"
       WRITE(out_unit,*)version
@@ -1366,7 +1366,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_control
 c-----------------------------------------------------------------------
@@ -1399,7 +1399,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing total resonant fields"
       CALL ipeq_alloc
       CALL idcon_build(egnum,xspmn)
@@ -1494,9 +1494,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipec_singfld_n"//
+      CALL ascii_open(out_unit,"gpec_singfld_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_SINGFLD: "//
+      WRITE(out_unit,*)"GPEC_SINGFLD: "//
      $     "Resonant fields, singular currents, and islands"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -1569,7 +1569,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_singfld
 c-----------------------------------------------------------------------
@@ -1589,7 +1589,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing resonant field from coils"
       ALLOCATE(vcmn(cmpert))
       vcmn=0
@@ -1631,9 +1631,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipec_vsingfld_n"//
+      CALL ascii_open(out_unit,"gpec_vsingfld_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_SINGFLD: "//
+      WRITE(out_unit,*)"GPEC_SINGFLD: "//
      $     "Resonant fields and islands from coils"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -1655,7 +1655,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_vsingfld
 c-----------------------------------------------------------------------
@@ -1686,9 +1686,9 @@ c-----------------------------------------------------------------------
 
       WRITE(*,*)"Restoring energy and torque profiles"
 
-      CALL ascii_open(out_unit,"ipec_dw_profile_n"//
+      CALL ascii_open(out_unit,"gpec_dw_profile_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_dw: "//
+      WRITE(out_unit,*)"GPEC_dw: "//
      $     "Energy and torque profiles by self-consistent solutions."
       WRITE(out_unit,*)
 
@@ -1847,9 +1847,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write general response matrix functions.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipec_dw_matrix_n"//
+      CALL ascii_open(out_unit,"gpec_dw_matrix_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_dw_matrix: "//
+      WRITE(out_unit,*)"GPEC_dw_matrix: "//
      $     "Self-consistent response matrix functions."
       WRITE(out_unit,*)
 
@@ -1925,9 +1925,9 @@ c----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write coil response matrix functions.
 c-----------------------------------------------------------------------
-         CALL ascii_open(out_unit,"ipec_dw_coil_matrix_n"//
+         CALL ascii_open(out_unit,"gpec_dw_coil_matrix_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_dw_coil_matrix: "//
+         WRITE(out_unit,*)"GPEC_dw_coil_matrix: "//
      $        "Self-consistent coil response matrix functions."
          WRITE(out_unit,*)
 
@@ -2037,7 +2037,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing |b| and del.x_prp"
       CALL cspline_alloc(cspl,mthsurf,2)
       cspl%xs=theta
@@ -2255,9 +2255,9 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
 
 
-      CALL ascii_open(out_unit,"ipec_pmodb_n"//
+      CALL ascii_open(out_unit,"gpec_pmodb_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_PMODB: "//
+      WRITE(out_unit,*)"GPEC_PMODB: "//
      $     "Components in perturbed mod b and del.x_prp"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -2304,9 +2304,9 @@ c-----------------------------------------------------------------------
 
          chea(:,0)=chea(:,0)/2.0
 
-         CALL ascii_open(out_unit,"ipec_pmodb_chebyshev_n"//
+         CALL ascii_open(out_unit,"gpec_pmodb_chebyshev_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_PMODB_CHEBYSHEV: "//
+         WRITE(out_unit,*)"GPEC_PMODB_CHEBYSHEV: "//
      $        "Chebyshev coefficients for perturbed mod b"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -2342,9 +2342,9 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
 
-         CALL ascii_open(out_unit,"ipec_chepmodb_n"//
+         CALL ascii_open(out_unit,"gpec_chepmodb_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_CHEPMODB: "//
+         WRITE(out_unit,*)"GPEC_CHEPMODB: "//
      $        "Reconstructed perturbed mod b by chebyshev"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -2369,9 +2369,9 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (fun_flag) THEN
-         CALL ascii_open(out_unit,"ipec_pmodb_fun_n"//
+         CALL ascii_open(out_unit,"gpec_pmodb_fun_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_PMODB_FUN: "//
+         WRITE(out_unit,*)"GPEC_PMODB_FUN: "//
      $        "Components in perturbed mod b in functions"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -2459,7 +2459,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_pmodb
 c-----------------------------------------------------------------------
@@ -2503,7 +2503,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing x and b normal components"
 
       CALL idcon_build(egnum,xspmn)
@@ -2588,9 +2588,9 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ipeq_dealloc
 
-      CALL ascii_open(out_unit,"ipec_xbnormal_n"//
+      CALL ascii_open(out_unit,"gpec_xbnormal_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_XBNORMAL: "//
+      WRITE(out_unit,*)"GPEC_XBNORMAL: "//
      $     "Normal components of displacement and field"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -2614,9 +2614,9 @@ c-----------------------------------------------------------------------
       ENDDO
 
       IF (bwp_pest_flag) THEN
-         CALL ascii_open(out_unit,"ipec_bnormal_pest_n"//
+         CALL ascii_open(out_unit,"gpec_bnormal_pest_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_BNORMAL_PEST: "//
+         WRITE(out_unit,*)"GPEC_BNORMAL_PEST: "//
      $        "Normal components of field in pest coordinates"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -2637,9 +2637,9 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (fun_flag) THEN
-         CALL ascii_open(out_unit,"ipec_xbnormal_fun_n"//
+         CALL ascii_open(out_unit,"gpec_xbnormal_fun_n"//
      $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"IPEC_XBNORMAL_FUN: "//
+         WRITE(out_unit,*)"GPEC_XBNORMAL_FUN: "//
      $        "Normal components of displacement and field in functions"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -2835,9 +2835,9 @@ c-----------------------------------------------------------------------
             psis(:,itheta)=psifac(:)
          ENDDO
          
-         CALL ascii_open(out_unit,"ipec_xbnormal_flux_n"//
+         CALL ascii_open(out_unit,"gpec_xbnormal_flux_n"//
      $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"IPEC_XBNROMAL_FLUX: "//
+         WRITE(out_unit,*)"GPEC_XBNROMAL_FLUX: "//
      $        "Perturbed flux surfaces"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -2869,7 +2869,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_xbnormal
 c-----------------------------------------------------------------------
@@ -2904,7 +2904,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing vb normal components from coils"
 
       IF(TRIM(jac_out)=="pest")THEN ! will be mlow,mhigh if jac_type pest
@@ -3052,9 +3052,9 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
 
       ! write to ascii table
-      CALL ascii_open(out_unit,"ipec_vbnormal_n"//
+      CALL ascii_open(out_unit,"gpec_vbnormal_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_VBNROMAL: "//
+      WRITE(out_unit,*)"GPEC_VBNROMAL: "//
      $     "Normal components of coil field"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -3075,9 +3075,9 @@ c-----------------------------------------------------------------------
       ENDDO
 
       IF (bwp_pest_flag) THEN
-         CALL ascii_open(out_unit,"ipec_vbnormal_pest_n"//
+         CALL ascii_open(out_unit,"gpec_vbnormal_pest_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_VBNROMAL_PEST: "//
+         WRITE(out_unit,*)"GPEC_VBNROMAL_PEST: "//
      $        "Normal components of coil field in pest coordinates"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -3129,7 +3129,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       RETURN
       END SUBROUTINE ipout_vbnormal
 c-----------------------------------------------------------------------
@@ -3165,7 +3165,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing x and b tangential components"
 
       CALL idcon_build(egnum,xspmn)
@@ -3227,9 +3227,9 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ipeq_dealloc
 
-      CALL ascii_open(out_unit,"ipec_xbtangent_n"//
+      CALL ascii_open(out_unit,"gpec_xbtangent_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_XBNROMAL: "//
+      WRITE(out_unit,*)"GPEC_XBNROMAL: "//
      $     "Tangential components of displacement and field"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -3250,9 +3250,9 @@ c-----------------------------------------------------------------------
       ENDDO
 
       IF (fun_flag) THEN
-         CALL ascii_open(out_unit,"ipec_xbtangent_fun_n"//
+         CALL ascii_open(out_unit,"gpec_xbtangent_fun_n"//
      $        TRIM(sn)//".out","UNKNOWN")         
-         WRITE(out_unit,*)"IPEC_XBTANGENT_FUN: "//
+         WRITE(out_unit,*)"GPEC_XBTANGENT_FUN: "//
      $        "Tangential components of displacement "//
      $        "and field in functions"
          WRITE(out_unit,*)version
@@ -3317,7 +3317,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_xbtangent
 c-----------------------------------------------------------------------
@@ -3399,7 +3399,7 @@ c-----------------------------------------------------------------------
 
       IF (eqbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing equilibrium magnetic fields"
-         IF(timeit) CALL ipec_timer(-2)
+         IF(timeit) CALL gpec_timer(-2)
          ! evaluate f value for vacuum
          mid = 0.0
          CALL spline_eval(sq,psilim,0)
@@ -3427,13 +3427,13 @@ c-----------------------------------------------------------------------
             ebz=-ebz
          ENDIF
          IF(btd<0)ebp=-ebp
-         IF(timeit) CALL ipec_timer(2)
+         IF(timeit) CALL gpec_timer(2)
       ENDIF
 
       CALL ipeq_alloc
 
       IF(verbose) WRITE(*,*)"Mapping fields to cylindrical coordinates"
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
 
       IF (brzphi_flag .OR. xrzphi_flag) THEN
          DO i=0,nr
@@ -3497,7 +3497,7 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
       ENDIF
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
 
       CALL ipeq_dealloc
 
@@ -3523,7 +3523,7 @@ c-----------------------------------------------------------------------
                
             ENDDO
          ENDDO
-         IF(timeit) CALL ipec_timer(2)
+         IF(timeit) CALL gpec_timer(2)
       ENDIF
       
       IF (divzero_flag) THEN
@@ -3629,9 +3629,9 @@ c-----------------------------------------------------------------------
          chxar(:,0)=chxar(:,0)/2.0
          chxaz(:,0)=chxaz(:,0)/2.0   
 
-         CALL ascii_open(out_unit,"ipec_brzphi_chebyshev_n"//
+         CALL ascii_open(out_unit,"gpec_brzphi_chebyshev_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_BRZPHI_CHEBYSHEV: "//
+         WRITE(out_unit,*)"GPEC_BRZPHI_CHEBYSHEV: "//
      $        "Chebyshev coefficients for brzphi field"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -3651,9 +3651,9 @@ c-----------------------------------------------------------------------
           ENDDO
          CALL ascii_close(out_unit)
 
-         CALL ascii_open(out_unit,"ipec_xrzphi_chebyshev_n"//
+         CALL ascii_open(out_unit,"gpec_xrzphi_chebyshev_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_XRZPHI_CHEBYSHEV: "//
+         WRITE(out_unit,*)"GPEC_XRZPHI_CHEBYSHEV: "//
      $        "Chebyshev coefficients for displacement"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -3841,9 +3841,9 @@ c-----------------------------------------------------------------------
 
 
       IF (eqbrzphi_flag) THEN
-         CALL ascii_open(out_unit,"ipec_eqbrzphi_n"//
+         CALL ascii_open(out_unit,"gpec_eqbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_EQBRZPHI: Eq. b field in rzphi grid"
+         WRITE(out_unit,*)"GPEC_EQBRZPHI: Eq. b field in rzphi grid"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3863,9 +3863,9 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (brzphi_flag) THEN
-         CALL ascii_open(out_unit,"ipec_brzphi_n"//
+         CALL ascii_open(out_unit,"gpec_brzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_BRZPHI: Total perturbed field"
+         WRITE(out_unit,*)"GPEC_BRZPHI: Total perturbed field"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3887,9 +3887,9 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
 
          IF (chebyshev_flag) THEN
-            CALL ascii_open(out_unit,"ipec_chebrzphi_n"//
+            CALL ascii_open(out_unit,"gpec_chebrzphi_n"//
      $           TRIM(sn)//".out","UNKNOWN")
-            WRITE(out_unit,*)"IPEC_CEHBRZPHI: Total perturbed field"
+            WRITE(out_unit,*)"GPEC_CEHBRZPHI: Total perturbed field"
             WRITE(out_unit,*)version
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3911,9 +3911,9 @@ c-----------------------------------------------------------------------
             CALL ascii_close(out_unit)
          ENDIF
 
-         CALL ascii_open(out_unit,"ipec_pbrzphi_n"//
+         CALL ascii_open(out_unit,"gpec_pbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_PBRZPHI: Perturbed field by plasma"
+         WRITE(out_unit,*)"GPEC_PBRZPHI: Perturbed field by plasma"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3935,9 +3935,9 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
 
          IF (coil_flag) THEN
-            CALL ascii_open(out_unit,"ipec_cbrzphi_n"//
+            CALL ascii_open(out_unit,"gpec_cbrzphi_n"//
      $           TRIM(sn)//".out","UNKNOWN")
-            WRITE(out_unit,*)"IPEC_CBRZPHI: External field by coils"
+            WRITE(out_unit,*)"GPEC_CBRZPHI: External field by coils"
             WRITE(out_unit,*)version
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -3962,9 +3962,9 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (brzphi_flag .AND. vbrzphi_flag) THEN
-         CALL ascii_open(out_unit,"ipec_vbrzphi_n"//
+         CALL ascii_open(out_unit,"gpec_vbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_VBRZPHI: Total perturbed field "//
+         WRITE(out_unit,*)"GPEC_VBRZPHI: Total perturbed field "//
      $        "by surface currents"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -3989,9 +3989,9 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (xrzphi_flag) THEN
-         CALL ascii_open(out_unit,"ipec_xrzphi_n"//
+         CALL ascii_open(out_unit,"gpec_xrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_XRZPHI: Displacement"
+         WRITE(out_unit,*)"GPEC_XRZPHI: Displacement"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -4013,9 +4013,9 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
 
          IF (chebyshev_flag) THEN
-            CALL ascii_open(out_unit,"ipec_chexrzphi_n"//
+            CALL ascii_open(out_unit,"gpec_chexrzphi_n"//
      $           TRIM(sn)//".out","UNKNOWN")
-            WRITE(out_unit,*)"IPEC_CEHXRZPHI: Displacement"
+            WRITE(out_unit,*)"GPEC_CEHXRZPHI: Displacement"
             WRITE(out_unit,*)version
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
@@ -4039,9 +4039,9 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (pbrzphi_flag) THEN
-         CALL ascii_open(out_unit,"ipec_vpbrzphi_n"//
+         CALL ascii_open(out_unit,"gpec_vpbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_VPBRZPHI: Vacuum field by "//
+         WRITE(out_unit,*)"GPEC_VPBRZPHI: Vacuum field by "//
      $        "surface currents"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -4066,9 +4066,9 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (vvbrzphi_flag) THEN
-         CALL ascii_open(out_unit,"ipec_vvbrzphi_n"//
+         CALL ascii_open(out_unit,"gpec_vvbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_VVBRZPHI: Vacuum field by "//
+         WRITE(out_unit,*)"GPEC_VVBRZPHI: Vacuum field by "//
      $        "surface currents"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
@@ -4098,7 +4098,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_xbrzphi
 c-----------------------------------------------------------------------
@@ -4133,7 +4133,7 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=ss,FMT='(I2)')snum
       ENDIF
 
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing vacuum fields by "//
      $     TRIM(ss)//"th resonant field"
       CALL ipvacuum_bnormal(singtype(snum)%psifac,
@@ -4148,9 +4148,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipec_vsbrzphi_n"//
+      CALL ascii_open(out_unit,"gpec_vsbrzphi_n"//
      $     TRIM(sn)//"_s"//TRIM(ss)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_VSBRZPHI: Vacuum field in rzphi grid by "//
+      WRITE(out_unit,*)"GPEC_VSBRZPHI: Vacuum field in rzphi grid by "//
      $     TRIM(ss)//"th resonant field"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -4173,7 +4173,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_vsbrzphi
 c-----------------------------------------------------------------------
@@ -4205,7 +4205,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       IF(verbose) WRITE(*,*)"Computing x and b rzphi functions"
 
       CALL idcon_build(egnum,xspmn)
@@ -4278,9 +4278,9 @@ c-----------------------------------------------------------------------
 
       CALL ipeq_dealloc
 
-      CALL ascii_open(out_unit,"ipec_xbrzphi_fun_n"//
+      CALL ascii_open(out_unit,"gpec_xbrzphi_fun_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_XBRZPHI_FUN: "//
+      WRITE(out_unit,*)"GPEC_XBRZPHI_FUN: "//
      $     "Rzphi components of displacement and field in functions"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -4322,7 +4322,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_xbrzphifun
 c-----------------------------------------------------------------------
@@ -4354,7 +4354,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing vector potential rzphi functions"
 
       CALL idcon_build(egnum,xspmn)
@@ -4425,9 +4425,9 @@ c-----------------------------------------------------------------------
 
       CALL ipeq_dealloc
 
-      CALL ascii_open(out_unit,"ipec_arzphi_fun_n"//
+      CALL ascii_open(out_unit,"gpec_arzphi_fun_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_ARZPHI_FUN: "//
+      WRITE(out_unit,*)"GPEC_ARZPHI_FUN: "//
      $     "Rzphi components of vector potential in functions"
       WRITE(out_unit,*)version
       WRITE(out_unit,*)
@@ -4469,7 +4469,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_arzphifun
 c-----------------------------------------------------------------------
@@ -4500,7 +4500,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing Clebsch displacements"
 
       CALL idcon_build(egnum,xspmn)
@@ -4537,9 +4537,9 @@ c-----------------------------------------------------------------------
 
 
       ! write ascii file(s)
-      CALL ascii_open(out_unit,"ipec_xclebsch_n"//
+      CALL ascii_open(out_unit,"gpec_xclebsch_n"//
      $   TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_XCLEBSCH: "//
+      WRITE(out_unit,*)"GPEC_XCLEBSCH: "//
      $   "Clebsch Components of the displacement."
       WRITE(out_unit,*)version
       WRITE(out_unit,'(1/,1x,a13,a8)')"jac_out = ",jac_out
@@ -4558,9 +4558,9 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
       IF(fun_flag)THEN
-          CALL ascii_open(out_unit,"ipec_xclebsch_fun_n"//
+          CALL ascii_open(out_unit,"gpec_xclebsch_fun_n"//
      $       TRIM(sn)//".out","UNKNOWN")
-          WRITE(out_unit,*)"IPEC_XCLEBSCH: "//
+          WRITE(out_unit,*)"GPEC_XCLEBSCH: "//
      $       "Clebsch Components of the displacement."
           WRITE(out_unit,*)version
           WRITE(out_unit,'(1/,1x,a13,a8)')"jac_out = ",jac_out
@@ -4633,7 +4633,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_xclebsch
 c-----------------------------------------------------------------------
@@ -4698,7 +4698,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert)::wfuns,rfuns
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::sfuns
 
-      IF(timeit) CALL ipec_timer(-2)
+      IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing Energy-Normalized flux bases"
 c-----------------------------------------------------------------------
 c     basic definitions
@@ -4811,7 +4811,7 @@ c      - Since W is Hermitian (W^dagger=W) the new operator is too
 c      - Eigenvalues correspond to int{I^2da} (power) per int{b^2da} (energy)
 c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
 c-----------------------------------------------------------------------
-      ! start with IPEC flux matrix
+      ! start with GPEC flux matrix
       ! remove border of modes/solutions (diagnostic only)
       i = malias+1
       j = mpert-malias
@@ -5416,7 +5416,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL ipec_timer(2)
+      IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE ipout_control_filter
 c-----------------------------------------------------------------------
@@ -5458,9 +5458,9 @@ c     set variables
 c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *,"Initializing NETCDF files"
       mmodes = (/(i,i=1,mpert)/)
-      mncfile = "ipec_control_output_n"//TRIM(sn)//".nc"
-      fncfile = "ipec_profile_output_n"//TRIM(sn)//".nc"
-      cncfile = "ipec_cylindrical_output_n"//TRIM(sn)//".nc"
+      mncfile = "gpec_control_output_n"//TRIM(sn)//".nc"
+      fncfile = "gpec_profile_output_n"//TRIM(sn)//".nc"
+      cncfile = "gpec_cylindrical_output_n"//TRIM(sn)//".nc"
 c-----------------------------------------------------------------------
 c     open files
 c-----------------------------------------------------------------------
@@ -5476,7 +5476,7 @@ c     define global file attributes
 c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Defining modal netcdf globals"
       CALL check( nf90_put_att(mncid,nf90_global,"title",
-     $     "IPEC outputs in Fourier or alternate modal bases"))
+     $     "GPEC outputs in Fourier or alternate modal bases"))
       CALL check( nf90_def_dim(mncid,"i",2,       midid) )
       CALL check( nf90_def_var(mncid,"i",nf90_int,midid,mivid) )
       CALL check( nf90_def_dim(mncid,"m",mpert,  mmdid) )
@@ -5492,7 +5492,7 @@ c-----------------------------------------------------------------------
 
       IF(debug_flag) PRINT *," - Defining flux netcdf globals"
       CALL check( nf90_put_att(fncid,nf90_global,"title",
-     $     "IPEC outputs in magnetic coordinate systems"))
+     $     "GPEC outputs in magnetic coordinate systems"))
       CALL check( nf90_def_dim(fncid,"i",2, fidid) )
       CALL check( nf90_def_var(fncid,"i",nf90_int,fidid,fivid) )
       CALL check( nf90_def_dim(fncid,"m_out",lmpert, fmdid) )
@@ -5506,7 +5506,7 @@ c-----------------------------------------------------------------------
 
       IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
       CALL check( nf90_put_att(cncid,nf90_global,"title",
-     $     "IPEC outputs in (R,z) coordinates"))
+     $     "GPEC outputs in (R,z) coordinates"))
       CALL check( nf90_def_dim(cncid,"i",2,       cidid) )
       CALL check( nf90_def_var(cncid,"i",nf90_int,cidid,civid) )
       CALL check( nf90_def_dim(cncid,"R",nr+1,crdid) )
