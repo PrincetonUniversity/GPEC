@@ -15,7 +15,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE rdcon_mod
-      USE ipglobal_mod
+      USE gpglobal_mod
       USE idcon_mod
       USE ismath_mod
       IMPLICIT NONE

@@ -5,31 +5,31 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. ipresp_mod
-c      1. ipresp_eigen
-c      2. ipresp_pinduct
-c      3. ipresp_sinduct
-c      4. ipresp_permeab
-c      5. ipresp_reluct
-c      6. ipresp_indrel
+c      0. gpresp_mod
+c      1. gpresp_eigen
+c      2. gpresp_pinduct
+c      3. gpresp_sinduct
+c      4. gpresp_permeab
+c      5. gpresp_reluct
+c      6. gpresp_indrel
 c-----------------------------------------------------------------------
-c     subprogram 0. ipresp_mod.
+c     subprogram 0. gpresp_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ipresp_mod
-      USE ipeq_mod
+      MODULE gpresp_mod
+      USE gpeq_mod
 
       IMPLICIT NONE
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipresp_eigen.
+c     subprogram 1. gpresp_eigen.
 c     construct flux and current matrices from eigenmodes.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_eigen
+      SUBROUTINE gpresp_eigen
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -38,7 +38,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(2,mpert) :: chpwmn,chpdif,chpwif
       CHARACTER(32) :: emessage
-      IF(debug_flag) PRINT *, "Entering ipresp_eigen"
+      IF(debug_flag) PRINT *, "Entering gpresp_eigen"
 c-----------------------------------------------------------------------
 c     build ideal solutions.
 c-----------------------------------------------------------------------
@@ -57,13 +57,13 @@ c     compute the perturbed quantities and contruct hermitian matrices.
 c-----------------------------------------------------------------------
          ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
      $        kap_mn(4,mpert),kax_mn(mpert))
-         CALL ipeq_alloc
+         CALL gpeq_alloc
          surface_flag=.FALSE.
-         CALL ipeq_sol(psilim)
+         CALL gpeq_sol(psilim)
          surface_flag=.FALSE.
-         CALL ipeq_contra(psilim)
-         CALL ipeq_cova(psilim)
-         CALL ipeq_surface(psilim)
+         CALL gpeq_contra(psilim)
+         CALL gpeq_cova(psilim)
+         CALL gpeq_surface(psilim)
 c-----------------------------------------------------------------------
 c     compute each fourier component.
 c-----------------------------------------------------------------------
@@ -82,8 +82,8 @@ c-----------------------------------------------------------------------
          chpdif(2,:)=chp_mn(3,:)-chp_mn(4,:)
          chpwif=chpdif
          DO j=1,2
-            CALL ipeq_weight(psilim,chpwmn(j,:),mfac,mpert,1)
-            CALL ipeq_weight(psilim,chpwif(j,:),mfac,mpert,1)
+            CALL gpeq_weight(psilim,chpwmn(j,:),mfac,mpert,1)
+            CALL gpeq_weight(psilim,chpwif(j,:),mfac,mpert,1)
             chptsq=SUM(REAL(CONJG(chpwmn(j,:))*chp_mn(2*j-1,:),r8))
             chpdsq=SUM(REAL(CONJG(chpwif(j,:))*chpdif(j,:),r8))
             chperr(j,i)=SQRT(chpdsq/chptsq)
@@ -136,21 +136,21 @@ c     $           ABS(1-surfet(2,i)/surfet(1,i))
      $           ", error = ",ABS(1-surfet(2,i)/surfet(1,i))
          ENDIF
 
-         CALL ipeq_dealloc
+         CALL gpeq_dealloc
          DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
       ENDDO
       DEALLOCATE(grri,grre)
-      IF(debug_flag) PRINT *, "->Leaving ipresp_eigen"      
+      IF(debug_flag) PRINT *, "->Leaving gpresp_eigen"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_eigen
+      END SUBROUTINE gpresp_eigen
 c-----------------------------------------------------------------------
-c     subprogram 2. ipresp_pinduct.
+c     subprogram 2. gpresp_pinduct.
 c     construct plasma inductance matrices.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_pinduct
+      SUBROUTINE gpresp_pinduct
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -238,12 +238,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_pinduct
+      END SUBROUTINE gpresp_pinduct
 c-----------------------------------------------------------------------
-c     subprogram 3. ipresp_sinduct.
+c     subprogram 3. gpresp_sinduct.
 c     construct surface inductance matrix.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_sinduct
+      SUBROUTINE gpresp_sinduct
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -290,12 +290,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_sinduct
+      END SUBROUTINE gpresp_sinduct
 c-----------------------------------------------------------------------
-c     subprogram 4. ipresp_permeab.
+c     subprogram 4. gpresp_permeab.
 c     construct permeability matrix.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_permeab
+      SUBROUTINE gpresp_permeab
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -379,12 +379,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_permeab
+      END SUBROUTINE gpresp_permeab
 c-----------------------------------------------------------------------
-c     subprogram 5. ipresp_reluct.
+c     subprogram 5. gpresp_reluct.
 c     construct reluctance matrix.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_reluct
+      SUBROUTINE gpresp_reluct
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -421,12 +421,12 @@ c-----------------------------------------------------------------------
          reluctevmats(j,:,:)=vr
       ENDDO
       RETURN
-      END SUBROUTINE ipresp_reluct
+      END SUBROUTINE gpresp_reluct
 c-----------------------------------------------------------------------
-c     subprogram 6. ipresp_indrel.
+c     subprogram 6. gpresp_indrel.
 c     construct combined matrix with surface inductance and reluctance.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipresp_indrel
+      SUBROUTINE gpresp_indrel
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -463,6 +463,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipresp_indrel
+      END SUBROUTINE gpresp_indrel
 
-      END MODULE ipresp_mod
+      END MODULE gpresp_mod

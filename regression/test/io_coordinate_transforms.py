@@ -99,7 +99,7 @@ def check(loc=loc,m=2):
 
     """
     loc = loc.rstrip('/')
-    files = ['ipdiag_pmodb_n1.out', 'ipdiag_pmodbmn_n1.out', 'pentrc_peq_n1.out']
+    files = ['gpec_diagnostics_pmodb_n1.out', 'gpec_diagnostics_pmodbmn_n1.out', 'pentrc_peq_n1.out']
     results = {}
 
     fx, ax = plt.subplots(2, 2, sharey=True, sharex=True)

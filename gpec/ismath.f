@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
       USE local_mod
       USE bicube_mod
       USE fspline_mod
-      USE ipglobal_mod
+      USE gpglobal_mod
       IMPLICIT NONE
 
       CONTAINS

@@ -198,8 +198,8 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         elif rungpec:
             if np.any([f.startswith('gpec_') for f in locfiles]):
                 os.system('rm gpec_*')
-            if np.any([f.startswith('ipdiag_') for f in locfiles]):
-                os.system('rm ipdiag_*')
+            if np.any([f.startswith('gpec_diagnostics_') for f in locfiles]):
+                os.system('rm gpdiag_*')
             if np.any([f.startswith('pent_') for f in locfiles]):
                 os.system('rm pent_*')
         elif runpent:

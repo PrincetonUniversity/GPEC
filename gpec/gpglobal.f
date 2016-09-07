@@ -1,8 +1,8 @@
 c-----------------------------------------------------------------------
 c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     IPGLOBAL: global definition
+c     GPGLOBAL: global definition
 c-----------------------------------------------------------------------
-      MODULE ipglobal_mod
+      MODULE gpglobal_mod
       USE bicube_mod
       USE fspline_mod
       USE global_mod, ONLY: version
@@ -287,4 +287,4 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpec_timer
 
-      END MODULE ipglobal_mod
+      END MODULE gpglobal_mod

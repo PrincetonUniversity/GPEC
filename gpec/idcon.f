@@ -21,7 +21,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE idcon_mod
-      USE ipglobal_mod
+      USE gpglobal_mod
       USE ismath_mod
       IMPLICIT NONE
 
@@ -879,8 +879,8 @@ c     compute necessary components.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing perturbed b field for gpec"
 
-      !CALL idcon_build(egnum,xspmn)   !! Only needed for ipeq_sol for xi's
-      !CALL ipeq_alloc                 !! displacements now in pentrc inputs
+      !CALL idcon_build(egnum,xspmn)   !! Only needed for gpeq_sol for xi's
+      !CALL gpeq_alloc                 !! displacements now in pentrc inputs
 c-----------------------------------------------------------------------
 c     set up fourier-spline type.
 c-----------------------------------------------------------------------

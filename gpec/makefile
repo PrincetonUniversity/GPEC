@@ -19,15 +19,15 @@ LIBS = \
 	-lharvest
 
 OBJS = \
-	ipglobal.o \
+	gpglobal.o \
 	ismath.o \
 	idcon.o \
 	rdcon.o \
-	ipeq.o \
-	ipresp.o \
-	ipdiag.o \
-	ipvacuum.o \
-	ipout.o \
+	gpeq.o \
+	gpresp.o \
+	gpdiag.o \
+	gpvacuum.o \
+	gpout.o \
 	gpec.o
 
 all: dcon coil gpec
@@ -47,15 +47,15 @@ gpec: $(OBJS)
 
 # dependencies
 
-ismath.o : ipglobal.o
+ismath.o : gpglobal.o
 idcon.o: ismath.o
-rdcon.o: ipglobal.o idcon.o ismath.o
-ipeq.o: idcon.o ismath.o
-ipresp.o: ipeq.o
-ipvacuum.o : ipeq.o
-ipdiag.o: ipresp.o ipvacuum.o
-ipout.o: ipresp.o ipvacuum.o ../coil/field.o ../coil/coil.o
-gpec.o: ipdiag.o ipout.o rdcon.o
+rdcon.o: gpglobal.o idcon.o ismath.o
+gpeq.o: idcon.o ismath.o
+gpresp.o: gpeq.o
+gpvacuum.o : gpeq.o
+gpdiag.o: gpresp.o gpvacuum.o
+gpout.o: gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o
+gpec.o: gpdiag.o gpout.o rdcon.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin gpec

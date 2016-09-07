@@ -991,7 +991,6 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(ymats,"extrap")
       CALL cspline_fit(zmats,"extrap")
 
-      !CALL ipeq_dealloc
       CALL fspline_dealloc(fmodb)
 c-----------------------------------------------------------------------
 c     terminate.

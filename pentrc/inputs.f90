@@ -777,7 +777,6 @@ module inputs
         divx_m%xs(0:) = psi(1:)
         if(set_dbdx)then
             if(verbose) print *,'Calculating dB/B, div(xi_prp)'
-            !call ipeq_alloc
             do i=istrt_psi,istop_psi
                 j = i-istrt_psi+1
                 if(verbose) call progressbar(j,1,npsi,op_percent=20)
