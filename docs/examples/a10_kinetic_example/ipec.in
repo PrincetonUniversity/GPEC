@@ -47,8 +47,8 @@
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
-   singcoup_flag=t          ! Calculate coupling of each m to resonant surfaces
-   singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
+   singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
+   singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
 
    pmodb_flag=t             ! Outputs delta-B_Lagrangian
