@@ -5,28 +5,28 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. ipvacuum
-c      1. ipvacuum_arbsurf
-c      2. ipvacuum_flxsurf
-c      3. ipvacuum_bnormal
+c      0. gpvacuum_mod
+c      1. gpvacuum_arbsurf
+c      2. gpvacuum_flxsurf
+c      3. gpvacuum_bnormal
 c-----------------------------------------------------------------------
-c     subprogram 0. ipvacuum_mod.
+c     subprogram 0. gpvacuum_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ipvacuum_mod
-      USE ipeq_mod
+      MODULE gpvacuum_mod
+      USE gpeq_mod
 
       IMPLICIT NONE
       
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipvacuum_arbsurf.
+c     subprogram 1. gpvacuum_arbsurf.
 c     compute arbitrary surface inductance.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_arbsurf(majr,minr)
+      SUBROUTINE gpvacuum_arbsurf(majr,minr)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -201,12 +201,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipvacuum_arbsurf
+      END SUBROUTINE gpvacuum_arbsurf
 c-----------------------------------------------------------------------
-c     subprogram 2. ipvacuum_flxsurf.
+c     subprogram 2. gpvacuum_flxsurf.
 c     compute flux surface inductances.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_flxsurf(psi)
+      SUBROUTINE gpvacuum_flxsurf(psi)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -358,12 +358,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipvacuum_flxsurf
+      END SUBROUTINE gpvacuum_flxsurf
 c-----------------------------------------------------------------------
-c     subprogram 3. ipvacuum_bnormal.
+c     subprogram 3. gpvacuum_bnormal.
 c     create bnormal input for vacuum code.  
 c-----------------------------------------------------------------------
-      SUBROUTINE ipvacuum_bnormal(psi,finmn,nr,nz)
+      SUBROUTINE gpvacuum_bnormal(psi,finmn,nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -467,7 +467,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipvacuum_bnormal
+      END SUBROUTINE gpvacuum_bnormal
 
-      END MODULE ipvacuum_mod
+      END MODULE gpvacuum_mod
       

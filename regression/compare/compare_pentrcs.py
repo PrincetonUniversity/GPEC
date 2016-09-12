@@ -48,10 +48,10 @@ def check_ascii_profiles(*directories):
     Check the ntv profile.
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     methods=['fgar','tgar']
@@ -98,10 +98,10 @@ def check_ascii_integrals(*directories):
     Check the ell dependence of the integrated torques.
 
     Args:
-        *args: strings. Any number of directory paths containing ipec outputs.
+        *args: strings. Any number of directory paths containing gpec outputs.
 
     Returns:
-        datasets: List of datasets from the corresponding profile ipec netcdfs
+        datasets: List of datasets from the corresponding profile gpec netcdfs
 
     """
     methods=['fgar','tgar']

@@ -16,6 +16,6 @@ mailon   = 'ae'
 # starting inputs taken from
 inputdir = "."
 # inputs used
-inputs   = ['equil','dcon','ipec','coil','pent']
+inputs   = ['equil','dcon','gpec','coil','pent']
 # temp file location for brute editing (this is the temp dir in this dir)
 tempdir  = '~/GPEC/temp'

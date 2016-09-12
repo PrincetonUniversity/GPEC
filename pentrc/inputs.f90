@@ -4,7 +4,7 @@ module inputs
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Input interface for PENTRC. Includes DCON interface developed by
-    !   J.-K. Park in IPEC package, as well as ascii interfaces for
+    !   J.-K. Park in GPEC package, as well as ascii interfaces for
     !   kinetic profiles and perturbed equilibrium files.
     !
     !*PUBLIC MEMBER FUNCTIONS:
@@ -53,7 +53,7 @@ module inputs
         read_pmodb, &
         read_peq, &
         set_peq, &
-        read_ipec_peq,&
+        read_gpec_peq,&
         read_equil, &
         read_fnml, &
         kin, xs_m, dbob_m, divx_m, fnml, &
@@ -343,7 +343,7 @@ module inputs
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
-        !npsi = nunique(table(:,1)) !! computationally expensive + ipec n=3's can have repeates
+        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeates
         nm = nunique(table(:,2),op_sorted=.True.)
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
@@ -377,7 +377,7 @@ module inputs
                     +xj*reshape(table(:,10),(/npsi,nm/),order=(/1,2/))
         endif
 
-        ! For consistency with IPEC-0.3.0 and smaller values near rationals
+        ! For consistency with GPEC-0.3.0 and smaller values near rationals
         if(verbose) print *,"  -> Using div(xi_perp) = -(dB/B+kappa.xi_perp)"
         divxmni = -(lagbmni+kapxmni)
 
@@ -564,7 +564,7 @@ module inputs
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
-        !npsi = nunique(table(:,1)) !! computationally expensive + ipec n=3's can have repeats
+        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeats
         nm = nunique(table(:,2),op_sorted=.True.)
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
@@ -777,7 +777,6 @@ module inputs
         divx_m%xs(0:) = psi(1:)
         if(set_dbdx)then
             if(verbose) print *,'Calculating dB/B, div(xi_prp)'
-            !call ipeq_alloc
             do i=istrt_psi,istop_psi
                 j = i-istrt_psi+1
                 if(verbose) call progressbar(j,1,npsi,op_percent=20)
@@ -884,7 +883,7 @@ module inputs
 
       
     !=======================================================================
-    subroutine read_ipec_peq(file,write_log)
+    subroutine read_gpec_peq(file,write_log)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Read pmodb and divxprp fourier components (psi,m) from input file.
@@ -910,7 +909,7 @@ module inputs
         open(unit=in_unit,file=file,status="old",position="rewind",form="unformatted")
         read(in_unit) ms,mp
         if((ms .ne. mstep) .or. (mp .ne. mpert)) then
-            stop "ERROR: inputs - IPEC perturbations don't match equilibrium"
+            stop "ERROR: inputs - GPEC perturbations don't match equilibrium"
         endif
         read(in_unit)lagbpar
         read(in_unit)divxprp
@@ -929,7 +928,7 @@ module inputs
         ! write log - designed as check of reading routines
         if(write_log)then
             out_unit = get_free_file_unit(-1)
-            print *, "Writing ipec lagb spline to pentrc_lagb.out"
+            print *, "Writing gpec lagb spline to pentrc_lagb.out"
             print *,"mpert = ",mpert
             print *,"mfac range = ",mfac(1),mfac(mpert)
             print *,"psifac range = ",psifac(1),psifac(mstep)
@@ -953,7 +952,7 @@ module inputs
             call cspline_write(outspl,.true.,.false.,out_unit,0,.true.)
             close(out_unit)
         endif
-    end subroutine read_ipec_peq
+    end subroutine read_gpec_peq
 
     
 end module inputs

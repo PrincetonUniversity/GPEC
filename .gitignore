@@ -23,6 +23,7 @@ docs/_build/
 
 dcon/dcon
 ipec/ipec
+gpec/gpec
 match/match
 multi/multi
 orbit/orbit

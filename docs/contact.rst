@@ -11,7 +11,7 @@ DCON
 :Email: 
     ahg@lanl.gov
 
-IPEC
+GPEC
 ====
 
 :Author:

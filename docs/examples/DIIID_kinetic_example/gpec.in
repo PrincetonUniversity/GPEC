@@ -1,16 +1,16 @@
-&IPEC_INPUT
-   dcon_dir   = './'                 ! Path to DCON outputs. Individual file paths are appended to this
+&gpec_input
+   dcon_dir   = ''                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = 'euler.bin'          ! Eigenfunctions output by DCON run
    ieqfile    = 'psi_in.bin'         ! Flux surfaces output by DCON run
    ivacuumfile= 'vacuum.bin'         ! Vacuum info output by DCON run
    rdconfile  = 'gal_solution.bin'   ! Galkin functions output by resistive DCON run
 
-   jac_in="pest"            ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
-   jsurf_in=0               ! True(1) if external perturbation is area weighted (i.e. flux)
+   jac_in="hamada"            ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
+   jsurf_in=1               ! True(1) if external perturbation is area weighted (i.e. flux)
    tmag_in =0               ! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
    mthsurf =0               ! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
 
-   coil_flag=f              ! Calculate external perturbation from coils in coil.in
+   coil_flag=t              ! Calculate external perturbation from coils in coil.in
 
    data_flag=f              ! Apply perturbation from thrid party code output
    data_type="surfmn"       ! Name of said code. Choose: surfmn,??
@@ -27,12 +27,12 @@
    displacement_flag=f      ! Perturbations are displacement (m). Default is field (T).
    fixed_boundary_flag=f    ! Total perturbation = external perturbation
 
-   mode_flag = t          ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
-   mode  = 1                ! DCON eigen function index (1 is least stable)
+   mode_flag = .F.          ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
+   mode  = 0                ! DCON eigen function index (1 is least stable)
    filter_types = 'w'       ! Isolate the filter_modes of energy (w), reluctance (r), permiability (p) or singular coupling (s) eigenvectors/singular-vectors
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
 /
-&IPEC_CONTROL
+&GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
    reg_flag=f               ! Regularize the solution near resonant surfaces
@@ -40,14 +40,14 @@
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
    nche=20                  ! Number of Chebyshev polynomials used
 /
-&IPEC_OUTPUT
-   jac_out="hamada"         ! Coordinate system of outputs
-   jsurf_out=0              ! True(1) for area weighted outputs (only appends standard ipec_control output)
-   tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends ipec_control)
-   mlim_out=64              ! If positive, Fourier decomposed outputs will span -mlim_out<=m<=mlim_out. Default (<=0) outputs on internal m range.
+&GPEC_OUTPUT
+   jac_out="pest"           ! Coordinate system of outputs
+   jsurf_out=0              ! True(1) for area weighted outputs (only appends standard gpec_control output)
+   tmag_out=0               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends gpec_control)
+   mlim_out=64               ! If positive, Fourier decomposed outputs will span -mlim_out<=m<=mlim_out. Default (<=0) outputs on internal m range.
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
-   filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
+   filter_flag=t            ! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
@@ -62,7 +62,7 @@
    brzphi_flag=t            ! Outputs perturbed field on regular (r,z) grid
    xrzphi_flag=f            ! Outputs displacement on regular (r,z) grid
    vbrzphi_flag=f           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
-   vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to external perturbation surface current (not a real field)
+   vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to exeternal perturbation surface current (not a real field)
    vsbrzphi_flag=f          ! Outputs the field on regular (r,z) grid due to singular surface currents
    ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
    xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
@@ -77,7 +77,7 @@
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    verbose=t                ! Print run log to terminal
 /
-&IPEC_DIAGNOSE
-   timeit=f                 ! Print timer splits for major subroutines
-   radvar_flag=t            ! Map various radial variables (rho,psi_tor) on psi_N grid
+&GPEC_DIAGNOSE
+   timeit=t                 ! Print timer splits for major subroutines
+   radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
 /

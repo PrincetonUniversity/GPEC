@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: cro,czo,cpsio,cpsilow,cpsilim,cqlim,
      $     ipd,btd,helicity
 
-      LOGICAL :: ipec_interface
+      LOGICAL :: gpec_interface
       CHARACTER(256) :: data_dir = 'default'
       CHARACTER(512) :: cfile
       INTEGER, DIMENSION(:), POINTER :: cmfac
@@ -63,7 +63,7 @@ c-----------------------------------------------------------------------
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
      $     data_dir,machine,ip_direction,bt_direction,
      $     coil_num,coil_name,coil_cur
-      NAMELIST/coil_output/ipec_interface
+      NAMELIST/coil_output/gpec_interface
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4
       REAL(r8) :: cr1,cr2
@@ -148,7 +148,7 @@ c-----------------------------------------------------------------------
       IF(ip_direction=="negative")ipd=-1.0
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
-      ipec_interface=.TRUE.
+      gpec_interface=.TRUE.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

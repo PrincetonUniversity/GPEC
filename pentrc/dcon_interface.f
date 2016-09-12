@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c     !! SELECT ROUTINES FROM IDEAL PERTURBED EQUILIBRIUM CONTROL !!
 c     Subroutines by Jong-Kyu Park for interfacing with DCON outputs.
 c     For the majority, these are identical to counterparts in the
-c     IPEC idcon module. There are a few additions from ipeq and ismath
+c     GPEC idcon module. There are a few additions from ipeq and ismath
 c     modules.
 c     Major changes are:
 c     - psixy=1 IF statement that optionally read psi_in.bin removed (no ieqfile)
@@ -778,7 +778,7 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zpbtrf: fmat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         !CALL ipec_stop(message)
+         !CALL gpec_stop(message)
          PRINT *,message
          STOP         
       ENDIF
@@ -991,7 +991,6 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(ymats,"extrap")
       CALL cspline_fit(zmats,"extrap")
 
-      !CALL ipeq_dealloc
       CALL fspline_dealloc(fmodb)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1336,7 +1335,7 @@ c-----------------------------------------------------------------------
         xmats   =set_xmats
         ymats   =set_ymats
         zmats   =set_zmats
-        !! only needed if using old ipec_o1 inputs
+        !! only needed if using old gpec_o1 inputs
         !mstep   =set_mstep
         !allocate(psifac(0:mstep))
         !psifac(:) = set_psifac(:)

@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
          return
       endif
       if ( ldcon .eq. 1 ) return
-      if ( lipec .eq. 1 ) return
+      if ( lgpec .eq. 1 ) return
       if ( lrgato .eq. 1 ) return
       if ( lzio .eq. 1 ) then
          call shellb
@@ -274,9 +274,9 @@ c-----------------------------------------------------------------------
          go to 1111
       endif
 c-----------------------------------------------------------------------
-c     ipec inputs.
+c     gpec inputs.
 c-----------------------------------------------------------------------
-      if ( lipec .eq. 1 ) then
+      if ( lgpec .eq. 1 ) then
          lzio = 1
          ieig = 0
 c

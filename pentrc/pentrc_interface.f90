@@ -128,8 +128,8 @@ module pentrc_interface
     character(512) :: &
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
-        ipec_file  ="ipec_order1_n1.bin", &
-        peq_file ="ipec_xclebsch_n1.out", &
+        gpec_file  ="gpec_order1_n1.bin", &
+        peq_file ="gpec_xclebsch_n1.out", &
         pmodb_file ="none", &
         data_dir ="."
     character(32) :: &
@@ -139,7 +139,7 @@ module pentrc_interface
         moment = "pressure"
 
     ! namelists
-    namelist/pent_input/kinetic_file,ipec_file,peq_file,pmodb_file,idconfile, &
+    namelist/pent_input/kinetic_file,gpec_file,peq_file,pmodb_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in,power_bin,power_bpin,power_rin,power_rcin
 
@@ -229,7 +229,7 @@ module pentrc_interface
         if(in_peq)then
             call read_peq(peq_file,jac_in,jsurf_in,tmag_in,indebug,&
                           op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
-            !call read_ipec_peq(ipec_file,indebug)
+            !call read_gpec_peq(gpec_file,indebug)
             if(trim(pmodb_file)/="" .and. trim(pmodb_file)/="none")&
                 call read_pmodb(pmodb_file,jac_in,jsurf_in,tmag_in,indebug,&
                                 op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))

@@ -5,44 +5,44 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c      0. ipdiag_mod
-c      1. ipdiag_eigen
-c      2. ipdiag_magpot
-c      3. ipdiag_arbsurf
-c      4. ipdiag_angles
-c      5. ipdiag_surfmode
-c      6. ipdiag_singcurs
-c      7. ipdiag_xbcontra
-c      8. ipdiag_xbnobo
-c      9. ipdiag_xbst
-c     10. ipdiag_pmodb
-c     11. ipdiag_pmodbmn
-c     12. ipdiag_rzphibx
-c     13. ipdiag_rzpgrid
-c     14. ipdiag_rzpdiv
-c     15. ipdiag_radvar
-c     16. ipdiag_permeabev_orthogonality
-c     17. ipdiag_dw_matrix
+c      0. gpdiag_mod
+c      1. gpdiag_eigen
+c      2. gpdiag_magpot
+c      3. gpdiag_arbsurf
+c      4. gpdiag_angles
+c      5. gpdiag_surfmode
+c      6. gpdiag_singcurs
+c      7. gpdiag_xbcontra
+c      8. gpdiag_xbnobo
+c      9. gpdiag_xbst
+c     10. gpdiag_pmodb
+c     11. gpdiag_pmodbmn
+c     12. gpdiag_rzphibx
+c     13. gpdiag_rzpgrid
+c     14. gpdiag_rzpdiv
+c     15. gpdiag_radvar
+c     16. gpdiag_permeabev_orthogonality
+c     17. gpdiag_dw_matrix
 c-----------------------------------------------------------------------
-c     subprogram 0. ipdiag_mod.
+c     subprogram 0. gpdiag_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE ipdiag_mod
-      USE ipresp_mod
-      USE ipvacuum_mod
+      MODULE gpdiag_mod
+      USE gpresp_mod
+      USE gpvacuum_mod
       USE field_mod
 
       IMPLICIT NONE
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. ipdiag_eigen.
+c     subprogram 1. gpdiag_eigen.
 c     diagnose eigenvectors and eigenenergies.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_eigen
+      SUBROUTINE gpdiag_eigen
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -53,8 +53,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_eigen.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_EIGEN: "//
+      CALL ascii_open(out_unit,"gpec_diagnostics_eigen.out","UNKNOWN")
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_EIGEN: "//
      $     "Diagnose DCON eigenvalues for eigenvectors"
       WRITE(out_unit,'(2(1x,a3),1x,a16)')"m","m","pot energy"
 
@@ -76,20 +76,21 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_eigen
+      END SUBROUTINE gpdiag_eigen
 c-----------------------------------------------------------------------
-c     subprogram 2. ipdiag_magpot.
+c     subprogram 2. gpdiag_magpot.
 c     diagnose magnetic potential errors.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_magpot
+      SUBROUTINE gpdiag_magpot
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER :: i
 
-      CALL ascii_open(out_unit,"ipdiag_magpot_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_magpot_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_MAGPOT: Magnetic potential errors"
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_MAGPOT: Magnetic potential "
+     $    //"errors"
       WRITE(out_unit,'(1x,a8,1x,I4)')"mpert=",mpert
       WRITE(out_unit,'(1x,a4,2(1x,a16))')"mode","chperr1","chperr2"
       DO i=1,mpert
@@ -106,12 +107,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_magpot
+      END SUBROUTINE gpdiag_magpot
 c-----------------------------------------------------------------------
-c     subprogram 3. ipdiag_arbsurf.
+c     subprogram 3. gpdiag_arbsurf.
 c     diagnose surface inductance.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_arbsurf(majr,minr)
+      SUBROUTINE gpdiag_arbsurf(majr,minr)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -121,14 +122,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL ipvacuum_arbsurf(majr,minr)
+      CALL gpvacuum_arbsurf(majr,minr)
       vmpert=SIZE(vsurf_indev)
       
       WRITE(UNIT=smajr, FMT='(I4)')INT(100*majr)
       WRITE(UNIT=sminr, FMT='(I4)')INT(100*minr)
-      CALL ascii_open(out_unit,"ipdiag_arbsurf_R"//smajr//"_r"//sminr//
-     $     ".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_VACUUM: "//
+      CALL ascii_open(out_unit,"gpec_diagnostics_arbsurf_R"//smajr//
+     $     "_r"//sminr//".out","UNKNOWN")
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_VACUUM: "//
      $     "Diagnose surface inductances for arbitrary shape"
       WRITE(out_unit,'(1x,a4,1x,a16)')"mode","surf_ind"
       DO i=1,vmpert
@@ -140,12 +141,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_arbsurf
+      END SUBROUTINE gpdiag_arbsurf
 c-----------------------------------------------------------------------
-c     subprogram 4. ipdiag_angles.
+c     subprogram 4. gpdiag_angles.
 c     diagnose and visualize magnetic angles.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_angles
+      SUBROUTINE gpdiag_angles
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -240,8 +241,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------      
-      CALL ascii_open(out_unit,"ipdiag_angles.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_ANGLES: "//
+      CALL ascii_open(out_unit,"gpec_diagnostics_angles.out","UNKNOWN")
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_ANGLES: "//
      $     "Diagnose and visualize magnetic angles"
       WRITE(out_unit,'(1x,a8,1x,I6)')"angnum=",angnum
       WRITE(out_unit,'(1x,a8,1x,I6)')"rstep=",rstep
@@ -282,12 +283,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_angles
+      END SUBROUTINE gpdiag_angles
 c-----------------------------------------------------------------------
-c     subprogram 5. ipdiag_surfmode.
+c     subprogram 5. gpdiag_surfmode.
 c     response to fourier modes for the control surface.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_surfmode(lowmode,highmode,
+      SUBROUTINE gpdiag_surfmode(lowmode,highmode,
      $     rin,bpin,bin,rcin,tin,jin)
 c-----------------------------------------------------------------------
 c     declaration.
@@ -309,25 +310,26 @@ c-----------------------------------------------------------------------
          binmn(j,i-mlow+1)=1
          finmn(j,:)=binmn(j,:)
          CALL iscdftb(mfac,mpert,binfun(j,:),mthsurf,finmn(j,:))         
-         CALL ipeq_fcoords(psilim,finmn(j,:),mfac,mpert,
+         CALL gpeq_fcoords(psilim,finmn(j,:),mfac,mpert,
      $        rin,bpin,bin,rcin,tin,jin)
-         CALL ipeq_weight(psilim,finmn(j,:),mfac,mpert,1)  
+         CALL gpeq_weight(psilim,finmn(j,:),mfac,mpert,1)
          IF (fixed_boundary_flag) THEN
             boutmn(j,:)=finmn(j,:)
          ELSE
             boutmn(j,:)=MATMUL(permeabmats(resp_index,:,:),finmn(j,:))
          ENDIF       
-         CALL ipeq_weight(psilim,finmn(j,:),mfac,mpert,0)  
-         CALL ipeq_bcoords(psilim,boutmn(j,:),mfac,mpert,
+         CALL gpeq_weight(psilim,finmn(j,:),mfac,mpert,0)
+         CALL gpeq_bcoords(psilim,boutmn(j,:),mfac,mpert,
      $        rin,bpin,bin,rcin,tin,jin)
          CALL iscdftb(mfac,mpert,boutfun(j,:),mthsurf,boutmn(j,:))
       ENDDO
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_surfmode.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_SURFMODE: Plasma response for the "//
-     $     "fourier modes on the control surface"
+      CALL ascii_open(out_unit,"gpec_diagnostics_surfmode.out",
+     $     "UNKNOWN")
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_SURFMODE: Plasma response "//
+     $     "for the fourier modes on the control surface"
       WRITE(out_unit,*)"MODES"
       WRITE(out_unit,'(1x,a4,4(1x,a16))')"m",
      $     "rebin","imbin","rebout","imbout"
@@ -356,9 +358,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_surfmode
+      END SUBROUTINE gpdiag_surfmode
 c-----------------------------------------------------------------------
-c     subprogram 6. ipdiag_singcurs.
+c     subprogram 6. gpdiag_singcurs.
 c     diagnose asymtotic values of singular currents.
 c     __________________________________________________________________
 c     egnum      : eigenmode number without edge_flag
@@ -367,7 +369,7 @@ c     rsing      : number of rational surfaces
 c     resol      : resolution by number of grid points
 c     smallwidth : closest point to approach
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_singcurs(egnum,xspmn,rsing,resol,smallwidth)
+      SUBROUTINE gpdiag_singcurs(egnum,xspmn,rsing,resol,smallwidth)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -395,7 +397,7 @@ c-----------------------------------------------------------------------
       delcurs=0
       corcurs=0
       singcurs=0
-      CALL ipeq_alloc
+      CALL gpeq_alloc
       CALL idcon_build(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     compute singular currents with logarithmic approach.
@@ -453,7 +455,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate delta and correction term at lpsi.
 c-----------------------------------------------------------------------
-            CALL ipeq_sol(lpsi)
+            CALL gpeq_sol(lpsi)
             lbwp1mn=bwp1_mn(resnum)
             CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
             CALL spline_eval(sq,lpsi,0)
@@ -479,7 +481,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate delta and correction term at rpsi.
 c-----------------------------------------------------------------------
-            CALL ipeq_sol(rpsi)
+            CALL gpeq_sol(rpsi)
             rbwp1mn=bwp1_mn(resnum)
             CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
             CALL spline_eval(sq,rpsi,0)
@@ -514,13 +516,13 @@ c-----------------------------------------------------------------------
 
          WRITE(*,*)"Finished the analysis for the q =",singtype(ising)%q
       ENDDO
-      CALL ipeq_dealloc
+      CALL gpeq_dealloc
 c-----------------------------------------------------------------------
 c     write the results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_deltas_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_deltas_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_DELTAS: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_DELTAS: "//
      $     "Asymtotic analysis for deltas at rational surfaces"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rsing=",rsing
       WRITE(out_unit,'(1x,a8,1x,I6)')"resol=",resol
@@ -534,9 +536,9 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL ascii_close(out_unit)
-      CALL ascii_open(out_unit,"ipdiag_singcurs_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_singcurs_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_SINGCURS: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_SINGCURS: "//
      $     "asymtotic analysis for singular currents at "//
      $     "rational surfaces"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rsing=",rsing
@@ -558,12 +560,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_singcurs
+      END SUBROUTINE gpdiag_singcurs
 c-----------------------------------------------------------------------
-c     subprogram 7. ipdiag_xbcontra.
+c     subprogram 7. gpdiag_xbcontra.
 c     diagnose various components of xi and b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbcontra(egnum,xspmn,rin,bpin,bin,rcin,tin)    
+      SUBROUTINE gpdiag_xbcontra(egnum,xspmn,rin,bpin,bin,rcin,tin)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -580,15 +582,15 @@ c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xspmn)
 
       WRITE(*,*)"Computing contravariant components in detail"
-      CALL ascii_open(out_unit,"ipdiag_xbcontra_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_xbcontra_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_XBCONTRA: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_XBCONTRA: "//
      $     "Contravariant components of displacement and field"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep = ",mstep
       WRITE(out_unit,'(1x,a8,1x,I6)')"mlow = ",mlow
       WRITE(out_unit,'(1x,a8,1x,I6,1/)')"mhigh = ",mhigh
       WRITE(out_unit,'(2(1x,a16))')"psifac","qfac"
-      CALL ipeq_alloc
+      CALL gpeq_alloc
       DO istep=0,mstep
          WRITE(out_unit,'(2(1x,es16.8))')psifac(istep),qfac(istep)
       ENDDO
@@ -605,42 +607,42 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(u5,mstep,mpert)
       u5%xs=psifac
       DO istep=0,mstep
-         CALL ipeq_sol(psifac(istep))
+         CALL gpeq_sol(psifac(istep))
          u5%fs(istep,:)=bwp_mn
       ENDDO
       CALL cspline_fit(u5,"extrap")
 
       DO istep=0,mstep
-         CALL ipeq_sol(psifac(istep))
-         CALL ipeq_contra(psifac(istep))
+         CALL gpeq_sol(psifac(istep))
+         CALL gpeq_contra(psifac(istep))
          CALL cspline_eval(u1,psifac(istep),1)
          CALL cspline_eval(u5,psifac(istep),1)
          xwd_mn(:)=u1%f1(:)
          bwd_mn(:)=u5%f1(:)
          IF (jac_type /= jac_out) THEN 
-            CALL ipeq_bcoords(psifac(istep),xwp_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),xwp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xwt_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),xwt_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xwz_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),xwz_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xsp_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),xsp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),bwp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwt_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),bwt_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwz_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),bwz_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xss_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),xss_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xwd_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),xwd_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),xsp1_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),xsp1_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwd_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),bwd_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
-            CALL ipeq_bcoords(psifac(istep),bwp1_mn,mfac,mpert,
+            CALL gpeq_bcoords(psifac(istep),bwp1_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
          ENDIF
          DO ipert=1,mpert
@@ -660,17 +662,17 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 
-      CALL ipeq_dealloc
+      CALL gpeq_dealloc
       CALL cspline_dealloc(u5)
       CALL ascii_close(out_unit)
 
       RETURN
-      END SUBROUTINE ipdiag_xbcontra
+      END SUBROUTINE gpdiag_xbcontra
 c-----------------------------------------------------------------------
-c     subprogram 8. ipdiag_xbnobo.
+c     subprogram 8. gpdiag_xbnobo.
 c     write normal perturbed quantities on the boundary.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbnobo(egnum,xspmn,d3_flag)
+      SUBROUTINE gpdiag_xbnobo(egnum,xspmn,d3_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -716,17 +718,17 @@ c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
       CALL idcon_build(egnum,xspmn)
-      CALL ipeq_alloc
-      CALL ipeq_sol(psilim)
-      CALL ipeq_contra(psilim)
-      CALL ipeq_normal(psilim)
-      CALL ipeq_bcoords(psilim,xno_mn,mfac,mpert,
+      CALL gpeq_alloc
+      CALL gpeq_sol(psilim)
+      CALL gpeq_contra(psilim)
+      CALL gpeq_normal(psilim)
+      CALL gpeq_bcoords(psilim,xno_mn,mfac,mpert,
      $     power_r,power_bp,power_b,0,0,0)
-      CALL ipeq_bcoords(psilim,bno_mn,mfac,mpert,
+      CALL gpeq_bcoords(psilim,bno_mn,mfac,mpert,
      $     power_r,power_bp,power_b,0,0,0)
       CALL iscdftb(mfac,mpert,xno_fun,mthnum,xno_mn)
       CALL iscdftb(mfac,mpert,bno_fun,mthnum,bno_mn)
-      CALL ipeq_dealloc
+      CALL gpeq_dealloc
       
       xnorvc=xno_fun*norvec
       xnozvc=xno_fun*nozvec
@@ -735,9 +737,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_xnobo_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_xnobo_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_XNOBO: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_XNOBO: "//
      $     "Perturbed normal displacement vectors on the boundary"      
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(xnor)","real(xnoz)","imag(xnor)","imag(xnoz)"
@@ -746,9 +748,9 @@ c-----------------------------------------------------------------------
      $        REAL(xnorvc(ithnum)),REAL(xnozvc(ithnum)),
      $        AIMAG(xnorvc(ithnum)),AIMAG(xnozvc(ithnum))
       ENDDO
-      CALL ascii_open(out_unit,"ipdiag_bnobo_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_bnobo_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_BNOBO: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_BNOBO: "//
      $     "perturbed normal field vectors on the boundary"      
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(bnor)","real(bnoz)","imag(bnor)","imag(bnoz)"
@@ -763,15 +765,15 @@ c-----------------------------------------------------------------------
 c     write data for 3d surface plot.
 c-----------------------------------------------------------------------
       IF (d3_flag) THEN
-         CALL ascii_open(out_unit,"iptemp.txt","UNKNOWN")
+         CALL ascii_open(out_unit,"gptemp.txt","UNKNOWN")
          WRITE(out_unit,'(1p,5es16.8)')rs
          WRITE(out_unit,'(1p,5es16.8)')zs
          WRITE(out_unit,'(1p,5es16.8)')REAL(xno_fun)
          WRITE(out_unit,'(1p,5es16.8)')AIMAG(xno_fun)      
          CALL ascii_close(out_unit)
          
-         filein="iptemp.txt"
-         file1="ipidl_3dsurf_xnobo_n"//TRIM(sn)//".out"
+         filein="gptemp.txt"
+         file1="gpidl_3dsurf_xnobo_n"//TRIM(sn)//".out"
 
          ddist=0.2
          mmtheta=mthnum
@@ -780,15 +782,15 @@ c-----------------------------------------------------------------------
          nt=144
          CALL ipidl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1)
 
-         CALL ascii_open(out_unit,"iptemp.txt","UNKNOWN")
+         CALL ascii_open(out_unit,"gptemp.txt","UNKNOWN")
          WRITE(out_unit,'(1p,5es16.8)')rs
          WRITE(out_unit,'(1p,5es16.8)')zs
          WRITE(out_unit,'(1p,5es16.8)')REAL(bno_fun)
          WRITE(out_unit,'(1p,5es16.8)')AIMAG(bno_fun)      
          CALL ascii_close(out_unit)
          
-         filein="iptemp.txt"
-         file1="ipidl_3dsurf_bnobo_n"//TRIM(sn)//".out"
+         filein="gptemp.txt"
+         file1="gpidl_3dsurf_bnobo_n"//TRIM(sn)//".out"
 
          ddist=0.2
          mmtheta=mthnum
@@ -802,12 +804,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_xbnobo
+      END SUBROUTINE gpdiag_xbnobo
 c-----------------------------------------------------------------------
-c     subprogram 9. ipdiag_xbst.
+c     subprogram 9. gpdiag_xbst.
 c     diagnose strength of x and b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_xbst(egnum,xspmn)
+      SUBROUTINE gpdiag_xbst(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -831,15 +833,15 @@ c-----------------------------------------------------------------------
 
       CALL idcon_build(egnum,xspmn)
       
-      CALL ipeq_alloc
+      CALL gpeq_alloc
       DO istep=1,mstep
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces.
 c-----------------------------------------------------------------------
-         CALL ipeq_sol(psifac(istep))
-         CALL ipeq_contra(psifac(istep))
-         CALL ipeq_cova(psifac(istep))
-         CALL ipeq_rzphi(psifac(istep))
+         CALL gpeq_sol(psifac(istep))
+         CALL gpeq_contra(psifac(istep))
+         CALL gpeq_cova(psifac(istep))
+         CALL gpeq_rzphi(psifac(istep))
 
          CALL iscdftb(mfac,mpert,bwp_fun,mthsurf,bwp_mn)
          CALL iscdftb(mfac,mpert,bwt_fun,mthsurf,bwt_mn)
@@ -878,13 +880,13 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,b1(istep,:),mthsurf,b1mns(istep,:))
          CALL iscdftf(mfac,mpert,b2(istep,:),mthsurf,b2mns(istep,:))
       ENDDO
-      CALL ipeq_dealloc
+      CALL gpeq_dealloc
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------      
-      CALL ascii_open(out_unit,"ipdiag_xbst_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_xbst_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_XBST: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_XBST: "//
      $     "Perturbed x and b strength on flux surfaces"
       WRITE(out_unit,*)     
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
@@ -913,12 +915,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_xbst
+      END SUBROUTINE gpdiag_xbst
 c-----------------------------------------------------------------------
-c     subprogram 10. ipdiag_pmodb.
+c     subprogram 10. gpdiag_pmodb.
 c     plot perturbed mod b.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_pmodb(egnum,xspmn)
+      SUBROUTINE gpdiag_pmodb(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -967,15 +969,15 @@ c-----------------------------------------------------------------------
       cspl%xs=theta
 
       CALL idcon_build(egnum,xspmn)
-      CALL ipeq_alloc
+      CALL gpeq_alloc
       DO istep=1,mstep
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces with regulation.
 c-----------------------------------------------------------------------
          CALL spline_eval(sq,psifac(istep),1)
-         CALL ipeq_sol(psifac(istep))
-         CALL ipeq_contra(psifac(istep))
-         CALL ipeq_cova(psifac(istep))
+         CALL gpeq_sol(psifac(istep))
+         CALL gpeq_contra(psifac(istep))
+         CALL gpeq_cova(psifac(istep))
 c-----------------------------------------------------------------------
 c     compute mod b variations.
 c-----------------------------------------------------------------------
@@ -1105,7 +1107,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_pmodb_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_pmodb_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IDIAG_PMODB: "//
      $     "Components in perturbed mod b"
@@ -1142,7 +1144,7 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
 
-      CALL ipeq_dealloc
+      CALL gpeq_dealloc
       DEALLOCATE(rs,zs,eulbparmns,lagbparmns,llagbparmns,cdeltamns,
      $     eulbparfun,lagbparfun,llagbparfun,eqfunx,eqfuny,eqfuns,
      $     xspmns,xmsmns,bvtmns,bvzmns,xmzmns,xvtmns,xvzmns,xmp1mns)
@@ -1150,12 +1152,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_pmodb
+      END SUBROUTINE gpdiag_pmodb
 c-----------------------------------------------------------------------
-c     subprogram 11. ipdiag_pmodbmn.
+c     subprogram 11. gpdiag_pmodbmn.
 c     test and plot perturbed mod b for gpec.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_pmodbmn(egnum,xspmn)
+      SUBROUTINE gpdiag_pmodbmn(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1181,7 +1183,7 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"Computing perturbed b field for gpec"
 
       CALL idcon_build(egnum,xspmn)
-      CALL ipeq_alloc
+      CALL gpeq_alloc
 c-----------------------------------------------------------------------
 c     set up fourier-spline type.
 c-----------------------------------------------------------------------
@@ -1319,7 +1321,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces with regulation.
 c-----------------------------------------------------------------------
-         CALL ipeq_sol(psifac(istep))
+         CALL gpeq_sol(psifac(istep))
          CALL cspline_eval(smats,psifac(istep),0)
          CALL cspline_eval(tmats,psifac(istep),0)
          CALL cspline_eval(xmats,psifac(istep),0)
@@ -1337,7 +1339,7 @@ c-----------------------------------------------------------------------
          divxmns(istep,:)=MATMUL(xmat,xmp1_mn)+
      $        MATMUL(ymat,xsp_mn)+MATMUL(zmat,xms_mn)/chi1            
 c-----------------------------------------------------------------------
-c     compute mod b variations for direct comparison to ipout_pmodb
+c     compute mod b variations for direct comparison to gpout_pmodb
 c-----------------------------------------------------------------------
          call iscdftb(mfac,mpert,curvfun,mtheta,curvmns(istep,:))
          call iscdftb(mfac,mpert,divxfun,mtheta,divxmns(istep,:))
@@ -1353,7 +1355,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write data.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_pmodbmn_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_pmodbmn_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IDIAG_PMODBMN: "//
      $     "Components in perturbed mod b"
@@ -1376,18 +1378,18 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_unit)
 
-      CALL ipeq_dealloc
+      CALL gpeq_dealloc
       CALL fspline_dealloc(fmodb)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_pmodbmn
+      END SUBROUTINE gpdiag_pmodbmn
 c-----------------------------------------------------------------------
-c     subprogram 12. ipdiag_rzphibx.
+c     subprogram 12. gpdiag_rzphibx.
 c     write r,z,phi,b,x on hamada coordinates.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_rzphibx(egnum,xspmn)
+      SUBROUTINE gpdiag_rzphibx(egnum,xspmn)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1431,12 +1433,12 @@ c-----------------------------------------------------------------------
 c     computation.
 c-----------------------------------------------------------------------
       WRITE(*,*)"Computing rzphibx components"
-      CALL ipeq_alloc
+      CALL gpeq_alloc
       DO istep=1,rstep
          CALL spline_eval(sq,psis(istep),0)
-         CALL ipeq_sol(psis(istep))
-         CALL ipeq_contra(psis(istep))
-         CALL ipeq_cova(psis(istep))
+         CALL gpeq_sol(psis(istep))
+         CALL gpeq_contra(psis(istep))
+         CALL gpeq_cova(psis(istep))
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -1489,13 +1491,13 @@ c-----------------------------------------------------------------------
          xps(istep,:)=t33*xvz_fun
          bps(istep,:)=t33*bvz_fun
       ENDDO
-      CALL ipeq_dealloc
+      CALL gpeq_dealloc
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_rzphibx_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_rzphibx_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_RZPHIBX: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_RZPHIBX: "//
      $     "Give rzphibx information in hamada coordinates"
       WRITE(out_unit,'(1x,a8,1x,I6)')"rstep=",rstep
       WRITE(out_unit,'(1x,a8,1x,I6)')"mthsurf=",mthsurf
@@ -1523,12 +1525,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_rzphibx
+      END SUBROUTINE gpdiag_rzphibx
 c-----------------------------------------------------------------------
-c     subprogram 13. ipdiag_rzpgrid.
+c     subprogram 13. gpdiag_rzpgrid.
 c     diagnose hamada coordinates inverted from rzphi.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_rzpgrid(nr,nz)
+      SUBROUTINE gpdiag_rzpgrid(nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1569,8 +1571,8 @@ c-----------------------------------------------------------------------
       xint=(x2-x1)/nr
       zint=(z2-z1)/nz
 
-      CALL ascii_open(out_unit,"ipdiag_rzpgrid.out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_RZPGRID: "//
+      CALL ascii_open(out_unit,"gpec_diagnostics_rzpgrid.out","UNKNOWN")
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_RZPGRID: "//
      $     "Give hamada coordinates as functions of rzphi"
       WRITE(out_unit,'(6(1x,a12))')"r","z","limit","psi","theta","phi"
 
@@ -1634,12 +1636,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_rzpgrid
+      END SUBROUTINE gpdiag_rzpgrid
 c-----------------------------------------------------------------------
-c     subprogram 14. ipdiag_rzpdiv.
+c     subprogram 14. gpdiag_rzpdiv.
 c     check divergence of rzphi functions.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
+      SUBROUTINE gpdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1700,10 +1702,10 @@ c-----------------------------------------------------------------------
       CALL bicube_dealloc(rfz)
       CALL bicube_dealloc(ifz)
 
-      CALL ascii_open(out_unit,"ipdiag_rzpdiv_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_rzpdiv_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       
-      WRITE(out_unit,*)"IPEC_RZPDIV: Divergence in rzphi grid"
+      WRITE(out_unit,*)"GPEC_RZPDIV: Divergence in rzphi grid"
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
      $     "re(div)","im(div)","abs(div)"
       
@@ -1719,12 +1721,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_rzpdiv     
+      END SUBROUTINE gpdiag_rzpdiv
 c-----------------------------------------------------------------------
-c     subprogram 15. ipdiag_radvar.
+c     subprogram 15. gpdiag_radvar.
 c     generate various radial variables.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_radvar
+      SUBROUTINE gpdiag_radvar
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1742,9 +1744,9 @@ c-----------------------------------------------------------------------
       psitor(:)=qs%fsi(:,1)/qintb
       rhotor(:)=SQRT(psitor(:))
       CALL spline_dealloc(qs)
-      CALL ascii_open(out_unit,"ipdiag_radvar_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_radvar_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_RADVAR: "//
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_RADVAR: "//
      $     "Various radial variables"
       WRITE(out_unit,'(1x,a8,1x,I6)')"mstep=",mstep
       WRITE(out_unit,'(1x,a8,1x,es16.8)')"qintb=",qintb
@@ -1758,12 +1760,12 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_radvar
+      END SUBROUTINE gpdiag_radvar
 c-----------------------------------------------------------------------
-c     subprogram 15. ipdiag_permeabev_orthogonality.
+c     subprogram 15. gpdiag_permeabev_orthogonality.
 c     diagnose orhtogonality of eigenvectors.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_permeabev_orthogonality
+      SUBROUTINE gpdiag_permeabev_orthogonality
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1773,9 +1775,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_permeabevorthogonality_n"//
-     $                         TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_PERMEABEVORTHOGONALITY: "//
+      CALL ascii_open(out_unit,"gpec_diagnostics_permeabevorthogonality"
+     $     //"_n"//TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_PERMEABEVORTHOGONALITY: "//
      $     "Diagnose orhtogonality of permeability eigenvectors"
       WRITE(out_unit,*)
       WRITE(out_unit,'(2(1x,a3),4(1x,a16))')"m1","m2","A1","A2",
@@ -1796,13 +1798,13 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_permeabev_orthogonality
+      END SUBROUTINE gpdiag_permeabev_orthogonality
       
 c-----------------------------------------------------------------------
-c     subprogram 16. ipdiag_reluctpowout.
+c     subprogram 16. gpdiag_reluctpowout.
 c     diagnose coordinate independence of power normalized eigenvalues.
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_reluctpowout(rout,bpout,bout,rcout)
+      SUBROUTINE gpdiag_reluctpowout(rout,bpout,bout,rcout)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1823,10 +1825,10 @@ c-----------------------------------------------------------------------
       DO i=1,mpert
          temp = 0
          temp(i) = 1.0
-         CALL ipeq_weight(psilim,temp,mfac,mpert,2)
+         CALL gpeq_weight(psilim,temp,mfac,mpert,2)
          sqrta(:,i) = temp
       ENDDO
-      ! start with IPEC flux matrix
+      ! start with GPEC flux matrix
       mat = reluctmats(resp_index,:,:)
       ! convert to bsqrt(A)
       mat=MATMUL(MATMUL(sqrta,mat),sqrta)
@@ -1842,9 +1844,9 @@ c      (while bcoords fills the rows)
 c-----------------------------------------------------------------------
       mato = reluctmats(resp_index,:,:)
       DO j=1,mpert
-         CALL ipeq_bcoords(psilim,mato(:,j),mfac,
+         CALL gpeq_bcoords(psilim,mato(:,j),mfac,
      $        mpert,rout,bpout,bout,rcout,0,1)
-         !CALL ipeq_weight_out(psilim,mato(j,:),mfac,mpert,1) ! field to flux
+         !CALL gpeq_weight_out(psilim,mato(j,:),mfac,mpert,1) ! field to flux
       ENDDO
       ! convert to bsqrt(A)
       sqrtao = 0 ! Need easy way to get fldflxmat from ipout
@@ -1854,10 +1856,10 @@ c-----------------------------------------------------------------------
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,mato,mpert,evo,work,lwork,rwork,info)
       
-      CALL ascii_open(out_unit,"ipdiag_reluctpowout_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_reluctpowout_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPDIAG_RELUCTPOWOUT: Reluctance matrix "//
-     $     "power eigenvalue calculation in output coordinates."
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_RELUCTPOWOUT: Reluctance "//
+     $     "matrix power eigenvalue calculation in output coordinates."
       WRITE(out_unit,*)
       WRITE(out_unit,*)"jac_out=",jac_out,"tmag_out=",0,"jsurf_out=",0
       WRITE(out_unit,*)"resp_index=",resp_index
@@ -1889,14 +1891,14 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_reluctpowout
+      END SUBROUTINE gpdiag_reluctpowout
 c-----------------------------------------------------------------------
-c     subprogram 17. ipdiag_dw_matrix.
+c     subprogram 17. gpdiag_dw_matrix.
 c     Some specific applications to test the ipout matrix calculations
-c     - Compare dw profile to ipout_dw profile
+c     - Compare dw profile to gpout_dw profile
 c     - Compare eigenvalues to post.py optimize_torque
 c-----------------------------------------------------------------------
-      SUBROUTINE ipdiag_dw_matrix(coil_flag)
+      SUBROUTINE gpdiag_dw_matrix(coil_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1957,7 +1959,7 @@ c-----------------------------------------------------------------------
       DO ipert=1,mpert
          fldflxmn=0
          fldflxmn(ipert)=1.0
-         CALL ipeq_weight(psilim,fldflxmn,mfac,mpert,2)
+         CALL gpeq_weight(psilim,fldflxmn,mfac,mpert,2)
          fldflxmat(:,ipert)=fldflxmn*sqrt(jarea)
       ENDDO
       WRITE(*,*)
@@ -2044,9 +2046,9 @@ c-----------------------------------------------------------------------
          optorq%fs(0,1)=tprof(1)-(tprof(2)-tprof(1))/
      $        (psifac(2)-psifac(1))*(psifac(1)-psifac(0))
          CALL cspline_fit(optorq,"extrap")
-         CALL ascii_open(out_unit,"ipdiag_dw_matrix_profile_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_dw_diag: "//
+         CALL ascii_open(out_unit,"gpec_diagnostics_dw_matrix_profile"
+     $        //"_n"//TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_dw_diag: "//
      $        "Energy and torque profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2065,9 +2067,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write general response matrix functions.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_dw_matrix_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_dw_matrix_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_dw_matrix: "//
+      WRITE(out_unit,*)"GPEC_dw_matrix: "//
      $     "Self-consistent response matrix functions."
       WRITE(out_unit,*)
 
@@ -2092,9 +2094,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate maximum torque eigenvalues.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"ipdiag_dw_eigen_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_dw_eigen_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_dw_eigen: "//
+      WRITE(out_unit,*)"GPEC_dw_eigen: "//
      $     "Eigenvalue profiles by self-consistent solutions."
       WRITE(out_unit,*)
 
@@ -2119,9 +2121,9 @@ c-----------------------------------------------------------------------
             tvec2=MATMUL(temp1,tvec1)
             tprof(istep)=DOT_PRODUCT(tvec1,tvec2)
          ENDDO
-         CALL ascii_open(out_unit,"ipdiag_dw_minimum_torque_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_dw_diag: "//
+         CALL ascii_open(out_unit,"gpec_diagnostics_dw_minimum_torque"
+     $        //"_n"//TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_dw_diag: "//
      $        "Energy and torque profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2138,9 +2140,9 @@ c-----------------------------------------------------------------------
       temp1=(gresp(mstep,:,:)+CONJG(TRANSPOSE(gresp(mstep,:,:))))/2.0
       CALL zhetrf('L',mpert,temp1,mpert,ipiv,work3,mpert*mpert,info)
 
-      CALL ascii_open(out_unit,"ipdiag_dw_ratio_eigen_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_dw_ratio_eigen_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"IPEC_dw_ratio_eigen: "//
+      WRITE(out_unit,*)"GPEC_dw_ratio_eigen: "//
      $     "Eigenvalue profiles by self-consistent solutions."
       WRITE(out_unit,*)
 
@@ -2189,9 +2191,9 @@ c-----------------------------------------------------------------------
      $           (psifac(2)-psifac(1))*(psifac(1)-psifac(0))
          ENDDO
          CALL cspline_fit(optorq,"extrap")
-         CALL ascii_open(out_unit,"ipdiag_dw_optimized_torque_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_dw_diag: "//
+         CALL ascii_open(out_unit,"gpec_diagnostics_dw_optimized_torque"
+     $        //"_n"//TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_dw_diag: "//
      $        "Energy and torque profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2236,9 +2238,9 @@ c----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write coil response matrix functions.
 c-----------------------------------------------------------------------
-         CALL ascii_open(out_unit,"ipdiag_coil_matrix_n"//
+         CALL ascii_open(out_unit,"gpec_diagnostics_coil_matrix_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_coil_matrix: "//
+         WRITE(out_unit,*)"GPEC_coil_matrix: "//
      $        "Self-consistent coil response matrix functions."
          WRITE(out_unit,*)
 
@@ -2258,9 +2260,9 @@ c-----------------------------------------------------------------------
 c     calculate maximum coil eigenvalues.
 c-----------------------------------------------------------------------
          WRITE(*,*) "Writing coil response eigenvectors and eigenvalues"
-         CALL ascii_open(out_unit,"ipdiag_coil_eigen_n"//
+         CALL ascii_open(out_unit,"gpec_diagnostics_coil_eigen_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_coil_eigen: "//
+         WRITE(out_unit,*)"GPEC_coil_eigen: "//
      $        "Coil eigenvalue profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2286,9 +2288,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate maximum torque-ratio TT^{-1}_b coil eigenvalues.
 c-----------------------------------------------------------------------
-         CALL ascii_open(out_unit,"ipdiag_coil_ratio_eigen_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"IPEC_coil_ratio_eigen: "//
+         CALL ascii_open(out_unit,"gpec_diagnostics_coil_ratio_eigen"
+     $        //"_n"//TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_coil_ratio_eigen: "//
      $        "Eigenvalue profiles by self-consistent solutions."
          WRITE(out_unit,*)
 
@@ -2328,6 +2330,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE ipdiag_dw_matrix
+      END SUBROUTINE gpdiag_dw_matrix
 
-      END MODULE ipdiag_mod
+      END MODULE gpdiag_mod

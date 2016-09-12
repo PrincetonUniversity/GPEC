@@ -546,7 +546,7 @@ c-----------------------------------------------------------------------
             write ( 60, 555 )  ( vacmat(j1,j2), j2=1,jmax1 )
          enddo
          close ( 60 )
-      elseif ( (ldcon .eq. 1).or.(lipec .eq. 1)) then
+      elseif ( (ldcon .eq. 1).or.(lgpec .eq. 1)) then
          open ( 62, file='vacdcon', status='unknown', form='formatted'
      .        ,recl=160)
          ndcon = n + 0.001

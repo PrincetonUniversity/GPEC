@@ -15,7 +15,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE rdcon_mod
-      USE ipglobal_mod
+      USE gpglobal_mod
       USE idcon_mod
       USE ismath_mod
       IMPLICIT NONE
@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)rsing,rnqty,rnx
       IF (rsing /= msing) THEN
          WRITE(message,'(a)')"GPEC needs the same msing number"
-         CALL ipec_stop(message)
+         CALL gpec_stop(message)
       ENDIF
       ALLOCATE(rsoltype(rsing),rpsifac(0:rnx)) 
       rsoltype(:)%msol=rsing

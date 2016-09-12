@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 
-Regression Test - Test Coordinate Transformed IO between IPEC and PENTRC
+Regression Test - Test Coordinate Transformed IO between GPEC and PENTRC
 =================================================================================
 
 :Date: 08/02/2016
@@ -67,9 +67,9 @@ def run(repo=repo, loc=None):
     inputs['coil']['COIL_CONTROL']['data_dir'] = repo + '/coil'
 
     # output transformed coordinate perturbation profiles
-    inputs['ipec']['IPEC_OUTPUT']['pmodb_flag'] = True
-    # output diagnostic working coordinate perturbation profiles from ipec
-    inputs['ipec']['IPEC_DIAGNOSE']['pmodbmn_flag'] = True
+    inputs['gpec']['GPEC_OUTPUT']['pmodb_flag'] = True
+    # output diagnostic working coordinate perturbation profiles from gpec
+    inputs['gpec']['GPEC_DIAGNOSE']['pmodbmn_flag'] = True
     # output diagnostic working coordinate perturbation profiles from pentrc
     if 'indebug' in inputs['pentrc']['PENT_ADMIN']:
         inputs['pentrc']['PENT_ADMIN']['indebug'] = True
@@ -79,12 +79,12 @@ def run(repo=repo, loc=None):
     # run mix of cases
     for coord in ['pest', 'hamada']:
         for t in [0, 1]:
-            inputs['ipec']['IPEC_OUTPUT']['jac_out'] = coord
-            inputs['ipec']['IPEC_OUTPUT']['tmag_out'] = t
+            inputs['gpec']['GPEC_OUTPUT']['jac_out'] = coord
+            inputs['gpec']['GPEC_OUTPUT']['tmag_out'] = t
             inputs['pentrc']['PENT_INPUT']['jac_in'] = coord
             inputs['pentrc']['PENT_INPUT']['tmag_in'] = t
             gpec.run(loc='{l}/{c}{t}'.format(l=loc, c=coord, t=t), rundir=rundir, qsub=True, mem=2e3, mailon='',
-                     rundcon=True, runipec=True, runpentrc=True, **inputs)
+                     rundcon=True, rungpec=True, runpentrc=True, **inputs)
 
     return True
 
@@ -99,7 +99,7 @@ def check(loc=loc,m=2):
 
     """
     loc = loc.rstrip('/')
-    files = ['ipdiag_pmodb_n1.out', 'ipdiag_pmodbmn_n1.out', 'pentrc_peq_n1.out']
+    files = ['gpec_diagnostics_pmodb_n1.out', 'gpec_diagnostics_pmodbmn_n1.out', 'pentrc_peq_n1.out']
     results = {}
 
     fx, ax = plt.subplots(2, 2, sharey=True, sharex=True)
