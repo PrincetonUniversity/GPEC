@@ -1,22 +1,22 @@
 
-FFLAGS = -I../equil -I../harvest
-F90 = $(FC) $(FFLAGS)
+include ../install/DEFAULTS.inc
+
+FFLAGS =
+IFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
+export FFLAGS # for sub-makes
 
 .f.o:
 	$(F90) -c $*.f
 
-LIBDIR = \
-	-L${LAPACKHOME} \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-llsode \
 	-lequil \
 	-lvac \
 	-lharvest \
-	-llapack \
-	-lblas
+	-lpentrc
 
 OBJS = \
 	debug.o \
@@ -31,8 +31,30 @@ OBJS = \
 	resist.o \
 	dcon.o
 
+all: harvest lsode equil vacuum pentrc dcon
+
+harvest:
+	cd ../; git submodule init; git submodule update
+	cd ../harvest; make FC=$(FC) CC=$(CC) GACODE_ROOT= -f Makefile libharvest.a
+	mkdir -p ../lib
+	cp -f ../harvest/libharvest.a ../lib/
+
+lsode:
+	cd ../lsode; make
+
+equil:
+	cd ../equil; make
+
+vacuum:
+	cd ../vacuum; make
+
+pentrc:
+	cd ../pentrc; make
+
 dcon: $(OBJS)
-	$(F90) -o dcon $(OBJS) $(LIBS)
+	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
+	mkdir -p ../bin
+	cp -f dcon ../bin
 
 # dependencies
 
@@ -46,7 +68,7 @@ ode_output.o: dcon_mod.o sing.o debug.o
 ode.o: ode_output.o
 free.o: ode.o
 resist.o: dcon_mod.o
-dcon.o: bal.o mercier.o ode.o free.o resist.o
+dcon.o: bal.o mercier.o ode.o free.o resist.o ../pentrc/inputs.o ../pentrc/dcon_interface.o ../pentrc/pentrc_interface.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff dcon

@@ -11,13 +11,14 @@ module utilities
     !   All variables are public
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     use params, only: r8,twopi
+    use netcdf
     
     implicit none
     
@@ -55,6 +56,90 @@ module utilities
         return
     end function get_free_file_unit
     
+    !=======================================================================
+    function to_upper(strIn) result(strOut)
+    !----------------------------------------------------------------------- 
+    !*DESCRIPTION: 
+    !   Capitalize a string.
+    !   Adapted from http://www.star.le.ac.uk/~cgp/fortran.html (25 May 2012)
+    !   Original author: Clive Page
+    !
+    !*ARGUMENTS:
+    !   lu_max : integer.
+    !       Maximum unit.
+    !
+    !*RETURNS:
+    !     integer.
+    !        Free unit.
+    !-----------------------------------------------------------------------
+    
+         implicit none
+    
+         character(len=*), intent(in) :: strIn
+         character(len=len(strIn)) :: strOut
+         integer :: i,j
+    
+         do i = 1, len(strIn)
+              j = iachar(strIn(i:i))
+              if (j>= iachar("a") .and. j<=iachar("z") ) then
+                   strOut(i:i) = achar(iachar(strIn(i:i))-32)
+              else
+                   strOut(i:i) = strIn(i:i)
+              end if
+         end do
+    
+    end function to_upper
+
+    !=======================================================================
+    function btoi(bool) result(ibool)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Convert logical variable to integer.
+    !
+    !*ARGUMENTS:
+    !   bool : logical.
+    !       True of False.
+    !
+    !*RETURNS:
+    !     integer.
+    !        0 or 1.
+    !-----------------------------------------------------------------------
+
+         implicit none
+
+         logical, intent(in) :: bool
+         integer :: ibool
+
+         ibool = 0
+         if(bool) ibool=1
+
+    end function btoi
+
+    !=======================================================================
+    function itob(ibool) result(bool)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Convert integer variable to logical.
+    !
+    !*ARGUMENTS:
+    !   ibool : integer.
+    !       Any integer variable
+    !
+    !*RETURNS:
+    !     logical.
+    !        True if ibool>0.
+    !-----------------------------------------------------------------------
+
+         implicit none
+
+         integer, intent(in) :: ibool
+         logical :: bool
+
+         bool = .false.
+         if(ibool>0) bool=.true.
+
+    end function itob
+
     !=======================================================================
     subroutine progressbar (j,jstart,jstop,op_step,op_percent)
     !----------------------------------------------------------------------- 
@@ -138,16 +223,16 @@ module utilities
             mins = (secs-hrs*60*60)/60
             secs = secs-hrs*60*60-mins*60
             if(present(unit))then
-                write(unit,"(1x,a,1p,e10.3,a)")"total cpu time = ",seconds," seconds"
+                write(unit,"(1x,a,1p,e10.3,a)")"Total cpu time = ",seconds," seconds"
             else
                 if(hrs>0)then
-                    print *,"total cpu time = ",hrs," hours, ", &
+                    print *,"Total cpu time = ",hrs," hours, ", &
                         mins," minutes, ",secs," seconds"
                 elseif(mins>0)then
-                    print *,"total cpu time = ", &
+                    print *,"Total cpu time = ", &
                         mins," minutes, ",secs," seconds"
                 else
-                    print *,"total cpu time = ",secs," seconds"
+                    print *,"Total cpu time = ",secs," seconds"
                 endif
             endif
         endif
@@ -318,16 +403,14 @@ module utilities
         character(32), dimension(:), allocatable :: titles,dummies
         logical, optional :: verbose,debug
         ! declare local variables
-        integer :: i,j,k,l,in_unit,iostat,startline,endline,ncol
+        integer :: i,j,k,l,in_unit,startline,endline,ncol
         character(1024) :: line
         character(10) :: numbers = '1234567890'
         character(2) :: signs = '+-'
-        logical :: fexists,isnum
+        logical :: isnum
         
         ! setup
         if(.not. present(debug)) debug = .false.
-        !inquire(file=file,exist=fexists)
-        !if(.not. fexists) stop "File does not exist"
         if(verbose) print *, "Reading table from file: "
         if(verbose) print *, '  '//trim(file)
         if(allocated(table)) deallocate(table)
@@ -421,8 +504,7 @@ module utilities
         logical, optional :: op_sorted
         ! declare local variables
         logical,dimension(:), allocatable::mask
-        real(r8),dimension(:), allocatable::tmp
-        integer::i,j,num
+        integer::i,num
         logical :: sorted
         sorted = .FALSE.
         if(present(op_sorted)) sorted=op_sorted
@@ -471,7 +553,7 @@ module utilities
         real(r8), dimension(1:), intent(in) :: array
         real(r8) :: median
         real(r8), dimension(:), allocatable :: temp
-        integer :: i,n
+        integer :: n
         
   
         ! make a copy of array that is sorted min to max
@@ -587,6 +669,104 @@ module utilities
     end function  cpnorm
     
     !=======================================================================
+    function ri(c)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Return the real and imaginary components of a complex value as a tuple.
+    !
+    !*ARGUMENTS:
+    !    c : complex
+    !       Complex value.
+    !
+    !-----------------------------------------------------------------------
+        implicit  none
+        complex(r8), intent(in) :: c
+
+        real(r8), dimension(2) :: ri
+
+        ri = (/ REAL(c), AIMAG(c) /)
+    end function  ri
+
+    !=======================================================================
+    subroutine append_1d(list, element)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Append a 1D allocatable array.
+    !
+    !*ARGUMENTS:
+    !    list : real, allocatable
+    !       1D array to be appended.
+    !    element: real
+    !       Number appended to end of list.
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        ! declarations
+        integer :: isize
+        real(r8), intent(in) :: element
+        real(r8), dimension(:), allocatable, intent(inout) :: list
+        real(r8), dimension(:), allocatable :: tmp
+
+        if(allocated(list)) then
+            isize = size(list)
+            allocate(tmp(isize+1))
+            tmp(1:isize) = list(:)
+            tmp(isize+1) = element
+            deallocate(list)
+            !call move_alloc(tmp, list) ! fortran 2003 standard
+            allocate(list(isize+1))
+            list(:) = tmp(:)
+            deallocate(tmp)
+        else
+            allocate(list(1))
+            list(1) = element
+        end if
+
+      end subroutine append_1d
+
+    !=======================================================================
+    subroutine append_2d(list, elements)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Append a 2D allocatable array.
+    !
+    !*ARGUMENTS:
+    !    list : real, allocatable
+    !       2D array to be appended.
+    !    elements: real
+    !       1D array appended to 1st dimension of list.
+    !
+    !-----------------------------------------------------------------------
+        implicit none
+        ! declarations
+
+        integer :: isize,jsize
+        real(r8), intent(in) :: elements(:)
+        real(r8), dimension(:,:), allocatable, intent(inout) :: list
+        real(r8), dimension(:,:), allocatable :: tmp
+
+        if(allocated(list)) then
+            isize = size(list,dim=1)
+            jsize = size(list,dim=2)
+            if (isize /= size(elements,dim=1)) stop "Cannot append arrays without matched dimensions"
+            allocate(tmp(isize,jsize+1))
+            tmp(:,1:jsize) = list(:,:)
+            tmp(:,jsize+1) = elements(1:isize)
+            deallocate(list)
+            !call move_alloc(tmp, list) ! fortran 2003 standard
+            allocate(list(isize,jsize+1))
+            list(:,:) = tmp(:,:)
+            deallocate(tmp)
+        else
+            isize = size(elements,dim=1)
+            jsize = 1
+            allocate(list(isize,jsize))
+            list(:,1) = elements(1:isize)
+        end if
+
+      end subroutine append_2d
+
+    !=======================================================================
     subroutine iscdftf(m,ms,func,fs,funcm)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
@@ -657,5 +837,25 @@ module utilities
         func(fs)=func(0)
         return
     end subroutine iscdftb
-    
+
+    !=======================================================================
+    subroutine check(stat)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Check if a netcdf call was successful. If not, raise an error.
+    !
+    !*ARGUMENTS:
+    !    stat : integer
+    !       Status returned by a netcdf library function
+    !
+    !-----------------------------------------------------------------------
+        integer, intent (in) :: stat
+        !stop if it is an error.
+        if(stat /= nf90_noerr) then
+          print *, trim(nf90_strerror(stat))
+          stop "ERROR: failed to write/read netcdf file"
+        endif
+        return
+    end subroutine check
+
 end module utilities

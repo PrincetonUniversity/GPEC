@@ -1,0 +1,69 @@
+&PENT_INPUT
+    kinetic_file="kinetic.txt"          ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
+    peq_file  = "gpec_xclebsch_n1.out"  ! Ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha)
+    idconfile = "euler.bin"             ! Dcon output
+    data_dir = "."                      ! Location of pre-formed fnml matrix used in rlar and clar methods (check release package)
+
+    mi = 2                              ! Main ion mass (u)
+    zi = 1                              ! Main ion charge (e)
+    mimp = 12                           ! Impurity mass (u)
+    zimp = 6                            ! Impurity charge (e)
+    nl = 6                              ! Bounce harmonic range (-nl to nl)
+    electron = .false.                  ! Electron contribution
+    nutype = "harmonic"                 ! Collision operator: "zero", "krook", "harmonic"
+    f0type = "maxwellian"               ! Distribution function: "maxwellian"
+    jac_in = "pest"                     ! Jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
+    jsurf_in=0                          ! True(1) if peq_file is area weighted
+    tmag_in =1                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
+/
+&PENT_CONTROL
+    wefac = 1                           ! Artificial factor applied to omega_EXB
+    wdfac = 1                           ! Artificial factor applied to omega_b
+    wpfac = 1                           ! Artificial factor applied to omega_phi
+    nufac = 1                           ! Artificial factor applied to collision operator
+    divxfac = 1                         ! Artificial factor applied to div xi_perp
+
+    atol_xlmda = 1e-12                  ! Absolute tolerance in energy and pitch integration
+    rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
+    atol_psi = 1e4                     ! Absolute tolerance in psi_n integration
+    rtol_psi = 1e-3                     ! Relative tolerance in psi_n integration
+    ntheta = 128                        ! Poloidal angle grid for bounce integration
+    nlmda = 128                         ! Pitch grid for omega_D, oemga_b, dJdJ
+
+    xmax = 128                          ! Upper bound of energy integral (x=E/T)
+    ximag = 0.0                         ! Step off real energy axis (use to avoid zero collisionality singularities)
+    psilims = 0 1                        ! Range in psi_n
+/
+&PENT_OUTPUT
+    moment = "pressure"                 ! Use 'pressure' for torque and particle transport, 'heat' for heat transport
+
+    fgar_flag = .true.                  ! Full    general aspect ratio calculation
+    tgar_flag = .true.                  ! Trapped general aspect ratio calculation
+    pgar_flag = .false.                 ! Passing general aspect ratio calculation
+    clar_flag = .false.                 ! Circular large aspect ratio calculation
+    rlar_flag = .true.                  ! Reduced large aspect ratio calculation
+    fcgl_flag = .false.                 ! Fluid Chew-Goldberger-Low limit
+    wxyz_flag = .false.                 ! Euler-lagrange equation matrix output at psiout
+    fkmm_flag = .false.                 ! Full euler-lagrange matrix calculation (t,p also available)
+    ftmm_flag = .false.                 ! Full torque mxm matrix calculation (t,p also available)
+    fwmm_flag = .false.                 ! Full dW mxm matrix calculation (t,p also available)
+
+    xlmda_out = .false.                 ! Output energy and pitch integrands on psi_out
+    theta_out = .false.                 ! Output bounce integrands on psi_out
+    psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs
+
+    equil_grid = .false.                ! Recalculate each requested method on equilibrium grid from DCON
+    input_grid = .false.                ! Recalculate each requested method on input displacements' grid
+
+    verbose = .true.                    ! Print progress to terminal
+    clean = .false.                     ! Remove pentrc_*.out before running
+/
+&PENT_ADMIN
+    fnml_flag = .false.                 ! Special function matrix [JKP PRL 2009]
+    ellip_flag = .false.                ! Elliptic integral functions
+    diag_flag = .false.                 ! Diagnostic module
+    indebug = .false.                   ! Debug input file parsing and manipulations
+    tdebug = .false.                    ! Debug psi integration
+    lambdadebug = .false.               ! Debug pitch integration
+    xdebug = .false.                    ! Debug energy integration
+/

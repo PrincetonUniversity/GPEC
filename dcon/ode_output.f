@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
  30   FORMAT(3x,"mlow",4x,"m",2x,"mhigh",2x,"isol",2x,"msol"//5i6/)
- 40   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 40   FORMAT(1x,a,es10.3,a,f6.3)
 c-----------------------------------------------------------------------
 c     allocate space for asymptotic coefficients.
 c-----------------------------------------------------------------------
@@ -83,6 +83,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)mband,mthsurf0,mthvac,psio,
      $        psilow,psilim,qlim,singfac_min
          WRITE(euler_bin_unit)power_b,power_r,power_bp
+         WRITE(euler_bin_unit)kin_flag,con_flag
          ! from sum1 equilibrium descriptions
          WRITE(euler_bin_unit) amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
@@ -146,7 +147,7 @@ c     print initial point of integration.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psifac,0)
       q=sq%f(4)
-      IF(verbose) WRITE(*,40)"psi = ",psifac,", q = ",q
+      IF(verbose) WRITE(*,40)"psi =",psifac,", q = ",q
 c-----------------------------------------------------------------------
 c     open file for error output.
 c-----------------------------------------------------------------------
@@ -168,6 +169,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_output_step(unorm)
 
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: xss
       REAL(r8), DIMENSION(:), INTENT(IN) :: unorm
 c-----------------------------------------------------------------------
 c     compute and print critical data for each time step.
@@ -178,9 +180,18 @@ c-----------------------------------------------------------------------
 c     write solutions.
 c-----------------------------------------------------------------------
       IF(bin_euler .AND. mod(istep,euler_stride) == 0)THEN
+         CALL sing_der(neq,psifac,u,du)
          WRITE(euler_bin_unit)1
          WRITE(euler_bin_unit)psifac,q,msol
          WRITE(euler_bin_unit)u
+         WRITE(euler_bin_unit)ud
+c-----------------------------------------------------------------------
+c     obsolete diagnostics.
+c-----------------------------------------------------------------------
+c         WRITE(euler_bin_unit)f1mats
+c         WRITE(euler_bin_unit)k1mats
+c         WRITE(euler_bin_unit)k1aats
+c         WRITE(euler_bin_unit)g1aats
       ENDIF
 c-----------------------------------------------------------------------
 c     output solutions components for each time step.
@@ -204,13 +215,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,es10.3,a,f6.3)
  20   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
 c-----------------------------------------------------------------------
 c     close crit files.
 c-----------------------------------------------------------------------
-      WRITE(term_unit,10)"psi = ",psifac,", q = ",q
+      WRITE(term_unit,10)"psi =",psifac,", q = ",q
       WRITE(crit_out_unit,20)
       CALL ascii_close(crit_out_unit)
       WRITE(crit_bin_unit)
@@ -262,7 +273,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(/a,i4,1p,2(a,e9.3))
+ 10   FORMAT(/a,i4,1p,2(a,es10.3))
  20   FORMAT(/5x,"i",5x,"eval",7x,"evali",7x,"err"/)
  30   FORMAT(i6,1p,3e11.3)
 c-----------------------------------------------------------------------
@@ -285,7 +296,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute and sort inverse eigenvalues.
 c-----------------------------------------------------------------------
-      lwork=2*mpert-1  
+      lwork=2*mpert-1
       CALL zheev('N','U',mpert,wp,mpert,evalsi,work,lwork,rwork,info)
       indexi=(/(ipert,ipert=1,mpert)/)
       key=-ABS(evalsi)
@@ -295,7 +306,7 @@ c     write ascii eigenvalues.
 c-----------------------------------------------------------------------
       IF(out_evals .AND. istep > 0)THEN
          WRITE(evals_out_unit,10)"istep = ",istep,
-     $        ", psifac = ",psifac,", q = ",q
+     $        ", psifac =",psifac,", q = ",q
          WRITE(evals_out_unit,20)
          WRITE(evals_out_unit,30)(ipert,
      $        evalsi(indexi(ipert)),evals(index(ipert)),

@@ -1,7 +1,10 @@
 
-FFLAGS = -I../equil -I../harvest
+include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS)
+FFLAGS =
+IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
+export FFLAGS
 
 .f.o:
 	$(F90) -c $*.f
@@ -9,17 +12,12 @@ F90 = $(FC) $(FFLAGS)
 %.o: %.f90
 	$(F90) -c $<
 
-LIBDIR = \
-	-L${LAPACKHOME} \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-llsode \
 	-lequil \
-	-lharvest \
-	-llapack \
-	-lblas
+	-lharvest
 
 OBJS = \
 	dcon_interface.o \
@@ -37,10 +35,26 @@ OBJS = \
 	pentrc_interface.o \
 	pentrc.o
 
+all: harvest lsode equil pentrc
+
+harvest:
+	cd ../; git submodule init; git submodule update
+	cd ../harvest; make FC=$(FC) CC=$(CC) GACODE_ROOT= -f Makefile libharvest.a
+	mkdir -p ../lib
+	cp -f ../harvest/libharvest.a ../lib/
+
+lsode:
+	cd ../lsode; make
+
+equil:
+	cd ../equil; make
+
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) $(LIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
+	mkdir -p ../bin
+	cp -f pentrc ../bin
 
 # dependencies
 
@@ -56,8 +70,8 @@ energy.o:  params.o utilities.o lsode2.o
 pitch.o:   params.o utilities.o lsode1.o energy.o special.o
 torque.o:  params.o utilities.o special.o dcon_interface.o inputs.o energy.o pitch.o
 diagnostics.o: params.o special.o energy.o pitch.o
-pentrc.o:  utilities.o special.o energy.o pitch.o torque.o inputs.o diagnostics.o 
-pentrc_interface.o: params.o utilities.o inputs.o energy.o pitch.o torque.o
+pentrc_interface.o: params.o utilities.o special.o inputs.o energy.o pitch.o torque.o diagnostics.o
+pentrc.o:  params.o pentrc_interface.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin pentrc

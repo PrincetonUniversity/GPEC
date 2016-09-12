@@ -11,6 +11,11 @@ PYPEC Source documentation
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: pypec.post
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: pypec.gpec
    :members:
    :undoc-members:

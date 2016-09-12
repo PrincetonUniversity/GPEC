@@ -4,7 +4,7 @@
 ============================
 
 Python modules for data visualization and postprocessing, 
-as well as python wrappers for IPEC and PENT.
+as well as python wrappers for GPEC and PENT.
 
 :Author: 
   N.C. Logan
@@ -18,15 +18,15 @@ Python at PPPL
 ==============
 
 To set up python on portal at PPPL, insert the 
-following lines into your .bashrc file:
+following lines into your .bashrc file::
 
   export PYTHONPATH=$PYTHONPATH:/path/to/gpec
   module load anaconda/2.3.0
   
-..note: Anaconda is the most complete and current python distribution
-available at pppl. Users can also use locally built python/2.7.2, but
-will loose 3D plotting capabilities and may experience problems reading
-large data files.
+.. note:: Anaconda is the most complete and current python distribution
+    available at pppl. Users can also use locally built python/2.7.2, but
+    will loose 3D plotting capabilities and may experience problems reading
+    large data files.
 
 Obviously, "/path/to/gpec" needs to be replaced with the path
 to your installation of the GPEC package (containing the pypec directory).
@@ -34,11 +34,11 @@ to your installation of the GPEC package (containing the pypec directory).
 For tcsh shell users, replace export with setenv syntax
 and insert in .cshrc.
 
-..note: Mayavi's default gui api is not consistent with the anaconda
-interactive python default. To enable 3D plotting, you must add
-"export QT_API=pyqt" to your .bashrc or a similar line to your .cshrc.
+.. note:: Mayavi's default gui api is not consistent with the anaconda
+    interactive python default. To enable 3D plotting, you must add
+    "export QT_API=pyqt" to your .bashrc or a similar line to your .cshrc.
 
-To put the changes into effect:
+To put the changes into effect::
 
   $ source ~/.bashrc
 
@@ -77,7 +77,7 @@ Using the Best Environement
 The ipython (interactive) environment is recomended for commandline
 data analysis. To start, it is easiest to auto-import a number of 
 basic mathematic and visualization modules and use an enhanced 
-interactivity for displaying figures. To do this enter:
+interactivity for displaying figures. To do this enter::
 
   $ ipython --pylab
 
@@ -97,8 +97,8 @@ There may be a few warnings/hints... take them or leave them.
 # This file tells python to treat the folder as a package
 
 # for "from package import *" to work use __all__ = ["file1","file2",...]
-__all__ = ['data','gpec']#,'namelist','modplot']
+__all__ = ['data','gpec','post']#,'namelist','modplot']
 
-import gpec,data,synthetics,modplot
+import gpec,data,post,synthetics,modplot
 import numpy as np
 

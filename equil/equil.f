@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
 
       NAMELIST/equil_control/eq_filename,eq_type,grid_type,mpsi,mtheta,
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
-     $     power_b,jac_method,convert_type,power_flag
+     $     power_b,jac_method,convert_type,power_flag,etol
       NAMELIST/equil_output/bin_2d,bin_eq_1d,bin_eq_2d,out_2d,out_eq_1d,
      $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose
 c-----------------------------------------------------------------------
@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=equil_control)
       READ(UNIT=in_unit,NML=equil_output)
       CALL ascii_close(in_unit)
-      IF(verbose) WRITE(*,'(1x,a,1p,e9.3)')"psihigh = ",psihigh
+      IF(verbose) WRITE(*,'(1x,a,es10.3)')"psihigh =",psihigh
       psihigh=MIN(psihigh,1._r8)
 c-----------------------------------------------------------------------
 c     define Jacobian.
@@ -69,6 +69,10 @@ c-----------------------------------------------------------------------
          power_r=0
       CASE("boozer")
          power_b=2
+         power_bp=0
+         power_r=0
+      CASE("park")
+         power_b=1
          power_bp=0
          power_r=0
       CASE("other")

@@ -1,20 +1,20 @@
 
-FFLAGS = -I../equil
-F90 = $(FC) $(FFLAGS)
+include ../install/DEFAULTS.inc
+
+FFLAGS =
+IFLAGS = -I../equil
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
+export FFLAGS # for sub-makes
+
 
 .f.o:
 	$(F90) -c $*.f
 
-LIBDIR = \
-	-L${LAPACKHOME} \
-	-L../lib
+LIBDIR = ../lib
 
 LIBS = \
-	$(LIBDIR) \
 	-lequil \
-	-llsode \
-	-llapack \
-	-lblas
+	-llsode
 
 OBJS = \
 	qsort.o \
@@ -28,8 +28,18 @@ OBJS = \
 	resist.o \
 	match.o
 
+all: lsode equil
+
+lsode:
+	cd ../lsode; make
+
+equil:
+	cd ../equil; make
+
 match: $(OBJS)
-	$(F90) -o match $(OBJS) $(LIBS)
+	$(F90) -o match $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	mkdir -p ../bin
+	cp -f match ../bin
 
 # dependencies
 

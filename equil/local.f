@@ -52,6 +52,7 @@ c-----------------------------------------------------------------------
       CHARACTER(10) :: date,time,zone
       INTEGER, DIMENSION(8) :: values
       REAL(4), SAVE :: seconds
+      INTEGER :: hrs,mins,secs
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -66,8 +67,16 @@ c-----------------------------------------------------------------------
          CALL DATE_AND_TIME(date,time,zone,values)
          seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
      $        -seconds
-         WRITE(unit,10)"Total cpu time = ",seconds," seconds"
-         WRITE(*,10)"Total cpu time = ",seconds," seconds"//CHAR(7)
+         secs = int(seconds)
+         hrs = secs/(60*60)
+         mins = (secs-hrs*60*60)/60
+         secs = secs-hrs*60*60-mins*60
+         IF (.TRUE.) THEN ! could limit to IF(verbos) if use global_mod
+            PRINT *,"Total cpu time for DCON = ",
+     $              mins," minutes, ",secs," seconds"
+            WRITE(unit,10)"Total cpu time = ",seconds," seconds"
+         ENDIF
+         !WRITE(*,10)"Total cpu time = ",seconds," seconds"//CHAR(7)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

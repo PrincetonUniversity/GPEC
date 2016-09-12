@@ -1,5 +1,6 @@
 
-#FFLAGS = -g
+include ../install/DEFAULTS.inc
+
 FFLAGS =
 F90 = $(FC) $(FFLAGS)
 

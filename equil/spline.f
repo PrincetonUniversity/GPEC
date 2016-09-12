@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(2) :: x0
       CHARACTER(6), DIMENSION(:), POINTER :: title
       CHARACTER(6) :: name
-      LOGICAL :: periodic
+      LOGICAL :: periodic,allocated
       END TYPE spline_type
       
       CONTAINS
@@ -79,6 +79,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(spl%xpower(2,nqty))
       spl%xpower=0
       spl%x0=0
+      spl%allocated = .TRUE.
       NULLIFY(spl%fsi)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -108,6 +109,7 @@ c-----------------------------------------------------------------------
       DEALLOCATE(spl%fs1)
       DEALLOCATE(spl%xpower)
       IF(ASSOCIATED(spl%fsi))DEALLOCATE(spl%fsi)
+      spl%allocated = .FALSE.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

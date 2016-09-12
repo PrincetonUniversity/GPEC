@@ -1,27 +1,29 @@
-&equil_control
-	eq_type="efit"
-   	eq_filename = "/p/gpec/users/jpark/data/equilibria/efit/142301_C94/EQDSK.OUT.CHEASE.NSTX_142301_C94_7800_7950.06"
-	eq_filename="/p/gpec/users/jpark/data/equilibria/efit/g144182.03750.qo105_d3d"
-	jac_type="hamada"
-	power_bp=0
-	power_b=0
-	power_r=0
+&EQUIL_CONTROL
+    eq_type="efit"       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
+    eq_filename = "../docs/examples/DIIID_example/g147131.02300_DIIID_KEFIT" ! Path to input file
 
-	grid_type="ldp"
-	psilow=1e-3
-	psihigh=0.99
-	mpsi=128
-	mtheta=256
-	newq0=0
-	input_only=f
+    jac_type="hamada"    ! Working coordinate system for all DCON and GPEC calculations. Overrides individual powers. Accepts hamada, pest, boozer, equal_arc
+    power_bp=0           ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+    power_b=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+    power_r=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+
+    grid_type="ldp"      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp or original. ldp packs points near the core and edge.
+    psilow=1e-2          ! Minimum value of psi, normalized from 0 to 1
+    psihigh=0.99         ! Maximum value of psi, normalized from 0 to 1
+    mpsi=64              ! Number of radial grid intervals for equilibrium quantities
+    mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
+    newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
+    etol=1e-7            ! Tolerance in equilibrium field integrations
+
+    input_only=f         ! Generate information about the input and then quit with no further calculation
 /
-&equil_output
-	gse_flag=t
-	out_eq_1d=f
-	bin_eq_1d=f
-	out_eq_2d=f
-	bin_eq_2d=t
-	out_2d=f
-	bin_2d=t
-	dump_flag=f
+&EQUIL_OUTPUT
+    gse_flag=f           ! Produces diagnostic output for accuracy of solution to Grad-Shafranov equation
+    out_eq_1d=f          ! Ascii output of 1D equilibrium file data
+    bin_eq_1d=f          ! Binary output of 1D equilibrium file data
+    out_eq_2d=f          ! Ascii output of 2D equilibrium file data
+    bin_eq_2d=t          ! Binary output of 2D equilibrium file data (set true for GPEC)
+    out_2d=f             ! Ascii output of processed 2D data
+    bin_2d=f             ! Binary output of processed 2D data
+    dump_flag=f          ! Binary dump of basic equilibrium data and 2D rzphi spline
 /

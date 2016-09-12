@@ -1,49 +1,123 @@
 Outputs and Post-Processing
 ***************************
 
+
+
+Choice of Spectral Decomposition
+=================================
+
+When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember
+
+1. GPEC uses a right handed magnetic coordinate system decomposed in :math:`\exp(im\theta-in\phi)`.
+2. GPEC effectively uses CCW :math:`\phi` for left-handed (LH) configurations, but CW :math:`\phi` for right-handed (RH) configurations.
+3. GPEC always uses upward outboard :math:`\theta`.
+
+The result of this is that the pitch-aligned field will always be positive m. This convention makes in-house analysis nice and easy. For example, one can *always* plot the m=2 perturbed normal displacement profile and see the resonant surface behavior at q=2. The m=-2 normal displacement will always be nonresonant. This is shown in the figure below from the package DIII-D example, which is a LH plasma.
+
+.. image:: _static/example_xno_kinkprofile.png
+   :width: 400px
+   :align: center
+
+For another example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface. We always look here for kink amplification.
+
+.. image:: _static/example_bnm_positiveamplified.png
+   :width: 400px
+   :align: center
+
+The convention does require some awareness from the user when interfacing with real-space quantities and/or other codes though. For example, the user does need to know that the spectrum rotates by :math:`-\phi` if real space coil rotates by :math:`\phi` in a RH configuration.
+
+To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the gpec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.
+
+
+Comparing to Real Space Quantities
+-----------------------------------
+
+In the real space representation decomposed in :math:`\exp(-in\phi)` with CCW :math:`\phi`, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW :math:`\phi` (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by :math:`\exp(im\theta-in\phi)`, the complex conjugate operation does not simply restore CCW \phi for RH configurations. It will also flip up and down.
+
+
+Interfacing with SURFMN
+------------------------
+
+SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard :math:`\theta`. However, it expands in :math:`\exp(-im\theta-in\phi)` and always uses a CCW :math:`\phi`. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.
+
+As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,
+
+.. code-block:: python
+
+   m_surfmn = helicity * m_gpec
+   b_surfmn = real(b_m) - i * helicity * imag(b_m).
+
+For LH configurations only the sign of m is flipped (according to 1). For RH configurations, m remains unchanged but the complex conjugate is taken (the combined effect of to 1 & 2).
+
+
+Interfacing with VACUUM
+------------------------
+
+Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW :math:`\phi` and downward outboard :math:`\theta`. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.
+
+
+Coordinates
+============
+
+There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,
+
+1. The 'working coordinates' defined by jac_type in equil.in.
+2. The 'input coordinates' defined by jac_in, tmag_in, and jsurf_in when applicable.
+3. The 'output coordinates' defined by jac_out, tmag_out, and jsurf_out when applicable.
+
+The DCON working coordinate system is used for nearly all internal calculations in the GPEC package, but the external drive may be prescribed in input coordinates (2) and the final perturbed equilibrium results may be converted to output coordinates (3). The working coordinates are magnetic cooridinates. The input and output coordinates may be converted to cylindrical :math:`\phi` using the tmag_in or tmag_out variables.
+
+The gpec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the 'jacobian' attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the gpec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.
+
+
+
+
+
+
+
 Output Files
 ============
 
-The IPEC outputs are entirely specified by flags (bool types t or f) set in the IPEC_output section of IPEC.in. All outputs are ASCII files, and can be grouped into two major categories.
+The GPEC outputs are entirely specified by flags (bool types t or f) set in the GPEC_output section of GPEC.in. All outputs are ASCII files, and can be grouped into two major categories.
 
 ASCII File Outputs
 ------------------
 
-A number of the flag options in IPEC.in instruct IPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.
+A number of the flag options in GPEC.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.
 
 Outputs Always Available
 
-These IPEC outputs can always be obtained from a equil.bin file output from DCON. 
+These GPEC outputs can always be obtained from a equil.bin file output from DCON.
 
-IPEC_response_n#.out
+GPEC_response_n#.out
 
     **Flag** resp_flag
 
     **Info** Energy for DCON eigenmodes and stability indices. Eigenvalues and eigenvectors for vacuum and plasma inductance (virtual casing currents to fields), plasma permeability (external fields to total fields), and plasma reluctance.
 
-IPEC_singcoup_matrix_n#.out
+GPEC_singcoup_matrix_n#.out
 
     **Flag** singcoup_flag
 
     **Info** The coupling matrix to resonant fields, coupling matrix to singular currents, and to island half-widths is given for each rational surface within the plasma (q=2, 3, etc) for each surface the real and imaginary coupling constants are given for each poloidal mode number on the control surface.
 
-IPEC_singcoup_svd_n#.out
+GPEC_singcoup_svd_n#.out
 
     **Flag** singcoup_flag
 
-    **Info** The SVD singular values (s) and eigen vectors for each coupling matrix in IPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.
+    **Info** The SVD singular values (s) and eigen vectors for each coupling matrix in GPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.
 
 Outputs Available When Error Field is Provided
 
-These outputs are only available when an external error field file is provided as an input to IPEC. This means IPEC.in must have the data_flag turned on and a infile specified.
+These outputs are only available when an external error field file is provided as an input to GPEC. This means GPEC.in must have the data_flag turned on and a infile specified.
 
-IPEC_control_n#.out
+GPEC_control_n#.out
 
     **Flag** 
 
     **Info** The Plasma response for an external perturbation on the control surface. This includes the vacuum energy, surface energy, plasma energy, real and imaginary vacuum input \mathbf{B}_{in} and total field on plasma boundary\mathbf{B}_{out}as a function of poloidal mode number.
 
-IPEC_singfld_n#.out
+GPEC_singfld_n#.out
 
     **Flag** singfld_flag
 
@@ -53,21 +127,21 @@ IPEC_singfld_n#.out
 
     **Info** Additional section showing the overlap field and overlap percentage for each eigenmode in the singcoup_svd output.
 
-IPEC_pmod_n#.out
+GPEC_pmod_n#.out
 
     **Flag** pmodb_flag
 
     **Info** Eulerian and Lagrangian \left|\mathbf{B}\right|(real and imaginary) for each poloidal mode number at each value of \Psi_{N} output. This output is necessary for NTV post processing.
 
-IPEC_xbnormal_n#.out
+GPEC_xbnormal_n#.out
 
     **Flag** xbnormal_flag
 
     **Info** The normal components of the displacement, magnetic field without the plasma response, and magnetic field with the plasma response included for each poloidal mode number at each value of \Psi_{N} output.??
 
-IPEC_*rzphi_n#.out
+GPEC_*rzphi_n#.out
 
-A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a IPEC_xrzphi_n1.out file. some common properties of these files are:
+A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a GPEC_xrzphi_n1.out file. some common properties of these files are:
 
 • real and imaginary components: Output files contain two dimensional data on an \left(r,z\right) grid for a single toroidal harmonic. To translate into three dimensions, perform the transformationB\left(r,z,\phi\right)=B_{real}\left(r,z\right)\cos\left(n\phi\right)+B_{imag}\left(r,z\right)\sin\left(n\phi\right)
  
@@ -88,7 +162,7 @@ A number of output files have a similar structure. Here the * in the file name i
 
     **Flag** vbrzphi_flag
 
-    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the IPEC boundary surface current composed of both the vacuum component and the plasma response.
+    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current composed of both the vacuum component and the plasma response.
 
     **Flag** vpbrzphi_flag
 
@@ -96,11 +170,11 @@ A number of output files have a similar structure. Here the * in the file name i
 
     **Flag** vvbrzphi_flag
 
-    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the IPEC boundary surface current from the external fields alone.
+    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current from the external fields alone.
 
     **Flag** ssbrzphi_flag
 
-    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the IPEC boundary surface current from the external fields alone.
+    **Info** The false perturbed magnetic field in the vacuum region on the \left(r,z,\phi\right) grid calculated using the GPEC boundary surface current from the external fields alone.
 
 Binary File Outputs
 -------------------
@@ -134,55 +208,4 @@ bnormal_spectrum.bin
 xdraw
 =====
 
-The binary IPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by IPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.
-
-IDL NTV Post Processing
-=======================
-
-The calculation of neoclassical toroidal viscosity (NTV) requires knowledge of many plasma properties. These the 3D magnetic field within the plasma \delta B
-  given by IPEC, as well as external variables such as pressure profiles, velocity profiles, and more that are not included in IPEC itself. To calculate an estimate of the NTV torque it is necessary to specify additional profile information with either measured data or analytical formulae. Either way, it should be emphasized that the calculation is a post-processing of IPEC data that is not self consistent with the IPEC solution. This is a reasonable estimate as long as the torque is not great enough to significantly effect the equilibrium.
-
-A review of the NTV calculation and definitions of the involved variables can be found in Ref. [Park, 2009]. For the detailed mathematics, although important, are not the subject of this manual. The important highlights for the user to keep in mind are the following: 
-
-• Necessary profiles include the toroidal rotationV_{\phi}, pressure P, and magnetic field B.
-
-– Force balance and the neoclassical value of the poloidal velocity are used to calculate the radial electric field.qn\left(E_{r}-v_{\phi}B_{\theta}+v_{\theta}B_{\phi}\right)	=	\frac{\partial P}{\partial r}  v_{\theta}	=	\frac{c_{p}}{eB_{\theta}}\frac{\partial T_{i}}{\partial r}\approx\frac{1.17}{eB_{\theta}}\frac{\partial T_{i}}{\partial r}
- 
-
-– Specifically, the experimental profiles used are ion temperature T_{i}, electron temperature T_{e}, electron density n_{e}, impurity density n_{iz}, the effective charge Z_{eff}, and toroidal rotation V_{\phi}. Optionally the E\times B rotation and deuterium rotation can be specified as well.
-
-• The integral over \kappa^{2}=\left[E-\mu B_{0}\left(1-\epsilon\right)\right]/2\mu B_{0}\epsilon is approximated away. ?
-
-• There are multiple distinct regimes of collisional and methods of dealing with them. In the post processing these are output as variables with the prefixes
-
-– CP \rightarrow Collisional Plateau regimes transport estimated by Shaing [Zhu2006, and references therein].
-
-– IN \rightarrow Generalized combination of the 1/\nu and \nu regimes. This is the most trusted result at the time of this manual's writing.
-
-Run Instructions
-----------------
-
-The first step in an NTV calculation for any given shot is to run the corresponding IPEC calculation. The output files necessary are the control, singfld, and pmodb, files. These should use the functional outputs. 
-
-Having obtained the required output files, the user should enter the IDL environment and run one of the two NTV routines. These routines are 'total_energy_torque.pro' and 'simple_energy_torque.pro'. The first requires full experimental data and should be initialized in the package script found at '/u/jpark/analysis/lib/init_routines_jkp.idl', while the second defines analytic profiles for the necessary variables in order to calculate results from IPEC outputs and can be used on its own. 
-
-An example of the run process within the IDL environment is shown here::
-
-  IDL> @/u/jpark/analysis/lib/init_routines_jkp.idl
-  IDL> gfile='g145117.03600_d3d_kinetic' ;efit equilibrium
-  IDL> kdir = 'samplepath' ;directory of GA kinetic file 
-  IDL> path1 = 'samplepath' ;directory of equilibrium file
-  IDL> path2 = 'samplepath' ;directory of IPEC outputs 
-  IDL> numstr = '145117.03600'	;shot.time
-  IDL> t = total_energy_torque(nn=3,/adata,/atime, kdir=kdir,gfile=gfile,/diamag,/magpre,/counter,path1=path1,path2=path2,nl=8,numstr=numstr)
-
-The result can be saved using::
-
-  IDL> save,file='t145117.03600_d3d_kinetic_ievenc1_counter.tsav',t
-
-or the user's choice of save file path. The result holds a huge amount of information. The structure can be found using the command::
-
-  IDL> help, /str, tor 
-  IDL> help, /str, t.TOT.L.NTVetc.
-
-This example uses a number of specific call words, and there are many more that can be examined by looking into the nuts and bolts of the script 'total_energy_torque.pro'. So as not to leave the reader hanging, we will quickly review the calls used above. The keywords '/adata' and '/atime' tell the routine that it will be using data from Andrea Garofalo, the structure of which has been hard-coded into the routine and would need to be edited for any new data format. The keyword '/counter' changes the sign of some of Andrea Garofalo's data to be consistent with other conventions. The keywords '/diamag' and '/magpre' tell the routine to use the diamagnetic rotation and magnetic precession respectively, and should be called for almost all non-debugging calculation purposes. Finally, the variable 'nl' specifies the number of bounce harmonics to include in the calculation. There are many other arguments that could be passed to the total_energy_torque such as specifying a separate machine, or individual profiles. However, the user will be required to familiarize themselves with the internal structures of the function and the data before extending themselves to use its full functionality.
+The binary GPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by GPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.

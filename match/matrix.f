@@ -359,9 +359,9 @@ c     diagnose form factors.
 c-----------------------------------------------------------------------
       WRITE(format1,10)mbit/2+1,mbit/2+3
       WRITE(format2,20)mbit,mbit
-      WRITE(out_unit,'(4x,a,i1,1p,2(a,e9.3))')
+      WRITE(out_unit,'(4x,a,i1,2(a,es10.3))')
      $     "poly_form_type = ",poly_form_type,
-     $     ", ff0 = ",ff0,", ff1 = ",ff1
+     $     ", ff0 =",ff0,", ff1 =",ff1
       WRITE(out_unit,format1)
       WRITE(out_unit,format2)(index(iterm),index(iterm),
      $     ff(index(iterm)),iterm=0,mterm)
@@ -473,9 +473,9 @@ c     diagnose form factors.
 c-----------------------------------------------------------------------
       WRITE(format1,10)mbit/2+1,mbit/2+3
       WRITE(format2,20)mbit,mbit
-      WRITE(out_unit,'(4x,a,i1,1p,2(a,e9.3))')
+      WRITE(out_unit,'(4x,a,i1,2(a,es10.3))')
      $     "poly_form_type = ",poly_form_type,
-     $     ", ff0 = ",ff0,", ff1 = ",ff1
+     $     ", ff0 =",ff0,", ff1 =",ff1
       WRITE(out_unit,format1)
       WRITE(out_unit,format2)(index(iterm),index(iterm),
      $     ff(index(iterm)),iterm=0,mterm)
@@ -585,10 +585,10 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,20)(iterm,index(iterm),REAL(det(index(iterm))),
      $     REAL(deta(index(iterm))),error(index(iterm)),iterm=0,mterm)
       WRITE(out_unit,10)
-      WRITE(*,'(1x,1p,2(a,e9.3))')
-     $     "errmax = ",errmax,", errmin = ",errmin
-      WRITE(out_unit,'(1x,1p,2(a,e9.3)/)')
-     $     "errmax = ",errmax,", errmin = ",errmin
+      WRITE(*,'(1x,2(a,es10.3))')
+     $     "errmax =",errmax,", errmin =",errmin
+      WRITE(out_unit,'(1x,2(a,es10.3)/)')
+     $     "errmax =",errmax,", errmin =",errmin
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
