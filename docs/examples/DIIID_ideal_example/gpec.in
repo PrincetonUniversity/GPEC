@@ -1,4 +1,4 @@
-&gpec_input
+&GPEC_INPUT
    dcon_dir   = ''                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = 'euler.bin'          ! Eigenfunctions output by DCON run
    ieqfile    = 'psi_in.bin'         ! Flux surfaces output by DCON run
