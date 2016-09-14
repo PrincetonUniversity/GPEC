@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb
+     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -221,7 +221,7 @@ c-----------------------------------------------------------------------
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          IF(verbose) WRITE(*,*)"Computing free boundary energies"
          ALLOCATE(ud(mpert,mpert,2))
-         CALL free_run(plasma1,vacuum1,total1,nzero)
+         CALL free_run(plasma1,vacuum1,total1,nzero,netcdf_out)
          DEALLOCATE(ud)
       ELSE
          plasma1=0
