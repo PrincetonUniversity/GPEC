@@ -16,7 +16,9 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
-     $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag
+     $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag,
+     $     netcdf_flag,ascii_flag
+
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,mlim_out,

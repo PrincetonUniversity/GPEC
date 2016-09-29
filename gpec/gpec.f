@@ -56,7 +56,8 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
-     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag
+     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
+     $     netcdf_flag,ascii_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -136,6 +137,8 @@ c-----------------------------------------------------------------------
       vvbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
+      netcdf_flag=.TRUE.
+      ascii_flag=.TRUE.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
       max_linesout=0
@@ -448,7 +451,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
-      CALL gpout_init_netcdf
+      IF (netcdf_flag) CALL gpout_init_netcdf
       IF (resp_flag) THEN
          CALL gpout_response(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,jsurf_out)

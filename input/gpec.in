@@ -72,9 +72,13 @@
    nz = 124                 ! Number of vertical grid points in rzphi outputs
    fun_flag=f               ! Write outputs to (r,z) in addition to default (psi,m)
    flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
+
+   netcdf_flag=t            ! Write all outputs in netcdf files
+   ascii_flag=t             ! Write all outputs in ascii tables
+   max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    bin_flag=f               ! Write binary outputs for use with xdraw
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
-   max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
+
    verbose=t                ! Print run log to terminal
 /
 &GPEC_DIAGNOSE
