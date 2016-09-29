@@ -1377,6 +1377,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
       LOGICAL, INTENT(IN) :: svd_flag
 
+      INTEGER :: i_id,q_id,p_id,c_id,w_id,k_id
+
       INTEGER :: itheta,ising
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
       COMPLEX(r8) :: lbwp1mn,rbwp1mn
@@ -1389,7 +1391,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,
      $     novf,novs,novi
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
-     $     ovf,ovs,ovi
+     $     ovf,ovs,ovi,singflx
       COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
@@ -1516,6 +1518,41 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
       ENDIF
 
+      IF(netcdf_flag)THEN
+         CALL check( nf90_open(fncfile,nf90_write,fncid) )
+         CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+         CALL check( nf90_inq_dimid(fncid,"q_rat",q_id) )
+         CALL check( nf90_redef(fncid))
+         CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
+     $      (/q_id,i_id/), p_id) )
+         CALL check( nf90_put_att(fncid, p_id, "units", "Wb") )
+         CALL check( nf90_put_att(fncid, p_id, "long_name",
+     $     "Pitch resonant flux") )
+         CALL check( nf90_def_var(fncid, "I_res", nf90_double,
+     $      (/q_id,i_id/), c_id) )
+         CALL check( nf90_put_att(fncid, c_id, "units", "A") )
+         CALL check( nf90_put_att(fncid, c_id, "long_name",
+     $     "Pitch resonant current") )
+         CALL check( nf90_def_var(fncid, "w_isl", nf90_double,
+     $      (/q_id/), w_id) )
+         CALL check( nf90_put_att(fncid, w_id, "units", "m") )
+         CALL check( nf90_put_att(fncid, w_id, "long_name",
+     $     "Full width of I_res island") )
+         CALL check( nf90_def_var(fncid, "K_isl", nf90_double,
+     $      (/q_id/), k_id) )
+         CALL check( nf90_put_att(fncid, k_id, "long_name",
+     $     "Chirikov parameter of I_res islands") )
+         CALL check( nf90_enddef(fncid) )
+         singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
+         CALL check( nf90_put_var(fncid, p_id,
+     $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, c_id,
+     $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
+         CALL check( nf90_put_var(fncid, k_id, chirikov) )
+         CALL check( nf90_close(fncid) )
+      ENDIF
+
       ! log singular response with harvest
       DO ising=1,msing
          aq(ising) = singtype(ising)%q
@@ -1559,6 +1596,8 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,*)
          ENDIF
 
+         ! information already in netcdf from control_filter subroutine
+
          ! log svd response with harvest
          ierr=set_harvest_payload_dbl_array(hlog,'overlap_percent'//nul,
      $        novf,msing)
@@ -1585,6 +1624,8 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(msing) :: vflxmn
       REAL(r8), DIMENSION(0:mthsurf) :: unitfun
+
+      INTEGER :: i_id,q_id,p_id,w_id,k_id
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -1652,6 +1693,33 @@ c-----------------------------------------------------------------------
      $           visland_hwidth(ising),vchirikov(ising)
          ENDDO
          CALL ascii_close(out_unit)
+      ENDIF
+
+      IF(netcdf_flag)THEN
+         CALL check( nf90_open(fncfile,nf90_write,fncid) )
+         CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+         CALL check( nf90_inq_dimid(fncid,"q_rat",q_id) )
+         CALL check( nf90_redef(fncid))
+         CALL check( nf90_def_var(fncid, "Phi_res_v", nf90_double,
+     $      (/q_id,i_id/), p_id) )
+         CALL check( nf90_put_att(fncid, p_id, "units", "Wb") )
+         CALL check( nf90_put_att(fncid, p_id, "long_name",
+     $     "Pitch resonant vacuum flux") )
+         CALL check( nf90_def_var(fncid, "w_isl_v", nf90_double,
+     $      (/q_id/), w_id) )
+         CALL check( nf90_put_att(fncid, w_id, "units", "m") )
+         CALL check( nf90_put_att(fncid, w_id, "long_name",
+     $     "Full width of vacuum island") )
+         CALL check( nf90_def_var(fncid, "K_isl_v", nf90_double,
+     $      (/q_id/), k_id) )
+         CALL check( nf90_put_att(fncid, k_id, "long_name",
+     $     "Chirikov parameter of vacuum islands") )
+         CALL check( nf90_enddef(fncid) )
+         CALL check( nf90_put_var(fncid, p_id,
+     $      RESHAPE((/REAL(vflxmn), AIMAG(vflxmn)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, w_id, 2*visland_hwidth) )
+         CALL check( nf90_put_var(fncid, k_id, vchirikov) )
+         CALL check( nf90_close(fncid) )
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -5549,7 +5617,7 @@ c-----------------------------------------------------------------------
       INTEGER:: i,midid,mmdid,medid,mtdid,
      $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
      $   mivid,mmvid,mevid,mtvid,fivid,fmvid,fpvid,ftvid,
-     $   civid,crvid,czvid,id,fileids(3)
+     $   frdid,frvid,fqdid,fqvid,civid,crvid,czvid,id,fileids(3)
       INTEGER, DIMENSION(mpert) :: mmodes
 c-----------------------------------------------------------------------
 c     set variables
@@ -5600,6 +5668,11 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(fncid,"theta_dcon",mthsurf+1, ftdid) )
       CALL check( nf90_def_var(fncid,"theta_dcon",nf90_double,
      $     ftdid,ftvid) )
+      CALL check( nf90_def_dim(fncid,"q_rat",msing, fqdid) )
+      CALL check( nf90_def_var(fncid,"q_rat",nf90_double,fqdid,fqvid))
+      CALL check( nf90_def_dim(fncid,"psi_n_rat",msing, frdid) )
+      CALL check( nf90_def_var(fncid,"psi_n_rat",nf90_double,
+     $     frdid,frvid))
       CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
 
       IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
@@ -5644,6 +5717,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(fncid,fmvid,lmfac) )
       CALL check( nf90_put_var(fncid,fpvid,psifac(1:mstep)) )
       CALL check( nf90_put_var(fncid,ftvid,theta) )
+      CALL check( nf90_put_var(fncid,frvid,
+     $   (/(singtype(i)%psifac,i=1,msing)/)) )
+      CALL check( nf90_put_var(fncid,fqvid,
+     $   (/(singtype(i)%q,i=1,msing)/)) )
 
       IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
       CALL check( nf90_put_var(cncid,civid,(/0,1/)) )
