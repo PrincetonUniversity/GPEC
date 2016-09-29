@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: out_bal2=.FALSE.
       LOGICAL :: bin_bal1=.FALSE.
       LOGICAL :: bin_bal2=.FALSE.
+      LOGICAL :: out_fund=.FALSE.
       LOGICAL :: out_fmat=.FALSE.
       LOGICAL :: out_gmat=.FALSE.
       LOGICAL :: out_kmat=.FALSE.

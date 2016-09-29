@@ -34,6 +34,8 @@
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
 /
 &DCON_OUTPUT
+    out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
+
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
