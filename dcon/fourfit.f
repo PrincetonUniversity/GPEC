@@ -184,7 +184,7 @@ c-----------------------------------------------------------------------
      $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,dbat,ebat,fbat
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu,fmatlu
 
-      LOGICAL, PARAMETER :: diagnose=.FALSE.
+      LOGICAL :: diagnose=.FALSE.
       INTEGER, PARAMETER :: unit=99
 
       mfac =(/(m,m=mlow,mhigh)/)
