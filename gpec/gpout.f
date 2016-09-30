@@ -1518,7 +1518,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
       ENDIF
 
-      IF(netcdf_flag)THEN
+      IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
          CALL check( nf90_inq_dimid(fncid,"q_rat",q_id) )
@@ -1695,7 +1695,7 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
       ENDIF
 
-      IF(netcdf_flag)THEN
+      IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
          CALL check( nf90_inq_dimid(fncid,"q_rat",q_id) )
@@ -1829,7 +1829,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: gcoil
 
       INTEGER :: p_id,j_id,m_id,c_id,k_id,i_id,ci_id,cp_id,m1_id,m2_id,
-     $    te_id,tc_id
+     $    te_id,tc_id,sl_id,cn_id
 
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
@@ -2021,6 +2021,9 @@ c-----------------------------------------------------------------------
      $                  coil_num, k_id) )
             CALL check( nf90_def_var(fncid, "coil_index_prime",
      $                  nf90_int, (/k_id/), cp_id) )
+            CALL check( nf90_def_dim(fncid,"coil_strlen",24,sl_id))
+            CALL check( nf90_def_var(fncid, "coil_name", nf90_char,
+     $                  (/sl_id, c_id/), cn_id) )
             CALL check( nf90_def_var(fncid, "T_coil", nf90_double,
      $                  (/p_id, c_id, k_id, i_id/), tc_id) )
             CALL check( nf90_put_att(fncid,tc_id,"long_name",
@@ -2029,6 +2032,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_enddef(fncid) )
             CALL check( nf90_put_var(fncid, ci_id,(/(i,i=1,coil_num)/)))
             CALL check( nf90_put_var(fncid, cp_id,(/(i,i=1,coil_num)/)))
+            CALL check( nf90_put_var(fncid,cn_id,coil_name(1:coil_num)))
             CALL check( nf90_put_var(fncid, tc_id,RESHAPE((/REAL(gcoil),
      $                  AIMAG(gcoil)/), (/mstep,coil_num,coil_num,2/))))
             CALL check( nf90_close(fncid) )
@@ -5652,9 +5656,11 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"mode",nf90_int,medid,mevid))
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
       CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
-      CALL check( nf90_def_dim(mncid,"q_rat",msing, mqdid) )
-      CALL check( nf90_def_var(mncid,"q_rat",nf90_double,mqdid,mqvid))
-      CALL check( nf90_def_var(mncid,"m_rat",nf90_int,mqdid,mrvid))
+      IF(msing>0)THEN
+         CALL check( nf90_def_dim(mncid,"q_rat",msing, mqdid) )
+         CALL check(nf90_def_var(mncid,"q_rat",nf90_double,mqdid,mqvid))
+         CALL check( nf90_def_var(mncid,"m_rat",nf90_int,mqdid,mrvid))
+      ENDIF
       CALL check( nf90_put_att(mncid,nf90_global,"jacobian",jac_type))
       CALL check( nf90_put_att(mncid,nf90_global,"helicity",helicity))
       CALL check( nf90_put_att(mncid,nf90_global,"q_lim",qlim))
@@ -5672,10 +5678,12 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(fncid,"theta_dcon",mthsurf+1, ftdid) )
       CALL check( nf90_def_var(fncid,"theta_dcon",nf90_double,
      $     ftdid,ftvid) )
-      CALL check( nf90_def_dim(fncid,"q_rat",msing, fqdid) )
-      CALL check( nf90_def_var(fncid,"q_rat",nf90_double,fqdid,fqvid))
-      CALL check( nf90_def_var(fncid,"psi_n_rat",nf90_double,
-     $     fqdid,frvid))
+      IF(msing>0)THEN
+         CALL check( nf90_def_dim(fncid,"q_rat",msing, fqdid) )
+         CALL check(nf90_def_var(fncid,"q_rat",nf90_double,fqdid,fqvid))
+         CALL check( nf90_def_var(fncid,"psi_n_rat",nf90_double,
+     $        fqdid,frvid))
+      ENDIF
       CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
 
       IF(debug_flag) PRINT *," - Defining cylindrical netcdf globals"
@@ -5714,20 +5722,24 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(mncid,mmvid,mfac) )
       CALL check( nf90_put_var(mncid,mevid,mmodes) )
       CALL check( nf90_put_var(mncid,mtvid,theta) )
-      CALL check( nf90_put_var(mncid,mrvid,
-     $   (/(INT(singtype(i)%q*nn),i=1,msing)/)) )
-      CALL check( nf90_put_var(mncid,mqvid,
-     $   (/(singtype(i)%q,i=1,msing)/)) )
+      IF(msing>0)THEN
+         CALL check( nf90_put_var(mncid,mrvid,
+     $      (/(INT(singtype(i)%q*nn),i=1,msing)/)) )
+         CALL check( nf90_put_var(mncid,mqvid,
+     $      (/(singtype(i)%q,i=1,msing)/)) )
+      ENDIF
 
       IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
       CALL check( nf90_put_var(fncid,fivid,(/0,1/)) )
       CALL check( nf90_put_var(fncid,fmvid,lmfac) )
       CALL check( nf90_put_var(fncid,fpvid,psifac(1:mstep)) )
       CALL check( nf90_put_var(fncid,ftvid,theta) )
-      CALL check( nf90_put_var(fncid,frvid,
-     $   (/(singtype(i)%psifac,i=1,msing)/)) )
-      CALL check( nf90_put_var(fncid,fqvid,
-     $   (/(singtype(i)%q,i=1,msing)/)) )
+      IF(msing>0)THEN
+         CALL check( nf90_put_var(fncid,frvid,
+     $      (/(singtype(i)%psifac,i=1,msing)/)) )
+         CALL check( nf90_put_var(fncid,fqvid,
+     $      (/(singtype(i)%q,i=1,msing)/)) )
+      ENDIF
 
       IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
       CALL check( nf90_put_var(cncid,civid,(/0,1/)) )

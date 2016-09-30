@@ -481,6 +481,10 @@ c-----------------------------------------------------------------------
             PRINT *,"WARNING: singfld_flag not supported with con_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
+         ELSEIF (msing==0) THEN
+            PRINT *,"WARNING: no rationals for singfld_flag"
+            singfld_flag = .FALSE.
+            vsingfld_flag = .FALSE.
          ELSE
             CALL gpout_singfld(mode,xspmn,sing_spot,singcoup_flag)
          ENDIF
