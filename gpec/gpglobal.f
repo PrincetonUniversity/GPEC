@@ -218,24 +218,21 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: mode
       INTEGER, INTENT(IN), OPTIONAL :: opunit
 
-      CHARACTER(10) :: date,time,zone
-      INTEGER, DIMENSION(8) :: values
+      REAL(4) :: time
       REAL(4), SAVE :: start,split
       INTEGER :: hrs,mins,secs,msec
 
       ! get time
-      CALL DATE_AND_TIME(date,time,zone,values)
+      CALL CPU_TIME(time)
 
       IF(mode==0)THEN ! start timer
-         start=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+         start=time
          split=0
       ELSEIF(mode==-2)THEN ! Reset split
-         split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
-     $         -start
+         split=time-start
       ELSEIF(mode>0)THEN ! outputs
          IF(mode==2)THEN ! write split (time since last call)
-            split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
-     $            -start-split
+            split=time-start-split
             secs = INT(split)
             hrs = secs/(60*60)
             mins = (secs-hrs*60*60)/60
@@ -259,8 +256,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ENDIF
          ! write total time since start
-         split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
-     $         -start
+         split=time-start
          secs = INT(split)
          hrs = secs/(60*60)
          mins = (secs-hrs*60*60)/60

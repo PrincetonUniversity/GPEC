@@ -209,15 +209,16 @@ module utilities
         integer, intent(in) :: mode
         integer, intent(in), optional :: unit
     
-        character(10) :: date,time,zone
-        integer, dimension(8) :: values
+        real(4) :: time
         real(4), save :: seconds
         integer :: hrs,mins,secs
-        
+
+        ! get current time
+        call cpu_time(time)
+
         ! write split
         if(mode/=0)then
-            call date_and_time(date,time,zone,values)
-            seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3-seconds
+            seconds=time-seconds
             secs = int(seconds)
             hrs = secs/(60*60)
             mins = (secs-hrs*60*60)/60
@@ -238,8 +239,7 @@ module utilities
         endif
         ! start timmer
         if(mode<=0)then
-            call date_and_time(date,time,zone,values)
-            seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+            seconds=time
         endif
         
         return
