@@ -10,8 +10,10 @@ c     1. iscdftf
 c     2. iscdftb
 c     3. issect
 c     4. issurfint
-c     5. ipidl_3dsurf
-c-----------------------------------------------------------------------
+c     5. issurfave
+c     6. isbubble
+c     7. iszinv
+c     8. ipidl_3dsurfc-----------------------------------------------------------------------
 c     subprogram 0. ismath_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
@@ -229,7 +231,7 @@ c-----------------------------------------------------------------------
       RETURN
       END FUNCTION issurfave
 c-----------------------------------------------------------------------
-c     subprogram 5. isbubble.
+c     subprogram 6. isbubble.
 c     performs a bubble sort in decreasing order of value.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -264,7 +266,41 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE isbubble
 c-----------------------------------------------------------------------
-c     subprogram 6. ipidl_3dsurf.
+c     subprogram 7. iszinv.
+c     Common control surface basis conversions and normalizations.
+c-----------------------------------------------------------------------
+      SUBROUTINE iszinv(mat_in, m, mat_out)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: m
+      COMPLEX(r8), DIMENSION(m,m), INTENT(IN) :: mat_in
+      COMPLEX(r8), DIMENSION(m,m), INTENT(OUT) :: mat_out
+
+      INTEGER :: i, info
+      INTEGER, DIMENSION(m):: ipiv
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: work2
+      REAL(r8), DIMENSION(3*m-2) :: rwork
+
+      COMPLEX(r8), DIMENSION(m,m) :: matmm,tempmm
+c-----------------------------------------------------------------------
+c     calculate inverse of a complex matrix
+c-----------------------------------------------------------------------
+      tempmm=0
+      DO i=1,mpert
+         tempmm(i,i)=1.0
+      ENDDO
+      matmm=mat_in
+      CALL zhetrf('L',m,matmm,m,ipiv,work2,m*m,info)
+      CALL zhetrs('L',m,m,matmm,m,ipiv,tempmm,m,info)
+      mat_out = tempmm
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE iszinv
+c-----------------------------------------------------------------------
+c     subprogram 8. ipidl_3dsurf.
 c     convert 2d data into 3d data.
 c-----------------------------------------------------------------------
 C     SIMPLE CODE TO READ/ECHO GLASSER DCON DATA

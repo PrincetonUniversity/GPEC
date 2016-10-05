@@ -912,7 +912,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i,j,i1,i2,i3,itheta,mpert_in
       INTEGER, DIMENSION(:), ALLOCATABLE :: mfac_in
-      REAL(r8) :: vengy,sengy,pengy,scale,norm
+      REAL(r8) :: vengy,sengy,pengy,scale,norm,jarea
       COMPLEX(r8) :: vy,sy,py
       CHARACTER(128) :: message
 
@@ -922,6 +922,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,xinmn,xoutmn,tempmn
       COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,templ
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun,xinfun,xoutfun
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrtamat,j2mat
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: tempml
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: cawmn
@@ -930,12 +931,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rawmn
       
       INTEGER :: i_id,m_id,modid,mo_id,t_id,r_id,z_id,rn_id,zn_id,p_id,
-     $    x_id,xx_id,xm_id,xxm_id,bm_id,bxm_id,b_id,bx_id,jo_id
+     $    x_id,xx_id,xm_id,xxm_id,bm_id,bxm_id,b_id,bx_id,jo_id,j2_id
 c-----------------------------------------------------------------------
-c     compute control surface area.
+c     basic definitions
 c-----------------------------------------------------------------------
-      units = (/(1.0,itheta=0,mthsurf)/)
-      jarea = issurfint(units,mthsurf,psilim,0,0)
       mpert_in = ABS(mmax)+ABS(mmin)+1
       ALLOCATE(mfac_in(mpert_in),cawmn(mpert_in))
       mfac_in = (/(i,i=mmin,mmax)/)
@@ -1064,6 +1063,21 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl(hlog,"energy_plasma"//nul,pengy)
       ierr=set_harvest_payload_dbl(hlog,"amplification"//nul,
      $                             sengy/pengy)
+c-----------------------------------------------------------------------
+c     calculate the scalar surface area for normalizations.
+c-----------------------------------------------------------------------
+      units = 1
+      jarea = issurfint(units,mthsurf,psilim,0,0)
+c-----------------------------------------------------------------------
+c     calculate dimensionless half area weighting matrix W as,
+c     W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c-----------------------------------------------------------------------
+      sqrtamat = 0
+      DO i=1,mpert
+         sqrtamat(i,i) = 1.0
+         CALL gpeq_weight(psilim,sqrtamat(:,i),mfac,mpert,2) ! A^1/2
+      ENDDO
+      j2mat = sqrtamat/sqrt(jarea)
 c-----------------------------------------------------------------------
 c     write results.
 c-----------------------------------------------------------------------
@@ -1218,7 +1232,11 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"J_out",nf90_double,
      $            (/m_id,modid,i_id/),jo_id) )
       CALL check( nf90_put_att(mncid,jo_id,"long_name",
-     $            "Transform to jac_out, tmag_out, jsurf_out (beta)") )
+     $   "Transform to jac_out, tmag_out, jsurf_out") )
+      CALL check( nf90_def_var(mncid,"J_surf_2",nf90_double,
+     $            (/m_id,m_id,i_id/),j2_id) )
+      CALL check( nf90_put_att(mncid,j2_id,"long_name",
+     $   "Transform to jsurf_out 2") )
       CALL check( nf90_enddef(mncid) )
       templ = MATMUL(coordmat,binmn)
       CALL check( nf90_put_var(mncid,bxm_id,RESHAPE((/REAL(binmn),
@@ -1236,6 +1254,8 @@ c-----------------------------------------------------------------------
       tempml = TRANSPOSE(coordmat)
       CALL check( nf90_put_var(mncid,jo_id,RESHAPE((/REAL(tempml),
      $          AIMAG(tempml)/),(/mpert,lmpert,2/))) )
+      CALL check( nf90_put_var(mncid,j2_id,RESHAPE((/REAL(j2mat),
+     $          AIMAG(j2mat)/),(/mpert,mpert,2/))) )
       CALL check( nf90_close(mncid) )
 
       CALL gpeq_bcoords(psilim,binmn,mfac,mpert,
@@ -1747,14 +1767,13 @@ c     declaration.
 c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: coil_flag
 
-      INTEGER :: ipert,istep,itheta,i,j,iindex
+      INTEGER :: ipert,istep,i,j,iindex
       REAL(r8) :: jarea,ileft
       COMPLEX(r8) :: t1,t2
 
       INTEGER, DIMENSION(mpert) :: ipiv
       REAL(r8), DIMENSION(0:mthsurf) :: units
-      COMPLEX(r8), DIMENSION(mpert) :: fldflxmn
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,fldflxmat
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,sqrtamat,ptof
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bsurfmat,dwks,dwk,
      $     gind,gindp,gres,gresp
 
@@ -1773,18 +1792,24 @@ c-----------------------------------------------------------------------
      $   gindp(mstep,mpert,mpert),gres(mstep,mpert,mpert),
      $   gresp(mstep,mpert,mpert))
 c-----------------------------------------------------------------------
+c     calculate the scalar surface area for normalizations.
+c-----------------------------------------------------------------------
+      units = 1
+      jarea = issurfint(units,mthsurf,psilim,0,0)
+c-----------------------------------------------------------------------
+c     calculate dimensionless half area weighting matrix W as,
+c     W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c-----------------------------------------------------------------------
+      sqrtamat = 0
+      DO i=1,mpert
+         sqrtamat(i,i) = 1.0
+         CALL gpeq_weight(psilim,sqrtamat(:,i),mfac,mpert,2) ! A^1/2
+      ENDDO
+      ptof = sqrtamat * sqrt(jarea)
+c-----------------------------------------------------------------------
 c     call solutions.
 c-----------------------------------------------------------------------
-      units = (/(1.0,itheta=0,mthsurf)/)
-      jarea = issurfint(units,mthsurf,psilim,0,0)
-      DO ipert=1,mpert
-         fldflxmn=0
-         fldflxmn(ipert)=1.0
-         CALL gpeq_weight(psilim,fldflxmn,mfac,mpert,2)
-         fldflxmat(:,ipert)=fldflxmn*sqrt(jarea)
-      ENDDO
-      WRITE(*,*)
-     $     "Call solutions for general response matrix functions"
+      WRITE(*,*) "Call solutions for general response matrix functions"
       edge_flag=.TRUE.
       DO ipert=1,mpert
          edge_mn=0
@@ -1834,14 +1859,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     make coordinate-independent matrix (normalized by phi power).
 c-----------------------------------------------------------------------
-         temp1=MATMUL(gind(istep,:,:),fldflxmat)
-         temp2=CONJG(TRANSPOSE(fldflxmat))
+         temp1=MATMUL(gind(istep,:,:),ptof)
+         temp2=CONJG(TRANSPOSE(ptof))
          gindp(istep,:,:)=MATMUL(temp2,temp1)
 c-----------------------------------------------------------------------
 c     make coordinate-independent matrix (normalized by phix power).
 c-----------------------------------------------------------------------
-         temp1=MATMUL(gres(istep,:,:),fldflxmat)
-         temp2=CONJG(TRANSPOSE(fldflxmat))
+         temp1=MATMUL(gres(istep,:,:),ptof)
+         temp2=CONJG(TRANSPOSE(ptof))
          gresp(istep,:,:)=MATMUL(temp2,temp1)
       ENDDO
 c-----------------------------------------------------------------------
@@ -1888,7 +1913,7 @@ c-----------------------------------------------------------------------
      $            (/p_id,m_id,j_id,i_id/), te_id) )
       CALL check( nf90_put_att(fncid, te_id, "long_name",
      $            "Energy-norm external flux torque matrix") )
-      CALL check( nf90_put_att(fncid, te_id, "units", "Nm/(Wb/m)") )
+      CALL check( nf90_put_att(fncid, te_id, "units", "Nm/T^2") )
       CALL check( nf90_enddef(fncid) )
       IF(debug_flag) PRINT *,"  Writing variables"
       CALL check( nf90_put_var(fncid, m1_id, mfac) )
@@ -1902,7 +1927,7 @@ c-----------------------------------------------------------------------
 c     construct coil-torque response matrix.
 c----------------------------------------------------------------------
       IF (coil_flag) THEN
-         ! form mutual inductance between coils and pflasma surface
+         ! form mutual inductance between coils and plasma surface
          ALLOCATE(mmat(mpert,coil_num),mdagger(coil_num,mpert))
          ALLOCATE(coilmn(cmpert))
          DO j=1,coil_num
@@ -1973,6 +1998,7 @@ c-----------------------------------------------------------------------
      $               AIMAG(gcoil)/), (/mstep,coil_num,coil_num,2/))) )
          CALL check( nf90_close(fncid) )
          IF(debug_flag) PRINT *,"Closed "//TRIM(fncfile)
+         DEALLOCATE(gcoil,tmat,mmat,mdagger)
       ENDIF
 c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
@@ -4655,7 +4681,6 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(mpert):: ipiv
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: work2
       ! SVD variables
       REAL(r8), DIMENSION(5*mpert) :: rworksvd
       REAL(r8), DIMENSION(5*msing) :: sworksvd
@@ -4672,14 +4697,14 @@ c-----------------------------------------------------------------------
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id,
      $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id
       REAL(r8) :: norm
+      REAL(r8), DIMENSION(0:mthsurf) :: units
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
-      REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(0:mthsurf) :: tempfun
       COMPLEX(r8), DIMENSION(msing) :: temps
       COMPLEX(r8), DIMENSION(mpert) :: temp,tempm,eigmn,filmn
       COMPLEX(r8), DIMENSION(lmpert) :: templ
       COMPLEX(r8), DIMENSION(mpert,mpert) :: mat,matmm,tempmm,singmat,
-     $    sqrta,sqrtainv
+     $    sqrtamat,ftop,ptof
       COMPLEX(r8), DIMENSION(mpert,msing) :: matms
       COMPLEX(r8), DIMENSION(msing,msing) :: matss
       COMPLEX(r8), DIMENSION(msing,mpert) :: matsm,singcoupmat
@@ -4703,7 +4728,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     basic definitions
 c-----------------------------------------------------------------------
-      singfac=mfac-nn*qlim
       IF(.NOT. PRESENT(op_write)) THEN
          output = .FALSE.
       ELSE
@@ -4717,29 +4741,21 @@ c-----------------------------------------------------------------------
          singmat(i,i) = chi1*twopi*ifac*(mfac(i)-nn*qlim)
       ENDDO
 c-----------------------------------------------------------------------
-c     calculate sqrt(A) weighting matrix.
-c      - Define sqrt(A) weighting matrix as
-c        W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c     calculate the scalar surface area for normalizations
 c-----------------------------------------------------------------------
+      units = 1
+      jarea = issurfint(units,mthsurf,psilim,0,0)
+c-----------------------------------------------------------------------
+c     calculate area dimensioned half-area weighting matrix W as,
+c     W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt} * int{sqrt(J|delpsi|)dt}
+c-----------------------------------------------------------------------
+      sqrtamat = 0
       DO i=1,mpert
-         temp = 0
-         temp(i) = 1.0
-         CALL gpeq_weight(psilim,temp,mfac,mpert,2) ! A^1/2
-         sqrta(:,i) = temp
+         sqrtamat(i,i) = 1.0
+         CALL gpeq_weight(psilim,sqrtamat(:,i),mfac,mpert,2) ! A^1/2
       ENDDO
-      ! inverse of the 1/2 area weighting
-      lwork=2*mpert-1
-      work=0
-      work2=0
-      rwork=0
-      mat=0
-      DO i=1,mpert
-         mat(i,i)=1
-      ENDDO
-      matmm=sqrta
-      CALL zhetrf('L',mpert,matmm,mpert,ipiv,work2,mpert*mpert,info)
-      CALL zhetrs('L',mpert,mpert,matmm,mpert,ipiv,mat,mpert,info)
-      sqrtainv = mat
+      ptof = sqrtamat * sqrt(jarea) ! transform power-norm field to flux
+      CALL iszinv(ptof,mpert,ftop)
 c-----------------------------------------------------------------------
 c     compute DCON energy per displacement eigenvalues and eigenvectors.
 c-----------------------------------------------------------------------
@@ -4758,7 +4774,7 @@ c-----------------------------------------------------------------------
       CALL zheev('V','U',mpert,xvecs,mpert,xvals,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
 c     compute energy eigenvalues and eigenvectors.
-c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c      - We want to use Phi'=bsqrtA/|sqrtA| basis so a eigenvector norm means
 c        int{b^2da}/int{da} = 1
 c     - we start with E = xi* Wt xi where * is the conjugate transpose
 c     - convert to total flux so E = Phi* F Phi
@@ -4774,8 +4790,8 @@ c-----------------------------------------------------------------------
       ! convert to external flux
       mat = permeabmats(resp_index,:,:)
       wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wvecs),mat)
-      ! convert to bsqrt(A)
-      wmat = MATMUL(MATMUL(sqrta,wvecs),sqrta)*2*mu0
+      ! convert to bsqrtA/|sqrtA|
+      wmat = MATMUL(MATMUL(ptof,wvecs),ptof)*2*mu0
       wvecs = wmat
       ! get eigenvalues and eigenvectors
       work = 0
@@ -4788,7 +4804,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     re-order energy eigenmodes by amplification dW_vac/dW.
 c-----------------------------------------------------------------------
-      mat=MATMUL(MATMUL(sqrta,surf_indinvmats),sqrta)
+      mat=MATMUL(MATMUL(ptof,surf_indinvmats),ptof)
       DO i=1,mpert
          tempm = wvecs(:,i)
          avals(i) = 0.5*REAL(DOT_PRODUCT(tempm,MATMUL(mat,tempm)))
@@ -4801,15 +4817,14 @@ c-----------------------------------------------------------------------
       ENDDO
 c-----------------------------------------------------------------------
 c     Calculate reluctance eigenvectors and eigenvalues
-c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c      - We want to use Phi'=BsqrtA/|sqrtA| basis so a eigenvector norm means
 c        int{b^2da}/int{da} = 1
-c        - This is a physiCALLy meaningful quantity (energy), and thus
+c        - This is a physically meaningful quantity (energy), and thus
 c          independent of coordinate system
 c      - Normalizing the input, I = RPhi becomes I = RWPhi'
 c      - Normalizing the output gives W^dagger I = W^daggerRW Phi'
 c      - Since W is Hermitian (W^dagger=W) the new operator is too
 c      - Eigenvalues correspond to int{I^2da} (power) per int{b^2da} (energy)
-c      - NOTE: No need to include 1/jarea=1/int{da} (gets normalized)
 c-----------------------------------------------------------------------
       ! start with GPEC flux matrix
       ! remove border of modes/solutions (diagnostic only)
@@ -4817,8 +4832,8 @@ c-----------------------------------------------------------------------
       j = mpert-malias
       rvecs = 0
       rvecs(i:j,i:j) = reluctmats(resp_index,i:j,i:j)
-      ! convert to bsqrt(A)
-      rmat = MATMUL(MATMUL(sqrta,rvecs),sqrta)
+      ! convert to bsqrtA/|sqrtA|
+      rmat = MATMUL(MATMUL(ptof,rvecs),ptof)
       rvecs = rmat
       work = 0
       rwork = 0
@@ -4829,7 +4844,7 @@ c-----------------------------------------------------------------------
       rvecs(:,:) = rvecs(:,mpert:1:-1)
 c-----------------------------------------------------------------------
 c     Calculate permeability right-singular vectors and singular values
-c      - We want to use Phi'=Bsqrt(A) basis so a eigenvector norm means
+c      - We want to use Phi'=bsqrtA/|sqrtA| basis so a eigenvector norm means
 c        int{b^2da}/int{da} = 1
 c        - This is a physically meaningful quantity (energy)
 c      - Phi = P Phix -> WPhi' = PW Phix' -> Phi' = W*PW Phix'
@@ -4840,8 +4855,8 @@ c-----------------------------------------------------------------------
       j = mpert-malias
       mat = 0
       mat(i:j,i:j) = permeabmats(resp_index,i:j,i:j)
-      ! convert to bsqrt(A)
-      pmat = MATMUL(MATMUL(sqrta,mat),sqrta)
+      ! convert to bsqrtA/|sqrtA|
+      pmat = MATMUL(MATMUL(ptof,mat),ptof)
       mat = TRANSPOSE(pmat)
       worksvd=0
       rworksvd=0
@@ -4990,7 +5005,7 @@ c-----------------------------------------------------------------------
      $    "Total displacement energy eigendecomposition") )
          CALL check( nf90_def_var(mncid,"X_eigenvalue",
      $               nf90_double,(/xdid/),xe_id) )
-         CALL check( nf90_put_att(mncid,xe_id,"units","J/(Wb/m)^2") )
+         CALL check( nf90_put_att(mncid,xe_id,"units","J/m^2") )
          CALL check( nf90_put_att(mncid,xe_id,"long_name",
      $    "Total displacement energy eigenvalues") )
 
@@ -5008,7 +5023,7 @@ c-----------------------------------------------------------------------
      $    "Energy-norm external flux energy eigendecomposition") )
          CALL check( nf90_def_var(mncid,"W_xe_eigenvalue",
      $               nf90_double,(/wdid/),we_id) )
-         CALL check( nf90_put_att(mncid,we_id,"units","J/(Wb/m)^2") )
+         CALL check( nf90_put_att(mncid,we_id,"units","J/T^2") )
          CALL check( nf90_put_att(mncid,we_id,"long_name",
      $    "Energy-norm external flux energy eigenvalues") )
          CALL check( nf90_def_var(mncid,"W_xe_amp",nf90_double,
@@ -5044,7 +5059,7 @@ c-----------------------------------------------------------------------
      $                         (/rdid/),re_id) )
          CALL check( nf90_put_att(mncid,re_id,"long_name",
      $    "Energy-norm external flux reluctance eigenvalues") )
-         CALL check( nf90_put_att(mncid,re_id,"units","A/(Wb/m)") )
+         CALL check( nf90_put_att(mncid,re_id,"units","A/T") )
          CALL check( nf90_def_var(mncid,"R_xe_RL",nf90_double,
      $                         (/rdid/),rl_id) )
          CALL check( nf90_put_att(mncid,rl_id,"long_name",
@@ -5164,9 +5179,9 @@ c-----------------------------------------------------------------------
 
          CALL check( nf90_def_var(mncid,"Phi_xe",nf90_double,
      $               (/mdid,idid/),ex_id) )
-         CALL check( nf90_put_att(mncid,ex_id,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,ex_id,"units","T") )
          CALL check( nf90_put_att(mncid,ex_id,"long_name",
-     $    "Energy-norm external flux") )
+     $    "Energy-norm external field") )
          CALL check( nf90_def_var(mncid,"Phi_x",nf90_double,
      $               (/mdid,idid/),fx_id) )
          CALL check( nf90_put_att(mncid,fx_id,"units","Wb") )
@@ -5174,7 +5189,7 @@ c-----------------------------------------------------------------------
      $    "External flux") )
          CALL check( nf90_def_var(mncid,"Phi_e",nf90_double,
      $               (/mdid,idid/),et_id) )
-         CALL check( nf90_put_att(mncid,et_id,"units","Wb/m") )
+         CALL check( nf90_put_att(mncid,et_id,"units","T") )
          CALL check( nf90_put_att(mncid,et_id,"long_name",
      $    "Energy-norm total flux") )
          CALL check( nf90_def_var(mncid,"Phi",nf90_double,
@@ -5186,22 +5201,22 @@ c-----------------------------------------------------------------------
          IF(fun_flag)THEN
             CALL check( nf90_def_var(mncid,"Phi_xe_fun",nf90_double,
      $                  (/tdid,idid/),exf_id) )
-            CALL check( nf90_put_att(mncid,exf_id,"units","Wb/m") )
+            CALL check( nf90_put_att(mncid,exf_id,"units","T") )
             CALL check( nf90_put_att(mncid,exf_id,"long_name",
      $       "Energy-norm external flux") )
             CALL check( nf90_def_var(mncid,"Phi_x_fun",nf90_double,
      $                  (/tdid,idid/),fxf_id) )
-            CALL check( nf90_put_att(mncid,fxf_id,"units","Wb") )
+            CALL check( nf90_put_att(mncid,fxf_id,"units","T") )
             CALL check( nf90_put_att(mncid,fxf_id,"long_name",
      $       "External flux") )
             CALL check( nf90_def_var(mncid,"Phi_e_fun",nf90_double,
      $                  (/tdid,idid/),etf_id) )
-            CALL check( nf90_put_att(mncid,etf_id,"units","Wb/m") )
+            CALL check( nf90_put_att(mncid,etf_id,"units","T") )
             CALL check( nf90_put_att(mncid,etf_id,"long_name",
      $       "Energy-norm total flux") )
             CALL check( nf90_def_var(mncid,"Phi_fun",nf90_double,
      $                  (/tdid,idid/),ftf_id) )
-            CALL check( nf90_put_att(mncid,ftf_id,"units","Wb") )
+            CALL check( nf90_put_att(mncid,ftf_id,"units","T") )
             CALL check( nf90_put_att(mncid,ftf_id,"long_name",
      $       "Total flux") )
             CALL check( nf90_def_var(mncid,"W_xe_eigenvector_fun",
@@ -5263,12 +5278,12 @@ c-----------------------------------------------------------------------
          ENDIF
 
          ! Energies for postprocessing re-normalization
-         mat=MATMUL(MATMUL(sqrta,plas_indinvmats(resp_index,:,:)),sqrta)
-         matmm=MATMUL(MATMUL(sqrta,surf_indinvmats),sqrta)
+         mat=MATMUL(MATMUL(ptof,plas_indinvmats(resp_index,:,:)),ptof)
+         matmm=MATMUL(MATMUL(ptof,surf_indinvmats),ptof)
          tempmm=plas_indmats(resp_index,:,:)
          tempmm=MATMUL(CONJG(TRANSPOSE(tempmm)),surf_indinvmats)
          tempmm=MATMUL(tempmm,plas_indinvmats(resp_index,:,:))
-         tempmm=MATMUL(MATMUL(sqrta,tempmm),sqrta) ! P-dagger.L^-1.P
+         tempmm=MATMUL(MATMUL(ptof,tempmm),ptof) ! P-dagger.L^-1.P
          DO i=1,mpert
             tempm = rvecs(:,i)
             sengys(i) =REAL(DOT_PRODUCT(tempm,MATMUL(tempmm,tempm)))
@@ -5303,7 +5318,7 @@ c-----------------------------------------------------------------------
          ! We calculate the "effective energy" Phi'.Phi_eff' for each mode where
          ! Phi_eff' = (W^-1.L.W^-1.W.R.W) .W^-1.Phi
          ! Note, the () term is unitless as it should be and we use R'.Phi' = e*Phi'
-         matmm=MATMUL(MATMUL(sqrtainv,surf_indmats),sqrtainv)
+         matmm=MATMUL(MATMUL(ftop,surf_indmats),ftop)
          DO i=1,mpert
             tempm = rvecs(:,i)
             rlvals(i) = rvals(i) *
@@ -5328,8 +5343,7 @@ c-----------------------------------------------------------------------
          ENDIF
 
          ! Energy normalized flux
-         temp = foutmn
-         CALL gpeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
+         temp = MATMUL(ftop,foutmn)
          templ = MATMUL(coordmat,temp) ! output coords
          CALL check( nf90_put_var(mncid,et_id,RESHAPE((/REAL(temp),
      $               AIMAG(temp)/),(/mpert,2/))) )
@@ -5349,8 +5363,7 @@ c-----------------------------------------------------------------------
            CALL check(nf90_put_var(mncid,ftf_id,RESHAPE((/REAL(tempfun),
      $         -helicity*AIMAG(tempfun)/),(/mthsurf+1,2/))) )
          ENDIF
-         temp = finmn
-         CALL gpeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
+         temp = MATMUL(ftop,finmn)
          CALL check( nf90_put_var(mncid,ex_id,RESHAPE((/REAL(temp),
      $               AIMAG(temp)/),(/mpert,2/))) )
          CALL check( nf90_put_var(mncid,fx_id,RESHAPE((/REAL(finmn),
