@@ -5206,7 +5206,7 @@ c-----------------------------------------------------------------------
      $       "Energy-norm external flux") )
             CALL check( nf90_def_var(mncid,"Phi_x_fun",nf90_double,
      $                  (/tdid,idid/),fxf_id) )
-            CALL check( nf90_put_att(mncid,fxf_id,"units","T") )
+            CALL check( nf90_put_att(mncid,fxf_id,"units","Wb") )
             CALL check( nf90_put_att(mncid,fxf_id,"long_name",
      $       "External flux") )
             CALL check( nf90_def_var(mncid,"Phi_e_fun",nf90_double,
@@ -5216,7 +5216,7 @@ c-----------------------------------------------------------------------
      $       "Energy-norm total flux") )
             CALL check( nf90_def_var(mncid,"Phi_fun",nf90_double,
      $                  (/tdid,idid/),ftf_id) )
-            CALL check( nf90_put_att(mncid,ftf_id,"units","T") )
+            CALL check( nf90_put_att(mncid,ftf_id,"units","Wb") )
             CALL check( nf90_put_att(mncid,ftf_id,"long_name",
      $       "Total flux") )
             CALL check( nf90_def_var(mncid,"W_xe_eigenvector_fun",
