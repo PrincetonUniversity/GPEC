@@ -1940,9 +1940,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: gcoil,
      $    gcoilevmatt, gcoilevmats
 
-      INTEGER :: p_id,j_id,m_id,c_id,k_id,i_id,ci_id,cp_id,m1_id,m2_id,
-     $    te_id,tc_id
-
       TYPE(cspline_type) :: optorq
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
