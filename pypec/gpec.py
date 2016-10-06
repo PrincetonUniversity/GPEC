@@ -147,8 +147,7 @@ def _newloc(loc):
 
 def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=False,
         rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,
-        mailon='ae',email='',mem=1e4,
-        runipec=False,runpent=False,optpentrc=False,pent_tol=0,**kwargs):
+        mailon='ae',email='',mem=1e4,runipec=False,**kwargs):
     """
     Python wrapper for running gpec package.
     
@@ -158,6 +157,7 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     :param return_on_complete: bool. Return only after job is finished on cluster (irrelevant if qsub=False).
     :param rerun: bool. Does not delete existing .out files.
     :param rundcon: bool. Run dcon.
+    :param runipec: bool. Run ipec.
     :param rungpec: bool. Run gpec.
     :param runpentrc: bool. Run pentrc.
     :param cleandcon: bool. Remove euler.bin file after run is complete.
@@ -183,8 +183,7 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     _newloc(loc)
     locfiles = os.listdir('.')
     if runipec:
-        print("WARNING: runipec is being deprecated. Use rungpec.")
-        rungpec = True
+        print("WARNING: runipec is deprecated in GPEC 1.0. Use rungpec.")
 
     if not rerun:
         print('Cleaning old run out, dat, and bin files')
@@ -195,16 +194,18 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
                 os.system('rm *.dat')
             if np.any([f.endswith('.bin') for f in locfiles]):
                 os.system('rm *.bin')
-        elif rungpec:
+        elif rungpec or runipec:
             if np.any([f.startswith('gpec_') for f in locfiles]):
                 os.system('rm gpec_*')
+            if np.any([f.startswith('ipec_') for f in locfiles]):
+                os.system('rm ipec_*')
             if np.any([f.startswith('gpec_diagnostics_') for f in locfiles]):
                 os.system('rm gpdiag_*')
             if np.any([f.startswith('pent_') for f in locfiles]):
                 os.system('rm pent_*')
-        elif runpent:
-            if np.any([f.startswith('pent_') for f in locfiles]):
-                os.system('rm pent_*')
+        elif runpentrc:
+            if np.any([f.startswith('pentrc_') for f in locfiles]):
+                os.system('rm pentrc_*')
 
     # set up run
     for key in kwargs:
@@ -247,9 +248,9 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         # fill in and write shell script
         exelist=''
         if rundcon: exelist+=rundir+'/dcon \n'
+        if runipec: exelist+=rundir+'/ipec \n'
         if rungpec: exelist+=rundir+'/gpec \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
-        if optpentrc: exelist+=rundir+'/OPENTRC \n'
         if cleandcon: exelist+='rm euler.in \n'
         jobstr = bashjob.replace('jobnamehere',jobname)
         if mailon: jobstr = jobstr.replace('# --- emailoptionhere','#PBS -m '+mailon)
@@ -272,9 +273,9 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     else:
         print(rundir+'/dcon')
         if rundcon: os.system(rundir+'/dcon')
+        if runipec: os.system(rundir+'/ipec')
         if rungpec: os.system(rundir+'/gpec')
         if runpentrc: os.system(rundir+'/pentrc')
-        if optpentrc: os.system(rundir+'/OPENTRC')
         # clean up
         if cleandcon: os.system('rm euler.bin')
         os.system('rm *.dat')
