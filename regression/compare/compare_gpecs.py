@@ -1,17 +1,10 @@
 #!/usr/bin/env python
 """
+:mod:`compare.compare_gpecs` -- Regression Testing Standard GPEC Output
+========================================================================
 
-Regression Testing - Testing Standard GPEC Output
-======================================================
-
-:Date: 07/02/2016
-
-Run notes:
-    -
-
-Result notes:
-    -
-
+This module contains a library of functions for visualizing standard GPEC
+output in a way that is conducive to comparing multiple GPEC runs.
 
 """
 
@@ -401,6 +394,7 @@ def check_all(*directories):
         if key[0] != '_' and key != 'check_all':
             print("Calling {:}".format(key))
             datasets = function(*directories)
+    plt.show()
 
 
 if __name__ == "__main__":

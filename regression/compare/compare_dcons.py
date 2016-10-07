@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 """
 
-Regression Testing - Testing Standard DCON Output
-======================================================
+:mod:`compare.compare_dcons` -- Regression Testing Standard DCON Output
+========================================================================
 
-:Date: 07/02/2016
-
-Run notes:
-    -
-
-Result notes:
-    -
-
+This module contains a library of functions for visualizing standard DCON
+output in a way that is conducive to comparing multiple DCON runs.
 
 """
 
@@ -115,6 +109,7 @@ def check_all(*directories):
         if key[0] != '_' and key != 'check_all':
             print("\nCalling {:}".format(key))
             datasets = function(*directories)
+    plt.show()
 
 
 if __name__ == "__main__":
