@@ -922,7 +922,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: binmn,boutmn,xinmn,xoutmn,tempmn
       COMPLEX(r8), DIMENSION(lmpert) :: cinmn,coutmn,templ
       COMPLEX(r8), DIMENSION(0:mthsurf) :: binfun,boutfun,xinfun,xoutfun
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrtamat,j2mat
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrtamat,j2mat,tempmm
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: tempml
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: cawmn
@@ -931,7 +931,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rawmn
       
       INTEGER :: i_id,m_id,modid,mo_id,t_id,r_id,z_id,rn_id,zn_id,p_id,
-     $    x_id,xx_id,xm_id,xxm_id,bm_id,bxm_id,b_id,bx_id,jo_id,j2_id
+     $    x_id,xx_id,xm_id,xxm_id,bm_id,bxm_id,b_id,bx_id,jo_id,j2_id,
+     $    mpdid,mp_id
 c-----------------------------------------------------------------------
 c     basic definitions
 c-----------------------------------------------------------------------
@@ -1197,6 +1198,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_inq_dimid(mncid,"m",m_id) )
       IF(debug_flag) PRINT *,"  Defining variables"
       CALL check( nf90_redef(mncid))
+      CALL check( nf90_def_dim(mncid, "m_prime", mpert, mpdid) )
+      CALL check( nf90_def_var(mncid, "m_prime", nf90_int,mpdid,mp_id))
       CALL check( nf90_def_dim(mncid,"m_out",lmpert,modid) )
       CALL check( nf90_def_var(mncid,"m_out",nf90_int,modid,mo_id))
       CALL check( nf90_put_att(mncid, mo_id ,"long_name",
@@ -1234,7 +1237,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(mncid,jo_id,"long_name",
      $   "Transform to jac_out, tmag_out, jsurf_out") )
       CALL check( nf90_def_var(mncid,"J_surf_2",nf90_double,
-     $            (/m_id,m_id,i_id/),j2_id) )
+     $            (/m_id,mpdid,i_id/),j2_id) )
       CALL check( nf90_put_att(mncid,j2_id,"long_name",
      $   "Transform to jsurf_out 2") )
       CALL check( nf90_enddef(mncid) )
@@ -1250,12 +1253,14 @@ c-----------------------------------------------------------------------
       templ = MATMUL(coordmat,xoutmn)
       CALL check( nf90_put_var(mncid,xm_id,RESHAPE((/REAL(xoutmn),
      $          AIMAG(xoutmn)/),(/mpert,2/))) )
+      CALL check( nf90_put_var(mncid,mp_id,mfac) )
       CALL check( nf90_put_var(mncid,mo_id,lmfac) )
       tempml = TRANSPOSE(coordmat)
       CALL check( nf90_put_var(mncid,jo_id,RESHAPE((/REAL(tempml),
      $          AIMAG(tempml)/),(/mpert,lmpert,2/))) )
-      CALL check( nf90_put_var(mncid,j2_id,RESHAPE((/REAL(j2mat),
-     $          AIMAG(j2mat)/),(/mpert,mpert,2/))) )
+      tempmm = TRANSPOSE(j2mat)
+      CALL check( nf90_put_var(mncid,j2_id,RESHAPE((/REAL(tempmm),
+     $          AIMAG(tempmm)/),(/mpert,mpert,2/))) )
       CALL check( nf90_close(mncid) )
 
       CALL gpeq_bcoords(psilim,binmn,mfac,mpert,
