@@ -1196,7 +1196,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(mncid,"m",m_id) )
          CALL check( nf90_redef(mncid))
          CALL check( nf90_def_dim(mncid, "m_prime", mpert, mpdid) )
-         CALL check( nf90_def_var(mncid, "m_prime", nf90_int,mpdid,mp_id))
+         CALL check( nf90_def_var(mncid, "m_prime", nf90_int, mpdid,
+     $      mp_id))
          CALL check( nf90_def_dim(mncid,"m_out",lmpert,modid) )
          CALL check( nf90_def_var(mncid,"m_out",nf90_int,modid,mo_id))
          CALL check( nf90_put_att(mncid, mo_id ,"long_name",
