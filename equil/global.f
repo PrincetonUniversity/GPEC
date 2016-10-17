@@ -14,7 +14,7 @@ c-----------------------------------------------------------------------
       USE cspline_mod
       IMPLICIT NONE
 
-      CHARACTER(32), PARAMETER :: version = "GPEC version 1.0.4"
+      CHARACTER(32), PARAMETER :: version = "GPEC version 1.0.5"
 
       CHARACTER(16) :: eq_type="fluxgrid"
       CHARACTER(128) :: eq_filename="fluxgrid.dat"
