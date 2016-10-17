@@ -5094,9 +5094,8 @@ c-----------------------------------------------------------------------
       foutmn = MATMUL(permeabmats(resp_index,:,:),finmn) ! total flux
       IF(fmodes/=0)THEN
          DO k=1,LEN_TRIM(ftypes)
-            temp = finmn
             filmn = 0
-            CALL gpeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
+            temp = MATMUL(ftop, finmn) ! flux (Tm^2) to power-normalized field (T)
             SELECT CASE(ftypes(k:k))
             CASE('x')
                temp = foutmn/(chi1*twopi*ifac*(mfac-nn*qlim)) ! total displacement
@@ -5149,7 +5148,7 @@ c-----------------------------------------------------------------------
                filmn = filmn*(chi1*twopi*ifac*(mfac-nn*qlim)) ! total flux
                filmn = MATMUL(permeabinvmats(resp_index,:,:),filmn) ! external flux
             ELSE
-               CALL gpeq_weight(psilim,filmn,mfac,mpert,2) ! sqrt(A)b to flux
+               filmn = MATMUL(ptof, filmn) ! power-normalized field back to true flux
             ENDIF
             finmn = filmn
          ENDDO
@@ -5555,8 +5554,7 @@ c-----------------------------------------------------------------------
          ENDIF
 
          ! Decomposition of the applied flux
-         temp = finmn
-         CALL gpeq_weight(psilim,temp,mfac,mpert,6) ! flux to sqrt(A)b
+         temp = MATMUL(ftop, finmn) ! flux to power-normalized field (T)
          tempm = MATMUL(CONJG(TRANSPOSE(wvecs)),temp)
          CALL check( nf90_put_var(mncid,wx_id,RESHAPE((/REAL(tempm),
      $               AIMAG(tempm)/),(/mpert,2/))) )
