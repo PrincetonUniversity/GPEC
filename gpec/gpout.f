@@ -1547,7 +1547,7 @@ c-----------------------------------------------------------------------
       IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-         CALL check( nf90_inq_dimid(fncid,"q_rat",q_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n_rat",q_id) )
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
      $      (/q_id,i_id/), p_id) )
@@ -1724,7 +1724,7 @@ c-----------------------------------------------------------------------
       IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-         CALL check( nf90_inq_dimid(fncid,"q_rat",q_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n_rat",q_id) )
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res_v", nf90_double,
      $      (/q_id,i_id/), p_id) )
@@ -5640,7 +5640,7 @@ c-----------------------------------------------------------------------
       INTEGER:: i,midid,mmdid,medid,mtdid,
      $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
      $   mivid,mmvid,mevid,mtvid,fivid,fmvid,fpvid,ftvid,
-     $   mrvid,mqdid,mqvid,frvid,fqdid,fqvid,civid,crvid,czvid,
+     $   mrvid,mjdid,mjvid,mqvid,frvid,frdid,fqvid,civid,crvid,czvid,
      $   id,fileids(3)
       INTEGER, DIMENSION(mpert) :: mmodes
 c-----------------------------------------------------------------------
@@ -5676,9 +5676,11 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
       CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
       IF(msing>0)THEN
-         CALL check( nf90_def_dim(mncid,"q_rat",msing, mqdid) )
-         CALL check(nf90_def_var(mncid,"q_rat",nf90_double,mqdid,mqvid))
-         CALL check( nf90_def_var(mncid,"m_rat",nf90_int,mqdid,mrvid))
+         CALL check( nf90_def_dim(mncid,"psi_n_rat",msing, mjdid) )
+         CALL check(nf90_def_var(mncid,"psi_n_rat",nf90_double,mjdid,
+     $      mjvid))
+         CALL check(nf90_def_var(mncid,"q_rat",nf90_double,mjdid,mqvid))
+         CALL check( nf90_def_var(mncid,"m_rat",nf90_int,mjdid,mrvid))
       ENDIF
       CALL check( nf90_put_att(mncid,nf90_global,"jacobian",jac_type))
       CALL check( nf90_put_att(mncid,nf90_global,"helicity",helicity))
@@ -5698,10 +5700,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"theta_dcon",nf90_double,
      $     ftdid,ftvid) )
       IF(msing>0)THEN
-         CALL check( nf90_def_dim(fncid,"q_rat",msing, fqdid) )
-         CALL check(nf90_def_var(fncid,"q_rat",nf90_double,fqdid,fqvid))
+         CALL check( nf90_def_dim(fncid,"psi_n_rat",msing, frdid) )
          CALL check( nf90_def_var(fncid,"psi_n_rat",nf90_double,
-     $        fqdid,frvid))
+     $        frdid,frvid))
+         CALL check(nf90_def_var(fncid,"q_rat",nf90_double,frdid,fqvid))
       ENDIF
       CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
 
@@ -5742,6 +5744,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(mncid,mevid,mmodes) )
       CALL check( nf90_put_var(mncid,mtvid,theta) )
       IF(msing>0)THEN
+         CALL check( nf90_put_var(mncid,mjvid,
+     $      (/(singtype(i)%psifac,i=1,msing)/)) )
          CALL check( nf90_put_var(mncid,mrvid,
      $      (/(INT(singtype(i)%q*nn),i=1,msing)/)) )
          CALL check( nf90_put_var(mncid,mqvid,
