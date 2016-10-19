@@ -422,6 +422,11 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
 
     if complex_dim in ds.dims:
         for k,v in ds.data_vars.iteritems():
+            if len(v.dims) > len(set(v.dims)):
+                print("WARNING: Removing {:} to avoid error (below) reforming complex_dim. ".format(k))
+                print("ValueError: broadcasting cannot handle duplicate dimensions")
+                del ds[k]
+                continue
             if complex_dim in v.dims:
                 tmp = v.attrs
                 ds[k] = v.loc[{complex_dim:0}]+1j*v.loc[{complex_dim:1}]
