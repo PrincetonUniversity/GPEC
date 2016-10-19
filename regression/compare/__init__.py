@@ -48,7 +48,7 @@ vacuum                  +2.4850e+00             +2.5020e+00
 # this file tells python to treat the folder as a package
 
 # for "from package import *" to work use __all__ = ["file1","file2",...]
-__all__ = ['compare_dcons','compare_gpecs','compare_ipecs']
+__all__ = ['compare_dcons','compare_gpecs','compare_pentrcs']
 
 # calling "imprort package" will run this code
-import compare_dcons, compare_gpecs, compare_ipecs
+#import compare_dcons, compare_gpecs, compare_pentrcs
