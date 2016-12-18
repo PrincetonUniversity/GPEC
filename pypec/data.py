@@ -314,10 +314,6 @@ import numpy as np                               # math
 from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,RegularGridInterpolator,griddata
 from scipy.special import ellipk,ellipe
 
-#in this package
-import modplot as plt
-import namelist 
-
 try:
     import mayavi.mlab as mmlab
 except ImportError as ie:
@@ -341,6 +337,10 @@ except ImportError:
     sns = False
     print('WARNING: seaborn not in python path')
     print(' -> We recomend loading anaconda/2.3.0 on portal')
+
+#in this package
+import modplot as plt
+import namelist
 
 # better label recognition using genfromtxt
 for c in '^|<>/':
