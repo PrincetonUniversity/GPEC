@@ -320,9 +320,15 @@ import namelist
 
 try:
     import mayavi.mlab as mmlab
-except ImportError:
+except ImportError as ie:
     mmlab = False
     print('WARNING: Mayavi not in python path')
+except ValueError as ve:
+    mmlab = False
+    print('WARNING: Mayavi conflicts with already set gui backend settings (using pylab?)\n'+repr(ve))
+except Exception as e:
+    mmlab = False
+    print('WARNING: Mayavi unavailable - '+repr(e))
 try:
     import xarray
 except ImportError:
