@@ -29,12 +29,12 @@
     coil_cur(1,6)= 500.0
 
     coil_name(2)="il"
-    coil_cur(2,2)= 1000.0
-    coil_cur(2,3)= 500.0
-    coil_cur(2,4)=-500.0
-    coil_cur(2,5)=-1000.0
-    coil_cur(2,6)=-500.0
-    coil_cur(2,1)= 500.0
+    coil_cur(2,1)= 1000.0
+    coil_cur(2,2)= 500.0
+    coil_cur(2,3)=-500.0
+    coil_cur(2,4)=-1000.0
+    coil_cur(2,5)=-500.0
+    coil_cur(2,6)= 500.0
 
 /
 &COIL_OUTPUT
