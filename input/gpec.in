@@ -46,10 +46,10 @@
    tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends gpec_control)
    mlim_out=64              ! Fourier decomposed outputs will span -mlim_out<=m<=mlim_out when jac_out/=jac_type or tmag_out/=tmag_in
 
-   resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
+   resp_flag=f              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
-   singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
+   singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
