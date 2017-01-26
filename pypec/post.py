@@ -87,6 +87,92 @@ dtor = np.pi / 180
 ######################################################## Helper functions
 
 
+def update_name_conventions(dataset, version=None, inplace=False):
+    """
+    Update the naming conventions in a dataset to the latest conventions.
+
+    Use this to avoid lots of if statements in cross-checking versions.
+
+    :param dataset:
+    :param version: str. Override version attribute.
+    :return:
+
+    """
+    # set to operate on
+    if inplace:
+        newset = dataset
+    else:
+        newset = dataset.copy(deep=True)
+    # version number
+    if version is None:
+        version = dataset.attrs.get('version', None)
+        if version is None:
+            raise ValueError('Must specify version')
+    version = version.split()[-1]  # just the major.minor.patch numbers
+    version = np.sum(np.array([1, 0.1, 0.001]) * map(np.float, version.split('.')))  # float representation
+
+    translator = OrderedDict()
+    if version < 0.3:
+        # profile output changes
+        translator['xi_psi1'] = 'xigradpsi_dpsi'
+        translator['xi_psi'] = 'xigradpsi'
+        translator['xi_alpha'] = 'xigradalpha'
+    if version < 0.5:
+        # control output changes
+        translator['b_xn'] = 'b_n_x_fun'
+        translator['b_n'] = 'b_n_fun'
+        translator['xi_xn'] = 'xi_n_x_fun'
+        translator['xi_n'] = 'xi_n_fun'
+        translator['dphi'] = 'delta_phi'
+        translator['b_xnm'] = 'b_n_x'
+        translator['b_nm'] = 'b_n'
+        translator['xi_xnm'] = 'xi_n_x'
+        translator['xi_nm'] = 'xi_n'
+        translator['Phi_X'] = 'Phi_x'
+        translator['Phi_EX'] = 'Phi_xe'
+        translator['Phi_T'] = 'Phi'
+        translator['Phi_ET'] = 'Phi_e'
+        translator['X_EVT'] = 'X_eigenvalue'
+        translator['X_EDT'] = 'X_eigenvector'
+        translator['W_EVX'] = 'W_xe_eigenvalue'
+        translator['R_EVX'] = 'R_xe_eigenvalue'
+        translator['P_EVX'] = 'P_xe_eigenvalue'
+        translator['C_EVX'] = 'C_xe_eigenvalue'
+        translator['W_EDX'] = 'W_xe_eigenvector'
+        translator['R_EDX'] = 'R_xe_eigenvector'
+        translator['P_EDX'] = 'P_xe_eigenvector'
+        translator['C_EDX'] = 'C_xe_eigenvector'
+        translator['W_EVX_energyv'] = 'W_xe_energyv'
+        translator['W_EVX_energys'] = 'W_xe_energys'
+        translator['W_EVX_energyp'] = 'W_xe_energyp'
+        translator['R_EVX_energyv'] = 'R_xe_energyv'
+        translator['R_EVX_energys'] = 'R_xe_energys'
+        translator['R_EVX_energyp'] = 'R_xe_energyp'
+        translator['W_EVX_A'] = 'W_xe_amp'
+        translator['R_EVX_RL'] = 'R_xe_RL'
+        translator['O_XT'] = 'O_Xxi_n'
+        translator['O_WX'] = 'O_WPhi_xe'
+        translator['O_PX'] = 'O_PPhi_xe'
+        translator['O_RX'] = 'O_RPhi_xe'
+        # profile output changes
+        translator['derxi_m_contrapsi'] = 'xigradpsi_dpsi'
+        translator['xi_m_contrapsi'] = 'xigradpsi'
+        translator['xi_m_contraalpha'] = 'xigradalpha'
+        # cylindrical output changes
+        translator['b_r_plas'] = 'b_r_plasma'
+        translator['b_z_plas'] = 'b_z_plasma'
+        translator['b_t_plas'] = 'b_t_plasma'
+
+    # swap out any old names that are in the dataset
+    #name_dict = OrderedDict(oldnew for oldnew in zip(old, new) if oldnew[0] in dataset)
+    #newset = dataset.rename(name_dict, inplace=inplace)
+    # do this in an explicit loop because some names already exist and need to get replaced in order
+    for okey, nkey in translator.iteritems():
+        if okey in newset:
+            newset = newset.rename({okey:nkey}, inplace=True)
+
+    return newset
+
 ######################################################## Post Processing Control Output
 
 
