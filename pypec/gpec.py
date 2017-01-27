@@ -147,7 +147,7 @@ def _newloc(loc):
 
 def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun=False,
         rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,
-        mailon='NONE',email='',mem=1e4,runipec=False,qsub=None,**kwargs):
+        mailon='NONE',email='',mem=3e3,hours=36,partition='ellis',runipec=False,qsub=None,**kwargs):
     """
     Python wrapper for running gpec package.
     
@@ -165,6 +165,8 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
     :param mailon: str. Choose from NONE, BEGIN, END, FAIL, REQUEUE, or ALL.
     :param email: str. Email address (default is submitting user).
     :param mem: floatMemory request of q-submission in megabytes (converted to integer).
+    :param hours: int. Number of hours requested from job manager.
+    :param partition: str. Specify a specific computing queue (e.g. 'ellis'). Default auto-changes to mque for mem>3e3.
     :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
 
     .. note::
@@ -234,13 +236,11 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
             pentrc = namelist.read('pentrc.in')
             if 'data_dir' not in pentrc['PENT_INPUT']:
                 pentrc['PENT_INPUT']['data_dir'] = packagedir+'pentrc'
-        # get all supporting data files (NOTE:: not necessary with new data_dir inputs)
-        #os.system('cp '+packagedir+'coil/*.dat .')
-        #os.system('cp '+packagedir+'pent/*.dat .')
 
     
     # actual run
     if submit:
+        # name the job based on the directory it is run in
         dloc = os.path.abspath(loc).split('/')[-1]
         jobname=(data.getshot(loc)+'_'+dloc).lstrip('_')
         # clean up old job submission if it exists
@@ -255,14 +255,11 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
         if rungpec: exelist+=rundir+'/gpec \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
         if cleandcon: exelist+='rm euler.in \n'
-        jobstr = bashjob.replace('jobnamehere',jobname)
-        jobstr = jobstr.replace('mailtypehere',mailon)
-        jobstr = jobstr.replace('mailuserhere',email)
-        jobstr = jobstr.replace('runlochere',loc)
-        jobstr = jobstr.replace('exelisthere',exelist)
-        jobstr = jobstr.replace('memhere',str(int(mem)))
-        if mem<=3e3: jobstr = \
-            jobstr.replace('mque','ellis')
+        if mem >= 3.5e3 and partition.lower() == 'ellis':  # ellis has 4GB per core
+            partition = 'mque'
+            jobstr = bashjob.format(name=jobname, nodes=1, mem=str(int(mem)), days=0, hours=int(hours),
+                          partition=partition, location= loc, exes=exelist,
+                          mailtype=mailon, mailuser=email)
         with open(jobname+'.sh','w') as f:
             f.write(jobstr)
         # submit job to cluster
