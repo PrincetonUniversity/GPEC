@@ -136,7 +136,7 @@ c     interpolate to uniform grid.
 c-----------------------------------------------------------------------
          DO itheta=0,mtheta
             CALL spline_eval(ff,rzphi%ys(itheta),1)
-            rzphi%fs(ipsi,itheta,1:3)=ff%f
+            rzphi%fs(ipsi,itheta,1:3)=ff%f(1:3)
             rzphi%fs(ipsi,itheta,4)=(1+ff%f1(4))
      $           *y_out(istep,1)*twopi*psio
          ENDDO
@@ -275,7 +275,6 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_position
       
-      INTEGER :: iii
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: ajac(2,2),det,dr,dz,fac,r,z
       TYPE(direct_bfield_type) :: bf
