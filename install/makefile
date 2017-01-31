@@ -72,7 +72,6 @@ mkbin:
 	cp -f ../sum/sum ../bin
 	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
-	cp -f ../input/mput ../bin
 
 # print verbose info
 
