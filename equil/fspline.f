@@ -171,10 +171,10 @@ c-----------------------------------------------------------------------
          ENDWHERE
          alpha1=alpha1*delta/twopi
          beta1=beta1*delta**2/twopi
-         alpha2=CONJG(alpha1)*expfac(0:mx-1)
-         beta2=CONJG(beta1)*expfac(0:mx-1)
-         alpha1=alpha1*expfac(1:mx)
-         beta1=beta1*expfac(1:mx)
+         alpha2=CONJG(alpha1)*expfac(0:my-1)
+         beta2=CONJG(beta1)*expfac(0:my-1)
+         alpha1=alpha1*expfac(1:my)
+         beta1=beta1*expfac(1:my)
 c-----------------------------------------------------------------------
 c     compute Fourier coefficients.
 c-----------------------------------------------------------------------
