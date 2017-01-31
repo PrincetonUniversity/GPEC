@@ -1887,7 +1887,7 @@ c-----------------------------------------------------------------------
          edge_mn=0
          edge_mn(ipert)=1.0
          CALL idcon_build(0,edge_mn)
-         DO istep=0,mstep
+         DO istep=1,mstep
             bsurfmat(istep,:,ipert)=u1%fs(istep,:)
          ENDDO
       ENDDO
@@ -4913,8 +4913,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert)::xvecs,wvecs,rvecs,pvecs,
      $    avecs,wmat,rmat,pmat
       COMPLEX(r8), DIMENSION(mpert,msing) :: svecs
-      COMPLEX(r8), DIMENSION(lmpert,mpert) :: xveco,wveco,rveco,pveco
-      COMPLEX(r8), DIMENSION(lmpert,msing) :: sveco
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert)::wfuns,rfuns
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::sfuns
 
