@@ -75,7 +75,7 @@ c-----------------------------------------------------------------------
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     surf_indinvmats,surf_indinvevmats,surfet,surfep,
-     $     amat,bmat,cmat,fmats,gmats,kmats
+     $     amat,bmat,cmat,fmats,gmats,kmats,coil_indmat
      $     ,wft,wtraw
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: chpmats,kapmats,
      $     plas_indmats,plas_indinvmats,permeabmats,diff_indmats,

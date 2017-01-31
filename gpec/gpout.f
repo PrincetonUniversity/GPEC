@@ -4884,9 +4884,9 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: output
       INTEGER :: i,j,k,maxmode
-      INTEGER :: idid,mdid,xdid,wdid,rdid,pdid,sdid,tdid,
-     $   mx_id,mw_id,mr_id,mp_id,ms_id,
-     $   we_id,re_id,pe_id,se_id,
+      INTEGER :: idid,mdid,xdid,wdid,rdid,pdid,sdid,tdid,cdid,
+     $   mx_id,mw_id,mr_id,mp_id,ms_id,mc_id,
+     $   we_id,re_id,pe_id,se_id,fc_id,fcf_id,sl_id,cn_id,
      $   w_id,r_id,p_id,s_id, sc_id,wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,rl_id,
      $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,ex_id,et_id,
@@ -4896,6 +4896,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: units
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: tempfun
+      COMPLEX(r8), DIMENSION(0:mthsurf, coil_num) :: tempfunc
       COMPLEX(r8), DIMENSION(msing) :: temps
       COMPLEX(r8), DIMENSION(mpert) :: temp,tempm,eigmn,filmn
       COMPLEX(r8), DIMENSION(mpert,mpert) :: mat,matmm,tempmm,singmat,
@@ -5372,6 +5373,19 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(mncid,ft_id,"units","Wb") )
          CALL check( nf90_put_att(mncid,ft_id,"long_name",
      $    "Total flux") )
+         IF(coil_flag) THEN
+           CALL check( nf90_def_dim(mncid,"coil_index",coil_num,cdid) )
+           CALL check( nf90_def_var(mncid,"coil_index",
+     $                 nf90_int,cdid,mc_id))
+           CALL check( nf90_def_dim(mncid,"coil_strlen",24,sl_id) )
+           CALL check( nf90_def_var(mncid,"coil_name",nf90_char,
+     $                 (/sl_id,cdid/),cn_id) )
+           CALL check( nf90_def_var(mncid,"Phi_coil",nf90_double,
+     $                 (/mdid,cdid,idid/),fc_id) )
+           CALL check( nf90_put_att(mncid,fc_id,"units","Wb") )
+           CALL check( nf90_put_att(mncid,fc_id,"long_name",
+     $      "Coil flux") )
+         ENDIF
 
          IF(fun_flag)THEN
             CALL check( nf90_def_var(mncid,"Phi_xe_fun",nf90_double,
@@ -5394,6 +5408,13 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(mncid,ftf_id,"units","Wb") )
             CALL check( nf90_put_att(mncid,ftf_id,"long_name",
      $       "Total flux") )
+            IF(coil_flag) THEN
+              CALL check( nf90_def_var(mncid,"Phi_coil_fun",nf90_double,
+     $                    (/tdid, cdid, idid/),fcf_id) )
+              CALL check( nf90_put_att(mncid,fcf_id,"units","Wb") )
+              CALL check( nf90_put_att(mncid,fcf_id,"long_name",
+     $         "Coil flux") )
+            ENDIF
             CALL check( nf90_def_var(mncid,"W_xe_eigenvector_fun",
      $               nf90_double,(/tdid,wdid,idid/),wf_id) )
             CALL check( nf90_put_att(mncid,wf_id,"long_name",
@@ -5552,6 +5573,23 @@ c-----------------------------------------------------------------------
            CALL check(nf90_put_var(mncid,fxf_id,RESHAPE((/REAL(tempfun),
      $         -helicity*AIMAG(tempfun)/),(/mthsurf+1,2/))) )
          ENDIF
+         IF(coil_flag) THEN
+           CALL check( nf90_put_var(mncid,mc_id,(/(i,i=1,coil_num)/)) )
+           CALL check( nf90_put_var(mncid,cn_id,coil_name(1:coil_num)))
+           CALL check( nf90_put_var(mncid,fc_id,
+     $                 RESHAPE((/REAL(coil_indmat),AIMAG(coil_indmat)/),
+     $                         (/mpert,coil_num,2/))) )
+           IF(fun_flag)THEN
+             DO i=1,coil_num
+               CALL iscdftb(mfac,mpert,tempfun,mthsurf,coil_indmat(:,i))
+               tempfunc(:,i) = tempfun * EXP(ifac * nn* dphi)
+             ENDDO
+             CALL check( nf90_put_var(mncid, fcf_id,
+     $            RESHAPE((/REAL(tempfunc), -helicity*AIMAG(tempfunc)/),
+     $            (/mthsurf+1, coil_num, 2/))) )
+           ENDIF
+         ENDIF
+
 
          ! Decomposition of the applied flux
          temp = MATMUL(ftop, finmn) ! flux to power-normalized field (T)

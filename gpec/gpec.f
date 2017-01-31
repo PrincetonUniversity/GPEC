@@ -17,7 +17,7 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: i,in,resol,
+      INTEGER :: i,j,in,resol,
      $     mode,m3mode,lowmode,highmode,filter_modes
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
@@ -343,13 +343,18 @@ c-----------------------------------------------------------------------
      $     "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert))
-         coilmn=0
-         CALL field_bs_psi(psilim,coilmn,1)
-         DO i=1,cmpert
-            IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-               finmn(cmlow-mlow+i)=coilmn(i)
-            ENDIF
+         ALLOCATE(coil_indmat(mpert,coil_num))
+         DO j=1,coil_num
+            coilmn=0
+            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
+            DO i=1,cmpert
+               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
+                  coil_indmat(cmlow-mlow+i,j)=coilmn(i)
+                  finmn(cmlow-mlow+i)=finmn(cmlow-mlow+i)+coilmn(i)
+               ENDIF
+            ENDDO
          ENDDO
+         DEALLOCATE(coilmn)
          IF(timeit) CALL gpec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------
