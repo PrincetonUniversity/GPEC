@@ -147,7 +147,7 @@ def _newloc(loc):
 
 def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun=False,
         rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,
-        mailon='NONE',email='',mem=3e3,hours=36,partition='ellis',runipec=False,qsub=None,**kwargs):
+        mailon='NONE',email='',mem=3e3,hours=36,partition='sque',runipec=False,qsub=None,**kwargs):
     """
     Python wrapper for running gpec package.
     
@@ -257,9 +257,10 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
         if cleandcon: exelist+='rm euler.in \n'
         if mem >= 3.5e3 and partition.lower() == 'ellis':  # ellis has 4GB per core
             partition = 'mque'
-            jobstr = bashjob.format(name=jobname, nodes=1, mem=str(int(mem)), days=0, hours=int(hours),
-                          partition=partition, location= loc, exes=exelist,
-                          mailtype=mailon, mailuser=email)
+        jobstr = bashjob.format(name=jobname, nodes=1, mem=str(int(mem)), days=0, hours=int(hours),
+                                partition=partition, location= loc, exes=exelist,
+                                mailtype=mailon.upper(), mailuser=email)
+        jobstr = jobstr.replace('#SBATCH --mail-type=NONE', '') # robust to sbatch versions
         with open(jobname+'.sh','w') as f:
             f.write(jobstr)
         # submit job to cluster

@@ -20,6 +20,7 @@ bashjob="""#!/bin/bash
 # ------------------------------------------------------------
 
 echo "The job's id is: $SLURM_JOBID"
+echo "The job's partition is: $SLURM_JOB_PARTITION"
 echo "The master node of this job is: $SLURM_SUBMIT_HOST"
 echo -n 'Started job at : ' ; date
 echo " "
