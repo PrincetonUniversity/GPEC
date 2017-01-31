@@ -11,7 +11,6 @@ output in a way that is conducive to comparing multiple GPEC runs.
 import numpy as np
 import sys, inspect, itertools, os
 from matplotlib import pyplot
-from collections import OrderedDict
 from pypec import data, post
 from pypec import modplot as plt
 
@@ -108,6 +107,7 @@ def check_control_1d(*directories):
         if ds is None:
             print('WARNING: No output in ' + d)
             continue
+        print(post.__file__)
         ds = post.update_name_conventions(ds, inplace=True)
         datasets.append(ds)
 

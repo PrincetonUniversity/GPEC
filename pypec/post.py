@@ -72,6 +72,7 @@ to do all sorts of post-processing tasks.
 """
 
 import numpy as np  # math
+from collections import OrderedDict
 
 # in this package
 import modplot as plt
