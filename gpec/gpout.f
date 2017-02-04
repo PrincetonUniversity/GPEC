@@ -1820,7 +1820,7 @@ c-----------------------------------------------------------------------
          edge_mn=0
          edge_mn(ipert)=1.0
          CALL idcon_build(0,edge_mn)
-         DO istep=0,mstep
+         DO istep=1,mstep
             bsurfmat(istep,:,ipert)=u1%fs(istep,:)
          ENDDO
       ENDDO
@@ -4723,8 +4723,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert)::xvecs,wvecs,rvecs,pvecs,
      $    avecs,wmat,rmat,pmat
       COMPLEX(r8), DIMENSION(mpert,msing) :: svecs
-      COMPLEX(r8), DIMENSION(lmpert,mpert) :: xveco,wveco,rveco,pveco
-      COMPLEX(r8), DIMENSION(lmpert,msing) :: sveco
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert)::wfuns,rfuns
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::sfuns
 
@@ -4977,15 +4975,6 @@ c-----------------------------------------------------------------------
      $        psilim,templ,lmfac,lmpert,rout,bpout,bout,rcout,tout,0)
            coordmat(:,i) = templ
          ENDDO
-         wveco = MATMUL(coordmat,wvecs)
-         rveco = MATMUL(coordmat,rvecs)
-         pveco = MATMUL(coordmat,pvecs)
-         IF(singcoup_set) sveco = MATMUL(coordmat,svecs)
-         !xveco = MATMUL(coordmat,MATMUL(singmat,xvecs))
-         !DO i=1,mpert
-         !  xveco(:,i) = xveco(:,i)/(chi1*twopi*ifac*(lmfac-nn*qlim)) ! not right if tout=0?
-         !ENDDO
-         xveco = xvecs
 
          ! Write to netCDF file
          IF(debug_flag) PRINT *,"Opening "//TRIM(mncfile)

@@ -219,7 +219,8 @@ c-----------------------------------------------------------------------
       subroutine spl1d2(n,x,f,w,ij,y,tab)
       implicit real*8 (a-h,o-z)
       data wz,sz/2.0e0,6.0e0/
-      dimension x(3),f(3),w(3),tab(3)
+      dimension x(*),f(*),w(*)
+      dimension tab(3)
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
@@ -297,7 +298,7 @@ c-----------------------------------------------------------------------
       subroutine search(xbar,x,n,i,mflag)
       implicit real*8 (a-h,o-z)
       character(8) com1(5)
-      dimension x(1)
+      dimension x(*)
       data com1/ 'search  ','xbar is ','outside ','range of',' table'/
 c-----------------------------------------------------------------------
 c     computations.
