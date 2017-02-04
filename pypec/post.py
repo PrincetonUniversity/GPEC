@@ -177,7 +177,7 @@ def update_name_conventions(dataset, version=None, inplace=False):
 ######################################################## Post Processing Control Output
 
 
-def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False):
+def add_3dsurface(control_output, phi_lim=2 * pi, nphi=180, overwrite=False, inplace=False):
     """
     Add 3D geometric dimensions to dataset from gpec_control_output_n#.nc.
 
@@ -186,6 +186,7 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
 
     :param control_output: Dataset. xarray Dataset opened from gpec_control_output_n#.nc
     :param phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
+    :param nphi: int. Length of toroidal angle dimension array.
     :param overwrite: bool. Overwrite geometric quantities if they already exist.
     :param inplace: bool. Modify dataset inplace. Otherwise, return a new dataset.
 
@@ -255,8 +256,8 @@ def add_3dsurface(control_output, phi_lim=2 * pi, overwrite=False, inplace=False
 
     # machine toroidal angle
     if 'phi_surf' not in ds or overwrite:
-        phi = np.linspace(0, phi_lim, 180)
-        phi = xarray.DataArray(phi, coords={'phi_surf': phi}, name='phi_surf')
+        phi = np.linspace(0, phi_lim, nphi)
+        phi = xarray.DataArray(phi, coords={'phi_surf': phi}, dims=('phi_surf',), name='phi_surf')
         ds['phi_surf'] = phi
         ds['phase_surf'] = np.exp(-1j * ds.attrs['n'] * ds['phi_surf'])
 
