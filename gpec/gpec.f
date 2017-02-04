@@ -17,7 +17,7 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      INTEGER :: i,in,resol,
+      INTEGER :: i,j,in,resol,
      $     mode,m3mode,lowmode,highmode,filter_modes
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
@@ -56,7 +56,8 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
-     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag
+     $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
+     $     netcdf_flag,ascii_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -136,6 +137,8 @@ c-----------------------------------------------------------------------
       vvbrzphi_flag=.FALSE.
       bin_flag=.TRUE.
       bin_2d_flag=.TRUE.
+      netcdf_flag=.TRUE.
+      ascii_flag=.TRUE.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
       max_linesout=0
@@ -340,13 +343,18 @@ c-----------------------------------------------------------------------
      $     "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert))
-         coilmn=0
-         CALL field_bs_psi(psilim,coilmn,1)
-         DO i=1,cmpert
-            IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-               finmn(cmlow-mlow+i)=coilmn(i)
-            ENDIF
+         ALLOCATE(coil_indmat(mpert,coil_num))
+         DO j=1,coil_num
+            coilmn=0
+            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
+            DO i=1,cmpert
+               IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
+                  coil_indmat(cmlow-mlow+i,j)=coilmn(i)
+                  finmn(cmlow-mlow+i)=finmn(cmlow-mlow+i)+coilmn(i)
+               ENDIF
+            ENDDO
          ENDDO
+         DEALLOCATE(coilmn)
          IF(timeit) CALL gpec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------
@@ -448,7 +456,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     full analysis.
 c-----------------------------------------------------------------------
-      CALL gpout_init_netcdf
+      IF (netcdf_flag) CALL gpout_init_netcdf
       IF (resp_flag) THEN
          CALL gpout_response(power_rout,power_bpout,
      $        power_bout,power_rcout,tmag_out,jsurf_out)
@@ -476,6 +484,10 @@ c-----------------------------------------------------------------------
       IF (singfld_flag) THEN
          IF (con_flag) THEN
             PRINT *,"WARNING: singfld_flag not supported with con_flag"
+            singfld_flag = .FALSE.
+            vsingfld_flag = .FALSE.
+         ELSEIF (msing==0) THEN
+            PRINT *,"WARNING: no rationals for singfld_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE

@@ -32,3 +32,10 @@ PYPEC Source documentation
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: regression
+
+
+.. automodule:: regression.compare
+   :members:
+   :undoc-members:
+   :show-inheritance:

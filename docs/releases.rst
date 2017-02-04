@@ -37,6 +37,55 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.0.3
+===========
+
+This patch fixes a mis-labeling of the control netcdf Phi_fun and Phi_x_fun units. The units are Wb.
+
+
+GPEC v1.0.2
+===========
+
+This patch features one bug fix and one addition to the netcdf output.
+
+Features
+--------------
+- A transform matrix J_surf_2 has been added to the control netcdf. This matrix applies a dimensionless half-area weighting.
+
+Bug Fixes
+-------------
+- The netcdf output Phi_xe has been changed from "energy-normalized flux" with units Wb/m to "energy-normalized field" with units of Tesla. The related \*_xe matrices have been similarly normalized. No physics is changed, only the scalar area normalization.
+
+
+GPEC v1.0.1
+===========
+
+This patch cleans up the input directory, removing deprecated files.
+
+
+GPEC v1.0.0
+===========
+
+This major release marks the true transition from individual ideal perturbed equilibrium calculations to a fully generalized perturbed equilibrium package.
+
+The Perturbed Equilibrium Nonambipolar TRansport Code (PENTRC) is used to calculate the neoclassical drift kinetic pressure matrixes required to minimize the hybrid kinetic-MHD perturbed energy and find a set of force balance states. The computational structure of the ideal DCON code is largely maintained in finding these states, although generalizations and modifications have been made to account for new mathematical properties. Foremost among these are 1) the absence of hermitian properties and 2) the integrable nature of singularities near the rational surfaces. Generalization of the linear algebra and new decomposition / recomposition of the matrices required by these changes are now used for both the ideal and kinetic calculations.
+
+The Ideal Perturbed Equilibrium Code (IPEC) has officially been deprecated and is now the package namesake: the Generalized Perturbed Equilibrium Code (GPEC). The foundational computational changes are much less than in the above case however, with only a few minor generalizations of hermitian linear algebra assumptions.
+
+Features
+-------------
+ - DCON inclusion of kinetic terms is now determined by the kin_flag input.
+  - Additional dcon_control namelist inputs can be used to control the kinetic calculations
+ - IPEC now calculates generalized perturbed equilibrium (no assumption that the force balance states form a hermitian matrix)
+ - IPEC netcdf output is nearly complete and naming conventions are official
+ - PENTRC now has fully netcdf output unless ascii is specifically requested by the user
+  - Output is now separated from calculations, setting the stage for parallelization
+
+Documentation
+----------------------
+ - Example runs have been split into ideal and kinetic examples to show the kinetic effects
+ - An "a10" example has been added for simple circular-large-aspect-ratio intuition
+
 
 GPEC v0.4.0
 ===========

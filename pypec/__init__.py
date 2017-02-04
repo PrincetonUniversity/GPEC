@@ -42,7 +42,7 @@ To put the changes into effect::
 
   $ source ~/.bashrc
 
-Users are futher encouraged to create a matplotlib rc file in
+Users are further encouraged to create a matplotlib rc file in
 user ~/.config/matplotlib similar to /u/nlogan/.config/matplotlib/matplotlibrc.
 This file sets a number of plotting defaults.
 
@@ -65,27 +65,27 @@ for each can be found at
 Setting Your Personal Defaults
 ------------------------------
 
-To set personal defualts for runs, edit the _defaults_.py file in
+To set personal defaults for runs, edit the _defaults_.py file in
 this directory. Some of these (like email) should be obvious, others
 you may not understand until becoming more familiar with the package.
 Do not worry if these are confusing, and feel free to skip them for now.
 
 
-Using the Best Environement
+Using the Best Environment
 ---------------------------
 
-The ipython (interactive) environment is recomended for commandline
+The ipython (interactive) environment is recommended for commandline
 data analysis. To start, it is easiest to auto-import a number of 
-basic mathematic and visualization modules and use an enhanced 
+basic mathematics and visualization modules and use an enhanced
 interactivity for displaying figures. To do this enter::
 
   $ ipython --pylab
 
 Look into online tutorial on numpy and matplotlib. Advanced users 
-are recomended to edit ~/.matplotlib/matplotlibrc and 
+are recommended to edit ~/.matplotlib/matplotlibrc and
 ~/.ipython/profile_default/startup/autoimports.ipy files.
 
-Now in the ipython envirnment, type
+Now in the ipython environment, type
 
 >>> from pypec import gpec,data # doctest:+ELLIPSIS
 

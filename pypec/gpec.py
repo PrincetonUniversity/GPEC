@@ -145,26 +145,28 @@ def _newloc(loc):
         
 
 
-def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=False,
+def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun=False,
         rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,
-        mailon='ae',email='',mem=1e4,
-        runipec=False,runpent=False,optpentrc=False,pent_tol=0,**kwargs):
+        mailon='NONE',email='',mem=3e3,hours=36,partition='sque',runipec=False,qsub=None,**kwargs):
     """
     Python wrapper for running gpec package.
     
     :param loc: str. Directory location for run.
     :param rundir: str. GPEC package directory with executables and .dat files.
-    :param qsub: bool. Submit job to cluster.
+    :param submit: bool. Submit job to cluster.
     :param return_on_complete: bool. Return only after job is finished on cluster (irrelevant if qsub=False).
     :param rerun: bool. Does not delete existing .out files.
     :param rundcon: bool. Run dcon.
+    :param runipec: bool. Run ipec.
     :param rungpec: bool. Run gpec.
     :param runpentrc: bool. Run pentrc.
     :param cleandcon: bool. Remove euler.bin file after run is complete.
     :param fill_inputs: bool. Use inputs from rundir (see kwargs).
-    :param mailon: str. Any combination of a,b,e for on interruption execution, and termination respectively.
-    :param email: str. Email address.
+    :param mailon: str. Choose from NONE, BEGIN, END, FAIL, REQUEUE, or ALL.
+    :param email: str. Email address (default is submitting user).
     :param mem: floatMemory request of q-submission in megabytes (converted to integer).
+    :param hours: int. Number of hours requested from job manager.
+    :param partition: str. Specify a specific computing queue (e.g. 'ellis'). Default auto-changes to mque for mem>3e3.
     :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
 
     .. note::
@@ -183,8 +185,10 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     _newloc(loc)
     locfiles = os.listdir('.')
     if runipec:
-        print("WARNING: runipec is being deprecated. Use rungpec.")
-        rungpec = True
+        print("WARNING: runipec is deprecated in GPEC 1.0. Use rungpec.")
+    if qsub:
+        print("WARNING: qsub is being deprecated in GPEC 1.0. Use submit in the future.")
+        submit = qsub
 
     if not rerun:
         print('Cleaning old run out, dat, and bin files')
@@ -195,16 +199,18 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
                 os.system('rm *.dat')
             if np.any([f.endswith('.bin') for f in locfiles]):
                 os.system('rm *.bin')
-        elif rungpec:
+        elif rungpec or runipec:
             if np.any([f.startswith('gpec_') for f in locfiles]):
                 os.system('rm gpec_*')
+            if np.any([f.startswith('ipec_') for f in locfiles]):
+                os.system('rm ipec_*')
             if np.any([f.startswith('gpec_diagnostics_') for f in locfiles]):
                 os.system('rm gpdiag_*')
             if np.any([f.startswith('pent_') for f in locfiles]):
                 os.system('rm pent_*')
-        elif runpent:
-            if np.any([f.startswith('pent_') for f in locfiles]):
-                os.system('rm pent_*')
+        elif runpentrc:
+            if np.any([f.startswith('pentrc_') for f in locfiles]):
+                os.system('rm pentrc_*')
 
     # set up run
     for key in kwargs:
@@ -230,16 +236,14 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
             pentrc = namelist.read('pentrc.in')
             if 'data_dir' not in pentrc['PENT_INPUT']:
                 pentrc['PENT_INPUT']['data_dir'] = packagedir+'pentrc'
-        # get all supporting data files (NOTE:: not necessary with new data_dir inputs)
-        #os.system('cp '+packagedir+'coil/*.dat .')
-        #os.system('cp '+packagedir+'pent/*.dat .')
 
     
     # actual run
-    if qsub:
+    if submit:
+        # name the job based on the directory it is run in
         dloc = os.path.abspath(loc).split('/')[-1]
-        jobname=data.getshot(loc)+'_'+dloc
-        # clean up old qsub if it exists
+        jobname=(data.getshot(loc)+'_'+dloc).lstrip('_')
+        # clean up old job submission if it exists
         if os.path.exists('../{:}.oe'.format(dloc)):
             os.system('rm ../{:}.oe'.format(dloc))
         if os.path.exists('{:}.sh'.format(jobname)):
@@ -247,21 +251,20 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         # fill in and write shell script
         exelist=''
         if rundcon: exelist+=rundir+'/dcon \n'
+        if runipec: exelist+=rundir+'/ipec \n'
         if rungpec: exelist+=rundir+'/gpec \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
-        if optpentrc: exelist+=rundir+'/OPENTRC \n'
         if cleandcon: exelist+='rm euler.in \n'
-        jobstr = bashjob.replace('jobnamehere',jobname)
-        if mailon: jobstr = jobstr.replace('# --- emailoptionhere','#PBS -m '+mailon)
-        if email:  jobstr = jobstr.replace('# --- emailhere','#PBS -M '+email)
-        jobstr = jobstr.replace('runlochere',loc)
-        jobstr = jobstr.replace('exelisthere',exelist)
-        jobstr = jobstr.replace('memhere',str(int(mem)))
-        if mem<=3e3: jobstr = jobstr.replace('#PBS -q mque','')
+        if mem >= 3.5e3 and partition.lower() == 'ellis':  # ellis has 4GB per core
+            partition = 'mque'
+        jobstr = bashjob.format(name=jobname, nodes=1, mem=str(int(mem)), days=0, hours=int(hours),
+                                partition=partition, location= loc, exes=exelist,
+                                mailtype=mailon.upper(), mailuser=email)
+        jobstr = jobstr.replace('#SBATCH --mail-type=NONE', '') # robust to sbatch versions
         with open(jobname+'.sh','w') as f:
             f.write(jobstr)
         # submit job to cluster
-        os.system('qsub '+jobname+'.sh')
+        os.system('sbatch '+jobname+'.sh')
         #wait for job completion to return
         if return_on_complete:
             print('Waiting for job to complete...')
@@ -272,9 +275,9 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     else:
         print(rundir+'/dcon')
         if rundcon: os.system(rundir+'/dcon')
+        if runipec: os.system(rundir+'/ipec')
         if rungpec: os.system(rundir+'/gpec')
         if runpentrc: os.system(rundir+'/pentrc')
-        if optpentrc: os.system(rundir+'/OPENTRC')
         # clean up
         if cleandcon: os.system('rm euler.bin')
         os.system('rm *.dat')

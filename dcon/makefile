@@ -27,6 +27,7 @@ OBJS = \
 	sing.o \
 	ode_output.o \
 	ode.o \
+	dcon_netcdf.o \
 	free.o \
 	resist.o \
 	dcon.o
@@ -66,7 +67,8 @@ fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
 sing.o: fourfit.o
 ode_output.o: dcon_mod.o sing.o debug.o
 ode.o: ode_output.o
-free.o: ode.o
+dcon_netcdf.o: dcon_mod.o
+free.o: ode.o dcon_netcdf.o
 resist.o: dcon_mod.o
 dcon.o: bal.o mercier.o ode.o free.o resist.o ../pentrc/inputs.o ../pentrc/dcon_interface.o ../pentrc/pentrc_interface.o
 

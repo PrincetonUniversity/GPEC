@@ -583,46 +583,49 @@ c-----------------------------------------------------------------------
       psitor(:)=qs%fsi(1:mpsi+1,1)/qintb
       CALL spline_dealloc(qs)
 
-      CALL ascii_open(out_unit,"idcon_equil.out","UNKNOWN")
-      WRITE(out_unit,*)"IDCON_EQUIL: "//
-     $     "Various equilibrium quantities"
-      WRITE(out_unit,*)     
-      WRITE(out_unit,'(1x,a13,a8)')"jac_type = ",jac_type
-      WRITE(out_unit,'(2(1x,a8,1x,I6))')"mpsi =",mpsi,"mtheta =",mtheta
-      WRITE(out_unit,'(2(1x,a14,1x,es16.8))')"psi_edge =",psio,
-     $     "psitor_edge =",qintb*psio
-      WRITE(out_unit,*)     
-      WRITE(out_unit,*)" Flux functions:"
-      WRITE(out_unit,*) 
-      WRITE(out_unit,'(6(1x,a16))')"psi","psitor","p","q","g","I"
-      DO ipsi=0,mpsi
-         CALL spline_eval(sq,sq%xs(ipsi),0)
-         CALL spline_alloc(qs,mtheta,1)
-         qs%xs=rzphi%ys
-         qs%fs(:,1)=jacb2(ipsi,:)
-         CALL spline_fit(qs,"periodic") 
-         CALL spline_int(qs)          
-         WRITE(out_unit,'(6(1x,es16.8))')sq%xs(ipsi),psitor(ipsi),
-     $        sq%f(2)/mu0,sq%f(4),sq%f(1)/(twopi*mu0),
-     $        (qs%fsi(mtheta,1)/(twopi*chi1)-sq%f(4)*sq%f(1)/twopi)/mu0
-         CALL spline_dealloc(qs)
-      ENDDO
-      WRITE(out_unit,*)     
-      WRITE(out_unit,*)" 2D functions:"
-      WRITE(out_unit,*)  
-      WRITE(out_unit,'(8(1x,a16))')"psi","theta","r","z",
-     $     "eta","dphi","jac","b0"
-      DO ipsi=0,mpsi
-         DO itheta=0,mtheta
-            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),0)
-            CALL bicube_eval(eqfun,eqfun%xs(ipsi),eqfun%ys(itheta),0)
-            WRITE(out_unit,'(8(1x,es16.8))')rzphi%xs(ipsi),
+      IF(ascii_flag)THEN
+         CALL ascii_open(out_unit,"idcon_equil.out","UNKNOWN")
+         WRITE(out_unit,*)"IDCON_EQUIL: "//
+     $        "Various equilibrium quantities"
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a13,a8)')"jac_type = ",jac_type
+         WRITE(out_unit,'(2(1x,a8,1x,I6))')"mpsi =",mpsi,
+     $        "mtheta =",mtheta
+         WRITE(out_unit,'(2(1x,a14,1x,es16.8))')"psi_edge =",psio,
+     $        "psitor_edge =",qintb*psio
+         WRITE(out_unit,*)
+         WRITE(out_unit,*)" Flux functions:"
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(6(1x,a16))')"psi","psitor","p","q","g","I"
+         DO ipsi=0,mpsi
+            CALL spline_eval(sq,sq%xs(ipsi),0)
+            CALL spline_alloc(qs,mtheta,1)
+            qs%xs=rzphi%ys
+            qs%fs(:,1)=jacb2(ipsi,:)
+            CALL spline_fit(qs,"periodic")
+            CALL spline_int(qs)
+            WRITE(out_unit,'(6(1x,es16.8))')sq%xs(ipsi),psitor(ipsi),
+     $           sq%f(2)/mu0,sq%f(4),sq%f(1)/(twopi*mu0),
+     $           (qs%fsi(mtheta,1)/chi1-sq%f(4)*sq%f(1))/(twopi*mu0)
+            CALL spline_dealloc(qs)
+         ENDDO
+         WRITE(out_unit,*)
+         WRITE(out_unit,*)" 2D functions:"
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(8(1x,a16))')"psi","theta","r","z",
+     $        "eta","dphi","jac","b0"
+         DO ipsi=0,mpsi
+            DO itheta=0,mtheta
+               CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),0)
+               CALL bicube_eval(eqfun,eqfun%xs(ipsi),eqfun%ys(itheta),0)
+               WRITE(out_unit,'(8(1x,es16.8))')rzphi%xs(ipsi),
      $           rzphi%ys(itheta)*twopi,rs(ipsi,itheta),zs(ipsi,itheta),
      $           rzphi%f(2)*twopi,rzphi%f(3)*twopi,
      $           rzphi%f(4)/(twopi*sq%f(4)*chi1),eqfun%f(1)
+            ENDDO
          ENDDO
-      ENDDO
-      CALL ascii_close(out_unit)
+         CALL ascii_close(out_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

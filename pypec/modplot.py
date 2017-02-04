@@ -490,6 +490,44 @@ pyplot.matplotlib.lines.Line2D.downsample = line_downsample
 
 ########################################### my own functions
 
+def add_inset_axes(ax,rect,axisbg='w',polar=False, **kwargs):
+    """
+    Add a axes inset in another axes.
+    Unlike the native matplotlib inset_axes, here the inset axes can be a polar axes.
+
+    Note that the parent axes should be drawn first if using autolayout (changes postion).
+    The inset axes will not track the original if it is moved.
+
+    From http://stackoverflow.com/questions/17458580/embedding-small-plots-inside-subplots-in-matplotlib/17479417#17479417
+
+    :param ax: Axes. Parent axes.
+    :param rect: list. Inset axes location and dimensions [left, bottom, width, height]
+    :param axisbg: str. Background color.
+    :param polar: bool. Polar plot.
+    :param kwargs: dict. Passed to add_subplot.
+    :return: Axes. A new inset axes.
+
+    """
+    fig = ax.figure
+    box = ax.get_position()
+    width = box.width
+    height = box.height
+    inax_position  = ax.transAxes.transform(rect[0:2])
+    transFigure = fig.transFigure.inverted()
+    infig_position = transFigure.transform(inax_position)
+    x = infig_position[0]
+    y = infig_position[1]
+    width *= rect[2]
+    height *= rect[3]
+    subax = fig.add_axes([x,y,width,height],axisbg=axisbg,polar=polar,**kwargs)
+    x_labelsize = subax.get_xticklabels()[0].get_size()
+    y_labelsize = subax.get_yticklabels()[0].get_size()
+    x_labelsize *= rect[2]**0.5
+    y_labelsize *= rect[3]**0.5
+    subax.xaxis.set_tick_params(labelsize=x_labelsize)
+    subax.yaxis.set_tick_params(labelsize=y_labelsize)
+    return subax
+
 def shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shiftedcmap'):
     """
     Function to offset the "center" of a colormap. Useful for

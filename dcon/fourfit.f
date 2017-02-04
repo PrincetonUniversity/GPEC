@@ -164,8 +164,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE fourfit_make_matrix
-      
+      SUBROUTINE fourfit_make_matrix(op_diagnose)
+
+      LOGICAL, OPTIONAL, INTENT(IN) :: op_diagnose
+
       CHARACTER(128) :: message
       INTEGER :: ipsi,ipert,jpert,m1,m2,m,dm,info,iqty,l,i,j,iindex
       REAL(r8) :: chi1,jtheta,nq,p1,psifac,q,q1,singfac1,singfac2,ileft
@@ -182,10 +184,11 @@ c-----------------------------------------------------------------------
      $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,dbat,ebat,fbat
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu,fmatlu
 
-      LOGICAL, PARAMETER :: diagnose=.FALSE.
+      LOGICAL :: diagnose=.FALSE.
       INTEGER, PARAMETER :: unit=99
 
       mfac =(/(m,m=mlow,mhigh)/)
+      IF(PRESENT(op_diagnose)) diagnose = op_diagnose
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -456,45 +459,47 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(dbats,"extrap")
       CALL cspline_fit(ebats,"extrap")
       CALL cspline_fit(fbats,"extrap")
-      
-      mfac =(/(i,i=mlow,mhigh)/)
-      CALL ascii_open(fourfit_out_unit,"imats.out","UNKNOWN")
-      WRITE(fourfit_out_unit,*)"DCON ideal energy matrices"
-      WRITE(fourfit_out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
-     $     "mpsi =",mpsi,"mpert =",mpert
-      WRITE(fourfit_out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')
-     $     "psi","m1","m2",
-     $     "real(Ai)","imag(Ai)","real(Bi)","imag(Bi)",
-     $     "real(Ci)","imag(Ci)","real(Di)","imag(Di)",
-     $     "real(Ei)","imag(Ei)","real(Hi)","imag(Hi)"
-      DO ipsi=0,mpsi 
-         DO i=1,mpert
-            DO j=1,mpert
-               ipert = (i-1)*mpert + j
-               WRITE(fourfit_out_unit,'(1x,es16.8,2(1x,I4),'//
-     $              '12(1x,es16.8))')
-     $              REAL(amats%xs(ipsi),4),mfac(i),mfac(j),
-     $              REAL(REAL(amats%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(amats%fs(ipsi,ipert)),4),
-     $              REAL(REAL(bmats%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(bmats%fs(ipsi,ipert)),4),
-     $              REAL(REAL(cmats%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(cmats%fs(ipsi,ipert)),4),
-     $              REAL(REAL(dmats%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(dmats%fs(ipsi,ipert)),4),
-     $              REAL(REAL(emats%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(emats%fs(ipsi,ipert)),4),
-     $              REAL(REAL(hmats%fs(ipsi,ipert)),4),
-     $              REAL(AIMAG(hmats%fs(ipsi,ipert)),4)
-            ENDDO
-         ENDDO
-      ENDDO
-      WRITE(fourfit_out_unit,*)
-      CALL ascii_close(fourfit_out_unit)
+
 c-----------------------------------------------------------------------
 c     write binary output for diagnosis.
 c-----------------------------------------------------------------------  
-      IF(.TRUE.)THEN
+      IF(diagnose)THEN
+         WRITE(*,*)"Write binary output for graphs."
+         mfac =(/(i,i=mlow,mhigh)/)
+         CALL ascii_open(fourfit_out_unit,"imats.out","UNKNOWN")
+         WRITE(fourfit_out_unit,*)"DCON ideal energy matrices"
+         WRITE(fourfit_out_unit,'(1/,1x,a12,1x,I6,1x,1(a12,I4),1/)')
+     $        "mpsi =",mpsi,"mpert =",mpert
+         WRITE(fourfit_out_unit,'(1x,a16,2(1x,a4),12(1x,a16))')
+     $        "psi","m1","m2",
+     $        "real(Ai)","imag(Ai)","real(Bi)","imag(Bi)",
+     $        "real(Ci)","imag(Ci)","real(Di)","imag(Di)",
+     $        "real(Ei)","imag(Ei)","real(Hi)","imag(Hi)"
+         DO ipsi=0,mpsi
+            DO i=1,mpert
+               DO j=1,mpert
+                  ipert = (i-1)*mpert + j
+                  WRITE(fourfit_out_unit,'(1x,es16.8,2(1x,I4),'//
+     $                 '12(1x,es16.8))')
+     $                 REAL(amats%xs(ipsi),4),mfac(i),mfac(j),
+     $                 REAL(REAL(amats%fs(ipsi,ipert)),4),
+     $                 REAL(AIMAG(amats%fs(ipsi,ipert)),4),
+     $                 REAL(REAL(bmats%fs(ipsi,ipert)),4),
+     $                 REAL(AIMAG(bmats%fs(ipsi,ipert)),4),
+     $                 REAL(REAL(cmats%fs(ipsi,ipert)),4),
+     $                 REAL(AIMAG(cmats%fs(ipsi,ipert)),4),
+     $                 REAL(REAL(dmats%fs(ipsi,ipert)),4),
+     $                 REAL(AIMAG(dmats%fs(ipsi,ipert)),4),
+     $                 REAL(REAL(emats%fs(ipsi,ipert)),4),
+     $                 REAL(AIMAG(emats%fs(ipsi,ipert)),4),
+     $                 REAL(REAL(hmats%fs(ipsi,ipert)),4),
+     $                 REAL(AIMAG(hmats%fs(ipsi,ipert)),4)
+               ENDDO
+            ENDDO
+         ENDDO
+         WRITE(fourfit_out_unit,*)
+         CALL ascii_close(fourfit_out_unit)
+
          WRITE(*,*)"Write binary output for graphs."
          CALL bin_open(bin_unit,"fs.bin","UNKNOWN","REWIND","none")
          DO ipert=1,(mband+1)*(2*mpert-mband)/2
@@ -906,7 +911,7 @@ c-----------------------------------------------------------------------
 c     some basic variables
 c-----------------------------------------------------------------------
       IF(PRESENT(methodin)) method = methodin
-      output=.TRUE.
+      output=.FALSE.
       IF(PRESENT(writein)) output = writein
       chi1=twopi*psio
       plim = (/0.0,1.0/)

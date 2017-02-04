@@ -314,15 +314,17 @@ import numpy as np                               # math
 from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,RegularGridInterpolator,griddata
 from scipy.special import ellipk,ellipe
 
-#in this package
-import modplot as plt
-import namelist 
-
 try:
     import mayavi.mlab as mmlab
-except ImportError:
+except ImportError as ie:
     mmlab = False
     print('WARNING: Mayavi not in python path')
+except ValueError as ve:
+    mmlab = False
+    print('WARNING: Mayavi conflicts with already set gui backend settings (using pylab?)\n'+repr(ve))
+except Exception as e:
+    mmlab = False
+    print('WARNING: Mayavi unavailable - '+repr(e))
 try:
     import xarray
 except ImportError:
@@ -335,6 +337,10 @@ except ImportError:
     sns = False
     print('WARNING: seaborn not in python path')
     print(' -> We recomend loading anaconda/2.3.0 on portal')
+
+#in this package
+import modplot as plt
+import namelist
 
 # better label recognition using genfromtxt
 for c in '^|<>/':
@@ -422,6 +428,11 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
 
     if complex_dim in ds.dims:
         for k,v in ds.data_vars.iteritems():
+            if len(v.dims) > len(set(v.dims)):
+                print("WARNING: Removing {:} to avoid error (below) reforming complex_dim. ".format(k))
+                print("ValueError: broadcasting cannot handle duplicate dimensions")
+                del ds[k]
+                continue
             if complex_dim in v.dims:
                 tmp = v.attrs
                 ds[k] = v.loc[{complex_dim:0}]+1j*v.loc[{complex_dim:1}]

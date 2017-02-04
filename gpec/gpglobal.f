@@ -16,7 +16,9 @@ c-----------------------------------------------------------------------
      $     bin_flag,bin_2d_flag,fixed_boundary_flag,reg_flag,
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
-     $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag
+     $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag,
+     $     netcdf_flag,ascii_flag
+
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,mlim_out,
@@ -73,7 +75,7 @@ c-----------------------------------------------------------------------
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     surf_indinvmats,surf_indinvevmats,surfet,surfep,
-     $     amat,bmat,cmat,fmats,gmats,kmats
+     $     amat,bmat,cmat,fmats,gmats,kmats,coil_indmat
      $     ,wft,wtraw
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: chpmats,kapmats,
      $     plas_indmats,plas_indinvmats,permeabmats,diff_indmats,
@@ -216,24 +218,21 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: mode
       INTEGER, INTENT(IN), OPTIONAL :: opunit
 
-      CHARACTER(10) :: date,time,zone
-      INTEGER, DIMENSION(8) :: values
+      REAL(4) :: time
       REAL(4), SAVE :: start,split
       INTEGER :: hrs,mins,secs,msec
 
       ! get time
-      CALL DATE_AND_TIME(date,time,zone,values)
+      CALL CPU_TIME(time)
 
       IF(mode==0)THEN ! start timer
-         start=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+         start=time
          split=0
       ELSEIF(mode==-2)THEN ! Reset split
-         split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
-     $         -start
+         split=time-start
       ELSEIF(mode>0)THEN ! outputs
          IF(mode==2)THEN ! write split (time since last call)
-            split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
-     $            -start-split
+            split=time-start-split
             secs = INT(split)
             hrs = secs/(60*60)
             mins = (secs-hrs*60*60)/60
@@ -257,8 +256,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ENDIF
          ! write total time since start
-         split=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
-     $         -start
+         split=time-start
          secs = INT(split)
          hrs = secs/(60*60)
          mins = (secs-hrs*60*60)/60

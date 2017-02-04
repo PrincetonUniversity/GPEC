@@ -6,7 +6,7 @@
 
     sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
-    qhigh=1e3            ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
+    qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
@@ -34,6 +34,8 @@
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
 /
 &DCON_OUTPUT
+    out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
+
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
@@ -47,4 +49,6 @@
     bin_bal1=f           ! Binary output for bal_flag poloidal functions
     out_bal2=f           ! Ascii output for bal_flag functions
     bin_bal2=f           ! Binary output for bal_flag functions
+
+    netcdf_out=t         ! Replicate ascii dcon.out information in a netcdf file
 /

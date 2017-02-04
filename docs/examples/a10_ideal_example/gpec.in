@@ -63,7 +63,7 @@
    vbrzphi_flag=t           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
    vvbrzphi_flag=t          ! Outputs field on regular (r,z) grid due to external perturbation surface current (not a real field)
    vsbrzphi_flag=t          ! Outputs the field on regular (r,z) grid due to singular surface currents
-   ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
+   ss_flag(1)=t             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
    xbrzphifun_flag=t        ! Outputs r,z, and perturbation vectors on psi,theta grid
    arzphifun_flag=t         ! Outputs r,z, and vector potential on psi,theta grid
 
@@ -71,9 +71,13 @@
    nz = 124                 ! Number of vertical grid points in rzphi outputs
    fun_flag=t               ! Write outputs to (r,z) in addition to default (psi,m)
    flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
+
+   netcdf_flag=t            ! Write all outputs in netcdf files
+   ascii_flag=f             ! Write all outputs in ascii tables
+   max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    bin_flag=f               ! Write binary outputs for use with xdraw
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
-   max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
+
    verbose=t                ! Print run log to terminal
 /
 &GPEC_DIAGNOSE
