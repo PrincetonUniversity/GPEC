@@ -1590,7 +1590,7 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl_array(hlog,"singflx"//nul,
      $     asingflx,msing)
 
-      IF (svd_flag) THEN
+      IF (svd_flag .AND.  ALLOCATED(sbno_fun))THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
      $        sbno_fun(1:mthsurf)))/mthsurf/2.0)
          sbno_mn = MATMUL(fldflxmat,sbno_mn)
