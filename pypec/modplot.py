@@ -47,7 +47,7 @@ import numpy as np                      # math
 from scipy.interpolate import interp1d  # math
 from types import MethodType            # to modify instances
 
-# Want seperate ID pyplot module for my hacks
+# Want separate ID pyplot module for my hacks
 # so this module does not change global matplotlib,pyplot,pylab,etc.
 # Issue is import matplotlib imports many modules... all intertwined.
 # METHOD 1
@@ -69,9 +69,9 @@ except:
     seaborn = None
 #override user preferences from ~/.matplotlib/matplotlibrc file.
 #really should define new functions
-matplotlib.rcParams['figure.autolayout']=True # Necessary for tight_layout
-matplotlib.rcParams['legend.frameon']=False
-matplotlib.rcParams['legend.loc']='best'
+#matplotlib.rcParams['figure.autolayout']=True # Necessary for tight_layout
+#matplotlib.rcParams['legend.frameon']=False
+#matplotlib.rcParams['legend.loc']='best'
 
 linestyles = [ '-' , '--' , '-.' , ':' , 'None' , ' ' ,'' ]
 show = pyplot.show
@@ -86,12 +86,13 @@ pop_size = np.array([3.346,3.346]) #single column. Do *2 for double
 ########################################### default colormaps
 
 import colormaps as cmaps
-for k in ['magma','inferno','plasma','viridis']:
-    pyplot.register_cmap(name=k, cmap=cmaps.cmaps[k])
-    pyplot.register_cmap(name=k+'_r', cmap=cmaps.cmaps[k+'_r'])
-f,ax = pyplot.subplots()
-pyplot.set_cmap(cmaps.cmaps['viridis'])
-pyplot.close(f)
+if not hasattr(matplotlib.cm, 'viridis'):
+    for k in ['magma','inferno','plasma','viridis']:
+        pyplot.register_cmap(name=k, cmap=cmaps.cmaps[k])
+        pyplot.register_cmap(name=k+'_r', cmap=cmaps.cmaps[k+'_r'])
+    f,ax = pyplot.subplots()
+    pyplot.set_cmap(cmaps.cmaps['viridis'])
+    pyplot.close(f)
 
 ########################################### default colormaps
 
@@ -146,7 +147,7 @@ def set_style(style=None,rc={}):
 ########################################### modified pyplot functions
 
 def subplots(nrows=1, ncols=1, sharex=False, sharey=False, squeeze=True, autosize=True,
-             subplot_kw=None, powerlim=(-3,3),useOffset=False,nybins=None,nxbins=None,
+             subplot_kw=None, powerlim=(-3, 3), useOffset=False, nybins=None, nxbins=None,
              **fig_kw):
     """
     Matplotlib subplots with default figsize = rcp_size*[ncols,nrows]
@@ -175,7 +176,7 @@ def subplots(nrows=1, ncols=1, sharex=False, sharey=False, squeeze=True, autosiz
     f = _modfigure(f)
     
     return f,ax
-subplots.__doc__ += 'ORIGINAL DOCUMENTATION \n\n'+pyplot.subplots.__doc__
+subplots.__doc__ += 'ORIGINAL DOCUMENTATION \n\n'+str(pyplot.subplots.__doc__)
 
 def figure(num=None, figsize=None, dpi=None, facecolor=None, edgecolor=None, frameon=True, FigureClass=matplotlib.figure.Figure, **kwargs):
     f = pyplot.figure(num=num, figsize=figsize, dpi=dpi, facecolor=facecolor, edgecolor=edgecolor, frameon=frameon, FigureClass=FigureClass, **kwargs)
@@ -189,7 +190,7 @@ def colorbar(mappable=None, cax=None, ax=None, use_gridspec=True,**kw):
     """
     cb = pyplot.colorbar(mappable=mappable, cax=cax, ax=ax, use_gridspec=use_gridspec,**kw)
     return cb
-colorbar.__doc__+='ORIGINAL DOCUMENTATION \n\n'+pyplot.colorbar.__doc__
+colorbar.__doc__+='ORIGINAL DOCUMENTATION \n\n'+str(pyplot.colorbar.__doc__)
 
 
 
@@ -241,7 +242,7 @@ def _figure_colorbar(self, mappable, cax=None, ax=None, use_gridspec=True,**kw):
     cb = self._orig_colorbar(mappable, cax=cax, ax=ax,
                              use_gridspec=use_gridspec,**kw)
     return cb
-_figure_colorbar.__doc__='Modified default use_gridspec=True. \n - \n'+pyplot.colorbar.__doc__
+_figure_colorbar.__doc__='Modified default use_gridspec=True. \n - \n'+str(pyplot.colorbar.__doc__)
 if not hasattr(pyplot.Figure,"_orig_colorbar"): #prevent recursion when reloaded
     pyplot.Figure._orig_colorbar = copy.deepcopy(pyplot.Figure.colorbar)
 pyplot.Figure.colorbar = _figure_colorbar
@@ -356,12 +357,12 @@ def _modaxes(ax,useOffset=False):
         2) Ticker format power lims (-3,3)
         3) New downsample instance, connected to x-axis rescale
         4) New plot instance with complex arg handling
-        
-    Arguments:   
-      ax        : obj. 
+
+    Arguments:
+      ax        : obj.
         Axes object.
     Key Word Arguments:
-      useOffset : bool. 
+      useOffset : bool.
         Offset axis zero.
 
     returns
@@ -374,18 +375,18 @@ def _modaxes(ax,useOffset=False):
     ax.yaxis.set_major_formatter(afmt)
     ax.xaxis.set_major_formatter(afmt)
     return ax
-    
+
 # down sample all lines in axes
 def _axes_downsample(self,ax,npts=10000):
     """
     Attempt to down sample original data in
     each Line2D object in lines.
 
-    Arguments: 
-      ax   : obj. 
+    Arguments:
+      ax   : obj.
         Initialized Axes object containing lines
-    Key Word Arguments: 
-      npts : int. 
+    Key Word Arguments:
+      npts : int.
         Number of points plotted in each line
 
     """
@@ -403,7 +404,7 @@ def _axes_plot(self, *args, **kwargs):
     Modified axes line plotting, with suport for complex plotting.
     Original matplotlib Axes plot method now located at _orig_plot.
     All original plot args and kwargs accepted.
-    
+
     """
     linestyles = matplotlib.lines.lineStyles.keys()
     newargs = map(_real_arg,args)
@@ -413,7 +414,7 @@ def _axes_plot(self, *args, **kwargs):
         newargs = [args[0]]
         if len(args)>1: newargs+=map(_imag_arg,args[1:])
         lines2=self._orig_plot(*newargs,**kwargs)
-        for l1,l2 in zip(lines1,lines2): 
+        for l1,l2 in zip(lines1,lines2):
             l2.set_color(l1.get_color())
             ils = linestyles.index(l1.get_linestyle())
             l2.set_linestyle(linestyles[ils+1])
@@ -422,7 +423,7 @@ def _axes_plot(self, *args, **kwargs):
         pyplot.gca().legend(ncol=max(1,len(self.lines)/6))
     #draw()
     return lines1+lines2
-_axes_plot.__doc__+=pyplot.plot.__doc__
+_axes_plot.__doc__+=str(pyplot.plot.__doc__)
 if not hasattr(pyplot.Axes,"_orig_plot"): #prevent recursion when reloaded
     pyplot.Axes._orig_plot = copy.deepcopy(pyplot.Axes.plot)
 pyplot.Axes.plot = _axes_plot
