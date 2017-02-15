@@ -164,15 +164,13 @@ def update_name_conventions(dataset, version=None, inplace=False):
         translator['b_z_plas'] = 'b_z_plasma'
         translator['b_t_plas'] = 'b_t_plasma'
 
-    # swap out any old names that are in the dataset
-    #name_dict = OrderedDict(oldnew for oldnew in zip(old, new) if oldnew[0] in dataset)
-    #newset = dataset.rename(name_dict, inplace=inplace)
     # do this in an explicit loop because some names already exist and need to get replaced in order
     for okey, nkey in translator.iteritems():
         if okey in newset:
-            newset = newset.rename({okey:nkey}, inplace=True)
+            newset = newset.rename({okey: nkey}, inplace=True)
 
     return newset
+
 
 ######################################################## Post Processing Control Output
 
@@ -356,6 +354,9 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
 
     :returns: w,v. Eigenvalue, eigenvector of optimum.
 
+    :Note:
+    The matrix order will be forced to end in the primed dimension, i.e. ('psi_n', 'm', 'm_prime')
+    or ('psi_n', 'coil_index', 'coil_index_prime').
 
     :Examples:
 
@@ -368,7 +369,7 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
     and the corresponding profile is easily obtained.
 
     >>> w,v = optimize_torque(prof['T_xe']) # handles any order of dims
-    >>> T_mat = prof['T_xe'].transpose('psi_n', 'm_prime', 'm') # order matters in  dot products
+    >>> T_mat = prof['T_xe'].transpose('psi_n', 'm', 'm_prime') # order matters in  dot products
     >>> T_opt = np.real(np.dot(np.dot(v.conj(), T_mat), v))/2 # 0.5 for quadratic fourier analysis
 
     We can then compare the spectrum and torque from our GPEC perturbed equilibrium to
@@ -397,35 +398,40 @@ def optimize_torque(matrixprofile, psilow=0, psihigh=1, normalize=False, energy=
     else:
         raise ValueError("Expected m by m_prime or coil_index by coil_index_prime matrix")
 
+    # the torque response matrix and energy response matrix are both hermitian
+    # note the input must be a numpy matrix. xarray will un-transpose when summing.
+    if energy:
+        hermitian_response_matrix = lambda mat: (mat - mat.T.conj()) / 2j
+    else:
+        hermitian_response_matrix = lambda mat: (mat + mat.T.conj()) / 2
+
     # total torque matrix
-    T1 = mprof.sel(method='nearest', psi_n=1)
-    T1 = (T1 + T1.conj().T) / 2
+    T1 = hermitian_response_matrix(mprof.sel(method='nearest', psi_n=1).values)
     T1inv = np.linalg.inv(T1)
 
-    # hermitian torque matrices on either end of the range
-    Th = mprof.sel(method='nearest', psi_n=psihigh)
-    Th = (Th + Th.conj().T) / 2
-    Tl = mprof.sel(method='nearest', psi_n=psilow)
-    Tl = (Tl + Tl.conj().T) / 2
-    if psilow == 0:
+    # hermitian response matrices on either end of the range
+    Th = hermitian_response_matrix(mprof.sel(method='nearest', psi_n=psihigh).values)
+    Tl = hermitian_response_matrix(mprof.sel(method='nearest', psi_n=psilow).values)
+    if psilow <= 0:
         Tl *= 0  # explicitly remove lower range
 
-    # optimal torque within range
+    # always calculate the total and local optimum to check positive definite properties
     Topt = Th - Tl
-    # optimal torque normalized to total torque
+    w1, v1 = np.linalg.eig(T1)
+    w, v = np.linalg.eig(Topt)
+    if not (np.all(np.real(w1) >= 0) and np.all(np.real(w) >= 0)):
+        print("WARNING: Not all eigenvalues are positive")
+        print("  w(psi_n=1) = {:}".format(sorted(w1)))
+        print("  w(local)   = {:}".format(sorted(w)))
+    # optimum normalized to total torque
     if normalize:
         Topt = np.dot(T1inv, Topt)
-
-    # calculate eigenvalues
-    w, v = np.linalg.eig(Topt)
+        w, v = np.linalg.eig(Topt)
 
     # find relevant "optimum"
-    argopt = np.argmax
     if minimize:
-        argopt = np.argmin
-    if energy:
-        i = argopt(np.imag(w))
+        i = np.argmin(np.real(w))
     else:
-        i = argopt(np.real(w))
+        i = np.argmax(np.real(w))
 
     return w[i], v[:, i]
