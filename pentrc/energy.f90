@@ -37,7 +37,8 @@ module energy_integration
         xnutype,xf0type, &                  ! characters
         qt,xdebug, &                        ! logical
         xintgrl_lsode, &                    ! functions
-        output_energy_record                ! subroutines
+        output_energy_record, &             ! subroutines
+        energy_record
     
     ! global variables with defaults
     real(r8) :: &
@@ -57,7 +58,12 @@ module energy_integration
     complex(r8), parameter :: xj = (0,1)
     !real(r8) :: wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
     logical :: imaxis_g = .false.
-    
+
+    real(r8) xcom_real
+    common /xcom/ xcom_real(8)
+!$OMP THREADPRIVATE(energy_record)
+!$OMP THREADPRIVATE(/xcom/)
+
     contains
 
     !=======================================================================
@@ -129,6 +135,8 @@ module energy_integration
         
         common /xcom/ wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
         
+!$OMP THREADPRIVATE(/xcom/)
+
         ! set lsode options - see lsode package for documentation
         Y(:) = 0
         YI(:) = 0
@@ -306,7 +314,9 @@ module energy_integration
         real(r8) :: wn,wt,we,wd,wb,nuk,l,n
     
         common /xcom/ wn,wt,we,wd,wb,nuk,l,n
-    
+
+!$OMP THREADPRIVATE(/xcom/)    
+
         ! use input or global variables
         !if(present(wntedbk_ln))then
         !    if(xdebug) print *,'xintgrnd -> using input freqs and modes'

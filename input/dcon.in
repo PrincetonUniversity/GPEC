@@ -48,3 +48,6 @@
     out_bal2=f           ! Ascii output for bal_flag functions
     bin_bal2=f           ! Binary output for bal_flag functions
 /
+&PARALLEL_INPUT
+	parallel_threads=1
+/

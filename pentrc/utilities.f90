@@ -463,18 +463,19 @@ module utilities
         
         ! read titles
         if(startline>1)then
-            do l=1,startline-2
-                read(in_unit,*)
-            enddo
-            line(:) = ' '
-            read(in_unit,'(a)') line
-            call splitstring(line,titles,' ',debug=debug)
+           do l=1,startline-2
+              read(in_unit,*)
+           enddo
+           line(:) = ' '
+           read(in_unit,'(a)') line
+           call splitstring(line,titles,' ',debug=debug)
         endif
         !if(debug) print *,"-> Table titles are ",titles
-        
+
         ! read table
         do l=1,1+endline-startline
-            read(in_unit,*) table(l,:)
+           !read(in_unit,*) table(l,:)
+           read(in_unit,*) (table(l,i),i=1,ncol)
         enddo
         close(in_unit)
         if(debug) print *,"Done"

@@ -122,32 +122,49 @@ module torque
     use grid, only : powspace,linspace
     ! use lsode_mod just a subroutine in the lsode directory...
     use spline_mod, only :  spline_type,spline_eval,spline_alloc,spline_dealloc,&
-                            spline_fit,spline_int,spline_write1
+                            spline_fit,spline_int,spline_write1,spline_eval_external_array
     use cspline_mod, only : cspline_type,cspline_eval,cspline_alloc,cspline_dealloc,&
-                            cspline_fit,cspline_int
+                            cspline_fit,cspline_int,cspline_eval_external_array
     use fspline_mod, only : fspline_eval
-    use bicube_mod, only : bicube_eval
+    use bicube_mod, only : bicube_eval,bicube_type,bicube_eval_external_array
     use spline_help, only: spline_roots
     use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappaintgnd
     use energy_integration, only : xintgrl_lsode,qt
-    use dcon_interface, only : issurfint
-    use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
-        kin,xs_m,dbob_m,divx_m,fnml,&                  ! equilib and pert. equilib splines
-        chi1,ro,zo,bo,mfac,mpert,mthsurf,&             ! reals or integers
-        verbose                                        ! logical
-    
+    use dcon_interface, only : issurfint,rzphi,geom,sq,eqfun,&
+                               smats,tmats,xmats,ymats,zmats,&
+                               smats_ix,tmats_ix,xmats_ix,ymats_ix,zmats_ix,&
+                               smats_f,tmats_f,xmats_f,ymats_f,zmats_f,&
+                               rzphi_ix,rzphi_iy,rzphi_f,rzphi_fx,rzphi_fy,&
+                               eqfun_ix,eqfun_iy,eqfun_f,eqfun_fx,eqfun_fy,&
+                               sq_s_ix, geom_s_ix,&
+                               sq_s_f, sq_s_f1, geom_s_f, geom_s_f1
+    use inputs, only : kin,xs_m,dbob_m,divx_m,fnml,&   ! equilib and pert. equilib splines
+         chi1,ro,zo,bo,mfac,mpert,mthsurf,&             ! reals or integers
+         verbose,&                                      ! logical
+         dbob_m_ix,divx_m_ix,dbob_m_f,divx_m_f,&        !parallelization variables
+         kin_s_ix,kin_s_f,kin_s_f1,&                    !parallelization variables (more)
+         xs_m1_ix,xs_m2_ix,xs_m3_ix,&                   !parallelization variables (more)
+         xs_m1_f,xs_m2_f,xs_m3_f                        !parallelization variables (more)
+
     implicit none
     
     real(r8) :: atol_psi = 1e-3, rtol_psi= 1e-6
     real(r8) :: psi_warned = 0.0
-    logical :: tdebug=.false., output_ascii =.true., output_netcdf=.true.
+    logical :: tdebug=.true., output_ascii =.true., output_netcdf=.true.
     integer :: nlmda=128, ntheta=128
     
-    complex(r8), dimension(:,:,:), allocatable :: elems ! temperary variable
+    complex(r8), dimension(:,:,:), allocatable :: elems ! temporary variable
     TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
     TYPE(cspline_type) :: trans ! nonambipolar transport and torque profile
 
     integer, parameter :: nfluxfuns = 21, nthetafuns = 18
+
+    integer :: fsave
+    real(r8) :: psave
+    real(r8), dimension(:), allocatable :: jacs,delpsi,rsurf,asurf
+    logical :: firstsurf
+
+!$OMP THREADPRIVATE(fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
 
     contains
     
@@ -171,9 +188,9 @@ module torque
     !       Ion charge in fundemental units (e).
     !    mi : integer (in)
     !       Ion mass (units of proton mass).
-    !   electron : logical
+    !   electron : logical (in)
     !       Calculate quantities for electrons (zi,mi ignored)
-    !   method : string
+    !   method : string (in)
     !       Choose from
     !           'RLAR' - Reduced Large-Aspect-Ratio,
     !           'CLAR' - Circular Large-Aspect-Ratio,
@@ -208,7 +225,7 @@ module torque
         logical, intent(in) :: electron
         integer, intent(in) :: l,n,zi,mi
         real(r8), intent(in) :: psi,wdfac,divxfac
-        character(*) :: method
+        character(*), intent(in) :: method
         logical, optional :: op_erecord
         real(r8), dimension(nfluxfuns), optional, intent(out) :: op_ffuns
         real(r8), dimension(ntheta*3,nthetafuns), optional, intent(out) :: op_tfuns
@@ -247,7 +264,11 @@ module torque
         complex(r8), dimension(mpert,mpert) :: a,u,vt
         real(r8), dimension(5*mpert) :: rwork
         complex(r8), dimension(3*mpert) :: work
-        
+
+        integer :: OMP_GET_THREAD_NUM
+        integer :: eqfun_my
+        real(r8) :: ys_i
+
         ! debug initiation
         if(tdebug) print *,"torque - tpsi function, psi = ",psi
         if(tdebug) print *,"  electron ",electron
@@ -282,95 +303,119 @@ module torque
             mass = mi*mp
             s = 1
         endif
-        
+
         ! Get perturbations
-        call cspline_eval(dbob_m,psi,0)
-        call cspline_eval(divx_m,psi,0)
+        !cspline external evaluation
+        dbob_m_ix = dbob_m%ix
+        CALL cspline_eval_external_array(dbob_m,psi,dbob_m_ix,dbob_m_f)
+        divx_m_ix = divx_m%ix
+        CALL cspline_eval_external_array(divx_m,psi,divx_m_ix,divx_m_f)
 
         !Poloidal functions - note ABS(A*clebsch) = ABS(A)
         allocate(dbfun(0:eqfun%my),dxfun(0:eqfun%my))
         call spline_alloc(tspl,eqfun%my,5)
         tspl%xs(0:) = eqfun%ys(0:)
+
         do i=0,eqfun%my
-           call bicube_eval(eqfun,psi,eqfun%ys(i),1)
-           call bicube_eval(rzphi,psi,eqfun%ys(i),1)
-           tspl%fs(i,1)= eqfun%f(1)            !b
-           tspl%fs(i,2)= eqfun%fx(1)/chi1      !db/dpsi
-           tspl%fs(i,3)= eqfun%fy(1)           !db/dtheta
-           tspl%fs(i,4)= rzphi%f(4)/chi1       !jac
-           tspl%fs(i,5)= rzphi%fx(4)/chi1**2   !dj/dpsi
+           ys_i = eqfun%ys(i)
+
+           call bicube_eval_external_array(eqfun, psi, ys_i, 1,&
+                eqfun_ix, eqfun_iy, eqfun_f, eqfun_fx, eqfun_fy)
+           call bicube_eval_external_array(rzphi, psi, ys_i, 1,&
+                rzphi_ix, rzphi_iy, rzphi_f, rzphi_fx, rzphi_fy)
+           tspl%fs(i,1)= eqfun_f(1)            !b
+           tspl%fs(i,2)= eqfun_fx(1)/chi1      !db/dpsi
+           tspl%fs(i,3)= eqfun_fy(1)           !db/dtheta
+           tspl%fs(i,4)= rzphi_f(4)/chi1       !jac
+           tspl%fs(i,5)= rzphi_fx(4)/chi1**2   !dj/dpsi 
+
            ! for flux fun outputs
            expm = exp(xj*twopi*mfac*eqfun%ys(i))
-           jbb  = rzphi%f(4)*eqfun%f(1)**2 ! chi1 cuz its the DCON working J
-           dbfun(i) = ABS( sum(dbob_m%f(:)*expm) )**2
-           dxfun(i) = ABS( sum(divx_m%f(:)*expm) * divxfac )**2
+           jbb  = rzphi_f(4)*eqfun_f(1)**2
+           dbfun(i) = ABS( sum(dbob_m_f(:)*expm) )**2
+           dxfun(i) = ABS( sum(divx_m_f(:)*expm) * divxfac )**2
         enddo
+
+        if (tdebug) then
+           print *,"Pass1::: thread=",OMP_GET_THREAD_NUM(),"l=",l,"tspl%fs=",tspl%fs(:,1)
+        endif
+
         ! clebsch conversion now in djdt o1*exp(-twopi*ifac*nn*q*theta)
         call spline_fit(tspl,"periodic")
+
+        if (tdebug) then
+           print *,"Pass2::: thread=",OMP_GET_THREAD_NUM(),"l=",l,"tspl%fs=",tspl%fs(:,1)
+        endif
+
         bmax = maxval(tspl%fs(:,1),dim=1)
         bmin = minval(tspl%fs(:,1),dim=1)
         ibmax= 0-1+maxloc(tspl%fs(:,1),dim=1)
+
         if(bmax/=tspl%fs(ibmax,1)) stop "ERROR: tpsi - &
            &Equilibirum field maximum not consistent with index"
         do i=2,4 !4th smallest so spline has more than 1 pt
            bmin = minval(tspl%fs(:,1),mask=tspl%fs(:,1)>bmin,dim=1)
         enddo
         ibmin = 0-1+MINLOC(tspl%fs(:,1),MASK=tspl%fs(:,1)>=bmin,DIM=1)
+
         if(bmin/=tspl%fs(ibmin,1)) stop "ERROR: tpsi - &
            &Equilibirum field maximum not consistent with index"
         if(tdebug) print *,"  bmin,bo,bmax = ",bmin,bo,bmax
-        
+
         ! flux function variables
-        call spline_eval(sq,psi,1)
-        call spline_eval(kin,psi,1)
-        call spline_eval(geom,psi,0)
-        q     = sq%f(4)
-        welec = kin%f(5)                            ! electric precession
-        wdian =-twopi*kin%f(s+2)*kin%f1(s)/(chrg*chi1*kin%f(s)) ! density gradient drive
-        wdiat =-twopi*kin%f1(s+2)/(chrg*chi1)       ! temperature gradient drive
+        call spline_eval_external_array(sq,psi,sq_s_ix,sq_s_f,sq_s_f1,1)
+        call spline_eval_external_array(kin,psi,kin_s_ix,kin_s_f,kin_s_f1,1)
+        call spline_eval_external_array(geom,psi,geom_s_ix,geom_s_f,geom_s_f1,0)
+        q     = sq_s_f(4)
+        welec = kin_s_f(5)                            ! electric precession
+        wdian =-twopi*kin_s_f(s+2)*kin_s_f1(s)/(chrg*chi1*kin_s_f(s)) ! density gradient drive
+        wdiat =-twopi*kin_s_f1(s+2)/(chrg*chi1)       ! temperature gradient drive
         wphi  = welec+wdian+wdiat                    ! toroidal rotation
-        wtran = SQRT(2*kin%f(s+2)/mass)/(q*ro)      ! transit freq
+        wtran = SQRT(2*kin_s_f(s+2)/mass)/(q*ro)      ! transit freq
         wgyro = chrg*bo/mass                        ! gyro frequency
-        nuk = kin%f(s+6)                            ! krook collisionality
-        call bicube_eval(rzphi,psi,tspl%xs(ibmin),0)
-        if(rzphi%f(1)<=0)then
-            print *,"  psi = ",psi," -> r^2 at min(B) = ",rzphi%f(1)
-            print *,"  -- theta at min(B) = ",tspl%xs(ibmin)
-            do i=0,10
-                theta = i/10.0
-                call spline_eval(tspl,theta,0)
-                call bicube_eval(rzphi,psi,theta,0)
-                print *,"  -- theta,B(theta),r^2(theta) = ",theta,tspl%f(1),rzphi%f(1)
-            enddo
-            stop "ERROR: torque - minor radius is negative"
+        nuk = kin_s_f(s+6)                            ! krook collisionality
+
+        call bicube_eval_external_array(rzphi, psi, tspl%xs(ibmin), 0,&
+             rzphi_ix, rzphi_iy, rzphi_f, rzphi_fx, rzphi_fy)
+        if(rzphi_f(1)<=0)then
+           print *,"  psi = ",psi," -> r^2 at min(B) = ",rzphi_f(1)
+           print *,"  -- theta at min(B) = ",tspl%xs(ibmin)
+           do i=0,10
+              theta = i/10.0
+              call spline_eval(tspl,theta,0)
+              call bicube_eval_external_array(rzphi, psi, theta, 0,&
+                   rzphi_ix, rzphi_iy, rzphi_f, rzphi_fx, rzphi_fy)
+              print *,"  -- theta,B(theta),r^2(theta) = ",theta,tspl%f(1),rzphi_f(1)
+           enddo
+           stop "ERROR: torque - minor radius is negative"
         endif
-        epsr = geom%f(2)/geom%f(3)
+        epsr = geom_s_f(2)/geom_s_f(3)
         !epsr = sqrt(psi)*SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
         !epsr = sqrt(rzphi%f(1))/ro                  ! epsr at deep trapped limit
         wbhat = (pi/4)*SQRT(epsr/2)*wtran           ! RLAR normalized by x^1/2
         wdhat = q**3*wtran**2/(4*epsr*wgyro)*wdfac  ! RLAR normalized by x
-        nueff = kin%f(s+6)/(2*epsr)                 ! if trapped
-        dbave = issurfint(dbfun,eqfun%my,psi,0,1)
-        dxave = issurfint(dxfun,eqfun%my,psi,0,1)
+        nueff = kin_s_f(s+6)/(2*epsr)
+
+        !dbave = issurfint(dbfun,eqfun%my,psi,0,1)
+        !dxave = issurfint(dxfun,eqfun%my,psi,0,1)
+        eqfun_my = eqfun%my
+        dbave = issurfint(dbfun,eqfun_my,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+        dxave = issurfint(dxfun,eqfun_my,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+
         deallocate(dbfun,dxfun)
         if(tdebug) print('(a14,7(es10.1E2),i4)'), "  eq values = ",wdian,&
                         wdiat,welec,wdhat,wbhat,nueff,q
-        
+
         ! optional record of flux functions
         if(present(op_ffuns)) then
-            if(tdebug) print *, "  storing ",nfluxfuns," flux functions in ",size(op_ffuns,dim=1)
-            op_ffuns = (/ psi, epsr, kin%f(1:8), q,sq%f(2), sq%f(3), &
+           if(tdebug) print *, "  storing ",nfluxfuns," flux functions in ",size(op_ffuns,dim=1)
+           op_ffuns = (/ psi, epsr, kin_s_f(1:8), q,sq_s_f(2), sq_s_f(3), &
                 wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /)
         endif
-        
-        
-        
-        
-        
-        
+
         if(tdebug) print *,'  method = '//method
         select case(method)
-        
+
             case('fcgl')
                 if(tdebug) print *,'  fcgl integrand. modes = ',n,l
                 if(l==0)then
@@ -378,23 +423,25 @@ module torque
                     call spline_alloc(cglspl,mthsurf,2)
                     do i=0,mthsurf
                         theta = i/real(mthsurf,r8)
-                        call bicube_eval(eqfun,psi,theta,0)
-                        call bicube_eval(rzphi,psi,theta,0)
+                        call bicube_eval_external_array(eqfun, psi, theta, 0,&
+                             eqfun_ix, eqfun_iy, eqfun_f, eqfun_fx, eqfun_fy)
+                        call bicube_eval_external_array(rzphi, psi, theta, 0,&
+                             rzphi_ix, rzphi_iy, rzphi_f, rzphi_fx, rzphi_fy)
                         expm = exp(xj*twopi*mfac*theta)
-                        jbb = (rzphi%f(4) * eqfun%f(1)**2)
-                        dbob = sum( dbob_m%f(:)*expm )   ! dB/B
-                        divx = sum( divx_m%f(:)*expm ) ! nabla.xi_perp
+                        jbb = (rzphi_f(4) * eqfun_f(1)**2)
+                        dbob = sum( dbob_m_f(:)*expm )   ! dB/B
+                        divx = sum( divx_m_f(:)*expm ) ! nabla.xi_perp
                         kapx = -0.5*(dbob+divx)
                         cglspl%xs(i) = theta
-                        cglspl%fs(i,1) = rzphi%f(4)*divx*CONJG(divx)
-                        cglspl%fs(i,2) = rzphi%f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)
+                        cglspl%fs(i,1) = rzphi_f(4)*divx*CONJG(divx)
+                        cglspl%fs(i,2) = rzphi_f(4)*(divx+3.0*kapx)*CONJG(divx+3.0*kapx)
                     enddo
                     CALL spline_fit(cglspl,"periodic")
                     CALL spline_int(cglspl)
                     ! torque
-                    tpsi = 2.0*n*xj*kin%f(s)*kin%f(s+2) &       ! T = 2nidW
-                        *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
-                        + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
+                    tpsi = 2.0*n*xj*kin_s_f(s)*kin_s_f(s+2) &       ! T = 2nidW
+                         *(0.5*(5.0/3.0)*cglspl%fsi(cglspl%mx,1)&
+                         + 0.5*(1.0/3.0)*cglspl%fsi(cglspl%mx,2))
                     call spline_dealloc(cglspl)
                else
                     tpsi=0
@@ -415,19 +462,21 @@ module torque
                     xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,lnq,n)
                 endif
                 ! kappa integration
-                if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbob_m%f(:))/mpert)
-                kappaint = kappaintgrl(n,l,q,mfac,dbob_m%f(:),fnml)
+                !if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbob_m%f(:))/mpert)
+                !kappaint = kappaintgrl(n,l,q,mfac,dbob_m%f(:),fnml)
+                if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbob_m_f(:))/mpert)
+                kappaint = kappaintgrl(n,l,q,mfac,dbob_m_f(:),fnml)
                 ! dT/dpsi
-                tpsi = sq%f(3)*kappaint*0.5*(-xint) &
-                    *SQRT(epsr/(2*pi**3))*n*n*kin%f(s)*kin%f(s+2)
+                tpsi = sq_s_f(3)*kappaint*0.5*(-xint) &
+                     *SQRT(epsr/(2*pi**3))*n*n*kin_s_f(s)*kin_s_f(s+2)
                 if(tdebug) print *,'  ->  xint',xint,', kint',kappaint,', tpsi ',tpsi
-            
-            
-            
-            
-            
-            
-            
+
+
+
+
+
+
+
             ! full general aspect ratio, trapped general aspect ratio
             case("clar")
                 ! set up
@@ -453,10 +502,10 @@ module torque
                     wbbar = pi*SQRT(2*epsr*lmda*bo)/(4*q*ro*ellipk(kappa**2))
                     wdbar = (2*q*lmda*(ellipe(kappa**2)/ellipk(kappa**2)-0.5)&
                         /(ro**2*epsr))*wdfac
-                    bhat = SQRT(2*kin%f(s+2)/mass)
-                    dhat = (kin%f(s+2)/chrg)
+                    bhat = SQRT(2*kin_s_f(s+2)/mass)
+                    dhat = (kin_s_f(s+2)/chrg)
                     ! JKP PRL 2009 perturbed action
-                    djdj = kappaintgnd(kappa,n,l,q,mfac,dbob_m%f(:),fnml)
+                    djdj = kappaintgnd(kappa,n,l,q,mfac,dbob_m_f(:),fnml)
                     ! Lambda functions
                     fbnce%xs(ilmda-1) = lmda
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
@@ -476,20 +525,20 @@ module torque
                 endif
 
                 ! dT/dpsi
-                tpsi = sq%f(3)*(-1*lxint(1)) & ! may be missing some normalizations from djdj
-                    *SQRT(epsr/(2*pi**3))*n*n*kin%f(s)*kin%f(s+2)
+                tpsi = sq_s_f(3)*(-1*lxint(1)) & ! may be missing some normalizations from djdj
+                     *SQRT(epsr/(2*pi**3))*n*n*kin_s_f(s)*kin_s_f(s+2)
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
                 
                 ! wrap up
                 deallocate(lxint)
                 call cspline_dealloc(fbnce) ! <omegab,d> Lambda functions
-                
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
         ! full general aspect ratio, trapped general aspect ratio
             case("fgar","tgar","pgar", &
                  "fwmm","twmm","pwmm","ftmm","ttmm","ptmm",&
@@ -508,18 +557,36 @@ module torque
                         call cspline_alloc(bwspl(i),ntheta-1,mpert)
                         bwspl(i)%xs(:) = bjspl%xs(:)
                     enddo
-                    ! build equilibrium geometric matrices 
-                    CALL cspline_eval(smats,psi,0)
-                    CALL cspline_eval(tmats,psi,0)
-                    CALL cspline_eval(xmats,psi,0)
-                    CALL cspline_eval(ymats,psi,0)
-                    CALL cspline_eval(zmats,psi,0)
-                    smat=RESHAPE(smats%f,(/mpert,mpert/))
-                    tmat=RESHAPE(tmats%f,(/mpert,mpert/))
-                    xmat=RESHAPE(xmats%f,(/mpert,mpert/))
-                    ymat=RESHAPE(ymats%f,(/mpert,mpert/))
-                    zmat=RESHAPE(zmats%f,(/mpert,mpert/))
-                else                
+                    ! build equilibrium geometric matrices
+                    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    !CALL cspline_eval(smats,psi,0)
+                    !CALL cspline_eval(tmats,psi,0)
+                    !CALL cspline_eval(xmats,psi,0)
+                    !CALL cspline_eval(ymats,psi,0)
+                    !CALL cspline_eval(zmats,psi,0)
+                    !smat=RESHAPE(smats%f,(/mpert,mpert/))
+                    !tmat=RESHAPE(tmats%f,(/mpert,mpert/))
+                    !xmat=RESHAPE(xmats%f,(/mpert,mpert/))
+                    !ymat=RESHAPE(ymats%f,(/mpert,mpert/))
+                    !zmat=RESHAPE(zmats%f,(/mpert,mpert/))
+                    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    !Use the external array equivalent (for parallelization purposes, to avoid allocatable subcomponents)
+                    smats_ix = smats%ix
+                    CALL cspline_eval_external_array(smats,psi,smats_ix,smats_f)
+                    tmats_ix = tmats%ix
+                    CALL cspline_eval_external_array(tmats,psi,tmats_ix,tmats_f)
+                    xmats_ix = xmats%ix
+                    CALL cspline_eval_external_array(xmats,psi,xmats_ix,xmats_f)
+                    ymats_ix = ymats%ix
+                    CALL cspline_eval_external_array(ymats,psi,ymats_ix,ymats_f)
+                    zmats_ix = zmats%ix
+                    CALL cspline_eval_external_array(zmats,psi,zmats_ix,zmats_f)
+                    smat=RESHAPE(smats_f,(/mpert,mpert/))
+                    tmat=RESHAPE(tmats_f,(/mpert,mpert/))
+                    xmat=RESHAPE(xmats_f,(/mpert,mpert/))
+                    ymat=RESHAPE(ymats_f,(/mpert,mpert/))
+                    zmat=RESHAPE(zmats_f,(/mpert,mpert/))
+                else
                     call cspline_alloc(fbnce,nlmda-1,3) ! <omegab,d>, <dJdJ> Lambda functions
                 endif
                 fbnce%title(:) = "elemij"
@@ -551,7 +618,7 @@ module torque
                         sigma = 1 !passing
                     endif
                     lnq = l+sigma*n*q
-                    
+
                     ! determine bounce points
                     vspl%fs(:,1) = 1.0-(lmda/bo)*tspl%fs(:,1)
                     call spline_fit(vspl,"extrap")
@@ -589,13 +656,15 @@ module torque
                     endif
                     ! bounce locations recorded for optional output
                     turns%fs(ilmda-1,1) = t1
-                    CALL bicube_eval(rzphi,psi,t1,0)
-                    turns%fs(ilmda-1,2)=ro+SQRT(rzphi%f(1))*COS(twopi*(t1+rzphi%f(2)))
-                    turns%fs(ilmda-1,3)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t1+rzphi%f(2)))
+                    call bicube_eval_external_array(rzphi, psi, t1, 0,&
+                         rzphi_ix, rzphi_iy, rzphi_f, rzphi_fx, rzphi_fy)
+                    turns%fs(ilmda-1,2)=ro+SQRT(rzphi_f(1))*COS(twopi*(t1+rzphi_f(2)))
+                    turns%fs(ilmda-1,3)=zo+SQRT(rzphi_f(1))*SIN(twopi*(t1+rzphi_f(2)))
                     turns%fs(ilmda-1,4) = t2
-                    CALL bicube_eval(rzphi,psi,t2,0)
-                    turns%fs(ilmda-1,5)=ro+SQRT(rzphi%f(1))*COS(twopi*(t2+rzphi%f(2)))
-                    turns%fs(ilmda-1,6)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t2+rzphi%f(2)))
+                    call bicube_eval_external_array(rzphi, psi, t2, 0,&
+                         rzphi_ix, rzphi_iy, rzphi_f, rzphi_fx, rzphi_fy)
+                    turns%fs(ilmda-1,5)=ro+SQRT(rzphi_f(1))*COS(twopi*(t2+rzphi_f(2)))
+                    turns%fs(ilmda-1,6)=zo+SQRT(rzphi_f(1))*SIN(twopi*(t2+rzphi_f(2)))
                     turns%xs(ilmda-1) = lmda
 
                     ! bounce averages
@@ -637,8 +706,10 @@ module torque
                             +tdt(2,i)*tspl%f(5)*tspl%f(1)*sqrt(vpar)
                         expm = exp(xj*twopi*mfac*tdt(1,i))
                         jbb = chi1*tspl%f(4)*tspl%f(1)**2 ! chi1 cuz its the DCON working J
-                        dbob = sum(dbob_m%f(:)*expm)
-                        divx = sum(divx_m%f(:)*expm) * divxfac
+                        !dbob = sum(dbob_m%f(:)*expm)
+                        !divx = sum(divx_m%f(:)*expm) * divxfac
+                        dbob = sum(dbob_m_f(:)*expm)
+                        divx = sum(divx_m_f(:)*expm) * divxfac
                         jvtheta(i) = tdt(2,i)*tspl%f(4)*tspl%f(1) &
                             *(divx*sqrt(vpar)+dbob*(1-1.5*lmda*tspl%f(1)/bo)/sqrt(vpar))&
                             *exp(-twopi*xj*n*q*(tdt(1,i)-tdt(1,1))) 
@@ -647,8 +718,8 @@ module torque
                         if(jvtheta(i)/=jvtheta(i))then
                             print *,'itheta,ntheta,theta',i,ntheta,tdt(1,i)
                             print *,'psi ',psi
-                            print *,'dbob_m = ',dbob_m%f(:)
-                            print *,'divx_m = ',divx_m%f(:)
+                            print *,'dbob_m = ',dbob_m_f(:)
+                            print *,'divx_m = ',divx_m_f(:)
                             print *,jvtheta(i)
                             stop
                         endif
@@ -675,8 +746,8 @@ module torque
                     fbnce%xs(ilmda-1) = lmda
                     wbbar = ro*twopi/((2-sigma)*bspl%fsi(bspl%mx,1))
                     wdbar = ro*ro*bo*wdfac*wbbar*2*(2-sigma)*bspl%fsi(bspl%mx,2)
-                    bhat = sqrt(2*kin%f(s+2)/mass)/ro
-                    dhat = (kin%f(s+2)/chrg)/(bo*ro*ro)
+                    bhat = sqrt(2*kin_s_f(s+2)/mass)/ro
+                    dhat = (kin_s_f(s+2)/chrg)/(bo*ro*ro)
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
                     fbnce%fs(ilmda-1,2) = wdbar*dhat
                     ! phase factor and action
@@ -735,8 +806,8 @@ module torque
                         j = (ilmda*2)/nlmda ! 0,1,2
                         do i=1,ntheta
                             expm = exp(xj*twopi*mfac*tdt(1,i))
-                            dbob = sum(dbob_m%f(:)*expm)
-                            divx = sum(divx_m%f(:)*expm) * divxfac
+                            dbob = sum(dbob_m_f(:)*expm)
+                            divx = sum(divx_m_f(:)*expm) * divxfac
                             op_tfuns(j*ntheta+i,:) = (/ &
                                 real(i,r8), real(j+1,r8), real(l,r8), psi, lmda, &
                                 bjspl%xs(i-1), tdt(:,i), bspl%fs(i-1,:), &
@@ -790,79 +861,80 @@ module torque
                 endif
                 
                 ! dT/dpsi
-                tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin%f(s)*kin%f(s+2) &
-                    *lxint(1)/fbnce_norm(1) &       ! lsode normalization
-                    *(chi1/twopi) ! unit conversion from psi to psi_n, theta_n to theta
+                tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin_s_f(s)*kin_s_f(s+2) &
+                     *lxint(1)/fbnce_norm(1) &       ! lsode normalization
+                     *(chi1/twopi) ! unit conversion from psi to psi_n, theta_n to theta 
                 if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
 
                 ! Euler lagrange matrices (wtw ~ dW ~ T/i)
                 if(present(op_wmats))then
-                    op_wmats(:,:,:) = 0
-                    do k=1,6
-                        do j=1,mpert
-                            do i=1,mpert
-                                iqty = ((k-1)*mpert+j-1)*mpert + i + 1
-                                op_wmats(i,j,k) = (1/(2*xj*n))*lxint(iqty)/fbnce_norm(iqty) &
-                                    *kin%f(s)*kin%f(s+2) &
-                                    *(-n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
-                            enddo
-                        enddo
-                    enddo
-                    call cspline_dealloc(bwspl(1))
-                    call cspline_dealloc(bwspl(2))
+                   op_wmats(:,:,:) = 0
+                   do k=1,6
+                      do j=1,mpert
+                         do i=1,mpert
+                            iqty = ((k-1)*mpert+j-1)*mpert + i + 1
+                            op_wmats(i,j,k) = (1/(2*xj*n))*lxint(iqty)/fbnce_norm(iqty) &
+                                 *kin_s_f(s)*kin_s_f(s+2) &
+                                 *(-n**2/sqrt(pi))*(ro/bo)*(chi1/twopi)
+                         enddo
+                      enddo
+                   enddo
+                   call cspline_dealloc(bwspl(1))
+                   call cspline_dealloc(bwspl(2))
                     
-                    ! DCON norms
-                    op_wmats = 2*mu0*op_wmats
-                    op_wmats(:,:,1:3) = op_wmats(:,:,1:3)/chi1
-                    op_wmats(:,:,1) = op_wmats(:,:,1)/chi1
+                   ! DCON norms
+                   op_wmats = 2*mu0*op_wmats
+                   op_wmats(:,:,1:3) = op_wmats(:,:,1:3)/chi1
+                   op_wmats(:,:,1) = op_wmats(:,:,1)/chi1
 
-                    if(method(2:4)=='kmm' .or. method(2:4)=='rmm')then ! Euler-Lagrange Matrix norms indep xi
-                        xix(:,1) = 1.0/sqrt(1.0*mpert) ! ||xix||=1
-                        tpsi = 0
-                        do i=1,6
-                            !tpsi = tpsi + maxval(op_wmats(:,:,i))**2 ! Max m,m' couplings
-                            !tpsi = tpsi + maxval(matmul(op_wmats(:,:,i),xix))**2 ! L_1 induced norms
-                            !tpsi = tpsi + maxval(matmul(transpose(xix),op_wmats(:,:,i)))**2 ! L_inf induced norms
-                            a=matmul(transpose(op_wmats(:,:,i)),op_wmats(:,:,i))
-                            work=0
-                            rwork=0
-                            s=0
-                            u=0
-                            vt=0
-                            lwork=3*mpert
-                            CALL zgesvd('S','S',mpert,mpert,a,mpert,svals,u, &
-                                mpert,vt,mpert,work,lwork,rwork,info)
-                            if(tdebug) print *,i,maxval(svals)
-                            tpsi = tpsi + maxval(svals) ! euclidean (spectral) norm
-                        enddo
-                        tpsi = (rex+imx*xj)*sqrt(tpsi) ! euclidean norm of the 6 norms
-                    elseif(index(method,'mm')>0)then ! Mode-coupled dW of T_phi 
-                        call cspline_eval(xs_m(1),psi,0)
-                        call cspline_eval(xs_m(2),psi,0)
-                        call cspline_eval(xs_m(3),psi,0)
-                        xix(:,1) = xs_m(1)%f(:)
-                        xiy(:,1) = xs_m(2)%f(:)
-                        xiz(:,1) = xs_m(3)%f(:)
-                        t_zz = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,1),xiz))*chi1**2
-                        t_zx = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,2),xix))*chi1
-                        t_zy = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,3),xiy))*chi1
-                        t_xx = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,4),xix))
-                        t_xy = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,5),xiy))
-                        t_yy = matmul(conjg(transpose(xiy)),matmul(op_wmats(:,:,6),xiy))
-                        tpsi = (2*n*xj/(2*mu0))*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
-                            +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
-                            +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
-                        if(tdebug)then
-                            print *," -> WxWx ~ ",op_wmats(20:25,20,1)
-                            print *,"expected to be all real (wmm) or all imag (tmm):"
-                            print *,"  xx = ",t_xx
-                            print *,"  yy = ",t_yy
-                            print *,"  zz = ",t_zz
-                        endif
-                    endif
-                    
+                   if(method(2:4)=='kmm' .or. method(2:4)=='rmm')then ! Euler-Lagrange Matrix norms indep xi
+                      xix(:,1) = 1.0/sqrt(1.0*mpert) ! ||xix||=1
+                      tpsi = 0
+                      do i=1,6
+                         !tpsi = tpsi + maxval(op_wmats(:,:,i))**2 ! Max m,m' couplings
+                         !tpsi = tpsi + maxval(matmul(op_wmats(:,:,i),xix))**2 ! L_1 induced norms
+                         !tpsi = tpsi + maxval(matmul(transpose(xix),op_wmats(:,:,i)))**2 ! L_inf induced norms
+                         a=matmul(transpose(op_wmats(:,:,i)),op_wmats(:,:,i))
+                         work=0
+                         rwork=0
+                         s=0
+                         u=0
+                         vt=0
+                         lwork=3*mpert
+                         CALL zgesvd('S','S',mpert,mpert,a,mpert,svals,u, &
+                              mpert,vt,mpert,work,lwork,rwork,info)
+                         if(tdebug) print *,i,maxval(svals)
+                         tpsi = tpsi + maxval(svals) ! euclidean (spectral) norm
+                      enddo
+                      tpsi = (rex+imx*xj)*sqrt(tpsi) ! euclidean norm of the 6 norms
+                   elseif(index(method,'mm')>0)then ! Mode-coupled dW of T_phi 
+                      call cspline_eval_external_array(xs_m(1),psi,xs_m1_ix,xs_m1_f)
+                      call cspline_eval_external_array(xs_m(2),psi,xs_m2_ix,xs_m2_f)
+                      call cspline_eval_external_array(xs_m(3),psi,xs_m3_ix,xs_m3_f)
+                      xix(:,1) = xs_m1_f(:)
+                      xiy(:,1) = xs_m2_f(:)
+                      xiz(:,1) = xs_m3_f(:)
+
+                      t_zz = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,1),xiz))*chi1**2
+                      t_zx = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,2),xix))*chi1
+                      t_zy = matmul(conjg(transpose(xiz)),matmul(op_wmats(:,:,3),xiy))*chi1
+                      t_xx = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,4),xix))
+                      t_xy = matmul(conjg(transpose(xix)),matmul(op_wmats(:,:,5),xiy))
+                      t_yy = matmul(conjg(transpose(xiy)),matmul(op_wmats(:,:,6),xiy))
+                      tpsi = (2*n*xj/(2*mu0))*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
+                           +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
+                           +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
+                      if(tdebug)then
+                         print *," -> WxWx ~ ",op_wmats(20:25,20,1)
+                         print *,"expected to be all real (wmm) or all imag (tmm):"
+                         print *,"  xx = ",t_xx
+                         print *,"  yy = ",t_yy
+                         print *,"  zz = ",t_zz
+                      endif
+                   endif
+
                 endif
-                
+
                 ! wrap up
                 deallocate(fbnce_norm,lxint)
                 call spline_dealloc(vspl) ! vparallel(theta) -> roots are bounce pts

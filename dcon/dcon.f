@@ -62,6 +62,7 @@ c-----------------------------------------------------------------------
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     ahb_flag,mthsurf0,msol_ahb
+      NAMELIST/parallel_input/parallel_threads
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -80,7 +81,9 @@ c-----------------------------------------------------------------------
       CALL ascii_open(in_unit,"dcon.in","OLD")
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
+      READ(UNIT=in_unit,NML=parallel_input)
       CALL ascii_close(in_unit)
+      CALL OMP_SET_NUM_THREADS(parallel_threads)
       delta_mhigh=delta_mhigh*2
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
@@ -182,7 +185,13 @@ c-----------------------------------------------------------------------
      $          op_peq=.FALSE.)
             ! manually set the pentrc equilibrium description
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
-     $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
+     $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac,
+     $           smats_ix,tmats_ix,xmats_ix,ymats_ix,
+     $           zmats_ix,smats_f,tmats_f,xmats_f,
+     $           ymats_f,zmats_f,
+     $           eqfun_ix,eqfun_iy,eqfun_f,eqfun_fx,eqfun_fy,
+     $           rzphi_ix,rzphi_iy,rzphi_f,rzphi_fx,rzphi_fy,
+     $           sq_s_ix, sq_s_f, sq_s_f1)
             ! manually set the kinetic profiles
             CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
      $          tfac,wefac,wpfac,tdebug)

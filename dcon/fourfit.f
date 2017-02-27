@@ -29,16 +29,47 @@ c-----------------------------------------------------------------------
      $    pentrc_nn=>nn,
      $    pentrc_r8=>r8,
      $    pentrc_timer=>timer
-      USE torque, only : kelmm      ! cspline Euler-Lagrange mats for local use
-      USE inputs, only : dbob_m,divx_m,kin,geom,xs_m,
-     $     inputs_eqfun=>eqfun,
-     $     inputs_sq=>sq,
-     $     inputs_rzphi=>rzphi,
-     $     inputs_smats=>smats,
-     $     inputs_tmats=>tmats,
-     $     inputs_xmats=>xmats,
-     $     inputs_ymats=>ymats,
-     $     inputs_zmats=>zmats
+      USE torque, only : kelmm,      ! cspline Euler-Lagrange mats for local use
+     $     fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf
+      USE inputs, only : dbob_m,divx_m,kin,xs_m,fnml,
+     $     dbob_m_ix, divx_m_ix, dbob_m_f, divx_m_f,
+     $     kin_s_ix, kin_s_f, kin_s_f1,
+     $     xs_m1_ix, xs_m2_ix, xs_m3_ix, xs_m1_f, xs_m2_f, xs_m3_f
+      USE energy_integration
+      USE pitch_integration
+      USE dcon_interface, only: geom,
+     $     dcon_int_rzphi=>rzphi,
+     $     dcon_int_eqfun=>eqfun,
+     $     dcon_int_sq=>sq,
+     $     dcon_int_smats=>smats,
+     $     dcon_int_tmats=>tmats,
+     $     dcon_int_xmats=>xmats,
+     $     dcon_int_ymats=>ymats,
+     $     dcon_int_zmats=>zmats,
+     $     dcon_int_sq_s_ix=>sq_s_ix,
+     $     dcon_int_sq_s_f=>sq_s_f,
+     $     dcon_int_sq_s_f1=>sq_s_f1,
+     $     geom_s_ix, geom_s_f, geom_s_f1,
+     $     dcon_int_eqfun_ix=>eqfun_ix,
+     $     dcon_int_eqfun_iy=>eqfun_iy,
+     $     dcon_int_eqfun_f=>eqfun_f,
+     $     dcon_int_eqfun_fx=>eqfun_fx,
+     $     dcon_int_eqfun_fy=>eqfun_fy,
+     $     dcon_int_rzphi_ix=>rzphi_ix,
+     $     dcon_int_rzphi_iy=>rzphi_iy,
+     $     dcon_int_rzphi_f=>rzphi_f,
+     $     dcon_int_rzphi_fx=>rzphi_fx,
+     $     dcon_int_rzphi_fy=>rzphi_fy,
+     $     dcon_int_smats_ix=>smats_ix,
+     $     dcon_int_tmats_ix=>tmats_ix,
+     $     dcon_int_xmats_ix=>xmats_ix,
+     $     dcon_int_ymats_ix=>ymats_ix,
+     $     dcon_int_zmats_ix=>zmats_ix,
+     $     dcon_int_smats_f=>smats_f,
+     $     dcon_int_tmats_f=>tmats_f,
+     $     dcon_int_xmats_f=>xmats_f,
+     $     dcon_int_ymats_f=>ymats_f,
+     $     dcon_int_zmats_f=>zmats_f
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
@@ -50,7 +81,9 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), POINTER :: ipiva
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat
       COMPLEX(r8), DIMENSION(:), POINTER :: jmat
-      
+
+      INTEGER :: parallel_threads
+
       ! kientic ABCDEH mats for sing_mod
       TYPE(cspline_type) :: kwmats(6),ktmats(6)
 
@@ -586,6 +619,11 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(xmats,mpsi,mpert**2)
       CALL cspline_alloc(ymats,mpsi,mpert**2)
       CALL cspline_alloc(zmats,mpsi,mpert**2)
+
+      !allocation of external arrays
+      ALLOCATE(smats_f(mpert**2), tmats_f(mpert**2), xmats_f(mpert**2),
+     $     ymats_f(mpert**2), zmats_f(mpert**2))
+
       smats%xs=sq%xs
       tmats%xs=sq%xs
       xmats%xs=sq%xs
@@ -912,6 +950,31 @@ c-----------------------------------------------------------------------
      $     dbat,ebat,umat,aamat,bkmat,bkaat,b1mat
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu
 c-----------------------------------------------------------------------
+c     declarations for parallelization.
+c-----------------------------------------------------------------------
+      INTEGER :: sTime, fTime, cr
+      REAL(r8) :: tsec
+
+      REAL(r8) xcom_real
+      COMMON /xcom/ xcom_real(8)
+      REAL(r8) dls011_real
+      INTEGER dls011_int
+      COMMON /DLS011/ dls011_real(218), dls011_int(37)
+      REAL(r8) dls002_real
+      INTEGER dls002_int
+      COMMON /DLS002/ dls002_real(218), dls002_int(37)
+      REAL(r8) :: lcom_real1
+      INTEGER :: lcom_int
+      REAL(r8) :: lcom_real2
+      COMMON /lcom/ lcom_real1(7), lcom_int(2), lcom_real2(2)
+      INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM
+      INTEGER :: eqfun_my
+!$OMP THREADPRIVATE(/xcom/,/DLS011/,/DLS002/,/lcom/)
+c-----------------------------------------------------------------------
+c     output formats
+c-----------------------------------------------------------------------
+ 10   FORMAT(' ',A4,I4,A1,I4,A6,I4,A1,I4,A8,E10.3,SP,E10.3,"i")
+c-----------------------------------------------------------------------
 c     some basic variables
 c-----------------------------------------------------------------------
       IF(PRESENT(methodin)) method = methodin
@@ -933,7 +996,8 @@ c-----------------------------------------------------------------------
       gaats%xs=rzphi%xs
       kaats%fs=0
       gaats%fs=0
-      
+
+      firstsurf = .TRUE.
       IF(method==-1)THEN
          output = .FALSE.
       ELSEIF(method==0)THEN
@@ -982,6 +1046,8 @@ c-----------------------------------------------------------------------
             ktmats(i)%xs=rzphi%xs
          ENDDO
 
+         CALL SYSTEM_CLOCK(COUNT_RATE=cr)
+         CALL SYSTEM_CLOCK(COUNT=sTime)
          DO ipsi=0,mpsi
             iindex = FLOOR(REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0))*10
             ileft = REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0)*10-iindex
@@ -991,23 +1057,83 @@ c-----------------------------------------------------------------------
             ktmat = 0
             psifac=rzphi%xs(ipsi)
             ! get ion matrices for all ell at this one psi
-            CALL OMP_SET_NUM_THREADS(2)
-!$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(l,kwmat_l,ktmat_l,tphi)
-!$OMP& COPYIN(dbob_m,divx_m,kin,geom,xs_m,
-!$OMP& inputs_eqfun,inputs_sq,inputs_rzphi,inputs_smats,
-!$OMP& inputs_tmats,inputs_xmats,inputs_ymats,inputs_zmats)
+
+            eqfun_my = eqfun%my
+!$OMP PARALLEL DEFAULT(NONE) SHARED(eqfun_my)
+            if(SIZE(jacs,1)/=eqfun_my)then
+               allocate(jacs(eqfun_my))
+            endif
+            if(SIZE(delpsi,1)/=eqfun_my)then
+               allocate(delpsi(eqfun_my))
+            endif
+            if(SIZE(rsurf,1)/=eqfun_my)then
+               allocate(rsurf(eqfun_my))
+            endif
+            if(SIZE(asurf,1)/=eqfun_my)then
+               allocate(asurf(eqfun_my))
+            endif
+!$OMP END PARALLEL
+
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(l,kwmat_l,ktmat_l,tphi)
 !$OMP& REDUCTION(+:kwmat,ktmat)
+c!!!!!!...from inputs.f90...
+!$OMP& COPYIN(dbob_m,divx_m,kin,xs_m,fnml,
+!$OMP& dbob_m_ix, divx_m_ix, dbob_m_f, divx_m_f, 
+!$OMP& kin_s_ix, kin_s_f, kin_s_f1,
+!$OMP& xs_m1_ix, xs_m2_ix, xs_m3_ix, xs_m1_f, xs_m2_f, xs_m3_f,
+c!!!!!!...from torque.f90...
+!$OMP& fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf,
+c!!!!!!...from energy.f90
+!$OMP& energy_record,
+c!!!!!!...from pitch.f90
+!$OMP& pitch_record,eqspl_g,turns_g,
+c!!!!!!...from dcon_interface.f90
+!$OMP& geom, dcon_int_sq,
+!$OMP& dcon_int_smats_ix, dcon_int_tmats_ix, dcon_int_xmats_ix,
+!$OMP& dcon_int_ymats_ix, dcon_int_zmats_ix,
+!$OMP& dcon_int_smats_f, dcon_int_tmats_f, dcon_int_xmats_f,
+!$OMP& dcon_int_ymats_f, dcon_int_zmats_f,
+!$OMP& dcon_int_sq_s_ix, dcon_int_sq_s_f, dcon_int_sq_s_f1,
+!$OMP& geom_s_ix, geom_s_f, geom_s_f1,
+!$OMP& dcon_int_eqfun_ix, dcon_int_eqfun_iy,
+!$OMP& dcon_int_rzphi_ix, dcon_int_rzphi_iy,
+!$OMP& dcon_int_eqfun_f, dcon_int_eqfun_fx, dcon_int_eqfun_fy, 
+!$OMP& dcon_int_rzphi_f, dcon_int_rzphi_fx, dcon_int_rzphi_fy,
+c!!!!!!...from energy.f90
+!$OMP& /xcom/,
+c!!!!!!...from lsode1.f
+!$OMP& /DLS011/,
+c!!!!!!...from lsode2.f
+!$OMP& /DLS002/,
+c!!!!!!...from pitch.f90
+!$OMP& /lcom/)
+            IF(ipsi==0 .AND. OMP_GET_THREAD_NUM() == 0)THEN
+               l = OMP_GET_NUM_THREADS()
+               print *,"# of OMP threads = ",l
+            ENDIF
+!$OMP DO
             DO l=-nl,nl
                kwmat_l = 0
                ktmat_l = 0
+
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"wmm",op_wmats=kwmat_l)
+
+               WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
+     $              l,"/",nl," tphi@1=",tphi
+
                kwmat = kwmat+kwmat_l
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"tmm",op_wmats=ktmat_l)
+
+               WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
+     $              l,"/",nl," tphi@2=",tphi
+
                ktmat = ktmat+ktmat_l
             ENDDO
-!$OMP END PARALLEL DO
+!$OMP END DO
+!$OMP END PARALLEL
+
             IF (electron_flag) THEN
                DO l=-nl,nl
                   kwmat_l = 0
@@ -1179,8 +1305,16 @@ c-----------------------------------------------------------------------
                   iqty=iqty+1
                ENDDO
             ENDDO
+c-----------------------------------------------------------------------
+c     print out timed loop over ipsi
+c----------------------------------------------------------------------- 
+            CALL SYSTEM_CLOCK(COUNT=fTime)
+            tsec = REAL(fTime-sTime,8)/REAL(cr,8)
+            print *,"ipsi=",ipsi," ended at tsec=",tsec
          ENDDO
-         ! fit splines
+c-----------------------------------------------------------------------
+c     fit splines
+c-----------------------------------------------------------------------
          DO i=1,6
             CALL cspline_fit(kwmats(i),"extrap")
             CALL cspline_fit(ktmats(i),"extrap")

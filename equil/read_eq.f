@@ -1444,6 +1444,8 @@ c     write 1D splines.
 c-----------------------------------------------------------------------
       READ(dump_unit)mpsi,nqty
       CALL spline_alloc(sq,mpsi,nqty)
+      !allocate external array
+      ALLOCATE(sq_s_f(SIZE(sq%f)), sq_s_f1(SIZE(sq%f1)))
       READ(dump_unit)sq%xs,sq%fs,
      $     sq%xpower,sq%x0,sq%title,sq%name,sq%periodic
       CALL spline_fit(sq,"extrap")

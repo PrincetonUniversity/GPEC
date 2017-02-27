@@ -52,8 +52,18 @@ c-----------------------------------------------------------------------
       REAL(r8) :: shotnum=0, shottime=0
       REAL(r8), DIMENSION(2) :: rext,rsep,zsep
       TYPE(spline_type) :: sq,sq_in
-      TYPE(bicube_type) :: rzphi,eqfun
+      TYPE(bicube_type) :: eqfun,rzphi
       TYPE(cspline_type) :: amats,bmats,cmats,
      $     smats,tmats,xmats,ymats,zmats
+
+      INTEGER :: smats_ix, tmats_ix, xmats_ix, ymats_ix, zmats_ix
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: smats_f, tmats_f, 
+     $     xmats_f, ymats_f, zmats_f
+
+      INTEGER :: eqfun_ix,eqfun_iy,rzphi_ix,rzphi_iy
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy,
+     $     rzphi_f,rzphi_fx,rzphi_fy
+      INTEGER :: sq_s_ix
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f, sq_s_f1
 
       END MODULE global_mod
