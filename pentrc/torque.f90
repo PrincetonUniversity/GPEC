@@ -1853,8 +1853,8 @@ module torque
             ni(sq%mx+1),ne(sq%mx+1),ti(sq%mx+1),te(sq%mx+1),llmda(sq%mx+1),&
             welec(sq%mx+1),wdian(sq%mx+1),wdiat(sq%mx+1),wphi(sq%mx+1),&
             wtran(sq%mx+1),wgyro(sq%mx+1),wbhat(sq%mx+1),wdhat(sq%mx+1))
-        do i=0,sq%mx
-            psi = sq%xs(i)
+        do i=1,sq%mx + 1
+            psi = sq%xs(i-1)
             call spline_eval(sq,psi,1)
             call spline_eval(kin,psi,1)
             call spline_eval(geom,psi,0)
