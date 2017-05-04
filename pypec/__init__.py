@@ -34,9 +34,10 @@ to your installation of the GPEC package (containing the pypec directory).
 For tcsh shell users, replace export with setenv syntax
 and insert in .cshrc.
 
-.. note:: Mayavi's default gui api is not consistent with the anaconda
+..note: Mayavi's default gui api is not consistent with the anaconda
     interactive python default. To enable 3D plotting, you must add
-    "export QT_API=pyqt" to your .bashrc or a similar line to your .cshrc.
+    "export QT_API=pyqt" and "ETS_TOOLKIT=qt4" to your .bashrc or a similar 
+    line to your .cshrc.
 
 To put the changes into effect::
 
@@ -79,7 +80,13 @@ data analysis. To start, it is easiest to auto-import a number of
 basic mathematics and visualization modules and use an enhanced
 interactivity for displaying figures. To do this enter::
 
-  $ ipython --pylab
+  $ ipython
+  In [1]: import mayavi
+  In [2]: %pylab
+
+.. note: Mayavi's API settings will still conflict with matplotlib if
+    it is not imported in the above order! For this reason, we cannot use
+    the --pylab call option with ipython.
 
 Look into online tutorial on numpy and matplotlib. Advanced users 
 are recommended to edit ~/.matplotlib/matplotlibrc and
