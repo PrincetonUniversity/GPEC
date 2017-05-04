@@ -1234,6 +1234,10 @@ c-----------------------------------------------------------------------
      $               (/m_id,modid,i_id/),jo_id) )
          CALL check( nf90_put_att(mncid,jo_id,"long_name",
      $      "Transform to jac_out, tmag_out, jsurf_out") )
+         CALL check( nf90_put_att(mncid,jo_id,"jacobian",jac_type) )
+         CALL check( nf90_put_att(mncid,jo_id,"jac_out",jac_out) )
+         CALL check( nf90_put_att(mncid,jo_id,"tmag_out",tmag_out) )
+         CALL check( nf90_put_att(mncid,jo_id,"jsurf_out",jsurf_out) )
          CALL check( nf90_def_var(mncid,"J_surf_2",nf90_double,
      $               (/m_id,mpdid,i_id/),j2_id) )
          CALL check( nf90_put_att(mncid,j2_id,"long_name",
