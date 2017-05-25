@@ -1,0 +1,15 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+jp2.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	psifac
+1	Real jpa
+2	Imag jpa
+
+ix	iy	title
+0	1	"perturbed current Re jpa
+0	2	"perturbed current Im jpa
