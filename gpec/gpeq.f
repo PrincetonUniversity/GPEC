@@ -291,6 +291,172 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_cova
 c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     subprogram 3-2. test1
+c     compute current components.
+c-----------------------------------------------------------------------
+        SUBROUTINE test2(psi)
+
+       REAL(r8), INTENT(IN) :: psi
+
+       REAL(r8), DIMENSION(0:mthsurf) :: eqb
+       INTEGER :: itheta
+
+       INTEGER :: istep,ipert,m1,dm,jpert,gridfac,gridstep,psinew
+       COMPLEX(r8), DIMENSION(mpert) :: bvt1_mn,bvz1_mn,test_mn
+c       COMPLEX(r8), DIMENSION(0:mstep,mpert) :: bvt1mn,bvz1mn,testmn
+       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
+       COMPLEX(r8), DIMENSION(0:mthsurf) :: jvt_fun, jvz_fun, jpar_fun
+c       COMPLEX(r8), DIMENSION(mpert) :: jwt_mn,jwz_mn,jwp_mn
+       TYPE(cspline_type) :: u6,u7,u8,u16,u17,u18 
+
+c       ALLOCATE(jwt_mn(mpert),jwz_mn(mpert),jwp_mn(mpert))
+c       ALLOCATE(jvt_fun(0:mthnum),jvz_fun(0:mthnum),jpar_fun(0:mthnum))
+      
+       PRINT * ,"jpar test "
+c       CALL spline_eval(sq,psi,1)
+      ! Start allocation for differentialtion 
+      CALL cspline_alloc(u6,mstep,mpert)
+      CALL cspline_alloc(u7,mstep,mpert)
+      CALL cspline_alloc(u8,mstep,mpert)
+      u6%xs=psifac
+      u7%xs=psifac
+      u8%xs=psifac
+       DO istep=0,mstep
+         CALL gpeq_sol(psifac(istep))
+         CALL gpeq_contra(psifac(istep))
+         CALL gpeq_cova(psifac(istep))
+         u6%fs(istep,:)=bvt_mn
+         u7%fs(istep,:)=bvz_mn
+         u8%fs(istep,:)=xsp_mn
+       ENDDO
+
+      CALL cspline_fit(u6,"extrap")
+      CALL cspline_fit(u7,"extrap")
+      CALL cspline_fit(u8,"extrap")
+
+c      gridfac=2
+c      CALL cspline_alloc(u16,mstep*gridfac,mpert)
+c      CALL cspline_alloc(u17,mstep*gridfac,mpert)
+c     CALL cspline_alloc(u18,mstep*gridfac,mpert)
+       
+
+c     DO gridstep=1,gridfac
+c        DO istep=0,mstep
+c
+c      psinew=(gridstep-1)*psifac(mstep)/gridfac+psifac(istep)/gridfac
+c        u16%xs(istep+mstep*(gridstep-1))=psinew
+c        CALL cspline_eval(u6,psinew,0)
+c        u16%fs(istep+mstep*(gridstep-1),:)=u6%f
+c        ENDDO
+c     ENDDO
+c     PRINT * ,u16%xs,u6%xs
+c     PRINT * ,u16%fs,u6%fs
+
+
+c      open(75, file='test.out')
+c      DO ipert=1,lmpert
+c            DO istep=1,mstep
+c               WRITE(75,*)REAL(u16%xs),REAL(u6%xs)
+c               WRITE(75,*)REAL(u16%fs),REAL(u6%fs)
+c            ENDDO
+c            WRITE(75,*)
+c      ENDDO
+
+
+
+
+c      CALL cspline_eval(u6,psi,1)
+
+      ! allocation of derivative finished
+
+      CALL cspline_eval(u6,psi,1)
+      CALL cspline_eval(u7,psi,1)
+      CALL cspline_eval(u8,psi,1)
+      
+c      bvt1_mn(:)=u6%f1(:)
+c      bvz1_mn(:)=u7%f1(:)
+c      test_mn(:)=u8%f1(:)
+
+      bvt1_mn=u6%f1
+      bvz1_mn=u7%f1
+      test_mn=u8%f1
+
+      CALL gpeq_sol(psi)
+      CALL gpeq_contra(psi)
+      CALL gpeq_cova(psi)
+
+      CALL cspline_dealloc(u6)
+      CALL cspline_dealloc(u7)
+      CALL cspline_dealloc(u8)
+c       PRINT * ,test_mn
+c       PRINT * ,xsp1_mn
+      jwp_mn=twopi*ifac*mfac*bvz_mn-(-twopi*ifac*nn*bvt_mn)
+      jwt_mn=twopi*ifac*nn*bvp_mn-(bvz1_mn)
+      jwz_mn=bvt1_mn-(twopi*ifac*mfac*bvp_mn)
+     
+c------ get parallel component----------------------------------------- 
+      
+      CALL spline_eval(sq,psi,1)
+      CALL cspline_eval(metric%cs,psi,0)
+      q=sq%f(4)
+      singfac=mfac-nn*q
+c-----------------------------------------------------------------------
+c     compute lower half of matrices.
+c-----------------------------------------------------------------------
+      g11(0:-mband:-1)=metric%cs%f(1:mband+1)
+      g22(0:-mband:-1)=metric%cs%f(mband+2:2*mband+2)
+      g33(0:-mband:-1)=metric%cs%f(2*mband+3:3*mband+3)
+      g23(0:-mband:-1)=metric%cs%f(3*mband+4:4*mband+4)
+      g31(0:-mband:-1)=metric%cs%f(4*mband+5:5*mband+5)
+      g12(0:-mband:-1)=metric%cs%f(5*mband+6:6*mband+6)      
+c-----------------------------------------------------------------------
+c     compute upper half of matrices.
+c-----------------------------------------------------------------------
+      g11(1:mband)=CONJG(g11(-1:-mband:-1))
+      g22(1:mband)=CONJG(g22(-1:-mband:-1))
+      g33(1:mband)=CONJG(g33(-1:-mband:-1))
+      g23(1:mband)=CONJG(g23(-1:-mband:-1))
+      g31(1:mband)=CONJG(g31(-1:-mband:-1))
+      g12(1:mband)=CONJG(g12(-1:-mband:-1))
+c-----------------------------------------------------------------------
+c     compute covariant components with metric tensors.
+c-----------------------------------------------------------------------
+      ipert=0
+      jvp_mn=0
+      jvt_mn=0
+      jvz_mn=0 
+      DO m1=mlow,mhigh
+         ipert=ipert+1
+         DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
+            jpert=ipert+dm
+            jvp_mn(ipert)=jvp_mn(ipert)+g11(dm)*jwp_mn(jpert)+
+     $           g12(dm)*jwt_mn(jpert)+g31(dm)*jwz_mn(jpert)
+            jvt_mn(ipert)=jvt_mn(ipert)+g12(dm)*jwp_mn(jpert)+
+     $           g22(dm)*jwt_mn(jpert)+g23(dm)*jwz_mn(jpert)
+            jvz_mn(ipert)=jvz_mn(ipert)+g31(dm)*jwp_mn(jpert)+
+     $           g23(dm)*jwt_mn(jpert)+g33(dm)*jwz_mn(jpert)
+         ENDDO
+      ENDDO
+
+      CALL spline_eval(sq,psi,0)
+      q=sq%f(4)
+      DO itheta=0,mthsurf
+         CALL bicube_eval(eqfun,psi,theta(itheta),0)
+         eqb(itheta)=eqfun%f(1)
+      ENDDO
+
+      CALL iscdftb(mfac,mpert,jvt_fun,mthsurf,jvt_mn)
+      CALL iscdftb(mfac,mpert,jvz_fun,mthsurf,jvz_mn)
+      jpar_fun=(jvt_fun+q*jvz_fun)/eqb!*chi1
+      CALL iscdftf(mfac,mpert,jpar_fun,mthsurf,jpar_mn)
+c      jpar_mn=(jvt_mn+q*jvz_mn)*chi1
+c      jpar_mn=(jvt_mn+q*jvz_mn)*chi1
+
+       RETURN
+       END SUBROUTINE test2
+
+c-----------------------------------------------------------------------
 c     subprogram 4. gpeq_normal.
 c     compute normal components.
 c-----------------------------------------------------------------------
@@ -1264,7 +1430,9 @@ c-----------------------------------------------------------------------
      $     xno_mn(mpert),xta_mn(mpert),xpa_mn(mpert),
      $     bno_mn(mpert),bta_mn(mpert),bpa_mn(mpert),
      $     xrr_mn(mpert),xrz_mn(mpert),xrp_mn(mpert),
-     $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert))
+     $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert),
+     $     jwp_mn(mpert),jwt_mn(mpert),jwz_mn(mpert),
+     $     jvp_mn(mpert),jvt_mn(mpert),jvz_mn(mpert),jpar_mn(mpert))
       IF(debug_flag) PRINT *, "->Leaving gpeq_alloc"
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1282,7 +1450,8 @@ c-----------------------------------------------------------------------
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
-     $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn)
+     $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
+     $     jwp_mn,jwt_mn,jwz_mn,jvp_mn,jvt_mn,jvz_mn,jpar_mn)
       IF(debug_flag) PRINT *, "->Leaving gpeq_dealloc"
 c-----------------------------------------------------------------------
 c     terminate.
