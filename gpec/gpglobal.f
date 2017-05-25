@@ -68,7 +68,8 @@ c-----------------------------------------------------------------------
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
-     $     edge_mn,edge_fun
+     $     edge_mn,edge_fun,jwp_mn,jwt_mn,jwz_mn,  !!!
+     $     jvp_mn,jvt_mn,jvz_mn,jpar_mn  !!!
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,

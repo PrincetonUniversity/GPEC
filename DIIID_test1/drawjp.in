@@ -1,0 +1,23 @@
+Type (G=Graph, C=Contour):	G
+
+filename
+jp.bin
+
+graph title:	Surface Quantities
+
+variable names
+0	psifac
+1	Real jwp
+2	Imag jwp
+3	Real jwt
+4	Imag jwt
+5	Real jwz
+6	Imag jwz
+
+ix	iy	title
+0	1	"perturbed current Re jwp
+0	2	"perturbed current Im jwp
+0	3	"perturbed current Re jwt
+0	4	"perturbed current Im jwt
+0	5	"perturbed current Re jwz
+0	6	"perturbed current Im jwz
