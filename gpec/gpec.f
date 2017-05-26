@@ -471,8 +471,8 @@ c     full analysis.
 c-----------------------------------------------------------------------
       IF (netcdf_flag) CALL gpout_init_netcdf
       IF (resp_flag) THEN
-         CALL gpout_response(power_rout,power_bpout,      !!!
-     $        power_bout,power_rcout,tmag_out,jsurf_out) !!!
+         CALL gpout_response(power_rout,power_bpout,      
+     $        power_bout,power_rcout,tmag_out,jsurf_out) 
       ENDIF
       DO i=1,LEN_TRIM(filter_types)
          IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
@@ -520,11 +520,11 @@ c-----------------------------------------------------------------------
          CALL gpout_qrv
       ENDIF
       IF (xclebsch_flag) THEN
-         CALL gpout_xclebsch(mode,xspmn) !speed up
+         CALL gpout_xclebsch(mode,xspmn) 
       ENDIF
       IF (kin_flag .AND. dw_flag) THEN
-        CALL gpout_dw(mode,xspmn)  ! speed up
-        CALL gpout_dw_matrix(coil_flag) !speed up
+        CALL gpout_dw(mode,xspmn)  
+        CALL gpout_dw_matrix(coil_flag)
       ENDIF
       IF (pmodb_flag) THEN
          CALL gpout_pmodb(mode,xspmn)
@@ -725,11 +725,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       PRINT * ,"test new routine"
       CALL gpeq_alloc
-      CALL gpeq_dealloc
-      CALL gpeq_alloc
-c      CALL test1(mode,xspmn,psilim)
-c      CALL test2(psilim)
-      CALL test3(mode,xspmn)
+      CALL gpout_jprofile(mode,xspmn)
       PRINT * ,"end of test"
       CALL gpeq_dealloc
       CALL gpec_dealloc

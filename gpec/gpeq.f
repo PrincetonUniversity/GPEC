@@ -292,10 +292,10 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_cova
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     subprogram 3-2. test1
-c     compute current components.
+c     subprogram 3-2. gpeq_jpert
+c     compute perturbed current components.
 c-----------------------------------------------------------------------
-        SUBROUTINE test2(psi)
+        SUBROUTINE gpeq_jpert(psi)
 
        REAL(r8), INTENT(IN) :: psi
 
@@ -454,7 +454,7 @@ c      jpar_mn=(jvt_mn+q*jvz_mn)*chi1
 c      jpar_mn=(jvt_mn+q*jvz_mn)*chi1
 
        RETURN
-       END SUBROUTINE test2
+       END SUBROUTINE gpeq_jpert
 
 c-----------------------------------------------------------------------
 c     subprogram 4. gpeq_normal.
