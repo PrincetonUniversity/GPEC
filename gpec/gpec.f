@@ -458,15 +458,15 @@ c     full analysis.
 c-----------------------------------------------------------------------
       IF (netcdf_flag) CALL gpout_init_netcdf
       IF (resp_flag) THEN
-         CALL gpout_response(power_rout,power_bpout,      !!!
-     $        power_bout,power_rcout,tmag_out,jsurf_out) !!!
+         CALL gpout_response(power_rout,power_bpout,      
+     $        power_bout,power_rcout,tmag_out,jsurf_out) 
       ENDIF
       DO i=1,LEN_TRIM(filter_types)
          IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
       ENDDO
       IF (singcoup_flag) THEN
-         CALL gpout_singcoup(sing_spot,power_rout,           !!!
-     $        power_bpout,power_bout,power_rcout,tmag_out)   !!!
+         CALL gpout_singcoup(sing_spot,power_rout,          
+     $        power_bpout,power_bout,power_rcout,tmag_out) 
       ENDIF
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
@@ -491,24 +491,24 @@ c-----------------------------------------------------------------------
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE
-          CALL gpout_singfld(mode,xspmn,sing_spot,singcoup_flag) ! speed up
+          CALL gpout_singfld(mode,xspmn,sing_spot,singcoup_flag)
          ENDIF
       ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
          CALL gpout_vsingfld()
       ENDIF
       IF (xclebsch_flag) THEN
-         CALL gpout_xclebsch(mode,xspmn) !speed up
+         CALL gpout_xclebsch(mode,xspmn) 
       ENDIF
       IF (kin_flag .AND. dw_flag) THEN
-        CALL gpout_dw(mode,xspmn)  ! speed up
-        CALL gpout_dw_matrix(coil_flag) !speed up
+        CALL gpout_dw(mode,xspmn)  
+        CALL gpout_dw_matrix(coil_flag)
       ENDIF
       IF (pmodb_flag) THEN
          CALL gpout_pmodb(mode,xspmn)
       ENDIF
       IF (xbnormal_flag) THEN
-         CALL gpout_xbnormal(mode,xspmn) !speed up
+         CALL gpout_xbnormal(mode,xspmn)
       ENDIF
       IF (xbtangent_flag) THEN
          CALL gpout_xbtangent(mode,xspmn,power_rout,
@@ -703,11 +703,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       PRINT * ,"test new routine"
       CALL gpeq_alloc
-      CALL gpeq_dealloc
-      CALL gpeq_alloc
-c      CALL test1(mode,xspmn,psilim)
-c      CALL test2(psilim)
-      CALL test3(mode,xspmn)
+      CALL gpout_jprofile(mode,xspmn)
       PRINT * ,"end of test"
       CALL gpeq_dealloc
       CALL gpec_dealloc

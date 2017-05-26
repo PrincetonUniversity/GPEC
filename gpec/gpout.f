@@ -2975,85 +2975,12 @@ c-----------------------------------------------------------------------
 
 
 c-----------------------------------------------------------------------
-c     subprogram 7-2. test output
+c     subprogram 8. gpout_jprofile 
 c-----------------------------------------------------------------------
-
-       SUBROUTINE test1(psi)
-
 c-----------------------------------------------------------------------
-c      declare
+c     print out jprofile 
 c-----------------------------------------------------------------------
-       REAL(r8), INTENT(IN) :: psi
-c       INTEGER, DIMENSION(mpert) :: ipiva
-c       COMPLEX(r8), DIMENSION(mpert) :: xspfac
-
-c     COMPLEX(r8), DIMENSION(mpert*mpert) :: work
-       INTEGER :: istep,ipert
-       COMPLEX(r8), DIMENSION(mpert) :: bvt1_mn,bvz1_mn,test_mn
-       COMPLEX(r8), DIMENSION(mstep,mpert) :: bvt1mn,bvz1mn,testmn
-       COMPLEX(r8), DIMENSION(mpert) :: jvp_mn,jvt_mn,jvz_mn
-       TYPE(cspline_type) :: u6,u7,u8 
-       
-       PRINT * ,"function test "
-       CALL spline_eval(sq,psi,1)
-      ! Start allocation for differentialtion 
-      CALL cspline_alloc(u6,mstep,mpert)
-      CALL cspline_alloc(u7,mstep,mpert)
-      CALL cspline_alloc(u8,mstep,mpert)
-      u6%xs=psifac
-      u7%xs=psifac
-      u8%xs=psifac
-       DO istep=0,mstep
-         CALL gpeq_sol(psifac(istep))
-         CALL gpeq_contra(psifac(istep))
-         CALL gpeq_cova(psifac(istep))
-         u6%fs(istep,:)=bvt_mn
-         u7%fs(istep,:)=bvz_mn
-         u8%fs(istep,:)=xsp_mn
-       ENDDO
-
-      CALL cspline_fit(u6,"extrap")
-      CALL cspline_fit(u7,"extrap")
-      CALL cspline_fit(u8,"extrap")
-       !
-         test_mn(:)=u8%f
-       ! start j calculation
-      ! required for bvp?
-       DO istep=0,mstep
-       CALL gpeq_sol(psifac(istep))
-       CALL gpeq_contra(psifac(istep))
-       CALL gpeq_cova(psifac(istep))
-
-       CALL cspline_eval(u6,psifac(istep),1)
-       CALL cspline_eval(u7,psifac(istep),1)
-       CALL cspline_eval(u8,psifac(istep),1)
-       ! j^psi, j^theta, j^zeta with Jacobian
-      bvt1mn(istep,:)=u6%fs1(istep,:)
-      bvz1mn(istep,:)=u7%fs1(istep,:)
-      testmn(istep,:)=u8%fs1(istep,:)
-c     jvp_mn=twopi*ifac*bvz_mn-(-twopi*ifac*bvt_mn)
-c     jvt_mn=twopi*ifac*bvp_mn-(-bvz1_mn)
-c     jvz_mn=bvt1_mn-(twopi*ifac*bvp_mn)
-      ENDDO
-      print *, bvt1mn
-c      print *, jvp_mn 
-       ! END
-
-        open (9, file='test1.dat')       
-       DO ipert=1,mpert
-       WRITE(9,*) 'A=[A complex',bvp_mn(ipert),']'
-       WRITE(9,*) 'B=[B complex',test_mn(ipert),']'
-       ENDDO
-
-       PRINT * ,"function test end "
-
-       RETURN
-       END SUBROUTINE test1
-
-c-----------------------------------------------------------------------
-c     subprogram 8. test3 
-c-----------------------------------------------------------------------
-      SUBROUTINE test3(egnum,xspmn)
+      SUBROUTINE gpout_jprofile(egnum,xspmn)
       INTEGER, INTENT(IN) :: egnum
 !      REAL(r8), INTENT(IN) :: psi
       INTEGER :: istep,ipert,bin_unit,itheta
@@ -3086,20 +3013,20 @@ c     $  bwtmns(mstep,lmpert),bwpmns(mstep,lmpert),bwzmns(mstep,lmpert))
      $  xwpmns(mstep,mpert),testmns(mstep,mpert),xvpmns(mstep,mpert),
      $  test2mns(mstep,mpert),test3mns(mstep,mpert),
      $  bwtmns(mstep,lmpert),bwpmns(mstep,lmpert),bwzmns(mstep,mpert))
-       PRINT * ,"PRINT j profile "
+       
+      PRINT * ,"PRINT j profile "
       CALL idcon_build(egnum,xspmn)      
-c      CALL idcon_build(egnum,xspmn) 
           
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
+c         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+c         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
          IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)         
      $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% Hello world"       
+     $        "volume = ",iindex,"% Jprofile mapping"       
          CALL gpeq_sol(psifac(istep))
          CALL gpeq_contra(psifac(istep))
          CALL gpeq_cova(psifac(istep))
-         CALL test2(psifac(istep))
+         CALL gpeq_jpert(psifac(istep))
           area=0
                DO itheta=0,mthsurf
                 CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
@@ -3174,13 +3101,12 @@ c         test3mns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=test3_mn
             test3mns(istep,:)=test3_mn
       ENDDO
       WRITE(*,*) xsp1mns
-c      bin_unit=8
 c        IF (bin_flag) THEN
-      open(77, file='jp.out')
-      write (77,*) lmpert,mstep
+      CALL ascii_open(out_unit,"jp.out","UNKNOWN")
+      write (out_unit,*) lmpert,mstep
       DO ipert=1,mpert
             DO istep=1,mstep
-               WRITE(77,*) REAL(psifac(istep)),
+               WRITE(out_unit,*) REAL(psifac(istep)),
      $              REAL(REAL(jwpmns(istep,ipert))),
      $              REAL(AIMAG(jwpmns(istep,ipert))),
      $              REAL(REAL(jwtmns(istep,ipert))),
@@ -3216,27 +3142,27 @@ c        IF (bin_flag) THEN
      $              REAL(REAL(test3mns(istep,ipert))),    
      $              REAL(AIMAG(test3mns(istep,ipert)))    
             ENDDO
-            WRITE(77,*)
+            WRITE(out_unit,*)
       ENDDO
-      CLOSE(77)
+      CALL ascii_close(out_unit)
 
-      PRINT * , xsp1mns
-      open(187, file='jptest.out')
-      write (187,*) lmpert,mstep
+      CALL ascii_open(out_unit,"jptest.out","UNKNOWN")
+      write (out_unit,*) lmpert,mstep
             DO ipert=1,mpert
             DO istep=1,mstep
-               WRITE(187,*)REAL(psifac(istep)),
+               WRITE(out_unit,*)REAL(psifac(istep)),
      $              REAL(REAL(xsp_mn(istep))),
      $              REAL(AIMAG(xsp_mn(istep)))    
             ENDDO
             ENDDO
-            WRITE(187,*)
+            WRITE(out_unit,*)
+      CALL ascii_close(out_unit)
 
-      CALL bin_open(78,
+      CALL bin_open(bin_unit,
      $        "jp.bin","UNKNOWN","REWIND","none")
       DO ipert=1,mpert
             DO istep=1,mstep
-               WRITE(78)REAL(psifac(istep),4),
+               WRITE(bin_unit)REAL(psifac(istep),4),
      $              REAL(REAL(jwpmns(istep,ipert)),4),
      $              REAL(AIMAG(jwpmns(istep,ipert)),4),
      $              REAL(REAL(jwtmns(istep,ipert)),4),
@@ -3250,26 +3176,26 @@ c        IF (bin_flag) THEN
      $              REAL(REAL(bvzmns(istep,ipert)),4),
      $              REAL(AIMAG(bvzmns(istep,ipert)),4)    
             ENDDO
-            WRITE(78)
+            WRITE(bin_unit)
       ENDDO
 c      ENDIF
-         CALL bin_close(78)
-      CALL bin_open(79,
+      CALL bin_close(bin_unit)
+      CALL bin_open(bin_unit,
      $        "jp2.bin","UNKNOWN","REWIND","none")
       DO ipert=1,mpert
             DO istep=1,mstep
-               WRITE(79)REAL(psifac(istep),4),
+               WRITE(bin_unit)REAL(psifac(istep),4),
      $              REAL(REAL(jparmns(istep,ipert)),4),
      $              REAL(AIMAG(jparmns(istep,ipert)),4)    
             ENDDO
-            WRITE(79)
+            WRITE(bin_unit)
       ENDDO
 c      ENDIF
-      CALL bin_open(80,
+      CALL bin_open(bin_unit,
      $        "check.bin","UNKNOWN","REWIND","none")
       DO ipert=1,mpert
             DO istep=1,mstep
-               WRITE(80)REAL(psifac(istep),4),
+               WRITE(bin_unit)REAL(psifac(istep),4),
      $              REAL(REAL(testmns(istep,ipert))),
      $              REAL(AIMAG(testmns(istep,ipert))),    
      $              REAL(REAL(test2mns(istep,ipert))),
@@ -3279,14 +3205,14 @@ c      ENDIF
      $              REAL(REAL(xspmns(istep,ipert))),    
      $              REAL(AIMAG(xspmns(istep,ipert)))    
             ENDDO
-            WRITE(80)
+            WRITE(bin_unit)
       ENDDO
-         CALL bin_close(80)
-      CALL bin_open(81,
+      CALL bin_close(bin_unit)
+      CALL bin_open(bin_unit,
      $        "check2.bin","UNKNOWN","REWIND","none")
       DO ipert=1,mpert
             DO istep=1,mstep
-               WRITE(81)REAL(psifac(istep),4),
+               WRITE(bin_unit)REAL(psifac(istep),4),
      $              REAL(REAL(xspmns(istep,ipert))),
      $              REAL(AIMAG(xspmns(istep,ipert))),    
      $              REAL(REAL(xssmns(istep,ipert))),
@@ -3296,16 +3222,15 @@ c      ENDIF
      $              REAL(REAL(xvpmns(istep,ipert))),    
      $              REAL(AIMAG(xvpmns(istep,ipert)))    
             ENDDO
-            WRITE(81)
+            WRITE(bin_unit)
       ENDDO
-         CALL bin_close(81)
+         CALL bin_close(bin_unit)
 c      ENDIF
       DEALLOCATE(jwpmns,jwtmns,
      $    jwzmns,jparmns,xspmns,xsp1mns,xssmns,xwpmns,testmns,xvpmns,
      $    bvtmns,bvpmns,bvzmns,bwtmns,bwpmns,bwzmns,test2mns,test3mns)
       RETURN
-      END SUBROUTINE test3
-
+      END SUBROUTINE gpout_jprofile
 
 
 
