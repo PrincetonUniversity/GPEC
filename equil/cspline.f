@@ -11,7 +11,7 @@ c-----------------------------------------------------------------------
 c     0. cspline_mod.
 c     1. cspline_alloc.
 c     2. cspline_dealloc.
-c     3. cspline_fit.
+c     3. cspline_fit_old.
 c     4. cspline_fac.
 c     5. cspline_eval.
 c     6. cspline_all_eval.
@@ -23,6 +23,7 @@ c     11. cspline_trilus.
 c     12. cspline_sherman.
 c     13. cspline_morrison.
 c     14. cspline_copy.
+c     15. cspline_fit.
 c-----------------------------------------------------------------------
 c     subprogram 0. cspline_type definition.
 c     defines cspline_type.
@@ -32,6 +33,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE cspline_mod
       USE local_mod
+      USE spline_mod
       IMPLICIT NONE
       
       TYPE :: cspline_type
@@ -96,13 +98,6 @@ c-----------------------------------------------------------------------
       
       TYPE(cspline_type), INTENT(INOUT) :: spl
 c-----------------------------------------------------------------------
-c     set scalars.
-c-----------------------------------------------------------------------
-      spl%mx=0
-      spl%nqty=0
-      spl%ix=0
-      spl%periodic=.FALSE.
-c-----------------------------------------------------------------------
 c     deallocate space.
 c-----------------------------------------------------------------------
       DEALLOCATE(spl%xs)
@@ -121,13 +116,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 3. cspline_fit.
+c     subprogram 3. cspline_fit_old.
 c     fits complex functions to cubic splines.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE cspline_fit(spl,endmode)
+      SUBROUTINE cspline_fit_old(spl,endmode)
       
       TYPE(cspline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
@@ -218,7 +213,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE cspline_fit
+      END SUBROUTINE cspline_fit_old
 c-----------------------------------------------------------------------
 c     subprogram 4. cspline_fac.
 c     sets up matrix for cubic spline fitting.
@@ -550,8 +545,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     formats.
 c-----------------------------------------------------------------------
- 10   FORMAT('(/4x,"i",2x,a6,6x,',i2.2,'(2x,"real",a6,2x,"imag",a6)/)')
- 20   FORMAT('(i5,1p,',i2.2,'e12.4)')
+ 10   FORMAT('(/4x,"i",4x,a6,1x,',i2.2,'(2x,"re ",a6,2x,"im ",a6)/)')
+ 20   FORMAT('(i5,1p,',i2.2,'e11.3)')
  30   FORMAT('(/4x,"i",2x,"j",',i2.2,'(4x,a6,1x)/)')
 c-----------------------------------------------------------------------
 c     abort.
@@ -569,7 +564,7 @@ c-----------------------------------------------------------------------
       ENDIF
       DO i=0,spl%mx
          CALL cspline_eval(spl,spl%xs(i),0)
-         IF(out)WRITE(iua,format2)i,spl%xs(i),spl%f
+         IF(out)WRITE(iua,format2)spl%xs(i),spl%f
          IF(bin)WRITE(iub)REAL(spl%xs(i),4),
      $        REAL(spl%f,4),REAL(AIMAG(spl%f),4)
       ENDDO
@@ -597,7 +592,7 @@ c-----------------------------------------------------------------------
             IF(bin)WRITE(iub)REAL(x,4),
      $           REAL(spl%f,4),REAL(AIMAG(spl%f),4)
          ENDDO
-c         IF(out)WRITE(iua,'(1x)')
+         IF(out)WRITE(iua,'(1x)')
       ENDDO
 c-----------------------------------------------------------------------
 c     print final interpolated values.
@@ -987,4 +982,51 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_copy
+c-----------------------------------------------------------------------
+c     subprogram 15. cspline_fit.
+c     fits complex functions to cubic splines.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_fit(spl,endmode)
+      
+      TYPE(cspline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+      INTEGER :: iqty,imx
+      TYPE(spline_type) :: rspl
+
+      CALL spline_alloc(rspl,spl%mx,spl%nqty*2)
+
+      rspl%xpower(:,1:spl%nqty)=spl%xpower
+      rspl%xpower(:,spl%nqty+1:2*spl%nqty)=spl%xpower
+
+      rspl%x0=spl%x0
+ 
+      rspl%xs=spl%xs
+
+      DO iqty=1,spl%nqty
+         DO imx=0,spl%mx
+            rspl%fs(imx,iqty)=DREAL(spl%fs(imx,iqty))
+            rspl%fs(imx,spl%nqty+iqty)=DIMAG(spl%fs(imx,iqty))
+         ENDDO
+      ENDDO
+      CALL spline_fit(rspl,endmode)
+      DO iqty=1,spl%nqty
+         DO imx=0,spl%mx
+           spl%fs(imx,iqty)=CMPLX(rspl%fs(imx,iqty),
+     $              rspl%fs(imx,spl%nqty+iqty),r8)
+           spl%fs1(imx,iqty)=CMPLX(rspl%fs1(imx,iqty),
+     $              rspl%fs1(imx,spl%nqty+iqty),r8)
+         ENDDO
+      ENDDO
+
+      spl%periodic=rspl%periodic
+
+      CALL spline_dealloc(rspl)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_fit
       END MODULE cspline_mod

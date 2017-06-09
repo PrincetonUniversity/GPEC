@@ -11,7 +11,7 @@ c-----------------------------------------------------------------------
 c     0. spline_mod.
 c     1. spline_alloc.
 c     2. spline_dealloc.
-c     3. spline_fit.
+c     3. spline_fit_old.
 c     4. spline_fac.
 c     5. spline_eval.
 c     6. spline_all_eval.
@@ -23,6 +23,9 @@ c     11. spline_trilus.
 c     12. spline_sherman.
 c     13. spline_morrison.
 c     14. spline_copy.
+c     15. spline_fit.
+c     16. spline_fill_matrix.
+c     17. spline_get_yp.
 c-----------------------------------------------------------------------
 c     subprogram 0. spline_type definition.
 c     defines spline_type.
@@ -36,13 +39,12 @@ c-----------------------------------------------------------------------
       
       TYPE :: spline_type
       INTEGER :: mx,nqty,ix
-      REAL(r8) :: x
       REAL(r8), DIMENSION(:), POINTER :: xs,f,f1,f2,f3
       REAL(r8), DIMENSION(:,:), POINTER :: fs,fs1,fsi,xpower
       REAL(r8), DIMENSION(2) :: x0
       CHARACTER(6), DIMENSION(:), POINTER :: title
       CHARACTER(6) :: name
-      LOGICAL :: periodic,allocated
+      LOGICAL :: periodic
       END TYPE spline_type
       
       CONTAINS
@@ -63,7 +65,6 @@ c-----------------------------------------------------------------------
       spl%mx=mx
       spl%nqty=nqty
       spl%ix=0
-      spl%x=0
       spl%periodic=.FALSE.
 c-----------------------------------------------------------------------
 c     allocate space.
@@ -79,7 +80,6 @@ c-----------------------------------------------------------------------
       ALLOCATE(spl%xpower(2,nqty))
       spl%xpower=0
       spl%x0=0
-      spl%allocated = .TRUE.
       NULLIFY(spl%fsi)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -109,20 +109,19 @@ c-----------------------------------------------------------------------
       DEALLOCATE(spl%fs1)
       DEALLOCATE(spl%xpower)
       IF(ASSOCIATED(spl%fsi))DEALLOCATE(spl%fsi)
-      spl%allocated = .FALSE.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 3. spline_fit.
+c     subprogram 3. spline_fit_old.
 c     fits real functions to cubic splines.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE spline_fit(spl,endmode)
+      SUBROUTINE spline_fit_old(spl,endmode)
       
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
@@ -213,7 +212,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE spline_fit
+      END SUBROUTINE spline_fit_old
 c-----------------------------------------------------------------------
 c     subprogram 4. spline_fac.
 c     sets up matrix for cubic spline fitting.
@@ -337,7 +336,6 @@ c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
       xx=x
-      spl%x = x
       spl%ix=MAX(spl%ix,0)
       spl%ix=MIN(spl%ix,spl%mx-1)
 c-----------------------------------------------------------------------
@@ -587,7 +585,7 @@ c-----------------------------------------------------------------------
             IF(out)WRITE(iua,format2)i,x,spl%f
             IF(bin)WRITE(iub)REAL(x,4),REAL(spl%f,4)
          ENDDO
-c         IF(out)WRITE(iua,'(1x)')
+         IF(out)WRITE(iua,'(1x)')
       ENDDO
 c-----------------------------------------------------------------------
 c     print final interpolated values.
@@ -913,4 +911,369 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_copy
+c-----------------------------------------------------------------------
+c     subprogram 15. spline_fit.
+c     fits real functions to cubic splines.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_fit(spl,endmode)
+      TYPE(spline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+      
+      INTEGER ::icount,icoef,imx,iqty,istart,jstart,info,iside
+      INTEGER :: ndim,nqty,kl,ku,ldab,nvar
+      INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv
+      INTEGER,  DIMENSION(:,:), ALLOCATABLE :: imap
+      REAL(r8) :: x0,x1,x2,dx
+      REAL(r8), DIMENSION(0:spl%mx) :: xfac
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rhs,locrhs,fs,locrhs0,
+     $                                         locrhs1,tmpmat
+      REAL(r8), DIMENSION(:,:),ALLOCATABLE :: mat,locmat,locmat0,locmat1
+      REAL(r8), DIMENSION(:,:,:),ALLOCATABLE :: coef
+c-----------------------------------------------------------------------
+c     extract powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         DO iqty=1,spl%nqty
+            IF(spl%xpower(iside,iqty) /= 0)THEN
+               xfac=1/ABS(spl%xs-spl%x0(iside))**spl%xpower(iside,iqty)
+               spl%fs(:,iqty)=spl%fs(:,iqty)*xfac
+            ENDIF
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     contruct grid and related matrix block.
+c     five unknow variables at each interval a,b,c,e,f
+c     a(x-xi)^3+b(x-xi)^2+c(x-xi)+d, where d=yi
+c     e and f are used for passing periodic conditions
+c-----------------------------------------------------------------------
+      nqty=spl%nqty
+      nvar=5
+      ALLOCATE (coef(nvar,0:spl%mx-1,nqty),imap(nvar,0:spl%mx-1))
+      ALLOCATE (fs(0:spl%mx,nqty))
+      icount=1
+      DO imx=0, spl%mx-1
+         DO icoef=1,nvar
+            imap(icoef,imx)=icount
+            icount=icount+1
+         ENDDO 
+      ENDDO
+      ndim=icount-1
+      kl=nvar*3
+      ku=kl
+      ldab=2*kl+ku+1
+      ALLOCATE(mat(ldab,ndim),rhs(ndim,nqty),ipiv(ndim))
+      mat=0
+      rhs=0
+      fs=spl%fs(:,:)
+c-----------------------------------------------------------------------
+c     contruct local matrix in each interval. 
+c-----------------------------------------------------------------------
+      ALLOCATE(locmat(nvar,nvar*3),locmat0(nvar,nvar*3),
+     &         locmat1(nvar,nvar*2),tmpmat(nvar,nvar*2))
+      ALLOCATE(locrhs(nvar,nqty),locrhs0(nvar,nqty),locrhs1(nvar,nqty))
+      DO imx=1,spl%mx-2
+         x0=spl%xs(imx-1)
+         x1=spl%xs(imx)
+         x2=spl%xs(imx+1)
+         locmat=0
+         locrhs=0
+c-----------------------------------------------------------------------
+c     S'0(x1)=S'1(x1)
+c-----------------------------------------------------------------------
+         dx=x1-x0
+         locmat(1,1)=3*dx*dx
+         locmat(1,2)=2*dx
+         locmat(1,3)=1
+         locmat(1,nvar+3)=-1
+c-----------------------------------------------------------------------
+c     S''1(x2)=S''2(x2)
+c-----------------------------------------------------------------------
+         dx=x2-x1
+         locmat(2,nvar+1)=6*dx
+         locmat(2,nvar+2)=2
+         locmat(2,2*nvar+2)=-2
+c-----------------------------------------------------------------------
+c     S1(x2)=S2(x2)
+c-----------------------------------------------------------------------
+         locmat(3,nvar+1)=dx*dx*dx
+         locmat(3,nvar+2)=dx*dx
+         locmat(3,nvar+3)=dx
+         locrhs(3,:)=fs(imx+1,:)-fs(imx,:)
+c-----------------------------------------------------------------------
+c     e1=e2
+c-----------------------------------------------------------------------
+         locmat(4,nvar+4)=1
+         locmat(4,2*nvar+4)=-1
+c-----------------------------------------------------------------------
+c     f0=f1
+c-----------------------------------------------------------------------
+         locmat(5,5)=1
+         locmat(5,nvar+5)=-1
+c-----------------------------------------------------------------------
+c     fill global matrix
+c-----------------------------------------------------------------------
+         istart=imap(1,imx)
+         jstart=imap(1,imx-1)
+         CALL spline_fill_matrix(mat,locmat,istart,jstart,kl,ku)
+         rhs(istart:istart+nvar-1,:)=locrhs
+      ENDDO
+c-----------------------------------------------------------------------
+c     boundary condition
+c-----------------------------------------------------------------------
+      locmat0=0
+      locrhs0=0
+      dx=spl%xs(1)-spl%xs(0)
+
+      locmat0(2,nvar+1)=6*dx
+      locmat0(2,nvar+2)=2
+      locmat0(2,2*nvar+2)=-2
+
+      locmat0(3,nvar+1)=dx*dx*dx
+      locmat0(3,nvar+2)=dx*dx
+      locmat0(3,nvar+3)=dx
+      locrhs0(3,:)=fs(1,:)-fs(0,:)
+
+      locmat0(4,nvar+4)=1
+      locmat0(4,2*nvar+4)=-1
+
+      locmat1=0
+      locrhs1=0
+      dx=spl%xs(spl%mx-1)-spl%xs(spl%mx-2)
+
+      locmat1(1,1)=3*dx*dx
+      locmat1(1,2)=2*dx
+      locmat1(1,3)=1
+      locmat1(1,nvar+3)=-1
+
+      dx=spl%xs(spl%mx)-spl%xs(spl%mx-1)
+      locmat1(2,nvar+1)=dx*dx*dx
+      locmat1(2,nvar+2)=dx*dx
+      locmat1(2,nvar+3)=dx
+      locrhs1(2,:)=fs(spl%mx,:)-fs(spl%mx-1,:)
+
+      locmat1(5,5)=1
+      locmat1(5,nvar+5)=-1
+
+      SELECT CASE(endmode)
+c-----------------------------------------------------------------------
+c     not-a-knot boundary conditions.
+c-----------------------------------------------------------------------
+      CASE("not-a-knot")
+         locmat0(1,nvar+1)=6
+         locmat0(1,2*nvar+1)=-6
+         locmat0(5,nvar+5)=1
+         locrhs0(5,:)=1
+
+         locmat1(3,1)=6
+         locmat1(3,nvar+1)=-6
+
+         locmat1(4,nvar+4)=1
+         locrhs1(4,:)=1
+c-----------------------------------------------------------------------
+c     extrap boudary conditions, use first and last four points to
+c     calculate y'(0) and y'(1).
+c-----------------------------------------------------------------------
+      CASE("extrap")
+         locmat0(1,nvar+3)=1
+         CALL spline_get_yp(spl%xs(0:3),spl%fs(0:3,:),
+     $                      spl%xs(0),locrhs0(1,:),nqty)
+
+         locmat0(5,nvar+5)=1
+         locrhs0(5,:)=1
+
+         dx=spl%xs(spl%mx)-spl%xs(spl%mx-1)
+         locmat1(3,nvar+1)=3*dx*dx
+         locmat1(3,nvar+2)=2*dx
+         locmat1(3,nvar+3)=1
+         CALL spline_get_yp(spl%xs(spl%mx-3:spl%mx),
+     $   spl%fs(spl%mx-3:spl%mx,:),spl%xs(spl%mx),locrhs1(3,:),nqty)
+
+         locmat1(4,nvar+4)=1
+         locrhs1(4,:)=1
+c-----------------------------------------------------------------------
+c     natural boudary conditions.
+c-----------------------------------------------------------------------
+      CASE("natural")
+         locmat0(1,nvar+2)=2
+
+         locmat0(5,nvar+5)=1
+         locrhs0(5,:)=1
+
+         dx=spl%xs(spl%mx)-spl%xs(spl%mx-1)
+         locmat1(3,nvar+1)=6*dx
+         locmat1(3,nvar+2)=2
+
+         locmat1(4,nvar+4)=1
+         locrhs1(4,:)=1
+c-----------------------------------------------------------------------
+c     periodic boudary conditions.
+c-----------------------------------------------------------------------
+      CASE("periodic")
+c-----------------------------------------------------------------------
+c     s'0(x0)=s'm-1(xm).
+c-----------------------------------------------------------------------
+         DO iqty=1,nqty
+            IF (ABS(spl%fs(0,iqty)-spl%fs(spl%mx,iqty)) > 1E-15) THEN
+               WRITE(*,*)
+     $             "Warning: first and last points are different. 
+     $              IQTY= ",IQTY,",  averaged value is used."//
+     $              TRIM(endmode)
+              spl%fs(0,iqty)=(spl%fs(0,iqty)+spl%fs(spl%mx,iqty))*0.5
+              spl%fs(spl%mx,iqty)=spl%fs(0,iqty)
+            ENDIF
+         ENDDO
+         locmat0(1,nvar+3)=1
+         locmat0(1,nvar+4)=-1
+            
+         dx=spl%xs(spl%mx)-spl%xs(spl%mx-1)
+         locmat1(4,nvar+1)=3*dx*dx
+         locmat1(4,nvar+2)=2*dx
+         locmat1(4,nvar+3)=1
+         locmat1(4,nvar+4)=-1
+c-----------------------------------------------------------------------
+c     s''0(x0)=s''m-1(xm).
+c-----------------------------------------------------------------------
+         locmat1(3,nvar+1)=6*dx
+         locmat1(3,nvar+1)=2
+         locmat1(3,nvar+5)=-1
+
+         locmat0(5,nvar+2)=2
+         locmat0(5,nvar+5)=-1
+         spl%periodic=.TRUE.
+c-----------------------------------------------------------------------
+c     unrecognized boundary condition.
+c-----------------------------------------------------------------------
+      CASE DEFAULT
+         CALL program_stop
+     $       ("Cannot recognize endmode = "//TRIM(endmode))
+      END SELECT
+c-----------------------------------------------------------------------
+c     fill global matrix at x0
+c-----------------------------------------------------------------------
+      istart=imap(1,0)
+      jstart=imap(1,0)
+      tmpmat=locmat0(:,nvar+1:3*nvar)
+      CALL spline_fill_matrix(mat,tmpmat,istart,jstart,kl,ku)
+      rhs(istart:istart+nvar-1,:)=locrhs0
+c-----------------------------------------------------------------------
+c     fill global matrix at xm
+c-----------------------------------------------------------------------
+      istart=imap(1,spl%mx-1)
+      jstart=imap(1,spl%mx-2)
+      tmpmat=locmat1(:,1:2*nvar)
+      CALL spline_fill_matrix(mat,tmpmat,istart,jstart,kl,ku)
+      rhs(istart:istart+nvar-1,:)=locrhs1
+c-----------------------------------------------------------------------
+c     solve global matrix
+c-----------------------------------------------------------------------
+      CALL dgbtrf(ndim,ndim,kl,ku,mat,ldab,ipiv,info)
+      IF (info .NE. 0) THEN
+         CALL program_stop
+     $           ("Error: LU factorization of spline matrix info ne 0")
+      ENDIF
+      CALL dgbtrs("N",ndim,kl,ku,nqty,mat,ldab,ipiv,rhs,ndim,info )
+      IF (info .NE. 0) THEN
+         CALL program_stop
+     $        ("Error: solve spline matrix info ne 0")
+      ENDIF
+c-----------------------------------------------------------------------
+c     get spl%fs1.
+c-----------------------------------------------------------------------
+      DO imx=0, spl%mx-1
+         DO icoef=1,nvar
+            coef(icoef,imx,:)=rhs(imap(icoef,imx),:)
+         ENDDO
+         spl%fs1(imx,:)=coef(3,imx,:) 
+      ENDDO
+      dx=spl%xs(imx)-spl%xs(imx-1)
+      spl%fs1(imx,:)=coef(3,imx-1,:)
+     $                   +dx*(coef(2,imx-1,:)*2+dx*coef(1,imx-1,:)*3)
+
+      DEALLOCATE (coef,imap)
+      DEALLOCATE (fs)
+      DEALLOCATE(mat,rhs,ipiv)
+      DEALLOCATE(locmat,locmat0,locmat1,tmpmat)
+      DEALLOCATE(locrhs,locrhs0,locrhs1)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_fit
+c-----------------------------------------------------------------------
+c     subprogram 16. spline_fill_matrix.
+c     fill local matrix into global matrix.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_fill_matrix(mat,locmat,istart,jstart,kl,ku)
+      INTEGER :: istart,jstart,itot,jtot,i,j,kl,ku,m,n,offset
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE,INTENT(INOUT) :: mat
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE,INTENT(IN) :: locmat
+c-----------------------------------------------------------------------
+c     fill matrix.
+c-----------------------------------------------------------------------
+      itot=SIZE(locmat,1)
+      jtot=SIZE(locmat,2)
+      offset=kl+ku+1
+      DO m=1, itot
+         i=m+istart-1
+         DO n=1, jtot
+            j=n+jstart-1
+            mat(offset+i-j,j)=mat(offset+i-j,j)+locmat(m,n)
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_fill_matrix
+c-----------------------------------------------------------------------
+c     subprogram 17. spline_get_yp.
+c     get yi' with four points for spline boundary condtion .
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_get_yp(x,y,xi,yip,nqty)
+      INTEGER, INTENT(IN) :: nqty
+      INTEGER :: n,nrhs,lda,info,ldb,i
+      INTEGER, DIMENSION(4) :: ipiv
+      REAL(r8) :: dx
+      REAL(r8), INTENT(IN) :: xi
+      REAL(r8), DIMENSION(:),INTENT(OUT) :: yip
+      REAL(r8), DIMENSION(4), INTENT(IN) :: x
+      REAL(r8), DIMENSION(:,:), INTENT(IN) :: y
+      REAL(r8), DIMENSION(4,nqty) :: b
+      REAL(r8), DIMENSION(4,4) :: a
+      n=4
+      nrhs=nqty
+      lda=N
+      ldb=N
+      a=0
+      b=0
+      
+      a(1,4)=1
+      b(1,:)=y(1,:)
+      DO i=2,n
+         dx=x(i)-x(1)
+         a(i,1)=dx*dx*dx
+         a(i,2)=dx*dx
+         a(i,3)=dx
+         a(i,4)=1
+         b(i,:)=y(i,:)
+      ENDDO
+      CALL dgesv(n,nrhs,a,lda,ipiv,b,ldb,info)
+      dx=xi-x(1)
+      yip=(3*b(1,:)*dx+2*b(2,:))*dx+b(3,:)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_get_yp
+
+
       END MODULE spline_mod
