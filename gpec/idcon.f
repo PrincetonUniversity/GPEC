@@ -282,6 +282,24 @@ c-----------------------------------------------------------------------
          wft=wft*(chi1*1e-3)
       ENDIF
 c-----------------------------------------------------------------------
+c     choose the rational surfaces included for overlap.
+c-----------------------------------------------------------------------
+      osing=0
+      DO ising=1,msing
+         IF ((singtype(ising)%psifac.GE.opsi1).AND.
+     $        (singtype(ising)%psifac.LE.opsi2)) THEN
+            ou=ising
+            osing=osing+1
+         ENDIF
+      ENDDO
+      IF (osing==0) THEN
+         ol=1
+         ou=1
+         osing=1
+      ELSE
+         ol=ou-osing+1
+      ENDIF
+c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
 c-----------------------------------------------------------------------
       sfac0=1

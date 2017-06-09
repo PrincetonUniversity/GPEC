@@ -226,7 +226,6 @@ module inputs
               call spline_eval(tmp,psi,0)
               kin%xs(i) = psi
               kin%fs(i,1:5) = tmp%f(1:5)
-              !print *,i,kin%fs(i,1:4)
         enddo
         
         ! convert temperatures to si units
@@ -241,6 +240,7 @@ module inputs
             /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
         kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
             /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
+
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
     
@@ -265,6 +265,7 @@ module inputs
 
         ! write log - designed as check of reading routines
         if(write_log)then
+        !if(.TRUE.)then
             out_unit = get_free_file_unit(-1)
             if(verbose) print *, "Writing kinetic spline to pentrc_kinetics.out"
             open(unit=out_unit,file="pentrc_kinetics.out",&

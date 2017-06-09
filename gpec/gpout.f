@@ -52,8 +52,8 @@ c-----------------------------------------------------------------------
       ! module wide output variables
       LOGICAL :: singcoup_set = .FALSE.
       REAL(r8) :: jarea
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: singcoup1mat,
-     $   w1v,w2v,w3v,t1v,t2v,t3v,fldflxmat,singbnoflxs
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fldflxmat,singbnoflxs,
+     $     w1v,w2v,w3v,t1v,t2v,t3v,o1v,o2v,o3v,y1v,y2v,y3v
 
       CONTAINS
       
@@ -155,7 +155,6 @@ c-----------------------------------------------------------------------
      $     plas_indev(resp_index,:),mpert)
       ierr=set_harvest_payload_dbl_array(hlog,"s_rho"//nul,
      $     reluctev(resp_index,:),mpert)
-
 c-----------------------------------------------------------------------
 c     fundamental matrices in netcdf
 c-----------------------------------------------------------------------
@@ -196,7 +195,6 @@ c-----------------------------------------------------------------------
      $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
          CALL check( nf90_close(mncid) )
       ENDIF
-
 c-----------------------------------------------------------------------
 c     All possible descriptions in large ascii files
 c-----------------------------------------------------------------------
@@ -232,7 +230,6 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a4,5(1x,a12))')"mode",
      $     "ep0","ep1","ep2","ep3","ep4"
-      ! torque = -2*nn*imag(ep)
       DO i=1,mpert
          WRITE(out_unit,'(1x,I4,5(1x,es12.3))')i,-2.0*nn*AIMAG(ep(i)),
      $        -2.0*nn*AIMAG(surfep(1,i)),-2.0*nn*AIMAG(surfep(2,i)),
@@ -441,7 +438,6 @@ c-----------------------------------------------------------------------
            CALL ascii_close(out_unit)
         ENDIF
       ENDIF
-
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -458,9 +454,6 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
       REAL(r8), INTENT(IN) :: spot
-
-      REAL(r8), DIMENSION(msing) :: s,s1,s2,s3
-      COMPLEX(r8), DIMENSION(msing,msing) :: u
 
       INTEGER :: i,j,itheta,ising,resnum,
      $     tmlow,tmhigh,tmpert,lwork,info
@@ -486,9 +479,9 @@ c-----------------------------------------------------------------------
      $     t1mat,t2mat,t3mat
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv,tmfac
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork,s,s1,s2,s3,o,o1,o2,o3
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: work
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: a,vt    
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: u,a,vt    
 
       TYPE(spline_type) :: spl 
 c-----------------------------------------------------------------------
@@ -497,8 +490,7 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)
      $     "Computing coupling between total resonant fields and "//
-     $     "external fields"
-      
+     $     "external fields"      
       IF(verbose) WRITE(*,*)"Computing surface inductances at "//
      $     "resonant surfaces"
       DO ising=1,msing
@@ -707,35 +699,35 @@ c-----------------------------------------------------------------------
 c     svd analysis.
 c-----------------------------------------------------------------------
       lwork=3*tmpert
-      ALLOCATE(ipiv(tmpert),rwork(5*msing),work(lwork),
-     $     a(msing,tmpert),vt(msing,tmpert),
+      ALLOCATE(s(msing),s1(msing),s2(msing),s3(msing),rwork(5*msing),
+     $     u(msing,msing),a(msing,tmpert),vt(msing,tmpert),
      $     w1v(tmpert,msing),w2v(tmpert,msing),w3v(tmpert,msing),
      $     t1v(tmpert,msing),t2v(tmpert,msing),t3v(tmpert,msing),
-     $     temp1(tmpert,tmpert),temp2(tmpert,tmpert),bmn(tmpert),
-     $     singcoup1mat(msing,tmpert))
-      
+     $     temp1(tmpert,tmpert),temp2(tmpert,tmpert),work(lwork),
+     $     ipiv(tmpert),bmn(tmpert))
+
       temp1=fldflxmat
       temp2=0
       DO i=1,tmpert
          temp2(i,i)=1
       ENDDO
-
+      
       CALL zgetrf(tmpert,tmpert,temp1,tmpert,ipiv,info)
-      CALL zgetrs('N',tmpert,tmpert,temp1,tmpert,ipiv,temp2,tmpert,info)
-
+      CALL zgetrs('N',tmpert,tmpert,temp1,tmpert,ipiv,
+     $     temp2,tmpert,info)
+      
       work=0
       rwork=0
       s=0
       u=0
       vt=0
       a=MATMUL(t1mat,temp2)
-      singcoup1mat = a
       CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $     work,lwork,rwork,info)    
       s1=s
       w1v=CONJG(TRANSPOSE(vt))
       t1v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
-
+      
       work=0
       rwork=0
       s=0
@@ -747,7 +739,7 @@ c-----------------------------------------------------------------------
       s2=s
       w2v=CONJG(TRANSPOSE(vt))
       t2v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
-
+      
       work=0
       rwork=0
       s=0
@@ -759,6 +751,54 @@ c-----------------------------------------------------------------------
       s3=s
       w3v=CONJG(TRANSPOSE(vt))
       t3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+      DEALLOCATE(rwork,u,a,vt)
+      WRITE(*,*)osing,msing
+c-----------------------------------------------------------------------
+c     repeat svd analysis when local coupling is requested.
+c-----------------------------------------------------------------------
+      IF (osing<msing) THEN
+         ALLOCATE(o(osing),o1(osing),o2(osing),o3(osing),rwork(5*osing),
+     $        u(osing,osing),a(osing,tmpert),vt(osing,tmpert),
+     $        o1v(tmpert,osing),o2v(tmpert,osing),o3v(tmpert,osing),
+     $        y1v(tmpert,osing),y2v(tmpert,osing),y3v(tmpert,osing))
+         
+         work=0
+         rwork=0
+         o=0
+         u=0
+         vt=0
+         a=MATMUL(t1mat(ol:ou,:),temp2)
+         CALL zgesvd('S','S',osing,tmpert,a,osing,o,u,osing,vt,osing,
+     $        work,lwork,rwork,info)    
+         o1=o
+         o1v=CONJG(TRANSPOSE(vt))
+         y1v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+         
+         work=0
+         rwork=0
+         o=0
+         u=0
+         vt=0
+         a=MATMUL(t2mat(ol:ou,:),temp2)
+         CALL zgesvd('S','S',osing,tmpert,a,osing,o,u,osing,vt,osing,
+     $        work,lwork,rwork,info)    
+         o2=o
+         o2v=CONJG(TRANSPOSE(vt))
+         y2v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+         
+         work=0
+         rwork=0
+         o=0
+         u=0
+         vt=0
+         a=MATMUL(t3mat(ol:ou,:),temp2)
+         CALL zgesvd('S','S',osing,tmpert,a,osing,o,u,osing,vt,osing,
+     $        work,lwork,rwork,info)    
+         o3=o
+         o3v=CONJG(TRANSPOSE(vt))
+         y3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+         DEALLOCATE(rwork,u,a,vt)
+      ENDIF
 c-----------------------------------------------------------------------
 c     save module wide variables
 c-----------------------------------------------------------------------
@@ -820,6 +860,7 @@ c-----------------------------------------------------------------------
             ENDDO
             WRITE(out_unit,*)
          ENDDO
+
          CALL ascii_close(out_unit)
 
          CALL ascii_open(out_unit,"gpec_singcoup_svd_n"//
@@ -836,7 +877,8 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(2(1x,a12,es17.8e3))')
      $        "psilim =",psilim,"qlim =",qlim
          WRITE(out_unit,*)
-         WRITE(out_unit,*)"SVD for coupling matrix to resonant fields"
+         WRITE(out_unit,*)"SVD for coupling matrix to resonant"//
+     $        " fields"
          WRITE(out_unit,*)
          DO i=1,msing
             WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
@@ -850,7 +892,8 @@ c-----------------------------------------------------------------------
             ENDDO
             WRITE(out_unit,*)
          ENDDO
-         WRITE(out_unit,*)"SVD for coupling matrix to singular currents"
+         WRITE(out_unit,*)"SVD for coupling matrix to singular"//
+     $        " currents"
          WRITE(out_unit,*)
          DO i=1,msing
             WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
@@ -864,7 +907,8 @@ c-----------------------------------------------------------------------
             ENDDO
             WRITE(out_unit,*)
          ENDDO
-         WRITE(out_unit,*)"SVD of coupling matrix to island half-widths"
+         WRITE(out_unit,*)"SVD of coupling matrix to island"//
+     $        " half-widths"
          WRITE(out_unit,*)
          DO i=1,msing
             WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
@@ -879,10 +923,76 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,*)
          ENDDO
          CALL ascii_close(out_unit)
+         
+         IF (osing<msing) THEN
+            CALL ascii_open(out_unit,"gpec_singcoup_svd_local_n"//
+     $           TRIM(sn)//".out","UNKNOWN")
+            WRITE(out_unit,*)"GPEC_SINGCOUP_LOCAL_SVD: SVD"//
+     $           " analysis for local coupling matrices"
+            WRITE(out_unit,*)version
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
+     $           "jac_out = ",jac_out,"tmag_out =",tmag_out
+            WRITE(out_unit,'(4(1x,a12,I4))')
+     $           "msing =",osing,"mpert =",tmpert,
+     $           "mlow =",tmlow,"mhigh =",tmhigh
+            WRITE(out_unit,'(2(1x,a12,es17.8e3))')
+     $           "psilim =",psilim,"qlim =",qlim
+            WRITE(out_unit,*)
+            WRITE(out_unit,*)"Local SVD for coupling matrix to"//
+     $           " resonant fields"
+            WRITE(out_unit,*)
+            DO i=1,osing
+               WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $              "mode =",i,"s =",o1(i)
+               WRITE(out_unit,*)
+               WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi)",
+     $              "imag(Phi)"
+               DO j=1,tmpert
+                  WRITE(out_unit,'(1x,I4,4(es17.8e3))')
+     $                 tmfac(j),REAL(y1v(j,i)),AIMAG(y1v(j,i))
+               ENDDO
+               WRITE(out_unit,*)
+            ENDDO
+            WRITE(out_unit,*)"Local SVD for coupling matrix to"//
+     $           " singular currents"
+            WRITE(out_unit,*)
+            DO i=1,osing
+               WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $              "mode =",i,"s =",o2(i)
+               WRITE(out_unit,*)
+               WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
+     $              "imag(Phi)"
+               DO j=1,tmpert
+                  WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $                 tmfac(j),REAL(y2v(j,i)),AIMAG(y2v(j,i))
+               ENDDO
+               WRITE(out_unit,*)
+            ENDDO
+            WRITE(out_unit,*)"Local SVD for coupling matrix to"//
+     $           " island half-widths"
+            WRITE(out_unit,*)
+            DO i=1,osing
+               WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $              "mode =",i,"s =",o3(i)
+               WRITE(out_unit,*)
+               WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
+     $              "imag(Phi)"
+               DO j=1,tmpert
+                  WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $                 tmfac(j),REAL(y3v(j,i)),AIMAG(y3v(j,i))
+               ENDDO
+               WRITE(out_unit,*)
+            ENDDO
+         ENDIF
+         CALL ascii_close(out_unit)
       ENDIF
-
-      DEALLOCATE(tmfac,t1mat,t2mat,t3mat,fldflxmn)
-      DEALLOCATE(ipiv,rwork,work,a,vt,temp1,temp2)
+      
+      DEALLOCATE(s,s1,s2,s3,t1v,t2v,t3v,
+     $     tmfac,t1mat,t2mat,t3mat,fldflxmn,ipiv,work,temp1,temp2) 
+      IF (osing<msing) THEN
+         DEALLOCATE(o,o1,o2,o3,y1v,y2v,y3v)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -976,7 +1086,7 @@ c-----------------------------------------------------------------------
          
          CALL ascii_close(in_unit)
          rawmn=dcosmn+ifac*dsinmn
-         cawmn=rawmn(:,nn) ! note this was wrong when using lmpert based on mlow,mhigh
+         cawmn=rawmn(:,nn)
          DEALLOCATE(dcosmn,dsinmn,rawmn)
       ELSE IF (harmonic_flag) THEN
          DO i=-hmnum,hmnum
@@ -1068,9 +1178,10 @@ c-----------------------------------------------------------------------
       units = 1
       jarea = issurfint(units,mthsurf,psilim,0,0)
 c-----------------------------------------------------------------------
-c     calculate dimensionless half area weighting matrix W as,
-c     W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c     calculate dimensionless half area weighting matrix W
 c-----------------------------------------------------------------------
+!     W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/
+!              int{sqrt(J|delpsi|)dt}
       sqrtamat = 0
       DO i=1,mpert
          sqrtamat(i,i) = 1.0
@@ -1387,7 +1498,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,p_id,dphi) )
          CALL check( nf90_close(mncid) )
       ENDIF
-
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1398,14 +1508,13 @@ c-----------------------------------------------------------------------
 c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singfld(egnum,xspmn,spot,svd_flag)
+      SUBROUTINE gpout_singfld(egnum,xspmn,spot)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
-      LOGICAL, INTENT(IN) :: svd_flag
 
       INTEGER :: i_id,q_id,p_id,c_id,w_id,k_id
 
@@ -1433,8 +1542,8 @@ c-----------------------------------------------------------------------
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
-c     delta is delta*chi1*sq%f(4) and j_c is j_c/(chi1*sq%f(4))
 c-----------------------------------------------------------------------
+!     delta is delta*chi1*sq%f(4) and j_c is j_c/(chi1*sq%f(4))
       DO ising=1,msing
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          respsi=singtype(ising)%psifac
@@ -1594,7 +1703,7 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl_array(hlog,"singflx"//nul,
      $     asingflx,msing)
 
-      IF (svd_flag .AND.  ALLOCATED(sbno_fun))THEN
+      IF (singcoup_set .AND. ALLOCATED(sbno_fun)) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
      $        sbno_fun(1:mthsurf)))/mthsurf/2.0)
          sbno_mn = MATMUL(fldflxmat,sbno_mn)
@@ -1623,17 +1732,51 @@ c-----------------------------------------------------------------------
      $              REAL(ovs(ising)),AIMAG(ovs(ising)),novs(ising),
      $              REAL(ovi(ising)),AIMAG(ovi(ising)),novi(ising)
             ENDDO
-            WRITE(out_unit,*)
+            WRITE(out_unit,*)            
          ENDIF
 
+         IF (osing<msing) THEN            
+            DO ising=1,osing
+               ovf(ising)=DOT_PRODUCT(o1v(:,ising),sbno_mn(:))/SQRT(2.0)
+               ovs(ising)=DOT_PRODUCT(o2v(:,ising),sbno_mn(:))/SQRT(2.0)
+               ovi(ising)=DOT_PRODUCT(o3v(:,ising),sbno_mn(:))/SQRT(2.0)
+            ENDDO
+            DO ising=1,osing
+               novf(ising)=ABS(ovf(ising))/sbnosurf*1e2
+               novs(ising)=ABS(ovs(ising))/sbnosurf*1e2
+               novi(ising)=ABS(ovi(ising))/sbnosurf*1e2
+            ENDDO
+            
+            IF(ascii_flag)THEN
+               WRITE(out_unit,*)"Local overlap fields, overlap "//
+     $              "singular currents, and overlap islands"
+               WRITE(out_unit,*)
+               WRITE(out_unit,'(1x,a6,9(1x,a16))')
+     $              "mode","real(ovf)","imag(ovf)","overlap(%)",
+     $              "real(ovs)","imag(ovs)","overlap(%)",
+     $              "real(ovi)","imag(ovi)","overlap(%)"
+               DO ising=1,osing
+                  WRITE(out_unit,'(1x,I6,9(es17.8e3))')ising,
+     $                 REAL(ovf(ising)),AIMAG(ovf(ising)),novf(ising),
+     $                 REAL(ovs(ising)),AIMAG(ovs(ising)),novs(ising),
+     $                 REAL(ovi(ising)),AIMAG(ovi(ising)),novi(ising)
+               ENDDO
+               WRITE(out_unit,*)
+            ENDIF
+         ENDIF
          ! information already in netcdf from control_filter subroutine
-
          ! log svd response with harvest
          ierr=set_harvest_payload_dbl_array(hlog,'overlap_percent'//nul,
      $        novf,msing)
       ENDIF
         
       IF(ascii_flag) CALL ascii_close(out_unit)
+      IF(singcoup_set) THEN
+         DEALLOCATE(w1v,w2v,w3v)
+         IF(osing<msing) THEN
+            DEALLOCATE(o1v,o2v,o3v)
+         ENDIF
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1873,9 +2016,9 @@ c-----------------------------------------------------------------------
       units = 1
       jarea = issurfint(units,mthsurf,psilim,0,0)
 c-----------------------------------------------------------------------
-c     calculate dimensionless half area weighting matrix W as,
-c     W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
+c     calculate dimensionless half area weighting matrix W.
 c-----------------------------------------------------------------------
+!     W_m,m' = int{sqrt(J|delpsi|)exp[-i*(m-m')t]dt}/int{sqrt(J|delpsi|)dt}
       sqrtamat = 0
       DO i=1,mpert
          sqrtamat(i,i) = 1.0

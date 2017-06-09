@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,mlim_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
-     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,opsi1,opsi2,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
@@ -186,6 +186,8 @@ c-----------------------------------------------------------------------
       malias=0
 
       psixy = 0
+      opsi1=0.0
+      opsi2=1.0
 c-----------------------------------------------------------------------
 c     read gpec.in.
 c-----------------------------------------------------------------------
@@ -491,7 +493,7 @@ c-----------------------------------------------------------------------
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE
-            CALL gpout_singfld(mode,xspmn,sing_spot,singcoup_flag)
+            CALL gpout_singfld(mode,xspmn,sing_spot)
          ENDIF
       ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
@@ -620,7 +622,7 @@ c-----------------------------------------------------------------------
          CALL gpout_control(infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,.FALSE.)
+         CALL gpout_singfld(mode,xspmn,sing_spot)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -642,7 +644,7 @@ c-----------------------------------------------------------------------
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,.FALSE.)
+         CALL gpout_singfld(mode,xspmn,sing_spot)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
          CALL gpout_xbnormal(mode,xspmn)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)
