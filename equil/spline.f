@@ -11,7 +11,7 @@ c-----------------------------------------------------------------------
 c     0. spline_mod.
 c     1. spline_alloc.
 c     2. spline_dealloc.
-c     3. spline_fit_old.
+c     3. spline_fit.
 c     4. spline_fac.
 c     5. spline_eval.
 c     6. spline_all_eval.
@@ -23,7 +23,7 @@ c     11. spline_trilus.
 c     12. spline_sherman.
 c     13. spline_morrison.
 c     14. spline_copy.
-c     15. spline_fit.
+c     15. spline_fit_ha.
 c     16. spline_fill_matrix.
 c     17. spline_get_yp.
 c-----------------------------------------------------------------------
@@ -117,13 +117,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 3. spline_fit_old.
+c     subprogram 3. spline_fit.
 c     fits real functions to cubic splines.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE spline_fit_old(spl,endmode)
+      SUBROUTINE spline_fit(spl,endmode)
       
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
@@ -214,7 +214,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE spline_fit_old
+      END SUBROUTINE spline_fit
 c-----------------------------------------------------------------------
 c     subprogram 4. spline_fac.
 c     sets up matrix for cubic spline fitting.
@@ -914,13 +914,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_copy
 c-----------------------------------------------------------------------
-c     subprogram 15. spline_fit.
-c     fits real functions to cubic splines.
+c     subprogram 15. spline_fit_ha.
+c     fits real functions to highly accurate cubic splines.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE spline_fit(spl,endmode)
+      SUBROUTINE spline_fit_ha(spl,endmode)
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
       
@@ -1203,7 +1203,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE spline_fit
+      END SUBROUTINE spline_fit_ha
 c-----------------------------------------------------------------------
 c     subprogram 16. spline_fill_matrix.
 c     fill local matrix into global matrix.

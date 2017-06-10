@@ -752,7 +752,6 @@ c-----------------------------------------------------------------------
       w3v=CONJG(TRANSPOSE(vt))
       t3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
       DEALLOCATE(rwork,u,a,vt)
-      WRITE(*,*)osing,msing
 c-----------------------------------------------------------------------
 c     repeat svd analysis when local coupling is requested.
 c-----------------------------------------------------------------------
