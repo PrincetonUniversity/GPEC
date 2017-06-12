@@ -13,6 +13,7 @@ c     4. fourfit_write_metric.
 c     5. fourfit_write_matrix.
 c     6. fourfit_evals.
 c     7. fourfit_diagnose_1.
+c     8. fourfit_kinetic_matrix.
 c-----------------------------------------------------------------------
 c     subprogram 0. fourfit_mod.
 c     module declarations.
@@ -425,13 +426,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set powers.
 c-----------------------------------------------------------------------
+      gmats%xpower(1,:)=-1
       IF(power_flag)THEN
-         hmats%x0(2)=1.0
-         hmats%xpower(1,:)=-1
-         hmats%xpower(2,:)=-1
-         gmats%x0(2)=1.0
-         gmats%xpower(1,:)=-1
-         gmats%xpower(2,:)=-1
+         IF (kin_flag)THEN
+            hmats%x0(2)=1.0
+            hmats%xpower(1,:)=-1
+            hmats%xpower(2,:)=-1
+            gmats%x0(2)=1.0
+            gmats%xpower(2,:)=-1
+         ENDIF
          m=mlow
          iqty=1
          DO jpert=1,mpert
