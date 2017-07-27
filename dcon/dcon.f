@@ -55,14 +55,13 @@ c-----------------------------------------------------------------------
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,
-     $     electron_flag,ktc,ktw
+     $     electron_flag,ktc,ktw,parallel_threads
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
      $     ahb_flag,mthsurf0,msol_ahb
-      NAMELIST/parallel_input/parallel_threads
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -81,7 +80,6 @@ c-----------------------------------------------------------------------
       CALL ascii_open(in_unit,"dcon.in","OLD")
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
-      READ(UNIT=in_unit,NML=parallel_input)
       CALL ascii_close(in_unit)
       CALL OMP_SET_NUM_THREADS(parallel_threads)
       delta_mhigh=delta_mhigh*2
