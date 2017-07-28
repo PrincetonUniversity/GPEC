@@ -42,9 +42,7 @@ module inputs
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
-        idcon_coords,&
-        smats_ix, tmats_ix, xmats_ix, ymats_ix, zmats_ix,&
-        smats_f, tmats_f, xmats_f, ymats_f, zmats_f
+        idcon_coords
 
     implicit none
 
@@ -59,28 +57,15 @@ module inputs
          read_fnml, &
          kin, xs_m, dbob_m, divx_m, fnml, &
          chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
-         verbose, &
-         dbob_m_ix, dbob_m_f, divx_m_ix, divx_m_f, kin_s_ix, kin_s_f, kin_s_f1, &
-         xs_m1_ix, xs_m1_f, xs_m2_ix, xs_m2_f, xs_m3_ix, xs_m3_f !"external" spline vars
+         verbose
 
     ! global variables with defaults
     logical :: verbose=.TRUE.
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
-    ! global variables added for "external" spline calls
-    !spline
-    integer :: kin_s_ix
-    real(r8), dimension(:), allocatable :: kin_s_f, kin_s_f1
-    !cspline
-    integer :: dbob_m_ix, divx_m_ix, xs_m1_ix, xs_m2_ix, xs_m3_ix
-    complex(r8), dimension(:), allocatable :: dbob_m_f, divx_m_f
-    complex(r8), dimension(:), allocatable :: xs_m1_f, xs_m2_f, xs_m3_f
 
 !$OMP THREADPRIVATE(dbob_m, divx_m, kin, xs_m, fnml)
-!$OMP THREADPRIVATE(kin_s_ix, kin_s_f, kin_s_f1)
-!$OMP THREADPRIVATE(dbob_m_ix, divx_m_ix, dbob_m_f, divx_m_f)
-!$OMP THREADPRIVATE(xs_m1_ix, xs_m1_f, xs_m2_ix, xs_m2_f, xs_m3_ix, xs_m3_f)
 
     contains
 
@@ -233,13 +218,6 @@ module inputs
         
         ! extrapolate to regular spline (helps smooth core??)
         call spline_alloc(kin,nkin,8)
-
-        !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-        allocate(kin_s_f(8))
-        allocate(kin_s_f1(8))
-!$OMP END PARALLEL
-
         kin%title(0:) = (/"psi_n ","n_i   ","n_e   ","t_i   ","t_e   ","omegae",&
                     "loglam","nu_i  ","nu_e  " /)
         do i=0,kin%mx
@@ -469,14 +447,6 @@ module inputs
         if(associated(divx_m%xs)) call cspline_dealloc(divx_m)
         call cspline_alloc(dbob_m,npsi-1,mpert)     ! (dB/B)
         call cspline_alloc(divx_m,npsi-1,mpert)     ! div(xi_prp)
-
-        !allocation of external arrays
-        if(allocated(dbob_m_f)) deallocate(dbob_m_f)
-        if(allocated(divx_m_f)) deallocate(divx_m_f)
-!$OMP PARALLEL DEFAULT(NONE) SHARED(mpert)
-        allocate(dbob_m_f(mpert), divx_m_f(mpert))
-!$OMP END PARALLEL
-
         dbob_m%xs(0:) = psi(1:)
         divx_m%xs(0:) = psi(1:)
         do i=1,npsi
@@ -771,11 +741,6 @@ module inputs
             xs_m(i)%xs(0:) = psi(:)
         enddo
 
-        !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE) SHARED(mpert)
-        allocate(xs_m1_f(mpert), xs_m2_f(mpert), xs_m3_f(mpert))
-!$OMP END PARALLEL
-
         do i =1,mpert
             ims = i+(mfac(1)-ms(1))
             if(ims>0 .and. ims<=nm)then        
@@ -799,13 +764,6 @@ module inputs
         if(associated(divx_m%xs)) call cspline_dealloc(divx_m)
         call cspline_alloc(dbob_m,npsi-1,mpert)     ! dB/B
         call cspline_alloc(divx_m,npsi-1,mpert)     ! nabla.xi_perp
-
-        !allocation of external arrays
-        if(allocated(dbob_m_f)) deallocate(dbob_m_f)
-        if(allocated(divx_m_f)) deallocate(divx_m_f)
-!$OMP PARALLEL DEFAULT(NONE) SHARED(mpert)
-        allocate(dbob_m_f(mpert), divx_m_f(mpert))
-!$OMP END PARALLEL
 
         dbob_m%xs(0:) = psi(1:)
         divx_m%xs(0:) = psi(1:)
@@ -954,12 +912,6 @@ module inputs
         ! form splines
         call cspline_alloc(dbob_m,mstep-1,mpert)
         call cspline_alloc(divx_m,mstep-1,mpert)
-
-        !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE) SHARED(mpert)
-        allocate(dbob_m_f(mpert), divx_m_f(mpert))
-!$OMP END PARALLEL
-
         dbob_m%xs(0:) = psifac(1:)
         divx_m%xs(0:) = psifac(1:)
         dbob_m%fs(0:,:) = lagbpar(:,:)

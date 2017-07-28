@@ -183,13 +183,7 @@ c-----------------------------------------------------------------------
      $          op_peq=.FALSE.)
             ! manually set the pentrc equilibrium description
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
-     $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac,
-     $           smats_ix,tmats_ix,xmats_ix,ymats_ix,
-     $           zmats_ix,smats_f,tmats_f,xmats_f,
-     $           ymats_f,zmats_f,
-     $           eqfun_ix,eqfun_iy,eqfun_f,eqfun_fx,eqfun_fy,
-     $           rzphi_ix,rzphi_iy,rzphi_f,rzphi_fx,rzphi_fy,
-     $           sq_s_ix, sq_s_f, sq_s_f1)
+     $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
             ! manually set the kinetic profiles
             CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
      $          tfac,wefac,wpfac,tdebug)

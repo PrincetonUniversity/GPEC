@@ -56,14 +56,4 @@ c-----------------------------------------------------------------------
       TYPE(cspline_type) :: amats,bmats,cmats,
      $     smats,tmats,xmats,ymats,zmats
 
-      INTEGER :: smats_ix, tmats_ix, xmats_ix, ymats_ix, zmats_ix
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: smats_f, tmats_f, 
-     $     xmats_f, ymats_f, zmats_f
-
-      INTEGER :: eqfun_ix,eqfun_iy,rzphi_ix,rzphi_iy
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy,
-     $     rzphi_f,rzphi_fx,rzphi_fy
-      INTEGER :: sq_s_ix
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f, sq_s_f1
-
       END MODULE global_mod

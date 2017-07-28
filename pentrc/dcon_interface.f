@@ -64,20 +64,6 @@ c-----------------------------------------------------------------------
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
 
-      !!!!!!!!!variables added for "external" spline calls
-      !spline
-      INTEGER :: sq_s_ix, geom_s_ix
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f, sq_s_f1, 
-     $     geom_s_f, geom_s_f1
-      !cspline
-      INTEGER :: smats_ix, tmats_ix, xmats_ix, ymats_ix, zmats_ix
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: smats_f, tmats_f, 
-     $     xmats_f, ymats_f, zmats_f
-      !bicube
-      INTEGER :: eqfun_ix, eqfun_iy, rzphi_ix, rzphi_iy
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy,
-     $     rzphi_f,rzphi_fx,rzphi_fy
-
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,di,dr,sfac,deltac
       END TYPE resist_type
@@ -104,11 +90,7 @@ c-----------------------------------------------------------------------
       TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
 
-!$OMP THREADPRIVATE(geom,sq,
-!$OMP& sq_s_ix, geom_s_ix, sq_s_f, sq_s_f1, geom_s_f, geom_s_f1,
-!$OMP& eqfun_ix, eqfun_iy, rzphi_ix, rzphi_iy, 
-!$OMP& eqfun_f, eqfun_fx, eqfun_fy, rzphi_f, rzphi_fx, rzphi_fy,
-!$OMP& smats_f, tmats_f, xmats_f, ymats_f, zmats_f)
+!$OMP THREADPRIVATE(geom,sq)
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -186,20 +168,7 @@ c     read equilibrium on flux coordinates.
 c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
 
-      !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-      ALLOCATE(sq_s_f(4))
-      ALLOCATE(sq_s_f1(4))
-!$OMP END PARALLEL
-
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
-
-      !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-      ALLOCATE(rzphi_f(4))
-      ALLOCATE(rzphi_fx(4))
-      ALLOCATE(rzphi_fy(4))
-!$OMP END PARALLEL
 
       rzphi%periodic(2)=.TRUE.
       READ(in_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
@@ -546,14 +515,6 @@ c-----------------------------------------------------------------------
 c     set up bicube type for equilibrium mod b.
 c-----------------------------------------------------------------------
       CALL bicube_alloc(eqfun,mpsi,mtheta,3)
-
-      !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-      ALLOCATE(eqfun_f(3))
-      ALLOCATE(eqfun_fx(3))
-      ALLOCATE(eqfun_fy(3))
-!$OMP END PARALLEL
-
       eqfun%xs=rzphi%xs
       eqfun%ys=rzphi%ys
       eqfun%name="equilibrium funs"
@@ -905,12 +866,6 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(xmats,mpsi,mpert**2)
       CALL cspline_alloc(ymats,mpsi,mpert**2)
       CALL cspline_alloc(zmats,mpsi,mpert**2)
-
-      !allocation of external arrays                                                                                                      
-!$OMP PARALLEL DEFAULT(NONE) SHARED(mpert)                                                                                                 
-      ALLOCATE(smats_f(mpert**2), tmats_f(mpert**2), xmats_f(mpert**2),
-     $     ymats_f(mpert**2), zmats_f(mpert**2))
-!$OMP END PARALLEL
 
       smats%xs=sq%xs
       tmats%xs=sq%xs
@@ -1310,12 +1265,6 @@ c-----------------------------------------------------------------------
         unitfun = 1
         call spline_alloc(geom,sq%mx,3)
 
-        !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-        ALLOCATE(geom_s_f(3))
-        ALLOCATE(geom_s_f1(3))
-!$OMP END PARALLEL
-
         geom%title=(/"area  ","<r>   ","<R>   "/)
         geom%xs = sq%xs
         firstsurf = .TRUE.
@@ -1453,15 +1402,7 @@ c-----------------------------------------------------------------------
       subroutine set_eq(set_eqfun,set_sq,set_rzphi,
      $              set_smats,set_tmats,set_xmats,set_ymats,set_zmats,
      $              set_chi1,set_ro,set_nn,set_jac_type,
-     $              set_mlow,set_mhigh,set_mpert,set_mthsurf,
-     $              set_smats_ix,set_tmats_ix,set_xmats_ix,set_ymats_ix,
-     $              set_zmats_ix,set_smats_f,set_tmats_f,set_xmats_f,
-     $              set_ymats_f,set_zmats_f,
-     $              set_eqfun_ix,set_eqfun_iy,
-     $              set_eqfun_f,set_eqfun_fx,set_eqfun_fy,
-     $              set_rzphi_ix,set_rzphi_iy,
-     $              set_rzphi_f,set_rzphi_fx,set_rzphi_fy,
-     $              set_sq_s_ix, set_sq_s_f, set_sq_s_f1)
+     $              set_mlow,set_mhigh,set_mpert,set_mthsurf)
       !----------------------------------------------------------------------- 
       !*DESCRIPTION: 
       !   Set the dcon equilibrium global variables directly. For internal use
@@ -1498,18 +1439,6 @@ c-----------------------------------------------------------------------
         !real(r8), dimension(:) :: set_psifac
         character(*), intent(in) :: set_jac_type
 
-        integer, intent(in) :: set_smats_ix,set_tmats_ix,set_xmats_ix,
-     $       set_ymats_ix,set_zmats_ix
-        complex(r8), dimension(:), intent(in) :: set_smats_f,
-     $       set_tmats_f,set_xmats_f,set_ymats_f,set_zmats_f
-
-        integer, intent(in) :: set_eqfun_ix,set_eqfun_iy,
-     $       set_rzphi_ix,set_rzphi_iy,set_sq_s_ix
-        real(r8), dimension(:), intent(in) :: set_eqfun_f,
-     $       set_eqfun_fx,set_eqfun_fy,
-     $       set_rzphi_f,set_rzphi_fx,set_rzphi_fy,
-     $       set_sq_s_f, set_sq_s_f1
-
         type(spline_type) :: set_sq
         type(bicube_type) :: set_eqfun,set_rzphi
         type(cspline_type) :: set_smats,set_tmats,set_xmats,
@@ -1529,61 +1458,6 @@ c-----------------------------------------------------------------------
         xmats   =set_xmats
         ymats   =set_ymats
         zmats   =set_zmats
-
-        ! set parallelization variables
-        smats_ix = set_smats_ix
-        tmats_ix = set_tmats_ix
-        xmats_ix = set_xmats_ix
-        ymats_ix = set_ymats_ix
-        zmats_ix = set_zmats_ix
-!$OMP PARALLEL DEFAULT(NONE)
-!$OMP& SHARED(set_smats_f,set_tmats_f,
-!$OMP& set_xmats_f,set_ymats_f,set_zmats_f)
-        ALLOCATE(smats_f(SIZE(set_smats_f)))
-        smats_f = set_smats_f
-        ALLOCATE(tmats_f(SIZE(set_tmats_f)))
-        tmats_f = set_tmats_f
-        ALLOCATE(xmats_f(SIZE(set_xmats_f)))
-        xmats_f = set_xmats_f
-        ALLOCATE(ymats_f(SIZE(set_ymats_f)))
-        ymats_f = set_ymats_f
-        ALLOCATE(zmats_f(SIZE(set_zmats_f)))
-        zmats_f = set_zmats_f
-!$OMP END PARALLEL
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        eqfun_ix = set_eqfun_ix
-        eqfun_iy = set_eqfun_iy
-        rzphi_ix = set_rzphi_ix
-        rzphi_iy = set_rzphi_iy
-!$OMP PARALLEL DEFAULT(NONE)
-!$OMP& SHARED(set_eqfun_f,set_eqfun_fx,set_eqfun_fy,
-!$OMP& set_rzphi_f,set_rzphi_fx,set_rzphi_fy)
-        ALLOCATE(eqfun_f(SIZE(set_eqfun_f)))
-        eqfun_f = set_eqfun_f
-        ALLOCATE(eqfun_fx(SIZE(set_eqfun_fx)))
-        eqfun_fx = set_eqfun_fx
-        ALLOCATE(eqfun_fy(SIZE(set_eqfun_fy)))
-        eqfun_fy = set_eqfun_fy
-        ALLOCATE(rzphi_f(SIZE(set_rzphi_f)))
-        rzphi_f = set_rzphi_f
-        ALLOCATE(rzphi_fx(SIZE(set_rzphi_fx)))
-        rzphi_fx= set_rzphi_fx
-        ALLOCATE(rzphi_fy(SIZE(set_rzphi_fy)))
-        rzphi_fy= set_rzphi_fy
-!$OMP END PARALLEL
-        sq_s_ix = set_sq_s_ix
-!$OMP PARALLEL DEFAULT(NONE) SHARED(set_sq_s_f,set_sq_s_f1)
-        ALLOCATE(sq_s_f(SIZE(set_sq_s_f)))
-        sq_s_f = set_sq_s_f
-        ALLOCATE(sq_s_f1(SIZE(set_sq_s_f1)))
-        sq_s_f1 = set_sq_s_f1
-!$OMP END PARALLEL
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        !! only needed if using old ipec_o1 inputs
-        !mstep   =set_mstep
-        !allocate(psifac(0:mstep))
-        !psifac(:) = set_psifac(:)
 
         chi1    =set_chi1
         ro      =set_ro

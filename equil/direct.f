@@ -80,8 +80,6 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
       CALL spline_alloc(sq,mpsi,4)
-      !allocate external array
-      ALLOCATE(sq_s_f(SIZE(sq%f)), sq_s_f1(SIZE(sq%f1)))
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
@@ -128,11 +126,6 @@ c-----------------------------------------------------------------------
             IF(mtheta == 0)mtheta=istep
             CALL bicube_alloc(rzphi,mpsi,mtheta,4)
             CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
-
-            !allocate external arrays
-            ALLOCATE(rzphi_f(4),rzphi_fx(4),rzphi_fy(4))
-            ALLOCATE(eqfun_f(3),eqfun_fx(3),eqfun_fy(3))
-
             rzphi%xs=sq%xs
             rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
             eqfun%xs=sq%xs            
