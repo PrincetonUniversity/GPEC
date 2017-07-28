@@ -952,8 +952,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations for parallelization.
 c-----------------------------------------------------------------------
-      INTEGER :: sTime, fTime, cr
-      REAL(r8) :: tsec
+      INTEGER :: sTime, fTime, cr, lsTime, lfTime
+      REAL(r8) :: tsec,lsec
 
       REAL(r8) xcom_real
       COMMON /xcom/ xcom_real(8)
@@ -967,13 +967,17 @@ c-----------------------------------------------------------------------
       INTEGER :: lcom_int
       REAL(r8) :: lcom_real2
       COMMON /lcom/ lcom_real1(7), lcom_int(2), lcom_real2(2)
-      INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM
+      INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM,lThreads
       INTEGER :: eqfun_my
 !$OMP THREADPRIVATE(/xcom/,/DLS011/,/DLS002/,/lcom/)
 c-----------------------------------------------------------------------
 c     output formats
 c-----------------------------------------------------------------------
- 10   FORMAT(' ',A4,I4,A1,I4,A6,I4,A1,I4,A8,E10.3,SP,E10.3,"i")
+ 10   FORMAT(' ',A4,I4,A1,I4,A6,I4,A1,I4,A8,E10.3,SP,E10.3,"i",A9,F8.2)
+
+      print *,"In serial region..."
+      lThreads = OMP_GET_NUM_THREADS()
+      print *,"# of OMP threads = ",lThreads
 c-----------------------------------------------------------------------
 c     some basic variables
 c-----------------------------------------------------------------------
@@ -1074,7 +1078,8 @@ c-----------------------------------------------------------------------
             endif
 !$OMP END PARALLEL
 
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(l,kwmat_l,ktmat_l,tphi)
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP& PRIVATE(l,kwmat_l,ktmat_l,tphi,lsec,lsTime,lfTime)
 !$OMP& REDUCTION(+:kwmat,ktmat)
 c!!!!!!...from inputs.f90...
 !$OMP& COPYIN(dbob_m,divx_m,kin,xs_m,fnml,
@@ -1108,26 +1113,32 @@ c!!!!!!...from lsode2.f
 c!!!!!!...from pitch.f90
 !$OMP& /lcom/)
             IF(ipsi==0 .AND. OMP_GET_THREAD_NUM() == 0)THEN
-               l = OMP_GET_NUM_THREADS()
-               print *,"# of OMP threads = ",l
+               print *,"In parallel region..."
+               lThreads = OMP_GET_NUM_THREADS()
+               print *,"# of OMP threads = ",lThreads
             ENDIF
 !$OMP DO
             DO l=-nl,nl
+               CALL SYSTEM_CLOCK(COUNT=lsTime)
                kwmat_l = 0
                ktmat_l = 0
 
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"wmm",op_wmats=kwmat_l)
 
+               CALL SYSTEM_CLOCK(COUNT=lfTime)
+               lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
                WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
-     $              l,"/",nl," tphi@1=",tphi
+     $              l,"/",nl," tphi@1=",tphi," lTime@1=",lsec
 
                kwmat = kwmat+kwmat_l
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"tmm",op_wmats=ktmat_l)
 
+               CALL SYSTEM_CLOCK(COUNT=lfTime)
+               lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
                WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
-     $              l,"/",nl," tphi@2=",tphi
+     $              l,"/",nl," tphi@2=",tphi," lTime@2=",lsec
 
                ktmat = ktmat+ktmat_l
             ENDDO
@@ -1312,6 +1323,9 @@ c-----------------------------------------------------------------------
             tsec = REAL(fTime-sTime,8)/REAL(cr,8)
             print *,"ipsi=",ipsi," ended at tsec=",tsec
          ENDDO
+         CALL SYSTEM_CLOCK(COUNT=fTime)
+         tsec = REAL(fTime-sTime,8)/REAL(cr,8)
+         print *,"Total time of kinetic matrix fourfit =",tsec
 c-----------------------------------------------------------------------
 c     fit splines
 c-----------------------------------------------------------------------
