@@ -66,13 +66,11 @@ c-----------------------------------------------------------------------
 
       !!!!!!!!!variables added for "external" spline calls
       !spline
-      INTEGER :: sq_s_ix, geom_s_ix
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f, sq_s_f1, 
-     $     geom_s_f, geom_s_f1
+      INTEGER :: sq_s_ix
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f, sq_s_f1
       !bicube
-      INTEGER :: eqfun_ix, eqfun_iy, rzphi_ix, rzphi_iy
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy,
-     $     rzphi_f,rzphi_fx,rzphi_fy
+      INTEGER :: eqfun_ix, eqfun_iy
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy
 
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,di,dr,sfac,deltac
@@ -101,9 +99,9 @@ c-----------------------------------------------------------------------
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
 
 !$OMP THREADPRIVATE(geom,sq,
-!$OMP& sq_s_ix, geom_s_ix, sq_s_f, sq_s_f1, geom_s_f, geom_s_f1,
-!$OMP& eqfun_ix, eqfun_iy, rzphi_ix, rzphi_iy, 
-!$OMP& eqfun_f, eqfun_fx, eqfun_fy, rzphi_f, rzphi_fx, rzphi_fy)
+!$OMP& sq_s_ix, sq_s_f, sq_s_f1,
+!$OMP& eqfun_ix, eqfun_iy,
+!$OMP& eqfun_f, eqfun_fx, eqfun_fy)
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -188,13 +186,6 @@ c-----------------------------------------------------------------------
 !$OMP END PARALLEL
 
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
-
-      !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-      ALLOCATE(rzphi_f(4))
-      ALLOCATE(rzphi_fx(4))
-      ALLOCATE(rzphi_fy(4))
-!$OMP END PARALLEL
 
       rzphi%periodic(2)=.TRUE.
       READ(in_unit)sq%xs,sq%fs,sq%fs1,sq%xpower
@@ -1299,12 +1290,6 @@ c-----------------------------------------------------------------------
         unitfun = 1
         call spline_alloc(geom,sq%mx,3)
 
-        !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-        ALLOCATE(geom_s_f(3))
-        ALLOCATE(geom_s_f1(3))
-!$OMP END PARALLEL
-
         geom%title=(/"area  ","<r>   ","<R>   "/)
         geom%xs = sq%xs
         firstsurf = .TRUE.
@@ -1445,8 +1430,6 @@ c-----------------------------------------------------------------------
      $              set_mlow,set_mhigh,set_mpert,set_mthsurf,
      $              set_eqfun_ix,set_eqfun_iy,
      $              set_eqfun_f,set_eqfun_fx,set_eqfun_fy,
-     $              set_rzphi_ix,set_rzphi_iy,
-     $              set_rzphi_f,set_rzphi_fx,set_rzphi_fy,
      $              set_sq_s_ix, set_sq_s_f, set_sq_s_f1)
       !----------------------------------------------------------------------- 
       !*DESCRIPTION: 
@@ -1485,10 +1468,9 @@ c-----------------------------------------------------------------------
         character(*), intent(in) :: set_jac_type
 
         integer, intent(in) :: set_eqfun_ix,set_eqfun_iy,
-     $       set_rzphi_ix,set_rzphi_iy,set_sq_s_ix
+     $       set_sq_s_ix
         real(r8), dimension(:), intent(in) :: set_eqfun_f,
      $       set_eqfun_fx,set_eqfun_fy,
-     $       set_rzphi_f,set_rzphi_fx,set_rzphi_fy,
      $       set_sq_s_f, set_sq_s_f1
 
         type(spline_type) :: set_sq
@@ -1514,23 +1496,14 @@ c-----------------------------------------------------------------------
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         eqfun_ix = set_eqfun_ix
         eqfun_iy = set_eqfun_iy
-        rzphi_ix = set_rzphi_ix
-        rzphi_iy = set_rzphi_iy
 !$OMP PARALLEL DEFAULT(NONE)
-!$OMP& SHARED(set_eqfun_f,set_eqfun_fx,set_eqfun_fy,
-!$OMP& set_rzphi_f,set_rzphi_fx,set_rzphi_fy)
+!$OMP& SHARED(set_eqfun_f,set_eqfun_fx,set_eqfun_fy)
         ALLOCATE(eqfun_f(SIZE(set_eqfun_f)))
         eqfun_f = set_eqfun_f
         ALLOCATE(eqfun_fx(SIZE(set_eqfun_fx)))
         eqfun_fx = set_eqfun_fx
         ALLOCATE(eqfun_fy(SIZE(set_eqfun_fy)))
         eqfun_fy = set_eqfun_fy
-        ALLOCATE(rzphi_f(SIZE(set_rzphi_f)))
-        rzphi_f = set_rzphi_f
-        ALLOCATE(rzphi_fx(SIZE(set_rzphi_fx)))
-        rzphi_fx= set_rzphi_fx
-        ALLOCATE(rzphi_fy(SIZE(set_rzphi_fy)))
-        rzphi_fy= set_rzphi_fy
 !$OMP END PARALLEL
         sq_s_ix = set_sq_s_ix
 !$OMP PARALLEL DEFAULT(NONE) SHARED(set_sq_s_f,set_sq_s_f1)

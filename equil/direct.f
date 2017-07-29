@@ -130,7 +130,6 @@ c-----------------------------------------------------------------------
             CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
 
             !allocate external arrays
-            ALLOCATE(rzphi_f(4),rzphi_fx(4),rzphi_fy(4))
             ALLOCATE(eqfun_f(3),eqfun_fx(3),eqfun_fy(3))
 
             rzphi%xs=sq%xs

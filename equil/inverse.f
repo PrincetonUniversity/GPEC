@@ -157,9 +157,6 @@ c-----------------------------------------------------------------------
       IF(mtheta == 0)mtheta=rz_in%my
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
 
-      !Allocate external array
-      ALLOCATE(rzphi_f(4),rzphi_fx(4),rzphi_fy(4))
-
       rzphi%xs=sq%xs
       rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
       rzphi%xtitle="psifac"

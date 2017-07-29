@@ -31,10 +31,7 @@ c-----------------------------------------------------------------------
      $    pentrc_timer=>timer
       USE torque, only : kelmm,      ! cspline Euler-Lagrange mats for local use
      $     fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf
-      USE inputs, only : dbob_m,divx_m,kin,xs_m,fnml,
-     $     dbob_m_ix, divx_m_ix, dbob_m_f, divx_m_f,
-     $     kin_s_ix, kin_s_f, kin_s_f1,
-     $     xs_m1_ix, xs_m2_ix, xs_m3_ix, xs_m1_f, xs_m2_f, xs_m3_f
+      USE inputs, only : dbob_m,divx_m,kin,xs_m,fnml
       USE energy_integration
       USE pitch_integration
       USE dcon_interface, only: geom,
@@ -49,17 +46,11 @@ c-----------------------------------------------------------------------
      $     dcon_int_sq_s_ix=>sq_s_ix,
      $     dcon_int_sq_s_f=>sq_s_f,
      $     dcon_int_sq_s_f1=>sq_s_f1,
-     $     geom_s_ix, geom_s_f, geom_s_f1,
      $     dcon_int_eqfun_ix=>eqfun_ix,
      $     dcon_int_eqfun_iy=>eqfun_iy,
      $     dcon_int_eqfun_f=>eqfun_f,
      $     dcon_int_eqfun_fx=>eqfun_fx,
-     $     dcon_int_eqfun_fy=>eqfun_fy,
-     $     dcon_int_rzphi_ix=>rzphi_ix,
-     $     dcon_int_rzphi_iy=>rzphi_iy,
-     $     dcon_int_rzphi_f=>rzphi_f,
-     $     dcon_int_rzphi_fx=>rzphi_fx,
-     $     dcon_int_rzphi_fy=>rzphi_fy
+     $     dcon_int_eqfun_fy=>eqfun_fy
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
@@ -1069,9 +1060,6 @@ c-----------------------------------------------------------------------
 !$OMP& REDUCTION(+:kwmat,ktmat)
 c!!!!!!...from inputs.f90...
 !$OMP& COPYIN(dbob_m,divx_m,kin,xs_m,fnml,
-!$OMP& dbob_m_ix, divx_m_ix, dbob_m_f, divx_m_f, 
-!$OMP& kin_s_ix, kin_s_f, kin_s_f1,
-!$OMP& xs_m1_ix, xs_m2_ix, xs_m3_ix, xs_m1_f, xs_m2_f, xs_m3_f,
 c!!!!!!...from torque.f90...
 !$OMP& fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf,
 c!!!!!!...from energy.f90
@@ -1081,11 +1069,8 @@ c!!!!!!...from pitch.f90
 c!!!!!!...from dcon_interface.f90
 !$OMP& geom, dcon_int_sq,
 !$OMP& dcon_int_sq_s_ix, dcon_int_sq_s_f, dcon_int_sq_s_f1,
-!$OMP& geom_s_ix, geom_s_f, geom_s_f1,
 !$OMP& dcon_int_eqfun_ix, dcon_int_eqfun_iy,
-!$OMP& dcon_int_rzphi_ix, dcon_int_rzphi_iy,
-!$OMP& dcon_int_eqfun_f, dcon_int_eqfun_fx, dcon_int_eqfun_fy, 
-!$OMP& dcon_int_rzphi_f, dcon_int_rzphi_fx, dcon_int_rzphi_fy,
+!$OMP& dcon_int_eqfun_f, dcon_int_eqfun_fx, dcon_int_eqfun_fy,
 c!!!!!!...from energy.f90
 !$OMP& /xcom/,
 c!!!!!!...from lsode1.f
