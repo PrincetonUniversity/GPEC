@@ -166,7 +166,7 @@ module torque
     !*DESCRIPTION: 
     !   Toroidal torque resulting from nonambipolar transport in perturbed
     !   equilibrium.
-    !   Imaginary component isproportional to the kinetic energy Im(T) = 2*n*dW_k.
+    !   Imaginary component is proportional to the kinetic energy Im(T) = 2*n*dW_k.
     !
     !*ARGUMENTS:
     !    psi : real (in)
@@ -256,18 +256,16 @@ module torque
         real(r8), dimension(5*mpert) :: rwork
         complex(r8), dimension(3*mpert) :: work
 
+        ! for calling this in function parallel
         integer :: OMP_GET_THREAD_NUM
-        integer :: eqfun_my
         real(r8) :: ys_i
-        integer :: ix = 0, iy = 0
+        integer :: eqfun_my, ix = 0, iy = 0
         real(r8), dimension(3) :: geom_f, geom_f1
-        real(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy
-        real(r8), dimension(4) :: sq_s_f, sq_s_f1
+        real(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy, sq_s_f, sq_s_f1
         real(r8), dimension(8) :: kin_f, kin_f1
         complex(r8), dimension(mpert) :: xs_m1_f, xs_m2_f, xs_m3_f
         complex(r8), dimension(mpert) :: dbob_m_f, divx_m_f
         complex(r8), dimension(mpert**2) :: flatmat
-        
 
         ! debug initiation
         if(tdebug) print *,"torque - tpsi function, psi = ",psi
@@ -381,21 +379,16 @@ module torque
            do i=0,10
               theta = i/10.0
               call spline_eval(tspl,theta,0)
-              call bicube_eval_external(rzphi, psi, theta, 0,&
-                   ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
+              call bicube_eval_external(rzphi, psi, theta, 0, ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
               print *,"  -- theta,B(theta),r^2(theta) = ",theta,tspl%f(1),rzphi_f(1)
            enddo
            stop "ERROR: torque - minor radius is negative"
         endif
         epsr = geom_f(2)/geom_f(3)
-        !epsr = sqrt(psi)*SQRT(SUM(rzphi%fs(rzphi%mx,:,1))/rzphi%my)/ro
-        !epsr = sqrt(rzphi%f(1))/ro                  ! epsr at deep trapped limit
         wbhat = (pi/4)*SQRT(epsr/2)*wtran           ! RLAR normalized by x^1/2
         wdhat = q**3*wtran**2/(4*epsr*wgyro)*wdfac  ! RLAR normalized by x
         nueff = kin_f(s+6)/(2*epsr)
 
-        !dbave = issurfint(dbfun,eqfun%my,psi,0,1)
-        !dxave = issurfint(dxfun,eqfun%my,psi,0,1)
         eqfun_my = eqfun%my
         dbave = issurfint(dbfun,eqfun_my,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
         dxave = issurfint(dxfun,eqfun_my,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
@@ -556,18 +549,6 @@ module torque
                         bwspl(i)%xs(:) = bjspl%xs(:)
                     enddo
                     ! build equilibrium geometric matrices
-                    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    !CALL cspline_eval(smats,psi,0)
-                    !CALL cspline_eval(tmats,psi,0)
-                    !CALL cspline_eval(xmats,psi,0)
-                    !CALL cspline_eval(ymats,psi,0)
-                    !CALL cspline_eval(zmats,psi,0)
-                    !smat=RESHAPE(smats%f,(/mpert,mpert/))
-                    !tmat=RESHAPE(tmats%f,(/mpert,mpert/))
-                    !xmat=RESHAPE(xmats%f,(/mpert,mpert/))
-                    !ymat=RESHAPE(ymats%f,(/mpert,mpert/))
-                    !zmat=RESHAPE(zmats%f,(/mpert,mpert/))
-                    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     !Use the external array equivalent (for parallelization purposes, to avoid allocatable subcomponents)
                     ix = -1
                     CALL cspline_eval_external(smats,psi,ix,flatmat)
@@ -650,13 +631,11 @@ module torque
                     endif
                     ! bounce locations recorded for optional output
                     turns%fs(ilmda-1,1) = t1
-                    call bicube_eval_external(rzphi, psi, t1, 0,&
-                         ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
+                    call bicube_eval_external(rzphi, psi, t1, 0, ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
                     turns%fs(ilmda-1,2)=ro+SQRT(rzphi_f(1))*COS(twopi*(t1+rzphi_f(2)))
                     turns%fs(ilmda-1,3)=zo+SQRT(rzphi_f(1))*SIN(twopi*(t1+rzphi_f(2)))
                     turns%fs(ilmda-1,4) = t2
-                    call bicube_eval_external(rzphi, psi, t2, 0,&
-                         ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
+                    call bicube_eval_external(rzphi, psi, t2, 0, ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
                     turns%fs(ilmda-1,5)=ro+SQRT(rzphi_f(1))*COS(twopi*(t2+rzphi_f(2)))
                     turns%fs(ilmda-1,6)=zo+SQRT(rzphi_f(1))*SIN(twopi*(t2+rzphi_f(2)))
                     turns%xs(ilmda-1) = lmda

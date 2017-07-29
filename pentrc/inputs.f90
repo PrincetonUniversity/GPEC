@@ -218,7 +218,6 @@ module inputs
         
         ! extrapolate to regular spline (helps smooth core??)
         call spline_alloc(kin,nkin,8)
-
         kin%title(0:) = (/"psi_n ","n_i   ","n_e   ","t_i   ","t_e   ","omegae",&
                     "loglam","nu_i  ","nu_e  " /)
         do i=0,kin%mx
@@ -448,7 +447,6 @@ module inputs
         if(associated(divx_m%xs)) call cspline_dealloc(divx_m)
         call cspline_alloc(dbob_m,npsi-1,mpert)     ! (dB/B)
         call cspline_alloc(divx_m,npsi-1,mpert)     ! div(xi_prp)
-
         dbob_m%xs(0:) = psi(1:)
         divx_m%xs(0:) = psi(1:)
         do i=1,npsi
@@ -914,7 +912,6 @@ module inputs
         ! form splines
         call cspline_alloc(dbob_m,mstep-1,mpert)
         call cspline_alloc(divx_m,mstep-1,mpert)
-
         dbob_m%xs(0:) = psifac(1:)
         divx_m%xs(0:) = psifac(1:)
         dbob_m%fs(0:,:) = lagbpar(:,:)

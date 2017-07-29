@@ -96,8 +96,7 @@ c-----------------------------------------------------------------------
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
 
 !$OMP THREADPRIVATE(geom,sq,
-!$OMP& eqfun_ix, eqfun_iy,
-!$OMP& eqfun_f, eqfun_fx, eqfun_fy)
+!$OMP& eqfun_ix, eqfun_iy, eqfun_f, eqfun_fx, eqfun_fy)
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -174,6 +173,7 @@ c-----------------------------------------------------------------------
 c     read equilibrium on flux coordinates.
 c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
+
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
 
       rzphi%periodic(2)=.TRUE.
@@ -521,14 +521,6 @@ c-----------------------------------------------------------------------
 c     set up bicube type for equilibrium mod b.
 c-----------------------------------------------------------------------
       CALL bicube_alloc(eqfun,mpsi,mtheta,3)
-
-      !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-      ALLOCATE(eqfun_f(3))
-      ALLOCATE(eqfun_fx(3))
-      ALLOCATE(eqfun_fy(3))
-!$OMP END PARALLEL
-
       eqfun%xs=rzphi%xs
       eqfun%ys=rzphi%ys
       eqfun%name="equilibrium funs"
