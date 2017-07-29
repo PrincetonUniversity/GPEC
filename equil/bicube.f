@@ -14,9 +14,9 @@ c      2. bicube_dealloc.
 c      3. bicube_fit.
 c      4. bicube_lsfit.
 c      5. bicube_eval.
-c      5a. bicube_eval_external_array.
+c      5a. bicube_eval_external.
 c      6. bicube_getco.
-c      6a. bicube_getco_external_array.
+c      6a. bicube_getco_external.
 c      7. bicube_all_eval.
 c      8. bicube_all_getco.
 c      9. bicube_write_xy.
@@ -638,13 +638,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE bicube_eval
 c-----------------------------------------------------------------------
-c     subprogram 5a. bicube_eval_external_array.
+c     subprogram 5a. bicube_eval_external.
 c     evaluates bicubic spline function with external arrays (parallel).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE bicube_eval_external_array(bcs, x, y, mode,
+      SUBROUTINE bicube_eval_external(bcs, x, y, mode,
      $     b_ix, b_iy, b_f, b_fx, b_fy)
 
       TYPE(bicube_type), INTENT(IN) :: bcs
@@ -661,7 +661,7 @@ c-----------------------------------------------------------------------
 c     error-check for mode number--external array is limited.
 c-----------------------------------------------------------------------
       IF (mode > 1) THEN
-         CALL program_stop("Set bicube_eval_external_array mode <=1 !")
+         CALL program_stop("Set bicube_eval_external mode <=1 !")
       ENDIF
 c-----------------------------------------------------------------------
 c     preliminary computations.
@@ -725,7 +725,7 @@ c     find offsets and compute local coefficients.
 c-----------------------------------------------------------------------
       dx=xx-bcs%xs(b_ix)
       dy=yy-bcs%ys(b_iy)
-      c=bicube_getco_external_array(bcs,b_ix,b_iy)
+      c=bicube_getco_external(bcs,b_ix,b_iy)
 c-----------------------------------------------------------------------
 c     evaluate f.
 c-----------------------------------------------------------------------
@@ -800,7 +800,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE bicube_eval_external_array
+      END SUBROUTINE bicube_eval_external
 c-----------------------------------------------------------------------
 c     subprogram 6. bicube_getco.
 c     computes coefficient matrices.
@@ -898,13 +898,13 @@ c-----------------------------------------------------------------------
       RETURN
       END FUNCTION bicube_getco
 c-----------------------------------------------------------------------
-c     subprogram 6a. bicube_getco_external_array.
+c     subprogram 6a. bicube_getco_external.
 c     computes coefficient matrices for external arrays.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      FUNCTION bicube_getco_external_array(bcs,b_ix,b_iy) RESULT(cmat)
+      FUNCTION bicube_getco_external(bcs,b_ix,b_iy) RESULT(cmat)
 
       TYPE(bicube_type), INTENT(IN) :: bcs
       INTEGER, INTENT(IN) :: b_ix, b_iy
@@ -993,7 +993,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END FUNCTION bicube_getco_external_array
+      END FUNCTION bicube_getco_external
 c-----------------------------------------------------------------------
 c     subprogram 7. bicube_all_eval.
 c     evaluates bicubic splines in all intervals.

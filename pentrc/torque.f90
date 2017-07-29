@@ -126,7 +126,7 @@ module torque
     use cspline_mod, only : cspline_type,cspline_eval,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_int,cspline_eval_external
     use fspline_mod, only : fspline_eval
-    use bicube_mod, only : bicube_eval,bicube_type,bicube_eval_external_array
+    use bicube_mod, only : bicube_eval,bicube_type,bicube_eval_external
     use spline_help, only: spline_roots
     use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappaintgnd
     use energy_integration, only : xintgrl_lsode,qt
@@ -317,9 +317,9 @@ module torque
         do i=0,eqfun%my
            ys_i = eqfun%ys(i)
 
-           call bicube_eval_external_array(eqfun, psi, ys_i, 1,&
+           call bicube_eval_external(eqfun, psi, ys_i, 1,&
                 eqfun_ix, eqfun_iy, eqfun_f, eqfun_fx, eqfun_fy)
-           call bicube_eval_external_array(rzphi, psi, ys_i, 1,&
+           call bicube_eval_external(rzphi, psi, ys_i, 1,&
                 ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
            tspl%fs(i,1)= eqfun_f(1)            !b
            tspl%fs(i,2)= eqfun_fx(1)/chi1      !db/dpsi
@@ -373,7 +373,7 @@ module torque
         wgyro = chrg*bo/mass                        ! gyro frequency
         nuk = kin_f(s+6)                            ! krook collisionality
 
-        call bicube_eval_external_array(rzphi, psi, tspl%xs(ibmin), 0,&
+        call bicube_eval_external(rzphi, psi, tspl%xs(ibmin), 0,&
              ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
         if(rzphi_f(1)<=0)then
            print *,"  psi = ",psi," -> r^2 at min(B) = ",rzphi_f(1)
@@ -381,7 +381,7 @@ module torque
            do i=0,10
               theta = i/10.0
               call spline_eval(tspl,theta,0)
-              call bicube_eval_external_array(rzphi, psi, theta, 0,&
+              call bicube_eval_external(rzphi, psi, theta, 0,&
                    ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
               print *,"  -- theta,B(theta),r^2(theta) = ",theta,tspl%f(1),rzphi_f(1)
            enddo
@@ -421,9 +421,9 @@ module torque
                     call spline_alloc(cglspl,mthsurf,2)
                     do i=0,mthsurf
                         theta = i/real(mthsurf,r8)
-                        call bicube_eval_external_array(eqfun, psi, theta, 0,&
+                        call bicube_eval_external(eqfun, psi, theta, 0,&
                              eqfun_ix, eqfun_iy, eqfun_f, eqfun_fx, eqfun_fy)
-                        call bicube_eval_external_array(rzphi, psi, theta, 0,&
+                        call bicube_eval_external(rzphi, psi, theta, 0,&
                              ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
                         expm = exp(xj*twopi*mfac*theta)
                         jbb = (rzphi_f(4) * eqfun_f(1)**2)
@@ -650,12 +650,12 @@ module torque
                     endif
                     ! bounce locations recorded for optional output
                     turns%fs(ilmda-1,1) = t1
-                    call bicube_eval_external_array(rzphi, psi, t1, 0,&
+                    call bicube_eval_external(rzphi, psi, t1, 0,&
                          ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
                     turns%fs(ilmda-1,2)=ro+SQRT(rzphi_f(1))*COS(twopi*(t1+rzphi_f(2)))
                     turns%fs(ilmda-1,3)=zo+SQRT(rzphi_f(1))*SIN(twopi*(t1+rzphi_f(2)))
                     turns%fs(ilmda-1,4) = t2
-                    call bicube_eval_external_array(rzphi, psi, t2, 0,&
+                    call bicube_eval_external(rzphi, psi, t2, 0,&
                          ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
                     turns%fs(ilmda-1,5)=ro+SQRT(rzphi_f(1))*COS(twopi*(t2+rzphi_f(2)))
                     turns%fs(ilmda-1,6)=zo+SQRT(rzphi_f(1))*SIN(twopi*(t2+rzphi_f(2)))
