@@ -14,7 +14,7 @@ c     2. cspline_dealloc.
 c     3. cspline_fit.
 c     4. cspline_fac.
 c     5. cspline_eval.
-c     5a. cspline_eval_external_array.
+c     5a. cspline_eval_external.
 c     6. cspline_all_eval.
 c     7. cspline_write.
 c     8. cspline_write_log.
@@ -439,13 +439,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_eval
 c-----------------------------------------------------------------------
-c     subprogram 5a. cspline_eval_external_array.
+c     subprogram 5a. cspline_eval_external.
 c     evaluates complex cubic splines with external arrays (parallel).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE cspline_eval_external_array(spl,x,s_ix,s_f)
+      SUBROUTINE cspline_eval_external(spl,x,s_ix,s_f)
 
       TYPE(cspline_type), INTENT(IN) :: spl
       REAL(r8), INTENT(IN) :: x
@@ -520,7 +520,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE cspline_eval_external_array
+      END SUBROUTINE cspline_eval_external
 c-----------------------------------------------------------------------
 c     subprogram 6. cspline_all_eval.
 c     evaluates cubic spline function.

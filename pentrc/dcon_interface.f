@@ -69,10 +69,6 @@ c-----------------------------------------------------------------------
       INTEGER :: sq_s_ix, geom_s_ix
       REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f, sq_s_f1, 
      $     geom_s_f, geom_s_f1
-      !cspline
-      INTEGER :: smats_ix, tmats_ix, xmats_ix, ymats_ix, zmats_ix
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: smats_f, tmats_f, 
-     $     xmats_f, ymats_f, zmats_f
       !bicube
       INTEGER :: eqfun_ix, eqfun_iy, rzphi_ix, rzphi_iy
       REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy,
@@ -107,8 +103,7 @@ c-----------------------------------------------------------------------
 !$OMP THREADPRIVATE(geom,sq,
 !$OMP& sq_s_ix, geom_s_ix, sq_s_f, sq_s_f1, geom_s_f, geom_s_f1,
 !$OMP& eqfun_ix, eqfun_iy, rzphi_ix, rzphi_iy, 
-!$OMP& eqfun_f, eqfun_fx, eqfun_fy, rzphi_f, rzphi_fx, rzphi_fy,
-!$OMP& smats_f, tmats_f, xmats_f, ymats_f, zmats_f)
+!$OMP& eqfun_f, eqfun_fx, eqfun_fy, rzphi_f, rzphi_fx, rzphi_fy)
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -906,12 +901,6 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(ymats,mpsi,mpert**2)
       CALL cspline_alloc(zmats,mpsi,mpert**2)
 
-      !allocation of external arrays                                                                                                      
-!$OMP PARALLEL DEFAULT(NONE) SHARED(mpert)                                                                                                 
-      ALLOCATE(smats_f(mpert**2), tmats_f(mpert**2), xmats_f(mpert**2),
-     $     ymats_f(mpert**2), zmats_f(mpert**2))
-!$OMP END PARALLEL
-
       smats%xs=sq%xs
       tmats%xs=sq%xs
       xmats%xs=sq%xs
@@ -1454,9 +1443,6 @@ c-----------------------------------------------------------------------
      $              set_smats,set_tmats,set_xmats,set_ymats,set_zmats,
      $              set_chi1,set_ro,set_nn,set_jac_type,
      $              set_mlow,set_mhigh,set_mpert,set_mthsurf,
-     $              set_smats_ix,set_tmats_ix,set_xmats_ix,set_ymats_ix,
-     $              set_zmats_ix,set_smats_f,set_tmats_f,set_xmats_f,
-     $              set_ymats_f,set_zmats_f,
      $              set_eqfun_ix,set_eqfun_iy,
      $              set_eqfun_f,set_eqfun_fx,set_eqfun_fy,
      $              set_rzphi_ix,set_rzphi_iy,
@@ -1498,11 +1484,6 @@ c-----------------------------------------------------------------------
         !real(r8), dimension(:) :: set_psifac
         character(*), intent(in) :: set_jac_type
 
-        integer, intent(in) :: set_smats_ix,set_tmats_ix,set_xmats_ix,
-     $       set_ymats_ix,set_zmats_ix
-        complex(r8), dimension(:), intent(in) :: set_smats_f,
-     $       set_tmats_f,set_xmats_f,set_ymats_f,set_zmats_f
-
         integer, intent(in) :: set_eqfun_ix,set_eqfun_iy,
      $       set_rzphi_ix,set_rzphi_iy,set_sq_s_ix
         real(r8), dimension(:), intent(in) :: set_eqfun_f,
@@ -1530,26 +1511,6 @@ c-----------------------------------------------------------------------
         ymats   =set_ymats
         zmats   =set_zmats
 
-        ! set parallelization variables
-        smats_ix = set_smats_ix
-        tmats_ix = set_tmats_ix
-        xmats_ix = set_xmats_ix
-        ymats_ix = set_ymats_ix
-        zmats_ix = set_zmats_ix
-!$OMP PARALLEL DEFAULT(NONE)
-!$OMP& SHARED(set_smats_f,set_tmats_f,
-!$OMP& set_xmats_f,set_ymats_f,set_zmats_f)
-        ALLOCATE(smats_f(SIZE(set_smats_f)))
-        smats_f = set_smats_f
-        ALLOCATE(tmats_f(SIZE(set_tmats_f)))
-        tmats_f = set_tmats_f
-        ALLOCATE(xmats_f(SIZE(set_xmats_f)))
-        xmats_f = set_xmats_f
-        ALLOCATE(ymats_f(SIZE(set_ymats_f)))
-        ymats_f = set_ymats_f
-        ALLOCATE(zmats_f(SIZE(set_zmats_f)))
-        zmats_f = set_zmats_f
-!$OMP END PARALLEL
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         eqfun_ix = set_eqfun_ix
         eqfun_iy = set_eqfun_iy

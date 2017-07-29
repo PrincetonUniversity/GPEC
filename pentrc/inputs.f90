@@ -42,9 +42,7 @@ module inputs
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
-        idcon_coords,&
-        smats_ix, tmats_ix, xmats_ix, ymats_ix, zmats_ix,&
-        smats_f, tmats_f, xmats_f, ymats_f, zmats_f
+        idcon_coords
 
     implicit none
 
