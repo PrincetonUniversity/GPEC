@@ -80,8 +80,6 @@ c-----------------------------------------------------------------------
          ENDIF
       ENDIF
       CALL spline_alloc(sq,mpsi,4)
-      !allocate external array
-      ALLOCATE(sq_s_f(SIZE(sq%f)), sq_s_f1(SIZE(sq%f1)))
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------

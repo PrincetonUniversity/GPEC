@@ -65,9 +65,6 @@ c-----------------------------------------------------------------------
       TYPE(fspline_type) :: metric
 
       !!!!!!!!!variables added for "external" spline calls
-      !spline
-      INTEGER :: sq_s_ix
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f, sq_s_f1
       !bicube
       INTEGER :: eqfun_ix, eqfun_iy
       REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy
@@ -99,7 +96,6 @@ c-----------------------------------------------------------------------
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
 
 !$OMP THREADPRIVATE(geom,sq,
-!$OMP& sq_s_ix, sq_s_f, sq_s_f1,
 !$OMP& eqfun_ix, eqfun_iy,
 !$OMP& eqfun_f, eqfun_fx, eqfun_fy)
 
@@ -178,13 +174,6 @@ c-----------------------------------------------------------------------
 c     read equilibrium on flux coordinates.
 c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
-
-      !allocation of external arrays
-!$OMP PARALLEL DEFAULT(NONE)
-      ALLOCATE(sq_s_f(4))
-      ALLOCATE(sq_s_f1(4))
-!$OMP END PARALLEL
-
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
 
       rzphi%periodic(2)=.TRUE.
@@ -1429,8 +1418,7 @@ c-----------------------------------------------------------------------
      $              set_chi1,set_ro,set_nn,set_jac_type,
      $              set_mlow,set_mhigh,set_mpert,set_mthsurf,
      $              set_eqfun_ix,set_eqfun_iy,
-     $              set_eqfun_f,set_eqfun_fx,set_eqfun_fy,
-     $              set_sq_s_ix, set_sq_s_f, set_sq_s_f1)
+     $              set_eqfun_f,set_eqfun_fx,set_eqfun_fy)
       !----------------------------------------------------------------------- 
       !*DESCRIPTION: 
       !   Set the dcon equilibrium global variables directly. For internal use
@@ -1467,11 +1455,9 @@ c-----------------------------------------------------------------------
         !real(r8), dimension(:) :: set_psifac
         character(*), intent(in) :: set_jac_type
 
-        integer, intent(in) :: set_eqfun_ix,set_eqfun_iy,
-     $       set_sq_s_ix
+        integer, intent(in) :: set_eqfun_ix,set_eqfun_iy
         real(r8), dimension(:), intent(in) :: set_eqfun_f,
-     $       set_eqfun_fx,set_eqfun_fy,
-     $       set_sq_s_f, set_sq_s_f1
+     $       set_eqfun_fx,set_eqfun_fy
 
         type(spline_type) :: set_sq
         type(bicube_type) :: set_eqfun,set_rzphi
@@ -1504,13 +1490,6 @@ c-----------------------------------------------------------------------
         eqfun_fx = set_eqfun_fx
         ALLOCATE(eqfun_fy(SIZE(set_eqfun_fy)))
         eqfun_fy = set_eqfun_fy
-!$OMP END PARALLEL
-        sq_s_ix = set_sq_s_ix
-!$OMP PARALLEL DEFAULT(NONE) SHARED(set_sq_s_f,set_sq_s_f1)
-        ALLOCATE(sq_s_f(SIZE(set_sq_s_f)))
-        sq_s_f = set_sq_s_f
-        ALLOCATE(sq_s_f1(SIZE(set_sq_s_f1)))
-        sq_s_f1 = set_sq_s_f1
 !$OMP END PARALLEL
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

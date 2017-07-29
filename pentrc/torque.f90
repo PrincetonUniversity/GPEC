@@ -122,7 +122,7 @@ module torque
     use grid, only : powspace,linspace
     ! use lsode_mod just a subroutine in the lsode directory...
     use spline_mod, only :  spline_type,spline_eval,spline_alloc,spline_dealloc,&
-                            spline_fit,spline_int,spline_write1,spline_eval_external_array
+                            spline_fit,spline_int,spline_write1,spline_eval_external
     use cspline_mod, only : cspline_type,cspline_eval,cspline_alloc,cspline_dealloc,&
                             cspline_fit,cspline_int,cspline_eval_external
     use fspline_mod, only : fspline_eval
@@ -132,9 +132,7 @@ module torque
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint,rzphi,geom,sq,eqfun,&
                                smats,tmats,xmats,ymats,zmats,&
-                               eqfun_ix,eqfun_iy,eqfun_f,eqfun_fx,eqfun_fy,&
-                               sq_s_ix,&
-                               sq_s_f, sq_s_f1
+                               eqfun_ix,eqfun_iy,eqfun_f,eqfun_fx,eqfun_fy
     use inputs, only : kin,xs_m,dbob_m,divx_m,fnml,&  ! equilib and pert. equilib splines
          chi1,ro,zo,bo,mfac,mpert,mthsurf,&           ! reals or integers
          verbose                                      ! logical
@@ -264,6 +262,7 @@ module torque
         integer :: ix = 0, iy = 0
         real(r8), dimension(3) :: geom_f, geom_f1
         real(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy
+        real(r8), dimension(4) :: sq_s_f, sq_s_f1
         real(r8), dimension(8) :: kin_f, kin_f1
         complex(r8), dimension(mpert) :: xs_m1_f, xs_m2_f, xs_m3_f
         complex(r8), dimension(mpert) :: dbob_m_f, divx_m_f
@@ -362,9 +361,9 @@ module torque
         if(tdebug) print *,"  bmin,bo,bmax = ",bmin,bo,bmax
 
         ! flux function variables
-        call spline_eval_external_array(sq,psi,sq_s_ix,sq_s_f,sq_s_f1,1)
-        call spline_eval_external_array(kin,psi,ix,kin_f,kin_f1,1)
-        call spline_eval_external_array(geom,psi,ix,geom_f,geom_f1,0)
+        call spline_eval_external(sq,psi,ix,sq_s_f,sq_s_f1,1)
+        call spline_eval_external(kin,psi,ix,kin_f,kin_f1,1)
+        call spline_eval_external(geom,psi,ix,geom_f,geom_f1,0)
         q     = sq_s_f(4)
         welec = kin_f(5)                            ! electric precession
         wdian =-twopi*kin_f(s+2)*kin_f1(s)/(chrg*chi1*kin_f(s)) ! density gradient drive

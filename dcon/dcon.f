@@ -186,8 +186,7 @@ c-----------------------------------------------------------------------
             ! manually set the pentrc equilibrium description
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
      $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac,
-     $           eqfun_ix,eqfun_iy,eqfun_f,eqfun_fx,eqfun_fy,
-     $           sq_s_ix, sq_s_f, sq_s_f1)
+     $           eqfun_ix,eqfun_iy,eqfun_f,eqfun_fx,eqfun_fy)
             ! manually set the kinetic profiles
             CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
      $          tfac,wefac,wpfac,tdebug)

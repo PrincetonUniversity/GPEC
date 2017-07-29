@@ -58,7 +58,5 @@ c-----------------------------------------------------------------------
 
       INTEGER :: eqfun_ix,eqfun_iy
       REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy
-      INTEGER :: sq_s_ix
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f, sq_s_f1
 
       END MODULE global_mod
