@@ -1,0 +1,14 @@
+! Construct a large-aspect-ratio, circular-cross-secJon equilibrium, using the Shafranov expansion to second order
+&lar_input
+	ma=128         ! number of radial grid points
+	mtau=128       ! number of azimuthal grid points
+
+	lar_r0=10      ! Major radius
+	lar_a=1        ! Minor radius
+
+	beta0=1e-3     ! Beta (pressure ratio) on axis
+	q0=1.5         ! q (safety factor) on axis
+
+	p_pres=2       ! p0*(1-(r/a))**p_pres
+	p_sig=1        ! sigma=J.B/B^2 is given by sigma0*(1-(r/a))**p_sig
+/

@@ -674,10 +674,10 @@ module torque
                                 if(ABS(psi_warned-psi)>0.1)then !avoid flood of warnings
                                     print('(2x,a61,es10.3E2)'), "WARNING: vpar zero crossing &
                                             &internal to magnetic well at psi ",psi
-                                    print('(2x,es10.3E2,a4,es10.3E2,a4,es10.3E2)'),&
-                                        t1," <= ",tdt(1,i)," <= ",t2
-                                    print *, "  -> Lambda, t/p boundary = ", lmda, lmdatpb
-                                    print *, "  -> consider changing mtheta in equil.in"
+                                    !print('(2x,es10.3E2,a4,es10.3E2,a4,es10.3E2)'),&
+                                    !    t1," <= ",tdt(1,i)," <= ",t2
+                                    !print *, "  -> Lambda, t/p boundary = ", lmda, lmdatpb
+                                    !print *, "  -> consider changing mtheta in equil.in"
                                     psi_warned = psi
                                 endif
                             endif

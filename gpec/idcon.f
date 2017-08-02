@@ -173,8 +173,10 @@ c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
 c-----------------------------------------------------------------------
       IF(verbose)THEN
-        WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
-        WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
+        WRITE(*,'(1x,3(a2,a8,I6))')"  ","mpert = ",mpert,", ","mlow = ",
+     $      mlow,", ","mhigh = ",mhigh
+        WRITE(*,'(1x,3(a2,a8,I6))')"  ","mstep = ",mstep,", ","mfix = ",
+     $      mfix,", ","msing = ",msing
       ENDIF
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))

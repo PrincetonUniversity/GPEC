@@ -35,7 +35,7 @@
 &GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
-   reg_flag=f               ! Regularize the solution near resonant surfaces
+   reg_flag=t               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
    nche=20                  ! Number of Chebyshev polynomials used
@@ -48,7 +48,7 @@
 
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
-   singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
+   singcoup_flag=t          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=t          ! Output of vacuum resonant surface quantities
 
@@ -56,7 +56,7 @@
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
    vbnormal_flag=t          ! Outputs vacuum normal displacement and field in plasma
    xclebsch_flag=t          ! Outputs clebsch coordinate displacement for PENT
-   dw_flag=t                ! Outputs self-consistent energy and torque profiles (when kin_flag=t from DCON)
+   dw_flag=f                ! Outputs self-consistent energy and torque profiles (when kin_flag=t from DCON)
 
    eqbrzphi_flag=t          ! Outputs equilibrium field on regular (r,z) grid
    brzphi_flag=t            ! Outputs perturbed field on regular (r,z) grid

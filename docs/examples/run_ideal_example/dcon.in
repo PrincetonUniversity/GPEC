@@ -1,5 +1,5 @@
 &DCON_CONTROL
-    bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
+    bal_flag=t           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
@@ -16,8 +16,8 @@
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
-    kin_flag = t         ! Kinetic EL equation (default: false)
-    con_flag = t         ! Continue integration through layers (default: false)
+    kin_flag = f         ! Kinetic EL equation (default: false)
+    con_flag = f         ! Continue integration through layers (default: false)
     kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
     kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
     kingridtype = 0      ! Regular grid method (default : 0)
@@ -27,11 +27,11 @@
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     electron_flag = f    ! Calculates electron contributions
 
-    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
-    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
+    tol_nr=1e-5          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-6           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
-    ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
+    ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
 /
 &DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H

@@ -40,7 +40,7 @@ c-----------------------------------------------------------------------
      $     nn,mmin,mmax
 
       REAL(r8) :: bo,ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
-     $     singfac_min,   amean,rmean,aratio,kappa,delta1,delta2,
+     $     singfac_min,amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
      $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
       COMPLEX(r8), PARAMETER  :: ifac = (0,1)

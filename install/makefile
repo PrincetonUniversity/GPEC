@@ -112,5 +112,16 @@ clean:
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 
+clear: 
+	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/run_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/a10_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/a10_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/DIIID_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/DIIID_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/solovev_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/solovev_kinetic_example; rm -f *.out *.bin *.nc
+
 realclean: clean
+	clear
 	rm -rf ../lib ../bin
