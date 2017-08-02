@@ -627,7 +627,7 @@ c     $        ("Finish full domain comptation with normal method.")
          ENDDO
       END SELECT
       
-c      IF(output_sol)CALL deltac_output_solution(gal)
+      IF(output_sol)CALL deltac_output_solution(gal)
 c-----------------------------------------------------------------------
 c     deallocate arrays and finish.
 c-----------------------------------------------------------------------

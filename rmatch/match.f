@@ -88,7 +88,7 @@ c-----------------------------------------------------------------------
       CHARACTER(10) :: model="deltac"
       INTEGER :: msing,totmsing,nstep=32,scan_nstep,qscan_ising=1
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
-      REAL(r8) :: eta(20),dlim=1000
+      REAL(r8) :: eta(20),dlim=1000,massden(20)
       REAL(r8) :: scan_x0,scan_x1
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
@@ -116,12 +116,12 @@ c-----------------------------------------------------------------------
       SUBROUTINE match_run
       
       INTEGER :: ising,iter
-      REAL(r8) :: rho,eta1,err
+      REAL(r8) :: rho1,eta1,err
       COMPLEX(r8) :: eigval
       
       NAMELIST/rmatch_input/ deltabin_filename,galsol_filename,
      $                         galsol_filename_cut,
-     $                         initguess,msing,eta,sol_flag,
+     $                         initguess,msing,eta,sol_flag,massden,
      $                         nstep,rtol,atol,fmin,fmax,lam,
      $                         scan_flag,scan_x0,scan_x1,scan_nstep,
      $                         model,qscan_ising,qscan_flag,qscan_out,
@@ -168,11 +168,13 @@ c-----------------------------------------------------------------------
      $        restype(ising)%e,restype(ising)%f,
      $        restype(ising)%h,restype(ising)%m,
      $        restype(ising)%g,restype(ising)%k,
-     $        eta1,rho,
+     $        eta1,rho1,
      $        restype(ising)%taua,restype(ising)%taur,
      $        restype(ising)%v1
          taur_save(ising)=restype(ising)%taur*eta1
          restype(ising)%taur=taur_save(ising)/eta(ising)
+         restype(ising)%taua=restype(ising)%taua/sqrt(rho1)
+         restype(ising)%taua=restype(ising)%taua*sqrt(massden(ising))
          restype(ising)%ising=ising
 
          WRITE (*,*) 'ising=',ising

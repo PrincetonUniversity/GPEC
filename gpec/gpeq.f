@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
 c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     IPEQ: calculate functions for perturbed equilibrium.
+c     GPEQ: calculate functions for perturbed equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
@@ -23,6 +23,8 @@ c     14. gpeq_rzpgrid
 c     15. gpeq_rzpdiv
 c     16. gpeq_alloc
 c     17. gpeq_dealloc
+c     18. gpeq_interp_singsurf
+c     19. gpeq_interp_sol
 c-----------------------------------------------------------------------
 c     subprogram 0. gpeq_mod.
 c     module declarations.
@@ -1286,5 +1288,87 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_dealloc
+c-----------------------------------------------------------------------
+c     subprogram 18. gpeq_interp_singsurf.
+c     create spline for interpretation of soltuon near singular surface.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_interp_singsurf(fsp_sol)
+      TYPE(cspline_type), INTENT(INOUT)::fsp_sol
+
+      INTEGER::psisize,ising,ix,icount
+      INTEGER,PARAMETER:: method=1
+      REAL(r8),PARAMETER:: dx=0.05,nx=100
+      REAL(r8)::nq1,x,x0,x1
+      REAL(r8),DIMENSION(msing)::respsi,dxl,dxr
+c-----------------------------------------------------------------------
+c     detemine spline allocation.
+c-----------------------------------------------------------------------
+      DO ising=1,msing
+         respsi(ising)=singtype(ising)%psifac
+         nq1=singtype(ising)%q1*nn
+         SELECT CASE(method)
+         CASE(1)
+         IF (ising==1) THEN
+            dxl(ising)=respsi(ising)-dx*(respsi(ising)-psilow)
+            dxr(ising)=respsi(ising)+dx*(respsi(ising+1)-respsi(ising))
+         ELSEIF (ising==msing) THEN
+            dxl(ising)=respsi(ising)-dx*(respsi(ising)-respsi(ising-1))
+            dxr(ising)=respsi(ising)+dx*(psilim-respsi(ising))
+         ELSE
+            dxl(ising)=respsi(ising)-dx*(respsi(ising)-respsi(ising-1))
+            dxr(ising)=respsi(ising)+dx*(respsi(ising+1)-respsi(ising))
+         ENDIF
+         CASE(2)
+            dxl(ising)=respsi(ising)-dx/nq1
+            dxr(ising)=respsi(ising)+dx/nq1
+         END SELECT
+      ENDDO
+c-----------------------------------------------------------------------
+c     construct solution spline.
+c-----------------------------------------------------------------------
+      icount=nx*(msing+1)-1
+      CALL cspline_alloc(fsp_sol,icount,mpert)
+      icount=0
+      DO ising=1,msing+1
+         IF (ising==1) THEN
+            x0=psilow
+            x1=dxl(ising)
+         ELSEIF (ising==msing) THEN
+            x0=dxr(ising-1)
+            x1=psilim
+         ELSE
+            x0=dxr(ising-1)
+            x1=dxl(ising)
+         ENDIF
+         DO ix=1,nx
+            x=x0+(ix-1)*(x1-x0)/(nx-1)
+            CALL gpeq_sol(x)
+            fsp_sol%xs(icount)=x
+            fsp_sol%fs(icount,:)=bwp_mn
+            icount=icount+1
+         ENDDO
+      ENDDO
+      CALL cspline_fit(fsp_sol,"not-a-knot")
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_interp_singsurf
+c-----------------------------------------------------------------------
+c     subprogram 19. gpeq_interp_sol.
+c     get bwn at psi after calling gpeq_interp_singsurf.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_interp_sol(fsp_sol,psi,interpbwn)
+      TYPE(cspline_type), INTENT(INOUT)::fsp_sol
+      REAL(r8), INTENT(IN):: psi
+      COMPLEX(r8),DIMENSION(mpert), INTENT(OUT)::interpbwn
+
+      CALL cspline_eval(fsp_sol,psi,0)
+      interpbwn=fsp_sol%f
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_interp_sol
 
       END MODULE gpeq_mod
