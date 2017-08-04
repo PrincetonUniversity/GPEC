@@ -30,7 +30,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
-     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,sing_spot,reg_spot,
+     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,reg_spot,
      $     amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
      $     q0,qa,crnt,q95,shotnum,shottime,opsi1,opsi2

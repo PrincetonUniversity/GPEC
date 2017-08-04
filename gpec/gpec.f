@@ -18,10 +18,11 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER :: i,j,in,resol,
-     $     mode,m3mode,lowmode,highmode,filter_modes
+     $     mode,m3mode,lowmode,highmode,filter_modes,
+     $     sing_npsi
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
-      REAL(r8) :: majr,minr,smallwidth,fp,normpsi
+      REAL(r8) :: sing_spot,majr,minr,smallwidth,fp,normpsi
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
@@ -46,8 +47,9 @@ c-----------------------------------------------------------------------
      $     ip_direction,bt_direction,rdconfile,
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
      $     filter_types,filter_modes,gal_flag
-      NAMELIST/gpec_control/resp_index,sing_spot,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz,resp_induct_flag
+      NAMELIST/gpec_control/resp_index,resp_induct_flag,
+     $     sing_spot,sing_npsi,reg_flag,reg_spot,
+     $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
@@ -105,6 +107,7 @@ c-----------------------------------------------------------------------
       resp_index=0
       resp_induct_flag=.TRUE.
       sing_spot=5e-4
+      sing_npsi=1e2
       reg_flag=.TRUE.
       reg_spot=5e-2
       chebyshev_flag=.TRUE.
@@ -438,6 +441,7 @@ c-----------------------------------------------------------------------
       ! gpec_control
       ierr=set_harvest_payload_int(hlog,'resp_index'//nul,resp_index)
       ierr=set_harvest_payload_dbl(hlog,'sing_spot'//nul,sing_spot)
+      ierr=set_harvest_payload_dbl(hlog,'sing_npsi'//nul,sing_npsi)
       ierr=set_harvest_payload_bol(hlog,'reg_flag'//nul,reg_flag)
       ierr=set_harvest_payload_dbl(hlog,'reg_spot'//nul,reg_spot)
       ! gpec_output
@@ -474,7 +478,7 @@ c-----------------------------------------------------------------------
          IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
       ENDDO
       IF (singcoup_flag) THEN
-         CALL gpout_singcoup(sing_spot,power_rout,
+         CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
      $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
 c-----------------------------------------------------------------------
@@ -500,7 +504,7 @@ c-----------------------------------------------------------------------
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE
-            CALL gpout_singfld(mode,xspmn,sing_spot)
+            CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
          ENDIF
       ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
@@ -633,7 +637,7 @@ c-----------------------------------------------------------------------
          CALL gpout_control(infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot)
+         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -655,7 +659,7 @@ c-----------------------------------------------------------------------
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot)
+         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
          CALL gpout_xbnormal(mode,xspmn)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)

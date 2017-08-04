@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
      $   w1v,w2v,w3v,w4v,
      $   t1v,t2v,t3v,t4v,
      $   o1v,o2v,o3v,o4v,y1v,y2v,y3v,y4v,
-     $   fldflxmat,singbnoflxs,singbnoflxsInterp
+     $   fldflxmat,singbnoflxs,singbwp
 
       CONTAINS
       
@@ -456,11 +456,11 @@ c-----------------------------------------------------------------------
 c     subprogram 2. gpout_singcoup.
 c     compute coupling between singular surfaces and external fields.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singcoup(spot,rout,bpout,bout,rcout,tout)
+      SUBROUTINE gpout_singcoup(spot,nspot,rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
+      INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout,nspot
       REAL(r8), INTENT(IN) :: spot
 
       INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,
@@ -551,7 +551,7 @@ c-----------------------------------------------------------------------
       delcurs=0
       singcurs=0
       CALL gpeq_alloc
-      ALLOCATE(singbnoflxs(msing,mpert),singbnoflxsInterp(msing,mpert))
+      ALLOCATE(singbnoflxs(msing,mpert),singbwp(msing,mpert))
       DO i=1,mpert
          finmn=0
          finmn(i)=1.0
@@ -568,7 +568,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct fsp_sol.
 c-----------------------------------------------------------------------
-         CALL gpeq_interp_singsurf(fsp_sol)
+         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
 c-----------------------------------------------------------------------
@@ -593,8 +593,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     evaluation based on the interperation.
 c-----------------------------------------------------------------------
-            CALL gpeq_interp_sol(fsp_sol,rpsi,interpbwn)
-            singbnoflxsInterp(ising,i)=interpbwn(resnum)
+            CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
+            singbwp(ising,i)=interpbwn(resnum)
 
             singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
 
@@ -700,7 +700,7 @@ c-----------------------------------------------------------------------
          t1mat = MATMUL(singbnoflxs,convmat)
          t2mat = MATMUL(singcurs,convmat)
          t3mat = MATMUL(islandhwids,convmat)
-         t4mat = MATMUL(singbnoflxsInterp,convmat)
+         t4mat = MATMUL(singbwp,convmat)
       ELSE
          ALLOCATE(fldflxmn(mpert),fldflxmat(mpert,mpert),
      $        t1mat(msing,mpert),t2mat(msing,mpert),
@@ -721,7 +721,7 @@ c-----------------------------------------------------------------------
          t1mat = singbnoflxs
          t2mat = singcurs*twopi*nn
          t3mat = islandhwids
-         t4mat = singbnoflxsInterp
+         t4mat = singbwp
       ENDIF
 c-----------------------------------------------------------------------
 c     svd analysis.
@@ -858,123 +858,152 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write matrix.
 c-----------------------------------------------------------------------
-      IF(ascii_flag)THEN
-         CALL ascii_open(out_unit,"gpec_singcoup_matrix_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_SINGCOUP_MATRIX: Coupling matrices"//
-     $        " between resonant field and external field"
-         WRITE(out_unit,*)version
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $        "jac_out = ",jac_out,"tmag_out =",tout
-         WRITE(out_unit,'(4(1x,a12,I4))')
-     $        "msing =",msing,"mpert =",tmpert,
-     $        "mlow =",tmlow,"mhigh =",tmhigh
-         WRITE(out_unit,'(2(1x,a12,es17.8e3))')
-     $        "psilim =",psilim,"qlim =",qlim
-         WRITE(out_unit,*)
-         WRITE(out_unit,*)"Coupling matrix to resonant fields"
-         WRITE(out_unit,*)
-         DO i=1,msing
-            WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
-     $           "q =",singtype(i)%q,"psi =",singtype(i)%psifac
-            WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
-            DO j=1,tmpert
-               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t1mat(i,j)),AIMAG(t1mat(i,j))
-            ENDDO
-            WRITE(out_unit,*)
-         ENDDO
-         WRITE(out_unit,*)"Coupling matrix to singular currents"
-         WRITE(out_unit,*)
-         DO i=1,msing
-            WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
-     $           "q =",singtype(i)%q,"psi =",singtype(i)%psifac
-            WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
-            DO j=1,tmpert
-               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t2mat(i,j)),AIMAG(t2mat(i,j))
-            ENDDO
-            WRITE(out_unit,*)
-         ENDDO
-         WRITE(out_unit,*)"Coupling matrix to island half-widths"
-         WRITE(out_unit,*)
-         DO i=1,msing
-            WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
-     $           "q =",singtype(i)%q,"psi =",singtype(i)%psifac
-            WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
-            DO j=1,tmpert
-               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t3mat(i,j)),AIMAG(t3mat(i,j))
-            ENDDO
-            WRITE(out_unit,*)
-         ENDDO
+      IF(ascii_flag)THENCALL ascii_open(out_unit,"gpec_singcoup_matrix_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"GPEC_SINGCOUP_MATRIX: Coupling matrices"//
+     $     " between resonant field and external field"
+      WRITE(out_unit,*)version
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
+     $     "jac_out = ",jac_out,"tmag_out =",tout
+      WRITE(out_unit,'(4(1x,a12,I4))')
+     $     "msing =",msing,"mpert =",tmpert,
+     $     "mlow =",tmlow,"mhigh =",tmhigh
+      WRITE(out_unit,'(2(1x,a12,es17.8e3))')
+     $     "psilim =",psilim,"qlim =",qlim
+      WRITE(out_unit,*)
 
-         CALL ascii_close(out_unit)
+      WRITE(out_unit,*)"Coupling matrix to effectiveresonant fields"
+      WRITE(out_unit,*)
+      DO i=1,msing
+         WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $        "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+         DO j=1,tmpert
+            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $           tmfac(j),REAL(t1mat(i,j)),AIMAG(t1mat(i,j))
+         ENDDO
+         WRITE(out_unit,*)
+      ENDDO
 
-         CALL ascii_open(out_unit,"gpec_singcoup_svd_n"//
-     $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_SINGCOUP_SVD: SVD analysis"//
-     $        " for coupling matrices"
-         WRITE(out_unit,*)version
+      WRITE(out_unit,*)"Coupling matrix to singular currents"
+      WRITE(out_unit,*)
+      DO i=1,msing
+         WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $        "q =",singtype(i)%q,"psi =",singtype(i)%psifac
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
-     $        "jac_out = ",jac_out,"tmag_out =",tmag_out
-         WRITE(out_unit,'(4(1x,a12,I4))')
-     $        "msing =",msing,"mpert =",tmpert,
-     $        "mlow =",tmlow,"mhigh =",tmhigh
-         WRITE(out_unit,'(2(1x,a12,es17.8e3))')
-     $        "psilim =",psilim,"qlim =",qlim
+         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+         DO j=1,tmpert
+            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $           tmfac(j),REAL(t2mat(i,j)),AIMAG(t2mat(i,j))
+         ENDDO
          WRITE(out_unit,*)
-         WRITE(out_unit,*)"SVD for coupling matrix to resonant"//
+      ENDDO
+
+      WRITE(out_unit,*)"Coupling matrix to island half-widths"
+      WRITE(out_unit,*)
+      DO i=1,msing
+         WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $        "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+         DO j=1,tmpert
+            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $           tmfac(j),REAL(t3mat(i,j)),AIMAG(t3mat(i,j))
+         ENDDO
+         WRITE(out_unit,*)
+      ENDDO
+WRITE(out_unit,*)"Coupling matrix to interpolated resonant fields"
+      WRITE(out_unit,*)
+      DO i=1,msing
+         WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $        "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+         DO j=1,tmpert
+            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $           tmfac(j),REAL(t4mat(i,j)),AIMAG(t4mat(i,j))
+         ENDDO
+         WRITE(out_unit,*)
+      ENDDO      CALL ascii_close(out_unit)
+
+      CALL ascii_open(out_unit,"gpec_singcoup_svd_n"//
+     $     TRIM(sn)//".out","UNKNOWN")
+      WRITE(out_unit,*)"GPEC_SINGCOUP_SVD: SVD analysis"//
+     $     " for coupling matrices"
+      WRITE(out_unit,*)version
+      WRITE(out_unit,*)
+      WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
+     $     "jac_out = ",jac_out,"tmag_out =",tmag_out
+      WRITE(out_unit,'(4(1x,a12,I4))')
+     $     "msing =",msing,"mpert =",tmpert,
+     $     "mlow =",tmlow,"mhigh =",tmhigh
+      WRITE(out_unit,'(2(1x,a12,es17.8e3))')
+     $     "psilim =",psilim,"qlim =",qlim
+      WRITE(out_unit,*)
+
+      WRITE(out_unit,*)"SVD for coupling matrix to effective "//
+     $     "resonant"//
      $        " fields"
+      WRITE(out_unit,*)
+      DO i=1,msing
+         WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $        "mode =",i,"s =",s1(i)
          WRITE(out_unit,*)
-         DO i=1,msing
-            WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $           "mode =",i,"s =",s1(i)
-            WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi)",
-     $           "imag(Phi)"
-            DO j=1,tmpert
-               WRITE(out_unit,'(1x,I4,4(es17.8e3))')
-     $              tmfac(j),REAL(t1v(j,i)),AIMAG(t1v(j,i))
-            ENDDO
-            WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi)",$"imag(Phi)"
+         DO j=1,tmpert
+            WRITE(out_unit,'(1x,I4,4(es17.8e3))')
+     $           tmfac(j),REAL(t1v(j,i)),AIMAG(t1v(j,i))
          ENDDO
-         WRITE(out_unit,*)"SVD for coupling matrix to singular"//
+         WRITE(out_unit,*)
+      ENDDO
+
+      WRITE(out_unit,*)"SVD for coupling matrix to singular"//
      $        " currents"
+      WRITE(out_unit,*)
+      DO i=1,msing
+         WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $        "mode =",i,"s =",s2(i)
          WRITE(out_unit,*)
-         DO i=1,msing
-            WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $           "mode =",i,"s =",s2(i)
-            WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
-     $           "imag(Phi)"
-            DO j=1,tmpert
-               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t2v(j,i)),AIMAG(t2v(j,i))
-            ENDDO
-            WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",$"imag(Phi)"
+         DO j=1,tmpert
+            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $           tmfac(j),REAL(t2v(j,i)),AIMAG(t2v(j,i))
          ENDDO
-         WRITE(out_unit,*)"SVD of coupling matrix to island"//
+         WRITE(out_unit,*)
+      ENDDO
+
+      WRITE(out_unit,*)"SVD of coupling matrix to island"//
      $        " half-widths"
+      WRITE(out_unit,*)
+      DO i=1,msing
+         WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $        "mode =",i,"s =",s3(i)
          WRITE(out_unit,*)
-         DO i=1,msing
-            WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $           "mode =",i,"s =",s3(i)
-            WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
-     $           "imag(Phi)"
-            DO j=1,tmpert
-               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t3v(j,i)),AIMAG(t3v(j,i))
-            ENDDO
-            WRITE(out_unit,*)
-         ENDDO
-         CALL ascii_close(out_unit)
+         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",$"imag(Phi)"
+         DO j=1,tmpert
+            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $           tmfac(j),REAL(t3v(j,i)),AIMAG(t3v(j,i))ENDDO
+         WRITE(out_unit,*)
+      ENDDO
+
+      WRITE(out_unit,*)"SVD for coupling matrix to interpolated "//
+     $     "resonant fields"
+      WRITE(out_unit,*)
+      DO i=1,msing
+         WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $        "mode =",i,"s =",s4(i)
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi_i)",
+     $        "imag(Phi_i)"
+         DO j=1,tmpert
+            WRITE(out_unit,'(1x,I4,4(es17.8e3))')
+     $           tmfac(j),REAL(t4v(j,i)),AIMAG(t4v(j,i))
+         ENDDO 
+         WRITE(out_unit,*) 
+      ENDDO
+      CALL ascii_close(out_unit)
 
          IF (osing<msing) THEN
             CALL ascii_open(out_unit,"gpec_singcoup_svd_local_n"//
@@ -1564,11 +1593,11 @@ c-----------------------------------------------------------------------
 c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singfld(egnum,xspmn,spot)
+      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum
+      INTEGER, INTENT(IN) :: egnum,nspot
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
@@ -1576,7 +1605,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: itheta,ising
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
-      COMPLEX(r8) :: lbwp1mn,rbwp1mn,lbwpmn
+      COMPLEX(r8) :: lbwp1mn,rbwp1mn
 
       INTEGER, DIMENSION(msing) :: resnum
       REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
@@ -1586,7 +1615,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,
      $     novf,novs,novi
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
-     $     ovf,ovs,ovi,singflx
+     $     ovf,ovs,ovi,singflx,singbwp
       COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn
 
       TYPE(spline_type) :: spl
@@ -1600,7 +1629,7 @@ c-----------------------------------------------------------------------
       CALL gpeq_alloc
       CALL idcon_build(egnum,xspmn)
 
-      CALL gpeq_interp_singsurf(fsp_sol)
+      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
 
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 c-----------------------------------------------------------------------
@@ -1638,7 +1667,7 @@ c-----------------------------------------------------------------------
          shear=mfac(resnum(ising))*sq%f1(4)/sq%f(4)**2
 
          CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
-         lbwpmn=interpbwn(resnum(ising))
+         singbwp(ising)=interpbwn(resnum(ising))
 
          lpsi=respsi-spot/(nn*ABS(singtype(ising)%q1))
          CALL gpeq_sol(lpsi)
@@ -1711,12 +1740,14 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a6,7(1x,a16))')"q","psi",
-     $        "real(singflx)","imag(singflx)",
+     $        "real(singbwp)","imag(singbwp)",
+     $     "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "islandhwidth","chirikov"
          DO ising=1,msing
             WRITE(out_unit,'(1x,f6.3,7(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
+     $        REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(singflx_mn(resnum(ising),ising)),
      $           AIMAG(singflx_mn(resnum(ising),ising)),
      $           REAL(singcur(ising)),AIMAG(singcur(ising)),

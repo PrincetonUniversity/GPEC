@@ -1293,12 +1293,13 @@ c-----------------------------------------------------------------------
 c     subprogram 18. gpeq_interp_singsurf.
 c     create spline for interpretation of soltuon near singular surface.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpeq_interp_singsurf(fsp_sol)
-      TYPE(cspline_type), INTENT(INOUT)::fsp_sol
+      SUBROUTINE gpeq_interp_singsurf(fsp_sol,spot,npsi)
+      TYPE(cspline_type), INTENT(INOUT)::fsp_sol    ! spline of bwp smoothly crossing rationals
+      REAL(r8), INTENT(IN) :: spot                  ! roughly the span in  m-nq to cross
+      INTEGER, INTENT(IN) :: npsi                   ! number of points between rationals in the spline
 
       INTEGER::psisize,ising,ix,icount
       INTEGER,PARAMETER:: method=1
-      REAL(r8),PARAMETER:: dx=0.05,nx=100
       REAL(r8)::nq1,x,x0,x1
       REAL(r8),DIMENSION(msing)::respsi,dxl,dxr
 c-----------------------------------------------------------------------
@@ -1312,24 +1313,30 @@ c-----------------------------------------------------------------------
          SELECT CASE(method)
          CASE(1)
          IF (ising==1) THEN
-            dxl(ising)=respsi(ising)-dx*(respsi(ising)-psilow)
-            dxr(ising)=respsi(ising)+dx*(respsi(ising+1)-respsi(ising))
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-psilow)
+            dxr(ising)=respsi(ising)
+     $                 +spot*(respsi(ising+1)-respsi(ising))
          ELSEIF (ising==msing) THEN
-            dxl(ising)=respsi(ising)-dx*(respsi(ising)-respsi(ising-1))
-            dxr(ising)=respsi(ising)+dx*(psilim-respsi(ising))
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-respsi(ising-1))
+            dxr(ising)=respsi(ising)
+     $                 +spot*(psilim-respsi(ising))
          ELSE
-            dxl(ising)=respsi(ising)-dx*(respsi(ising)-respsi(ising-1))
-            dxr(ising)=respsi(ising)+dx*(respsi(ising+1)-respsi(ising))
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-respsi(ising-1))
+            dxr(ising)=respsi(ising)
+     $                 +spot*(respsi(ising+1)-respsi(ising))
          ENDIF
          CASE(2)
-            dxl(ising)=respsi(ising)-dx/nq1
-            dxr(ising)=respsi(ising)+dx/nq1
+            dxl(ising)=respsi(ising)-spot/nq1
+            dxr(ising)=respsi(ising)+spot/nq1
          END SELECT
       ENDDO
 c-----------------------------------------------------------------------
 c     construct solution spline.
 c-----------------------------------------------------------------------
-      icount=nx*(msing+1)-1
+      icount=npsi*(msing+1)-1
       CALL cspline_alloc(fsp_sol,icount,mpert)
       icount=0
       DO ising=1,msing+1
@@ -1343,8 +1350,8 @@ c-----------------------------------------------------------------------
             x0=dxr(ising-1)
             x1=dxl(ising)
          ENDIF
-         DO ix=1,nx
-            x=x0+(ix-1)*(x1-x0)/(nx-1)
+         DO ix=1,npsi
+            x=x0+(ix-1)*(x1-x0)/(npsi-1)
             CALL gpeq_sol(x)
             fsp_sol%xs(icount)=x
             fsp_sol%fs(icount,:)=bwp_mn

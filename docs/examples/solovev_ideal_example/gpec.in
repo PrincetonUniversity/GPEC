@@ -35,6 +35,7 @@
 &GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
+   sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=t               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
