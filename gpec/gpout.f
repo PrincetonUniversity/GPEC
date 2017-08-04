@@ -57,8 +57,11 @@ c-----------------------------------------------------------------------
       ! module wide output variables
       LOGICAL :: singcoup_set = .FALSE.
       REAL(r8) :: jarea
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fldflxmat,singbnoflxs,
-     $     w1v,w2v,w3v,t1v,t2v,t3v,o1v,o2v,o3v,y1v,y2v,y3v
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::
+     $   w1v,w2v,w3v,w4v,
+     $   t1v,t2v,t3v,t4v,
+     $   o1v,o2v,o3v,o4v,y1v,y2v,y3v,y4v,
+     $   fldflxmat,singbnoflxs,singbnoflxsInterp
 
       CONTAINS
       
@@ -460,7 +463,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
       REAL(r8), INTENT(IN) :: spot
 
-      INTEGER :: i,j,itheta,ising,resnum,
+      INTEGER :: i,j,itheta,ising,resnum,rsing,rpert,
      $     tmlow,tmhigh,tmpert,lwork,info
       REAL(r8) :: respsi,lpsi,rpsi,jarea,thetai
       COMPLEX(r8) :: lbwp1mn,rbwp1mn
@@ -481,15 +484,15 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(msing,mpert,mpert) :: fsurfindmats
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: fldflxmn,bmn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::  temp1,temp2,
-     $     t1mat,t2mat,t3mat
+     $     t1mat,t2mat,t3mat,t4mat
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv,tmfac
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork,s,s1,s2,s3,o,o1,o2,o3
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork,s,s1,s2,s3,s4,
+     $     o,o1,o2,o3
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: work
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: u,a,vt
 
-      TYPE(spline_type) :: spl 
-      LOGICAL :: interp_sol=.FALSE.
+      TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
 c-----------------------------------------------------------------------
@@ -548,7 +551,7 @@ c-----------------------------------------------------------------------
       delcurs=0
       singcurs=0
       CALL gpeq_alloc
-      ALLOCATE(singbnoflxs(msing,mpert))
+      ALLOCATE(singbnoflxs(msing,mpert),singbnoflxsInterp(msing,mpert))
       DO i=1,mpert
          finmn=0
          finmn(i)=1.0
@@ -562,9 +565,10 @@ c-----------------------------------------------------------------------
          edge_mn=foutmn/(chi1*singfac*twopi*ifac)
          edge_flag=.TRUE.
          CALL idcon_build(0,edge_mn)
-         IF (galsol%gal_flag .OR. interp_sol) THEN
-            CALL gpeq_interp_singsurf(fsp_sol)
-         ENDIF
+c-----------------------------------------------------------------------
+c     construct fsp_sol.
+c-----------------------------------------------------------------------
+         CALL gpeq_interp_singsurf(fsp_sol)
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
 c-----------------------------------------------------------------------
@@ -587,23 +591,21 @@ c-----------------------------------------------------------------------
             fkaxmn(resnum)=singcurs(ising,i)/(twopi*nn)
             singflx_mn=MATMUL(fsurfindmats(ising,:,:),fkaxmn)
 c-----------------------------------------------------------------------
-c     evaluation based on the interperation or not.
+c     evaluation based on the interperation.
 c-----------------------------------------------------------------------
-            IF (galsol%gal_flag .OR. interp_sol) THEN
-               CALL gpeq_interp_sol(fsp_sol,rpsi,interpbwn)
-               singbnoflxs(ising,i)=interpbwn(resnum)
-            ELSE
-               singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
-            ENDIF
+            CALL gpeq_interp_sol(fsp_sol,rpsi,interpbwn)
+            singbnoflxsInterp(ising,i)=interpbwn(resnum)
+
+            singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
+
             islandhwids(ising,i)=4*singflx_mn(resnum)/
      $           (twopi*shear(ising)*sq%f(4)*chi1)
          ENDDO
 c-----------------------------------------------------------------------
 c     deallocate fsp_sol.
 c-----------------------------------------------------------------------
-         IF (galsol%gal_flag .OR. interp_sol) THEN
-            CALL cspline_dealloc(fsp_sol)
-         ENDIF
+         CALL cspline_dealloc(fsp_sol)
+
          IF(verbose) WRITE(*,'(1x,a16,i4,a22,es10.3)')
      $        "poloidal mode = ",mfac(i),", resonant coupling = ",
      $        SUM(ABS(singbnoflxs(:,i)))/msing
@@ -666,7 +668,7 @@ c     convert coordinates.
 c-----------------------------------------------------------------------
          ALLOCATE(fldflxmn(lmpert),fldflxmat(lmpert,lmpert),
      $        t1mat(msing,lmpert),t2mat(msing,lmpert),
-     $        t3mat(msing,lmpert),tmfac(lmpert))
+     $        t3mat(msing,lmpert),t4mat(msing,lmpert),tmfac(lmpert))
          DO i=1,lmpert
             lftnmn=0
             lftnmn(i)=1.0
@@ -698,10 +700,11 @@ c-----------------------------------------------------------------------
          t1mat = MATMUL(singbnoflxs,convmat)
          t2mat = MATMUL(singcurs,convmat)
          t3mat = MATMUL(islandhwids,convmat)
+         t4mat = MATMUL(singbnoflxsInterp,convmat)
       ELSE
          ALLOCATE(fldflxmn(mpert),fldflxmat(mpert,mpert),
      $        t1mat(msing,mpert),t2mat(msing,mpert),
-     $        t3mat(msing,mpert),tmfac(mpert))
+     $        t3mat(msing,mpert),t4mat(msing,mpert),tmfac(mpert))
          units = (/(1.0,itheta=0,mthsurf)/)
          jarea = issurfint(units,mthsurf,psilim,0,0)
          DO i=1,mpert
@@ -718,18 +721,19 @@ c-----------------------------------------------------------------------
          t1mat = singbnoflxs
          t2mat = singcurs*twopi*nn
          t3mat = islandhwids
+         t4mat = singbnoflxsInterp
       ENDIF
 c-----------------------------------------------------------------------
 c     svd analysis.
 c-----------------------------------------------------------------------
       lwork=3*tmpert
-      ALLOCATE(s(msing),s1(msing),s2(msing),s3(msing),rwork(5*msing),
+      ALLOCATE(s(msing),s1(msing),s2(msing),s3(msing),s4(msing),
      $     u(msing,msing),a(msing,tmpert),vt(msing,tmpert),
      $     w1v(tmpert,msing),w2v(tmpert,msing),w3v(tmpert,msing),
      $     t1v(tmpert,msing),t2v(tmpert,msing),t3v(tmpert,msing),
-     $     temp1(tmpert,tmpert),temp2(tmpert,tmpert),work(lwork),
-     $     ipiv(tmpert),bmn(tmpert))
-
+     $     w4v(tmpert,msing),t4v(tmpert,msing),
+     $     temp1(tmpert,tmpert),temp2(tmpert,tmpert),
+     $     work(lwork),rwork(5*msing),ipiv(tmpert),bmn(tmpert))
       temp1=fldflxmat
       temp2=0
       DO i=1,tmpert
@@ -775,6 +779,18 @@ c-----------------------------------------------------------------------
       s3=s
       w3v=CONJG(TRANSPOSE(vt))
       t3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+
+      work=0
+      rwork=0
+      s=0
+      u=0
+      vt=0
+      a=MATMUL(t4mat,temp2)
+      CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
+     $     work,lwork,rwork,info)
+      s4=s
+      w4v=CONJG(TRANSPOSE(vt))
+      t4v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
       DEALLOCATE(rwork,u,a,vt)
 c-----------------------------------------------------------------------
 c     repeat svd analysis when local coupling is requested.
@@ -783,7 +799,8 @@ c-----------------------------------------------------------------------
          ALLOCATE(o(osing),o1(osing),o2(osing),o3(osing),rwork(5*osing),
      $        u(osing,osing),a(osing,tmpert),vt(osing,tmpert),
      $        o1v(tmpert,osing),o2v(tmpert,osing),o3v(tmpert,osing),
-     $        y1v(tmpert,osing),y2v(tmpert,osing),y3v(tmpert,osing))
+     $        y1v(tmpert,osing),y2v(tmpert,osing),y3v(tmpert,osing),
+     $        o4(osing),o4v(tmpert,osing),y4v(tmpert,osing))
 
          work=0
          rwork=0
@@ -820,7 +837,19 @@ c-----------------------------------------------------------------------
          o3=o
          o3v=CONJG(TRANSPOSE(vt))
          y3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
-         DEALLOCATE(rwork,u,a,vt)
+
+          work=0
+          rwork=0
+          o=0
+          u=0
+          vt=0
+          a=MATMUL(t4mat(ol:ou,:),temp2)
+          CALL zgesvd('S','S',osing,tmpert,a,osing,o,u,osing,vt,osing,
+     $         work,lwork,rwork,info)
+          o4=o
+          o4v=CONJG(TRANSPOSE(vt))
+          y4v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+          DEALLOCATE(rwork,u,a,vt)
       ENDIF
 c-----------------------------------------------------------------------
 c     save module wide variables
@@ -1011,10 +1040,10 @@ c-----------------------------------------------------------------------
          CALL ascii_close(out_unit)
       ENDIF
 
-      DEALLOCATE(s,s1,s2,s3,t1v,t2v,t3v,
-     $     tmfac,t1mat,t2mat,t3mat,fldflxmn,ipiv,work,temp1,temp2)
+      DEALLOCATE(s,s1,s2,s3,s4,t1v,t2v,t3v,t4v,
+     $     tmfac,t1mat,t2mat,t3mat,t4mat,fldflxmn,ipiv,work,temp1,temp2)
       IF (osing<msing) THEN
-         DEALLOCATE(o,o1,o2,o3,y1v,y2v,y3v)
+         DEALLOCATE(o,o1,o2,o3,o4,y1v,y2v,y3v,y4v)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1547,7 +1576,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: itheta,ising
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
-      COMPLEX(r8) :: lbwp1mn,rbwp1mn
+      COMPLEX(r8) :: lbwp1mn,rbwp1mn,lbwpmn
 
       INTEGER, DIMENSION(msing) :: resnum
       REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
@@ -1561,7 +1590,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn
 
       TYPE(spline_type) :: spl
-      LOGICAL :: interp_sol=.FALSE.
       TYPE(cspline_type) :: fsp_sol
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
 c-----------------------------------------------------------------------
@@ -1571,9 +1599,9 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing total resonant fields"
       CALL gpeq_alloc
       CALL idcon_build(egnum,xspmn)
-      IF (galsol%gal_flag .OR. interp_sol) THEN
-         CALL gpeq_interp_singsurf(fsp_sol)
-      ENDIF
+
+      CALL gpeq_interp_singsurf(fsp_sol)
+
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
@@ -1609,23 +1637,16 @@ c-----------------------------------------------------------------------
          j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0
          shear=mfac(resnum(ising))*sq%f1(4)/sq%f(4)**2
 
+         CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
+         lbwpmn=interpbwn(resnum(ising))
+
          lpsi=respsi-spot/(nn*ABS(singtype(ising)%q1))
-         IF (galsol%gal_flag .OR. interp_sol) THEN
-            CALL gpeq_interp_sol(fsp_sol,lpsi,interpbwn)
-            lbwp1mn=interpbwn(resnum(ising))
-         ELSE
-            CALL gpeq_sol(lpsi)
-            lbwp1mn=bwp1_mn(resnum(ising))
-         ENDIF
+         CALL gpeq_sol(lpsi)
+         lbwp1mn=bwp1_mn(resnum(ising))
          
          rpsi=respsi+spot/(nn*ABS(singtype(ising)%q1))
-         IF (galsol%gal_flag .OR. interp_sol) THEN
-            CALL gpeq_interp_sol(fsp_sol,rpsi,interpbwn)
-            rbwp1mn=interpbwn(resnum(ising))
-         ELSE
-            CALL gpeq_sol(rpsi)
-            rbwp1mn=bwp1_mn(resnum(ising))
-         ENDIF
+         CALL gpeq_sol(rpsi)
+         rbwp1mn=bwp1_mn(resnum(ising))
 
          delta(ising)=rbwp1mn-lbwp1mn
          delcur(ising)=j_c(ising)*delta(ising)*ifac/
@@ -1671,9 +1692,8 @@ c-----------------------------------------------------------------------
      $        ", total resonant field = ",
      $        ABS(singflx_mn(resnum(ising),ising))
       ENDDO
-      IF (galsol%gal_flag .OR. interp_sol) THEN
-         CALL cspline_dealloc(fsp_sol)
-      ENDIF
+
+      CALL cspline_dealloc(fsp_sol)
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
 c     write results.

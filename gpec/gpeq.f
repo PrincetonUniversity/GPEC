@@ -69,6 +69,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute preliminary quantities.
 c-----------------------------------------------------------------------
+      CALL cspline_eval(u1,psi,0)
       xsp_mn=u1%f
       IF (kin_flag) THEN
          CALL cspline_eval(u3,psi,0)
@@ -1305,6 +1306,8 @@ c     detemine spline allocation.
 c-----------------------------------------------------------------------
       DO ising=1,msing
          respsi(ising)=singtype(ising)%psifac
+      ENDDO
+      DO ising=1,msing
          nq1=singtype(ising)%q1*nn
          SELECT CASE(method)
          CASE(1)
@@ -1333,7 +1336,7 @@ c-----------------------------------------------------------------------
          IF (ising==1) THEN
             x0=psilow
             x1=dxl(ising)
-         ELSEIF (ising==msing) THEN
+         ELSEIF (ising==msing+1) THEN
             x0=dxr(ising-1)
             x1=psilim
          ELSE
