@@ -70,9 +70,10 @@ ifdef GPEC_PLATFORM
 	ifeq ($(GPEC_PLATFORM),portal_intel)
 	    # $ module load intel acml netcdf
         # make options=-vec_report0 2>&1 | tee log.txt
+	# make options=-traceback -p for debugging memory leak
         # status: Success 06/14/2016, solovev_ideal_example DCON 9s, GPEC 3m 1s.
 		PLATFORM = portal
-		FC = /usr/pppl/intel/11.0/081/bin/intel64/ifort -traceback -O2 -p
+		FC = /usr/pppl/intel/11.0/081/bin/intel64/ifort -O2		
 		CC = /usr/pppl/intel/11.0/081/bin/intel64/icc -O2
 		MATHHOME = /usr/pppl/intel/11-pkgs/acml-4.3.0/ifort64
 		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
