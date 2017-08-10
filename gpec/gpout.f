@@ -1169,8 +1169,10 @@ c-----------------------------------------------------------------------
       ierr=set_harvest_payload_dbl(hlog,"energy_vacuum"//nul,vengy)
       ierr=set_harvest_payload_dbl(hlog,"energy_surface"//nul,sengy)
       ierr=set_harvest_payload_dbl(hlog,"energy_plasma"//nul,pengy)
-      ierr=set_harvest_payload_dbl(hlog,"amplification"//nul,
-     $                             sengy/pengy)
+      ierr=set_harvest_payload_dbl(hlog,
+     $     "toroidal_torque"//nul,-2.0*nn*AIMAG(py))
+      ierr=set_harvest_payload_dbl(hlog,
+     $     "amplification"//nul,sengy/pengy)
 c-----------------------------------------------------------------------
 c     calculate the scalar surface area for normalizations.
 c-----------------------------------------------------------------------
@@ -1318,6 +1320,8 @@ c-----------------------------------------------------------------------
      $               "energy_surface",sengy) )
          CALL check( nf90_put_att(mncid,nf90_global,
      $               "energy_plasma",pengy) )
+         CALL check( nf90_put_att(mncid,nf90_global,
+     $               "toroidal_torque",-2.0*nn*AIMAG(py)) )
          CALL check( nf90_put_att(mncid,nf90_global,
      $               "area",jarea) )
          CALL check( nf90_def_var(mncid,"b_n",nf90_double,

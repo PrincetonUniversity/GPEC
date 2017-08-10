@@ -22,7 +22,7 @@
     kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
     kingridtype = 0      ! Regular grid method (default : 0)
     passing_flag = t     ! Includes passing particle effects (default: false)
-    ktanh_flag = t       ! Ignore kinetic effects in the core smoothly (default: false)
+    ktanh_flag = f       ! Ignore kinetic effects in the core smoothly (default: false)
     ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     electron_flag = f    ! Calculates electron contributions

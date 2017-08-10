@@ -48,7 +48,7 @@
     ftmm_flag = f                       ! Full torque mxm matrix calculation (t,p also available)
     fwmm_flag = f                       ! Full dW mxm matrix calculation (t,p also available)
 
-    output_ascii = f                    ! Write ascii output files
+    output_ascii = t                    ! Write ascii output files
     output_netcdf = t                   ! Write netcdf output files
 
     xlmda_out = f                       ! Output energy and pitch integrands on psi_out
