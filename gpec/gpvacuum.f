@@ -9,6 +9,7 @@ c      0. gpvacuum_mod
 c      1. gpvacuum_arbsurf
 c      2. gpvacuum_flxsurf
 c      3. gpvacuum_bnormal
+c      4. gpvacuum_mutuals
 c-----------------------------------------------------------------------
 c     subprogram 0. gpvacuum_mod.
 c     module declarations.

@@ -7,6 +7,7 @@ c     code organization.
 c-----------------------------------------------------------------------
 c     0. coil_mod.
 c     1. coil_read.
+c     2. coil_dealloc.
 c-----------------------------------------------------------------------
 c     subprogram 0. coil_mod.
 c     module declarations.
