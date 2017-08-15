@@ -33,15 +33,14 @@ c     declaration.
 c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: majr,minr
 
-      INTEGER :: vmtheta,vmlow,vmhigh,vmpert,m,itheta,rtheta,i,vn,lwork
+      INTEGER :: vmtheta,vmlow,vmhigh,vmpert,m,itheta,rtheta,i,lwork,vn
       REAL(r8) :: qa,kernelsignin
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
 
       INTEGER, DIMENSION(:), POINTER :: ipiv,vmfac
       REAL(r8), DIMENSION(:), POINTER :: vtheta,vrfac,veta,vr,vz,
-     $     jac,dphi,delte,delpsi,wgtfun,grri_real,grri_imag,
-     $     grre_real,grre_imag,rwork
+     $     jac,dphi,delte,grri_real,grri_imag,grre_real,grre_imag,rwork
       COMPLEX(r8), DIMENSION(:), POINTER :: vbwp_mn,rbwp_mn,vbwp_fun,
      $     rbwp_fun,chi_fun,che_fun,flx_fun,kax_fun,work
       REAL(r8), DIMENSION(:,:), POINTER :: vgrri,vgrre
@@ -52,17 +51,16 @@ c-----------------------------------------------------------------------
 c     specify whatever boundary here with normal polar angles.
 c-----------------------------------------------------------------------
       vmtheta=256
-      vmlow=0
-      vmhigh=10
+      vmlow=-20
+      vmhigh=20
       vmpert=vmhigh-vmlow+1
-      nn=1
       qlim=1.0
+      vn=nn
 
       ALLOCATE(vmfac(vmpert))
       ALLOCATE(vtheta(0:vmtheta),vrfac(0:vmtheta),veta(0:vmtheta),
      $     vr(0:vmtheta),vz(0:vmtheta),jac(0:vmtheta),
-     $     dphi(0:vmtheta),delte(0:vmtheta),
-     $     delpsi(0:vmtheta),wgtfun(0:vmtheta))
+     $     dphi(0:vmtheta),delte(0:vmtheta))
 
       vmfac=(/(m,m=vmlow,vmhigh)/)      
       vtheta=(/(itheta,itheta=0,vmtheta)/)/REAL(vmtheta,r8)
@@ -70,18 +68,15 @@ c-----------------------------------------------------------------------
       veta=twopi*vtheta
       vr=majr+vrfac*COS(veta)
       vz=0.0+vrfac*SIN(veta)
-      !surface jacobian with delpsi.
+      !surface jacobian for polar coordinates.
       jac=vrfac*vr
       dphi=0
-      delpsi=1.0
-      wgtfun=1.0/(jac*delpsi)
       delte=-dphi/qlim
 c-----------------------------------------------------------------------
 c     invert values for vn < 0.
 c-----------------------------------------------------------------------
-      vn=nn
       qa=qlim 
-      IF(vn <0) THEN
+      IF(vn<0) THEN
          qa=-qa
          delte=-delte
          vn=-vn
@@ -187,16 +182,15 @@ c-----------------------------------------------------------------------
       CALL zgetrf(vmpert,vmpert,temp1,vmpert,ipiv,info)
       CALL zgetrs('N',vmpert,vmpert,temp1,vmpert,ipiv,temp2,vmpert,info)
       temp1=TRANSPOSE(temp2)
-      temp1=0.5*(temp1+CONJG(TRANSPOSE(temp1)))
+c      temp1=0.5*(temp1+CONJG(TRANSPOSE(temp1)))
       vsurf_indmats=temp1
       lwork=2*vmpert-1
       CALL zheev('V','U',vmpert,temp1,vmpert,vsurf_indev,work,
      $     lwork,rwork,info)
-      DEALLOCATE(vmfac,vtheta,vrfac,veta,vr,vz,jac,dphi,delte,
-     $     delpsi,wgtfun)
+      DEALLOCATE(vmfac,vtheta,vrfac,veta,vr,vz,jac,dphi,delte)
       DEALLOCATE(vbwp_mn,rbwp_mn,vbwp_fun,rbwp_fun,chi_fun,che_fun,
      $     flx_fun,kax_fun,grri_real,grri_imag,grre_real,grre_imag,
-     $     vflxmats,vkaxmats,ipiv,rwork,work,temp1,temp2,
+     $     vflxmats,ipiv,rwork,work,temp1,temp2,
      $     vgrri,vgrre,vwv)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -472,6 +466,52 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpvacuum_bnormal
+c-----------------------------------------------------------------------
+c     subprogram 4. gpvacuum_mutuals.
+c     calculate mutual inductances.  
+c-----------------------------------------------------------------------
+      SUBROUTINE gpvacuum_mutuals
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      REAL(r8) :: majr,minr,err1,err2
+      INTEGER :: vmpert,i
+      COMPLEX(r8), DIMENSION(:,:),POINTER :: lmat1,lmat2,lmat12,lmat21
+
+      majr=10.0
+      minr=1.0
+      CALL gpvacuum_arbsurf(majr,minr)
+      vmpert=SIZE(vsurf_indev)
+      ALLOCATE(lmat1(vmpert,vmpert))
+      lmat1=vsurf_indmats
+      DEALLOCATE(vsurf_indmats,vsurf_indev)
+
+      majr=10.0
+      minr=2.0
+      CALL gpvacuum_arbsurf(majr,minr)
+      vmpert=SIZE(vsurf_indev)
+      ALLOCATE(lmat2(vmpert,vmpert))
+      lmat2=vsurf_indmats
+      DEALLOCATE(vsurf_indmats,vsurf_indev)
+
+      ALLOCATE(lmat12(vmpert,vmpert),lmat21(vmpert,vmpert))
+      lmat12=MATMUL(lmat1,lmat2)
+      lmat21=MATMUL(lmat2,lmat1)
+      err1=MAXVAL(ABS(lmat1-TRANSPOSE(CONJG(lmat1))))/MAXVAL(ABS(lmat1))
+      err2=MAXVAL(ABS(lmat12-lmat21))/MAXVAL(ABS(lmat12))
+      DO i=1,vmpert
+         WRITE(*,*)ABS(lmat12(3,i)),ABS(lmat21(3,i))
+      ENDDO
+      WRITE(*,*)"err1=",err1
+      WRITE(*,*)"err2=",err2
+      
+      DEALLOCATE(lmat1,lmat2,lmat12,lmat21)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpvacuum_mutuals
 
       END MODULE gpvacuum_mod
       
+

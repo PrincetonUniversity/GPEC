@@ -175,8 +175,8 @@ c-----------------------------------------------------------------------
       test_flag=.FALSE.
       eigm_flag=.FALSE.
 
-      majr=10.0
-      minr=1.0
+      majr=9.0
+      minr=5.0
       mode=1
       lowmode=-10
       highmode=10
@@ -596,6 +596,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (arbsurf_flag) THEN
          CALL gpdiag_arbsurf(majr,minr)
+         CALL gpvacuum_mutuals
       ENDIF         
       IF (angles_flag) THEN
          CALL gpdiag_angles
