@@ -525,7 +525,7 @@ c-----------------------------------------------------------------------
          CALL gpout_pmodb(mode,xspmn)
       ENDIF
       IF (xbnormal_flag) THEN
-         CALL gpout_xbnormal(mode,xspmn)
+         CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
       ENDIF
       IF (xbtangent_flag) THEN
          CALL gpout_xbtangent(mode,xspmn,power_rout,

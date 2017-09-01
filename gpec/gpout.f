@@ -1000,8 +1000,8 @@ WRITE(out_unit,*)"Coupling matrix to interpolated resonant fields"
          DO j=1,tmpert
             WRITE(out_unit,'(1x,I4,4(es17.8e3))')
      $           tmfac(j),REAL(t4v(j,i)),AIMAG(t4v(j,i))
-         ENDDO 
-         WRITE(out_unit,*) 
+         ENDDO
+         WRITE(out_unit,*)
       ENDDO
       CALL ascii_close(out_unit)
 
@@ -1739,13 +1739,13 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,7(1x,a16))')"q","psi",
+         WRITE(out_unit,'(1x,a6,9(1x,a16))')"q","psi",
      $        "real(singbwp)","imag(singbwp)",
      $     "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "islandhwidth","chirikov"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,7(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,9(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $        REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(singflx_mn(resnum(ising),ising)),
@@ -2807,11 +2807,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 7. gpout_xbnormal.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_xbnormal(egnum,xspmn)
+      SUBROUTINE gpout_xbnormal(egnum,xspmn,spot,nspot)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum
+      INTEGER, INTENT(IN) :: egnum,nspot
+      REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,xm_id,x_id,
@@ -2832,7 +2833,10 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,psis,rvecs,zvecs
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rss,zss,
-     $     xnofuns,bnofuns
+     $     xnofuns,bnofuns,intbwpmns
+
+      COMPLEX(r8), DIMENSION(mpert) :: interpbwn
+	 TYPE(cspline_type) :: fsp_sol
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
 c-----------------------------------------------------------------------
@@ -2842,6 +2846,7 @@ c-----------------------------------------------------------------------
      $   xnofuns(mstep,0:mthsurf),bnofuns(mstep,0:mthsurf))
       ALLOCATE(xmns(mstep,lmpert),ymns(mstep,lmpert),
      $   xnomns(mstep,lmpert),bnomns(mstep,lmpert),bwpmns(mstep,lmpert))
+      ALLOCATE(intbwpmns(mstep,lmpert))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -2849,8 +2854,7 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing x and b normal components"
 
       CALL idcon_build(egnum,xspmn)
-      tout = tmag_out
-
+tout = tmag_out
       ! set up pest grid
       IF(TRIM(jac_out)=="pest")THEN ! will be mlow,mhigh if jac_type pest
         mlow_pest = lmlow
@@ -2865,6 +2869,8 @@ c-----------------------------------------------------------------------
       pwpmns = 0
 
       CALL gpeq_alloc
+      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+
       DO istep=1,mstep
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
          ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
@@ -2917,13 +2923,21 @@ c-----------------------------------------------------------------------
 
          CALL gpeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep),ji=0)
          CALL gpeq_bcoordsout(bnomns(istep,:),bno_mn,psifac(istep),ji=0)
+
+         CALL ipeq_interp_sol(fsp_sol,psifac(istep),interpbwn)
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
-            CALL gpeq_bcoordsout(bwpmns(istep,:),bno_mn,psifac(istep),
-     $                           ji=1)
+            CALL gpeq_bcoordsout(bwpmns(istep,:),bno_mn,
+     $                           psifac(istep),ji=1)
+            CALL ipeq_bcoordsout(intbwpmns(istep,:),interpbwn,
+     $                           psifac(istep),ji=0)
          ELSE ! no need to re-weight bno_mn with expensive invfft and fft
             bwp_mn=bwp_mn/area
             bwpmns(istep,:)=0
             bwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwp_mn
+
+            interpbwn=interpbwn/area
+            intbwpmns(istep,:)=0
+            intbwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=interpbwn
          ENDIF
          xnofuns(istep,:)=xnofuns(istep,:)*EXP(ifac*nn*dphi)
          bnofuns(istep,:)=bnofuns(istep,:)*EXP(ifac*nn*dphi)
@@ -3022,11 +3036,14 @@ c-----------------------------------------------------------------------
      $              REAL(REAL(bnomns(istep,ipert)),4),
      $              REAL(AIMAG(bnomns(istep,ipert)),4),
      $              REAL(REAL(bwpmns(istep,ipert)),4),
-     $              REAL(AIMAG(bwpmns(istep,ipert)),4)    
+     $              REAL(AIMAG(bwpmns(istep,ipert)),4),
+     $              REAL(REAL(intbwpmns(istep,ipert)),4),
+     $              REAL(AIMAG(intbwpmns(istep,ipert)),4)
             ENDDO
             WRITE(bin_unit)
          ENDDO
          CALL bin_close(bin_unit)
+         CALL cspline_dealloc(fsp_sol)
       ENDIF
 
       IF (bin_2d_flag) THEN
@@ -3206,7 +3223,7 @@ c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
 c-----------------------------------------------------------------------
       DEALLOCATE(rvecs,zvecs,rs,zs,psis,rss,zss,xnofuns,bnofuns)
-      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns)
+      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns,intbwpmns)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
