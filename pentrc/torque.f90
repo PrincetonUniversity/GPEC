@@ -131,8 +131,7 @@ module torque
     use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappaintgnd
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint,rzphi,geom,sq,eqfun,&
-                               smats,tmats,xmats,ymats,zmats,&
-                               eqfun_ix,eqfun_iy,eqfun_f,eqfun_fx,eqfun_fy
+                               smats,tmats,xmats,ymats,zmats
     use inputs, only : kin,xs_m,dbob_m,divx_m,fnml,&  ! equilib and pert. equilib splines
          chi1,ro,zo,bo,mfac,mpert,mthsurf,&           ! reals or integers
          verbose                                      ! logical
@@ -258,9 +257,8 @@ module torque
 
         ! for calling this in function parallel
         integer :: OMP_GET_THREAD_NUM
-        real(r8) :: ys_i
-        integer :: eqfun_my, ix = 0, iy = 0
-        real(r8), dimension(3) :: geom_f, geom_f1
+        integer :: ix, iy
+        real(r8), dimension(3) :: geom_f, geom_f1, eqfun_f, eqfun_fx, eqfun_fy
         real(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy, sq_s_f, sq_s_f1
         real(r8), dimension(8) :: kin_f, kin_f1
         complex(r8), dimension(mpert) :: xs_m1_f, xs_m2_f, xs_m3_f
@@ -313,11 +311,10 @@ module torque
         tspl%xs(0:) = eqfun%ys(0:)
 
         do i=0,eqfun%my
-           ys_i = eqfun%ys(i)
-
-           call bicube_eval_external(eqfun, psi, ys_i, 1,&
-                eqfun_ix, eqfun_iy, eqfun_f, eqfun_fx, eqfun_fy)
-           call bicube_eval_external(rzphi, psi, ys_i, 1,&
+           theta = eqfun%ys(i)
+           call bicube_eval_external(eqfun, psi, theta, 1,&
+                ix, iy, eqfun_f, eqfun_fx, eqfun_fy)
+           call bicube_eval_external(rzphi, psi, theta, 1,&
                 ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
            tspl%fs(i,1)= eqfun_f(1)            !b
            tspl%fs(i,2)= eqfun_fx(1)/chi1      !db/dpsi
@@ -326,7 +323,7 @@ module torque
            tspl%fs(i,5)= rzphi_fx(4)/chi1**2   !dj/dpsi 
 
            ! for flux fun outputs
-           expm = exp(xj*twopi*mfac*eqfun%ys(i))
+           expm = exp(xj*twopi*mfac*theta)
            jbb  = rzphi_f(4)*eqfun_f(1)**2
            dbfun(i) = ABS( sum(dbob_m_f(:)*expm) )**2
            dxfun(i) = ABS( sum(divx_m_f(:)*expm) * divxfac )**2
@@ -389,9 +386,9 @@ module torque
         wdhat = q**3*wtran**2/(4*epsr*wgyro)*wdfac  ! RLAR normalized by x
         nueff = kin_f(s+6)/(2*epsr)
 
-        eqfun_my = eqfun%my
-        dbave = issurfint(dbfun,eqfun_my,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
-        dxave = issurfint(dxfun,eqfun_my,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+        i = eqfun%my
+        dbave = issurfint(dbfun,i,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+        dxave = issurfint(dxfun,i,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
 
         deallocate(dbfun,dxfun)
         if(tdebug) print('(a14,7(es10.1E2),i4)'), "  eq values = ",wdian,&
@@ -415,7 +412,7 @@ module torque
                     do i=0,mthsurf
                         theta = i/real(mthsurf,r8)
                         call bicube_eval_external(eqfun, psi, theta, 0,&
-                             eqfun_ix, eqfun_iy, eqfun_f, eqfun_fx, eqfun_fy)
+                             ix, iy, eqfun_f, eqfun_fx, eqfun_fy)
                         call bicube_eval_external(rzphi, psi, theta, 0,&
                              ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
                         expm = exp(xj*twopi*mfac*theta)

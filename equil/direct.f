@@ -126,10 +126,6 @@ c-----------------------------------------------------------------------
             IF(mtheta == 0)mtheta=istep
             CALL bicube_alloc(rzphi,mpsi,mtheta,4)
             CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
-
-            !allocate external arrays
-            ALLOCATE(eqfun_f(3),eqfun_fx(3),eqfun_fy(3))
-
             rzphi%xs=sq%xs
             rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
             eqfun%xs=sq%xs            

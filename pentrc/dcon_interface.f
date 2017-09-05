@@ -64,11 +64,6 @@ c-----------------------------------------------------------------------
       TYPE(cspline_type) :: smats,tmats,xmats,ymats,zmats
       TYPE(fspline_type) :: metric
 
-      !!!!!!!!!variables added for "external" spline calls
-      !bicube
-      INTEGER :: eqfun_ix, eqfun_iy
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy
-
       TYPE :: resist_type
       REAL(r8) :: e,f,h,m,g,k,eta,rho,taua,taur,di,dr,sfac,deltac
       END TYPE resist_type
@@ -95,8 +90,7 @@ c-----------------------------------------------------------------------
       TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
       TYPE(sing_type), DIMENSION(:), POINTER :: singtype
 
-!$OMP THREADPRIVATE(geom,sq,
-!$OMP& eqfun_ix, eqfun_iy, eqfun_f, eqfun_fx, eqfun_fy)
+!$OMP THREADPRIVATE(geom,sq)
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -1408,9 +1402,7 @@ c-----------------------------------------------------------------------
       subroutine set_eq(set_eqfun,set_sq,set_rzphi,
      $              set_smats,set_tmats,set_xmats,set_ymats,set_zmats,
      $              set_chi1,set_ro,set_nn,set_jac_type,
-     $              set_mlow,set_mhigh,set_mpert,set_mthsurf,
-     $              set_eqfun_ix,set_eqfun_iy,
-     $              set_eqfun_f,set_eqfun_fx,set_eqfun_fy)
+     $              set_mlow,set_mhigh,set_mpert,set_mthsurf)
       !----------------------------------------------------------------------- 
       !*DESCRIPTION: 
       !   Set the dcon equilibrium global variables directly. For internal use
@@ -1447,10 +1439,6 @@ c-----------------------------------------------------------------------
         !real(r8), dimension(:) :: set_psifac
         character(*), intent(in) :: set_jac_type
 
-        integer, intent(in) :: set_eqfun_ix,set_eqfun_iy
-        real(r8), dimension(:), intent(in) :: set_eqfun_f,
-     $       set_eqfun_fx,set_eqfun_fy
-
         type(spline_type) :: set_sq
         type(bicube_type) :: set_eqfun,set_rzphi
         type(cspline_type) :: set_smats,set_tmats,set_xmats,
@@ -1470,25 +1458,6 @@ c-----------------------------------------------------------------------
         xmats   =set_xmats
         ymats   =set_ymats
         zmats   =set_zmats
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        eqfun_ix = set_eqfun_ix
-        eqfun_iy = set_eqfun_iy
-!$OMP PARALLEL DEFAULT(NONE)
-!$OMP& SHARED(set_eqfun_f,set_eqfun_fx,set_eqfun_fy)
-        ALLOCATE(eqfun_f(SIZE(set_eqfun_f)))
-        eqfun_f = set_eqfun_f
-        ALLOCATE(eqfun_fx(SIZE(set_eqfun_fx)))
-        eqfun_fx = set_eqfun_fx
-        ALLOCATE(eqfun_fy(SIZE(set_eqfun_fy)))
-        eqfun_fy = set_eqfun_fy
-!$OMP END PARALLEL
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        !! only needed if using old ipec_o1 inputs
-        !mstep   =set_mstep
-        !allocate(psifac(0:mstep))
-        !psifac(:) = set_psifac(:)
 
         chi1    =set_chi1
         ro      =set_ro

@@ -42,12 +42,7 @@ c-----------------------------------------------------------------------
      $     dcon_int_tmats=>tmats,
      $     dcon_int_xmats=>xmats,
      $     dcon_int_ymats=>ymats,
-     $     dcon_int_zmats=>zmats,
-     $     dcon_int_eqfun_ix=>eqfun_ix,
-     $     dcon_int_eqfun_iy=>eqfun_iy,
-     $     dcon_int_eqfun_f=>eqfun_f,
-     $     dcon_int_eqfun_fx=>eqfun_fx,
-     $     dcon_int_eqfun_fy=>eqfun_fy
+     $     dcon_int_zmats=>zmats
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
@@ -1065,8 +1060,6 @@ c!!!!!!...from pitch.f90
 !$OMP& pitch_record,eqspl_g,turns_g,
 c!!!!!!...from dcon_interface.f90
 !$OMP& geom, dcon_int_sq,
-!$OMP& dcon_int_eqfun_ix, dcon_int_eqfun_iy,
-!$OMP& dcon_int_eqfun_f, dcon_int_eqfun_fx, dcon_int_eqfun_fy,
 c!!!!!!...from energy.f90
 !$OMP& /xcom/,
 c!!!!!!...from lsode1.f

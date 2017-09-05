@@ -56,7 +56,4 @@ c-----------------------------------------------------------------------
       TYPE(cspline_type) :: amats,bmats,cmats,
      $     smats,tmats,xmats,ymats,zmats
 
-      INTEGER :: eqfun_ix,eqfun_iy
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: eqfun_f,eqfun_fx,eqfun_fy
-
       END MODULE global_mod
