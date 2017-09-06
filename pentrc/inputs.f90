@@ -4,7 +4,7 @@ module inputs
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Input interface for PENTRC. Includes DCON interface developed by
-    !   J.-K. Park in IPEC package, as well as ascii interfaces for
+    !   J.-K. Park in GPEC package, as well as ascii interfaces for
     !   kinetic profiles and perturbed equilibrium files.
     !
     !*PUBLIC MEMBER FUNCTIONS:
@@ -41,24 +41,27 @@ module inputs
         idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
         geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
+        shotnum,shottime,machine,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
         idcon_coords
-
+    
     implicit none
-
+    
     private
     public &
-         read_kin, &
-         read_pmodb, &
-         read_peq, &
-         set_peq, &
-         read_ipec_peq,&
-         read_equil, &
-         read_fnml, &
-         kin, xs_m, dbob_m, divx_m, fnml, &
-         chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
-         verbose
-
+        read_kin, &
+        read_pmodb, &
+        read_peq, &
+        set_peq, &
+        read_gpec_peq,&
+        read_equil, &
+        read_fnml, &
+        kin, xs_m, dbob_m, divx_m, fnml, &
+        geom,eqfun, sq, rzphi, smats, tmats, xmats, ymats, zmats, &
+        chi1,ro,zo,bo,nn,mfac,mpert,mthsurf, &
+        shotnum,shottime,machine,&
+        verbose
+    
     ! global variables with defaults
     logical :: verbose=.TRUE.
     type(spline_type) :: kin
@@ -171,13 +174,13 @@ module inputs
     !    file : character(256) (in)
     !       File path.
     !   zi : integer
-    !       Ion charge in fundemental units
+    !       Ion charge in fundamental units
     !   zimp : integer
-    !       Impurity ion charge in fundemental units
+    !       Impurity ion charge in fundamental units
     !   mi : integer
-    !       Ion mass in fundemental units (mass proton)
+    !       Ion mass in fundamental units (mass proton)
     !   mimp : integer
-    !       Impurity ion mass in fundemental units
+    !       Impurity ion mass in fundamental units
     !   wefac : real
     !       Direct multiplier for omegaE profiles
     !   wpfac : real
@@ -200,7 +203,7 @@ module inputs
         integer, parameter :: nkin = 100
         integer :: i,out_unit, tshape(2)
         real(r8) :: psi
-        real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wphi,wpefac
+        real(r8), dimension(0:nkin) :: zeff,zpitch,welec,wdian,wdiat,wpefac
         type(spline_type) :: tmp
         
         call readtable(file,table,titles,verbose,write_log)
@@ -225,7 +228,6 @@ module inputs
               call spline_eval(tmp,psi,0)
               kin%xs(i) = psi
               kin%fs(i,1:5) = tmp%f(1:5)
-              !print *,i,kin%fs(i,1:4)
         enddo
         
         ! convert temperatures to si units
@@ -240,6 +242,7 @@ module inputs
             /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
         kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
             /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
+
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
     
@@ -256,14 +259,15 @@ module inputs
         welec = wpefac*welec   ! indirect manipulation of rotation
         if(wpfac/=1.0 .and. verbose) then
             print('(a40,es10.2e3)'),'  -> manipulating rotation by factor of ',wpfac
-            print *,'     by indierct manipulation of omegae profile'
+            print *,'     by indirect manipulation of omegae profile'
         endif
         kin%fs(:,5) = welec(:)
         call spline_fit(kin,"extrap")
-        if(write_log) print *,"Reformed kin spline with rotation manipulatins"
+        if(write_log) print *,"Reformed kin spline with rotation manipulations"
 
         ! write log - designed as check of reading routines
         if(write_log)then
+        !if(.TRUE.)then
             out_unit = get_free_file_unit(-1)
             if(verbose) print *, "Writing kinetic spline to pentrc_kinetics.out"
             open(unit=out_unit,file="pentrc_kinetics.out",&
@@ -342,7 +346,7 @@ module inputs
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
-        !npsi = nunique(table(:,1)) !! computationally expensive + ipec n=3's can have repeates
+        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeates
         nm = nunique(table(:,2),op_sorted=.True.)
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
@@ -355,7 +359,7 @@ module inputs
         allocate(lagbmns(npsi,mpert),divxmns(npsi,mpert))
         firstnm = nunique(table(1:nm,2))
         if(firstnm==nm)then ! written with psi as outer loop
-            ms = table(1:nm,2)
+            ms = INT(table(1:nm,2))
             psi = (/(table(j,1),j=1,npsi*nm,nm)/)
             if(debug) print *,"psi outerloop"
             lagbmni(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/2,1/))&
@@ -365,7 +369,7 @@ module inputs
             kapxmni(:,:) = reshape(table(:,9),(/npsi,nm/),order=(/2,1/))&
                     +xj*reshape(table(:,10),(/npsi,nm/),order=(/2,1/))
         else ! written with m as outer loop
-            ms = (/(table(i,2),i=1,npsi*nm,npsi)/)
+            ms = (/(INT(table(i,2)),i=1,npsi*nm,npsi)/)
             psi = table(1:npsi,1)
             if(debug) print *,"m outerloop"
             lagbmni(:,:) = reshape(table(:,5),(/npsi,nm/),order=(/1,2/))&
@@ -376,7 +380,7 @@ module inputs
                     +xj*reshape(table(:,10),(/npsi,nm/),order=(/1,2/))
         endif
 
-        ! For consistency with IPEC-0.3.0 and smaller values near rationals
+        ! For consistency with GPEC-0.3.0 and smaller values near rationals
         if(verbose) print *,"  -> Using div(xi_perp) = -(dB/B+kappa.xi_perp)"
         divxmni = -(lagbmni+kapxmni)
 
@@ -395,6 +399,8 @@ module inputs
                 powin=(/0,1,0,0/)
             CASE("boozer")
                 powin=(/2,0,0,0/)
+            CASE("park")
+                powin=(/1,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
             CASE("other")
@@ -404,11 +410,14 @@ module inputs
                 endif
             CASE DEFAULT
                 stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
-                    & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
+                    & 'park','polar', or 'other'. Setting to 'default' uses idconfile jac_type."
         END SELECT
-        if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
+        if(verbose) then
+            print *,"  Displacements input in "//trim(jac_in)//" coordinates:"
+            print '(a29,4(I3))',"    -> b, bp, r, rc raised to",powin
+        endif
         if(jac_in/=jac_type .or. tmag_in/=1)then
-            if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
+            if(tmag_in/=1 .and. verbose) print *,'  Displacements input in cylindrical toroidal angle'
             if(verbose) print *,'Converting to '//trim(jac_type)//' coordinates used by DCON'
             ! make sure to use the larger of the input and working spectra
             if(mpert>nm)then
@@ -558,7 +567,7 @@ module inputs
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
-        !npsi = nunique(table(:,1)) !! computationally expensive + ipec n=3's can have repeats
+        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeats
         nm = nunique(table(:,2),op_sorted=.True.)
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
@@ -571,7 +580,7 @@ module inputs
         allocate(xmp1mns(npsi,mpert),xspmns(npsi,mpert),xmsmns(npsi,mpert))
         firstnm = nunique(table(1:nm,2))
         if(firstnm==nm)then ! written with psi as outer loop
-            ms = table(1:nm,2)
+            ms = INT(table(1:nm,2))
             psi = (/(table(j,1),j=1,npsi*nm,nm)/)
             if(debug) print *,"psi outerloop"
             !if(debug) print *,"ms = ",ms
@@ -583,7 +592,7 @@ module inputs
             xmsmni(:,:) = reshape(table(:,7),(/npsi,nm/),order=(/2,1/))&
                     +xj*reshape(table(:,8),(/npsi,nm/),order=(/2,1/))
         else ! written with m as outer loop
-            ms = (/(table(i,2),i=1,npsi*nm,npsi)/)
+            ms = (/(INT(table(i,2)),i=1,npsi*nm,npsi)/)
             psi = table(1:npsi,1)
             if(debug) print *,"m outerloop"
             !if(debug) print *,"ms = ",ms
@@ -611,6 +620,8 @@ module inputs
                 powin=(/0,1,0,0/)
             CASE("boozer")
                 powin=(/2,0,0,0/)
+            CASE("park")
+                powin=(/1,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
             CASE("other")
@@ -622,9 +633,12 @@ module inputs
                 stop "ERROR: inputs - jac_in must be 'hamada','pest','equal_arc','boozer',&
                     & 'polar', or 'other'. Setting to 'default' uses idconfile jac_type."
         END SELECT
-        if(verbose) print *,"  -> Displacements input in "//trim(jac_in)//" coordinates: b,bp,r,rc raised to",powin
+        if(verbose) then
+            print *,"  Displacements input in "//trim(jac_in)//" coordinates:"
+            print '(a29,4(I3))',"    -> b, bp, r, rc raised to",powin
+        endif
         if(jac_in/=jac_type .or. tmag_in/=1)then
-            if(tmag_in/=1 .and. verbose) print *,'     Displacements input in cylindrical toroidal angle'
+            if(tmag_in/=1 .and. verbose) print *,'  Displacements input in cylindrical toroidal angle'
             if(verbose) print *,'Converting to '//trim(jac_type)//' coordinates used by DCON'
             ! make sure to use the larger of the input and working spectra
             if(mpert>nm)then
@@ -645,11 +659,11 @@ module inputs
                 ! convert spectrum on each surface
                 do i=1,npsi
                     if(verbose) call progressbar(i,1,npsi,op_percent=20)
-                    CALL idcon_coords(psi(i),xmp1mns(i,:),ms,nm,&
+                    CALL idcon_coords(psi(i),xmp1mni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
-                    CALL idcon_coords(psi(i),xspmns(i,:),ms,nm,&
+                    CALL idcon_coords(psi(i),xspmni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
-                    CALL idcon_coords(psi(i),xmsmns(i,:),ms,nm,&
+                    CALL idcon_coords(psi(i),xmsmni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                     xmp1mns(i,:) = newm(nm,ms,xmp1mni(i,:),mpert,mfac)
                     xspmns(i,:) = newm(nm,ms,xspmni(i,:),mpert,mfac)
@@ -709,7 +723,6 @@ module inputs
         ! declare local variables
         logical :: debug,set_dbdx
         integer :: i,j,ims,istrt_psi,istop_psi,npsi,nm, out_unit
-        real(r8) :: r_mjr,r_mnr,jac,g12,g13,g22,g23,g33,gfac
         complex(r8), dimension(0:mthsurf) :: divxfun,dbobfun
         complex(r8), dimension(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
         complex(r8), dimension(:,:), allocatable :: jbbkapxmns,jbbdivxmns,jbbdbobmns
@@ -740,7 +753,6 @@ module inputs
             call cspline_alloc(xs_m(i),npsi-1,mpert)
             xs_m(i)%xs(0:) = psi(:)
         enddo
-
         do i =1,mpert
             ims = i+(mfac(1)-ms(1))
             if(ims>0 .and. ims<=nm)then        
@@ -764,12 +776,10 @@ module inputs
         if(associated(divx_m%xs)) call cspline_dealloc(divx_m)
         call cspline_alloc(dbob_m,npsi-1,mpert)     ! dB/B
         call cspline_alloc(divx_m,npsi-1,mpert)     ! nabla.xi_perp
-
         dbob_m%xs(0:) = psi(1:)
         divx_m%xs(0:) = psi(1:)
         if(set_dbdx)then
             if(verbose) print *,'Calculating dB/B, div(xi_prp)'
-            !call ipeq_alloc
             do i=istrt_psi,istop_psi
                 j = i-istrt_psi+1
                 if(verbose) call progressbar(j,1,npsi,op_percent=20)
@@ -876,7 +886,7 @@ module inputs
 
       
     !=======================================================================
-    subroutine read_ipec_peq(file,write_log)
+    subroutine read_gpec_peq(file,write_log)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
     !   Read pmodb and divxprp fourier components (psi,m) from input file.
@@ -893,7 +903,6 @@ module inputs
         ! declare variables            
         complex(r8), dimension(mstep,mpert) :: lagbpar,divxprp
         integer :: i,ms,mp,iout,istep,in_unit,out_unit
-        integer, dimension(:), allocatable :: mtemp
         type(cspline_type) :: outspl
     
           
@@ -903,7 +912,7 @@ module inputs
         open(unit=in_unit,file=file,status="old",position="rewind",form="unformatted")
         read(in_unit) ms,mp
         if((ms .ne. mstep) .or. (mp .ne. mpert)) then
-            stop "ERROR: inputs - IPEC perturbations don't match equilibrium"
+            stop "ERROR: inputs - GPEC perturbations don't match equilibrium"
         endif
         read(in_unit)lagbpar
         read(in_unit)divxprp
@@ -922,7 +931,7 @@ module inputs
         ! write log - designed as check of reading routines
         if(write_log)then
             out_unit = get_free_file_unit(-1)
-            print *, "Writing ipec lagb spline to pentrc_lagb.out"
+            print *, "Writing gpec lagb spline to pentrc_lagb.out"
             print *,"mpert = ",mpert
             print *,"mfac range = ",mfac(1),mfac(mpert)
             print *,"psifac range = ",psifac(1),psifac(mstep)
@@ -946,7 +955,7 @@ module inputs
             call cspline_write(outspl,.true.,.false.,out_unit,0,.true.)
             close(out_unit)
         endif
-    end subroutine read_ipec_peq
+    end subroutine read_gpec_peq
 
     
 end module inputs

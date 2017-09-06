@@ -11,13 +11,14 @@ module utilities
     !   All variables are public
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     use params, only: r8,twopi
+    use netcdf
     
     implicit none
     
@@ -208,37 +209,37 @@ module utilities
         integer, intent(in) :: mode
         integer, intent(in), optional :: unit
     
-        character(10) :: date,time,zone
-        integer, dimension(8) :: values
+        real(4) :: time
         real(4), save :: seconds
         integer :: hrs,mins,secs
-        
+
+        ! get current time
+        call cpu_time(time)
+
         ! write split
         if(mode/=0)then
-            call date_and_time(date,time,zone,values)
-            seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3-seconds
+            seconds=time-seconds
             secs = int(seconds)
             hrs = secs/(60*60)
             mins = (secs-hrs*60*60)/60
             secs = secs-hrs*60*60-mins*60
             if(present(unit))then
-                write(unit,"(1x,a,1p,e10.3,a)")"total cpu time = ",seconds," seconds"
+                write(unit,"(1x,a,1p,e10.3,a)")"Total cpu time = ",seconds," seconds"
             else
                 if(hrs>0)then
-                    print *,"total cpu time = ",hrs," hours, ", &
+                    print *,"Total cpu time = ",hrs," hours, ", &
                         mins," minutes, ",secs," seconds"
                 elseif(mins>0)then
-                    print *,"total cpu time = ", &
+                    print *,"Total cpu time = ", &
                         mins," minutes, ",secs," seconds"
                 else
-                    print *,"total cpu time = ",secs," seconds"
+                    print *,"Total cpu time = ",secs," seconds"
                 endif
             endif
         endif
         ! start timmer
         if(mode<=0)then
-            call date_and_time(date,time,zone,values)
-            seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+            seconds=time
         endif
         
         return
@@ -402,16 +403,14 @@ module utilities
         character(32), dimension(:), allocatable :: titles,dummies
         logical, optional :: verbose,debug
         ! declare local variables
-        integer :: i,j,k,l,in_unit,iostat,startline,endline,ncol
+        integer :: i,j,k,l,in_unit,startline,endline,ncol
         character(1024) :: line
         character(10) :: numbers = '1234567890'
         character(2) :: signs = '+-'
-        logical :: fexists,isnum
+        logical :: isnum
         
         ! setup
         if(.not. present(debug)) debug = .false.
-        !inquire(file=file,exist=fexists)
-        !if(.not. fexists) stop "File does not exist"
         if(verbose) print *, "Reading table from file: "
         if(verbose) print *, '  '//trim(file)
         if(allocated(table)) deallocate(table)
@@ -506,8 +505,7 @@ module utilities
         logical, optional :: op_sorted
         ! declare local variables
         logical,dimension(:), allocatable::mask
-        real(r8),dimension(:), allocatable::tmp
-        integer::i,j,num
+        integer::i,num
         logical :: sorted
         sorted = .FALSE.
         if(present(op_sorted)) sorted=op_sorted
@@ -556,7 +554,7 @@ module utilities
         real(r8), dimension(1:), intent(in) :: array
         real(r8) :: median
         real(r8), dimension(:), allocatable :: temp
-        integer :: i,n
+        integer :: n
         
   
         ! make a copy of array that is sorted min to max
@@ -705,7 +703,7 @@ module utilities
     !-----------------------------------------------------------------------
         implicit none
         ! declarations
-        integer :: i, isize
+        integer :: isize
         real(r8), intent(in) :: element
         real(r8), dimension(:), allocatable, intent(inout) :: list
         real(r8), dimension(:), allocatable :: tmp
@@ -840,5 +838,25 @@ module utilities
         func(fs)=func(0)
         return
     end subroutine iscdftb
-    
+
+    !=======================================================================
+    subroutine check(stat)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !  Check if a netcdf call was successful. If not, raise an error.
+    !
+    !*ARGUMENTS:
+    !    stat : integer
+    !       Status returned by a netcdf library function
+    !
+    !-----------------------------------------------------------------------
+        integer, intent (in) :: stat
+        !stop if it is an error.
+        if(stat /= nf90_noerr) then
+          print *, trim(nf90_strerror(stat))
+          stop "ERROR: failed to write/read netcdf file"
+        endif
+        return
+    end subroutine check
+
 end module utilities

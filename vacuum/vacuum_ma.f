@@ -62,7 +62,7 @@ c     initialization.
 c-----------------------------------------------------------------------
       call defglo
       ldcon = 1
-      lipec = 0
+      lgpec = 0
       open (iotty,file='mscvac.out',status='unknown')
       open (outpest,file='pestotv',status='unknown',form='formatted')
       open (inmode,file='vac.in',status='old', form='formatted' )
@@ -189,7 +189,7 @@ c     initialization.
 c-----------------------------------------------------------------------
       call defglo
       ldcon = 0
-      lipec = 1
+      lgpec = 1
       ieig = 0
       open (iotty,file='mscvac.out',status='unknown')
       open (outpest,file='pestotv',status='unknown',form='formatted')
@@ -730,7 +730,8 @@ c-----------------------------------------------------------------------
                zloops(i) = zinf(j)
                
                isgchix = int(rgdl(i))*isgchi
-               alph = atan2m (xinf(j+1)-xinf(j-1),zinf(j-1)-zinf(j+1))
+               k = max(1,j-1)
+               alph = atan2m (xinf(j+1)-xinf(k),zinf(k)-zinf(j+1))
                cosalph = COS(alph)
                sinalph = SIN(alph) 
                bxr(i) = bnkr(j)*cosalph/gpsjp(j) + 

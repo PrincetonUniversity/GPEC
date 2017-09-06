@@ -22,14 +22,14 @@ module pentrc_interface
     !   rzphi, bicube_type      - (psi,theta) Cylindrical coordinate & Jacobian
     !
     !*REVISION HISTORY:
-    !     2014.03.06 -Logan- initial writting. 
+    !     2014.03.06 -Logan- initial writing.
     !
     !-----------------------------------------------------------------------
     ! AUTHOR: Logan
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only: r8,xj
+    use params, only: r8,xj, npsi_out, nmethods, methods, docs
     use utilities, only: timer,to_upper,get_free_file_unit
     use special, only: set_fymnl,set_ellip
     use dcon_interface, only: set_eq, idcon_harvest
@@ -38,27 +38,27 @@ module pentrc_interface
     use diagnostics, only: diagnose_all
 
     use energy_integration, only: &
-        output_energy_record,&                       ! subroutines
-        xatol,xrtol,xmax,ximag,xnufac,&             ! reals
-        xnutype,xf0type,&                           ! character(32)
+        output_energy_netcdf,output_energy_ascii,&  ! subroutine
+        xatol,xrtol,xmax,ximag,xnufac, &            ! real
+        xnutype,xf0type,&                           ! character
         qt,xdebug                                   ! logical
     use pitch_integration, only: &
-        output_pitch_record,&                       ! subroutines
-        lambdaatol,lambdartol,&                     ! reals
+        output_pitch_netcdf,output_pitch_ascii,&                       ! subroutines
+        lambdaatol,lambdartol,&                     ! real
         lambdadebug                                 ! logical
     use torque, only : &
         tintgrl_lsode,tintgrl_grid,tpsi,&           ! functions
-        output_bouncefun_ascii,&                    ! subroutines
+        output_orbit_ascii,&
+        output_orbit_netcdf,output_torque_netcdf,&  ! subroutines
         ntheta,nlmda,nthetafuns,&                   ! integers
-        atol_psi,rtol_psi,&                               ! reals
+        atol_psi,rtol_psi,&                         ! real
         tdebug,output_ascii,output_netcdf,&         ! logical
-        mpert,mfac                                  !! hacked for test writting
+        mpert,mfac                                  !! hacked for test writing
     use global_mod, only: version                   ! GPEC package
 
     implicit none
 
     ! declarations and defaults
-    integer, parameter :: nflags=18
     logical :: &
         fgar_flag=.true.,&
         tgar_flag=.false.,&
@@ -91,7 +91,8 @@ module pentrc_interface
         diag_flag=.false.,&
         term_flag=.false.,&
         clean=.true.,&
-        flags(nflags)=.false.
+        flags(nmethods)=.false.,&
+        indebug=.false.
 
     integer :: i, &
         mi=2, &
@@ -104,8 +105,7 @@ module pentrc_interface
         power_bin = -1,&
         power_bpin = -1,&
         power_rin = -1,&
-        power_rcin = -1,&
-        nout = 30
+        power_rcin = -1
 
     real(r8) ::    &
         atol_xlmda=1e-6, &
@@ -118,21 +118,20 @@ module pentrc_interface
         nufac=1.0, &
         divxfac=1.0, &
         diag_psi = 0.7, &
-        psilims(2) = (/0,1/), &
-        psi_out(30)= -1
-    real(r8), dimension(:,:), allocatable :: thetatable,thetafuns
+        psi_out(npsi_out) = -1, &
+        psilims(2) = (/0,1/)
+    !real(r8), dimension(npsi_out) :: psi_out
     complex(r8) :: tphi  = (0,0), tsurf = (0,0), teq = (0,0)
     complex(r8), dimension(:,:,:), allocatable :: wtw
 
-    character(4) :: nstring,method,methods(nflags)
+    character(4) :: nstring,method
     character(512) :: &
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
-        ipec_file  ="ipec_order1_n1.bin", &
-        peq_file ="ipec_xclebsch_n1.out", &
+        gpec_file  ="gpec_order1_n1.bin", &
+        peq_file ="", &
         pmodb_file ="none", &
-        data_dir =".",&
-        docs(nflags)=""
+        data_dir ="."
     character(32) :: &
         nutype = "harmonic",&
         f0type = "maxwellian",&
@@ -140,7 +139,7 @@ module pentrc_interface
         moment = "pressure"
 
     ! namelists
-    namelist/pent_input/kinetic_file,ipec_file,peq_file,pmodb_file,idconfile, &
+    namelist/pent_input/kinetic_file,gpec_file,peq_file,pmodb_file,idconfile, &
         data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
         jac_in,jsurf_in,tmag_in,power_bin,power_bpin,power_rin,power_rcin
 
@@ -155,8 +154,8 @@ module pentrc_interface
         term_flag,verbose,clean
 
     namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
-        tdebug,xdebug,lambdadebug
-        
+        tdebug,xdebug,lambdadebug,indebug
+
     private :: i ! these conflict with the dcon namespace
 
     contains    
@@ -177,7 +176,7 @@ module pentrc_interface
     !   op_deq : logical (default true)
     !       Read dcon euler.bin description of the equilibrium
     !   op_peq : logical (default true)
-    !       Read ascii table of clesch displacement profiles
+    !       Read ascii table of clebsch displacement profiles
     !
     !*RETURNS:
     !
@@ -186,6 +185,7 @@ module pentrc_interface
         logical, optional, intent(in) :: op_kin,op_deq,op_peq
         logical :: in_kin,in_deq,in_peq
         integer :: i
+        character(3) :: nstr
 
         ! defaults
         in_kin = .true.
@@ -224,18 +224,25 @@ module pentrc_interface
         lambdartol = rtol_xlmda
 
         ! read (perturbed) equilibrium inputs
-        if(tdebug .and. in_kin) print *,"  read_kin args: ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
+        if(indebug .and. in_kin) print *,"  read_kin args: ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug
         if(in_deq) call read_equil(idconfile)
-        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
+        if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
         if(in_peq)then
-            call read_peq(peq_file,jac_in,jsurf_in,tmag_in,tdebug,&
+            if(peq_file=="")then
+               write(nstr,'(i3)')nn
+               peq_file="gpec_xclebsch_n"//trim(adjustl(nstr))//".out" 
+            endif            
+            call read_peq(peq_file,jac_in,jsurf_in,tmag_in,indebug,&
                           op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
-            !call read_ipec_peq(ipec_file,tdebug)
+            !if(gpec_file=="")then
+            !   write(nstr,'(i3)')nn
+            !   gpec_file="gpec_order1_n"//trim(adjustl(nstr))//".bin" 
+            !endif
+            !call read_gpec_peq(gpec_file,indebug)
             if(trim(pmodb_file)/="" .and. trim(pmodb_file)/="none")&
-                call read_pmodb(pmodb_file,jac_in,jsurf_in,tmag_in,tdebug,&
+                call read_pmodb(pmodb_file,jac_in,jsurf_in,tmag_in,indebug,&
                                 op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
         endif
-
     end subroutine initialize_pentrc
 
     !=======================================================================
@@ -280,11 +287,11 @@ module pentrc_interface
         lambdartol = rtol_xlmda
         
         ! set the kinetic spline
-        if(tdebug)THEN
+        if(indebug)THEN
             print *,"read_kin args:"
             print *,"  ",trim(kinetic_file),zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug
         endif
-        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,tdebug)
+        call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
 
         ! transfer torque function variables to external program
         get_nl = nl
@@ -301,4 +308,4 @@ module pentrc_interface
     
 end module pentrc_interface
     
-    
+

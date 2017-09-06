@@ -1,8 +1,8 @@
 &PENT_INPUT
     kinetic_file="g147131.02300_DIIID_KEFIT.kin"          ! ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
-    peq_file  = "ipec_xclebsch_n1.out"  ! ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha)
+    peq_file  = "gpec_xclebsch_n1.out"  ! ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha)
     idconfile = "euler.bin"             ! dcon output
-    data_dir = "."                      ! Location of pre-formed fnml matrix used in rlar and clar methods (check release package)
+    data_dir = ""                       ! Location of pre-formed fnml matrix used in rlar and clar methods (check release package)
 
     mi = 2                              ! main ion mass (u)
     zi = 1                              ! main ion charge (e)
@@ -13,8 +13,8 @@
     nutype = "harmonic"                 ! collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! distribution function: "maxwellian"
     jac_in = "pest"                     ! jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
-    jsurf_in=0                          ! True(1) if peq_file is area weighted
-    tmag_in =0                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
+    jsurf_in=0                          ! true(1) if peq_file is area weighted
+    tmag_in =0                          ! true(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
 /                                       
 &PENT_CONTROL                           
     wefac = 1                           ! artificial factor applied to omega_EXB
@@ -32,7 +32,7 @@
 
     xmax = 128                          ! upper bound of energy integral (x=E/T)
     ximag = 0.0                         ! step off real energy axis (use to avoid zero collisionality singularities)
-    psilims = 0 1                        ! range in psi_n
+    psilims = 0 1                       ! range in psi_n
 /
 &PENT_OUTPUT
     moment = "pressure"                 ! 'pressure' for torque and particle transport, 'heat' for heat transport
@@ -62,6 +62,7 @@
     fnml_flag = .false.                 ! special function matrix [JKP PRL 2009]
     ellip_flag = .false.                ! elliptic integral functions
     diag_flag = .false.                 ! diagnostic module
+    indebug = .false.                   ! debug input file parsing and manipulations
     tdebug = .false.                    ! debug psi integration
     lambdadebug = .false.               ! debug pitch integration
     xdebug = .false.                    ! debug energy integration

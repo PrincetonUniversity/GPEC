@@ -6,7 +6,7 @@
 
     sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
-    qhigh=1e3            ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
+    qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
@@ -28,13 +28,15 @@
     electron_flag = f    ! Calculates electron contributions
 	parallel_threads=16  ! Parallel calculations of the kinetic matrix components (2*nl+1 is recommended, where nl is defined in pentrc.in)
 
-    tol_nr=1e-5          ! Relative tolerance of dynamic integration steps away from rationals
-    tol_r=1e-6           ! Relative tolerance of dynamic integration steps near rationals
+    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
-    ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
+    ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 /
 &DCON_OUTPUT
+    out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
+
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
@@ -48,4 +50,6 @@
     bin_bal1=f           ! Binary output for bal_flag poloidal functions
     out_bal2=f           ! Ascii output for bal_flag functions
     bin_bal2=f           ! Binary output for bal_flag functions
+
+    netcdf_out=t         ! Replicate ascii dcon.out information in a netcdf file
 /

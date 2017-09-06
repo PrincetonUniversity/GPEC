@@ -23,18 +23,35 @@ c-----------------------------------------------------------------------
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. field_bs_psi.
-c     calculate 3d field spectrum on a psi using biot-savart law.
-c-----------------------------------------------------------------------
+c
+c     *DESCRIPTION:
+c        Calculate 3d field spectrum on a psi using biot-savart law.
+c
+c     *ARGUMENTS:
+c         psi : real
+c            Flux surface on which biat-savart field is decomposed
+c            magnetic fourier components
+c         bmn : real array
+c            Fourier spectrum of normal field on psi. Coordinates are jac_type?
+c         wegt : integer
+c            Surface area weighting flag (like jsurf).
+c         op_start : integer (optional)
+c            Field from coils op_start to op_stop is calculated. Default is 1 to coil_num.
+c         op_stop : integer (optional)
+c            Field from coils op_start to op_stop is calculated. Default is 1 to coil_num.
+c
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE field_bs_psi(psi,bmn,wegt)
+      SUBROUTINE field_bs_psi(psi,bmn,wegt,op_start,op_stop)
 
       REAL(r8), INTENT(IN) :: psi
       INTEGER, INTENT(IN) :: wegt
+      INTEGER, INTENT(IN), OPTIONAL :: op_start,op_stop
       COMPLEX(r8), DIMENSION(cmpert) :: bmn
 
-      INTEGER :: i,j,k,isec,iseg,itheta,izeta,ipsi,ipert,nseg
+      INTEGER :: i,j,k,iseg,itheta,izeta,ipert,nseg,
+     $    istart,istop
 
       REAL(r8) :: rfac,eta,phi,jac,delpsi,rr,zz,rx,ry,rz,dl,
      $     cosang,sinang,w11,w12,area
@@ -47,6 +64,11 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
+
+      istart = 1
+      istop = coil_num
+      IF(PRESENT(op_start)) istart = op_start
+      IF(PRESENT(op_stop)) istop = op_stop
 
       tbx=0
       tby=0
@@ -62,8 +84,7 @@ c-----------------------------------------------------------------------
       aspl%xs=ctheta
       area=1.0
       
-      DO i=1,coil_num
-         
+      DO i=istart,istop
          nseg=coil(i)%nsec-1
 
          ALLOCATE(xa(coil(i)%ncoil,coil(i)%s,nseg),
@@ -214,11 +235,11 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:nr,0:nz) :: gdr,gdz
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: cbr,cbz,cbp
 
-      INTEGER :: i,j,k,isec,iseg,ir,iz,ip,nseg
+      INTEGER :: i,j,k,iseg,ir,iz,ip,nseg
 
       REAL(r8) :: phi,rx,ry,rz,dl,cosang,sinang,dlmin
       REAL(r8), DIMENSION(0:nr,0:nz,0:np) :: xobs,yobs,zobs,
-     $     bx,by,bz,br,bp,bn
+     $     bx,by,bz,br,bp
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: tbr,tbz,tbp
       REAL(r8), DIMENSION(:,:,:), POINTER :: xa,ya,za,
      $     dx,dy,dz,dbx,dby,dbz

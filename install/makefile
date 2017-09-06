@@ -1,15 +1,21 @@
 
 include DEFAULTS.inc
 
+# extend these variables to sub-makes
+FFLAGS ?=
+CFLAGS ?=
+export FFLAGS
+export CFLAGS
+
 # compile package
 
 .IGNORE:
 
 all: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
-	xdraw coil ipec mkbin
+	xdraw coil gpec mkbin
 
 allf: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
-	coil ipec mkbin
+	coil gpec mkbin
 
 
 # executables:
@@ -21,40 +27,40 @@ harvest:
 	cp -f ../harvest/libharvest.a ../lib/
 
 xdraw:
-	cd ../xdraw;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../xdraw;  make
 
 lsode:
-	cd ../lsode;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../lsode;  make liblsode
 
 equil:
-	cd ../equil;  make -f makefile cflag=$(cflag) options=$(options)
-
-orbit:
-	cd ../orbit;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../equil;  make libequil
 
 vacuum:
-	cd ../vacuum; make -f makefile cflag=$(cflag) options=$(options)
+	cd ../vacuum; make libvac
+
+orbit:
+	cd ../orbit;  make orbit
 
 dcon:
-	cd ../dcon;   make -f makefile cflag=$(cflag) options=$(options)
+	cd ../dcon;   make dcon
 
 match:
-	cd ../match;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../match;  make match
 
 multi:
-	cd ../multi;  make -f makefile cflag=$(cflag) options=$(options)
+	cd ../multi;  make multi
 
 sum:
-	cd ../sum;    make -f makefile cflag=$(cflag) options=$(options)
+	cd ../sum;    make sum
 
 coil:
-	cd ../coil;   make -f makefile cflag=$(cflag) options=$(options)
+	cd ../coil;   make libcoil
 
-ipec:  
-	cd ../ipec;   make -f makefile cflag=$(cflag) options=$(options)
+gpec:
+	cd ../gpec;   make gpec
 
 pentrc:  
-	cd ../pentrc; make -f makefile cflag=$(cflag) options=$(options)
+	cd ../pentrc; make pentrc
 
 mkbin:
 	mkdir -p ../bin
@@ -64,9 +70,8 @@ mkbin:
 	cp -f ../match/match ../bin
 	cp -f ../multi/multi ../bin
 	cp -f ../sum/sum ../bin
-	cp -f ../ipec/ipec ../bin
+	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
-	cp -f ../input/mput ../bin
 
 # print verbose info
 
@@ -104,8 +109,19 @@ clean:
 	cd ../multi;  make clean
 	cd ../sum;    make clean
 	cd ../coil;   make clean
-	cd ../ipec;   make clean
+	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 
+clear: 
+	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/run_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/a10_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/a10_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/DIIID_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/DIIID_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/solovev_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/solovev_kinetic_example; rm -f *.out *.bin *.nc
+
 realclean: clean
+	clear
 	rm -rf ../lib ../bin

@@ -33,3 +33,9 @@ The DEFAULTS.inc sets a number of variables based on conditionals that determine
   make FC=lfc
 
 The executable then must be manually copied to the package bin directory.
+
+To do a thorough debugging, try adding more flags with the FFLAGS variable. Try,
+
+  make FFLAGS="-g -O0 -Wall -fbacktrace -fcheck=all"
+
+for example.

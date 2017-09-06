@@ -23,7 +23,7 @@ c-----------------------------------------------------------------------
       USE free_mod
       USE resist_mod
       USE pentrc_interface,         ! rename overlapping names
-     $    pentrc_verbose=>verbose,  ! should get a more fundemental fix
+     $    pentrc_verbose=>verbose,  ! should get a more fundamental fix
      $    pentrc_mpert=>mpert,
      $    pentrc_nn=>nn,
      $    pentrc_r8=>r8,
@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb
+     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -172,7 +172,7 @@ c-----------------------------------------------------------------------
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
          CALL fourfit_make_metric
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
-         CALL fourfit_make_matrix
+         CALL fourfit_make_matrix(out_fund)
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
          IF(kin_flag)THEN
@@ -196,7 +196,7 @@ c-----------------------------------------------------------------------
             CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,tdebug)
             DEALLOCATE(xtmp,mtmp,psitmp)
             IF(verbose) WRITE(*,*)"Computing Kinetic Matrices"
-            CALL fourfit_kinetic_matrix(kingridtype,.TRUE.)
+            CALL fourfit_kinetic_matrix(kingridtype,out_fund)
          ENDIF
          CALL sing_scan
          DO ising=1,msing
@@ -222,7 +222,7 @@ c-----------------------------------------------------------------------
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          IF(verbose) WRITE(*,*)"Computing free boundary energies"
          ALLOCATE(ud(mpert,mpert,2))
-         CALL free_run(plasma1,vacuum1,total1,nzero)
+         CALL free_run(plasma1,vacuum1,total1,nzero,netcdf_out)
          DEALLOCATE(ud)
       ELSE
          plasma1=0

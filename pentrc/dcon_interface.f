@@ -5,7 +5,7 @@ c-----------------------------------------------------------------------
 c     !! SELECT ROUTINES FROM IDEAL PERTURBED EQUILIBRIUM CONTROL !!
 c     Subroutines by Jong-Kyu Park for interfacing with DCON outputs.
 c     For the majority, these are identical to counterparts in the
-c     IPEC idcon module. There are a few additions from ipeq and ismath
+c     GPEC idcon module. There are a few additions from ipeq and ismath
 c     modules.
 c     Major changes are:
 c     - psixy=1 IF statement that optionally read psi_in.bin removed (no ieqfile)
@@ -40,22 +40,22 @@ c-----------------------------------------------------------------------
      $     nn,mmin,mmax
 
       REAL(r8) :: bo,ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
-     $     singfac_min,   amean,rmean,aratio,kappa,delta1,delta2,
+     $     singfac_min,amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
      $     q0,qmin,qmax,qa,crnt,q95,shotnum,shottime
       COMPLEX(r8), PARAMETER  :: ifac = (0,1)
       CHARACTER(16) :: jac_type,machine
       CHARACTER(128) :: idconfile
 
-      LOGICAL, DIMENSION(:), POINTER :: sing_flag
-      INTEGER, DIMENSION(:), POINTER :: fixstep,mfac,lmfac
+      LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
+      INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
 
-      REAL(r8), DIMENSION(:), POINTER :: psifac,rhofac,qfac,singfac,
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac,rhofac,qfac,singfac,
      $     r,z,theta,et,ep,ee,eft,efp
 
-      COMPLEX(r8), DIMENSION(:), POINTER ::
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE ::
      $     edge_mn,edge_fun
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: wt,wt0,wft,wtraw,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,wft,wtraw,
      $     amat,bmat,cmat,fmats,gmats,kmats
 
       TYPE(spline_type) :: sq,geom
@@ -70,25 +70,25 @@ c-----------------------------------------------------------------------
 
       TYPE :: solution_type
       INTEGER :: msol
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
       END TYPE solution_type
 
       TYPE :: fixfac_type
       INTEGER :: msol
-      INTEGER, DIMENSION(:), POINTER :: index
-      COMPLEX(r8), DIMENSION(:,:), POINTER :: fixfac,transform,gauss
+      INTEGER, DIMENSION(:), ALLOCATABLE :: index
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fixfac,transform,gauss
       END TYPE fixfac_type
 
       TYPE :: sing_type
       INTEGER :: msol_l,msol_r,jfix,jpert
       REAL(r8) :: psifac,q,q1
-      COMPLEX(r8), DIMENSION(:,:,:), POINTER :: ca_l,ca_r
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: ca_l,ca_r
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
-      TYPE(solution_type), DIMENSION(:), POINTER :: soltype
-      TYPE(fixfac_type), DIMENSION(:), POINTER :: fixtype
-      TYPE(sing_type), DIMENSION(:), POINTER :: singtype
+      TYPE(solution_type), DIMENSION(:), ALLOCATABLE :: soltype
+      TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
+      TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype
 
 !$OMP THREADPRIVATE(geom,sq)
 
@@ -105,10 +105,10 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: lpsixy
       CHARACTER(128) :: message
       CHARACTER(2) :: sn
-      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,i,in_unit
+      INTEGER :: m,data_type,ifix,ios,msol,istep,ising,itheta,in_unit
       REAL(r8) :: sfac0
 
-      REAL(r4), DIMENSION(:,:), POINTER :: rgarr,zgarr,psigarr
+      REAL(r4), DIMENSION(:,:), ALLOCATABLE :: rgarr,zgarr,psigarr
 c-----------------------------------------------------------------------
 c     open euler.bin and read header.
 c-----------------------------------------------------------------------
@@ -133,6 +133,8 @@ c-----------------------------------------------------------------------
          jac_type="equal_arc"
       ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="boozer"
+      ELSE IF ((power_b==1).AND.(power_bp==0).AND.(power_r==0)) THEN
+         jac_type="park"
       ELSE
          jac_type="other"
       ENDIF
@@ -167,7 +169,6 @@ c-----------------------------------------------------------------------
 c     read equilibrium on flux coordinates.
 c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
-
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
 
       rzphi%periodic(2)=.TRUE.
@@ -436,7 +437,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ifix,jfix,kfix,ieq,info
+      INTEGER :: istep,ifix,jfix,kfix,info
       INTEGER, DIMENSION(mpert) :: ipiv
       COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
@@ -517,10 +518,10 @@ c-----------------------------------------------------------------------
       CALL bicube_alloc(eqfun,mpsi,mtheta,3)
       eqfun%xs=rzphi%xs
       eqfun%ys=rzphi%ys
-      eqfun%name="equilibrium funs"
-      eqfun%xtitle="psi"
+      eqfun%name="eqfuns" ! 1D equilibrium functions
+      eqfun%xtitle="psi  "
       eqfun%ytitle="theta"
-      eqfun%title=(/" modb  "," divx1 "," divx2 "/)      
+      eqfun%title=(/"modb  ","divx1 ","divx2 "/)
 c-----------------------------------------------------------------------
 c     begin loop over nodes.
 c-----------------------------------------------------------------------
@@ -661,7 +662,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(128) :: message
       INTEGER :: ipert,jpert,m1,m2,m,dm,info,iqty
-      REAL(r8) :: jtheta,nq,singfac1,singfac2,rm
+      REAL(r8) :: jtheta,nq,singfac1,singfac2
       REAL(r8) :: q,q1,p,p1
       INTEGER, DIMENSION(mpert) :: ipiva
       COMPLEX(r8), DIMENSION(mpert*mpert) :: work
@@ -779,7 +780,7 @@ c-----------------------------------------------------------------------
          WRITE(message,'(a,e12.3,a,i3,a)')
      $        "zpbtrf: fmat singular at psi = ",psi,
      $        ", ipert = ",info,", reduce delta_mband"
-         !CALL ipec_stop(message)
+         !CALL gpec_stop(message)
          PRINT *,message
          STOP         
       ENDIF
@@ -844,7 +845,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER :: ipsi,istep,ipert,jpert,itheta,dm,m1,m2
+      INTEGER :: ipsi,ipert,jpert,itheta,dm,m1,m2
       REAL(r8) :: psi,angle,rs,
      $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht,
      $     p1,q,rfac,eta,jac,jac1
@@ -866,7 +867,6 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(xmats,mpsi,mpert**2)
       CALL cspline_alloc(ymats,mpsi,mpert**2)
       CALL cspline_alloc(zmats,mpsi,mpert**2)
-
       smats%xs=sq%xs
       tmats%xs=sq%xs
       xmats%xs=sq%xs
@@ -879,8 +879,8 @@ c-----------------------------------------------------------------------
       fmodb%name="fmodb"
       fmodb%xtitle=" psi  "
       fmodb%ytitle="theta "
-      fmodb%title=(/" smat  "," tmat  "," xmat  ",
-     $     " ymat1 "," ymat2 "," zmat1 ", " zmat2 "," zmat3 "/)
+      fmodb%title=(/" smat "," tmat "," xmat ",
+     $     "ymat1 ","ymat2 ","zmat1 ","zmat2 ","zmat3 "/)
 c-----------------------------------------------------------------------
 c     computes fourier series of geometric tensors.
 c-----------------------------------------------------------------------
@@ -993,7 +993,6 @@ c-----------------------------------------------------------------------
       CALL cspline_fit(ymats,"extrap")
       CALL cspline_fit(zmats,"extrap")
 
-      !CALL ipeq_dealloc
       CALL fspline_dealloc(fmodb)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1063,7 +1062,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(amp), INTENT(IN) :: amf
       COMPLEX(r8), DIMENSION(amp), INTENT(INOUT) :: ftnmn
 
-      INTEGER :: i,ising,itheta
+      INTEGER :: i,itheta
       REAL(r8) :: thetai,jarea,
      $      rfac,eta,jac,bpfac,btfac,bfac,fac
 
@@ -1270,7 +1269,6 @@ c-----------------------------------------------------------------------
         firstsurf = .TRUE.
         do ipsi=0,sq%mx
             psifac = geom%xs(ipsi)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if(firstsurf .OR. psifac/=psave .OR. mthsurf/=fsave)then
                if(firstsurf)then
                   allocate(jacs(0:mthsurf),delpsi(0:mthsurf),
@@ -1284,7 +1282,7 @@ c-----------------------------------------------------------------------
                      endif
                   endif
                   if(allocated(delpsi))then
-                     if(lbound(delpsi,1).NE.0 .OR. 
+                     if(lbound(delpsi,1).NE.0 .OR.
      $                    ubound(delpsi,1).NE.mthsurf)then
                         deallocate(delpsi)
                         allocate(delpsi(0:mthsurf))
@@ -1308,8 +1306,6 @@ c-----------------------------------------------------------------------
             endif
             geom%fs(ipsi,1) = issurfint(unitfun,mthsurf,psifac,0,0,
      $           fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if(firstsurf .OR. psifac/=psave .OR. mthsurf/=fsave)then
                if(firstsurf)then
                   allocate(jacs(0:mthsurf),delpsi(0:mthsurf),
@@ -1347,8 +1343,6 @@ c-----------------------------------------------------------------------
             endif
             geom%fs(ipsi,2) = issurfint(unitfun,mthsurf,psifac,3,1,
      $           fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if(firstsurf .OR. psifac/=psave .OR. mthsurf/=fsave)then
                if(firstsurf)then
                   allocate(jacs(0:mthsurf),delpsi(0:mthsurf),
@@ -1386,14 +1380,13 @@ c-----------------------------------------------------------------------
             endif
             geom%fs(ipsi,3) = issurfint(unitfun,mthsurf,psifac,1,1,
      $           fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         enddo
-         call spline_fit(geom,"extrap")
+        enddo
+        call spline_fit(geom,"extrap")
         !call spline_int(geom) ! not necessary yet
 
         ! evaluate field on axis
-         call spline_eval(sq,0.0_r8,0)
-         bo = abs(sq%f(1))/(twopi*ro)
+        call spline_eval(sq,0.0_r8,0)
+        bo = abs(sq%f(1))/(twopi*ro)
 
       end subroutine set_geom
 
@@ -1438,7 +1431,7 @@ c-----------------------------------------------------------------------
         real(r8) :: set_ro,set_chi1
         !real(r8), dimension(:) :: set_psifac
         character(*), intent(in) :: set_jac_type
-
+        
         type(spline_type) :: set_sq
         type(bicube_type) :: set_eqfun,set_rzphi
         type(cspline_type) :: set_smats,set_tmats,set_xmats,
@@ -1451,7 +1444,7 @@ c-----------------------------------------------------------------------
         sq      =set_sq
         rzphi   =set_rzphi
         mpsi = sq%mx
-        
+
         ! needed to create w_i^T*w_j coefficient matices
         smats   =set_smats 
         tmats   =set_tmats
@@ -1474,6 +1467,7 @@ c-----------------------------------------------------------------------
         
         ! set additional geometric spline
         call set_geom
+
       end subroutine set_eq
       
 c-----------------------------------------------------------------------

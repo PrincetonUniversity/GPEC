@@ -3,12 +3,12 @@
 :mod:`pypec.gpec` -- Python Wrappers for FORTRAN Codes
 ======================================================
 
-This is a collection of wrapper functions for running DCON, IPEC, and PENT.
+This is a collection of wrapper functions for running DCON, GPEC, and PENT.
 
 If run from the command line, this module will call an associated GUI.
 
 This module is for more advanced operators who want to control/run 
-the fortran package for DCON, IPEC, and PENT. To get started, lets
+the fortran package for DCON, GPEC, and PENT. To get started, lets
 explore the package
 
 >>> gpec.
@@ -28,7 +28,7 @@ change what we want to
 >>> new_inputs['dcon']['DCON_CONTROL']['nn']=2
 >>> new_dir = new_inputs.indir[:-2]+'2'
 
-DOUBLE CHECK THAT ALL IPUTS ARE WHAT YOU EXPECT (not shown here)
+*Double check that all inputs are what you expect* (not shown here)
 and submit the job to the cluster.
 
 >>> gpec.run(loc=new_dir,**new_inputs.infiles)
@@ -90,24 +90,19 @@ class InputSet:
     """
     Class designed to hold the standard inputs for a run.
 
-    Attributes:
-      rundir : str. 
-        Location of executables, .dat files, and extra .in files.
-      indir  : str. 
-        Location of .in files read in and stored here
-      infiles: dict. 
-        Tree like storage of namelist objects.
+    :Attributes:
+
+        - rundir: str. Location of executables, .dat files, and extra .in files.
+        - indir: str. Location of .in files read in and stored here
+        - infiles: dict. Tree like storage of namelist objects.
 
     """
     def __init__(self,rundir=packagedir+'bin',indir=packagedir+'input'):
         """
-        Initializes the intance.
+        Initializes the instance.
 
-        Key Word Arguments: 
-          rundir : str. 
-            Location of IPEC package rundirectory.
-          indir  : str. 
-            Location of .in namelist files to read.
+        :param rundir: str. Location of GPEC package rundirectory.
+        :param indir : str. Location of .in namelist files to read.
 
         """
         self.rundir = rundir.rstrip('/')+'/' # want ending /
@@ -133,9 +128,8 @@ def _newloc(loc):
     Utility function for making and moving to a new location.
     Note: First 2 directories counted pre-/ must exist already.
     
-    Arguments: 
-      loc : str. 
-        Directory to make and/or move to.
+    :param loc: str. Directory to make and/or move to.
+
     """
     dirs = os.path.abspath(loc).split('/')
     for i in range(2,len(dirs)+1):
@@ -151,67 +145,37 @@ def _newloc(loc):
         
 
 
-def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=False,
-        rundcon=True,runipec=True,runpentrc=True,cleandcon=False,fill_inputs=False,
-        mailon='ae',email='',mem=1e4,
-        runpent=False,optpentrc=False,pent_tol=0,**kwargs):
+def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun=False,
+        rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,
+        mailon='NONE',email='',mem=3e3,hours=36,partition='sque',runipec=False,qsub=None,**kwargs):
     """
-    Python wrapper for running ipec package.
+    Python wrapper for running gpec package.
     
-    Key Word Arguments:
-      loc      : str. 
-        Directory location for run.
-      rundir   : str. 
-        IPEC package directory with executables and .dat files.
-      qsub     : bool. 
-        Submit job to cluster.
-      return_on_complete : bool. 
-        Return only after job is finished on cluster (irrelevant if qsub=False).
-      rerun : bool.
-        Does not delete existing .out files.
-      rundcon  : bool. 
-        Run dcon.
-      runipec  : bool. 
-        Run ipec.
-      runpentrc : bool.
-        Run pentrc.
-      cleandcon : bool.
-        Remove euler.bin file after run is complete.
-      fill_inputs : bool. 
-        Use inputs from rundir (see kwargs).
-      mailon   : str. 
-        Any combination of a,b,e for on interruption
-        execution, and termination respectively.
-      email    : str. 
-        Email address.
-      mem : float
-        Memory request of q-submission in megabytes (converted to integer).
-    
-    Deprecated Key Word Arguments:
-      runpent : bool.
-        Run deprecated pent program.
-      optpentrc : bool.
-        Run OPENTRC executable pentrc optimization (under construction).
-      pent_tol : float. 
-        Acceptable torque error. pent_tol>0 tries maskpsi of 32,16,4,2,1 
-        until convergence or 1. Forced to 0 when qsub is true.
-    ..note::
-      Deprecated kwrags are kept for a time so as to avoid incorrect assumption
-      that they are input files.
-    
-    Additional key word arguments:
-      kwargs   : dict. 
-        namelist instance(s) written to <kwarg>.in file(s).
-        
-    .. note:: 
+    :param loc: str. Directory location for run.
+    :param rundir: str. GPEC package directory with executables and .dat files.
+    :param submit: bool. Submit job to cluster.
+    :param return_on_complete: bool. Return only after job is finished on cluster (irrelevant if qsub=False).
+    :param rerun: bool. Does not delete existing .out files.
+    :param rundcon: bool. Run dcon.
+    :param runipec: bool. Run ipec.
+    :param rungpec: bool. Run gpec.
+    :param runpentrc: bool. Run pentrc.
+    :param cleandcon: bool. Remove euler.bin file after run is complete.
+    :param fill_inputs: bool. Use inputs from rundir (see kwargs).
+    :param mailon: str. Choose from NONE, BEGIN, END, FAIL, REQUEUE, or ALL.
+    :param email: str. Email address (default is submitting user).
+    :param mem: floatMemory request of q-submission in megabytes (converted to integer).
+    :param hours: int. Number of hours requested from job manager.
+    :param partition: str. Specify a specific computing queue (e.g. 'ellis'). Default auto-changes to mque for mem>3e3.
+    :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
+
+    .. note::
       Namelists taken from (in order of priority): 
       1) Key word arguments 
       2) .in files from loc
       3) .in files from rundir
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     # housekeeping
@@ -220,6 +184,12 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
     print('Running Purturbed Equilibrium Package in '+loc)
     _newloc(loc)
     locfiles = os.listdir('.')
+    if runipec:
+        print("WARNING: runipec is deprecated in GPEC 1.0. Use rungpec.")
+    if qsub:
+        print("WARNING: qsub is being deprecated in GPEC 1.0. Use submit in the future.")
+        submit = qsub
+
     if not rerun:
         print('Cleaning old run out, dat, and bin files')
         if rundcon:
@@ -229,16 +199,18 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
                 os.system('rm *.dat')
             if np.any([f.endswith('.bin') for f in locfiles]):
                 os.system('rm *.bin')
-        elif runipec:
+        elif rungpec or runipec:
+            if np.any([f.startswith('gpec_') for f in locfiles]):
+                os.system('rm gpec_*')
             if np.any([f.startswith('ipec_') for f in locfiles]):
                 os.system('rm ipec_*')
-            if np.any([f.startswith('ipdiag_') for f in locfiles]):
-                os.system('rm ipdiag_*')
+            if np.any([f.startswith('gpec_diagnostics_') for f in locfiles]):
+                os.system('rm gpdiag_*')
             if np.any([f.startswith('pent_') for f in locfiles]):
                 os.system('rm pent_*')
-        elif runpent:
-            if np.any([f.startswith('pent_') for f in locfiles]):
-                os.system('rm pent_*')
+        elif runpentrc:
+            if np.any([f.startswith('pentrc_') for f in locfiles]):
+                os.system('rm pentrc_*')
 
     # set up run
     for key in kwargs:
@@ -264,16 +236,14 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
             pentrc = namelist.read('pentrc.in')
             if 'data_dir' not in pentrc['PENT_INPUT']:
                 pentrc['PENT_INPUT']['data_dir'] = packagedir+'pentrc'
-        # get all supporting data files (NOTE:: not necessary with new data_dir inputs)
-        #os.system('cp '+packagedir+'coil/*.dat .')
-        #os.system('cp '+packagedir+'pent/*.dat .')
 
     
     # actual run
-    if qsub:
+    if submit:
+        # name the job based on the directory it is run in
         dloc = os.path.abspath(loc).split('/')[-1]
-        jobname=data.getshot(loc)+'_'+dloc
-        # clean up old qsub if it exists
+        jobname=(data.getshot(loc)+'_'+dloc).lstrip('_')
+        # clean up old job submission if it exists
         if os.path.exists('../{:}.oe'.format(dloc)):
             os.system('rm ../{:}.oe'.format(dloc))
         if os.path.exists('{:}.sh'.format(jobname)):
@@ -282,21 +252,20 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         exelist=''
         if rundcon: exelist+=rundir+'/dcon \n'
         if runipec: exelist+=rundir+'/ipec \n'
+        if rungpec: exelist+=rundir+'/gpec \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
-        if optpentrc: exelist+=rundir+'/OPENTRC \n'
-        if cleandcon: exelist+='rm euler.in \n'
-        jobstr = bashjob.replace('jobnamehere',jobname)
-        if mailon: jobstr = jobstr.replace('# --- emailoptionhere','#PBS -m '+mailon)
-        if email:  jobstr = jobstr.replace('# --- emailhere','#PBS -M '+email)
-        jobstr = jobstr.replace('runlochere',loc)
-        jobstr = jobstr.replace('exelisthere',exelist)
-        jobstr = jobstr.replace('memhere',str(int(mem)))
-        if mem<=3e3: jobstr = jobstr.replace('#PBS -q mque','')
+        if cleandcon: exelist+='rm euler.bin \n'
+        if mem >= 3.5e3 and partition.lower() == 'ellis':  # ellis has 4GB per core
+            partition = 'mque'
+        jobstr = bashjob.format(name=jobname, nodes=1, mem=str(int(mem)), days=0, hours=int(hours),
+                                partition=partition, location= loc, exes=exelist,
+                                mailtype=mailon.upper(), mailuser=email)
+        jobstr = jobstr.replace('#SBATCH --mail-type=NONE', '') # robust to sbatch versions
         with open(jobname+'.sh','w') as f:
             f.write(jobstr)
         # submit job to cluster
-        os.system('qsub '+jobname+'.sh')
-        #wait for job completion to return
+        os.system('sbatch '+jobname+'.sh')
+        # wait for job completion to return
         if return_on_complete:
             print('Waiting for job to complete...')
             while not os.path.exists('../'+jobname+'.oe'):
@@ -307,8 +276,8 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
         print(rundir+'/dcon')
         if rundcon: os.system(rundir+'/dcon')
         if runipec: os.system(rundir+'/ipec')
+        if rungpec: os.system(rundir+'/gpec')
         if runpentrc: os.system(rundir+'/pentrc')
-        if optpentrc: os.system(rundir+'/OPENTRC')
         # clean up
         if cleandcon: os.system('rm euler.bin')
         os.system('rm *.dat')
@@ -321,22 +290,14 @@ def run(loc='.',rundir=default.rundir,qsub=True,return_on_complete=False,rerun=F
 
 def optntv(mlist,maxiter=50,loc='.',rundir=default.rundir,**kwargs):
     """
-    Python wrapper for running ipec package multiple times in
+    Python wrapper for running gpec package multiple times in
     a search for the normalized spectrum that maximizes NTV.
     
-    Arguments:      
-      mlist    : list. 
-        Integer poloidal modes included on plasma surface.
-    
-    Key Word Arguments:    
-      maxiter  : int.
-        Maximum number of iterations.
-      loc      : str. 
-        Directory location for run.
-      rundir   : str. 
-        IPEC package directory with executables and .dat files.
-      kwargs : dict. 
-        namelist instance(s) written to <kwarg>.in file(s).
+    :param mlist: list. Integer poloidal modes included on plasma surface.
+    :param maxiter: int.Maximum number of iterations.
+    :param loc: str. Directory location for run.
+    :param rundir: str. GPEC package directory with executables and .dat files.
+    :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
         
      .. note::
        Namelists taken from (in order of priority):
@@ -344,35 +305,33 @@ def optntv(mlist,maxiter=50,loc='.',rundir=default.rundir,**kwargs):
        2) .in files from loc
        3) .in files from rundir
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     mlist = map(int,mlist)
     mlist.sort()
     loc=os.path.abspath(loc)
         
-    # Clean ipec.in of any error fields
-    if 'ipec' not in kwargs:
-        print('WARNING: No ipec.in specidied. Using copy from run directory')
-        kwargs['ipec']=namelist.read(rundir+'/ipec.in',combine_arrays=0)
-    kwargs['ipec']['IPEC_INPUT']['coil_flag']=False
-    kwargs['ipec']['IPEC_INPUT']['data_flag']=False
-    kwargs['ipec']['IPEC_INPUT']['harmonic_flag']=True
-    kwargs['ipec']['IPEC_OUTPUT']['ntv_flag']=True
-    for key in kwargs['ipec']['IPEC_INPUT'].keys():
+    # Clean gpec.in of any error fields
+    if 'gpec' not in kwargs:
+        print('WARNING: No gpec.in specidied. Using copy from run directory')
+        kwargs['gpec']=namelist.read(rundir+'/gpec.in',combine_arrays=0)
+    kwargs['gpec']['GPEC_INPUT']['coil_flag']=False
+    kwargs['gpec']['GPEC_INPUT']['data_flag']=False
+    kwargs['gpec']['GPEC_INPUT']['harmonic_flag']=True
+    kwargs['gpec']['GPEC_OUTPUT']['ntv_flag']=True
+    for key in kwargs['gpec']['GPEC_INPUT'].keys():
         if key.startswith('cos') or key.startswith('sin'):
-            del kwargs['ipec']['IPEC_INPUT'][key]
+            del kwargs['gpec']['GPEC_INPUT'][key]
 
-    # Include each m errorfield namelist variable in ipec input
+    # Include each m errorfield namelist variable in gpec input
     for m in mlist:
         for cs in ['cosmn','sinmn']:
-            kwargs['ipec']['IPEC_INPUT'][cs+'('+str(m)+')'] = 1e-4
+            kwargs['gpec']['GPEC_INPUT'][cs+'('+str(m)+')'] = 1e-4
 
     # Set up base for run
     run(loc=loc,rundir=rundir,qsub=False,
-        rundcon=True,runipec=False,runpent=False,**kwargs)
+        rundcon=True,rungpec=False,runpent=False,**kwargs)
     inputs = InputSet(indir='.').infiles
     nn = inputs['dcon']['DCON_CONTROL']['nn']
 
@@ -385,8 +344,8 @@ def optntv(mlist,maxiter=50,loc='.',rundir=default.rundir,**kwargs):
         cs = np.array(cs)
         cs = cs.reshape(2,-1)
         for m,c,s in zip(mlist,cs[0,:],cs[1,:]):
-            kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m)+')'] = c
-            kwargs['ipec']['IPEC_INPUT']['sinmn('+str(m)+')'] = s
+            kwargs['gpec']['GPEC_INPUT']['cosmn('+str(m)+')'] = c
+            kwargs['gpec']['GPEC_INPUT']['sinmn('+str(m)+')'] = s
         run(loc=loc,rundcon=False,qsub=False,**kwargs)
         ntv = data.read('pent_n'+str(nn)+'.out')
         tot = ntv[0].params['total(T_phi)']
@@ -408,40 +367,24 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     a search for the normalized spectrum that maximizes NTV.
     
     Approach is as follows:
-    1) Run DCON and IPEC in base directory with singcoup_flag True
-    2) Run IPEC twice for each m, creating new subdirectories cosmn* and sinmn*
+    1) Run DCON and GPEC in base directory with singcoup_flag True
+    2) Run GPEC twice for each m, creating new subdirectories cosmn* and sinmn*
     3) Optimize a functional wrapper for PENTRC using optimize.fmin_slsqp
     - Spectra constrained to have 1 Gm^2 norm
-    - wrapper uses data package to linearly combine ipec_xclebsch outputs
-    - Initial guess is the first singcoup_svd mode from IPEC
+    - wrapper uses data package to linearly combine gpec_xclebsch outputs
+    - Initial guess is the first singcoup_svd mode from GPEC
     
-    Arguments:      
-      ms    : list. 
-        Integer poloidal modes included on plasma surface.
-    
-    Key Word Arguments:
-      ms    : list. 
-        Integer poloidal modes included on plasma surface.
-      ttype : str.
-        PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).
-      tfac : int.
-        Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.
-      perp1 : bool.
-        Optimizes in space perpendicular to 1st IPEC SVD mode.
-      norm : float.
-        Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).
-      qsub : bool.
-        Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.
-      method : str.
-        Method used in scipy.optimize.minimize.
-      maxiter  : int.
-        Maximum number of iterations.
-      loc      : str. 
-        Directory location for run.
-      rundir   : str. 
-        IPEC package directory with executables and .dat files.
-      kwargs : dict. 
-        namelist instance(s) written to <kwarg>.in file(s).
+    :param ms: list. Integer poloidal modes included on plasma surface.
+    :param ttype: str.PENTRC_OUTPUT flag (fgar,tgar,rlar,etc).
+    :param tfac: int.Optimization minimizes tfac*|T_phi|. Negative values maximize applied NTV.
+    :param perp1: bool.Optimizes in space perpendicular to 1st GPEC SVD mode.
+    :param norm: float.Amplitude of applied area normalized spectrum Phi_x (Tesla meter^2).
+    :param qsub: bool.Submits individual jobs to cluster. Use gpec.run for qsub overall optimizer.
+    :param method: str.Method used in scipy.optimize.minimize.
+    :param maxiter: int.Maximum number of iterations.
+    :param loc: str. Directory location for run.
+    :param rundir: str. GPEC package directory with executables and .dat files.
+    :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
         
      .. note::
        Namelists taken from (in order of priority):
@@ -449,9 +392,7 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
        2) .in files from loc
        3) .in files from rundir
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     global iteration
@@ -462,46 +403,46 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     loc=os.path.abspath(loc)+'/'
     rundir=os.path.abspath(rundir)+'/'
     
-    # get ipec.in
-    if 'ipec' not in kwargs:
-        if os.path.isfile(loc+'ipec.in'):
-            kwargs['ipec']=namelist.read(loc+'ipec.in')
+    # get gpec.in
+    if 'gpec' not in kwargs:
+        if os.path.isfile(loc+'gpec.in'):
+            kwargs['gpec']=namelist.read(loc+'gpec.in')
         else:
-            print('WARNING: No ipec.in specified. Using copy from run directory')
-            kwargs['ipec']=namelist.read(rundir+'ipec.in')
-    if 'coil_flag' in kwargs['ipec']['IPEC_INPUT']:
-        if kwargs['ipec']['IPEC_INPUT']['coil_flag']:
+            print('WARNING: No gpec.in specified. Using copy from run directory')
+            kwargs['gpec']=namelist.read(rundir+'gpec.in')
+    if 'coil_flag' in kwargs['gpec']['GPEC_INPUT']:
+        if kwargs['gpec']['GPEC_INPUT']['coil_flag']:
             print('WARNING: Includes additional field from coils as background.')
-    if 'data_flag' in kwargs['ipec']['IPEC_INPUT']:
-        if kwargs['ipec']['IPEC_INPUT']['data_flag']:
+    if 'data_flag' in kwargs['gpec']['GPEC_INPUT']:
+        if kwargs['gpec']['GPEC_INPUT']['data_flag']:
             print('WARNING: Includes additional field from data file as background.')
     # assert necessary flags
-    kwargs['ipec']['IPEC_INPUT']['jsurf_in']=1
-    kwargs['ipec']['IPEC_INPUT']['harmonic_flag']=True
-    kwargs['ipec']['IPEC_OUTPUT']['xclebsch_flag']=True
-    kwargs['ipec']['IPEC_OUTPUT']['singcoup_flag']=True
-    kwargs['ipec']['IPEC_OUTPUT']['resp_flag']=True
+    kwargs['gpec']['GPEC_INPUT']['jsurf_in']=1
+    kwargs['gpec']['GPEC_INPUT']['harmonic_flag']=True
+    kwargs['gpec']['GPEC_OUTPUT']['xclebsch_flag']=True
+    kwargs['gpec']['GPEC_OUTPUT']['singcoup_flag']=True
+    kwargs['gpec']['GPEC_OUTPUT']['resp_flag']=True
     # remove any previous spectra
-    for key in kwargs['ipec']['IPEC_INPUT'].keys():
+    for key in kwargs['gpec']['GPEC_INPUT'].keys():
         if key.startswith('cos') or key.startswith('sin'):
-            del kwargs['ipec']['IPEC_INPUT'][key]
+            del kwargs['gpec']['GPEC_INPUT'][key]
     # include flat cosine and sine component for each m
     for m in ms:
         for cs in ['cosmn','sinmn']:
-            kwargs['ipec']['IPEC_INPUT'][cs+'('+str(m)+')'] = norm/np.sqrt(2.0*len(ms))
+            kwargs['gpec']['GPEC_INPUT'][cs+'('+str(m)+')'] = norm/np.sqrt(2.0*len(ms))
     
-    # base run (runs the only DCON run and runs IPEC to get singcoup svd modes)
+    # base run (runs the only DCON run and runs GPEC to get singcoup svd modes)
     print('-'*40+' Running base case')
     run(loc=loc,rundir=rundir,qsub=False,
-        rundcon=True,runipec=True,runpent=False,runpentrc=False,**kwargs)
+        rundcon=True,rungpec=True,runpent=False,runpentrc=False,**kwargs)
     
     # retrieve base variables
     kwargs['dcon'] = namelist.read(loc+'dcon.in')
     nn = kwargs['dcon']['DCON_CONTROL']['nn']
     mem = (10/max(1,5-nn))*1e3
-    # retrieve ipec svd modes
-    print('Reading IPEC svd dominant modes...')
-    sc1,sc2 = data.read(loc+'ipec_singcoup_svd_n{}.out'.format(nn),quiet=True)[:2]
+    # retrieve gpec svd modes
+    print('Reading GPEC svd dominant modes...')
+    sc1,sc2 = data.read(loc+'gpec_singcoup_svd_n{}.out'.format(nn),quiet=True)[:2]
     msc = sc1.x[0]
     Phi1,Phi2 = [],[]
     for m in ms:
@@ -519,55 +460,55 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     Phi2 =(Phi2/amp2)*norm#/np.sqrt(2.0*len(ms))
     
     # assert sub-run variables
-    kwargs['ipec']['IPEC_INPUT']['idconfile']=loc+'euler.bin'
-    kwargs['ipec']['IPEC_INPUT']['ivacuumfile']=loc+'vacuum.bin'
-    kwargs['ipec']['IPEC_INPUT']['ieqfile']=loc+'psi_in.bin'
-    for k in kwargs['ipec']['IPEC_OUTPUT']: # maximum speed
-        if 'flag' in k: kwargs['ipec']['IPEC_OUTPUT'][k]=False
-    kwargs['ipec']['IPEC_OUTPUT']['xclebsch_flag']=True
+    kwargs['gpec']['GPEC_INPUT']['idconfile']=loc+'euler.bin'
+    kwargs['gpec']['GPEC_INPUT']['ivacuumfile']=loc+'vacuum.bin'
+    kwargs['gpec']['GPEC_INPUT']['ieqfile']=loc+'psi_in.bin'
+    for k in kwargs['gpec']['GPEC_OUTPUT']: # maximum speed
+        if 'flag' in k: kwargs['gpec']['GPEC_OUTPUT'][k]=False
+    kwargs['gpec']['GPEC_OUTPUT']['xclebsch_flag']=True
     kwargs['pentrc'] = namelist.read(loc+'pentrc.in')
-    kwargs['pentrc']['PENT_INPUT']['peq_file'] = 'ipec_xclebsch_n{}.out'.format(nn)
+    kwargs['pentrc']['PENT_INPUT']['peq_file'] = 'gpec_xclebsch_n{}.out'.format(nn)
     kwargs['pentrc']['PENT_INPUT']['idconfile']= loc+'euler.bin'
-    # run ipec for each spectral component
+    # run gpec for each spectral component
     print('-'*40+' Submitting jobs for each m')
     
     
     for m in ms:
         # null all other components
         for m2 in ms:
-            kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m2)+')'] = 0
-            kwargs['ipec']['IPEC_INPUT']['sinmn('+str(m2)+')'] = 0
+            kwargs['gpec']['GPEC_INPUT']['cosmn('+str(m2)+')'] = 0
+            kwargs['gpec']['GPEC_INPUT']['sinmn('+str(m2)+')'] = 0
         # apply pure component
-        kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m)+')'] = norm
+        kwargs['gpec']['GPEC_INPUT']['cosmn('+str(m)+')'] = norm
         if not os.path.isfile(loc+'cosmn{}.oe'.format(m)):
             run(loc=loc+'cosmn{}'.format(m),rundir=rundir,qsub=True,mem=mem,
-                rundcon=False,runipec=True,runpent=False,runpentrc=True,**kwargs)
-        kwargs['ipec']['IPEC_INPUT']['cosmn('+str(m)+')'] = 0
-        kwargs['ipec']['IPEC_INPUT']['sinmn('+str(m)+')'] = norm        
+                rundcon=False,rungpec=True,runpent=False,runpentrc=True,**kwargs)
+        kwargs['gpec']['GPEC_INPUT']['cosmn('+str(m)+')'] = 0
+        kwargs['gpec']['GPEC_INPUT']['sinmn('+str(m)+')'] = norm
         if not os.path.isfile(loc+'sinmn{}.oe'.format(m)):
             run(loc=loc+'sinmn{}'.format(m),rundir=rundir,qsub=True,mem=mem,
-                rundcon=False,runipec=True,runpent=False,runpentrc=True,**kwargs)
+                rundcon=False,rungpec=True,runpent=False,runpentrc=True,**kwargs)
     
     
     # wait for runs to finish
     print('Waiting for m runs to complete...')
-    ipecdone = False
-    while not ipecdone:
+    gpecdone = False
+    while not gpecdone:
         test = [os.path.isfile(loc+'cosmn{}.oe'.format(m)) for m in ms]
         test+= [os.path.isfile(loc+'sinmn{}.oe'.format(m)) for m in ms]
         if np.all(test):
-            ipecdone=True
+            gpecdone=True
         else:
             time.sleep(60*3)
     
     # read all the displacements (this takes time)
     print('Reading xclebsch files...')
     data.default_quiet=True
-    xms = data.readall(loc,filetype='ipec_xclebsch_n{:}.out'.format(nn),quiet=True)
+    xms = data.readall(loc,filetype='gpec_xclebsch_n{:}.out'.format(nn),quiet=True)
     
     # assert pentrc iteration variables
     kwargs['pentrc'] = namelist.read(loc+'pentrc.in')
-    kwargs['pentrc']['PENT_INPUT']['peq_file'] = loc+'ipec_xclebsch_mopt_n{}.out'.format(nn)
+    kwargs['pentrc']['PENT_INPUT']['peq_file'] = loc+'gpec_xclebsch_mopt_n{}.out'.format(nn)
     kwargs['pentrc']['PENT_INPUT']['idconfile']= loc+'euler.bin'
     for k in kwargs['pentrc']['PENT_OUTPUT'].keys():
         if 'flag' in k: kwargs['pentrc']['PENT_OUTPUT'][k]=False
@@ -581,7 +522,7 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
 
         """
         ccs = condition(cs,direction=-1)
-        # form linear superpostion of ipec results
+        # form linear superpostion of gpec results
         cosmn,sinmn = np.array(ccs).reshape(2,-1)#*np.array([[1,-1]]).T
         xclebsch = 0
         for m,c,s in zip(ms,cosmn,sinmn):
@@ -589,11 +530,11 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
         # write the summed displacement
         #  - note read cannot distinguish between psi' and psi and numbers the second
         #  - note extra precision needed for psi values
-        data.write(xclebsch,fname=loc+'ipec_xclebsch_mopt_n{}.out'.format(nn),
+        data.write(xclebsch,fname=loc+'gpec_xclebsch_mopt_n{}.out'.format(nn),
                    ynames=['xi^psi','xi^psi_1','xi^alpha'],fmt='%24.16E') 
         
         # run pentrc in que, but wait for result
-        run(loc=loc,rundcon=False,runipec=False,runpent=False,runpentrc=True,fill_inputs=False,
+        run(loc=loc,rundcon=False,rungpec=False,runpent=False,runpentrc=True,fill_inputs=False,
             mem=mem,qsub=qsub,return_on_complete=True,pentrc=kwargs['pentrc'])
         ntv = data.read('pentrc_{:}_n{:}.out'.format(ttype,nn),quiet=True)
         metric = tfac*np.abs(ntv[0].y['intT_phi'][-1]) # gets minimized
@@ -651,7 +592,7 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
         vnorm = np.norm(vec)
         return (np.abs(vm)/vnorm)/norm
     def overlap(vec,Phi1=Phi1,debug=False):
-        """Equality constrain that solution be perpendicular to IPEC dominant mode"""
+        """Equality constrain that solution be perpendicular to GPEC dominant mode"""
         compvec = np.sum(np.array(vec).reshape([2,-1])*np.array([[1,1j]]).T,axis=0)
         dot = compvec.dot(Phi1.conj()).real#np.sum(compvec.real*Phi1.real+compvec.imag*Phi1.imag)
         ovlp= dot/(np.norm(compvec)*np.norm(Phi1))
@@ -665,7 +606,7 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     Phiq = tvec**0.5 * norm/np.norm(tvec**0.5)
     Phil = tvec * norm/np.norm(tvec)
     darray = np.array([ms,Phi1.real,Phi1.imag,Phi2.real,Phi2.imag,Phil.real,Phil.imag,Phiq.real,Phiq.imag]).T
-    header ='GPEC: Area normalized poloidal IPEC spectrum that optimizes the PENTRC torque\n'
+    header ='GPEC: Area normalized poloidal GPEC spectrum that optimizes the PENTRC torque\n'
     header+='Phi_L estimated by linear approximation of PENTRC torque\n'
     header+='Phi_Q estimated by quadratic approximation of PENTRC torque\n'
     header+='Phi_T estimated by nonlinear {:} optimization of PENTRC torque\n\n'.format(method)
@@ -702,37 +643,28 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     
 
 
-def omegascan(omega='wp',base='.',scale=np.linspace(-2,2,20),pentrcfile='pentrc.in',**kwargs):
+def omegascan(omega='wp',base='.',scale=(-2,-1,-0.5,0.5,1,2),pentrcfile='pentrc.in',**kwargs):
     """
     Run pent for series of scaled nu/omega_phi/omega_E/omega_D/gamma_damp values. 
     User must specify full path to all files named in pent.in input file
     located in the base directory.
     Note that the rotation profile is scaled by manipulating omega_E
-    on each surface to obtain the scaled roation.
+    on each surface to obtain the scaled rotation.
 
-    Key Word Arguments:
-      omega     : str. 
-       Choose from nu, wp, we, wd, or ga
-      base    : str. 
-       Top level directory containing dcon and ipec runs.
-       Must contain euler.bin and vacuum.bin file.
-      scale   : ndarray. 
-        The scale factors iterated over.
-      pentfile: str. 
-        Original input file.
-      rundcon : bool
-        Set true if using hybrid kinetic MHD DCON. Will also attempt IPEC + PENT.
+    :param omega: str. Choose from nu, wp, we, wd, or ga
+    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin and vacuum.bin file.
+    :param scale: ndarray. The scale factors iterated over.
+    :param pentfile: str. Original input file.
+    :param rundcon: bool. Set true if using hybrid kinetic MHD DCON. Will also attempt GPEC + PENT.
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
 
     """
     # setup
     base = os.path.abspath(base)+'/'
     pentrc = namelist.read(pentrcfile)
     scale = map(float,scale)
-    for k in ['dcon','ipec','pent','pentrc']:
+    for k in ['dcon','gpec','pent','pentrc']:
         if 'run'+k not in kwargs:
             kwargs['run'+k] = k=='pentrc'
         elif kwargs['run'+k]:
@@ -740,11 +672,11 @@ def omegascan(omega='wp',base='.',scale=np.linspace(-2,2,20),pentrcfile='pentrc.
             if k=='dcon':
                 kwargs['equil'] = namelist.read(base+'equil'+'.in')
                 kwargs['vac'] = namelist.read(base+'vac'+'.in')
-            if k=='ipec':
+            if k=='gpec':
                 kwargs['coil'] = namelist.read(base+'coil'+'.in')
     
-    # use some initial ipec run if already available
-    if not kwargs['runipec'] or kwargs['rundcon']:
+    # use some initial gpec run if already available
+    if not kwargs['rungpec'] or kwargs['rundcon']:
         for k in pentrc['PENT_INPUT']:
             if 'file' in k:
                 pentrc['PENT_INPUT'][k] = os.path.abspath(pentrc['PENT_INPUT'][k])
@@ -758,7 +690,7 @@ def omegascan(omega='wp',base='.',scale=np.linspace(-2,2,20),pentrcfile='pentrc.
         
     return True
 
-def nustarscan(base='.',scale=10**np.linspace(-1,1,11),pentfile='pent.in',
+def nustarscan(base='.',scale=(0.1,1.0,10.0),pentfile='pent.in',
            scalen=True,scalet=True,**kwargs):
     """
     Run pent for series of *approximately* scaled collisionality values.
@@ -776,22 +708,14 @@ def nustarscan(base='.',scale=10**np.linspace(-1,1,11),pentfile='pent.in',
     .. note:: Approximate scaling ignores log-Lambda dependence, and uses
        nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.
 
-    Key Word Arguments:
-      base    : str. 
-       Top level directory containing dcon and ipec runs.
-       Must contain euler.bin and vacuum.bin file.
-      scale   : ndarray. 
-        The scale factors iterated over.
-      pentfile: str. 
-        Original input file.
-      scalen : bool.
-        Use density scaling to change nu_star.
-      scalet : bool.
-        Use temperature scaling to change nu_star.
+    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin and vacuum.bin file.
+    :param scale: ndarray. The scale factors iterated over.
+    :param pentfile: str. Original input file.
+    :param scalen: bool.Use density scaling to change nu_star.
+    :param scalet: bool.Use temperature scaling to change nu_star.
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
+
     """
     # setup
     base = os.path.abspath(base) +'/'
@@ -832,7 +756,7 @@ def nustarscan(base='.',scale=10**np.linspace(-1,1,11),pentfile='pent.in',
         pent['PENT_INPUT']['kinetic_file']=os.path.abspath(newkfile)
         
         run(loc=base+'nustar{:.2e}'.format(s),rundcon=False,
-            runipec=False,pent=pent,**kwargs)
+            rungpec=False,pent=pent,**kwargs)
     
     return True
 

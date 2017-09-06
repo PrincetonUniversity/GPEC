@@ -1,7 +1,7 @@
 #!/usr/local/env python
 """
-:mod:`pypec.data` -- ASCII Table Data Turned Pythonic
-=====================================================
+:mod:`pypec.data` -- Pythonic Treatment of Scientific Data
+===========================================================
 
 The data module is a very generalized tool for visualizing and manipulating scientific data from netcdf and ascii files.
 
@@ -9,7 +9,7 @@ GPEC data is migrating to netcdf, and this module uses the xarray module for its
 
 Previous GPEC results and some current outputs are still writen to ascii. This module contains a custom I/O for converting ascii data to python objects. A custom Data object was created for this purpose, and conversion to the xarray Dataset is automated in the open_dataset function to facilitate migration to netcdf. The only requirement for creating a data object from an ascii file is that the file have one or more tables of data, with appropriate labels in a header line directly above the data.
 
-Here, we show some examples using common outputs from both IPEC and PENT.
+Here, we show some examples using common outputs from both GPEC and PENT.
 
 Beginners
 ---------
@@ -24,7 +24,7 @@ Explore the data module by typing 'data.' and hitting tab. For information on an
 
 Lets use it! To get a typical GPEC output into python, use the open_dataset function.
 
->>> con = data.open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
+>>> con = data.open_dataset('examples/DIIID_ideal_example/gpec_control_output_n1.nc')
 
 Printing to the terminal is intelegent, giving a conviniently human readable summary of the data.
 
@@ -87,7 +87,7 @@ Data variables:
     z_n            (theta) float64 0.003568 0.03241 0.06134 0.09036 0.1195 ...
     dphi           (theta) float64 0.0 -0.039 -0.078 -0.117 -0.1559 -0.1948 ...
 Attributes:
-    title: IPEC outputs in Fourier or alternate modal bases
+    title: GPEC outputs in Fourier or alternate modal bases
     Jacobian: pest
     q_lim: 5.2
     psi_n_lim: 0.991536136179
@@ -129,7 +129,7 @@ inevitably need tweaking.
 
 For a common example of more customized plots, lets look at some 2d data
 
->>> cyl = data.open_dataset('examples/DIIID_ideal_example/ipec_cylindrical_output_n1.nc')
+>>> cyl = data.open_dataset('examples/DIIID_ideal_example/gpec_cylindrical_output_n1.nc')
 
 We could use the built in plotting methods like ds['b_z'].plot), but these are (R,z) figures
 should be done with a little care to look right. Lets look at b_z for example,
@@ -155,7 +155,7 @@ There we go. That looks publication ready!
 Another common plot of GPEC outputs is the (psi,m) spectrogram plot. Lets quickly make a
 nice one,
 
->>> prof = data.open_dataset('examples/DIIID_ideal_example/ipec_profile_output_n1.nc')
+>>> prof = data.open_dataset('examples/DIIID_ideal_example/gpec_profile_output_n1.nc')
 >>> f,ax = plt.subplots()
 >>> extent = [prof['m'].min(),prof['m'].max(),prof['psi_n'].min(),prof['psi_n'].max()]
 >>> im = ax.imshow(np.abs(prof['xi_m_contrapsi']).T,origin='lower',cmap='viridis',
@@ -196,47 +196,9 @@ True
 That's it! Read the table with your favorite editor. It will probably need a little
 cleaning at the top since it tries to use the lengthy legend labels as column headers.
 
-Finally, 3D equilibrium calculations lend themselves naturally to 3D figures. This module
-has a helpful function for forming the necessary x,y,z meshes to quickly plot the
-3D plasma using mayavi.
-
-After adding the requisite geometry to the control surface output,
-
->>> con = add_control_geometry(con,phi_lim=np.pi*3/2)
-
-it is easy to make 3D surface plots using mayavi,
-
->>> x,y,z = con['X'].values,con['Y'].values,con['Z'].values
->>> b_n_3d = np.real(con['b_n']*con['expn'])
->>> fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))
->>> mesh = mmlab.mesh(x,y,z,scalars=b_n_3d,colormap='RdBu',vmin=-2e-3,vmax=2e-3,figure=fig)
-
-Note that mayavi explicitly requires numpy.ndarray objects so we had to
-use the values of each xarray DataArray.
-
-Now, lets cap the ends with our full profile information. This is a little
-more involved. For the toroidal angle of each end, we need to rotate the
-2D arrays for the mesh and the field values.
-
->>> for phi in [0,np.pi*3/2]:
-...     b = np.real(prof['b_n']*np.exp(1j*phi)) # poloidal cross section at phi
-...     xy = prof['R']*np.exp(1j*phi) # rotate the plane
-...     x,y,z = np.real(xy),np.imag(xy),np.real(prof['z'])
-...     x,y,z,b = np.array([x,y,z,b])[:,:,::10] # downsample psi by 10 to speed up mayavi
-...     cap = mmlab.mesh(x,y,z,scalars=b,colormap='RdBu',vmin=-2e-3,vmax=2e-3,figure=fig)
->>> mmlab.savefig(filename='examples/figures/example_bn_3d_capped.png',figure=fig)
-
-.. image:: examples/figures/example_bn_3d_capped.png
-   :width: 600px
-
-That looks awesome!
-
-There are, of course, plenty more outputs and important ways of visualizing
-them intuitively. See, for example, the 2D plots in the add_control_geometry
-function's documentation. At this point we have outlined the basics. Using
-the modules and similar commands to those used here the user should be able
-to fully interact with and visually explore the GP
-EC output.
+At this point we have outlined the basics. Using this module and similar commands
+to those used here the user should be able to fully interact with and visually
+explore the GPEC output.
 
 
 
@@ -245,15 +207,16 @@ Advanced Users
 
 In this section, we will assume you have a pretty good hold on both python and the basic ploting functions of these modules.
 
-Now that you use this module regularly, save yourself some time by placing the line:
+Now that you use this module regularly, save yourself some time by placing the line::
 
   from pypec import *
 
-into your autoimport file located at
+into your autoimport file located at::
+
 ~/.ipython/profile_default/startup/autoimports.ipy
 
 
-Deprecated Ascii Interface
+Deprecated ASCII Interface
 ---------------------------
 
 As mentioned above, GPEC has moved the vast majority of its I/O to netcdf, and open_dataset should
@@ -310,7 +273,7 @@ Note that the interpolator initialized the interpolation function on the first c
 One common need is to look at spectra. For this we want to utilize
 the full functionality of the data instances' plot1d function.
 
->>> xc, = read('examples/DIIID_ideal_example/ipec_xclebsch_n1.out')
+>>> xc, = read('examples/DIIID_ideal_example/gpec_xclebsch_n1.out')
 Casting table 1 into Data object.
 >>> f = xc.plot1d('xi^psi','psi',x2rng=(1,3))
 >>> f.savefig('examples/figures/example_spectrum.png')
@@ -351,15 +314,17 @@ import numpy as np                               # math
 from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,RegularGridInterpolator,griddata
 from scipy.special import ellipk,ellipe
 
-#in this package
-import modplot as plt
-import namelist 
-
 try:
     import mayavi.mlab as mmlab
-except ImportError:
+except ImportError as ie:
     mmlab = False
     print('WARNING: Mayavi not in python path')
+except ValueError as ve:
+    mmlab = False
+    print('WARNING: Mayavi conflicts with already set gui backend settings (using pylab?)\n'+repr(ve))
+except Exception as e:
+    mmlab = False
+    print('WARNING: Mayavi unavailable - '+repr(e))
 try:
     import xarray
 except ImportError:
@@ -373,6 +338,10 @@ except ImportError:
     print('WARNING: seaborn not in python path')
     print(' -> We recomend loading anaconda/2.3.0 on portal')
 
+#in this package
+import modplot as plt
+import namelist
+
 # better label recognition using genfromtxt
 for c in '^|<>/':
     if c in np.lib._iotools.NameValidator.defaultdeletechars:
@@ -383,14 +352,6 @@ for c in '^|<>/':
 default_quiet = False
 cmap_div = plt.pyplot.get_cmap('RdBu_r')
 cmap_seq = plt.pyplot.get_cmap('viridis') #_load_default_cmap()
-
-######################################################## Change default keywords
-
-def interp1d_unbound(x, y, kind='linear', axis=-1, copy=True, bounds_error=False,
-                     fill_value=np.nan, assume_sorted=False):
-    return interp1d(x, y, kind=kind, axis=axis, copy=copy, bounds_error=bounds_error,
-                     fill_value=fill_value, assume_sorted=assume_sorted)
-interp1d_unbound.__doc__ = interp1d.__doc__.split('Examples')[0] # Examples fail doctest
 
 ######################################################## Helper functions
 
@@ -436,11 +397,18 @@ def _set_color_defaults(calc_data,center=None,**kwargs):
 def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
     """
     Wrapper for xarray.open_dataset that allows automated reduction of
-    a dimension destinguishing real and imaginary components.
+    a dimension distinguishing real and imaginary components.
 
-    New Parameter
-    -------------
-    complex_dim : str, Dimension designating real/imaginary (0,1)
+    :param filename_or_obj: str, file or xarray.backends.DataStore
+        Strings are interpreted as a path to a netCDF file or an OpenDAP URL
+        and opened with python-netCDF4, unless the filename ends with .gz, in
+        which case the file is gunzipped and opened with scipy.io.netcdf
+        (only netCDF3 supported). File-like objects are opened with
+        scipy.io.netcdf (only netCDF3 supported).
+    :param complex_dim: str. Dimension designating real/imaginary (0,1)
+    :param kwargs: dict. All other key word arguments are passed to xarray.open_dataset.
+
+    **Original Documentation:**
 
     """
 
@@ -460,43 +428,39 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
 
     if complex_dim in ds.dims:
         for k,v in ds.data_vars.iteritems():
+            if len(v.dims) > len(set(v.dims)):
+                print("WARNING: Removing {:} to avoid error (below) reforming complex_dim. ".format(k))
+                print("ValueError: broadcasting cannot handle duplicate dimensions")
+                del ds[k]
+                continue
             if complex_dim in v.dims:
                 tmp = v.attrs
                 ds[k] = v.loc[{complex_dim:0}]+1j*v.loc[{complex_dim:1}]
                 ds[k].attrs = tmp
 
     return ds
+
 open_dataset.__doc__+= xarray.open_dataset.__doc__
+while '--' in open_dataset.__doc__:
+    open_dataset.__doc__ = open_dataset.__doc__.replace('--','')
+
 
 def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
          auto_complex=True,quiet=default_quiet):
     """
-    Get the data from any ipec output as a list of python 
+    Get the data from any gpec output as a list of python
     class-type objects using numpy.genfromtxt.
 
-    Arguments
-      fname      : str. 
-        Path of ipec output file.
+    :param fname: str. Path of gpec output file.
+    :param squeeze: bool. Sets all attributes to single data object.
+    :param forcex: list. Set independent data labels.
+    :param forcedim: list. Set dimensionality of each x.
+    :param maxnumber: int. Reads only first maxnumber of tables.
+    :param maxlength: int. Tables with more rows than this are downsampled for speed.
+    :param auto_complex: bool. Include amplitude and phase of complex data as variables.
+    :param quiet: bool. Prevent non-warning messages printed to terminal.
     
-    Key Word Arguments:
-      squeeze : bool. 
-        Sets all attributes to single data object.
-      forcex  : list. 
-        Set independent data labels.
-      forcedim : list.
-        Set dimensionality of each x.
-      maxnumber : int.
-        Reads only first maxnumber of tables.
-      maxlength : int.
-        Tables with more rows than this are downsampled for speed.
-      auto_complex : bool.
-        Include amplitude and phase of complex data as variables.
-      quiet   : bool.
-        Prevent non-warning messages printed to terminal.
-    
-    Returns:
-      list. 
-        Class objects for each block of data in the file.
+    :returns: list. Class objects for each block of data in the file.
     
     """
     #debug start_time = time.time()
@@ -631,17 +595,11 @@ def readall(base='.',filetype='pent_n1.out',**kwargs):
     filetype, reads them into python objects, and stores 
     objects in a dictionary with directory names as keys.
     
-    Key Word Arguments:
-      base     : str. 
-        Top level directory in which to begin search.
-      filetype : str. 
-        Files to read.
-      kwargs :dict. 
-        Passed to appropriate reader function.
+    :param base: str. Top level directory in which to begin search.
+    :param filetype: str. Files to read.
+    :param kwargs: dict. Passed to appropriate reader function.
     
-    Returns:
-      dict.
-        Key-Value pairs are directories and their contained data.
+    :returns: dict. Key-Value pairs are directories and their contained data.
     
     """
 
@@ -688,18 +646,11 @@ def write(dataobj,fname='',ynames=[],**kwargs):
     structure... the header text will have been lost in the read however,
     as will some column label symbols in the use of genfromtxt.
     
-    Arguments:
-      dataobj : obj. 
-        Data_Base type object.
-      fname   : str. 
-        File to write to.
-    
-      kwargs  : dict. 
-      Passed to numpy.savetxt
+    :param dataobj: obj. Data_Base type object.
+    :param fname: str. File to write to.
+    :param kwargs: dict. Passed to numpy.savetxt
 
-    Returns:
-      bool. 
-        True.
+    :returns: bool. True.
     
     """
     if not fname: return False
@@ -741,24 +692,13 @@ def plotall(results,xfun,yfun,label='',axes=None,**kwargs):
     Line plot of data gethered recursively from a dictionary 
     containing multiple namelists or data objects.
 
-    Arguments:
-      results : dict. 
-        A readall result.
-      xfun    : func. 
-        A function that takes args (key,val) for each dictionary item 
-        and whose result is appended to the xaxis.
-      yfun    : func. 
-        A function that takes args (key,val) for each dictionary item 
-        and whose result is appended to the yaxis.
-
-    Key Word Arguments:
-      axes    : obj. 
-        matplotlib axes object.
-      kwargs  : dict. 
-        Passed to matplotlib plot function
+    :param results: dict. A readall result.
+    :param xfun: func. A function that takes args (key,val) for each dictionary item and whose result is appended to the xaxis.
+    :param yfun: func. A function that takes args (key,val) for each dictionary item and whose result is appended to the yaxis.
+    :param axes: obj. matplotlib axes object.
+    :param kwargs: dict. Passed to matplotlib plot function
     
-    Returns:
-      figure.
+    :returns: figure.
     
     """
     x = []
@@ -791,7 +731,7 @@ def plotall(results,xfun,yfun,label='',axes=None,**kwargs):
     return f
 
 
-######################################################## THE BASE IPEC DATA OBJECTS
+######################################################## THE BASE GPEC DATA OBJECTS
 
 class DataBase(object):
     """
@@ -813,19 +753,12 @@ class DataBase(object):
         dictionaries of dependent and independent data. Also breaks
         down preamble to find any global parameters.
         
-        **Arguments:**
-          fromtxt : structured array. 
-          preamble: str.
-          
-        **Key Word Arguments:**
-          forcex  : list.
-            x-axis labels.
-          maxlength : int.
-            Tables with more rows than this are downsampled for speed.
-          auto_complex : bool.
-            Include amplitude and phase of complex data as variables.
-          quiet : bool.
-            Supress printed information and warnings.
+        :param fromtxt: structured array.
+        :param preamble: str. Pre-pending text
+        :param forcex: list. x-axis labels.
+        :param maxlength: int. Tables with more rows than this are downsampled for speed.
+        :param auto_complex: bool. Include amplitude and phase of complex data as variables.
+        :param quiet: bool. Supress printed information and warnings.
 
         """
         #debug start_time = time.time()
@@ -992,19 +925,11 @@ class DataBase(object):
         """
         Interpolate data to point(s).
         
-        Arguments:
-          x  : ndarray shape (npts,ndim).
-            Point(s) on dependent axis(axes).
-        
-        Key Word Arguments:
-          ynames : list. 
-            Any number of keys from y attribute
-          quiet  : bool. 
-            Suppres status messages
+        :param x: ndarray shape (npts,ndim). Point(s) on dependent axis(axes).
+        :param ynames: list. Any number of keys from y attribute
+        :param quiet: bool. Suppress status messages
 
-        Returns:
-          dict. 
-            Each name contains array of interpolated data.  
+        :returns: dict. Each name contains array of interpolated data.
         
         """
         #housekeeping
@@ -1062,34 +987,18 @@ class DataBase(object):
         """
         Line plots of from 1D or 2D data.
         
-        Key Word Arguments:
+        :param ynames: list. Strings specifying dependent data displayed.
+        :param xname: string. The independent axis if 2D data.
+        :param x1rng: optional. Valid formats are,
+            x - Plot single nearest point.
+            (xmin,xmax) - Plots all data in range (min,max).
+            (xmin,xmax,n) - Plots n evenly spaced points in range.
+        :param x2rng: Same as x1rng. Applicable to 2D or 3D data.
+        :param x3rng: Same as x2rng for 3D data only. Order of x is xnames with xname placed in front if given.
+        :param squeeze: bool. Plots all ynames in same axis.
+        :param kwargs: dict. Valid matplotlib pyplot.plot keyword arguments.
 
-          ynames : list
-            Strings specifying dependent data displayed.
-          xname  : string
-            The independent axis if 2D data.
-          x1rng  : optional
-            Valid formats are:
-
-              - x               Plot single nearest point x-axis.
-              - (xmin,xmax)     Plots all data in range (min,max). 
-              - (xmin,xmax,n)   Plots n evenly spaced points in range.
-
-          x2rng  : . 
-            Same as x1rng. Applicable to 2D or 3D data.
-          x3rng  : . 
-            Same as x2rng for 3D data only. Order of x is 
-            xnames with xname placed in front if given.
-          squeeze : bool
-            Plots all ynames in same axis.
-            
-        kwargs : dict
-            Valid matplotlib pyplot.plot keyword arguments.
-
-        Returns:
-
-          f : figure
-            poloidal cross sections of plasma response
+        :returns: figure.
 
         """
         # housekeeping
@@ -1208,34 +1117,22 @@ class DataBase(object):
         """
         Matplotlib 2D plots of the data.
         
-        Key Word Arguments:
-          ynames : list. 
-            Strings specifying dependent data displayed.
-          aspect : str/float. 
-            Choose from 'auto' or 'equal' (see matplotlib axes.set_aspect).
-            A float stretches a circle to hight=aspect*width. 
-          plot_type: str. 
-            Choose one of:
-            
-            - "imshow" Use matplotlib imshow to plot on grid.
-            - "pcolormesh" Use matplotlib pcolormesh to plot on grid.
-            - "contour"    Use matplotlib contour to plot on grid.
-            - "contourf"   Use matplotlib contourf to plot on grid.
-            - "tripcolor"  Use matplotlib tripcolor to plot raw points.
-            - "tripcontour"  Use matplotlib tripcontour to plot raw points.
-            - "tripcontourf" Use matplotlib tripcontourf to plot raw points.
-
-          cbar   : bool. 
-            Show colorbar.
-          grid_size : tuple. 
-            Size of grid used if no regular axes x (in order of xnames).
-          swap   : bool. 
-            Swap x/y axes.
-          kwargs : dict. 
-            Valid pcolormesh/contour/contourf key arguments.
+        :param ynames: list. Strings specifying dependent data displayed.
+        :param aspect: str/float. Choose from 'auto' or 'equal' (see matplotlib axes.set_aspect). A float stretches a circle to hight=aspect*width.
+        :param plot_type: str. Choose one of,
+            "imshow"       - Use matplotlib imshow to plot on grid.
+            "pcolormesh"   - Use matplotlib pcolormesh to plot on grid.
+            "contour"      - Use matplotlib contour to plot on grid.
+            "contourf"     - Use matplotlib contourf to plot on grid.
+            "tripcolor"    - Use matplotlib tripcolor to plot raw points.
+            "tripcontour"  - Use matplotlib tripcontour to plot raw points.
+            "tripcontourf" - Use matplotlib tripcontourf to plot raw points.
+        :param cbar: bool. Show colorbar.
+        :param grid_size: tuple. Size of grid used if no regular axes x (in order of xnames).
+        :param swap: bool. Swap x/y axes.
+        :param kwargs: dict. Valid pcolormesh/contour/contourf key arguments.
         
-        Returns:
-          figure. 
+        :returns: figure.
         
         """
         if not ynames: ynames=np.sort(self.y.keys()).tolist()
@@ -1334,52 +1231,46 @@ class DataBase(object):
         Three dimensional plots. Data with xnames r,z will be plotted
         with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).
 
-            1D data > lines in a plane in 3-space.
-            2D data > z axis becomes y value
-            3D data > chosen display type
+            - 1D data > lines in a plane in 3-space.
+            - 2D data > z axis becomes y value
+            - 3D data > chosen display type
 
         Must have mayavi.mlab module available in pythonpath.
         
-        *Key Word Arguments:*
-          ynames   : list. 
-            Strings specifying dependent data displayed.
-          filter   : dict. 
-            Filter points as only those closest to this y value.
-          cbar : bool.
-            Display a vertical colorbar in the Mayavi Scene.
-          size : tuple.
-            Size of figure in pixels.
-          plot_type : str. 
-            Valid mayavi.mlab function name. 
-            Overrides default function choices (plot3d,mesh,quiver3d).
-          phi : ndarray.
-            Toroidal angle grid for complex 2D data. Default is 360 degrees, 180 pts.
-          center : float.
-            Center colormap on this value.
+        :param ynames: list. Strings specifying dependent data displayed.
+        :param filter: dict. Filter points as only those closest to this y value.
+        :param cbar: bool. Display a vertical colorbar in the Mayavi Scene.
+        :param size: tuple. Size of figure in pixels.
+        :param plot_type: str. Valid mayavi.mlab function name. Overrides default function choices (plot3d,mesh,quiver3d).
+        :param phi: ndarray. Toroidal angle grid for complex 2D data. Default is 360 degrees, 180 pts.
+        :param center: float. Center colormap on this value.
 
-        *Returns:*
-          figure.
+        :returns: figure.
           
           
-        *Example:*
-        
-        xb, = data.read('examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
-        xb.plot3d('bno')
-        
-        ..note: I think what we usually want out of IPEC is
-        the 3D surface perturbation. If we run with fun_flag
-        xn, = data.read('ipec_xbnormal_fun_n2.out')
-        psi = 1.0
-        n = 2
-        fltr= xb.y['psi']==xb.y['psi'][np.abs(xb.y['psi']-psi).argmin()]
-        r,z,p = xb.pts[:,0][fltr],xb.pts[:,1][fltr],np.linspace(0,2*np.pi,60)
-        s = xb.y['bno'][fltr]
-        cx = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
-        X,Y = cx.real,cx.imag
-        Z = z.reshape(-1,1)*np.ones_like(X)
-        S = (s.reshape(-1,1)*np.exp(-n*1j*p.reshape(1,-1))).real
-        mmlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1))
-        mmlab.mesh(X, Y, Z, scalars=S) #, colormap='YlGnBu'
+        """
+        """
+        :Examples:
+
+        A quick visualization might look like,
+
+        >>> xb, = data.read('examples/DIIID_ideal_example/gpec_xbnormal_fun_n1.out',forcex=['r','z'])
+        >>> xb.plot3d('bno')
+
+        Taking a more hands-on approach,
+
+        >>> xn, = data.read('gpec_xbnormal_fun_n2.out')
+        >>> psi = 1.0
+        >>> n = 2
+        >>> fltr= xb.y['psi']==xb.y['psi'][np.abs(xb.y['psi']-psi).argmin()]
+        >>> r,z,p = xb.pts[:,0][fltr],xb.pts[:,1][fltr],np.linspace(0,2*np.pi,60)
+        >>> s = xb.y['bno'][fltr]
+        >>> cx = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
+        >>> X,Y = cx.real,cx.imag
+        >>> Z = z.reshape(-1,1)*np.ones_like(X)
+        >>> S = (s.reshape(-1,1)*np.exp(-n*1j*p.reshape(1,-1))).real
+        >>> mmlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1))
+        >>> mmlab.mesh(X, Y, Z, scalars=S) #, colormap='YlGnBu'
         
         """
         if not ynames: ynames=np.sort(self.y.keys()).tolist()
@@ -1450,20 +1341,13 @@ class DataBase(object):
         it s represented as the color of the plotted symbols. If the data is 3D 
         and unsliced, preference if given in order of xnames.
 
-        Arguments:     
-          ynames : list.
-            Dependent data to be displayed. Default is all y data.
-          xname  : str.
-            Independent axis used in scatter plots. Default is first in xnames.
-          x1     : float.
-            Use only data with first axis clossest to value.
-          x2     : float.
-            Use only data with second axis clossest to value.
-          x3     : float.
-            Use only data with thrid axis clossest to value.
+        :param ynames: list. Dependent data to be displayed. Default is all y data.
+        :param xname: str. Independent axis used in scatter plots. Default is first in xnames.
+        :param x1: float. Use only data with first axis clossest to value.
+        :param x2: float. Use only data with second axis clossest to value.
+        :param x3: float. Use only data with thrid axis clossest to value.
         
-        Returns:
-          figure
+        :returns: figure.
         
         """
         if not ynames: ynames=np.sort(self.y.keys()).tolist()
@@ -1554,22 +1438,15 @@ class DataBase(object):
 
     def slice(self,x,xname=None,ynames=[]):#npts=100,**kwargs):
         """
-        UNDER CONSTRUCTION
+        *UNDER CONSTRUCTION*
 
         Return 1D data object from 2D. Method grids new data, 
         so beware of loosing accuracy near rational surfaces.
         
-        Arguments:    
-          x       : float. 
-            Lower bound of the axis.
-            
-        Key Word Arguments:
-          xname   : str. 
-            Axis allong which slice is performed.
+        :param x: float. Lower bound of the axis.
+        :param xname: str. Axis allong which slice is performed.
         
-        Returns: 
-          obj. 
-            New data nd-1 dimensional data object.
+        :returns: obj. New data nd-1 dimensional data object.
         
         """
 
@@ -1708,8 +1585,7 @@ def _mathtext(text):
     Helper function to convert lazy ascii conventions to 
     nicer latex strings.
     
-    Arguments:
-      text : str.
+    :param text : str.
     
     """
 
@@ -1749,17 +1625,11 @@ def _mathtext(text):
 
 def getshot(path='.',full_name=False):
     """
-    Find 6 digit shot number in path to directory
-    or file.
+    Find 6 digit shot number in path to directory or file.
     
-    **Arguments:**
-      
-    **Key Word Arguments:**
-      d : str.
-        Path.
-    **Returns:**
-      str.
-        Shot number if found, '' if not.
+    :param d: str. Path.
+
+    :returns: str. Shot number if found, '' if not.
     
     """
     pth = os.path.abspath(path)
@@ -1778,80 +1648,6 @@ def getshot(path='.',full_name=False):
                 break
     return shot
 
-
-def add_control_geometry(ds, phi_lim=2*np.pi, overwrite=False):
-    """
-    Add geometric dimensions to dataset from ipec_control_output_n#.nc.
-
-    Args:
-        ds: Dataset. xarray Dataset opened from ipec_control_output_n#.nc
-        phi_lim: float. Toroidal angle extended from 0 to phi_lim radians.
-        overwrite: bool. Overwrite geometric quantities if they already exist.
-
-    Returns:
-        Dataset. New dataset with additional dimensions.
-
-    **Examples:**
-
-    After opening, and adding geometry,
-
-    >>> ds = open_dataset('examples/DIIID_ideal_example/ipec_control_output_n1.nc')
-    >>> ds = add_control_geometry(ds)
-    
-    it is easy to make 3D surface plots using mayavi,
-
-    >>> fig = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=(600,600))
-    >>> mesh = mmlab.mesh(ds['X'].values,ds['Y'].values,ds['Z'].values,
-    ...                   scalars=np.real(ds['b_n']*ds['expn']),colormap='RdBu',figure=fig)
-    >>> mmlab.savefig(filename='examples/figures/example_bn_3d.png',figure=fig)
-
-    .. image:: examples/figures/example_bn_3d.png
-       :width: 600px
-
-    Make 2D perturbed last-closed-flux-surface plots quickly using,
-
-    >>> fac = 1e-1 # good for DIII-D unit eigenmodes
-    >>> f,ax = plt.subplots()
-    >>> ax.set_aspect('equal')
-    >>> l, = ax.plot(ds['R'],ds['z'],color='k')
-    >>> for i in range(4): # most and least stable modes
-    ...     v = np.real(ds['R_EDX_FUN'][i]*fac)
-    ...     l, = ax.plot(ds['R']+v*ds['R_n'],ds['z']+v*ds['z_n'])
-    >>> sm = plt.set_linearray(ax.lines[-4:],cmap='viridis')
-    >>> cb = f.colorbar(sm,ticks=range(4))
-    >>> cb.set_label('Mode Index')
-    >>> xtl = ax.set_xticks([1,1.7,2.4])
-    >>> txt = ax.set_xlabel('R (m)')
-    >>> txt = ax.set_ylabel('z (m)')
-    >>> f.savefig('examples/figures/example_boundary_wiggle.png')
-
-    .. image:: examples/figures/example_boundary_wiggle.png
-       :width: 600px
-
-    """
-    # Toroidal angle
-    if 'phi' not in ds or overwrite:
-        phi = np.linspace(0,phi_lim,180)
-        phi = xarray.DataArray(phi,coords={'phi':phi})
-        ds['phi'] = phi
-        ds['expn'] = np.exp(-1j*ds.attrs['n']*ds['phi'])
-
-    # 3D cartesian coords for 3D plots
-    if 'X' not in ds or overwrite:
-        xy = (ds['R']*np.exp(1j*ds['phi'])).to_dataset(name='xy')
-        ds['X'] = xy.apply(np.real)['xy']
-        ds['Y'] = xy.apply(np.imag)['xy']
-        ds['Z'] = ds['z']*(1+0*ds['phi'])
-
-    # Normal vectors
-    if False and ('z_n' not in ds or 'R_n' not in ds or overwrite):
-        dr = np.roll(ds['R'],1)-np.roll(ds['R'],-1)
-        dz = np.roll(ds['z'],1)-np.roll(ds['z'],-1)
-        norm = np.sqrt(dr**2+dz**2)
-        ds['z_n'] = xarray.DataArray(dr/norm,coords=ds['theta'].to_dataset())
-        ds['R_n'] =-xarray.DataArray(dz/norm,coords=ds['theta'].to_dataset())
-
-    return ds
 
 ######################################################## Developer functions
 
@@ -1955,103 +1751,3 @@ def _plot3dvolume(self,ynames=None,npts=124,cbar=True,plot_type='',**kwargs):
         
     f = mmlab.gcf()
     return xx,yy,zz,S
-
-def _plot3d_dev(self,ynames=None,filter={'psi':1},cbar=False,plot_type='',**kwargs):
-    """
-    Three dimensional plots. Data with xnames r,z will be plotted
-    with third dimension phi where Y = Re[y]cos(n*phi)+Im[y]sin(n*phi).
-
-        1D data > lines in a plane in 3-space.
-        2D data > z axis becomes y value
-        3D data > chosen display type
-
-    Must have mayavi.mlab module available in pythonpath.
-    
-    *Key Word Arguments:*
-      ynames   : list. 
-        Strings specifying dependent data displayed.
-      filter   : dict. 
-        Filter points as only those closest to this y value.
-      plot_type : str. 
-        Valid mayavi.mlab function name. 
-        Overrides default function choices (plot3d,mesh,quiver3d).
-
-    *Returns:*
-      figure.
-      
-      
-    *Example:*
-    
-    xb, = data.read('examples/DIIID_ideal_example/ipec_xbnormal_fun_n1.out',forcex=['r','z'])
-    xb.plot3d('bno')
-    
-    ..note: I think what we usually want out of IPEC is
-    the 3D surface perturbation. If we run with fun_flag
-    xn, = data.read('ipec_xbnormal_fun_n2.out')
-    psi = 1.0
-    n = 2
-    fltr= xb.y['psi']==xb.y['psi'][np.abs(xb.y['psi']-psi).argmin()]
-    r,z,p = xb.pts[:,0][fltr],xb.pts[:,1][fltr],np.linspace(0,2*np.pi,60)
-    s = xb.y['bno'][fltr]
-    cx = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
-    X,Y = cx.real,cx.imag
-    Z = z.reshape(-1,1)*np.ones_like(X)
-    S = (s.reshape(-1,1)*np.exp(-n*1j*p.reshape(1,-1))).real
-    mmlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1))
-    mmlab.mesh(X, Y, Z, scalars=S) #, colormap='YlGnBu'
-    
-    """
-    if not ynames: ynames=np.sort(self.y.keys()).tolist()
-    if not type(ynames) in (list,tuple): ynames=[ynames]
-    if not mmlab: raise ImportError("Unable to import mayavi.mlab.")
-
-    # the correct 3d plotting function
-    plotfunc = getattr(mmlab,['plot3d','mesh','quiver3d'][self.nd-1])
-    if plot_type:
-        if plot_type=='volume':
-            def plotfunc(X,Y,Z,S,name='',**kwargs):
-                src = mmlab.pipeline.scalar_field(X,Y,Z,S,name=name)
-                thr = mmlab.pipeline.threshold(src,low=1e-9)
-                mmlab.pipeline.volume(src,**kwargs)
-                mmlab.pipeline.scalar_cut_plane(thr,plane_orientation='x_axes')
-                mmlab.pipeline.scalar_cut_plane(thr,plane_orientation='y_axes')
-        else:
-            plotfunc = getattr(mmlab,plot_type)
-            
-
-    # filter data by other y variable
-    fltr = self.y[ynames[0]]==self.y[ynames[0]]
-    for k in filter:
-        if k in self.y.keys():
-            fltr*= self.y[k]==self.y[k][np.abs(self.y[k]-filter[k]).argmin()]
-    
-    # general multidimensional axes
-    X = np.array(self.pts[fltr,:]).T.tolist()
-    if self.nd==1: X += np.zeros_like(X.ravel())
-    # Extra work to convert the cylindrical axes
-    if self.xnames==['r','z']:
-        r,z,p = self.pts[:,0][fltr],self.pts[:,1][fltr],np.linspace(0,2*np.pi,180)
-        XY = r.reshape(-1,1)*np.exp(1j*p.reshape(1,-1))
-        Z = z.reshape(-1,1)*np.ones_like(XY.real)
-        X = [XY.real,XY.imag,Z]
-        if plot_type=='volume':
-            X = np.meshgrid(XY.real,XY.imag,Z)
-            x = [x[0],X[1],X[2]]
-            p = np.arctan2(X[1],X[0])
-    
-    # display data
-    for name in ynames:
-        if 'figure' not in kwargs: f = mmlab.figure(bgcolor=(1,1,1),fgcolor=(0,0,0),size=size)
-        S = self.y[name][fltr]
-        if self.xnames==['r','z']:
-            S = np.real((S.reshape(-1,1)*np.exp(-self.params['n']*1j*p.reshape(1,-1))))
-        if plotfunc in [mmlab.mesh,mmlab.points3d]:
-            XYZ = X
-            kwargs['scalars'] = S
-        else:
-            XYZ = X+[np.real(S)]
-        #print(np.array(XYZ).shape)
-        plotfunc(*XYZ,name=name,**kwargs)
-        if cbar: mmlab.colorbar(title=name,orientation='vertical')
-        f = mmlab.gcf()
-    return XYZ

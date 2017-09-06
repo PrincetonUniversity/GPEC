@@ -28,8 +28,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: cro,czo,cpsio,cpsilow,cpsilim,cqlim,
      $     ipd,btd,helicity
 
-      LOGICAL :: ipec_interface
-      CHARACTER(256) :: data_dir
+      LOGICAL :: gpec_interface
+      CHARACTER(256) :: data_dir = 'default'
       CHARACTER(512) :: cfile
       INTEGER, DIMENSION(:), POINTER :: cmfac
 
@@ -63,7 +63,7 @@ c-----------------------------------------------------------------------
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
      $     data_dir,machine,ip_direction,bt_direction,
      $     coil_num,coil_name,coil_cur
-      NAMELIST/coil_output/ipec_interface
+      NAMELIST/coil_output/gpec_interface
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4
       REAL(r8) :: cr1,cr2
@@ -76,11 +76,16 @@ c-----------------------------------------------------------------------
       cmlow=-64
       cmhigh=64
       coil_cur=0
-      data_dir='.' !#REPLACE-WITH-PATH
       CALL ascii_open(in_unit,"coil.in","OLD")
       READ(UNIT=in_unit,NML=coil_control)
       READ(UNIT=in_unit,NML=coil_output)
       CALL ascii_close(in_unit)
+      IF (TRIM(data_dir)=='' .OR. TRIM(data_dir)=='default') THEN
+         CALL getenv('GPECHOME',data_dir)
+         IF(LEN(TRIM(data_dir))==0) stop
+     $  "ERROR: Default coil dir requires GPECHOME environment variable"
+         data_dir = TRIM(data_dir)//'/coil'
+      ENDIF
       IF (present(icoil_num)) coil_num=icoil_num
       IF (present(icoil_name)) coil_name=icoil_name
       IF (present(icoil_cur)) coil_cur=icoil_cur
@@ -143,7 +148,7 @@ c-----------------------------------------------------------------------
       IF(ip_direction=="negative")ipd=-1.0
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
-      ipec_interface=.TRUE.
+      gpec_interface=.TRUE.
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

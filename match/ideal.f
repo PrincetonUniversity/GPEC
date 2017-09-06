@@ -51,12 +51,9 @@ c-----------------------------------------------------------------------
       INTEGER :: data_type,ifix,ios,mband,msol,istep,ising,ipert
 
       INTEGER :: i1,i2,i3,i4,i5,i6
-      REAL(r8) :: r1,r2,r3,r4,r5
+      REAL(r8) :: r1,r2,r3,r4,r5,eqrs(23)
 
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: u
-      ! obsolete iagnostics.
-c      COMPLEX(r8), DIMENSION(:,:), POINTER :: f1mats,k1mats,
-c     $     k1aats,g1aats
 c-----------------------------------------------------------------------
 c     open data file and read header.
 c-----------------------------------------------------------------------
@@ -65,6 +62,7 @@ c-----------------------------------------------------------------------
       READ(in_unit)mband,i2,i3,r1,r2,r3,r4,r5
       READ(in_unit)i4,i5,i6
       READ(in_unit)kin_flag,con_flag
+      READ(in_unit)eqrs
 
       CALL spline_alloc(sq,mpsi,4)
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
@@ -90,11 +88,6 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
-            ! obsolete diagnostics.
-c            READ(UNIT=in_unit)
-c            READ(UNIT=in_unit)
-c            READ(UNIT=in_unit)
-c            READ(UNIT=in_unit)
          CASE(2)
             mfix=mfix+1
             READ(UNIT=in_unit)
@@ -130,8 +123,10 @@ c-----------------------------------------------------------------------
 c     allocate arrays, prepare to read data.
 c-----------------------------------------------------------------------
       mpert=mhigh-mlow+1
-      WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh," mpert = ",mpert
-      WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
+      WRITE(*,'(1x,3(a2,a8,I6))')"  ","mpert = ",mpert,", ","mlow = ",
+     $     mlow,", ","mhigh = ",mhigh
+      WRITE(*,'(1x,3(a2,a8,I6))')"  ","mstep = ",mstep,", ","mfix = ",
+     $     mfix,", ","msing = ",msing
       ALLOCATE(psifac(0:mstep),rho(0:mstep),q(0:mstep),
      $     soltype(0:mstep),v(mpert,4,0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
@@ -147,9 +142,6 @@ c-----------------------------------------------------------------------
       istep=-1
       ifix=0
       ising=0
-      ! obsolete diagnostics.
-c      ALLOCATE(f1mats(0:mstep,mpert**2),k1mats(0:mstep,mpert**2),
-c     $     k1aats(0:mstep,mpert**2),g1aats(0:mstep,mpert**2))
       WRITE(*,*)"Read solutions."
 c-----------------------------------------------------------------------
 c     read data.
@@ -165,11 +157,6 @@ c-----------------------------------------------------------------------
             u => soltype(istep)%u
             READ(UNIT=in_unit)soltype(istep)%u(:,:,1:2)
             READ(UNIT=in_unit)soltype(istep)%u(:,:,3:4)
-            ! obsolete diagnostics.
-c            READ(UNIT=in_unit)f1mats(istep,:)
-c            READ(UNIT=in_unit)k1mats(istep,:)
-c            READ(UNIT=in_unit)k1aats(istep,:)
-c            READ(UNIT=in_unit)g1aats(istep,:)
          CASE(2)
             ifix=ifix+1
             fixstep(ifix)=istep
@@ -241,25 +228,6 @@ c-----------------------------------------------------------------------
       ELSE
          res_flag=.FALSE.
       ENDIF
-c-----------------------------------------------------------------------
-c     obsolete diagnostics.
-c----------------------------------------------------------------------- 
-c      CALL bin_open(bin_unit,"fss.bin","UNKNOWN","REWIND","none")
-c      DO ipert=1,mpert**2
-c         DO istep=0,mstep
-c            WRITE(bin_unit)   REAL(psifac(istep),4),
-c     $           REAL(REAL(f1mats(istep,ipert)),4),
-c     $           REAL(AIMAG(f1mats(istep,ipert)),4),
-c     $           REAL(REAL(k1mats(istep,ipert)),4),
-c     $           REAL(AIMAG(k1mats(istep,ipert)),4),
-c     $           REAL(REAL(k1aats(istep,ipert)),4),
-c     $           REAL(AIMAG(k1aats(istep,ipert)),4),
-c     $           REAL(REAL(g1aats(istep,ipert)),4),
-c     $           REAL(AIMAG(g1aats(istep,ipert)),4)
-c         ENDDO
-c         WRITE(bin_unit)
-c      ENDDO
-c      CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

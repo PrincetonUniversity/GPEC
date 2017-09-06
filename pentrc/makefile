@@ -1,9 +1,10 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
-
-F90 = $(FC) $(options) $(FFLAGS)
+FFLAGS =
+IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
+export FFLAGS
 
 .f.o:
 	$(F90) -c $*.f
@@ -33,6 +34,20 @@ OBJS = \
 	diagnostics.o \
 	pentrc_interface.o \
 	pentrc.o
+
+all: harvest lsode equil pentrc
+
+harvest:
+	cd ../; git submodule init; git submodule update
+	cd ../harvest; make FC=$(FC) CC=$(CC) GACODE_ROOT= -f Makefile libharvest.a
+	mkdir -p ../lib
+	cp -f ../harvest/libharvest.a ../lib/
+
+lsode:
+	cd ../lsode; make
+
+equil:
+	cd ../equil; make
 
 pentrc: $(OBJS)
 	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)

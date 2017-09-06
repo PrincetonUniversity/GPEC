@@ -49,9 +49,8 @@ c-----------------------------------------------------------------------
       
       INTEGER, INTENT(IN) :: mode,unit
 
-      CHARACTER(10) :: date,time,zone
-      INTEGER, DIMENSION(8) :: values
-      REAL(4), SAVE :: seconds
+      REAL(4), SAVE :: start
+      REAL(4) :: seconds
       INTEGER :: hrs,mins,secs
 c-----------------------------------------------------------------------
 c     format statements.
@@ -61,22 +60,24 @@ c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
       IF(mode == 0)THEN
-         CALL DATE_AND_TIME(date,time,zone,values)
-         seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
+         CALL CPU_TIME(start)
       ELSE
-         CALL DATE_AND_TIME(date,time,zone,values)
-         seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
-     $        -seconds
+         CALL CPU_time(seconds)
+         seconds=seconds-start
          secs = int(seconds)
          hrs = secs/(60*60)
          mins = (secs-hrs*60*60)/60
          secs = secs-hrs*60*60-mins*60
-         IF (.TRUE.) THEN ! could limit to IF(verbos) if use global_mod
-            PRINT *,"Total cpu time for DCON = ",
-     $              mins," minutes, ",secs," seconds"
-            WRITE(unit,10)"Total cpu time = ",seconds," seconds"
+         IF(hrs>0)THEN
+            PRINT *,"Total cpu time = ",hrs," hours, ",
+     $         mins," minutes, ",secs," seconds"
+         ELSEIF(mins>0)THEN
+            PRINT *,"Total cpu time = ",
+     $         mins," minutes, ",secs," seconds"
+         ELSEIF(secs>0)THEN
+            PRINT *,"Total cpu time = ",secs," seconds"
          ENDIF
-         !WRITE(*,10)"Total cpu time = ",seconds," seconds"//CHAR(7)
+         WRITE(unit,10)"Total cpu time = ",seconds," seconds"
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

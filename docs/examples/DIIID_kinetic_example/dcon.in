@@ -48,4 +48,6 @@
     bin_bal1=f           ! Binary output for bal_flag poloidal functions
     out_bal2=f           ! Ascii output for bal_flag functions
     bin_bal2=f           ! Binary output for bal_flag functions
+
+    netcdf_out=t         ! Replicate ascii dcon.out information in a netcdf file
 /

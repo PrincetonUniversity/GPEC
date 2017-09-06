@@ -19,6 +19,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE free_mod
       USE ode_mod
+      USE dcon_netcdf_mod
       IMPLICIT NONE
 
       INTEGER :: msol_ahb=-1
@@ -39,10 +40,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_run(plasma1,vacuum1,total1,nzero)
+      SUBROUTINE free_run(plasma1,vacuum1,total1,nzero,op_netcdf_out)
 
       COMPLEX(r8), INTENT(OUT) :: plasma1,vacuum1,total1
       INTEGER, INTENT(IN) :: nzero
+      LOGICAL, OPTIONAL :: op_netcdf_out
 
       LOGICAL, PARAMETER :: normalize=.TRUE.
       CHARACTER(1), DIMENSION(mpert,msol) :: star
@@ -74,7 +76,8 @@ c-----------------------------------------------------------------------
  20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",2x,"re total",2x,
      $     "im total"/)
  30   FORMAT(i6,1p,4e11.3,a)
- 40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",5x,"vacuum",5x,"total"/)
+ 40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",5x,"vacuum",2x,"re total",
+     $     2x,"im total"/)
  50   FORMAT(2i6,1p,4e11.3,a)
  60   FORMAT(/2x,"ipert",4x,"m",4x,"re wt",6x,"im wt",6x,"abs wt"/)
  70   FORMAT(2i6,1p,3e11.3,2x,a)
@@ -94,13 +97,12 @@ c-----------------------------------------------------------------------
          wp=0
       ENDIF
 c-----------------------------------------------------------------------
-c     write file for mscvac, prepare input for ahb, and deallocate.
+c     write file for mscvac, prepare input for ahb (deallocate moved to end).
 c-----------------------------------------------------------------------
       CALL free_write_msc
       IF(ahb_flag)CALL free_ahb_prep(wp,nmat,smat)
       CALL spline_eval(sq,psilim,0)
       v1=sq%f(3)
-      CALL dcon_dealloc
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
@@ -254,6 +256,16 @@ c-----------------------------------------------------------------------
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
       CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
+c-----------------------------------------------------------------------
+c     optionally write netcdf file.
+c-----------------------------------------------------------------------
+      IF(present(op_netcdf_out))THEN
+         IF(op_netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,ep,ev,et)
+      ENDIF
+c-----------------------------------------------------------------------
+c     deallocate
+c-----------------------------------------------------------------------
+      CALL dcon_dealloc
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

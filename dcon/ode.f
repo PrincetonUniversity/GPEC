@@ -154,11 +154,12 @@ c-----------------------------------------------------------------------
       ELSE
          DO
             ising=ising+1
-            IF(ising > msing.OR.psilim<sing(ising)%psifac)EXIT
+            IF(ising > msing.OR.psilim<sing(MIN(ising,msing))%psifac)
+     $        EXIT
             q=sing(ising)%q
             IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
          ENDDO
-         IF(ising>msing.OR.psilim<sing(ising)%psifac
+         IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac
      $        .OR.singfac_min==0)THEN
             psimax=psilim*(1-eps)
             next="finish"
@@ -321,11 +322,11 @@ c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
       DO
          ising=ising+1
-         IF(ising>msing.OR.psilim<sing(ising)%psifac)EXIT
+         IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac)EXIT
          q=sing(ising)%q
          IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
       ENDDO
-      IF(ising>msing.OR.psilim<sing(ising)%psifac)THEN
+      IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac)THEN
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          psimax=psilim*(1-eps)
          next="finish"
@@ -432,7 +433,7 @@ c-----------------------------------------------------------------------
       psifac=sing(ising)%psifac+dpsi
       CALL sing_get_ua(ising,psifac,ua)
       IF (.NOT. con_flag) THEN
-         u(:,index(1),:)=0
+         u(:,index(1),:)=0 !originally, u(ipert0,:,:)=0
       ENDIF
       CALL sing_der(neq,psi_old,u,du1)
       CALL sing_der(neq,psifac,u,du2)
@@ -478,14 +479,14 @@ c     find next ising.
 c-----------------------------------------------------------------------
       DO
          ising=ising+1
-         IF(ising>msing .OR.psilim<sing(ising)%psifac)EXIT
+         IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac) EXIT
          q=sing(ising)%q
          IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
       ENDDO
 c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
-      IF(ising>msing.OR.psilim<sing(ising)%psifac)THEN
+      IF(ising>msing.OR.psilim<sing(MIN(ising,msing))%psifac)THEN
          psimax=psilim*(1-eps)
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          next="finish"
