@@ -26,7 +26,8 @@ c-----------------------------------------------------------------------
       USE fspline_mod, only : fspline_type,fspline_eval,fspline_alloc,
      $                       fspline_dealloc,fspline_fit_1,fspline_fit_2
       USE bicube_mod, only : bicube_type,bicube_eval,bicube_alloc,
-     $                       bicube_dealloc,bicube_fit
+     $                       bicube_dealloc,bicube_fit,
+     $                       bicube_eval_external
       USE params, only : r4,r8,pi,twopi,mu0
       USE utilities, only : get_free_file_unit,iscdftb,iscdftf
       
@@ -1164,19 +1165,22 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       REAL(r8), DIMENSION(0:fs), INTENT(IN) :: func
 
-      INTEGER  :: itheta
-      REAL(r8) :: issurfint
-      REAL(r8) :: rfac,eta,jac,area
-      REAL(r8), DIMENSION(1,2) :: w
-      REAL(r8), DIMENSION(0:fs) :: z,thetas
-
       LOGICAL, INTENT(INOUT) :: first
       INTEGER, INTENT(INOUT)  :: fsave
       REAL(r8), INTENT(INOUT) :: psave
       REAL(r8),DIMENSION(0:),INTENT(INOUT) :: jacs,delpsi,r,a
 
+      INTEGER  :: itheta, ix, iy
+      REAL(r8) :: issurfint
+      REAL(r8) :: rfac,eta,jac,area
+      REAL(r8), DIMENSION(1,2) :: w
+      REAL(r8), DIMENSION(0:fs) :: z,thetas
+      REAL(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy, sq_s_f, sq_s_f1
+
       issurfint=0
       area=0
+      ix = 0
+      iy = 0
       IF(first .OR. psi/=psave .OR. fs/=fsave)THEN
          psave = psi
          fsave = fs
@@ -1185,16 +1189,17 @@ c-----------------------------------------------------------------------
             thetas(itheta) = REAL(itheta,r8)/REAL(fs,r8)
          ENDDO
          DO itheta=0,fs-1
-            CALL bicube_eval(rzphi,psi,thetas(itheta),1)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(thetas(itheta)+rzphi%f(2))
+            CALL bicube_eval_external(rzphi, psi, thetas(itheta), 1,
+     $           ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
+            rfac=SQRT(rzphi_f(1))
+            eta=twopi*(thetas(itheta)+rzphi_f(2))
             a(itheta)=rfac
             r(itheta)=ro+rfac*COS(eta)
             z(itheta)=zo+rfac*SIN(eta)
-            jac=rzphi%f(4)
+            jac=rzphi_f(4)
             jacs(itheta)=jac
-            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            w(1,1)=(1+rzphi_fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi_fy(1)*pi*r(itheta)/(rfac*jac)
             delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
          ENDDO
       ENDIF

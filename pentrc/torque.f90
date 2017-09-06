@@ -168,14 +168,9 @@ module torque
     endtype diagnostic_record
     type(diagnostic_record) :: orbit_record(nmethods)
 
-    integer, parameter :: nfluxfuns = 21, nthetafuns = 18
-
-    integer :: fsave
-    real(r8) :: psave
-    real(r8), dimension(:), allocatable :: jacs,delpsi,rsurf,asurf
-    logical :: firstsurf
-
-!$OMP THREADPRIVATE(fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+    complex(r8), dimension(:,:,:), allocatable :: elems
+    TYPE(cspline_type) :: kelmm(6) ! kinetic euler lagrange matrix splines
+    TYPE(cspline_type) :: trans ! nonambipolar transport and torque profile
 
     contains
     
@@ -283,6 +278,10 @@ module torque
         complex(r8), dimension(mpert) :: xs_m1_f, xs_m2_f, xs_m3_f
         complex(r8), dimension(mpert) :: dbob_m_f, divx_m_f
         complex(r8), dimension(mpert**2) :: flatmat
+        integer :: fsave
+        real(r8) :: psave
+        real(r8), dimension(0:mthsurf) :: jacs,delpsi,rsurf,asurf
+        logical :: firstsurf
 
         ! debug initiation
         if(tdebug) print *,"torque - tpsi function, psi = ",psi
@@ -405,6 +404,8 @@ module torque
         wbhat = (pi/4)*SQRT(epsr/2)*wtran           ! RLAR normalized by x^1/2
         wdhat = q**3*wtran**2/(4*epsr*wgyro)*wdfac  ! RLAR normalized by x
         nueff = kin_f(s+6)/(2*epsr)
+
+        firstsurf = .true.  ! first surface integral at this psi
         dbave = issurfint(dbfun,mthsurf,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
         dxave = issurfint(dxfun,mthsurf,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
 

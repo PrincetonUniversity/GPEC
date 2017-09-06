@@ -180,7 +180,7 @@ program pentrc
                         nvalid = size(psi_out_valid,dim=1)
                         do i=1,nvalid
                             if(nvalid>10) call progressbar(i,1,nvalid,op_percent=20)
-                            print '(a8,es10.3E3)',"  psi = ",psi_out_valid(i)
+                            print '(a7,es11.3E3)',"  psi =",psi_out_valid(i)
                             do l=-nl,nl,max(1,nl)
                                 tsurf = tpsi(psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
                                              op_erecord=xlmda_out,op_orecord=theta_out)

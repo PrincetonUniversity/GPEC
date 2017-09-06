@@ -78,7 +78,6 @@ module energy_integration
 
     real(r8) xcom_real
     common /xcom/ xcom_real(8)
-!$OMP THREADPRIVATE(energy_record)
 !$OMP THREADPRIVATE(/xcom/)
 
     contains

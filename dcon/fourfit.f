@@ -30,8 +30,7 @@ c-----------------------------------------------------------------------
      $    pentrc_nn=>nn,
      $    pentrc_r8=>r8,
      $    pentrc_timer=>timer
-      USE torque, only : kelmm,      ! cspline Euler-Lagrange mats for local use
-     $     fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf
+      USE torque, only : kelmm      ! cspline Euler-Lagrange mats for local use
       USE inputs, only : dbob_m,divx_m,kin,xs_m,fnml
       USE energy_integration
       USE pitch_integration
@@ -978,7 +977,6 @@ c-----------------------------------------------------------------------
       kaats%fs=0
       gaats%fs=0
 
-      firstsurf = .TRUE.
       IF(method==-1)THEN
          output = .FALSE.
       ELSEIF(method==0)THEN
@@ -1040,32 +1038,12 @@ c-----------------------------------------------------------------------
             ! get ion matrices for all ell at this one psi
 
             eqfun_my = eqfun%my
-!$OMP PARALLEL DEFAULT(NONE) SHARED(eqfun_my)
-            if(SIZE(jacs,1)/=eqfun_my)then
-               allocate(jacs(eqfun_my))
-            endif
-            if(SIZE(delpsi,1)/=eqfun_my)then
-               allocate(delpsi(eqfun_my))
-            endif
-            if(SIZE(rsurf,1)/=eqfun_my)then
-               allocate(rsurf(eqfun_my))
-            endif
-            if(SIZE(asurf,1)/=eqfun_my)then
-               allocate(asurf(eqfun_my))
-            endif
-!$OMP END PARALLEL
 
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP& PRIVATE(l,kwmat_l,ktmat_l,tphi,lsec,lsTime,lfTime)
 !$OMP& REDUCTION(+:kwmat,ktmat)
 c!!!!!!...from inputs.f90...
 !$OMP& COPYIN(dbob_m,divx_m,kin,xs_m,fnml,
-c!!!!!!...from torque.f90...
-!$OMP& fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf,
-c!!!!!!...from energy.f90
-!$OMP& energy_record,
-c!!!!!!...from pitch.f90
-!$OMP& pitch_record,eqspl_g,turns_g,
 c!!!!!!...from dcon_interface.f90
 !$OMP& geom, dcon_int_sq,
 c!!!!!!...from energy.f90
