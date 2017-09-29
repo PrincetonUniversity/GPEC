@@ -1465,6 +1465,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: x0,x1,eps,reps
       COMPLEX(r8) :: det0,det1,sing_det
 
+      WRITE(*, *) "Finding kinetically displaced singular surfaces"
       singnum=0
       psising=-1
       i_recur=0
@@ -1472,7 +1473,7 @@ c-----------------------------------------------------------------------
       x0=psilow
       x1=psihigh
 c-----------------------------------------------------------------------
-c     adapatively search the singular point.
+c     adaptively search the singular point.
 c-----------------------------------------------------------------------
       sing_flag=.FALSE.
       det0=sing_get_f_det(x0)
@@ -1504,7 +1505,7 @@ c-----------------------------------------------------------------------
          psising(singnum)=psihigh
       ENDIF
 c-----------------------------------------------------------------------
-c     Newton method to find the accurate local minium point.
+c     Newton method to find the accurate local minimum point.
 c-----------------------------------------------------------------------           
       DO i=2,singnum-1
          x1=psising(i)
@@ -1522,12 +1523,13 @@ c-----------------------------------------------------------------------
       psising_check=psising
       psising=-1
       singnum=1
-      WRITE (*,*) 'ABS(det_max)=',ABS(det_max),'eps=',keps1
+      WRITE(*,'(a,E10.3,a,E10.3)') 'ABS(det_max) =', ABS(det_max),
+     $     ' eps =', keps1
       psising(1)=psising_check(1)
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
-         WRITE (*,*) 'psising_check(',i,')=',psising_check(i),
-     $               'det0=',ABS(det0)
+         WRITE(*,'(a,E10.3,a,E10.3)') '- psi',psising_check(i),
+     $        ' det0 is', ABS(det0)
          reps=keps1/keps2
          eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
          IF (ABS(det0)<=ABS(det_max)*eps) THEN
@@ -1537,13 +1539,14 @@ c-----------------------------------------------------------------------
       ENDDO
       singnum=singnum+1
       psising(singnum)=psising_check(singnum_check)
-      OPEN(UNIT=100,FILE="sing_find.out",STATUS="UNKNOWN")
+      OPEN(UNIT=out_unit,FILE="sing_find.out",STATUS="UNKNOWN")
+         WRITE(out_unit,'(1x,3(a16))') "psi","real(det)","imag(det)"
          DO i=1,singnum
             det0=sing_get_f_det(psising(i))
-            WRITE (100,*) "singfac=",psising(i),'ABS(det)=',ABS(det0),
-     $           'Real(det)=',REAL(det0),'Imag(det)=',IMAG(det0)
+            WRITE(out_unit,'(1x,3(e16.9))') psising(i),
+     $           REAL(det0), AIMAG(det0)
          ENDDO
-      CLOSE (UNIT=100)
+      CLOSE (UNIT=out_unit)
       kmsing=singnum-2
       ALLOCATE(kinsing(kmsing))
       DO ising=1,kmsing
@@ -1716,7 +1719,8 @@ c-----------------------------------------------------------------------
          ENDIF
          IF(it > itmax) THEN
             it=-1
-            WRITE(*,*) "Solution is not well converged."
+            WRITE(*,'(a,e10.3,a,e10.3,a)') "- search terminated at ",
+     $               zopt," with large ",err," error"
             z=zopt
             EXIT
          ENDIF
