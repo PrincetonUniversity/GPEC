@@ -30,6 +30,7 @@ c-----------------------------------------------------------------------
      $    pentrc_nn=>nn,
      $    pentrc_r8=>r8,
      $    pentrc_timer=>timer
+      USE utilities, only : progressbar
       USE torque, only : kelmm      ! cspline Euler-Lagrange mats for local use
       USE inputs, only : dbob_m,divx_m,kin,xs_m,fnml
       USE energy_integration
@@ -1028,10 +1029,6 @@ c-----------------------------------------------------------------------
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
          CALL SYSTEM_CLOCK(COUNT=sTime)
          DO ipsi=0,mpsi
-            iindex = FLOOR(REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0))*10
-            ileft = REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0)*10-iindex
-            IF ((ipsi /= 0) .AND. (ileft == 0) .AND. verbose)
-     $           WRITE(*,*)"  ...",iindex,"% of kinetic computations"
             kwmat = 0
             ktmat = 0
             psifac=rzphi%xs(ipsi)
@@ -1264,6 +1261,7 @@ c-----------------------------------------------------------------------
             CALL SYSTEM_CLOCK(COUNT=fTime)
             tsec = REAL(fTime-sTime,8)/REAL(cr,8)
             print *,"ipsi=",ipsi," ended at tsec=",tsec
+         IF(verbose) CALL progressbar(ipsi,0,mpsi,op_percent=10)
          ENDDO
          CALL SYSTEM_CLOCK(COUNT=fTime)
          tsec = REAL(fTime-sTime,8)/REAL(cr,8)

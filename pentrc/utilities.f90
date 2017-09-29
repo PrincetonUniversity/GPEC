@@ -154,7 +154,7 @@ module utilities
     !   jstop : integer, in
     !       End of do loop
     !*OPTIONAL ARGUMENTS:
-    !   op_tep : integer, optional in
+    !   op_step : integer, optional in
     !       Do loop increment (default 1)
     !   op_percent : integer, optional in
     !       Prints progress every percent of the iterations (default 10).
@@ -164,7 +164,8 @@ module utilities
         integer, intent(in) :: j,jstart,jstop
         integer, optional :: op_step,op_percent
     
-        integer :: iteration,iterations,k,done,jstep,percent
+        integer :: iteration,iterations,k,done,jstep,percent,d10
+        real(r8) :: crnt, last
         character(64) :: bar
         
         ! set up
@@ -175,11 +176,18 @@ module utilities
         iteration = (j-jstart)/jstep + 1
         iterations= (jstop-jstart)/jstep + 1
         bar = "  |----------| ???% iterations complete"
-        
-        if(iteration==1 .or. mod(iteration,iterations*percent/100)==0)then
-            done = iteration/(iterations/10)
-            write(unit=bar(16:18),fmt="(i3)") 10*done
-            do k=1, done
+
+        crnt = FLOOR(iteration * percent * 1.0 / iterations)
+        last = FLOOR((iteration - 1) * percent * 1.0 / iterations)
+        if(iteration==1 .or. crnt>last .or. iteration==iterations)then
+            if(iteration==iterations)then
+                done = 100
+            else
+                done = crnt * percent
+            endif
+            write(unit=bar(16:18),fmt="(i3)") done
+            d10 = done/10
+            do k=1, d10
                bar(3+k:3+k)="o"
             enddo  
             print *,trim(bar)
