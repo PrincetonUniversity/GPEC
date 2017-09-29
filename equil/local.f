@@ -69,13 +69,13 @@ c-----------------------------------------------------------------------
          mins = (secs-hrs*60*60)/60
          secs = secs-hrs*60*60-mins*60
          IF(hrs>0)THEN
-            PRINT *,"Total cpu time = ",hrs," hours, ",
-     $         mins," minutes, ",secs," seconds"
+            WRITE(*,'(a,i3,a,i2,a,i2,a)'),"Total cpu time = ",hrs,
+     $         " hours, ",mins," minutes, ",secs," seconds"
          ELSEIF(mins>0)THEN
-            PRINT *,"Total cpu time = ",
+            WRITE(*,'(a,i2,a,i2,a)'),"Total cpu time = ",
      $         mins," minutes, ",secs," seconds"
          ELSEIF(secs>0)THEN
-            PRINT *,"Total cpu time = ",secs," seconds"
+            WRITE(*,'(a,i2,a)'),"Total cpu time = ",secs," seconds"
          ENDIF
          WRITE(unit,10)"Total cpu time = ",seconds," seconds"
       ENDIF

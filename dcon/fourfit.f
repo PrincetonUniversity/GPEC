@@ -929,6 +929,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations for parallelization.
 c-----------------------------------------------------------------------
+      LOGICAL :: debug_omp
       INTEGER :: sTime, fTime, cr, lsTime, lfTime
       REAL(r8) :: tsec,lsec
 
@@ -952,9 +953,12 @@ c     output formats
 c-----------------------------------------------------------------------
  10   FORMAT(' ',A4,I4,A1,I4,A6,I4,A1,I4,A8,E10.3,SP,E10.3,"i",A9,F8.2)
 
-      print *,"In serial region..."
-      lThreads = OMP_GET_NUM_THREADS()
-      print *,"# of OMP threads = ",lThreads
+      debug_omp = .FALSE.
+      IF(debug_omp)THEN
+         print *,"In serial region..."
+         lThreads = OMP_GET_NUM_THREADS()
+         print *,"# of OMP threads = ",lThreads
+      ENDIF
 c-----------------------------------------------------------------------
 c     some basic variables
 c-----------------------------------------------------------------------
@@ -1052,9 +1056,9 @@ c!!!!!!...from lsode2.f
 c!!!!!!...from pitch.f90
 !$OMP& /lcom/)
             IF(ipsi==0 .AND. OMP_GET_THREAD_NUM() == 0)THEN
-               print *,"In parallel region..."
                lThreads = OMP_GET_NUM_THREADS()
-               print *,"# of OMP threads = ",lThreads
+               WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
+     $              lThreads," OMP threads"
             ENDIF
 !$OMP DO
             DO l=-nl,nl
@@ -1064,22 +1068,23 @@ c!!!!!!...from pitch.f90
 
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"wmm",op_wmats=kwmat_l)
-
-               CALL SYSTEM_CLOCK(COUNT=lfTime)
-               lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
-               WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
-     $              l,"/",nl," tphi@1=",tphi," lTime@1=",lsec
-
                kwmat = kwmat+kwmat_l
+               IF(debug_omp)THEN
+                  CALL SYSTEM_CLOCK(COUNT=lfTime)
+                  lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
+                  WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
+     $                 l,"/",nl," tphi@1=",tphi," lTime@1=",lsec
+               ENDIF
+
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"tmm",op_wmats=ktmat_l)
-
-               CALL SYSTEM_CLOCK(COUNT=lfTime)
-               lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
-               WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
-     $              l,"/",nl," tphi@2=",tphi," lTime@2=",lsec
-
                ktmat = ktmat+ktmat_l
+               IF(debug_omp)THEN
+                  CALL SYSTEM_CLOCK(COUNT=lfTime)
+                  lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
+                  WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
+     $                 l,"/",nl," tphi@2=",tphi," lTime@2=",lsec
+               ENDIF
             ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
@@ -1257,15 +1262,14 @@ c-----------------------------------------------------------------------
             ENDDO
 c-----------------------------------------------------------------------
 c     print out timed loop over ipsi
-c----------------------------------------------------------------------- 
-            CALL SYSTEM_CLOCK(COUNT=fTime)
-            tsec = REAL(fTime-sTime,8)/REAL(cr,8)
-            print *,"ipsi=",ipsi," ended at tsec=",tsec
+c-----------------------------------------------------------------------
+            IF(debug_omp)THEN
+               CALL SYSTEM_CLOCK(COUNT=fTime)
+               tsec = REAL(fTime-sTime,8)/REAL(cr,8)
+               print *,"ipsi=",ipsi," ended at tsec=",tsec
+            ENDIF
          IF(verbose) CALL progressbar(ipsi,0,mpsi,op_percent=10)
          ENDDO
-         CALL SYSTEM_CLOCK(COUNT=fTime)
-         tsec = REAL(fTime-sTime,8)/REAL(cr,8)
-         print *,"Total time of kinetic matrix fourfit =",tsec
 c-----------------------------------------------------------------------
 c     fit splines
 c-----------------------------------------------------------------------
