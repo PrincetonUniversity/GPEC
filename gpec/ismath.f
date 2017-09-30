@@ -188,11 +188,18 @@ c-----------------------------------------------------------------------
             issurfint=issurfint+
      $           r(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
          ENDDO
-      ELSE 
+      ELSE IF (wegt==2) THEN
          DO itheta=0,fs-1
             issurfint=issurfint+
      $           jacs(itheta)*delpsi(itheta)*func(itheta)/r(itheta)/fs
          ENDDO
+      ELSE IF (wegt==3) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           a(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE
+         STOP "ERROR: issurfint wegt must be in [0,1,2,3]"
       ENDIF
 
       IF (ave==1) THEN
