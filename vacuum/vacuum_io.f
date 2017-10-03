@@ -94,6 +94,7 @@ c-----------------------------------------------------------------------
       write ( outmod, 9001 )
       rsave  = r
       write ( outmod,9002 )
+      rewind inmode ! make robust to namelists with no title line
       read(inmode,modes)
       read(inmode,debugs)
       read(inmode,vacdat)
