@@ -1539,14 +1539,14 @@ c-----------------------------------------------------------------------
       ENDDO
       singnum=singnum+1
       psising(singnum)=psising_check(singnum_check)
-      OPEN(UNIT=out_unit,FILE="sing_find.out",STATUS="UNKNOWN")
-         WRITE(out_unit,'(1x,3(a16))') "psi","real(det)","imag(det)"
+      OPEN(UNIT=sing_unit,FILE="sing_find.out",STATUS="UNKNOWN")
+         WRITE(sing_unit,'(1x,3(a16))') "psi","real(det)","imag(det)"
          DO i=1,singnum
             det0=sing_get_f_det(psising(i))
-            WRITE(out_unit,'(1x,3(e16.9))') psising(i),
+            WRITE(sing_unit,'(1x,3(e16.9))') psising(i),
      $           REAL(det0), AIMAG(det0)
          ENDDO
-      CLOSE (UNIT=out_unit)
+      CLOSE (UNIT=sing_unit)
       kmsing=singnum-2
       ALLOCATE(kinsing(kmsing))
       DO ising=1,kmsing
