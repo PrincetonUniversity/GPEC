@@ -19,6 +19,11 @@ c     10. gpout_xbrzphi
 c     11. gpout_vsbrzphi
 c     12. gpout_xbrzphifun
 c     13. gpout_arzphifun
+c     14. gpout_control_filter
+c     15. gpout_qrv
+c     16. check
+c     17. gpout_init_netcdf
+c     18. gpout_close_netcdf
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -3135,7 +3140,6 @@ c-----------------------------------------------------------------------
      $    mpv_id,qs_id,vn_id,vw_id,pw_id
 
       REAL(r8), DIMENSION(cmpsi) :: qs
-      REAL(r8), DIMENSION(mstep) :: qs_mstep
       REAL(r8), DIMENSION(cmpsi,lmpert) :: xmns,ymns
       COMPLEX(r8), DIMENSION(cmpsi,lmpert) :: vnomns,vwpmns
       COMPLEX(r8), DIMENSION(mstep,lmpert) :: vnomns_mstep,vwpmns_mstep
@@ -3235,11 +3239,9 @@ c-----------------------------------------------------------------------
       pwps%fs(0:,:) = pwpmns(:,:)
       call cspline_fit(pwps,"extrap")
       DO ipsi=1,mstep
-         CALL spline_eval(sq,psifac(ipsi),0)
          CALL cspline_eval(vnos,psifac(ipsi),0)
          CALL cspline_eval(vwps,psifac(ipsi),0)
          CALL cspline_eval(pwps,psifac(ipsi),0)
-         qs_mstep(ipsi) = sq%f(4)
          vnomns_mstep(ipsi,:) = vnos%f(:)
          vwpmns_mstep(ipsi,:) = vwps%f(:)
          pwpmns_mstep(ipsi,:) = pwps%f(:)
@@ -3252,10 +3254,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
          CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
          CALL check( nf90_redef(fncid))
-         CALL check( nf90_def_var(fncid, "q", nf90_double,
-     $      (/p_id/), qs_id) )
-         CALL check( nf90_put_att(fncid,qs_id,"long_name",
-     $      "Safety factor") )
          CALL check( nf90_def_var(fncid, "b_n_x", nf90_double,
      $      (/p_id,m_id,i_id/),vn_id) )
          CALL check( nf90_put_att(fncid,vn_id,"long_name",
@@ -3280,7 +3278,6 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(fncid,pw_id,"jacobian","pest") )
          ENDIF
          CALL check( nf90_enddef(fncid) )
-         CALL check( nf90_put_var(fncid,qs_id,qs_mstep) )
          CALL check( nf90_put_var(fncid,vn_id,RESHAPE((/REAL(
      $      vnomns_mstep), AIMAG(vnomns_mstep)/), (/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,vw_id,RESHAPE((/REAL(
@@ -5793,7 +5790,59 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_control_filter
 c-----------------------------------------------------------------------
-c     subprogram 15. check.
+c     subprogram 15. gpout_qrv.
+c     Add some basic alternative x coordinates into the profile outputs.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpout_qrv
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,p_id, qs_id,rn_id,dv_id
+
+      REAL(r8), DIMENSION(mstep) :: qs_mstep, rn_mstep, dv_mstep
+      REAL(r8), DIMENSION(0:mthsurf) :: unitfun
+c-----------------------------------------------------------------------
+c     calculation
+c-----------------------------------------------------------------------
+      unitfun = 1
+      DO i=1,mstep
+         CALL spline_eval(sq, psifac(i),0)
+         qs_mstep(i) = sq%f(4)
+         dv_mstep(i) = sq%f(3)
+         rn_mstep(i) = issurfint(unitfun,mthsurf,psifac(i),3,1)
+      ENDDO
+      rn_mstep = rn_mstep / issurfint(unitfun,mthsurf,REAL(1.0,r8),3,1)
+c-----------------------------------------------------------------------
+c     ouput
+c-----------------------------------------------------------------------
+      CALL check( nf90_open(fncfile,nf90_write,fncid) )
+      CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
+      CALL check( nf90_redef(fncid))
+      CALL check( nf90_def_var(fncid,"q",nf90_double,p_id,qs_id) )
+      CALL check( nf90_put_att(fncid,qs_id,"long_name",
+     $   "Safety factor") )
+      CALL check( nf90_def_var(fncid,"rho",nf90_double,p_id,rn_id) )
+      CALL check( nf90_put_att(fncid,rn_id,"long_name",
+     $   "Normalized flux surface average minor radius") )
+      CALL check( nf90_put_att(fncid,rn_id,"units","m") )
+      CALL check( nf90_def_var(fncid,"dvdpsi_n",nf90_double,p_id,dv_id))
+      CALL check( nf90_put_att(fncid,dv_id,"long_name",
+     $   "Differential volume per normalized poloidal flux") )
+      CALL check( nf90_put_att(fncid,dv_id,"units","m^3") )
+      CALL check( nf90_enddef(fncid) )
+
+      CALL check( nf90_put_var(fncid,dv_id,dv_mstep) )
+      CALL check( nf90_put_var(fncid,qs_id,qs_mstep) )
+      CALL check( nf90_put_var(fncid,rn_id,rn_mstep) )
+      CALL check( nf90_close(fncid) )
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpout_qrv
+c-----------------------------------------------------------------------
+c     subprogram 16. check.
 c     Check status of netcdf file.
 c-----------------------------------------------------------------------
       SUBROUTINE check(stat)
@@ -5814,7 +5863,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE check
 c-----------------------------------------------------------------------
-c     subprogram 16. gpout_init_netcdf.
+c     subprogram 17. gpout_init_netcdf.
 c     Initialize the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_init_netcdf
@@ -5964,7 +6013,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_init_netcdf
 c-----------------------------------------------------------------------
-c     subprogram 17. gpout_close_netcdf.
+c     subprogram 18. gpout_close_netcdf.
 c     Close the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_close_netcdf

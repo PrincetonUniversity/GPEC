@@ -423,24 +423,24 @@ module inputs
             if(mpert>nm)then
                 ! convert spectrum on each surface
                 do i=1,npsi
-                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
                     lagbmns(i,:) = newm(nm,ms,lagbmni(i,:),mpert,mfac)
                     divxmns(i,:) = newm(nm,ms,divxmni(i,:),mpert,mfac)
                     CALL idcon_coords(psi(i),lagbmns(i,:),mfac,mpert,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                     CALL idcon_coords(psi(i),divxmns(i,:),mfac,mpert,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
                 enddo
             else
                 ! convert spectrum on each surface
                 do i=1,npsi
-                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
                     CALL idcon_coords(psi(i),lagbmni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                     CALL idcon_coords(psi(i),divxmni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                     lagbmns(i,:) = newm(nm,ms,lagbmni(i,:),mpert,mfac)
                     divxmns(i,:) = newm(nm,ms,divxmni(i,:),mpert,mfac)
+                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
                 enddo
             endif
         else
@@ -459,7 +459,6 @@ module inputs
         dbob_m%xs(0:) = psi(1:)
         divx_m%xs(0:) = psi(1:)
         do i=1,npsi
-            if(verbose) call progressbar(i,1,npsi,op_step=1,op_percent=20)
             call iscdftb(mfac,mpert,lagbfun,mthsurf,lagbmns(i,:))
             call iscdftb(mfac,mpert,divxfun,mthsurf,divxmns(i,:))
             do j=0,mthsurf
@@ -469,6 +468,7 @@ module inputs
             enddo
             call iscdftf(mfac,mpert,lagbfun,mthsurf,dbob_m%fs(i-1,:))
             call iscdftf(mfac,mpert,divxfun,mthsurf,divx_m%fs(i-1,:))
+            if(verbose) call progressbar(i,1,npsi,op_step=1,op_percent=20)
         enddo
         call cspline_fit(dbob_m,"extrap")
         call cspline_fit(divx_m,"extrap")
@@ -644,7 +644,6 @@ module inputs
             if(mpert>nm)then
                 ! convert spectrum on each surface
                 do i=1,npsi
-                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
                     xmp1mns(i,:) = newm(nm,ms,xmp1mni(i,:),mpert,mfac)
                     xspmns(i,:) = newm(nm,ms,xspmni(i,:),mpert,mfac)
                     xmsmns(i,:) = newm(nm,ms,xmsmni(i,:),mpert,mfac)
@@ -654,11 +653,11 @@ module inputs
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                     CALL idcon_coords(psi(i),xmsmns(i,:),mfac,mpert,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
+                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
                 enddo
             else
                 ! convert spectrum on each surface
                 do i=1,npsi
-                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
                     CALL idcon_coords(psi(i),xmp1mni(i,:),ms,nm,&
                         powin(3),powin(2),powin(1),powin(4),tmag_in,jsurf_in)
                     CALL idcon_coords(psi(i),xspmni(i,:),ms,nm,&
@@ -668,6 +667,7 @@ module inputs
                     xmp1mns(i,:) = newm(nm,ms,xmp1mni(i,:),mpert,mfac)
                     xspmns(i,:) = newm(nm,ms,xspmni(i,:),mpert,mfac)
                     xmsmns(i,:) = newm(nm,ms,xmsmni(i,:),mpert,mfac)
+                    if(verbose) call progressbar(i,1,npsi,op_percent=20)
                 enddo
             endif
         else
@@ -782,7 +782,6 @@ module inputs
             if(verbose) print *,'Calculating dB/B, div(xi_prp)'
             do i=istrt_psi,istop_psi
                 j = i-istrt_psi+1
-                if(verbose) call progressbar(j,1,npsi,op_percent=20)
                 call cspline_eval(xs_m(1),psi(i),0)
                 call cspline_eval(xs_m(2),psi(i),0)
                 call cspline_eval(xs_m(3),psi(i),0)
@@ -812,6 +811,7 @@ module inputs
                 enddo
                 call iscdftf(mfac,mpert,divxfun,mthsurf,divx_m%fs(i-1,:))
                 call iscdftf(mfac,mpert,dbobfun,mthsurf,dbob_m%fs(i-1,:))
+                if(verbose) call progressbar(j,1,npsi,op_percent=20)
             enddo
         else
             ! default dbdx is a flat spectrum

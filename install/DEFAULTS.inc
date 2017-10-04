@@ -162,7 +162,7 @@ endif
 # include compiler specific libs for intel fast moves
 ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
-#    FCLIBS = -lirc -limf
+    #FCLIBS = -lirc -limf # outdated
     FCLIBS = -lintlc -limf
     FCINC = $(F90HOME)/include/intel64
 else
