@@ -49,9 +49,10 @@ c-----------------------------------------------------------------------
       
       INTEGER, INTENT(IN) :: mode,unit
 
+      INTEGER, SAVE :: count_rate, wall_start
       REAL(4), SAVE :: start
       REAL(4) :: seconds
-      INTEGER :: hrs,mins,secs
+      INTEGER :: hrs,mins,secs, wall_seconds
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -61,7 +62,10 @@ c     computations.
 c-----------------------------------------------------------------------
       IF(mode == 0)THEN
          CALL CPU_TIME(start)
+         CALL SYSTEM_CLOCK(COUNT_RATE=count_rate)
+         CALL SYSTEM_CLOCK(COUNT=wall_start)
       ELSE
+         ! report cpu time
          CALL CPU_time(seconds)
          seconds=seconds-start
          secs = int(seconds)
@@ -78,6 +82,23 @@ c-----------------------------------------------------------------------
             WRITE(*,'(a,i2,a)'),"Total cpu time = ",secs," seconds"
          ENDIF
          WRITE(unit,10)"Total cpu time = ",seconds," seconds"
+         ! report wall time
+         CALL SYSTEM_CLOCK(COUNT=wall_seconds)
+         seconds=(wall_seconds-wall_start)/REAL(count_rate, 8)
+         secs = int(seconds)
+         hrs = secs/(60*60)
+         mins = (secs-hrs*60*60)/60
+         secs = secs-hrs*60*60-mins*60
+         IF(hrs>0)THEN
+            WRITE(*,'(a,i3,a,i2,a,i2,a)'),"Total wall time = ",hrs,
+     $         " hours, ",mins," minutes, ",secs," seconds"
+         ELSEIF(mins>0)THEN
+            WRITE(*,'(a,i2,a,i2,a)'),"Total wall time = ",
+     $         mins," minutes, ",secs," seconds"
+         ELSEIF(secs>0)THEN
+            WRITE(*,'(a,i2,a)'),"Total wall time = ",secs," seconds"
+         ENDIF
+         WRITE(unit,10)"Total wall time = ",seconds," seconds"
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
