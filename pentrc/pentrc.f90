@@ -179,7 +179,7 @@ program pentrc
                     if(allocated(psi_out_valid))then
                         nvalid = size(psi_out_valid,dim=1)
                         do i=1,nvalid
-                            if(nvalid<10) print '(a8,es10.3E3)',"  psi = ",psi_out_valid(i)
+                            if(nvalid<10) print '(a8,es11.3E3)',"  psi = ",psi_out_valid(i)
                             do l=-nl,nl,max(1,nl)
                                 tsurf = tpsi(psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
                                              op_erecord=xlmda_out,op_orecord=theta_out)

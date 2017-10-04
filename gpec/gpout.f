@@ -5797,7 +5797,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT (IN) :: i,p_id, qs_id,rn_id,dv_id,
+      INTEGER :: i,p_id, qs_id,rn_id,dv_id
 
       REAL(r8), DIMENSION(mstep) :: qs_mstep, rn_mstep, dv_mstep
       REAL(r8), DIMENSION(0:mthsurf) :: unitfun
@@ -5806,10 +5806,10 @@ c     calculation
 c-----------------------------------------------------------------------
       unitfun = 1
       DO i=1,mstep
-         CALL spline_eval(sq, psifac,0)
+         CALL spline_eval(sq, psifac(i),0)
          qs_mstep(i) = sq%f(4)
          dv_mstep(i) = sq%f(3)
-         rn_mstep(i) = issurfint(unitfun,mthsurf,psifac(ipsi),3,1)
+         rn_mstep(i) = issurfint(unitfun,mthsurf,psifac(i),3,1)
       ENDDO
       rn_mstep = rn_mstep / issurfint(unitfun,mthsurf,REAL(1.0,r8),3,1)
 c-----------------------------------------------------------------------
@@ -5832,8 +5832,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_enddef(fncid) )
 
       CALL check( nf90_put_var(fncid,dv_id,dv_mstep) )
-      CALL check( nf90_put_var(fncid,qs_id,qs_mstep )
-      CALL check( nf90_put_var(fncid,rn_id,rn_mstep )
+      CALL check( nf90_put_var(fncid,qs_id,qs_mstep) )
+      CALL check( nf90_put_var(fncid,rn_id,rn_mstep) )
       CALL check( nf90_close(fncid) )
 
 c-----------------------------------------------------------------------
