@@ -43,7 +43,6 @@ c-----------------------------------------------------------------------
 c      REAL(r8), DIMENSION(0:rz_in%mx,0:rz_in%my) :: x,y,r2,deta
       REAL(r8),DIMENSION(:,:),ALLOCATABLE :: x,y,r2,deta
       TYPE(spline_type) :: spl
-      TYPE(bicube_type), POINTER :: rzphip
 c-----------------------------------------------------------------------
 c     fit input to cubic splines and diagnose.
 c-----------------------------------------------------------------------
@@ -153,7 +152,6 @@ c     prepare new bicube type for coordinates.
 c-----------------------------------------------------------------------
       IF(mtheta == 0)mtheta=rz_in%my
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
-      rzphip => rzphi
       rzphi%xs=sq%xs
       rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
       rzphi%xtitle="psifac"

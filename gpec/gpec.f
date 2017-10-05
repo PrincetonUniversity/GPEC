@@ -661,7 +661,7 @@ c-----------------------------------------------------------------------
          edge_flag=.TRUE.
          CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
-         CALL gpout_xbnormal(mode,xspmn)
+         CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)
          CALL gpdiag_radvar
          ! reset output options

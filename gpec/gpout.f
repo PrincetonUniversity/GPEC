@@ -488,7 +488,7 @@ c-----------------------------------------------------------------------
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv,tmfac
       REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork,s,s1,s2,s3,s4,
-     $     o,o1,o2,o3
+     $     o,o1,o2,o3,o4
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: work
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: u,a,vt
 
@@ -858,152 +858,160 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write matrix.
 c-----------------------------------------------------------------------
-      IF(ascii_flag)THENCALL ascii_open(out_unit,"gpec_singcoup_matrix_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_SINGCOUP_MATRIX: Coupling matrices"//
-     $     " between resonant field and external field"
-      WRITE(out_unit,*)version
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
-     $     "jac_out = ",jac_out,"tmag_out =",tout
-      WRITE(out_unit,'(4(1x,a12,I4))')
-     $     "msing =",msing,"mpert =",tmpert,
-     $     "mlow =",tmlow,"mhigh =",tmhigh
-      WRITE(out_unit,'(2(1x,a12,es17.8e3))')
-     $     "psilim =",psilim,"qlim =",qlim
-      WRITE(out_unit,*)
-
-      WRITE(out_unit,*)"Coupling matrix to effectiveresonant fields"
-      WRITE(out_unit,*)
-      DO i=1,msing
-         WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
-     $        "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+      IF(ascii_flag)THEN
+         CALL ascii_open(out_unit,"gpec_singcoup_matrix_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_SINGCOUP_MATRIX: Coupling matrices"//
+     $        " between resonant field and external field"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
-         DO j=1,tmpert
-            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $           tmfac(j),REAL(t1mat(i,j)),AIMAG(t1mat(i,j))
+         WRITE(out_unit,'(1x,a13,a8,1x,a12,I2)')
+     $        "jac_out = ",jac_out,"tmag_out =",tout
+         WRITE(out_unit,'(4(1x,a12,I4))')
+     $        "msing =",msing,"mpert =",tmpert,
+     $        "mlow =",tmlow,"mhigh =",tmhigh
+         WRITE(out_unit,'(2(1x,a12,es17.8e3))')
+     $        "psilim =",psilim,"qlim =",qlim
+         WRITE(out_unit,*)
+
+         WRITE(out_unit,*)"Coupling matrix to effectiveresonant fields"
+         WRITE(out_unit,*)
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $           "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $              tmfac(j),REAL(t1mat(i,j)),AIMAG(t1mat(i,j))
+            ENDDO
+            WRITE(out_unit,*)
          ENDDO
-         WRITE(out_unit,*)
-      ENDDO
 
-      WRITE(out_unit,*)"Coupling matrix to singular currents"
-      WRITE(out_unit,*)
-      DO i=1,msing
-         WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
-     $        "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+         WRITE(out_unit,*)"Coupling matrix to singular currents"
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
-         DO j=1,tmpert
-            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $           tmfac(j),REAL(t2mat(i,j)),AIMAG(t2mat(i,j))
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $           "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $              tmfac(j),REAL(t2mat(i,j)),AIMAG(t2mat(i,j))
+            ENDDO
+            WRITE(out_unit,*)
          ENDDO
-         WRITE(out_unit,*)
-      ENDDO
 
-      WRITE(out_unit,*)"Coupling matrix to island half-widths"
-      WRITE(out_unit,*)
-      DO i=1,msing
-         WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
-     $        "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+         WRITE(out_unit,*)"Coupling matrix to island half-widths"
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
-         DO j=1,tmpert
-            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $           tmfac(j),REAL(t3mat(i,j)),AIMAG(t3mat(i,j))
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $           "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $              tmfac(j),REAL(t3mat(i,j)),AIMAG(t3mat(i,j))
+            ENDDO
+            WRITE(out_unit,*)
          ENDDO
+
+         WRITE(out_unit,*)"Coupling matrix to interpolated"//
+     $        " resonant fields"
          WRITE(out_unit,*)
-      ENDDO
-WRITE(out_unit,*)"Coupling matrix to interpolated resonant fields"
-      WRITE(out_unit,*)
-      DO i=1,msing
-         WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
-     $        "q =",singtype(i)%q,"psi =",singtype(i)%psifac
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
-         DO j=1,tmpert
-            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $           tmfac(j),REAL(t4mat(i,j)),AIMAG(t4mat(i,j))
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $           "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $              tmfac(j),REAL(t4mat(i,j)),AIMAG(t4mat(i,j))
+            ENDDO
+            WRITE(out_unit,*)
          ENDDO
-         WRITE(out_unit,*)
-      ENDDO      CALL ascii_close(out_unit)
+         CALL ascii_close(out_unit)
 
-      CALL ascii_open(out_unit,"gpec_singcoup_svd_n"//
-     $     TRIM(sn)//".out","UNKNOWN")
-      WRITE(out_unit,*)"GPEC_SINGCOUP_SVD: SVD analysis"//
-     $     " for coupling matrices"
-      WRITE(out_unit,*)version
-      WRITE(out_unit,*)
-      WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
-     $     "jac_out = ",jac_out,"tmag_out =",tmag_out
-      WRITE(out_unit,'(4(1x,a12,I4))')
-     $     "msing =",msing,"mpert =",tmpert,
-     $     "mlow =",tmlow,"mhigh =",tmhigh
-      WRITE(out_unit,'(2(1x,a12,es17.8e3))')
-     $     "psilim =",psilim,"qlim =",qlim
-      WRITE(out_unit,*)
-
-      WRITE(out_unit,*)"SVD for coupling matrix to effective "//
-     $     "resonant"//
-     $        " fields"
-      WRITE(out_unit,*)
-      DO i=1,msing
-         WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $        "mode =",i,"s =",s1(i)
+         CALL ascii_open(out_unit,"gpec_singcoup_svd_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_SINGCOUP_SVD: SVD analysis"//
+     $        " for coupling matrices"
+         WRITE(out_unit,*)version
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi)",$"imag(Phi)"
-         DO j=1,tmpert
-            WRITE(out_unit,'(1x,I4,4(es17.8e3))')
-     $           tmfac(j),REAL(t1v(j,i)),AIMAG(t1v(j,i))
+         WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
+     $        "jac_out = ",jac_out,"tmag_out =",tmag_out
+         WRITE(out_unit,'(4(1x,a12,I4))')
+     $        "msing =",msing,"mpert =",tmpert,
+     $        "mlow =",tmlow,"mhigh =",tmhigh
+         WRITE(out_unit,'(2(1x,a12,es17.8e3))')
+     $        "psilim =",psilim,"qlim =",qlim
+         WRITE(out_unit,*)
+
+         WRITE(out_unit,*)"SVD for coupling matrix to effective "//
+     $        "resonant"//
+     $           " fields"
+         WRITE(out_unit,*)
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $           "mode =",i,"s =",s1(i)
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi)",
+     $           "imag(Phi)"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,4(es17.8e3))')
+     $              tmfac(j),REAL(t1v(j,i)),AIMAG(t1v(j,i))
+            ENDDO
+            WRITE(out_unit,*)
          ENDDO
-         WRITE(out_unit,*)
-      ENDDO
 
-      WRITE(out_unit,*)"SVD for coupling matrix to singular"//
-     $        " currents"
-      WRITE(out_unit,*)
-      DO i=1,msing
-         WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $        "mode =",i,"s =",s2(i)
+         WRITE(out_unit,*)"SVD for coupling matrix to singular"//
+     $           " currents"
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",$"imag(Phi)"
-         DO j=1,tmpert
-            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $           tmfac(j),REAL(t2v(j,i)),AIMAG(t2v(j,i))
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $           "mode =",i,"s =",s2(i)
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
+     $           "imag(Phi)"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $              tmfac(j),REAL(t2v(j,i)),AIMAG(t2v(j,i))
+            ENDDO
+            WRITE(out_unit,*)
          ENDDO
-         WRITE(out_unit,*)
-      ENDDO
 
-      WRITE(out_unit,*)"SVD of coupling matrix to island"//
-     $        " half-widths"
-      WRITE(out_unit,*)
-      DO i=1,msing
-         WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $        "mode =",i,"s =",s3(i)
+         WRITE(out_unit,*)"SVD of coupling matrix to island"//
+     $           " half-widths"
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",$"imag(Phi)"
-         DO j=1,tmpert
-            WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $           tmfac(j),REAL(t3v(j,i)),AIMAG(t3v(j,i))ENDDO
-         WRITE(out_unit,*)
-      ENDDO
-
-      WRITE(out_unit,*)"SVD for coupling matrix to interpolated "//
-     $     "resonant fields"
-      WRITE(out_unit,*)
-      DO i=1,msing
-         WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $        "mode =",i,"s =",s4(i)
-         WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi_i)",
-     $        "imag(Phi_i)"
-         DO j=1,tmpert
-            WRITE(out_unit,'(1x,I4,4(es17.8e3))')
-     $           tmfac(j),REAL(t4v(j,i)),AIMAG(t4v(j,i))
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $           "mode =",i,"s =",s3(i)
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
+     $           "imag(Phi)"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $              tmfac(j),REAL(t3v(j,i)),AIMAG(t3v(j,i))
+            ENDDO
+            WRITE(out_unit,*)
          ENDDO
+
+         WRITE(out_unit,*)"SVD for coupling matrix to interpolated "//
+     $        "resonant fields"
          WRITE(out_unit,*)
-      ENDDO
-      CALL ascii_close(out_unit)
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $           "mode =",i,"s =",s4(i)
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi_i)",
+     $           "imag(Phi_i)"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,4(es17.8e3))')
+     $              tmfac(j),REAL(t4v(j,i)),AIMAG(t4v(j,i))
+            ENDDO
+            WRITE(out_unit,*)
+         ENDDO
+         CALL ascii_close(out_unit)
 
          IF (osing<msing) THEN
             CALL ascii_open(out_unit,"gpec_singcoup_svd_local_n"//
@@ -1062,6 +1070,21 @@ WRITE(out_unit,*)"Coupling matrix to interpolated resonant fields"
                DO j=1,tmpert
                   WRITE(out_unit,'(1x,I4,2(es17.8e3))')
      $                 tmfac(j),REAL(y3v(j,i)),AIMAG(y3v(j,i))
+               ENDDO
+               WRITE(out_unit,*)
+            ENDDO
+            WRITE(out_unit,*)"Local SVD for coupling matrix to"//
+     $           " interpolated resonant fields"
+            WRITE(out_unit,*)
+            DO i=1,osing
+               WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $              "mode =",i,"s =",o4(i)
+               WRITE(out_unit,*)
+               WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
+     $              "imag(Phi)"
+               DO j=1,tmpert
+                  WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $                 tmfac(j),REAL(y4v(j,i)),AIMAG(y4v(j,i))
                ENDDO
                WRITE(out_unit,*)
             ENDDO
@@ -2854,7 +2877,8 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing x and b normal components"
 
       CALL idcon_build(egnum,xspmn)
-tout = tmag_out
+      tout = tmag_out
+
       ! set up pest grid
       IF(TRIM(jac_out)=="pest")THEN ! will be mlow,mhigh if jac_type pest
         mlow_pest = lmlow
@@ -2924,11 +2948,11 @@ c-----------------------------------------------------------------------
          CALL gpeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep),ji=0)
          CALL gpeq_bcoordsout(bnomns(istep,:),bno_mn,psifac(istep),ji=0)
 
-         CALL ipeq_interp_sol(fsp_sol,psifac(istep),interpbwn)
+         CALL gpeq_interp_sol(fsp_sol,psifac(istep),interpbwn)
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             CALL gpeq_bcoordsout(bwpmns(istep,:),bno_mn,
      $                           psifac(istep),ji=1)
-            CALL ipeq_bcoordsout(intbwpmns(istep,:),interpbwn,
+            CALL gpeq_bcoordsout(intbwpmns(istep,:),interpbwn,
      $                           psifac(istep),ji=0)
          ELSE ! no need to re-weight bno_mn with expensive invfft and fft
             bwp_mn=bwp_mn/area
