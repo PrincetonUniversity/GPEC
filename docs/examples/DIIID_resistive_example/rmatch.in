@@ -1,4 +1,4 @@
-&rmatch_input
+&RMATCH_INPUT
     galsol_filename = "gal_solution.dat"
     galsol_filename_cut = "gal_solution_cut.dat"
     deltabin_filename = "delta_gw.dat"
@@ -12,8 +12,8 @@
     itermax=5000
     msing=20
     initguess = ( 0,10)    !n=1
-    eta=8e-8,8e-8,8e-8,8e-8,8e-8,8e-8,8e-8
-    massden=3.345200000000000e-07,3.345200000000000e-07,3.345200000000000e-07,3.345200000000000e-07,3.345200000000000e-07
+    eta=8e-8
+    massden=3.3e-07
     scan_x1 =  1e-9
     scan_x0 = 1.90E-10
 
@@ -36,18 +36,21 @@
     match_sol%b_flag=f
     coil%ideal_flag=f
 /
+&RMATCH_OUTPUT
+    bin_rpecsol=f
+    out_rpecsol=f
+/
 
-&deltac_list
+&DELTAC_LIST
     tid=3,5,6,4
-    deltac_bin_sol=t
-    deltac_out_sol=t
+    deltac_bin_sol=f
+    deltac_out_sol=f
     xmax_method=1
 
     rescale=t
     pfac=0.1
     xfac=10.0
     gal_method="normal"
-!    gal_method="resonant"
     noexp=t
     nx=128
     nq=5
@@ -66,14 +69,13 @@
     order_exp=20
 
     diagnose_res=f
-!    diagnose_sol=f
 
     x0_ua=0.3
     x1_ua=1
     nx_ua=100
     outt=3
 /
-&nyquist_input
+&NYQUIST_INPUT
     nyquist%flag=f
     nyquist%ns=100
 
@@ -84,7 +86,7 @@
     nyquist%out=t
     nyquist%bin=t
 /    
-&msing_list
+&MSING_LIST
     msing_diagnose=f
     vmat_filename="vmat.bin"
     sing_frac=0.2

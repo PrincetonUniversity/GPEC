@@ -85,6 +85,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: qscan_out=.TRUE.,deltar_flag=.FALSE.,deflate=.FALSE.,
      $           deltac_flag=.FALSE.,deltaj_flag=.FALSE.,
      $           match_flag=.FALSE.
+      LOGICAL :: bin_rpecsol=.FALSE.,out_rpecsol=.FALSE.
       CHARACTER(10) :: model="deltac"
       INTEGER :: msing,totmsing,nstep=32,scan_nstep,qscan_ising=1
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
@@ -129,6 +130,7 @@ c-----------------------------------------------------------------------
      $                         deflate,nroot,match_flag,ising_output,
      $                         match_sol,matrix_diagnose,fulldomain,
      $                         coil,itermax 
+      NAMELIST/rmatch_output/ bin_rpecsol,out_rpecsol
       NAMELIST/nyquist_input/nyquist
 10    FORMAT(1x,"Eigenvalue=",1p,2e11.3)
 20    FORMAT(1x,"ising=",I2,1x,"q_in=",1p,2e11.3)
@@ -138,12 +140,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     initialize and set parameters.
 c-----------------------------------------------------------------------
+      WRITE(*,*)""
+      WRITE(*,*)"RMATCH START"
+      WRITE(*,*)"__________________________________________"
       xvar=-1.0
       CALL ascii_open(out_unit,"match.out","REPLACE")
       CALL timer(0,out_unit)
       CALL match_init
       OPEN(UNIT=in_unit,FILE="rmatch.in",STATUS="OLD")
       READ(in_unit,NML=rmatch_input)
+      REWIND(in_unit)
+      READ(in_unit,NML=rmatch_output)
       REWIND(in_unit)
       READ(in_unit,NML=nyquist_input)
       REWIND(in_unit)
@@ -177,13 +184,18 @@ c-----------------------------------------------------------------------
          restype(ising)%taua=restype(ising)%taua*sqrt(massden(ising))
          restype(ising)%ising=ising
 
-         WRITE (*,*) 'ising=',ising
-         WRITE (*,*) 'e=',restype(ising)%e,'f=',restype(ising)%f
-         WRITE (*,*) 'h=',restype(ising)%h,'m=',restype(ising)%m
-         WRITE (*,*) 'g=',restype(ising)%g,'k=',restype(ising)%k
-         WRITE (*,*) 'taua=',restype(ising)%taua
-         WRITE (*,*) 'taur=',restype(ising)%taur
-         WRITE (*,*) 'v1=',restype(ising)%v1
+         WRITE(*,'(1x,a,i3)') 'ising = ',ising
+         WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'e =',restype(ising)%e,
+     $         ', f =',restype(ising)%f
+         WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'h =',restype(ising)%h,
+     $         ', m=',restype(ising)%m
+         WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'g =',restype(ising)%g,
+     $         ', k=',restype(ising)%k
+         WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'taua =',
+     $         restype(ising)%taua
+         WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'taur =',
+     $         restype(ising)%taur
+         WRITE(*,'(2x,a,es10.3E2,a,es10.3E2)') 'v1 =',restype(ising)%v1
       ENDDO
       CLOSE(UNIT=bin_unit)
       IF (fulldomain>0) THEN
@@ -1527,106 +1539,111 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write full outer region solutions, binary.
 c-----------------------------------------------------------------------
-      WRITE(filename1,*) TRIM(filename)//'_out.bin'
-      CALL bin_open(bin_unit,filename1,"REPLACE","REWIND","none")
-      DO ipert=1,outs%mpert
-         DO ip=0,outs%tot_grids                
-            IF (outs%issing(ip)) THEN
-c               WRITE(bin_unit)
-               CYCLE
-            ENDIF
-            WRITE (bin_unit) REAL(outs%psi(ip),4),
-     $                       REAL(outtotsol(ipert,ip),4),
-     $                       REAL(IMAG(outtotsol(ipert,ip)),4),
-     $                       mylog(outtotsol(ipert,ip))
+      IF(bin_rpecsol)THEN
+         WRITE(filename1,*) TRIM(filename)//'_out.bin'
+         CALL bin_open(bin_unit,filename1,"REPLACE","REWIND","none")
+         DO ipert=1,outs%mpert
+            DO ip=0,outs%tot_grids
+               IF (outs%issing(ip)) THEN
+                  CYCLE
+               ENDIF
+               WRITE (bin_unit) REAL(outs%psi(ip),4),
+     $                          REAL(outtotsol(ipert,ip),4),
+     $                          REAL(IMAG(outtotsol(ipert,ip)),4),
+     $                          mylog(outtotsol(ipert,ip))
+            ENDDO
+            WRITE(bin_unit)
          ENDDO
-         WRITE(bin_unit)
-      ENDDO  
-      CALL bin_close(bin_unit)
+         CALL bin_close(bin_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     write full outer region solutions, ascii.
 c-----------------------------------------------------------------------
-      WRITE(filename1,*) TRIM(filename)//'_out.out'
-      CALL ascii_open(match_unit,TRIM(filename1),"REPLACE")
-      WRITE (match_unit,10) 'psifac'
-               DO m=outs%mlow,outs%mhigh
-                  WRITE (tmp,"(I4)") m
-                  tmp=ADJUSTL(tmp)
-                  WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
-                  WRITE (match_unit,10) TRIM(comp_tittle)
-                  WRITE (comp_tittle,*) 'IMAG(',TRIM(tmp),')'
-                  WRITE (match_unit,10) TRIM(comp_tittle)
-               ENDDO
-10            FORMAT (1P,A15,$)
-               WRITE (match_unit,*)
-               DO ip=0,outs%tot_grids
-                  IF (outs%issing(ip)) CYCLE
-                  WRITE (match_unit,20) outs%psi(ip)
-20               FORMAT (1P,E20.10,$)
-                  DO ipert=1,outs%mpert
-                     WRITE (match_unit,20)
-     $                     REAL(outtotsol(ipert,ip)),
-     $                     IMAG(outtotsol(ipert,ip))
-                  ENDDO
-                  WRITE (match_unit,*)
-               ENDDO
-               CALL ascii_close(match_unit)
-
+      IF(out_rpecsol)THEN
+         WRITE(filename1,*) TRIM(filename)//'_out.out'
+         CALL ascii_open(match_unit,TRIM(filename1),"REPLACE")
+         WRITE (match_unit,10) 'psifac'
+         DO m=outs%mlow,outs%mhigh
+            WRITE (tmp,"(I4)") m
+            tmp=ADJUSTL(tmp)
+            WRITE (comp_tittle,*) 'REAL(',TRIM(tmp),')'
+            WRITE (match_unit,10) TRIM(comp_tittle)
+            WRITE (comp_tittle,*) 'IMAG(',TRIM(tmp),')'
+            WRITE (match_unit,10) TRIM(comp_tittle)
+         ENDDO
+10       FORMAT (1P,A15,$)
+         WRITE (match_unit,*)
+         DO ip=0,outs%tot_grids
+            IF (outs%issing(ip)) CYCLE
+            WRITE (match_unit,20) outs%psi(ip)
+20          FORMAT (1P,E20.10,$)
+            DO ipert=1,outs%mpert
+               WRITE (match_unit,20)
+     $               REAL(outtotsol(ipert,ip)),
+     $               IMAG(outtotsol(ipert,ip))
+            ENDDO
+            WRITE (match_unit,*)
+         ENDDO
+         CALL ascii_close(match_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     write inner region solutions, binary.
 c-----------------------------------------------------------------------      
-      tmp_cut=outtotsol_cut
-      outtotsol_cut=0
-      eff_grids=-1
-      DO ip=0,outs%tot_grids
-         IF (outs%issing(ip)) THEN
-            CYCLE
-         ENDIF
-         eff_grids=eff_grids+1
-         outtotsol_cut(:,eff_grids)=tmp_cut(:,ip)
-         psi_cut(eff_grids)=outs%psi(ip)
-      ENDDO
-      CALL cspline_alloc(outcut_sp,eff_grids,outs%mpert)
-      outcut_sp%xs(0:eff_grids)=psi_cut(0:eff_grids)
-      DO ip=0,eff_grids
-         outcut_sp%fs(ip,:)=outtotsol_cut(:,ip)
-      ENDDO
-      CALL cspline_fit(outcut_sp,"extrap")
-      WRITE(filename1,*) TRIM(filename)//'_in.bin'
-      CALL bin_open(bin_unit,filename1,"REPLACE","REWIND","none")
-      DO ising=1,msing
-         DO ip=-ins%tot_g,ins%tot_g
-            IF (match_sol%uniform) THEN
-               inpsi=inpsifac(ip,ising)
-               DO jsing=1,outs%msing
-                  IF (outs%xext(ising,1)<inpsi .AND. 
-     $                inpsi<outs%xext(ising,2)) THEN 
-                     ipert=NINT(outs%nn*outs%qsing(ising))-outs%mlow+1
-                     CALL cspline_eval(outcut_sp,inpsi,0)
-                     insol=outcut_sp%f(ipert)+intotsol(ip,ising)
-                     WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
-     $                                REAL(insol,4),
-     $                                REAL(IMAG(insol),4),
-     $                                mylog(insol)
-                  ENDIF
-               ENDDO
-            ELSE
-               insol=intotsol(ip,ising)
-               WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
-     $                          REAL(insol,4),
-     $                          REAL(IMAG(insol),4),
-     $                          mylog(insol)
-
+      IF(bin_rpecsol)THEN
+         tmp_cut=outtotsol_cut
+         outtotsol_cut=0
+         eff_grids=-1
+         DO ip=0,outs%tot_grids
+            IF (outs%issing(ip)) THEN
+               CYCLE
             ENDIF
+            eff_grids=eff_grids+1
+            outtotsol_cut(:,eff_grids)=tmp_cut(:,ip)
+            psi_cut(eff_grids)=outs%psi(ip)
          ENDDO
-         WRITE(bin_unit)
-      ENDDO 
-      CALL bin_close(bin_unit)  
-      CALL cspline_dealloc(outcut_sp)
+         CALL cspline_alloc(outcut_sp,eff_grids,outs%mpert)
+         outcut_sp%xs(0:eff_grids)=psi_cut(0:eff_grids)
+         DO ip=0,eff_grids
+            outcut_sp%fs(ip,:)=outtotsol_cut(:,ip)
+         ENDDO
+         CALL cspline_fit(outcut_sp,"extrap")
+         WRITE(filename1,*) TRIM(filename)//'_in.bin'
+         CALL bin_open(bin_unit,filename1,"REPLACE","REWIND","none")
+         DO ising=1,msing
+            DO ip=-ins%tot_g,ins%tot_g
+               IF (match_sol%uniform) THEN
+                  inpsi=inpsifac(ip,ising)
+                  DO jsing=1,outs%msing
+                     IF (outs%xext(ising,1)<inpsi .AND.
+     $                   inpsi<outs%xext(ising,2)) THEN
+                        ipert=NINT(outs%nn*outs%qsing(ising))
+     $                        -outs%mlow+1
+                        CALL cspline_eval(outcut_sp,inpsi,0)
+                        insol=outcut_sp%f(ipert)+intotsol(ip,ising)
+                        WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
+     $                                   REAL(insol,4),
+     $                                   REAL(IMAG(insol),4),
+     $                                   mylog(insol)
+                     ENDIF
+                  ENDDO
+               ELSE
+                  insol=intotsol(ip,ising)
+                  WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
+     $                             REAL(insol,4),
+     $                             REAL(IMAG(insol),4),
+     $                             mylog(insol)
+
+               ENDIF
+            ENDDO
+            WRITE(bin_unit)
+         ENDDO
+         CALL bin_close(bin_unit)
+         CALL cspline_dealloc(outcut_sp)
+      ENDIF
 c-----------------------------------------------------------------------
 c     write resonant outer region solutions, binary.
 c-----------------------------------------------------------------------
-      IF (match_sol%flag) THEN
+      IF (match_sol%flag .AND. bin_rpecsol) THEN
          WRITE(filename1,*) TRIM(filename)//'_out_qpert.bin'
          CALL bin_open(bin_unit,filename1,"REPLACE","REWIND","none")
          DO ip=0,outs%tot_grids                

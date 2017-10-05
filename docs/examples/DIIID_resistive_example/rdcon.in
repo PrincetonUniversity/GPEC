@@ -1,4 +1,4 @@
-&gal_input
+&GAL_INPUT
     nx=256               ! The number of elements in each interval between two singular surfaces
     pfac=0.001           ! Packing ratio near the singular surface
     gal_tol=1e-10        ! Tolerance of lsode integration
@@ -10,18 +10,19 @@
     solver="LU"          ! LU factorization of solving Galerkinn matrix
     nq=6                 ! The number of Gaussian points in each Galerkin element
 /
-&gal_output
+&GAL_OUTPUT
     interp_np=3          ! The number of interpration points for outputting Galerkin solution
     restore_uh=t         ! Include the Hermite solution in Galerkin soluitn
     restore_us=t         ! Include the small solution in Galerkin solution
     restore_ul=t         ! Include the larger solution in Galerkin solution
     bin_delmatch=t       ! Output solution for rmatch
-    out_galsol=t         ! Output Galerkin solution in ascii file
-    bin_galsol=t         ! Output Galerkin solution in binary file
+    out_galsol=f         ! Output Galerkin solution in ascii files
+    bin_galsol=f         ! Output Galerkin solution in binary files
     b_flag=f             ! Output the perturbation of radial b field
-    coil%rpec_flag=f     ! Resistive perturbed equilibrium computation
+    coil%rpec_flag=t     ! Resistive perturbed equilibrium computation
+    bin_coilsol=f        ! Output binary files for every unit-m driven solution
 /
-&rdcon_control
+&RDCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
@@ -54,7 +55,7 @@
     regrid_flag=f        ! Redo the grid generation for galerkin method
 /
 
-&rdcon_output
+&RDCON_OUTPUT
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
@@ -70,7 +71,7 @@
     bin_bal2=f           ! Binary output for bal_flag functions
 /
 
-&ua_diagnose_list
+&UA_DIAGNOSE_LIST
     uad%flag=f
     uad%phase=t
 /

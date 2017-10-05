@@ -285,7 +285,8 @@ c-----------------------------------------------------------------------
       CALL sing_mmat(ising)
       m0mat=TRANSPOSE(singp%mmatr(r1(1),r2,:,0))
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
-      WRITE (*,*) "di=",di,"ising=",ising
+      WRITE(*,'(1x,a4,es10.3E2,a9,es11.3E3)') "di =",di,
+     $     ", ising =",ising
       singp%di=di
       singp%alpha=SQRT(-CMPLX(singp%di))
 c-----------------------------------------------------------------------

@@ -85,7 +85,7 @@ c-----------------------------------------------------------------------
      $     diagnose_mat=.FALSE.,dx1dx2_flag=.TRUE.,
      $     restore_uh=.TRUE.,restore_us=.TRUE.,restore_ul=.TRUE.,
      $     bin_delmatch=.FALSE.,b_flag=.FALSE.,out_galsol=.FALSE.,
-     $     bin_galsol=.FALSE.
+     $     bin_galsol=.FALSE.,bin_coilsol=.FALSE.
       CHARACTER(1), DIMENSION(2) :: side=(/"l","r"/)
       CHARACTER(128), PRIVATE :: format1,format2
       CHARACTER(20) :: solver="cholesky"
@@ -1286,7 +1286,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     start loops over intervals and grid cells.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"galerkin make arrays"
+      WRITE(*,*)"Making galerkin arrays"
       DO ising=0,msing
          intvl => gal%intvl(ising)
          DO ix=1,gal%nx
@@ -1350,7 +1350,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate and compute arrays.
 c-----------------------------------------------------------------------
-      WRITE(*,*)"start galerkin"
+      WRITE(*,*)"Starting Galerkin method"
       msol_old=msol
       msol=2*mpert
       CALL gal_alloc(gal,nx,nq,dx0,dx1,dx2,pfac)
@@ -1360,16 +1360,16 @@ c     solve global matrix.
 c-----------------------------------------------------------------------
       gal%sol=gal%rhs
       IF (solver == "LU") THEN
-         WRITE(*,*)"galerkin matrix LU factorization"
+         WRITE(*,*)"Performing Galerkin matrix LU factorization"
          CALL zgbtrf(gal%ndim,gal%ndim,gal%kl,gal%ku,gal%mat,gal%ldab,
      $        gal%ipiv,info)
-         WRITE(*,*)"galerkin matrix solve"
+         WRITE(*,*)"Calculating Galerkin matrix solution"
          CALL zgbtrs("N",gal%ndim,gal%kl,gal%ku,gal%nsol,gal%mat,
      $        gal%ldab,gal%ipiv,gal%sol,gal%ndim,info )
       ELSEIF (solver == "cholesky") THEN
-         WRITE(*,*)"galerkin matrix cholesky factorization"
+         WRITE(*,*)"Performing Galerkin matrix Cholesky factorization"
          CALL zpbtrf('L',gal%ndim,gal%kl,gal%mat,gal%ldab,info)
-         WRITE(*,*)"galerkin matrix solve"
+         WRITE(*,*)"Calculating Galerkin matrix solution"
          CALL zpbtrs('L',gal%ndim,gal%kl,gal%nsol,gal%mat,gal%ldab,
      $        gal%sol,gal%ndim,info)     
       ENDIF
@@ -1399,7 +1399,7 @@ c-----------------------------------------------------------------------
       CALL gal_dealloc(gal)
       DEALLOCATE (delta)
       msol=msol_old
-      WRITE(*,*)"finish galerkin"
+      WRITE(*,*)"Finished Galerkin method"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1661,7 +1661,8 @@ c-----------------------------------------------------------------------
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
      $     dpsi1_intvl
       NAMELIST /gal_output/interp_np,restore_uh,restore_us,
-     $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,coil 
+     $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,coil,
+     $     bin_coilsol
 c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------
@@ -2100,7 +2101,8 @@ c-----------------------------------------------------------------------
                CALL bin_close(gal_bin_unit)
             ENDDO
          ENDDO
-         
+      ENDIF
+      IF(bin_coilsol)THEN
          IF (coil%rpec_flag) THEN
             DO isol=coil%m1,coil%m2
                WRITE (filename(2),"(I4)")isol-2*msing

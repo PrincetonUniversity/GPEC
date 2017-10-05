@@ -22,8 +22,8 @@
     restore_us=t         ! Include the small solution in Galerkin solution
     restore_ul=t         ! Include the larger solution in Galerkin solution
     bin_delmatch=t       ! Output solution for rmatch
-    out_galsol=t         ! Output Galerkin solution in ascii file
-    bin_galsol=t         ! Output Galerkin solution in binary file
+    out_galsol=t         ! Output Galerkin solution in ascii files
+    bin_galsol=t         ! Output Galerkin solution in binary files
     b_flag=f             ! Output the perturbation of radial b field
     coil%rpec_flag=f     ! Resistive perturbed equilibrium computation
 /
