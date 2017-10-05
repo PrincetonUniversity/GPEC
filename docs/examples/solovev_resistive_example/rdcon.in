@@ -1,31 +1,25 @@
 &gal_input
-    nx=256
-    pfac=0.001
-    gal_tol=1e-10
-    dx1dx2_flag=t
-    dx0=5e-4
-    dx1=1.e-3
-    dx2=1.e-3
-    cutoff=10
-    solver="LU"
-    nq=6
-    diagnose_integrand=f 
-    diagnose_map=f
-    diagnose_grid=f
-    diagnose_lsode=t
-    ndiagnose=12
-    diagnose_mat=f
+    nx=256               ! The number of elements in each interval between two singular surfaces
+    pfac=0.001           ! Packing ratio near the singular surface
+    gal_tol=1e-10        ! Tolerance of lsode integration
+    dx1dx2_flag=t        ! Flag to include the special dx1 and dx2 treatments for resonant and extension element
+    dx0=5e-4             ! The distance to the singular surface to truncate the lsode integration in resonant element
+    dx1=1.e-3            ! The size of resonant element
+    dx2=1.e-3            ! The size of extension element
+    cutoff=10            ! The number of elements include the large solution as the driving term
+    solver="LU"          ! LU factorization of solving Galerkinn matrix
+    nq=6                 ! The number of Gaussian points in each Galerkin element
 /
 &gal_output
-    interp_np=3
-    restore_uh=t
-    restore_us=t
-    restore_ul=t
-    bin_delmatch=t
-    out_galsol=t
-    bin_galsol=t
-    b_flag=f
-    coil%rpec_flag=t
+    interp_np=3          ! The number of interpration points for outputting Galerkin solution
+    restore_uh=t         ! Include the Hermite solution in Galerkin soluitn
+    restore_us=t         ! Include the small solution in Galerkin solution
+    restore_ul=t         ! Include the larger solution in Galerkin solution
+    bin_delmatch=t       ! Output solution for rmatch
+    out_galsol=t         ! Output Galerkin solution in ascii file
+    bin_galsol=t         ! Output Galerkin solution in binary file
+    b_flag=f             ! Output the perturbation of radial b field
+    coil%rpec_flag=f     ! Resistive perturbed equilibrium computation
 /
 &rdcon_control
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
@@ -51,13 +45,13 @@
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 
-    cyl_flag=f
+    cyl_flag=f           ! Make delta_mlow and delta_mhigh set the actual m truncation bounds. Default is to expand (n*qmin-4, n*qmax).
 
-    sing1_flag=f
-    sing_order=6
-    sing_order_ceiling=t
+    sing1_flag=f         ! Special power series treatment
+    sing_order=6         ! The highest order of power series to be retained
+    sing_order_ceiling=t ! Auto detect the minium order to be retained in power series
 
-    regrid_flag=f
+    regrid_flag=f        ! Redo the grid generation for galerkin method
 /
 
 &rdcon_output
