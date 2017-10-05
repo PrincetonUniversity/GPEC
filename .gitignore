@@ -21,6 +21,9 @@
 .project
 bin/
 docs/_build/
+docs/examples/*/gal_solution.dat
+docs/examples/*/delta_gw.dat
+docs/examples/*/gal_solution_cut.dat
 
 dcon/dcon
 ipec/ipec
