@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: br,bz,brr,brz,bzr,bzz
       END TYPE direct_bfield_type
 
-      REAL(r8) :: direct_tol0=1e-8
+      REAL(r8) :: etol=1e-8
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -117,7 +117,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     start loop over flux surfaces and integrate over field line.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,'(a,1p,e10.3)')" direct_tol0 = ",direct_tol0
+      IF(verbose) WRITE(*,'(a,1p,e10.3)')" etol = ",etol
       DO ipsi=mpsi,0,-1
          CALL direct_fl_int(ipsi,y_out,bf)
 c-----------------------------------------------------------------------
@@ -428,8 +428,8 @@ c-----------------------------------------------------------------------
       iopt=1
       mf=10
       itol=1
-      rtol=direct_tol0
-      atol=direct_tol0*y(2)
+      rtol=etol
+      atol=etol*y(2)
       iwork=0
       rwork=0
       rwork(1)=twopi
