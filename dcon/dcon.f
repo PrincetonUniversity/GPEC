@@ -204,6 +204,9 @@ c-----------------------------------------------------------------------
          ENDDO
          IF (kin_flag)THEN
             CALL ksing_find
+            DO ising=1,kmsing
+               CALL resist_eval(kinsing(ising))
+            ENDDO
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------

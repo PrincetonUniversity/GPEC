@@ -90,12 +90,10 @@ c-----------------------------------------------------------------------
          IF(next == "cross")THEN
             IF(res_flag)THEN
                CALL ode_resist_cross
+            ELSEIF(kin_flag)THEN
+               CALL ode_kin_cross
             ELSE
-               IF(kin_flag)THEN
-                  CALL ode_kin_cross
-               ELSE
-                  CALL ode_ideal_cross
-               ENDIF
+               CALL ode_ideal_cross
             ENDIF
          ELSE
             EXIT
@@ -153,7 +151,7 @@ c-----------------------------------------------------------------------
             psimax=kinsing(ising)%psifac-
      $           singfac_min/ABS(nn*kinsing(ising)%q1)
             next="cross"
-         ENDIF         
+         ENDIF
       ELSE
          DO
             ising=ising+1
@@ -557,6 +555,24 @@ c-----------------------------------------------------------------------
       WRITE(*,10)"psi =",kinsing(ising)%psifac,", q = ",
      $     kinsing(ising)%q
       CALL ode_unorm(.TRUE.)
+c-----------------------------------------------------------------------
+c     write singular surfaces and asymptotic placeholders before reinit.
+c-----------------------------------------------------------------------
+      IF(bin_euler)THEN
+         WRITE(euler_bin_unit)4
+         WRITE(euler_bin_unit)kinsing(ising)%psifac,kinsing(ising)%q,
+     $        kinsing(ising)%q1
+         WRITE(euler_bin_unit)msol
+         WRITE(euler_bin_unit)ca * 0
+         WRITE(euler_bin_unit)msol
+         WRITE(euler_bin_unit)ca * 0
+         WRITE(euler_bin_unit)
+     $        kinsing(ising)%restype%e,kinsing(ising)%restype%f,
+     $        kinsing(ising)%restype%h,kinsing(ising)%restype%m,
+     $        kinsing(ising)%restype%g,kinsing(ising)%restype%k,
+     $        kinsing(ising)%restype%eta,kinsing(ising)%restype%rho,
+     $        kinsing(ising)%restype%taua,kinsing(ising)%restype%taur
+      ENDIF
 c-----------------------------------------------------------------------
 c     re-initialize.
 c-----------------------------------------------------------------------

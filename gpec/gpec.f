@@ -484,11 +484,7 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (singfld_flag) THEN
-         IF (con_flag) THEN
-            PRINT *,"WARNING: singfld_flag not supported with con_flag"
-            singfld_flag = .FALSE.
-            vsingfld_flag = .FALSE.
-         ELSEIF (msing==0) THEN
+         IF (msing==0) THEN
             PRINT *,"WARNING: no rationals for singfld_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
