@@ -21,6 +21,8 @@ c-----------------------------------------------------------------------
       USE gpeq_mod
 
       IMPLICIT NONE
+
+      REAL(r8), PRIVATE :: prad
       
       CONTAINS
 c-----------------------------------------------------------------------
@@ -35,9 +37,9 @@ c-----------------------------------------------------------------------
       CHARACTER(128), INTENT(IN), OPTIONAL :: surfile
 
       INTEGER :: vmtheta,vmlow,vmhigh,vmpert,m,itheta,rtheta,i,lwork,vn
-      REAL(r8) :: qa,kernelsignin,rplus
+      REAL(r8) :: qa,kernelsignin,rplus,thetai
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.      
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
 
       INTEGER, DIMENSION(:), POINTER :: ipiv,vmfac
       REAL(r8), DIMENSION(:), POINTER :: vtheta,vrfac,veta,vr,vz,
@@ -73,16 +75,23 @@ c-----------------------------------------------------------------------
          vr=majr+vrfac*COS(veta)
          vz=0.0+vrfac*SIN(veta)
       ENDIF
+
       IF(present(psi)) THEN
          DO itheta=0,vmtheta
             CALL bicube_eval(rzphi,psi,vtheta(itheta),0)
-            vrfac(itheta)=SQRT(rzphi%f(1))+rplus
             veta(itheta)=twopi*(vtheta(itheta)+rzphi%f(2))
+         ENDDO
+
+         DO itheta=0,vmtheta
+            thetai=issect(vmtheta,vtheta(:),veta(:),vtheta(itheta))
+            CALL bicube_eval(rzphi,psi,thetai,0)
+            vrfac(itheta)=SQRT(rzphi%f(1))+rplus
             vr(itheta)=ro+vrfac(itheta)*COS(veta(itheta))
             vz(itheta)=zo+vrfac(itheta)*SIN(veta(itheta))
             dphi(itheta)=rzphi%f(3)
          ENDDO
       ENDIF
+
 c     IF(present(surfile)) THEN
 c     ENDIF
       !surface jacobian for polar coordinates.
@@ -97,6 +106,10 @@ c-----------------------------------------------------------------------
          delte=-delte
          vn=-vn
       ENDIF  
+c-----------------------------------------------------------------------
+c     estimate prad for vacuum.
+c-----------------------------------------------------------------------
+      prad=(MAXVAL(vr)-MINVAL(vr))/2.0
 c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------
@@ -134,14 +147,15 @@ c-----------------------------------------------------------------------
       ALLOCATE(vwv(vmpert,vmpert))
       kernelsignin=-1.0
       CALL mscvac(vwv,vmpert,vmtheta,vmtheta,nfm2,nths2,complex_flag,
-     $     kernelsignin)
+     $     kernelsignin,wall_flag)
       ALLOCATE(vgrri(nths2,nfm2))
       CALL grrget(nfm2,nths2,vgrri)
       kernelsignin=1.0
       CALL mscvac(vwv,vmpert,vmtheta,vmtheta,nfm2,nths2,complex_flag,
-     $     kernelsignin)
+     $     kernelsignin,wall_flag)
       ALLOCATE(vgrre(nths2,nfm2))
       CALL grrget(nfm2,nths2,vgrre)
+      !vgrre(i+vmtheta,:) possibly provides coupling and mutuals!
 c-----------------------------------------------------------------------
 c     construct surface inductance matrix for specified boundary.
 c-----------------------------------------------------------------------
@@ -225,7 +239,7 @@ c-----------------------------------------------------------------------
       INTEGER :: i,itheta,rtheta,vn,lwork
       REAL(r8) :: qa,kernelsignin
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.      
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.      
 
       INTEGER, DIMENSION(mpert) :: ipiv
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
@@ -303,12 +317,12 @@ c     get grri and grre matrices by calling mscvac functions.
 c-----------------------------------------------------------------------
       kernelsignin=-1.0
       CALL mscvac(vwv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $     kernelsignin)
+     $     kernelsignin,wall_flag)
       ALLOCATE(vgrri(nths2,nfm2))
       CALL grrget(nfm2,nths2,vgrri)
       kernelsignin=1.0
       CALL mscvac(vwv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $     kernelsignin)
+     $     kernelsignin,wall_flag)
       ALLOCATE(vgrre(nths2,nfm2))
       CALL grrget(nfm2,nths2,vgrre)
 c-----------------------------------------------------------------------
@@ -496,20 +510,24 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:),POINTER :: lmat1,lmat2,lmat12,lmat21,
      $     ilmat1,ilmat2,mmat,immat,dmat,temp1,temp2
 
-      psi=0.6
-      CALL gpvacuum_arbsurf(psi=psi)
+      CALL gpvacuum_arbsurf(psi=psilim)
       vmpert=SIZE(vsurf_indev)
       ALLOCATE(lmat1(vmpert,vmpert))
       lmat1=vsurf_indmats
       DEALLOCATE(vsurf_indmats,vsurf_indev)
 
-      psi=0.99
-      dist=0.5
-      CALL gpvacuum_arbsurf(psi=psi,dist=dist)
+      dist=prad*0.1
+      CALL gpvacuum_arbsurf(psi=psilim,dist=dist)
       vmpert=SIZE(vsurf_indev)
       ALLOCATE(lmat2(vmpert,vmpert))
       lmat2=vsurf_indmats
       DEALLOCATE(vsurf_indmats,vsurf_indev)
+
+
+
+
+
+
 
       ALLOCATE(lmat12(vmpert,vmpert),lmat21(vmpert,vmpert),
      $     ilmat1(vmpert,vmpert),ilmat2(vmpert,vmpert),
@@ -538,33 +556,62 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate mutual inductance matrices.
 c-----------------------------------------------------------------------
+      mmat=MATMUL(lmat2,ilmat1)
+      err1=MAXVAL(ABS(mmat-TRANSPOSE(CONJG(mmat))))/MAXVAL(ABS(mmat))
+c      WRITE(*,*)"diag_err=",err1
+c      mmat=0.5*(mmat+TRANSPOSE(CONJG(mmat)))
+
       lwork=2*vmpert-1
       ALLOCATE(d1(vmpert),rwork(3*vmpert-2),work(lwork))
       ALLOCATE(dmat(vmpert,vmpert))
-      mmat=0.5*(lmat12+lmat21)
+
       temp1=mmat
       CALL zheev('V','U',vmpert,temp1,vmpert,d1,work,lwork,rwork,info)
       dmat=0
       DO i=1,vmpert
-         dmat(i,i)=d1(i)
-      ENDDO
-      temp2=MATMUL(temp1,MATMUL(dmat,CONJG(TRANSPOSE(temp1))))
-      err1=MAXVAL(ABS(temp2-mmat))/MAXVAL(ABS(mmat))
-      WRITE(*,*)"diag_err=",err1
-      dmat=0
-      DO i=1,vmpert
          dmat(i,i)=SQRT(d1(i))
       ENDDO
+
       mmat=MATMUL(temp1,MATMUL(dmat,CONJG(TRANSPOSE(temp1))))
       temp1=mmat
       CALL zpotrf('U',vmpert,temp1,vmpert,info)
       CALL zpotri('U',vmpert,temp1,vmpert,info)
       immat=temp1
 
-      temp1=MATMUL(mmat,ilmat1)
-      temp2=MATMUL(immat,lmat2)
-      err1=MAXVAL(ABS(temp1-temp2))/MAXVAL(ABS(temp1))
+      mmat=MATMUL(lmat1,mmat)
+      immat=MATMUL(lmat2,immat)
+      err1=MAXVAL(ABS(mmat-immat))/MAXVAL(ABS(mmat))
       WRITE(*,*)"mutual_err=",err1
+
+c      lwork=2*vmpert-1
+c      ALLOCATE(d1(vmpert),rwork(3*vmpert-2),work(lwork))
+c      ALLOCATE(dmat(vmpert,vmpert))
+c      mmat=0.5*(lmat12+lmat21)
+c      temp1=mmat
+c      CALL zheev('V','U',vmpert,temp1,vmpert,d1,work,lwork,rwork,info)
+c      dmat=0
+c      DO i=1,vmpert
+c         dmat(i,i)=d1(i)
+c      ENDDO
+c      temp2=MATMUL(temp1,MATMUL(dmat,CONJG(TRANSPOSE(temp1))))
+c      err1=MAXVAL(ABS(temp2-mmat))/MAXVAL(ABS(mmat))
+c      WRITE(*,*)"diag_err=",err1
+c      dmat=0
+c      DO i=1,vmpert
+c         dmat(i,i)=SQRT(d1(i))
+c      ENDDO
+c      mmat=MATMUL(temp1,MATMUL(dmat,CONJG(TRANSPOSE(temp1))))
+c      temp1=mmat
+c      CALL zpotrf('U',vmpert,temp1,vmpert,info)
+c      CALL zpotri('U',vmpert,temp1,vmpert,info)
+c      immat=temp1
+
+c      temp1=MATMUL(mmat,ilmat1)
+c      temp2=MATMUL(immat,lmat2)
+c      err1=MAXVAL(ABS(temp1-temp2))/MAXVAL(ABS(temp1))
+c      WRITE(*,*)"mutual_err=",err1
+
+
            
       DEALLOCATE(lmat1,lmat2,lmat12,lmat21)
 c-----------------------------------------------------------------------

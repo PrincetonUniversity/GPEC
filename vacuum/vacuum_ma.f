@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine mscvac(wv,mpert,mtheta,mthvac,nfmo,nthso,complex_flag,
-     $     kernelsignin)
+     $     kernelsignin,wall_flag)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
 
@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       real(8) :: kernelsignin
       integer mpert,mtheta,mthvac
       complex*16 wv(mpert,mpert)
-      logical, intent(in) :: complex_flag
+      logical, intent(in) :: complex_flag,wall_flag      
 
       complex(8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
@@ -65,7 +65,11 @@ c-----------------------------------------------------------------------
       lgpec = 0
       open (iotty,file='mscvac.out',status='unknown')
       open (outpest,file='pestotv',status='unknown',form='formatted')
-      open (inmode,file='vac.in',status='old', form='formatted' )
+      IF (wall_flag) THEN
+         open (inmode,file='vac_wall.in',status='old', form='formatted')
+      ELSE
+         open (inmode,file='vac.in',status='old', form='formatted' )
+      ENDIF
       open (outmod,file='modovmc',status='unknown', form='formatted' )
       call msctimer ( outmod, "top of main" )
       call ent33

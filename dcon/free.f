@@ -68,7 +68,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       COMPLEX(r8), DIMENSION(mpert,mpert) :: vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       COMPLEX(r8), DIMENSION(mpert) :: diff
@@ -118,7 +118,7 @@ c-----------------------------------------------------------------------
       vac_unit=4
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin)
+     $     kernelsignin,wall_flag)
       ALLOCATE(grri(nths2,nfm2))
       CALL grrget(nfm2,nths2,grri)
       CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
@@ -128,7 +128,7 @@ c-----------------------------------------------------------------------
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin)
+     $     kernelsignin,wall_flag)
       ALLOCATE(grri(nths2,nfm2))
       CALL grrget(nfm2,nths2,grri)
       WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)

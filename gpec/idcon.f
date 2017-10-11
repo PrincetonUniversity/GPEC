@@ -874,7 +874,7 @@ c     read vacuum.bin from vacuum code.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_vacuum
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
       REAL(r8) :: kernelsignin
 c-----------------------------------------------------------------------
 c     read vacuum data.
@@ -896,13 +896,13 @@ c-----------------------------------------------------------------------
          IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
          kernelsignin = -1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $               kernelsignin)
+     $               kernelsignin,wall_flag)
          IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
          ALLOCATE(grri(nths2,nfm2))
          CALL grrget(nfm2,nths2,grri)
          kernelsignin = 1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $               kernelsignin)
+     $               kernelsignin,wall_flag)
          ALLOCATE(grre(nths2,nfm2))
          CALL grrget(nfm2,nths2,grre) ! grre is nths2 by nfm2 by definition
       ENDIF
