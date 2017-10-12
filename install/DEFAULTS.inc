@@ -75,7 +75,8 @@ ifdef GPEC_PLATFORM
 		PLATFORM = portal
 		FC = /usr/pppl/intel/11.0/081/bin/intel64/ifort -O2		
 		CC = /usr/pppl/intel/11.0/081/bin/intel64/icc -O2
-		MATHHOME = /usr/pppl/intel/11-pkgs/acml-4.3.0/ifort64
+		#MATHHOME = /usr/pppl/intel/11-pkgs/acml-4.3.0/ifort64
+		MATHHOME = /usr/pppl/intel/2015-pkgs/acml-5.3.1/ifort64
 		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
     else ifeq ($(GPEC_PLATFORM),portal_gfortran)
 	    # $ module load gcc4 acml netcdf

@@ -642,7 +642,7 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
     # set normalization of currents using max absolute current
     if not curlim:
         curs = []
-        for i in range(10):
+        for i in range(50):
             for j in range(50):
                 if 'coil_cur({:},{:})'.format(i+1,j+1) in coil['COIL_CONTROL']:
                     curs.append(coil['COIL_CONTROL']['coil_cur({:},{:})'.format(i+1,j+1)])
@@ -657,7 +657,7 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
     
     # get x,y,z and plot each coil
     coils = {}
-    for i in range(1,10):
+    for i in range(1,50):
         if 'coil_name({:})'.format(i) in coil['COIL_CONTROL']:
             name = coil['COIL_CONTROL']['coil_name({:})'.format(i)]
             machine = coil['COIL_CONTROL']['machine']
