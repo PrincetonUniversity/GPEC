@@ -14,6 +14,7 @@ c     2. spline_dealloc.
 c     3. spline_fit.
 c     4. spline_fac.
 c     5. spline_eval.
+c     5a. spline_eval_external.
 c     6. spline_all_eval.
 c     7. spline_write1.
 c     8. spline_write2.
@@ -433,6 +434,103 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_eval
+c-----------------------------------------------------------------------
+c     subprogram 5a. spline_eval_external
+c     evaluates real cubic spline with external arrays (parallel).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_eval_external(spl,x,s_ix,s_f,s_f1,mode)
+
+      TYPE(spline_type), INTENT(IN) :: spl
+      REAL(r8), INTENT(IN) :: x
+
+      INTEGER :: iqty,iside
+      REAL(r8) :: xx,d,z,z1,xfac,dx
+      REAL(r8) :: g,g1,g2,g3
+
+      INTEGER, INTENT(INOUT) :: s_ix
+      REAL(r8), DIMENSION(:), INTENT(INOUT) :: s_f,s_f1
+
+      INTEGER, INTENT(IN) :: mode
+c-----------------------------------------------------------------------
+c     zero out external arrays.
+c-----------------------------------------------------------------------
+      s_f = 0
+      s_f1 = 0
+c-----------------------------------------------------------------------
+c     preliminary computations.
+c-----------------------------------------------------------------------
+      xx=x
+      s_ix=MAX(s_ix,0)
+      s_ix=MIN(s_ix,spl%mx-1)
+c-----------------------------------------------------------------------
+c     normalize interval for periodic splines.
+c-----------------------------------------------------------------------
+      IF(spl%periodic)THEN
+         DO
+            IF(xx < spl%xs(spl%mx))EXIT
+            xx=xx-spl%xs(spl%mx)
+         ENDDO
+         DO
+            IF(xx >= spl%xs(0))EXIT
+            xx=xx+spl%xs(spl%mx)
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     find cubic spline interval.
+c-----------------------------------------------------------------------
+      DO
+         IF(xx >= spl%xs(s_ix).OR.s_ix <= 0)EXIT
+         s_ix=s_ix-1
+      ENDDO
+      DO
+         IF(xx < spl%xs(s_ix+1).OR.s_ix >= spl%mx-1)EXIT
+         s_ix=s_ix+1
+      ENDDO
+c-----------------------------------------------------------------------
+c     evaluate offset and related quantities.
+c-----------------------------------------------------------------------
+      d=spl%xs(s_ix+1)-spl%xs(s_ix)
+      z=(xx-spl%xs(s_ix))/d
+      z1=1-z
+c-----------------------------------------------------------------------
+c     evaluate functions.
+c-----------------------------------------------------------------------
+      s_f=spl%fs(s_ix,1:spl%nqty)*z1*z1*(3-2*z1)
+     $     +spl%fs(s_ix+1,1:spl%nqty)*z*z*(3-2*z)
+     $     +d*z*z1*(spl%fs1(s_ix,1:spl%nqty)*z1
+     $     -spl%fs1(s_ix+1,1:spl%nqty)*z)
+c-----------------------------------------------------------------------
+c     evaluate first derivatives.
+c-----------------------------------------------------------------------
+      IF(mode > 0)THEN
+         s_f1=6*(spl%fs(s_ix+1,1:spl%nqty)
+     $        -spl%fs(s_ix,1:spl%nqty))*z*z1/d
+     $        +spl%fs1(s_ix,1:spl%nqty)*z1*(3*z1-2)
+     $        +spl%fs1(s_ix+1,1:spl%nqty)*z*(3*z-2)
+      ENDIF
+c-----------------------------------------------------------------------
+c     restore powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         dx=x-spl%x0(iside)
+         DO iqty=1,spl%nqty
+            IF(spl%xpower(iside,iqty) == 0)CYCLE
+            xfac=ABS(dx)**spl%xpower(iside,iqty)
+            g=s_f(iqty)*xfac
+            IF(mode > 0)g1=(s_f1(iqty)+s_f(iqty)
+     $           *spl%xpower(iside,iqty)/dx)*xfac
+            s_f(iqty)=g
+            IF(mode > 0)s_f1(iqty)=g1
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_eval_external
 c-----------------------------------------------------------------------
 c     subprogram 6. spline_all_eval.
 c     evaluates cubic spline function.

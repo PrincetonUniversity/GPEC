@@ -13,6 +13,7 @@ c-----------------------------------------------------------------------
       INTEGER :: bin_unit=3
       INTEGER :: equil_unit=4
       INTEGER :: term_unit=6
+      INTEGER :: sing_unit=7
 
       INTEGER :: dump_unit=9
       INTEGER :: sum_unit=10

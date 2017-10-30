@@ -8,8 +8,8 @@
 #   Choose one of the following
 #    $ module load gcc4 lapack-blas netcdf
 #    $ module load lff95 lapack-blas netcdf
-#    $ module load pgf acml netcdf; export ACML_HOME=$ACML_HOME/pgi64
-#    $ module load intel acml netcdf; export ACML_HOME=$ACML_HOME/ifort64
+#    $ module load pgf netcdf acml/5.3.1/pgi64
+#    $ module load intel netcdf acml/5.3.1/ifort64
 #   Defaults will try to use gcc4
 #
 # On venus.gat.com
@@ -163,6 +163,7 @@ endif
 # include compiler specific libs for intel fast moves
 ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
+    #FCLIBS = -lirc -limf # outdated
     FCLIBS = -lintlc -limf
     FCINC = $(F90HOME)/include/intel64
 else

@@ -36,7 +36,7 @@ module pitch_integration
     use dcon_interface, only : shotnum, shottime, machine
     use global_mod, only : version
     use netcdf
-    
+
     implicit none
     
     private
@@ -67,6 +67,14 @@ module pitch_integration
         real(r8), dimension(:,:,:,:), allocatable :: fs
     endtype record
     type(record) :: pitch_record(nmethods)
+
+    ! parallel LSODE protection
+    real(r8) :: real1_lcom
+    integer :: int_lcom
+    real(r8) :: real2_lcom
+    common /lcom/ real1_lcom(7), int_lcom(2), real2_lcom(2)
+!$OMP THREADPRIVATE(/lcom/)
+!$OMP THREADPRIVATE(pitch_record,eqspl_g,turns_g)
 
     contains
 
@@ -162,7 +170,8 @@ module pitch_integration
 
         common /lcom/ wn_g,wt_g,we_g,nuk_g,bobmax_g,epsr_g, &
                     q_g,l_g,n_g,rex_g,imx_g
-        
+!$OMP THREADPRIVATE(/lcom/)
+
         ! set lsode options - see lsode package for documentation
         neq = 2*(eq_spl%nqty-2)
         liw  = 20 + neq         ! for mf 22 ! only uses 20 if mf 10
@@ -324,7 +333,8 @@ module pitch_integration
         complex(r8) :: xint,fres
     
         common /lcom/ wn,wt,we,nuk,bobmax,epsr,q,l,n,rex,imx
-    
+!$OMP THREADPRIVATE(/lcom/)
+
         ! use (input or) global variables
         if(lambdadebug) print *,'lintgrnd - lambda =',x
         call cspline_eval(eqspl_g,x,0)
