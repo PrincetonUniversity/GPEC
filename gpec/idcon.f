@@ -173,8 +173,10 @@ c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
 c-----------------------------------------------------------------------
       IF(verbose)THEN
-        WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
-        WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
+        WRITE(*,'(1x,3(a2,a8,I6))')"  ","mpert = ",mpert,", ","mlow = ",
+     $      mlow,", ","mhigh = ",mhigh
+        WRITE(*,'(1x,3(a2,a8,I6))')"  ","mstep = ",mstep,", ","mfix = ",
+     $      mfix,", ","msing = ",msing
       ENDIF
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
@@ -280,6 +282,24 @@ c-----------------------------------------------------------------------
          eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
          efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
          wft=wft*(chi1*1e-3)
+      ENDIF
+c-----------------------------------------------------------------------
+c     choose the rational surfaces included for overlap.
+c-----------------------------------------------------------------------
+      osing=0
+      DO ising=1,msing
+         IF ((singtype(ising)%psifac.GE.opsi1).AND.
+     $        (singtype(ising)%psifac.LE.opsi2)) THEN
+            ou=ising
+            osing=osing+1
+         ENDIF
+      ENDDO
+      IF (osing==0) THEN
+         ol=1
+         ou=1
+         osing=1
+      ELSE
+         ol=ou-osing+1
       ENDIF
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.

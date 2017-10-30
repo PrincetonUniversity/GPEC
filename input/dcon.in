@@ -27,11 +27,11 @@
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     electron_flag = f    ! Calculates electron contributions
 
-    tol_nr=1e-5          ! Relative tolerance of dynamic integration steps away from rationals
-    tol_r=1e-6           ! Relative tolerance of dynamic integration steps near rationals
+    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
-    ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
+    ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 /
 &DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H

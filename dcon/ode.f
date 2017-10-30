@@ -433,7 +433,7 @@ c-----------------------------------------------------------------------
       psifac=sing(ising)%psifac+dpsi
       CALL sing_get_ua(ising,psifac,ua)
       IF (.NOT. con_flag) THEN
-         u(:,index(1),:)=0
+         u(:,index(1),:)=0 !originally, u(ipert0,:,:)=0
       ENDIF
       CALL sing_der(neq,psi_old,u,du1)
       CALL sing_der(neq,psifac,u,du2)
