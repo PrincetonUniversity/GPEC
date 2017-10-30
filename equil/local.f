@@ -30,11 +30,11 @@ c-----------------------------------------------------------------------
      $     r8=SELECTED_REAL_KIND(13,307)
       REAL(r8), PARAMETER :: pi=3.1415926535897932385_r8,
      $     twopi=2*pi,pisq=pi*pi,mu0=4e-7_r8*pi,
-     $     rtod=180/pi,dtor=pi/180,alog10=2.302585093_r8
+     $     rtod=180/pi,dtor=pi/180,alog10=2.3025850929940459_r8
       REAL(r8), PARAMETER :: e=1.6021917e-19,
      $     mp=1.672614e-27,me=9.1091e-31,
      $     c=2.997925e10,jzero=2.4048255577_r8,ev=e
-      REAL(r8), PARAMETER :: zero=0,one=1
+      REAL(r8), PARAMETER :: zero=0,one=1,two=2,half=.5
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       CONTAINS

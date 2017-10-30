@@ -260,7 +260,8 @@ c-----------------------------------------------------------------------
      $     REAL(psio,4),REAL(betap1,4),REAL(betap2,4),REAL(betap3,4),
      $     REAL(betat,4),REAL(betan,4),REAL(bt0,4),REAL(q0,4),
      $     REAL(qmin,4),REAL(qmax,4),REAL(qa,4),REAL(crnt,4),
-     $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1),REAL(q95)
+     $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1),REAL(q95),
+     $     REAL(bwall,4),REAL(betaj,4)
       CALL bin_close(sum_unit)
 c-----------------------------------------------------------------------
 c     log inputs/outputs with harvest

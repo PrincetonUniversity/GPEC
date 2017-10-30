@@ -1585,6 +1585,8 @@ c-----------------------------------------------------------------------
       bcs2%fsy=bcs1%fsy
       bcs2%fsxy=bcs1%fsxy
       bcs2%name=bcs1%name
+      bcs2%xtitle=bcs1%xtitle
+      bcs2%ytitle=bcs1%ytitle
       bcs2%title=bcs1%title
       bcs2%periodic=bcs1%periodic
       bcs2%xpower=bcs1%xpower
