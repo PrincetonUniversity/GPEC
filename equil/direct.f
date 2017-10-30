@@ -83,9 +83,9 @@ c-----------------------------------------------------------------------
             mpsi=sq_in%mx-2
          ENDIF
       ENDIF
-      CALL spline_alloc(sq,mpsi,5)
+      CALL spline_alloc(sq,mpsi,4)
       sq%name="  sq  "
-      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "," rho  "/)
+      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
 c     set up radial grid
 c-----------------------------------------------------------------------
@@ -162,7 +162,6 @@ c-----------------------------------------------------------------------
          sq%fs(ipsi,2)=bf%p
          sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
          sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
-         sq%fs(ipsi,5)=SQRT(sq%xs(ipsi))
          CALL spline_dealloc(ff)
       ENDDO
 c-----------------------------------------------------------------------

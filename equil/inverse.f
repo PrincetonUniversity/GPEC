@@ -123,9 +123,9 @@ c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
       IF(grid_type == "original" .OR. grid_type == "orig")mpsi=sq_in%mx
-      CALL spline_alloc(sq,mpsi,5)
+      CALL spline_alloc(sq,mpsi,4)
       sq%name="  sq  "
-      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "," rho  "/)
+      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
 c     set up radial grid
 c-----------------------------------------------------------------------
@@ -217,7 +217,6 @@ c-----------------------------------------------------------------------
          sq%fs(ipsi,2)=sq_in%f(2)
          sq%fs(ipsi,3)=spl%fsi(mtheta,3)*twopi*pi
          sq%fs(ipsi,4)=spl%fsi(mtheta,4)*sq%fs(ipsi,1)/(2*twopi*psio)
-         sq%fs(ipsi,5)=SQRT(sq%xs(ipsi))
       ENDDO
       CALL spline_fit(sq,"extrap")
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
@@ -418,9 +417,9 @@ c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
       IF(grid_type == "original" .OR. grid_type == "orig")mpsi=sq_in%mx
-      CALL spline_alloc(sq,mpsi,5)
+      CALL spline_alloc(sq,mpsi,4)
       sq%name="  sq  "
-      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "," rho  "/)
+      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
 c     set up radial grid
 c-----------------------------------------------------------------------
@@ -518,9 +517,7 @@ c-----------------------------------------------------------------------
          sq%fs(ipsi,1)=sq_in%f(1)*twopi
          sq%fs(ipsi,2)=sq_in%f(2)
          sq%fs(ipsi,3)=spl%fsi(mtheta,3)*twopi*pi
-cc         sq%fs(ipsi,4)=spl%fsi(mtheta,4)*sq%fs(ipsi,1)/(2*twopi*psio)
          sq%fs(ipsi,4)=sq_in%f(3)
-         sq%fs(ipsi,5)=SQRT(sq%xs(ipsi))
       ENDDO
       CALL spline_fit(sq,"extrap")
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
