@@ -219,6 +219,26 @@ c-----------------------------------------------------------------------
       ENDIF
       DEALLOCATE(ud)
 c-----------------------------------------------------------------------
+c     write rational surfaces and asymptotic coefficient placeholders.
+c-----------------------------------------------------------------------
+      IF(kin_flag .AND. bin_euler)THEN
+         DO ising=1,msing
+            WRITE(euler_bin_unit)4
+            WRITE(euler_bin_unit)sing(ising)%psifac,sing(ising)%q,
+     $           sing(ising)%q1
+            WRITE(euler_bin_unit)msol
+            WRITE(euler_bin_unit)ca * 0
+            WRITE(euler_bin_unit)msol
+            WRITE(euler_bin_unit)ca * 0
+            WRITE(euler_bin_unit)
+     $           sing(ising)%restype%e,sing(ising)%restype%f,
+     $           sing(ising)%restype%h,sing(ising)%restype%m,
+     $           sing(ising)%restype%g,sing(ising)%restype%k,
+     $           sing(ising)%restype%eta,sing(ising)%restype%rho,
+     $           sing(ising)%restype%taua,sing(ising)%restype%taur
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
 c     compute free boundary energies.
 c-----------------------------------------------------------------------
       IF(vac_flag .AND. .NOT.
