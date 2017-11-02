@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: mtmp
       REAL(r8), DIMENSION(:), ALLOCATABLE :: psitmp
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xtmp
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: ctmp
 
       ! harvest variables
       INCLUDE 'harvest_lib.inc77'
@@ -221,15 +222,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write rational surfaces and asymptotic coefficient placeholders.
 c-----------------------------------------------------------------------
+      ALLOCATE(ctmp(mpert,msol,2))
+      ctmp = 0
       IF(kin_flag .AND. bin_euler)THEN
          DO ising=1,msing
             WRITE(euler_bin_unit)4
             WRITE(euler_bin_unit)sing(ising)%psifac,sing(ising)%q,
      $           sing(ising)%q1
             WRITE(euler_bin_unit)msol
-            WRITE(euler_bin_unit)ca * 0
+            WRITE(euler_bin_unit)ctmp
             WRITE(euler_bin_unit)msol
-            WRITE(euler_bin_unit)ca * 0
+            WRITE(euler_bin_unit)ctmp
             WRITE(euler_bin_unit)
      $           sing(ising)%restype%e,sing(ising)%restype%f,
      $           sing(ising)%restype%h,sing(ising)%restype%m,
@@ -238,6 +241,7 @@ c-----------------------------------------------------------------------
      $           sing(ising)%restype%taua,sing(ising)%restype%taur
          ENDDO
       ENDIF
+      DEALLOCATE(ctmp)
 c-----------------------------------------------------------------------
 c     compute free boundary energies.
 c-----------------------------------------------------------------------
