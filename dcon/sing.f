@@ -1532,7 +1532,8 @@ c-----------------------------------------------------------------------
      $        ' det0 is', ABS(det0)
          reps=keps1/keps2
          eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
-         IF (ABS(det0)<=ABS(det_max)*eps) THEN
+         ! always record the effective surface, even if it isn't very singular
+         IF (.TRUE.) THEN !ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)
          ENDIF

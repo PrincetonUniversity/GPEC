@@ -556,6 +556,24 @@ c-----------------------------------------------------------------------
      $     kinsing(ising)%q
       CALL ode_unorm(.TRUE.)
 c-----------------------------------------------------------------------
+c     write singular surfaces and asymptotic placeholders before reinit.
+c-----------------------------------------------------------------------
+      IF(bin_euler)THEN
+         WRITE(euler_bin_unit)4
+         WRITE(euler_bin_unit)kinsing(ising)%psifac,kinsing(ising)%q,
+     $        kinsing(ising)%q1
+         WRITE(euler_bin_unit)msol
+         WRITE(euler_bin_unit)ca * 0
+         WRITE(euler_bin_unit)msol
+         WRITE(euler_bin_unit)ca * 0
+         WRITE(euler_bin_unit)
+     $        kinsing(ising)%restype%e,kinsing(ising)%restype%f,
+     $        kinsing(ising)%restype%h,kinsing(ising)%restype%m,
+     $        kinsing(ising)%restype%g,kinsing(ising)%restype%k,
+     $        kinsing(ising)%restype%eta,kinsing(ising)%restype%rho,
+     $        kinsing(ising)%restype%taua,kinsing(ising)%restype%taur
+      ENDIF
+c-----------------------------------------------------------------------
 c     re-initialize.
 c-----------------------------------------------------------------------
       psi_old=psifac
