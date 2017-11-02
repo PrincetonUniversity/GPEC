@@ -11,7 +11,7 @@ c     2. read_eq_fluxgrid.
 c     3. read_eq_miller.
 c     4. read_eq_miller4.
 c     5. read_eq_chease.
-c     6. read_eq_chease2.
+c     6. read_eq_chease2. 
 c     7 read_eq_chum.
 c     8. read_eq_galkin.
 c     9. read_eq_efit.
@@ -28,8 +28,13 @@ c     19. read_eq_popov2.
 c     20. read_eq_rtaylor.
 c     21. read_eq_dump.
 c     22. read_eq_wdn.
-c     23. read_eq_lez_2
-c     24. read_eq_chease3
+c     23. read_eq_vmec.
+c     24. read_eq_t7_old.
+c     25. read_eq_t7.
+c     26. read_eq_hansen_inverse.
+c     27. read_eq_chease3.
+c     28. read_eq_pfrc.
+c     29. read_eq_chease4.
 c-----------------------------------------------------------------------
 c     subprogram 0. read_eq_mod.
 c     module declarations.
@@ -42,6 +47,8 @@ c-----------------------------------------------------------------------
       USE direct_mod
       USE utils_mod
       IMPLICIT NONE
+
+      INTEGER :: ns1=1
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -142,7 +149,6 @@ c     fit input to bicubic splines.
 c-----------------------------------------------------------------------
       rz_in%xs=(/(ix,ix=0,mx)/)
       rz_in%ys=(/(iy,iy=0,my)/)/REAL(my,r8)
-      CALL bicube_fit(rz_in,"extrap","periodic")
 c-----------------------------------------------------------------------
 c     compute poloidal flux as new radial variable.
 c-----------------------------------------------------------------------
@@ -190,6 +196,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(xs(0:mx))
       ALLOCATE(sq(0:mx,3))
       ALLOCATE(rz(0:mx,0:my,2))
+      rz=0
 c-----------------------------------------------------------------------
 c     read arrays.
 c-----------------------------------------------------------------------
@@ -197,18 +204,19 @@ c-----------------------------------------------------------------------
       READ(in_unit)sq(:,1)
       READ(in_unit)sq(:,2)
       READ(in_unit)sq(:,3)
-      READ(in_unit)(rz(ix,:,1),ix=0,mx)
-      READ(in_unit)(rz(ix,:,2),ix=0,mx)
+      READ(in_unit)(rz(ix,0:my-1,1),ix=0,mx)
+      READ(in_unit)(rz(ix,0:my-1,2),ix=0,mx)
       CALL bin_close(in_unit)
 c-----------------------------------------------------------------------
 c     copy to eq_in.
 c-----------------------------------------------------------------------
+      rz(:,my,:)=rz(:,0,:)
       ro=rz(0,0,1)
       zo=rz(0,0,2)
-      psio=xs(mx)-xs(0)
+      psio=ABS(xs(mx)-xs(0))
       CALL spline_alloc(sq_in,mx,4)
       CALL bicube_alloc(rz_in,mx,my,2)
-      sq_in%xs=(xs-xs(0))/psio
+      sq_in%xs=(xs-xs(0))/(xs(mx)-xs(0))
       sq_in%fs(:,1:3)=sq
       sq_in%fs(:,2)=sq_in%fs(:,2)*mu0
       rz_in%fs=rz
@@ -1484,12 +1492,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
+      IF(newq0 == -1)newq0=-q0
       IF(newq0 /= 0)THEN
          f0=sq%fs(0,1)-sq%fs1(0,1)*sq%xs(0)
          f0fac=f0**2*((newq0/q0)**2-one)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
@@ -1580,86 +1589,423 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE read_eq_wdn
 c-----------------------------------------------------------------------
-c     subprogram 23. read_eq_lez_2.
-c     reads data from Leonid E. Zakharov's equilibrium code (by kkim).
+c     subprogram 23. read_eq_vmec.
+c     reads data from Hirshman's 2D VMEC code.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE read_eq_lez_2
+      SUBROUTINE read_eq_vmec
 
-      LOGICAL :: file_stat
-      INTEGER :: ia,ja,ma,mtau
-      REAL(r4), DIMENSION(:), POINTER :: psis,qs,fs,ps
-      REAL(r4), DIMENSION(:,:), POINTER :: rg,zg
+      LOGICAL :: lasym=.FALSE.
+      LOGICAL, PARAMETER :: diagnose=.FALSE.
+      INTEGER :: is,ks,ns,ipol,mpol,itheta,mtheta=128,js
+      REAL(r8) :: jds,jds1
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: chi,fpsi,presf,q,theta,
+     $     sinfac,cosfac,svec
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rmncc,zmnsc,lmnsc,
+     $     rmnsc,zmncc,lmncc,rmnc,rmns,zmnc,zmns
 c-----------------------------------------------------------------------
-c     open equilibrium file.
+c     format statements.
 c-----------------------------------------------------------------------
-      INQUIRE(FILE=TRIM(eq_filename),EXIST=file_stat)
-      IF (.NOT.file_stat) CALL program_stop
-     $     ("Can't open input file "//TRIM(eq_filename))
+ 10   FORMAT(/4x,"is",2x,"ipol",5x,"rmnc",7x,"rmns",
+     $     7x,"zmnc",7x,"zmns"/)
+ 20   FORMAT(2i6,1p,4e11.3)
+ 30   FORMAT(/4x,"is",5x,"svec"/)
+ 40   FORMAT(i6,1p,e11.3)
+c-----------------------------------------------------------------------
+c     open input file and read sizes.
+c-----------------------------------------------------------------------
       CALL ascii_open(in_unit,TRIM(eq_filename),"OLD")
+      read(in_unit,*)ns,mpol,lasym
+      mpol=mpol-1
+      ns=ns-1
 c-----------------------------------------------------------------------
-c     read sizes and allocate input arrays.
+c     allocate and read 2D arrays.
 c-----------------------------------------------------------------------
-      READ(in_unit,*)ma
-      ma=ma-1
-      READ(in_unit,*)mtau
-      mtau=mtau-1
+      ALLOCATE(rmncc(0:ns,0:mpol),zmnsc(0:ns,0:mpol),lmnsc(0:ns,0:mpol))
+      READ(in_unit,*)rmncc,zmnsc,lmnsc
+      IF(lasym)THEN
+         ALLOCATE(rmnsc(0:ns,0:mpol),zmncc(0:ns,0:mpol),
+     $        lmncc(0:ns,0:mpol))
+         READ(in_unit,*)rmnsc,zmncc,lmncc
+      ENDIF
 c-----------------------------------------------------------------------
-c     allocate arrays.
+c     allocate and read 1D arrays.
 c-----------------------------------------------------------------------
-      ALLOCATE(psis(0:ma),qs(0:ma),fs(0:ma),ps(0:ma),
-     $     rg(0:ma,0:mtau),zg(0:ma,0:mtau))
-      CALL spline_alloc(sq_in,ma,4)
-      CALL bicube_alloc(rz_in,ma,mtau,2)
+      ALLOCATE(chi(0:ns),fpsi(0:ns),presf(0:ns),q(0:ns))
+      READ(in_unit,*)chi,fpsi,presf,q
+      call ascii_close(in_unit)
 c-----------------------------------------------------------------------
-c     read 2d data.
+c     compute position of o-point.
 c-----------------------------------------------------------------------
-      DO ia=0,mtau
-         DO ja=0,ma
-           READ(in_unit,*)rg(ja,ia)
-        ENDDO
+      ro=rmncc(0,0)
+      IF(lasym)THEN
+         zo=zmncc(0,0)
+      ELSE
+         zo=0
+      ENDIF
+c-----------------------------------------------------------------------
+c     prepare linear interpolation to finer flux surfaces.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(sq_in,ns*ns1,4)
+      ALLOCATE(rmnc(0:ns*ns1,0:mpol),zmns(0:ns*ns1,0:mpol),svec(0:ns))
+      IF(lasym)ALLOCATE(rmns(0:ns*ns1,0:mpol),zmnc(0:ns*ns1,0:mpol))
+      psio=chi(ns)-chi(0)
+      svec=1/(/(SQRT(REAL(is,r8)/ns),is=0,ns)/)
+      svec(0)=0
+      
+c
+c     factor out sqrt(s) from m-odd coefficients
+c      
+      DO is=1,ns-1
+         jds=REAL(is,r8)/ns
+	 jds=SQRT(jds)
+	 DO ipol=0,mpol
+	    IF (MOD(ipol,2) == 0) CYCLE
+	    rmncc(is,ipol) = rmncc(is,ipol)/jds
+	    zmnsc(is,ipol) = zmnsc(is,ipol)/jds
+	    IF (lasym) THEN
+   	       rmnsc(is,ipol) = rmnsc(is,ipol)/jds
+	       zmncc(is,ipol) = zmncc(is,ipol)/jds
+	    END IF
+	 END DO
+	 IF (is == 1) THEN
+	     rmncc(0,1) = rmncc(1,1)
+	     zmnsc(0,1) = zmnsc(1,1)
+	     IF (lasym) THEN
+   	        rmnsc(0,1) = rmnsc(1,1)
+	        zmncc(0,1) = zmncc(1,1)
+	     END IF
+	 END IF
+      END DO
+      
+      DO is=0,ns-1
+         DO js=0,ns1
+            ks=is*ns1+js
+            jds=REAL(js,r8)/ns1
+            jds1=SQRT(REAL(ks,r8)/(ns*ns1))
+c-----------------------------------------------------------------------
+c     interpolate surface quantities.
+c-----------------------------------------------------------------------
+            sq_in%xs(ks)=(chi(is)-chi(0)+(chi(is+1)-chi(is))*jds)/psio
+            sq_in%fs(ks,1)=-(fpsi(is)+(fpsi(is+1)-fpsi(is))*jds)
+            sq_in%fs(ks,2)=mu0*(presf(is)+(presf(is+1)-presf(is))*jds)
+            sq_in%fs(ks,3)=q(is)+(q(is+1)-q(is))*jds
+c-----------------------------------------------------------------------
+c     interpolate even-odd fourier coefficients.
+c-----------------------------------------------------------------------
+            DO ipol=0,mpol
+               rmnc(ks,ipol)=rmncc(is,ipol)
+     $              +(rmncc(is+1,ipol)-rmncc(is,ipol))*jds
+               zmns(ks,ipol)=zmnsc(is,ipol)
+     $              +(zmnsc(is+1,ipol)-zmnsc(is,ipol))*jds
+               IF(lasym)THEN
+                  rmns(ks,ipol)=rmnsc(is,ipol)
+     $                 +(rmnsc(is+1,ipol)-rmnsc(is,ipol))*jds
+                  zmnc(ks,ipol)=zmncc(is,ipol)
+     $                 +(zmncc(is+1,ipol)-zmncc(is,ipol))*jds
+               END IF
+c-----------------------------------------------------------------------
+c     reinsert sqrt(s) factor for odd coefficients
+c-----------------------------------------------------------------------
+               IF (MOD(ipol,2) == 1) THEN
+                  rmnc(ks,ipol)=jds1*rmnc(ks,ipol)
+                  zmns(ks,ipol)=jds1*zmns(ks,ipol)
+                  IF(lasym)THEN
+                     rmns(ks,ipol)=jds1*rmns(ks,ipol)
+                     zmnc(ks,ipol)=jds1*zmnc(ks,ipol)
+                  ENDIF
+               ENDIF
+c-----------------------------------------------------------------------
+c     finish loops over surfaces.
+c-----------------------------------------------------------------------
+            ENDDO
+c-----------------------------------------------------------------------
+c     interpolate odd fourier coefficients.
+c-----------------------------------------------------------------------
+         ENDDO
       ENDDO
-      DO ia=0,mtau
-         DO ja=0,ma
-           READ(in_unit,*)zg(ja,ia)
-        ENDDO
+      psio=ABS(psio)/twopi
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      IF(diagnose)THEN
+         OPEN(UNIT=debug_unit,FILE="vmec.out",STATUS="UNKNOWN")
+         WRITE(debug_unit,30)
+         DO is=0,ns
+            WRITE(debug_unit,40)is,svec(is)
+         ENDDO
+         WRITE(debug_unit,30)
+         DO ipol=0,mpol
+            WRITE(debug_unit,10)
+            DO is=0,ns*ns1
+               WRITE(debug_unit,20)is,ipol,rmnc(is,ipol),rmns(is,ipol),
+     $              zmnc(is,ipol),zmns(is,ipol)
+            ENDDO
+         ENDDO
+         WRITE(debug_unit,10)
+         CLOSE(UNIT=debug_unit)
+         CALL program_stop("Termination by read_eq_vmec.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     compute fourier series.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,ns*ns1,mtheta,2)
+      ALLOCATE(theta(0:mtheta),sinfac(0:mtheta),cosfac(0:mtheta))
+      theta=(/(itheta,itheta=0,mtheta)/)*twopi/mtheta
+      rz_in%fs=0
+      DO ipol=0,mpol
+         sinfac=SIN(ipol*theta)
+         cosfac=COS(ipol*theta)
+         DO is=0,ns*ns1
+            rz_in%fs(is,:,1)=rz_in%fs(is,:,1)+rmnc(is,ipol)*cosfac
+            rz_in%fs(is,:,2)=rz_in%fs(is,:,2)+zmns(is,ipol)*sinfac
+            IF(lasym)THEN
+               rz_in%fs(is,:,1)=rz_in%fs(is,:,1)+rmns(is,ipol)*sinfac
+               rz_in%fs(is,:,2)=rz_in%fs(is,:,2)+zmnc(is,ipol)*cosfac
+            ENDIF
+         ENDDO
       ENDDO
 c-----------------------------------------------------------------------
-c     read 1d data.
+c     deallocate local arrays and process as inverse-type data.
 c-----------------------------------------------------------------------
-      DO ja=0,ma
-         READ(in_unit,*)psis(ja),qs(ja),fs(ja),ps(ja)
-      ENDDO
-      CALL ascii_close(in_unit)
-c-----------------------------------------------------------------------
-c     revise 1D data.
-c-----------------------------------------------------------------------
-      psio=psis(ma)
-      sq_in%xs=psis/psio
-      sq_in%fs(:,1)=fs
-      sq_in%fs(:,2)=ps
-      sq_in%fs(:,3)=qs
-c-----------------------------------------------------------------------
-c     revise 2D profiles.
-c-----------------------------------------------------------------------
-      ro=rg(0,0)
-      zo=zg(0,0)
-      rz_in%fs(:,:,1)=rg
-      rz_in%fs(:,:,2)=zg
-c-----------------------------------------------------------------------
-c     deallocate local arrays and process inverse equilibrium.
-c-----------------------------------------------------------------------
-      DEALLOCATE(psis,qs,fs,ps,rg,zg)
+      DEALLOCATE(rmncc,zmnsc,lmnsc,chi,fpsi,presf,q,theta)
+      DEALLOCATE(rmnc,zmns)
+      IF(lasym)THEN
+         DEALLOCATE(rmnsc,zmncc,lmncc)
+         DEALLOCATE(rmns,zmnc)
+      ENDIF
       CALL inverse_run
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE read_eq_lez_2
+      END SUBROUTINE read_eq_vmec
 c-----------------------------------------------------------------------
-c     subprogram 24. read_eq_chease3.
+c     subprogram 24. read_eq_t7_old.
+c     reads data from Culham's T7 code, old version.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_t7_old
+
+      INTEGER :: mpsi,mtheta
+      REAL(r8), DIMENSION(:), POINTER :: psi,f,p,q
+      REAL(r8), DIMENSION(:,:), POINTER :: r,z
+c-----------------------------------------------------------------------
+c     open data file, read sizes, allocate and read arrays..
+c-----------------------------------------------------------------------
+      CALL bin_open(in_unit,TRIM(eq_filename),"OLD","REWIND",
+     $     convert_type)
+      READ(in_unit)mpsi,mtheta
+      ALLOCATE(psi(0:mpsi),f(0:mpsi),p(0:mpsi),q(0:mpsi),
+     $     r(0:mpsi,0:mtheta),z(0:mpsi,0:mtheta))
+      READ(in_unit)psi(1:mpsi),f(1:mpsi),p(1:mpsi),q(1:mpsi),
+     $     r(1:mpsi,0:mtheta-1),z(1:mpsi,0:mtheta-1)
+      CALL bin_close(in_unit)
+c-----------------------------------------------------------------------
+c     set periodicity.
+c-----------------------------------------------------------------------
+      r(1:mpsi,mtheta)=r(1:mpsi,0)
+      z(1:mpsi,mtheta)=z(1:mpsi,0)
+c-----------------------------------------------------------------------
+c     extrapolate to axis.
+c-----------------------------------------------------------------------
+      ro=SUM(r(1,:))/(mtheta+1)
+      zo=SUM(z(1,:))/(mtheta+1)
+      r(0,:)=ro
+      z(0,:)=zo
+      psi(0)=0
+      f(0)=f(1)-psi(1)*(f(2)-f(1))/(psi(2)-psi(1))
+      p(0)=p(1)-psi(1)*(p(2)-p(1))/(psi(2)-psi(1))
+      q(0)=q(1)-psi(1)*(q(2)-q(1))/(psi(2)-psi(1))
+c-----------------------------------------------------------------------
+c     start on outboard side and reverse direction.
+c-----------------------------------------------------------------------
+      r(:,0:mtheta/2)=r(:,mtheta/2:0:-1)
+      z(:,0:mtheta/2)=z(:,mtheta/2:0:-1)
+      r(:,mtheta/2+1:mtheta)=r(:,mtheta:1:-1)
+      z(:,mtheta/2+1:mtheta)=z(:,mtheta:1:-1)
+c-----------------------------------------------------------------------
+c     copy and revise 1D arrays.
+c-----------------------------------------------------------------------
+      psio=psi(mpsi)-psi(0)
+      CALL spline_alloc(sq_in,mpsi,4)
+      sq_in%xs=(psi-psi(0))/psio
+      sq_in%fs(:,1)=f
+      sq_in%fs(:,2)=p*mu0
+      sq_in%fs(:,3)=q
+      if(psio < 0)psio=-psio
+c-----------------------------------------------------------------------
+c     copy and revise 2D arrays.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,mpsi,mtheta,2)
+      rz_in%fs(:,:,1)=r
+      rz_in%fs(:,:,2)=z
+c-----------------------------------------------------------------------
+c     process inverse equilibrium and deallocate local arrays.
+c-----------------------------------------------------------------------
+      DEALLOCATE(psi,f,p,q,r,z)
+      CALL inverse_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE READ_eq_t7_old
+c-----------------------------------------------------------------------
+c     subprogram 25. read_eq_t7.
+c     reads data from Culham's T7 code.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_t7
+
+      INTEGER :: mpsi,mtheta
+      REAL(r8), DIMENSION(:), POINTER :: psi,f,p,q
+      REAL(r8), DIMENSION(:,:), POINTER :: r,z
+c-----------------------------------------------------------------------
+c     open data file, read sizes, allocate and read arrays..
+c-----------------------------------------------------------------------
+      CALL bin_open(in_unit,TRIM(eq_filename),"OLD","REWIND",
+     $     convert_type)
+      READ(in_unit)mpsi,mtheta
+      mpsi=mpsi-1
+      mtheta=mtheta-1
+      ALLOCATE(psi(0:mpsi),f(0:mpsi),p(0:mpsi),q(0:mpsi),
+     $     r(0:mpsi,0:mtheta),z(0:mpsi,0:mtheta))
+      READ(in_unit)psi,f,p,q,r,z
+      CALL bin_close(in_unit)
+c-----------------------------------------------------------------------
+c     copy and revise 1D arrays.
+c-----------------------------------------------------------------------
+      psio=psi(mpsi)-psi(0)
+      CALL spline_alloc(sq_in,mpsi,4)
+      sq_in%xs=(psi-psi(0))/psio
+      sq_in%fs(:,1)=f
+      sq_in%fs(:,2)=p*mu0
+      sq_in%fs(:,3)=q
+      if(psio < 0)psio=-psio
+c-----------------------------------------------------------------------
+c     copy and revise 2D arrays.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,mpsi,mtheta,2)
+      ro=r(0,0)
+      zo=z(0,0)
+      rz_in%fs(:,:,1)=r
+      rz_in%fs(:,:,2)=z
+c-----------------------------------------------------------------------
+c     process inverse equilibrium and deallocate local arrays.
+c-----------------------------------------------------------------------
+      DEALLOCATE(psi,f,p,q,r,z)
+      CALL inverse_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE READ_eq_t7
+c-----------------------------------------------------------------------
+c     subprogram 26. read_eq_hansen_inverse.
+c     reads data from Chris Hansen's equilibrium code, inverse form.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_hansen_inverse
+
+      INTEGER :: mpsi,mtheta
+      REAL(r4), DIMENSION(:), ALLOCATABLE :: psi,f,p,q
+      REAL(r4), DIMENSION(:,:), ALLOCATABLE :: r,z
+
+      LOGICAL, PARAMETER :: diagnose=.FALSE.
+      INTEGER :: ipsi,itheta
+c-----------------------------------------------------------------------
+c     format statements
+c-----------------------------------------------------------------------
+ 10   FORMAT(/2x,"ipsi",5x,"psi",9x,"f",10x,"p",10x,"q",
+     $     10x,"xs",8x,"fs1",8x,"fs2",8x,"fs3",8x,"rho"/)
+ 20   FORMAT(i6,1p,9e11.3)
+ 30   FORMAT(/2x,"ipsi",2x,"ithe",6x,"r",10x,"z"/)
+ 40   FORMAT(2i6,1p,2e11.3)
+ 100  FORMAT(2i6)
+ 200  FORMAT(6E18.10)
+c-----------------------------------------------------------------------
+c     read data.
+c-----------------------------------------------------------------------
+      CALL bin_open(in_unit,TRIM(eq_filename),"OLD","REWIND",
+     $     convert_type)
+      READ(in_unit)mpsi,mtheta
+      ALLOCATE(psi(0:mpsi),f(0:mpsi),p(0:mpsi),q(0:mpsi),
+     $     r(0:mpsi,0:mtheta),z(0:mpsi,0:mtheta))
+      READ(in_unit)psi(mpsi:0:-1)
+      READ(in_unit)f(mpsi:0:-1)
+      READ(in_unit)p(mpsi:0:-1)
+      READ(in_unit)q(mpsi:0:-1)
+      READ(in_unit)r(mpsi:0:-1,:)
+      READ(in_unit)z(mpsi:0:-1,:)
+      CALL bin_close(in_unit)
+c-----------------------------------------------------------------------
+c     copy and modify 1D arrays.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(sq_in,mpsi,4)
+      psio=psi(0)
+      sq_in%xs=1-psi/psio
+      sq_in%fs(:,1)=f
+      sq_in%fs(:,2)=p*mu0
+      sq_in%fs(:,3)=q
+c-----------------------------------------------------------------------
+c     select axis position and impose periodicity.
+c-----------------------------------------------------------------------
+      ro=r(0,0)
+      zo=z(0,0)
+      r(:,mtheta)=r(:,0)
+      z(:,mtheta)=z(:,0)
+c-----------------------------------------------------------------------
+c     copy to bicubic spline values in revised order.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,mpsi,mtheta,2)
+      rz_in%fs(:,:,1)=r
+      rz_in%fs(:,:,2)=z
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      IF(diagnose)THEN
+         OPEN(UNIT=debug_unit,FILE="hansen.out",STATUS="UNKNOWN")
+         WRITE(debug_unit,'(2a/)')"filename = ",TRIM(eq_filename)
+         WRITE(debug_unit,'(2(a,i3),1p,2(a,e10.3))')
+     $        "mpsi = ",mpsi,", mtheta = ",mtheta,
+     $        ", ro = ",ro,", zo = ",zo
+         WRITE(debug_unit,10)
+         DO ipsi=0,mpsi
+            WRITE(debug_unit,20)ipsi,psi(ipsi),f(ipsi),p(ipsi),q(ipsi),
+     $           sq_in%xs(ipsi),sq_in%fs(ipsi,1:3),SQRT(sq_in%xs(ipsi))
+         ENDDO
+         WRITE(debug_unit,10)
+         WRITE(debug_unit,30)
+         DO ipsi=0,mpsi
+            DO itheta=0,mtheta
+               WRITE(debug_unit,40)ipsi,itheta,rz_in%fs(ipsi,itheta,:)
+            ENDDO
+            WRITE(debug_unit,30)
+         ENDDO
+         CLOSE(UNIT=debug_unit)
+         CALL program_stop
+     $        ("read_eq_hansen_inverse: abort after diagnose.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     process inverse equilibrium.
+c-----------------------------------------------------------------------
+      DEALLOCATE(psi,f,p,q,r,z)
+      CALL inverse_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_hansen_inverse
+c-----------------------------------------------------------------------
+c     subprogram 27. read_eq_chease3.
 c     reads inverse equilibrium from CHEASE equilibrium code.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1670,7 +2016,7 @@ c-----------------------------------------------------------------------
       INTEGER :: npsi,ipsi,nchi
       REAL(r8) :: b0exp,r0exp,rmag,zmag,tpsio
       REAL(r8), DIMENSION(:), ALLOCATABLE :: norpsi,psi,t,mu0p,q
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq,jaceq,g12l
 c-----------------------------------------------------------------------
 c     open file and read sizes.
 c-----------------------------------------------------------------------
@@ -1681,7 +2027,8 @@ c-----------------------------------------------------------------------
 c     allocate local arrays.
 c-----------------------------------------------------------------------
       ALLOCATE(norpsi(npsi),psi(npsi),t(npsi),mu0p(npsi),q(npsi))
-      ALLOCATE(req(npsi,nchi),zeq(npsi,nchi))
+      ALLOCATE(req(npsi,nchi),zeq(npsi,nchi),
+     $        jaceq(npsi,nchi),g12l(npsi,nchi))
 c-----------------------------------------------------------------------
 c     read local arrays and close file.
 c-----------------------------------------------------------------------
@@ -1689,6 +2036,8 @@ c-----------------------------------------------------------------------
          READ(in_unit)norpsi(ipsi),psi(ipsi),t(ipsi),mu0p(ipsi),q(ipsi)
          READ(in_unit)req(ipsi,:)
          READ(in_unit)zeq(ipsi,:)
+         READ(in_unit)jaceq(ipsi,:)
+         READ(in_unit)g12l(ipsi,:)
       ENDDO
       CALL ascii_close(in_unit)
 c-----------------------------------------------------------------------
@@ -1712,17 +2061,173 @@ c-----------------------------------------------------------------------
       CALL bicube_alloc(rz_in,npsi-1,nchi-1,2)
       rz_in%fs(:,:,1)=req
       rz_in%fs(:,:,2)=zeq
+      jaceq=jaceq*4*pi*pi
 c-----------------------------------------------------------------------
 c     deallocate local arrays and process inverse equilibrium.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
       DEALLOCATE(norpsi,psi,t,mu0p,q)
-      DEALLOCATE(req,zeq)
+      DEALLOCATE(req,zeq,jaceq,g12l)
+      CALL bicube_fit(rz_in,"extrap","periodic")
       CALL inverse_run
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE read_eq_chease3      
-      
-      
+      END SUBROUTINE read_eq_chease3
+c-----------------------------------------------------------------------
+c     subprogram 28. read_eq_pfrc.
+c     George Marklin's PFRC equilibrium code.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_pfrc
+
+      LOGICAL, PARAMETER :: diagnose=.FALSE.
+      INTEGER :: mr,mz,mpsi,ir,iz,ipsi
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,p
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: psig
+c-----------------------------------------------------------------------
+c     format statements.
+c-----------------------------------------------------------------------
+ 10   FORMAT(4x,"mr",4x,"mz",2x,"mpsi",5x,"rmin",7x,"rmax",7x,
+     $     "zmin",7x,"zmax"//3i6,1p,4e11.3/)
+ 20   FORMAT(/2x,"ipsi",5x,"psi",9x,"p"/)
+ 30   FORMAT(i6,1p,2e11.3)
+ 40   FORMAT(/4x,"ir",4x,"iz",5x,"psi"/)
+ 50   FORMAT(2i6,1p,e11.3)
+c-----------------------------------------------------------------------
+c     read input.
+c-----------------------------------------------------------------------
+      OPEN(UNIT=in_unit,FILE=TRIM(eq_filename),STATUS="OLD")
+      READ(in_unit,*)mr,mz,mpsi
+      READ(in_unit,*)rmin,rmax,zmin,zmax
+      ALLOCATE(psi(0:mpsi),p(0:mpsi),psig(0:mr,0:mz))
+      READ(in_unit,*)(psi(ipsi),p(ipsi),ipsi=0,mpsi)
+      READ(in_unit,*)psig
+      CLOSE(UNIT=in_unit)
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      IF(diagnose)THEN
+         OPEN(UNIT=debug_unit,FILE="pfrc.out",STATUS="REPLACE")
+         WRITE(debug_unit,'(2a)')"filename = ",TRIM(eq_filename)
+         WRITE(debug_unit,10)mr,mz,mpsi,rmin,rmax,zmin,zmax
+         WRITE(debug_unit,20)
+         WRITE(debug_unit,30)(ipsi,psi(ipsi),p(ipsi),ipsi=0,mpsi)
+         WRITE(debug_unit,20)
+         WRITE(debug_unit,40)
+         DO iz=0,mz
+            WRITE(debug_unit,50)(ir,iz,psig(ir,iz),ir=0,mr)
+            WRITE(debug_unit,40)
+         ENDDO
+         CLOSE(UNIT=debug_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     transfer 1D arrays to cubic splines.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(sq_in,mpsi,4)
+      psio=psi(mpsi)
+      sq_in%xs=1-psi(mpsi:0:-1)/psio
+      sq_in%fs(:,1)=0
+      sq_in%fs(:,2)=p(mpsi:0:-1)
+      sq_in%fs(:,3)=0
+c-----------------------------------------------------------------------
+c     transfer 2D arrays to cubic splines.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(psi_in,mr,mz,2)
+      psi_in%fs(:,:,1)=psig
+c-----------------------------------------------------------------------
+c     deallocate arrays and call direct.
+c-----------------------------------------------------------------------
+      DEALLOCATE(psi,p,psig)
+      CALL direct_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_pfrc
+c-----------------------------------------------------------------------
+c     subprogram 29. read_eq_chease4.
+c     reads inverse equilibrium from CHEASE equilibrium code.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_chease4
+
+      INTEGER :: npsi,ipsi,nchi
+      REAL(r8) :: b0exp,r0exp,rmag,zmag,tpsio
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: norpsi,psi,t,mu0p,q
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq,jaceq,g12l
+c-----------------------------------------------------------------------
+c     open file and read sizes.
+c-----------------------------------------------------------------------
+      WRITE(*,*) "Direct use CHEASE PEST equilibrium."
+      jac_type="pest"
+      power_b=0
+      power_bp=0
+      power_r=2
+      OPEN(UNIT=in_unit,FILE=TRIM(eq_filename),STATUS="OLD",
+     $     FORM="UNFORMATTED")
+      READ(in_unit)npsi,nchi,r0exp,b0exp,rmag,zmag,tpsio
+c-----------------------------------------------------------------------
+c     allocate local arrays.
+c-----------------------------------------------------------------------
+      ALLOCATE(norpsi(npsi),psi(npsi),t(npsi),mu0p(npsi),q(npsi))
+      ALLOCATE(req(npsi,nchi),zeq(npsi,nchi),
+     $         jaceq(npsi,nchi),g12l(npsi,nchi))
+c-----------------------------------------------------------------------
+c     read local arrays and close file.
+c-----------------------------------------------------------------------
+      OPEN(1012,FILE='CHEASE_INFO.OUT')
+      WRITE(*,*) 'OUTPUT CHEASE INFO'
+120   FORMAT(19(E30.15,1X))
+      DO ipsi=1,npsi
+         READ(in_unit)norpsi(ipsi),psi(ipsi),t(ipsi),mu0p(ipsi),q(ipsi)
+         READ(in_unit)req(ipsi,:)
+         READ(in_unit)zeq(ipsi,:)
+         READ(in_unit)jaceq(ipsi,:)
+         READ(in_unit)g12l(ipsi,:)
+         WRITE(1012,120) norpsi(ipsi),q(ipsi)
+      ENDDO
+      CLOSE(1012)
+      CALL ascii_close(in_unit)
+c-----------------------------------------------------------------------
+c     copy variables.
+c-----------------------------------------------------------------------
+      ro=rmag
+      zo=zmag
+      psio=abs(tpsio)
+c-----------------------------------------------------------------------
+c     copy 1D arrays.
+c-----------------------------------------------------------------------      
+      CALL spline_alloc(sq_in,npsi-1,4)
+      sq_in%xs=norpsi
+      sq_in%fs(:,1)=t
+      sq_in%fs(:,2)=mu0p
+      sq_in%fs(:,3)=q
+      CALL spline_fit(sq_in,"extrap")
+c-----------------------------------------------------------------------
+c     copy 2D arrays.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,npsi-1,nchi-1,6)
+      rz_in%fs(:,:,1)=req
+      rz_in%fs(:,:,2)=zeq
+      rz_in%fs(:,:,3)=jaceq*4*pi*pi
+      rz_in%fs(:,:,4)=g12l/(2*pi)
+      rz_in%fs(:,:,5)=req
+      rz_in%fs(:,:,6)=zeq
+c-----------------------------------------------------------------------
+c     deallocate local arrays and process inverse equilibrium.
+c-----------------------------------------------------------------------
+      CALL bicube_fit(rz_in,"extrap","periodic")
+      CALL inverse_chease4_run(jaceq)
+      DEALLOCATE(norpsi,psi,t,mu0p,q)
+      DEALLOCATE(req,zeq,jaceq,g12l)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_chease4
       END MODULE read_eq_mod

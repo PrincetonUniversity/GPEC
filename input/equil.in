@@ -13,9 +13,12 @@
     mpsi=128              ! Number of radial grid intervals for equilibrium quantities
     mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
     newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
-    etol=1e-7            ! Tolerance in equilibrium field integrations
+
+	etol = 1e-7          ! Tolerance for direct equilibrium reconstruction of flux surfaces/coordinates
 
     input_only=f         ! Generate information about the input and then quit with no further calculation
+
+    use_galgrid=t        ! Use the same grid as galerkin method when regrid=.True.
 /
 &EQUIL_OUTPUT
     gse_flag=f           ! Produces diagnostic output for accuracy of solution to Grad-Shafranov equation

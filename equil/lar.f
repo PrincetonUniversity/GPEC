@@ -9,6 +9,7 @@ c     0. lar_mod.
 c     1. lar_der.
 c     2. lar_run.
 c     3. lar_coefs.
+c     4. lar_profile.
 c-----------------------------------------------------------------------
 c     subprogram 0. lar_mod.
 c     profile declarations.
@@ -42,18 +43,9 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: x,xfac,bsq,pp
 c-----------------------------------------------------------------------
-c     compute equilibrium profiles.
-c-----------------------------------------------------------------------
-      x=r/lar_a
-      xfac=1-x*x
-      p=p00*xfac**p_pres
-      pp=-2*p_pres*p00*x*xfac**(p_pres-1)
-      sigma=sigma0/(1+x**(2*p_sig))**(1+1/p_sig)
-      bsq=(y(1)/r)**2+y(2)**2
-      q=r**2*y(2)/(lar_r0*y(1))
-c-----------------------------------------------------------------------
 c     compute derivatives.
 c-----------------------------------------------------------------------
+      CALL lar_profile(r,y,p,pp,sigma,bsq,q)
       dy(1)=-pp/bsq*y(1)+sigma*y(2)*r
       dy(2)=-pp/bsq*y(2)-sigma*y(1)/r
       dy(3)=y(1)*lar_r0/r
@@ -281,4 +273,33 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE lar_coefs
+c-----------------------------------------------------------------------
+c     subprogram 4. lar_profile.
+c     computes profile functions for pressure and sigma.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE lar_profile(r,y,p,pp,sigma,bsq,q)
+
+      REAL(r8), INTENT(IN) :: r
+      REAL(r8), INTENT(OUT) :: p,pp,sigma,bsq,q
+      REAL(r8), DIMENSION(:), INTENT(IN) :: y
+      
+      REAL(r8) :: x,xfac
+c-----------------------------------------------------------------------
+c     compute equilibrium profiles.
+c-----------------------------------------------------------------------
+      x=r/lar_a
+      xfac=1-x*x
+      p=p00*xfac**p_pres
+      pp=-2*p_pres*p00*x*xfac**(p_pres-1)
+      sigma=sigma0/(1+x**(2*p_sig))**(1+1/p_sig)
+      bsq=(y(1)/r)**2+y(2)**2
+      q=r**2*y(2)/(lar_r0*y(1))
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE lar_profile
       END MODULE lar_mod

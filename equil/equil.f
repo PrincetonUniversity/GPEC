@@ -24,7 +24,7 @@ c-----------------------------------------------------------------------
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. equil_read.
-c     read input.
+c     reads input.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -36,7 +36,8 @@ c-----------------------------------------------------------------------
 
       NAMELIST/equil_control/eq_filename,eq_type,grid_type,mpsi,mtheta,
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
-     $     power_b,jac_method,convert_type,power_flag,etol
+     $     power_b,jac_method,convert_type,power_flag,ns1,
+     $     sp_pfac,sp_nx,sp_dx1,sp_dx2,use_galgrid,etol
       NAMELIST/equil_output/bin_2d,bin_eq_1d,bin_eq_2d,out_2d,out_eq_1d,
      $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose
 c-----------------------------------------------------------------------
@@ -46,8 +47,10 @@ c-----------------------------------------------------------------------
       IF(.NOT.file_stat)CALL program_stop
      $     ("Can't open input file equil.in")
       CALL ascii_open(in_unit,"equil.in","OLD")
-      READ(UNIT=in_unit,NML=equil_control)
-      READ(UNIT=in_unit,NML=equil_output)
+      IF (eq_type.NE."repack_eq") THEN
+         READ(UNIT=in_unit,NML=equil_control)
+         READ(UNIT=in_unit,NML=equil_output)
+      ENDIF
       CALL ascii_close(in_unit)
       IF(verbose) WRITE(*,'(1x,a,es10.3)')"psihigh =",psihigh
       psihigh=MIN(psihigh,1._r8)
@@ -109,6 +112,8 @@ c-----------------------------------------------------------------------
          CALL read_eq_chease2
       CASE("chease3")
          CALL read_eq_chease3
+      CASE("chease4")
+         CALL read_eq_chease4
       CASE("chum")
          CALL read_eq_chum
       CASE("efit")
@@ -147,8 +152,16 @@ c-----------------------------------------------------------------------
          CALL read_eq_wdn
       CASE("dump")
          CALL read_eq_dump
-      CASE("lez2")
-         CALL read_eq_lez_2
+      CASE("vmec")
+         CALL read_eq_vmec
+      CASE("t7_old")
+         CALL read_eq_t7_old
+      CASE("t7")
+         CALL read_eq_t7
+      CASE("hansen_inverse")
+         CALL read_eq_hansen_inverse
+      CASE("pfrc")
+         CALL read_eq_pfrc
       CASE DEFAULT
          CALL program_stop("Cannot recognize eq_type "//TRIM(eq_type))
       END SELECT

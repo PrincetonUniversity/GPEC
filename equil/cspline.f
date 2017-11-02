@@ -676,7 +676,6 @@ c-----------------------------------------------------------------------
             IF(bin)WRITE(iub)REAL(x,4),
      $           REAL(spl%f,4),REAL(AIMAG(spl%f),4)
          ENDDO
-         IF(out)WRITE(iua,'(1x)')
       ENDDO
 c-----------------------------------------------------------------------
 c     print final interpolated values.
@@ -1074,7 +1073,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE cspline_fit(spl,endmode)
-      
+
       TYPE(cspline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
       INTEGER :: iqty,imx
@@ -1086,7 +1085,7 @@ c-----------------------------------------------------------------------
       rspl%xpower(:,spl%nqty+1:2*spl%nqty)=spl%xpower
 
       rspl%x0=spl%x0
- 
+
       rspl%xs=spl%xs
 
       DO iqty=1,spl%nqty

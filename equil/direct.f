@@ -22,6 +22,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE direct_mod
       USE global_mod
+      USE utils_mod
       IMPLICIT NONE
 
       INTEGER, PRIVATE :: istep
@@ -32,6 +33,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi,psir,psiz,psirz,psirr,psizz,f,f1,p,p1
       REAL(r8) :: br,bz,brr,brz,bzr,bzz
       END TYPE direct_bfield_type
+
+      REAL(r8) :: etol=1e-8
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -49,6 +52,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
       REAL(r8), DIMENSION(3,3) :: v
 
+      REAL(r8) :: xm,dx,rholow,rhohigh
       TYPE(direct_bfield_type) :: bf
       TYPE(spline_type) :: ff
 c-----------------------------------------------------------------------
@@ -72,7 +76,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
-      IF(grid_type == "original")THEN
+      IF(grid_type == "original" .OR. grid_type == "orig")THEN
          IF(sq_in%xs(sq_in%mx) < 1-1e-6)THEN
             mpsi=sq_in%mx-1
          ELSE
@@ -91,8 +95,15 @@ c-----------------------------------------------------------------------
          sq%xs=psilow+(psihigh-psilow)*SIN(sq%xs*pi/2)**2
       CASE("rho")
          sq%xs=psihigh*(/(ipsi**2,ipsi=1,mpsi+1)/)/(mpsi+1)**2
-      CASE("original")
+      CASE("original","orig")
          sq%xs=sq_in%xs(1:mpsi)
+      CASE("mypack")
+         rholow=SQRT(psilow)
+         rhohigh=SQRT(psihigh)
+         xm=(rhohigh+rholow)/2
+         dx=(rhohigh-rholow)/2
+         sq%xs=xm+dx*mypack(mpsi/2,sp_pfac,"both")
+         sq%xs=sq%xs**2
       CASE default
          CALL program_stop("Cannot recognize grid_type "//grid_type)
       END SELECT
@@ -106,6 +117,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     start loop over flux surfaces and integrate over field line.
 c-----------------------------------------------------------------------
+      IF(verbose) WRITE(*,'(a,1p,e10.3)')" etol = ",etol
       DO ipsi=mpsi,0,-1
          CALL direct_fl_int(ipsi,y_out,bf)
 c-----------------------------------------------------------------------
@@ -128,7 +140,10 @@ c-----------------------------------------------------------------------
             CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
             rzphi%xs=sq%xs
             rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
-            eqfun%xs=sq%xs            
+            rzphi%xtitle="psifac"
+            rzphi%ytitle="theta "
+            rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/)
+            eqfun%xs=sq%xs
             eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
          ENDIF
 c-----------------------------------------------------------------------
@@ -161,6 +176,7 @@ c-----------------------------------------------------------------------
       sq%name="  sq  "
       sq%title=(/" psi  ","  f   ","  p   ","  q   "/)
       q0=sq%fs(0,4)-sq%fs1(0,4)*sq%xs(0)
+      IF(newq0 == -1)newq0=-q0
 c-----------------------------------------------------------------------
 c     revise q profile.
 c-----------------------------------------------------------------------
@@ -169,7 +185,7 @@ c-----------------------------------------------------------------------
          f0fac=f0**2*((newq0/q0)**2-1)
          q0=newq0
          DO ipsi=0,mpsi
-            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)
+            ffac=SQRT(1+f0fac/sq%fs(ipsi,1)**2)*SIGN(one,newq0)
             sq%fs(ipsi,1)=sq%fs(ipsi,1)*ffac
             sq%fs(ipsi,4)=sq%fs(ipsi,4)*ffac
             rzphi%fs(ipsi,:,3)=rzphi%fs(ipsi,:,3)*ffac
@@ -204,7 +220,7 @@ c-----------------------------------------------------------------------
             v(3,3)=twopi*r
             w11=(1+rzphi%fy(2))*twopi**2*rfac*r/jacfac
             w12=-rzphi%fy(1)*pi*r/(rfac*jacfac)
-            
+
             delpsi=SQRT(w11**2+w12**2)
             eqfun%fs(ipsi,itheta,1)=SQRT(((twopi*psio*delpsi)**2+
      $           sq%f(1)**2)/(twopi*r)**2)
@@ -369,8 +385,8 @@ c-----------------------------------------------------------------------
       INTEGER :: iopt,istate,itask,itol,jac,mf
       INTEGER, DIMENSION(liw) :: iwork
       INTEGER, PARAMETER :: nstep=2048
-      REAL(r8), PARAMETER :: eps=1e-14
-      REAL(r8) :: tol0,atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
+      REAL(r8), PARAMETER :: eps=1e-12
+      REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork
 c-----------------------------------------------------------------------
@@ -384,7 +400,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     find flux surface.
 c-----------------------------------------------------------------------
-      tol0=etol
       psifac=sq%xs(ipsi)
       psi0=psio*(1-psifac)
       r=ro+SQRT(psifac)*(rs2-ro)
@@ -412,8 +427,8 @@ c-----------------------------------------------------------------------
       iopt=1
       mf=10
       itol=1
-      rtol=tol0
-      atol=tol0*y(2)
+      rtol=etol
+      atol=etol*y(2)
       iwork=0
       rwork=0
       rwork(1)=twopi

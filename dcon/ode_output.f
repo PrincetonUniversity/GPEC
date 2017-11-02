@@ -169,7 +169,6 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_output_step(unorm)
 
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: xss
       REAL(r8), DIMENSION(:), INTENT(IN) :: unorm
 c-----------------------------------------------------------------------
 c     compute and print critical data for each time step.
@@ -185,13 +184,6 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)psifac,q,msol
          WRITE(euler_bin_unit)u
          WRITE(euler_bin_unit)ud
-c-----------------------------------------------------------------------
-c     obsolete diagnostics.
-c-----------------------------------------------------------------------
-c         WRITE(euler_bin_unit)f1mats
-c         WRITE(euler_bin_unit)k1mats
-c         WRITE(euler_bin_unit)k1aats
-c         WRITE(euler_bin_unit)g1aats
       ENDIF
 c-----------------------------------------------------------------------
 c     output solutions components for each time step.
@@ -221,7 +213,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     close crit files.
 c-----------------------------------------------------------------------
-      WRITE(term_unit,10)"psi =",psifac,", q = ",q
+      WRITE(term_unit,10)"psi = ",psifac,", q = ",q
       WRITE(crit_out_unit,20)
       CALL ascii_close(crit_out_unit)
       WRITE(crit_bin_unit)
@@ -306,7 +298,7 @@ c     write ascii eigenvalues.
 c-----------------------------------------------------------------------
       IF(out_evals .AND. istep > 0)THEN
          WRITE(evals_out_unit,10)"istep = ",istep,
-     $        ", psifac =",psifac,", q = ",q
+     $        ", psifac = ",psifac,", q = ",q
          WRITE(evals_out_unit,20)
          WRITE(evals_out_unit,30)(ipert,
      $        evalsi(indexi(ipert)),evals(index(ipert)),

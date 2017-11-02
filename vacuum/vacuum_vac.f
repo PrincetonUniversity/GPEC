@@ -608,6 +608,9 @@ c     subprogram 2. kernel.
 c     computes kernels of integral equation for Laplace's
 c     equation for a torus.
 c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
       SUBROUTINE kernel(xobs,zobs,xsce,zsce,grdgre,gren,
      $     j1,j2,isgn,iopw,iops,ischk)
       USE vglobal_mod
@@ -616,9 +619,7 @@ c-----------------------------------------------------------------------
       REAL(8), DIMENSION(:), INTENT(IN) :: xobs,zobs,xsce,zsce
       REAL(8), DIMENSION(:,:), INTENT(OUT) :: grdgre
       REAL(8), DIMENSION(:,:), INTENT(OUT), TARGET :: gren
-
-      INTEGER, INTENT(IN) :: iopw,iops,ischk
-      INTEGER, INTENT(INOUT) :: isgn,j1,j2
+      INTEGER, INTENT(IN) :: j1,j2,isgn,iopw,iops,ischk
       
       INTEGER  :: i,ic,iend,ig,ilr,isph,istart,j,j1j2,jres,js1,js2,
      $     js3,js4,js5,mthm,mths
@@ -727,10 +728,10 @@ c-----------------------------------------------------------------------
          iend=2
 
          IF(isph == 1 .AND. j2 == 2)THEN
-           IF(jbot-j == 1)iend=3
-           IF(jbot-j == 0)iend=4
-           IF(j-jtop == 0)iend=0
-           IF(j-jtop == 1)iend=1
+            IF(jbot-j == 1)iend=3
+            IF(jbot-j == 0)iend=4
+            IF(j-jtop == 0)iend=0
+            IF(j-jtop == 1)iend=1
          ENDIF
 
          istart=4-iend
@@ -823,7 +824,7 @@ c-----------------------------------------------------------------------
          residu=0.0
          IF(j1 == j2)residu=two
 
-         IF(ishape < 10)THEN
+         IF(ishape < 10 .OR. ishape == 41)THEN
             resdg=(2-j1)*(2-j2)+(j1-1)*(j2-1)
             resk0=(2-j1)*(2-j2)+(j1-3)*(j2-1)
             residu=resdg+resk0
@@ -841,7 +842,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
  175     CONTINUE
-         IF((xs < zero).AND.(j2 == 2)) work(j)=1.0
+
+         IF((xs < zero).AND.(j2 == 2))work(j)=1.0
+
          DO ic=1,mth
             grdgre((j1-1)*mth+j,(j2-1)*mth+ic)=work(ic)
             gren(j,ic)=gren(j,ic)/twopi
@@ -1049,7 +1052,10 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       IMPLICIT REAL*8 (a-h,o-z)
 
+      INTEGER:: npots0,npots
       logical infwal, lfix, insect
+      REAL*8, DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
+     $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp,rioptmp
       dimension xwal1(*), zwal1(*)
       dimension iop(2),xpp(nths),zpp(nths),ww1(nths),ww2(nths),
      $    ww3(nths),thet(nths),tabx(3),tabz(3)
@@ -1135,7 +1141,7 @@ c-----------------------------------------------------------------------
       zah = a / zh                            
       zph = plrad / zh
       zmup = 0.5*dlog ((zrad+plrad)/(zrad-plrad))  ! mu-plas
-      zmuw = dlog( zah + sqrt(zah**2 + 1) )   ! mu-wall
+      zmuw = dlog( zah + sqrt(zah**2 + 1) )  ! mu-wall
       zxmup = exp(zmup)
       zxmuw = exp(zmuw)
       zbwal = zh * cosh ( zmuw )              ! Major radius of wall
@@ -1209,7 +1215,65 @@ c-----------------------------------------------------------------------
          xwal1(i) =   cw + a*cos( the + dw*sin(the) )
          zwal1(i) = - bw * a*sin( the + tw*sn2th ) - aw*sn2th
       enddo
+      open(unit=41,file="vacuum_used_wall_ishape4.out",status='unknown',
+     $     form='FORMATTED')
+      do i=1,mth2
+         write(41,*) xwal1(i),zwal1(i)
+      enddo
+      close (41)
  320  continue
+      if ( ishape .ne. 41 ) go to 325
+      open(unit=41,file="wall_geo.dat",status='old',
+     $             form='FORMATTED')
+      read(41,'(I4)') npots0
+      read(41,'(F30.20)') wcentr
+c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
+      npots=npots0+5-1
+      allocate (thetatmp(npots),xwaltmp(npots),zwaltmp(npots),rioptmp(2)
+     $   ,xpptmp(npots),ww1tmp(npots),ww2tmp(npots),ww3tmp(npots),
+     $   tabtmp(3))
+      do i = 1, npots0
+         read (41,'(F30.20)')thetatmp(i)
+         read (41,'(F30.20)')xwaltmp(i)
+         read (41,'(F30.20)')zwaltmp(i)
+         xwaltmp(i)=xwaltmp(i)-wcentr
+      enddo
+      close (41)
+      rioptmp(1)=4
+      rioptmp(2)=4
+      call spl1d1(npots0,thetatmp,xwaltmp,xpptmp,rioptmp,1,
+     $            ww1tmp,ww2tmp,ww3tmp)
+      do i = 1, mth1
+         the0 = (i-1)*dth
+         call spl1d2(npots0,thetatmp,xwaltmp,xpptmp,1,the0,tabtmp)
+         xwal1(i)=tabtmp(1)*a+wcentr
+      enddo
+      rioptmp(1)=4
+      rioptmp(2)=4
+      call spl1d1(npots0,thetatmp,zwaltmp,xpptmp,rioptmp,1,
+     $            ww1tmp,ww2tmp,ww3tmp)
+      do i = 1, mth1
+         the0 = (i-1)*dth
+         call spl1d2(npots0,thetatmp,zwaltmp,xpptmp,1,the0,tabtmp)
+         zwal1(i)=tabtmp(1)*a
+      enddo
+      xwal1(1)=xwal1(mth1)
+      zwal1(1)=zwal1(mth1)
+      xwal1(mth2)=xwal1(2)
+      zwal1(mth2)=zwal1(2)
+      IF (.FALSE.) THEN
+         open(unit=41,file="vacuum_used_wall.out",status='unknown',
+     $        form='FORMATTED')
+         do i=1,mth2
+            write(41,*) xwal1(i),zwal1(i)
+         enddo
+         close (41)
+      ENDIF
+      deallocate(thetatmp,xwaltmp,zwaltmp,xpptmp,ww1tmp,ww2tmp,ww3tmp,
+     $           rioptmp,tabtmp)
+ 325  continue
+
+
       if ( ishape .ne. 5 ) go to 340
       wcentr = xmaj + cw*plrad
       do 330 i = 1, mth2
@@ -1676,9 +1740,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine adjustb(betin,betout,a_,bw_,cw_,dw_,
-     $     xmaj_,plrad_,ishape_)
-     $     
+      subroutine adjustb(betin,betout,a_,bw_,cw_,dw_,xmaj_,plrad_,
+     $   ishape_)
       USE vglobal_mod
       IMPLICIT REAL*8 (a-h,o-z)
 c-----------------------------------------------------------------------
