@@ -57,8 +57,9 @@ c-----------------------------------------------------------------------
       ! module wide output variables
       LOGICAL :: singcoup_set = .FALSE.
       REAL(r8) :: jarea
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fldflxmat,singbnoflxs,
-     $     w1v,w2v,w3v,t1v,t2v,t3v,o1v,o2v,o3v,y1v,y2v,y3v
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: fldflxmat,fldflxinv,
+     $     singbnoflxs
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: wvec,owvec
 
       CONTAINS
       
@@ -480,11 +481,12 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: convmat
       COMPLEX(r8), DIMENSION(msing,mpert,mpert) :: fsurfindmats
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: fldflxmn,bmn
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::  temp1,temp2,
-     $     t1mat,t2mat,t3mat
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE ::  temp1
+     $     tmat,tvec,otvec
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: sval,osval
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv,tmfac
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork,s,s1,s2,s3,o,o1,o2,o3
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: work
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: u,a,vt    
 
@@ -496,7 +498,7 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)
      $     "Computing coupling between total resonant fields and "//
      $     "external fields"      
-      IF(verbose) WRITE(*,*)"Computing surface inductances at "//
+      IF(verbose) WRITE(*,*)"Computing surface inductance at "//
      $     "resonant surfaces"
       DO ising=1,msing
          resnum=NINT(singtype(ising)%q*nn)-mlow+1
@@ -530,7 +532,7 @@ c-----------------------------------------------------------------------
      $        jcfun(mthsurf)/mthsurf
          w_c(ising)=w_c(ising)-0.5*wcfun(mthsurf)/mthsurf
 
-         j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0  
+         j_c(ising)=1.0/j_c(ising)*chi1*/mu0
          shear(ising)=mfac(resnum)*sq%f1(4)/sq%f(4)**2
 
          ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))         
@@ -573,7 +575,7 @@ c-----------------------------------------------------------------------
             CALL gpeq_sol(rpsi)
             rbwp1mn=bwp1_mn(resnum)
 
-            deltas(ising,i)=rbwp1mn-lbwp1mn
+            deltas(ising,i)=sq%f(4)*chi1*(rbwp1mn-lbwp1mn)
             delcurs(ising,i)=j_c(ising)*deltas(ising,i)*ifac/
      $           (twopi*mfac(resnum))
             singcurs(ising,i)=-delcurs(ising,i)/ifac
@@ -646,8 +648,7 @@ c-----------------------------------------------------------------------
 c     convert coordinates. 
 c-----------------------------------------------------------------------
          ALLOCATE(fldflxmn(lmpert),fldflxmat(lmpert,lmpert),
-     $        t1mat(msing,lmpert),t2mat(msing,lmpert),
-     $        t3mat(msing,lmpert),tmfac(lmpert))
+     $      tmat(msing,lmpert,nmat),tmfac(lmpert))
          DO i=1,lmpert
             lftnmn=0
             lftnmn(i)=1.0
@@ -676,13 +677,13 @@ c-----------------------------------------------------------------------
          tmhigh = lmhigh
          tmpert = lmpert
          tmfac= lmfac
-         t1mat = MATMUL(singbnoflxs,convmat)
-         t2mat = MATMUL(singcurs,convmat)
-         t3mat = MATMUL(islandhwids,convmat)
+         tmat(:,:,1) = MATMUL(deltas,convmat)
+         tmat(:,:,2) = MATMUL(singbnoflxs,convmat)
+         tmat(:,:,3) = MATMUL(singcurs,convmat)
+         tmat(:,:,4) = MATMUL(islandhwids,convmat)
       ELSE
          ALLOCATE(fldflxmn(mpert),fldflxmat(mpert,mpert),
-     $        t1mat(msing,mpert),t2mat(msing,mpert),
-     $        t3mat(msing,mpert),tmfac(mpert))
+     $        tmat(msing,mpert,nmat),tmfac(mpert))
          units = (/(1.0,itheta=0,mthsurf)/)
          jarea = issurfint(units,mthsurf,psilim,0,0)
          DO i=1,mpert
@@ -696,111 +697,66 @@ c-----------------------------------------------------------------------
          tmhigh = mhigh
          tmpert = mpert
          tmfac = mfac
-         t1mat = singbnoflxs
-         t2mat = singcurs*twopi*nn
-         t3mat = islandhwids
+         tmat(:,:,1) = singbnoflxs
+         tmat(:,:,2) = singcurs*twopi*nn
+         tmat(:,:,3) = islandhwids
+         tmat(:,:,4) = deltas
       ENDIF
 c-----------------------------------------------------------------------
 c     svd analysis.
 c-----------------------------------------------------------------------
       lwork=3*tmpert
-      ALLOCATE(s(msing),s1(msing),s2(msing),s3(msing),rwork(5*msing),
+      ALLOCATE(fldflxinv(tmpert,tmpert),s(msing,nmat),
+     $     wvec(tmpert,msing,nmat),tvec(tmpert,msing,nmat),
      $     u(msing,msing),a(msing,tmpert),vt(msing,tmpert),
-     $     w1v(tmpert,msing),w2v(tmpert,msing),w3v(tmpert,msing),
-     $     t1v(tmpert,msing),t2v(tmpert,msing),t3v(tmpert,msing),
-     $     temp1(tmpert,tmpert),temp2(tmpert,tmpert),work(lwork),
-     $     ipiv(tmpert),bmn(tmpert))
+     $     temp1(tmpert,tmpert),
+     $     work(lwork),rwork(5*msing),ipiv(tmpert))
 
+      ! inverse area normalization
       temp1=fldflxmat
-      temp2=0
+      fldflxinv=0
       DO i=1,tmpert
-         temp2(i,i)=1
+         fldflxinv(i,i)=1
       ENDDO
-      
       CALL zgetrf(tmpert,tmpert,temp1,tmpert,ipiv,info)
       CALL zgetrs('N',tmpert,tmpert,temp1,tmpert,ipiv,
-     $     temp2,tmpert,info)
-      
-      work=0
-      rwork=0
+     $     fldflxinv,tmpert,info)
+
+      ! svd of each coupling metric matrix
       s=0
-      u=0
-      vt=0
-      a=MATMUL(t1mat,temp2)
-      CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
-     $     work,lwork,rwork,info)    
-      s1=s
-      w1v=CONJG(TRANSPOSE(vt))
-      t1v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
-      
-      work=0
-      rwork=0
-      s=0
-      u=0
-      vt=0
-      a=MATMUL(t2mat,temp2)
-      CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
-     $     work,lwork,rwork,info)    
-      s2=s
-      w2v=CONJG(TRANSPOSE(vt))
-      t2v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
-      
-      work=0
-      rwork=0
-      s=0
-      u=0
-      vt=0
-      a=MATMUL(t3mat,temp2)
-      CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
-     $     work,lwork,rwork,info)    
-      s3=s
-      w3v=CONJG(TRANSPOSE(vt))
-      t3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+      do i=1,nmat
+          work=0
+          rwork=0
+          u=0
+          vt=0
+          a=MATMUL(tmat(:,:,i),fldflxinv)
+          CALL zgesvd('S','S',msing,tmpert,a,msing,s(:,i),u,msing,
+         $     vt,msing,work,lwork,rwork,info)
+          wvec(:,:,i)=CONJG(TRANSPOSE(vt))
+          tvec(:,:,i)=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+      enddo
       DEALLOCATE(rwork,u,a,vt)
 c-----------------------------------------------------------------------
 c     repeat svd analysis when local coupling is requested.
 c-----------------------------------------------------------------------
       IF (osing<msing) THEN
-         ALLOCATE(o(osing),o1(osing),o2(osing),o3(osing),rwork(5*osing),
+         ALLOCATE(osval(osing,nmat),rwork(5*osing),
      $        u(osing,osing),a(osing,tmpert),vt(osing,tmpert),
-     $        o1v(tmpert,osing),o2v(tmpert,osing),o3v(tmpert,osing),
-     $        y1v(tmpert,osing),y2v(tmpert,osing),y3v(tmpert,osing))
+     $        owvec(tmpert,osing,nmat),otvec(tmpert,osing,nmat))
          
-         work=0
-         rwork=0
-         o=0
-         u=0
-         vt=0
-         a=MATMUL(t1mat(ol:ou,:),temp2)
-         CALL zgesvd('S','S',osing,tmpert,a,osing,o,u,osing,vt,osing,
-     $        work,lwork,rwork,info)    
-         o1=o
-         o1v=CONJG(TRANSPOSE(vt))
-         y1v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
-         
-         work=0
-         rwork=0
-         o=0
-         u=0
-         vt=0
-         a=MATMUL(t2mat(ol:ou,:),temp2)
-         CALL zgesvd('S','S',osing,tmpert,a,osing,o,u,osing,vt,osing,
-     $        work,lwork,rwork,info)    
-         o2=o
-         o2v=CONJG(TRANSPOSE(vt))
-         y2v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
-         
-         work=0
-         rwork=0
-         o=0
-         u=0
-         vt=0
-         a=MATMUL(t3mat(ol:ou,:),temp2)
-         CALL zgesvd('S','S',osing,tmpert,a,osing,o,u,osing,vt,osing,
-     $        work,lwork,rwork,info)    
-         o3=o
-         o3v=CONJG(TRANSPOSE(vt))
-         y3v=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+      ! svd of each coupling metric matrix
+      osval = 0
+      do i=1,nmat
+          work=0
+          rwork=0
+          u=0
+          vt=0
+          a=MATMUL(tmat(:,:,i),fldflxinv)
+          CALL zgesvd('S','S',osing,tmpert,a,osing,osval(:,i),u,osing,
+         $     vt,osing,work,lwork,rwork,info)
+          owvec(:,:,i)=CONJG(TRANSPOSE(vt))
+          otvec(:,:,i)=MATMUL(CONJG(fldflxmat),CONJG(TRANSPOSE(vt)))
+      enddo
          DEALLOCATE(rwork,u,a,vt)
       ENDIF
 c-----------------------------------------------------------------------
@@ -834,7 +790,7 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
             DO j=1,tmpert
                WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t1mat(i,j)),AIMAG(t1mat(i,j))
+     $              tmfac(j),REAL(tmat(i,j,1)),AIMAG(tmat(i,j,1))
             ENDDO
             WRITE(out_unit,*)
          ENDDO
@@ -847,7 +803,7 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
             DO j=1,tmpert
                WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t2mat(i,j)),AIMAG(t2mat(i,j))
+     $              tmfac(j),REAL(tmat(i,j,2)),AIMAG(tmat(i,j,2))
             ENDDO
             WRITE(out_unit,*)
          ENDDO
@@ -860,10 +816,23 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
             DO j=1,tmpert
                WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t3mat(i,j)),AIMAG(t3mat(i,j))
+     $              tmfac(j),REAL(tmat(i,j,3)),AIMAG(tmat(i,j,3))
             ENDDO
             WRITE(out_unit,*)
          ENDDO
+
+         WRITE(out_unit,*)"Coupling matrix to Delta_mn"
+         WRITE(out_unit,*)
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a4,f6.3,1x,a6,es17.8e3)')
+     $           "q =",singtype(i)%q,"psi =",singtype(i)%psifac
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $              tmfac(j),REAL(tmat(i,j,4)),AIMAG(tmat(i,j,4))
+            ENDDO
+            WRITE(out_unit,*)
 
          CALL ascii_close(out_unit)
 
@@ -886,13 +855,13 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          DO i=1,msing
             WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $           "mode =",i,"s =",s1(i)
+     $           "mode =",i,"s =",sval(i,1)
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi)",
      $           "imag(Phi)"
             DO j=1,tmpert
                WRITE(out_unit,'(1x,I4,4(es17.8e3))')
-     $              tmfac(j),REAL(t1v(j,i)),AIMAG(t1v(j,i))
+     $              tmfac(j),REAL(tvec(j,i,1)),AIMAG(tvec(j,i,1))
             ENDDO
             WRITE(out_unit,*)
          ENDDO
@@ -901,13 +870,13 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          DO i=1,msing
             WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $           "mode =",i,"s =",s2(i)
+     $           "mode =",i,"s =",sval(i,2)
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
      $           "imag(Phi)"
             DO j=1,tmpert
                WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t2v(j,i)),AIMAG(t2v(j,i))
+     $              tmfac(j),REAL(tvec(j,i,2)),AIMAG(tvec(j,i,2))
             ENDDO
             WRITE(out_unit,*)
          ENDDO
@@ -916,13 +885,27 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,*)
          DO i=1,msing
             WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $           "mode =",i,"s =",s3(i)
+     $           "mode =",i,"s =",sval(i,3)
             WRITE(out_unit,*)
             WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
      $           "imag(Phi)"
             DO j=1,tmpert
                WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $              tmfac(j),REAL(t3v(j,i)),AIMAG(t3v(j,i))
+     $              tmfac(j),REAL(tvec(j,i,3)),AIMAG(tvec(j,i,3))
+            ENDDO
+            WRITE(out_unit,*)
+         ENDDO
+         WRITE(out_unit,*)"SVD of coupling matrix to Delta_mn"
+         WRITE(out_unit,*)
+         DO i=1,msing
+            WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $           "mode =",i,"s =",sval(i,4)
+            WRITE(out_unit,*)
+            WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
+     $           "imag(Phi)"
+            DO j=1,tmpert
+               WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $              tmfac(j),REAL(tvec(j,i,4)),AIMAG(tvec(j,i,4))
             ENDDO
             WRITE(out_unit,*)
          ENDDO
@@ -948,13 +931,13 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,*)
             DO i=1,osing
                WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $              "mode =",i,"s =",o1(i)
+     $              "mode =",i,"s =",osval(i,1)
                WRITE(out_unit,*)
                WRITE(out_unit,'(1x,a4,4(1x,a16))')"m","real(Phi)",
      $              "imag(Phi)"
                DO j=1,tmpert
                   WRITE(out_unit,'(1x,I4,4(es17.8e3))')
-     $                 tmfac(j),REAL(y1v(j,i)),AIMAG(y1v(j,i))
+     $                 tmfac(j),REAL(otvec(j,i,1)),AIMAG(otvec(j,i,1))
                ENDDO
                WRITE(out_unit,*)
             ENDDO
@@ -963,13 +946,13 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,*)
             DO i=1,osing
                WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $              "mode =",i,"s =",o2(i)
+     $              "mode =",i,"s =",osval(i,2)
                WRITE(out_unit,*)
                WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
      $              "imag(Phi)"
                DO j=1,tmpert
                   WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $                 tmfac(j),REAL(y2v(j,i)),AIMAG(y2v(j,i))
+     $                 tmfac(j),REAL(otvec(j,i,2)),AIMAG(otvec(j,i,2))
                ENDDO
                WRITE(out_unit,*)
             ENDDO
@@ -978,24 +961,52 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,*)
             DO i=1,osing
                WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
-     $              "mode =",i,"s =",o3(i)
+     $              "mode =",i,"s =",osval(i,3)
                WRITE(out_unit,*)
                WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
      $              "imag(Phi)"
                DO j=1,tmpert
                   WRITE(out_unit,'(1x,I4,2(es17.8e3))')
-     $                 tmfac(j),REAL(y3v(j,i)),AIMAG(y3v(j,i))
+     $                 tmfac(j),REAL(otvec(j,i,3)),AIMAG(otvec(j,i,3))
                ENDDO
                WRITE(out_unit,*)
             ENDDO
+            WRITE(out_unit,*)"Local SVD for coupling matrix to"//
+     $           " island half-widths"
+            WRITE(out_unit,*)
+            DO i=1,osing
+               WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $              "mode =",i,"s =",osval(i,3)
+               WRITE(out_unit,*)
+               WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
+     $              "imag(Phi)"
+               DO j=1,tmpert
+                  WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $                 tmfac(j),REAL(otvec(j,i,3)),AIMAG(otvec(j,i,3))
+               ENDDO
+               WRITE(out_unit,*)
+            ENDDO
+            WRITE(out_unit,*)"Local SVD for coupling matrix to "//
+     $           "Delta_mn"
+            WRITE(out_unit,*)
+            DO i=1,osing
+               WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
+     $              "mode =",i,"s =",osval(i,4)
+               WRITE(out_unit,*)
+               WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real(Phi)",
+     $              "imag(Phi)"
+               DO j=1,tmpert
+                  WRITE(out_unit,'(1x,I4,2(es17.8e3))')
+     $                 tmfac(j),REAL(otvec(j,i,4)),AIMAG(otvec(j,i,4))
+               ENDDO
+               WRITE(out_unit,*)
          ENDIF
          CALL ascii_close(out_unit)
       ENDIF
       
-      DEALLOCATE(s,s1,s2,s3,t1v,t2v,t3v,
-     $     tmfac,t1mat,t2mat,t3mat,fldflxmn,ipiv,work,temp1,temp2) 
+      DEALLOCATE(sval,tvec,tmat,tmfac,fldflxmn,ipiv,work,temp1)
       IF (osing<msing) THEN
-         DEALLOCATE(o,o1,o2,o3,y1v,y2v,y3v)
+         DEALLOCATE(osval,otvec)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1524,7 +1535,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i_id,q_id,p_id,c_id,w_id,k_id
+      INTEGER :: i_id,q_id,p_id,c_id,w_id,k_id,d_id
 
       INTEGER :: itheta,ising
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1538,7 +1549,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,
      $     novf,novs,novi
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
-     $     ovf,ovs,ovi,singflx
+     $     ovf,ovs,ovi,ovd,singflx
       COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
@@ -1551,7 +1562,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c-----------------------------------------------------------------------
-!     delta is delta*chi1*sq%f(4) and j_c is j_c/(chi1*sq%f(4))
       DO ising=1,msing
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          respsi=singtype(ising)%psifac
@@ -1579,7 +1589,7 @@ c-----------------------------------------------------------------------
          j_c(ising)=j_c(ising)-jac*delpsi(mthsurf)*
      $        jcfun(mthsurf)/mthsurf
 
-         j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0
+         j_c(ising)=1.0/j_c(ising)*chi1/mu0
          shear=mfac(resnum(ising))*sq%f1(4)/sq%f(4)**2
 
          lpsi=respsi-spot/(nn*ABS(singtype(ising)%q1))
@@ -1590,7 +1600,7 @@ c-----------------------------------------------------------------------
          CALL gpeq_sol(rpsi)
          rbwp1mn=bwp1_mn(resnum(ising))
 
-         delta(ising)=rbwp1mn-lbwp1mn
+         delta(ising)=chi1*sq%f(4)*(rbwp1mn-lbwp1mn)
          delcur(ising)=j_c(ising)*delta(ising)*ifac/
      $        (twopi*mfac(resnum(ising)))
          singcur(ising)=-delcur(ising)/ifac
@@ -1650,16 +1660,18 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,7(1x,a16))')"q","psi",
+         WRITE(out_unit,'(1x,a6,9(1x,a16))')"q","psi",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
+     $        "real(Delta)","imag(Delta)",
      $        "islandhwidth","chirikov"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,7(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,9(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           REAL(singflx_mn(resnum(ising),ising)),
      $           AIMAG(singflx_mn(resnum(ising),ising)),
      $           REAL(singcur(ising)),AIMAG(singcur(ising)),
+     $           REAL(delta(ising)),AIMAG(delta(ising)),
      $           island_hwidth(ising),chirikov(ising)
          ENDDO
          WRITE(out_unit,*)
@@ -1680,6 +1692,10 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, c_id, "units", "A") )
          CALL check( nf90_put_att(fncid, c_id, "long_name",
      $     "Pitch resonant current") )
+         CALL check( nf90_def_var(fncid, "Delta_res", nf90_double,
+     $      (/q_id,i_id/), d_id) )
+         CALL check( nf90_put_att(fncid, d_id, "long_name",
+     $     "Normalized jump in the normal field poloidal flux derivative") )
          CALL check( nf90_def_var(fncid, "w_isl", nf90_double,
      $      (/q_id/), w_id) )
          CALL check( nf90_put_att(fncid, w_id, "units", "m") )
@@ -1695,6 +1711,8 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, d_id,
+     $      RESHAPE((/REAL(delta), AIMAG(delta)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_close(fncid) )
@@ -1716,58 +1734,66 @@ c-----------------------------------------------------------------------
      $        sbno_fun(1:mthsurf)))/mthsurf/2.0)
          sbno_mn = MATMUL(fldflxmat,sbno_mn)
          DO ising=1,msing
-            ovf(ising)=DOT_PRODUCT(w1v(:,ising),sbno_mn(:))/SQRT(2.0)
-            ovs(ising)=DOT_PRODUCT(w2v(:,ising),sbno_mn(:))/SQRT(2.0)
-            ovi(ising)=DOT_PRODUCT(w3v(:,ising),sbno_mn(:))/SQRT(2.0)
+            ovf(ising)=DOT_PRODUCT(wvec(:,ising,1),sbno_mn(:))/SQRT(2.0)
+            ovs(ising)=DOT_PRODUCT(wvec(:,ising,2),sbno_mn(:))/SQRT(2.0)
+            ovi(ising)=DOT_PRODUCT(wvec(:,ising,3),sbno_mn(:))/SQRT(2.0)
+            ovd(ising)=DOT_PRODUCT(wvec(:,ising,4),sbno_mn(:))/SQRT(2.0)
          ENDDO
          DO ising=1,msing
             novf(ising)=ABS(ovf(ising))/sbnosurf*1e2
             novs(ising)=ABS(ovs(ising))/sbnosurf*1e2
             novi(ising)=ABS(ovi(ising))/sbnosurf*1e2
+            novi(ising)=ABS(ovd(ising))/sbnosurf*1e2
          ENDDO
 
          IF(ascii_flag)THEN
             WRITE(out_unit,*)"Overlap fields, overlap singular "//
      $           "currents, and overlap islands"
             WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a6,9(1x,a16))')
+            WRITE(out_unit,'(1x,a6,12(1x,a16))')
      $           "mode","real(ovf)","imag(ovf)","overlap(%)",
      $           "real(ovs)","imag(ovs)","overlap(%)",
      $           "real(ovi)","imag(ovi)","overlap(%)"
+     $           "real(ovd)","imag(ovd)","overlap(%)"
             DO ising=1,msing
-               WRITE(out_unit,'(1x,I6,9(es17.8e3))')ising,
+               WRITE(out_unit,'(1x,I6,12(es17.8e3))')ising,
      $              REAL(ovf(ising)),AIMAG(ovf(ising)),novf(ising),
      $              REAL(ovs(ising)),AIMAG(ovs(ising)),novs(ising),
-     $              REAL(ovi(ising)),AIMAG(ovi(ising)),novi(ising)
+     $              REAL(ovi(ising)),AIMAG(ovi(ising)),novi(ising),
+     $              REAL(ovd(ising)),AIMAG(ovd(ising)),novi(ising)
             ENDDO
             WRITE(out_unit,*)            
          ENDIF
 
          IF (osing<msing) THEN            
             DO ising=1,osing
-               ovf(ising)=DOT_PRODUCT(o1v(:,ising),sbno_mn(:))/SQRT(2.0)
-               ovs(ising)=DOT_PRODUCT(o2v(:,ising),sbno_mn(:))/SQRT(2.0)
-               ovi(ising)=DOT_PRODUCT(o3v(:,ising),sbno_mn(:))/SQRT(2.0)
+               ovf(ising)=DOT_PRODUCT(owvec(:,ising,1),sbno_mn(:))/SQRT(2.0)
+               ovs(ising)=DOT_PRODUCT(owvec(:,ising,2),sbno_mn(:))/SQRT(2.0)
+               ovi(ising)=DOT_PRODUCT(owvec(:,ising,3),sbno_mn(:))/SQRT(2.0)
+               ovd(ising)=DOT_PRODUCT(owvec(:,ising,4),sbno_mn(:))/SQRT(2.0)
             ENDDO
             DO ising=1,osing
                novf(ising)=ABS(ovf(ising))/sbnosurf*1e2
                novs(ising)=ABS(ovs(ising))/sbnosurf*1e2
                novi(ising)=ABS(ovi(ising))/sbnosurf*1e2
+               novi(ising)=ABS(ovd(ising))/sbnosurf*1e2
             ENDDO
             
             IF(ascii_flag)THEN
                WRITE(out_unit,*)"Local overlap fields, overlap "//
      $              "singular currents, and overlap islands"
                WRITE(out_unit,*)
-               WRITE(out_unit,'(1x,a6,9(1x,a16))')
+               WRITE(out_unit,'(1x,a6,12(1x,a16))')
      $              "mode","real(ovf)","imag(ovf)","overlap(%)",
      $              "real(ovs)","imag(ovs)","overlap(%)",
      $              "real(ovi)","imag(ovi)","overlap(%)"
+     $              "real(ovd)","imag(ovd)","overlap(%)"
                DO ising=1,osing
                   WRITE(out_unit,'(1x,I6,9(es17.8e3))')ising,
      $                 REAL(ovf(ising)),AIMAG(ovf(ising)),novf(ising),
      $                 REAL(ovs(ising)),AIMAG(ovs(ising)),novs(ising),
-     $                 REAL(ovi(ising)),AIMAG(ovi(ising)),novi(ising)
+     $                 REAL(ovi(ising)),AIMAG(ovi(ising)),novi(ising),
+     $                 REAL(ovd(ising)),AIMAG(ovd(ising)),novd(ising)
                ENDDO
                WRITE(out_unit,*)
             ENDIF
@@ -1780,9 +1806,9 @@ c-----------------------------------------------------------------------
         
       IF(ascii_flag) CALL ascii_close(out_unit)
       IF(singcoup_set) THEN
-         DEALLOCATE(w1v,w2v,w3v)
+         DEALLOCATE(wvec)
          IF(osing<msing) THEN
-            DEALLOCATE(o1v,o2v,o3v)
+            DEALLOCATE(owvec)
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
