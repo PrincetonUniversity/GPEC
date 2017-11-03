@@ -1498,7 +1498,6 @@ c-----------------------------------------------------------------------
          psising(2:singnum+1)=psising(1:singnum)
          psising(1)=psilow
          singnum=singnum+1
-         
       ENDIF
       IF (psising(singnum)<psihigh) THEN
          singnum=singnum+1
@@ -1529,11 +1528,12 @@ c-----------------------------------------------------------------------
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
          WRITE(*,'(a,E10.3,a,E10.3)') '- psi',psising_check(i),
-     $        ' det0 is', ABS(det0)
+     $        ' determinant of F is', ABS(det0)
          reps=keps1/keps2
          eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
+         eps = 1e-4
          ! always record the effective surface, even if it isn't very singular
-         IF (.TRUE.) THEN !ABS(det0)<=ABS(det_max)*eps) THEN
+         IF ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)
          ENDIF
@@ -1691,7 +1691,7 @@ c-----------------------------------------------------------------------
       INTEGER :: it
 
       INTEGER :: ising,info
-      REAL(r8) :: dzfac=1e-6,dfac=1e-2, tol=1e-15, itmax=1000,dz,dz1,dz2
+      REAL(r8) :: dzfac=1e-6,dfac=1e-2, tol=1e-9, itmax=1e4,dz,dz1,dz2
       REAL(r8) :: z_old,f_old,f,b0,b1,zopt,fopt
 c-----------------------------------------------------------------------
 c     find initial guess.
@@ -1720,8 +1720,10 @@ c-----------------------------------------------------------------------
          ENDIF
          IF(it > itmax) THEN
             it=-1
-            WRITE(*,'(a,e10.3,a,e10.3,a)') "- search terminated at ",
-     $               zopt," with large ",err," error"
+            ! Exessive warning: if kin_flag true the well is shallow
+            ! compared to ideal singularity and we hit itmax almost always
+c            WRITE(*,'(a,e10.3,a,e10.3,a)') "- search terminated at ",
+c     $               zopt," with large ",err," error"
             z=zopt
             EXIT
          ENDIF
