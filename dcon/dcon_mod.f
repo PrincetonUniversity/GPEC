@@ -54,6 +54,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: out_sol=.FALSE.
       LOGICAL :: bin_sol=.FALSE.
       LOGICAL :: netcdf_out=.TRUE.
+      LOGICAL :: diagnose_detf=.FALSE.
 
       LOGICAL :: bal_flag=.FALSE.
       LOGICAL :: mat_flag=.FALSE.

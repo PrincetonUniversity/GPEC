@@ -1454,7 +1454,9 @@ c-----------------------------------------------------------------------
 c     subprogram 14. ksing_find.
 c     find new singular surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE ksing_find
+      SUBROUTINE ksing_find(diagnose_detf)
+
+      LOGICAL, INTENT(IN) :: diagnose_detf
 
       REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,keps1=1e-10,keps2=1e-4
       INTEGER, PARAMETER :: nsing=1000
@@ -1487,13 +1489,16 @@ c-----------------------------------------------------------------------
       psising(singnum)=x0
       sing_det=det0
       sing_flag=.TRUE.
-      OPEN(UNIT=100,FILE="grid.out",STATUS="UNKNOWN")
-      CALL bin_open(bin_unit,"grid.bin","UNKNOWN","REWIND","none")
+      IF (diagnose_detf) THEN
+          OPEN(UNIT=100,FILE="grid.out",STATUS="UNKNOWN")
+          CALL bin_open(bin_unit,"grid.bin","UNKNOWN","REWIND","none")
+      ENDIF
       CALL sing_adp_find_sing(x0,x1,det0,det1,nsing,psising,singnum,
-     $     i_recur,i_depth,tol,sing_det,sing_flag)
-      CLOSE (UNIT=100)
-      CALL bin_close(bin_unit)
-      
+     $     i_recur,i_depth,tol,sing_det,sing_flag,diagnose_detf)
+      IF (diagnose_detf) THEN
+          CLOSE (UNIT=100)
+          CALL bin_close(bin_unit)
+      ENDIF
       IF (psising(1)>psilow) THEN
          psising(2:singnum+1)=psising(1:singnum)
          psising(1)=psilow
@@ -1567,7 +1572,8 @@ c     adaptive finder.
 c-----------------------------------------------------------------------
       RECURSIVE SUBROUTINE sing_adp_find_sing(x0,x1,det0,det1,
      $     m_singpos,singpos,singnum,i_recur,i_depth,
-     $     tol,sing_det,sing_flag)
+     $     tol,sing_det,sing_flag,diagnose_detf)
+      LOGICAL,INTENT(IN) :: diagnose_detf
       LOGICAL,INTENT(INOUT) :: sing_flag
       INTEGER,INTENT(IN) :: m_singpos
       INTEGER,INTENT(INOUT) :: singnum
@@ -1668,13 +1674,11 @@ c-----------------------------------------------------------------------
          IF (tmp1==0.OR.tmp2==0) THEN
             CALL program_stop("det(2)-det(1)=0 or det(3)-det(2)=0")
          ENDIF
-         WRITE(100,*) x(2),ABS(det(2)),REAL(det(2)),IMAG(det(2))
-         WRITE(100,*) x(3),ABS(det(3)),REAL(det(3)),IMAG(det(3))
-         WRITE(bin_unit)REAL(x(2),4),REAL(LOG10(ABS(det(2))),4),
+         IF (diagnose_detf) THEN
+             WRITE(100,*) x(2),ABS(det(2)),REAL(det(2)),IMAG(det(2))
+             WRITE(bin_unit)REAL(x(2),4),REAL(LOG10(ABS(det(2))),4),
      $        REAL(REAL(det(2)),4),REAL(AIMAG(det(2)),4)
-         WRITE(bin_unit)REAL(x(3),4),REAL(LOG10(ABS(det(3))),4),
-     $        REAL(REAL(det(3)),4),REAL(AIMAG(det(3)),4)
-         
+
       ENDIF
       i_depth=i_depth-1      
       END SUBROUTINE sing_adp_find_sing      

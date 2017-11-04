@@ -62,7 +62,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund
+     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_fund,diagnose_detf
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -204,7 +204,7 @@ c-----------------------------------------------------------------------
             CALL resist_eval(sing(ising))
          ENDDO
          IF (kin_flag)THEN
-            CALL ksing_find
+            CALL ksing_find(diagnose_detf)
             DO ising=1,kmsing
                CALL resist_eval(kinsing(ising))
             ENDDO
