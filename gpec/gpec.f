@@ -18,10 +18,11 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       INTEGER :: i,j,in,resol,
-     $     mode,m3mode,lowmode,highmode,filter_modes
+     $     mode,m3mode,lowmode,highmode,filter_modes,
+     $     sing_npsi
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
-      REAL(r8) :: majr,minr,smallwidth,fp,normpsi
+      REAL(r8) :: sing_spot,majr,minr,smallwidth,fp,normpsi
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
@@ -31,7 +32,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,jprof_flag
+     $     filter_flag,gal_flag,jprof_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -45,14 +46,15 @@ c-----------------------------------------------------------------------
      $     displacement_flag,mode,coil_flag,
      $     ip_direction,bt_direction,rdconfile,
      $     pmode,p1mode,dmode,d1mode,fmode,rmode,smode,
-     $     filter_types,filter_modes
-      NAMELIST/gpec_control/resp_index,sing_spot,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz,resp_induct_flag
+     $     filter_types,filter_modes,gal_flag
+      NAMELIST/gpec_control/resp_index,resp_induct_flag,
+     $     sing_spot,sing_npsi,reg_flag,reg_spot,
+     $     chebyshev_flag,nche,nchr,nchz
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
      $     tmag_out,mlim_out,eqbrzphi_flag,brzphi_flag,xrzphi_flag,
-     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,
+     $     vbrzphi_flag,vvbrzphi_flag,divzero_flag,dw_flag,opsi1,opsi2,
      $     bin_flag,bin_2d_flag,fun_flag,flux_flag,bwp_pest_flag,
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
@@ -77,7 +79,7 @@ c-----------------------------------------------------------------------
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
       ivacuumfile="vacuum.bin"
-      rdconfile="gal_solution.bin"
+      rdconfile="globalsol.bin"
       power_flag=.TRUE.
       fft_flag=.FALSE.
       fixed_boundary_flag=.FALSE.
@@ -85,6 +87,7 @@ c-----------------------------------------------------------------------
       harmonic_flag=.FALSE.
       mode_flag=.FALSE.
       displacement_flag=.FALSE.
+      gal_flag=.FALSE.
       mthsurf0=1
       nmin=1
       nmax=1
@@ -104,6 +107,7 @@ c-----------------------------------------------------------------------
       resp_index=0
       resp_induct_flag=.TRUE.
       sing_spot=5e-4
+      sing_npsi=1e2
       reg_flag=.TRUE.
       reg_spot=5e-2
       chebyshev_flag=.TRUE.
@@ -186,6 +190,8 @@ c-----------------------------------------------------------------------
       malias=0
 
       psixy = 0
+      opsi1=0.0
+      opsi2=1.0
 c-----------------------------------------------------------------------
 c     read gpec.in.
 c-----------------------------------------------------------------------
@@ -198,6 +204,7 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=gpec_output)
       READ(in_unit,NML=gpec_diagnose)
       CALL ascii_close(in_unit)
+      galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
 c-----------------------------------------------------------------------
 c     Deprecated variable errors
@@ -308,10 +315,14 @@ c-----------------------------------------------------------------------
       CALL DATE_AND_TIME(date,time,zone,values)
       seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
 c-----------------------------------------------------------------------
-c     prepare ideal solutions.
+c     prepare DCON solutions.
 c-----------------------------------------------------------------------
       CALL idcon_read(psixy)
       CALL idcon_transform
+c-----------------------------------------------------------------------
+c     replace radial grids and u1-u4 with RDON solutions.
+c-----------------------------------------------------------------------
+      IF(gal_flag) CALL rdcon_read_solution
 c-----------------------------------------------------------------------
 c     reconstruct metric tensors.
 c-----------------------------------------------------------------------
@@ -326,6 +337,11 @@ c     set parameters from dcon.
 c-----------------------------------------------------------------------
       ALLOCATE(xspmn(mpert),finmn(mpert),foutmn(mpert),
      $     fxmn(mpert),fxfun(mthsurf))
+      xspmn = 0
+      finmn = 0
+      foutmn = 0
+      fxmn = 0
+      fxfun = 0
 c-----------------------------------------------------------------------
 c     read coil data.
 c-----------------------------------------------------------------------
@@ -425,6 +441,7 @@ c-----------------------------------------------------------------------
       ! gpec_control
       ierr=set_harvest_payload_int(hlog,'resp_index'//nul,resp_index)
       ierr=set_harvest_payload_dbl(hlog,'sing_spot'//nul,sing_spot)
+      ierr=set_harvest_payload_dbl(hlog,'sing_npsi'//nul,sing_npsi)
       ierr=set_harvest_payload_bol(hlog,'reg_flag'//nul,reg_flag)
       ierr=set_harvest_payload_dbl(hlog,'reg_spot'//nul,reg_spot)
       ! gpec_output
@@ -442,10 +459,6 @@ c-----------------------------------------------------------------------
       CALL gpresp_reluct
       IF(timeit) CALL gpec_timer(2)
 c-----------------------------------------------------------------------
-c     run and test rdcon.
-c-----------------------------------------------------------------------
-c      CALL rdcon_read
-c-----------------------------------------------------------------------
 c     Set parameters for outputs.
 c-----------------------------------------------------------------------
       IF (nrzeq_flag) THEN
@@ -458,15 +471,15 @@ c     full analysis.
 c-----------------------------------------------------------------------
       IF (netcdf_flag) CALL gpout_init_netcdf
       IF (resp_flag) THEN
-         CALL gpout_response(power_rout,power_bpout,      
-     $        power_bout,power_rcout,tmag_out,jsurf_out) 
+         CALL gpout_response(power_rout,power_bpout,
+     $        power_bout,power_rcout,tmag_out,jsurf_out)
       ENDIF
       DO i=1,LEN_TRIM(filter_types)
          IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
       ENDDO
       IF (singcoup_flag) THEN
-         CALL gpout_singcoup(sing_spot,power_rout,          
-     $        power_bpout,power_bout,power_rcout,tmag_out) 
+         CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
+     $        power_bpout,power_bout,power_rcout,tmag_out)
       ENDIF
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
@@ -491,24 +504,28 @@ c-----------------------------------------------------------------------
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE
-          CALL gpout_singfld(mode,xspmn,sing_spot,singcoup_flag)
+            CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
          ENDIF
       ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
          CALL gpout_vsingfld()
       ENDIF
+      IF(netcdf_flag.and.(xclebsch_flag.or.dw_flag.or.pmodb_flag
+     $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag))THEN
+         CALL gpout_qrv
+      ENDIF
       IF (xclebsch_flag) THEN
-         CALL gpout_xclebsch(mode,xspmn) 
+         CALL gpout_xclebsch(mode,xspmn)
       ENDIF
       IF (kin_flag .AND. dw_flag) THEN
-        CALL gpout_dw(mode,xspmn)  
-        CALL gpout_dw_matrix(coil_flag)
+         CALL gpout_dw(mode,xspmn)
+         CALL gpout_dw_matrix(coil_flag)
       ENDIF
       IF (pmodb_flag) THEN
          CALL gpout_pmodb(mode,xspmn)
       ENDIF
       IF (xbnormal_flag) THEN
-         CALL gpout_xbnormal(mode,xspmn)
+         CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
       ENDIF
       IF (xbtangent_flag) THEN
          CALL gpout_xbtangent(mode,xspmn,power_rout,
@@ -517,6 +534,9 @@ c-----------------------------------------------------------------------
       IF (coil_flag .AND. vbnormal_flag) THEN
          CALL gpout_vbnormal(power_rout,power_bpout,power_bout,
      $        power_rcout,tmag_out)
+      ENDIF
+      IF (jprof_flag) THEN
+           CALL gpout_jprofile(mode,xspmn)
       ENDIF
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag) THEN
@@ -620,7 +640,7 @@ c-----------------------------------------------------------------------
          CALL gpout_control(infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,.FALSE.)
+         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -642,9 +662,9 @@ c-----------------------------------------------------------------------
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,.FALSE.)
+         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
-         CALL gpout_xbnormal(mode,xspmn)
+         CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)
          CALL gpdiag_radvar
          ! reset output options
@@ -701,11 +721,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      PRINT * ,"test new routine"
-      CALL gpeq_alloc
-      CALL gpout_jprofile(mode,xspmn)
-      PRINT * ,"end of test"
-      CALL gpeq_dealloc
       CALL gpec_dealloc
       CALL gpec_stop("Normal termination.")
       END PROGRAM gpec_main

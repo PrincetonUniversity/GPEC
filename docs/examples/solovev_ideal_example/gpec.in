@@ -3,7 +3,9 @@
    idconfile  = 'euler.bin'          ! Eigenfunctions output by DCON run
    ieqfile    = 'psi_in.bin'         ! Flux surfaces output by DCON run
    ivacuumfile= 'vacuum.bin'         ! Vacuum info output by DCON run
-   rdconfile  = 'gal_solution.bin'   ! Galkin functions output by resistive DCON run
+   rdconfile  = 'globalsol.bin'      ! Galerkin eigenfunctions output by resistive DCON run
+
+   gal_flag = f             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
 
    jac_in="pest"            ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
    jsurf_in=0               ! True(1) if external perturbation is area weighted (i.e. flux)
@@ -35,6 +37,7 @@
 &GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
+   sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=t               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.

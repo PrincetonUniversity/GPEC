@@ -637,12 +637,13 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
             
     colormap = data.plt.pyplot.get_cmap(cmap)
     to_rgb =  data.plt.matplotlib.colors.ColorConverter().to_rgb
-    r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84,'rfxmod':0.46,'mast':0.83,'jet':3.05}
+    r0 = {'d3d': 1.69, 'nstx': 1.00, 'iter': 6.42, 'kstar': 1.84, 'JTEXTtest': 1.00, 'rfxmod': 0.46,
+          'mast': 0.83, 'jet': 3.05, 'compass': 0.56, 'east': 1.85}
     
     # set normalization of currents using max absolute current
     if not curlim:
         curs = []
-        for i in range(10):
+        for i in range(50):
             for j in range(50):
                 if 'coil_cur({:},{:})'.format(i+1,j+1) in coil['COIL_CONTROL']:
                     curs.append(coil['COIL_CONTROL']['coil_cur({:},{:})'.format(i+1,j+1)])
@@ -657,7 +658,7 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
     
     # get x,y,z and plot each coil
     coils = {}
-    for i in range(1,10):
+    for i in range(1,50):
         if 'coil_name({:})'.format(i) in coil['COIL_CONTROL']:
             name = coil['COIL_CONTROL']['coil_name({:})'.format(i)]
             machine = coil['COIL_CONTROL']['machine']
@@ -713,7 +714,7 @@ def _coil_to_netcdf(name,machine):
     
     """
     # set up
-    r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84,'rfxmod':0.46}
+    r0 = {'d3d':1.69,'nstx':1.00,'iter':6.42,'kstar':1.84,'rfxmod':0.46,'mast':0.83,'jet':3.05,'compass':0.56}
     
     cfile = '{:}_{:}.dat'.format(machine,name)
     with open(packagedir+'coil/'+cfile,'r') as f:

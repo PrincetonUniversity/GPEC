@@ -159,7 +159,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: itheta
       REAL(r8) :: issurfint,area
-      REAL(r8), DIMENSION(0:fs) :: thetas,delpsi,jacs
+      REAL(r8), DIMENSION(0:fs) :: thetas,delpsi,jacs,r,z,a
 
       issurfint=0
       area=0
@@ -169,6 +169,7 @@ c-----------------------------------------------------------------------
          CALL bicube_eval(rzphi,psi,thetas(itheta),1)
          rfac=SQRT(rzphi%f(1))
          eta=twopi*(thetas(itheta)+rzphi%f(2))
+         a(itheta)=rfac
          r(itheta)=ro+rfac*COS(eta)
          z(itheta)=zo+rfac*SIN(eta)
          jac=rzphi%f(4)
@@ -188,11 +189,18 @@ c-----------------------------------------------------------------------
             issurfint=issurfint+
      $           r(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
          ENDDO
-      ELSE 
+      ELSE IF (wegt==2) THEN
          DO itheta=0,fs-1
             issurfint=issurfint+
      $           jacs(itheta)*delpsi(itheta)*func(itheta)/r(itheta)/fs
          ENDDO
+      ELSE IF (wegt==3) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           a(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE
+         STOP "ERROR: issurfint wegt must be in [0,1,2,3]"
       ENDIF
 
       IF (ave==1) THEN

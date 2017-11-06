@@ -13,6 +13,7 @@ c     4. fourfit_write_metric.
 c     5. fourfit_write_matrix.
 c     6. fourfit_evals.
 c     7. fourfit_diagnose_1.
+c     8. fourfit_kinetic_matrix.
 c-----------------------------------------------------------------------
 c     subprogram 0. fourfit_mod.
 c     module declarations.
@@ -29,7 +30,20 @@ c-----------------------------------------------------------------------
      $    pentrc_nn=>nn,
      $    pentrc_r8=>r8,
      $    pentrc_timer=>timer
+      USE utilities, only : progressbar
       USE torque, only : kelmm      ! cspline Euler-Lagrange mats for local use
+      USE inputs, only : dbob_m,divx_m,kin,xs_m,fnml
+      USE energy_integration
+      USE pitch_integration
+      USE dcon_interface, only: geom,
+     $     dcon_int_rzphi=>rzphi,
+     $     dcon_int_eqfun=>eqfun,
+     $     dcon_int_sq=>sq,
+     $     dcon_int_smats=>smats,
+     $     dcon_int_tmats=>tmats,
+     $     dcon_int_xmats=>xmats,
+     $     dcon_int_ymats=>ymats,
+     $     dcon_int_zmats=>zmats
       IMPLICIT NONE
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
@@ -41,7 +55,9 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), POINTER :: ipiva
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat
       COMPLEX(r8), DIMENSION(:), POINTER :: jmat
-      
+
+      INTEGER :: parallel_threads
+
       ! kientic ABCDEH mats for sing_mod
       TYPE(cspline_type) :: kwmats(6),ktmats(6)
 
@@ -425,13 +441,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set powers.
 c-----------------------------------------------------------------------
+      gmats%xpower(1,:)=-1
       IF(power_flag)THEN
-         hmats%x0(2)=1.0
-         hmats%xpower(1,:)=-1
-         hmats%xpower(2,:)=-1
-         gmats%x0(2)=1.0
-         gmats%xpower(1,:)=-1
-         gmats%xpower(2,:)=-1
+         IF (kin_flag)THEN
+            hmats%x0(2)=1.0
+            hmats%xpower(1,:)=-1
+            hmats%xpower(2,:)=-1
+            gmats%x0(2)=1.0
+            gmats%xpower(2,:)=-1
+         ENDIF
          m=mlow
          iqty=1
          DO jpert=1,mpert
@@ -582,6 +600,7 @@ c-----------------------------------------------------------------------
       CALL cspline_alloc(xmats,mpsi,mpert**2)
       CALL cspline_alloc(ymats,mpsi,mpert**2)
       CALL cspline_alloc(zmats,mpsi,mpert**2)
+
       smats%xs=sq%xs
       tmats%xs=sq%xs
       xmats%xs=sq%xs
@@ -908,6 +927,39 @@ c-----------------------------------------------------------------------
      $     dbat,ebat,umat,aamat,bkmat,bkaat,b1mat
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu
 c-----------------------------------------------------------------------
+c     declarations for parallelization.
+c-----------------------------------------------------------------------
+      LOGICAL :: debug_omp
+      INTEGER :: sTime, fTime, cr, lsTime, lfTime
+      REAL(r8) :: tsec,lsec
+
+      REAL(r8) xcom_real
+      COMMON /xcom/ xcom_real(8)
+      REAL(r8) dls011_real
+      INTEGER dls011_int
+      COMMON /DLS011/ dls011_real(218), dls011_int(37)
+      REAL(r8) dls002_real
+      INTEGER dls002_int
+      COMMON /DLS002/ dls002_real(218), dls002_int(37)
+      REAL(r8) :: lcom_real1
+      INTEGER :: lcom_int
+      REAL(r8) :: lcom_real2
+      COMMON /lcom/ lcom_real1(7), lcom_int(2), lcom_real2(2)
+      INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM,lThreads
+      INTEGER :: eqfun_my
+!$OMP THREADPRIVATE(/xcom/,/DLS011/,/DLS002/,/lcom/)
+c-----------------------------------------------------------------------
+c     output formats
+c-----------------------------------------------------------------------
+ 10   FORMAT(' ',A4,I4,A1,I4,A6,I4,A1,I4,A8,E10.3,SP,E10.3,"i",A9,F8.2)
+
+      debug_omp = .FALSE.
+      IF(debug_omp)THEN
+         print *,"In serial region..."
+         lThreads = OMP_GET_NUM_THREADS()
+         print *,"# of OMP threads = ",lThreads
+      ENDIF
+c-----------------------------------------------------------------------
 c     some basic variables
 c-----------------------------------------------------------------------
       IF(PRESENT(methodin)) method = methodin
@@ -929,7 +981,7 @@ c-----------------------------------------------------------------------
       gaats%xs=rzphi%xs
       kaats%fs=0
       gaats%fs=0
-      
+
       IF(method==-1)THEN
          output = .FALSE.
       ELSEIF(method==0)THEN
@@ -978,25 +1030,65 @@ c-----------------------------------------------------------------------
             ktmats(i)%xs=rzphi%xs
          ENDDO
 
+         CALL SYSTEM_CLOCK(COUNT_RATE=cr)
+         CALL SYSTEM_CLOCK(COUNT=sTime)
          DO ipsi=0,mpsi
-            iindex = FLOOR(REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0))*10
-            ileft = REAL(ipsi+1,8)/FLOOR((mpsi+1)/10.0)*10-iindex
-            IF ((ipsi /= 0) .AND. (ileft == 0) .AND. verbose)
-     $           WRITE(*,*)"  ...",iindex,"% of kinetic computations"
             kwmat = 0
             ktmat = 0
             psifac=rzphi%xs(ipsi)
             ! get ion matrices for all ell at this one psi
+
+            eqfun_my = eqfun%my
+
+!$OMP PARALLEL DEFAULT(SHARED)
+!$OMP& PRIVATE(l,kwmat_l,ktmat_l,tphi,lsec,lsTime,lfTime)
+!$OMP& REDUCTION(+:kwmat,ktmat)
+c!!!!!!...from inputs.f90...
+!$OMP& COPYIN(dbob_m,divx_m,kin,xs_m,fnml,
+c!!!!!!...from dcon_interface.f90
+!$OMP& geom, dcon_int_sq,
+c!!!!!!...from energy.f90
+!$OMP& /xcom/,
+c!!!!!!...from lsode1.f
+!$OMP& /DLS011/,
+c!!!!!!...from lsode2.f
+!$OMP& /DLS002/,
+c!!!!!!...from pitch.f90
+!$OMP& /lcom/)
+            IF(ipsi==0 .AND. OMP_GET_THREAD_NUM() == 0)THEN
+               lThreads = OMP_GET_NUM_THREADS()
+               WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
+     $              lThreads," OMP threads"
+            ENDIF
+!$OMP DO
             DO l=-nl,nl
+               CALL SYSTEM_CLOCK(COUNT=lsTime)
                kwmat_l = 0
                ktmat_l = 0
+
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"wmm",op_wmats=kwmat_l)
                kwmat = kwmat+kwmat_l
+               IF(debug_omp)THEN
+                  CALL SYSTEM_CLOCK(COUNT=lfTime)
+                  lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
+                  WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
+     $                 l,"/",nl," tphi@1=",tphi," lTime@1=",lsec
+               ENDIF
+
                tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $              ft//"tmm",op_wmats=ktmat_l)
                ktmat = ktmat+ktmat_l
+               IF(debug_omp)THEN
+                  CALL SYSTEM_CLOCK(COUNT=lfTime)
+                  lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
+                  WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
+     $                 l,"/",nl," tphi@2=",tphi," lTime@2=",lsec
+               ENDIF
             ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
+
             IF (electron_flag) THEN
                DO l=-nl,nl
                   kwmat_l = 0
@@ -1168,8 +1260,19 @@ c-----------------------------------------------------------------------
                   iqty=iqty+1
                ENDDO
             ENDDO
+c-----------------------------------------------------------------------
+c     print out timed loop over ipsi
+c-----------------------------------------------------------------------
+            IF(debug_omp)THEN
+               CALL SYSTEM_CLOCK(COUNT=fTime)
+               tsec = REAL(fTime-sTime,8)/REAL(cr,8)
+               print *,"ipsi=",ipsi," ended at tsec=",tsec
+            ENDIF
+         IF(verbose) CALL progressbar(ipsi,0,mpsi,op_percent=10)
          ENDDO
-         ! fit splines
+c-----------------------------------------------------------------------
+c     fit splines
+c-----------------------------------------------------------------------
          DO i=1,6
             CALL cspline_fit(kwmats(i),"extrap")
             CALL cspline_fit(ktmats(i),"extrap")

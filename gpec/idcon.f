@@ -62,9 +62,9 @@ c-----------------------------------------------------------------------
          jac_type="equal_arc"
       ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN  
          jac_type="boozer"
-      ELSE IF ((power_b==1).AND.(power_bp==0).AND.(power_r==0)) THEN  
+      ELSE IF ((power_b==1).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="park"
-      ELSE 
+      ELSE
          jac_type="other"
       ENDIF
       IF (jac_in=="") THEN
@@ -173,8 +173,10 @@ c-----------------------------------------------------------------------
 c     allocate arrays and prepare to read data.
 c-----------------------------------------------------------------------
       IF(verbose)THEN
-        WRITE(*,*)"mlow = ",mlow,", mhigh = ",mhigh,", mpert = ",mpert
-        WRITE(*,*)"mstep = ",mstep,", mfix = ",mfix,", msing = ",msing
+        WRITE(*,'(1x,3(a2,a8,I6))')"  ","mpert = ",mpert,", ","mlow = ",
+     $      mlow,", ","mhigh = ",mhigh
+        WRITE(*,'(1x,3(a2,a8,I6))')"  ","mstep = ",mstep,", ","mfix = ",
+     $      mfix,", ","msing = ",msing
       ENDIF
       ALLOCATE(psifac(0:mstep),rhofac(0:mstep),qfac(0:mstep),
      $     soltype(0:mstep),singtype(msing))
@@ -280,6 +282,24 @@ c-----------------------------------------------------------------------
          eft=eft/(mu0*2.0)*psio**2*(chi1*1e-3)**2
          efp=efp/(mu0*2.0)*psio**2*(chi1*1e-3)**2
          wft=wft*(chi1*1e-3)
+      ENDIF
+c-----------------------------------------------------------------------
+c     choose the rational surfaces included for overlap.
+c-----------------------------------------------------------------------
+      osing=0
+      DO ising=1,msing
+         IF ((singtype(ising)%psifac.GE.opsi1).AND.
+     $        (singtype(ising)%psifac.LE.opsi2)) THEN
+            ou=ising
+            osing=osing+1
+         ENDIF
+      ENDDO
+      IF (osing==0) THEN
+         ol=1
+         ou=1
+         osing=1
+      ELSE
+         ol=ou-osing+1
       ENDIF
 c-----------------------------------------------------------------------
 c     modify Lundquist numbers.
@@ -400,7 +420,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE idcon_transform
 c-----------------------------------------------------------------------
 c     subprogram 3. idcon_build.
-c     builds ideal euler-Lagrange solutions.
+c     builds ideal Euler-Lagrange solutions.
 c     __________________________________________________________________
 c     egnum  : a label of eigenmode
 c     xwpimn : arbitrary xipsi function on the control surface.
@@ -414,9 +434,9 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ifix,jfix,kfix,info
+      INTEGER :: istep,ifix,jfix,kfix,info,ipert
       INTEGER, DIMENSION(mpert) :: ipiv
-      COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1
+      COMPLEX(r8), DIMENSION(mpert) :: uedge,temp1,tuedge
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp2
       IF(debug_flag) PRINT *, "Entering idcon_build"
 c-----------------------------------------------------------------------
@@ -427,24 +447,51 @@ c-----------------------------------------------------------------------
       ELSE
          uedge=wt(:,egnum)
       ENDIF
-      temp2=soltype(mstep)%u(:,1:mpert,1)
-      CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
-      CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
 c-----------------------------------------------------------------------
 c     construct eigenfunctions.
 c-----------------------------------------------------------------------
-      jfix=0
-      DO ifix=0,mfix
-         temp1=MATMUL(fixtype(ifix)%transform,uedge)
-         kfix=fixstep(ifix+1)
-         DO istep=jfix,kfix
-            u1%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
-            u2%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
-            u3%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,3),temp1)
-            u4%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,4),temp1)
-         ENDDO         
-         jfix=kfix+1
-      ENDDO
+      u1%fs=0
+      u2%fs=0
+      u3%fs=0
+      u4%fs=0
+      IF (galsol%gal_flag) THEN
+         ! direct solutions from rmatch (single m at boundary)
+         !DO istep=0,galsol%tot_grids
+         !   u1%fs(istep,:) = galsol%u(:,istep,egnum)
+         !ENDDO
+
+         ! convert rdcon solutions with single m at psilim
+         ! to energy ranked solutions with multiple m at psilim
+         istep=galsol%tot_grids
+         DO ipert=1,galsol%mpert
+            temp2(:,ipert)=galsol%u(:,istep,ipert)
+         ENDDO
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         tuedge=uedge
+         CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,tuedge,mpert,info)
+         DO istep=0,galsol%tot_grids
+            DO ipert=1,galsol%mpert
+               u1%fs(istep,:)=u1%fs(istep,:)
+     $                       +galsol%u(:,istep,ipert)*tuedge(ipert)
+            ENDDO
+         ENDDO
+      ELSE
+         temp2=soltype(mstep)%u(:,1:mpert,1)
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,1,temp2,mpert,ipiv,uedge,mpert,info)
+         jfix=0
+         DO ifix=0,mfix
+            temp1=MATMUL(fixtype(ifix)%transform,uedge)
+            kfix=fixstep(ifix+1)
+            DO istep=jfix,kfix
+              u1%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,1),temp1)
+              u2%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,2),temp1)
+              u3%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,3),temp1)
+              u4%fs(istep,:)=MATMUL(soltype(istep)%u(:,1:mpert,4),temp1)
+            ENDDO
+            jfix=kfix+1
+         ENDDO
+      ENDIF
 c-----------------------------------------------------------------------
 c     fit the functions.
 c-----------------------------------------------------------------------

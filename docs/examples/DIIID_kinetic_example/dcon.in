@@ -26,6 +26,7 @@
     ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     electron_flag = f    ! Calculates electron contributions
+	parallel_threads=9   ! Parallel calculations of the kinetic matrix components (2*nl+1 is recommended, where nl is defined in pentrc.in)
 
     tol_nr=1e-4          ! Relative tolerance of dynamic integration steps away from rationals
     tol_r=1e-5           ! Relative tolerance of dynamic integration steps near rationals

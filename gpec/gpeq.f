@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
 c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     IPEQ: calculate functions for perturbed equilibrium.
+c     GPEQ: calculate functions for perturbed equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
@@ -23,6 +23,8 @@ c     14. gpeq_rzpgrid
 c     15. gpeq_rzpdiv
 c     16. gpeq_alloc
 c     17. gpeq_dealloc
+c     18. gpeq_interp_singsurf
+c     19. gpeq_interp_sol
 c-----------------------------------------------------------------------
 c     subprogram 0. gpeq_mod.
 c     module declarations.
@@ -56,11 +58,6 @@ c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,1)
-      CALL cspline_eval(u1,psi,0)
-      CALL cspline_eval(u2,psi,0)
-      CALL cspline_eval(u3,psi,0)
-      CALL cspline_eval(u4,psi,0)
-
       q=sq%f(4)
       q1=sq%f1(4)
       singfac=mfac-nn*q
@@ -72,16 +69,28 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute preliminary quantities.
 c-----------------------------------------------------------------------
+      CALL cspline_eval(u1,psi,0)
       xsp_mn=u1%f
       IF (kin_flag) THEN
+         CALL cspline_eval(u3,psi,0)
+         CALL cspline_eval(u4,psi,0)
          xsp1_mn=u3%f
          xss_mn=u4%f
       ELSE
-         xspfac=u2%f/singfac
-         CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
-     $        2*mband+1,u1%f,1,ione,xspfac,1)
-         CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
-         xsp1_mn=xspfac/singfac
+         IF (galsol%gal_flag) THEN
+            CALL cspline_eval(u1,psi,1)
+            CALL cspline_eval(u2,psi,0)
+            xsp1_mn=u1%f1
+         ELSE
+            CALL cspline_eval(u1,psi,0)
+            CALL cspline_eval(u2,psi,0)
+            xspfac=u2%f/singfac
+            CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
+     $         2*mband+1,u1%f,1,ione,xspfac,1)
+            CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,
+     $         info)
+            xsp1_mn=xspfac/singfac
+         ENDIF
          CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
          CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
          CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
@@ -1449,5 +1458,96 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_dealloc
+c-----------------------------------------------------------------------
+c     subprogram 18. gpeq_interp_singsurf.
+c     create spline for interpretation of soltuon near singular surface.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_interp_singsurf(fsp_sol,spot,npsi)
+      TYPE(cspline_type), INTENT(INOUT)::fsp_sol    ! spline of bwp smoothly crossing rationals
+      REAL(r8), INTENT(IN) :: spot                  ! roughly the span in  m-nq to cross
+      INTEGER, INTENT(IN) :: npsi                   ! number of points between rationals in the spline
+
+      INTEGER::psisize,ising,ix,icount
+      INTEGER,PARAMETER:: method=1
+      REAL(r8)::nq1,x,x0,x1
+      REAL(r8),DIMENSION(msing)::respsi,dxl,dxr
+c-----------------------------------------------------------------------
+c     detemine spline allocation.
+c-----------------------------------------------------------------------
+      DO ising=1,msing
+         respsi(ising)=singtype(ising)%psifac
+      ENDDO
+      DO ising=1,msing
+         nq1=singtype(ising)%q1*nn
+         SELECT CASE(method)
+         CASE(1)
+         IF (ising==1) THEN
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-psilow)
+            dxr(ising)=respsi(ising)
+     $                 +spot*(respsi(ising+1)-respsi(ising))
+         ELSEIF (ising==msing) THEN
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-respsi(ising-1))
+            dxr(ising)=respsi(ising)
+     $                 +spot*(psilim-respsi(ising))
+         ELSE
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-respsi(ising-1))
+            dxr(ising)=respsi(ising)
+     $                 +spot*(respsi(ising+1)-respsi(ising))
+         ENDIF
+         CASE(2)
+            dxl(ising)=respsi(ising)-spot/nq1
+            dxr(ising)=respsi(ising)+spot/nq1
+         END SELECT
+      ENDDO
+c-----------------------------------------------------------------------
+c     construct solution spline.
+c-----------------------------------------------------------------------
+      icount=npsi*(msing+1)-1
+      CALL cspline_alloc(fsp_sol,icount,mpert)
+      icount=0
+      DO ising=1,msing+1
+         IF (ising==1) THEN
+            x0=psilow
+            x1=dxl(ising)
+         ELSEIF (ising==msing+1) THEN
+            x0=dxr(ising-1)
+            x1=psilim
+         ELSE
+            x0=dxr(ising-1)
+            x1=dxl(ising)
+         ENDIF
+         DO ix=1,npsi
+            x=x0+(ix-1)*(x1-x0)/(npsi-1)
+            CALL gpeq_sol(x)
+            fsp_sol%xs(icount)=x
+            fsp_sol%fs(icount,:)=bwp_mn
+            icount=icount+1
+         ENDDO
+      ENDDO
+      CALL cspline_fit(fsp_sol,"not-a-knot")
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_interp_singsurf
+c-----------------------------------------------------------------------
+c     subprogram 19. gpeq_interp_sol.
+c     get bwn at psi after calling gpeq_interp_singsurf.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_interp_sol(fsp_sol,psi,interpbwn)
+      TYPE(cspline_type), INTENT(INOUT)::fsp_sol
+      REAL(r8), INTENT(IN):: psi
+      COMPLEX(r8),DIMENSION(mpert), INTENT(OUT)::interpbwn
+
+      CALL cspline_eval(fsp_sol,psi,0)
+      interpbwn=fsp_sol%f
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_interp_sol
 
       END MODULE gpeq_mod

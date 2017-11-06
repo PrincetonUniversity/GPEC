@@ -168,9 +168,17 @@ c-----------------------------------------------------------------------
      $   plas_indinvmats(0:4,mpert,mpert),
      $   plas_indev(0:4,mpert),plas_indevmats(0:4,mpert,mpert),
      $   plas_indinvev(0:4,mpert),plas_indinvevmats(0:4,mpert,mpert))
+      plas_indmats = 0
+      plas_indev = 0
+      plas_indevmats = 0
+      plas_indinvmats = 0
+      plas_indinvev = 0
+      plas_indinvevmats = 0
+
       lwork=2*mpert+1
       DO j=1,4
          ! plasma inductance
+         IF(galsol%gal_flag .AND. j/=1) CYCLE
          temp1=TRANSPOSE(kapmats(j,:,:))
          temp2=TRANSPOSE(flxmats)
          CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
@@ -186,7 +194,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate energy inductance matrix by energy consideration.
 c-----------------------------------------------------------------------
-      IF(resp_induct_flag)THEN
+      IF(resp_induct_flag .AND. .NOT. galsol%gal_flag)THEN
          temp1=0
          DO i=1,mpert
             DO j=1,mpert
@@ -199,7 +207,7 @@ c-----------------------------------------------------------------------
          CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
          plas_indmats(0,:,:)=temp1
-      ELSE
+      ELSEIF(.NOT. galsol%gal_flag)THEN
          temp1=0
          temp2=flxmats
          DO i=1,mpert
@@ -218,8 +226,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate inverse of the plasma inductance ~ Energy
 c-----------------------------------------------------------------------
-      CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
+      plas_indinvevmats = 0
       DO j=0,4
+         IF(galsol%gal_flag .AND. j/=1) CYCLE
          temp1=0
          DO i=1,mpert
             temp1(i,i)=1
@@ -316,6 +325,7 @@ c-----------------------------------------------------------------------
      $     permeabinvmats(0:4,mpert,mpert))
       lwork=2*mpert+1
       DO j=0,4
+         IF(galsol%gal_flag .AND. j/=1) CYCLE
          work=0
          rwork=0
          temp1=TRANSPOSE(surf_indmats)
@@ -367,6 +377,7 @@ c     SVD permeability matrix for orthonormal basis.
 c-----------------------------------------------------------------------
       ALLOCATE(permeabsv(0:4,mpert),permeabsvmats(0:4,mpert,mpert))
       DO j=0,4
+         IF(galsol%gal_flag .AND. j/=1) CYCLE
          lwork=3*mpert
          works=0
          rworks=0
@@ -399,6 +410,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(reluctev(0:4,mpert),diff_indmats(0:4,mpert,mpert),
      $     reluctmats(0:4,mpert,mpert),reluctevmats(0:4,mpert,mpert))
       DO j=0,4
+         IF(galsol%gal_flag .AND. j/=1) CYCLE
          work=0
          work2=0
          rwork=0
@@ -441,6 +453,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(indrelev(0:4,mpert),indrelmats(0:4,mpert,mpert),
      $     indrelevmats(0:4,mpert,mpert))
       DO j=0,4
+         IF(galsol%gal_flag .AND. j/=1) CYCLE
          work=0
          work2=0
          rwork=0

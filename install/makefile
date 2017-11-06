@@ -11,11 +11,11 @@ export CFLAGS
 
 .IGNORE:
 
-all: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
-	xdraw coil gpec mkbin
+all: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum xdraw coil gpec mkbin
 
-allf: v harvest lsode equil orbit vacuum pentrc dcon match multi sum \
-	coil gpec mkbin
+allf: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum coil gpec mkbin
 
 
 # executables:
@@ -47,6 +47,12 @@ dcon:
 match:
 	cd ../match;  make match
 
+rdcon:
+	cd ../rdcon;   make rdcon
+
+rmatch:
+	cd ../rmatch;  make rmatch
+
 multi:
 	cd ../multi;  make multi
 
@@ -66,8 +72,10 @@ mkbin:
 	mkdir -p ../bin
 	cp -f ../orbit/orbit ../bin
 	cp -f ../dcon/dcon ../bin
-	cp -f ../xdraw/xdraw ../bin
 	cp -f ../match/match ../bin
+	cp -f ../rdcon/rdcon ../bin
+	cp -f ../rmatch/rmatch ../bin
+	cp -f ../xdraw/xdraw ../bin
 	cp -f ../multi/multi ../bin
 	cp -f ../sum/sum ../bin
 	cp -f ../gpec/gpec ../bin
@@ -106,11 +114,24 @@ clean:
 	cd ../vacuum; make clean
 	cd ../dcon;   make clean
 	cd ../match;  make clean
+	cd ../rdcon;  make clean
+	cd ../rmatch; make clean
 	cd ../multi;  make clean
 	cd ../sum;    make clean
 	cd ../coil;   make clean
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 
+clear:
+	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/run_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/a10_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/a10_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/DIIID_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/DIIID_kinetic_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/solovev_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/solovev_kinetic_example; rm -f *.out *.bin *.nc
+
 realclean: clean
+	clear
 	rm -rf ../lib ../bin

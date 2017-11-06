@@ -55,7 +55,7 @@ c-----------------------------------------------------------------------
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,
-     $     electron_flag,ktc,ktw
+     $     electron_flag,ktc,ktw,parallel_threads
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -81,6 +81,7 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
+      CALL OMP_SET_NUM_THREADS(parallel_threads)
       delta_mhigh=delta_mhigh*2
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
@@ -182,7 +183,7 @@ c-----------------------------------------------------------------------
      $          op_peq=.FALSE.)
             ! manually set the pentrc equilibrium description
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
-     $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
+     $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
             ! manually set the kinetic profiles
             CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
      $          tfac,wefac,wpfac,tdebug)
@@ -259,7 +260,8 @@ c-----------------------------------------------------------------------
      $     REAL(psio,4),REAL(betap1,4),REAL(betap2,4),REAL(betap3,4),
      $     REAL(betat,4),REAL(betan,4),REAL(bt0,4),REAL(q0,4),
      $     REAL(qmin,4),REAL(qmax,4),REAL(qa,4),REAL(crnt,4),
-     $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1),REAL(q95)
+     $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1),REAL(q95),
+     $     REAL(bwall,4),REAL(betaj,4)
       CALL bin_close(sum_unit)
 c-----------------------------------------------------------------------
 c     log inputs/outputs with harvest

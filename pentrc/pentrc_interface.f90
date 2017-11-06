@@ -129,7 +129,7 @@ module pentrc_interface
         idconfile="euler.bin", &
         kinetic_file='kin.dat', &
         gpec_file  ="gpec_order1_n1.bin", &
-        peq_file ="gpec_xclebsch_n1.out", &
+        peq_file ="", &
         pmodb_file ="none", &
         data_dir ="."
     character(32) :: &
@@ -185,6 +185,7 @@ module pentrc_interface
         logical, optional, intent(in) :: op_kin,op_deq,op_peq
         logical :: in_kin,in_deq,in_peq
         integer :: i
+        character(3) :: nstr
 
         ! defaults
         in_kin = .true.
@@ -227,14 +228,21 @@ module pentrc_interface
         if(in_deq) call read_equil(idconfile)
         if(in_kin) call read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,indebug)
         if(in_peq)then
+            if(peq_file=="")then
+               write(nstr,'(i3)')nn
+               peq_file="gpec_xclebsch_n"//trim(adjustl(nstr))//".out" 
+            endif            
             call read_peq(peq_file,jac_in,jsurf_in,tmag_in,indebug,&
                           op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
+            !if(gpec_file=="")then
+            !   write(nstr,'(i3)')nn
+            !   gpec_file="gpec_order1_n"//trim(adjustl(nstr))//".bin" 
+            !endif
             !call read_gpec_peq(gpec_file,indebug)
             if(trim(pmodb_file)/="" .and. trim(pmodb_file)/="none")&
                 call read_pmodb(pmodb_file,jac_in,jsurf_in,tmag_in,indebug,&
                                 op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
         endif
-
     end subroutine initialize_pentrc
 
     !=======================================================================

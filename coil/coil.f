@@ -23,8 +23,8 @@ c-----------------------------------------------------------------------
       INTEGER :: coil_unit=31,cmlow,cmhigh
       INTEGER :: cnn,cmpsi,cmtheta,cmzeta,cmpert,coil_num
       CHARACTER(24) :: machine,ceq_type,ip_direction,bt_direction
-      CHARACTER(24), DIMENSION(10) :: coil_name
-      REAL(r8), DIMENSION(10,48) :: coil_cur
+      CHARACTER(24), DIMENSION(50) :: coil_name
+      REAL(r8), DIMENSION(50,48) :: coil_cur
       REAL(r8) :: cro,czo,cpsio,cpsilow,cpsilim,cqlim,
      $     ipd,btd,helicity
 
@@ -57,8 +57,8 @@ c-----------------------------------------------------------------------
       
       CHARACTER(128), INTENT(IN) :: cdconfile
       INTEGER, OPTIONAL :: icoil_num
-      REAL(r8), DIMENSION(10,48), OPTIONAL :: icoil_cur
-      CHARACTER(24), DIMENSION(10), OPTIONAL :: icoil_name
+      REAL(r8), DIMENSION(50,48), OPTIONAL :: icoil_cur
+      CHARACTER(24), DIMENSION(50), OPTIONAL :: icoil_name
 
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
      $     data_dir,machine,ip_direction,bt_direction,

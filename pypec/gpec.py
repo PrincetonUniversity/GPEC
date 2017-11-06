@@ -254,7 +254,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
         if runipec: exelist+=rundir+'/ipec \n'
         if rungpec: exelist+=rundir+'/gpec \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
-        if cleandcon: exelist+='rm euler.in \n'
+        if cleandcon: exelist+='rm euler.bin \n'
         if mem >= 3.5e3 and partition.lower() == 'ellis':  # ellis has 4GB per core
             partition = 'mque'
         jobstr = bashjob.format(name=jobname, nodes=1, mem=str(int(mem)), days=0, hours=int(hours),
@@ -265,7 +265,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
             f.write(jobstr)
         # submit job to cluster
         os.system('sbatch '+jobname+'.sh')
-        #wait for job completion to return
+        # wait for job completion to return
         if return_on_complete:
             print('Waiting for job to complete...')
             while not os.path.exists('../'+jobname+'.oe'):
