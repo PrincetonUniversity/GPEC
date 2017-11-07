@@ -3224,269 +3224,141 @@ c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE gpout_xbnormal
-
-
-
 c-----------------------------------------------------------------------
-c     subprogram 8. gpout_jprofile 
+c     subprogram 8. gpout_jprofile
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     print out jprofile 
+c     print out jprofile
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_jprofile(egnum,xspmn)
       INTEGER, INTENT(IN) :: egnum
-!      REAL(r8), INTENT(IN) :: psi
-      INTEGER :: istep,ipert,bin_unit,itheta
-      INTEGER :: iindex
+      INTEGER :: istep,ipert,itheta,iindex
+      INTEGER :: p_id,m_id,t_id,i_id,jp_id,jm_id
+      REAL(r8) :: ileft,psi
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
-      COMPLEX(r8), DIMENSION(mpert) :: test_mn,test2_mn,test3_mn
-!      COMPLEX(r8), DIMENSION(mpert) :: test_mn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: jwpmns,jwtmns,
-     $     jwzmns,jparmns,bvtmns,bvpmns,bvzmns,
-     $     bwtmns,bwpmns,bwzmns,test2mns,test3mns,
-     $     xspmns,xsp1mns,xssmns,xwpmns,testmns,
-     $     xvpmns 
-     
-      REAL(r8) :: ileft
-      REAL(r8) :: area
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs
-
-
-c      ALLOCATE(jwpmns(mstep,lmpert),jwtmns(mstep,lmpert),
-c     $  jwzmns(mstep,lmpert),jparmns(mstep,lmpert),
-c     $  bvtmns(mstep,lmpert),bvpmns(mstep,lmpert),bvzmns(mstep,lmpert),
-c     $  xspmns(mstep,lmpert),xsp1mns(mstep,lmpert),xssmns(mstep,lmpert),
-c     $  xwpmns(mstep,lmpert),testmns(mstep,lmpert),xvpmns(mstep,lmpert),
-c     $  test2mns(mstep,lmpert),test3mns(mstep,lmpert),
-c     $  bwtmns(mstep,lmpert),bwpmns(mstep,lmpert),bwzmns(mstep,lmpert))
+     $     jwzmns,jpamns
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
       ALLOCATE(jwpmns(mstep,mpert),jwtmns(mstep,mpert),
-     $  jwzmns(mstep,mpert),jparmns(mstep,mpert),
-     $  bvtmns(mstep,mpert),bvpmns(mstep,mpert),bvzmns(mstep,mpert),
-     $  xspmns(mstep,mpert),xsp1mns(mstep,mpert),xssmns(mstep,mpert),
-     $  xwpmns(mstep,mpert),testmns(mstep,mpert),xvpmns(mstep,mpert),
-     $  test2mns(mstep,mpert),test3mns(mstep,mpert),
-     $  bwtmns(mstep,lmpert),bwpmns(mstep,lmpert),bwzmns(mstep,mpert))
-       
-      PRINT * ,"PRINT j profile "
-      CALL idcon_build(egnum,xspmn)      
-          
+     $         jwzmns(mstep,mpert),jpamns(mstep,mpert))
+      jwpmns=0
+      jwtmns=0
+      jwzmns=0
+      jpamns=0
+c-----------------------------------------------------------------------
+c     compute solutions and contravariant/additional components.
+c-----------------------------------------------------------------------
+      IF(timeit) CALL gpec_timer(-2)
+      IF(verbose) WRITE(*,*)"Computing current profile components"
+
+      CALL idcon_build(egnum,xspmn)
+
       DO istep=1,mstep
-c         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-c         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)         
+         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
+         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose) THEN
      $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% Jprofile mapping"       
-         CALL gpeq_sol(psifac(istep))
-         CALL gpeq_contra(psifac(istep))
-         CALL gpeq_cova(psifac(istep))
-         CALL gpeq_jpert(psifac(istep))
-          area=0
-               DO itheta=0,mthsurf
-                CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
-                rfac=SQRT(rzphi%f(1))
-                jac=rzphi%f(4)
-                jacs(itheta)=jac
-                w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-                w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-                delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-                area=area+jac*delpsi(itheta)/mthsurf
-              ENDDO
-          area=area-jac*delpsi(mthsurf)/mthsurf
-          CALL cspline_eval(u1,psifac(istep),1)
-          CALL gpeq_sol(psifac(istep))
-          CALL cspline_eval(u3,psifac(istep),0)
-          test_mn=bwp_mn/area
-          test2_mn=u1%f1
-          test3_mn=u3%f
-          jwpmns(istep,:)=0
-          jwtmns(istep,:)=0
-          jwzmns(istep,:)=0
-          jparmns(istep,:)=0
-          bvtmns(istep,:)=0
-          bvpmns(istep,:)=0
-          bvzmns(istep,:)=0
-          bwtmns(istep,:)=0
-          bwpmns(istep,:)=0
-          bwzmns(istep,:)=0
-          xspmns(istep,:)=0
-          xsp1mns(istep,:)=0
-          xssmns(istep,:)=0
-          xwpmns(istep,:)=0
-          xvpmns(istep,:)=0
-          testmns(istep,:)=0
-          test2mns(istep,:)=0
-          test3mns(istep,:)=0
-c         jwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwp_mn
-c         jwtmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwt_mn
-c         jwzmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwz_mn
-c         jparmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jpar_mn
-c         bvtmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bvt_mn
-c         bvpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bvp_mn
-c         bvzmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bvz_mn
-c         bwtmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwt_mn
-c         bwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwp_mn
-c         bwzmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwz_mn
-c         xspmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=xsp_mn
-c         xsp1mns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=xsp1_mn
-c         xssmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=xss_mn
-c         xwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=xwp_mn
-c         xvpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=xvp_mn
-c         testmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=test_mn
-c         test2mns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=test2_mn
-c         test3mns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=test3_mn
-            jwpmns(istep,:)=jwp_mn
-            jwtmns(istep,:)=jwt_mn
-            jwzmns(istep,:)=jwz_mn
-            jparmns(istep,:)=jpar_mn
-            bvtmns(istep,:)=bvt_mn
-            bvpmns(istep,:)=bvp_mn
-            bvzmns(istep,:)=bvz_mn
-            bwtmns(istep,:)=bwt_mn
-            bwpmns(istep,:)=bwp_mn
-            bwzmns(istep,:)=bwz_mn
-            xspmns(istep,:)=xsp_mn
-            xsp1mns(istep,:)=xsp1_mn
-            xssmns(istep,:)=xss_mn
-            xwpmns(istep,:)=xwp_mn
-            xvpmns(istep,:)=xvp_mn
-            testmns(istep,:)=test_mn
-            test2mns(istep,:)=test2_mn
-            test3mns(istep,:)=test3_mn
+     $        "volume = ",iindex,"% current profile calculations"
+         ENDIF
+         psi = psifac(istep)
+         CALL gpeq_cur(psi)
+         ! todo: do we need to use ji=1 or divide by area?
+         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+            CALL gpeq_bcoordsout(jwpmns(istep,:),jwp_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jwtmns(istep,:),jwt_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jwzmns(istep,:),jwz_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jpamns(istep,:),jpa_mn,psi,ji=0)
+         ELSE
+            jwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwp_mn
+            jwtmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwt_mn
+            jwzmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwz_mn
+            jpamns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jpa_mn
+         ENDIF
       ENDDO
-      WRITE(*,*) xsp1mns
-c        IF (bin_flag) THEN
-      CALL ascii_open(out_unit,"jp.out","UNKNOWN")
-      write (out_unit,*) lmpert,mstep
-      DO ipert=1,mpert
-            DO istep=1,mstep
-               WRITE(out_unit,*) REAL(psifac(istep)),
-     $              REAL(REAL(jwpmns(istep,ipert))),
-     $              REAL(AIMAG(jwpmns(istep,ipert))),
-     $              REAL(REAL(jwtmns(istep,ipert))),
-     $              REAL(AIMAG(jwtmns(istep,ipert))),
-     $              REAL(REAL(jwzmns(istep,ipert))),
-     $              REAL(AIMAG(jwzmns(istep,ipert))),    
-     $              REAL(REAL(jparmns(istep,ipert))),
-     $              REAL(AIMAG(jparmns(istep,ipert))),    
-     $              REAL(REAL(bvpmns(istep,ipert))),
-     $              REAL(AIMAG(bvpmns(istep,ipert))),    
-     $              REAL(REAL(bvtmns(istep,ipert))),
-     $              REAL(AIMAG(bvtmns(istep,ipert))),    
-     $              REAL(REAL(bvzmns(istep,ipert))),
-     $              REAL(AIMAG(bvzmns(istep,ipert))),   
-     $              REAL(REAL(bwpmns(istep,ipert))),
-     $              REAL(AIMAG(bwpmns(istep,ipert))),    
-     $              REAL(REAL(bwtmns(istep,ipert))),
-     $              REAL(AIMAG(bwtmns(istep,ipert))),    
-     $              REAL(REAL(bwzmns(istep,ipert))),
-     $              REAL(AIMAG(bwzmns(istep,ipert))),    
-     $              REAL(REAL(xspmns(istep,ipert))),
-     $              REAL(AIMAG(xspmns(istep,ipert))),    
-     $              REAL(REAL(xsp1mns(istep,ipert))),
-     $              REAL(AIMAG(xsp1mns(istep,ipert))),    
-     $              REAL(REAL(xssmns(istep,ipert))),
-     $              REAL(AIMAG(xssmns(istep,ipert))),    
-     $              REAL(REAL(xwpmns(istep,ipert))),
-     $              REAL(AIMAG(xwpmns(istep,ipert))),    
-     $              REAL(REAL(testmns(istep,ipert))),
-     $              REAL(AIMAG(testmns(istep,ipert))),    
-     $              REAL(REAL(test2mns(istep,ipert))),
-     $              REAL(AIMAG(test2mns(istep,ipert))),
-     $              REAL(REAL(test3mns(istep,ipert))),    
-     $              REAL(AIMAG(test3mns(istep,ipert)))    
-            ENDDO
-            WRITE(out_unit,*)
-      ENDDO
-      CALL ascii_close(out_unit)
 
-      CALL ascii_open(out_unit,"jptest.out","UNKNOWN")
-      write (out_unit,*) lmpert,mstep
-            DO ipert=1,mpert
-            DO istep=1,mstep
-               WRITE(out_unit,*)REAL(psifac(istep)),
-     $              REAL(REAL(xsp_mn(istep))),
-     $              REAL(AIMAG(xsp_mn(istep)))    
+      IF (ascii_flag) THEN
+         CALL ascii_open(out_unit,"gpec_jprofile_n"//TRIM(sn)
+     $       //".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_JPROFILE: "//
+     $        "Components of the current profile"
+         WRITE(out_unit,*)version
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $        "mpsi =",mpsi,"mpert =",lmpert
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1(1x,a16),1x,a4,6(1x,a16))')"psi","m",
+     $        "real(jwp)","imag(jwp)","real(jwt)","imag(jwt)",
+     $        "real(jwz)","imag(jwz)","real(jpa)","imag(jpa)"
+         DO ipsi=1,mpsi
+            DO ipert=1,lmpert
+                  WRITE(out_unit,*)REAL(psifac(istep)),
+     $                 REAL(jwpmns(istep)),AIMAG(jwpmns(istep)),
+     $                 REAL(jwtmns(istep)),AIMAG(jwtmns(istep)),
+     $                 REAL(jwzmns(istep)),AIMAG(jwzmns(istep)),
+     $                 REAL(jpamns(istep)),AIMAG(jpamns(istep))
             ENDDO
-            ENDDO
-            WRITE(out_unit,*)
-      CALL ascii_close(out_unit)
+         ENDDO
+         WRITE(out_unit,*)
+         CALL ascii_close(out_unit)
+      END IF
 
-      CALL bin_open(bin_unit,
-     $        "jp.bin","UNKNOWN","REWIND","none")
-      DO ipert=1,mpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(jwpmns(istep,ipert)),4),
-     $              REAL(AIMAG(jwpmns(istep,ipert)),4),
-     $              REAL(REAL(jwtmns(istep,ipert)),4),
-     $              REAL(AIMAG(jwtmns(istep,ipert)),4),
-     $              REAL(REAL(jwzmns(istep,ipert)),4),
-     $              REAL(AIMAG(jwzmns(istep,ipert)),4),    
-     $              REAL(REAL(bvtmns(istep,ipert)),4),
-     $              REAL(AIMAG(bvtmns(istep,ipert)),4),    
-     $              REAL(REAL(bvpmns(istep,ipert)),4),
-     $              REAL(AIMAG(bvpmns(istep,ipert)),4),    
-     $              REAL(REAL(bvzmns(istep,ipert)),4),
-     $              REAL(AIMAG(bvzmns(istep,ipert)),4)    
-            ENDDO
-            WRITE(bin_unit)
-      ENDDO
-c      ENDIF
-      CALL bin_close(bin_unit)
-      CALL bin_open(bin_unit,
-     $        "jp2.bin","UNKNOWN","REWIND","none")
-      DO ipert=1,mpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(jparmns(istep,ipert)),4),
-     $              REAL(AIMAG(jparmns(istep,ipert)),4)    
-            ENDDO
-            WRITE(bin_unit)
-      ENDDO
-c      ENDIF
-      CALL bin_open(bin_unit,
-     $        "check.bin","UNKNOWN","REWIND","none")
-      DO ipert=1,mpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(testmns(istep,ipert))),
-     $              REAL(AIMAG(testmns(istep,ipert))),    
-     $              REAL(REAL(test2mns(istep,ipert))),
-     $              REAL(AIMAG(test2mns(istep,ipert))),
-     $              REAL(REAL(test3mns(istep,ipert))),    
-     $              REAL(AIMAG(test3mns(istep,ipert))),    
-     $              REAL(REAL(xspmns(istep,ipert))),    
-     $              REAL(AIMAG(xspmns(istep,ipert)))    
-            ENDDO
-            WRITE(bin_unit)
-      ENDDO
-      CALL bin_close(bin_unit)
-      CALL bin_open(bin_unit,
-     $        "check2.bin","UNKNOWN","REWIND","none")
-      DO ipert=1,mpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(xspmns(istep,ipert))),
-     $              REAL(AIMAG(xspmns(istep,ipert))),    
-     $              REAL(REAL(xssmns(istep,ipert))),
-     $              REAL(AIMAG(xssmns(istep,ipert))),    
-     $              REAL(REAL(xwpmns(istep,ipert))),
-     $              REAL(AIMAG(xwpmns(istep,ipert))),
-     $              REAL(REAL(xvpmns(istep,ipert))),    
-     $              REAL(AIMAG(xvpmns(istep,ipert)))    
-            ENDDO
-            WRITE(bin_unit)
-      ENDDO
+      IF (bin_flag) THEN
+         CALL bin_open(bin_unit,
+     $           "jprofile.bin","UNKNOWN","REWIND","none")
+         DO ipert = 1, mpert
+             DO istep = 1, mstep
+                 WRITE(bin_unit)REAL(psifac(istep), 4),
+     $              REAL(REAL(jwpmns(istep, ipert)), 4),
+     $              REAL(AIMAG(jwpmns(istep, ipert)), 4),
+     $              REAL(REAL(jwtmns(istep, ipert)), 4),
+     $              REAL(AIMAG(jwtmns(istep, ipert)), 4),
+     $              REAL(REAL(jwzmns(istep, ipert)), 4),
+     $              REAL(AIMAG(jwzmns(istep, ipert)), 4),
+     $              REAL(REAL(jpamns(istep, ipert)), 4),
+     $              REAL(AIMAG(jpamns(istep, ipert)), 4)
+             ENDDO
+             WRITE(bin_unit)
+         ENDDO
          CALL bin_close(bin_unit)
-c      ENDIF
-      DEALLOCATE(jwpmns,jwtmns,
-     $    jwzmns,jparmns,xspmns,xsp1mns,xssmns,xwpmns,testmns,xvpmns,
-     $    bvtmns,bvpmns,bvzmns,bwtmns,bwpmns,bwzmns,test2mns,test3mns)
+      ENDIF
+
+      IF(netcdf_flag)THEN
+         CALL check( nf90_open(fncfile,nf90_write,fncid) )
+         CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+         CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
+         CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
+         CALL check( nf90_redef(fncid))
+         CALL check( nf90_def_var(fncid, "jgradpsi", nf90_double,
+     $               (/p_id,m_id,i_id/),jp_id) )
+         CALL check( nf90_put_att(fncid,jp_id,"long_name",
+     $        "Contravariant psi component of perturbed current") )
+         !CALL check( nf90_put_att(fncid,jp_id,"units","Amps") ) ! todo: check this
+         CALL check( nf90_put_att(fncid,jp_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "j_parallel", nf90_double,
+     $               (/p_id,m_id,i_id/),jm_id) )
+         CALL check( nf90_put_att(fncid,jm_id,"long_name",
+     $               "Perturbed current along the field line") )
+         !CALL check( nf90_put_att(fncid,jm_id,"units","Amps") ) ! todo: check this
+         CALL check( nf90_put_att(fncid,jm_id,"jacobian",jac_out) )
+         CALL check( nf90_enddef(fncid) )
+         CALL check( nf90_put_var(fncid,jp_id,RESHAPE((/REAL(jwpmns),
+     $               AIMAG(jwpmns)/),(/mstep,lmpert,2/)))
+         CALL check( nf90_put_var(fncid,jm_id,RESHAPE((/REAL(jpamns),
+     $               AIMAG(jpamns)/),(/mstep,lmpert,2/)))
+         CALL check( nf90_close(fncid) )
+      ENDIF
+
+      DEALLOCATE(jwpmns,jwtmns,jwzmns,jpamns)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      IF(timeit) CALL gpec_timer(-2)
       RETURN
       END SUBROUTINE gpout_jprofile
-
-
-
 c-----------------------------------------------------------------------
 c     subprogram 8. gpout_vbnormal.
 c-----------------------------------------------------------------------
