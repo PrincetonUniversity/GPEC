@@ -516,7 +516,8 @@ c-----------------------------------------------------------------------
          CALL gpout_vsingfld()
       ENDIF
       IF(netcdf_flag.and.(xclebsch_flag.or.dw_flag.or.pmodb_flag
-     $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag))THEN
+     $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag
+     $   .or.jprof_flag))THEN
          CALL gpout_qrv
       ENDIF
       IF (xclebsch_flag) THEN
