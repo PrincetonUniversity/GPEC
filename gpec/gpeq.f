@@ -300,11 +300,12 @@ c-----------------------------------------------------------------------
 
       REAL(r8), INTENT(IN) :: psi
 
-      INTEGER :: istep,itheta,ipert,m1,dm,jpert,loc(1)
+      INTEGER :: i,istep,itheta,ipert,m1,dm,jpert,loc(1)
       REAL(r8), DIMENSION(0:mthsurf) :: eqb
       COMPLEX(r8), DIMENSION(mpert) :: bvtl_mn,bvzl_mn,bvt1_mn,bvz1_mn
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
       COMPLEX(r8), DIMENSION(0:mthsurf) :: jvt_fun, jvz_fun, jpa_fun
+      TYPE(cspline_type) :: bvtz
 
       IF (debug_flag) PRINT * ,"Entering gpeq_cur"
 c-----------------------------------------------------------------------
@@ -313,16 +314,16 @@ c-----------------------------------------------------------------------
       ! psi derivative of covarent field
       loc = MINLOC(ABS(psifac(1:mstep-1) - psi))
       istep = loc(1)
-      CALL gpeq_sol(psifac(istep-1))
-      CALL gpeq_contra(psifac(istep-1))
-      CALL gpeq_cova(psifac(istep-1))
-      bvtl_mn = bvt_mn
-      bvzl_mn = bvz_mn
-      CALL gpeq_sol(psifac(istep+1))
-      CALL gpeq_contra(psifac(istep+1))
-      CALL gpeq_cova(psifac(istep+1))
-      bvt1_mn = (bvt_mn - bvtl_mn) / (psifac(istep+1) - psifac(istep-1))
-      bvz1_mn = (bvz_mn - bvzl_mn) / (psifac(istep+1) - psifac(istep-1))
+      CALL cspline_alloc(bvtz,6,mpert*2)
+      DO i=-3,3
+         bvtz%xs(i+3) = psifac(istep+i)
+         bvtz%fs(i+3,1:mpert)=bvt_mn
+         bvtz%fs(i+3,1+mpert:2*mpert)=bvz_mn
+      ENDDO
+      CALL cspline_fit(bvtz,"extrap")
+      CALL cspline_eval(bvtz,psi,1)
+      bvt1_mn = bvtz%f1(1:mpert)
+      bvz1_mn = bvtz%f1(1+mpert:2*mpert)
       CALL gpeq_sol(psi)
       CALL gpeq_contra(psi)
       CALL gpeq_cova(psi)
@@ -371,17 +372,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute parallel component.
 c-----------------------------------------------------------------------
-      IF (psifac(istep) == psi) THEN
-          eqb(:)=eqfun%fs(istep,:,1)
-          q = sq%fs(istep,4)
-      ELSE
-          CALL spline_eval(sq,psi,0)
-          q=sq%f(4)
-          DO itheta=0,mthsurf
-             CALL bicube_eval(eqfun,psi,theta(itheta),0)
-             eqb(itheta)=eqfun%f(1)
-          ENDDO
-      ENDIF
+      CALL spline_eval(sq,psi,0)
+      q=sq%f(4)
+      DO itheta=0,mthsurf
+         CALL bicube_eval(eqfun,psi,theta(itheta),0)
+         eqb(itheta)=eqfun%f(1)
+      ENDDO
       CALL iscdftb(mfac,mpert,jvt_fun,mthsurf,jvt_mn)
       CALL iscdftb(mfac,mpert,jvz_fun,mthsurf,jvz_mn)
       jpa_fun=(jvt_fun+q*jvz_fun)/eqb!*chi1

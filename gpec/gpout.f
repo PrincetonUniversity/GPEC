@@ -3263,19 +3263,24 @@ c-----------------------------------------------------------------------
       SUBROUTINE gpout_jprofile(egnum,xspmn)
       INTEGER, INTENT(IN) :: egnum
       INTEGER :: istep,ipert,itheta,iindex
-      INTEGER :: p_id,m_id,t_id,i_id,jp_id,jm_id
+      INTEGER :: p_id,m_id,t_id,i_id,jp_id,jm_id,jt_id,jz_id,j_p_id,
+     $           j_t_id,j_z_id
       REAL(r8) :: ileft,psi
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: jwpmns,jwtmns,
-     $     jwzmns,jpamns
+     $     jwzmns,jvpmns,jvtmns,jvzmns,jpamns
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
 c-----------------------------------------------------------------------
-      ALLOCATE(jwpmns(mstep,mpert),jwtmns(mstep,mpert),
-     $         jwzmns(mstep,mpert),jpamns(mstep,mpert))
+      ALLOCATE(jwpmns(mstep,lmpert),jwtmns(mstep,lmpert),
+     $   jwzmns(mstep,lmpert),jvpmns(mstep,lmpert),jvtmns(mstep,lmpert),
+     $   jvzmns(mstep,lmpert),jpamns(mstep,lmpert))
       jwpmns=0
       jwtmns=0
       jwzmns=0
+      jvpmns=0
+      jvtmns=0
+      jvzmns=0
       jpamns=0
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
@@ -3284,12 +3289,13 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Computing current profile components"
 
       CALL idcon_build(egnum,xspmn)
+      CALL gpeq_alloc
 
       DO istep=1,mstep
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
          ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
          IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose) THEN
-            WRITE(*,'(1x,a9,i3,a23)') "volume = ",iindex,
+            WRITE(*,'(1x,a9,i3,a)') "volume = ",iindex,
      $        "% current profile calculations"
          ENDIF
          psi = psifac(istep)
@@ -3299,15 +3305,26 @@ c-----------------------------------------------------------------------
             CALL gpeq_bcoordsout(jwpmns(istep,:),jwp_mn,psi,ji=0)
             CALL gpeq_bcoordsout(jwtmns(istep,:),jwt_mn,psi,ji=0)
             CALL gpeq_bcoordsout(jwzmns(istep,:),jwz_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jvpmns(istep,:),jvp_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jvtmns(istep,:),jvt_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jvzmns(istep,:),jvz_mn,psi,ji=0)
             CALL gpeq_bcoordsout(jpamns(istep,:),jpa_mn,psi,ji=0)
          ELSE
             jwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwp_mn
             jwtmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwt_mn
             jwzmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwz_mn
+            jvpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jvp_mn
+            jvtmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jvt_mn
+            jvzmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jvz_mn
             jpamns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jpa_mn
          ENDIF
       ENDDO
 
+      CALL gpeq_dealloc
+
+c-----------------------------------------------------------------------
+c     write outputs.
+c-----------------------------------------------------------------------
       IF (ascii_flag) THEN
          CALL ascii_open(out_unit,"gpec_jprofile_n"//TRIM(sn)
      $       //".out","UNKNOWN")
@@ -3366,8 +3383,33 @@ c-----------------------------------------------------------------------
      $               (/p_id,m_id,i_id/),jp_id) )
          CALL check( nf90_put_att(fncid,jp_id,"long_name",
      $        "Contravariant psi component of perturbed current") )
-         !CALL check( nf90_put_att(fncid,jp_id,"units","Amps") ) ! todo: check this
          CALL check( nf90_put_att(fncid,jp_id,"jacobian",jac_out) )
+         !CALL check( nf90_put_att(fncid,jp_id,"units","Amps") ) ! todo: check this
+         CALL check( nf90_def_var(fncid, "jgradtheta", nf90_double,
+     $               (/p_id,m_id,i_id/),jt_id) )
+         CALL check( nf90_put_att(fncid,jt_id,"long_name",
+     $        "Contravariant theta component of perturbed current") )
+         CALL check( nf90_put_att(fncid,jt_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "jgradphi", nf90_double,
+     $               (/p_id,m_id,i_id/),jz_id) )
+         CALL check( nf90_put_att(fncid,jz_id,"long_name",
+     $        "Contravariant phi component of perturbed current") )
+         CALL check( nf90_put_att(fncid,jz_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "j_psi", nf90_double,
+     $               (/p_id,m_id,i_id/),j_p_id) )
+         CALL check( nf90_put_att(fncid,j_p_id,"long_name",
+     $        "Covariant psi component of perturbed current") )
+         CALL check( nf90_put_att(fncid,j_p_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "j_theta", nf90_double,
+     $               (/p_id,m_id,i_id/),j_t_id) )
+         CALL check( nf90_put_att(fncid,j_t_id,"long_name",
+     $        "Covariant theta component of perturbed current") )
+         CALL check( nf90_put_att(fncid,j_t_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "j_phi", nf90_double,
+     $               (/p_id,m_id,i_id/),j_z_id) )
+         CALL check( nf90_put_att(fncid,j_z_id,"long_name",
+     $        "Covariant phi component of perturbed current") )
+         CALL check( nf90_put_att(fncid,j_z_id,"jacobian",jac_out) )
          CALL check( nf90_def_var(fncid, "j_parallel", nf90_double,
      $               (/p_id,m_id,i_id/),jm_id) )
          CALL check( nf90_put_att(fncid,jm_id,"long_name",
@@ -3377,12 +3419,22 @@ c-----------------------------------------------------------------------
          CALL check( nf90_enddef(fncid) )
          CALL check( nf90_put_var(fncid,jp_id,RESHAPE((/REAL(jwpmns),
      $               AIMAG(jwpmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,jt_id,RESHAPE((/REAL(jwtmns),
+     $               AIMAG(jwtmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,jz_id,RESHAPE((/REAL(jwzmns),
+     $               AIMAG(jwzmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,j_p_id,RESHAPE((/REAL(jvpmns),
+     $               AIMAG(jvpmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,j_t_id,RESHAPE((/REAL(jvtmns),
+     $               AIMAG(jvtmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,j_z_id,RESHAPE((/REAL(jvzmns),
+     $               AIMAG(jvzmns)/),(/mstep,lmpert,2/))))
          CALL check( nf90_put_var(fncid,jm_id,RESHAPE((/REAL(jpamns),
      $               AIMAG(jpamns)/),(/mstep,lmpert,2/))))
          CALL check( nf90_close(fncid) )
       ENDIF
 
-      DEALLOCATE(jwpmns,jwtmns,jwzmns,jpamns)
+      DEALLOCATE(jwpmns,jwtmns,jwzmns,jvpmns,jvtmns,jvzmns,jpamns)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
