@@ -3289,13 +3289,13 @@ c-----------------------------------------------------------------------
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
          ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
          IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose) THEN
-     $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% current profile calculations"
+            WRITE(*,'(1x,a9,i3,a23)') "volume = ",iindex,
+     $        "% current profile calculations"
          ENDIF
          psi = psifac(istep)
          CALL gpeq_cur(psi)
          ! todo: do we need to use ji=1 or divide by area?
-         IF ((jac_out /= jac_type).OR.(tout==0)) THEN
+         IF ((jac_out /= jac_type).OR.(tmag_out==0)) THEN
             CALL gpeq_bcoordsout(jwpmns(istep,:),jwp_mn,psi,ji=0)
             CALL gpeq_bcoordsout(jwtmns(istep,:),jwt_mn,psi,ji=0)
             CALL gpeq_bcoordsout(jwzmns(istep,:),jwz_mn,psi,ji=0)
@@ -3322,13 +3322,13 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1(1x,a16),1x,a4,6(1x,a16))')"psi","m",
      $        "real(jwp)","imag(jwp)","real(jwt)","imag(jwt)",
      $        "real(jwz)","imag(jwz)","real(jpa)","imag(jpa)"
-         DO ipsi=1,mpsi
+         DO istep=1,mpsi
             DO ipert=1,lmpert
-                  WRITE(out_unit,*)REAL(psifac(istep)),
-     $                 REAL(jwpmns(istep)),AIMAG(jwpmns(istep)),
-     $                 REAL(jwtmns(istep)),AIMAG(jwtmns(istep)),
-     $                 REAL(jwzmns(istep)),AIMAG(jwzmns(istep)),
-     $                 REAL(jpamns(istep)),AIMAG(jpamns(istep))
+               WRITE(out_unit,*)psifac(istep),lmfac(ipert),
+     $           REAL(jwpmns(istep,ipert)),AIMAG(jwpmns(istep,ipert)),
+     $           REAL(jwtmns(istep,ipert)),AIMAG(jwtmns(istep,ipert)),
+     $           REAL(jwzmns(istep,ipert)),AIMAG(jwzmns(istep,ipert)),
+     $           REAL(jpamns(istep,ipert)),AIMAG(jpamns(istep,ipert))
             ENDDO
          ENDDO
          WRITE(out_unit,*)
@@ -3376,9 +3376,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid,jm_id,"jacobian",jac_out) )
          CALL check( nf90_enddef(fncid) )
          CALL check( nf90_put_var(fncid,jp_id,RESHAPE((/REAL(jwpmns),
-     $               AIMAG(jwpmns)/),(/mstep,lmpert,2/)))
+     $               AIMAG(jwpmns)/),(/mstep,lmpert,2/))))
          CALL check( nf90_put_var(fncid,jm_id,RESHAPE((/REAL(jpamns),
-     $               AIMAG(jpamns)/),(/mstep,lmpert,2/)))
+     $               AIMAG(jpamns)/),(/mstep,lmpert,2/))))
          CALL check( nf90_close(fncid) )
       ENDIF
 
