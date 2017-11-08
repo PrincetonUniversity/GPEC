@@ -26,7 +26,8 @@ c-----------------------------------------------------------------------
       USE fspline_mod, only : fspline_type,fspline_eval,fspline_alloc,
      $                       fspline_dealloc,fspline_fit_1,fspline_fit_2
       USE bicube_mod, only : bicube_type,bicube_eval,bicube_alloc,
-     $                       bicube_dealloc,bicube_fit
+     $                       bicube_dealloc,bicube_fit,
+     $                       bicube_eval_external
       USE params, only : r4,r8,pi,twopi,mu0
       USE utilities, only : get_free_file_unit,iscdftb,iscdftf
       
@@ -89,6 +90,8 @@ c-----------------------------------------------------------------------
       TYPE(solution_type), DIMENSION(:), ALLOCATABLE :: soltype
       TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
       TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype
+
+!$OMP THREADPRIVATE(geom,sq)
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -1152,7 +1155,8 @@ c-----------------------------------------------------------------------
 c     subprogram 4. issurfint.
 c     surface integration by simple method.
 c-----------------------------------------------------------------------
-      FUNCTION issurfint(func,fs,psi,wegt,ave)
+      FUNCTION issurfint(func,fs,psi,wegt,ave,
+     $     fsave,psave,jacs,delpsi,r,a,first)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1161,39 +1165,41 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
       REAL(r8), DIMENSION(0:fs), INTENT(IN) :: func
 
-      LOGICAL  :: first = .TRUE. ! Only set at first call, implicitly saved
-      INTEGER  :: itheta
+      LOGICAL, INTENT(INOUT) :: first
+      INTEGER, INTENT(INOUT)  :: fsave
+      REAL(r8), INTENT(INOUT) :: psave
+      REAL(r8),DIMENSION(0:),INTENT(INOUT) :: jacs,delpsi,r,a
+
+      INTEGER  :: itheta, ix, iy
       REAL(r8) :: issurfint
       REAL(r8) :: rfac,eta,jac,area
       REAL(r8), DIMENSION(1,2) :: w
       REAL(r8), DIMENSION(0:fs) :: z,thetas
-
-      ! note we had to make arrays allocatable to be allowed to save
-      INTEGER  :: fsave
-      REAL(r8) :: psave
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: jacs,delpsi,r,a
-      SAVE :: psave,fsave,jacs,delpsi,r,a
+      REAL(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy, sq_s_f, sq_s_f1
 
       issurfint=0
       area=0
+      ix = 0
+      iy = 0
       IF(first .OR. psi/=psave .OR. fs/=fsave)THEN
          psave = psi
          fsave = fs
-         IF(.NOT.first) DEALLOCATE(jacs,delpsi,r,a)
          first = .FALSE.
-         ALLOCATE(jacs(0:fs),delpsi(0:fs),r(0:fs),a(0:fs))
-         thetas=(/(itheta,itheta=0,fs)/)/REAL(fs,r8)
+         DO itheta=0,fs
+            thetas(itheta) = REAL(itheta,r8)/REAL(fs,r8)
+         ENDDO
          DO itheta=0,fs-1
-            CALL bicube_eval(rzphi,psi,thetas(itheta),1)
-            rfac=SQRT(rzphi%f(1))
-            eta=twopi*(thetas(itheta)+rzphi%f(2))
+            CALL bicube_eval_external(rzphi, psi, thetas(itheta), 1,
+     $           ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
+            rfac=SQRT(rzphi_f(1))
+            eta=twopi*(thetas(itheta)+rzphi_f(2))
             a(itheta)=rfac
             r(itheta)=ro+rfac*COS(eta)
             z(itheta)=zo+rfac*SIN(eta)
-            jac=rzphi%f(4)
+            jac=rzphi_f(4)
             jacs(itheta)=jac
-            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            w(1,1)=(1+rzphi_fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi_fy(1)*pi*r(itheta)/(rfac*jac)
             delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
          ENDDO
       ENDIF
@@ -1251,19 +1257,134 @@ c-----------------------------------------------------------------------
         real(r8) :: psifac
         real(r8), dimension(0:mthsurf) :: unitfun
 
+        integer :: fsave
+        real(r8) :: psave
+        real(r8), dimension(:), allocatable :: jacs,delpsi,rsurf,asurf
+        logical :: firstsurf
+
         ! double check that sq equilibrium spline is defined
         if(.not. sq%allocated)
      $      stop 'ERROR: Cannot define geometric splines without sq'
 
         unitfun = 1
         call spline_alloc(geom,sq%mx,3)
+
         geom%title=(/"area  ","<r>   ","<R>   "/)
         geom%xs = sq%xs
+        firstsurf = .TRUE.
         do ipsi=0,sq%mx
             psifac = geom%xs(ipsi)
-            geom%fs(ipsi,1) = issurfint(unitfun,mthsurf,psifac,0,0)
-            geom%fs(ipsi,2) = issurfint(unitfun,mthsurf,psifac,3,1)
-            geom%fs(ipsi,3) = issurfint(unitfun,mthsurf,psifac,1,1)
+            if(firstsurf .OR. psifac/=psave .OR. mthsurf/=fsave)then
+               if(firstsurf)then
+                  allocate(jacs(0:mthsurf),delpsi(0:mthsurf),
+     $                 rsurf(0:mthsurf),asurf(0:mthsurf))
+               else
+                  if(allocated(jacs))then
+                     if (lbound(jacs,1).NE.0 .OR.
+     $                    ubound(jacs,1).NE.mthsurf)then
+                        deallocate(jacs)
+                        allocate(jacs(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(delpsi))then
+                     if(lbound(delpsi,1).NE.0 .OR.
+     $                    ubound(delpsi,1).NE.mthsurf)then
+                        deallocate(delpsi)
+                        allocate(delpsi(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(rsurf))then
+                     if(lbound(rsurf,1).NE.0 .OR.
+     $                    ubound(rsurf,1).NE.mthsurf)then
+                        deallocate(rsurf)
+                        allocate(rsurf(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(asurf))then
+                     if(lbound(asurf,1).NE.0 .OR.
+     $                    ubound(asurf,1).NE.mthsurf)then
+                        deallocate(asurf)
+                        allocate(asurf(0:mthsurf))
+                     endif
+                  endif
+               endif
+            endif
+            geom%fs(ipsi,1) = issurfint(unitfun,mthsurf,psifac,0,0,
+     $           fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+            if(firstsurf .OR. psifac/=psave .OR. mthsurf/=fsave)then
+               if(firstsurf)then
+                  allocate(jacs(0:mthsurf),delpsi(0:mthsurf),
+     $                 rsurf(0:mthsurf),asurf(0:mthsurf))
+               else
+                  if(allocated(jacs))then
+                     if(lbound(jacs,1).NE.0 .OR.
+     $                    ubound(jacs,1).NE.mthsurf)then
+                        deallocate(jacs)
+                        allocate(jacs(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(delpsi))then
+                     if(lbound(delpsi,1).NE.0 .OR.
+     $                    ubound(delpsi,1).NE.mthsurf)then
+                        deallocate(delpsi)
+                        allocate(delpsi(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(rsurf))then
+                     if(lbound(rsurf,1).NE.0 .OR.
+     $                    ubound(rsurf,1).NE.mthsurf)then
+                        deallocate(rsurf)
+                        allocate(rsurf(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(asurf))then
+                     if(lbound(asurf,1).NE.0 .OR.
+     $                    ubound(asurf,1).NE.mthsurf)then
+                        deallocate(asurf)
+                        allocate(asurf(0:mthsurf))
+                     endif
+                  endif
+               endif
+            endif
+            geom%fs(ipsi,2) = issurfint(unitfun,mthsurf,psifac,3,1,
+     $           fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
+            if(firstsurf .OR. psifac/=psave .OR. mthsurf/=fsave)then
+               if(firstsurf)then
+                  allocate(jacs(0:mthsurf),delpsi(0:mthsurf),
+     $                 rsurf(0:mthsurf),asurf(0:mthsurf))
+               else
+                  if(allocated(jacs))then
+                     if(lbound(jacs,1).NE.0 .OR.
+     $                    ubound(jacs,1).NE.mthsurf)then
+                        deallocate(jacs)
+                        allocate(jacs(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(delpsi))then
+                     if(lbound(delpsi,1).NE.0 .OR.
+     $                    ubound(delpsi,1).NE.mthsurf)then
+                        deallocate(delpsi)
+                        allocate(delpsi(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(rsurf))then
+                     if(lbound(rsurf,1).NE.0 .OR.
+     $                    ubound(rsurf,1).NE.mthsurf)then
+                        deallocate(rsurf)
+                        allocate(rsurf(0:mthsurf))
+                     endif
+                  endif
+                  if(allocated(asurf))then
+                     if(lbound(asurf,1).NE.0 .OR.
+     $                    ubound(asurf,1).NE.mthsurf)then
+                        deallocate(asurf)
+                        allocate(asurf(0:mthsurf))
+                     endif
+                  endif
+               endif
+            endif
+            geom%fs(ipsi,3) = issurfint(unitfun,mthsurf,psifac,1,1,
+     $           fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
         enddo
         call spline_fit(geom,"extrap")
         !call spline_int(geom) ! not necessary yet
@@ -1335,10 +1456,6 @@ c-----------------------------------------------------------------------
         xmats   =set_xmats
         ymats   =set_ymats
         zmats   =set_zmats
-        !! only needed if using old gpec_o1 inputs
-        !mstep   =set_mstep
-        !allocate(psifac(0:mstep))
-        !psifac(:) = set_psifac(:)
 
         chi1    =set_chi1
         ro      =set_ro

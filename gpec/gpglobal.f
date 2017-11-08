@@ -30,7 +30,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
-     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,sing_spot,reg_spot,
+     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,reg_spot,
      $     amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
      $     q0,qa,crnt,q95,shotnum,shottime,opsi1,opsi2
@@ -69,7 +69,8 @@ c-----------------------------------------------------------------------
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
-     $     edge_mn,edge_fun
+     $     edge_mn,edge_fun,jwp_mn,jwt_mn,jwz_mn,
+     $     jvp_mn,jvt_mn,jvz_mn,jpa_mn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
@@ -98,6 +99,13 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
       END TYPE solution_type
 
+      TYPE :: galsol_type
+      LOGICAL :: gal_flag
+      INTEGER :: mpert, tot_grids,mlow,mhigh,mtot
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
+      END TYPE galsol_type
+
       TYPE :: fixfac_type
       INTEGER :: msol
       INTEGER, DIMENSION(:), ALLOCATABLE :: index
@@ -111,6 +119,9 @@ c-----------------------------------------------------------------------
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
+      INTEGER :: gal_pert,gal_unit=105
+      LOGICAL :: gal_check
+      TYPE(galsol_type) :: galsol
       TYPE(solution_type), DIMENSION(:), ALLOCATABLE :: soltype,rsoltype
       TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
       TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype
@@ -143,12 +154,25 @@ c-----------------------------------------------------------------------
       CALL cspline_dealloc(u2)
       CALL fspline_dealloc(metric)
 
-      DO istep=0,mstep
-         DEALLOCATE(soltype(istep)%u)
-      ENDDO
-      DO ifix=1,mfix
-         DEALLOCATE(fixtype(ifix)%fixfac,fixtype(ifix)%index)
-      ENDDO
+      IF(ALLOCATED(soltype))THEN
+         DO istep=0,mstep
+            DEALLOCATE(soltype(istep)%u)
+         ENDDO
+         DEALLOCATE(soltype)
+      ENDIF
+      IF(ALLOCATED(fixtype))THEN
+         DO ifix=0,mfix
+            IF(ALLOCATED(fixtype(ifix)%fixfac))
+     $         DEALLOCATE(fixtype(ifix)%fixfac)
+            IF(ALLOCATED(fixtype(ifix)%index))
+     $         DEALLOCATE(fixtype(ifix)%index)
+            IF(ALLOCATED(fixtype(ifix)%transform))
+     $         DEALLOCATE(fixtype(ifix)%transform)
+            IF(ALLOCATED(fixtype(ifix)%gauss))
+     $         DEALLOCATE(fixtype(ifix)%gauss)
+         ENDDO
+         DEALLOCATE(fixtype)
+      ENDIF
 
       IF (psixy == 1) CALL bicube_dealloc(psi_in)
 c-----------------------------------------------------------------------

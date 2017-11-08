@@ -14,6 +14,7 @@ c     2. cspline_dealloc.
 c     3. cspline_fit_old.
 c     4. cspline_fac.
 c     5. cspline_eval.
+c     5a. cspline_eval_external.
 c     6. cspline_all_eval.
 c     7. cspline_write.
 c     8. cspline_write_log.
@@ -433,6 +434,89 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_eval
 c-----------------------------------------------------------------------
+c     subprogram 5a. cspline_eval_external.
+c     evaluates complex cubic splines with external arrays (parallel).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_eval_external(spl,x,s_ix,s_f)
+
+      TYPE(cspline_type), INTENT(IN) :: spl
+      REAL(r8), INTENT(IN) :: x
+
+      INTEGER :: iqty,iside
+      REAL(r8) :: xx,d,z,z1,dx
+
+      INTEGER, INTENT(INOUT) :: s_ix
+      COMPLEX(r8), DIMENSION(:), INTENT(INOUT) :: s_f
+
+      REAL(r8) :: xpow
+c-----------------------------------------------------------------------
+c     zero out external array.
+c-----------------------------------------------------------------------
+      s_f = 0
+c-----------------------------------------------------------------------
+c     preliminary computations.
+c-----------------------------------------------------------------------
+      xx=x
+      s_ix=MAX(s_ix,0)
+      s_ix=MIN(s_ix,spl%mx-1)
+c-----------------------------------------------------------------------
+c     normalize interval for periodic splines.
+c-----------------------------------------------------------------------
+      IF(spl%periodic)THEN
+         DO
+            IF(xx < spl%xs(spl%mx))EXIT
+            xx=xx-spl%xs(spl%mx)
+         ENDDO
+         DO
+            IF(xx >= spl%xs(0))EXIT
+            xx=xx+spl%xs(spl%mx)
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     find cubic spline interval.
+c-----------------------------------------------------------------------
+      DO
+         IF(xx >= spl%xs(s_ix).OR.s_ix <= 0)EXIT
+         s_ix=s_ix-1
+      ENDDO
+      DO
+         IF(xx < spl%xs(s_ix+1).OR.s_ix >= spl%mx-1)EXIT
+         s_ix=s_ix+1
+      ENDDO
+c-----------------------------------------------------------------------
+c     evaluate offset and related quantities.
+c-----------------------------------------------------------------------
+      d=spl%xs(s_ix+1)-spl%xs(s_ix)
+      z=(xx-spl%xs(s_ix))/d
+      z1=1-z
+c-----------------------------------------------------------------------
+c     evaluate functions.
+c-----------------------------------------------------------------------
+      s_f=spl%fs(s_ix,:)*z1*z1*(3-2*z1)
+     $     +spl%fs(s_ix+1,:)*z*z*(3-2*z)
+     $     +d*z*z1*(spl%fs1(s_ix,:)*z1
+     $     -spl%fs1(s_ix+1,:)*z)
+c-----------------------------------------------------------------------
+c     restore powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         dx=ABS(x-spl%x0(iside))
+         DO iqty=1,spl%nqty
+            xpow = spl%xpower(iside,iqty)
+            IF(xpow /= 0)THEN
+               s_f(iqty)=s_f(iqty)*(dx**xpow)
+            ENDIF
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_eval_external
+c-----------------------------------------------------------------------
 c     subprogram 6. cspline_all_eval.
 c     evaluates cubic spline function.
 c-----------------------------------------------------------------------
@@ -592,7 +676,6 @@ c-----------------------------------------------------------------------
             IF(bin)WRITE(iub)REAL(x,4),
      $           REAL(spl%f,4),REAL(AIMAG(spl%f),4)
          ENDDO
-         IF(out)WRITE(iua,'(1x)')
       ENDDO
 c-----------------------------------------------------------------------
 c     print final interpolated values.
@@ -990,7 +1073,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE cspline_fit(spl,endmode)
-      
+
       TYPE(cspline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
       INTEGER :: iqty,imx
@@ -1002,7 +1085,7 @@ c-----------------------------------------------------------------------
       rspl%xpower(:,spl%nqty+1:2*spl%nqty)=spl%xpower
 
       rspl%x0=spl%x0
- 
+
       rspl%xs=spl%xs
 
       DO iqty=1,spl%nqty

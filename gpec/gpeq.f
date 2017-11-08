@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
 c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     IPEQ: calculate functions for perturbed equilibrium.
+c     GPEQ: calculate functions for perturbed equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
@@ -23,6 +23,8 @@ c     14. gpeq_rzpgrid
 c     15. gpeq_rzpdiv
 c     16. gpeq_alloc
 c     17. gpeq_dealloc
+c     18. gpeq_interp_singsurf
+c     19. gpeq_interp_sol
 c-----------------------------------------------------------------------
 c     subprogram 0. gpeq_mod.
 c     module declarations.
@@ -56,11 +58,6 @@ c-----------------------------------------------------------------------
 c     evaluate matrices and solutions.
 c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,1)
-      CALL cspline_eval(u1,psi,0)
-      CALL cspline_eval(u2,psi,0)
-      CALL cspline_eval(u3,psi,0)
-      CALL cspline_eval(u4,psi,0)
-
       q=sq%f(4)
       q1=sq%f1(4)
       singfac=mfac-nn*q
@@ -72,16 +69,28 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute preliminary quantities.
 c-----------------------------------------------------------------------
+      CALL cspline_eval(u1,psi,0)
       xsp_mn=u1%f
       IF (kin_flag) THEN
+         CALL cspline_eval(u3,psi,0)
+         CALL cspline_eval(u4,psi,0)
          xsp1_mn=u3%f
          xss_mn=u4%f
       ELSE
-         xspfac=u2%f/singfac
-         CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
-     $        2*mband+1,u1%f,1,ione,xspfac,1)
-         CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,info)
-         xsp1_mn=xspfac/singfac
+         IF (galsol%gal_flag) THEN
+            CALL cspline_eval(u1,psi,1)
+            CALL cspline_eval(u2,psi,0)
+            xsp1_mn=u1%f1
+         ELSE
+            CALL cspline_eval(u1,psi,0)
+            CALL cspline_eval(u2,psi,0)
+            xspfac=u2%f/singfac
+            CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
+     $         2*mband+1,u1%f,1,ione,xspfac,1)
+            CALL zpbtrs('L',mpert,mband,1,fmats,mband+1,xspfac,mpert,
+     $         info)
+            xsp1_mn=xspfac/singfac
+         ENDIF
          CALL zhetrf('L',mpert,amat,mpert,ipiva,work,mpert*mpert,info)
          CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,bmat,mpert,info)
          CALL zhetrs('L',mpert,mpert,amat,mpert,ipiva,cmat,mpert,info)
@@ -281,6 +290,104 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_cova
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     subprogram 3-2. gpeq_cur
+c     compute perturbed current components.
+c     gpeq_sol, gpeq_contra and gpeq_cova should be called prior to this
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_cur(psi)
+
+      REAL(r8), INTENT(IN) :: psi
+
+      INTEGER :: i,istep,itheta,ipert,m1,dm,jpert,loc(1)
+      REAL(r8), DIMENSION(0:mthsurf) :: eqb
+      COMPLEX(r8), DIMENSION(mpert) :: bvtl_mn,bvzl_mn,bvt1_mn,bvz1_mn
+      COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: jvt_fun, jvz_fun, jpa_fun
+      TYPE(cspline_type) :: bvtz
+
+      IF (debug_flag) PRINT * ,"Entering gpeq_cur"
+c-----------------------------------------------------------------------
+c     compute contravarient component.
+c-----------------------------------------------------------------------
+      ! psi derivative of covarent field
+      loc = MINLOC(ABS(psifac(1:mstep-1) - psi))
+      istep = loc(1)
+      CALL cspline_alloc(bvtz,6,mpert*2)
+      DO i=-3,3
+         bvtz%xs(i+3) = psifac(istep+i)
+         bvtz%fs(i+3,1:mpert)=bvt_mn
+         bvtz%fs(i+3,1+mpert:2*mpert)=bvz_mn
+      ENDDO
+      CALL cspline_fit(bvtz,"extrap")
+      CALL cspline_eval(bvtz,psi,1)
+      bvt1_mn = bvtz%f1(1:mpert)
+      bvz1_mn = bvtz%f1(1+mpert:2*mpert)
+      CALL gpeq_sol(psi)
+      CALL gpeq_contra(psi)
+      CALL gpeq_cova(psi)
+      ! contravarient current
+      jwp_mn=twopi*ifac*mfac*bvz_mn-(-twopi*ifac*nn*bvt_mn)
+      jwt_mn=twopi*ifac*nn*bvp_mn-(bvz1_mn)
+      jwz_mn=bvt1_mn-(twopi*ifac*mfac*bvp_mn)
+c-----------------------------------------------------------------------
+c     compute lower half of matrices.
+c-----------------------------------------------------------------------
+      CALL cspline_eval(metric%cs,psi,0)
+      g11(0:-mband:-1)=metric%cs%f(1:mband+1)
+      g22(0:-mband:-1)=metric%cs%f(mband+2:2*mband+2)
+      g33(0:-mband:-1)=metric%cs%f(2*mband+3:3*mband+3)
+      g23(0:-mband:-1)=metric%cs%f(3*mband+4:4*mband+4)
+      g31(0:-mband:-1)=metric%cs%f(4*mband+5:5*mband+5)
+      g12(0:-mband:-1)=metric%cs%f(5*mband+6:6*mband+6)      
+c-----------------------------------------------------------------------
+c     compute upper half of matrices.
+c-----------------------------------------------------------------------
+      g11(1:mband)=CONJG(g11(-1:-mband:-1))
+      g22(1:mband)=CONJG(g22(-1:-mband:-1))
+      g33(1:mband)=CONJG(g33(-1:-mband:-1))
+      g23(1:mband)=CONJG(g23(-1:-mband:-1))
+      g31(1:mband)=CONJG(g31(-1:-mband:-1))
+      g12(1:mband)=CONJG(g12(-1:-mband:-1))
+c-----------------------------------------------------------------------
+c     compute covariant components with metric tensors.
+c-----------------------------------------------------------------------
+      ipert=0
+      jvp_mn=0
+      jvt_mn=0
+      jvz_mn=0 
+      DO m1=mlow,mhigh
+         ipert=ipert+1
+         DO dm=MAX(1-ipert,-mband),MIN(mpert-ipert,mband)
+            jpert=ipert+dm
+            jvp_mn(ipert)=jvp_mn(ipert)+g11(dm)*jwp_mn(jpert)+
+     $           g12(dm)*jwt_mn(jpert)+g31(dm)*jwz_mn(jpert)
+            jvt_mn(ipert)=jvt_mn(ipert)+g12(dm)*jwp_mn(jpert)+
+     $           g22(dm)*jwt_mn(jpert)+g23(dm)*jwz_mn(jpert)
+            jvz_mn(ipert)=jvz_mn(ipert)+g31(dm)*jwp_mn(jpert)+
+     $           g23(dm)*jwt_mn(jpert)+g33(dm)*jwz_mn(jpert)
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     compute parallel component.
+c-----------------------------------------------------------------------
+      CALL spline_eval(sq,psi,0)
+      q=sq%f(4)
+      DO itheta=0,mthsurf
+         CALL bicube_eval(eqfun,psi,theta(itheta),0)
+         eqb(itheta)=eqfun%f(1)
+      ENDDO
+      CALL iscdftb(mfac,mpert,jvt_fun,mthsurf,jvt_mn)
+      CALL iscdftb(mfac,mpert,jvz_fun,mthsurf,jvz_mn)
+      jpa_fun=(jvt_fun+q*jvz_fun)/eqb!*chi1
+      CALL iscdftf(mfac,mpert,jpa_fun,mthsurf,jpa_mn)
+      IF(debug_flag) PRINT *, "->Leaving gpeq_cur"
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_cur
 c-----------------------------------------------------------------------
 c     subprogram 4. gpeq_normal.
 c     compute normal components.
@@ -1255,7 +1362,9 @@ c-----------------------------------------------------------------------
      $     xno_mn(mpert),xta_mn(mpert),xpa_mn(mpert),
      $     bno_mn(mpert),bta_mn(mpert),bpa_mn(mpert),
      $     xrr_mn(mpert),xrz_mn(mpert),xrp_mn(mpert),
-     $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert))
+     $     brr_mn(mpert),brz_mn(mpert),brp_mn(mpert),
+     $     jwp_mn(mpert),jwt_mn(mpert),jwz_mn(mpert),
+     $     jvp_mn(mpert),jvt_mn(mpert),jvz_mn(mpert),jpa_mn(mpert))
       IF(debug_flag) PRINT *, "->Leaving gpeq_alloc"
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1273,12 +1382,104 @@ c-----------------------------------------------------------------------
      $     xwp_mn,xwt_mn,xwz_mn,bwp_mn,bwt_mn,bwz_mn,xmt_mn,bmt_mn,
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
-     $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn)
+     $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
+     $     jwp_mn,jwt_mn,jwz_mn,jvp_mn,jvt_mn,jvz_mn,jpa_mn)
       IF(debug_flag) PRINT *, "->Leaving gpeq_dealloc"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpeq_dealloc
+c-----------------------------------------------------------------------
+c     subprogram 18. gpeq_interp_singsurf.
+c     create spline for interpretation of soltuon near singular surface.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_interp_singsurf(fsp_sol,spot,npsi)
+      TYPE(cspline_type), INTENT(INOUT)::fsp_sol    ! spline of bwp smoothly crossing rationals
+      REAL(r8), INTENT(IN) :: spot                  ! roughly the span in  m-nq to cross
+      INTEGER, INTENT(IN) :: npsi                   ! number of points between rationals in the spline
+
+      INTEGER::psisize,ising,ix,icount
+      INTEGER,PARAMETER:: method=1
+      REAL(r8)::nq1,x,x0,x1
+      REAL(r8),DIMENSION(msing)::respsi,dxl,dxr
+c-----------------------------------------------------------------------
+c     detemine spline allocation.
+c-----------------------------------------------------------------------
+      DO ising=1,msing
+         respsi(ising)=singtype(ising)%psifac
+      ENDDO
+      DO ising=1,msing
+         nq1=singtype(ising)%q1*nn
+         SELECT CASE(method)
+         CASE(1)
+         IF (ising==1) THEN
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-psilow)
+            dxr(ising)=respsi(ising)
+     $                 +spot*(respsi(ising+1)-respsi(ising))
+         ELSEIF (ising==msing) THEN
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-respsi(ising-1))
+            dxr(ising)=respsi(ising)
+     $                 +spot*(psilim-respsi(ising))
+         ELSE
+            dxl(ising)=respsi(ising)
+     $                 -spot*(respsi(ising)-respsi(ising-1))
+            dxr(ising)=respsi(ising)
+     $                 +spot*(respsi(ising+1)-respsi(ising))
+         ENDIF
+         CASE(2)
+            dxl(ising)=respsi(ising)-spot/nq1
+            dxr(ising)=respsi(ising)+spot/nq1
+         END SELECT
+      ENDDO
+c-----------------------------------------------------------------------
+c     construct solution spline.
+c-----------------------------------------------------------------------
+      icount=npsi*(msing+1)-1
+      CALL cspline_alloc(fsp_sol,icount,mpert)
+      icount=0
+      DO ising=1,msing+1
+         IF (ising==1) THEN
+            x0=psilow
+            x1=dxl(ising)
+         ELSEIF (ising==msing+1) THEN
+            x0=dxr(ising-1)
+            x1=psilim
+         ELSE
+            x0=dxr(ising-1)
+            x1=dxl(ising)
+         ENDIF
+         DO ix=1,npsi
+            x=x0+(ix-1)*(x1-x0)/(npsi-1)
+            CALL gpeq_sol(x)
+            fsp_sol%xs(icount)=x
+            fsp_sol%fs(icount,:)=bwp_mn
+            icount=icount+1
+         ENDDO
+      ENDDO
+      CALL cspline_fit(fsp_sol,"not-a-knot")
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_interp_singsurf
+c-----------------------------------------------------------------------
+c     subprogram 19. gpeq_interp_sol.
+c     get bwn at psi after calling gpeq_interp_singsurf.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpeq_interp_sol(fsp_sol,psi,interpbwn)
+      TYPE(cspline_type), INTENT(INOUT)::fsp_sol
+      REAL(r8), INTENT(IN):: psi
+      COMPLEX(r8),DIMENSION(mpert), INTENT(OUT)::interpbwn
+
+      CALL cspline_eval(fsp_sol,psi,0)
+      interpbwn=fsp_sol%f
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpeq_interp_sol
 
       END MODULE gpeq_mod

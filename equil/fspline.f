@@ -119,13 +119,25 @@ c-----------------------------------------------------------------------
 
       INTEGER :: m,ix,iq,mx,my,mband,nqty,j
       REAL(r8), PARAMETER :: eps=1e-3
-      REAL(r8), DIMENSION(fst%my) :: delta,d4fac
-      REAL(r8), DIMENSION(0:fst%mx,0:fst%my,fst%nqty) :: fs,fsy
-      COMPLEX(r8), DIMENSION(0:fst%my) :: expfac0,expfac
-      COMPLEX(r8), DIMENSION(fst%my) :: dexpfac0,dexpfac
-      COMPLEX(r8), DIMENSION(fst%my) :: alpha1,alpha2,beta1,beta2
-      COMPLEX(r8), DIMENSION(0:fst%mx,0:fst%mband,fst%nqty) :: coef
+      REAL(r8), ALLOCATABLE, DIMENSION(:) :: delta,d4fac,delta4
+      REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: fs,fsy
+      COMPLEX(r8), ALLOCATABLE, DIMENSION(:) :: expfac0,expfac
+      COMPLEX(r8), ALLOCATABLE, DIMENSION(:) :: dexpfac0,dexpfac
+      COMPLEX(r8), ALLOCATABLE, DIMENSION(:) :: alpha1,alpha2,
+     $                                          beta1,beta2
+      COMPLEX(r8), ALLOCATABLE, DIMENSION(:,:,:) :: coef
       TYPE(spline_type) :: spl
+c-----------------------------------------------------------------------
+c     allocate.
+c-----------------------------------------------------------------------
+      ALLOCATE (delta(fst%my),d4fac(fst%my),delta4(fst%my))
+      ALLOCATE (fs(0:fst%mx,0:fst%my,fst%nqty),
+     $          fsy(0:fst%mx,0:fst%my,fst%nqty))
+      ALLOCATE (expfac0(0:fst%my),expfac(0:fst%my))
+      ALLOCATE (dexpfac0(fst%my),dexpfac(fst%my))
+      ALLOCATE (alpha1(fst%my),alpha2(fst%my),
+     $          beta1(fst%my),beta2(fst%my))
+      ALLOCATE (coef(0:fst%mx,0:fst%mband,fst%nqty))
 c-----------------------------------------------------------------------
 c     copy sizes and zero Fourier coefficients.
 c-----------------------------------------------------------------------
@@ -138,8 +150,11 @@ c-----------------------------------------------------------------------
 c     prepare principal periodic functions.
 c-----------------------------------------------------------------------
       delta=fst%ys(1:my)-fst%ys(0:my-1)
-      d4fac=1/delta**4
-      expfac0=EXP(-ifac*fst%ys)
+      delta4=delta**4
+      d4fac=1/delta4
+      DO ix=0,my
+         expfac0(ix)=EXP(-ifac*fst%ys(ix))
+      ENDDO
       dexpfac0=expfac0(0:my-1)/expfac0(1:my)
       expfac=1
       dexpfac=1
@@ -207,6 +222,15 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
+c     deallocate.
+c-----------------------------------------------------------------------
+      DEALLOCATE (delta,d4fac,delta4)
+      DEALLOCATE (fs,fsy)
+      DEALLOCATE (expfac0,expfac)
+      DEALLOCATE (dexpfac0,dexpfac)
+      DEALLOCATE (alpha1,alpha2,beta1,beta2)
+      DEALLOCATE (coef)
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -226,7 +250,12 @@ c-----------------------------------------------------------------------
 
       CHARACTER(64) :: message
       INTEGER :: iqty,j,m,mband,mx,my,nqty,p2
-      COMPLEX(r8), DIMENSION(0:fst%my-1,0:fst%mx,fst%nqty) :: f,g
+      COMPLEX(r8), ALLOCATABLE, DIMENSION(:,:,:) :: f,g
+c-----------------------------------------------------------------------
+c     allocate.
+c-----------------------------------------------------------------------
+      ALLOCATE (f(0:fst%my-1,0:fst%mx,fst%nqty),
+     $          g(0:fst%my-1,0:fst%mx,fst%nqty))
 c-----------------------------------------------------------------------
 c     abort if my-1 is not a power of 2.
 c-----------------------------------------------------------------------
@@ -289,6 +318,10 @@ c-----------------------------------------------------------------------
             WRITE(fst%cs%title(j),'("cs",i1,"_",i2.2)')iqty,m
          ENDDO
       ENDDO
+c-----------------------------------------------------------------------
+c     dellocate.
+c-----------------------------------------------------------------------
+      DEALLOCATE (f,g)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -382,11 +415,23 @@ c-----------------------------------------------------------------------
       INTEGER :: m,iy
       REAL(r8), DIMENSION(fst%my) :: y
       COMPLEX(r8), DIMENSION(fst%my) :: expfac,expfac0
-      COMPLEX(r8), DIMENSION(fst%my,fst%nqty*(fst%mx+1)) ::
-     $     f0,f1,f2,f3
-      COMPLEX(r8), DIMENSION(fst%mx,fst%my,fst%nqty) ::
+      COMPLEX(r8), ALLOCATABLE, DIMENSION(:,:) :: f0,f1,f2,f3
+      COMPLEX(r8), ALLOCATABLE, DIMENSION(:,:,:) ::
      $     term,termx,termxx
-      COMPLEX(r8), DIMENSION(fst%mx,0:fst%mband,fst%nqty) :: c,cx,cxx
+      COMPLEX(r8), ALLOCATABLE, DIMENSION(:,:,:) :: c,cx,cxx
+c-----------------------------------------------------------------------
+c     allocate.
+c-----------------------------------------------------------------------
+      ALLOCATE (f0(fst%my,fst%nqty*(fst%mx+1)),
+     $          f1(fst%my,fst%nqty*(fst%mx+1)),
+     $          f2(fst%my,fst%nqty*(fst%mx+1)),
+     $          f3(fst%my,fst%nqty*(fst%mx+1)))
+      ALLOCATE (term(fst%mx,fst%my,fst%nqty),
+     $          termx(fst%mx,fst%my,fst%nqty),
+     $          termxx(fst%mx,fst%my,fst%nqty))
+      ALLOCATE (c(fst%mx,0:fst%mband,fst%nqty),
+     $          cx(fst%mx,0:fst%mband,fst%nqty),
+     $          cxx(fst%mx,0:fst%mband,fst%nqty))
 c-----------------------------------------------------------------------
 c     evaluate cubic splines and m = 0 terms for functions.
 c-----------------------------------------------------------------------
@@ -448,6 +493,13 @@ c-----------------------------------------------------------------------
          fxy=fxy+termx*ifac*m
          fyy=fyy-term*m*m
       ENDDO
+c-----------------------------------------------------------------------
+c     deallcoate.
+c-----------------------------------------------------------------------
+      DEALLOCATE (f0,f1,f2,f3)
+      DEALLOCATE (term,termx,termxx)
+      DEALLOCATE (c,cx,cxx)
+
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

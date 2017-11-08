@@ -13,6 +13,7 @@ c-----------------------------------------------------------------------
       INTEGER :: bin_unit=3
       INTEGER :: equil_unit=4
       INTEGER :: term_unit=6
+      INTEGER :: sing_unit=7
 
       INTEGER :: dump_unit=9
       INTEGER :: sum_unit=10
@@ -22,6 +23,14 @@ c-----------------------------------------------------------------------
 
       INTEGER :: lar_out_unit=13
       INTEGER :: lar_bin_unit=14
+
+      INTEGER :: out1_unit=21
+      INTEGER :: bin1_unit=22
+      
+      INTEGER :: gal_out_unit=31
+      INTEGER :: gal_bin_unit=32
+
+      INTEGER :: preflat_unit=41
 
       INTEGER :: debug_unit=99
 

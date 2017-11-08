@@ -14,6 +14,7 @@ c     2. spline_dealloc.
 c     3. spline_fit.
 c     4. spline_fac.
 c     5. spline_eval.
+c     5a. spline_eval_external.
 c     6. spline_all_eval.
 c     7. spline_write1.
 c     8. spline_write2.
@@ -434,6 +435,103 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_eval
 c-----------------------------------------------------------------------
+c     subprogram 5a. spline_eval_external
+c     evaluates real cubic spline with external arrays (parallel).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_eval_external(spl,x,s_ix,s_f,s_f1,mode)
+
+      TYPE(spline_type), INTENT(IN) :: spl
+      REAL(r8), INTENT(IN) :: x
+
+      INTEGER :: iqty,iside
+      REAL(r8) :: xx,d,z,z1,xfac,dx
+      REAL(r8) :: g,g1,g2,g3
+
+      INTEGER, INTENT(INOUT) :: s_ix
+      REAL(r8), DIMENSION(:), INTENT(INOUT) :: s_f,s_f1
+
+      INTEGER, INTENT(IN) :: mode
+c-----------------------------------------------------------------------
+c     zero out external arrays.
+c-----------------------------------------------------------------------
+      s_f = 0
+      s_f1 = 0
+c-----------------------------------------------------------------------
+c     preliminary computations.
+c-----------------------------------------------------------------------
+      xx=x
+      s_ix=MAX(s_ix,0)
+      s_ix=MIN(s_ix,spl%mx-1)
+c-----------------------------------------------------------------------
+c     normalize interval for periodic splines.
+c-----------------------------------------------------------------------
+      IF(spl%periodic)THEN
+         DO
+            IF(xx < spl%xs(spl%mx))EXIT
+            xx=xx-spl%xs(spl%mx)
+         ENDDO
+         DO
+            IF(xx >= spl%xs(0))EXIT
+            xx=xx+spl%xs(spl%mx)
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     find cubic spline interval.
+c-----------------------------------------------------------------------
+      DO
+         IF(xx >= spl%xs(s_ix).OR.s_ix <= 0)EXIT
+         s_ix=s_ix-1
+      ENDDO
+      DO
+         IF(xx < spl%xs(s_ix+1).OR.s_ix >= spl%mx-1)EXIT
+         s_ix=s_ix+1
+      ENDDO
+c-----------------------------------------------------------------------
+c     evaluate offset and related quantities.
+c-----------------------------------------------------------------------
+      d=spl%xs(s_ix+1)-spl%xs(s_ix)
+      z=(xx-spl%xs(s_ix))/d
+      z1=1-z
+c-----------------------------------------------------------------------
+c     evaluate functions.
+c-----------------------------------------------------------------------
+      s_f=spl%fs(s_ix,1:spl%nqty)*z1*z1*(3-2*z1)
+     $     +spl%fs(s_ix+1,1:spl%nqty)*z*z*(3-2*z)
+     $     +d*z*z1*(spl%fs1(s_ix,1:spl%nqty)*z1
+     $     -spl%fs1(s_ix+1,1:spl%nqty)*z)
+c-----------------------------------------------------------------------
+c     evaluate first derivatives.
+c-----------------------------------------------------------------------
+      IF(mode > 0)THEN
+         s_f1=6*(spl%fs(s_ix+1,1:spl%nqty)
+     $        -spl%fs(s_ix,1:spl%nqty))*z*z1/d
+     $        +spl%fs1(s_ix,1:spl%nqty)*z1*(3*z1-2)
+     $        +spl%fs1(s_ix+1,1:spl%nqty)*z*(3*z-2)
+      ENDIF
+c-----------------------------------------------------------------------
+c     restore powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         dx=x-spl%x0(iside)
+         DO iqty=1,spl%nqty
+            IF(spl%xpower(iside,iqty) == 0)CYCLE
+            xfac=ABS(dx)**spl%xpower(iside,iqty)
+            g=s_f(iqty)*xfac
+            IF(mode > 0)g1=(s_f1(iqty)+s_f(iqty)
+     $           *spl%xpower(iside,iqty)/dx)*xfac
+            s_f(iqty)=g
+            IF(mode > 0)s_f1(iqty)=g1
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_eval_external
+c-----------------------------------------------------------------------
 c     subprogram 6. spline_all_eval.
 c     evaluates cubic spline function.
 c-----------------------------------------------------------------------
@@ -587,7 +685,6 @@ c-----------------------------------------------------------------------
             IF(out)WRITE(iua,format2)i,x,spl%f
             IF(bin)WRITE(iub)REAL(x,4),REAL(spl%f,4)
          ENDDO
-         IF(out)WRITE(iua,'(1x)')
       ENDDO
 c-----------------------------------------------------------------------
 c     print final interpolated values.
@@ -923,7 +1020,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE spline_fit_ha(spl,endmode)
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
-      
+
       INTEGER ::icount,icoef,imx,iqty,istart,jstart,info,iside
       INTEGER :: ndim,nqty,kl,ku,ldab,nvar
       INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv
@@ -960,7 +1057,7 @@ c-----------------------------------------------------------------------
          DO icoef=1,nvar
             imap(icoef,imx)=icount
             icount=icount+1
-         ENDDO 
+         ENDDO
       ENDDO
       ndim=icount-1
       kl=nvar*3
@@ -971,7 +1068,7 @@ c-----------------------------------------------------------------------
       rhs=0
       fs=spl%fs(:,:)
 c-----------------------------------------------------------------------
-c     contruct local matrix in each interval. 
+c     contruct local matrix in each interval.
 c-----------------------------------------------------------------------
       ALLOCATE(locmat(nvar,nvar*3),locmat0(nvar,nvar*3),
      &         locmat1(nvar,nvar*2),tmpmat(nvar,nvar*2))
@@ -1120,7 +1217,7 @@ c-----------------------------------------------------------------------
          DO iqty=1,nqty
             IF (ABS(spl%fs(0,iqty)-spl%fs(spl%mx,iqty)) > 1E-15) THEN
                WRITE(*,*)
-     $             "Warning: first and last points are different. 
+     $             "Warning: first and last points are different.
      $              IQTY= ",IQTY,",  averaged value is used."//
      $              TRIM(endmode)
               spl%fs(0,iqty)=(spl%fs(0,iqty)+spl%fs(spl%mx,iqty))*0.5
@@ -1129,7 +1226,7 @@ c-----------------------------------------------------------------------
          ENDDO
          locmat0(1,nvar+3)=1
          locmat0(1,nvar+4)=-1
-            
+
          dx=spl%xs(spl%mx)-spl%xs(spl%mx-1)
          locmat1(4,nvar+1)=3*dx*dx
          locmat1(4,nvar+2)=2*dx
@@ -1188,7 +1285,7 @@ c-----------------------------------------------------------------------
          DO icoef=1,nvar
             coef(icoef,imx,:)=rhs(imap(icoef,imx),:)
          ENDDO
-         spl%fs1(imx,:)=coef(3,imx,:) 
+         spl%fs1(imx,:)=coef(3,imx,:)
       ENDDO
       dx=spl%xs(imx)-spl%xs(imx-1)
       spl%fs1(imx,:)=coef(3,imx-1,:)
@@ -1257,7 +1354,7 @@ c-----------------------------------------------------------------------
       ldb=N
       a=0
       b=0
-      
+
       a(1,4)=1
       b(1,:)=y(1,:)
       DO i=2,n
