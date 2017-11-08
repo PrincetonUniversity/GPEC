@@ -300,7 +300,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), INTENT(IN) :: psi
 
-      INTEGER :: istep,itheta,ipert,m1,dm,jpert
+      INTEGER :: istep,itheta,ipert,m1,dm,jpert,loc(1)
       REAL(r8), DIMENSION(0:mthsurf) :: eqb
       COMPLEX(r8), DIMENSION(mpert) :: bvtl_mn,bvzl_mn,bvt1_mn,bvz1_mn
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
@@ -311,7 +311,8 @@ c-----------------------------------------------------------------------
 c     compute contravarient component.
 c-----------------------------------------------------------------------
       ! psi derivative of covarent field
-      istep = MINLOC(ABS(psifac - psi))
+      loc = MINLOC(ABS(psifac(1:mstep-1) - psi))
+      istep = loc(1)
       CALL gpeq_sol(psifac(istep-1))
       CALL gpeq_contra(psifac(istep-1))
       CALL gpeq_cova(psifac(istep-1))
