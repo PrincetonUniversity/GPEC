@@ -30,7 +30,7 @@
 #      from /usr/pppl/intel/11.0/081/lib/intel64
 #      including /usr/pppl/intel/11.0/081/include/intel64
 #
-#   Set environement FC,LAPACKHOME,NETCDFHOME to change these
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
 #   ------------------------------------------------------------
 #
 # On venus.gat.com

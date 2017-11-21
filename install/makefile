@@ -97,7 +97,7 @@ v:
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
 	@echo
-	@echo "Set environement FC,LAPACKHOME,NETCDFHOME to change these"
+	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
 	@echo "   example: module load gcc4 lapack netcdf"
 endif
