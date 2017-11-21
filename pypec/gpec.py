@@ -146,7 +146,7 @@ def _newloc(loc):
 
 
 def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun=False,
-        rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,
+        rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,version='1.1',
         mailon='NONE',email='',mem=3e3,hours=36,partition='sque',runipec=False,qsub=None,**kwargs):
     """
     Python wrapper for running gpec package.
@@ -162,6 +162,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
     :param runpentrc: bool. Run pentrc.
     :param cleandcon: bool. Remove euler.bin file after run is complete.
     :param fill_inputs: bool. Use inputs from rundir (see kwargs).
+    :param version: str. Version of GPEC loaded (may set compilers if 1.2 or later)
     :param mailon: str. Choose from NONE, BEGIN, END, FAIL, REQUEUE, or ALL.
     :param email: str. Email address (default is submitting user).
     :param mem: floatMemory request of q-submission in megabytes (converted to integer).
@@ -259,7 +260,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
             partition = 'mque'
         jobstr = bashjob.format(name=jobname, nodes=1, mem=str(int(mem)), days=0, hours=int(hours),
                                 partition=partition, location= loc, exes=exelist,
-                                mailtype=mailon.upper(), mailuser=email)
+                                mailtype=mailon.upper(), mailuser=email, version=version)
         jobstr = jobstr.replace('#SBATCH --mail-type=NONE', '') # robust to sbatch versions
         with open(jobname+'.sh','w') as f:
             f.write(jobstr)

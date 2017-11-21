@@ -27,6 +27,8 @@ echo " "
 
 cd {location:}
 
+module purge
+module load gpec/{version:}
 {exes:}
  
 rm *.dat
