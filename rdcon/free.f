@@ -69,8 +69,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,"Energies: plasma = ",e10.3,", vacuum = ",e10.3,
-     $     ", total = ",e10.3)
+ 10   FORMAT(1x,"Energies: plasma = ",es10.3,", vacuum = ",es10.3,
+     $     ", total = ",es10.3)
  20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",5x,"total"/)
  30   FORMAT(i6,1p,3e11.3,a)
  40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",5x,"vacuum",5x,"total"/)
@@ -205,7 +205,6 @@ c-----------------------------------------------------------------------
 c     write eigenvalues to file.
 c-----------------------------------------------------------------------
       message=""
-c$$$      message(1:nzero)="  internal instability"
       WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
       WRITE(out_unit,20)
       WRITE(out_unit,30)(isol,ep(isol),ev(isol),et(isol),

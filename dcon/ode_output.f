@@ -213,7 +213,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     close crit files.
 c-----------------------------------------------------------------------
-      WRITE(term_unit,10)"psi = ",psifac,", q = ",q
+      WRITE(term_unit,10)"psi =",psifac,", q = ",q
       WRITE(crit_out_unit,20)
       CALL ascii_close(crit_out_unit)
       WRITE(crit_bin_unit)

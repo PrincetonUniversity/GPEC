@@ -591,13 +591,12 @@ c-----------------------------------------------------------------------
             fkaxmn(resnum)=singcurs(ising,i)/(twopi*nn)
             singflx_mn=MATMUL(fsurfindmats(ising,:,:),fkaxmn)
 c-----------------------------------------------------------------------
-c     evaluation based on the interperation.
+c     evaluation based on the interpolation.
 c-----------------------------------------------------------------------
             CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
             singbwp(ising,i)=interpbwn(resnum)
 
             singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
-
             islandhwids(ising,i)=4*singflx_mn(resnum)/
      $           (twopi*shear(ising)*sq%f(4)*chi1)
          ENDDO
