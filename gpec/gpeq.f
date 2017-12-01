@@ -1394,7 +1394,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psi
 
       INTEGER :: i,istep,itheta,ipert,m1,dm,jpert,loc(1)
-      REAL(r8), DIMENSION(0:mthsurf) :: eqb
+      REAL(r8), DIMENSION(0:mthsurf) :: eqb,jacs
       COMPLEX(r8), DIMENSION(mpert) :: bvtl_mn,bvzl_mn,bvt1_mn,bvz1_mn
       COMPLEX(r8), DIMENSION(-mband:mband) :: g11,g22,g33,g23,g31,g12
       COMPLEX(r8), DIMENSION(0:mthsurf) :: jvt_fun, jvz_fun, jpa_fun
@@ -1404,26 +1404,31 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute contravarient component.
 c-----------------------------------------------------------------------
-      ! psi derivative of covarent field
+      ! psi derivative of covariant field
       loc = MINLOC(ABS(psifac(1:mstep-1) - psi))
-      istep = loc(1)
+      istep = MAXVAL([loc(1),3]) ! otherwise it will refer to wrong index
+      istep = MINVAL([istep,mstep-3]) ! same here
       CALL cspline_alloc(bvtz,6,mpert*2)
       DO i=-3,3
-         bvtz%xs(i+3) = psifac(istep+i)
+         CALL gpeq_sol(psifac(istep+i))
+         CALL gpeq_contra(psifac(istep+i))
+         CALL gpeq_cova(psifac(istep+i))
+         bvtz%xs(i+3)=psifac(istep+i)
          bvtz%fs(i+3,1:mpert)=bvt_mn
          bvtz%fs(i+3,1+mpert:2*mpert)=bvz_mn
+         IF (i==0) THEN
+            jwp_mn=twopi*ifac*mfac*bvz_mn-(-twopi*ifac*nn*bvt_mn)
+            jwt_mn=twopi*ifac*nn*bvp_mn
+            jwz_mn=-twopi*ifac*mfac*bvp_mn
+         ENDIF
       ENDDO
       CALL cspline_fit(bvtz,"extrap")
       CALL cspline_eval(bvtz,psi,1)
-      bvt1_mn = bvtz%f1(1:mpert)
-      bvz1_mn = bvtz%f1(1+mpert:2*mpert)
-      CALL gpeq_sol(psi)
-      CALL gpeq_contra(psi)
-      CALL gpeq_cova(psi)
-      ! contravarient current
-      jwp_mn=twopi*ifac*mfac*bvz_mn-(-twopi*ifac*nn*bvt_mn)
-      jwt_mn=twopi*ifac*nn*bvp_mn-(bvz1_mn)
-      jwz_mn=bvt1_mn-(twopi*ifac*mfac*bvp_mn)
+      bvt1_mn=bvtz%f1(1:mpert)
+      bvz1_mn=bvtz%f1(1+mpert:2*mpert)
+      jwt_mn=jwt_mn-bvz1_mn
+      jwz_mn=jwz_mn+bvt1_mn
+      CALL cspline_dealloc(bvtz)
 c-----------------------------------------------------------------------
 c     compute lower half of matrices.
 c-----------------------------------------------------------------------
@@ -1469,11 +1474,13 @@ c-----------------------------------------------------------------------
       q=sq%f(4)
       DO itheta=0,mthsurf
          CALL bicube_eval(eqfun,psi,theta(itheta),0)
+         CALL bicube_eval(rzphi,psi,theta(itheta),0)
          eqb(itheta)=eqfun%f(1)
+         jacs(itheta)=rzphi%f(4)
       ENDDO
       CALL iscdftb(mfac,mpert,jvt_fun,mthsurf,jvt_mn)
       CALL iscdftb(mfac,mpert,jvz_fun,mthsurf,jvz_mn)
-      jpa_fun=(jvt_fun+q*jvz_fun)/eqb!*chi1
+      jpa_fun=chi1*(jvt_fun+q*jvz_fun)/(jacs*eqb)
       CALL iscdftf(mfac,mpert,jpa_fun,mthsurf,jpa_mn)
       IF(debug_flag) PRINT *, "->Leaving gpeq_cur"
 c-----------------------------------------------------------------------

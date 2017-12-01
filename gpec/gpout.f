@@ -3560,16 +3560,17 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $        "mpsi =",mpsi,"mpert =",lmpert
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1(1x,a16),1x,a4,6(1x,a16))')"psi","m",
+         WRITE(out_unit,'(2(1x,a16),1x,a4,8(1x,a16))')"psi","m",
      $        "real(jwp)","imag(jwp)","real(jwt)","imag(jwt)",
      $        "real(jwz)","imag(jwz)","real(jpa)","imag(jpa)"
-         DO istep=1,mpsi
+         DO istep=1,mstep
             DO ipert=1,lmpert
-               WRITE(out_unit,*)psifac(istep),lmfac(ipert),
-     $           REAL(jwpmns(istep,ipert)),AIMAG(jwpmns(istep,ipert)),
-     $           REAL(jwtmns(istep,ipert)),AIMAG(jwtmns(istep,ipert)),
-     $           REAL(jwzmns(istep,ipert)),AIMAG(jwzmns(istep,ipert)),
-     $           REAL(jpamns(istep,ipert)),AIMAG(jpamns(istep,ipert))
+               WRITE(out_unit,'(1(es17.8e3),1x,I4,8(es17.8e3))')
+     $              psifac(istep),lmfac(ipert),
+     $             REAL(jwpmns(istep,ipert)),AIMAG(jwpmns(istep,ipert)),
+     $             REAL(jwtmns(istep,ipert)),AIMAG(jwtmns(istep,ipert)),
+     $             REAL(jwzmns(istep,ipert)),AIMAG(jwzmns(istep,ipert)),
+     $             REAL(jpamns(istep,ipert)),AIMAG(jpamns(istep,ipert))
             ENDDO
          ENDDO
          WRITE(out_unit,*)
@@ -3579,8 +3580,8 @@ c-----------------------------------------------------------------------
       IF (bin_flag) THEN
          CALL bin_open(bin_unit,
      $           "jprofile.bin","UNKNOWN","REWIND","none")
-         DO ipert = 1, mpert
-             DO istep = 1, mstep
+         DO ipert = 1,mpert
+             DO istep = 1,mstep
                  WRITE(bin_unit)REAL(psifac(istep), 4),
      $              REAL(REAL(jwpmns(istep, ipert)), 4),
      $              REAL(AIMAG(jwpmns(istep, ipert)), 4),
