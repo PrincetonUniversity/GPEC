@@ -32,8 +32,11 @@
 #
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
 #   ------------------------------------------------------------
+#   
+#   Now compile using
+#    $ make FFLAGS="-openmp -vec_report0"
 #
-# On venus.gat.com
+# On iris.gat.com
 #   <Proper compiler options need to be updated for v1.2>
 #
 # On mac OSX
