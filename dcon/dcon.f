@@ -54,7 +54,7 @@ c-----------------------------------------------------------------------
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
-     $     kingridtype,ktanh_flag,passing_flag,
+     $     kingridtype,ktanh_flag,passing_flag,spline_ha,
      $     electron_flag,ktc,ktw,parallel_threads
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,

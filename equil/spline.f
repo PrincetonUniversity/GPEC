@@ -11,7 +11,7 @@ c-----------------------------------------------------------------------
 c     0. spline_mod.
 c     1. spline_alloc.
 c     2. spline_dealloc.
-c     3. spline_fit.
+c     3. spline_fit_ahg.
 c     4. spline_fac.
 c     5. spline_eval.
 c     5a. spline_eval_external.
@@ -27,6 +27,7 @@ c     14. spline_copy.
 c     15. spline_fit_ha.
 c     16. spline_fill_matrix.
 c     17. spline_get_yp.
+c     18. spline_fit.
 c-----------------------------------------------------------------------
 c     subprogram 0. spline_type definition.
 c     defines spline_type.
@@ -37,7 +38,8 @@ c-----------------------------------------------------------------------
       MODULE spline_mod
       USE local_mod
       IMPLICIT NONE
-      
+     
+      LOGICAL :: spline_ha = .FALSE.
       TYPE :: spline_type
       INTEGER :: mx,nqty,ix
       REAL(r8), DIMENSION(:), POINTER :: xs,f,f1,f2,f3
@@ -118,13 +120,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 3. spline_fit.
+c     subprogram 3. spline_fit_ahg.
 c     fits real functions to cubic splines.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE spline_fit(spl,endmode)
+      SUBROUTINE spline_fit_ahg(spl,endmode)
       
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
@@ -215,7 +217,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE spline_fit
+      END SUBROUTINE spline_fit_ahg
 c-----------------------------------------------------------------------
 c     subprogram 4. spline_fac.
 c     sets up matrix for cubic spline fitting.
@@ -1373,6 +1375,31 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_get_yp
+c-----------------------------------------------------------------------
+c     subprogram 18. spline_fit.
+c     switch between cubic splines.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_fit(spl,endmode)
+      
+      TYPE(spline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+c-----------------------------------------------------------------------
+c     switch between two spline_fit.
+c-----------------------------------------------------------------------
+      IF (spline_ha.AND.(endmode.EQ."extrap".OR.endmode.EQ."natural"))
+     &THEN
+         CALL spline_fit_ha(spl,endmode)
+      ELSE
+         CALL spline_fit_ahg(spl,endmode)
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_fit
 
 
       END MODULE spline_mod

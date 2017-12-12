@@ -11,7 +11,7 @@ c-----------------------------------------------------------------------
 c     0. cspline_mod.
 c     1. cspline_alloc.
 c     2. cspline_dealloc.
-c     3. cspline_fit_old.
+c     3. cspline_fit_ahg.
 c     4. cspline_fac.
 c     5. cspline_eval.
 c     5a. cspline_eval_external.
@@ -24,7 +24,8 @@ c     11. cspline_trilus.
 c     12. cspline_sherman.
 c     13. cspline_morrison.
 c     14. cspline_copy.
-c     15. cspline_fit.
+c     15. cspline_fit_ha.
+c     16. cspline_fit.
 c-----------------------------------------------------------------------
 c     subprogram 0. cspline_type definition.
 c     defines cspline_type.
@@ -117,13 +118,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_dealloc
 c-----------------------------------------------------------------------
-c     subprogram 3. cspline_fit_old.
+c     subprogram 3. cspline_fit_ahg.
 c     fits complex functions to cubic splines.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE cspline_fit_old(spl,endmode)
+      SUBROUTINE cspline_fit_ahg(spl,endmode)
       
       TYPE(cspline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
@@ -214,7 +215,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE cspline_fit_old
+      END SUBROUTINE cspline_fit_ahg
 c-----------------------------------------------------------------------
 c     subprogram 4. cspline_fac.
 c     sets up matrix for cubic spline fitting.
@@ -1066,13 +1067,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_copy
 c-----------------------------------------------------------------------
-c     subprogram 15. cspline_fit.
+c     subprogram 15. cspline_fit_ha.
 c     fits complex functions to cubic splines.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE cspline_fit(spl,endmode)
+      SUBROUTINE cspline_fit_ha(spl,endmode)
 
       TYPE(cspline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
@@ -1107,6 +1108,32 @@ c-----------------------------------------------------------------------
       spl%periodic=rspl%periodic
 
       CALL spline_dealloc(rspl)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_fit_ha
+c-----------------------------------------------------------------------
+c     subprogram 16. cspline_fit.
+c     switch between  cubic splines.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_fit(spl,endmode)
+
+      TYPE(cspline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+c-----------------------------------------------------------------------
+c     switch between csplines.
+c-----------------------------------------------------------------------
+      IF (spline_ha.AND.(endmode.EQ."extrap".OR.endmode.EQ."natural"))
+     &THEN
+         CALL cspline_fit_ha(spl,endmode)
+      ELSE
+         CALL cspline_fit_ahg(spl,endmode)
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
