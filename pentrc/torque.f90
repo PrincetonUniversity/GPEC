@@ -142,7 +142,7 @@ module torque
     use netcdf
 
     implicit none
-    
+
     real(r8) :: atol_psi = 1e-3, rtol_psi= 1e-6
     real(r8) :: psi_warned = 0.0
     logical :: tdebug=.false., output_ascii =.false., output_netcdf=.true.

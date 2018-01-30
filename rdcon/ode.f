@@ -346,7 +346,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e9.3,0p,a,f6.3)
+ 10   FORMAT(1x,a,1p,e10.3,0p,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -359,7 +359,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     fixup solution at singular surface.
 c-----------------------------------------------------------------------
-      WRITE(*,10)"psi = ",sing(ising)%psifac,", q = ",sing(ising)%q
+      WRITE(*,10)"psi =",sing(ising)%psifac,", q = ",sing(ising)%q
       CALL ode_unorm(.TRUE.)
 c-----------------------------------------------------------------------
 c     diagnose solution before reinitialization.
@@ -555,12 +555,12 @@ c-----------------------------------------------------------------------
          ipert=errloc(1)
          isol=errloc(2)
          ieq=errloc(3)
-         WRITE(message,'(4(a,i3),1p,3(a,e9.3))')
+         WRITE(message,'(4(a,i3),1p,3(a,e10.3))')
      $        "Termination by ode_step"//CHAR(10)
      $        //" ipert = ",ipert,", ieq = ",ieq,", isol = ",isol,
      $        ", msol = ",msol,CHAR(10)
-     $        //" errmax = ",errmax,", ewt = ",ewtmax,
-     $        ", atol = ",ABS(atol(ipert,isol,ieq))
+     $        //" errmax =",errmax,", ewt =",ewtmax,
+     $        ", atol =",ABS(atol(ipert,isol,ieq))
          CALL program_stop(message)
       ENDIF
 c-----------------------------------------------------------------------
@@ -602,7 +602,7 @@ c-----------------------------------------------------------------------
       IF(diagnose2)THEN
          OPEN(UNIT=debug_unit,FILE="unorm.out",STATUS="UNKNOWN")
          DO isol=1,msol
-            WRITE(debug_unit,'(a,i2,a,1p,e9.3)')
+            WRITE(debug_unit,'(a,i2,a,1p,e10.3)')
      $           " isol = ",isol,", unorm = ",unorm(isol)
             WRITE(debug_unit,10)
             DO ipert=1,mpert
@@ -669,7 +669,7 @@ c     format statements.
 c-----------------------------------------------------------------------
  10   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
      $     "eval1"/)
- 20   FORMAT(1x,a,i6,a,1p,e9.3,0p,a,f6.3)
+ 20   FORMAT(1x,a,i6,a,1p,e10.3,0p,a,f6.3)
  30   FORMAT(2x,"mlow",1x,"mhigh",1x,"mpert",2x,"msol",1x,"ipert0",
      $     3x,"psifac",7x,"q",7x,"singfac"//5i6,1p,3e11.3/)
  40   FORMAT(2(a,i3))
@@ -701,7 +701,7 @@ c-----------------------------------------------------------------------
       WRITE(crit_out_unit,10)
       WRITE(crit_out_unit,20)
      $     "Gaussian Reduction at istep = ",istep,
-     $     ", psi = ",psifac,", q = ",q
+     $     ", psi =",psifac,", q = ",q
       IF(.NOT. sing_flag)WRITE(crit_out_unit,10)
       istate=1
       flag_count=0

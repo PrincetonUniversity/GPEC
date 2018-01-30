@@ -696,10 +696,10 @@ c-----------------------------------------------------------------------
          emax=MAXVAL(ABS(error))
          lmax=MAXVAL(errlog)
          jmax=MAXLOC(errlog)
-         WRITE(*,'(1p,3(a,e9.3))')
-     $        " fxmax = ",fxmax,", fymax = ",fymax,", smax = ",smax
+         WRITE(*,'(1p,3(a,e10.3))')
+     $        " fxmax =",fxmax,", fymax =",fymax,", smax =",smax
          WRITE(*,'(1p,2(a,e10.3),a,2i4)')
-     $        " emax = ",emax,", lmax = ",lmax,", maxloc = ",jmax-1
+     $        " emax =",emax,", lmax =",lmax,", maxloc = ",jmax-1
       ENDIF
 c-----------------------------------------------------------------------
 c     write contour plot.

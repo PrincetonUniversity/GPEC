@@ -942,15 +942,15 @@ c-----------------------------------------------------------------------
       WRITE(debug_unit,10)(TRIM(name),iqty,TRIM(name),iqty,iqty=1,2)
       WRITE(debug_unit,20)(i,mat2(i,:),i=1,2)
       WRITE(debug_unit,10)(TRIM(name),iqty,TRIM(name),iqty,iqty=1,2)
-      WRITE(debug_unit,'(1p,2(a,e9.3),a,l1/)')
-     $     " ABS(detfac) = ",ABS(detfac),", degen_tol = ",degen_tol,
+      WRITE(debug_unit,'(1p,2(a,e10.3),a,l1/)')
+     $     " ABS(detfac) =",ABS(detfac),", degen_tol =",degen_tol,
      $     ", degen = ",degen
 c-----------------------------------------------------------------------
 c     write output.
 c-----------------------------------------------------------------------
       WRITE(unit,'(a/)')TRIM(name)//":"
       DO iorder=0,norder
-         WRITE(debug_unit,'(a,i2,a,1p,e9.3)')" iorder = ",iorder,
+         WRITE(debug_unit,'(a,i2,a,1p,e10.3)')" iorder =",iorder,
      $        ", MAXVAL("//TRIM(name)//") = ",
      $        MAXVAL(ABS(mat(:,:,:,iorder)))
          WRITE(debug_unit,30)(TRIM(name),iqty,TRIM(name),iqty,iqty=1,2)
@@ -999,10 +999,10 @@ c-----------------------------------------------------------------------
      $     ", sing_order = ",sing_order,", singp%order = ",singp%order
       WRITE(debug_unit,'(1p,2(a,e10.3),a,2i3)')" q = ",singp%q,
      $     ", di = ",singp%di,", r2 = ",singp%r2
-      WRITE(debug_unit,'(1p,3(a,e9.3)/)')
-     $     " alpha = ",REAL(singp%alpha),
-     $     ", alpha+0.5 = ",REAL(singp%alpha)+.5,
-     $     ", alpha-0.5 = ",REAL(singp%alpha)-.5
+      WRITE(debug_unit,'(1p,3(a,e10.3)/)')
+     $     " alpha =",REAL(singp%alpha),
+     $     ", alpha+0.5 =",REAL(singp%alpha)+.5,
+     $     ", alpha-0.5 =",REAL(singp%alpha)-.5
 c-----------------------------------------------------------------------
 c     write matrices.
 c-----------------------------------------------------------------------
