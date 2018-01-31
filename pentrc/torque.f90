@@ -300,7 +300,7 @@ module torque
 
         ! set species
         if(electron)then
-            chrg = e
+            chrg = -1*e
             mass = me
             s = 2
         else
@@ -1014,7 +1014,7 @@ module torque
         ! for flux calculations
         allocate(gam(2*nl+1),chi(2*nl+1))
         if(electron)then
-            chrg = e
+            chrg = -1*e
             s = 2
         else
             chrg = zi*e
@@ -1254,7 +1254,7 @@ module torque
 
         ! for flux calculation
         if(electron)then
-            chrg = e
+            chrg = -1*e
             s = 2
         else
             chrg = zi*e
@@ -1707,7 +1707,7 @@ module torque
 
         ! set species
         if(electron)then
-            chrg = e
+            chrg = -1*e
             mass = me
             s = 2
         else
@@ -1835,7 +1835,7 @@ module torque
 
         ! set species
         if(electron)then
-            chrg = e
+            chrg = -1*e
             mass = me
             s = 2
         else

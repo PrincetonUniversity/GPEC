@@ -687,16 +687,8 @@ module energy_integration
     !*ARGUMENTS:
     !    n : integer.
     !       mode number
-    !    zi : integer (in)
-    !       Ion charge in fundamental units (e).
-    !    mi : integer (in)
-    !       Ion mass (units of proton mass).
-    !    electron : logical
-    !       Calculate quantities for electrons (zi,mi ignored)
-    !    method : string
-    !       Label inserted in output file names.
-    !    table : real 2D
-    !       Table of values writen to file
+    !    opt_label : string
+    !       Optional addition to the file name
     !
     !-----------------------------------------------------------------------
         implicit none
