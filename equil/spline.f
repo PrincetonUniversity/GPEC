@@ -28,6 +28,8 @@ c     15. spline_fit_ha.
 c     16. spline_fill_matrix.
 c     17. spline_get_yp.
 c     18. spline_fit.
+c     19. spline_thomas.
+c     20. spline_classic.
 c-----------------------------------------------------------------------
 c     subprogram 0. spline_type definition.
 c     defines spline_type.
@@ -1390,8 +1392,12 @@ c-----------------------------------------------------------------------
 c     switch between two spline_fit.
 c-----------------------------------------------------------------------
       IF (spline_ha.AND.(endmode.EQ."extrap".OR.endmode.EQ."natural"))
-     &THEN
-         CALL spline_fit_ha(spl,endmode)
+     $THEN
+         IF (endmode=="natural".OR.endmode=="extrap") THEN
+            CALL spline_classic(spl,endmode)
+         ELSE 
+            CALL spline_fit_ha(spl,endmode)
+         ENDIF
       ELSE
          CALL spline_fit_ahg(spl,endmode)
       ENDIF
@@ -1400,6 +1406,187 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_fit
+c-----------------------------------------------------------------------
+c     subprogram 19. spline_thomas.
+c     thomas method to solve tri-diagnol matrix.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_thomas_v1(a,b,c,f,n,m)
+      
+      INTEGER, INTENT(IN):: n,m
+      REAL(r8), DIMENSION(n), INTENT(INOUT):: a,b,c
+      REAL(r8), DIMENSION(n,m), INTENT(INOUT):: f
+      REAL(r8), DIMENSION(0:n):: p
+      REAL(r8), DIMENSION(0:n,m):: q
+      REAL(r8), DIMENSION(n,m):: x
+      REAL(r8) :: denom
+      INTEGER:: i  
+c-----------------------------------------------------------------------
+c     calculate tri-diagno matrix
+c     a=[A(1,2),A(2,3),...,A(n-1,n)];
+c     b=[A(1,1),A(2,2),...,A(n,n)];
+c     c=[A(2,1),A(3,2),...,A(n,n-1)];
+c     f is n row m column matrix
+c-----------------------------------------------------------------------
+      a(1) = 0
+      c(n) = 0
+      p=0
+      q=0
+      x=0
+c forward elimination
+      DO i = 1, n
+         denom = b(i) + a(i)*p(i-1)
+         p(i) = -c(i) /denom
+         q(i,:) = (f(i,:)-a(i)*q(i-1,:)) /denom
+      ENDDO
+c back substitution
+      DO i = n, 1, -1
+         x(i,:) = p(i)*x(i+1,:) + q(i,:)
+      ENDDO
+      f=x
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_thomas_v1
+c-----------------------------------------------------------------------
+c     subprogram 19. spline_thomas.
+c     thomas method to solve tri-diagnol matrix.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+     SUBROUTINE spline_thomas(l,d,u,b,n,m)
 
+      INTEGER, INTENT(IN):: n,m
+      REAL(r8), DIMENSION(n), INTENT(INOUT):: d
+      REAL(r8), DIMENSION(n-1), INTENT(INOUT):: l,u
+      REAL(r8), DIMENSION(n,m), INTENT(INOUT):: b
+      INTEGER:: i
+c-----------------------------------------------------------------------
+c     calculate tri-diagno matrix
+c     l=[A(1,2),A(2,3),...,A(n-1,n)];
+c     d=[A(1,1),A(2,2),...,A(n,n)];
+c     u=[A(2,1),A(3,2),...,A(n,n-1)];
+c     b is n row m column matrix
+c-----------------------------------------------------------------------
+      DO i = 2, n
+         l(i-1) = l(i-1)/d(i-1)
+         d(i) = d(i) - u(i-1) * l(i-1)
+         b(i,:) = b(i,:) - b(i-1,:) * l(i-1)
+      ENDDO
 
+      b(n,:) = b(n,:) / d(n);
+      DO i = n-1, 1, -1
+         b(i,:) = (b(i,:) - u(i) * b(i+1,:)) / d(i);
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_thomas
+c-----------------------------------------------------------------------
+c     subprogram 20. spline_classic.
+c     classical way to solve spline 
+c     no periodic and not-a-knot B.C.
+c     g=a+b(x-xi)+c(x-xi)^2+d(x-xi)^3
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_classic(spl,endmode)
+      TYPE(spline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+      REAL(r8), DIMENSION(:),ALLOCATABLE :: d,l,u,h
+      REAL(r8), DIMENSION(:,:),ALLOCATABLE :: r
+      REAL(r8), DIMENSION(0:spl%mx) :: xfac
+
+      INTEGER :: iside,iqty,i
+      REAL(r8),DIMENSION(spl%nqty) :: bs,cs,ds
+c-----------------------------------------------------------------------
+c     extract powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         DO iqty=1,spl%nqty
+            IF(spl%xpower(iside,iqty) /= 0)THEN
+               xfac=1/ABS(spl%xs-spl%x0(iside))**spl%xpower(iside,iqty)
+               spl%fs(:,iqty)=spl%fs(:,iqty)*xfac
+            ENDIF
+         ENDDO
+      ENDDO
+      ALLOCATE (d(0:spl%mx),l(spl%mx),u(spl%mx),r(0:spl%mx,spl%nqty))
+      ALLOCATE (h(0:spl%mx-1))
+c-----------------------------------------------------------------------
+c     compute tridiagnol matrix for natural B.C.
+c-----------------------------------------------------------------------
+      DO i=0,spl%mx-1
+         h(i)=spl%xs(i+1)-spl%xs(i)
+      ENDDO
+
+      d(0)=1
+      DO i=1,spl%mx-1
+         d(i)=2*(h(i-1)+h(i))
+      ENDDO
+      d(spl%mx)=1
+
+      DO i=1,spl%mx-1
+         l(i)=h(i-1)
+      ENDDO
+      l(spl%mx)=0
+
+      u(1)=0
+      DO i=2,spl%mx
+         u(i)=h(i-1)
+      ENDDO
+
+      r(0,:)=0
+      DO i=1,spl%mx-1
+         r(i,:)=( (spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $           -(spl%fs(i,:)-spl%fs(i-1,:))/h(i-1) )*6
+      ENDDO
+      r(spl%mx,:)=0
+
+      IF (endmode=="extrap") THEN
+         CALL spline_get_yp(spl%xs(0:3),spl%fs(0:3,:),
+     $                      spl%xs(0),r(0,:),spl%nqty)
+         CALL spline_get_yp(spl%xs(spl%mx-3:spl%mx),
+     $        spl%fs(spl%mx-3:spl%mx,:),spl%xs(spl%mx),
+     $        r(spl%mx,:),spl%nqty)
+         d(0)=2*h(0)
+         d(spl%mx)=2*h(spl%mx-1)
+         u(1)=h(0)
+         l(spl%mx)=h(spl%mx-1)
+         r(0,:)=( (spl%fs(1,:)-spl%fs(0,:))/h(0) - r(0,:) )*6
+         r(spl%mx,:)=( r(spl%mx,:) 
+     $  -(spl%fs(spl%mx,:)-spl%fs(spl%mx-1,:))/h(spl%mx-1) )*6
+
+      ENDIF
+c-----------------------------------------------------------------------
+c     solve and contrruct spline.
+c-----------------------------------------------------------------------
+
+      CALL spline_thomas(l,d,u,r,spl%mx+1,spl%nqty)
+
+      DO i=0, spl%mx-1
+         bs=(spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $    - 0.5*h(i)*r(i,:)
+     $    - h(i)*(r(i+1,:)-r(i,:))/6
+         spl%fs1(i,:)=bs
+      ENDDO
+      ds=(r(spl%mx,:)-r(spl%mx-1,:))/(h(spl%mx-1)*6)
+      cs=r(spl%mx-1,:)*0.5
+      i=spl%mx-1
+      bs=(spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $    - 0.5*h(i)*r(i,:)
+     $    - h(i)*(r(i+1,:)-r(i,:))/6
+      i=spl%mx
+      spl%fs1(i,:)=bs+h(i-1)*(cs*2+h(i-1)*ds*3)
+      DEALLOCATE (d,l,u,r,h)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_classic
       END MODULE spline_mod
