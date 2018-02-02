@@ -1016,7 +1016,9 @@ c-----------------------------------------------------------------------
       END SUBROUTINE spline_copy
 c-----------------------------------------------------------------------
 c     subprogram 15. spline_fit_ha.
-c     fits real functions to highly accurate cubic splines.
+c     fits real functions to highly accurate cubic splines
+c     using generalized matrix solves: sacrificing speed for accuracy
+c     and generalizability
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -1393,11 +1395,7 @@ c     switch between two spline_fit.
 c-----------------------------------------------------------------------
       IF (spline_ha.AND.(endmode.EQ."extrap".OR.endmode.EQ."natural"))
      $THEN
-         IF (endmode=="natural".OR.endmode=="extrap") THEN
-            CALL spline_classic(spl,endmode)
-         ELSE 
-            CALL spline_fit_ha(spl,endmode)
-         ENDIF
+         CALL spline_classic(spl,endmode)
       ELSE
          CALL spline_fit_ahg(spl,endmode)
       ENDIF
@@ -1458,7 +1456,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-     SUBROUTINE spline_thomas(l,d,u,b,n,m)
+      SUBROUTINE spline_thomas(l,d,u,b,n,m)
 
       INTEGER, INTENT(IN):: n,m
       REAL(r8), DIMENSION(n), INTENT(INOUT):: d
