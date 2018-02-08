@@ -236,7 +236,7 @@ c-----------------------------------------------------------------------
 c     write the plasma matrix.
 c-----------------------------------------------------------------------
       WRITE(out_unit,'(/1x,a/)')"Plasma Energy Matrix:"
-      DO isol=1,2
+      DO isol=1,mpert
          WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,", m = ",m(isol)
          WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
          WRITE(out_unit,'(i3,1p,3e13.5)')
