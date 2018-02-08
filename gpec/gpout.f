@@ -131,7 +131,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: matmm
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert) :: wtfun,ilfun,rfun,pfun
-      CHARACTER(2048) :: header
 
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*) "Writing response matrices"
@@ -252,7 +251,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,I4,2(1x,es12.3))')i,s(i),sts(i)
       ENDDO
       WRITE(out_unit,*)
-      
+
       WRITE(out_unit,*)"Eigenvalues (e) and Singular Values (s)"
       WRITE(out_unit,*)" jac_type = ",jac_type
       WRITE(out_unit,*)"  L = Vacuum Inductance"
@@ -306,7 +305,7 @@ c-----------------------------------------------------------------------
      $           reluctevmats(resp_index,j,i),
      $           wt(j,i),a(j,i),
      $           plas_indinvevmats(resp_index,j,i)
-         ENDDO 
+         ENDDO
       ENDDO
       WRITE(out_unit,*)
 
@@ -390,20 +389,20 @@ c-----------------------------------------------------------------------
      $           reluctmats(resp_index,j,i),
      $           plas_indinvmats(resp_index,j,i),
      $           a(j,i)
-         ENDDO 
+         ENDDO
       ENDDO
       WRITE(out_unit,*)
 
       CALL ascii_close(out_unit)
-      
+
       ! LOGAN - Eigenvectors on control surface in functions
       IF(fun_flag) THEN
         DO i=1,mpert
-          CALL iscdftb(mfac,mpert,wtfun(:,i),mthsurf,wt(:,i))     
+          CALL iscdftb(mfac,mpert,wtfun(:,i),mthsurf,wt(:,i))
           CALL iscdftb(mfac,mpert,ilfun(:,i),mthsurf,
      $      plas_indinvmats(resp_index,:,i))
           CALL iscdftb(mfac,mpert,rfun(:,i),mthsurf,
-     $      reluctevmats(resp_index,:,i))    
+     $      reluctevmats(resp_index,:,i))
           CALL iscdftb(mfac,mpert,pfun(:,i),mthsurf,
      $      permeabevmats(resp_index,:,i))
         ENDDO
@@ -412,7 +411,7 @@ c-----------------------------------------------------------------------
           rfac=SQRT(rzphi%f(1))
           eta=twopi*(theta(i)+rzphi%f(2))
           r(i)=ro+rfac*COS(eta)
-          z(i)=zo+rfac*SIN(eta) 
+          z(i)=zo+rfac*SIN(eta)
         ENDDO
         IF(ascii_flag)THEN
            CALL ascii_open(out_unit,"gpec_response_fun_n"//
@@ -430,13 +429,12 @@ c-----------------------------------------------------------------------
            WRITE(out_unit,*)
            WRITE(out_unit,*)"jac_type = "//jac_type
            WRITE(out_unit,*)
-           WRITE(header,'(a16,9(1x,a16))')"r","z",
-     $       "real(P)","imag(P)","real(rho)","imag(rho)",
-     $       "real(W)","imag(W)","real(iLmda)","imag(iLmda)"
            DO j=1,mpert
              WRITE(out_unit,'(1x,2(a12,I4))')"isol =",j," n =",nn
              WRITE(out_unit,*)
-             WRITE(out_unit,*) header
+             WRITE(out_unit,'(a16,9(1x,a16))') "r","z",
+     $       "real(P)","imag(P)","real(rho)","imag(rho)",
+     $       "real(W)","imag(W)","real(iLmda)","imag(iLmda)"
              DO i=0,mthsurf
                WRITE(out_unit,'(10(es17.8e3))') r(i),z(i),
      $           pfun(i,j),rfun(i,j),wtfun(i,j),ilfun(i,j)

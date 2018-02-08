@@ -11,6 +11,8 @@ x       R
 y       Z
 
 dependent variable names
+1	Eulerian Re b_par
+2	Eulerian Im b_par
 3	Lagrangian Re mod b
 4	Lagrangian Im mod b
 
