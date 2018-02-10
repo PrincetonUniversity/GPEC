@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
       USE local_mod
       IMPLICIT NONE
      
-      LOGICAL :: spline_ha = .FALSE.
+      LOGICAL :: use_classic_splines = .TRUE.
       TYPE :: spline_type
       INTEGER :: mx,nqty,ix
       REAL(r8), DIMENSION(:), POINTER :: xs,f,f1,f2,f3
@@ -1393,8 +1393,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     switch between two spline_fit.
 c-----------------------------------------------------------------------
-      IF (spline_ha.AND.(endmode.EQ."extrap".OR.endmode.EQ."natural"))
-     $THEN
+      IF (use_classic_splines .AND.
+     $    (endmode.EQ."extrap".OR.endmode.EQ."natural"))THEN
          CALL spline_classic(spl,endmode)
       ELSE
          CALL spline_fit_ahg(spl,endmode)

@@ -1127,9 +1127,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     switch between csplines.
 c-----------------------------------------------------------------------
-      IF (spline_ha.AND.(endmode.EQ."extrap".OR.endmode.EQ."natural"))
-     &THEN
-         CALL cspline_fit_ha(spl,endmode)
+      IF (use_classic_splines .AND.
+     $    (endmode.EQ."extrap".OR.endmode.EQ."natural"))THEN
+         CALL cspline_classic(spl,endmode)
       ELSE
          CALL cspline_fit_ahg(spl,endmode)
       ENDIF
@@ -1139,4 +1139,185 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_fit
+c-----------------------------------------------------------------------
+c     subprogram 20. cspline_classic.
+c     classical way to solve spline... with complex r
+c     no periodic and not-a-knot B.C.
+c     g=a+b(x-xi)+c(x-xi)^2+d(x-xi)^3
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_classic(spl,endmode)
+      TYPE(cspline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+      REAL(r8), DIMENSION(:),ALLOCATABLE :: d,l,u,h
+      COMPLEX(r8), DIMENSION(:,:),ALLOCATABLE :: r
+      REAL(r8), DIMENSION(0:spl%mx) :: xfac
+
+      INTEGER :: iside,iqty,i
+      REAL(r8),DIMENSION(spl%nqty) :: bs,cs,ds
+c-----------------------------------------------------------------------
+c     extract powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         DO iqty=1,spl%nqty
+            IF(spl%xpower(iside,iqty) /= 0)THEN
+               xfac=1/ABS(spl%xs-spl%x0(iside))**spl%xpower(iside,iqty)
+               spl%fs(:,iqty)=spl%fs(:,iqty)*xfac
+            ENDIF
+         ENDDO
+      ENDDO
+      ALLOCATE (d(0:spl%mx),l(spl%mx),u(spl%mx),r(0:spl%mx,spl%nqty))
+      ALLOCATE (h(0:spl%mx-1))
+c-----------------------------------------------------------------------
+c     compute tridiagnol matrix for natural B.C.
+c-----------------------------------------------------------------------
+      DO i=0,spl%mx-1
+         h(i)=spl%xs(i+1)-spl%xs(i)
+      ENDDO
+
+      d(0)=1
+      DO i=1,spl%mx-1
+         d(i)=2*(h(i-1)+h(i))
+      ENDDO
+      d(spl%mx)=1
+
+      DO i=1,spl%mx-1
+         l(i)=h(i-1)
+      ENDDO
+      l(spl%mx)=0
+
+      u(1)=0
+      DO i=2,spl%mx
+         u(i)=h(i-1)
+      ENDDO
+
+      r(0,:)=0
+      DO i=1,spl%mx-1
+         r(i,:)=( (spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $           -(spl%fs(i,:)-spl%fs(i-1,:))/h(i-1) )*6
+      ENDDO
+      r(spl%mx,:)=0
+
+      IF (endmode=="extrap") THEN
+         CALL cspline_get_yp(spl%xs(0:3),spl%fs(0:3,:),
+     $                      spl%xs(0),r(0,:),spl%nqty)
+         CALL cspline_get_yp(spl%xs(spl%mx-3:spl%mx),
+     $        spl%fs(spl%mx-3:spl%mx,:),spl%xs(spl%mx),
+     $        r(spl%mx,:),spl%nqty)
+         d(0)=2*h(0)
+         d(spl%mx)=2*h(spl%mx-1)
+         u(1)=h(0)
+         l(spl%mx)=h(spl%mx-1)
+         r(0,:)=( (spl%fs(1,:)-spl%fs(0,:))/h(0) - r(0,:) )*6
+         r(spl%mx,:)=( r(spl%mx,:)
+     $  -(spl%fs(spl%mx,:)-spl%fs(spl%mx-1,:))/h(spl%mx-1) )*6
+
+      ENDIF
+c-----------------------------------------------------------------------
+c     solve and contrruct spline.
+c-----------------------------------------------------------------------
+
+      CALL cspline_thomas(l,d,u,r,spl%mx+1,spl%nqty)
+
+      DO i=0, spl%mx-1
+         bs=(spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $    - 0.5*h(i)*r(i,:)
+     $    - h(i)*(r(i+1,:)-r(i,:))/6
+         spl%fs1(i,:)=bs
+      ENDDO
+      ds=(r(spl%mx,:)-r(spl%mx-1,:))/(h(spl%mx-1)*6)
+      cs=r(spl%mx-1,:)*0.5
+      i=spl%mx-1
+      bs=(spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $    - 0.5*h(i)*r(i,:)
+     $    - h(i)*(r(i+1,:)-r(i,:))/6
+      i=spl%mx
+      spl%fs1(i,:)=bs+h(i-1)*(cs*2+h(i-1)*ds*3)
+      DEALLOCATE (d,l,u,r,h)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_classic
+c-----------------------------------------------------------------------
+c     subprogram 19. spline_thomas.
+c     thomas method to solve tri-diagnol matrix.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_thomas(l,d,u,b,n,m)
+
+      INTEGER, INTENT(IN):: n,m
+      REAL(r8), DIMENSION(n), INTENT(INOUT):: d
+      REAL(r8), DIMENSION(n-1), INTENT(INOUT):: l,u
+      COMPLEX(r8), DIMENSION(n,m), INTENT(INOUT):: b
+      INTEGER:: i
+c-----------------------------------------------------------------------
+c     calculate tri-diagno matrix
+c     l=[A(1,2),A(2,3),...,A(n-1,n)];
+c     d=[A(1,1),A(2,2),...,A(n,n)];
+c     u=[A(2,1),A(3,2),...,A(n,n-1)];
+c     b is n row m column matrix
+c-----------------------------------------------------------------------
+      DO i = 2, n
+         l(i-1) = l(i-1)/d(i-1)
+         d(i) = d(i) - u(i-1) * l(i-1)
+         b(i,:) = b(i,:) - b(i-1,:) * l(i-1)
+      ENDDO
+
+      b(n,:) = b(n,:) / d(n);
+      DO i = n-1, 1, -1
+         b(i,:) = (b(i,:) - u(i) * b(i+1,:)) / d(i);
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_thomas
+c-----------------------------------------------------------------------
+c     subprogram 17. spline_get_yp.
+c     get yi' with four points for spline boundary condtion .
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_get_yp(x,y,xi,yip,nqty)
+      INTEGER, INTENT(IN) :: nqty
+      INTEGER :: n,nrhs,lda,info,ldb,i
+      INTEGER, DIMENSION(4) :: ipiv
+      REAL(r8) :: dx
+      REAL(r8), INTENT(IN) :: xi
+      COMPLEX(r8), DIMENSION(:),INTENT(OUT) :: yip
+      REAL(r8), DIMENSION(4), INTENT(IN) :: x
+      COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: y
+      COMPLEX(r8), DIMENSION(4,nqty) :: b
+      COMPLEX(r8), DIMENSION(4,4) :: a
+      n=4
+      nrhs=nqty
+      lda=N
+      ldb=N
+      a=0
+      b=0
+
+      a(1,4)=1
+      b(1,:)=y(1,:)
+      DO i=2,n
+         dx=x(i)-x(1)
+         a(i,1)=dx*dx*dx
+         a(i,2)=dx*dx
+         a(i,3)=dx
+         a(i,4)=1
+         b(i,:)=y(i,:)
+      ENDDO
+      CALL zgesv(n,nrhs,a,lda,ipiv,b,ldb,info)
+      dx=xi-x(1)
+      yip=(3*b(1,:)*dx+2*b(2,:))*dx+b(3,:)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_get_yp
       END MODULE cspline_mod

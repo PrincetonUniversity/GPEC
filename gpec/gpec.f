@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
      $     filter_types,filter_modes,gal_flag
       NAMELIST/gpec_control/resp_index,resp_induct_flag,
      $     sing_spot,sing_npsi,reg_flag,reg_spot,
-     $     chebyshev_flag,nche,nchr,nchz
+     $     chebyshev_flag,nche,nchr,nchz,use_classic_splines
       NAMELIST/gpec_output/resp_flag,singcoup_flag,nrzeq_flag,nr,nz,
      $     singfld_flag,pmodb_flag,xbnormal_flag,rstep,jsurf_out,
      $     jac_out,power_bout,power_rout,power_bpout,power_rcout,
