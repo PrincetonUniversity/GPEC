@@ -55,37 +55,69 @@
 # use acml or lapack based on what is loaded
 ifndef ACML_HOME
     MATHHOME = $(LAPACKHOME)
+    MATHLIBS = -llapack -lblas
 else
     MATHHOME = $(ACML_HOME)
+    MATHLIBS = -lacml
 endif
 
 # specifics of which libraries are used
 #---------------------------------------
 
-# tack on lib dir to home dirs if necessary
+# tack on lib and include directories to math home if necessary
 ifneq ($(wildcard $(MATHHOME)/lib/.),)
     MATHDIR = $(MATHHOME)/lib
 else
     MATHDIR = $(MATHHOME)
 endif
-ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
-    NETCDFDIR = $(NETCDFHOME)/lib
-else
-    NETCDFDIR = $(NETCDFHOME)
-endif
-
-# tack on include dir to home dirs if necessary
 ifneq ($(wildcard $(MATHHOME)/include/.),)
     MATHINC = $(MATHHOME)/include
 else
     MATHINC = $(MATHHOME)
 endif
-ifneq ($(wildcard $(NETCDFHOME)/include/.),)
-    NETCDFINC = $(NETCDFHOME)/include
+
+# tack on lib and include directories to netcdf home if necessary
+# and catch the fact that PPPL split up fortran and c netcdf modules
+ifdef NETCDF_FORTRAN_HOME
+    ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/lib/.),)
+        NETCDFDIR = $(NETCDF_FORTRAN_HOME)/lib
+    else
+        NETCDFDIR = $(NETCDF_FORTRAN_HOME)
+    endif
+    ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/include/.),)
+        NETCDFINC = $(NETCDF_FORTRAN_HOME)/include
+    else
+        NETCDFINC = $(NETCDF_FORTRAN_HOME)
+    endif
 else
-    NETCDFINC = $(NETCDFHOME)
+    ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
+        NETCDFDIR = $(NETCDFHOME)/lib
+    else
+        NETCDFDIR = $(NETCDFHOME)
+    endif
+    ifneq ($(wildcard $(NETCDFHOME)/include/.),)
+        NETCDFINC = $(NETCDFHOME)/include
+    else
+        NETCDFINC = $(NETCDFHOME)
+    endif
+endif
+# check if the netcdf and netcdf libraries are split up or not
+ifdef NETCDF_C_HOME
+    NETCDFLIBS = -lnetcdff
+    NETCDF_C_LIBS = -lnetcdf
+    NETCDF_C_DIR = $(NETCDF_C_HOME)/lib
+else
+    ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
+        NETCDFLIBS = -lnetcdff -lnetcdf
+    else
+        NETCDFLIBS = -lnetcdf
+    endif
+    NETCDF_C_LIBS =
+    NETCD_C_CDIR = .
 endif
 
+# Intel specifics
+#----------------
 # include compiler specific libs for intel fast moves
 ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
@@ -96,18 +128,4 @@ else
     FCDIR = .
     FCLIBS = 
     FCINC = .
-endif
-
-# check if math dir has lapack or acml library
-ifneq ($(shell ls $(MATHDIR) | grep liblapack),)
-    MATHLIBS = -llapack -lblas
-else
-    MATHLIBS = -lacml
-endif
-
-# check if netcdf dir has netcdff library
-ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
-    NETCDFLIBS = -lnetcdf -lnetcdff
-else
-    NETCDFLIBS = -lnetcdf
 endif

@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS =
+FFLAGS = -vec_report0 -openmp
 IFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
@@ -53,7 +53,7 @@ pentrc:
 	cd ../pentrc; make
 
 dcon: $(OBJS)
-	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../bin
 	cp -f dcon ../bin
 

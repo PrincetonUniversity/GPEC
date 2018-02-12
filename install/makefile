@@ -2,8 +2,10 @@
 include DEFAULTS.inc
 
 # extend these variables to sub-makes
-FFLAGS ?=
+FFLAGS?="-openmp -vec_report0"
+#FFLAGS ?= "-qopenmp"  # for when we get intel/2017 sorted out
 CFLAGS ?=
+
 export FFLAGS
 export CFLAGS
 
@@ -90,8 +92,8 @@ v:
 	@echo "   using math libraries $(MATHLIBS)"
 	@echo "   from $(MATHDIR)"
 	@echo "   including $(MATHINC)"
-	@echo "   and netcdf libraries $(NETCDFLIBS)"
-	@echo "   from $(NETCDFDIR)"
+	@echo "   and netcdf libraries $(NETCDFLIBS) $(NETCDF_C_LIBS)"
+	@echo "   from $(NETCDFDIR) $(NETCDF_C_DIR)"
 	@echo "   including $(NETCDFINC)"
 	@echo "   and compiler libraries $(FCLIBS)"
 	@echo "   from $(FCDIR)"
