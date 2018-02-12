@@ -32,8 +32,11 @@
 #
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
 #   ------------------------------------------------------------
+#   
+#   Now compile using
+#    $ make FFLAGS="-openmp -vec_report0"
 #
-# On venus.gat.com
+# On iris.gat.com
 #   <Proper compiler options need to be updated for v1.2>
 #
 # On mac OSX
@@ -118,7 +121,8 @@ endif
 # include compiler specific libs for intel fast moves
 ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
-    FCLIBS = -lintlc -limf
+    FCLIBS = -lirc -limf # irc.a needed for static compile
+    #FCLIBS = -lintlc -limf # intlc was new for intel?
     FCINC = $(F90HOME)/include/intel64
 else
     FCDIR = .
