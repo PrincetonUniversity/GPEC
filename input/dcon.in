@@ -33,6 +33,8 @@
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
+
+    use_classic_splines = t ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
 &DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H

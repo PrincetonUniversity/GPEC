@@ -30,7 +30,7 @@ c-----------------------------------------------------------------------
      $    pentrc_timer=>timer
       IMPLICIT NONE
 
-      LOGICAL :: cyl_flag=.FALSE.
+      LOGICAL :: use_classic_splines_for_dcon, cyl_flag=.FALSE.
       INTEGER :: mmin,ipsi,m
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
@@ -83,6 +83,7 @@ c-----------------------------------------------------------------------
       CALL ascii_close(in_unit)
       CALL OMP_SET_NUM_THREADS(parallel_threads)
       delta_mhigh=delta_mhigh*2
+      use_classic_splines_for_dcon = use_classic_splines
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
@@ -94,6 +95,8 @@ c-----------------------------------------------------------------------
       CALL equil_out_diagnose(.FALSE.,out_unit)
       CALL equil_out_write_2d
       IF(direct_flag)CALL bicube_dealloc(psi_in)
+      ! enables different settings for dcon and equilibrium splines
+      use_classic_splines = use_classic_splines_for_dcon
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
