@@ -50,7 +50,7 @@ equil:
 	cd ../equil; make
 
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
 	mkdir -p ../bin

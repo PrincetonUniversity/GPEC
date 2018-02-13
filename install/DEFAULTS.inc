@@ -108,12 +108,14 @@ ifdef NETCDF_C_HOME
     NETCDF_C_DIR = $(NETCDF_C_HOME)/lib
 else
     ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
-        NETCDFLIBS = -lnetcdff -lnetcdf
+        NETCDFLIBS = -lnetcdff
+        NETCDF_C_LIBS = -lnetcdf
+        NETCDF_C_DIR = $(NETCDFDIR)
     else
         NETCDFLIBS = -lnetcdf
+        NETCDF_C_LIBS = $(NETCDFDIR)
+        NETCDF_C_DIR = -lnetcdf
     endif
-    NETCDF_C_LIBS =
-    NETCD_C_CDIR = .
 endif
 
 # Intel specifics
