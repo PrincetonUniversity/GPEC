@@ -567,7 +567,8 @@ c     declarations.
 c-----------------------------------------------------------------------      
       SUBROUTINE free_get_wvac()
       LOGICAL, PARAMETER :: complex_flag=.FALSE.
-      INTEGER :: ipert
+      INTEGER :: ipert, nfm2, nths2
+      REAL(r8) :: kernelsignin
       REAL(r8), DIMENSION(mpert) :: singfac
 c-----------------------------------------------------------------------
 c     allocate vacuum matrix.
@@ -581,7 +582,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
-      CALL mscvac(wvac,mpert,mtheta,mthvac,complex_flag)
+      kernelsignin = 1.0
+      CALL mscvac(wvac,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
+     $     kernelsignin)
       CALL system("rm -f ahg2msc.out")
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
