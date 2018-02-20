@@ -498,6 +498,9 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: u,a,vt
 
       CHARACTER(72), DIMENSION(nsingcoup) :: titles
+      INTEGER :: idid, mdid, cdid, mc_id
+      INTEGER, DIMENSION(nsingcoup) :: c_id, r_id, s_id,
+     $     cl_id, rl_id, sl_id
 
       TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
@@ -712,7 +715,7 @@ c-----------------------------------------------------------------------
          tmhigh = lmhigh
          tmpert = lmpert
          tmfac= lmfac
-         DO i=1,5
+         DO i=1,nsingcoup
             singcoup_xfo(i,:,:) = MATMUL(singcoup_xf(i,:,:),convmat)
          ENDDO
       ELSE
@@ -759,19 +762,23 @@ c-----------------------------------------------------------------------
 
       ! calculate the output coodinat matrix SVD 
       ! re-normalize such that overlap dot products operate on unweighted fields
-      DO i=1,5
+      DO i=1,nsingcoup
          work=0
          rwork=0
          s=0
          u=0
          vt=0
-         a=MATMUL(singcoup_xfo(i, :, :), ftop)
+         ! todo: I think this should actually be fldflxmat -> we had C.Phi_x and we want (C.W).(W^-1.Phi_x) where W = fldflxmat ~ sqrt(A)
+         a=MATMUL(singcoup_xfo(i, :, :), ftop)                 ! resonant coupling of power normalized field
          CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $        work,lwork,rwork,info)
          singcoup_svals_xo(i,:) = s
-         singcoup_rsv_xeo(i,:,:) = CONJG(TRANSPOSE(vt))
+         singcoup_rsv_xeo(i,:,:) = CONJG(TRANSPOSE(vt))        ! right singular vectors of power normalized coupling
+         ! we want to record Vt.W so Vt.W.b_x = Vt.Phi_xe, and we do a dagger so the innder product can be a simple multiplication
+         ! todo: this should be dagger(Vt.W) = dagger(W).dragger(Vt)... so are we missing a transpose on fldfluxmat?
+         ! todo: note I believe W is hermitian so dagger(Vt.W) = W.dragger(Vt)
          singcoup_rsv_xo(i,:,:) = MATMUL(CONJG(fldflxmat),
-     $                                  CONJG(TRANSPOSE(vt)))
+     $                                  CONJG(TRANSPOSE(vt)))  ! vectors converted to flux so inner product with b is ~Ab^2
       ENDDO
 
       DEALLOCATE(s,u,a,vt,work,rwork,ipiv)
@@ -787,19 +794,19 @@ c-----------------------------------------------------------------------
      $      localcoup_rsv_xeo(nsingcoup,tmpert,osing),
      $      localcoup_rsv_xo(nsingcoup,tmpert,osing))
 
-         DO i=1,5
+         DO i=1,nsingcoup
             work=0
             rwork=0
             s=0
             u=0
             vt=0
-            a=MATMUL(singcoup_xfo(i,ol:ou,:),ftop)
+            a=MATMUL(singcoup_xfo(i,ol:ou,:),ftop)                 ! resonant coupling of power normalized field
             CALL zgesvd('S','S',osing,tmpert,a,osing,s,u,osing,vt,osing,
      $           work,lwork,rwork,info)
             localcoup_svals_xo(i,:) = s
-            localcoup_rsv_xeo(i,:,:) = CONJG(TRANSPOSE(vt))
+            localcoup_rsv_xeo(i,:,:) = CONJG(TRANSPOSE(vt))         ! right singular vectors of power normalized coupling
             localcoup_rsv_xo(i,:,:) = MATMUL(CONJG(fldflxmat),
-     $                                     CONJG(TRANSPOSE(vt)))
+     $                                       CONJG(TRANSPOSE(vt)))  ! vectors converted to flux so inner product with b is ~Ab^2
          ENDDO
          DEALLOCATE(s,u,a,vt,work,rwork,ipiv)
       ENDIF
@@ -840,6 +847,7 @@ c-----------------------------------------------------------------------
                WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
                DO j=1,tmpert
                   WRITE(out_unit,'(1x,I4,2(es17.8e3))') tmfac(j),
+                     ! todo: record power normalized matrix actually used in SVD
      $               REAL(singcoup_xfo(i,ising,j)),
      $               AIMAG(singcoup_xfo(i,ising,j))
                ENDDO
@@ -923,6 +931,104 @@ c-----------------------------------------------------------------------
             ENDDO
             CALL ascii_close(out_unit)
          ENDIF
+      ENDIF
+
+c-----------------------------------------------------------------------
+c     Write the same output coordinate data to netcdf
+c-----------------------------------------------------------------------
+      IF(netcdf_flag)THEN
+         ! append netcdf file
+         CALL check( nf90_open(mncfile,nf90_write,mncid) )
+
+         ! references to pre-defined dimensions
+         CALL check( nf90_inq_dimid(mncid,"i",idid) )
+         CALL check( nf90_inq_dimid(mncid,"m_out",mdid) )
+
+         ! start definitions
+         CALL check( nf90_redef(mncid))
+         IF(debug_flag) PRINT *,"  Defining vecs"
+         CALL check( nf90_def_dim(mncid,"mode_C",msing,cdid) )
+         CALL check( nf90_def_var(mncid,"mode_C",nf90_int,cdid,
+     $               mc_id) )
+         CALL check( nf90_put_att(mncid, mc_id ,"long_name",
+     $    "Singular coupling mode index") )
+
+         names(1) = "Effective energy normalized resonant flux"
+         names(2) = "Energy normalized resonant current"
+         names(3) = "Normalized island width"
+         names(4) = "Energy normalized penetrated flux"
+         names(5) = "Unitless delta prime"
+         tags = (/'f', 's', 'i', 'p', 'd'/)
+         ! todo: confirm units
+         units = (/'none', 'A/T ', 'm/T ', 'none', '1/T '/)
+         DO i=1,nsingcoup
+            CALL check( nf90_def_var(mncid,"C_"//tags(i)//"_x_out",
+     $           nf90_double, (/mdid,cdid,idid/), c_id(i)) )
+            CALL check( nf90_put_att(mncid,c_id(i),"long_name",
+     $           trim(names(i))//"coupling to external flux") )
+            CALL check( nf90_put_att(mncid,c_id(i),"units",units(i)) )
+            CALL check( nf90_def_var(mncid,
+     $           "C_"//tags(i)//"_xb_out_singvec",
+     $           nf90_double,(/mdid,cdid,idid/),r_id(i)) )
+            CALL check( nf90_put_att(mncid,r_id(i),"long_name",
+     $           trim(names(i))//" coupling right-singular vectors") )
+            CALL check( nf90_def_var(mncid,
+     $           "C_"//tags(i)//"_xe_out_singval",
+     $           nf90_double,(/cdid/),s_id(i)) )
+            CALL check( nf90_put_att(mncid,s_id(i),"long_name",
+     $           trim(names(i))//" coupling singular values") )
+            CALL check( nf90_put_att(mncid,s_id(i),"units",units(i)) )
+            IF(osing<msing)THEN
+               CALL check( nf90_def_var(mncid,"C_l"//tags(i)//"_x_out",
+     $              nf90_double, (/mdid,cdid,idid/), cl_id(i)) )
+               CALL check( nf90_put_att(mncid,cl_id(i),"long_name",
+     $           "Local "//trim(names(i))//"coupling to external flux"))
+               CALL check(nf90_put_att(mncid,cl_id(i),"units",units(i)))
+               CALL check( nf90_def_var(mncid,
+     $              "C_l"//tags(i)//"_xb_out_singvec",
+     $              nf90_double,(/mdid,cdid,idid/),rl_id(i)) )
+               CALL check( nf90_put_att(mncid,rl_id(i),"long_name",
+     $          "Local "//trim(names(i))//" coupling right singular"))
+               CALL check( nf90_def_var(mncid,
+     $              "C_l"//tags(i)//"_xe_out_singval",
+     $              nf90_double,(/cdid/),sl_id(i)) )
+               CALL check( nf90_put_att(mncid,sl_id(i),"long_name",
+     $          "Local "//trim(names(i))//" coupling singular values"))
+               CALL check(nf90_put_att(mncid,sl_id(i),"units",units(i)))
+            ENDIF 
+         ENDDO
+
+         ! end definitions
+         CALL check( nf90_enddef(mncid) )
+
+         ! write variables
+         IF(debug_flag) PRINT *,"  Putting variables"
+         modec = (/(i,i=1,msing)/)
+         CALL check( nf90_put_var(mncid,mc_id,modec) )
+         DO i=1,nsingcoup
+            CALL check( nf90_put_var(mncid,c_id(i),RESHAPE(
+     $           (/REAL(singcoup_xfo(i,:,:)),
+     $             AIMAG(singcoup_xfo(i,:,:))/),(/tmpert,msing,2/))))
+            CALL check( nf90_put_var(mncid,r_id(i),RESHAPE(
+     $           (/REAL(singcoup_rsv_xo(i,:,:)),
+     $             AIMAG(singcoup_rsv_xo(i,:,:))/),(/tmpert,msing,2/))))
+            CALL check( nf90_put_var(mncid,s_id(i),
+     $           singcoup_svals_xo(i,ising)) )
+            IF(osing<msing)THEN
+               CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
+     $              (/REAL(localcoup_xfo(i,:,:)),
+     $              AIMAG(localcoup_xfo(i,:,:))/),(/tmpert,msing,2/))))
+               CALL check( nf90_put_var(mncid,rl_id(i),RESHAPE(
+     $              (/REAL(localcoup_rsv_xo(i,:,:)),
+     $              AIMAG(localcoup_rsv_xo(i,:,:))/),
+     $              (/tmpert,msing,2/))))
+               CALL check( nf90_put_var(mncid,sl_id(i),
+     $              localcoup_svals_xo(i,ising)))
+            ENDIF
+         ENDDO
+
+         ! close the file
+         CALL check( nf90_close(mncid) )
       ENDIF
 
 c-----------------------------------------------------------------------
