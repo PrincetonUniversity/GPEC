@@ -497,7 +497,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: work
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: u,a,vt
 
-      CHARACTER(72), DIMENSION(nsingcoup) :: titles
+      CHARACTER(72), DIMENSION(nsingcoup) :: titles, names
+      CHARACTER(1), DIMENSION(nsingcoup) :: tags
       INTEGER :: idid, mdid, cdid, mc_id
       INTEGER, DIMENSION(nsingcoup) :: c_id, r_id, s_id,
      $     cl_id, rl_id, sl_id
@@ -834,7 +835,7 @@ c-----------------------------------------------------------------------
          titles(2) = "coupling matrix to singular currents"
          titles(3) = "coupling matrix to island half-widths"
          titles(4) = "coupling matrix to to penetrated resonant fields"
-         titles(5) = "coupling matrix to unitless delta-prime"
+         titles(5) = "coupling matrix to unitless Delta"
 
          DO i=1,nsingcoup
             WRITE(out_unit,*) "The "//trim(titles(i))
@@ -957,7 +958,7 @@ c-----------------------------------------------------------------------
          names(2) = "Energy normalized resonant current"
          names(3) = "Normalized island width"
          names(4) = "Energy normalized penetrated flux"
-         names(5) = "Unitless delta prime"
+         names(5) = "Unitless Delta"
          tags = (/'f', 's', 'i', 'p', 'd'/)
          ! todo: confirm units
          units = (/'none', 'A/T ', 'm/T ', 'none', '1/T '/)
@@ -1709,7 +1710,7 @@ c-----------------------------------------------------------------------
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
-     $        "real(deltaprime)","imag(deltaprime)",
+     $        "real(Delta)","imag(Delta)",
      $        "islandhwidth","chirikov"
          DO ising=1,msing
             WRITE(out_unit,'(1x,f6.3,13(es17.8e3))')
