@@ -55,7 +55,7 @@ c-----------------------------------------------------------------------
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,use_classic_splines,
-     $     electron_flag,ktc,ktw,parallel_threads
+     $     ion_flag,electron_flag,ktc,ktw,parallel_threads
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -164,12 +164,12 @@ c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag)THEN
          IF(verbose) WRITE(*,'(1x,a)')
      $        "Fourier analysis of metric tensor components"
-         IF(verbose) WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,
+         IF(verbose) WRITE(*,'(1x,1p,4(a,es10.3))')"q0 = ",q0,
      $        ", qmin = ",qmin,", qmax = ",qmax,", q95 = ",q95
-         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,e10.3))')
+         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,es10.3))')
      $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
      $        ", qlim = ",qlim,", psilim = ",psilim
-         IF(verbose) WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
+         IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betap1 = ",betap1
          IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband

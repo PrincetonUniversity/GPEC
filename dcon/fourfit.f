@@ -1060,47 +1060,57 @@ c!!!!!!...from pitch.f90
                WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
      $              lThreads," OMP threads"
             ENDIF
+            IF (ion_flag) THEN
 !$OMP DO
-            DO l=-nl,nl
-               CALL SYSTEM_CLOCK(COUNT=lsTime)
-               kwmat_l = 0
-               ktmat_l = 0
-
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"wmm",op_wmats=kwmat_l)
-               kwmat = kwmat+kwmat_l
-               IF(debug_omp)THEN
-                  CALL SYSTEM_CLOCK(COUNT=lfTime)
-                  lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
-                  WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
-     $                 l,"/",nl," tphi@1=",tphi," lTime@1=",lsec
-               ENDIF
-
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"tmm",op_wmats=ktmat_l)
-               ktmat = ktmat+ktmat_l
-               IF(debug_omp)THEN
-                  CALL SYSTEM_CLOCK(COUNT=lfTime)
-                  lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
-                  WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
-     $                 l,"/",nl," tphi@2=",tphi," lTime@2=",lsec
-               ENDIF
-            ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
-
-            IF (electron_flag) THEN
                DO l=-nl,nl
+                  CALL SYSTEM_CLOCK(COUNT=lsTime)
                   kwmat_l = 0
                   ktmat_l = 0
+
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
+     $                 ft//"wmm",op_wmats=kwmat_l)
+                  kwmat = kwmat+kwmat_l
+
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
+     $                 ft//"tmm",op_wmats=ktmat_l)
+                  ktmat = ktmat+ktmat_l
+
+                  IF(debug_omp)THEN
+                     CALL SYSTEM_CLOCK(COUNT=lfTime)
+                     lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
+                     WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
+     $                    l,"/",nl," lTime=",lsec
+                  ENDIF
+               ENDDO
+!$OMP END DO
+            ENDIF
+
+            IF (electron_flag) THEN
+!$OMP DO
+               DO l=-nl,nl
+                  CALL SYSTEM_CLOCK(COUNT=lsTime)
+                  kwmat_l = 0
+                  ktmat_l = 0
+
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"wmm",op_wmats=ktmat_l)
                   kwmat = kwmat+kwmat_l
+
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
                   ktmat = ktmat+ktmat_l
+
+                  IF(debug_omp)THEN
+                     CALL SYSTEM_CLOCK(COUNT=lfTime)
+                     lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
+                     WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
+     $                    l,"/",nl," lTime=",lsec
+                  ENDIF
                ENDDO
+!$OMP END DO
             ENDIF
+!$OMP END PARALLEL
+
             ! apply normalizations and hypertangent smoothing for core
             IF (ktanh_flag) THEN
                kwmat=kinfac1*kwmat*(1+tanh((psifac-ktc)*ktw))
@@ -1266,7 +1276,7 @@ c-----------------------------------------------------------------------
             IF(debug_omp)THEN
                CALL SYSTEM_CLOCK(COUNT=fTime)
                tsec = REAL(fTime-sTime,8)/REAL(cr,8)
-               print *,"ipsi=",ipsi," ended at tsec=",tsec
+               write(*, *),"ipsi=",ipsi," ended at tsec=",tsec
             ENDIF
          IF(verbose) CALL progressbar(ipsi,0,mpsi,op_percent=10)
          ENDDO
@@ -1308,16 +1318,18 @@ c-----------------------------------------------------------------------
             ktmat = 0
             psifac=rzphi%xs(ipsi)
             ! get matrices for all ell at this one psi
-            DO l=-nl,nl
-               kwmat_l = 0
-               ktmat_l = 0
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"wmm",op_wmats=ktmat_l)
-               kwmat = kwmat+kwmat_l
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"tmm",op_wmats=ktmat_l)
-               ktmat = ktmat+ktmat_l
-            ENDDO
+            IF (ion_flag) THEN
+               DO l=-nl,nl
+                  kwmat_l = 0
+                  ktmat_l = 0
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
+     $                 ft//"wmm",op_wmats=ktmat_l)
+                  kwmat = kwmat+kwmat_l
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
+     $                 ft//"tmm",op_wmats=ktmat_l)
+                  ktmat = ktmat+ktmat_l
+               ENDDO
+            ENDIF
             IF (electron_flag) THEN
                DO l=-nl,nl
                   kwmat_l = 0

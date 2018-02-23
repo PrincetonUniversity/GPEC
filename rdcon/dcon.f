@@ -340,12 +340,12 @@ c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag .OR. gal_flag)THEN
          IF(verbose) WRITE(*,'(1x,a)')
      $        "Fourier analysis of metric tensor components"
-         IF(verbose) WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,
+         IF(verbose) WRITE(*,'(1x,1p,4(a,es10.3))')"q0 = ",q0,
      $        ", qmin = ",qmin,", qmax = ",qmax,", qa = ",qa
-         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,e10.3))')
+         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,es10.3))')
      $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
      $        ", qlim = ",qlim,", psilim = ",psilim
-         IF(verbose) WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
+         IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betaj = ",betaj
          IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband

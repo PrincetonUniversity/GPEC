@@ -25,7 +25,8 @@
     ktanh_flag = t       ! Ignore kinetic effects in the core smoothly (default: false)
     ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
-    electron_flag = f    ! Include electron dW_k IN ADDITON TO the ion contribution when kin_flag is true
+    ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
+    electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
 
     tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
     tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
