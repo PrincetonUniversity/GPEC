@@ -1523,18 +1523,22 @@ c-----------------------------------------------------------------------
       psising_check=psising
       psising=-1
       singnum=1
-      WRITE(*,'(a,E10.3,a,E10.3)') 'ABS(det_max) =', ABS(det_max),
-     $     ' eps =', keps1
+      WRITE(*,'(a,es10.3,a,es10.3)') ' Looking for singularities below',
+     $      keps1, 'x the maximum determinant of', ABS(det_max)
       psising(1)=psising_check(1)
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
-         WRITE(*,'(a,E10.3,a,E10.3)') '- psi',psising_check(i),
-     $        ' det0 is', ABS(det0)
          reps=keps1/keps2
          eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
          IF (ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)
+            WRITE(*,'(a,es10.3,a,es10.3,a)') '  > psi',psising_check(i),
+     $        ' is singular'
+         ELSE
+            WRITE(*,'(a,es10.3,a,es10.3,a)') '  - psi',psising_check(i),
+     $        ' is not singular. Determinant is ',
+     $        ABS(det0)/(ABS(det_max)*eps), 'x the threshold'
          ENDIF
       ENDDO
       singnum=singnum+1
@@ -1719,8 +1723,8 @@ c-----------------------------------------------------------------------
          ENDIF
          IF(it > itmax) THEN
             it=-1
-            WRITE(*,'(a,e10.3,a,e10.3,a)') "- search terminated at ",
-     $               zopt," with large ",err," error"
+            WRITE(*,'(a,es10.3,a,es10.3,a)') "  - search terminated at",
+     $               zopt," with large",err," error"
             z=zopt
             EXIT
          ENDIF
