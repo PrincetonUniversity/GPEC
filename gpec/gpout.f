@@ -483,7 +483,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,lmpert) :: convmat
       COMPLEX(r8), DIMENSION(msing,mpert,mpert) :: fsurfindmats
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: fldflxmn,bmn
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::  temp1, ftop,
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE ::  temp1, flxtofld,
      $     singbnoflxs, singbwp
 
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE ::
@@ -607,11 +607,11 @@ c-----------------------------------------------------------------------
 c     evaluation based on the interpolation.
 c-----------------------------------------------------------------------
             CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
-            singbwp(ising,i)=interpbwn(resnum)
+            singbwp(ising,i)=interpbwn(resnum) / area(ising)     ! flux normalized by area for units Tesla
 
-            singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)
+            singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)  ! flux normalized by area for units Tesla
             islandhwids(ising,i)=4*singflx_mn(resnum)/
-     $           (twopi*shear(ising)*singtype(ising)%q*chi1)
+     $           (twopi*shear(ising)*singtype(ising)%q*chi1)     ! square of the width to be linear
          ENDDO
 c-----------------------------------------------------------------------
 c     deallocate fsp_sol.
@@ -619,7 +619,7 @@ c-----------------------------------------------------------------------
          CALL cspline_dealloc(fsp_sol)
 
          IF(verbose) WRITE(*,'(1x,a16,i4,a22,es10.3)')
-     $        "poloidal mode = ",mfac(i),", resonant coupling = ",
+     $        "poloidal mode =",mfac(i),", resonant coupling =",
      $        SUM(ABS(singbnoflxs(:,i)))/msing
       ENDDO
       CALL gpeq_dealloc
@@ -746,21 +746,13 @@ c-----------------------------------------------------------------------
       lwork=3*tmpert
       ALLOCATE(s(msing),u(msing,msing),a(msing,tmpert),vt(msing,tmpert),
      $   work(lwork),rwork(5*msing),ipiv(tmpert),
-     $   temp1(tmpert,tmpert), ftop(tmpert,tmpert),
+     $   temp1(tmpert,tmpert), flxtofld(tmpert,tmpert),
      $   singcoup_out_vals(nsingcoup,msing),
      $   singcoup_out_vecs(nsingcoup,tmpert,msing),
      $   singcoup_out_bvecs(nsingcoup,tmpert,msing))
 
-      ! get inverse of fldflxmat for converting to flux to power normalization
-      ! todo: this should use iszinv (confirm it is hermitian)
-      temp1=fldflxmat
-      ftop=0
-      DO i=1,tmpert
-         ftop(i,i)=1
-      ENDDO
-      CALL zgetrf(tmpert,tmpert,temp1,tmpert,ipiv,info)
-      CALL zgetrs('N',tmpert,tmpert,temp1,tmpert,ipiv,
-     $     ftop,tmpert,info)
+      ! get inverse of fldflxmat for converting to flux to power normalized field ((bA^1/2)_m / A^1/2)
+      CALL iszinv(fldflxmat,tmpert,flxtofld)
 
       ! calculate the output coodinat matrix SVD 
       ! re-normalize such that overlap dot products operate on unweighted fields
@@ -770,7 +762,7 @@ c-----------------------------------------------------------------------
          s=0
          u=0
          vt=0
-         a=MATMUL(singcoup_out(i, :, :), ftop)                 ! coupling to power normalized external field
+         a=MATMUL(singcoup_out(i, :, :), flxtofld)             ! coupling to power normalized external field
          CALL zgesvd('S','S',msing,tmpert,a,msing,s,u,msing,vt,msing,
      $        work,lwork,rwork,info)                           ! note zgesvd vt is actually V^dagger
          singcoup_out_vals(i,:) = s                            ! singular values of power normalized coupling
@@ -799,7 +791,7 @@ c-----------------------------------------------------------------------
             s=0
             u=0
             vt=0
-            a=MATMUL(singcoup_out(i,ol:ou,:),ftop)                  ! coupling to power normalized external field
+            a=MATMUL(singcoup_out(i,ol:ou,:),flxtofld)              ! coupling to power normalized external field
             CALL zgesvd('S','S',osing,tmpert,a,osing,s,u,osing,vt,osing,
      $           work,lwork,rwork,info)                             ! note zgesvd vt is actually V^dagger
             localcoup_out_vals(i,:) = s                             ! singular values of power normalized coupling
@@ -810,6 +802,22 @@ c-----------------------------------------------------------------------
          ENDDO
          DEALLOCATE(s,u,a,vt,work,rwork,ipiv)
       ENDIF
+
+c-----------------------------------------------------------------------
+c     write the outputs
+c-----------------------------------------------------------------------
+         titles(1) = "coupling matrix to effective resonant fields"
+         titles(2) = "coupling matrix to singular currents"
+         titles(3) = "coupling matrix to square of island half-widths"
+         titles(4) = "coupling matrix to to penetrated resonant fields"
+         titles(5) = "coupling matrix to unitless Delta"
+         names(1) = "Effective energy normalized resonant flux"
+         names(2) = "Resonant current"
+         names(3) = "Square of island half-width in psi_n"
+         names(4) = "Energy normalized penetrated flux"
+         names(5) = "Delta"
+         tags = (/'f', 's', 'i', 'p', 'd'/)
+         units = (/'none', 'A/T ', '1/T ', 'none', '1/T '/)
 
 c-----------------------------------------------------------------------
 c     write the output coordinate coupling matrices.
@@ -830,12 +838,6 @@ c-----------------------------------------------------------------------
      $        "psilim =",psilim,"qlim =",qlim
          WRITE(out_unit,*)
          
-         titles(1) = "coupling matrix to effectiveresonant fields"
-         titles(2) = "coupling matrix to singular currents"
-         titles(3) = "coupling matrix to square of island half-widths"
-         titles(4) = "coupling matrix to to penetrated resonant fields"
-         titles(5) = "coupling matrix to unitless Delta"
-
          DO i=1,nsingcoup
             WRITE(out_unit,*) "The "//trim(titles(i))
             WRITE(out_unit,*)
@@ -844,10 +846,10 @@ c-----------------------------------------------------------------------
      $              "q =",singtype(ising)%q,
      $              "psi =",singtype(ising)%psifac
                WRITE(out_unit,*)
-               WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+               WRITE(out_unit,'(1x,a4,2(1x,a16))')"m",
+     $         "real(C_"//tags(i)//")","imag(C_"//tags(i)//")"
                DO j=1,tmpert
                   WRITE(out_unit,'(1x,I4,2(es17.8e3))') tmfac(j),
-                     ! todo: record power normalized matrix actually used in SVD
      $               REAL(singcoup_out(i,ising,j)),
      $               AIMAG(singcoup_out(i,ising,j))
                ENDDO
@@ -863,6 +865,11 @@ c-----------------------------------------------------------------------
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_SINGCOUP_SVD: SVD analysis"//
      $        " for coupling matrices"
+         WRITE(out_unit,*)"Note the right singular vectors have an "//
+     $        "additional half-area weighting,"
+         WRITE(out_unit,*)"such that their inner product with b_x"//
+     $        " is the overlap field."
+         WRITE(out_unit,*)"Dividing by Phi_xe**2 then gives the overlap"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,a12,a8,1x,a12,I2)')
@@ -882,7 +889,8 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,'(1x,a6,I4,1x,a6,es17.8e3)')
      $           "mode =",ising,"s =",singcoup_out_vals(i,ising)
                WRITE(out_unit,*)
-               WRITE(out_unit,'(1x,a4,2(1x,a16))')"m","real","imag"
+               WRITE(out_unit,'(1x,a4,2(1x,a16))') "m",
+     $            "real(V_"//tags(i)//")", "imag(V_"//tags(i)//")"
                DO j=1,tmpert
                   WRITE(out_unit,'(1x,I4,2(es17.8e3))') tmfac(j),
      $               REAL(singcoup_out_bvecs(i,j,ising)),
@@ -946,21 +954,12 @@ c-----------------------------------------------------------------------
 
          ! start definitions
          CALL check( nf90_redef(mncid))
-         IF(debug_flag) PRINT *,"  Defining vecs"
          CALL check( nf90_def_dim(mncid,"mode_C",msing,cdid) )
          CALL check( nf90_def_var(mncid,"mode_C",nf90_int,cdid,
      $               mc_id) )
          CALL check( nf90_put_att(mncid, mc_id ,"long_name",
      $    "Singular coupling mode index") )
 
-         names(1) = "Effective energy normalized resonant flux"
-         names(2) = "Resonant current"
-         names(3) = "Square of island half-width in psi_n"
-         names(4) = "Energy normalized penetrated flux"
-         names(5) = "Delta"
-         tags = (/'f', 's', 'i', 'p', 'd'/)
-         ! todo: confirm units of bwp
-         units = (/'none', 'A/T ', '1/T ', 'none', '1/T '/)
          DO i=1,nsingcoup
             CALL check( nf90_def_var(mncid,"C_"//tags(i)//"_x_out",
      $           nf90_double, (/mdid,cdid,idid/), c_id(i)) )
@@ -1002,7 +1001,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_enddef(mncid) )
 
          ! write variables
-         IF(debug_flag) PRINT *,"  Putting variables"
          modec = (/(i,i=1,msing)/)
          CALL check( nf90_put_var(mncid,mc_id,modec) )
          DO i=1,nsingcoup
@@ -1014,7 +1012,7 @@ c-----------------------------------------------------------------------
      $             AIMAG(singcoup_out_bvecs(i,:,:))/),
      $           (/tmpert,msing,2/))))
             CALL check( nf90_put_var(mncid,s_id(i),
-     $           singcoup_out_vals(i,ising)) )
+     $           singcoup_out_vals(i,:)) )
             IF(osing<msing)THEN
                CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
      $              (/REAL(localcoup_out(i,:,:)),
@@ -1024,7 +1022,7 @@ c-----------------------------------------------------------------------
      $              AIMAG(localcoup_out_bvecs(i,:,:))/),
      $              (/tmpert,msing,2/))))
                CALL check( nf90_put_var(mncid,sl_id(i),
-     $              localcoup_out_vals(i,ising)))
+     $              localcoup_out_vals(i,:)))
             ENDIF
          ENDDO
 
@@ -1035,8 +1033,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Deallocate local variables.
 c-----------------------------------------------------------------------
-      DEALLOCATE(singcoup_out, singcoup_out_vecs, singcoup_out_vals,
-     $     tmfac, fldflxmn, temp1, ftop)
+      DEALLOCATE(singcoup_out, singcoup_out_bvecs, singcoup_out_vals,
+     $     tmfac, fldflxmn, temp1, flxtofld)
       IF (osing<msing) THEN
          DEALLOCATE(localcoup_out_bvecs, localcoup_out_vals)
       ENDIF
@@ -1085,7 +1083,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: dcosmn,dsinmn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rawmn
       
-      INTEGER :: i_id,m_id,modid,mo_id,t_id,r_id,z_id,rn_id,zn_id,p_id,
+      INTEGER :: i_id,m_id,modid,t_id,r_id,z_id,rn_id,zn_id,p_id,
      $    x_id,xx_id,xm_id,xxm_id,bm_id,bxm_id,b_id,bx_id,jo_id,j2_id,
      $    mpdid,mp_id
 c-----------------------------------------------------------------------
@@ -1354,14 +1352,11 @@ c-----------------------------------------------------------------------
          CALL check( nf90_open(mncfile,nf90_write,mncid) )
          CALL check( nf90_inq_dimid(mncid,"i",i_id) )
          CALL check( nf90_inq_dimid(mncid,"m",m_id) )
+         CALL check( nf90_inq_dimid(mncid,"m_out",modid) )
          CALL check( nf90_redef(mncid))
          CALL check( nf90_def_dim(mncid, "m_prime", mpert, mpdid) )
          CALL check( nf90_def_var(mncid, "m_prime", nf90_int, mpdid,
      $      mp_id))
-         CALL check( nf90_def_dim(mncid,"m_out",lmpert,modid) )
-         CALL check( nf90_def_var(mncid,"m_out",nf90_int,modid,mo_id))
-         CALL check( nf90_put_att(mncid, mo_id ,"long_name",
-     $       "Poloidal mode number of Jacobian conversion") )
          CALL check( nf90_put_att(mncid,nf90_global,
      $               "energy_vacuum",vengy) )
          CALL check( nf90_put_att(mncid,nf90_global,
@@ -1414,7 +1409,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,xm_id,RESHAPE((/REAL(xoutmn),
      $             AIMAG(xoutmn)/),(/mpert,2/))) )
          CALL check( nf90_put_var(mncid,mp_id,mfac) )
-         CALL check( nf90_put_var(mncid,mo_id,lmfac) )
          tempml = TRANSPOSE(coordmat)
          CALL check( nf90_put_var(mncid,jo_id,RESHAPE((/REAL(tempml),
      $             AIMAG(tempml)/),(/mpert,lmpert,2/))) )
@@ -1732,9 +1726,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
      $      (/q_id,i_id/), p_id) )
-         CALL check( nf90_put_att(fncid, p_id, "units", "Wb") )
+         CALL check( nf90_put_att(fncid, p_id, "units", "T") )
          CALL check( nf90_put_att(fncid, p_id, "long_name",
-     $     "Pitch resonant flux") )
+     $     "Pitch resonant flux normalized by the surface area") )
          CALL check( nf90_def_var(fncid, "I_res", nf90_double,
      $      (/q_id,i_id/), c_id) )
          CALL check( nf90_put_att(fncid, c_id, "units", "A") )
@@ -1742,20 +1736,19 @@ c-----------------------------------------------------------------------
      $     "Pitch resonant current") )
          CALL check( nf90_def_var(fncid, "w_isl", nf90_double,
      $      (/q_id/), w_id) )
-         CALL check( nf90_put_att(fncid, w_id, "units", "m") )
          CALL check( nf90_put_att(fncid, w_id, "long_name",
-     $     "Full width of I_res island") )
+     $     "Fully saturated island width in normalized poloidal flux") )
          CALL check( nf90_def_var(fncid, "K_isl", nf90_double,
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
-     $     "Chirikov parameter of I_res islands") )
+     $     "Chirikov parameter of fully saturated islands") )
          CALL check( nf90_enddef(fncid) )
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
-         CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
+         CALL check( nf90_put_var(fncid, w_id, 2*sqrt(island_hwidth)) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_close(fncid) )
       ENDIF
@@ -2262,7 +2255,6 @@ c-----------------------------------------------------------------------
          IF(netcdf_flag)THEN
             CALL check( nf90_open(fncfile,nf90_write,fncid) )
             CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-            CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
             CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
             CALL check( nf90_redef(fncid))
             CALL check( nf90_def_dim(fncid,"coil_index",coil_num,c_id))
@@ -5115,7 +5107,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: output
       INTEGER :: i,j,k,maxmode
       INTEGER :: idid,mdid,xdid,wdid,rdid,pdid,sdid,tdid,cdid,
-     $   mx_id,mw_id,mr_id,mp_id,ms_id,mc_id,
+     $   mx_id,mw_id,mr_id,mp_id,mc_id,
      $   we_id,re_id,pe_id,se_id,fc_id,fcf_id,sl_id,cn_id,
      $   w_id,r_id,p_id,s_id, sc_id,wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,rl_id,
@@ -5394,6 +5386,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
          CALL check( nf90_inq_dimid(mncid,"m",mdid) )
          CALL check( nf90_inq_dimid(mncid,"theta",tdid) )
+         IF(singcoup_Set)THEN
+            CALL check( nf90_inq_dimid(mncid,"mode_C",sdid) )
+         ENDIF
 
          ! Start definitions
          CALL check( nf90_redef(mncid))
@@ -5529,11 +5524,6 @@ c-----------------------------------------------------------------------
      $  "rmalized external flux decomposed in permeability eigenmodes"))
 
          IF(singcoup_set)THEN
-            CALL check( nf90_def_dim(mncid,"mode_C",msing,   sdid) )
-            CALL check( nf90_def_var(mncid,"mode_C",nf90_int,sdid,
-     $                  ms_id) )
-            CALL check( nf90_put_att(mncid, ms_id ,"long_name",
-     $       "Singular coupling mode index") )
             CALL check( nf90_def_var(mncid,"C_xe",nf90_double,
      $                  (/mdid,sdid,idid/),sc_id) )
             CALL check( nf90_put_att(mncid,sc_id,"long_name",
@@ -5693,7 +5683,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,pe_id,pvals) )
          IF(singcoup_set) THEN
             matms = TRANSPOSE(singcoupmat)
-            CALL check( nf90_put_var(mncid,ms_id,indx(:msing)) )
             CALL check( nf90_put_var(mncid,sc_id,RESHAPE(
      $       (/REAL(matms),AIMAG(matms)/),(/mpert,msing,2/))))
             CALL check( nf90_put_var(mncid,s_id,RESHAPE(
@@ -5953,9 +5942,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER:: i,midid,mmdid,medid,mtdid,
+      INTEGER:: i,midid,mmdid,modid,medid,mtdid,
      $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
-     $   mivid,mmvid,mevid,mtvid,fivid,fmvid,fpvid,ftvid,
+     $   mivid,mmvid,movid,mevid,mtvid,fivid,fmvid,fpvid,ftvid,
      $   mrvid,mjdid,mjvid,mqvid,frvid,frdid,fqvid,civid,crvid,czvid,
      $   id,fileids(3)
       INTEGER, DIMENSION(mpert) :: mmodes
@@ -5987,6 +5976,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"i",nf90_int,midid,mivid) )
       CALL check( nf90_def_dim(mncid,"m",mpert,  mmdid) )
       CALL check( nf90_def_var(mncid,"m",nf90_int,mmdid,mmvid) )
+      CALL check( nf90_def_dim(mncid,"m_out",lmpert, modid) )
+      CALL check( nf90_def_var(mncid,"m_out",nf90_int,modid,movid) )
       CALL check( nf90_def_dim(mncid,"mode",mpert,   medid) )
       CALL check( nf90_def_var(mncid,"mode",nf90_int,medid,mevid))
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
@@ -6057,6 +6048,7 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Putting coordinates in control netcdfs"
       CALL check( nf90_put_var(mncid,mivid,(/0,1/)) )
       CALL check( nf90_put_var(mncid,mmvid,mfac) )
+      CALL check( nf90_put_var(mncid,movid,lmfac) )
       CALL check( nf90_put_var(mncid,mevid,mmodes) )
       CALL check( nf90_put_var(mncid,mtvid,theta) )
       IF(msing>0)THEN
