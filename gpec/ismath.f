@@ -287,7 +287,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i, info
       INTEGER, DIMENSION(m):: ipiv
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: work2
+      COMPLEX(r8), DIMENSION(m,m) :: work2
       REAL(r8), DIMENSION(3*m-2) :: rwork
 
       COMPLEX(r8), DIMENSION(m,m) :: matmm,tempmm
@@ -295,7 +295,7 @@ c-----------------------------------------------------------------------
 c     calculate inverse of a complex matrix
 c-----------------------------------------------------------------------
       tempmm=0
-      DO i=1,mpert
+      DO i=1,m
          tempmm(i,i)=1.0
       ENDDO
       matmm=mat_in
