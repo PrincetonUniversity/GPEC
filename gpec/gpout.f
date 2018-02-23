@@ -596,7 +596,7 @@ c-----------------------------------------------------------------------
             CALL gpeq_sol(rpsi)
             rbwp1mn=bwp1_mn(resnum)
 
-            deltas(ising,i)=(rbwp1mn - lbwp1mn) * singtype(ising)%q*chi1
+            deltas(ising,i)=(rbwp1mn - lbwp1mn)/(singtype(ising)%q*chi1)
             delcurs(ising,i)= (rbwp1mn - lbwp1mn) *
      $           j_c(ising) * ifac / (twopi * mfac(resnum))
             singcurs(ising,i)=-delcurs(ising,i)/ifac
@@ -1596,7 +1596,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c-----------------------------------------------------------------------
-!     delta is delta*chi1*sq%f(4) and j_c is j_c/(chi1*sq%f(4))
+!     j_c is j_c/(chi1*sq%f(4))
       DO ising=1,msing
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          respsi=singtype(ising)%psifac
@@ -1638,7 +1638,7 @@ c-----------------------------------------------------------------------
          CALL gpeq_sol(rpsi)
          rbwp1mn=bwp1_mn(resnum(ising))
 
-         delta(ising) = (rbwp1mn - lbwp1mn) * singtype(ising)%q * chi1
+         delta(ising) = (rbwp1mn - lbwp1mn) / (singtype(ising)%q * chi1)
          delcur(ising)= (rbwp1mn - lbwp1mn) * j_c(ising) * ifac /
      $        (twopi*mfac(resnum(ising)))
          singcur(ising)=-delcur(ising)/ifac
@@ -1748,7 +1748,7 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
-         CALL check( nf90_put_var(fncid, w_id, 2*sqrt(island_hwidth)) )
+         CALL check( nf90_put_var(fncid, w_id, island_hwidth) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_close(fncid) )
       ENDIF
