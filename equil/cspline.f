@@ -1216,9 +1216,9 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(4) :: ipiv
       REAL(r8) :: dx
       REAL(r8), INTENT(IN) :: xi
-      COMPLEX(r8), DIMENSION(:),INTENT(OUT) :: yip
+      COMPLEX(r8), DIMENSION(nqty),INTENT(OUT) :: yip
       REAL(r8), DIMENSION(4), INTENT(IN) :: x
-      COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: y
+      COMPLEX(r8), DIMENSION(4,nqty), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(4,nqty) :: b
       COMPLEX(r8), DIMENSION(4,4) :: a
       n=4
