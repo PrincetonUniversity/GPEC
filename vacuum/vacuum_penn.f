@@ -18,6 +18,7 @@ c     subprogram 1. date_time.
 c-----------------------------------------------------------------------
       subroutine date_time(date_array,datex,timex)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer date_array(*)
       character*(*) datex,timex
       return
@@ -27,6 +28,7 @@ c     subprogram 2. cleanup.
 c-----------------------------------------------------------------------
       subroutine cleanup
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       call system('rm -f modovmc')
       call system('rm -f pestotv')
       call system('rm -f vacdcon')
@@ -38,6 +40,7 @@ c     subprogram 3. shellb
 c-----------------------------------------------------------------------
       subroutine shellb
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       return
       end
 c-----------------------------------------------------------------------
@@ -46,6 +49,7 @@ c-----------------------------------------------------------------------
       subroutine gelima(copmat,nfm,uvpr,nfm1,jmax1,jmax2,uvp0,nfm2,
      $     wrki,waa,nfm3,wbb,nfm4,ifail)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer ipiv(jmax1),info
       call dgetrf(jmax1,jmax1,copmat,nfm,ipiv,info)
       call dgetrs('N',jmax1,jmax12evp0,copmat,nfm,ipiv,uvpr,nfm1,info)
@@ -57,6 +61,7 @@ c-----------------------------------------------------------------------
       subroutine gelimb(copmat,nfm,uvpwr,nfm1,jmax1,jmax2,uvpw0,
      $     nfm2,wrki,ifail)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer ipiv(jmax1),info
       call dgetrf(jmax1,jmax1,copmat,nfm,ipiv,info)
       call dgetrs('N',jmax1,jmax2,copmat,nfm,ipiv,uvpw0,nfm2,info)
@@ -67,6 +72,7 @@ c     subprogram 6. skipeof.
 c-----------------------------------------------------------------------
 	subroutine skipeof(iva,iva1)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 	return
 	end
 c-----------------------------------------------------------------------
@@ -74,6 +80,7 @@ c     subprogram 7. timedate.
 c-----------------------------------------------------------------------
       subroutine timedate(ntim,ndat,mach,nsfx)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       return
       end
 c-----------------------------------------------------------------------
@@ -81,5 +88,6 @@ c     subprogram 8. userinfo.
 c-----------------------------------------------------------------------
       subroutine userinfo(nuser,nacct,ndrop,nsfx)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       return
       end

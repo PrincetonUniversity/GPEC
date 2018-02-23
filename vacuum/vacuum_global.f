@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
       REAL(8) :: alx,alz,betag,betai,betap,betav,bit,ctroy,dat,date0,
      $     datem,datev,datime,dth,dthin,eqdr,eqdt,eqpi,fa1,five,
      $     four,ga1,gp0,half,one,p0,psilim,psimin,psipls,pye,qa1,
-     $     r,r2,r4,r6,rgato,seven,three,time0,timem,timev,two,twopi,
+     $     r2,r4,r6,rgato,seven,three,time0,timem,timev,two,twopi,
      $     twopi2,upsiln,x000,xma,xzero,z47,z48,z49,z54,z55,z56,z57,
      $     zero,zma,n,no2pi,no2pi2,aval0
       REAL(8) :: a,abulg,aloop,apl,aval,aw,b,bbulg,bloop,bpl,bval,bw,

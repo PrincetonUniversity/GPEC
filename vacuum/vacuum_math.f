@@ -35,6 +35,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine spl1d1(n,x,f,w,iop,ij,a,b,c)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension iop(*),x(*),f(*),w(*),a(*),b(*),c(*)
       data zz,oz,tz,sz/0.0e0,1.0e0,3.0e0,6.0e0/
 c-----------------------------------------------------------------------
@@ -214,6 +215,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine spl1d2(n,x,f,w,ij,y,tab)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       data wz,sz/2.0e0,6.0e0/
       dimension x(*),f(*),w(*)
       dimension tab(3)
@@ -254,6 +256,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine search(xbar,x,n,i,mflag)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension x(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -324,6 +327,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine searchx(xbar,x,n,i,mflag)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer xbar,x(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -396,6 +400,7 @@ c-----------------------------------------------------------------------
       subroutine green
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
@@ -533,6 +538,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine trans ( vecin,mthin, vecout,mth )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -569,6 +575,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine transdx ( vecin,mthin, vecout,mth, dx0 )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -605,6 +612,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine transdxx ( vecin,mthin, vecout,mth, dx0,dx1 )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension vecin(*), vecout(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -647,6 +655,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine smooth0 ( g, n )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension g(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -677,6 +686,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine smooth ( g, n )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension g(*), h(301)
 c-----------------------------------------------------------------------
 c     computations.
@@ -709,6 +719,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine lagp ( ax, af, m, nl, x, f, df, iop, iper )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension ax(*), af(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -792,6 +803,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine shft ( i0,i, axi, ax, m, dax )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension ax(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -823,6 +835,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine lagpe4 ( f0,m, x,f, df, iop )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension f0(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -944,6 +957,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine eigen(a,r,n,mv)
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension a(*),r(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -1066,6 +1080,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine mult ( a, b, c, ndim, ndim2, m, l )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension a(ndim,ndim), b(ndim,ndim2), c(ndim,ndim2)
 c-----------------------------------------------------------------------
 c     computations.
@@ -1093,6 +1108,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine matmul1 ( a, b, nda,ndb, n, c,ndc )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension a(nda,nda), b(ndb,ndb), c(ndc,ndc)
 c-----------------------------------------------------------------------
 c     computations.
@@ -1120,6 +1136,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine matmul3 ( a, b, nda,ndb, la,lb,lc, c,ndc )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension a(nda,nda), b(ndb,ndb), c(ndc,ndc)
 c-----------------------------------------------------------------------
 c     computation.
@@ -1147,6 +1164,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine indef4 ( f, fin, dx, n1, n2, defint, iend )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension f(*), fin(*)
 c-----------------------------------------------------------------------
 c     computation.
@@ -1185,6 +1203,7 @@ c-----------------------------------------------------------------------
       function atan2m ( z,x )
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       epszer = 1e-30
 

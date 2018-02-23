@@ -27,6 +27,7 @@ c-----------------------------------------------------------------------
      $     kernelsignin)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       integer nfmo,nthso
       real(8) :: kernelsignin
@@ -149,6 +150,7 @@ c-----------------------------------------------------------------------
      $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       integer nfmo,nthso
       integer mpert,mtheta,mthvac
@@ -281,6 +283,7 @@ c-----------------------------------------------------------------------
       subroutine defglo
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     define constants.
 c-----------------------------------------------------------------------
@@ -392,6 +395,7 @@ c-----------------------------------------------------------------------
       subroutine ent33
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -415,6 +419,7 @@ c-----------------------------------------------------------------------
       subroutine funint
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension zork1(nths), zork2(nths), dlenth(nths)
       dimension the(nths)
@@ -551,6 +556,7 @@ c-----------------------------------------------------------------------
       subroutine diaplt
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
      $     zorkpr(nths), zorkpi(nths), zork3(nths), chlagdy(nths,nfm),
@@ -612,6 +618,7 @@ c-----------------------------------------------------------------------
       subroutine pickup(blr,bli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       DIMENSION xlp(nths),xloops(ndimlp),zloops(ndimlp),
      $     chir(5,ndimlp),chii(5,ndimlp),
@@ -878,7 +885,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine loops
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       REAL, DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
       REAL, DIMENSION(:), ALLOCATABLE :: sourcemat
@@ -955,7 +963,8 @@ c-----------------------------------------------------------------------
       subroutine chi(xsce,zsce,xscp,zscp,isg,creal,cimag,ns,ip,
      $     chir,chii,nsew,blr,bli,rgdl)
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension iop(2), ww1(nths),ww2(nths),ww3(nths),tab(3)
       dimension blr(*),bli(*), xsce(*),zsce(*),xscp(*),zscp(*)
