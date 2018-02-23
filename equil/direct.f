@@ -128,7 +128,7 @@ c-----------------------------------------------------------------------
             CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
             rzphi%xs=sq%xs
             rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
-            eqfun%xs=sq%xs            
+            eqfun%xs=sq%xs
             eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
          ENDIF
 c-----------------------------------------------------------------------
@@ -204,7 +204,7 @@ c-----------------------------------------------------------------------
             v(3,3)=twopi*r
             w11=(1+rzphi%fy(2))*twopi**2*rfac*r/jacfac
             w12=-rzphi%fy(1)*pi*r/(rfac*jacfac)
-            
+
             delpsi=SQRT(w11**2+w12**2)
             eqfun%fs(ipsi,itheta,1)=SQRT(((twopi*psio*delpsi)**2+
      $           sq%f(1)**2)/(twopi*r)**2)

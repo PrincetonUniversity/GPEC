@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), POINTER :: ipiva
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat
       COMPLEX(r8), DIMENSION(:), POINTER :: jmat
-      
+
       ! kientic ABCDEH mats for sing_mod
       TYPE(cspline_type) :: kwmats(6),ktmats(6)
 
@@ -932,7 +932,7 @@ c-----------------------------------------------------------------------
       gaats%xs=rzphi%xs
       kaats%fs=0
       gaats%fs=0
-      
+
       IF(method==-1)THEN
          output = .FALSE.
       ELSEIF(method==0)THEN
@@ -990,16 +990,18 @@ c-----------------------------------------------------------------------
             ktmat = 0
             psifac=rzphi%xs(ipsi)
             ! get ion matrices for all ell at this one psi
-            DO l=-nl,nl
-               kwmat_l = 0
-               ktmat_l = 0
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"wmm",op_wmats=kwmat_l)
-               kwmat = kwmat+kwmat_l
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"tmm",op_wmats=ktmat_l)
-               ktmat = ktmat+ktmat_l
-            ENDDO
+            IF (ion_flag) THEN
+               DO l=-nl,nl
+                  kwmat_l = 0
+                  ktmat_l = 0
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
+     $                 ft//"wmm",op_wmats=kwmat_l)
+                  kwmat = kwmat+kwmat_l
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
+     $                 ft//"tmm",op_wmats=ktmat_l)
+                  ktmat = ktmat+ktmat_l
+               ENDDO
+            ENDIF
             IF (electron_flag) THEN
                DO l=-nl,nl
                   kwmat_l = 0
@@ -1208,16 +1210,18 @@ c-----------------------------------------------------------------------
             ktmat = 0
             psifac=rzphi%xs(ipsi)
             ! get matrices for all ell at this one psi
-            DO l=-nl,nl
-               kwmat_l = 0
-               ktmat_l = 0
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"wmm",op_wmats=ktmat_l)
-               kwmat = kwmat+kwmat_l
-               tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $              ft//"tmm",op_wmats=ktmat_l)
-               ktmat = ktmat+ktmat_l
-            ENDDO
+            IF (ion_flag) THEN
+               DO l=-nl,nl
+                  kwmat_l = 0
+                  ktmat_l = 0
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
+     $                 ft//"wmm",op_wmats=ktmat_l)
+                  kwmat = kwmat+kwmat_l
+                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
+     $                 ft//"tmm",op_wmats=ktmat_l)
+                  ktmat = ktmat+ktmat_l
+               ENDDO
+            ENDIF
             IF (electron_flag) THEN
                DO l=-nl,nl
                   kwmat_l = 0
