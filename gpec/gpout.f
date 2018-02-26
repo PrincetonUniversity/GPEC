@@ -596,7 +596,7 @@ c-----------------------------------------------------------------------
             CALL gpeq_sol(rpsi)
             rbwp1mn=bwp1_mn(resnum)
 
-            deltas(ising,i)=(rbwp1mn - lbwp1mn)/(singtype(ising)%q*chi1)
+            deltas(ising,i)=(rbwp1mn - lbwp1mn) / (twopi * chi1)  ! like Park Phys. Plasmas 2007, but normalized by B.grad(theta)
             delcurs(ising,i)= (rbwp1mn - lbwp1mn) *
      $           j_c(ising) * ifac / (twopi * mfac(resnum))
             singcurs(ising,i)=-delcurs(ising,i)/ifac
@@ -631,7 +631,7 @@ c-----------------------------------------------------------------------
       singcoup(2,:,:) = singcurs*twopi*nn  ! resonant current (amps)
       singcoup(3,:,:) = islandhwids        ! square of the penetrated island half-width in normalized poloidal flux
       singcoup(4,:,:) = singbwp            ! interpolated (penetrated) resonant field
-      singcoup(5,:,:) = deltas             ! jump in db/dpsi from [Park, Phys. Plasmas 2007]
+      singcoup(5,:,:) = deltas             ! jump in db/dpsi modified from [Park, Phys. Plasmas 2007], using B.grad(theta) norm instread of B.grad(phi)
       singcoup_set  = .TRUE.
 c-----------------------------------------------------------------------
 c     convert coordinates for matrix on the plasma boundary.
@@ -1638,7 +1638,7 @@ c-----------------------------------------------------------------------
          CALL gpeq_sol(rpsi)
          rbwp1mn=bwp1_mn(resnum(ising))
 
-         delta(ising) = (rbwp1mn - lbwp1mn) / (singtype(ising)%q * chi1)
+         delta(ising) = (rbwp1mn - lbwp1mn) / (twopi * chi1)
          delcur(ising)= (rbwp1mn - lbwp1mn) * j_c(ising) * ifac /
      $        (twopi*mfac(resnum(ising)))
          singcur(ising)=-delcur(ising)/ifac
@@ -1786,7 +1786,7 @@ c-----------------------------------------------------------------------
      $           "real(ovs)","imag(ovs)","overlap(%)",  ! Resonant current RSV overlap
      $           "real(ovi)","imag(ovi)","overlap(%)",  ! Island width RSV overlap
      $           "real(ovp)","imag(ovp)","overlap(%)",  ! Penetrated flux RSV overlap
-     $           "real(ovd)","imag(ovd)","overlap(%)"   ! Unitless Delta' RSV overlap
+     $           "real(ovd)","imag(ovd)","overlap(%)"   ! Unitless Delta RSV overlap
             DO ising=1,msing
                WRITE(out_unit,'(1x,I6,15(es17.8e3))') ising,
      $             REAL(olap(1,ising)),AIMAG(olap(1,ising)),op(1,ising),
@@ -1822,7 +1822,7 @@ c-----------------------------------------------------------------------
      $           "real(ovs)","imag(ovs)","overlap(%)",  ! Resonant current RSV overlap
      $           "real(ovi)","imag(ovi)","overlap(%)",  ! Island width RSV overlap
      $           "real(ovp)","imag(ovp)","overlap(%)",  ! Penetrated flux RSV overlap
-     $           "real(ovd)","imag(ovd)","overlap(%)"   ! Unitless Delta' RSV overlap
+     $           "real(ovd)","imag(ovd)","overlap(%)"   ! Unitless Delta RSV overlap
             DO ising=1,osing
                WRITE(out_unit,'(1x,I6,15(es17.8e3))') ising,
      $             REAL(olap(1,ising)),AIMAG(olap(1,ising)),op(1,ising),
