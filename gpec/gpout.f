@@ -5946,7 +5946,7 @@ c-----------------------------------------------------------------------
      $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
      $   mivid,mmvid,movid,mevid,mtvid,fivid,fmvid,fpvid,ftvid,
      $   mrvid,mjdid,mjvid,mqvid,frvid,frdid,fqvid,civid,crvid,czvid,
-     $   id,fileids(3)
+     $   fq1vid,id,fileids(3)
       INTEGER, DIMENSION(mpert) :: mmodes
 c-----------------------------------------------------------------------
 c     set variables
@@ -5993,6 +5993,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(mncid,nf90_global,"helicity",helicity))
       CALL check( nf90_put_att(mncid,nf90_global,"q_lim",qlim))
       CALL check( nf90_put_att(mncid,nf90_global,"psi_n_lim",psilim))
+      CALL check( nf90_put_att(mncid,nf90_global,"chi1",chi1))
 
       IF(debug_flag) PRINT *," - Defining flux netcdf globals"
       CALL check( nf90_put_att(fncid,nf90_global,"title",
@@ -6011,6 +6012,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(fncid,"psi_n_rat",nf90_double,
      $        frdid,frvid))
          CALL check(nf90_def_var(fncid,"q_rat",nf90_double,frdid,fqvid))
+         CALL check(nf90_def_var(fncid,"dqdpsi_n_rat",nf90_double,
+     $        frdid,fq1vid))
       ENDIF
       CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
 
@@ -6070,6 +6073,8 @@ c-----------------------------------------------------------------------
      $      (/(singtype(i)%psifac,i=1,msing)/)) )
          CALL check( nf90_put_var(fncid,fqvid,
      $      (/(singtype(i)%q,i=1,msing)/)) )
+         CALL check( nf90_put_var(fncid,fq1vid,
+     $      (/(singtype(i)%q1,i=1,msing)/)) )
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
