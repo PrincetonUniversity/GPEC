@@ -105,8 +105,8 @@ c-----------------------------------------------------------------------
       LOGICAL :: ktanh_flag = .FALSE.
       LOGICAL :: passing_flag = .FALSE.
       LOGICAL :: electron_flag = .FALSE.
+      LOGICAL :: ion_flag = .TRUE.
       LOGICAL :: fkg_kmats_flag = .FALSE.
-      LOGICAL :: electron = .FALSE.
       LOGICAL :: keq_out = .FALSE.
       LOGICAL :: theta_out = .FALSE.
       LOGICAL :: xlmda_out = .FALSE.

@@ -239,7 +239,7 @@ c-----------------------------------------------------------------------
             secs = secs-hrs*60*60-mins*60
             msec = int((split-secs)*1e3)
             IF(PRESENT(opunit))THEN
-               write(opunit,"(1x,a,1p,e10.3,a)")"  split cpu time = ",
+               write(opunit,"(1x,a,1p,es10.3,a)")"  split cpu time = ",
      $            split," seconds"
             ELSE
                IF(hrs>0)THEN
@@ -263,7 +263,7 @@ c-----------------------------------------------------------------------
          secs = secs-hrs*60*60-mins*60
          msec = int((split-secs)*1e3)
          IF(PRESENT(opunit))THEN
-            write(opunit,"(1x,a,1p,e10.3,a)")"  total cpu time = ",
+            write(opunit,"(1x,a,1p,es10.3,a)")"  total cpu time = ",
      $         split," seconds"
          ELSE
             IF(hrs>0)THEN
