@@ -96,7 +96,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: sas_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
-      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3
+      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
 
       INTEGER :: kingridtype=0
       REAL(r8) :: kinfac1=1.0,kinfac2=1.0,ktc=0.1,ktw=50

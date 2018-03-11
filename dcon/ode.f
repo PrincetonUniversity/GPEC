@@ -124,6 +124,9 @@ c-----------------------------------------------------------------------
       
       INTEGER :: ipert
       REAL(r8), DIMENSION(mpert) :: key,m
+      INTEGER :: it,itmax=50
+      INTEGER, DIMENSION(1) :: jpsi
+      REAL(r8) :: dpsi,q,q1,eps=1e-10
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
@@ -132,9 +135,40 @@ c-----------------------------------------------------------------------
       psiout=1
       psifac=sq%xs(0)
 c-----------------------------------------------------------------------
-c     find next singular surface.
+c     use newton iteration to find starting psi if qlow it is above q0
+c-----------------------------------------------------------------------
+      IF(qlow > sq%fs(0, 4))THEN
+         jpsi=MINLOC(ABS(sq%fs(:,4)-qlow))
+         IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
+         psifac=sq%xs(jpsi(1))
+         it=0
+         DO
+            it=it+1
+            CALL spline_eval(sq,psifac,1)
+            q=sq%f(4)
+            q1=sq%f1(4)
+            dpsi=(qlow-q)/q1
+            psifac=psifac+dpsi
+            IF(ABS(dpsi) < eps*ABS(psifac) .OR. it > itmax)EXIT
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     find inner singular surface.
 c-----------------------------------------------------------------------
       ising=0
+      IF(kin_flag)THEN
+        DO ising=0,kmsing
+           IF(kinsing(ising)%psifac > psifac) EXIT
+        ENDDO
+      ELSE
+         DO ising=0,msing
+            IF(sing(ising)%psifac > psifac) EXIT
+         ENDDO
+      ENDIF
+      ising = MAX(0, ising-1)
+c-----------------------------------------------------------------------
+c     find next singular surface.
+c-----------------------------------------------------------------------
       IF(kin_flag)THEN
          DO
             ising=ising+1
