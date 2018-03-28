@@ -55,6 +55,7 @@ c-----------------------------------------------------------------------
       CHARACTER(64) :: mncfile,fncfile,cncfile
 
       ! module wide output variables
+      INCLUDE "version.inc"
       INTEGER, PARAMETER :: nsingcoup=5             ! number of resonant coupling models
       LOGICAL :: singcoup_set = .FALSE.             ! whether singcoup subroutine has been run
       REAL(r8) :: jarea                             ! control surface area

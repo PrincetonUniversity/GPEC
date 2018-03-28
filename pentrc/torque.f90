@@ -117,7 +117,7 @@ module torque
     !-----------------------------------------------------------------------
     
     use params, only : r8, xj, mp, me, e, mu0, pi, twopi, &
-        npsi_out, nell_out, nlambda_out, nmethods, methods, ngrids, grids
+        npsi_out, nell_out, nlambda_out, nmethods, methods, ngrids, grids, version
     use utilities, only : get_free_file_unit, check, median, append_2d, &
         ri, btoi, itob
     use special, only : ellipk,ellipe
@@ -138,7 +138,6 @@ module torque
         chi1,ro,zo,bo,mfac,mpert,mthsurf,shotnum,shottime, &    ! reals or integers
         verbose, &                                              ! logical
         machine                                                 ! character
-    use global_mod, only : version
     use netcdf
 
     implicit none

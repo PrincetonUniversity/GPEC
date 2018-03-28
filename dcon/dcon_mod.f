@@ -14,6 +14,8 @@ c-----------------------------------------------------------------------
       USE global_mod
       USE equil_mod
       USE equil_out_mod
+      USE pentrc_interface, ONLY: version
+
       IMPLICIT NONE
 
       INTEGER :: out_bal1_unit=21

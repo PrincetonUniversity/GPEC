@@ -10,9 +10,13 @@
 # restricting all compilation to intel compilers compatible wth openmpi.
 # Machine specific instructions are below.
 #
+# Note that GPEC uses git to fetch/update the harvest repository as well as
+# to label the version at compilation time. Thus, you must have a working git
+# command in order to compile.
+#
 # On portal.pppl.gov
 #   Developers should load the default intel/11.0.081 and associated libraries,
-#     $ module load intel openmpi netcdf acml/5.3.1/ifort64
+#     $ module load intel openmpi netcdf acml/5.3.1/ifort64 git
 #   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message,

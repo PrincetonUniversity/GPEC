@@ -24,7 +24,7 @@ module pitch_integration
     !-----------------------------------------------------------------------
     
     use params, only : r8,xj,mp,e, npsi_out, nell_out, nlambda_out, &
-        nmethods, methods
+        nmethods, methods, version
     use utilities, only : get_free_file_unit,append_2d,check
     use special, only : ellipk
     use cspline_mod, only: cspline_type,cspline_eval
@@ -34,7 +34,6 @@ module pitch_integration
     use energy_integration, only: xintgrl_lsode
     use lsode1_mod
     use dcon_interface, only : shotnum, shottime, machine
-    use global_mod, only : version
     use netcdf
 
     implicit none

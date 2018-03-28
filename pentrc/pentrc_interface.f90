@@ -29,7 +29,7 @@ module pentrc_interface
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only: r8,xj, npsi_out, nmethods, methods, docs
+    use params, only: r8,xj, npsi_out, nmethods, methods, docs, version
     use utilities, only: timer,to_upper,get_free_file_unit
     use special, only: set_fymnl,set_ellip
     use dcon_interface, only: set_eq, idcon_harvest
@@ -55,7 +55,6 @@ module pentrc_interface
         atol_psi,rtol_psi,&                         ! real
         tdebug,output_ascii,output_netcdf,&         ! logical
         mpert,mfac                                  !! hacked for test writing
-    use global_mod, only: version                   ! GPEC package
 
     implicit none
 
