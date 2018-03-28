@@ -164,8 +164,7 @@ module utilities
         integer, intent(in) :: j,jstart,jstop
         integer, optional :: op_step,op_percent
     
-        integer :: iteration,iterations,k,done,jstep,percent,d10
-        real(r8) :: crnt, last
+        integer :: iteration,iterations,k,done,jstep,percent,d10,crnt,last
         character(64) :: bar
         
         ! set up
@@ -177,8 +176,8 @@ module utilities
         iterations= (jstop-jstart)/jstep + 1
         bar = "  |----------| ???% iterations complete"
 
-        crnt = FLOOR(iteration * percent * 1.0 / iterations)
-        last = FLOOR((iteration - 1) * percent * 1.0 / iterations)
+        crnt = FLOOR(iteration * 100.0 / iterations / percent)
+        last = FLOOR((iteration - 1) * 100.0 / iterations / percent)
         if(iteration==1 .or. crnt>last .or. iteration==iterations)then
             if(iteration==iterations)then
                 done = 100

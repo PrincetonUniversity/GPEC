@@ -811,7 +811,7 @@ module inputs
                 enddo
                 call iscdftf(mfac,mpert,divxfun,mthsurf,divx_m%fs(i-1,:))
                 call iscdftf(mfac,mpert,dbobfun,mthsurf,dbob_m%fs(i-1,:))
-                if(verbose) call progressbar(j,1,npsi,op_percent=20)
+                if(verbose) call progressbar(i,istrt_psi,istop_psi,op_percent=20)
             enddo
         else
             ! default dbdx is a flat spectrum
