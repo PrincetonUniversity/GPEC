@@ -52,26 +52,10 @@ vacuum:
 	cd ../vacuum; make
 
 pentrc:
-	cd ../pentrc; make
-
-# decide if we need to update the version in the underlying pentrc code (keep them in sync)
-ifeq ($(wildcard ../pentrc/version.inc),)
-version.inc: force
-	@echo ">>> Git version unknown! >>> Updating pentrc"
 	cd ../pentrc; make pentrc
-else ifeq ($(shell grep -F "'"`git describe --tags`"'" ../pentrc/version.inc),)
-version.inc: force
-	@echo ">>> Git version changed! >>> Updating pentrc"
-	cd ../pentrc; make pentrc
-else
-version.inc:
-	@echo ">>> Git version unchanged <<<"
-endif
 
-force:
-
-
-dcon: $(OBJS)
+# note we explicitly make pentrc to force sync the compile-time version variable
+dcon: pentrc $(OBJS)
 	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../bin
 	cp -f dcon ../bin
@@ -82,7 +66,7 @@ clean:
 # dependencies
 
 dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
-	../equil/equil_mod.mod ../equil/equil_out_mod.mod ../pentrc/dcon_interface.mod version.inc
+	../equil/equil_mod.mod ../equil/equil_out_mod.mod ../pentrc/dcon_interface.mod
 mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
 fourfit.o: ../equil/fspline_mod.mod ../equil/global_mod.mod \
