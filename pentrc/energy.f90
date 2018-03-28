@@ -25,10 +25,9 @@ module energy_integration
     !-----------------------------------------------------------------------
     
     use params, only : r8, mp, me, e, npsi_out, nell_out, nlambda_out, &
-        nmethods, methods
+        nmethods, methods, version
     use utilities, only : get_free_file_unit,append_2d,check
     use dcon_interface, only : shotnum, shottime, machine
-    use global_mod, only : version
     use netcdf
     
     use lsode2_mod

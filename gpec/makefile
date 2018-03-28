@@ -30,6 +30,8 @@ OBJS = \
 	gpout.o \
 	gpec.o
 
+# targets
+
 all: dcon coil gpec
 
 dcon:
@@ -38,6 +40,24 @@ dcon:
 coil:
 	cd ../coil; make
 
+# decide if we need to update the version
+# note gpec keeps track of its own version, which can differ from the synced dcon & pentrc one
+# this enables faster compiling during development
+ifeq ($(wildcard version.inc),)
+version.inc: force
+	@echo ">>> Creating version file"
+	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee version.inc
+else ifeq ($(shell grep -F "'"`git describe --tags`"'" version.inc),)
+version.inc: force
+	@echo ">>> Updating version file"
+	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee version.inc
+else
+version.inc:
+	@echo ">>> Git version unchanged!"
+endif
+
+force:
+
 gpec: $(OBJS)
 	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../lib
@@ -45,17 +65,18 @@ gpec: $(OBJS)
 	mkdir -p ../bin
 	cp -f gpec ../bin
 
+clean:
+	rm -f *.o *.mod *.out *.bin gpec
+
 # dependencies
 
-ismath.o : gpglobal.o
-idcon.o: ismath.o
-rdcon.o: gpglobal.o idcon.o ismath.o
+gpglobal.o: ../equil/fspline_mod.mod ../equil/bicube_mod.mod
+ismath.o: gpglobal.o  ../equil/local_mod.mod
+idcon.o: gpglobal.o ismath.o
+rdcon.o: gpglobal.o ismath.o idcon.o
 gpeq.o: idcon.o ismath.o
 gpresp.o: gpeq.o
 gpvacuum.o : gpeq.o
 gpdiag.o: gpresp.o gpvacuum.o
-gpout.o: gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o
+gpout.o: gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o version.inc
 gpec.o: gpdiag.o gpout.o rdcon.o
-
-clean:
-	rm -f *.o *.mod *.out *.bin gpec

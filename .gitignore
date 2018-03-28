@@ -25,6 +25,8 @@ docs/examples/*/gal_solution.dat
 docs/examples/*/delta_gw.dat
 docs/examples/*/gal_solution_cut.dat
 
+*version.inc
+
 dcon/dcon
 rdcon/rdcon
 gpec/gpec
