@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: parallel_threads
 
-      ! kientic ABCDEH mats for sing_mod
+      ! kinetic ABCDEH mats for sing_mod
       TYPE(cspline_type) :: kwmats(6),ktmats(6)
 
       CONTAINS
@@ -89,14 +89,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set up kinetic Fourier-spline type.
 c-----------------------------------------------------------------------
-      CALL fspline_alloc(fmodb,mpsi,mtheta,mband,8)
-      fmodb%xs=rzphi%xs
-      fmodb%ys=rzphi%ys*twopi
-      fmodb%name="fmodb"
-      fmodb%xtitle=" psi  "
-      fmodb%ytitle="theta "
-      fmodb%title=(/" smat  "," tmat  "," xmat  ",
+	  if(kin_flag) then
+         CALL fspline_alloc(fmodb,mpsi,mtheta,mband,8)
+         fmodb%xs=rzphi%xs
+         fmodb%ys=rzphi%ys*twopi
+         fmodb%name="fmodb"
+         fmodb%xtitle=" psi  "
+         fmodb%ytitle="theta "
+         fmodb%title=(/" smat  "," tmat  "," xmat  ",
      $     " ymat1 "," ymat2 "," zmat1 ", " zmat2 "," zmat3 "/)
+      endif
 c-----------------------------------------------------------------------
 c     begin loop over nodes.
 c-----------------------------------------------------------------------
@@ -107,16 +109,18 @@ c-----------------------------------------------------------------------
          q=sq%fs(ipsi,4)
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
-            CALL bicube_eval(eqfun,rzphi%xs(ipsi),rzphi%ys(itheta),1)
             theta=rzphi%ys(itheta)
             rfac=SQRT(rzphi%f(1))
             eta=twopi*(theta+rzphi%f(2))
             r=ro+rfac*COS(eta)
             jac=rzphi%f(4)
             jac1=rzphi%fx(4)
-            b2h=eqfun%f(1)**2/2
-            b2hp=eqfun%f(1)*eqfun%fx(1)
-            b2ht=eqfun%f(1)*eqfun%fy(1)  
+            if(kin_flag) then
+               CALL bicube_eval(eqfun,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+               b2h=eqfun%f(1)**2/2
+               b2hp=eqfun%f(1)*eqfun%fx(1)
+               b2ht=eqfun%f(1)*eqfun%fy(1)  
+            endif
 c-----------------------------------------------------------------------
 c     compute contravariant basis vectors.
 c-----------------------------------------------------------------------
@@ -146,16 +150,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute kinetic metric tensor components.
 c-----------------------------------------------------------------------
-            fmodb%fs(ipsi,itheta,1)=jac*(p1+b2hp)
-     $           -chi1**2*b2ht*(g12+q*g13)/(jac*b2h*2)
-            fmodb%fs(ipsi,itheta,2)=
-     $           chi1**2*b2ht*(g23+q*g33)/(jac*b2h*2)
-            fmodb%fs(ipsi,itheta,3)=jac*b2h*2
-            fmodb%fs(ipsi,itheta,4)=jac1*b2h*2-chi1**2*b2h*2*eqfun%fy(2)
-            fmodb%fs(ipsi,itheta,5)=-twopi*chi1**2/jac*(g12+q*g13)
-            fmodb%fs(ipsi,itheta,6)=chi1**2*b2h*2*eqfun%fy(3)
-            fmodb%fs(ipsi,itheta,7)=twopi*chi1**2/jac*(g23+q*g33)
-            fmodb%fs(ipsi,itheta,8)=twopi*chi1**2/jac*(g22+q*g23)
+            if(kin_flag) then
+               fmodb%fs(ipsi,itheta,1)=jac*(p1+b2hp)
+     $              -chi1**2*b2ht*(g12+q*g13)/(jac*b2h*2)
+               fmodb%fs(ipsi,itheta,2)=
+     $              chi1**2*b2ht*(g23+q*g33)/(jac*b2h*2)
+               fmodb%fs(ipsi,itheta,3)=jac*b2h*2
+               fmodb%fs(ipsi,itheta,4)=
+     $              jac1*b2h*2-chi1**2*b2h*2*eqfun%fy(2)
+               fmodb%fs(ipsi,itheta,5)=-twopi*chi1**2/jac*(g12+q*g13)
+               fmodb%fs(ipsi,itheta,6)=chi1**2*b2h*2*eqfun%fy(3)
+               fmodb%fs(ipsi,itheta,7)=twopi*chi1**2/jac*(g23+q*g33)
+               fmodb%fs(ipsi,itheta,8)=twopi*chi1**2/jac*(g22+q*g23)
+            endif
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -163,11 +170,16 @@ c     fit Fourier-spline type.
 c-----------------------------------------------------------------------
       IF(fft_flag)THEN
          CALL fspline_fit_2(metric,"extrap",.FALSE.)
-         CALL fspline_fit_2(fmodb,"extrap",.FALSE.)
       ELSE
          CALL fspline_fit_1(metric,"extrap",.FALSE.)
-         CALL fspline_fit_1(fmodb,"extrap",.FALSE.)
       ENDIF
+      if(kin_flag) then
+         IF(fft_flag)THEN
+            CALL fspline_fit_2(fmodb,"extrap",.FALSE.)
+         ELSE
+            CALL fspline_fit_1(fmodb,"extrap",.FALSE.)
+         ENDIF
+      endif
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

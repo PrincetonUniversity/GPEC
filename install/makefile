@@ -2,9 +2,9 @@
 include DEFAULTS.inc
 
 # extend these variables to sub-makes
-FFLAGS?="-openmp -vec_report0"
+FFLAGS?="-fopenmp -g"
 #FFLAGS ?= "-qopenmp"  # for when we get intel/2017 sorted out
-CFLAGS ?=
+CFLAGS?="-g"
 
 export FFLAGS
 export CFLAGS
@@ -13,7 +13,7 @@ export CFLAGS
 
 .IGNORE:
 
-all: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
+all: v lsode harvest equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw coil gpec mkbin
 
 allf: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \

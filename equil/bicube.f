@@ -450,6 +450,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
+      if( bcs%mx==0 .OR. bcs%my== 0) then
+         write(*,'(2(A,I5))')" Error: bcs%mx=",bcs%mx,", bcs%my=",bcs%my
+         stop
+      endif
       bcs%ix=max(bcs%ix,0)
       bcs%ix=min(bcs%ix,bcs%mx-1)
       bcs%iy=max(bcs%iy,0)
@@ -473,11 +477,11 @@ c-----------------------------------------------------------------------
 c     find x interval.
 c-----------------------------------------------------------------------
       DO
-         IF(xx >= bcs%xs(bcs%ix) .OR. bcs%ix <= 0)EXIT
+         IF(bcs%ix <= 0 .OR. xx >= bcs%xs(bcs%ix)) EXIT
          bcs%ix=bcs%ix-1
       ENDDO
       DO
-         IF(xx < bcs%xs(bcs%ix+1) .OR. bcs%ix >= bcs%mx-1)EXIT
+         IF(bcs%ix >= bcs%mx-1 .OR. xx < bcs%xs(bcs%ix+1)) EXIT
          bcs%ix=bcs%ix+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -497,11 +501,11 @@ c-----------------------------------------------------------------------
 c     find y interval.
 c-----------------------------------------------------------------------
       DO
-         IF(yy >= bcs%ys(bcs%iy) .OR. bcs%iy <= 0)EXIT
+         IF(bcs%iy <= 0 .OR. yy >= bcs%ys(bcs%iy))EXIT
          bcs%iy=bcs%iy-1
       ENDDO
       DO
-         IF(yy < bcs%ys(bcs%iy+1) .OR. bcs%iy >= bcs%my-1)EXIT
+         IF(bcs%iy >= bcs%my-1 .OR. yy < bcs%ys(bcs%iy+1))EXIT
          bcs%iy=bcs%iy+1
       ENDDO
 c-----------------------------------------------------------------------

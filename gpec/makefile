@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -vec_report0
+FFLAGS = -g
 IFLAGS = -I../equil -I../coil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
