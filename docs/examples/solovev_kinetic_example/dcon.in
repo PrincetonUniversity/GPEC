@@ -24,17 +24,18 @@
     kingridtype = 0      ! Regular grid method (default : 0)
     passing_flag = t     ! Includes passing particle effects in kinetic EL equation (default: false)
     trapped_flag = t     ! Includes trapped particle effects in kinetic EL equation  (default: true)
-    ktanh_flag = t       ! Ignore kinetic effects in the core smoothly (default: false)
+    ktanh_flag = f       ! Ignore kinetic effects in the core smoothly (default: false)
     ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
     electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
 
-    tol_nr=1e-5          ! Relative tolerance of dynamic integration steps away from rationals
-    tol_r=1e-6           ! Relative tolerance of dynamic integration steps near rationals
+    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
+	parallel_threads=13  ! Parallel calculations of the kinetic matrix components (2*nl+1 is recommended, where nl is defined in pentrc.in)
 
     use_classic_splines = t ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
