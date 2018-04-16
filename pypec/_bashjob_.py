@@ -2,7 +2,7 @@ bashjob="""#!/bin/bash
 
 #SBATCH --job-name={name:}
 
-#SBATCH --nodes={nodes:}
+#SBATCH --ntasks={ntasks:}
 #SBATCH --mem={mem:}M
 #SBATCH --time={days:}-{hours:}:00:00
 #SBATCH --partition={partition:}

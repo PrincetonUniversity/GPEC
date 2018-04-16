@@ -146,7 +146,7 @@ def _newloc(loc):
 
 
 def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun=False,
-        rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,version='1.1',
+        rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,version='1.2',
         mailon='NONE',email='',mem=3e3,hours=36,partition='sque',runipec=False,qsub=None,**kwargs):
     """
     Python wrapper for running gpec package.
@@ -167,7 +167,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
     :param email: str. Email address (default is submitting user).
     :param mem: floatMemory request of q-submission in megabytes (converted to integer).
     :param hours: int. Number of hours requested from job manager.
-    :param partition: str. Specify a specific computing queue (e.g. 'ellis'). Default auto-changes to mque for mem>3e3.
+    :param partition: str. Specify a specific computing queue (e.g. 'ellis'). Default auto-chooses based on threads and memory.
     :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
 
     .. note::
@@ -192,7 +192,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
         submit = qsub
 
     if not rerun:
-        print('Cleaning old run out, dat, and bin files')
+        print(' > Cleaning old run out, dat, and bin files')
         if rundcon:
             if np.any([f.endswith('.out') for f in locfiles]):
                 os.system('rm *.out')
@@ -215,10 +215,10 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
 
     # set up run
     for key in kwargs:
-        print('Writting '+key+'.in from keyword argument.')
+        print(' > Writting '+key+'.in from keyword argument.')
         namelist.write(kwargs[key],key+'.in') #over-write if exists
     
-    print('Using package from '+rundir)
+    print(' > Using package from '+rundir)
     if rundir != loc:
         # fill missing input files 
         if fill_inputs:
@@ -226,7 +226,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
             rundirins=[f for f in os.listdir(rundir) if f[-3:]=='.in' and f[:4]!='draw']
             missedins=[f for f in rundirins if f not in localins]
             for infile in missedins:
-                print('Copying '+infile+' from rundir.')
+                print(' > Copying '+infile+' from rundir.')
                 os.system('cp '+rundir+'/'+infile+' .')
         # path to package data files
         if os.path.isfile('coil.in'):
@@ -237,7 +237,21 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
             pentrc = namelist.read('pentrc.in')
             if 'data_dir' not in pentrc['PENT_INPUT']:
                 pentrc['PENT_INPUT']['data_dir'] = packagedir+'pentrc'
-
+        # request enough threads for openmpi
+        ntasks = 1
+        if rundcon and os.path.isfile('dcon.in'):
+            dcon = namelist.read('dcon.in')
+            if 'parallel_threads' in dcon.get('DCON_CONTROL', {}):
+                ntasks = dcon['DCON_CONTROL']['parallel_threads']
+                print(' > Requesting {:} threads'.format(ntasks))
+        # set partition based on needs
+        if partition == 'sque':
+            if mem > 5.7e4:  # ellis nodes have 62G of memory
+                partition = 'mque'
+            elif ntasks > 4:
+                partition = 'dawson'
+            else:
+                partition = 'ellis'
     
     # actual run
     if submit:
@@ -250,15 +264,14 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
         if os.path.exists('{:}.sh'.format(jobname)):
             os.system('rm {:}.sh'.format(jobname))
         # fill in and write shell script
-        exelist=''
+        exelist='module purge; module load intel openmpi netcdf acml/5.3.1/ifort64 git \n'
         if rundcon: exelist+=rundir+'/dcon \n'
         if runipec: exelist+=rundir+'/ipec \n'
         if rungpec: exelist+=rundir+'/gpec \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
         if cleandcon: exelist+='rm euler.bin \n'
-        if mem >= 3.5e3 and partition.lower() == 'ellis':  # ellis has 4GB per core
-            partition = 'mque'
-        jobstr = bashjob.format(name=jobname, nodes=1, mem=str(int(mem)), days=0, hours=int(hours),
+
+        jobstr = bashjob.format(name=jobname, ntasks=ntasks, mem=str(int(mem)), days=0, hours=int(hours),
                                 partition=partition, location= loc, exes=exelist,
                                 mailtype=mailon.upper(), mailuser=email, version=version)
         jobstr = jobstr.replace('#SBATCH --mail-type=NONE', '') # robust to sbatch versions
@@ -268,13 +281,12 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
         os.system('sbatch '+jobname+'.sh')
         # wait for job completion to return
         if return_on_complete:
-            print('Waiting for job to complete...')
+            print(' > Waiting for job to complete...')
             while not os.path.exists('../'+jobname+'.oe'):
                 time.sleep(60)    
             # clean up
             os.system('rm *.dat')
     else:
-        print(rundir+'/dcon')
         if rundcon: os.system(rundir+'/dcon')
         if runipec: os.system(rundir+'/ipec')
         if rungpec: os.system(rundir+'/gpec')
