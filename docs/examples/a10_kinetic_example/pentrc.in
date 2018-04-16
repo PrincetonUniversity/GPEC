@@ -23,7 +23,7 @@
     nufac = 1                           ! Artificial factor applied to collision operator
     divxfac = 1                         ! Artificial factor applied to div xi_perp
 
-    atol_xlmda = 1e-12                  ! Absolute tolerance in energy and pitch integration
+    atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
     rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
     atol_psi = 1e-9                     ! Absolute tolerance in psi_n integration
     rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
