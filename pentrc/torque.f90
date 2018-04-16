@@ -1638,9 +1638,9 @@ module torque
                 k = orbit_record(m)%psi_index
                 j = orbit_record(m)%ell_index
                 i = orbit_record(m)%lambda_index
-                if(psi/=orbit_record(m)%psi(k) .or. k==0) k = k+1
-                if(ell/=orbit_record(m)%ell(j) .or. j==0) j = mod(j,nell_out)+1
-                if(lambda/=orbit_record(m)%lambda(i,j,k) .or. i==0) i = mod(i,nlambda_out)+1
+                if(psi/=orbit_record(m)%psi(max(k, 1)) .or. k==0) k = k+1
+                if(ell/=orbit_record(m)%ell(max(j, 1)) .or. j==0) j = mod(j,nell_out)+1
+                if(lambda/=orbit_record(m)%lambda(max(i, 1),j,k) .or. i==0) i = mod(i,nlambda_out)+1
                 if(debug) print *,"   - new i,j,k = ",i,j,k
                 ! force fail if buggy
                 if(k>npsi_out)then

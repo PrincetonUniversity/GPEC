@@ -473,11 +473,13 @@ c-----------------------------------------------------------------------
 c     find x interval.
 c-----------------------------------------------------------------------
       DO
-         IF(xx >= bcs%xs(bcs%ix) .OR. bcs%ix <= 0)EXIT
+         IF(bcs%ix <= 0)EXIT
+         IF(xx >= bcs%xs(bcs%ix))EXIT
          bcs%ix=bcs%ix-1
       ENDDO
       DO
-         IF(xx < bcs%xs(bcs%ix+1) .OR. bcs%ix >= bcs%mx-1)EXIT
+         IF(bcs%ix >= bcs%mx-1)EXIT
+         IF(xx < bcs%xs(bcs%ix+1))EXIT
          bcs%ix=bcs%ix+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -497,11 +499,13 @@ c-----------------------------------------------------------------------
 c     find y interval.
 c-----------------------------------------------------------------------
       DO
-         IF(yy >= bcs%ys(bcs%iy) .OR. bcs%iy <= 0)EXIT
+         IF(bcs%iy <= 0)EXIT
+         IF(yy >= bcs%ys(bcs%iy))EXIT
          bcs%iy=bcs%iy-1
       ENDDO
       DO
-         IF(yy < bcs%ys(bcs%iy+1) .OR. bcs%iy >= bcs%my-1)EXIT
+         IF(bcs%iy >= bcs%my-1)EXIT
+         IF(yy < bcs%ys(bcs%iy+1))EXIT
          bcs%iy=bcs%iy+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -689,11 +693,13 @@ c-----------------------------------------------------------------------
 c     find x interval.
 c-----------------------------------------------------------------------
       DO
-         IF(xx >= bcs%xs(b_ix) .OR. b_ix <= 0)EXIT
+         IF(b_ix <= 0)EXIT
+         IF(xx >= bcs%xs(b_ix))EXIT
          b_ix=b_ix-1
       ENDDO
       DO
-         IF(xx < bcs%xs(b_ix+1) .OR. b_ix >= bcs%mx-1)EXIT
+         IF(b_ix >= bcs%mx-1)EXIT
+         IF(xx < bcs%xs(b_ix+1))EXIT
          b_ix=b_ix+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -713,11 +719,13 @@ c-----------------------------------------------------------------------
 c     find y interval.
 c-----------------------------------------------------------------------
       DO
-         IF(yy >= bcs%ys(b_iy) .OR. b_iy <= 0)EXIT
+         IF(b_iy <= 0)EXIT
+         IF(yy >= bcs%ys(b_iy))EXIT
          b_iy=b_iy-1
       ENDDO
       DO
-         IF(yy < bcs%ys(b_iy+1) .OR. b_iy >= bcs%my-1)EXIT
+         IF(b_iy >= bcs%my-1)EXIT
+         IF(yy < bcs%ys(b_iy+1))EXIT
          b_iy=b_iy+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -1664,7 +1672,6 @@ c-----------------------------------------------------------------------
                ainv(2,1)=-amat(2,1)
                ainv=ainv/adet
                dx=-ainv(1,1)*bcs%fx(iqty)-ainv(1,2)*bcs%fy(iqty)
-               dy=-ainv(2,1)*bcs%fx(iqty)-ainv(2,2)*bcs%fy(iqty)
                x=x+dx
                y=y+dy
             ENDDO
