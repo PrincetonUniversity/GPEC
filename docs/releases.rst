@@ -55,6 +55,8 @@ Adds
   + This is similar to what is sometimes called external Delta' in tearing stability theory **need to divide by vacuum**
   * Penetrated resonant flux: interpolated across singspot, and physically meaningful for kinetic MHD equilibria only
 - DCON, GPEC, & PENTRC - Updates the version based on the compile-time git commit
+- DCON, GPEC & PENTRC - Can use a classical spline coefficient solution for "extrap" boundary condition splines, avoiding  a suspected (minor) bug in the original tri-diagonal solution that resulted in large grad-shafranov errors in poorer quality equilibrium (especially inverse or modified equilibrium).
+  * Previous tri-diagonal spline solutions can be recovered by setting use_classic_splines to false
 
 Changes
 --------
@@ -63,8 +65,7 @@ Changes
   * Uses iszinv to invert hermitian fldflxmat
   * Uses area normalization of penetrated flux for consistency with effective flux
   * Adds unique names for the singcoup mat and svd ascii outputs (enables python reading)
-- DCON, GPEC & PENTRC - Uses a classical spline coefficient solution for "extrap" boundary condition splines, avoiding  a suspected (minor) bug in the original tri-diagonal solution that resulted in large grad-shafranov errors in poorer quality equilibrium (especially inverse or modified equilibrium).
-  * Previous tri-diagonal spline solutions can be recovered by setting use_classic_splines to false
+- PYPEC - Improves automatic selection of partitions and threads in job submission and adds rdcon to exe options
 
 Fixes
 ------
