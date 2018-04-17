@@ -25,8 +25,8 @@
 
     atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
     rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
-    atol_psi = 1e-6                     ! Absolute tolerance in psi_n integration
-    rtol_psi = 1e-5                     ! Relative tolerance in psi_n integration
+    atol_psi = 1e-9                     ! Absolute tolerance in psi_n integration
+    rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration
     nlmda = 128                         ! Pitch grid for omega_D, oemga_b, dJdJ
 
