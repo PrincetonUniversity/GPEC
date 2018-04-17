@@ -1,40 +1,30 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Outputs and Post-Processing &mdash; GPEC 0.3.4 documentation</title>
-    
+    <title>Outputs and Post-Processing &#8212; GPEC 1.0.5 documentation</title>
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.3.4',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="GPEC 0.3.4 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="DCON README" href="dcon_readme.html" />
     <link rel="prev" title="Getting started" href="getting_started.html" /> 
-  </head>
-  <body>
+  </head><body>
 
 <div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
 <a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
 </div>
 
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,7 +45,7 @@
       </ul>
     </div>
 
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
@@ -83,22 +73,23 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="dcon_readme.html"
                         title="next chapter">DCON README</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/outputs.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/outputs.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -107,7 +98,7 @@
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="outputs-and-post-processing">
 <h1>Outputs and Post-Processing<a class="headerlink" href="#outputs-and-post-processing" title="Permalink to this headline">¶</a></h1>
@@ -115,25 +106,25 @@
 <h2>Choice of Spectral Decomposition<a class="headerlink" href="#choice-of-spectral-decomposition" title="Permalink to this headline">¶</a></h2>
 <p>When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember</p>
 <ol class="arabic simple">
-<li>GPEC uses a right handed magnetic coordinate system decomposed in <span class="math">\(\exp(im\theta-in\phi)\)</span>.</li>
-<li>GPEC effectively uses CCW <span class="math">\(\phi\)</span> for left-handed (LH) configurations, but CW <span class="math">\(\phi\)</span> for right-handed (RH) configurations.</li>
-<li>GPEC always uses upward outboard <span class="math">\(\theta\)</span>.</li>
+<li>GPEC uses a right handed magnetic coordinate system decomposed in <span class="math notranslate">\(\exp(im\theta-in\phi)\)</span>.</li>
+<li>GPEC effectively uses CCW <span class="math notranslate">\(\phi\)</span> for left-handed (LH) configurations, but CW <span class="math notranslate">\(\phi\)</span> for right-handed (RH) configurations.</li>
+<li>GPEC always uses upward outboard <span class="math notranslate">\(\theta\)</span>.</li>
 </ol>
 <p>The result of this is that the pitch-aligned field will always be positive m. This convention makes in-house analysis nice and easy. For example, one can <em>always</em> plot the m=2 perturbed normal displacement profile and see the resonant surface behavior at q=2. The m=-2 normal displacement will always be nonresonant. This is shown in the figure below from the package DIII-D example, which is a LH plasma.</p>
 <a class="reference internal image-reference" href="_images/example_xno_kinkprofile.png"><img alt="_images/example_xno_kinkprofile.png" class="align-center" src="_images/example_xno_kinkprofile.png" style="width: 400px;" /></a>
 <p>For another example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface. We always look here for kink amplification.</p>
 <a class="reference internal image-reference" href="_images/example_bnm_positiveamplified.png"><img alt="_images/example_bnm_positiveamplified.png" class="align-center" src="_images/example_bnm_positiveamplified.png" style="width: 400px;" /></a>
-<p>The convention does require some awareness from the user when interfacing with real-space quantities and/or other codes though. For example, the user does need to know that the spectrum rotates by <span class="math">\(-\phi\)</span> if real space coil rotates by <span class="math">\(\phi\)</span> in a RH configuration.</p>
-<p>To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the ipec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.</p>
+<p>The convention does require some awareness from the user when interfacing with real-space quantities and/or other codes though. For example, the user does need to know that the spectrum rotates by <span class="math notranslate">\(-\phi\)</span> if real space coil rotates by <span class="math notranslate">\(\phi\)</span> in a RH configuration.</p>
+<p>To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the gpec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.</p>
 <div class="section" id="comparing-to-real-space-quantities">
 <h3>Comparing to Real Space Quantities<a class="headerlink" href="#comparing-to-real-space-quantities" title="Permalink to this headline">¶</a></h3>
-<p>In the real space representation decomposed in <span class="math">\(\exp(-in\phi)\)</span> with CCW <span class="math">\(\phi\)</span>, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW <span class="math">\(\phi\)</span> (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by <span class="math">\(\exp(im\theta-in\phi)\)</span>, the complex conjugate operation does not simply restore CCW phi for RH configurations. It will also flip up and down.</p>
+<p>In the real space representation decomposed in <span class="math notranslate">\(\exp(-in\phi)\)</span> with CCW <span class="math notranslate">\(\phi\)</span>, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW <span class="math notranslate">\(\phi\)</span> (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by <span class="math notranslate">\(\exp(im\theta-in\phi)\)</span>, the complex conjugate operation does not simply restore CCW phi for RH configurations. It will also flip up and down.</p>
 </div>
 <div class="section" id="interfacing-with-surfmn">
 <h3>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this headline">¶</a></h3>
-<p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard <span class="math">\(\theta\)</span>. However, it expands in <span class="math">\(\exp(-im\theta-in\phi)\)</span> and always uses a CCW <span class="math">\(\phi\)</span>. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
+<p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard <span class="math notranslate">\(\theta\)</span>. However, it expands in <span class="math notranslate">\(\exp(-im\theta-in\phi)\)</span> and always uses a CCW <span class="math notranslate">\(\phi\)</span>. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
 <p>As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">m_surfmn</span> <span class="o">=</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">m_gpec</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">m_surfmn</span> <span class="o">=</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">m_gpec</span>
 <span class="n">b_surfmn</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">*</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">imag</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span><span class="o">.</span>
 </pre></div>
 </div>
@@ -141,69 +132,69 @@
 </div>
 <div class="section" id="interfacing-with-vacuum">
 <h3>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Permalink to this headline">¶</a></h3>
-<p>Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW <span class="math">\(\phi\)</span> and downward outboard <span class="math">\(\theta\)</span>. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.</p>
+<p>Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW <span class="math notranslate">\(\phi\)</span> and downward outboard <span class="math notranslate">\(\theta\)</span>. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.</p>
 </div>
 </div>
 <div class="section" id="coordinates">
 <h2>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this headline">¶</a></h2>
 <p>There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,</p>
 <ol class="arabic simple">
-<li>The &#8216;working coordinates&#8217; defined by jac_type in equil.in.</li>
-<li>The &#8216;input coordinates&#8217; defined by jac_in, tmag_in, and jsurf_in when applicable.</li>
-<li>The &#8216;output coordinates&#8217; defined by jac_out, tmag_out, and jsurf_out when applicable.</li>
+<li>The ‘working coordinates’ defined by jac_type in equil.in.</li>
+<li>The ‘input coordinates’ defined by jac_in, tmag_in, and jsurf_in when applicable.</li>
+<li>The ‘output coordinates’ defined by jac_out, tmag_out, and jsurf_out when applicable.</li>
 </ol>
-<p>The DCON working coordinate system is used for nearly all internal calculations in the GPEC package, but the external drive may be prescribed in input coordinates (2) and the final perturbed equilibrium results may be converted to output coordinates (3). The working coordinates are magnetic cooridinates. The input and output coordinates may be converted to cylindrical <span class="math">\(\phi\)</span> using the tmag_in or tmag_out variables.</p>
-<p>The ipec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the &#8216;jacobian&#8217; attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the ipec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.</p>
+<p>The DCON working coordinate system is used for nearly all internal calculations in the GPEC package, but the external drive may be prescribed in input coordinates (2) and the final perturbed equilibrium results may be converted to output coordinates (3). The working coordinates are magnetic cooridinates. The input and output coordinates may be converted to cylindrical <span class="math notranslate">\(\phi\)</span> using the tmag_in or tmag_out variables.</p>
+<p>The gpec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the ‘jacobian’ attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the gpec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.</p>
 </div>
 <div class="section" id="output-files">
 <h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
-<p>The IPEC outputs are entirely specified by flags (bool types t or f) set in the IPEC_output section of IPEC.in. All outputs are ASCII files, and can be grouped into two major categories.</p>
+<p>The GPEC outputs are entirely specified by flags (bool types t or f) set in the GPEC_output section of GPEC.in. All outputs are ASCII files, and can be grouped into two major categories.</p>
 <div class="section" id="ascii-file-outputs">
 <h3>ASCII File Outputs<a class="headerlink" href="#ascii-file-outputs" title="Permalink to this headline">¶</a></h3>
-<p>A number of the flag options in IPEC.in instruct IPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.</p>
+<p>A number of the flag options in GPEC.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.</p>
 <p>Outputs Always Available</p>
-<p>These IPEC outputs can always be obtained from a equil.bin file output from DCON.</p>
-<p>IPEC_response_n#.out</p>
+<p>These GPEC outputs can always be obtained from a equil.bin file output from DCON.</p>
+<p>GPEC_response_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> resp_flag</p>
 <p><strong>Info</strong> Energy for DCON eigenmodes and stability indices. Eigenvalues and eigenvectors for vacuum and plasma inductance (virtual casing currents to fields), plasma permeability (external fields to total fields), and plasma reluctance.</p>
 </div></blockquote>
-<p>IPEC_singcoup_matrix_n#.out</p>
+<p>GPEC_singcoup_matrix_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> singcoup_flag</p>
 <p><strong>Info</strong> The coupling matrix to resonant fields, coupling matrix to singular currents, and to island half-widths is given for each rational surface within the plasma (q=2, 3, etc) for each surface the real and imaginary coupling constants are given for each poloidal mode number on the control surface.</p>
 </div></blockquote>
-<p>IPEC_singcoup_svd_n#.out</p>
+<p>GPEC_singcoup_svd_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> singcoup_flag</p>
-<p><strong>Info</strong> The SVD singular values (s) and eigen vectors for each coupling matrix in IPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.</p>
+<p><strong>Info</strong> The SVD singular values (s) and eigen vectors for each coupling matrix in GPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.</p>
 </div></blockquote>
 <p>Outputs Available When Error Field is Provided</p>
-<p>These outputs are only available when an external error field file is provided as an input to IPEC. This means IPEC.in must have the data_flag turned on and a infile specified.</p>
-<p>IPEC_control_n#.out</p>
+<p>These outputs are only available when an external error field file is provided as an input to GPEC. This means GPEC.in must have the data_flag turned on and a infile specified.</p>
+<p>GPEC_control_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong></p>
 <p><strong>Info</strong> The Plasma response for an external perturbation on the control surface. This includes the vacuum energy, surface energy, plasma energy, real and imaginary vacuum input mathbf{B}_{in} and total field on plasma boundarymathbf{B}_{out}as a function of poloidal mode number.</p>
 </div></blockquote>
-<p>IPEC_singfld_n#.out</p>
+<p>GPEC_singfld_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> singfld_flag</p>
 <p><strong>Info</strong> The Psi_{N}, total resonant mathbf{B} (real and imaginary), singular current (real and imaginary), island half width in units of normalized flux and Chirikov parameter at rational surface inside the plasma.</p>
 <p><strong>Flag</strong> singcoup_flag</p>
 <p><strong>Info</strong> Additional section showing the overlap field and overlap percentage for each eigenmode in the singcoup_svd output.</p>
 </div></blockquote>
-<p>IPEC_pmod_n#.out</p>
+<p>GPEC_pmod_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> pmodb_flag</p>
 <p><strong>Info</strong> Eulerian and Lagrangian left|mathbf{B}right|(real and imaginary) for each poloidal mode number at each value of Psi_{N} output. This output is necessary for NTV post processing.</p>
 </div></blockquote>
-<p>IPEC_xbnormal_n#.out</p>
+<p>GPEC_xbnormal_n#.out</p>
 <blockquote>
 <div><p><strong>Flag</strong> xbnormal_flag</p>
 <p><strong>Info</strong> The normal components of the displacement, magnetic field without the plasma response, and magnetic field with the plasma response included for each poloidal mode number at each value of Psi_{N} output.??</p>
 </div></blockquote>
-<p>IPEC_*rzphi_n#.out</p>
-<p>A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a IPEC_xrzphi_n1.out file. some common properties of these files are:</p>
+<p>GPEC_*rzphi_n#.out</p>
+<p>A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a GPEC_xrzphi_n1.out file. some common properties of these files are:</p>
 <ul>
 <li><p class="first">real and imaginary components: Output files contain two dimensional data on an left(r,zright) grid for a single toroidal harmonic. To translate into three dimensions, perform the transformationBleft(r,z,phiright)=B_{real}left(r,zright)cosleft(nphiright)+B_{imag}left(r,zright)sinleft(nphiright)</p>
 </li>
@@ -216,13 +207,13 @@
 <p><strong>Flag</strong> xrzphi_flag</p>
 <p><strong>Info</strong> The displacement on the left(r,z,phiright) grid.</p>
 <p><strong>Flag</strong> vbrzphi_flag</p>
-<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the IPEC boundary surface current composed of both the vacuum component and the plasma response.</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current composed of both the vacuum component and the plasma response.</p>
 <p><strong>Flag</strong> vpbrzphi_flag</p>
 <p><strong>Info</strong> The true perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid due to the plasma response alone calculated from the plasma response surface condition.</p>
 <p><strong>Flag</strong> vvbrzphi_flag</p>
-<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the IPEC boundary surface current from the external fields alone.</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current from the external fields alone.</p>
 <p><strong>Flag</strong> ssbrzphi_flag</p>
-<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the IPEC boundary surface current from the external fields alone.</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current from the external fields alone.</p>
 </div></blockquote>
 </li>
 </ul>
@@ -254,7 +245,7 @@
 </div>
 <div class="section" id="xdraw">
 <h2>xdraw<a class="headerlink" href="#xdraw" title="Permalink to this headline">¶</a></h2>
-<p>The binary IPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by IPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.</p>
+<p>The binary GPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by GPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.</p>
 </div>
 </div>
 
@@ -264,7 +255,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -284,9 +275,9 @@
  
       </ul>
     </div>
-    <div class="footer">
-        &copy; Copyright 2015, PPPL.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015, PPPL.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.0.
     </div>
   </body>
 </html>
