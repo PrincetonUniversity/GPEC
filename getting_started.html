@@ -123,26 +123,14 @@
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="public">
 <h3>Public<a class="headerlink" href="#public" title="Permalink to this headline">¶</a></h3>
-<p>Public installations are available &#64;portal.pppl.gov:/p/gpec/.
-Public installations cloned and kept up to date from the <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">releases on Github</a>. The releases remain private for now, so only those with access to the repository will be able to install/update the site package. Contact <a class="reference external" href="mailto:nlogan&#37;&#52;&#48;pppl&#46;gov">nlogan<span>&#64;</span>pppl<span>&#46;</span>gov</a> for access.</p>
+<p>Public installations are available &#64;portal.pppl.gov:/p/gpec/. The executables are available in a /bin directory and run examples can be found in /docs/examples.</p>
+<p>Public installations are cloned and kept up to date from the <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">releases on Github</a>. The releases remain private for now, so only those with access to the repository will be able to install/update the site package. Contact <a class="reference external" href="mailto:nlogan&#37;&#52;&#48;pppl&#46;gov">nlogan<span>&#64;</span>pppl<span>&#46;</span>gov</a> for access.</p>
 </div>
 <div class="section" id="personal">
 <h3>Personal<a class="headerlink" href="#personal" title="Permalink to this headline">¶</a></h3>
 <p>Personal copies of GPEC should be cloned from the <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">Github repository</a>, as the make process uses git commands assuming the installation is a git repository.</p>
-<p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory’s makefile references the DEFAULTS.inc file, also in install. A basic compiling is as simple as executing:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span>
-</pre></div>
-</div>
-<p>in the install directory. The executables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
-<p>The DEFAULTS.inc sets a number of variables based on conditionals that determine the architecture on which GPEC is being compiled. If you are installing in a new or recently changed environment these can be over-ridden at the individual level. For example, at PPPL this might be done in pentrc using:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FC</span><span class="o">=</span><span class="n">ifort</span>
-</pre></div>
-</div>
-<p>The executable then must be manually copied to the package bin directory.</p>
-<p>To do a thorough debugging, try adding more flags with the FFLAGS variable. Try,</p>
-<blockquote>
-<div>make FFLAGS=”-g -O0 -Wall -fbacktrace -fcheck=all”</div></blockquote>
-<p>for example.</p>
+<p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory’s makefile references the DEFAULTS.inc file, also in install.
+Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
 </div>
 </div>
 <div class="section" id="running-using-omfit">

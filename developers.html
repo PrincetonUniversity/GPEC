@@ -141,6 +141,12 @@
 </dd>
 </dl>
 <p>Specific instructions are given in the link above as to exactly how to branch and merge these various branches. For example, the –no-ff option should be used when merging in order to keep branch histories. Just follow the examples and you wont go wrong!</p>
+<p><strong>Debugging</strong></p>
+<p>To do a thorough debugging, try adding more flags with the FFLAGS variable. A good set might be,:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-g -O0 -Wall -fbacktrace -fcheck=all&quot;</span>
+</pre></div>
+</div>
+<p>for example.</p>
 </div>
 <div class="section" id="documentation">
 <h3>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
