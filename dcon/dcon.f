@@ -30,7 +30,7 @@ c-----------------------------------------------------------------------
      $    pentrc_timer=>timer
       IMPLICIT NONE
 
-      LOGICAL :: use_classic_splines_for_dcon, cyl_flag=.FALSE.
+      LOGICAL :: use_classic_splines_for_dcon=.FALSE., cyl_flag=.FALSE.
       INTEGER :: mmin,ipsi,m
       COMPLEX(r8) :: plasma1,vacuum1,total1
 

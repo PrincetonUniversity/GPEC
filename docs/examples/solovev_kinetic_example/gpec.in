@@ -42,7 +42,7 @@
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
    nche=20                  ! Number of Chebyshev polynomials used
-   use_classic_splines = t  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+   use_classic_splines = f  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
 &GPEC_OUTPUT
    jac_out="hamada"         ! Coordinate system of outputs

@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
       USE local_mod
       IMPLICIT NONE
      
-      LOGICAL :: use_classic_splines = .TRUE.
+      LOGICAL :: use_classic_splines = .FALSE.
       TYPE :: spline_type
       INTEGER :: mx,nqty,ix
       REAL(r8), DIMENSION(:), POINTER :: xs,f,f1,f2,f3
