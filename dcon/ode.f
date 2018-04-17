@@ -157,11 +157,11 @@ c     find inner singular surface.
 c-----------------------------------------------------------------------
       ising=0
       IF(kin_flag)THEN
-        DO ising=0,kmsing
+        DO ising=1,kmsing
            IF(kinsing(ising)%psifac > psifac) EXIT
         ENDDO
       ELSE
-         DO ising=0,msing
+         DO ising=1,msing
             IF(sing(ising)%psifac > psifac) EXIT
          ENDDO
       ENDIF
