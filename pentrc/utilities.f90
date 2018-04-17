@@ -154,7 +154,7 @@ module utilities
     !   jstop : integer, in
     !       End of do loop
     !*OPTIONAL ARGUMENTS:
-    !   op_tep : integer, optional in
+    !   op_step : integer, optional in
     !       Do loop increment (default 1)
     !   op_percent : integer, optional in
     !       Prints progress every percent of the iterations (default 10).
@@ -164,7 +164,7 @@ module utilities
         integer, intent(in) :: j,jstart,jstop
         integer, optional :: op_step,op_percent
     
-        integer :: iteration,iterations,k,done,jstep,percent
+        integer :: iteration,iterations,k,done,jstep,percent,d10,crnt,last
         character(64) :: bar
         
         ! set up
@@ -175,11 +175,18 @@ module utilities
         iteration = (j-jstart)/jstep + 1
         iterations= (jstop-jstart)/jstep + 1
         bar = "  |----------| ???% iterations complete"
-        
-        if(iteration==1 .or. mod(iteration,iterations*percent/100)==0)then
-            done = iteration/(iterations/10)
-            write(unit=bar(16:18),fmt="(i3)") 10*done
-            do k=1, done
+
+        crnt = FLOOR(iteration * 100.0 / iterations / percent)
+        last = FLOOR((iteration - 1) * 100.0 / iterations / percent)
+        if(iteration==1 .or. crnt>last .or. iteration==iterations)then
+            if(iteration==iterations)then
+                done = 100
+            else
+                done = crnt * percent
+            endif
+            write(unit=bar(16:18),fmt="(i3)") done
+            d10 = done/10
+            do k=1, d10
                bar(3+k:3+k)="o"
             enddo  
             print *,trim(bar)
@@ -462,18 +469,19 @@ module utilities
         
         ! read titles
         if(startline>1)then
-            do l=1,startline-2
-                read(in_unit,*)
-            enddo
-            line(:) = ' '
-            read(in_unit,'(a)') line
-            call splitstring(line,titles,' ',debug=debug)
+           do l=1,startline-2
+              read(in_unit,*)
+           enddo
+           line(:) = ' '
+           read(in_unit,'(a)') line
+           call splitstring(line,titles,' ',debug=debug)
         endif
         !if(debug) print *,"-> Table titles are ",titles
-        
+
         ! read table
         do l=1,1+endline-startline
-            read(in_unit,*) table(l,:)
+           !read(in_unit,*) table(l,:)
+           read(in_unit,*) (table(l,i),i=1,ncol)
         enddo
         close(in_unit)
         if(debug) print *,"Done"

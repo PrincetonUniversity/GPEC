@@ -1,5 +1,5 @@
 
-FFLAGS = 
+FFLAGS = -vec_report0
 
 F90 = $(FC) $(FFLAGS)
 

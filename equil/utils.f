@@ -13,6 +13,8 @@ c     4. put_seed.
 c     5. bubble.
 c     6. my_transpose.
 c     7. my_ctranspose.
+c     8. mypack.
+c     9. ident.
 c-----------------------------------------------------------------------
 c     subprogram 0. utils.
 c     module declarations.
@@ -199,7 +201,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: seed
 
       INTEGER :: seed_size
-      INTEGER, DIMENSION(:), POINTER :: seed_array
+      INTEGER, DIMENSION(:), ALLOCATABLE :: seed_array
 c-----------------------------------------------------------------------
 c     deposit seed.
 c-----------------------------------------------------------------------
@@ -301,4 +303,90 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END FUNCTION my_ctranspose
+c-----------------------------------------------------------------------
+c     subprogram 8. direct_mypack.
+c     computes packed grid on (0,1).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      FUNCTION mypack(nx,pfac,side) RESULT(x)
+
+      INTEGER, INTENT(IN) :: nx
+      REAL(r8), INTENT(IN) :: pfac
+      CHARACTER(*), INTENT(IN) :: side
+      REAL(r8), DIMENSION(-nx:nx) :: x
+
+      INTEGER :: ix
+      REAL(r8) :: lambda,a
+      REAL(r8), DIMENSION(-nx:nx) :: xi,num,den
+c-----------------------------------------------------------------------
+c     fill logical grid.
+c-----------------------------------------------------------------------
+      SELECT CASE(side)
+      CASE("left")
+         xi=(/(ix,ix=-2*nx,0)/)/REAL(2*nx,r8)
+      CASE("right")
+         xi=(/(ix,ix=0,2*nx)/)/REAL(2*nx,r8)
+      CASE("both")
+         xi=(/(ix,ix=-nx,nx)/)/REAL(nx,r8)
+      CASE DEFAULT
+         CALL program_stop
+     $        ("gal_pack: cannot recognize side = "//TRIM(side))
+      END SELECT
+c-----------------------------------------------------------------------
+c     compute grid.
+c-----------------------------------------------------------------------
+      IF(pfac > 1)THEN
+         lambda=SQRT(1-1/pfac)
+         num=LOG((1+lambda*xi)/(1-lambda*xi))
+         den=LOG((1+lambda)/(1-lambda))
+         x=num/den
+      ELSEIF(pfac == 1)THEN
+         x=xi
+      ELSEIF(pfac > 0)THEN
+         lambda=SQRT(1-pfac)
+         a=LOG((1+lambda)/(1-lambda))
+         num=EXP(a*xi)-1
+         den=EXP(a*xi)+1
+         x=num/den/lambda
+      ELSE
+         x=xi**(-pfac)
+      ENDIF
+c-----------------------------------------------------------------------
+c     shift output to (-1,1)
+c-----------------------------------------------------------------------
+      SELECT CASE(side)
+      CASE("left")
+         x=2*x+1
+      CASE("right")
+         x=2*x-1
+      END SELECT
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END FUNCTION mypack
+c-----------------------------------------------------------------------
+c     subprogram 9. ident.
+c     computes and returns integer identity matrix.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      FUNCTION ident(n) RESULT(mat)
+
+      INTEGER, INTENT(IN) :: n
+      INTEGER, DIMENSION(n,n) :: mat
+
+      INTEGER :: i,j
+c-----------------------------------------------------------------------
+c     compute identity matrix.
+c-----------------------------------------------------------------------
+      mat=RESHAPE((/(1,(0,j=1,n),i=1,n-1),1/),(/n,n/))
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END FUNCTION ident
       END MODULE utils_mod

@@ -1,0 +1,82 @@
+&GAL_INPUT
+    nx=256               ! The number of elements in each interval between two singular surfaces
+    pfac=0.001           ! Packing ratio near the singular surface
+    gal_tol=1e-10        ! Tolerance of lsode integration
+    dx1dx2_flag=t        ! Flag to include the special dx1 and dx2 treatments for resonant and extension element
+    dx0=5e-4             ! The distance to the singular surface to truncate the lsode integration in resonant element
+    dx1=1.e-3            ! The size of resonant element
+    dx2=1.e-3            ! The size of extension element
+    cutoff=10            ! The number of elements include the large solution as the driving term
+    solver="LU"          ! LU factorization of solving Galerkinn matrix
+    nq=6                 ! The number of Gaussian points in each Galerkin element
+
+    diagnose_integrand=f ! Output diagnoses of asymptotic solutions in ua.bin
+    diagnose_map=f       ! Output diagnoses of local-to-global mapping in map.out
+    diagnose_grid=f      ! Output diagnoses of gridding in grid.out and grid.bin
+    diagnose_lsode=f     ! Output ls*.out and ls*.bin diagnostic files
+    ndiagnose=12         ! The number of eigenfunctions written when diagnosing lsode
+/
+&GAL_OUTPUT
+    interp_np=3          ! The number of interpration points for outputting Galerkin solution
+    restore_uh=t         ! Include the Hermite solution in Galerkin soluitn
+    restore_us=t         ! Include the small solution in Galerkin solution
+    restore_ul=t         ! Include the larger solution in Galerkin solution
+    bin_delmatch=t       ! Output solution for rmatch
+    out_galsol=t         ! Output Galerkin solution in ascii files
+    bin_galsol=t         ! Output Galerkin solution in binary files
+    b_flag=f             ! Output the perturbation of radial b field
+    coil%rpec_flag=f     ! Resistive perturbed equilibrium computation
+/
+&RDCON_CONTROL
+    bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
+    mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
+    ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
+    vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
+    gal_flag=t           ! Compute outer regime using resonant Galerkin method
+
+    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    dmlim=0.2            ! See sas_flag
+    sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
+
+    nn=1                 ! Toroidal mode number
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
+    mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
+
+    tol_nr=1e-5          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-6           ! Relative tolerance of dynamic integration steps near rationals
+    crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
+    singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
+    ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
+
+    cyl_flag=f           ! Make delta_mlow and delta_mhigh set the actual m truncation bounds. Default is to expand (n*qmin-4, n*qmax).
+
+    sing1_flag=f         ! Special power series treatment
+    sing_order=6         ! The highest order of power series to be retained
+    sing_order_ceiling=t ! Auto detect the minium order to be retained in power series
+
+    regrid_flag=f        ! Redo the grid generation for galerkin method
+/
+
+&RDCON_OUTPUT
+    crit_break=t         ! Color of the crit curve changes when crossing a singular surface
+
+    ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
+    msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
+    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
+
+    bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    euler_stride=1       ! Output only every euler_stride'th psi step to binary file
+
+    out_bal1=f           ! Ascii output for bal_flag poloidal functions
+    bin_bal1=f           ! Binary output for bal_flag poloidal functions
+    out_bal2=f           ! Ascii output for bal_flag functions
+    bin_bal2=f           ! Binary output for bal_flag functions
+/
+
+&UA_DIAGNOSE_LIST
+    uad%flag=f
+    uad%phase=t
+/

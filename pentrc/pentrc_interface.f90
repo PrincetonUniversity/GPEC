@@ -29,13 +29,14 @@ module pentrc_interface
     ! EMAIL: nlogan@pppl.gov
     !-----------------------------------------------------------------------
     
-    use params, only: r8,xj, npsi_out, nmethods, methods, docs
+    use params, only: r8,xj, npsi_out, nmethods, methods, docs, version
     use utilities, only: timer,to_upper,get_free_file_unit
     use special, only: set_fymnl,set_ellip
     use dcon_interface, only: set_eq, idcon_harvest
     use inputs, only : read_kin,read_equil,nn,read_peq,read_pmodb,&
                        set_peq,read_fnml,verbose
     use diagnostics, only: diagnose_all
+    use spline_mod, only: use_classic_splines
 
     use energy_integration, only: &
         output_energy_netcdf,output_energy_ascii,&  ! subroutine
@@ -54,7 +55,6 @@ module pentrc_interface
         atol_psi,rtol_psi,&                         ! real
         tdebug,output_ascii,output_netcdf,&         ! logical
         mpert,mfac                                  !! hacked for test writing
-    use global_mod, only: version                   ! GPEC package
 
     implicit none
 
@@ -139,22 +139,23 @@ module pentrc_interface
         moment = "pressure"
 
     ! namelists
-    namelist/pent_input/kinetic_file,gpec_file,peq_file,pmodb_file,idconfile, &
-        data_dir,zi,zimp,mi,mimp,nl,electron,nutype,f0type,&
-        jac_in,jsurf_in,tmag_in,power_bin,power_bpin,power_rin,power_rcin
+    namelist/pent_input/kinetic_file, gpec_file, peq_file, pmodb_file, idconfile, &
+            data_dir, zi, zimp, mi, mimp, nl, electron, nutype, f0type, &
+            jac_in, jsurf_in, tmag_in, power_bin, power_bpin, power_rin, power_rcin
 
-    namelist/pent_control/nfac,tfac,wefac,wdfac,wpfac,nufac,divxfac, &
-        atol_xlmda,rtol_xlmda,atol_psi,rtol_psi,nlmda,ntheta,ximag,xmax,psilims
+    namelist/pent_control/nfac, tfac, wefac, wdfac, wpfac, nufac, divxfac, &
+            atol_xlmda, rtol_xlmda, atol_psi, rtol_psi, nlmda, ntheta, ximag, xmax, psilims, &
+            use_classic_splines
 
-    namelist/pent_output/moment,output_ascii,output_netcdf,&
-        eq_out,theta_out,xlmda_out,eqpsi_out,equil_grid,input_grid,&
-        fgar_flag,tgar_flag,pgar_flag,clar_flag,rlar_flag,fcgl_flag,&
-        wxyz_flag,psi_out,fkmm_flag,tkmm_flag,pkmm_flag,frmm_flag,trmm_flag,prmm_flag,&
-        fwmm_flag,twmm_flag,pwmm_flag,ftmm_flag,ttmm_flag,ptmm_flag,&
-        term_flag,verbose,clean
+    namelist/pent_output/moment, output_ascii, output_netcdf, &
+            eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, &
+            fgar_flag, tgar_flag, pgar_flag, clar_flag, rlar_flag, fcgl_flag, &
+            wxyz_flag, psi_out, fkmm_flag, tkmm_flag, pkmm_flag, frmm_flag, trmm_flag, prmm_flag, &
+            fwmm_flag, twmm_flag, pwmm_flag, ftmm_flag, ttmm_flag, ptmm_flag, &
+            term_flag, verbose, clean
 
-    namelist/pent_admin/fnml_flag,ellip_flag,diag_flag,&
-        tdebug,xdebug,lambdadebug,indebug
+    namelist/pent_admin/fnml_flag, ellip_flag, diag_flag, &
+            tdebug, xdebug, lambdadebug, indebug
 
     private :: i ! these conflict with the dcon namespace
 

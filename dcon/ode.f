@@ -124,6 +124,9 @@ c-----------------------------------------------------------------------
       
       INTEGER :: ipert
       REAL(r8), DIMENSION(mpert) :: key,m
+      INTEGER :: it,itmax=50
+      INTEGER, DIMENSION(1) :: jpsi
+      REAL(r8) :: dpsi,q,q1,eps=1e-10
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
@@ -132,18 +135,52 @@ c-----------------------------------------------------------------------
       psiout=1
       psifac=sq%xs(0)
 c-----------------------------------------------------------------------
-c     find next singular surface.
+c     use newton iteration to find starting psi if qlow it is above q0
+c-----------------------------------------------------------------------
+      IF(qlow > sq%fs(0, 4))THEN
+         jpsi=MINLOC(ABS(sq%fs(:,4)-qlow))
+         IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
+         psifac=sq%xs(jpsi(1))
+         it=0
+         DO
+            it=it+1
+            CALL spline_eval(sq,psifac,1)
+            q=sq%f(4)
+            q1=sq%f1(4)
+            dpsi=(qlow-q)/q1
+            psifac=psifac+dpsi
+            IF(ABS(dpsi) < eps*ABS(psifac) .OR. it > itmax)EXIT
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     find inner singular surface.
 c-----------------------------------------------------------------------
       ising=0
       IF(kin_flag)THEN
+        DO ising=1,kmsing
+           IF(kinsing(ising)%psifac > psifac) EXIT
+        ENDDO
+      ELSE
+         DO ising=1,msing
+            IF(sing(ising)%psifac > psifac) EXIT
+         ENDDO
+      ENDIF
+      ising = MAX(0, ising-1)
+c-----------------------------------------------------------------------
+c     find next singular surface.
+c-----------------------------------------------------------------------
+      IF(kin_flag)THEN
          DO
             ising=ising+1
-            IF(ising > kmsing.OR.psilim<kinsing(ising)%psifac)EXIT
+            IF(ising > kmsing)EXIT
+            IF(psilim<kinsing(ising)%psifac)EXIT
             q=kinsing(ising)%q
             IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
          ENDDO
-         IF(ising>kmsing.OR.psilim<kinsing(ising)%psifac
-     $        .OR.singfac_min==0)THEN
+         IF(ising>kmsing.OR.singfac_min==0)THEN
+            psimax=psilim*(1-eps)
+            next="finish"
+         ELSEIF(psilim<kinsing(ising)%psifac)THEN
             psimax=psilim*(1-eps)
             next="finish"
          ELSE
@@ -583,14 +620,19 @@ c     find next ising.
 c-----------------------------------------------------------------------
       DO
          ising=ising+1
-         IF(ising>kmsing.OR.psilim<kinsing(ising)%psifac)EXIT
+         IF(ising>kmsing) EXIT
+         IF(psilim<kinsing(ising)%psifac) EXIT
          q=kinsing(ising)%q
          IF(mlow<=nn*q.AND.mhigh>=nn*q)EXIT
       ENDDO
 c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
-      IF(ising>kmsing.OR.psilim<kinsing(ising)%psifac)THEN
+      IF(ising>kmsing)THEN
+         psimax=psilim*(1-eps)
+         m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         next="finish"
+      ELSEIF(psilim<kinsing(ising)%psifac)THEN
          psimax=psilim*(1-eps)
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          next="finish"

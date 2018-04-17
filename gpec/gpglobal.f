@@ -5,7 +5,6 @@ c-----------------------------------------------------------------------
       MODULE gpglobal_mod
       USE bicube_mod
       USE fspline_mod
-      USE global_mod, ONLY: version
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -30,7 +29,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: ro,zo,psio,chi1,mthsurf0,psilow,psilim,qlim,
      $     qmin,qmax,seconds,rfac,eta,singfac_min,rmin,rmax,zlim,
-     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,sing_spot,reg_spot,
+     $     jac,jac1,q,q1,p,p1,bpfac,btfac,bfac,fac,reg_spot,
      $     amean,rmean,aratio,kappa,delta1,delta2,
      $     li1,li2,li3,betap1,betap2,betap3,betat,betan,bt0,
      $     q0,qa,crnt,q95,shotnum,shottime,opsi1,opsi2
@@ -98,6 +97,13 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
       END TYPE solution_type
 
+      TYPE :: galsol_type
+      LOGICAL :: gal_flag
+      INTEGER :: mpert, tot_grids,mlow,mhigh,mtot
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psifac
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: u
+      END TYPE galsol_type
+
       TYPE :: fixfac_type
       INTEGER :: msol
       INTEGER, DIMENSION(:), ALLOCATABLE :: index
@@ -111,6 +117,9 @@ c-----------------------------------------------------------------------
       TYPE(resist_type) :: restype
       END TYPE sing_type
 
+      INTEGER :: gal_pert,gal_unit=105
+      LOGICAL :: gal_check
+      TYPE(galsol_type) :: galsol
       TYPE(solution_type), DIMENSION(:), ALLOCATABLE :: soltype,rsoltype
       TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
       TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype
@@ -143,12 +152,25 @@ c-----------------------------------------------------------------------
       CALL cspline_dealloc(u2)
       CALL fspline_dealloc(metric)
 
-      DO istep=0,mstep
-         DEALLOCATE(soltype(istep)%u)
-      ENDDO
-      DO ifix=1,mfix
-         DEALLOCATE(fixtype(ifix)%fixfac,fixtype(ifix)%index)
-      ENDDO
+      IF(ALLOCATED(soltype))THEN
+         DO istep=0,mstep
+            DEALLOCATE(soltype(istep)%u)
+         ENDDO
+         DEALLOCATE(soltype)
+      ENDIF
+      IF(ALLOCATED(fixtype))THEN
+         DO ifix=0,mfix
+            IF(ALLOCATED(fixtype(ifix)%fixfac))
+     $         DEALLOCATE(fixtype(ifix)%fixfac)
+            IF(ALLOCATED(fixtype(ifix)%index))
+     $         DEALLOCATE(fixtype(ifix)%index)
+            IF(ALLOCATED(fixtype(ifix)%transform))
+     $         DEALLOCATE(fixtype(ifix)%transform)
+            IF(ALLOCATED(fixtype(ifix)%gauss))
+     $         DEALLOCATE(fixtype(ifix)%gauss)
+         ENDDO
+         DEALLOCATE(fixtype)
+      ENDIF
 
       IF (psixy == 1) CALL bicube_dealloc(psi_in)
 c-----------------------------------------------------------------------

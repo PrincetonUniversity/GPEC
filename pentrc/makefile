@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS =
+FFLAGS = -vec_report0 -openmp
 IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS
@@ -49,8 +49,23 @@ lsode:
 equil:
 	cd ../equil; make
 
+ifeq ($(wildcard version.inc),)
+version.inc: force
+	@echo ">>> Creating version file"
+	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee version.inc
+else ifeq ($(shell grep -F "'"`git describe --tags`"'" version.inc),)
+version.inc: force
+	@echo ">>> Updating version file"
+	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee version.inc
+else
+version.inc:
+	@echo ">>> Git version unchanged!"
+endif
+
+force:
+
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
 	mkdir -p ../bin
@@ -60,18 +75,19 @@ pentrc: $(OBJS)
 
 lsode1.o:
 lsode2.o:
-params.o:
+params.o: version.inc
 grid.o: 
 utilities.o: params.o
 special.o: params.o utilities.o
-dcon_interface.o: params.o utilities.o
+dcon_interface.o: ../equil/spline_mod.mod ../equil/fspline_mod.mod ../equil/cspline_mod.mod ../equil/bicube_mod.mod \
+	params.o utilities.o
 inputs.o:  params.o utilities.o special.o dcon_interface.o
 energy.o:  params.o utilities.o lsode2.o
 pitch.o:   params.o utilities.o lsode1.o energy.o special.o
 torque.o:  params.o utilities.o special.o dcon_interface.o inputs.o energy.o pitch.o
 diagnostics.o: params.o special.o energy.o pitch.o
 pentrc_interface.o: params.o utilities.o special.o inputs.o energy.o pitch.o torque.o diagnostics.o
-pentrc.o:  params.o pentrc_interface.o
+pentrc.o:  params.o  pentrc_interface.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin pentrc

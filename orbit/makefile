@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS =
+FFLAGS = -vec_report0
 IFLAGS = -I../equil -I$(MATHINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS

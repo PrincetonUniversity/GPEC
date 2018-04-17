@@ -1,26 +1,50 @@
-#------------------------------------------------------------------
-# General GNU make for portal, venus, or OSX platforms
-# - Conditionals used to determine platform
-# - This defines platform specific defaults for FC,LAPACKHOME,NETCDFHOME
+#------------------------------------------------------------------------------
+# This file is used to dynamically set some default compiler options
+# based on what libraries are available on the current machine.
 #
-# On portal.pppl.gov (or portalr6.pppl.gov for more up-to-date libraries)
-#   Must load compiler and basic libraries (These modify LD_LIBRARY_PATH).
-#   Choose one of the following
-#    $ module load gcc4 lapack-blas netcdf
-#    $ module load lff95 lapack-blas netcdf
-#    $ module load pgf acml netcdf; export ACML_HOME=$ACML_HOME/pgi64
-#    $ module load intel acml netcdf; export ACML_HOME=$ACML_HOME/ifort64
-#   Defaults will try to use gcc4
+# Prior to version 1.2, GPEC could be compiled using ifort, pgf, gfortran,
+# or lfc. All public releases on portal wheree compiled using lfc, which
+# required only default user path libraries.
 #
-# On venus.gat.com
-# - All paths are hardcoded at this point (08/2015).
-#   -- We are waiting on a upgrade that will enable "module load" standardization
+# With the release of 1.2, the options have been greatly simplified by
+# restricting all compilation to intel compilers compatible wth openmpi.
+# Machine specific instructions are below.
+#
+# Note that GPEC uses git to fetch/update the harvest repository as well as
+# to label the version at compilation time. Thus, you must have a working git
+# command in order to compile.
+#
+# On portal.pppl.gov
+#   Developers should load the default intel/11.0.081 and associated libraries,
+#     $ module load intel openmpi netcdf acml/5.3.1/ifort64 git
+#   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message,
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /usr/pppl/intel/11.0/081/bin/intel64/ifort
+#      using math libraries -lacml
+#      from /usr/pppl/acml/5.3.1/ifort64/lib
+#      including /usr/pppl/acml/5.3.1/ifort64/include
+#      and netcdf libraries -lnetcdf -lnetcdff
+#      from /usr/pppl/intel/11-pkgs/netcdf-3.6.3/lib
+#      including /usr/pppl/intel/11-pkgs/netcdf-3.6.3/include
+#      and compiler libraries -lintlc -limf
+#      from /usr/pppl/intel/11.0/081/lib/intel64
+#      including /usr/pppl/intel/11.0/081/include/intel64
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#   
+#   Now compile using
+#    $ make FFLAGS="-openmp -vec_report0"
+#
+# On iris.gat.com
+#   <Proper compiler options need to be updated for v1.2>
 #
 # On mac OSX
-#   Prerequisites
-#   - Install gfortran in your path.
-#      -- Available from macports or sourceforge
-#   - Install lapack, blas, and netcdf libraries in usr/lib.
+#   With the move to licensed intel compilers, OSX is no longer supported.
 #
 #
 # If your platform is not properly included in this make file
@@ -35,152 +59,79 @@
 # use acml or lapack based on what is loaded
 ifndef ACML_HOME
     MATHHOME = $(LAPACKHOME)
+    MATHLIBS = -llapack -lblas
 else
     MATHHOME = $(ACML_HOME)
+    MATHLIBS = -lacml
 endif
-
-
-# platform dependent defaults
-#-----------------------------
-
-# force default if necessary compiler/libraries not specified
-ifneq ($(shell echo $(HOSTNAME) | grep sunfire),)
-    PLATFORM = portal
-    ifeq "$(or $(GPEC_PLATFORM), $(and $(FC), $(MATHHOME), $(NETCDFHOME)))" ""
-        GPEC_PLATFORM = portal_intel
-    endif
-else ifneq ($(shell echo $(HOSTNAME) | grep venus),)
-    PLATFORM = venus
-    ifeq "$(or $(GPEC_PLATFORM), $(and $(FC), $(MATHHOME), $(NETCDFHOME)))" ""
-        GPEC_PLATFORM = venus_mpi
-    endif
-else ifneq ($(shell echo $(MACHTYPE) | grep apple),)
-    PLATFORM = osx
-    ifeq "$(or $(GPEC_PLATFORM), $(and $(FC), $(MATHHOME), $(NETCDFHOME)))" ""
-        GPEC_PLATFORM = osx_gfortran
-    endif
-endif
-
-
-# set compiler and libraries based on GPEC_PLATFORM
-#-----------------------------------------------
-
-ifdef GPEC_PLATFORM
-    export GPEC_PLATFORM # extends it to recursive makes
-	ifeq ($(GPEC_PLATFORM),portal_intel)
-	    # $ module load intel acml netcdf
-        # make options=-vec_report0 2>&1 | tee log.txt
-	# make options=-traceback -p for debugging memory leak
-        # status: Success 06/14/2016, solovev_ideal_example DCON 9s, GPEC 3m 1s.
-		PLATFORM = portal
-		FC = /usr/pppl/intel/11.0/081/bin/intel64/ifort -O2		
-		CC = /usr/pppl/intel/11.0/081/bin/intel64/icc -O2
-		#MATHHOME = /usr/pppl/intel/11-pkgs/acml-4.3.0/ifort64
-		MATHHOME = /usr/pppl/intel/2015-pkgs/acml-5.3.1/ifort64
-		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
-    else ifeq ($(GPEC_PLATFORM),portal_gfortran)
-	    # $ module load gcc4 acml netcdf
-        # status: Success 06/14/2016. solovev_ideal_example DCON 15s, GPEC 14m 32s.
-		PLATFORM = portal
-		FC = /usr/pppl/gcc/4.6.3/bin/gfortran4
-		CC = /usr/pppl/gcc/4.6.3/bin/gcc4
-		MATHHOME = /usr/pppl/gcc/4.6-pkgs/lapack-3.3.1
-		NETCDFHOME = /usr/pppl/gcc/4.6-pkgs/netcdf-4.1.2
-    else ifeq ($(GPEC_PLATFORM),portal_pgf)
-	    # $ module load pgf acml netcdf; export ACML_HOME=$ACML_HOME/pgi64
-        # $ make GPEC_PLATFORMS="'-tp px-64'" options="'-tp px-64'" 2>&1 | tee log.txt
-        # status: Success 06/17/2016. solovev_ideal_example DCON 29s, GPEC 12m 41s.
-		PLATFORM = portal
-		FC = /usr/pppl/pgi/11.10/linux86-64/11.10/bin/pgf90
-		CC = /usr/pppl/pgi/11.10/linux86-64/11.10/bin/pgcc
-		MATHHOME = /usr/pppl/pgi/11-pkgs/acml-5.1.0/pgi64
-		NETCDFHOME = /usr/pppl/pgi/11-pkgs/netcdf-4.1.1
-	else ifeq ($(GPEC_PLATFORM),portal_lfc)
-	    # $ module load lff95/8.00a_64bit lapack-blas/3.1.1 netcdf/3.6.2
-		# status: Success 06/17/2016. solovev_ideal_example DCON 15s, GPEC 15m 36s.
-		PLATFORM = portal
-		FC = /usr/pppl/lf64x/lf6480/bin/lfc
-		CC = /usr/pppl/gcc/4.6.3/bin/gcc4
-		MATHHOME = /usr/pppl/lff95/8.x86_64-pkgs/lapack-3.1.1.x86_64
-		NETCDFHOME = /usr/pppl/lff95/8.x86_64-pkgs/netcdf-3.6.2.x86_64
-    else ifeq ($(GPEC_PLATFORM),portalr6_intel)
-	    # $ module load intel acml netcdf
-        # status: Success 06/14/2016. solovev_ideal_example DCON 15s, GPEC segfault in xclebsch.
-		PLATFORM = portal
-		FC = /usr/pppl/intel/2015.u1/bin/ifort
-		CC = /usr/pppl/intel/2015.u1/bin/icc
-		MATHHOME = /usr/pppl/intel/2015-pkgs/acml-5.3.1/ifort64
-		NETCDFHOME = /usr/pppl/intel/2015-pkgs/netcdf-4.3.2
-	else ifeq ($(GPEC_PLATFORM),zwang_intel)
-	    # $ module load intel/2013.1.3 lapack netcdf
-	    # status: Success.
-		PLATFORM = portal
-		FC = /usr/pppl/intel/2013.1.3/bin/ifort
-		CC = /usr/pppl/intel/2013.1.3/bin/icc
-		MATHHOME = /u/zwang/numericalLib/lapack_3.4.2
-		NETCDFHOME = /usr/pppl/intel/11-pkgs/netcdf-3.6.3
-	else ifeq ($(GPEC_PLATFORM),venus_mpi)
-        FC = /task/imd/local64/bin/mpif90
-        MATHHOME = /opt/pgi/linux86-64/12.10/lib #pgf
-        NETCDFHOME = /task/imd/local64/lib #mpif90
-	else ifeq ($(GPEC_PLATFORM),osx_gfortran)
-        FC = gfortran
-        MATHHOME = /usr/lib
-        NETCDFHOME = /opt/local/lib
-	else
-        $(error No corresponding option of GPEC_PLATFORM $(GPEC_PLATFORM) to set compile environment.)
-	endif
-endif
-
 
 # specifics of which libraries are used
 #---------------------------------------
 
-# tack on lib dir to home dirs if necessary
+# tack on lib and include directories to math home if necessary
 ifneq ($(wildcard $(MATHHOME)/lib/.),)
     MATHDIR = $(MATHHOME)/lib
 else
     MATHDIR = $(MATHHOME)
 endif
-ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
-    NETCDFDIR = $(NETCDFHOME)/lib
-else
-    NETCDFDIR = $(NETCDFHOME)
-endif
-
-# tack on include dir to home dirs if necessary
 ifneq ($(wildcard $(MATHHOME)/include/.),)
     MATHINC = $(MATHHOME)/include
 else
     MATHINC = $(MATHHOME)
 endif
-ifneq ($(wildcard $(NETCDFHOME)/include/.),)
-    NETCDFINC = $(NETCDFHOME)/include
+
+# tack on lib and include directories to netcdf home if necessary
+# and catch the fact that PPPL split up fortran and c netcdf modules
+ifdef NETCDF_FORTRAN_HOME
+    ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/lib/.),)
+        NETCDFDIR = $(NETCDF_FORTRAN_HOME)/lib
+    else
+        NETCDFDIR = $(NETCDF_FORTRAN_HOME)
+    endif
+    ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/include/.),)
+        NETCDFINC = $(NETCDF_FORTRAN_HOME)/include
+    else
+        NETCDFINC = $(NETCDF_FORTRAN_HOME)
+    endif
 else
-    NETCDFINC = $(NETCDFHOME)
+    ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
+        NETCDFDIR = $(NETCDFHOME)/lib
+    else
+        NETCDFDIR = $(NETCDFHOME)
+    endif
+    ifneq ($(wildcard $(NETCDFHOME)/include/.),)
+        NETCDFINC = $(NETCDFHOME)/include
+    else
+        NETCDFINC = $(NETCDFHOME)
+    endif
+endif
+# check if the netcdf and netcdf libraries are split up or not
+ifdef NETCDF_C_HOME
+    NETCDFLIBS = -lnetcdff
+    NETCDF_C_LIBS = -lnetcdf
+    NETCDF_C_DIR = $(NETCDF_C_HOME)/lib
+else
+    ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
+        NETCDFLIBS = -lnetcdff
+        NETCDF_C_LIBS = -lnetcdf
+        NETCDF_C_DIR = $(NETCDFDIR)
+    else
+        NETCDFLIBS = -lnetcdf
+        NETCDF_C_LIBS = $(NETCDFDIR)
+        NETCDF_C_DIR = -lnetcdf
+    endif
 endif
 
+# Intel specifics
+#----------------
 # include compiler specific libs for intel fast moves
 ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
-    FCLIBS = -lintlc -limf
+    FCLIBS = -lirc -limf # irc.a needed for static compile
+    #FCLIBS = -lintlc -limf # intlc was new for intel?
     FCINC = $(F90HOME)/include/intel64
 else
     FCDIR = .
     FCLIBS = 
     FCINC = .
-endif
-
-# check if math dir has lapack or acml library
-ifneq ($(shell ls $(MATHDIR) | grep liblapack),)
-    MATHLIBS = -llapack -lblas
-else
-    MATHLIBS = -lacml
-endif
-
-# check if netcdf dir has netcdff library
-ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
-    NETCDFLIBS = -lnetcdf -lnetcdff
-else
-    NETCDFLIBS = -lnetcdf
 endif

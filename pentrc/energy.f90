@@ -25,10 +25,9 @@ module energy_integration
     !-----------------------------------------------------------------------
     
     use params, only : r8, mp, me, e, npsi_out, nell_out, nlambda_out, &
-        nmethods, methods
+        nmethods, methods, version
     use utilities, only : get_free_file_unit,append_2d,check
     use dcon_interface, only : shotnum, shottime, machine
-    use global_mod, only : version
     use netcdf
     
     use lsode2_mod
@@ -75,7 +74,11 @@ module energy_integration
     complex(r8), parameter :: xj = (0,1)
     !real(r8) :: wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
     logical :: imaxis_g = .false.
-    
+
+    real(r8) xcom_real
+    common /xcom/ xcom_real(8)
+!$OMP THREADPRIVATE(/xcom/)
+
     contains
 
     !=======================================================================
@@ -154,6 +157,9 @@ module energy_integration
                 y(neq(1)),yi(neq(1)),dky(neq(1))
         
         common /xcom/ wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
+
+!$OMP THREADPRIVATE(/xcom/)
+
 
         ! set default recording flag
         i = 0
@@ -331,6 +337,8 @@ module energy_integration
         real(r8) :: wn,wt,we,wd,wb,nuk,l,n
     
         common /xcom/ wn,wt,we,wd,wb,nuk,l,n
+
+!$OMP THREADPRIVATE(/xcom/)
 
         ! complex contour determined by global variable for module
         if(imaxis_g)then

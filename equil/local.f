@@ -30,11 +30,11 @@ c-----------------------------------------------------------------------
      $     r8=SELECTED_REAL_KIND(13,307)
       REAL(r8), PARAMETER :: pi=3.1415926535897932385_r8,
      $     twopi=2*pi,pisq=pi*pi,mu0=4e-7_r8*pi,
-     $     rtod=180/pi,dtor=pi/180,alog10=2.302585093_r8
+     $     rtod=180/pi,dtor=pi/180,alog10=2.3025850929940459_r8
       REAL(r8), PARAMETER :: e=1.6021917e-19,
      $     mp=1.672614e-27,me=9.1091e-31,
      $     c=2.997925e10,jzero=2.4048255577_r8,ev=e
-      REAL(r8), PARAMETER :: zero=0,one=1
+      REAL(r8), PARAMETER :: zero=0,one=1,two=2,half=.5
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       CONTAINS
@@ -49,9 +49,10 @@ c-----------------------------------------------------------------------
       
       INTEGER, INTENT(IN) :: mode,unit
 
+      INTEGER, SAVE :: count_rate, wall_start
       REAL(4), SAVE :: start
       REAL(4) :: seconds
-      INTEGER :: hrs,mins,secs
+      INTEGER :: hrs,mins,secs, wall_seconds
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -61,7 +62,10 @@ c     computations.
 c-----------------------------------------------------------------------
       IF(mode == 0)THEN
          CALL CPU_TIME(start)
+         CALL SYSTEM_CLOCK(COUNT_RATE=count_rate)
+         CALL SYSTEM_CLOCK(COUNT=wall_start)
       ELSE
+         ! report cpu time
          CALL CPU_time(seconds)
          seconds=seconds-start
          secs = int(seconds)
@@ -69,15 +73,32 @@ c-----------------------------------------------------------------------
          mins = (secs-hrs*60*60)/60
          secs = secs-hrs*60*60-mins*60
          IF(hrs>0)THEN
-            PRINT *,"Total cpu time = ",hrs," hours, ",
-     $         mins," minutes, ",secs," seconds"
+            WRITE(*,'(a,i3,a,i2,a,i2,a)'),"Total cpu time = ",hrs,
+     $         " hours, ",mins," minutes, ",secs," seconds"
          ELSEIF(mins>0)THEN
-            PRINT *,"Total cpu time = ",
+            WRITE(*,'(a,i2,a,i2,a)'),"Total cpu time = ",
      $         mins," minutes, ",secs," seconds"
          ELSEIF(secs>0)THEN
-            PRINT *,"Total cpu time = ",secs," seconds"
+            WRITE(*,'(a,i2,a)'),"Total cpu time = ",secs," seconds"
          ENDIF
          WRITE(unit,10)"Total cpu time = ",seconds," seconds"
+         ! report wall time
+         CALL SYSTEM_CLOCK(COUNT=wall_seconds)
+         seconds=(wall_seconds-wall_start)/REAL(count_rate, 8)
+         secs = int(seconds)
+         hrs = secs/(60*60)
+         mins = (secs-hrs*60*60)/60
+         secs = secs-hrs*60*60-mins*60
+         IF(hrs>0)THEN
+            WRITE(*,'(a,i3,a,i2,a,i2,a)'),"Total wall time = ",hrs,
+     $         " hours, ",mins," minutes, ",secs," seconds"
+         ELSEIF(mins>0)THEN
+            WRITE(*,'(a,i2,a,i2,a)'),"Total wall time = ",
+     $         mins," minutes, ",secs," seconds"
+         ELSEIF(secs>0)THEN
+            WRITE(*,'(a,i2,a)'),"Total wall time = ",secs," seconds"
+         ENDIF
+         WRITE(unit,10)"Total wall time = ",seconds," seconds"
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

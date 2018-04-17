@@ -14,7 +14,9 @@ c      2. bicube_dealloc.
 c      3. bicube_fit.
 c      4. bicube_lsfit.
 c      5. bicube_eval.
+c      5a. bicube_eval_external.
 c      6. bicube_getco.
+c      6a. bicube_getco_external.
 c      7. bicube_all_eval.
 c      8. bicube_all_getco.
 c      9. bicube_write_xy.
@@ -471,11 +473,13 @@ c-----------------------------------------------------------------------
 c     find x interval.
 c-----------------------------------------------------------------------
       DO
-         IF(xx >= bcs%xs(bcs%ix) .OR. bcs%ix <= 0)EXIT
+         IF(bcs%ix <= 0)EXIT
+         IF(xx >= bcs%xs(bcs%ix))EXIT
          bcs%ix=bcs%ix-1
       ENDDO
       DO
-         IF(xx < bcs%xs(bcs%ix+1) .OR. bcs%ix >= bcs%mx-1)EXIT
+         IF(bcs%ix >= bcs%mx-1)EXIT
+         IF(xx < bcs%xs(bcs%ix+1))EXIT
          bcs%ix=bcs%ix+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -495,11 +499,13 @@ c-----------------------------------------------------------------------
 c     find y interval.
 c-----------------------------------------------------------------------
       DO
-         IF(yy >= bcs%ys(bcs%iy) .OR. bcs%iy <= 0)EXIT
+         IF(bcs%iy <= 0)EXIT
+         IF(yy >= bcs%ys(bcs%iy))EXIT
          bcs%iy=bcs%iy-1
       ENDDO
       DO
-         IF(yy < bcs%ys(bcs%iy+1) .OR. bcs%iy >= bcs%my-1)EXIT
+         IF(bcs%iy >= bcs%my-1)EXIT
+         IF(yy < bcs%ys(bcs%iy+1))EXIT
          bcs%iy=bcs%iy+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -636,6 +642,174 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE bicube_eval
 c-----------------------------------------------------------------------
+c     subprogram 5a. bicube_eval_external.
+c     evaluates bicubic spline function with external arrays (parallel).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE bicube_eval_external(bcs, x, y, mode,
+     $     b_ix, b_iy, b_f, b_fx, b_fy)
+
+      TYPE(bicube_type), INTENT(IN) :: bcs
+      REAL(r8), INTENT(IN) :: x,y
+      INTEGER, INTENT(IN) :: mode
+
+      INTEGER :: i,iqty,iside
+      REAL(r8) :: dx,dy,xx,yy,g,gx,gy,gxx,gyy,gxy,xfac,yfac
+      REAL(r8), DIMENSION (4,4,bcs%nqty) :: c
+
+      INTEGER, INTENT(INOUT) :: b_ix,b_iy
+      REAL(r8), DIMENSION(:), INTENT(INOUT) :: b_f,b_fx,b_fy
+c-----------------------------------------------------------------------
+c     error-check for mode number--external array is limited.
+c-----------------------------------------------------------------------
+      IF (mode > 1) THEN
+         CALL program_stop("Set bicube_eval_external mode <=1 !")
+      ENDIF
+c-----------------------------------------------------------------------
+c     preliminary computations.
+c-----------------------------------------------------------------------
+      b_ix=max(b_ix,0)
+      b_ix=min(b_ix,bcs%mx-1)
+      b_iy=max(b_iy,0)
+      b_iy=min(b_iy,bcs%my-1)
+      xx=x
+      yy=y
+c-----------------------------------------------------------------------
+c     normalize x interval for periodic splines.
+c-----------------------------------------------------------------------
+      IF(bcs%periodic(1))THEN
+         DO
+            IF(xx < bcs%xs(bcs%mx))EXIT
+            xx=xx-bcs%xs(bcs%mx)
+         ENDDO
+         DO
+            IF(xx >= bcs%xs(0))EXIT
+            xx=xx+bcs%xs(bcs%mx)
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     find x interval.
+c-----------------------------------------------------------------------
+      DO
+         IF(b_ix <= 0)EXIT
+         IF(xx >= bcs%xs(b_ix))EXIT
+         b_ix=b_ix-1
+      ENDDO
+      DO
+         IF(b_ix >= bcs%mx-1)EXIT
+         IF(xx < bcs%xs(b_ix+1))EXIT
+         b_ix=b_ix+1
+      ENDDO
+c-----------------------------------------------------------------------
+c     normalize y interval for periodic splines.
+c-----------------------------------------------------------------------
+      IF(bcs%periodic(2))THEN
+         DO
+            IF(yy < bcs%ys(bcs%my))EXIT
+            yy=yy-bcs%ys(bcs%my)
+         ENDDO
+         DO
+            IF(yy >= bcs%ys(0))EXIT
+            yy=yy+bcs%ys(bcs%my)
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     find y interval.
+c-----------------------------------------------------------------------
+      DO
+         IF(b_iy <= 0)EXIT
+         IF(yy >= bcs%ys(b_iy))EXIT
+         b_iy=b_iy-1
+      ENDDO
+      DO
+         IF(b_iy >= bcs%my-1)EXIT
+         IF(yy < bcs%ys(b_iy+1))EXIT
+         b_iy=b_iy+1
+      ENDDO
+c-----------------------------------------------------------------------
+c     find offsets and compute local coefficients.
+c-----------------------------------------------------------------------
+      dx=xx-bcs%xs(b_ix)
+      dy=yy-bcs%ys(b_iy)
+      c=bicube_getco_external(bcs,b_ix,b_iy)
+c-----------------------------------------------------------------------
+c     evaluate f.
+c-----------------------------------------------------------------------
+      b_f=0
+      DO i=4,1,-1
+         b_f=b_f*dx
+     $        +((c(i,4,:)*dy
+     $        +c(i,3,:))*dy
+     $        +c(i,2,:))*dy
+     $        +c(i,1,:)
+      ENDDO
+c-----------------------------------------------------------------------
+c     evaluate first derivatives of f
+c-----------------------------------------------------------------------
+      IF(mode > 0)THEN
+         b_fx=0
+         b_fy=0
+         DO i=4,1,-1
+            b_fy=b_fy*dx
+     $           +(c(i,4,:)*3*dy
+     $           +c(i,3,:)*2)*dy
+     $           +c(i,2,:)
+            b_fx=b_fx*dy
+     $           +(c(4,i,:)*3*dx
+     $           +c(3,i,:)*2)*dx
+     $           +c(2,i,:)
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     restore x powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         dx=x-bcs%x0(iside)
+         DO iqty=1,bcs%nqty
+            IF(bcs%xpower(iside,iqty) == 0)CYCLE
+            xfac=ABS(dx)**bcs%xpower(iside,iqty)
+            g=b_f(iqty)*xfac
+            IF(mode > 0)THEN
+               gx=(b_fx(iqty)+b_f(iqty)
+     $              *bcs%xpower(iside,iqty)/dx)*xfac
+               gy=b_fy(iqty)*xfac
+            ENDIF
+            b_f(iqty)=g
+            IF(mode > 0)THEN
+               b_fx(iqty)=gx
+               b_fy(iqty)=gy
+            ENDIF
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     restore y powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         dy=y-bcs%y0(iside)
+         DO iqty=1,bcs%nqty
+            IF(bcs%ypower(iside,iqty) == 0)CYCLE
+            yfac=ABS(dy)**bcs%ypower(iside,iqty)
+            g=b_f(iqty)*yfac
+            IF(mode > 0)THEN
+               gx=b_fx(iqty)*yfac
+               gy=(b_fy(iqty)+b_f(iqty)
+     $              *bcs%ypower(iside,iqty)/dy)*yfac
+            ENDIF
+            b_f(iqty)=g
+            IF(mode > 0)THEN
+               b_fx(iqty)=gx
+               b_fy(iqty)=gy
+            ENDIF
+         ENDDO
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE bicube_eval_external
+c-----------------------------------------------------------------------
 c     subprogram 6. bicube_getco.
 c     computes coefficient matrices.
 c-----------------------------------------------------------------------
@@ -731,6 +905,103 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END FUNCTION bicube_getco
+c-----------------------------------------------------------------------
+c     subprogram 6a. bicube_getco_external.
+c     computes coefficient matrices for external arrays.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      FUNCTION bicube_getco_external(bcs,b_ix,b_iy) RESULT(cmat)
+
+      TYPE(bicube_type), INTENT(IN) :: bcs
+      INTEGER, INTENT(IN) :: b_ix, b_iy
+      REAL(r8), DIMENSION(4,4,bcs%nqty) :: cmat
+
+      REAL(r8) :: hxfac,hxfac2,hxfac3
+      REAL(r8) :: hyfac,hyfac2,hyfac3
+      REAL(r8), DIMENSION(3:4,4) :: gxmat,gymat
+      REAL(r8), DIMENSION(4,4,bcs%nqty) :: temp
+c-----------------------------------------------------------------------
+c     compute gxmat.
+c-----------------------------------------------------------------------
+      hxfac=1/(bcs%xs(b_ix+1)-bcs%xs(b_ix))
+      hxfac2=hxfac*hxfac
+      hxfac3=hxfac2*hxfac
+      gxmat(3,1)=-3*hxfac2
+      gxmat(3,2)=-2*hxfac
+      gxmat(3,3)=3*hxfac2
+      gxmat(3,4)=-hxfac
+      gxmat(4,1)=2*hxfac3
+      gxmat(4,2)=hxfac2
+      gxmat(4,3)=-2*hxfac3
+      gxmat(4,4)=hxfac2
+c-----------------------------------------------------------------------
+c     compute gymat.
+c-----------------------------------------------------------------------
+      hyfac=1/(bcs%ys(b_iy+1)-bcs%ys(b_iy))
+      hyfac2=hyfac*hyfac
+      hyfac3=hyfac2*hyfac
+      gymat(3,1)=-3*hyfac2
+      gymat(3,2)=-2*hyfac
+      gymat(3,3)=3*hyfac2
+      gymat(3,4)=-hyfac
+      gymat(4,1)=2*hyfac3
+      gymat(4,2)=hyfac2
+      gymat(4,3)=-2*hyfac3
+      gymat(4,4)=hyfac2
+c-----------------------------------------------------------------------
+c     compute smat.
+c-----------------------------------------------------------------------
+      cmat(1,1,:)=bcs%fs(b_ix,b_iy,:)
+      cmat(1,2,:)=bcs%fsy(b_ix,b_iy,:)
+      cmat(1,3,:)=bcs%fs(b_ix,b_iy+1,:)
+      cmat(1,4,:)=bcs%fsy(b_ix,b_iy+1,:)
+      cmat(2,1,:)=bcs%fsx(b_ix,b_iy,:)
+      cmat(2,2,:)=bcs%fsxy(b_ix,b_iy,:)
+      cmat(2,3,:)=bcs%fsx(b_ix,b_iy+1,:)
+      cmat(2,4,:)=bcs%fsxy(b_ix,b_iy+1,:)
+      cmat(3,1,:)=bcs%fs(b_ix+1,b_iy,:)
+      cmat(3,2,:)=bcs%fsy(b_ix+1,b_iy,:)
+      cmat(3,3,:)=bcs%fs(b_ix+1,b_iy+1,:)
+      cmat(3,4,:)=bcs%fsy(b_ix+1,b_iy+1,:)
+      cmat(4,1,:)=bcs%fsx(b_ix+1,b_iy,:)
+      cmat(4,2,:)=bcs%fsxy(b_ix+1,b_iy,:)
+      cmat(4,3,:)=bcs%fsx(b_ix+1,b_iy+1,:)
+      cmat(4,4,:)=bcs%fsxy(b_ix+1,b_iy+1,:)
+c-----------------------------------------------------------------------
+c     multiply by gymat^T.
+c-----------------------------------------------------------------------
+      temp(:,1:2,:)=cmat(:,1:2,:)
+      temp(:,3,:)
+     $     =cmat(:,1,:)*gymat(3,1)
+     $     +cmat(:,2,:)*gymat(3,2)
+     $     +cmat(:,3,:)*gymat(3,3)
+     $     +cmat(:,4,:)*gymat(3,4)
+      temp(:,4,:)
+     $     =cmat(:,1,:)*gymat(4,1)
+     $     +cmat(:,2,:)*gymat(4,2)
+     $     +cmat(:,3,:)*gymat(4,3)
+     $     +cmat(:,4,:)*gymat(4,4)
+c-----------------------------------------------------------------------
+c     multiply by gxmat.
+c-----------------------------------------------------------------------
+      cmat(1:2,:,:)=temp(1:2,:,:)
+      cmat(3,:,:)
+     $     =gxmat(3,1)*temp(1,:,:)
+     $     +gxmat(3,2)*temp(2,:,:)
+     $     +gxmat(3,3)*temp(3,:,:)
+     $     +gxmat(3,4)*temp(4,:,:)
+      cmat(4,:,:)
+     $     =gxmat(4,1)*temp(1,:,:)
+     $     +gxmat(4,2)*temp(2,:,:)
+     $     +gxmat(4,3)*temp(3,:,:)
+     $     +gxmat(4,4)*temp(4,:,:)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END FUNCTION bicube_getco_external
 c-----------------------------------------------------------------------
 c     subprogram 7. bicube_all_eval.
 c     evaluates bicubic splines in all intervals.
@@ -1322,6 +1593,8 @@ c-----------------------------------------------------------------------
       bcs2%fsy=bcs1%fsy
       bcs2%fsxy=bcs1%fsxy
       bcs2%name=bcs1%name
+      bcs2%xtitle=bcs1%xtitle
+      bcs2%ytitle=bcs1%ytitle
       bcs2%title=bcs1%title
       bcs2%periodic=bcs1%periodic
       bcs2%xpower=bcs1%xpower
@@ -1399,7 +1672,6 @@ c-----------------------------------------------------------------------
                ainv(2,1)=-amat(2,1)
                ainv=ainv/adet
                dx=-ainv(1,1)*bcs%fx(iqty)-ainv(1,2)*bcs%fy(iqty)
-               dy=-ainv(2,1)*bcs%fx(iqty)-ainv(2,2)*bcs%fy(iqty)
                x=x+dx
                y=y+dy
             ENDDO

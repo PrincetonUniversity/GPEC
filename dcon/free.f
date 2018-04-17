@@ -29,8 +29,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
       INTEGER :: nfm2,nths2
-      REAL(8), DIMENSION(:,:), pointer :: grri
-c-----------------------------------------------------------------------
+      REAL(8), DIMENSION(:,:), POINTER :: grri
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -62,7 +61,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work2
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,wt0,temp,wpt,wvt
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat,vl,vr
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
       REAL(r8) :: kernelsignin
@@ -236,7 +236,7 @@ c-----------------------------------------------------------------------
 c     write the plasma matrix.
 c-----------------------------------------------------------------------
       WRITE(out_unit,'(/1x,a/)')"Plasma Energy Matrix:"
-      DO isol=1,2
+      DO isol=1,mpert
          WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,", m = ",m(isol)
          WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
          WRITE(out_unit,'(i3,1p,3e13.5)')

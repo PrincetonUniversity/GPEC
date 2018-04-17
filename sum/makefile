@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = 
+FFLAGS = -vec_report0
 F90 = $(FC) $(FFLAGS)
 
 .f.o:

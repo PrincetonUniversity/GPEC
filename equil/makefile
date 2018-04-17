@@ -1,5 +1,5 @@
 
-FFLAGS =
+FFLAGS = -vec_report0
 
 F90 = $(FC) $(FFLAGS)
 
@@ -29,6 +29,11 @@ libequil: $(OBJS)
 	mkdir -p ../lib/
 	ar -r ../lib/libequil.a *.o
 
+# targets
+
+clean:
+	rm -f *.o *.mod
+
 # dependencies
 
 local.o: io.o
@@ -47,6 +52,3 @@ gsec.o: inverse.o
 sol.o: direct.o
 equil.o: read_eq.o lar.o gsec.o sol.o
 equil_out.o: global.o
-
-clean:
-	rm -f *.o *.mod

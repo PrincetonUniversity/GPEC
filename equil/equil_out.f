@@ -49,8 +49,8 @@ c-----------------------------------------------------------------------
      $     5x,"delta2",5x,"volume"//1p,7e11.3/)
  30   FORMAT(/5x,"li1",8x,"li2",8x,"li3",9x,"ro",9x,"zo",8x,"psio"
      $     //1p,6e11.3/)
- 40   FORMAT(/4x,"betap1",5x,"betap2",5x,"betap3",5x,"betat",6x,
-     $     "betan",5x,"ppeakfac",5x,"bt0"//1p,7e11.3/)
+ 40   FORMAT(/4x,"betap1",5x,"betap2",5x,"betat",6x,
+     $     "betan",7x,"betaj",6x,"bwall",7x,"bt0"//1p,7e11.3/)
  50   FORMAT(/6x,"q0",8x,"qmin",8x,"q95",7x,"qmax",8x,"qa",8x,"crnt",
      $     7x,"I/aB"//1p,7e11.3/)
  60   FORMAT(/'ipsi',2x,'psifac',6x,'f',7x,'mu0 p',5x,'dvdpsi',6x,'q'/)
@@ -65,7 +65,7 @@ c-----------------------------------------------------------------------
       WRITE(unit,10)mpsi,mtheta,psilow,psihigh,rsep,zsep
       WRITE(unit,20)amean,rmean,aratio,kappa,delta1,delta2,volume
       WRITE(unit,30)li1,li2,li3,ro,zo,psio
-      WRITE(unit,40)betap1,betap2,betap3,betat,betan,ppeakfac,bt0
+      WRITE(unit,40)betap1,betap2,betat,betan,betaj,bwall,bt0
       WRITE(unit,50)q0,qmin,q95,qmax,qa,crnt,crnt/(amean*bt0)
 c-----------------------------------------------------------------------
 c     output surface quantities.
@@ -270,7 +270,7 @@ c-----------------------------------------------------------------------
 c     prepare cubics spline for integration.
 c-----------------------------------------------------------------------
       CALL spline_alloc(gs,mtheta,2)
-      CALL spline_alloc(hs,mpsi,3)
+      CALL spline_alloc(hs,mpsi,4)
       gs%xs=rzphi%ys
       hs%xs=rzphi%xs
 c-----------------------------------------------------------------------
@@ -298,6 +298,7 @@ c-----------------------------------------------------------------------
       CALL spline_int(gs)
       crnt=gs%fsi(mtheta,2)/(1e6*mu0)
       bp0=gs%fsi(mtheta,2)/gs%fsi(mtheta,1)
+      bwall=1e6*mu0*crnt/(twopi*amean)
       CALL spline_dealloc(gs)
 c-----------------------------------------------------------------------
 c     integrate poloidal magnetic field over each flux surface.
@@ -328,6 +329,7 @@ c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          hs%fs(ipsi,1)=sq%fs(ipsi,2)*sq%fs(ipsi,3)
          hs%fs(ipsi,2)=sq%fs(ipsi,3)
+         hs%fs(ipsi,4)=sq%fs(ipsi,2)**2*sq%fs(ipsi,3)
       ENDDO
       hs%xpower(1,3)=-1
       CALL spline_fit(hs,"extrap")
@@ -356,6 +358,7 @@ c-----------------------------------------------------------------------
       p0=sq%fs(0,2)-sq%fs1(0,2)*sq%xs(0)
       ppeakfac=p0*hs%fsi(mpsi,2)/hs%fsi(mpsi,1)
       betat=2*(hs%fsi(mpsi,1)/hs%fsi(mpsi,2))/bt0**2
+      betaj=2*SQRT(hs%fsi(mpsi,4)/hs%fsi(mpsi,2))/bwall**2
       betan=100*amean*bt0*betat/crnt
       betap1=2*(hs%fsi(mpsi,1)/hs%fsi(mpsi,2))/bp0**2
       betap2=4*hs%fsi(mpsi,1)/((1e6*mu0*crnt)**2*ro)
@@ -560,13 +563,62 @@ c-----------------------------------------------------------------------
       SUBROUTINE equil_out_gse
 
       INTEGER :: ipsi,itheta,iqty
-      REAL(r8), DIMENSION(0:mpsi,2) :: term
-      REAL(r8), DIMENSION(0:mpsi) :: totali,errori,errlogi
-      REAL(r8), DIMENSION(0:mtheta) :: rfac,angle
-      REAL(r8), DIMENSION(0:mpsi,0:mtheta) :: r,z
-      REAL(r8), DIMENSION(0:mpsi,0:mtheta) :: source,total,error,errlog
+      REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: term
+      REAL(r8), ALLOCATABLE, DIMENSION(:) :: totali,errori,errlogi
+      REAL(r8), ALLOCATABLE, DIMENSION(:) :: rfac,angle
+      REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: r,z
+      REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: source,total,error,errlog
       TYPE(bicube_type) :: flux
       TYPE(spline_type) :: temp
+
+      LOGICAL, PARAMETER :: diagnose_sq=.FALSE.,diagnose_maxima=.FALSE.,
+     $     diagnose_xy=.FALSE.,diagnose_yx=.FALSE.,diagnose_src=.FALSE.
+      INTEGER, DIMENSION(2) :: jmax
+      REAL(r8) :: fxmax,fymax,smax,emax,lmax
+
+c-----------------------------------------------------------------------
+c     allocate.
+c-----------------------------------------------------------------------
+      ALLOCATE (term(0:mpsi,2))
+      ALLOCATE (totali(0:mpsi),errori(0:mpsi),errlogi(0:mpsi))
+      ALLOCATE (rfac(0:mtheta),angle(0:mtheta))
+      ALLOCATE (r(0:mpsi,0:mtheta),z(0:mpsi,0:mtheta))
+      ALLOCATE (source(0:mpsi,0:mtheta),total(0:mpsi,0:mtheta),
+     $          error(0:mpsi,0:mtheta),errlog(0:mpsi,0:mtheta))
+c-----------------------------------------------------------------------
+c     diagnose sq.
+c-----------------------------------------------------------------------
+      IF(diagnose_sq)THEN
+         WRITE(*,*)"Diagnosing sq"
+         OPEN(UNIT=debug_unit,FILE="sq.out",STATUS="REPLACE")
+         OPEN(UNIT=bin_unit,FILE="sq.bin",STATUS="REPLACE",
+     $        FORM="UNFORMATTED")
+         CALL spline_write1(sq,.TRUE.,.TRUE.,debug_unit,bin_unit,.TRUE.)
+         CLOSE(UNIT=debug_unit)
+         CLOSE(UNIT=bin_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     yx diagnose of rzphi.
+c-----------------------------------------------------------------------
+      IF(diagnose_yx)THEN
+         WRITE(*,*)"Diagnosing yx"
+         OPEN(UNIT=bin_unit,FILE="yx.bin",STATUS="REPLACE",
+     $        FORM="UNFORMATTED")
+         CALL bicube_write_yx(rzphi,.FALSE.,.TRUE.,debug_unit,bin_unit,
+     $        .TRUE.)
+         CLOSE(UNIT=bin_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     xy diagnose of rzphi.
+c-----------------------------------------------------------------------
+      IF(diagnose_xy)THEN
+         WRITE(*,*)"Diagnosing xy"
+         OPEN(UNIT=bin_unit,FILE="xy.bin",STATUS="REPLACE",
+     $        FORM="UNFORMATTED")
+         CALL bicube_write_xy(rzphi,.FALSE.,.TRUE.,debug_unit,bin_unit,
+     $        .TRUE.)
+         CLOSE(UNIT=bin_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute coordinates.
 c-----------------------------------------------------------------------
@@ -604,14 +656,25 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute source.
 c-----------------------------------------------------------------------
+      IF(diagnose_src)OPEN(UNIT=bin_unit,FILE="src.bin",
+     $     STATUS="REPLACE",FORM="UNFORMATTED")
       DO ipsi=0,mpsi
          DO itheta=0,mtheta
             CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),0)
             source(ipsi,itheta)=rzphi%f(4)/(twopi*psio*pi**2)
      $           *(sq%fs(ipsi,1)*sq%fs1(ipsi,1)
      $           /(twopi*r(ipsi,itheta))**2+sq%fs1(ipsi,2))
+            IF(diagnose_src)WRITE(bin_unit)
+     $           REAL(rzphi%xs(ipsi),4),REAL(rzphi%ys(itheta),4),
+     $           REAL(rzphi%f(4)/(twopi*psio*pi**2),4),
+     $           REAL(sq%fs(ipsi,1)*sq%fs1(ipsi,1),4),
+     $           REAL(sq%fs1(ipsi,2),4),
+     $           REAL(sq%fs(ipsi,1),4),
+     $           REAL(sq%fs1(ipsi,1),4)
          ENDDO
+         IF(diagnose_src)WRITE(bin_unit)
       ENDDO
+      IF(diagnose_src)CLOSE(UNIT=bin_unit)
 c-----------------------------------------------------------------------
 c     compute total and error.
 c-----------------------------------------------------------------------
@@ -623,6 +686,21 @@ c-----------------------------------------------------------------------
       ELSEWHERE
          errlog=0
       ENDWHERE
+c-----------------------------------------------------------------------
+c     diagnose maxima.
+c-----------------------------------------------------------------------
+      IF(diagnose_maxima)THEN
+         fxmax=MAXVAL(ABS(flux%fsx(:,:,1)))
+         fymax=MAXVAL(ABS(flux%fsy(:,:,2)))
+         smax=MAXVAL(ABS(source))
+         emax=MAXVAL(ABS(error))
+         lmax=MAXVAL(errlog)
+         jmax=MAXLOC(errlog)
+         WRITE(*,'(1p,3(a,e10.3))')
+     $        " fxmax =",fxmax,", fymax =",fymax,", smax =",smax
+         WRITE(*,'(1p,2(a,e10.3),a,2i4)')
+     $        " emax =",emax,", lmax =",lmax,", maxloc = ",jmax-1
+      ENDIF
 c-----------------------------------------------------------------------
 c     write contour plot.
 c-----------------------------------------------------------------------
@@ -696,6 +774,14 @@ c-----------------------------------------------------------------------
 c     deallocate bicube_type.
 c-----------------------------------------------------------------------
       CALL bicube_dealloc(flux)
+c-----------------------------------------------------------------------
+c     deallocate.
+c-----------------------------------------------------------------------
+      DEALLOCATE (term)
+      DEALLOCATE (totali,errori,errlogi)
+      DEALLOCATE (rfac,angle)
+      DEALLOCATE (r,z)
+      DEALLOCATE (source,total,error,errlog)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

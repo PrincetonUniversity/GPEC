@@ -67,7 +67,9 @@ module inputs
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
-        
+
+!$OMP THREADPRIVATE(dbob_m, divx_m, kin, xs_m, fnml)
+
     contains
 
     !=======================================================================
@@ -398,7 +400,7 @@ module inputs
             CASE("boozer")
                 powin=(/2,0,0,0/)
             CASE("park")
-                powin=(/1,0,0,0/)  
+                powin=(/1,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
             CASE("other")
@@ -619,7 +621,7 @@ module inputs
             CASE("boozer")
                 powin=(/2,0,0,0/)
             CASE("park")
-                powin=(/1,0,0,0/)  
+                powin=(/1,0,0,0/)
             CASE("polar")
                 powin=(/0,1,0,1/)
             CASE("other")
@@ -809,7 +811,7 @@ module inputs
                 enddo
                 call iscdftf(mfac,mpert,divxfun,mthsurf,divx_m%fs(i-1,:))
                 call iscdftf(mfac,mpert,dbobfun,mthsurf,dbob_m%fs(i-1,:))
-                if(verbose) call progressbar(j,1,npsi,op_percent=20)
+                if(verbose) call progressbar(i,istrt_psi,istop_psi,op_percent=20)
             enddo
         else
             ! default dbdx is a flat spectrum

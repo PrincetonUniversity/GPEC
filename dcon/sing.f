@@ -243,6 +243,7 @@ c-----------------------------------------------------------------------
 c     zero di if out of range.
 c-----------------------------------------------------------------------
       ipert0=NINT(nn*singp%q)-mlow+1
+      q=singp%q
       IF(ipert0 <= 0 .OR. mlow > nn*q .OR. mhigh < nn*q)THEN
          singp%di=0
          RETURN
@@ -251,7 +252,6 @@ c-----------------------------------------------------------------------
 c     allocate and compute ranges.
 c-----------------------------------------------------------------------
       ALLOCATE(sing(ising)%n1(mpert-1),sing(ising)%n2(2*mpert-2))
-      q=singp%q
       singp%r1=(/ipert0/)
       singp%r2=(/ipert0,ipert0+mpert/)
       singp%n1=(/(ipert,ipert=1,ipert0-1),(ipert,ipert=ipert0+1,mpert)/)
@@ -1465,6 +1465,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: x0,x1,eps,reps
       COMPLEX(r8) :: det0,det1,sing_det
 
+      WRITE(*, *) "Finding kinetically displaced singular surfaces"
       singnum=0
       psising=-1
       i_recur=0
@@ -1472,7 +1473,7 @@ c-----------------------------------------------------------------------
       x0=psilow
       x1=psihigh
 c-----------------------------------------------------------------------
-c     adapatively search the singular point.
+c     adaptively search the singular point.
 c-----------------------------------------------------------------------
       sing_flag=.FALSE.
       det0=sing_get_f_det(x0)
@@ -1504,7 +1505,7 @@ c-----------------------------------------------------------------------
          psising(singnum)=psihigh
       ENDIF
 c-----------------------------------------------------------------------
-c     Newton method to find the accurate local minium point.
+c     Newton method to find the accurate local minimum point.
 c-----------------------------------------------------------------------           
       DO i=2,singnum-1
          x1=psising(i)
@@ -1522,28 +1523,34 @@ c-----------------------------------------------------------------------
       psising_check=psising
       psising=-1
       singnum=1
-      WRITE (*,*) 'ABS(det_max)=',ABS(det_max),'eps=',keps1
+      WRITE(*,'(a,es10.3,a,es10.3)') ' Looking for singularities below',
+     $      keps1, 'x the maximum determinant of', ABS(det_max)
       psising(1)=psising_check(1)
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
-         WRITE (*,*) 'psising_check(',i,')=',psising_check(i),
-     $               'det0=',ABS(det0)
          reps=keps1/keps2
          eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
          IF (ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)
+            WRITE(*,'(a,es10.3,a,es10.3,a)') '  > psi',psising_check(i),
+     $        ' is singular'
+         ELSE
+            WRITE(*,'(a,es10.3,a,es10.3,a)') '  - psi',psising_check(i),
+     $        ' is not singular. Determinant is ',
+     $        ABS(det0)/(ABS(det_max)*eps), 'x the threshold'
          ENDIF
       ENDDO
       singnum=singnum+1
       psising(singnum)=psising_check(singnum_check)
-      OPEN(UNIT=100,FILE="sing_find.out",STATUS="UNKNOWN")
+      OPEN(UNIT=sing_unit,FILE="sing_find.out",STATUS="UNKNOWN")
+         WRITE(sing_unit,'(1x,3(a16))') "psi","real(det)","imag(det)"
          DO i=1,singnum
             det0=sing_get_f_det(psising(i))
-            WRITE (100,*) "singfac=",psising(i),'ABS(det)=',ABS(det0),
-     $           'Real(det)=',REAL(det0),'Imag(det)=',IMAG(det0)
+            WRITE(sing_unit,'(1x,3(e16.9))') psising(i),
+     $           REAL(det0), AIMAG(det0)
          ENDDO
-      CLOSE (UNIT=100)
+      CLOSE (UNIT=sing_unit)
       kmsing=singnum-2
       ALLOCATE(kinsing(kmsing))
       DO ising=1,kmsing
@@ -1716,7 +1723,8 @@ c-----------------------------------------------------------------------
          ENDIF
          IF(it > itmax) THEN
             it=-1
-            WRITE(*,*) "Solution is not well converged."
+            WRITE(*,'(a,es10.3,a,es10.3,a)') "  - search terminated at",
+     $               zopt," with large",err," error"
             z=zopt
             EXIT
          ENDIF

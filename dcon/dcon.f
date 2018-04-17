@@ -30,7 +30,7 @@ c-----------------------------------------------------------------------
      $    pentrc_timer=>timer
       IMPLICIT NONE
 
-      LOGICAL :: cyl_flag=.FALSE.
+      LOGICAL :: use_classic_splines_for_dcon=.FALSE., cyl_flag=.FALSE.
       INTEGER :: mmin,ipsi,m
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
@@ -54,8 +54,9 @@ c-----------------------------------------------------------------------
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
-     $     kingridtype,ktanh_flag,passing_flag,
-     $     ion_flag,electron_flag,ktc,ktw
+     $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
+     $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
+     $     use_classic_splines
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -81,7 +82,9 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
+      CALL OMP_SET_NUM_THREADS(parallel_threads)
       delta_mhigh=delta_mhigh*2
+      use_classic_splines_for_dcon = use_classic_splines
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
@@ -93,6 +96,8 @@ c-----------------------------------------------------------------------
       CALL equil_out_diagnose(.FALSE.,out_unit)
       CALL equil_out_write_2d
       IF(direct_flag)CALL bicube_dealloc(psi_in)
+      ! enables different settings for dcon and equilibrium splines
+      use_classic_splines = use_classic_splines_for_dcon
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
@@ -160,12 +165,12 @@ c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag)THEN
          IF(verbose) WRITE(*,'(1x,a)')
      $        "Fourier analysis of metric tensor components"
-         IF(verbose) WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,
+         IF(verbose) WRITE(*,'(1x,1p,4(a,es10.3))')"q0 = ",q0,
      $        ", qmin = ",qmin,", qmax = ",qmax,", q95 = ",q95
-         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,e10.3))')
+         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,es10.3))')
      $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
      $        ", qlim = ",qlim,", psilim = ",psilim
-         IF(verbose) WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
+         IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betap1 = ",betap1
          IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
@@ -182,7 +187,7 @@ c-----------------------------------------------------------------------
      $          op_peq=.FALSE.)
             ! manually set the pentrc equilibrium description
             CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
-     $          twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
+     $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
             ! manually set the kinetic profiles
             CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
      $          tfac,wefac,wpfac,tdebug)
@@ -259,7 +264,8 @@ c-----------------------------------------------------------------------
      $     REAL(psio,4),REAL(betap1,4),REAL(betap2,4),REAL(betap3,4),
      $     REAL(betat,4),REAL(betan,4),REAL(bt0,4),REAL(q0,4),
      $     REAL(qmin,4),REAL(qmax,4),REAL(qa,4),REAL(crnt,4),
-     $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1),REAL(q95)
+     $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1),REAL(q95),
+     $     REAL(bwall,4),REAL(betaj,4)
       CALL bin_close(sum_unit)
 c-----------------------------------------------------------------------
 c     log inputs/outputs with harvest
