@@ -974,7 +974,7 @@ c-----------------------------------------------------------------------
       ELSE IF (passing_flag) THEN
          ft="p"
       ELSE
-         program_stop("Kinetic calculations require "//
+         CALL program_stop("Kinetic calculations require "//
      $                "passing_flag and/or trapped_flag")
       ENDIF
 c-----------------------------------------------------------------------
