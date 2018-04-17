@@ -5,16 +5,23 @@
 Getting started
 ***************
 
-This section provides the basic structure of the GPEC code and the processes necessary to run it. Although it is not a tutorial, the user should be able to run a sample of the code after reading this chapter.
-
 .. _installing:
 
 .. include:: ../install/README
 
 .. _Run_Process:
 
-Run Process
-===========
+Running using OMFIT
+====================
+
+`OMFIT <http://gafusion.github.io/OMFIT-source/>`_ is the recommended way to run GPEC for new users. Public releases of OMFIT are available on most major fusion clusters, or it can be downloaded to your personal computer.
+
+Using OMFIT guides users through a clean workflow, providing many powerful tools to facilitate the necessary preparation of inputs. It provides the interface, for example, with EFIT and profile fitting tools on many machines. It also enables users to submit GPEC jobs remotely, quickly visualize outputs, perform powerful python post-processing, and share projects with others.
+
+A complete description of the OMFIT workflow manager GPEC module can be found in `this google doc tutorial <https://docs.google.com/document/d/1qSUjJZYmET8-X08rRGBT6L_9D9fzEN_zCV75OX_ZbZk/edit?usp=sharing>`_.
+
+Manual Run Process
+==================
 
 This section outlines the basic run process with reference to some of the most common input-output manipulation in GPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the Namelist Variables section.
 
@@ -26,7 +33,7 @@ Public copies of the GPEC releases are available at /p/gpec on portal. The user 
 
 2. Edit the equil.in file
 
-  - Specify the specific plasma shot of interest by setting the initial equilibrium file (ex: efit output g-file).
+  - Specify the specific plasma shot of interest by setting the initial equilibrium file (ex: EFIT output g-file).
 
   - Set the range of normalized flux to be included in the calculation.
 
