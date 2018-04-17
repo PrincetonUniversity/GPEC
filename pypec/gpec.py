@@ -142,12 +142,11 @@ def _newloc(loc):
                 raise
     os.chdir(loc)
     return
-        
 
 
-def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun=False,
-        rundcon=True,rungpec=True,runpentrc=True,cleandcon=False,fill_inputs=False,version='1.2',
-        mailon='NONE',email='',mem=3e3,hours=36,partition='sque',runipec=False,qsub=None,**kwargs):
+def run(loc='.', rundir=default.rundir, submit=True, return_on_complete=False, rerun=False,
+        rundcon=True, rungpec=True, runpentrc=True, runrdcon=False, cleandcon=False, fill_inputs=False, version='1.2',
+        mailon='NONE', email='', mem=3e3, hours=36, partition='sque', runipec=False, qsub=None, **kwargs):
     """
     Python wrapper for running gpec package.
     
@@ -160,6 +159,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
     :param runipec: bool. Run ipec.
     :param rungpec: bool. Run gpec.
     :param runpentrc: bool. Run pentrc.
+    :param runpentrc: bool. Run rdcon and rmatch.
     :param cleandcon: bool. Remove euler.bin file after run is complete.
     :param fill_inputs: bool. Use inputs from rundir (see kwargs).
     :param version: str. Version of GPEC loaded (may set compilers if 1.2 or later)
@@ -266,6 +266,7 @@ def run(loc='.',rundir=default.rundir,submit=True,return_on_complete=False,rerun
         # fill in and write shell script
         exelist='module purge; module load intel openmpi netcdf acml/5.3.1/ifort64 git \n'
         if rundcon: exelist+=rundir+'/dcon \n'
+        if runrdcon: exelist+=rundir+'/rdcon \n' + rundir+'/rmatch \n'
         if runipec: exelist+=rundir+'/ipec \n'
         if rungpec: exelist+=rundir+'/gpec \n'
         if runpentrc: exelist+=rundir+'/pentrc \n'
