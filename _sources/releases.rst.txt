@@ -37,6 +37,14 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.2.1
+===========
+
+Fixes
+------
+- DOCS - Fixes a mismatch in the jacobian's between GPEC and PENTRC (the torques profiles now match)
+
+
 GPEC v1.2.0
 ===========
 
