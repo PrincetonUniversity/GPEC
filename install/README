@@ -17,25 +17,21 @@ In order to acquire access to the code sources and/or executables, the user must
 3. The users will include the proper code name(s) and appropriate references in published results and presentations. The will must email a draft of any article/report/presentation/etc. using GPEC results to the authors prior to publishing.
 
 
-Install
-========
+Installation
+============
 
-Public installations should be downloaded and kept up to date from the `releases on Github <https://github.com/PrincetonUniversity/GPEC>`_. The releases remain private for now, so only those with access to the repository will be able to install/update the site package. Contact nlogan@pppl.gov for access.
+Public
+-------
 
-The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory's makefile references the DEFAULTS.inc file, also in install. A basic compiling is as simple as executing::
+Public installations are available @portal.pppl.gov:/p/gpec/. The executables are available in a /bin directory and run examples can be found in /docs/examples.
 
-  make
-  
-in the install directory. The executables will then be available in their individual subdirectories as well as collected in the bin directory.
+Public installations are cloned and kept up to date from the `releases on Github <https://github.com/PrincetonUniversity/GPEC>`_. The releases remain private for now, so only those with access to the repository will be able to install/update the site package. Contact nlogan@pppl.gov for access.
 
-The DEFAULTS.inc sets a number of variables based on conditionals that determine the architecture on which GPEC is being compiled. If you are installing in a new or recently changed environment these can be over-ridden at the individual level. For example, at PPPL this might be done in pentrc using::
 
-  make FC=lfc
+Personal
+--------
 
-The executable then must be manually copied to the package bin directory.
+Personal copies of GPEC should be cloned from the `Github repository <https://github.com/PrincetonUniversity/GPEC>`_, as the make process uses git commands assuming the installation is a git repository.
 
-To do a thorough debugging, try adding more flags with the FFLAGS variable. Try,
-
-  make FFLAGS="-g -O0 -Wall -fbacktrace -fcheck=all"
-
-for example.
+The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory's makefile references the DEFAULTS.inc file, also in install.
+Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.

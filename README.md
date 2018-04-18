@@ -53,6 +53,15 @@ The highlights are,
 Specific instructions are given in the link above as to exactly how to branch and merge these various branches. For example, the --no-ff option should be used when merging in order to keep branch histories. Just follow the examples and you wont go wrong!
 
 
+**Debugging**
+
+To do a thorough debugging, try adding more flags with the FFLAGS variable. A good set might be,::
+
+  make FFLAGS="-g -O0 -Wall -fbacktrace -fcheck=all"
+
+for example.
+
+
 Documentation
 -------------
 
@@ -72,3 +81,4 @@ This creates a new gpec-docs directory in the same directory that contains the l
     make ghpages
 
 This is now all you need to do in order to update docs for that local repo from there on out.
+
