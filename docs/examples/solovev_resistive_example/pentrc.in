@@ -12,7 +12,9 @@
     electron = .false.                  ! Calculate all results for electrons INSTEAD OF ions (only one species per PENTRC run)
     nutype = "harmonic"                 ! Collision operator: "zero", "krook", "harmonic"
     f0type = "maxwellian"               ! Distribution function: "maxwellian"
-    jac_in = ""                         ! Jacobian of peq_file harmonic decomposition
+    jac_in = "pest"                     ! Jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
+    jsurf_in=0                          ! True(1) if peq_file is area weighted
+    tmag_in =1                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
 /
 &PENT_CONTROL
     wefac = 1                           ! Artificial factor applied to omega_EXB
