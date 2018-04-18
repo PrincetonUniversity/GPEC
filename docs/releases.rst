@@ -40,6 +40,14 @@ The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>
 GPEC v1.2.0
 ===========
 
+Fixes
+------
+- DOCS - Fixes a mismatch in the jacobian's between GPEC and PENTRC (the torques profiles now match)
+
+
+GPEC v1.2.0
+===========
+
 Adds
 ------
 - RDCON & RMATCH - Adds resistive DCON packages
