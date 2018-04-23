@@ -582,7 +582,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct fsp_sol.
 c-----------------------------------------------------------------------
-         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+         IF (msing>0) THEN
+            CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+         ENDIF
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
 c-----------------------------------------------------------------------
@@ -608,7 +610,7 @@ c-----------------------------------------------------------------------
 c     evaluation based on the interpolation.
 c-----------------------------------------------------------------------
             CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
-            singbwp(ising,i)=interpbwn(resnum) / area(ising)     ! flux normalized by area for units Tesla
+            singbwp(ising,i)=interpbwn(resnum) / area(ising) ! flux normalized by area for units Tesla
 
             singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)  ! flux normalized by area for units Tesla
             islandhwids(ising,i)=4*singflx_mn(resnum)/
@@ -1591,7 +1593,9 @@ c-----------------------------------------------------------------------
       CALL gpeq_alloc
       CALL idcon_build(egnum,xspmn)
 
-      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+      IF (msing>0) THEN
+         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+      ENDIF
 
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 c-----------------------------------------------------------------------
@@ -2803,7 +2807,7 @@ c-----------------------------------------------------------------------
      $     xnofuns,bnofuns,intbwpmns
 
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
-	 TYPE(cspline_type) :: fsp_sol
+      TYPE(cspline_type) :: fsp_sol
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
 c-----------------------------------------------------------------------
@@ -2837,7 +2841,9 @@ c-----------------------------------------------------------------------
       pwpmns = 0
 
       CALL gpeq_alloc
-      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+      IF (msing>0) THEN
+         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+      ENDIF
 
       DO istep=1,mstep
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
@@ -2892,25 +2898,34 @@ c-----------------------------------------------------------------------
          CALL gpeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep),ji=0)
          CALL gpeq_bcoordsout(bnomns(istep,:),bno_mn,psifac(istep),ji=0)
 
-         CALL gpeq_interp_sol(fsp_sol,psifac(istep),interpbwn)
+         IF (msing>0) THEN
+            CALL gpeq_interp_sol(fsp_sol,psifac(istep),interpbwn)
+         ENDIF
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             CALL gpeq_bcoordsout(bwpmns(istep,:),bno_mn,
      $                           psifac(istep),ji=1)
-            CALL gpeq_bcoordsout(intbwpmns(istep,:),interpbwn,
-     $                           psifac(istep),ji=0)
+            IF (msing>0) THEN
+               CALL gpeq_bcoordsout(intbwpmns(istep,:),interpbwn,
+     $              psifac(istep),ji=0)
+            ENDIF
          ELSE ! no need to re-weight bno_mn with expensive invfft and fft
             bwp_mn=bwp_mn/area
             bwpmns(istep,:)=0
             bwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwp_mn
 
-            interpbwn=interpbwn/area
-            intbwpmns(istep,:)=0
-            intbwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=interpbwn
+            IF (msing>0) THEN
+               interpbwn=interpbwn/area
+               intbwpmns(istep,:)=0
+               intbwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=interpbwn
+            ENDIF
          ENDIF
          xnofuns(istep,:)=xnofuns(istep,:)*EXP(ifac*nn*dphi)
          bnofuns(istep,:)=bnofuns(istep,:)*EXP(ifac*nn*dphi)
       ENDDO
       CALL gpeq_dealloc
+      IF (msing>0) THEN
+         CALL cspline_dealloc(fsp_sol)
+      ENDIF
 
       IF(ascii_flag)THEN
          CALL ascii_open(out_unit,"gpec_xbnormal_n"//
@@ -3011,7 +3026,6 @@ c-----------------------------------------------------------------------
             WRITE(bin_unit)
          ENDDO
          CALL bin_close(bin_unit)
-         CALL cspline_dealloc(fsp_sol)
       ENDIF
 
       IF (bin_2d_flag) THEN
