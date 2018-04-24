@@ -582,9 +582,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct fsp_sol.
 c-----------------------------------------------------------------------
-         IF (msing>0) THEN
-            CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
-         ENDIF
+         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)         
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
 c-----------------------------------------------------------------------
@@ -1593,9 +1591,7 @@ c-----------------------------------------------------------------------
       CALL gpeq_alloc
       CALL idcon_build(egnum,xspmn)
 
-      IF (msing>0) THEN
-         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
-      ENDIF
+      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
 
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 c-----------------------------------------------------------------------
@@ -2817,7 +2813,7 @@ c-----------------------------------------------------------------------
      $   xnofuns(mstep,0:mthsurf),bnofuns(mstep,0:mthsurf))
       ALLOCATE(xmns(mstep,lmpert),ymns(mstep,lmpert),
      $   xnomns(mstep,lmpert),bnomns(mstep,lmpert),bwpmns(mstep,lmpert))
-      ALLOCATE(intbwpmns(mstep,lmpert))
+      IF (msing>0) ALLOCATE(intbwpmns(mstep,lmpert))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -3011,20 +3007,35 @@ c-----------------------------------------------------------------------
       IF (bin_flag) THEN
          CALL bin_open(bin_unit,
      $        "xbnormal.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,lmpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(xnomns(istep,ipert)),4),
-     $              REAL(AIMAG(xnomns(istep,ipert)),4),
-     $              REAL(REAL(bnomns(istep,ipert)),4),
-     $              REAL(AIMAG(bnomns(istep,ipert)),4),
-     $              REAL(REAL(bwpmns(istep,ipert)),4),
-     $              REAL(AIMAG(bwpmns(istep,ipert)),4),
-     $              REAL(REAL(intbwpmns(istep,ipert)),4),
-     $              REAL(AIMAG(intbwpmns(istep,ipert)),4)
+         IF (msing>0) THEN
+            DO ipert=1,lmpert
+               DO istep=1,mstep
+                  WRITE(bin_unit)REAL(psifac(istep),4),
+     $                 REAL(REAL(xnomns(istep,ipert)),4),
+     $                 REAL(AIMAG(xnomns(istep,ipert)),4),
+     $                 REAL(REAL(bnomns(istep,ipert)),4),
+     $                 REAL(AIMAG(bnomns(istep,ipert)),4),
+     $                 REAL(REAL(bwpmns(istep,ipert)),4),
+     $                 REAL(AIMAG(bwpmns(istep,ipert)),4),
+     $                 REAL(REAL(intbwpmns(istep,ipert)),4),
+     $                 REAL(AIMAG(intbwpmns(istep,ipert)),4)
+               ENDDO
+               WRITE(bin_unit)
             ENDDO
-            WRITE(bin_unit)
-         ENDDO
+         ELSE
+            DO ipert=1,lmpert
+               DO istep=1,mstep
+                  WRITE(bin_unit)REAL(psifac(istep),4),
+     $                 REAL(REAL(xnomns(istep,ipert)),4),
+     $                 REAL(AIMAG(xnomns(istep,ipert)),4),
+     $                 REAL(REAL(bnomns(istep,ipert)),4),
+     $                 REAL(AIMAG(bnomns(istep,ipert)),4),
+     $                 REAL(REAL(bwpmns(istep,ipert)),4),
+     $                 REAL(AIMAG(bwpmns(istep,ipert)),4)
+               ENDDO
+               WRITE(bin_unit)
+            ENDDO
+         ENDIF
          CALL bin_close(bin_unit)
       ENDIF
 
@@ -3205,7 +3216,8 @@ c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
 c-----------------------------------------------------------------------
       DEALLOCATE(rvecs,zvecs,rs,zs,psis,rss,zss,xnofuns,bnofuns)
-      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns,intbwpmns)
+      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns)
+      IF (msing>0) DEALLOCATE(intbwpmns)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
