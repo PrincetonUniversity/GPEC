@@ -1,0 +1,61 @@
+&dcon_control
+	mat_flag=t
+	ode_flag=t
+	vac_flag=t
+
+	bal_flag=t
+	mer_flag=t
+
+	nn=1
+	delta_mlow=16
+	delta_mhigh=16
+	delta_mband=0
+	sing_start=0
+
+	mthvac=480
+	thmax0=1
+
+	tol_nr=1e-8
+	tol_r=1e-8
+	crossover=1e-2
+
+	singfac_min=1e-4
+	ucrit=1e4
+
+	sing_order=6
+/
+
+&dcon_output
+	crit_break=t
+	ahb_flag=f
+	msol_ahb=1
+	mthsurf0=1
+	bin_euler=f
+	euler_stride=1
+/
+
+&stride_params
+	verbose_performance_output = f
+
+	fourfit_metric_parallel = f
+	vac_parallel = t
+
+	grid_packing="singularities" !"naive"
+	axis_mid_pt_skew = 12.0
+	asymp_at_sing = t			!use asymptotic expansions at singular surfaces
+	kill_big_soln_for_ideal_dW = f		!explicitly remove the big solution
+
+	calc_delta_prime = t			!when false, sing_order=2 is better for speed, (with less accuracy).
+	calc_dp_with_vac = t			!when vac_flag=t, this will use vacuum edge conditions to calculate delta prime.
+	solve_delta_prime_with_sparse_mat = f   !opts to use the SuperLU sparse matrix solver, (which can be much slower).
+	big_soln_err_tol = 1e-7		    	!threshold error for correct solution to the delta prime bvp.
+
+	integrate_riccati = f
+	riccati_bounce = t
+	verbose_riccati_output = f
+	ric_negate_zero_evec_at_sing = f
+	ric_dt = 1e-8
+        ric_tol = 1e-6
+
+	use_new_spline = t			!The new spline is more accurate.
+/
