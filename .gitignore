@@ -39,3 +39,7 @@ pentrc/pentrc
 sum/sum
 xdraw/pspack
 xdraw/xdraw
+
+stride/SuperLU/SuperLU_5.2.1/
+stride/dcon/*.f90
+stride/dcon/stride

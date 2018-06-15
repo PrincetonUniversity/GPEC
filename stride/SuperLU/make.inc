@@ -13,12 +13,11 @@
 #
 ############################################################################
 #
-# ToDo: Make this work for shared libraries and out-of-source builds.  Right
-# now it only works for builds under /home/xiaoye/Dropbox/Codes/SuperLU/SuperLU_5.2.1/build/
+# ToDo: Make this work for shared libraries and out-of-source builds.
 #
 #  The name of the libraries to be created/linked to
 #
-SuperLUroot	= /home/asg5/dcon_stellarator_qrint/SuperLU
+SuperLUroot	= /p/gpec/users/aglasser/gpec_stride/stride/SuperLU
 SUPERLULIB   	= $(SuperLUroot)/SuperLU_5.2.1/SRC/libsuperlu.a
 
 TMGLIB       	= libtmglib.a

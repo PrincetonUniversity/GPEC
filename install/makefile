@@ -14,10 +14,10 @@ export CFLAGS
 .IGNORE:
 
 all: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw coil gpec mkbin
+	multi sum xdraw coil gpec stride mkbin
 
 allf: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum coil gpec mkbin
+	multi sum coil gpec stride mkbin
 
 
 # executables:
@@ -70,6 +70,9 @@ gpec:
 pentrc:  
 	cd ../pentrc; make pentrc
 
+stride:
+	cd ../stride; make stride
+
 mkbin:
 	mkdir -p ../bin
 	cp -f ../orbit/orbit ../bin
@@ -82,6 +85,7 @@ mkbin:
 	cp -f ../sum/sum ../bin
 	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
+	cp -f ../stride/stride ../bin
 
 # print verbose info
 
@@ -123,6 +127,7 @@ clean:
 	cd ../coil;   make clean
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
+	cd ../stride; make clean
 
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
