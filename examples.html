@@ -1,24 +1,36 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>Tutorial Examples &#8212; GPEC 1.0.5 documentation</title>
+    
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="PYPEC Source documentation" href="source_documentation.html" />
     <link rel="prev" title="Namelist Variables" href="namelists.html" /> 
-  </head><body>
+  </head>
+  <body role="document">
 
 <div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
 <a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
@@ -71,14 +83,12 @@
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
-    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -102,9 +112,9 @@ One of the major benefits to a new user is the pre-packaged post-analysis and pl
 <div class="section" id="gpec-diii-d-ideal-example">
 <h2>GPEC DIII-D Ideal Example<a class="headerlink" href="#gpec-diii-d-ideal-example" title="Permalink to this headline">¶</a></h2>
 <p>This example uses a baseline H-mode Error Field Correction (EFC) plasma from a n=1 EFC study done in 2013. The equilibrium used is a kinetic EFIT from DIII-D shot 147131 at 2300ms, and the profiles are self consistent with the equilibrium. Pre-GPEC results using a combination of GPEC and PENT for this calculation are published in <a class="reference external" href="http://scitation.aip.org/content/aip/journal/pop/21/7/10.1063/1.4886795">[C. Paz-Soldan, M. J. Lanctot, N. C. Logan, et al., Phys. Plasmas 21, 072503 (2014).]</a>.</p>
-<p>Note that the coil and pentrc input namelists use relative paths to the package’s data files. If you would like to run the example in a different location, you must change the input appropriately.</p>
-<p>Following a typical workflow we first cd to the example’s directory, then run DCON:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dcon</span>
+<p>Note that the coil and pentrc input namelists use relative paths to the package&#8217;s data files. If you would like to run the example in a different location, you must change the input appropriately.</p>
+<p>Following a typical workflow we first cd to the example&#8217;s directory, then run DCON:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">dcon</span>
 
  <span class="n">DCON</span> <span class="n">START</span> <span class="o">=&gt;</span> <span class="n">GPEC</span> <span class="n">version</span> <span class="mf">1.0</span><span class="o">.</span><span class="mi">0</span>
  <span class="n">__________________________________________</span>
@@ -137,7 +147,7 @@ One of the major benefits to a new user is the pre-packaged post-analysis and pl
 <p>From the positive total energy, we see that the plasma is reasonably stable for n=1 perturbations. Totals are often of this order 1e0-1e-2, while numbers of order 1e-3 or smaller might be considered approching instability and require some investigation. It is
 always a good idea to check any solution, using xdraw or just skimming dcon.out.</p>
 <p>Satisfied with the DCON result, we run GPEC:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gpec</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">gpec</span>
 
  <span class="n">GPEC</span> <span class="n">START</span> <span class="o">=&gt;</span> <span class="n">GPEC</span> <span class="n">version</span> <span class="mf">1.0</span><span class="o">.</span><span class="mi">0</span>
  <span class="n">__________________________________________</span>
@@ -210,7 +220,7 @@ always a good idea to check any solution, using xdraw or just skimming dcon.out.
 </div>
 <p>Here we see the plasma has a single mode permeability ~8, meaning that the application of the first permeability eigenmode on the plasma control surface would result in a total flux (external + plasma response) 8 times the applied mode. The full permeability eigenmode and eigevector information can be found in gpec_response_n1.out. We also see a preview of the resonant field information, a more detailed collection of which is in gpec_singfld_n1.out. Finally, we have told GPEC to calculate and output the clebsch coordinate displacments in gpec_xclebsch_n1.out. This becomes an input for PENT.</p>
 <p>Finally, we run PENT:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>pentrc
+<div class="highlight-default"><div class="highlight"><pre><span></span>pentrc
 
  PENTRC START =&gt; GPEC version 1.0.0
  __________________________________________
@@ -350,7 +360,7 @@ PENTRC STOP =&gt; Normal termination.
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2015, PPPL.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.0.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>

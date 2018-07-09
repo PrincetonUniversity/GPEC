@@ -1,24 +1,36 @@
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
     <title>Getting started &#8212; GPEC 1.0.5 documentation</title>
+    
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Outputs and Post-Processing" href="outputs.html" />
     <link rel="prev" title="Indices and tables" href="index.html" /> 
-  </head><body>
+  </head>
+  <body role="document">
 
 <div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
 <a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
@@ -80,14 +92,12 @@
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
-    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -129,7 +139,7 @@
 <div class="section" id="personal">
 <h3>Personal<a class="headerlink" href="#personal" title="Permalink to this headline">¶</a></h3>
 <p>Personal copies of GPEC should be cloned from the <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">Github repository</a>, as the make process uses git commands assuming the installation is a git repository.</p>
-<p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory’s makefile references the DEFAULTS.inc file, also in install.
+<p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory&#8217;s makefile references the DEFAULTS.inc file, also in install.
 Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
 </div>
 </div>
@@ -198,17 +208,17 @@ Compiled using this install makefile, the executables will then be available in 
 <p class="first admonition-title">Note</p>
 <p class="last">The only real responsibility of the user is to make sure the GPEC input Jacobian is consistent with the 3D error field input file. However, the user should be aware that each coordinate system has different strengths. Hamada coordinates have the best convergence properties in general, but are poor for the inboard side of the plasma. PEST coordinates are user friendly but poor for outboard resolution. Boozer coordinates tend to find a middle ground between these, with mild convergence and fair resolution throughout the plasma.</p>
 </div>
-<p>The above requirements are all that is needed to understand the internal workings of GPEC’s coordinate transforms. There is, however, a final question of the various “normal” toroidal angles as defined for a specific machine. GPEC does not take into account the sign of the toroidal field. The result is, that for machines such as DIII-D with “normal” toroidal field defined as negative (BCENTER&lt;0 in efit equilibria) the phase of GPEC outputs will not match the machine-defined toroidal angle. To convert three dimensional GPEC outputs in such cases to machine coordinates it may be necessary to take the complex conjugate of a given amplitude and multiply equilibrium output toroidal fields by negative one.</p>
+<p>The above requirements are all that is needed to understand the internal workings of GPEC&#8217;s coordinate transforms. There is, however, a final question of the various “normal” toroidal angles as defined for a specific machine. GPEC does not take into account the sign of the toroidal field. The result is, that for machines such as DIII-D with “normal” toroidal field defined as negative (BCENTER&lt;0 in efit equilibria) the phase of GPEC outputs will not match the machine-defined toroidal angle. To convert three dimensional GPEC outputs in such cases to machine coordinates it may be necessary to take the complex conjugate of a given amplitude and multiply equilibrium output toroidal fields by negative one.</p>
 </div>
 <div class="section" id="inputs">
 <span id="id2"></span><h2>Inputs<a class="headerlink" href="#inputs" title="Permalink to this headline">¶</a></h2>
-<p>At this point it is obvious that GPEC calculations hinge on first acquiring two types of data. GPEC interfaces with the input data by simple reads of formatted text files. The format and file path’s are specified in the .in files used in the run process, and are called on to initialize the ideal equilibrium solver.</p>
+<p>At this point it is obvious that GPEC calculations hinge on first acquiring two types of data. GPEC interfaces with the input data by simple reads of formatted text files. The format and file path&#8217;s are specified in the .in files used in the run process, and are called on to initialize the ideal equilibrium solver.</p>
 <p>The first input, equilibrium profile data, is specified in the equil.in file and can come in many different forms. By far the most common option is “efit”, in which case a two dimensional EFIT output g-file is used to specify the original axi-symmetric equilibrium. This equilibrium data and file format are widely used across multiple machines, and alternative formats are supported by GPEC when necessary. It is worth noting that significant differences between kinetic EFIT equilibria and the more simple non-kinetic EFITs has been noted. Obtaining the best 2D equilibrium data possible is encouraged for detailed calculations, however the casual user should not have need to concern themselves too heavily with this input source short of looking for the kinetic EFIT when possible.</p>
 <p>The second input, the 3D “error field” data, is somewhat more specific in its requirements. The input data can be again read from a file, and accepts a small number of select formats. These files must specify the external field on the surface of the GPEC plasma boundary defined by the psihigh variable in equil.in. This means that the data must be pre-processed using knowledge of both the non-axisymmetric external field (applied and/or intrinsic), the same equilibrium used in the GPEC corresponding calculation, and the exact magnetic surface used in that calculation. This requirement of coordination by the user is an easy pitfall for the un-wary. If utilizing this method, be sure that all work is consistent! To avoid the pitfalls associated with the above method a in-house Biot-Savart module that contains various coil geometries has been added as of GPEC 2.00. Using the coil_flag in gpec.in will result in the reading of yet another input file “coil.in” and the fields from the coils/currents specified therein will be calculated on the appropriate surface. Finally, the harmonic_flag allows users to apply a set amplitude harmonic on the boundary. All the 3D field input may be used (or not) in any combination, and the total boundary condition will be a sum of those used.</p>
 </div>
 <div class="section" id="results">
 <span id="id3"></span><h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
-<p>The results of an GPEC run depend on the output flags selected in gpec.in prior to the run. Without getting into the specifics of each output, there are a few important properties any GPEC run that should always be kept in minds. Each GPEC run always returns its results in the form of consistently named .out files in the run-directory. This means that it will overwrite any previous run’s results if they are not moved first. Always move any results worth keeping to a separate directory and keep track of which runs used which inputs. Outputs are expensive, so try to limit runs to only output the essential physics of interest each time.</p>
+<p>The results of an GPEC run depend on the output flags selected in gpec.in prior to the run. Without getting into the specifics of each output, there are a few important properties any GPEC run that should always be kept in minds. Each GPEC run always returns its results in the form of consistently named .out files in the run-directory. This means that it will overwrite any previous run&#8217;s results if they are not moved first. Always move any results worth keeping to a separate directory and keep track of which runs used which inputs. Outputs are expensive, so try to limit runs to only output the essential physics of interest each time.</p>
 <p>An important property of GPEC results for post-processing is their linearity. GPEC calculates results for a single toroidal harmonic. When appropriate, results from multiple runs can simply be added (to obtain a total perturbed field for example). In the same spirit, the amplitude of a plasma response calculated by GPEC is linear with the error-field. Thus, plasma response fields can be multiplier by a constant to simulate changes in a driven 3D error field.</p>
 </div>
 </div>
@@ -241,7 +251,7 @@ Compiled using this install makefile, the executables will then be available in 
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2015, PPPL.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.0.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
     </div>
   </body>
 </html>
