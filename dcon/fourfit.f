@@ -979,10 +979,15 @@ c-----------------------------------------------------------------------
       IF(PRESENT(writein)) output = writein
       chi1=twopi*psio
       plim = (/0.0,1.0/)
-      IF (passing_flag) THEN
+      IF (passing_flag .AND. trapped_flag) THEN
          ft="f"
-      ELSE
+      ELSE IF (trapped_flag) THEN
          ft="t"
+      ELSE IF (passing_flag) THEN
+         ft="p"
+      ELSE
+         CALL program_stop("Kinetic calculations require "//
+     $                "passing_flag and/or trapped_flag")
       ENDIF
 c-----------------------------------------------------------------------
 c     Original approach using eqgrid loop to calculate kinetic matrices

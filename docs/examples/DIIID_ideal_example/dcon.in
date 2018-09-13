@@ -35,7 +35,7 @@
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
 
-    use_classic_splines = t ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
 &DCON_OUTPUT
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface

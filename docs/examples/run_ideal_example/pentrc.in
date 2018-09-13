@@ -24,8 +24,8 @@
     divxfac = 1                         ! Artificial factor applied to div xi_perp
 
     atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
-    rtol_xlmda = 1e-4                   ! Relative tolerance in energy and pitch integration
-    atol_psi = 1e-6                     ! Absolute tolerance in psi_n integration
+    rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
+    atol_psi = 1e-9                     ! Absolute tolerance in psi_n integration
     rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
     ntheta = 128                        ! Poloidal angle grid for bounce integration
     nlmda = 128                         ! Pitch grid for omega_D, oemga_b, dJdJ
@@ -38,7 +38,7 @@
     moment = "pressure"                 ! Use 'pressure' for torque and particle transport, 'heat' for heat transport
 
     fgar_flag = t          		! Full general aspect ratio calculation
-    tgar_flag = t                       ! Trapped general aspect ratio calculation
+    tgar_flag = f                       ! Trapped general aspect ratio calculation
     pgar_flag = f                       ! Passing general aspect ratio calculation
     clar_flag = f                       ! Circular large aspect ratio calculation
     rlar_flag = f                       ! Reduced large aspect ratio calculation

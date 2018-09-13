@@ -365,7 +365,9 @@ c-----------------------------------------------------------------------
             intvl%cell(ix)%etype="ext1"
             intvl%cell(ix)%extra="right"
          ENDDO
-         IF (intvl%cell(ix)%etype.NE."none".OR.ix > nx) THEN
+         IF (ix > nx) THEN
+            CALL program_stop("Too many elements include big solution.")
+         ELSEIF (intvl%cell(ix)%etype .NE. "none") THEN
             CALL program_stop("Too many elements include big solution.")
          ENDIF
          intvl%cell(ix)%etype="ext2"

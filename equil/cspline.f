@@ -488,11 +488,13 @@ c-----------------------------------------------------------------------
 c     find cubic spline interval.
 c-----------------------------------------------------------------------
       DO
-         IF(xx >= spl%xs(spl%ix).OR.spl%ix <= 0)EXIT
+         IF(spl%ix <= 0)EXIT
+         IF(xx >= spl%xs(spl%ix))EXIT
          spl%ix=spl%ix-1
       ENDDO
       DO
-         IF(xx < spl%xs(spl%ix+1).OR.spl%ix >= spl%mx-1)EXIT
+         IF(spl%ix >= spl%mx-1)EXIT
+         IF(xx < spl%xs(spl%ix+1))EXIT
          spl%ix=spl%ix+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -610,11 +612,13 @@ c-----------------------------------------------------------------------
 c     find cubic spline interval.
 c-----------------------------------------------------------------------
       DO
-         IF(xx >= spl%xs(s_ix).OR.s_ix <= 0)EXIT
+         IF(s_ix <= 0)EXIT
+         IF(xx >= spl%xs(s_ix))EXIT
          s_ix=s_ix-1
       ENDDO
       DO
-         IF(xx < spl%xs(s_ix+1).OR.s_ix >= spl%mx-1)EXIT
+         IF(s_ix >= spl%mx-1)EXIT
+         IF(xx < spl%xs(s_ix+1))EXIT
          s_ix=s_ix+1
       ENDDO
 c-----------------------------------------------------------------------

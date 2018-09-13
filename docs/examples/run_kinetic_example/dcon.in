@@ -1,12 +1,12 @@
 &DCON_CONTROL
-    bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
+    bal_flag=t           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
 
     sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
-    qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
+    qlow=0               ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
@@ -14,7 +14,7 @@
     delta_mlow=8         ! Expands lower bound of Fourier harmonics
     delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
     delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
-    mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    mthvac=960           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
     kin_flag = t         ! Kinetic EL equation (default: false)
@@ -22,20 +22,21 @@
     kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
     kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
     kingridtype = 0      ! Regular grid method (default : 0)
-    passing_flag = t     ! Includes passing particle effects (default: false)
+    passing_flag = t     ! Includes passing particle effects in kinetic EL equation (default: false)
+    trapped_flag = t     ! Includes trapped particle effects in kinetic EL equation  (default: true)
     ktanh_flag = f       ! Ignore kinetic effects in the core smoothly (default: false)
     ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
     electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
-
+    parallel_threads=16  ! Parallel calculations of the kinetic matrix components (2*nl+1 is recommended, where nl is defined in pentrc.in)
     tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
     tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 
-    use_classic_splines = t ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
 &DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H

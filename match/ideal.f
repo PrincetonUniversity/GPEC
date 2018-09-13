@@ -130,7 +130,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(psifac(0:mstep),rho(0:mstep),q(0:mstep),
      $     soltype(0:mstep),v(mpert,4,0:mstep),singtype(msing))
       ALLOCATE(fixstep(0:mfix+1),fixtype(0:mfix),sing_flag(mfix))
-      ALLOCATE(ep(mpert),et(mpert),wt(mpert,mpert))
+      ALLOCATE(ep(mpert),et(mpert),wt(mpert,mpert),wt0(mpert,mpert))
       ALLOCATE(ebp(mpert),ebt(mpert),wbt(mpert,mpert))
       fixstep(0)=0
       fixstep(mfix+1)=mstep
@@ -218,7 +218,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate matching matrix.
 c-----------------------------------------------------------------------
-      IF(singtype(msing)%msol_r > mpert .AND. res_flag)THEN
+      IF(msing>0.AND.singtype(msing)%msol_r>mpert.AND.res_flag) THEN
          mmatch=mpert
          DO ising=1,msing
             mmatch=mmatch+singtype(ising)%msol_r

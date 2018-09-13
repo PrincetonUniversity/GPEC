@@ -34,12 +34,12 @@
 /
 &GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
-   sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
+   sing_spot=1e-3           ! Minimum distance to singular surface in (m-nq) space
    reg_flag=f               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
    nche=20                  ! Number of Chebyshev polynomials used
-   use_classic_splines = t  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+   use_classic_splines = f  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
 &GPEC_OUTPUT
    jac_out=""               ! Coordinate system of outputs
@@ -50,7 +50,7 @@
    resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
    filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
-   singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
+   singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=t          ! Output of vacuum resonant surface quantities
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian

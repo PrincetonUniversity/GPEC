@@ -37,6 +37,198 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.2.0
+===========
+
+Fixes
+------
+- DOCS - Fixes a mismatch in the jacobian's between GPEC and PENTRC (the torques profiles now match)
+
+
+GPEC v1.2.0
+===========
+
+Adds
+------
+- RDCON & RMATCH - Adds resistive DCON packages
+  * Calculates inner layer model and performs matching with ideal outer layer
+  * Cite [A.H. Glasser, Z.R. Wang, and J.-K. Park, Physics of Plasmas 23, 112506 (2016)]
+  * Includes new resistive examples
+- DCON - Adds ability to calculate bounce harmonics in parallel when forming kinetic matrices for Euler-Lagrange Equation
+- DCON - Adds ability to start the Euler-Lagrange ODE integration at or above a minimum safety factor qlow
+- DCON - Adds ability to include electron kinetic terms in Euler-Lagrange equation (controlled by the new electron_flag)
+- VACUUM - Adds ability to read prescribed wall geometry file
+- GPEC - Adds new singfld and signcoup calculations and includes all singcoup and singfld outputs in netcdf
+  * Delta: is the published resonant coupling metric [Park, Phys. Plasmas 2007] normalized by B.grad(theta) instead of B.grad(phi).
+  + This is similar to what is sometimes called external Delta' in tearing stability theory **need to divide by vacuum**
+  * Penetrated resonant flux: interpolated across singspot, and physically meaningful for kinetic MHD equilibria only
+- DCON, GPEC, & PENTRC - Updates the version based on the compile-time git commit
+- DCON, GPEC & PENTRC - Can use a classical spline coefficient solution for "extrap" boundary condition splines, avoiding  a suspected (minor) bug in the original tri-diagonal solution that resulted in large grad-shafranov errors in poorer quality equilibrium (especially inverse or modified equilibrium).
+  * Previous tri-diagonal spline solutions can be recovered by setting use_classic_splines to false
+
+Changes
+--------
+- DCON - Improves clarity of singular surface search messages
+- GPEC - Improves clarity and consistency of singular coupling outputs
+  * Uses iszinv to invert hermitian fldflxmat
+  * Uses area normalization of penetrated flux for consistency with effective flux
+  * Adds unique names for the singcoup mat and svd ascii outputs (enables python reading)
+- PYPEC - Improves automatic selection of partitions and threads in job submission and adds rdcon to exe options
+
+Fixes
+------
+- DCON - Fixes only the the plasma energy matrix written to dcon.out to include full matrix (previously only 2 columns)
+- GPEC - Improves clarity and consistency of singular coupling outputs
+  * Corrects units of Phi_res in netcdf (area normalized, so T not Wb)
+  * Corrects units and calculation of island width in netcdf (unitless width in psi_n, required a sqrt)
+- GPEC - Fixes bug in iszinv for m/=mpert matrices (no impact on previous results, which all used m=mpert)
+- GPEC - Fixes bug in the normalization of singular coupling islandwidths (singdfld unchanged)
+- GPEC - Fixes poor formatting in response file header
+- PENTRC - Corrects the sign of the charge when calculating NTV torque and kinetic delta-W for electrons
+- VACUUM - Makes vacuum code robust to namelists without a header line
+
+Removes
+--------
+- ALL - Removes official support for all compilers other than intel
+  * Parallel openmpi calls unique to intel
+  * Move is consistent with RDCON development path
+
+
+GPEC v1.1.7
+===========
+
+Features
+---------
+- DCON - A new, explicit ion flag toggles whether the ion kinetic energy is included in the kinetic Euler-Lagrange equation
+
+
+GPEC v1.1.6
+===========
+
+This release corrects a bug that may have made previous GPEC electron NTV have the incorrect sign.
+
+Fixes
+----------
+- PENTRC - Corrected the sign of the charge (diamagnetic frequencies, etc) for electron calculations.
+
+
+GPEC v1.1.5
+===========
+
+This version includes a minor but important change to make the ideal GPEC eigenfunctions almost identical to those from DCON in IPEC. A power extraction essential for numerical stability when forming the fundamental H and G matrices in the kinetic solutions has been removed from the ideal calculations for consistency with the previous calculations in the ideal case.
+
+Adds
+---------
+- COIL - New coils are available for JET, NSTX, and COMPASS. The number of coils usable in a run increased.
+- GPEC - The q, rho, and volume profiles are included in the netcdf output if any profile output is requested.
+- GPEC - The local coupling matrix between opsi1 and opsi2 and corresponding svd vectors are available. **needs netcdf output??**
+
+Fixes
+----------
+- DCON - Fundamental matrices only use power extraction technique when kin_flag is true.
+- PENTRC - Progressbars are now called at the end of do loops for more precise reporting.
+- PENTRC - Torque estimation from surface currents is now recorded in harvest and netcdf.
+
+Documentation
+--------------
+- EXAMPLES - Examples now include "run" examples with J.-K. Park's typical workflow and settings.
+- INPUT - Annotations and settings of default input namelists include minor changes.
+- PYPEC - Mayavi instructions are updated for latest portal python installations.
+
+
+GPEC v1.1.4
+===========
+
+Fixes
+----------
+- COIL - Fixed faulty 1.1.3 implementation of increasing the east coil windings.
+
+
+GPEC v1.1.3
+===========
+
+Fixes
+----------
+- COIL - Increased the number of windings for the up and down EAST coil arrays
+
+
+GPEC v1.1.2
+===========
+
+Fixes
+--------------
+- PENTRC - Now successfully writes kinetic profiles on the equilibrium grid to netcdf files
+
+
+GPEC v1.1.1
+===========
+
+Fixes
+------------
+- PYPEC - A bug was fixed in the python processing tools' optimize_torque function
+
+
+GPEC v1.1.0
+===========
+
+This release includes a new DCON netcdf output file and SLURM job submission interface in PYPEC for compatibility with the new portal and iris computing standards. Details are below.
+
+Adds
+---------
+- DCON - A clean, efficient netcdf file replicates the information in the complicated dcon.out ascii.
+- DCON - The _new namelist variable_, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).
+- COIL - KSTAR and EAST coils are available.
+- COIL - A NSTX-U error field model is available.
+- GPEC - Control netcdf outputs include the external flux applied from each coil and coil names.
+- GPEC - Profile netcdf outputs include rational surface quantities, coil names, and vsbrzphi, xbrzphifun, and arzphifun outputs.
+- GPEC - Code is robust to singfld_flag with con_flag.
+- GPEC - The _new namelist variables_, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.
+- PYPEC - SLURM job submission.
+- PYPEC - Post processing includes a function that updates netcdf naming conventions to be consistent with the latest version.
+- PYPEC - Backwards compatibility for running ipec is available.
+- REGRESSION - Tools for comparing versions are available.
+
+Fixes
+----------
+- DCON, GPEC, PENTRC - Timers were fixed to correctly handle multi-day runs.
+- DCON - Ascii formatting is updated for complex eigenvalue energies.
+- GPEC - An indexing offset in calculation in dw_flag torque matrix output was fixed.
+- GPEC - Appropriate ascii closing was added.
+
+Documentation
+--------------
+- DOCS - Documentation includes compare module.
+- INPUT - Annotations and settings of default input namelists include minor changes.
+
+
+GPEC v1.0.6
+===========
+
+This patch features fixes to a number of deeply embedded indexing and memory allocation bugs. This is necessary for compiler robustness. The regression examples show essentially no change in the results to machine precision on portal.
+
+Fixes
+----------
+- VACUUM & LSODE - This patch fixes the misallocation of memory for input arrays in a number of old subroutines.
+- EQUIL - This patch fixes the misallocation of memory for temporary arrays in Fourier spline fitting.
+- GPEC - This patch fixes an index offset in the matrices forming the torque matrix profile.
+
+
+GPEC v1.0.5
+===========
+
+Fixes
+-----------
+- Fixed normalization of filter_flag energy normalized field decomposition.
+
+This bug was introduced with the new normalized field (T) convention in 1.0.2. To correct the decomposed energy normalized flux O_*Phi_xe in versions 1.0.2-1.0.4, multiply by 1/sqrt(A).
+
+
+GPEC v1.0.4
+===========
+
+Avoids repetition of dimensions in control netcdf J_surf_2.
+Note this is not critical for the netcdf, but necessary for the way pypec and xarray treat dimensions.
+
 GPEC v1.0.3
 ===========
 
@@ -48,11 +240,11 @@ GPEC v1.0.2
 
 This patch features one bug fix and one addition to the netcdf output.
 
-Features
+Adds
 --------------
 - A transform matrix J_surf_2 has been added to the control netcdf. This matrix applies a dimensionless half-area weighting.
 
-Bug Fixes
+Fixes
 -------------
 - The netcdf output Phi_xe has been changed from "energy-normalized flux" with units Wb/m to "energy-normalized field" with units of Tesla. The related \*_xe matrices have been similarly normalized. No physics is changed, only the scalar area normalization.
 
@@ -72,7 +264,7 @@ The Perturbed Equilibrium Nonambipolar TRansport Code (PENTRC) is used to calcul
 
 The Ideal Perturbed Equilibrium Code (IPEC) has officially been deprecated and is now the package namesake: the Generalized Perturbed Equilibrium Code (GPEC). The foundational computational changes are much less than in the above case however, with only a few minor generalizations of hermitian linear algebra assumptions.
 
-Features
+Adds
 -------------
  - DCON inclusion of kinetic terms is now determined by the kin_flag input.
   - Additional dcon_control namelist inputs can be used to control the kinetic calculations
@@ -92,7 +284,7 @@ GPEC v0.4.0
 
 This release includes a number of minor I/O changes and convenient default input features as well as a few minor bug fixes.
 
-Bug Fixes
+Fixes
 --------------
 
 - MATCH updated interface for changes DCON file formats
@@ -126,7 +318,7 @@ GPEC v0.3.5
 
 This release includes critical bug fixes for the nonambipolar transport calculations in PENTRC.
 
-Bug Fixes
+Fixes
 --------------
 
 - PENTRC a correction factor of 1/2 has been applied to the fcgl, *gar, and *mm methods to correctly represent quadratic terms using complex analysis
@@ -138,7 +330,7 @@ GPEC v0.3.4
 
 This release includes a number of critical bug fixes found and fixed in a general review of the ideal MHD package in preparation of the move to kinetic MHD version 0.4.0 under development. It also includes a few (re-)standardizations of features.
 
-Bug Fixes
+Fixes
 --------------
 
 - PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques
@@ -214,7 +406,7 @@ GPEC v0.3.2
 GPEC v0.3.1
 ===========
 
-Bugfixes
+Fixes
 ------------
 
 - IPEC fixed mistaken use of Hermitian lapack subroutines for permeability matrix
@@ -249,7 +441,7 @@ Performance
 GPEC v0.3.0
 ===========
 
-Bugfixes
+Fixes
 ------------
 
 - DCON qhigh is enforced independent of sas_flag

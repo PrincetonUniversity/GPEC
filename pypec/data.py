@@ -1635,11 +1635,9 @@ def getshot(path='.',full_name=False):
     pth = os.path.abspath(path)
     shot = ''
     for i in range(len(pth)-5):
-        try:
-            shot = str(int(pth[i:i+6]))
+        if str.isdigit(pth[i:i+6]):
+            shot = pth[i:i+6]
             break
-        except:
-            pass
     if full_name:
         dirs = pth.split('/')
         for d in dirs:
