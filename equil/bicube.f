@@ -1676,6 +1676,7 @@ c-----------------------------------------------------------------------
                ainv(2,1)=-amat(2,1)
                ainv=ainv/adet
                dx=-ainv(1,1)*bcs%fx(iqty)-ainv(1,2)*bcs%fy(iqty)
+               dy=-ainv(2,1)*bcs%fx(iqty)-ainv(2,2)*bcs%fy(iqty)
                x=x+dx
                y=y+dy
             ENDDO

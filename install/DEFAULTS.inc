@@ -82,37 +82,31 @@
 #
 #------------------------------------------------------------------
 
+LAPACKHOME=/usr/local/lib
+NETCDFHOME=/usr/local/netcdf
+
 # general defaults
 #------------------
 
 # use acml or lapack based on what is loaded
-ifdef MKLROOT
-    MATHHOME = $(MKLROOT)
-  	MATHLIBS = -lmkl_rt
-else ifdef LAPACKHOME
+ifndef ACML_HOME
     MATHHOME = $(LAPACKHOME)
     MATHLIBS = -llapack -lblas
-else ifdef ACML_HOME
+else
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
-else
-    echo "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME"
 endif
 
 # specifics of which libraries are used
 #---------------------------------------
 
 # tack on lib and include directories to math home if necessary
-ifneq ($(wildcard $(MATHHOME)/lib/intel64/.),)
-    MATHDIR = $(MATHHOME)/lib/intel64
-else ifneq ($(wildcard $(MATHHOME)/lib/.),)
+ifneq ($(wildcard $(MATHHOME)/lib/.),)
     MATHDIR = $(MATHHOME)/lib
 else
     MATHDIR = $(MATHHOME)
 endif
-ifneq ($(wildcard $(MATHHOME)/include/intel64/lp64/.),)
-    MATHINC = $(MATHHOME)/include/intel64/lp64
-else ifneq ($(wildcard $(MATHHOME)/include/.),)
+ifneq ($(wildcard $(MATHHOME)/include/.),)
     MATHINC = $(MATHHOME)/include
 else
     MATHINC = $(MATHHOME)
@@ -132,13 +126,6 @@ ifdef NETCDF_FORTRAN_HOME
         NETCDFINC = $(NETCDF_FORTRAN_HOME)
     endif
 else
-    ifndef NETCDFHOME
-        ifndef NETCDF_DIR
-            echo "Must set NETCDF_FORTRAN_HOME, NETCDFHOME, or NETCDF_DIR"
-        else
-            NETCDFHOME = $(NETCDF_DIR)
-        endif
-    endif
     ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
         NETCDFDIR = $(NETCDFHOME)/lib
     else
@@ -161,9 +148,9 @@ else
         NETCDF_C_LIBS = -lnetcdf
         NETCDF_C_DIR = $(NETCDFDIR)
     else
-        NETCDFLIBS = -lnetcdf
-        NETCDF_C_LIBS = $(NETCDFDIR)
-        NETCDF_C_DIR = -lnetcdf
+        NETCDFLIBS = -lnetcdff
+        NETCDF_C_LIBS = -lnetcdf
+        NETCDF_C_DIR = $(NETCDFDIR)
     endif
 endif
 
@@ -175,12 +162,11 @@ ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCLIBS = -lirc -limf # irc.a needed for static compile
     #FCLIBS = -lintlc -limf # intlc was new for intel?
     FCINC = $(F90HOME)/include/intel64
-else ifneq ($(wildcard $(F90HOME)/compiler/lib/intel64/.),)
-    FCDIR = $(F90HOME)/lib/intel64
-    FCLIBS = -lirc -limf # irc.a needed for static compile
-    FCINC = $(F90HOME)/compiler/include/intel64
 else
-    FCDIR = .
-    FCLIBS =
-    FCINC = .
+    FCDIR = /usr/lib64
+    FCLIBS = -lgfortran
+    FCINC = /usr/include
 endif
+
+
+########################

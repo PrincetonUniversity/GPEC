@@ -39,7 +39,7 @@ equil:
 	cd ../equil; make
 
 rdcon: $(OBJS)
-	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -Wl,-rpath=$(MATHDIR)
 	mkdir -p ../bin
 	cp -f rdcon ../bin
 

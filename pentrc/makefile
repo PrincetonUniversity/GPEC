@@ -65,7 +65,7 @@ endif
 force:
 
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS) -Wl,-rpath=$(MATHDIR) -Wl,-rpath=$(NETCDFDIR)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
 	mkdir -p ../bin

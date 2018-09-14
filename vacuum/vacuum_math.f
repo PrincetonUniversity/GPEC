@@ -37,9 +37,8 @@ c-----------------------------------------------------------------------
       subroutine spl1d1(n,x,f,w,iop,ij,a,b,c)
       implicit real*8 (a-h,o-z)
       dimension iop(*),x(*),f(*),w(*),a(*),b(*),c(*)
-      real*8 comm(6)
-      data  comm          /8hspl1d1 n,8h less th,8han 4. re,8hsults in,
-     1 8hcorrect.,8h        /
+      character(8) comm(5)
+      data comm /'spl1d1 n',' less th','an 4. re','sults in','correct.'/
       data zz,oz,tz,sz/0.0e0,1.0e0,3.0e0,6.0e0/
 c-----------------------------------------------------------------------
 c     computations.
@@ -259,7 +258,7 @@ c-----------------------------------------------------------------------
       subroutine labrt(isw,lhol,inx)
       implicit real*8 (a-h,o-z)
 
-      real*8 lhol(8)
+      character*8 lhol(5)
       logical ps, ts
       data np/10/,ps/.true./,ts/.false./
 c-----------------------------------------------------------------------

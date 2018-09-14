@@ -31,7 +31,7 @@ equil:
 	cd ../equil; make
 
 rmatch: $(OBJS)
-	$(F90) -o rmatch $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o rmatch $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -Wl,-rpath=$(MATHDIR)
 	mkdir -p ../bin
 	cp -f rmatch ../bin
 
