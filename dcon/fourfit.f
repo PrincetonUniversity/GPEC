@@ -1028,6 +1028,19 @@ c-----------------------------------------------------------------------
          r2mats%fs=0
          r3mats%fs=0
 
+         ! The slow part of this code is filling up these 12 N by M by M complex splines.
+         ! Here, M is typically ~100 and N is typically ~500.
+         ! Each NxMxM element requires energy integrals that take time, so this takes hrs.
+         ! once the spline is in hand, the code takes ~1-10sec
+         ! So restarting after a crash in the middle of this loop would be useful.
+         ! Since the rest of the code before & after is so fast, I think we would really just need
+         ! to write these splines to disk (every ~64 ipsi steps or so?).
+         ! Maybe as a temp binary backup file? Then we could
+         ! check for said backup file at the begining of the loop and optionally load it + jump
+         ! ahead in ipsi. We would need a flag to not use the backup if we want to actually
+         ! re-run (maybe we changed an input profile or something), right?
+         ! Is there a better way?
+         ! Better parallelization might just make this a moot point
          DO i=1,6
             CALL cspline_alloc(kwmats(i),mpsi,mpert**2)
             CALL cspline_alloc(ktmats(i),mpsi,mpert**2)
@@ -1037,7 +1050,7 @@ c-----------------------------------------------------------------------
 
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
          CALL SYSTEM_CLOCK(COUNT=sTime)
-         DO ipsi=0,mpsi
+         DO ipsi=0,mpsi  ! each of these surfaces is independent - could be parallel
             kwmat = 0
             ktmat = 0
             psifac=rzphi%xs(ipsi)
@@ -1067,7 +1080,7 @@ c!!!!!!...from pitch.f90
             ENDIF
             IF (ion_flag) THEN
 !$OMP DO
-               DO l=-nl,nl
+               DO l=-nl,nl  ! Parallel. Good. But often just 1 of the l's is slow and holds up the whole ipsi loop
                   CALL SYSTEM_CLOCK(COUNT=lsTime)
                   kwmat_l = 0
                   ktmat_l = 0
