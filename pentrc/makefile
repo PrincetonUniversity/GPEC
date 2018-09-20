@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -vec_report0 -openmp
+FFLAGS =  -qopenmp
 IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS

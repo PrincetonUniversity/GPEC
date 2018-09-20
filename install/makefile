@@ -2,8 +2,8 @@
 include DEFAULTS.inc
 
 # extend these variables to sub-makes
-FFLAGS?="-openmp -vec_report0"
-#FFLAGS ?= "-qopenmp"  # for when we get intel/2017 sorted out
+#FFLAGS?="-openmp -vec_report0"  # intel 2012 and earlier
+FFLAGS ?= "-qopenmp"  # modern intel
 CFLAGS ?=
 
 export FFLAGS
