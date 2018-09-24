@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
      $     use_classic_splines,
-     $     mat_p1sup,mat_f1sup
+     $     mat_p1sup,mat_f1sup,peak_flag
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -243,7 +243,7 @@ c-----------------------------------------------------------------------
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          IF(verbose) WRITE(*,*)"Computing free boundary energies"
          ALLOCATE(ud(mpert,mpert,2))
-         CALL free_run(plasma1,vacuum1,total1,nzero,netcdf_out)
+         CALL free_run(plasma1,vacuum1,total1,nzero,.TRUE.,netcdf_out)
          DEALLOCATE(ud)
       ELSE
          plasma1=0

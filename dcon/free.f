@@ -39,11 +39,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_run(plasma1,vacuum1,total1,nzero,op_netcdf_out)
+      SUBROUTINE free_run(plasma1,vacuum1,total1,nzero,final,netcdf_out)
 
       COMPLEX(r8), INTENT(OUT) :: plasma1,vacuum1,total1
       INTEGER, INTENT(IN) :: nzero
-      LOGICAL, OPTIONAL :: op_netcdf_out
+      LOGICAL, INTENT(IN) :: final, netcdf_out
 
       LOGICAL, PARAMETER :: normalize=.TRUE.
       CHARACTER(1), DIMENSION(mpert,msol) :: star
@@ -90,7 +90,7 @@ c-----------------------------------------------------------------------
          temp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
          wp=u(:,1:mpert,2)
          wp=CONJG(TRANSPOSE(wp))
-         CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)  
+         CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
          CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
          wp=CONJG(TRANSPOSE(wp))/psio**2
       ELSE
@@ -173,7 +173,7 @@ c-----------------------------------------------------------------------
          wt(:,isol)=wt(:,isol)*phase
          star(:,isol)=' '
          star(imax(1),isol)='*'
-      ENDDO      
+      ENDDO
 c-----------------------------------------------------------------------
 c     compute plasma and vacuum contributions.
 c-----------------------------------------------------------------------
@@ -183,89 +183,93 @@ c-----------------------------------------------------------------------
          ep(ipert)=wpt(ipert,ipert)
          ev(ipert)=wvt(ipert,ipert)
       ENDDO
-c-----------------------------------------------------------------------
-c     write data for ahb and deallocate.
-c-----------------------------------------------------------------------
-      IF(ahb_flag)THEN
-         CALL free_ahb_write(nmat,smat,wt,et)
-         DEALLOCATE(r,z,theta,dphi,thetas,project)
-      ENDIF
-c-----------------------------------------------------------------------
-c     save eigenvalues and eigenvectors to file.
-c-----------------------------------------------------------------------
-      IF(bin_euler)THEN
-         WRITE(euler_bin_unit)3
-         WRITE(euler_bin_unit)ep
-         WRITE(euler_bin_unit)et
-         WRITE(euler_bin_unit)wt
-         WRITE(euler_bin_unit)wt0
-      ENDIF
-c-----------------------------------------------------------------------
-c     write to screen and copy to output.
-c-----------------------------------------------------------------------
       plasma1=REAL(ep(1))
       vacuum1=REAL(ev(1))
       total1=REAL(et(1))
-      IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
-     $     REAL(et(1)),AIMAG(et(1))
+      IF(final)THEN
+c-----------------------------------------------------------------------
+c     write data for ahb and deallocate.
+c-----------------------------------------------------------------------
+         IF(ahb_flag)THEN
+            CALL free_ahb_write(nmat,smat,wt,et)
+            DEALLOCATE(r,z,theta,dphi,thetas,project)
+         ENDIF
+c-----------------------------------------------------------------------
+c     save eigenvalues and eigenvectors to file.
+c-----------------------------------------------------------------------
+         IF(bin_euler)THEN
+            WRITE(euler_bin_unit)3
+            WRITE(euler_bin_unit)ep
+            WRITE(euler_bin_unit)et
+            WRITE(euler_bin_unit)wt
+            WRITE(euler_bin_unit)wt0
+         ENDIF
+c-----------------------------------------------------------------------
+c     write to screen and copy to output.
+c-----------------------------------------------------------------------
+         IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
+     $        REAL(et(1)),AIMAG(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
 c-----------------------------------------------------------------------
-      message=""
-      WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
-      WRITE(out_unit,20)
-      WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
-     $     REAL(et(isol)),AIMAG(et(isol)),
-     $     TRIM(message(isol)),isol=1,mpert)
-      WRITE(out_unit,20)
+         message=""
+         WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
+         WRITE(out_unit,20)
+         WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
+     $        REAL(et(isol)),AIMAG(et(isol)),
+     $        TRIM(message(isol)),isol=1,mpert)
+         WRITE(out_unit,20)
 c-----------------------------------------------------------------------
 c     write eigenvectors to file.
 c-----------------------------------------------------------------------
-      WRITE(out_unit,*)"Total Energy Eigenvectors:"
-      m=mlow+(/(isol,isol=0,mpert-1)/)
-      DO isol=1,mpert
-         WRITE(out_unit,40)
-         WRITE(out_unit,50)isol,imax(1),REAL(ep(isol)),REAL(ev(isol)),
-     $        REAL(et(isol)),AIMAG(et(isol)),TRIM(message(isol))
-         WRITE(out_unit,60)
-         WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
-     $        ABS(wt(ipert,isol)),star(ipert,isol),ipert=1,mpert)
-         WRITE(out_unit,60)
-      ENDDO
+         WRITE(out_unit,*)"Total Energy Eigenvectors:"
+         m=mlow+(/(isol,isol=0,mpert-1)/)
+         DO isol=1,mpert
+            WRITE(out_unit,40)
+            WRITE(out_unit,50)isol,imax(1),
+     $           REAL(ep(isol)),REAL(ev(isol)),
+     $           REAL(et(isol)),AIMAG(et(isol)),TRIM(message(isol))
+            WRITE(out_unit,60)
+            WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
+     $           ABS(wt(ipert,isol)),star(ipert,isol),ipert=1,mpert)
+            WRITE(out_unit,60)
+         ENDDO
 c-----------------------------------------------------------------------
 c     write the plasma matrix.
 c-----------------------------------------------------------------------
-      WRITE(out_unit,'(/1x,a/)')"Plasma Energy Matrix:"
-      DO isol=1,mpert
-         WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,", m = ",m(isol)
-         WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
-         WRITE(out_unit,'(i3,1p,3e13.5)')
-     $        (ipert,wp(ipert,isol),ABS(wp(ipert,isol)),ipert=1,mpert)
-         WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
-      ENDDO
+         WRITE(out_unit,'(/1x,a/)')"Plasma Energy Matrix:"
+         DO isol=1,mpert
+            WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,
+     $            ", m = ",m(isol)
+            WRITE(out_unit,
+     $            '(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
+            WRITE(out_unit,'(i3,1p,3e13.5)')
+     $          (ipert,wp(ipert,isol),ABS(wp(ipert,isol)),ipert=1,mpert)
+            WRITE(out_unit,
+     $            '(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
+         ENDDO
 c-----------------------------------------------------------------------
 c     compute and print separate plasma and vacuum eigenvalues.
 c-----------------------------------------------------------------------
-      lwork=2*mpert+1
-      CALL zgeev('V','V',mpert,wp,mpert,ep,
-     $     vl,mpert,vr,mpert,work2,lwork,rwork2,info)
-      eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
-      CALL bubble(REAL(ep),eindex,1,mpert)
-      tt=ep
-      DO ipert=1,mpert
-         ep(ipert)=tt(eindex(mpert+1-ipert))
-      ENDDO
-      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
+         lwork=2*mpert+1
+         CALL zgeev('V','V',mpert,wp,mpert,ep,
+     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+         eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+         CALL bubble(REAL(ep),eindex,1,mpert)
+         tt=ep
+         DO ipert=1,mpert
+            ep(ipert)=tt(eindex(mpert+1-ipert))
+         ENDDO
+         CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
-      IF(present(op_netcdf_out))THEN
-         IF(op_netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,ep,ev,et)
-      ENDIF
+         IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,ep,ev,et)
 c-----------------------------------------------------------------------
 c     deallocate
 c-----------------------------------------------------------------------
-      CALL dcon_dealloc
+         CALL dcon_dealloc
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

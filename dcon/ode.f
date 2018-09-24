@@ -121,7 +121,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_axis_init
-      
+
       INTEGER :: ipert
       REAL(r8), DIMENSION(mpert) :: key,m
       INTEGER :: it,itmax=50
@@ -187,7 +187,7 @@ c-----------------------------------------------------------------------
             psimax=kinsing(ising)%psifac-
      $           singfac_min/ABS(nn*kinsing(ising)%q1)
             next="cross"
-         ENDIF         
+         ENDIF
       ELSE
          DO
             ising=ising+1
@@ -475,7 +475,7 @@ c-----------------------------------------------------------------------
       CALL sing_der(neq,psi_old,u,du1)
       CALL sing_der(neq,psifac,u,du2)
       u=u+(du1+du2)*dpsi
-      IF (.NOT. con_flag) THEN 
+      IF (.NOT. con_flag) THEN
          u(ipert0,:,:)=0
          u(:,index(1),:)=ua(:,ipert0+mpert,:)
       ENDIF
@@ -602,15 +602,15 @@ c-----------------------------------------------------------------------
 
       IF (con_flag) THEN
          CALL sing_der(neq,psi_old,u,du1)
-         psifac=kinsing(ising)%psifac+dpsi  
+         psifac=kinsing(ising)%psifac+dpsi
          CALL sing_der(neq,psifac,u,du2)
-         u=u+(du1+du2)*dpsi 
+         u=u+(du1+du2)*dpsi
       ELSE
          u(ipert1,:,:)=0
          CALL sing_der(neq,psi_old,u,du1)
-         psifac=kinsing(ising)%psifac+dpsi 
+         psifac=kinsing(ising)%psifac+dpsi
          CALL sing_der(neq,psifac,u,du2)
-         u=u+(du1+du2)*dpsi 
+         u=u+(du1+du2)*dpsi
          u(ipert1,:,:)=0
          u(:,index(1),:)=0
          u(ipert1,index(1),:)=1
@@ -1145,6 +1145,16 @@ c-----------------------------------------------------------------------
       REAL(r8) :: dsingfac,norm,dnorm,powmax_old
       REAL(r8), DIMENSION(msol) :: power
       COMPLEX(r8), DIMENSION(mpert,msol,2) :: dca
+      COMPLEX(r8) :: plasma1,vacuum1,total1
+      COMPLEX(r8), SAVE :: total0=-huge(0.0_r8)
+c-----------------------------------------------------------------------
+c     truncation test: local maximum in energy outside last singularity?
+c-----------------------------------------------------------------------
+      IF(next=="finish" .AND. peak_flag)THEN ! we've past the last singularity
+         CALL free_run(plasma1,vacuum1,total1,nzero,.FLASE.,.FALSE.)
+         IF(total1 < total0) flag = .TRUE.
+         total0 = total1
+      ENDIF
 c-----------------------------------------------------------------------
 c     simple return.
 c-----------------------------------------------------------------------
