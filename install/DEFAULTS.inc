@@ -19,7 +19,7 @@
 #     $ module load intel openmpi netcdf acml/5.3.1/ifort64 git
 #   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
-#   in this install directory should produce the following verbose message,
+#   in this install directory should produce the following verbose message.
 #
 #   ------------------------------------------------------------
 #   Defaults tailored for
@@ -38,17 +38,16 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS="-openmp -vec_report0"
+#    $ make FFLAGS="-openmp -vec_report0" 2>&1 | tee make.log
 #
 # On ukstar
 #   Developers should use the default intel compiler and load the netcdf_intel module
 #     $ module load netcdf/netcdf_intel
 #     $ export F90HOME=/opt/intel/compilers_and_libraries_2018.1.163/linux
 #     $ export FC=/opt/intel/compilers_and_libraries_2018.1.163/linux/bin/intel64/ifort
-
 #   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
-#   in this install directory should produce the following verbose message,
+#   in this install directory should produce the following verbose message.
 #
 #   ------------------------------------------------------------
 #   Defaults tailored for
@@ -67,10 +66,38 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS="-qopenmp"
+#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
 #
 # On iris.gat.com
-#   With the move to licensed intel compilers, OSX is no longer actively supported.
+#   Developers should use the ifort compiler and associated netcdf module
+#     $ module load ifort/ifort2017 netcdf/4.4.1-mpich3.2-ifort2017
+#   Then set one undefined environement variable
+#     $ export F90HOME=/fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux
+#   Alternately, you can simply load the gpec module!
+#     $ module load gpec
+#   This should properly set up your LD_LIBRARY_PATH, PATH, and environment variables.
+#    Either way, executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux/bin/intel64/ifort
+#      using math libraries -lmkl_rt
+#      from /fusion/usc/opt/intel2017//compilers_and_libraries/linux/mkl/lib/intel64
+#      including /fusion/usc/opt/intel2017//compilers_and_libraries/linux/mkl/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/lib /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/lib
+#      including /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/include
+#      and compiler libraries -lirc -limf
+#      from /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux//lib/intel64
+#      including /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux//compiler/include/intel64
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
 #
 # On mac OSX
 #   With the move to licensed intel compilers, OSX is no longer actively supported.
