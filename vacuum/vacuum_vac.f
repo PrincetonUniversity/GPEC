@@ -1313,6 +1313,9 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       if ( ishape .ne. 8 ) go to 349
       call d3dwall ( xwal1, zwal1, mth, outmod, iotty )
  349  continue
+      if ( ishape .ne. 9 ) go to 351
+      call wallfromfile ( xwal1, zwal1, mth, outmod, iotty )
+ 351  continue
       if ( ishape .ne. 11 ) go to 400
       do 350 i = 1, mth2
       the = (i-1) * dth
@@ -1492,6 +1495,10 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       zwal1(iq1) = - ww2(i)
   140 continue
   145 continue
+      write(333,*) mth1
+      do ii=1,mth1
+         write(333,*) xwal1(ii),zwal1(ii)
+      enddo
       if ( leqarcw .eq. 1 ) then
          call  eqarcw ( xwal1,zwal1, xpp,zpp, ww1,ww2,ww3, mth1 )
          do i = 1, mth1
@@ -2308,3 +2315,40 @@ c-----------------------------------------------------------------------
       return
  999  call errmes ( outpest, 'wtopest' )
       end subroutine wtopest
+c-----------------------------------------------------------------------
+c     subprogram 23. wallfromfile.
+c     defines the shape of an arbitrary conductor from a file
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      subroutine wallfromfile ( xwall, zwall, mthh, iomod, iotty1 )
+      USE vglobal_mod
+      IMPLICIT REAL*8 (a-h,o-z)
+
+      integer ierr
+      dimension xwall(*), zwall(*), xin(1000), zin(1000)
+c-----------------------------------------------------------------------
+c     computations.
+c-----------------------------------------------------------------------
+      
+c-----------------------------------------------------------------------
+c     read scalars.
+c-----------------------------------------------------------------------
+      open(100, file='vacwall.in' )
+      read(100,*) mthin
+      read(100,*) (xin(ith),zin(ith),ith=1,mthin)
+      close(100)
+      
+      if( mthin .ne. mthh ) then
+         write(iomod, '("wallfromfile: mthin/=mthh",2i6)') mthin,mthh
+         write(iotty1,'("wallfromfile: mthin/=mthh",2i6)') mthin,mthh
+      endif
+
+      xwall(mthh+1) = xwall(1)
+      zwall(mthh+1) = zwall(1)
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      return
+      end subroutine wallfromfile
