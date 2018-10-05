@@ -802,7 +802,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_ldp_i
 
-      INTEGER :: mx,my
+      INTEGER :: mx,my,ii
       REAL(r8), DIMENSION(:), POINTER :: psi,f,p,q
       REAL(r8), DIMENSION(:,:), POINTER :: r,z
 c-----------------------------------------------------------------------
@@ -827,7 +827,25 @@ c-----------------------------------------------------------------------
       READ(in_unit)q
       READ(in_unit)r
       READ(in_unit)z
-      CALL bin_close(in_unit)
+c-----------------------------------------------------------------------
+c     check for valid data
+c-----------------------------------------------------------------------
+      if( all(isnan(f)) ) then
+         write(0,*) "ERROR: Equilibrium file full of NaNs."
+         CLOSE(in_unit,STATUS='DELETE')
+         stop
+      else
+         CALL bin_close(in_unit)
+      endif
+c-----------------------------------------------------------------------
+c     ignore high-q region
+c-----------------------------------------------------------------------
+      do ii=0,mx
+         if( q(ii)>10.0 ) then
+            psihigh=(psi(ii)-psi(0))/(psi(mx)-psi(0))
+            exit
+         endif
+      enddo
 c-----------------------------------------------------------------------
 c     copy and revise 1D arrays.
 c-----------------------------------------------------------------------
