@@ -37,7 +37,7 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
-GPEC v1.2.0
+GPEC v1.2.1
 ===========
 
 Fixes
