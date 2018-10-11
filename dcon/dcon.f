@@ -68,7 +68,7 @@ c     format statements.
 c-----------------------------------------------------------------------
  10   FORMAT(/'ipsi',2x,'psifac',6x,'f',7x,'mu0 p',5x,'dvdpsi',
      $     6x,'q',10x,'di',9x,'dr',8x,'ca1'/)
- 20   FORMAT(i3,1p,5e10.3,3e11.3)
+ 20   FORMAT(i4,1p,8e11.3)
  30   FORMAT(/3x,"mlow",1x,"mhigh",1x,"mpert",1x,"mband",3x,"nn",2x,
      $     "lim_fl",2x,"dmlim",7x,"qlim",6x,"psilim"//5i6,l6,1p,3e11.3/)
 c-----------------------------------------------------------------------
