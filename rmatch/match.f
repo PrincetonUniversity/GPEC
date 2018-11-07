@@ -312,9 +312,10 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(OUT) :: err
       INTEGER, INTENT(OUT) :: it
 
-      INTEGER :: ising,info,nmat
+      INTEGER :: ising,info,nmat,pass
       INTEGER, DIMENSION(4*msing-1) :: ipiv
-      REAL(r8) :: dzfac=0.05, tol=1e-10, itmax=1000,relaxfac=0.1
+      REAL(r8) :: dzfac=0.05, itmax=1000, relaxfac=0.1
+      REAL(r8) :: tol_pass1=1e-4, tol_pass2=1e-10
       COMPLEX(r8) :: z_old,f_old,f,dz
       COMPLEX(r8), DIMENSION(4*msing) :: cof
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
@@ -328,43 +329,55 @@ c-----------------------------------------------------------------------
 40    FORMAT(1x,"cof_in(",i2,")  d+=",1p,2e11.3,"  d-=",1p,2e11.3)
       itmax=itermax
 c-----------------------------------------------------------------------
-c     find initial guess.
+c     Use initial guess but ignore complex component of z.
 c-----------------------------------------------------------------------
+      z=COMPLEX( REAL(z), 0 )
       f=ff(z,mat)
       dz=z*dzfac
       it=0
 c-----------------------------------------------------------------------
-c     iterate.
+c     iterate
+c     For pass1, allow only the real component of z to move.
+c     For pass2, allow both components of z to move.
 c-----------------------------------------------------------------------
-      DO
-         it=it+1
-         err=ABS(dz/z)
-         IF (it==1) THEN
-            WRITE (out_unit,10)
+      DO pass=1,2
+         DO
+            it=it+1
+            err=ABS(dz/z)
+            IF (it==1) THEN
+               WRITE (out_unit,10)
+               WRITE(out_unit,*)
+               WRITE(out_unit,*)            
+            ENDIF
+            WRITE(out_unit,20)it,err,REAL(z),AIMAG(z),REAL(f),AIMAG(f)
             WRITE(out_unit,*)
-            WRITE(out_unit,*)            
-         ENDIF
-         WRITE(out_unit,20)it,err,REAL(z),AIMAG(z),REAL(f),AIMAG(f)
-         WRITE(out_unit,*)
 
-         IF(err < tol) EXIT
-         IF( ISNAN(REAL(f)) ) THEN
-            WRITE(*,*) "Solution is NaN. it=", it
-            WRITE(out_unit,*) "Solution is NaN. it=", it
-            it=-1
-            EXIT
-         ENDIF
-         IF(it > itmax) THEN
-            it=-1
-            WRITE(*,*) "Solution is not well converged."
-            WRITE(out_unit,*) "Solution is not well converged."
-            EXIT
-         ENDIF
-         z_old=z
-         z=z+dz*relaxfac
-         f_old=f
-         f=ff(z,mat)
-         dz=-f*(z-z_old)/(f-f_old)
+            IF( pass==1 .and. err < tol_pass1) THEN
+               dz=COMPLEX( REAL(dz),1e-10*REAL(dz) )
+               EXIT
+            ENDIF
+            IF( pass==2 .and. err < tol_pass2) EXIT
+            IF( ISNAN(REAL(f)) ) THEN
+               WRITE(*,*) "Solution is NaN. it=", it
+               WRITE(out_unit,*) "Solution is NaN. it=", it
+               it=-1
+               EXIT
+            ENDIF
+            IF(it > itmax) THEN
+               it=-1
+               WRITE(*,*) "Solution is not well converged."
+               WRITE(out_unit,*) "Solution is not well converged."
+               EXIT
+            ENDIF
+            z_old=z
+            z=z+dz*relaxfac
+            f_old=f
+            f=ff(z,mat)
+            dz=-f*(z-z_old)/(f-f_old)
+            IF( pass==1 ) THEN
+               dz=COMPLEX( REAL(dz), 0 )
+            ENDIF
+         ENDDO
       ENDDO
 c-----------------------------------------------------------------------
 c     compute the coefficients of outter and inner region solutions.
