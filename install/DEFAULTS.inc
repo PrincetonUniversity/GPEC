@@ -40,6 +40,20 @@
 #   Now compile using
 #    $ make FFLAGS="-openmp -vec_report0"
 #
+# *************** UPDATE 11/07/18 FOR portal.pppl.gov ******************
+#
+#   The intel/11 compiler is deprecated and will soon be removed from
+#   the system. The options are being updated to reflect the newer 
+#   intel/2018 compiler
+#
+#   new options are now  FFLAGS = -qopenmp
+#   and the MKL library is used for LAPACK+BLAS routines
+#
+#   Compiler with:   make FFLAGS="-qopenmp -g -O0"  # for debugging
+#                    make FFLAGS="-qopenmp -O3"     # for optimized version
+#
+# **********************************************************************
+#
 # On iris.gat.com
 #   <Proper compiler options need to be updated for v1.2>
 #
@@ -56,10 +70,27 @@
 # general defaults
 #------------------
 
+# The new modules on portal at PPPL now use LAPACK_HOME instead of LAPACKHOME
+ifndef LAPACKHOME
+   ifdef LAPACK_HOME
+         LAPACKHOME = $(LAPACK_HOME)
+   endif
+endif
+
+# If using the Intel compiler, the MKL library is a better choice for lapack+blas
+# The ACML library is not being maintained anymore but we can leave it there for now
+
 # use acml or lapack based on what is loaded
 ifndef ACML_HOME
-    MATHHOME = $(LAPACKHOME)
-    MATHLIBS = -llapack -lblas
+    ifdef MKLROOT
+      # MKL is available. Use it.
+        MATHHOME = $(MKLROOT)/lib/intel64
+        MATHLIBS = -lmkl_intel_lp64 -lmkl_sequential -lmkl_core
+    else
+      # No MKL library. Set to LAPACKHOME.
+        MATHHOME = $(LAPACKHOME)
+        MATHLIBS = -llapack -lblas
+    endif
 else
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
