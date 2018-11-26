@@ -3183,7 +3183,7 @@ c-----------------------------------------------------------------------
          rss=xnofuns*rvecs
          zss=xnofuns*zvecs
          DO itheta=0,mthsurf
-            psis(:,itheta)=psifac(:)
+            psis(:,itheta)=psifac(1:mstep)
          ENDDO
 
          IF(ascii_flag)THEN
