@@ -1737,8 +1737,9 @@ c-----------------------------------------------------------------------
      $     "Pitch resonant current") )
          CALL check( nf90_def_var(fncid, "w_isl", nf90_double,
      $      (/q_id/), w_id) )
+         CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, w_id, "long_name",
-     $     "Fully saturated island width in normalized poloidal flux") )
+     $     "Full width of saturated island") )
          CALL check( nf90_def_var(fncid, "K_isl", nf90_double,
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
@@ -1749,7 +1750,7 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
-         CALL check( nf90_put_var(fncid, w_id, island_hwidth) )
+         CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_close(fncid) )
       ENDIF
@@ -1947,7 +1948,7 @@ c-----------------------------------------------------------------------
      $     "Pitch resonant vacuum flux") )
          CALL check( nf90_def_var(fncid, "w_isl_v", nf90_double,
      $      (/q_id/), w_id) )
-         CALL check( nf90_put_att(fncid, w_id, "units", "m") )
+         CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, w_id, "long_name",
      $     "Full width of vacuum island") )
          CALL check( nf90_def_var(fncid, "K_isl_v", nf90_double,
