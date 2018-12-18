@@ -582,7 +582,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct fsp_sol.
 c-----------------------------------------------------------------------
-         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)         
 c-----------------------------------------------------------------------
 c     evaluate delta/singular current/normal field/islands.
 c-----------------------------------------------------------------------
@@ -608,7 +608,7 @@ c-----------------------------------------------------------------------
 c     evaluation based on the interpolation.
 c-----------------------------------------------------------------------
             CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
-            singbwp(ising,i)=interpbwn(resnum) / area(ising)     ! flux normalized by area for units Tesla
+            singbwp(ising,i)=interpbwn(resnum) / area(ising) ! flux normalized by area for units Tesla
 
             singbnoflxs(ising,i)=singflx_mn(resnum)/area(ising)  ! flux normalized by area for units Tesla
             islandhwids(ising,i)=4*singflx_mn(resnum)/
@@ -2803,7 +2803,7 @@ c-----------------------------------------------------------------------
      $     xnofuns,bnofuns,intbwpmns
 
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
-	 TYPE(cspline_type) :: fsp_sol
+      TYPE(cspline_type) :: fsp_sol
 c-----------------------------------------------------------------------
 c     allocation puts memory in heap, avoiding stack overfill
 c-----------------------------------------------------------------------
@@ -2813,7 +2813,7 @@ c-----------------------------------------------------------------------
      $   xnofuns(mstep,0:mthsurf),bnofuns(mstep,0:mthsurf))
       ALLOCATE(xmns(mstep,lmpert),ymns(mstep,lmpert),
      $   xnomns(mstep,lmpert),bnomns(mstep,lmpert),bwpmns(mstep,lmpert))
-      ALLOCATE(intbwpmns(mstep,lmpert))
+      IF (msing>0) ALLOCATE(intbwpmns(mstep,lmpert))
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -2837,7 +2837,9 @@ c-----------------------------------------------------------------------
       pwpmns = 0
 
       CALL gpeq_alloc
-      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+      IF (msing>0) THEN
+         CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
+      ENDIF
 
       DO istep=1,mstep
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
@@ -2892,25 +2894,34 @@ c-----------------------------------------------------------------------
          CALL gpeq_bcoordsout(xnomns(istep,:),xno_mn,psifac(istep),ji=0)
          CALL gpeq_bcoordsout(bnomns(istep,:),bno_mn,psifac(istep),ji=0)
 
-         CALL gpeq_interp_sol(fsp_sol,psifac(istep),interpbwn)
+         IF (msing>0) THEN
+            CALL gpeq_interp_sol(fsp_sol,psifac(istep),interpbwn)
+         ENDIF
          IF ((jac_out /= jac_type).OR.(tout==0)) THEN
             CALL gpeq_bcoordsout(bwpmns(istep,:),bno_mn,
      $                           psifac(istep),ji=1)
-            CALL gpeq_bcoordsout(intbwpmns(istep,:),interpbwn,
-     $                           psifac(istep),ji=0)
+            IF (msing>0) THEN
+               CALL gpeq_bcoordsout(intbwpmns(istep,:),interpbwn,
+     $              psifac(istep),ji=0)
+            ENDIF
          ELSE ! no need to re-weight bno_mn with expensive invfft and fft
             bwp_mn=bwp_mn/area
             bwpmns(istep,:)=0
             bwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=bwp_mn
 
-            interpbwn=interpbwn/area
-            intbwpmns(istep,:)=0
-            intbwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=interpbwn
+            IF (msing>0) THEN
+               interpbwn=interpbwn/area
+               intbwpmns(istep,:)=0
+               intbwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=interpbwn
+            ENDIF
          ENDIF
          xnofuns(istep,:)=xnofuns(istep,:)*EXP(ifac*nn*dphi)
          bnofuns(istep,:)=bnofuns(istep,:)*EXP(ifac*nn*dphi)
       ENDDO
       CALL gpeq_dealloc
+      IF (msing>0) THEN
+         CALL cspline_dealloc(fsp_sol)
+      ENDIF
 
       IF(ascii_flag)THEN
          CALL ascii_open(out_unit,"gpec_xbnormal_n"//
@@ -2996,22 +3007,36 @@ c-----------------------------------------------------------------------
       IF (bin_flag) THEN
          CALL bin_open(bin_unit,
      $        "xbnormal.bin","UNKNOWN","REWIND","none")
-         DO ipert=1,lmpert
-            DO istep=1,mstep
-               WRITE(bin_unit)REAL(psifac(istep),4),
-     $              REAL(REAL(xnomns(istep,ipert)),4),
-     $              REAL(AIMAG(xnomns(istep,ipert)),4),
-     $              REAL(REAL(bnomns(istep,ipert)),4),
-     $              REAL(AIMAG(bnomns(istep,ipert)),4),
-     $              REAL(REAL(bwpmns(istep,ipert)),4),
-     $              REAL(AIMAG(bwpmns(istep,ipert)),4),
-     $              REAL(REAL(intbwpmns(istep,ipert)),4),
-     $              REAL(AIMAG(intbwpmns(istep,ipert)),4)
+         IF (msing>0) THEN
+            DO ipert=1,lmpert
+               DO istep=1,mstep
+                  WRITE(bin_unit)REAL(psifac(istep),4),
+     $                 REAL(REAL(xnomns(istep,ipert)),4),
+     $                 REAL(AIMAG(xnomns(istep,ipert)),4),
+     $                 REAL(REAL(bnomns(istep,ipert)),4),
+     $                 REAL(AIMAG(bnomns(istep,ipert)),4),
+     $                 REAL(REAL(bwpmns(istep,ipert)),4),
+     $                 REAL(AIMAG(bwpmns(istep,ipert)),4),
+     $                 REAL(REAL(intbwpmns(istep,ipert)),4),
+     $                 REAL(AIMAG(intbwpmns(istep,ipert)),4)
+               ENDDO
+               WRITE(bin_unit)
             ENDDO
-            WRITE(bin_unit)
-         ENDDO
+         ELSE
+            DO ipert=1,lmpert
+               DO istep=1,mstep
+                  WRITE(bin_unit)REAL(psifac(istep),4),
+     $                 REAL(REAL(xnomns(istep,ipert)),4),
+     $                 REAL(AIMAG(xnomns(istep,ipert)),4),
+     $                 REAL(REAL(bnomns(istep,ipert)),4),
+     $                 REAL(AIMAG(bnomns(istep,ipert)),4),
+     $                 REAL(REAL(bwpmns(istep,ipert)),4),
+     $                 REAL(AIMAG(bwpmns(istep,ipert)),4)
+               ENDDO
+               WRITE(bin_unit)
+            ENDDO
+         ENDIF
          CALL bin_close(bin_unit)
-         CALL cspline_dealloc(fsp_sol)
       ENDIF
 
       IF (bin_2d_flag) THEN
@@ -3158,7 +3183,7 @@ c-----------------------------------------------------------------------
          rss=xnofuns*rvecs
          zss=xnofuns*zvecs
          DO itheta=0,mthsurf
-            psis(:,itheta)=psifac(:)
+            psis(:,itheta)=psifac(1:mstep)
          ENDDO
 
          IF(ascii_flag)THEN
@@ -3191,7 +3216,8 @@ c-----------------------------------------------------------------------
 c     deallocation cleans memory in heap
 c-----------------------------------------------------------------------
       DEALLOCATE(rvecs,zvecs,rs,zs,psis,rss,zss,xnofuns,bnofuns)
-      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns,intbwpmns)
+      DEALLOCATE(xmns,ymns,xnomns,bnomns,bwpmns)
+      IF (msing>0) DEALLOCATE(intbwpmns)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

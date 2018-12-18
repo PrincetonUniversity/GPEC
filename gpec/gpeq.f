@@ -1291,7 +1291,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpeq_dealloc
 c-----------------------------------------------------------------------
 c     subprogram 18. gpeq_interp_singsurf.
-c     create spline for interpretation of soltuon near singular surface.
+c     create spline for interpretation of solution near singular surface.
 c-----------------------------------------------------------------------
       SUBROUTINE gpeq_interp_singsurf(fsp_sol,spot,npsi)
       TYPE(cspline_type), INTENT(INOUT)::fsp_sol    ! spline of bwp smoothly crossing rationals
