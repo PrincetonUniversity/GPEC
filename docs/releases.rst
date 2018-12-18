@@ -81,6 +81,25 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.2.2
+===========
+
+Adds
+------
+- GPEC - Adds new coils for DIII-D, COMPASS, ASDEX Upgrade, and NSTX-U
+
+Changes
+--------
+- DOCS - Updates documentation of authors, public installations, and compilation at each institution
+- DCON - Makes formatting of surface quantities table in dcon.out consistent between DCON and RDCON
+- DCON - Makes sum1.bin (previously sum1.dat) outputs consistent with CALTRANS DCON.
+- GPEC - Singular coupling routines are skipped entirely (avoiding possible issues) if no rationals exist in the domain
+
+Fixes
+------
+- GPEC - Fixes a ss_flag bug so the penetrated vacuum field is calculated on the correct surfaces
+
+
 GPEC v1.2.1
 ===========
 
