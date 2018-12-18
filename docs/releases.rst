@@ -4,8 +4,14 @@ Accessing Releases
 
 
 Official releases are available for download from the `github release page <https://github.com/PrincetonUniversity/GPEC/releases>`_.
+To stay up to date, however, it is recommended that users use on of the following public releases.
+The default gpec module at each institution tracks the latest release. Beta development branches  are available if you should happen to need a new feature right away and are updated weekly at each institution. It is best, however, to always contact a developer if/when thinking of using a beta feature.
 
-On the PPPL portal computers, releases are available at /p/gpec. To use a release,::
+
+Princeton Plasma Physics Laboratory
+=====================================
+
+On the Princeton portal.pppl.gov computers, releases are available at /p/gpec. To use a release,::
 
     module use /p/gpec/modules
 
@@ -17,10 +23,48 @@ to see the available releases, or simply,::
 
     module load gpec
 
-to load the current default. This will add the appropriate directories to your path, such that you can simply
-call the executables (i.e. dcon, etc.).
+to load the current default. This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply
+call the executables (i.e. dcon, gpec, etc.).
 
-On the General Atomics iris computer, releases are available at /fusion/projects/codes/gpec. To use a release, simply load the publicly available gpec module.
+Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
+
+    module load gpec/0.0
+
+but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
+
+
+Gerenal Atomics
+================
+
+On the General Atomics iris.gat.com server, releases are available at /fusion/projects/codes/gpec. To use the most up to date release, simply load the publicly available gpec module,::
+
+    module load gpec
+
+This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply
+call the executables (i.e. dcon, gpec, etc.).
+
+Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
+
+    module load gpec/0.0
+
+but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
+
+
+National Fusion Research Institute
+===================================
+
+On the NFRI ukstar server, releases are available at /usr/local/analysis/GPEC. To use the most up to date release, simply load the publicly available gpec module,::
+
+    module load gpec
+
+This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply
+call the executables (i.e. dcon, gpec, etc.).
+
+Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
+
+    module load gpec/0.0
+
+but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
 
 
 ******************
