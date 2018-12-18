@@ -4,8 +4,14 @@ Accessing Releases
 
 
 Official releases are available for download from the `github release page <https://github.com/PrincetonUniversity/GPEC/releases>`_.
+To stay up to date, however, it is recommended that users use on of the following public releases.
+The default gpec module at each institution tracks the latest release. Beta development branches  are available if you should happen to need a new feature right away and are updated daily at each institution. It is best, however, to always contact a developer if/when thinking of using a beta feature.
 
-On the PPPL portal computers, releases are available at /p/gpec. To use a release,::
+
+Princeton Plasma Physics Laboratory
+=====================================
+
+On the Princeton portal.pppl.gov computers, releases are available at /p/gpec. To use a release,::
 
     module use /p/gpec/modules
 
@@ -17,10 +23,45 @@ to see the available releases, or simply,::
 
     module load gpec
 
-to load the current default. This will add the appropriate directories to your path, such that you can simply
-call the executables (i.e. dcon, etc.).
+to load the current default. This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply call the executables (i.e. dcon, gpec, etc.).
 
-On the General Atomics iris computer, releases are available at /fusion/projects/codes/gpec. To use a release, simply load the publicly available gpec module.
+Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
+
+    module load gpec/0.0
+
+but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
+
+
+General Atomics
+================
+
+On the General Atomics iris.gat.com server, releases are available at /fusion/projects/codes/gpec. To use the most up to date release, simply load the publicly available gpec module,::
+
+    module load gpec
+
+This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply call the executables (i.e. dcon, gpec, etc.).
+
+Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
+
+    module load gpec/0.0
+
+but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
+
+
+National Fusion Research Institute
+===================================
+
+On the NFRI ukstar server, releases are available at /usr/local/analysis/GPEC. To use the most up to date release, simply load the publicly available gpec module,::
+
+    module load gpec
+
+This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply call the executables (i.e. dcon, gpec, etc.).
+
+Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
+
+    module load gpec/0.0
+
+but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
 
 
 ******************
@@ -36,6 +77,33 @@ This is an active, developing scientific research code. The release structure at
 Note, backwards compatibility is defined as the ability to return to a previous run and re-run any previously successful executable. This does not guarantee all output file formats are exactly maintained.
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
+
+GPEC v1.2.3
+===========
+
+Fixes
+------
+- GPEC - Fixes incorrect w_isl unit labeling in netcdf and makes it the full width for consistency with w_isl_v
+
+
+GPEC v1.2.2
+===========
+
+Adds
+------
+- GPEC - Adds new coils for DIII-D, COMPASS, ASDEX Upgrade, and NSTX-U
+
+Changes
+--------
+- DOCS - Updates documentation of authors, public installations, and compilation at each institution
+- DCON - Makes formatting of surface quantities table in dcon.out consistent between DCON and RDCON
+- DCON - Makes sum1.bin (previously sum1.dat) outputs consistent with CALTRANS DCON.
+- GPEC - Singular coupling routines are skipped entirely (avoiding possible issues) if no rationals exist in the domain
+
+Fixes
+------
+- GPEC - Fixes a ss_flag bug so the penetrated vacuum field is calculated on the correct surfaces
+
 
 GPEC v1.2.1
 ===========

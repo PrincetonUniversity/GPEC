@@ -1,20 +1,15 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Outputs and Post-Processing &#8212; GPEC 1.0.5 documentation</title>
-    
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <title>Outputs and Post-Processing &#8212; GPEC 1.2.3 documentation</title>
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.0.5',
+        VERSION:     '1.2.3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -24,43 +19,298 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="DCON README" href="dcon_readme.html" />
-    <link rel="prev" title="Getting started" href="getting_started.html" /> 
+    <link rel="prev" title="Getting started" href="getting_started.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
   </head>
-  <body role="document">
+  <body>
 
 <div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
 <a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
 </div>
 
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="dcon_readme.html" title="DCON README"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="getting_started.html" title="Getting started"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">home</a>|&nbsp;</li>
-        <li><a href="search.html">search</a>|&nbsp;</li>
- 
-      </ul>
-    </div>
 
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          GPEC</a>
+        <span class="navbar-text navbar-version pull-left"><b>1.2</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="references.html">Research</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="examples.html">Learn</a></li>
+                <li><a href="developers.html">Develop</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="source_documentation.html">Code</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Jump to <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#gpec-user-agreement">GPEC User Agreement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="getting_started.html#public">Public</a></li>
+<li class="toctree-l3"><a class="reference internal" href="getting_started.html#personal">Personal</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#running-using-omfit">Running using OMFIT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#manual-run-process">Manual Run Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#a-word-on-coordinates">A Word On Coordinates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#inputs">Inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#results">Results</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Outputs and Post-Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#choice-of-spectral-decomposition">Choice of Spectral Decomposition</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#comparing-to-real-space-quantities">Comparing to Real Space Quantities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#coordinates">Coordinates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#output-files">Output Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ascii-file-outputs">ASCII File Outputs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#binary-file-outputs">Binary File Outputs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#xdraw">xdraw</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dcon_readme.html">DCON README</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dcon_readme.html#determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas">Determining the MHD Stability of Axisymmetric Toroidal Plasmas</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-1-introduction">Section 1. Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-2-straight-fieldline-coordinates">Section 2. Straight-Fieldline Coordinates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-3-installation">Section 3. Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-4-equil-input">Section 4. EQUIL Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-5-dcon-input">Section 5. DCON Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-6-vacuum-input">Section 6. VACUUM Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-7-dcon-output">Section 7. DCON Output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-8-orbit-input">Section 8. ORBIT Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-9-orbit-input">Section 9. ORBIT Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-10-other-documentation">Section 10. Other documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="namelists.html">Namelist Variables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="namelists.html#the-equil-namelist">The EQUIL Namelist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namelists.html#the-dcon-namelist">The DCON Namelist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namelists.html#the-gpec-namelist">The GPEC Namelist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namelists.html#the-pentrc-namelist">The PENTRC Namelist</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Tutorial Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#omfit-tutorial">OMFIT Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#gpec-diii-d-ideal-example">GPEC DIII-D Ideal Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="source_documentation.html">PYPEC Source documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="source_documentation.html#regression-compare-for-comparing-restults"><code class="docutils literal"><span class="pre">regression.compare</span></code> – For Comparing Restults</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="source_documentation.html#interface">Interface</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Accessing Releases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#princeton-plasma-physics-laboratory">Princeton Plasma Physics Laboratory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#general-atomics">General Atomics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#national-fusion-research-institute">National Fusion Research Institute</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#release-notes">Release Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-2-3">GPEC v1.2.3</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#fixes">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-2-2">GPEC v1.2.2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#adds">Adds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#changes">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id1">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-2-1">GPEC v1.2.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id2">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-2-0">GPEC v1.2.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id3">Adds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id4">Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id5">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#removes">Removes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-7">GPEC v1.1.7</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#features">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-6">GPEC v1.1.6</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id6">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-5">GPEC v1.1.5</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id7">Adds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id8">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#documentation">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-4">GPEC v1.1.4</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id9">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-3">GPEC v1.1.3</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id10">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-2">GPEC v1.1.2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id11">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-1">GPEC v1.1.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id12">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-0">GPEC v1.1.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id13">Adds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id14">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id15">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-6">GPEC v1.0.6</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id16">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-5">GPEC v1.0.5</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id17">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-4">GPEC v1.0.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-3">GPEC v1.0.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-2">GPEC v1.0.2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id18">Adds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id19">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-1">GPEC v1.0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-0">GPEC v1.0.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id20">Adds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id21">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-4-0">GPEC v0.4.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id22">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id23">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id24">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-5">GPEC v0.3.5</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id25">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-4">GPEC v0.3.4</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id30">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id31">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#speed-and-stability">Speed and Stability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id32">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-3">GPEC v0.3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-2">GPEC v0.3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-1">GPEC v0.3.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id33">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id34">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#performance">Performance</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-0">GPEC v0.3.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id35">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id36">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="releases.html#id37">Performance</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developers.html">Developers Corner</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developers.html#general-perturbed-equilibrium-codes">General Perturbed Equilibrium Codes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="developers.html#development">Development</a></li>
+<li class="toctree-l3"><a class="reference internal" href="developers.html#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact Information</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contact.html#gpec-pent">GPEC &amp; PENT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contact.html#dcon-rdcon">DCON &amp; RDCON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contact.html#stride">STRIDE</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">Select Publications</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="references.html#id1">2007</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#id2">2009</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#id6">2010</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#id7">2011</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#id9">2012</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#id11">2013</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
+        <div class="sphinxsidebarwrapper"><ul>
 <li><a class="reference internal" href="#">Outputs and Post-Processing</a><ul>
 <li><a class="reference internal" href="#choice-of-spectral-decomposition">Choice of Spectral Decomposition</a><ul>
 <li><a class="reference internal" href="#comparing-to-real-space-quantities">Comparing to Real Space Quantities</a></li>
@@ -79,37 +329,25 @@
 </li>
 </ul>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="getting_started.html"
-                        title="previous chapter">Getting started</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="dcon_readme.html"
-                        title="next chapter">DCON README</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/outputs.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+  <li>
+    <a href="getting_started.html" title="Previous Chapter: Getting started"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Getting started</span>
+    </a>
+  </li>
+  <li>
+    <a href="dcon_readme.html" title="Next Chapter: DCON README"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">DCON README &raquo;</span>
+    </a>
+  </li>
+<form action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
         </div>
       </div>
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+    <div class="col-md-12 content">
+      
   <div class="section" id="outputs-and-post-processing">
 <h1>Outputs and Post-Processing<a class="headerlink" href="#outputs-and-post-processing" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="choice-of-spectral-decomposition">
@@ -149,12 +387,12 @@
 <h2>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this headline">¶</a></h2>
 <p>There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,</p>
 <ol class="arabic simple">
-<li>The &#8216;working coordinates&#8217; defined by jac_type in equil.in.</li>
-<li>The &#8216;input coordinates&#8217; defined by jac_in, tmag_in, and jsurf_in when applicable.</li>
-<li>The &#8216;output coordinates&#8217; defined by jac_out, tmag_out, and jsurf_out when applicable.</li>
+<li>The ‘working coordinates’ defined by jac_type in equil.in.</li>
+<li>The ‘input coordinates’ defined by jac_in, tmag_in, and jsurf_in when applicable.</li>
+<li>The ‘output coordinates’ defined by jac_out, tmag_out, and jsurf_out when applicable.</li>
 </ol>
 <p>The DCON working coordinate system is used for nearly all internal calculations in the GPEC package, but the external drive may be prescribed in input coordinates (2) and the final perturbed equilibrium results may be converted to output coordinates (3). The working coordinates are magnetic cooridinates. The input and output coordinates may be converted to cylindrical <span class="math">\(\phi\)</span> using the tmag_in or tmag_out variables.</p>
-<p>The gpec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the &#8216;jacobian&#8217; attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the gpec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.</p>
+<p>The gpec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the ‘jacobian’ attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the gpec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.</p>
 </div>
 <div class="section" id="output-files">
 <h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
@@ -260,34 +498,28 @@
 </div>
 
 
-          </div>
-        </div>
-      </div>
-      <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="dcon_readme.html" title="DCON README"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="getting_started.html" title="Getting started"
-             >previous</a> |</li>
-        <li><a href="index.html">home</a>|&nbsp;</li>
-        <li><a href="search.html">search</a>|&nbsp;</li>
- 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2015, PPPL.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
-    </div>
+    
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/outputs.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2015, PPPL.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+    </p>
+  </div>
+</footer>
   </body>
 </html>
