@@ -52,7 +52,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="index.html">
+        <a class="navbar-brand" href="index.html"><span><img src="_static/GPEC_logo.png"></span>
           GPEC</a>
         <span class="navbar-text navbar-version pull-left"><b>1.2</b></span>
       </div>
@@ -62,8 +62,8 @@
             
                 <li><a href="references.html">Cite</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li><a href="examples.html">Learn</a></li>
                 <li><a href="developers.html">Develop</a></li>
+                <li><a href="releases.html">Release History</a></li>
                 <li><a href="source_documentation.html">Code</a></li>
             
             
@@ -84,24 +84,33 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html#running-using-omfit">Running using OMFIT</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html#manual-run-process">Manual Run Process</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#keeping-track-of-coordinates">Keeping Track of Coordinates</a></li>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#inputs">Inputs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#outputs">Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#manual-examples">Manual Examples</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="outputs.html">Choice of Spectral Decomposition</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="outputs.html#comparing-to-real-space-quantities">Comparing to Real Space Quantities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html">Coordinates</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#translating-to-machine-space">Translating to Machine Space</a></li>
 <li class="toctree-l2"><a class="reference internal" href="outputs.html#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
-<li class="toctree-l2"><a class="reference internal" href="outputs.html#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#interfacing-with-vacuum">Interfacing with VACUUM</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="outputs.html#inputs">Inputs</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="outputs.html#coordinates">Coordinates</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html#the-equil-namelist">The EQUIL Namelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html#the-dcon-namelist">The DCON Namelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html#the-gpec-namelist">The GPEC Namelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html#the-pentrc-namelist">The PENTRC Namelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outputs.html#post-processing-visualization">Post-Processing &amp; Visualization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#omfit">OMFIT</a></li>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#pypec">PYPEC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="outputs.html#xdraw">xdraw</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="outputs.html#output-files">Output Files</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="outputs.html#ascii-file-outputs">ASCII File Outputs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="outputs.html#binary-file-outputs">Binary File Outputs</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="outputs.html#xdraw">xdraw</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dcon_readme.html">DCON README</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="dcon_readme.html#determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas">Determining the MHD Stability of Axisymmetric Toroidal Plasmas</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-1-introduction">Section 1. Introduction</a></li>
@@ -123,7 +132,6 @@
 <li class="toctree-l1"><a class="reference internal" href="namelists.html#the-gpec-namelist">The GPEC Namelist</a></li>
 <li class="toctree-l1"><a class="reference internal" href="namelists.html#the-pentrc-namelist">The PENTRC Namelist</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">OMFIT Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html#manual-examples">Manual Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_documentation.html">PYPEC Source documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="source_documentation.html#regression-compare-for-comparing-restults"><code class="docutils literal"><span class="pre">regression.compare</span></code> – For Comparing Restults</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="source_documentation.html#interface">Interface</a></li>
@@ -282,6 +290,9 @@
   <div class="row">
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo"/>
+            </a></p>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
