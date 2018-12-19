@@ -1,5 +1,6 @@
-Contact Information
-*******************
+.. _contacts:
+
+The primary developers of each code within the GPEC package are listed below.
 
 GPEC & PENT
 ===========

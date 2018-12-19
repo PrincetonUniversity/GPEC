@@ -17,21 +17,50 @@ In order to acquire access to the code sources and/or executables, the user must
 3. The users will include the proper code name(s) and appropriate references in published results and presentations. The will must email a draft of any article/report/presentation/etc. using GPEC results to the authors prior to publishing.
 
 
-Installation
-============
+.. _installation:
+
+Installations
+=============
 
 Public
 -------
 
-Public installations are available @portal.pppl.gov:/p/gpec/. The executables are available in a /bin directory and run examples can be found in /docs/examples.
+Public installations are available at PPPL (portal.pppl.gov), GA (iris.gat.com), and NFRI (ukstar). Public installations are regularly cloned and kept up to date with the :ref:`official releases <releases>`.
 
-Public installations are cloned and kept up to date from the `releases on Github <https://github.com/PrincetonUniversity/GPEC>`_. The releases remain private for now, so only those with access to the repository will be able to install/update the site package. Contact nlogan@pppl.gov for access.
+The default gpec module at each institution tracks the latest release. Public installations of the "development" (beta) branch are also available if you should happen to need a new feature right away.
+
+On any of the above clusters, use the module system to obtain the appropriate gpec environment. For example, use::
+
+    module avail
+
+to see the available releases or simply,::
+
+    module load gpec
+
+to load the current default. This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply call the executables (i.e. dcon, gpec, etc.).
+
+.. note:: **For PPPL Users**
+   On the Princeton portal.pppl.gov computers, users must first execute :code:`module use /p/gpec/modules`. It is recommended this be included in a .bashrc or similar file.
+
+Loading the gpec module sets the :code:`$GPECHOME` environment variable. This is helpful for find the path to source code, including such helpful things as the :ref:`examples` at :code:`$GPECHOME/docs/examples`.
+
+Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
+
+    module load gpec/0.0
+
+but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability. We ask that users always :ref:`contact a developer <contacts>` if/when thinking of using a beta feature.
 
 
 Personal
 --------
 
-Personal copies of GPEC should be cloned from the `Github repository <https://github.com/PrincetonUniversity/GPEC>`_, as the make process uses git commands assuming the installation is a git repository.
+Personal copies of GPEC should be cloned from the `Github repository <https://github.com/PrincetonUniversity/GPEC>`_, as the make process uses git commands assuming the installation is a git repository. The repository remains private for now, so only those with access will be able to install/update the package. Contact nlogan@pppl.gov for access.
 
 The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory's makefile references the DEFAULTS.inc file, also in install.
 Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.
+
+Compiling should use intel compilers with the -qopenmp flag for parallel kinetic calculations in the gpec executable. An example make command might be,::
+
+    make FFLAGS="-qopenmp" 2>&1 | tee make.log
+
+where the logging part is merely a useful suggestion. Appropriate compiler details for the major fusion clusters on which public installations are maintained is recorded in the $GPECHOME/install/DEFAULTS.inc file annotations.

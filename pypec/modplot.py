@@ -5,8 +5,7 @@
 
 Collection of modified matplotlib functions and objects.
 
-Examples
---------
+:Examples:
 
 Plot complex arguments.
 
