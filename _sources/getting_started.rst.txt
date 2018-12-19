@@ -67,4 +67,4 @@ The GPEC repository contains a number of examples intended to provide both consi
 
 Example console commands and output are given below.
 
-:doc:`DIII-D Ideal Example <examples/DIIID_ideal_example/README>`
+:doc:`DIII-D Ideal Example <../examples/DIIID_ideal_example/README>`
