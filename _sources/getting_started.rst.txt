@@ -26,31 +26,31 @@ Public copies of the GPEC releases are available at /p/gpec on portal. The user 
 
 1. Edit the dcon.in file
 
-  - DCON will only run for a single toroidal mode number. Set the toroidal mode number for the entire run here using the crucial parameter nn. GPEC outputs for multiple toroidal mode numbers can be added together in the post-processing.
+   - DCON will only run for a single toroidal mode number. Set the toroidal mode number for the entire run here using the crucial parameter nn. GPEC outputs for multiple toroidal mode numbers can be added together in the post-processing.
 
 2. Edit the equil.in file
 
-  - Specify the specific plasma shot of interest by setting the initial equilibrium file (ex: EFIT output g-file).
+   - Specify the specific plasma shot of interest by setting the initial equilibrium file (ex: EFIT output g-file).
 
-  - Set the range of normalized flux to be included in the calculation.
+   - Set the range of normalized flux to be included in the calculation.
 
 3. $/p/gpec/<release>/bin/dcon
 
-  - This creates the euler.bin file, which provides a orthonormal basis of force balance states for GPEC.
+   - This creates the euler.bin file, which provides a orthonormal basis of force balance states for GPEC.
 
-  - Once this is created, you can various effects on this equilibrium by changing the 3D field input in gpec.in without having to run DCON again.
+   - Once this is created, you can various effects on this equilibrium by changing the 3D field input in gpec.in without having to run DCON again.
 
 4. Edit the gpec.in file
 
-  - Specify the 3D error field input file to be used in GPEC to perturb the 2D equilibrium.
+   - Specify the 3D error field input file to be used in GPEC to perturb the 2D equilibrium.
 
-    - This must match the psihigh variable used in equil.in.
+      - This must match the psihigh variable used in equil.in.
 
-  - Set the flags to specify the desired outputs.
+   - Set the flags to specify the desired outputs.
 
 5. /p/gpec/<release>/bin/gpec
 
-  - That’s it! Now go look at your output files.
+   - That’s it! Now go look at your output files.
 
 Note that GPEC takes 2-3 inputs depending on whether kinetic effects are included. All calculations require a file containing the 2D plasma equilibrium, which is specified in equil.in prior to the DCON run. The most common equilibrium source is “efit”, in which case a two dimensional EFIT output g-file is used to specify the original axi-symmetric equilibrium. This equilibrium data and file format are widely used across multiple machines, but many alternative formats are also supported by GPEC. It is worth noting that significant differences between kinetic EFIT equilibria and the more simple non-kinetic EFITs has been noted. Obtaining the best 2D equilibrium data possible is encouraged for detailed calculations.
 
