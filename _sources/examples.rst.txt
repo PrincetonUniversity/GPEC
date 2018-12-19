@@ -17,9 +17,8 @@ Manual Examples
 
 The GPEC repository contains a number of examples intended to provide both consistent regression testing and a useful reseource for users looking to manually run straightforward examples. These examples are located in $GPECHOME/docs/examples, and contain all the necessary inputs and namelists to run the appropriate suite of codes. Ideal and kinetic examples use dcon, gpec, and pentrc. Resistive examples contain the necessary inputs to run dcon, rdcon, rmatch and gpec.
 
-Example console commands and output are given below.
-
 .. note:: The use of $GPECHOME and executable commands such as `dcon`, `gpec` or `pentrc` assumes the appropriate environement variables have been set. The easiest way to do this is to use the module commands associated with one of the public installations.
 
+Example console commands and output are given below.
 
 :doc:`DIII-D Ideal Example <./examples/DIIID_ideal_example/README>`
