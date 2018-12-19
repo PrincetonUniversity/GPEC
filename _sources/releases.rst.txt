@@ -182,7 +182,7 @@ Adds
 - GPEC - Control netcdf outputs include the external flux applied from each coil and coil names.
 - GPEC - Profile netcdf outputs include rational surface quantities, coil names, and vsbrzphi, xbrzphifun, and arzphifun outputs.
 - GPEC - Code is robust to singfld_flag with con_flag.
-- GPEC - The _new namelist variables_, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.
+- GPEC - The new namelist variables, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.
 - PYPEC - SLURM job submission.
 - PYPEC - Post processing includes a function that updates netcdf naming conventions to be consistent with the latest version.
 - PYPEC - Backwards compatibility for running ipec is available.

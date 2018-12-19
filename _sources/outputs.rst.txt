@@ -1,6 +1,6 @@
 
 Coordinates
-============
+***********
 
 A clear understanding of the input and output coordinate conventions is essential for GPEC. There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,
 
@@ -15,7 +15,7 @@ The DCON working coordinate system is used for nearly all internal calculations 
 The :code:`gpec_control_output_n#` netcdf file gives spectral quantities in the working coordinates (specified in the 'jacobian' attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the gpec_control_n#.out ascii output. *Note that the same transformation cannot be safely made for other weighted quantities*.
 
 Translating to Machine Space
-------------------------------
+============================
 
 When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember
 
@@ -44,7 +44,7 @@ In the real space representation decomposed in :math:`\exp(-in\phi)` with CCW :m
 
 
 Interfacing with SURFMN
-------------------------
+=======================
 
 SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard :math:`\theta`. However, it expands in :math:`\exp(-im\theta-in\phi)` and always uses a CCW :math:`\phi`. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.
 
@@ -59,19 +59,20 @@ For LH configurations only the sign of m is flipped (according to 1). For RH con
 
 
 Interfacing with VACUUM
-------------------------
+=======================
 
 Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW :math:`\phi` and downward outboard :math:`\theta`. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.
 
 
 
 Inputs
-*******
+******
 
 .. include:: namelists.rst
 
+
 Outputs
-********
+*******
 
 The results of an GPEC run depend on the output flags selected in gpec.in prior to the run. Without getting into the specifics of each output, there are a few important properties any GPEC run that should always be kept in minds. Each GPEC run always returns its results in the form of consistently named .out files in the run-directory. This means that it will overwrite any previous run's results if they are not moved first. Always move any results worth keeping to a separate directory and keep track of which runs used which inputs. Outputs are expensive, so try to limit runs to only output the essential physics of interest each time.
 
