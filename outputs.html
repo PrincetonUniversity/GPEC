@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Coordinates &#8212; GPEC 1.2.3 documentation</title>
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.2.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
+          <!-- GPEC-->
+        </a>
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.2</b></span> -->
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="references.html">Cite</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="developers.html">Develop</a></li>
+                <li><a href="releases.html">Release History</a></li>
+                <li><a href="source_documentation.html">Code</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Jump to <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+           <!-- 
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+           -->
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo"/>
+            </a></p><ul>
+<li><a class="reference internal" href="#">Coordinates</a><ul>
+<li><a class="reference internal" href="#translating-to-machine-space">Translating to Machine Space</a></li>
+<li><a class="reference internal" href="#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
+<li><a class="reference internal" href="#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#inputs">Inputs</a><ul>
+<li><a class="reference internal" href="#the-equil-namelist">The EQUIL Namelist</a></li>
+<li><a class="reference internal" href="#the-dcon-namelist">The DCON Namelist</a></li>
+<li><a class="reference internal" href="#the-gpec-namelist">The GPEC Namelist</a></li>
+<li><a class="reference internal" href="#the-pentrc-namelist">The PENTRC Namelist</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#outputs">Outputs</a><ul>
+<li><a class="reference internal" href="#post-processing-visualization">Post-Processing &amp; Visualization</a><ul>
+<li><a class="reference internal" href="#omfit">OMFIT</a></li>
+<li><a class="reference internal" href="#pypec">PYPEC</a></li>
+<li><a class="reference internal" href="#xdraw">xdraw</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#output-files">Output Files</a><ul>
+<li><a class="reference internal" href="#ascii-file-outputs">ASCII File Outputs</a></li>
+<li><a class="reference internal" href="#binary-file-outputs">Binary File Outputs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<form action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="col-md-12 content">
+      
+  <div class="section" id="coordinates">
+<h1>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this headline">¶</a></h1>
+<p>A clear understanding of the input and output coordinate conventions is essential for GPEC. There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,</p>
+<ol class="arabic simple">
+<li>The ‘working coordinates’ defined by jac_type in equil.in.</li>
+<li>The ‘input coordinates’ defined by jac_in, tmag_in, and jsurf_in when applicable.</li>
+<li>The ‘output coordinates’ defined by jac_out, tmag_out, and jsurf_out when applicable.</li>
+</ol>
+<p>The DCON working coordinate system is used for nearly all internal calculations in the GPEC package, but the external drive may be prescribed in input coordinates (2) and the final perturbed equilibrium results may be converted to output coordinates (3). The working coordinates are magnetic cooridinates. The input and output coordinates may be converted to cylindrical <span class="math">\(\phi\)</span> using the tmag_in or tmag_out variables.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The responsibility of the user is to make sure the GPEC input Jacobian is consistent with the 3D error field input file and the PENTRC input jacobian is consistent with the GPEC output. OMFIT helps sync some of this automatically. However, the user should be aware that each coordinate system has different strengths. Hamada coordinates have the best convergence properties in general, but are poor for the inboard side of the plasma. PEST coordinates are user friendly but poor for outboard resolution. Boozer coordinates tend to find a middle ground between these, with mild convergence and fair resolution throughout the plasma.</p>
+</div>
+<p>The <code class="code docutils literal"><span class="pre">gpec_control_output_n#</span></code> netcdf file gives spectral quantities in the working coordinates (specified in the ‘jacobian’ attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the gpec_control_n#.out ascii output. <em>Note that the same transformation cannot be safely made for other weighted quantities</em>.</p>
+<div class="section" id="translating-to-machine-space">
+<h2>Translating to Machine Space<a class="headerlink" href="#translating-to-machine-space" title="Permalink to this headline">¶</a></h2>
+<p>When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember</p>
+<ol class="arabic simple">
+<li>GPEC uses a right handed magnetic coordinate system decomposed in <span class="math">\(\exp(im\theta-in\phi)\)</span>.</li>
+<li>GPEC effectively uses CCW <span class="math">\(\phi\)</span> for left-handed (LH) configurations, but CW <span class="math">\(\phi\)</span> for right-handed (RH) configurations.</li>
+<li>GPEC always uses upward outboard <span class="math">\(\theta\)</span>.</li>
+</ol>
+<p>The result of this is that the pitch-aligned field will always be positive m. This convention makes in-house analysis nice and easy. For example, one can <em>always</em> plot the m=2 perturbed normal displacement profile and see the resonant surface behavior at q=2. The m=-2 normal displacement will always be nonresonant. This is shown in the figure below from the package DIII-D example, which is a LH plasma.</p>
+<a class="reference internal image-reference" href="_images/example_xno_kinkprofile.png"><img alt="_images/example_xno_kinkprofile.png" class="align-center" src="_images/example_xno_kinkprofile.png" style="width: 400px;" /></a>
+<p>For another example, the figure below shows a that the positive m fields are magnified for a DIII-D example control surface. We always look here for kink amplification.</p>
+<a class="reference internal image-reference" href="_images/example_bnm_positiveamplified.png"><img alt="_images/example_bnm_positiveamplified.png" class="align-center" src="_images/example_bnm_positiveamplified.png" style="width: 400px;" /></a>
+<p>The convention does require some awareness from the user when interfacing with real-space quantities and/or other codes though. For example, the user does need to know that the spectrum rotates by <span class="math">\(-\phi\)</span> if real space coil rotates by <span class="math">\(\phi\)</span> in a RH configuration.</p>
+<p>To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the gpec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.</p>
+<p>In the real space representation decomposed in <span class="math">\(\exp(-in\phi)\)</span> with CCW <span class="math">\(\phi\)</span>, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW <span class="math">\(\phi\)</span> (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by <span class="math">\(\exp(im\theta-in\phi)\)</span>, the complex conjugate operation does not simply restore CCW phi for RH configurations. It will also flip up and down.</p>
+</div>
+<div class="section" id="interfacing-with-surfmn">
+<h2>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this headline">¶</a></h2>
+<p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard <span class="math">\(\theta\)</span>. However, it expands in <span class="math">\(\exp(-im\theta-in\phi)\)</span> and always uses a CCW <span class="math">\(\phi\)</span>. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
+<p>As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">m_surfmn</span> <span class="o">=</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">m_gpec</span>
+<span class="n">b_surfmn</span> <span class="o">=</span> <span class="n">real</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">*</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">imag</span><span class="p">(</span><span class="n">b_m</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>For LH configurations only the sign of m is flipped (according to 1). For RH configurations, m remains unchanged but the complex conjugate is taken (the combined effect of to 1 &amp; 2).</p>
+</div>
+<div class="section" id="interfacing-with-vacuum">
+<h2>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Permalink to this headline">¶</a></h2>
+<p>Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW <span class="math">\(\phi\)</span> and downward outboard <span class="math">\(\theta\)</span>. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.</p>
+</div>
+</div>
+<div class="section" id="inputs">
+<h1>Inputs<a class="headerlink" href="#inputs" title="Permalink to this headline">¶</a></h1>
+<p>Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any <cite>public installation &lt;_installation&gt;</cite>.</p>
+<p>The major input files requiring user interaction are as follows.</p>
+<div class="section" id="the-equil-namelist">
+<h2>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Permalink to this headline">¶</a></h2>
+<p>This namelist specifies the equilibrium inputs and how equilibrium quantities are splined for use in the various executables.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;EQUIL_CONTROL
+    eq_type=&quot;efit&quot;       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
+    eq_filename=&quot;mypath&quot; ! Path to input file (geqdsk, etc.) Must specified (no default).
+
+    jac_type=&quot;hamada&quot;    ! Working coordinate system for all DCON and GPEC calculations. Overrides individual powers. Accepts hamada, pest, boozer, equal_arc
+    power_bp=0           ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+    power_b=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+    power_r=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
+
+    grid_type=&quot;ldp&quot;      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp or original. ldp packs points near the core and edge.
+    psilow=1e-2          ! Minimum value of psi, normalized from 0 to 1
+    psihigh=0.992        ! Maximum value of psi, normalized from 0 to 1
+    mpsi=128              ! Number of radial grid intervals for equilibrium quantities
+    mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
+    newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
+    etol = 1e-7          ! Tolerance for direct equilibrium reconstruction of flux surfaces/coordinates
+    use_classic_splines = t ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+
+    input_only=f         ! Generate information about the input and then quit with no further calculation
+    use_galgrid=t        ! Use the same grid as galerkin method when regrid=.True.
+/
+&amp;EQUIL_OUTPUT
+    gse_flag=f           ! Produces diagnostic output for accuracy of solution to Grad-Shafranov equation
+    out_eq_1d=f          ! Ascii output of 1D equilibrium file data
+    bin_eq_1d=f          ! Binary output of 1D equilibrium file data
+    out_eq_2d=f          ! Ascii output of 2D equilibrium file data
+    bin_eq_2d=f          ! Binary output of 2D equilibrium file data (set true for GPEC)
+    out_2d=f             ! Ascii output of processed 2D data
+    bin_2d=f             ! Binary output of processed 2D data
+    dump_flag=f          ! Binary dump of basic equilibrium data and 2D rzphi spline
+/
+</pre></div>
+</div>
+</div>
+<div class="section" id="the-dcon-namelist">
+<h2>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Permalink to this headline">¶</a></h2>
+<p>This namelist controls the behavior of the DCON code and determines its outputs.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;DCON_CONTROL
+    bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
+    mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
+    ode_flag=t           ! Integrate ODE&#39;s for determining stability of internal long-wavelength mode (must be true for GPEC)
+    vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
+
+    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    dmlim=0.2            ! See sas_flag
+    qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
+    qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
+    sing_start=0         ! Start integration at the sing_start&#39;th rational from the axis (psilow)
+
+    nn=1                 ! Toroidal mode number
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m&#39;
+    mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
+    thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
+
+    kin_flag = t         ! Kinetic EL equation (default: false)
+    con_flag = t         ! Continue integration through layers (default: false)
+    kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
+    kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
+    kingridtype = 0      ! Regular grid method (default : 0)
+    passing_flag = t     ! Includes passing particle effects in kinetic EL equation (default: false)
+    trapped_flag = t     ! Includes trapped particle effects in kinetic EL equation  (default: true)
+    ktanh_flag = f       ! Ignore kinetic effects in the core smoothly (default: false)
+    ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
+    ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
+    ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
+    electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
+    parallel_threads=16  ! Parallel calculations of the kinetic matrix components (2*nl+1 is recommended, where nl is defined in pentrc.in)
+
+    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
+    crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
+    singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
+    ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
+
+    use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+/
+&amp;DCON_OUTPUT
+    out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
+
+    crit_break=t         ! Color of the crit curve changes when crossing a singular surface
+
+    ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
+    msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
+    mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
+
+    bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    euler_stride=1       ! Output only every euler_stride&#39;th psi step to binary file
+
+    out_bal1=f           ! Ascii output for bal_flag poloidal functions
+    bin_bal1=f           ! Binary output for bal_flag poloidal functions
+    out_bal2=f           ! Ascii output for bal_flag functions
+    bin_bal2=f           ! Binary output for bal_flag functions
+
+    netcdf_out=t         ! Replicate ascii dcon.out information in a netcdf file
+/
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Additional DCON documentation can be found in the pre-GPEC documentation <cite>here &lt;_dcon&gt;</cite>.</p>
+</div>
+</div>
+<div class="section" id="the-gpec-namelist">
+<h2>The GPEC Namelist<a class="headerlink" href="#the-gpec-namelist" title="Permalink to this headline">¶</a></h2>
+<p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;GPEC_INPUT
+   dcon_dir   = &quot;&quot;                   ! Path to DCON outputs. Individual file paths are appended to this
+   idconfile  = &quot;euler.bin&quot;          ! Eigenfunctions output by DCON run
+   ieqfile    = &quot;psi_in.bin&quot;         ! Flux surfaces output by DCON run
+   ivacuumfile= &quot;vacuum.bin&quot;         ! Vacuum info output by DCON run
+   rdconfile  = &quot;globalsol.bin&quot;      ! Galerkin eigenfunctions output by resistive DCON run
+
+   gal_flag = t             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
+
+   jac_in=&quot;&quot;                ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
+   jsurf_in=0               ! True(1) if external perturbation is area weighted (i.e. flux)
+   tmag_in =1               ! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
+   mthsurf =0               ! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
+
+   coil_flag=t              ! Calculate external perturbation from coils in coil.in
+
+   data_flag=f              ! Apply perturbation from thrid party code output
+   data_type=&quot;surfmn&quot;       ! Name of said code. Choose: surfmn,??
+   infile=&quot;path/to/file&quot;    ! Path to said output
+   nmin=0                   ! Extra parameters needed to read surfmn files.
+   nmax=64                  ! Extra parameters needed to read surfmn files.
+   mmin=-64                 ! Extra parameters needed to read surfmn files.
+   mmax=64                  ! Extra parameters needed to read surfmn files.
+
+   harmonic_flag=f          ! Apply self-defined perturbations
+   cosmn(3)=1e-4            ! Real part of m=3 component (n defined by DCON run).
+   sinmn(6)=1e-4            ! Imaginary part of m=6 component. etc.
+
+   displacement_flag=f      ! Perturbations are displacement (m). Default is field (T).
+   fixed_boundary_flag=f    ! Total perturbation = external perturbation
+
+   mode_flag = f            ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
+   mode  = 0                ! DCON eigen function index (1 is least stable)
+   filter_types = &#39;w&#39;       ! Isolate the filter_modes of energy (w), reluctance (r), permiability (p) or singular coupling (s) eigenvectors/singular-vectors
+   filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
+/
+&amp;GPEC_CONTROL
+   resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
+   sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
+   sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
+   reg_flag=f               ! Regularize the solution near resonant surfaces
+   reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
+   chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
+   nche=20                  ! Number of Chebyshev polynomials used
+   use_classic_splines = f  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+/
+&amp;GPEC_OUTPUT
+   jac_out=&quot;&quot;               ! Coordinate system of outputs
+   jsurf_out=0              ! True(1) for area weighted outputs (only appends standard gpec_control output)
+   tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends gpec_control)
+   mlim_out=64              ! Fourier decomposed outputs will span -mlim_out&lt;=m&lt;=mlim_out when jac_out/=jac_type or tmag_out/=tmag_in
+
+   resp_flag=t              ! Output energy, reluctance, inductance, and permeability eigenvalues, eigenvectors, and matrices
+   filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
+   singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
+   singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
+   vsingfld_flag=f          ! Output of vacuum resonant surface quantities
+
+   pmodb_flag=f             ! Outputs delta-B_Lagrangian
+   xbnormal_flag=t          ! Outputs normal displacement and field in plasma
+   vbnormal_flag=t          ! Outputs vacuum normal displacement and field in plasma
+   xclebsch_flag=t          ! Outputs clebsch coordinate displacement for PENT
+   dw_flag=t                ! Outputs self-consistent energy and torque profiles (when kin_flag=t from DCON)
+
+   eqbrzphi_flag=t          ! Outputs equilibrium field on regular (r,z) grid
+   brzphi_flag=t            ! Outputs perturbed field on regular (r,z) grid
+   xrzphi_flag=f            ! Outputs displacement on regular (r,z) grid
+   vbrzphi_flag=f           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
+   vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to external perturbation surface current (not a real field)
+   vsbrzphi_flag=f          ! Outputs the field on regular (r,z) grid due to singular surface currents
+   ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
+   xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
+   arzphifun_flag=f         ! Outputs r,z, and vector potential on psi,theta grid
+
+   nr = 128                 ! Number of radial grid points in rzphi outputs
+   nz = 128                 ! Number of vertical grid points in rzphi outputs
+   fun_flag=f               ! Write outputs to (r,z) in addition to default (psi,m)
+   flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
+
+   netcdf_flag=t            ! Write all outputs in netcdf files
+   ascii_flag=f             ! Write all outputs in ascii tables
+   max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
+   bin_flag=f               ! Write binary outputs for use with xdraw
+   bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
+
+   verbose=t                ! Print run log to terminal
+/
+&amp;GPEC_DIAGNOSE
+   timeit=f                 ! Print timer splits for major subroutines
+   radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
+/
+</pre></div>
+</div>
+</div>
+<div class="section" id="the-pentrc-namelist">
+<h2>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Permalink to this headline">¶</a></h2>
+<p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
+<pre class="literal-block">
+&amp;PENT_INPUT
+    idconfile  = &quot;euler.bin&quot;            ! Eigenfunctions output by DCON run
+    kinetic_file = &quot;kinetic.txt&quot;        ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
+    data_dir = &quot;&quot;                       ! Location of pre-formed fnml matrix used in rlar and clar methods. &quot;default&quot; uses $GPECHOME/pentrc.
+    peq_file = &quot;&quot;                       ! Ascii displacement. columns: psi_n, m, real(xi^psi), imag(xi^psi), real(xi^alpha), imag(xi^alpha). Default uses &quot;gpec_xclebsch_n#.out&quot;
+
+    mi = 2                              ! Main ion mass (u)
+    zi = 1                              ! Main ion charge (e)
+    mimp = 12                           ! Impurity mass (u)
+    zimp = 6                            ! Impurity charge (e)
+    nl = 6                              ! Bounce harmonic range (-nl to nl)
+    electron = .false.                  ! Calculate all results for electrons INSTEAD OF ions (only one species per PENTRC run)
+    nutype = &quot;harmonic&quot;                 ! Collision operator: &quot;zero&quot;, &quot;krook&quot;, &quot;harmonic&quot;
+    f0type = &quot;maxwellian&quot;               ! Distribution function: &quot;maxwellian&quot;
+    jac_in = &quot;&quot;                         ! Jacobian of peq_file harmonic decomposition. 'default' uses jac_type of idconfile.
+    jsurf_in=0                          ! True(1) if peq_file is area weighted
+    tmag_in =1                          ! True(1) if peq_file has toroidal angle defined by jac_in. False(0) if machine angle.
+/                                       
+&amp;PENT_CONTROL
+    wefac = 1                           ! Artificial factor applied to omega_EXB
+    wdfac = 1                           ! Artificial factor applied to omega_b
+    wpfac = 1                           ! Artificial factor applied to omega_phi
+    nufac = 1                           ! Artificial factor applied to collision operator
+    divxfac = 1                         ! Artificial factor applied to div xi_perp
+
+    atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
+    rtol_xlmda = 1e-5                   ! Relative tolerance in energy and pitch integration
+    atol_psi = 1e-4                     ! Absolute tolerance in psi_n integration
+    rtol_psi = 1e-4                     ! Relative tolerance in psi_n integration
+    ntheta = 128                        ! Poloidal angle grid for bounce integration
+    nlmda = 128                         ! Pitch grid for omega_D, oemga_b, dJdJ
+
+    xmax = 128                          ! Upper bound of energy integral (x=E/T)
+    ximag = 0.0                         ! Step off real energy axis (use to avoid zero collisionality singularities)
+    psilims = 0 1                       ! Range in psi_n
+    use_classic_splines = f             ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+/
+&amp;PENT_OUTPUT
+    moment = &quot;pressure&quot;                 ! Use 'pressure' for torque and particle transport, 'heat' for heat transport
+
+    fgar_flag = t                       ! Full general aspect ratio calculation
+    tgar_flag = t                       ! Trapped general aspect ratio calculation
+    pgar_flag = f                       ! Passing general aspect ratio calculation
+    clar_flag = f                       ! Circular large aspect ratio calculation
+    rlar_flag = f                       ! Reduced large aspect ratio calculation
+    fcgl_flag = f                       ! Fluid Chew-Goldberger-Low limit
+    wxyz_flag = f                       ! Euler-lagrange equation matrix output at psiout
+    fkmm_flag = f                       ! Full euler-lagrange matrix calculation (t,p also available)
+    ftmm_flag = f                       ! Full torque mxm matrix calculation (t,p also available)
+    fwmm_flag = f                       ! Full dW mxm matrix calculation (t,p also available)
+
+    output_ascii = f                    ! Write ascii output files
+    output_netcdf = t                   ! Write netcdf output files
+
+    xlmda_out = f                       ! Output energy and pitch integrands on psi_out
+    theta_out = f                       ! Output bounce integrands on psi_out
+    psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs
+
+    equil_grid = f                      ! Recalculate each requested method on equilibrium grid from DCON
+    input_grid = f                      ! Recalculate each requested method on input displacements' grid
+
+    verbose = t                         ! Print progress to terminal
+    clean = f                           ! Remove pentrc_*.out before running
+/
+&amp;PENT_ADMIN                             
+    fnml_flag = f                       ! Special function matrix [JKP PRL 2009]
+    ellip_flag = f                      ! Elliptic integral functions
+    diag_flag = f                       ! Diagnostic module
+    indebug = f                         ! Debug input file parsing and manipulations
+    tdebug = f                          ! Debug psi integration
+    lambdadebug = f                     ! Debug pitch integration
+    xdebug = f                          ! Debug energy integration
+/
+
+
+</pre>
+</div>
+</div>
+<div class="section" id="outputs">
+<h1>Outputs<a class="headerlink" href="#outputs" title="Permalink to this headline">¶</a></h1>
+<p>The results of an GPEC run depend on the output flags selected in gpec.in prior to the run. Without getting into the specifics of each output, there are a few important properties any GPEC run that should always be kept in minds. Each GPEC run always returns its results in the form of consistently named .out files in the run-directory. This means that it will overwrite any previous run’s results if they are not moved first. Always move any results worth keeping to a separate directory and keep track of which runs used which inputs. Outputs are expensive, so try to limit runs to only output the essential physics of interest each time.</p>
+<p>An important property of many GPEC results is their linearity. GPEC calculates results for a single toroidal harmonic. When appropriate, results from multiple runs can simply be added (to obtain a total perturbed field for example). In the same spirit, the amplitude of a plasma response calculated by GPEC is linear with the error-field. Thus, plasma response fields can be multiplier by a constant to simulate changes in a driven 3D error field.</p>
+<div class="section" id="post-processing-visualization">
+<h2>Post-Processing &amp; Visualization<a class="headerlink" href="#post-processing-visualization" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="omfit">
+<h3>OMFIT<a class="headerlink" href="#omfit" title="Permalink to this headline">¶</a></h3>
+<p>The easiest way to visualize and interact with GPEC outputs is through the OMFIT interface. In OMFIT, one can easily navigate the ascii, binary, and netcdf outputs, double-clicking to visualize certain quantities as desired. A number of pre-packaged plotting and post-processing routines are also provided. See the ` online tutorial &lt;<a class="reference external" href="https://docs.google.com/document/d/1qSUjJZYmET8-X08rRGBT6L_9D9fzEN_zCV75OX_ZbZk/edit?usp=sharing">https://docs.google.com/document/d/1qSUjJZYmET8-X08rRGBT6L_9D9fzEN_zCV75OX_ZbZk/edit?usp=sharing</a>&gt;`_ for examples.</p>
+</div>
+<div class="section" id="pypec">
+<h3>PYPEC<a class="headerlink" href="#pypec" title="Permalink to this headline">¶</a></h3>
+<p>GPEC installations also come with a stand-alone python package for reading, manipulating, and visualizing the GPEC output. When loading the GPEC module of one of the public installations, this module will be available in your python path. Examples are provided in the <a class="reference internal" href="source_documentation.html#source-documentation"><span class="std std-ref">python documentation</span></a>.</p>
+</div>
+<div class="section" id="xdraw">
+<h3>xdraw<a class="headerlink" href="#xdraw" title="Permalink to this headline">¶</a></h3>
+<p>The binary GPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by GPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.</p>
+</div>
+</div>
+<div class="section" id="output-files">
+<h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
+<p>The GPEC outputs are entirely specified by flags (bool types t or f) set in the GPEC_output section of GPEC.in. All outputs are ASCII files, and can be grouped into two major categories.</p>
+<div class="section" id="ascii-file-outputs">
+<h3>ASCII File Outputs<a class="headerlink" href="#ascii-file-outputs" title="Permalink to this headline">¶</a></h3>
+<p>A number of the flag options in GPEC.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.</p>
+<p>Outputs Always Available</p>
+<p>These GPEC outputs can always be obtained from a equil.bin file output from DCON.</p>
+<p>GPEC_response_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> resp_flag</p>
+<p><strong>Info</strong> Energy for DCON eigenmodes and stability indices. Eigenvalues and eigenvectors for vacuum and plasma inductance (virtual casing currents to fields), plasma permeability (external fields to total fields), and plasma reluctance.</p>
+</div></blockquote>
+<p>GPEC_singcoup_matrix_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> singcoup_flag</p>
+<p><strong>Info</strong> The coupling matrix to resonant fields, coupling matrix to singular currents, and to island half-widths is given for each rational surface within the plasma (q=2, 3, etc) for each surface the real and imaginary coupling constants are given for each poloidal mode number on the control surface.</p>
+</div></blockquote>
+<p>GPEC_singcoup_svd_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> singcoup_flag</p>
+<p><strong>Info</strong> The SVD singular values (s) and eigen vectors for each coupling matrix in GPEC_singcoup_matrix_n#.out. Large s corresponds to large amplification, with the largest (most important mode) listed at the top. The results should be dotted with the unweighted normal field spectrum to give physical meaning.</p>
+</div></blockquote>
+<p>Outputs Available When Error Field is Provided</p>
+<p>These outputs are only available when an external error field file is provided as an input to GPEC. This means GPEC.in must have the data_flag turned on and a infile specified.</p>
+<p>GPEC_control_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong></p>
+<p><strong>Info</strong> The Plasma response for an external perturbation on the control surface. This includes the vacuum energy, surface energy, plasma energy, real and imaginary vacuum input mathbf{B}_{in} and total field on plasma boundarymathbf{B}_{out}as a function of poloidal mode number.</p>
+</div></blockquote>
+<p>GPEC_singfld_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> singfld_flag</p>
+<p><strong>Info</strong> The Psi_{N}, total resonant mathbf{B} (real and imaginary), singular current (real and imaginary), island half width in units of normalized flux and Chirikov parameter at rational surface inside the plasma.</p>
+<p><strong>Flag</strong> singcoup_flag</p>
+<p><strong>Info</strong> Additional section showing the overlap field and overlap percentage for each eigenmode in the singcoup_svd output.</p>
+</div></blockquote>
+<p>GPEC_pmod_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> pmodb_flag</p>
+<p><strong>Info</strong> Eulerian and Lagrangian left|mathbf{B}right|(real and imaginary) for each poloidal mode number at each value of Psi_{N} output. This output is necessary for NTV post processing.</p>
+</div></blockquote>
+<p>GPEC_xbnormal_n#.out</p>
+<blockquote>
+<div><p><strong>Flag</strong> xbnormal_flag</p>
+<p><strong>Info</strong> The normal components of the displacement, magnetic field without the plasma response, and magnetic field with the plasma response included for each poloidal mode number at each value of Psi_{N} output.??</p>
+</div></blockquote>
+<p>GPEC_*rzphi_n#.out</p>
+<p>A number of output files have a similar structure. Here the * in the file name is replaced by the appropriate leading letters of the corresponding flag. For example the xrzphi_flag for n=1 creates a GPEC_xrzphi_n1.out file. some common properties of these files are:</p>
+<ul>
+<li><p class="first">real and imaginary components: Output files contain two dimensional data on an left(r,zright) grid for a single toroidal harmonic. To translate into three dimensions, perform the transformationBleft(r,z,phiright)=B_{real}left(r,zright)cosleft(nphiright)+B_{imag}left(r,zright)sinleft(nphiright)</p>
+</li>
+<li><p class="first">l parameter: 1 designates points inside plasma, 0 points in vacuum, -1 points near/on surface (singularity)</p>
+<blockquote>
+<div><p><strong>Flag</strong> eqbrzphi_flag</p>
+<p><strong>Info</strong> The original equilibrium field on a left(r,z,phiright) grid.</p>
+<p><strong>Flag</strong> brzphi_flag</p>
+<p><strong>Info</strong> The left(r,z,phiright)components of the perturbed magnetic fields inside the plasma on the left(r,z,phiright) grid.</p>
+<p><strong>Flag</strong> xrzphi_flag</p>
+<p><strong>Info</strong> The displacement on the left(r,z,phiright) grid.</p>
+<p><strong>Flag</strong> vbrzphi_flag</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current composed of both the vacuum component and the plasma response.</p>
+<p><strong>Flag</strong> vpbrzphi_flag</p>
+<p><strong>Info</strong> The true perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid due to the plasma response alone calculated from the plasma response surface condition.</p>
+<p><strong>Flag</strong> vvbrzphi_flag</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current from the external fields alone.</p>
+<p><strong>Flag</strong> ssbrzphi_flag</p>
+<p><strong>Info</strong> The false perturbed magnetic field in the vacuum region on the left(r,z,phiright) grid calculated using the GPEC boundary surface current from the external fields alone.</p>
+</div></blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="binary-file-outputs">
+<h3>Binary File Outputs<a class="headerlink" href="#binary-file-outputs" title="Permalink to this headline">¶</a></h3>
+<p>These files are designed for quick and easy visualization of results using the xdraw command. For more details on using xdraw see the devoted section on this page.</p>
+<p>xbnormal.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> bin_flag</p>
+<p><strong>Info</strong> The normal displacement and magnetic field as functions of Psi_{N} for xdraw.</p>
+</div></blockquote>
+<p>xbnormal_2d.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> bin_2d_flag</p>
+<p><strong>Info</strong> Contour profiles of the normal displacement and magnetic field in (R,z) for xdraw.</p>
+</div></blockquote>
+<p>pflux_re(im)_2d.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> bin_2d_flag</p>
+<p><strong>Info</strong> Contour profiles of the real (imaginary) perturbed flux in (R,z) for xdraw.</p>
+</div></blockquote>
+<p>bnormal_spectrum.bin</p>
+<blockquote>
+<div><p><strong>Flag</strong> bin_flag</p>
+<p><strong>Info</strong> Surfmn type contours of the normal perturbed magnetic fields as a function of poloidal harmonic number and Psi_{N}.</p>
+</div></blockquote>
+</div>
+</div>
+</div>
+
+
+    </div>
+    
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/outputs.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2015, PPPL.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

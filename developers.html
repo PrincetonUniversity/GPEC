@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Code Development &#8212; GPEC 1.2.3 documentation</title>
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.2.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
+          <!-- GPEC-->
+        </a>
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.2</b></span> -->
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="references.html">Cite</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="#">Develop</a></li>
+                <li><a href="releases.html">Release History</a></li>
+                <li><a href="source_documentation.html">Code</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Jump to <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+           <!-- 
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+           -->
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/GPEC_logo.png" alt="Logo"/>
+            </a></p><ul>
+<li><a class="reference internal" href="#">Code Development</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+
+<form action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+        </div>
+      </div>
+    <div class="col-md-12 content">
+      
+  <p id="developing">This <strong>Generalized Perturbed Equilibrium Code</strong> package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, RDCON, STRIDE, GPEC, and PENTRC.</p>
+<p>The primary purpose of this package is to calculated the stability to nonaxisymmetric modes and (if stable) the nonaxisymmetric force balance in tokamak plasmas.</p>
+<p>Please contact the authors if interested in becoming a contributor to this project. Refer to the <a class="reference external" href="http://princetonuniversity.github.io/GPEC/">contacts and research pages</a> for details.</p>
+<div class="section" id="code-development">
+<h1>Code Development<a class="headerlink" href="#code-development" title="Permalink to this headline">¶</a></h1>
+<p>There is a <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">Github repository</a> for this package to facilitate version control and collaborative contributions.</p>
+<p>To become a contributor to the GPEC package, contact <a class="reference external" href="mailto:nlogan&#37;&#52;&#48;pppl&#46;gov">nlogan<span>&#64;</span>pppl<span>&#46;</span>gov</a> to be added to the development team. Next, go the the Github repository to familiarize yourself with the documentation, branch structure, latest commits, etc. While there, go ahead and copy the HTTPS clone URL from the box in the right side panel. Finally, create a directory on your local machine, clone the repository, and checkout the appropriate branch in order to start contributing.</p>
+<p>On the PPPL portal computers, navigate to a directory in which you want to do your development (something like /p/gpec/users/&lt;username&gt;/gpec) and use following commands:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">&lt;</span><span class="n">copied</span><span class="o">-</span><span class="n">url</span><span class="o">-</span><span class="n">from</span><span class="o">-</span><span class="n">github</span><span class="o">&gt;</span> <span class="n">gpec</span>
+<span class="n">cd</span> <span class="n">gpec</span>
+<span class="n">git</span> <span class="n">checkout</span> <span class="o">-</span><span class="n">b</span> <span class="n">develop</span>
+<span class="n">git</span> <span class="n">pull</span> <span class="n">origin</span> <span class="n">develop</span>
+</pre></div>
+</div>
+<p>This will create a directory ‘gpec’ and with the developmental branch of the repository in it. For more on branches, see the workflow section below. For compile instructions, see the install section. Now you are free to add/edit files in this branch. Be sure to use:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">add</span> <span class="o">&lt;</span><span class="n">new</span><span class="o">-</span><span class="n">file</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>when creating new files, so that they come under version control. Be sure to make regular commits:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">commit</span> <span class="o">-</span><span class="n">a</span> <span class="c1"># Will open $EDITOR for message</span>
+</pre></div>
+</div>
+<p>as you go. You can’t go wrong with more commits. Especially when developing as a team.</p>
+<p>When you have finished a significant addition/improvement push it to Github using:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">push</span> <span class="o">-</span><span class="n">u</span> <span class="n">origin</span> <span class="n">develop</span>
+</pre></div>
+</div>
+<p>so that others working on the same branch can stay in sync with your developments. Similarly, you should be regularly pulling from the branch in order to stay in sync with what others are doing. To do so, use:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">pull</span> <span class="n">origin</span> <span class="n">develop</span>
+</pre></div>
+</div>
+<p>There are many great git tutorials on the web, and great documentation for all the commands. Use them!</p>
+<p><strong>GIT Workflow</strong></p>
+<p>All developers need to use Vincent Driessen’s <a class="reference external" href="http://nvie.com/posts/a-successful-git-branching-model">GitFlow</a> workflow when editing the GPEC package. PLEASE READ THE ENTIRE POST. It is short, very thorough, and good for both experienced and new git users.</p>
+<dl class="docutils">
+<dt>The highlights are,</dt>
+<dd><ul class="first last simple">
+<li>There are two permanent branches: master and develop</li>
+<li>The master branch is only updated for at release ready stages</li>
+<li>New features should be developed in short-lived (days) branches coming off of and merging back to the development branch.</li>
+</ul>
+</dd>
+</dl>
+<p>Specific instructions are given in the link above as to exactly how to branch and merge these various branches. For example, the –no-ff option should be used when merging in order to keep branch histories. Just follow the examples and you wont go wrong!</p>
+<p><strong>Debugging</strong></p>
+<p>To do a thorough debugging, try adding more flags with the FFLAGS variable. A good set might be,:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-g -O0 -Wall -fbacktrace -fcheck=all&quot;</span>
+</pre></div>
+</div>
+<p>for example.</p>
+</div>
+<div class="section" id="documentation">
+<h1>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h1>
+<p>Documentation of the GPEC package has been created using sphinx and is hosted by <a class="reference external" href="http://princetonuniversity.github.io/GPEC/">PrincetonUniveristy GitHub Pages</a>.</p>
+<p>The documentation for the entire package is contained within the top level docs directory, and uses rst files with syntax that should be straight forward to mimic. If creating a new .rst file be sure to include it in the top level organization of the index.rst file.</p>
+<p><strong>Building the documentation</strong></p>
+<p>The very first time, starting from the root of the repo:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">docs</span>
+<span class="n">make</span> <span class="n">init</span>
+</pre></div>
+</div>
+<p>This creates a new gpec-docs directory in the same directory that contains the local repository (not in the repository itself) and checks out a devoted documentation branch. With that set up, the following will build the documentation and push it to the proper place:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">ghpages</span>
+</pre></div>
+</div>
+<p>This is now all you need to do in order to update docs for that local repo from there on out.</p>
+</div>
+
+
+    </div>
+    
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/developers.rst.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2015, PPPL.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
