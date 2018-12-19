@@ -176,7 +176,7 @@ This release includes a new DCON netcdf output file and SLURM job submission int
 Adds
 ---------
 - DCON - A clean, efficient netcdf file replicates the information in the complicated dcon.out ascii.
-- DCON - The _new namelist variable_, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).
+- DCON - The new namelist variable, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).
 - COIL - KSTAR and EAST coils are available.
 - COIL - A NSTX-U error field model is available.
 - GPEC - Control netcdf outputs include the external flux applied from each coil and coil names.
@@ -267,11 +267,14 @@ The Ideal Perturbed Equilibrium Code (IPEC) has officially been deprecated and i
 Adds
 -------------
  - DCON inclusion of kinetic terms is now determined by the kin_flag input.
-  - Additional dcon_control namelist inputs can be used to control the kinetic calculations
+
+    - Additional dcon_control namelist inputs can be used to control the kinetic calculations
+
  - IPEC now calculates generalized perturbed equilibrium (no assumption that the force balance states form a hermitian matrix)
  - IPEC netcdf output is nearly complete and naming conventions are official
  - PENTRC now has fully netcdf output unless ascii is specifically requested by the user
-  - Output is now separated from calculations, setting the stage for parallelization
+
+    - Output is now separated from calculations, setting the stage for parallelization
 
 Documentation
 ----------------------
@@ -321,7 +324,7 @@ This release includes critical bug fixes for the nonambipolar transport calculat
 Fixes
 --------------
 
-- PENTRC a correction factor of 1/2 has been applied to the fcgl, *gar, and *mm methods to correctly represent quadratic terms using complex analysis
+- PENTRC a correction factor of 1/2 has been applied to the fcgl, \*gar, and \*mm methods to correctly represent quadratic terms using complex analysis
 - PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.
 
 

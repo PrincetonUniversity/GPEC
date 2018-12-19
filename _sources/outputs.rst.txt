@@ -88,7 +88,7 @@ The easiest way to visualize and interact with GPEC outputs is through the OMFIT
 PYPEC
 ------
 
-GPEC installations also come with a stand-alone python package for reading, manipulating, and visualizing the GPEC output. When loading the GPEC module of one of the public installations, this module will be available in your python path. Examples are provided in the :ref:`python documentation <_source_documentation>`_.
+GPEC installations also come with a stand-alone python package for reading, manipulating, and visualizing the GPEC output. When loading the GPEC module of one of the public installations, this module will be available in your python path. Examples are provided in the :ref:`python documentation <source_documentation>`.
 
 
 xdraw

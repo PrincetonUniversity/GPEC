@@ -34,7 +34,7 @@ Public copies of the GPEC releases are available at /p/gpec on portal. The user 
 
    - Set the range of normalized flux to be included in the calculation.
 
-3. $/p/gpec/<release>/bin/dcon
+3. $GPECHOME/bin/dcon
 
    - This creates the euler.bin file, which provides a orthonormal basis of force balance states for GPEC.
 
@@ -44,11 +44,11 @@ Public copies of the GPEC releases are available at /p/gpec on portal. The user 
 
    - Specify the 3D error field input file to be used in GPEC to perturb the 2D equilibrium.
 
-      - This must match the psihigh variable used in equil.in.
+      + This must match the psihigh variable used in equil.in.
 
    - Set the flags to specify the desired outputs.
 
-5. /p/gpec/<release>/bin/gpec
+5. $GPECHOME/bin/gpec
 
    - That’s it! Now go look at your output files.
 
@@ -67,4 +67,5 @@ The GPEC repository contains a number of examples intended to provide both consi
 
 Example console commands and output are given below.
 
-- `DIII-D Ideal Example <_DIIID_ideal_example>`
+- :ref:`DIII-D Ideal Example <DIIID_ideal_example>`
+- :ref:`Run <Run_Process>`

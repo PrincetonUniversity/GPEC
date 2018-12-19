@@ -192,24 +192,24 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-4">GPEC v0.3.4</a><ul>
-<li><a class="reference internal" href="#id30">Fixes</a></li>
-<li><a class="reference internal" href="#id31">Features</a></li>
+<li><a class="reference internal" href="#id26">Fixes</a></li>
+<li><a class="reference internal" href="#id27">Features</a></li>
 <li><a class="reference internal" href="#speed-and-stability">Speed and Stability</a></li>
-<li><a class="reference internal" href="#id32">Documentation</a></li>
+<li><a class="reference internal" href="#id28">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-3">GPEC v0.3.3</a></li>
 <li><a class="reference internal" href="#gpec-v0-3-2">GPEC v0.3.2</a></li>
 <li><a class="reference internal" href="#gpec-v0-3-1">GPEC v0.3.1</a><ul>
-<li><a class="reference internal" href="#id33">Fixes</a></li>
-<li><a class="reference internal" href="#id34">Features</a></li>
+<li><a class="reference internal" href="#id29">Fixes</a></li>
+<li><a class="reference internal" href="#id30">Features</a></li>
 <li><a class="reference internal" href="#performance">Performance</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-0">GPEC v0.3.0</a><ul>
-<li><a class="reference internal" href="#id35">Fixes</a></li>
-<li><a class="reference internal" href="#id36">Features</a></li>
-<li><a class="reference internal" href="#id37">Performance</a></li>
+<li><a class="reference internal" href="#id31">Fixes</a></li>
+<li><a class="reference internal" href="#id32">Features</a></li>
+<li><a class="reference internal" href="#id33">Performance</a></li>
 </ul>
 </li>
 </ul>
@@ -421,13 +421,13 @@
 <h2>Adds<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON - A clean, efficient netcdf file replicates the information in the complicated dcon.out ascii.</li>
-<li>DCON - The _new namelist <a href="#id38"><span class="problematic" id="id39">variable_</span></a>, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).</li>
+<li>DCON - The new namelist variable, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).</li>
 <li>COIL - KSTAR and EAST coils are available.</li>
 <li>COIL - A NSTX-U error field model is available.</li>
 <li>GPEC - Control netcdf outputs include the external flux applied from each coil and coil names.</li>
 <li>GPEC - Profile netcdf outputs include rational surface quantities, coil names, and vsbrzphi, xbrzphifun, and arzphifun outputs.</li>
 <li>GPEC - Code is robust to singfld_flag with con_flag.</li>
-<li>GPEC - The _new namelist <a href="#id40"><span class="problematic" id="id41">variables_</span></a>, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.</li>
+<li>GPEC - The _new namelist <a href="#id34"><span class="problematic" id="id35">variables_</span></a>, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.</li>
 <li>PYPEC - SLURM job submission.</li>
 <li>PYPEC - Post processing includes a function that updates netcdf naming conventions to be consistent with the latest version.</li>
 <li>PYPEC - Backwards compatibility for running ipec is available.</li>
@@ -510,24 +510,26 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <div class="section" id="id20">
 <h2>Adds<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div><ul class="simple">
-<li>DCON inclusion of kinetic terms is now determined by the kin_flag input.</li>
-</ul>
+<div><ul>
+<li><p class="first">DCON inclusion of kinetic terms is now determined by the kin_flag input.</p>
 <blockquote>
 <div><ul class="simple">
 <li>Additional dcon_control namelist inputs can be used to control the kinetic calculations</li>
 </ul>
 </div></blockquote>
-<ul class="simple">
-<li>IPEC now calculates generalized perturbed equilibrium (no assumption that the force balance states form a hermitian matrix)</li>
-<li>IPEC netcdf output is nearly complete and naming conventions are official</li>
-<li>PENTRC now has fully netcdf output unless ascii is specifically requested by the user</li>
-</ul>
+</li>
+<li><p class="first">IPEC now calculates generalized perturbed equilibrium (no assumption that the force balance states form a hermitian matrix)</p>
+</li>
+<li><p class="first">IPEC netcdf output is nearly complete and naming conventions are official</p>
+</li>
+<li><p class="first">PENTRC now has fully netcdf output unless ascii is specifically requested by the user</p>
 <blockquote>
 <div><ul class="simple">
 <li>Output is now separated from calculations, setting the stage for parallelization</li>
 </ul>
 </div></blockquote>
+</li>
+</ul>
 </div></blockquote>
 </div>
 <div class="section" id="id21">
@@ -582,7 +584,7 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <div class="section" id="id25">
 <h2>Fixes<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>PENTRC a correction factor of 1/2 has been applied to the fcgl, <a href="#id26"><span class="problematic" id="id27">*</span></a>gar, and <a href="#id28"><span class="problematic" id="id29">*</span></a>mm methods to correctly represent quadratic terms using complex analysis</li>
+<li>PENTRC a correction factor of 1/2 has been applied to the fcgl, *gar, and *mm methods to correctly represent quadratic terms using complex analysis</li>
 <li>PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.</li>
 </ul>
 </div>
@@ -590,8 +592,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <div class="section" id="gpec-v0-3-4">
 <h1>GPEC v0.3.4<a class="headerlink" href="#gpec-v0-3-4" title="Permalink to this headline">¶</a></h1>
 <p>This release includes a number of critical bug fixes found and fixed in a general review of the ideal MHD package in preparation of the move to kinetic MHD version 0.4.0 under development. It also includes a few (re-)standardizations of features.</p>
-<div class="section" id="id30">
-<h2>Fixes<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id26">
+<h2>Fixes<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques<ul>
 <li><strong>All previous 0.3 version torques should be considered incorrect</strong></li>
@@ -613,8 +615,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li>IPEC ipeq_fcoordsout and ipeq_bcoordsout always perform transformation on larger of the working/output m grids (not expected to be an issue for previous versions)</li>
 </ul>
 </div>
-<div class="section" id="id31">
-<h2>Features<a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id27">
+<h2>Features<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>IPEC output coordinate m range is now determined by a new IPEC_OUTPUT variable mlim_out</li>
 <li>IPEC the control surface theta-space function values are now always calculated and output</li>
@@ -637,8 +639,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li>INSTALL and all individual makefiles have updated from the develop branch, reorganizing the linking order and allowing diverse machine/compiler options.</li>
 </ul>
 </div>
-<div class="section" id="id32">
-<h2>Documentation<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id28">
+<h2>Documentation<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Updated input and example namelists and their annotation</li>
 </ul>
@@ -667,8 +669,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </div>
 <div class="section" id="gpec-v0-3-1">
 <h1>GPEC v0.3.1<a class="headerlink" href="#gpec-v0-3-1" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id33">
-<h2>Fixes<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id29">
+<h2>Fixes<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>IPEC fixed mistaken use of Hermitian lapack subroutines for permeability matrix</li>
 <li>PYPEC synthetics properly closes synthetic surfaces that cover the full poloidal angle (vessel wall, etc.)</li>
@@ -676,8 +678,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li>PYPEC updated to reflect move from xray to xarray</li>
 </ul>
 </div>
-<div class="section" id="id34">
-<h2>Features<a class="headerlink" href="#id34" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id30">
+<h2>Features<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>IPEC netcdf additions, including control surface matrices, profile quantities, shot/time/machine, and more</li>
 <li>IPEC netcdf names conform to netcdf conventions</li>
@@ -704,8 +706,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </div>
 <div class="section" id="gpec-v0-3-0">
 <h1>GPEC v0.3.0<a class="headerlink" href="#gpec-v0-3-0" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id35">
-<h2>Fixes<a class="headerlink" href="#id35" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id31">
+<h2>Fixes<a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON qhigh is enforced independent of sas_flag</li>
 <li>IPEC longstanding bug that caused crashes when brzphi was requested without eqbrzphi is fixed</li>
@@ -715,8 +717,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </li>
 </ul>
 </div>
-<div class="section" id="id36">
-<h2>Features<a class="headerlink" href="#id36" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id32">
+<h2>Features<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>COIL now includes 4x48 RFX-mod coils</li>
 <li>IPEC netCDF output is now available for major output flags (more will be transitioned soon)<ul>
@@ -728,8 +730,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li>IPEC reduced terminal printing - no longer is every eigenmode printed to the terminal</li>
 </ul>
 </div>
-<div class="section" id="id37">
-<h2>Performance<a class="headerlink" href="#id37" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id33">
+<h2>Performance<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>IPEC speed was increased by saving coordinate transformation information on a surface when performing multiple transformations on one surface</li>
 <li>IPEC brzphi speed was increase by 1-2 orders of magnitude by calculating (r,z,phi) quantities on the requested grid points instead of across surfaces</li>
