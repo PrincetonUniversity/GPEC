@@ -1,7 +1,3 @@
-Outputs and Post-Processing
-***************************
-
-
 
 Choice of Spectral Decomposition
 =================================

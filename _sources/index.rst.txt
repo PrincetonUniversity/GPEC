@@ -11,7 +11,7 @@ Note that the DCON code was developed by Alan H. Glasser at Los Alamos National 
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
    getting_started.rst
    outputs.rst

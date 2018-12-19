@@ -1,7 +1,5 @@
-Namelist Variables
-+++++++++++++++++++
 
-Fully annotated namelist input files can be found in the input directory of your GPEC installation.
+Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any `public installation <_installation>`.
 
 The major input files requiring user interaction are as follows.
 
@@ -20,6 +18,8 @@ This namelist controls the behavior of the DCON code and determines its outputs.
 
 .. include:: ../input/dcon.in
    :literal:
+
+.. note:: Additional DCON documentation can be found in the pre-GPEC documentation `here <_dcon>`.
 
 The GPEC Namelist
 ==================

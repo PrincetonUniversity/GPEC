@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Outputs and Post-Processing &#8212; GPEC 1.2.3 documentation</title>
+    <title>Choice of Spectral Decomposition &#8212; GPEC 1.2.3 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="DCON README" href="dcon_readme.html" />
-    <link rel="prev" title="Getting started" href="getting_started.html" />
+    <link rel="prev" title="GPEC User Agreement" href="getting_started.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -76,36 +76,32 @@
   <ul class="dropdown-menu globaltoc"
       role="menu"
       aria-labelledby="dLabelGlobalToc"><ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#gpec-user-agreement">GPEC User Agreement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#installation">Installation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="getting_started.html#public">Public</a></li>
-<li class="toctree-l3"><a class="reference internal" href="getting_started.html#personal">Personal</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">GPEC User Agreement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html#installations">Installations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#public">Public</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#personal">Personal</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#running-using-omfit">Running using OMFIT</a></li>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#manual-run-process">Manual Run Process</a></li>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#a-word-on-coordinates">A Word On Coordinates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html#running-using-omfit">Running using OMFIT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html#manual-run-process">Manual Run Process</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#keeping-track-of-coordinates">Keeping Track of Coordinates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="getting_started.html#inputs">Inputs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="getting_started.html#results">Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html#outputs">Outputs</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Outputs and Post-Processing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#choice-of-spectral-decomposition">Choice of Spectral Decomposition</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#comparing-to-real-space-quantities">Comparing to Real Space Quantities</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Choice of Spectral Decomposition</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#comparing-to-real-space-quantities">Comparing to Real Space Quantities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#coordinates">Coordinates</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#output-files">Output Files</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#ascii-file-outputs">ASCII File Outputs</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#binary-file-outputs">Binary File Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#coordinates">Coordinates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#output-files">Output Files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ascii-file-outputs">ASCII File Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#binary-file-outputs">Binary File Outputs</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#xdraw">xdraw</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="#xdraw">xdraw</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dcon_readme.html">DCON README</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="dcon_readme.html#determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas">Determining the MHD Stability of Axisymmetric Toroidal Plasmas</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="dcon_readme.html#section-1-introduction">Section 1. Introduction</a></li>
@@ -122,18 +118,12 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="namelists.html">Namelist Variables</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="namelists.html#the-equil-namelist">The EQUIL Namelist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namelists.html#the-dcon-namelist">The DCON Namelist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namelists.html#the-gpec-namelist">The GPEC Namelist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namelists.html#the-pentrc-namelist">The PENTRC Namelist</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Tutorial Examples</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#omfit-tutorial">OMFIT Tutorial</a></li>
-<li class="toctree-l2"><a class="reference internal" href="examples.html#gpec-diii-d-ideal-example">GPEC DIII-D Ideal Example</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="namelists.html">The EQUIL Namelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namelists.html#the-dcon-namelist">The DCON Namelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namelists.html#the-gpec-namelist">The GPEC Namelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namelists.html#the-pentrc-namelist">The PENTRC Namelist</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">OMFIT Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html#manual-examples">Manual Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_documentation.html">PYPEC Source documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="source_documentation.html#regression-compare-for-comparing-restults"><code class="docutils literal"><span class="pre">regression.compare</span></code> – For Comparing Restults</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="source_documentation.html#interface">Interface</a></li>
@@ -141,145 +131,129 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="releases.html">Accessing Releases</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#princeton-plasma-physics-laboratory">Princeton Plasma Physics Laboratory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#general-atomics">General Atomics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#national-fusion-research-institute">National Fusion Research Institute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">GPEC v1.2.3</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#fixes">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="releases.html#release-notes">Release Notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-2-3">GPEC v1.2.3</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#fixes">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-2-2">GPEC v1.2.2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#adds">Adds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#changes">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id1">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-2-2">GPEC v1.2.2</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#adds">Adds</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#changes">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id1">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-2-1">GPEC v1.2.1</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id2">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-2-1">GPEC v1.2.1</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id2">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-2-0">GPEC v1.2.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id3">Adds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id4">Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id5">Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#removes">Removes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-2-0">GPEC v1.2.0</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id3">Adds</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id4">Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id5">Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#removes">Removes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-1-7">GPEC v1.1.7</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#features">Features</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-7">GPEC v1.1.7</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#features">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-1-6">GPEC v1.1.6</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id6">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-6">GPEC v1.1.6</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id6">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-1-5">GPEC v1.1.5</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id7">Adds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id8">Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#documentation">Documentation</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-5">GPEC v1.1.5</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id7">Adds</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id8">Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#documentation">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-1-4">GPEC v1.1.4</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id9">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-4">GPEC v1.1.4</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id9">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-1-3">GPEC v1.1.3</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id10">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-3">GPEC v1.1.3</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id10">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-1-2">GPEC v1.1.2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id11">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-2">GPEC v1.1.2</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id11">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-1-1">GPEC v1.1.1</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id12">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-1">GPEC v1.1.1</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id12">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-1-0">GPEC v1.1.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id13">Adds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id14">Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id15">Documentation</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-1-0">GPEC v1.1.0</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id13">Adds</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id14">Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id15">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-0-6">GPEC v1.0.6</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id16">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-6">GPEC v1.0.6</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id16">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-0-5">GPEC v1.0.5</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id17">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-5">GPEC v1.0.5</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id17">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-0-4">GPEC v1.0.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-0-3">GPEC v1.0.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-0-2">GPEC v1.0.2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id18">Adds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id19">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-4">GPEC v1.0.4</a></li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-3">GPEC v1.0.3</a></li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-2">GPEC v1.0.2</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id18">Adds</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id19">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-0-1">GPEC v1.0.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v1-0-0">GPEC v1.0.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id20">Adds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id21">Documentation</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-1">GPEC v1.0.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v1-0-0">GPEC v1.0.0</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id20">Adds</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id21">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v0-4-0">GPEC v0.4.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id22">Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id23">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id24">Documentation</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-4-0">GPEC v0.4.0</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id22">Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id23">Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id24">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v0-3-5">GPEC v0.3.5</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id25">Fixes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-5">GPEC v0.3.5</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id25">Fixes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v0-3-4">GPEC v0.3.4</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id30">Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id31">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#speed-and-stability">Speed and Stability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id32">Documentation</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-4">GPEC v0.3.4</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id30">Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id31">Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#speed-and-stability">Speed and Stability</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id32">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v0-3-3">GPEC v0.3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v0-3-2">GPEC v0.3.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v0-3-1">GPEC v0.3.1</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id33">Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id34">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#performance">Performance</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-3">GPEC v0.3.3</a></li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-2">GPEC v0.3.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-1">GPEC v0.3.1</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id33">Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id34">Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#performance">Performance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html#gpec-v0-3-0">GPEC v0.3.0</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id35">Fixes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id36">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#id37">Performance</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="releases.html#gpec-v0-3-0">GPEC v0.3.0</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id35">Fixes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id36">Features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="releases.html#id37">Performance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developers.html">General Perturbed Equilibrium Codes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developers.html#development">Development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developers.html#documentation">Documentation</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="developers.html">Developers Corner</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="developers.html#general-perturbed-equilibrium-codes">General Perturbed Equilibrium Codes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="developers.html#development">Development</a></li>
-<li class="toctree-l3"><a class="reference internal" href="developers.html#documentation">Documentation</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact Information</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="contact.html#gpec-pent">GPEC &amp; PENT</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contact.html#dcon-rdcon">DCON &amp; RDCON</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contact.html#stride">STRIDE</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="references.html">Select Publications</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="references.html#id1">2007</a></li>
-<li class="toctree-l2"><a class="reference internal" href="references.html#id2">2009</a></li>
-<li class="toctree-l2"><a class="reference internal" href="references.html#id6">2010</a></li>
-<li class="toctree-l2"><a class="reference internal" href="references.html#id7">2011</a></li>
-<li class="toctree-l2"><a class="reference internal" href="references.html#id9">2012</a></li>
-<li class="toctree-l2"><a class="reference internal" href="references.html#id11">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">GPEC &amp; PENT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html#dcon-rdcon">DCON &amp; RDCON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html#stride">STRIDE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">DCON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html#rdcon">RDCON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html#stride">STRIDE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html#gpec">GPEC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="references.html#ideal">Ideal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="references.html#kinetic">Kinetic</a></li>
 </ul>
 </li>
 </ul>
@@ -311,8 +285,7 @@
   <div class="row">
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper"><ul>
-<li><a class="reference internal" href="#">Outputs and Post-Processing</a><ul>
-<li><a class="reference internal" href="#choice-of-spectral-decomposition">Choice of Spectral Decomposition</a><ul>
+<li><a class="reference internal" href="#">Choice of Spectral Decomposition</a><ul>
 <li><a class="reference internal" href="#comparing-to-real-space-quantities">Comparing to Real Space Quantities</a></li>
 <li><a class="reference internal" href="#interfacing-with-surfmn">Interfacing with SURFMN</a></li>
 <li><a class="reference internal" href="#interfacing-with-vacuum">Interfacing with VACUUM</a></li>
@@ -326,11 +299,9 @@
 </li>
 <li><a class="reference internal" href="#xdraw">xdraw</a></li>
 </ul>
-</li>
-</ul>
 
   <li>
-    <a href="getting_started.html" title="Previous Chapter: Getting started"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Getting started</span>
+    <a href="getting_started.html" title="Previous Chapter: GPEC User Agreement"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; GPEC User Agreement</span>
     </a>
   </li>
   <li>
@@ -348,10 +319,8 @@
       </div>
     <div class="col-md-12 content">
       
-  <div class="section" id="outputs-and-post-processing">
-<h1>Outputs and Post-Processing<a class="headerlink" href="#outputs-and-post-processing" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="choice-of-spectral-decomposition">
-<h2>Choice of Spectral Decomposition<a class="headerlink" href="#choice-of-spectral-decomposition" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="choice-of-spectral-decomposition">
+<h1>Choice of Spectral Decomposition<a class="headerlink" href="#choice-of-spectral-decomposition" title="Permalink to this headline">¶</a></h1>
 <p>When comparing spectral GPEC outputs to real space quantities or to other codes, it is important to remember</p>
 <ol class="arabic simple">
 <li>GPEC uses a right handed magnetic coordinate system decomposed in <span class="math">\(\exp(im\theta-in\phi)\)</span>.</li>
@@ -365,11 +334,11 @@
 <p>The convention does require some awareness from the user when interfacing with real-space quantities and/or other codes though. For example, the user does need to know that the spectrum rotates by <span class="math">\(-\phi\)</span> if real space coil rotates by <span class="math">\(\phi\)</span> in a RH configuration.</p>
 <p>To facilitate interfacing with other codes that may have different handedness conventions, the helicity is included in the gpec_control_output netcdf file. The helicity is defined as +1 for right handed plasmas in which Bt and Ip are in the same direction, and -1 for left handed plasmas in which Bt and Ip are apposed.</p>
 <div class="section" id="comparing-to-real-space-quantities">
-<h3>Comparing to Real Space Quantities<a class="headerlink" href="#comparing-to-real-space-quantities" title="Permalink to this headline">¶</a></h3>
+<h2>Comparing to Real Space Quantities<a class="headerlink" href="#comparing-to-real-space-quantities" title="Permalink to this headline">¶</a></h2>
 <p>In the real space representation decomposed in <span class="math">\(\exp(-in\phi)\)</span> with CCW <span class="math">\(\phi\)</span>, GPEC takes the complex conjugate of the inverse poloidal Fourier transform for RH configurations. This is restoring CCW <span class="math">\(\phi\)</span> (according to 2), and is done internally before writing function outputs. Note in the full Fourier representation by <span class="math">\(\exp(im\theta-in\phi)\)</span>, the complex conjugate operation does not simply restore CCW phi for RH configurations. It will also flip up and down.</p>
 </div>
 <div class="section" id="interfacing-with-surfmn">
-<h3>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this headline">¶</a></h3>
+<h2>Interfacing with SURFMN<a class="headerlink" href="#interfacing-with-surfmn" title="Permalink to this headline">¶</a></h2>
 <p>SURFMN is a popular vacuum spectrum code. It calculates the field from experimental coil geometries and/or intrinsic error fields in magnetic coordinates on plasma flux surfaces. SURFMN also uses upward outboard <span class="math">\(\theta\)</span>. However, it expands in <span class="math">\(\exp(-im\theta-in\phi)\)</span> and always uses a CCW <span class="math">\(\phi\)</span>. In SURFMN, the pitch resonant m can flip sign dependending on the sign of Bt and Ip.</p>
 <p>As a practical example, interfacing a Fourier representation of the 3D field on a flux surface from GPEC with SURFMN would require using,</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">m_surfmn</span> <span class="o">=</span> <span class="n">helicity</span> <span class="o">*</span> <span class="n">m_gpec</span>
@@ -379,12 +348,12 @@
 <p>For LH configurations only the sign of m is flipped (according to 1). For RH configurations, m remains unchanged but the complex conjugate is taken (the combined effect of to 1 &amp; 2).</p>
 </div>
 <div class="section" id="interfacing-with-vacuum">
-<h3>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Permalink to this headline">¶</a></h3>
+<h2>Interfacing with VACUUM<a class="headerlink" href="#interfacing-with-vacuum" title="Permalink to this headline">¶</a></h2>
 <p>Vacuum is the code used in DCON to calculate the vacuum energy matrices, which combine with the plasma energy matrix to describe the full system eigenmodes. The VACUUM code uses CCW <span class="math">\(\phi\)</span> and downward outboard <span class="math">\(\theta\)</span>. We thus use the complex conjugate of RH configurations to interface GPEC and VACUUM.</p>
 </div>
 </div>
 <div class="section" id="coordinates">
-<h2>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this headline">¶</a></h2>
+<h1>Coordinates<a class="headerlink" href="#coordinates" title="Permalink to this headline">¶</a></h1>
 <p>There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,</p>
 <ol class="arabic simple">
 <li>The ‘working coordinates’ defined by jac_type in equil.in.</li>
@@ -395,10 +364,10 @@
 <p>The gpec_control_output_n#.out netcdf file gives spectral quantities in the working coordinates (specified in the ‘jacobian’ attribute). It also provides a J_out matrix. The dot product of this matrix and the b or xi spectra will convert the the output coordinates, reproducing the final table of the gpec_control_n#.out ascii output. Note that the same transformation cannot be safely made for other weighted quantities.</p>
 </div>
 <div class="section" id="output-files">
-<h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
+<h1>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h1>
 <p>The GPEC outputs are entirely specified by flags (bool types t or f) set in the GPEC_output section of GPEC.in. All outputs are ASCII files, and can be grouped into two major categories.</p>
 <div class="section" id="ascii-file-outputs">
-<h3>ASCII File Outputs<a class="headerlink" href="#ascii-file-outputs" title="Permalink to this headline">¶</a></h3>
+<h2>ASCII File Outputs<a class="headerlink" href="#ascii-file-outputs" title="Permalink to this headline">¶</a></h2>
 <p>A number of the flag options in GPEC.in instruct GPEC to output ASCII file data. Some of these outputs are always available. Some, however, require a input error field instead of a hard coded harmonic_flag call. Both groups are listed in detail here.</p>
 <p>Outputs Always Available</p>
 <p>These GPEC outputs can always be obtained from a equil.bin file output from DCON.</p>
@@ -467,7 +436,7 @@
 </ul>
 </div>
 <div class="section" id="binary-file-outputs">
-<h3>Binary File Outputs<a class="headerlink" href="#binary-file-outputs" title="Permalink to this headline">¶</a></h3>
+<h2>Binary File Outputs<a class="headerlink" href="#binary-file-outputs" title="Permalink to this headline">¶</a></h2>
 <p>These files are designed for quick and easy visualization of results using the xdraw command. For more details on using xdraw see the devoted section on this page.</p>
 <p>xbnormal.bin</p>
 <blockquote>
@@ -492,9 +461,8 @@
 </div>
 </div>
 <div class="section" id="xdraw">
-<h2>xdraw<a class="headerlink" href="#xdraw" title="Permalink to this headline">¶</a></h2>
+<h1>xdraw<a class="headerlink" href="#xdraw" title="Permalink to this headline">¶</a></h1>
 <p>The binary GPEC outputs can be viewed using the commandxdraw filenamewhere filename is one of the .bin files created by GPEC (“.bin” excluded). This is a quick way to view results immediately as they are produced. The xdraw tool provides a highly interactive environment that takes keystroke inputs to change plot display options, navigate plots, display single or multiple responses at once, do limited post processing (get a gradient, or ratio), and save figures. For a full list of the command options, enter the xdraw environment and press “k”.</p>
-</div>
 </div>
 
 

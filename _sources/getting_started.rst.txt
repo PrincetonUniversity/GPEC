@@ -1,10 +1,5 @@
 .. _getting_started:
 
-
-***************
-Getting started
-***************
-
 .. _installing:
 
 .. include:: ../install/README
@@ -14,11 +9,13 @@ Getting started
 Running using OMFIT
 ====================
 
-`OMFIT <http://gafusion.github.io/OMFIT-source/>`_ is the recommended way to run GPEC for new users. Public releases of OMFIT are available on most major fusion clusters, or it can be downloaded to your personal computer.
+`OMFIT <http://gafusion.github.io/OMFIT-source/>`_ is a framework for integrated modeling. It contains a GPEC module for preparing, running, and analyzing GPEC runs that is highly recommended for pure users (non-developers). OMFIT is the recommended way to run GPEC for new users. Public releases of OMFIT are available on most major fusion clusters, or it can be downloaded to your personal computer.
 
 Using OMFIT guides users through a clean workflow, providing many powerful tools to facilitate the necessary preparation of inputs. It provides the interface, for example, with EFIT and profile fitting tools on many machines. It also enables users to submit GPEC jobs remotely, quickly visualize outputs, perform powerful python post-processing, and share projects with others.
 
-A complete description of the OMFIT workflow manager GPEC module can be found in `this google doc tutorial <https://docs.google.com/document/d/1qSUjJZYmET8-X08rRGBT6L_9D9fzEN_zCV75OX_ZbZk/edit?usp=sharing>`_.
+A complete description of the OMFIT GPEC module can be found on the `module documentation page <http://gafusion.github.io/OMFIT-source/modules/mod_GPEC.html#mod-gpec>`_ and a thorough discussion of the workflow, inputs, outputs, and post-processing can be found in `the corresponding google doc tutorial <https://docs.google.com/document/d/1qSUjJZYmET8-X08rRGBT6L_9D9fzEN_zCV75OX_ZbZk/edit?usp=sharing>`_.
+
+
 
 Manual Run Process
 ==================
@@ -59,19 +56,19 @@ Note that GPEC takes only two inputs. The file containing the 2D plasma equilibr
 
 .. _coordinates:
 
-A Word On Coordinates
-=====================
+Keeping Track of Coordinates
+-----------------------------
 
 Keeping all the different coordinate systems used in a GPEC run can be intimidating to the first time user. Luckily, there is no reason to fear! GPEC easily switches between coordinate systems, and does not require consistency throughout the run process. That is, the inputs and outputs can have different coordinates. The coordinate system used for the DCON run specify the working coordinates for GPEC. The jac_in specified in gpec.in specifies the coordinate system used by the 3D error field input file, and jac_out specifies the coordinate system of the GPEC outputs. GPEC handles the transitions between these three coordinate systems all internally.
 
-.. note:: The only real responsibility of the user is to make sure the GPEC input Jacobian is consistent with the 3D error field input file. However, the user should be aware that each coordinate system has different strengths. Hamada coordinates have the best convergence properties in general, but are poor for the inboard side of the plasma. PEST coordinates are user friendly but poor for outboard resolution. Boozer coordinates tend to find a middle ground between these, with mild convergence and fair resolution throughout the plasma.
+.. note:: The responsibility of the user is to make sure the GPEC input Jacobian is consistent with the 3D error field input file and the PENTRC input jacobian is consistent with the GPEC output. OMFIT helps sync some of this automatically. However, the user should be aware that each coordinate system has different strengths. Hamada coordinates have the best convergence properties in general, but are poor for the inboard side of the plasma. PEST coordinates are user friendly but poor for outboard resolution. Boozer coordinates tend to find a middle ground between these, with mild convergence and fair resolution throughout the plasma.
 
 The above requirements are all that is needed to understand the internal workings of GPEC's coordinate transforms. There is, however, a final question of the various “normal” toroidal angles as defined for a specific machine. GPEC does not take into account the sign of the toroidal field. The result is, that for machines such as DIII-D with “normal” toroidal field defined as negative (BCENTER<0 in efit equilibria) the phase of GPEC outputs will not match the machine-defined toroidal angle. To convert three dimensional GPEC outputs in such cases to machine coordinates it may be necessary to take the complex conjugate of a given amplitude and multiply equilibrium output toroidal fields by negative one.
 
 .. _inputs:
 
 Inputs
-======
+-------
 
 At this point it is obvious that GPEC calculations hinge on first acquiring two types of data. GPEC interfaces with the input data by simple reads of formatted text files. The format and file path's are specified in the .in files used in the run process, and are called on to initialize the ideal equilibrium solver.
 
@@ -81,8 +78,8 @@ The second input, the 3D “error field” data, is somewhat more specific in it
 
 .. _results:
 
-Results
-=======
+Outputs
+--------
 
 The results of an GPEC run depend on the output flags selected in gpec.in prior to the run. Without getting into the specifics of each output, there are a few important properties any GPEC run that should always be kept in minds. Each GPEC run always returns its results in the form of consistently named .out files in the run-directory. This means that it will overwrite any previous run's results if they are not moved first. Always move any results worth keeping to a separate directory and keep track of which runs used which inputs. Outputs are expensive, so try to limit runs to only output the essential physics of interest each time.
 
