@@ -17,7 +17,7 @@ A complete description of the OMFIT GPEC module can be found on the `module docu
 Manual Run Process
 ==================
 
-This section outlines the basic run process with reference to some of the most common input-output manipulation in GPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the :ref:'Inputs' section.
+This section outlines the basic run process with reference to some of the most common input-output manipulation in GPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the :ref:`Inputs` section.
 
 .. note:: The use of $GPECHOME and executable commands such as `dcon`, `gpec` or `pentrc` assumes the appropriate environement variables have been set. The easiest way to do this is to use the module commands associated with one of the public installations.
 
