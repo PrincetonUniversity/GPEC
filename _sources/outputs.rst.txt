@@ -5,7 +5,9 @@ Coordinates
 A clear understanding of the input and output coordinate conventions is essential for GPEC. There are up to 3 separate coordinate systems use in the programs within GPEC package. This include,
 
 1. The 'working coordinates' defined by jac_type in equil.in.
+
 2. The 'input coordinates' defined by jac_in, tmag_in, and jsurf_in when applicable.
+
 3. The 'output coordinates' defined by jac_out, tmag_out, and jsurf_out when applicable.
 
 The DCON working coordinate system is used for nearly all internal calculations in the GPEC package, but the external drive may be prescribed in input coordinates (2) and the final perturbed equilibrium results may be converted to output coordinates (3). The working coordinates are magnetic cooridinates. The input and output coordinates may be converted to cylindrical :math:`\phi` using the tmag_in or tmag_out variables.

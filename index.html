@@ -54,8 +54,9 @@
             
                 <li><a href="references.html">Cite</a></li>
                 <li><a href="contact.html">Contact</a></li>
-                <li><a href="developers.html">Develop</a></li>
+                <li><a href="outputs.html">I/O</a></li>
                 <li><a href="releases.html">Release History</a></li>
+                <li><a href="developers.html">Develop</a></li>
                 <li><a href="source_documentation.html">Code</a></li>
             
             
@@ -144,7 +145,7 @@
 <span id="installation"></span><h1>Installations<a class="headerlink" href="#installations" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="public">
 <h2>Public<a class="headerlink" href="#public" title="Permalink to this headline">¶</a></h2>
-<p>Public installations are available at PPPL (portal.pppl.gov), GA (iris.gat.com), and NFRI (ukstar). Public installations are regularly cloned and kept up to date with the <a class="reference external" href="_releases">official releases</a>.</p>
+<p>Public installations are available at PPPL (portal.pppl.gov), GA (iris.gat.com), and NFRI (ukstar). Public installations are regularly cloned and kept up to date with the <a class="reference internal" href="releases.html#releases"><span class="std std-ref">official releases</span></a>.</p>
 <p>The default gpec module at each institution tracks the latest release. Public installations of the “development” (beta) branch are also available if you should happen to need a new feature right away.</p>
 <p>On any of the above clusters, use the module system to obtain the appropriate gpec environment. For example, use:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">avail</span>
@@ -158,14 +159,14 @@
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last"><strong>For PPPL Users</strong>
-On the Princeton portal.pppl.gov computers, users must first execute <code class="code docutils literal"><span class="pre">module</span> <span class="pre">use</span> <span class="pre">/p/gpec/modules</span></code>. It is recomended this be included in a .bashrc or similar file.</p>
+On the Princeton portal.pppl.gov computers, users must first execute <code class="code docutils literal"><span class="pre">module</span> <span class="pre">use</span> <span class="pre">/p/gpec/modules</span></code>. It is recommended this be included in a .bashrc or similar file.</p>
 </div>
-<p>Loading the gpec module sets the $GPECHOME environment variable. This is helpful for find the path to source code, including such helpful things as the <cite>examples &lt;_examples&gt;</cite> at $GPECHOME/docs/examples.</p>
+<p>Loading the gpec module sets the <code class="code docutils literal"><span class="pre">$GPECHOME</span></code> environment variable. This is helpful for find the path to source code, including such helpful things as the <cite>examples</cite> at <code class="code docutils literal"><span class="pre">$GPECHOME/docs/examples</span></code>.</p>
 <p>Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">load</span> <span class="n">gpec</span><span class="o">/</span><span class="mf">0.0</span>
 </pre></div>
 </div>
-<p>but this should be used with the understanding that many of it’s features are in beta testing and no guaranties are made for its stability. We ask that users always <cite>contact a developer &lt;_contacts&gt;</cite> if/when thinking of using a beta feature.</p>
+<p>but this should be used with the understanding that many of it’s features are in beta testing and no guaranties are made for its stability. We ask that users always <cite>contact a developer &lt;contacts&gt;</cite> if/when thinking of using a beta feature.</p>
 </div>
 <div class="section" id="personal">
 <h2>Personal<a class="headerlink" href="#personal" title="Permalink to this headline">¶</a></h2>
@@ -187,41 +188,36 @@ Compiled using this install makefile, the executables will then be available in 
 </div>
 <div class="section" id="manual-run-process">
 <h1>Manual Run Process<a class="headerlink" href="#manual-run-process" title="Permalink to this headline">¶</a></h1>
-<p>This section outlines the basic run process with reference to some of the most common input-output manipulation in GPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the Namelist Variables section.</p>
-<p>Public copies of the GPEC releases are available at /p/gpec on portal. The user should usually choose the latest release, lets call it &lt;release&gt;. To run GPEC, a user should first navigate to a directory in which they wish to run and write outputs. Once in the run-directory the user needs (at a minimum) the dcon, equil, vac, and gpec namelist files, which can be copied from /p/gpec/&lt;release&gt;/input for example. The user can then follow these simple steps to complete a GPEC run:</p>
-<ol class="arabic">
-<li><p class="first">Edit the dcon.in file</p>
-<ul class="simple">
+<p>This section outlines the basic run process with reference to some of the most common input-output manipulation in GPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the :ref:’Inputs’ section.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The use of $GPECHOME and executable commands such as <cite>dcon</cite>, <cite>gpec</cite> or <cite>pentrc</cite> assumes the appropriate environement variables have been set. The easiest way to do this is to use the module commands associated with one of the public installations.</p>
+</div>
+<p>To run GPEC, a user should first navigate to a directory in which they wish to run and write outputs. Once in the run-directory the user needs (at a minimum) the dcon, equil, vac, and gpec namelist files, which can be copied from $GPECHOME/input for example. The user can then follow these simple steps to complete a GPEC run:</p>
+<ol class="arabic simple">
+<li>Edit the dcon.in file<ul>
 <li>DCON will only run for a single toroidal mode number. Set the toroidal mode number for the entire run here using the crucial parameter nn. GPEC outputs for multiple toroidal mode numbers can be added together in the post-processing.</li>
 </ul>
 </li>
-<li><p class="first">Edit the equil.in file</p>
-<ul class="simple">
+<li>Edit the equil.in file<ul>
 <li>Specify the specific plasma shot of interest by setting the initial equilibrium file (ex: EFIT output g-file).</li>
 <li>Set the range of normalized flux to be included in the calculation.</li>
 </ul>
 </li>
-<li><p class="first">$GPECHOME/bin/dcon</p>
-<ul class="simple">
+<li>$GPECHOME/bin/dcon<ul>
 <li>This creates the euler.bin file, which provides a orthonormal basis of force balance states for GPEC.</li>
 <li>Once this is created, you can various effects on this equilibrium by changing the 3D field input in gpec.in without having to run DCON again.</li>
 </ul>
 </li>
-<li><p class="first">Edit the gpec.in file</p>
-<ul>
-<li><p class="first">Specify the 3D error field input file to be used in GPEC to perturb the 2D equilibrium.</p>
-<blockquote>
-<div><ul class="simple">
+<li>Edit the gpec.in file<ul>
+<li>Specify the 3D error field input file to be used in GPEC to perturb the 2D equilibrium.<ul>
 <li>This must match the psihigh variable used in equil.in.</li>
 </ul>
-</div></blockquote>
 </li>
-<li><p class="first">Set the flags to specify the desired outputs.</p>
-</li>
+<li>Set the flags to specify the desired outputs.</li>
 </ul>
 </li>
-<li><p class="first">$GPECHOME/bin/gpec</p>
-<ul class="simple">
+<li>$GPECHOME/bin/gpec<ul>
 <li>That’s it! Now go look at your output files.</li>
 </ul>
 </li>
@@ -232,10 +228,6 @@ Compiled using this install makefile, the executables will then be available in 
 <div class="section" id="manual-examples">
 <h2>Manual Examples<a class="headerlink" href="#manual-examples" title="Permalink to this headline">¶</a></h2>
 <p>The GPEC repository contains a number of examples intended to provide both consistent regression testing and a useful reseource for users looking to manually run straightforward examples. These examples are located in $GPECHOME/docs/examples, and contain all the necessary inputs and namelists to run the appropriate suite of codes. Ideal and kinetic examples use dcon, gpec, and pentrc. Resistive examples contain the necessary inputs to run dcon, rdcon, rmatch and gpec.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The use of $GPECHOME and executable commands such as <cite>dcon</cite>, <cite>gpec</cite> or <cite>pentrc</cite> assumes the appropriate environement variables have been set. The easiest way to do this is to use the module commands associated with one of the public installations.</p>
-</div>
 <p>Example console commands and output are given below.</p>
 <ul class="simple">
 <li><a class="reference internal" href="examples.html#diiid-ideal-example"><span class="std std-ref">DIII-D Ideal Example</span></a></li>

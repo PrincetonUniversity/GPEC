@@ -4,14 +4,12 @@ GPEC documentation website site map
 .. toctree::
    :maxdepth: 1
 
-   getting_started.rst
+   index.rst
+   references.rst
+   contact.rst
    outputs.rst
-   dcon_readme.rst
-   namelists.rst
    examples.rst
-   source_documentation.rst
    releases.rst
    developers.rst
-   contact.rst
-   references.rst
+   source_documentation.rst
 

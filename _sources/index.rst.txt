@@ -17,9 +17,11 @@ A complete description of the OMFIT GPEC module can be found on the `module docu
 Manual Run Process
 ==================
 
-This section outlines the basic run process with reference to some of the most common input-output manipulation in GPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the Namelist Variables section.
+This section outlines the basic run process with reference to some of the most common input-output manipulation in GPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the :ref:'Inputs' section.
 
-Public copies of the GPEC releases are available at /p/gpec on portal. The user should usually choose the latest release, lets call it <release>. To run GPEC, a user should first navigate to a directory in which they wish to run and write outputs. Once in the run-directory the user needs (at a minimum) the dcon, equil, vac, and gpec namelist files, which can be copied from /p/gpec/<release>/input for example. The user can then follow these simple steps to complete a GPEC run:
+.. note:: The use of $GPECHOME and executable commands such as `dcon`, `gpec` or `pentrc` assumes the appropriate environement variables have been set. The easiest way to do this is to use the module commands associated with one of the public installations.
+
+To run GPEC, a user should first navigate to a directory in which they wish to run and write outputs. Once in the run-directory the user needs (at a minimum) the dcon, equil, vac, and gpec namelist files, which can be copied from $GPECHOME/input for example. The user can then follow these simple steps to complete a GPEC run:
 
 1. Edit the dcon.in file
 
@@ -41,7 +43,7 @@ Public copies of the GPEC releases are available at /p/gpec on portal. The user 
 
    - Specify the 3D error field input file to be used in GPEC to perturb the 2D equilibrium.
 
-      + This must match the psihigh variable used in equil.in.
+     - This must match the psihigh variable used in equil.in.
 
    - Set the flags to specify the desired outputs.
 
@@ -59,8 +61,6 @@ Manual Examples
 ---------------
 
 The GPEC repository contains a number of examples intended to provide both consistent regression testing and a useful reseource for users looking to manually run straightforward examples. These examples are located in $GPECHOME/docs/examples, and contain all the necessary inputs and namelists to run the appropriate suite of codes. Ideal and kinetic examples use dcon, gpec, and pentrc. Resistive examples contain the necessary inputs to run dcon, rdcon, rmatch and gpec.
-
-.. note:: The use of $GPECHOME and executable commands such as `dcon`, `gpec` or `pentrc` assumes the appropriate environement variables have been set. The easiest way to do this is to use the module commands associated with one of the public installations.
 
 Example console commands and output are given below.
 

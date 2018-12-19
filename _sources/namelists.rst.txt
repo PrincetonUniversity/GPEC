@@ -19,7 +19,7 @@ This namelist controls the behavior of the DCON code and determines its outputs.
 .. include:: ../input/dcon.in
    :literal:
 
-.. note:: Additional DCON documentation can be found in the pre-GPEC documentation `here <_dcon>`.
+.. note:: Additional DCON documentation can be found in the pre-GPEC documentation `here <dcon>`.
 
 The GPEC Namelist
 ==================
