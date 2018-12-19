@@ -13,6 +13,10 @@ The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>
 GPEC v1.2.3
 ===========
 
+Changes
+-------
+- DOCS - Modernizes online documentation
+
 Fixes
 ------
 - GPEC - Fixes incorrect w_isl unit labeling in netcdf and makes it the full width for consistency with w_isl_v
