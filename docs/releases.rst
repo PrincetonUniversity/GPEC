@@ -1,75 +1,4 @@
-******************
-Accessing Releases
-******************
-
-
-Official releases are available for download from the `github release page <https://github.com/PrincetonUniversity/GPEC/releases>`_.
-To stay up to date, however, it is recommended that users use on of the following public releases.
-The default gpec module at each institution tracks the latest release. Beta development branches  are available if you should happen to need a new feature right away and are updated weekly at each institution. It is best, however, to always contact a developer if/when thinking of using a beta feature.
-
-
-Princeton Plasma Physics Laboratory
-=====================================
-
-On the Princeton portal.pppl.gov computers, releases are available at /p/gpec. To use a release,::
-
-    module use /p/gpec/modules
-
-will give you access to the official gpec modules. Use,::
-
-    module avail
-
-to see the available releases, or simply,::
-
-    module load gpec
-
-to load the current default. This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply
-call the executables (i.e. dcon, gpec, etc.).
-
-Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
-
-    module load gpec/0.0
-
-but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
-
-
-Gerenal Atomics
-================
-
-On the General Atomics iris.gat.com server, releases are available at /fusion/projects/codes/gpec. To use the most up to date release, simply load the publicly available gpec module,::
-
-    module load gpec
-
-This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply
-call the executables (i.e. dcon, gpec, etc.).
-
-Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
-
-    module load gpec/0.0
-
-but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
-
-
-National Fusion Research Institute
-===================================
-
-On the NFRI ukstar server, releases are available at /usr/local/analysis/GPEC. To use the most up to date release, simply load the publicly available gpec module,::
-
-    module load gpec
-
-This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply
-call the executables (i.e. dcon, gpec, etc.).
-
-Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,::
-
-    module load gpec/0.0
-
-but this should be used with the understanding that many of it's features are in beta testing and no guaranties are made for its stability.
-
-
-******************
-Release Notes
-******************
+.. _releases:
 
 This is an active, developing scientific research code. The release structure attempt to follow the semantic versioning guidelines. Given a version number MAJOR.MINOR.PATCH,
 
@@ -80,6 +9,18 @@ This is an active, developing scientific research code. The release structure at
 Note, backwards compatibility is defined as the ability to return to a previous run and re-run any previously successful executable. This does not guarantee all output file formats are exactly maintained.
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
+
+GPEC v1.2.3
+===========
+
+Changes
+-------
+- DOCS - Modernizes online documentation
+
+Fixes
+------
+- GPEC - Fixes incorrect w_isl unit labeling in netcdf and makes it the full width for consistency with w_isl_v
+
 
 GPEC v1.2.2
 ===========
@@ -239,13 +180,13 @@ This release includes a new DCON netcdf output file and SLURM job submission int
 Adds
 ---------
 - DCON - A clean, efficient netcdf file replicates the information in the complicated dcon.out ascii.
-- DCON - The _new namelist variable_, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).
+- DCON - The new namelist variable, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).
 - COIL - KSTAR and EAST coils are available.
 - COIL - A NSTX-U error field model is available.
 - GPEC - Control netcdf outputs include the external flux applied from each coil and coil names.
 - GPEC - Profile netcdf outputs include rational surface quantities, coil names, and vsbrzphi, xbrzphifun, and arzphifun outputs.
 - GPEC - Code is robust to singfld_flag with con_flag.
-- GPEC - The _new namelist variables_, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.
+- GPEC - The new namelist variables, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.
 - PYPEC - SLURM job submission.
 - PYPEC - Post processing includes a function that updates netcdf naming conventions to be consistent with the latest version.
 - PYPEC - Backwards compatibility for running ipec is available.
@@ -330,11 +271,14 @@ The Ideal Perturbed Equilibrium Code (IPEC) has officially been deprecated and i
 Adds
 -------------
  - DCON inclusion of kinetic terms is now determined by the kin_flag input.
-  - Additional dcon_control namelist inputs can be used to control the kinetic calculations
+
+    - Additional dcon_control namelist inputs can be used to control the kinetic calculations
+
  - IPEC now calculates generalized perturbed equilibrium (no assumption that the force balance states form a hermitian matrix)
  - IPEC netcdf output is nearly complete and naming conventions are official
  - PENTRC now has fully netcdf output unless ascii is specifically requested by the user
-  - Output is now separated from calculations, setting the stage for parallelization
+
+    - Output is now separated from calculations, setting the stage for parallelization
 
 Documentation
 ----------------------
@@ -384,7 +328,7 @@ This release includes critical bug fixes for the nonambipolar transport calculat
 Fixes
 --------------
 
-- PENTRC a correction factor of 1/2 has been applied to the fcgl, *gar, and *mm methods to correctly represent quadratic terms using complex analysis
+- PENTRC a correction factor of 1/2 has been applied to the fcgl, \*gar, and \*mm methods to correctly represent quadratic terms using complex analysis
 - PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.
 
 
