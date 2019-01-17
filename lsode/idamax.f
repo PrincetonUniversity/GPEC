@@ -3,7 +3,7 @@ c
 c     finds the index of element having max. absolute value.
 c     jack dongarra, linpack, 3/11/78.
 c
-      real*8 dx(*),dmax
+      real*8 dx(1),dmax
       integer i,incx,ix,n
 c
       idamax = 0
