@@ -31,9 +31,12 @@ c     22. read_eq_wdn.
 c     23. read_eq_vmec.
 c     24. read_eq_t7_old.
 c     25. read_eq_t7.
-c     26. read_eq_marklin_direct.
-c     27. read_eq_marklin_inverse.
-c     28. read_eq_hansen_inverse.
+c     26. read_eq_hansen_inverse.
+c     27. read_eq_chease3.
+c     28. read_eq_pfrc.
+c     29. read_eq_chease4.
+c     30. read_eq_marklin_direct.
+c     31. read_eq_marklin_inverse.
 c-----------------------------------------------------------------------
 c     subprogram 0. read_eq_mod.
 c     module declarations.
@@ -614,15 +617,17 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE read_eq_efit
 
-      INTEGER :: i,j,nw,nh,ia,mr,mz,ma
+      INTEGER :: e,i,j,nw,nh,ia,mr,mz,ma
       INTEGER :: ios
       REAL(r8) :: bcentr,cpasma,rgrid,rmaxis,rzero,ssibry1,
      $     ssibry2,ssimag1,ssimag2,xdim,xdum,zdim,zmaxis,zmid
+      REAL(r8) :: tmp
+      CHARACTER(LEN=7) :: shotstr, timestr
 c-----------------------------------------------------------------------
 c     read equilibrium data.
 c-----------------------------------------------------------------------
       CALL ascii_open(in_unit,TRIM(eq_filename),'OLD')
-      READ(in_unit,'(52x,2i4)')nw,nh
+      READ(in_unit,'(26x,a7,a7,12x,2i4)') shotstr,timestr,nw,nh
       READ(in_unit,'(5e16.9)')xdim,zdim,rzero,rgrid,zmid
       READ(in_unit,'(5e16.9)')rmaxis,zmaxis,ssimag1,ssibry1,bcentr
       READ(in_unit,'(5e16.9)')cpasma,ssimag2,xdum,rmaxis,xdum
@@ -640,6 +645,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     translate to internal quantities.
 c-----------------------------------------------------------------------
+      DO i=2,7
+         READ(shotstr(:i),*,IOSTAT=e) tmp
+         IF(e==0) shotnum = tmp
+         READ(timestr(:i),*,IOSTAT=e) tmp
+         IF(e==0) shottime= tmp
+      ENDDO
       mr=nw-1
       mz=nh-1
       ma=nw-1
@@ -1899,151 +1910,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE READ_eq_t7
 c-----------------------------------------------------------------------
-c     subprogram 26. read_eq_marklin_direct.
-c     reads data from George Marklin's equilibrium code, direct form.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE read_eq_marklin_direct
-
-      INTEGER :: mpsi,mr,mz,ipsi
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,f,p,q,di
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: psifun
-c-----------------------------------------------------------------------
-c     read data.
-c-----------------------------------------------------------------------
-      CALL ascii_open(in_unit,TRIM(eq_filename),"OLD")
-      READ(in_unit,*)mpsi,mr,mz
-      READ(in_unit,*)rmin,rmax,zmin,zmax
-      ALLOCATE(psi(0:mpsi),f(0:mpsi),p(0:mpsi),q(0:mpsi),di(0:mpsi),
-     $     psifun(0:mr,0:mz))
-      READ(in_unit,*)(psi(ipsi),f(ipsi),p(ipsi),q(ipsi),di(ipsi),
-     $     ipsi=0,mpsi)
-      READ(in_unit,*)psifun
-      CALL bin_close(in_unit)
-c-----------------------------------------------------------------------
-c     copy and modify 1D arrays.
-c-----------------------------------------------------------------------
-      CALL spline_alloc(sq_in,mpsi,4)
-      psio=psi(0)
-      sq_in%xs=(psi(0)-psi)/psio
-      sq_in%fs(:,1)=f
-      sq_in%fs(:,2)=p*mu0
-      sq_in%fs(:,3)=q
-c-----------------------------------------------------------------------
-c     copy to bicubic spline values in revised order.
-c-----------------------------------------------------------------------
-      CALL bicube_alloc(psi_in,mr,mz,1)
-      psi_in%xs=sq_in%xs/psio
-      psi_in%fs(:,:,1)=psifun
-c-----------------------------------------------------------------------
-c     process direct equilibrium.
-c-----------------------------------------------------------------------
-      DEALLOCATE(psi,f,p,q,psifun)
-      CALL direct_run
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE read_eq_marklin_direct
-c-----------------------------------------------------------------------
-c     subprogram 27. read_eq_marklin_inverse.
-c     reads data from George Marklin's equilibrium code, inverse form.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE read_eq_marklin_inverse
-
-      INTEGER :: mpsi,mtheta
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,f,p,q
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: r,z
-
-      LOGICAL, PARAMETER :: diagnose=.FALSE.
-      INTEGER :: ipsi,itheta
-c-----------------------------------------------------------------------
-c     format statements
-c-----------------------------------------------------------------------
- 10   FORMAT(/2x,"ipsi",5x,"psi",9x,"f",10x,"p",10x,"q",
-     $     10x,"xs",8x,"fs1",8x,"fs2",8x,"fs3",8x,"rho"/)
- 20   FORMAT(i6,1p,9e11.3)
- 30   FORMAT(/2x,"ipsi",2x,"ithe",6x,"r",10x,"z"/)
- 40   FORMAT(2i6,1p,2e11.3)
-c-----------------------------------------------------------------------
-c     read data.
-c-----------------------------------------------------------------------
-      CALL ascii_open(in_unit,TRIM(eq_filename),"OLD")
-      READ(in_unit,*)mpsi,mtheta
-      ALLOCATE(psi(0:mpsi),f(0:mpsi),p(0:mpsi),q(0:mpsi),
-     $     r(0:mpsi,0:mtheta),z(0:mpsi,0:mtheta))
-      READ(in_unit,*)(psi(ipsi),f(ipsi),p(ipsi),q(ipsi),
-     $     ipsi=0,mpsi)
-      READ(in_unit,*)((r(ipsi,itheta),z(ipsi,itheta),
-     $     ipsi=0,mpsi),itheta=0,mtheta)
-      CALL bin_close(in_unit)
-c-----------------------------------------------------------------------
-c     copy and modify 1D arrays.
-c-----------------------------------------------------------------------
-      CALL spline_alloc(sq_in,mpsi,4)
-      psio=psi(0)
-      sq_in%xs=(psi(0)-psi)/psio
-      sq_in%fs(:,1)=f
-      sq_in%fs(:,2)=p*mu0
-      sq_in%fs(:,3)=q
-c-----------------------------------------------------------------------
-c     select axis position and impose periodicity.
-c-----------------------------------------------------------------------
-      ro=r(0,0)
-      zo=z(0,0)
-      r(:,mtheta)=r(:,0)
-      z(:,mtheta)=z(:,0)
-c-----------------------------------------------------------------------
-c     copy to bicubic spline values in revised order.
-c-----------------------------------------------------------------------
-      CALL bicube_alloc(rz_in,mpsi,mtheta,2)
-c$$$      rz_in%fs(:,:,1)=r(:,mtheta:0:-1)
-c$$$      rz_in%fs(:,:,2)=z(:,mtheta:0:-1)
-      rz_in%fs(:,:,1)=r
-      rz_in%fs(:,:,2)=z
-c-----------------------------------------------------------------------
-c     diagnose.
-c-----------------------------------------------------------------------
-      IF(diagnose)THEN
-         OPEN(UNIT=debug_unit,FILE="marklin.out",STATUS="UNKNOWN")
-         WRITE(debug_unit,'(2a/)')"filename = ",TRIM(eq_filename)
-         WRITE(debug_unit,'(2(a,i3),1p,2(a,e10.3))')
-     $        "mpsi = ",mpsi,", mtheta = ",mtheta,
-     $        ", ro = ",ro,", zo = ",zo
-         WRITE(debug_unit,10)
-         DO ipsi=0,mpsi
-            WRITE(debug_unit,20)ipsi,psi(ipsi),f(ipsi),p(ipsi),q(ipsi),
-     $           sq_in%xs(ipsi),sq_in%fs(ipsi,1:3),SQRT(sq_in%xs(ipsi))
-         ENDDO
-         WRITE(debug_unit,10)
-         WRITE(debug_unit,30)
-         DO ipsi=0,mpsi
-            DO itheta=0,mtheta
-               WRITE(debug_unit,40)ipsi,itheta,rz_in%fs(ipsi,itheta,:)
-            ENDDO
-            WRITE(debug_unit,30)
-         ENDDO
-         CLOSE(UNIT=debug_unit)
-         CALL program_stop
-     $        ("read_eq_marklin_inverse: abort after diagnose.")
-      ENDIF
-c-----------------------------------------------------------------------
-c     process inverse equilibrium.
-c-----------------------------------------------------------------------
-      DEALLOCATE(psi,f,p,q,r,z)
-      CALL inverse_run
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE read_eq_marklin_inverse
-c-----------------------------------------------------------------------
-c     subprogram 27. read_eq_hansen_inverse.
+c     subprogram 26. read_eq_hansen_inverse.
 c     reads data from Chris Hansen's equilibrium code, inverse form.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2140,4 +2007,373 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE read_eq_hansen_inverse
+c-----------------------------------------------------------------------
+c     subprogram 27. read_eq_chease3.
+c     reads inverse equilibrium from CHEASE equilibrium code.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_chease3
+
+      INTEGER :: npsi,ipsi,nchi
+      REAL(r8) :: b0exp,r0exp,rmag,zmag,tpsio
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: norpsi,psi,t,mu0p,q
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq,jaceq,g12l
+c-----------------------------------------------------------------------
+c     open file and read sizes.
+c-----------------------------------------------------------------------
+      OPEN(UNIT=in_unit,FILE=TRIM(eq_filename),STATUS="OLD",
+     $     FORM="UNFORMATTED")
+      READ(in_unit)npsi,nchi,r0exp,b0exp,rmag,zmag,tpsio
+c-----------------------------------------------------------------------
+c     allocate local arrays.
+c-----------------------------------------------------------------------
+      ALLOCATE(norpsi(npsi),psi(npsi),t(npsi),mu0p(npsi),q(npsi))
+      ALLOCATE(req(npsi,nchi),zeq(npsi,nchi),
+     $        jaceq(npsi,nchi),g12l(npsi,nchi))
+c-----------------------------------------------------------------------
+c     read local arrays and close file.
+c-----------------------------------------------------------------------
+      DO ipsi=1,npsi
+         READ(in_unit)norpsi(ipsi),psi(ipsi),t(ipsi),mu0p(ipsi),q(ipsi)
+         READ(in_unit)req(ipsi,:)
+         READ(in_unit)zeq(ipsi,:)
+         READ(in_unit)jaceq(ipsi,:)
+         READ(in_unit)g12l(ipsi,:)
+      ENDDO
+      CALL ascii_close(in_unit)
+c-----------------------------------------------------------------------
+c     copy variables.
+c-----------------------------------------------------------------------
+      ro=rmag
+      zo=zmag
+      psio=abs(tpsio)
+c-----------------------------------------------------------------------
+c     copy 1D arrays.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(sq_in,npsi-1,4)
+      sq_in%xs=norpsi
+      sq_in%fs(:,1)=t
+      sq_in%fs(:,2)=mu0p
+      sq_in%fs(:,3)=q
+      CALL spline_fit(sq_in,"extrap")
+c-----------------------------------------------------------------------
+c     copy 2D arrays.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,npsi-1,nchi-1,2)
+      rz_in%fs(:,:,1)=req
+      rz_in%fs(:,:,2)=zeq
+      jaceq=jaceq*4*pi*pi
+c-----------------------------------------------------------------------
+c     deallocate local arrays and process inverse equilibrium.
+c-----------------------------------------------------------------------
+      DEALLOCATE(norpsi,psi,t,mu0p,q)
+      DEALLOCATE(req,zeq,jaceq,g12l)
+      CALL bicube_fit(rz_in,"extrap","periodic")
+      CALL inverse_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_chease3
+c-----------------------------------------------------------------------
+c     subprogram 28. read_eq_pfrc.
+c     George Marklin's PFRC equilibrium code.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_pfrc
+
+      LOGICAL, PARAMETER :: diagnose=.FALSE.
+      INTEGER :: mr,mz,mpsi,ir,iz,ipsi
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,p
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: psig
+c-----------------------------------------------------------------------
+c     format statements.
+c-----------------------------------------------------------------------
+ 10   FORMAT(4x,"mr",4x,"mz",2x,"mpsi",5x,"rmin",7x,"rmax",7x,
+     $     "zmin",7x,"zmax"//3i6,1p,4e11.3/)
+ 20   FORMAT(/2x,"ipsi",5x,"psi",9x,"p"/)
+ 30   FORMAT(i6,1p,2e11.3)
+ 40   FORMAT(/4x,"ir",4x,"iz",5x,"psi"/)
+ 50   FORMAT(2i6,1p,e11.3)
+c-----------------------------------------------------------------------
+c     read input.
+c-----------------------------------------------------------------------
+      OPEN(UNIT=in_unit,FILE=TRIM(eq_filename),STATUS="OLD")
+      READ(in_unit,*)mr,mz,mpsi
+      READ(in_unit,*)rmin,rmax,zmin,zmax
+      ALLOCATE(psi(0:mpsi),p(0:mpsi),psig(0:mr,0:mz))
+      READ(in_unit,*)(psi(ipsi),p(ipsi),ipsi=0,mpsi)
+      READ(in_unit,*)psig
+      CLOSE(UNIT=in_unit)
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      IF(diagnose)THEN
+         OPEN(UNIT=debug_unit,FILE="pfrc.out",STATUS="REPLACE")
+         WRITE(debug_unit,'(2a)')"filename = ",TRIM(eq_filename)
+         WRITE(debug_unit,10)mr,mz,mpsi,rmin,rmax,zmin,zmax
+         WRITE(debug_unit,20)
+         WRITE(debug_unit,30)(ipsi,psi(ipsi),p(ipsi),ipsi=0,mpsi)
+         WRITE(debug_unit,20)
+         WRITE(debug_unit,40)
+         DO iz=0,mz
+            WRITE(debug_unit,50)(ir,iz,psig(ir,iz),ir=0,mr)
+            WRITE(debug_unit,40)
+         ENDDO
+         CLOSE(UNIT=debug_unit)
+      ENDIF
+c-----------------------------------------------------------------------
+c     transfer 1D arrays to cubic splines.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(sq_in,mpsi,4)
+      psio=psi(mpsi)
+      sq_in%xs=1-psi(mpsi:0:-1)/psio
+      sq_in%fs(:,1)=0
+      sq_in%fs(:,2)=p(mpsi:0:-1)
+      sq_in%fs(:,3)=0
+c-----------------------------------------------------------------------
+c     transfer 2D arrays to cubic splines.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(psi_in,mr,mz,2)
+      psi_in%fs(:,:,1)=psig
+c-----------------------------------------------------------------------
+c     deallocate arrays and call direct.
+c-----------------------------------------------------------------------
+      DEALLOCATE(psi,p,psig)
+      CALL direct_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_pfrc
+c-----------------------------------------------------------------------
+c     subprogram 29. read_eq_chease4.
+c     reads inverse equilibrium from CHEASE equilibrium code.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_chease4
+
+      INTEGER :: npsi,ipsi,nchi
+      REAL(r8) :: b0exp,r0exp,rmag,zmag,tpsio
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: norpsi,psi,t,mu0p,q
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq,jaceq,g12l
+c-----------------------------------------------------------------------
+c     open file and read sizes.
+c-----------------------------------------------------------------------
+      WRITE(*,*) "Direct use CHEASE PEST equilibrium."
+      jac_type="pest"
+      power_b=0
+      power_bp=0
+      power_r=2
+      OPEN(UNIT=in_unit,FILE=TRIM(eq_filename),STATUS="OLD",
+     $     FORM="UNFORMATTED")
+      READ(in_unit)npsi,nchi,r0exp,b0exp,rmag,zmag,tpsio
+c-----------------------------------------------------------------------
+c     allocate local arrays.
+c-----------------------------------------------------------------------
+      ALLOCATE(norpsi(npsi),psi(npsi),t(npsi),mu0p(npsi),q(npsi))
+      ALLOCATE(req(npsi,nchi),zeq(npsi,nchi),
+     $         jaceq(npsi,nchi),g12l(npsi,nchi))
+c-----------------------------------------------------------------------
+c     read local arrays and close file.
+c-----------------------------------------------------------------------
+      OPEN(1012,FILE='CHEASE_INFO.OUT')
+      WRITE(*,*) 'OUTPUT CHEASE INFO'
+120   FORMAT(19(E30.15,1X))
+      DO ipsi=1,npsi
+         READ(in_unit)norpsi(ipsi),psi(ipsi),t(ipsi),mu0p(ipsi),q(ipsi)
+         READ(in_unit)req(ipsi,:)
+         READ(in_unit)zeq(ipsi,:)
+         READ(in_unit)jaceq(ipsi,:)
+         READ(in_unit)g12l(ipsi,:)
+         WRITE(1012,120) norpsi(ipsi),q(ipsi)
+      ENDDO
+      CLOSE(1012)
+      CALL ascii_close(in_unit)
+c-----------------------------------------------------------------------
+c     copy variables.
+c-----------------------------------------------------------------------
+      ro=rmag
+      zo=zmag
+      psio=abs(tpsio)
+c-----------------------------------------------------------------------
+c     copy 1D arrays.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(sq_in,npsi-1,4)
+      sq_in%xs=norpsi
+      sq_in%fs(:,1)=t
+      sq_in%fs(:,2)=mu0p
+      sq_in%fs(:,3)=q
+      CALL spline_fit(sq_in,"extrap")
+c-----------------------------------------------------------------------
+c     copy 2D arrays.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,npsi-1,nchi-1,6)
+      rz_in%fs(:,:,1)=req
+      rz_in%fs(:,:,2)=zeq
+      rz_in%fs(:,:,3)=jaceq*4*pi*pi
+      rz_in%fs(:,:,4)=g12l/(2*pi)
+      rz_in%fs(:,:,5)=req
+      rz_in%fs(:,:,6)=zeq
+c-----------------------------------------------------------------------
+c     deallocate local arrays and process inverse equilibrium.
+c-----------------------------------------------------------------------
+      CALL bicube_fit(rz_in,"extrap","periodic")
+      CALL inverse_chease4_run(jaceq)
+      DEALLOCATE(norpsi,psi,t,mu0p,q)
+      DEALLOCATE(req,zeq,jaceq,g12l)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_chease4
+c     subprogram 30. read_eq_marklin_direct.
+c     reads data from George Marklin's equilibrium code, direct form.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_marklin_direct
+
+      INTEGER :: mpsi,mr,mz,ipsi
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,f,p,q,di
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: psifun
+c-----------------------------------------------------------------------
+c     read data.
+c-----------------------------------------------------------------------
+      CALL ascii_open(in_unit,TRIM(eq_filename),"OLD")
+      READ(in_unit,*)mpsi,mr,mz
+      READ(in_unit,*)rmin,rmax,zmin,zmax
+      ALLOCATE(psi(0:mpsi),f(0:mpsi),p(0:mpsi),q(0:mpsi),di(0:mpsi),
+     $     psifun(0:mr,0:mz))
+      READ(in_unit,*)(psi(ipsi),f(ipsi),p(ipsi),q(ipsi),di(ipsi),
+     $     ipsi=0,mpsi)
+      READ(in_unit,*)psifun
+      CALL bin_close(in_unit)
+c-----------------------------------------------------------------------
+c     copy and modify 1D arrays.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(sq_in,mpsi,4)
+      psio=psi(0)
+      sq_in%xs=(psi(0)-psi)/psio
+      sq_in%fs(:,1)=f
+      sq_in%fs(:,2)=p*mu0
+      sq_in%fs(:,3)=q
+c-----------------------------------------------------------------------
+c     copy to bicubic spline values in revised order.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(psi_in,mr,mz,1)
+      psi_in%xs=sq_in%xs/psio
+      psi_in%fs(:,:,1)=psifun
+c-----------------------------------------------------------------------
+c     process direct equilibrium.
+c-----------------------------------------------------------------------
+      DEALLOCATE(psi,f,p,q,psifun)
+      CALL direct_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_marklin_direct
+c-----------------------------------------------------------------------
+c     subprogram 31. read_eq_marklin_inverse.
+c     reads data from George Marklin's equilibrium code, inverse form.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE read_eq_marklin_inverse
+
+      INTEGER :: mpsi,mtheta
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: psi,f,p,q
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: r,z
+
+      LOGICAL, PARAMETER :: diagnose=.FALSE.
+      INTEGER :: ipsi,itheta
+c-----------------------------------------------------------------------
+c     format statements
+c-----------------------------------------------------------------------
+ 10   FORMAT(/2x,"ipsi",5x,"psi",9x,"f",10x,"p",10x,"q",
+     $     10x,"xs",8x,"fs1",8x,"fs2",8x,"fs3",8x,"rho"/)
+ 20   FORMAT(i6,1p,9e11.3)
+ 30   FORMAT(/2x,"ipsi",2x,"ithe",6x,"r",10x,"z"/)
+ 40   FORMAT(2i6,1p,2e11.3)
+c-----------------------------------------------------------------------
+c     read data.
+c-----------------------------------------------------------------------
+      CALL ascii_open(in_unit,TRIM(eq_filename),"OLD")
+      READ(in_unit,*)mpsi,mtheta
+      ALLOCATE(psi(0:mpsi),f(0:mpsi),p(0:mpsi),q(0:mpsi),
+     $     r(0:mpsi,0:mtheta),z(0:mpsi,0:mtheta))
+      READ(in_unit,*)(psi(ipsi),f(ipsi),p(ipsi),q(ipsi),
+     $     ipsi=0,mpsi)
+      READ(in_unit,*)((r(ipsi,itheta),z(ipsi,itheta),
+     $     ipsi=0,mpsi),itheta=0,mtheta)
+      CALL bin_close(in_unit)
+c-----------------------------------------------------------------------
+c     copy and modify 1D arrays.
+c-----------------------------------------------------------------------
+      CALL spline_alloc(sq_in,mpsi,4)
+      psio=psi(0)
+      sq_in%xs=(psi(0)-psi)/psio
+      sq_in%fs(:,1)=f
+      sq_in%fs(:,2)=p*mu0
+      sq_in%fs(:,3)=q
+c-----------------------------------------------------------------------
+c     select axis position and impose periodicity.
+c-----------------------------------------------------------------------
+      ro=r(0,0)
+      zo=z(0,0)
+      r(:,mtheta)=r(:,0)
+      z(:,mtheta)=z(:,0)
+c-----------------------------------------------------------------------
+c     copy to bicubic spline values in revised order.
+c-----------------------------------------------------------------------
+      CALL bicube_alloc(rz_in,mpsi,mtheta,2)
+c$$$      rz_in%fs(:,:,1)=r(:,mtheta:0:-1)
+c$$$      rz_in%fs(:,:,2)=z(:,mtheta:0:-1)
+      rz_in%fs(:,:,1)=r
+      rz_in%fs(:,:,2)=z
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      IF(diagnose)THEN
+         OPEN(UNIT=debug_unit,FILE="marklin.out",STATUS="UNKNOWN")
+         WRITE(debug_unit,'(2a/)')"filename = ",TRIM(eq_filename)
+         WRITE(debug_unit,'(2(a,i3),1p,2(a,e10.3))')
+     $        "mpsi = ",mpsi,", mtheta = ",mtheta,
+     $        ", ro = ",ro,", zo = ",zo
+         WRITE(debug_unit,10)
+         DO ipsi=0,mpsi
+            WRITE(debug_unit,20)ipsi,psi(ipsi),f(ipsi),p(ipsi),q(ipsi),
+     $           sq_in%xs(ipsi),sq_in%fs(ipsi,1:3),SQRT(sq_in%xs(ipsi))
+         ENDDO
+         WRITE(debug_unit,10)
+         WRITE(debug_unit,30)
+         DO ipsi=0,mpsi
+            DO itheta=0,mtheta
+               WRITE(debug_unit,40)ipsi,itheta,rz_in%fs(ipsi,itheta,:)
+            ENDDO
+            WRITE(debug_unit,30)
+         ENDDO
+         CLOSE(UNIT=debug_unit)
+         CALL program_stop
+     $        ("read_eq_marklin_inverse: abort after diagnose.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     process inverse equilibrium.
+c-----------------------------------------------------------------------
+      DEALLOCATE(psi,f,p,q,r,z)
+      CALL inverse_run
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE read_eq_marklin_inverse
       END MODULE read_eq_mod

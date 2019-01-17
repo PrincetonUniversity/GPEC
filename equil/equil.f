@@ -159,6 +159,10 @@ c-----------------------------------------------------------------------
          CALL read_eq_t7_old
       CASE("t7")
          CALL read_eq_t7
+      CASE("marklin_direct")
+         CALL read_eq_marklin_direct
+      CASE("marklin_inverse")
+         CALL read_eq_marklin_inverse
       CASE("hansen_inverse")
          CALL read_eq_hansen_inverse
       CASE("pfrc")

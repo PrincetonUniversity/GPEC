@@ -351,7 +351,7 @@ c-----------------------------------------------------------------------
 c     interpolate local values.
 c-----------------------------------------------------------------------
       psifac=singp%psifac
-      CALL spline_eval_external_array(locstab,psifac,locstab_s_ix,
+      CALL spline_eval_external(locstab,psifac,locstab_s_ix,
      $     locstab_s_f)
       di0=locstab_s_f(1)/psifac
       q1=singp%q1
@@ -483,13 +483,14 @@ c-----------------------------------------------------------------------
       msol=2*mpert
       singp => sing(ising)
       psifac=singp%psifac
-      CALL spline_eval_external_array(sq,psifac,sq_s_ix,
+
+      CALL spline_eval_external(sq,psifac,sq_s_ix,
      $     sq_s_f,sq_s_f1,sq_s_f2,sq_s_f3)
-      CALL cspline_eval_external_array(fmats,psifac,fmats_s_ix,
+      CALL cspline_eval_external(fmats,psifac,fmats_s_ix,
      $     fmats_s_f,fmats_s_f1,fmats_s_f2,fmats_s_f3)
-      CALL cspline_eval_external_array(gmats,psifac,gpot_s_ix,
+      CALL cspline_eval_external(gmats,psifac,gpot_s_ix,
      $     gpot_s_f,gpot_s_f1,gpot_s_f2,gpot_s_f3)
-      CALL cspline_eval_external_array(kmats,psifac,kpot_s_ix,
+      CALL cspline_eval_external(kmats,psifac,kpot_s_ix,
      $     kpot_s_f,kpot_s_f1,kpot_s_f2,kpot_s_f3)
 c-----------------------------------------------------------------------
 c     allocate arrays.
@@ -979,12 +980,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
 c-----------------------------------------------------------------------
-      CALL spline_eval_external_array(sq,startPsi,sq_s_ix,sq_s_f)
-      CALL cspline_eval_external_array(fmats,startPsi,
+      CALL spline_eval_external(sq,startPsi,sq_s_ix,sq_s_f)
+      CALL cspline_eval_external(fmats,startPsi,
      $     fmats_s_ix,fmats_s_f)
-      CALL cspline_eval_external_array(gmats,startPsi,
+      CALL cspline_eval_external(gmats,startPsi,
      $     gmats_s_ix,gmats_s_f)
-      CALL cspline_eval_external_array(kmats,startPsi,
+      CALL cspline_eval_external(kmats,startPsi,
      $     kmats_s_ix,kmats_s_f)
 c-----------------------------------------------------------------------
 c     define local scalars.
@@ -1100,12 +1101,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
 c-----------------------------------------------------------------------
-      CALL spline_eval_external_array(sq,startPsi,sq_s_ix,sq_s_f)
-      CALL cspline_eval_external_array(fmats,startPsi,
+      CALL spline_eval_external(sq,startPsi,sq_s_ix,sq_s_f)
+      CALL cspline_eval_external(fmats,startPsi,
      $     fmats_s_ix,fmats_s_f)
-      CALL cspline_eval_external_array(gmats,startPsi,
+      CALL cspline_eval_external(gmats,startPsi,
      $     gmats_s_ix,gmats_s_f)
-      CALL cspline_eval_external_array(kmats,startPsi,
+      CALL cspline_eval_external(kmats,startPsi,
      $     kmats_s_ix,kmats_s_f)
 c-----------------------------------------------------------------------
 c     define local scalars.

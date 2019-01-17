@@ -22,6 +22,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE direct_mod
       USE global_mod
+      USE utils_mod
       IMPLICIT NONE
 
       INTEGER, PRIVATE :: istep
@@ -32,6 +33,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi,psir,psiz,psirz,psirr,psizz,f,f1,p,p1
       REAL(r8) :: br,bz,brr,brz,bzr,bzz
       END TYPE direct_bfield_type
+
+      REAL(r8) :: etol=1e-8
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -45,17 +48,19 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ir,iz,itheta,ipsi
       INTEGER, PARAMETER :: nstep=2048
-      REAL(r8) :: f0fac,f0,ffac
+      REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
       REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
+      REAL(r8), DIMENSION(3,3) :: v
 
+      REAL(r8) :: xm,dx,rholow,rhohigh
       TYPE(direct_bfield_type) :: bf
       TYPE(spline_type) :: ff
 c-----------------------------------------------------------------------
 c     warning.
 c-----------------------------------------------------------------------
       direct_flag=.TRUE.
-      IF(psihigh >= 1-1e-6)WRITE(*,'(1x,a,1p,e10.3,a)')
-     $        "Warning: direct equilibrium with psihigh = ",psihigh,
+      IF(psihigh >= 1-1e-6)WRITE(*,'(1x,a,es10.3,a)')
+     $        "Warning: direct equilibrium with psihigh =",psihigh,
      $        " could hang on separatrix."
 c-----------------------------------------------------------------------
 c     fit input to cubic splines and diagnose.
@@ -71,7 +76,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare new spline type for surface quantities.
 c-----------------------------------------------------------------------
-      IF(grid_type == "original")THEN
+      IF(grid_type == "original" .OR. grid_type == "orig")THEN
          IF(sq_in%xs(sq_in%mx) < 1-1e-6)THEN
             mpsi=sq_in%mx-1
          ELSE
@@ -80,7 +85,7 @@ c-----------------------------------------------------------------------
       ENDIF
       CALL spline_alloc(sq,mpsi,4)
       sq%name="  sq  "
-      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "," rho  "/)
+      sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
 c     set up radial grid
 c-----------------------------------------------------------------------
@@ -90,8 +95,15 @@ c-----------------------------------------------------------------------
          sq%xs=psilow+(psihigh-psilow)*SIN(sq%xs*pi/2)**2
       CASE("rho")
          sq%xs=psihigh*(/(ipsi**2,ipsi=1,mpsi+1)/)/(mpsi+1)**2
-      CASE("original")
+      CASE("original","orig")
          sq%xs=sq_in%xs(1:mpsi)
+      CASE("mypack")
+         rholow=SQRT(psilow)
+         rhohigh=SQRT(psihigh)
+         xm=(rhohigh+rholow)/2
+         dx=(rhohigh-rholow)/2
+         sq%xs=xm+dx*mypack(mpsi/2,sp_pfac,"both")
+         sq%xs=sq%xs**2
       CASE default
          CALL program_stop("Cannot recognize grid_type "//grid_type)
       END SELECT
@@ -105,6 +117,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     start loop over flux surfaces and integrate over field line.
 c-----------------------------------------------------------------------
+      IF(verbose) WRITE(*,'(a,1p,es10.3)')" etol = ",etol
       DO ipsi=mpsi,0,-1
          CALL direct_fl_int(ipsi,y_out,bf)
 c-----------------------------------------------------------------------
@@ -124,15 +137,21 @@ c-----------------------------------------------------------------------
          IF(ipsi == mpsi)THEN
             IF(mtheta == 0)mtheta=istep
             CALL bicube_alloc(rzphi,mpsi,mtheta,4)
+            CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
             rzphi%xs=sq%xs
             rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
+            rzphi%xtitle="psifac"
+            rzphi%ytitle="theta "
+            rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/)
+            eqfun%xs=sq%xs
+            eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
          ENDIF
 c-----------------------------------------------------------------------
 c     interpolate to uniform grid.
 c-----------------------------------------------------------------------
          DO itheta=0,mtheta
             CALL spline_eval(ff,rzphi%ys(itheta),1)
-            rzphi%fs(ipsi,itheta,1:3)=ff%f
+            rzphi%fs(ipsi,itheta,1:3)=ff%f(1:3)
             rzphi%fs(ipsi,itheta,4)=(1+ff%f1(4))
      $           *y_out(istep,1)*twopi*psio
          ENDDO
@@ -180,6 +199,38 @@ c-----------------------------------------------------------------------
       IF(power_flag)rzphi%xpower(1,:)=(/1._r8,0._r8,.5_r8,0._r8/)
       CALL bicube_fit(rzphi,"extrap","periodic")
       CALL spline_dealloc(sq_in)
+c-----------------------------------------------------------------------
+c     evaluate eqfun.
+c-----------------------------------------------------------------------
+      DO ipsi=0,mpsi
+         CALL spline_eval(sq,sq%xs(ipsi),0)
+         q=sq%f(4)
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(itheta/REAL(mtheta,r8)+rzphi%f(2))
+            r=ro+rfac*COS(eta)
+            jacfac=rzphi%f(4)
+            v(1,1)=rzphi%fx(1)/(2*rfac)
+            v(1,2)=rzphi%fx(2)*twopi*rfac
+            v(1,3)=rzphi%fx(3)*r
+            v(2,1)=rzphi%fy(1)/(2*rfac)
+            v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+            v(2,3)=rzphi%fy(3)*r
+            v(3,3)=twopi*r
+            w11=(1+rzphi%fy(2))*twopi**2*rfac*r/jacfac
+            w12=-rzphi%fy(1)*pi*r/(rfac*jacfac)
+
+            delpsi=SQRT(w11**2+w12**2)
+            eqfun%fs(ipsi,itheta,1)=SQRT(((twopi*psio*delpsi)**2+
+     $           sq%f(1)**2)/(twopi*r)**2)
+            eqfun%fs(ipsi,itheta,2)=(SUM(v(1,:)*v(2,:))+q*v(3,3)*v(1,3))
+     $           /(jacfac*eqfun%fs(ipsi,itheta,1)**2)
+            eqfun%fs(ipsi,itheta,3)=(v(2,3)*v(3,3)+q*v(3,3)*v(3,3))
+     $           /(jacfac*eqfun%fs(ipsi,itheta,1)**2)
+         ENDDO
+      ENDDO
+      CALL bicube_fit(eqfun,"extrap","periodic")
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -334,18 +385,18 @@ c-----------------------------------------------------------------------
       INTEGER :: iopt,istate,itask,itol,jac,mf
       INTEGER, DIMENSION(liw) :: iwork
       INTEGER, PARAMETER :: nstep=2048
-      REAL(r8), PARAMETER :: tol0=1e-6,eps=1e-12
+      REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
       REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,"ipsi = ",i3,", psifac = ",1pe10.3)
+ 10   FORMAT(1x,"ipsi = ",i3,", psifac =",es10.3)
  20   FORMAT(/2x,"is",5x,"eta",8x,"deta",8x,"s",9x,"rfac",8x,"r",10x,
      $     "z",9x,"psi",8x,"err"/)
  30   FORMAT(i4,1p,8e11.3)
- 40   FORMAT(a,i4,a,1p,e10.3,a,i3)
+ 40   FORMAT(a,i4,a,es10.3,a,i3)
 c-----------------------------------------------------------------------
 c     find flux surface.
 c-----------------------------------------------------------------------
@@ -376,8 +427,8 @@ c-----------------------------------------------------------------------
       iopt=1
       mf=10
       itol=1
-      rtol=tol0
-      atol=tol0*y(2)
+      rtol=etol
+      atol=etol*y(2)
       iwork=0
       rwork=0
       rwork(1)=twopi
@@ -449,6 +500,7 @@ c-----------------------------------------------------------------------
       TYPE(direct_bfield_type) :: bf
 c-----------------------------------------------------------------------
 c     preliminary computations.
+c     here magnetic coordinates are defined
 c-----------------------------------------------------------------------
       cosfac=COS(eta)
       sinfac=SIN(eta)
@@ -483,7 +535,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: rfac,eta,psi0
       
       REAL(r8) :: dpsi,cosfac,sinfac,drfac,r,z
-      REAL(r8), PARAMETER :: eps=1.e-12
+      REAL(r8), PARAMETER :: eps=1e-12
       TYPE(direct_bfield_type) :: bf
 c-----------------------------------------------------------------------
 c     initialize iteration.

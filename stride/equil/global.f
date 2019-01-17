@@ -11,6 +11,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE global_mod
       USE bicube_mod
+      USE cspline_mod
       IMPLICIT NONE
 
       CHARACTER(16) :: eq_type="fluxgrid"
@@ -26,13 +27,18 @@ c-----------------------------------------------------------------------
       LOGICAL :: gse_flag=.FALSE.
       LOGICAL :: power_flag=.TRUE.
       LOGICAL :: dump_flag=.FALSE.
-
+      LOGICAL :: verbose=.TRUE.
+      LoGICAL :: use_galgrid=.TRUE.
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6
       REAL(r8) :: newq0=0
-
+      REAL(r8) :: sp_pfac=1
+      REAL(r8) :: sp_dx1=1e-3,sp_dx2=1e-3
+      REAL(r8), DIMENSION(:),ALLOCATABLE:: xs_pack
+      INTEGER :: sp_nx
       INTEGER :: mex
       REAL(r8), DIMENSION(:), POINTER :: qex,psiex
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: ud
 
       CHARACTER(16) :: jac_type="hamada"
       INTEGER :: power_bp=0,power_b=0,power_r=0,jac_method=1
@@ -42,9 +48,12 @@ c-----------------------------------------------------------------------
       REAL(r8) :: ro,zo,psio,q0,qa,qmin,qmax,amean,rmean,aratio,kappa,
      $     delta1,delta2,bt0,bwall,crnt,betat,betaj,betan,betap1,betap2,
      $     betap3,li1,li2,li3,volume,p0,ppeakfac,q95
+      REAL(r8) :: shotnum=0, shottime=0
       REAL(r8), DIMENSION(2) :: rext,rsep,zsep
       TYPE(spline_type) :: sq,sq_in
-      TYPE(bicube_type), TARGET :: rzphi
+      TYPE(bicube_type) :: eqfun,rzphi
+      TYPE(cspline_type) :: amats,bmats,cmats,
+     $     smats,tmats,xmats,ymats,zmats
 
       !For Parallelized Use
       INTEGER :: rzphi_ix, rzphi_iy

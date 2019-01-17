@@ -80,7 +80,7 @@ c-----------------------------------------------------------------------
       DO ipsi=0,mpsi
          psifac=sq%xs(ipsi)
          DO itheta=0,mtheta
-            CALL bicube_eval_external_array(rzphi,rzphi%xs(ipsi),
+            CALL bicube_eval_external(rzphi,rzphi%xs(ipsi),
      $           rzphi%ys(itheta),1,rz_ix,rz_iy,rzphi_s_f,rzphi_s_fx,
      $           rzphi_s_fy)
             theta=rzphi%ys(itheta)

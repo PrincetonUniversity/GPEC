@@ -12,18 +12,22 @@ c     0. cspline_mod.
 c     1. cspline_alloc.
 c     2. cspline_dealloc.
 c     3. cspline_fit.
-c     4. cspline_fac.
-c     5. cspline_eval.
-c     5a. cspline_eval_external_array.
-c     6. cspline_all_eval.
-c     7. cspline_write.
-c     8. cspline_write_log.
-c     9. cspline_int.
-c     10. cspline_triluf.
-c     11. cspline_trilus.
-c     12. cspline_sherman.
-c     13. cspline_morrison.
-c     14. cspline_copy.
+c     4. cspline_fit_classic.
+c     5. cspline_fit_ahg.
+c     6. cspline_fac.
+c     7. cspline_eval.
+c     8. cspline_eval_external.
+c     9. cspline_all_eval.
+c     10. cspline_write.
+c     11. cspline_write_log.
+c     12. cspline_int.
+c     13. cspline_triluf.
+c     14. cspline_trilus.
+c     15. cspline_sherman.
+c     16. cspline_morrison.
+c     17. cspline_copy.
+c     18. cspline_thomas.
+c     19. cspline_get_yp.
 c-----------------------------------------------------------------------
 c     subprogram 0. cspline_type definition.
 c     defines cspline_type.
@@ -33,6 +37,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE cspline_mod
       USE local_mod
+      USE spline_mod
       IMPLICIT NONE
       
       TYPE :: cspline_type
@@ -116,12 +121,140 @@ c-----------------------------------------------------------------------
       END SUBROUTINE cspline_dealloc
 c-----------------------------------------------------------------------
 c     subprogram 3. cspline_fit.
-c     fits complex functions to cubic splines.
+c     router between Glasser and classic spline fits.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE cspline_fit(spl,endmode)
+
+      TYPE(cspline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+c-----------------------------------------------------------------------
+c     switch between csplines.
+c-----------------------------------------------------------------------
+      IF (use_classic_splines .AND.
+     $    (endmode.EQ."extrap".OR.endmode.EQ."natural"))THEN
+         CALL cspline_fit_classic(spl,endmode)
+      ELSE
+         CALL cspline_fit_ahg(spl,endmode)
+      ENDIF
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_fit
+c-----------------------------------------------------------------------
+c     subprogram 4. cspline_fit_classic.
+c     classical spline solution as in spline.f, but now with complex r
+c     does not support periodic and not-a-knot boundary conditions
+c     g=a+b(x-xi)+c(x-xi)^2+d(x-xi)^3
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_fit_classic(spl,endmode)
+      TYPE(cspline_type), INTENT(INOUT) :: spl
+      CHARACTER(*), INTENT(IN) :: endmode
+      REAL(r8), DIMENSION(:),ALLOCATABLE :: d,l,u,h
+      COMPLEX(r8), DIMENSION(:,:),ALLOCATABLE :: r
+      REAL(r8), DIMENSION(0:spl%mx) :: xfac
+
+      INTEGER :: iside,iqty,i
+      REAL(r8),DIMENSION(spl%nqty) :: bs,cs,ds
+c-----------------------------------------------------------------------
+c     extract powers.
+c-----------------------------------------------------------------------
+      DO iside=1,2
+         DO iqty=1,spl%nqty
+            IF(spl%xpower(iside,iqty) /= 0)THEN
+               xfac=1/ABS(spl%xs-spl%x0(iside))**spl%xpower(iside,iqty)
+               spl%fs(:,iqty)=spl%fs(:,iqty)*xfac
+            ENDIF
+         ENDDO
+      ENDDO
+      ALLOCATE (d(0:spl%mx),l(spl%mx),u(spl%mx),r(0:spl%mx,spl%nqty))
+      ALLOCATE (h(0:spl%mx-1))
+c-----------------------------------------------------------------------
+c     compute tridiagnol matrix for natural B.C.
+c-----------------------------------------------------------------------
+      DO i=0,spl%mx-1
+         h(i)=spl%xs(i+1)-spl%xs(i)
+      ENDDO
+
+      d(0)=1
+      DO i=1,spl%mx-1
+         d(i)=2*(h(i-1)+h(i))
+      ENDDO
+      d(spl%mx)=1
+
+      DO i=1,spl%mx-1
+         l(i)=h(i-1)
+      ENDDO
+      l(spl%mx)=0
+
+      u(1)=0
+      DO i=2,spl%mx
+         u(i)=h(i-1)
+      ENDDO
+
+      r(0,:)=0
+      DO i=1,spl%mx-1
+         r(i,:)=( (spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $           -(spl%fs(i,:)-spl%fs(i-1,:))/h(i-1) )*6
+      ENDDO
+      r(spl%mx,:)=0
+
+      IF (endmode=="extrap") THEN
+         CALL cspline_get_yp(spl%xs(0:3),spl%fs(0:3,:),
+     $                      spl%xs(0),r(0,:),spl%nqty)
+         CALL cspline_get_yp(spl%xs(spl%mx-3:spl%mx),
+     $        spl%fs(spl%mx-3:spl%mx,:),spl%xs(spl%mx),
+     $        r(spl%mx,:),spl%nqty)
+         d(0)=2*h(0)
+         d(spl%mx)=2*h(spl%mx-1)
+         u(1)=h(0)
+         l(spl%mx)=h(spl%mx-1)
+         r(0,:)=( (spl%fs(1,:)-spl%fs(0,:))/h(0) - r(0,:) )*6
+         r(spl%mx,:)=( r(spl%mx,:)
+     $  -(spl%fs(spl%mx,:)-spl%fs(spl%mx-1,:))/h(spl%mx-1) )*6
+
+      ENDIF
+c-----------------------------------------------------------------------
+c     solve and contrruct spline.
+c-----------------------------------------------------------------------
+
+      CALL cspline_thomas(l,d,u,r,spl%mx+1,spl%nqty)
+
+      DO i=0, spl%mx-1
+         bs=(spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $    - 0.5*h(i)*r(i,:)
+     $    - h(i)*(r(i+1,:)-r(i,:))/6
+         spl%fs1(i,:)=bs
+      ENDDO
+      ds=(r(spl%mx,:)-r(spl%mx-1,:))/(h(spl%mx-1)*6)
+      cs=r(spl%mx-1,:)*0.5
+      i=spl%mx-1
+      bs=(spl%fs(i+1,:)-spl%fs(i,:))/h(i)
+     $    - 0.5*h(i)*r(i,:)
+     $    - h(i)*(r(i+1,:)-r(i,:))/6
+      i=spl%mx
+      spl%fs1(i,:)=bs+h(i-1)*(cs*2+h(i-1)*ds*3)
+      DEALLOCATE (d,l,u,r,h)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_fit_classic
+c-----------------------------------------------------------------------
+c     subprogram 5. cspline_fit_ahg.
+c     fits complex functions to cubic splines.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_fit_ahg(spl,endmode)
       
       TYPE(cspline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
@@ -160,7 +293,7 @@ c-----------------------------------------------------------------------
 c     extrapolation boundary conditions.
 c-----------------------------------------------------------------------
       SELECT CASE(endmode)
-      CASE("extrap1")
+      CASE("extrap")
          DO iqty=1,spl%nqty
             spl%fs1(0,iqty)=SUM(cl(1:4)*spl%fs(0:3,iqty))
             spl%fs1(spl%mx,iqty)=SUM(cr(1:4)
@@ -175,7 +308,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     not-a-knot boundary conditions.
 c-----------------------------------------------------------------------
-      CASE("not-a-knot","extrap")
+      CASE("not-a-knot")
          spl%fs1(1,:)=spl%fs1(1,:)-(2*spl%fs(1,:)
      $        -spl%fs(0,:)-spl%fs(2,:))*2*b(1)
          spl%fs1(spl%mx-1,:)=spl%fs1(spl%mx-1,:)
@@ -212,9 +345,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE cspline_fit
+      END SUBROUTINE cspline_fit_ahg
 c-----------------------------------------------------------------------
-c     subprogram 4. cspline_fac.
+c     subprogram 6. cspline_fac.
 c     sets up matrix for cubic spline fitting.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -242,7 +375,7 @@ c-----------------------------------------------------------------------
 c     extrapolation boundary conditions.
 c-----------------------------------------------------------------------
       SELECT CASE(endmode)
-      CASE("extrap1")
+      CASE("extrap")
          b=b*b
          cl(1)=(spl%xs(0)*(3*spl%xs(0)
      $        -2*(spl%xs(1)+spl%xs(2)+spl%xs(3)))
@@ -286,7 +419,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     not-a-knot boundary conditions.
 c-----------------------------------------------------------------------
-      CASE("not-a-knot","extrap")
+      CASE("not-a-knot")
          b=b*b
          a(0,1)=a(0,1)+(spl%xs(2)+spl%xs(0)-2*spl%xs(1))*b(1)
          a(1,1)=a(1,1)+(spl%xs(2)-spl%xs(1))*b(1)
@@ -317,7 +450,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_fac
 c-----------------------------------------------------------------------
-c     subprogram 5. cspline_eval.
+c     subprogram 7. cspline_eval.
 c     evaluates complex cubic spline function.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -355,11 +488,13 @@ c-----------------------------------------------------------------------
 c     find cubic spline interval.
 c-----------------------------------------------------------------------
       DO
-         IF(xx >= spl%xs(spl%ix).OR.spl%ix <= 0)EXIT
+         IF(spl%ix <= 0)EXIT
+         IF(xx >= spl%xs(spl%ix))EXIT
          spl%ix=spl%ix-1
       ENDDO
       DO
-         IF(xx < spl%xs(spl%ix+1).OR.spl%ix >= spl%mx-1)EXIT
+         IF(spl%ix >= spl%mx-1)EXIT
+         IF(xx < spl%xs(spl%ix+1))EXIT
          spl%ix=spl%ix+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -432,14 +567,13 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_eval
 c-----------------------------------------------------------------------
-c     subprogram 5a. cspline_eval_external_array.
+c     subprogram 8. cspline_eval_external.
 c     evaluates complex cubic splines with external arrays (parallel).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE cspline_eval_external_array(spl,x,s_ix,s_f,s_f1,s_f2,
-     $     s_f3)
+      SUBROUTINE cspline_eval_external(spl,x,s_ix,s_f,s_f1,s_f2,s_f3)
 
       TYPE(cspline_type), INTENT(IN) :: spl
       REAL(r8), INTENT(IN) :: x
@@ -449,10 +583,14 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: g,g1,g2,g3
 
       INTEGER, INTENT(INOUT) :: s_ix
-      COMPLEX(r8), DIMENSION(:), INTENT(OUT) :: s_f
+      COMPLEX(r8), DIMENSION(:), INTENT(INOUT) :: s_f
       COMPLEX(r8), DIMENSION(:),OPTIONAL,INTENT(OUT) :: s_f1,s_f2,s_f3
 
       REAL(r8) :: xpow,xfac
+c-----------------------------------------------------------------------
+c     zero out external array.
+c-----------------------------------------------------------------------
+      s_f = 0
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
@@ -476,11 +614,13 @@ c-----------------------------------------------------------------------
 c     find cubic spline interval.
 c-----------------------------------------------------------------------
       DO
-         IF(xx >= spl%xs(s_ix).OR.s_ix <= 0)EXIT
+         IF(s_ix <= 0)EXIT
+         IF(xx >= spl%xs(s_ix))EXIT
          s_ix=s_ix-1
       ENDDO
       DO
-         IF(xx < spl%xs(s_ix+1).OR.s_ix >= spl%mx-1)EXIT
+         IF(s_ix >= spl%mx-1)EXIT
+         IF(xx < spl%xs(s_ix+1))EXIT
          s_ix=s_ix+1
       ENDDO
 c-----------------------------------------------------------------------
@@ -552,9 +692,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE cspline_eval_external_array
+      END SUBROUTINE cspline_eval_external
 c-----------------------------------------------------------------------
-c     subprogram 6. cspline_all_eval.
+c     subprogram 9. cspline_all_eval.
 c     evaluates cubic spline function.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -647,7 +787,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_all_eval
 c-----------------------------------------------------------------------
-c     subprogram 7. cspline_write.
+c     subprogram 10. cspline_write.
 c     produces ascii and binary output.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -713,7 +853,6 @@ c-----------------------------------------------------------------------
             IF(bin)WRITE(iub)REAL(x,4),
      $           REAL(spl%f,4),REAL(AIMAG(spl%f),4)
          ENDDO
-         IF(out)WRITE(iua,'(1x)')
       ENDDO
 c-----------------------------------------------------------------------
 c     print final interpolated values.
@@ -737,7 +876,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_write
 c-----------------------------------------------------------------------
-c     subprogram 8. cspline_write_log
+c     subprogram 11. cspline_write_log
 c     produces ascii and binary output of logs.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -887,7 +1026,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_write_log
 c-----------------------------------------------------------------------
-c     subprogram 9. cspline_int.
+c     subprogram 12. cspline_int.
 c     integrates complex cubic splines.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -942,7 +1081,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_int
 c-----------------------------------------------------------------------
-c     subprogram 10. cspline_triluf.
+c     subprogram 13. cspline_triluf.
 c     performs tridiagonal LU factorization.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -983,7 +1122,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_triluf
 c-----------------------------------------------------------------------
-c     subprogram 11. cspline_trilus.
+c     subprogram 14. cspline_trilus.
 c     performs tridiagonal LU solution.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1019,7 +1158,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_trilus
 c-----------------------------------------------------------------------
-c     subprogram 12. cspline_sherman.
+c     subprogram 15. cspline_sherman.
 c     uses Sherman-Morrison formula to factor periodic matrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1047,7 +1186,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_sherman
 c-----------------------------------------------------------------------
-c     subprogram 13. cspline_morrison.
+c     subprogram 16. cspline_morrison.
 c     uses Sherman-Morrison formula to solve periodic matrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1074,6 +1213,85 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE cspline_morrison
+c-----------------------------------------------------------------------
+c     subprogram 17. cspline_thomas.
+c     thomas method to solve tri-diagnol (complex) matrix
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_thomas(l,d,u,b,n,m)
+
+      INTEGER, INTENT(IN):: n,m
+      REAL(r8), DIMENSION(n), INTENT(INOUT):: d
+      REAL(r8), DIMENSION(n-1), INTENT(INOUT):: l,u
+      COMPLEX(r8), DIMENSION(n,m), INTENT(INOUT):: b
+      INTEGER:: i
+c-----------------------------------------------------------------------
+c     calculate tri-diagno matrix
+c     l=[A(1,2),A(2,3),...,A(n-1,n)];
+c     d=[A(1,1),A(2,2),...,A(n,n)];
+c     u=[A(2,1),A(3,2),...,A(n,n-1)];
+c     b is n row m column matrix
+c-----------------------------------------------------------------------
+      DO i = 2, n
+         l(i-1) = l(i-1)/d(i-1)
+         d(i) = d(i) - u(i-1) * l(i-1)
+         b(i,:) = b(i,:) - b(i-1,:) * l(i-1)
+      ENDDO
+
+      b(n,:) = b(n,:) / d(n);
+      DO i = n-1, 1, -1
+         b(i,:) = (b(i,:) - u(i) * b(i+1,:)) / d(i);
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_thomas
+c-----------------------------------------------------------------------
+c     subprogram 18. cspline_get_yp.
+c     get yi' with four points for spline boundary condtion.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE cspline_get_yp(x,y,xi,yip,nqty)
+      INTEGER, INTENT(IN) :: nqty
+      INTEGER :: n,nrhs,lda,info,ldb,i
+      INTEGER, DIMENSION(4) :: ipiv
+      REAL(r8) :: dx
+      REAL(r8), INTENT(IN) :: xi
+      COMPLEX(r8), DIMENSION(nqty),INTENT(OUT) :: yip
+      REAL(r8), DIMENSION(4), INTENT(IN) :: x
+      COMPLEX(r8), DIMENSION(4,nqty), INTENT(IN) :: y
+      COMPLEX(r8), DIMENSION(4,nqty) :: b
+      COMPLEX(r8), DIMENSION(4,4) :: a
+      n=4
+      nrhs=nqty
+      lda=N
+      ldb=N
+      a=0
+      b=0
+
+      a(1,4)=1
+      b(1,:)=y(1,:)
+      DO i=2,n
+         dx=x(i)-x(1)
+         a(i,1)=dx*dx*dx
+         a(i,2)=dx*dx
+         a(i,3)=dx
+         a(i,4)=1
+         b(i,:)=y(i,:)
+      ENDDO
+      CALL zgesv(n,nrhs,a,lda,ipiv,b,ldb,info)
+      dx=xi-x(1)
+      yip=(3*b(1,:)*dx+2*b(2,:))*dx+b(3,:)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE cspline_get_yp
 c-----------------------------------------------------------------------
 c     subprogram 14. cspline_copy.
 c     copies one cspline_type to another.
