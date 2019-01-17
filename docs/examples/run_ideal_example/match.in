@@ -3,7 +3,7 @@
 	full=f
 
 	ideal_flag=t
-	contour_flag=t
+	contour_flag=f
 
 	res_flag=f
 	ff0=1e6

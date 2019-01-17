@@ -478,8 +478,13 @@ c-----------------------------------------------------------------------
          IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
       ENDDO
       IF (singcoup_flag) THEN
-         CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
-     $        power_bpout,power_bout,power_rcout,tmag_out)
+         IF (msing==0) THEN
+            PRINT *,"WARNING: no rationals for singcoup_flag"
+            singcoup_flag = .FALSE.
+         ELSE         
+            CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
+     $           power_bpout,power_bout,power_rcout,tmag_out)
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     perturbed equilibria with a given equilibrium and external field.
