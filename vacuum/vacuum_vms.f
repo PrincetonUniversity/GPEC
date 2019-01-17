@@ -76,6 +76,11 @@ c-----------------------------------------------------------------------
 c     subprogram 6. zop.
 c-----------------------------------------------------------------------
       subroutine zop(ioc,name,nsize,idisk,icode,ilab)
+c He apparently wants to control the writes directly.
+c VMS Fortran lets you do this, but it's a real kludge.
+c Since his reads and writes all pretend to be real*8
+c I open the file for direct access with 8byte records
+c (recl is in units of 4bytes)
       implicit real*8 (a-h,o-z)
       character*(8) name
       open(unit=ioc,file=name,
@@ -104,7 +109,9 @@ c-----------------------------------------------------------------------
 
       ncurr = 0
       noffsets = nadres * nbytes - ncurr
-
+c Now do the writes one 8 byte record at a time.
+c Probably adds a lot of overhead to the file in RMS.
+c I hope he doesn't need compatibility
       do i=1,nwords
          write(iocs,rec=noffsets,iostat=ierr) a(i)
          noffsets=noffsets+1
@@ -126,7 +133,7 @@ c-----------------------------------------------------------------------
 
       ncurr = 0
       noffsets = nadres * nbytes - ncurr
-
+c read the same way it's written, one 8 byte record at a time.
       do i=1,nwords
          read(ioc,rec=noffsets,iostat=ierr) a(i)
          noffsets=noffsets+1

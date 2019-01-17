@@ -1,14 +1,15 @@
 # This is the makefile for VACUUM.
 
 FFLAGS = -O3 -qopenmp -xHost #-qopt-zmm-usage=high #-ipo
-F90 = ifort $(FFLAGS)
+
+F90 = $(FC) $(FFLAGS)
 
 .f.o: 
 	$(F90) -c $*.f
 
 OBJS = \
 	bzio.o \
-        aleg_new.o \
+    aleg_new.o \
 	vacuum_global.o \
 	vacuum_io.o \
 	vacuum_ma.o \
@@ -31,4 +32,4 @@ vacuum_ut.o: vacuum_global.o
 vacuum_vac.o: vacuum_global.o 
 
 clean:
-	rm -f *.o *.mod *~
+	rm -f *.o *.mod

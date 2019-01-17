@@ -10,9 +10,9 @@ c     2. cardmo
 c     3. dskmd1
 c     4. readahg
 c     5. readvacin
-c     6. mdskrd0
-c     7. mdskrd1
-c     8. adjustm
+c     6. readvacin5
+c     7. adjustm
+c     8. setahgdir
 c-----------------------------------------------------------------------
 c     subprogram 1. inglo.
 c     read data from inadjv.
@@ -34,6 +34,7 @@ c-----------------------------------------------------------------------
          return
       endif
       if ( ldcon .eq. 1 ) return
+      if ( lgpec .eq. 1 ) return
       if ( lrgato .eq. 1 ) return
       if ( lzio .eq. 1 ) then
          call shellb
@@ -57,9 +58,8 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
 
-      character(8) :: under="--------"
-c$$$      real*8 under
-c$$$      data under / "--------" /
+      character(8) under
+      data under / "--------" /
       namelist / modes  / mfel,m,mth,n,mdiv,lsymz,lfunin,xiin,
      .     leqarcw, lpest1, lnova, ladj, ldcon, lgato, lrgato, lspark, 
      $     ismth, lzio, mp0,mp1
@@ -67,16 +67,13 @@ c$$$      data under / "--------" /
      $     wall, lkplt
       namelist / vacdat / ishape,aw,bw,cw,dw,tw,nsing,epsq,noutv,delg,
      .     idgt, idot, delfac, idsk, cn0
-      namelist / diagns / lkdis, ieig, iloop, xloop, zloop,
+      namelist / diagns / lkdis, ieig, iloop,
      $     nloop,nloopr, 
      .     lpsub, nphil, nphse, mx, mz, nph, xofsl,
-     $     aloop, bloop, dloop, rloop, ntloop, deloop
+     $     aloop, bloop, dloop, rloop, ntloop, deloop,
+     $     nxlpin,nzlpin,epslp,xlpmin,xlpmax,zlpmin,zlpmax,linterior
       namelist / shape  / ipshp, xpl, apl,bpl, dpl,  a, b, r,
      $     abulg, bbulg, tbulg, qain
-c$$$      namelist / sprk / nminus, nplus, mphi, lwrt11,civ,
-c$$$     $     sp2sgn1, sp2sgn2, sp2sgn3, sp2sgn4, sp2sgn5,
-c$$$     $     sp3sgn1, sp3sgn2, sp3sgn3, sp3sgn4, sp3sgn5,
-c$$$     $     lff, ff, fv
       namelist / timer / verbose_timer_output
 c-----------------------------------------------------------------------
 c     formats.
@@ -98,19 +95,17 @@ c-----------------------------------------------------------------------
       write ( outmod, 9001 )
       rsave  = r
       write ( outmod,9002 )
+      rewind inmode ! make robust to namelists with no title line
       read(inmode,modes)
       read(inmode,debugs)
       read(inmode,vacdat)
       read(inmode,shape)
       read(inmode,diagns)
-      read(inmode,timer)
-c      read(inmode,sprk)
       write(outmod,modes)
       write(outmod,debugs)
       write(outmod,vacdat)
       write(outmod,shape)
       write(outmod,diagns)
-c      write(outmod,sprk)
 c-----------------------------------------------------------------------
 c     subsidiary computations.
 c-----------------------------------------------------------------------
@@ -163,7 +158,7 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
 
-      dimension vecin(ntsin), xigr(ntsin), xigi(ntsin)
+      dimension vecin(ntsin), xigr_(ntsin), xigi_(ntsin)
       dimension zerov(nths), thgr(nths)
 c-----------------------------------------------------------------------
 c     format statements.
@@ -176,6 +171,8 @@ c-----------------------------------------------------------------------
  605  format ( 10e13.5 )
  702  format (/, 'mthin, lmin,lmax, ndcon, ga1, fa1, qa1 = ',/,
      $     4i5, 1p3e13.5, / )
+ 5702 format (/, 'mthin, lmin,lmax, n, qa1 = ',/,
+     $        3i5, 2e13.5, / )
  8011 format ( 5i4, 1p5e14.6 )
  8021 format ( 1p10e14.6 )
  9600 format ( /, 1x, " mp1, qa1, fa1, ga1 = ", a,1p3e12.5,/ )
@@ -207,13 +204,13 @@ c-----------------------------------------------------------------------
          lzio = 0
          dx0 = 0.5
          call readvacin ( mfel,rgato,ndum2,ngato,qa1,xinf,zinf,
-     $        delta, vecin, xigr,xigi, mth,mth1,mth2, ndfel,dx0,
+     $        delta, vecin, xigr_,xigi_, mth,mth1,mth2, ndfel,dx0,
      $        ieig, outmod, iotty )
-         call wrtout ( mfel, xigr, "xigr", 1, mfel )
+         call wrtout ( mfel, xigr_, "xigr", 1, mfel )
          l11 = lmin(1)
          l22 = lmax(1)
-         call fanal ( xigr, mfel, xirc, xirs, l11,l22, pye,-0.5_8 )
-         call fanal ( xigi, mfel, xiic, xiis, l11,l22, pye,-0.5_8 )
+         call fanal ( xigr_, mfel, xirc, xirs, l11,l22, pye,-0.5_8 )
+         call fanal ( xigi_, mfel, xiic, xiis, l11,l22, pye,-0.5_8 )
          llnn = l22 - l11 + 1
          call vecwrt ( llnn, xirc, "xirc(l)", 1, llnn, outmod,0 )
          call vecwrt ( llnn, xirs, "xirs(l)", 1, llnn, outmod,0 )
@@ -269,13 +266,35 @@ c     dcon inputs.
 c-----------------------------------------------------------------------
       if ( ldcon .eq. 1 ) then
          lzio = 1
-         call readahg ( mthin,lmin(1),lmax(1),ndcon,qa1,xinf,zinf,
-     $        delta, vecin, mth )
+         call readahg ( ahgdir, mthin,lmin(1),lmax(1),ndcon,qa1,xinf,
+     $        zinf, delta, vecin, mth )
          mthin1 = mthin + 1
          mthin2 = mthin1 + 1
          n = ndcon
          write ( iotty, 702 ) mthin,lmin(1),lmax(1),ndcon, ga1,fa1,qa1
          write ( outmod,702 ) mthin,lmin(1),lmax(1),ndcon, ga1,fa1,qa1
+         go to 1111
+      endif
+c-----------------------------------------------------------------------
+c     gpec inputs.
+c-----------------------------------------------------------------------
+      if ( lgpec .eq. 1 ) then
+         lzio = 1
+         ieig = 0
+c
+         dx0 = 0.0
+         dx1 = 0.0
+
+         call readvacin5 ( nxlpin,nzlpin, xlpmin,xlpmax, zlpmin,zlpmax,
+     $        mthin, lmin(1),lmax(1),ntor, qa1,
+     $        xinf,zinf,delta, vecin, bnlr,bnli,
+     $        mth,dx0,dx1, ieig)
+
+         mthin1 = mthin + 1
+         mthin2 = mthin1 + 1
+         n = ntor
+         write ( iotty, 5702 ) mthin,lmin(1),lmax(1),n, qa1
+         write ( outmod,5702 ) mthin,lmin(1),lmax(1),n, qa1
          go to 1111
       endif
 c-----------------------------------------------------------------------
@@ -296,8 +315,6 @@ c-----------------------------------------------------------------------
          r6     = r4 * r2
          mthin1 = mthin + 1
          mthin2 = mthin + 2
-      else
-c         if ( lcdf .eq. 1 ) call mdskrd0
       endif
 c-----------------------------------------------------------------------
 c     more computations.
@@ -389,8 +406,6 @@ c-----------------------------------------------------------------------
          endif
          call zcl ( outmap1, 999 )
          call zcl ( iomode, 999 )
-      else
-c         if ( lcdf .eq. 1 ) call mdskrd1
       endif
 c-----------------------------------------------------------------------
 c     more computations.
@@ -417,6 +432,7 @@ c-----------------------------------------------------------------------
          zerov(i) = 0.0
          thgr(i) = (i-1)*dth
       enddo
+
       call arrays
 c-----------------------------------------------------------------------
 c     termination.
@@ -431,15 +447,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine readahg ( mthin,lmin,lmax,ndcon,qa1,xinf,zinf,
-     $     delta, vecin, mth )
+      subroutine readahg ( ahgdir, mthin,lmin,lmax,ndcon,qa1,xinf,
+     $     zinf, delta, vecin, mth )
       implicit real*8 (a-h,o-z)
+      character(128) ahgdir
       integer mthin,lmin,lmax,ndcon,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*)
 c-----------------------------------------------------------------------
 c     read data.
 c-----------------------------------------------------------------------
-      open(unit=3,file='ahg2msc.out')
+      open(unit=3,file=trim(ahgdir)//'/ahg2msc.out')
       read(3,*)mthin
       read(3,*)lmin
       read(3,*)lmax
@@ -517,425 +534,80 @@ c-----------------------------------------------------------------------
       close(unit=3)
  2    return
       end
-c$$$c-----------------------------------------------------------------------
-c$$$c     subprogram 6. mdskrd0.
-c$$$c     read netcdf data.
-c$$$c-----------------------------------------------------------------------
-c$$$c-----------------------------------------------------------------------
-c$$$c     declarations.
-c$$$c-----------------------------------------------------------------------
-c$$$      subroutine mdskrd0
-c$$$      USE vglobal_mod
-c$$$      implicit real*8 (a-h,o-z)
-c$$$
-c$$$      include 'netcdf.inc'
-c$$$      character*72 datype(6)
-c$$$c-----------------------------------------------------------------------
-c$$$c     format statements.
-c$$$c-----------------------------------------------------------------------
-c$$$ 1001 format( /,3x, "Id #", 2x, "Variable", 3x, "V-Type", 1x,
-c$$$     $     "Attributes" 1x, "Dimensions" )
-c$$$ 1002 format( 2x, i5, 2x, a10, i5,4x, i5,3x, 5i5 ) 
-c$$$ 9000 format(/, 1x, a,/, 1x, " jobid = ", a )
-c$$$ 2002 format(/,'           VACUUM on ', A10, ' at ', a10,/,
-c$$$     $     '          MAPPING on ', a10, ' at ', a10,/,
-c$$$     $     ' From EQUILIBRIUM on ', a10, ' at ', a10,
-c$$$     $     ' to dsk: ', a ,/,
-c$$$     $     ' with NOSURF = ',i3,' MTHIN = ',i4,/,
-c$$$     $     '      MJACX, NJACG, LJACB =',3i2,/,
-c$$$     $     ' Jacobian =  X ** ',i1,
-c$$$     $     '/ ( Grad-PSI ** ',i1,' * B ** ',i1,')',/ )
-c$$$ 3066 format(/," betap,betat,beta=",f6.2,f8.2,"%   ",f8.2,"% ")
-c$$$ 3067 format(" betap,betat,beta(old def.)=",f6.2,f8.2,"%   ",f8.2,"% ")
-c$$$ 3068 format(" beta star =",f8.2,"%")
-c$$$ 3777 format(" tor field=  ",f6.2,"(T)     IP=",f7.3,"(MA) ",/,
-c$$$     1     " I(MA)/A(m)B(T)= ",f6.2,"   troyon factor",f6.2,/,
-c$$$     2     " q(axis)  =  ",f6.2,"        q(edge)",f6.2)
-c$$$ 3778 format(" qstar    =  ",f6.2,"  qstar/q(1) = ",f6.2)
-c$$$ 3779 format(" bt2dv= ",e12.4," pdv= ",e12.4," dv= ",e12.4)
-c$$$ 3780 format(" li(GA)= ",e12.4," dlp= ",e12.4)
-c$$$ 9600 format( /, 1x, " qa1, fa1, ga1 = ", 1p3e12.5,/ )
-c$$$ 9500 format( /, 1x, "r, upsiln, xma  = ", 1p3e12.5,/ )
-c$$$c-----------------------------------------------------------------------
-c$$$c     define names for data types.
-c$$$c-----------------------------------------------------------------------
-c$$$      datype(1) = "byte:      Eight-bit data. For saving space."
-c$$$      datype(2) = "character: Synonymous with byte. ASCII characters."
-c$$$      datype(3) = "short:     16-bit integers."
-c$$$      datype(4) = "long:      32-bit integers."
-c$$$      datype(5) = "float:     32-bit IEEE floating-point."
-c$$$      datype(6) = "double:    64-bit IEEE floating-point."
-c$$$c-----------------------------------------------------------------------
-c$$$c     computations.
-c$$$c-----------------------------------------------------------------------
-c$$$      call writg1 ( "Opening a NetCDF File (5.3).", seps, 3, nout ) 
-c$$$      cdfid = ncopn ( cdfin, ncnowrit, rcode )
-c$$$      call nwopn ( cdfid, cdfin, "ncnowrit", rcode, nout )
-c$$$      call writg1 ( "Inquiring about a NetCDF File (5.7).",
-c$$$     $     seps, 3, nout )
-c$$$      call ncinq ( cdfid, ndims, nvars, ngatts, recid, rcode )
-c$$$      call nwinq ( cdfid, ndims, nvars, ngatts, recid, rcode, nout )
-c$$$      call writg1 ( "Dimensions' Information (6.3).", seps, 1, nout )
-c$$$      do idims = 1, ndims
-c$$$         call ncdinq ( cdfid, idims, vname, dimsiz(idims), rcode )
-c$$$         call nwdinq ( cdfid, idims, vname, dimsiz(idims), rcode,
-c$$$     $        nout )
-c$$$      enddo
-c$$$      call writg1 ( "The Record Dimension info., if any.. ",
-c$$$     $     seps, 3, nout )
-c$$$      if ( recid .ne. -1 ) then
-c$$$         call ncdinq ( cdfid, recid, recnam, nrecs, rcode )
-c$$$         call nwdinq ( cdfid, recid, recnam, nrecs, rcode, nout )
-c$$$      endif
-c$$$      if ( check1 ) then
-c$$$         call writg1 ( "The Global Atrtributes (8.3): ", seps, 3, nout )
-c$$$         do igatts = 1, ngatts
-c$$$            call ncanam ( cdfid, ncglobal, igatts, attnam, rcode )
-c$$$            call ncainq ( cdfid, ncglobal, attnam, attype, attlen,
-c$$$     $           rcode )
-c$$$            if ( attype .eq. 2 ) then
-c$$$               call ncagtc ( cdfid, ncglobal, attnam, astrng, maxa1,
-c$$$     $              rcode )
-c$$$               call nwagtc ( cdfid, ncglobal, attnam, astrng, attlen,
-c$$$     $              maxa1, rcode, nout )
-c$$$            else
-c$$$               call ncagt ( cdfid, ncglobal, attnam, attval, rcode )
-c$$$               call nwagt ( cdfid, ncglobal, attnam, attval, attlen,
-c$$$     $              rcode, nout )
-c$$$            endif
-c$$$            call writg1 ( ".............................", seps, 0,
-c$$$     $           nout )
-c$$$         enddo
-c$$$         call writg1 ( "Variable's Information (7.3): ", seps, 1, nout )
-c$$$         call writg1 ( "        Data Types:", seps, 1, nout )
-c$$$         write ( 6, '(/,3x,"No.",15x,"Type",/, (i4, 2x, a72) )' )
-c$$$     $        ( idat, datype(idat), idat = 1, 6 )
-c$$$         write ( outmod, '(/,3x,"No.",15x,"Type",/, (i4, 2x, a72) )' )
-c$$$     $        ( idat, datype(idat), idat = 1, 6 )
-c$$$      endif
-c$$$      do ivars  = 1, nvars
-c$$$         call ncvinq ( cdfid, ivars, vname, vtype, vn(ivars),
-c$$$     $        vdims, vnatt, rcode )
-c$$$         vrname(ivars) = vname
-c$$$         vrtype(ivars) = vtype
-c$$$         vrnat(ivars) = vnatt
-c$$$         if ( vn(ivars) .ne. 0 ) then
-c$$$            do ivn = 1, vn(ivars)
-c$$$               vvdims(ivars,ivn) = vdims(ivn)
-c$$$            enddo
-c$$$         endif
-c$$$      enddo
-c$$$      if ( check1 ) then
-c$$$         write ( 6, 1001 )
-c$$$         write ( outmod, 1001 )
-c$$$         do ivars = 1, nvars
-c$$$            write ( 6, 1002 ) ivars, vrname(ivars), vrtype(ivars),
-c$$$     $           vrnat(ivars),
-c$$$     $           ( dimsiz(vvdims(ivars,ivn)), ivn = 1, vn(ivars) )
-c$$$            write ( outmod, 1002 ) ivars, vrname(ivars), vrtype(ivars),
-c$$$     $           vrnat(ivars),
-c$$$     $           ( dimsiz(vvdims(ivars,ivn)), ivn = 1, vn(ivars) )
-c$$$         enddo
-c$$$      endif
-c$$$      call writg1 ( "Reading the Variables.", seps, 3, nout )
-c$$$      vid = ncvid ( cdfid, 'ctitle', rcode )
-c$$$      call nwvid ( cdfid, 'ctitle', vid, rcode, nout )
-c$$$      start(1) = 1
-c$$$      count(1) = dimsiz( vvdims(vid,1) )
-c$$$      nd = 1
-c$$$      length = maxc1
-c$$$      call ncvgtc ( cdfid, vid, start,count, ctitle, length,
-c$$$     $     rcode )
-c$$$      vid = ncvid ( cdfid, 'date0', rcode )
-c$$$      start(1) = 1
-c$$$      count(1) = dimsiz( vvdims(vid,1) )
-c$$$      nd = 1
-c$$$      length = maxct
-c$$$      call ncvgtc ( cdfid, vid, start,count, date0, length,
-c$$$     $     rcode )
-c$$$      vid = ncvid ( cdfid, 'time0', rcode )
-c$$$      start(1) = 1
-c$$$      count(1) = dimsiz( vvdims(vid,1) )
-c$$$      nd = 1
-c$$$      length = maxct
-c$$$      call ncvgtc ( cdfid, vid, start,count, time0, length,
-c$$$     $     rcode )
-c$$$      vid = ncvid ( cdfid, 'datem', rcode )
-c$$$      start(1) = 1
-c$$$      count(1) = dimsiz( vvdims(vid,1) )
-c$$$      nd = 1
-c$$$      length = maxct
-c$$$      call ncvgtc ( cdfid, vid, start,count, datem, length,
-c$$$     $     rcode )
-c$$$      vid = ncvid ( cdfid, 'timem', rcode )
-c$$$      start(1) = 1
-c$$$      count(1) = dimsiz( vvdims(vid,1) )
-c$$$      nd = 1
-c$$$      length = maxct
-c$$$      call ncvgtc ( cdfid, vid, start,count, timem, length,
-c$$$     $     rcode )
-c$$$      vid = ncvid ( cdfid, 'dskout', rcode )
-c$$$      start(1) = 1
-c$$$      count(1) = dimsiz( vvdims(vid,1) )
-c$$$      nd = 1
-c$$$      length = nccl3
-c$$$      call ncvgtc ( cdfid, vid, start,count, dskout, length,
-c$$$     $     rcode )
-c$$$      vid = ncvid ( cdfid, 'nx', rcode )
-c$$$      vindx(1) = 1
-c$$$      nd = vn(vid)
-c$$$      call ncvgt1 ( cdfid, vid, vindx, nx, rcode )
-c$$$      vid = ncvid ( cdfid, 'nz', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, nz, rcode )
-c$$$      vid = ncvid ( cdfid, 'nosurf', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, nosurf, rcode )
-c$$$      vid = ncvid ( cdfid, 'mth', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, mthin, rcode )
-c$$$      vid = ncvid ( cdfid, 'lpless', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, lpless, rcode )
-c$$$      vid = ncvid ( cdfid, 'alx', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, alx, rcode )
-c$$$      vid = ncvid ( cdfid, 'alz', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, alz, rcode )
-c$$$      vid = ncvid ( cdfid, 'xzpst', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, xzero, rcode )
-c$$$      vid = ncvid ( cdfid, 'xmag', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, xma, rcode )
-c$$$      vid = ncvid ( cdfid, 'rpst', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, r, rcode )
-c$$$      vid = ncvid ( cdfid, 'p0pst', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, p0, rcode )
-c$$$      vid = ncvid ( cdfid, 'gppst', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, gp0, rcode )
-c$$$      vid = ncvid ( cdfid, 'pminpst', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, psimin, rcode )
-c$$$      vid = ncvid ( cdfid, 'plimpst', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, psilim, rcode )
-c$$$      vid = ncvid ( cdfid, 'plspst', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, psipls, rcode )
-c$$$      vid = ncvid ( cdfid, 'betapst', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, betag, rcode )
-c$$$      vid = ncvid ( cdfid, 'betag', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, betap, rcode )
-c$$$      vid = ncvid ( cdfid, 'rjacps', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, rjacps, rcode )
-c$$$      if ( lpest1 ) then
-c$$$         vid = ncvid ( cdfid, 'upsiln', rcode )
-c$$$         call ncvgt1 ( cdfid, vid, vindx, upsiln, rcode )
-c$$$      endif
-c$$$      vid = ncvid ( cdfid, 'mjacx', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, mj, rcode )
-c$$$      vid = ncvid ( cdfid, 'njacg', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, nj, rcode )
-c$$$      vid = ncvid ( cdfid, 'ljacb', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, lj, rcode )
-c$$$      vid = ncvid ( cdfid, 'nzd1', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, nzd1map, rcode )
-c$$$      vid = ncvid ( cdfid, 'nzd2', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, nzd2map, rcode )
-c$$$      vid = ncvid ( cdfid, 'dth', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, dtmap, rcode )
-c$$$      vid = ncvid ( cdfid, 'dr', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, drmap, rcode )
-c$$$      vid = ncvid ( cdfid, 'pi', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, pimap, rcode )
-c$$$      vid = ncvid ( cdfid, 'xzero', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, xzeromap, rcode )
-c$$$      vid = ncvid ( cdfid, 'zmag', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, zma, rcode )
-c$$$      vid = ncvid ( cdfid, 'upsiln', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, upsiln, rcode )
-c$$$      vid = ncvid ( cdfid, 'betat', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, betat, rcode )
-c$$$      vid = ncvid ( cdfid, 'betap', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, betap, rcode )
-c$$$      vid = ncvid ( cdfid, 'ctroy', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, ctroy, rcode )
-c$$$      vid = ncvid ( cdfid, 'betatot', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, betatot, rcode )
-c$$$      vid = ncvid ( cdfid, 'betapo', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, betapo, rcode )
-c$$$      vid = ncvid ( cdfid, 'betato', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, betato, rcode )
-c$$$      vid = ncvid ( cdfid, 'betats', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, betats, rcode )
-c$$$      vid = ncvid ( cdfid, 'btor', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, btor, rcode )
-c$$$      vid = ncvid ( cdfid, 'aima', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, aima, rcode )
-c$$$      vid = ncvid ( cdfid, 'aioab', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, aioab, rcode )
-c$$$      vid = ncvid ( cdfid, 'bt2dv', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, bt2dv, rcode )
-c$$$      vid = ncvid ( cdfid, 'pdvamu0', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, pdvamu0, rcode )
-c$$$      vid = ncvid ( cdfid, 'dv', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, dv, rcode )
-c$$$      vid = ncvid ( cdfid, 'xliga', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, xliga, rcode )
-c$$$      vid = ncvid ( cdfid, 'dlp', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, dlp, rcode )
-c$$$      vid = ncvid ( cdfid, 'qstar', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, qstar, rcode )
-c$$$      vid = ncvid ( cdfid, 'qratio', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, vindx, qratio, rcode )
-c$$$      vid = ncvid ( cdfid, 'q', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, 1, q00, rcode )
-c$$$      vid = ncvid ( cdfid, 'p', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, 1, p01, rcode )
-c$$$      vid = ncvid ( cdfid, 'fb', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, 1, f0, rcode )
-c$$$      vid = ncvid ( cdfid, 'fb', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, nosurf, fa1, rcode )
-c$$$      vid = ncvid ( cdfid, 'g', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, 1, g0, rcode )
-c$$$      vid = ncvid ( cdfid, 'g', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, nosurf, ga1, rcode )
-c$$$      vid = ncvid ( cdfid, 'q', rcode )
-c$$$      call ncvgt1 ( cdfid, vid, nosurf, qa1, rcode )
-c$$$      q0 = q00
-c$$$      q1 = qa1
-c$$$      ljacb = lj
-c$$$      mjacx = mj
-c$$$      njacg = nj
-c$$$      write ( outmod, 9000 ) ctitle, jobid
-c$$$      write ( iotty,  9000 ) ctitle, jobid
-c$$$      write(outmod,2002) datev,timev, datem,timem, date0,time0,
-c$$$     $     dskout, nosurf, mthin,
-c$$$     $     mjacx, njacg, ljacb,
-c$$$     $     mjacx, njacg, ljacb
-c$$$      write( 6,2002) datev,timev, datem,timem, date0,time0,
-c$$$     $     dskout, nosurf, mthin,
-c$$$     $     mjacx, njacg, ljacb,
-c$$$     $     mjacx, njacg, ljacb
-c$$$      write(nout(2),3066) betap,betat,betatot
-c$$$      write(6,3066) betap,betat,betatot
-c$$$      write(outmod,3067) betapo,betato,betatot
-c$$$      write(6,3067) betapo,betato,betatot
-c$$$      write(outmod,3068) betats
-c$$$      write(6,3068) betats
-c$$$      write(outmod,3777) btor,aima,aioab,ctroy,q00,q1
-c$$$      write(6,3777) btor,aima,aioab,ctroy,q00,q1
-c$$$      write(outmod,3778) qstar,qratio
-c$$$      write(6,3778) qstar,qratio
-c$$$      write(outmod,3779) bt2dv,pdvamu0,dv
-c$$$      write(6,3779) bt2dv,pdvamu0,dv
-c$$$      write(outmod,3780) xliga,dlp
-c$$$      write(6,3780) xliga,dlp
-c$$$      write ( outmod,9600 ) qa1, fa1, ga1
-c$$$      write ( iotty, 9600 ) qa1, fa1, ga1
-c$$$      write ( outmod,9500 ) r, upsiln, xma
-c$$$      write ( iotty, 9500 ) r, upsiln, xma
-c$$$      mthin1 = mthin  + 1
-c$$$      mthin2 = mthin1 + 1
-c$$$      r2     = r * r
-c$$$      r4     = r2 * r2
-c$$$      r6     = r4 * r2
-c$$$c-----------------------------------------------------------------------
-c$$$c     termination.
-c$$$c-----------------------------------------------------------------------
-c$$$      return
-c$$$      end
-c$$$c-----------------------------------------------------------------------
-c$$$c     subprogram 7. mdskrd1.
-c$$$c     read netcdf data.
-c$$$c-----------------------------------------------------------------------
-c$$$c-----------------------------------------------------------------------
-c$$$c     declarations.
-c$$$c-----------------------------------------------------------------------
-c$$$      subroutine mdskrd1
-c$$$      USE vglobal_mod
-c$$$      implicit real*8 (a-h,o-z)
-c$$$
-c$$$      include 'netcdf.inc'
-c$$$      dimension vecin(ntsin)
-c$$$c-----------------------------------------------------------------------
-c$$$c     computations.
-c$$$c-----------------------------------------------------------------------
-c$$$      iref = 0
-c$$$      mthin1 = mthin + 1
-c$$$      mthin2 = mthin1 + 1
-c$$$      vid = ncvid ( cdfid, 'x', rcode )
-c$$$      nd = 2
-c$$$      start(1) = 1
-c$$$      start(2) = nosurf
-c$$$      count(1) = dimsiz ( vvdims(vid,1) )
-c$$$      count(2) = 1
-c$$$      call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$      call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $     rcode, nout0 )
-c$$$      call trans ( vecin,mthin, xinf,mth )
-c$$$      vid = ncvid ( cdfid, 'z', rcode )
-c$$$      call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$      call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $     rcode, nout0 )
-c$$$      call trans ( vecin,mthin, zinf,mth )
-c$$$      vid = ncvid ( cdfid, 'grpssq', rcode )
-c$$$      call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$      call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $     rcode, nout0 )
-c$$$      call trans ( vecin,mthin, grpssq,mth )
-c$$$      if ( .not. lpest1 ) then
-c$$$         vid = ncvid ( cdfid, 'xjacob', rcode )
-c$$$         call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$         call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $        rcode, nout0 )
-c$$$         call trans ( vecin,mthin, xjacob,mth )
-c$$$         vid = ncvid ( cdfid, 'delta', rcode )
-c$$$         call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$         call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $        rcode, nout0 )
-c$$$         call trans ( vecin,mthin, delta,mth )
-c$$$      endif
-c$$$      if ( lpest1 ) then
-c$$$         do i = 1, mth2
-c$$$            xjacob(i) = upsiln * xinf(i)**2 / ( twopi*r )
-c$$$         enddo
-c$$$      endif
-c$$$      if ( lnova ) then
-c$$$         vid = ncvid ( cdfid, 'xsq', rcode )
-c$$$         call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$         call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $        rcode, nout0 )
-c$$$         call trans ( vecin,mthin, xsq,mth )
-c$$$         vid = ncvid ( cdfid, 'gpsdth', rcode )
-c$$$         call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$         call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $        rcode, nout0 )
-c$$$         call trans ( vecin,mthin, gpsdth,mth )
-c$$$         vid = ncvid ( cdfid, 'xsqdth', rcode )
-c$$$         call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$         call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $        rcode, nout0 )
-c$$$         call trans ( vecin,mthin, xsqdth,mth )
-c$$$         vid = ncvid ( cdfid, 'xjacob', rcode )
-c$$$         call ncvgt ( cdfid, vid, start, count, vecin, rcode )
-c$$$         call nwvgt ( cdfid, vid, start,count,nd, vecin,vals, nd1,nd2,
-c$$$     $        rcode, nout0 )
-c$$$         call trans ( vecin,mthin, xjacob,mth )
-c$$$         mthd2p1=mth/2+1
-c$$$         do i = 1, mthd2p1
-c$$$            zbsq = ( grpssq(i) + r2*ga1 ) / xsq(i)
-c$$$            zdbsqb = ( gpsdth(i) - zbsq*xsqdth(i) ) / (xsq(i)*zbsq )
-c$$$            xsdtxs(i) = xsqdth(i)/xsq(i)
-c$$$            gpdtgp(i) = gpsdth(i)/grpssq(i)
-c$$$            xjdtxj(i) = 0.5 * ( mj*xsdtxs(i)-nj*gpdtgp(i) - lj*zdbsqb )
-c$$$            xjacob(mth2-i)=xjacob(i)
-c$$$            xjdtxj(mth2-i)=-xjdtxj(i)
-c$$$            delta(mth2-i)=-delta(i)
-c$$$         enddo
-c$$$         xjdtxj(1)=0.
-c$$$         xjdtxj(mthd2p1)=0.
-c$$$         delta(1)=0.
-c$$$         delta(mthd2p1)=0.
-c$$$      endif
-c$$$c-----------------------------------------------------------------------
-c$$$c     termination.
-c$$$c-----------------------------------------------------------------------
-c$$$      return
-c$$$      end
 c-----------------------------------------------------------------------
-c     subprogram 8. adjustm.
+c     subprogram 6. readvacin5.
+c     read vacin5 input.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      subroutine readvacin5 ( nlx,nlz, xll,xlr, zlb,zlt,
+     $     mthin, lmin,lmax,ntor, qa1,
+     $     xinf,zinf, delta, vecin, bnlr,bnli,
+     $     mth, dx0,dx1, ireig5)
+c-----------------------------------------------------------------------
+c     read input.
+c-----------------------------------------------------------------------
+      implicit real*8 (a-h,o-z)
+      INTEGER mthin, lmin, lmax, ntor, ith,jl, jmax1
+      DIMENSION xinf(*),zinf(*),delta(*), vecin(*),bnlr(*), bnli(*)
+c-----------------------------------------------------------------------
+c     read scalars.
+c-----------------------------------------------------------------------
+      OPEN ( UNIT=7, FILE='vacin5' )
+      READ(7,'(/)')
+      READ(7,*) nlx
+      READ(7,*) nlz
+      READ(7,*) xll
+      READ(7,*) xlr
+      READ(7,*) zlb
+      READ(7,*) zlt
+      READ(7,*) mthin
+      READ(7,*) lmin
+      READ(7,*) lmax
+      READ(7,*) ntor
+      READ(7,*) qa1
+
+      mthin1 = mthin + 1
+      jmax1 = lmax - lmin + 1
+c-----------------------------------------------------------------------
+c     read arrays.
+c-----------------------------------------------------------------------
+
+      READ(7,'(/)')
+      READ(7,*)(vecin(ith),ith=1,mthin1)
+      READ(7,'(/)')
+      READ(7,*)(vecin(ith),ith=1,mthin1)
+      READ(7,'(/)')
+      READ(7,*)(vecin(ith),ith=1,mthin1)
+      CALL transdxx ( vecin,mthin, xinf,mth, dx0,dx1)
+      READ(7,'(/)')
+      READ(7,*)(vecin(ith),ith=1,mthin1)
+      CALL transdxx ( vecin,mthin, zinf,mth, dx0,dx1)
+
+      !Xwall
+      ! READ(7,*)(vecin(ith),ith=1,mthin1)
+      ! CALL transdxx ( vecin,mthin, xwin,mth, dx0,dx1 )
+
+      !Zwall
+      ! READ(7,*)(vecin(ith),ith=1,mthin1)
+      ! CALL transdxx ( vecin,mthin, zwin,mth, dx0,dx1 )
+
+      READ(7,'(/)')
+      READ(7,*)(vecin(ith),ith=1,mthin1)
+      CALL transdxx ( vecin,mthin, delta,mth, dx0,dx1)
+      READ(7,'(/)')
+      READ(7,*)(bnlr(jl),jl=1,jmax1)
+      READ(7,'(/)')
+      READ(7,*)(bnli(jl),jl=1,jmax1)
+      CLOSE ( UNIT=7 )
+c-----------------------------------------------------------------------
+c     terminate routine.
+c-----------------------------------------------------------------------
+      RETURN
+      END
+c-----------------------------------------------------------------------
+c     subprogram 7. adjustm.
 c     read netcdf data.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -956,17 +628,29 @@ c-----------------------------------------------------------------------
       ndfel = ( (ndfel+1)/2 ) * 2
       mth = ndfel * mfel
       if ( mth00 .ne. mth ) then
-         write ( nout1,
-     $        '(/,1x,"****** WARNING: mth00 .ne. mth ******",/ )' )
-         write ( nout2,
-     $        '(/,1x,"****** WARNING: mth00 .ne. mth ******",/ )' )
          mth1 = mth + 1
          mth2 = mth1 + 1
       endif
-      write ( nout1, '(/,5x, "mth00, mth, mfel, ndfel = ", 4i5 )' )
-     $     mth00, mth, mfel, ndfel
-      write ( nout2, '(/,5x, "mth00, mth, mfel, ndfel = ", 4i5 )' )
-     $     mth00, mth, mfel, ndfel
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      return
+      end
+
+c-----------------------------------------------------------------------
+c     subprogram 7. setahgdir.
+c     read netcdf data.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      subroutine setahgdir ( directory )
+      use vglobal_mod
+      character(len=*), intent(in) :: directory
+c-----------------------------------------------------------------------
+c     computations.
+c-----------------------------------------------------------------------
+      ahgdir = directory
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------

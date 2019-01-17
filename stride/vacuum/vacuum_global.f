@@ -26,6 +26,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(8) :: jobid
       CHARACTER(60) :: seps
+      CHARACTER(128) :: ahgdir = "."
       CHARACTER(nccl3) :: dskout,cdfin,cdfout
       CHARACTER(maxc1) :: ctitle
       CHARACTER(maxa1) :: astrng
@@ -40,16 +41,17 @@ c-----------------------------------------------------------------------
      $     nj,nosurf,nunst,nx,nz,nzd1,nzd2,idgt,idot,ieig,ieps,ishape,
      $     ismth,lff,lmax1,lpsub,lwrt11,mphi,mx,mz,nloop,nloopr,nminus,
      $     noutv,nph,nphil,nphse,nplus,nsing,ntloop,cdfid,nd1,nd2,nd12,
-     $     neqv2,neqv3,neqv4,neqv5,nfmsq
+     $     neqv2,neqv3,neqv4,neqv5,nfmsq,ndimlp,
+     $     nxlpin,nzlpin,lgpec,linterior,ixx,ixn,izx
 
       INTEGER, DIMENSION(3) :: nout,nout0
       INTEGER, DIMENSION(5) :: nw
       INTEGER, DIMENSION(20) :: ntitle
-      INTEGER, DIMENSION(:), POINTER :: lmax,lmin
+      INTEGER, DIMENSION(:), POINTER :: lmax,lmin,lfm
 
       REAL(8) :: alx,alz,betag,betai,betap,betav,bit,ctroy,dat,date0,
      $     datem,datev,datime,dth,dthin,eqdr,eqdt,eqpi,fa1,five,
-     $     four,ga1,gp0,half,one,p0,psilim,psimin,psipls,pye,qa1,r
+     $     four,ga1,gp0,half,one,p0,psilim,psimin,psipls,pye,qa1,
      $     r2,r4,r6,rgato,seven,three,time0,timem,timev,two,twopi,
      $     twopi2,upsiln,x000,xma,xzero,z47,z48,z49,z54,z55,z56,z57,
      $     zero,zma,n,no2pi,no2pi2,aval0
@@ -57,18 +59,21 @@ c-----------------------------------------------------------------------
      $     civ,cn0,cw,delfac,delg,deloop,delx,delz,dloop,dpl,dw,epsq,
      $     ff,qain,rloop,sp2sgn1,sp2sgn2,sp2sgn3,sp2sgn4,sp2sgn5,
      $     sp3sgn1,sp3sgn2,sp3sgn3,sp3sgn4,sp3sgn5,tbulg,tw,xofsl,xpl,
-     $     xs,xt,xtp,zs,zt,ztp
+     $     xs,xt,xtp,zs,zt,ztp,
+     $     epslp,xlpmin,xlpmax,zlpmin,zlpmax,plrad,xmaj,zmxp
+
+      REAL(8) :: kernelsign
       REAL(8), DIMENSION(numvar) :: vn,vrnat,vrtype
       REAL(8), DIMENSION(numvar,ndima) :: vvdims
       REAL(8), DIMENSION(ndima) :: count,start,vdims,vindx
-      REAL(8), DIMENSION(ndim0):: dimsiz
+      REAL(8), DIMENSION(ndim0) :: dimsiz
 
       REAL(8), DIMENSION(9) :: xiin=(/0,0,0,0,0,0,0,1,0/)
       REAL(8), DIMENSION(100) :: eigval
-      REAL(8), DIMENSION(101) :: xloop,zloop
       REAL(8), DIMENSION(:), POINTER :: xirc,xirs,xiic,xiis,
      $     grpssq,xsq,gpsdth,xsqdth,xjacob,delta,xjdtxj,xsdtxs,
-     $     gpdtgp,slngth,xinf,zinf,xplap,zplap,fv,val0
+     $     gpdtgp,slngth,xinf,zinf,xplap,zplap,fv,val0,
+     $     xobp,zobp,xloop,zloop
       REAL(8), DIMENSION(:,:), POINTER :: vacmat,vacmatu,vacmtiu,vals
 
       REAL(8), DIMENSION(:), POINTER :: xwal,zwal,xwalp,zwalp,cnqd,snqd
@@ -82,7 +87,8 @@ c-----------------------------------------------------------------------
       REAL(8), DIMENSION(:,:), POINTER :: grwp,grri,chiwc,chiws
 
       REAL(8), DIMENSION(:), POINTER :: bxpwtr,bxpwti,bzpwtr,bzpwti,
-     $     bnpwtr,bnpwti
+     $     bnpwtr,bnpwti,bnlr,bnli,xilr,xili,xigr,xigi,bnkr,bnki,
+     $     bthpr,bthpi,gpsjp,bnpptr,bnppti,chipr,chipi
       REAL(8), DIMENSION(:,:), POINTER :: bxpwr,bxpwi,bzpwr,bzpwi,
      $     bnpwr,bnpwi
 
@@ -145,6 +151,11 @@ c-----------------------------------------------------------------------
      $     bzpwi(nths,nfm),bnpwr(nths,nfm),bnpwi(nths,nfm))
       ALLOCATE(bxpwtr(nths),bxpwti(nths),bzpwtr(nths),bzpwti(nths),
      $     bnpwtr(nths),bnpwti(nths))
+      ALLOCATE(xilr(nths),xili(nths),xigr(nths),xigi(nths),
+     $     bnkr(nths),bnki(nths),bthpr(nths),bthpi(nths),
+     $     gpsjp(nths),bnpptr(nths),bnppti(nths),
+     $     chipr(nths),chipi(nths))
+      ALLOCATE(lfm(nfm),bnlr(nfm),bnli(nfm))
 c-----------------------------------------------------------------------
 c     zero arrays.
 c-----------------------------------------------------------------------
@@ -217,6 +228,8 @@ c-----------------------------------------------------------------------
       bzpwti=0
       bnpwtr=0
       bnpwti=0
+      bnlr=0
+      bnli=0
 c-----------------------------------------------------------------------
 c     set pointers.
 c-----------------------------------------------------------------------
@@ -238,7 +251,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deallocate arrays.
 c-----------------------------------------------------------------------
-      DEALLOCATE(lmax,lmin)
       DEALLOCATE(xirc,xirs,xiic,xiis,fv)
       DEALLOCATE(grpssq,xsq,gpsdth,xsqdth,xjacob,delta,xjdtxj,xsdtxs,
      $     gpdtgp,slngth,xinf,zinf,xplap,zplap)
@@ -248,10 +260,15 @@ c-----------------------------------------------------------------------
       DEALLOCATE(cslth,snlth,coslt,sinlt,cplar,cplai,cwallr,cwalli,
      $     cwalr,cwali,cpwr,cpwi,cwwtr,cwwti,cwptr,cwpti,wrktr1,wrktr2)
       DEALLOCATE(xpass,zpass,chiwc,chiws)
-      DEALLOCATE(grwp,grri)
+c-----------------------------------------------------------------------
+c     modification.
+c-----------------------------------------------------------------------
+      DEALLOCATE(grwp)
+c-----------------------------------------------------------------------
       DEALLOCATE(gatovac)
       DEALLOCATE(bxpwr,bxpwi,bzpwr,bzpwi,bnpwr,bnpwi)
       DEALLOCATE(bxpwtr,bxpwti,bzpwtr,bzpwti,bnpwtr,bnpwti)
+      DEALLOCATE(bnlr,bnli)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

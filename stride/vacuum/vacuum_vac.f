@@ -123,7 +123,6 @@ c-----------------------------------------------------------------------
       j1 = 1
       j2 = 1
       ksgn = 2*j2 - 3
-
       call kernel(xpla,zpla,xpla,zpla,grdgre,grwp,j1,j2,ksgn,1,1,0)
       if ( checkd .and. (lfele .eq. 0) ) then
          call matwrtn ( grwp,nths,nths,1,1,mth,mth,16,8,
@@ -157,7 +156,6 @@ c-----------------------------------------------------------------------
      $        "Imag GPP_ll", outmod,0 )
       endif
       iwp = 1
-
       if ( .not. farwal ) then
          call wwall ( mth1, xwal, zwal )
          j1 = 1
@@ -201,7 +199,6 @@ c-----------------------------------------------------------------------
          endif
          iwp = 2
       endif
-
       if ( check1 )
      $     call msctimer ( outmod, "aft kern and fourier" )
       mth12 = iwp*mth
@@ -270,9 +267,18 @@ c-----------------------------------------------------------------------
          enddo
       endif
       ier = 0
-      call gelimb ( grdgre,nths2,dummy,nths2,mth12,lmax2,
-     $     grri,nths2,work1,ier )
+
+      IF (kernelsign < 0) THEN
+         grdgre=kernelsign*grdgre
+         DO i=1,nths2
+            grdgre(i,i)=grdgre(i,i)+2.0
+         ENDDO
+      ENDIF
+
+      call gelimb (grdgre,nths2,dummy,nths2,mth12,lmax2,
+     $        grri,nths2,work1,ier )
       deallocate(grdgre)
+
       allocate(arr(nfm,nfm),ari(nfm,nfm),air(nfm,nfm),aii(nfm,nfm))
       if ( check1 )
      $     call msctimer ( outmod, "after leqt1f" )
@@ -478,8 +484,7 @@ c-----------------------------------------------------------------------
             do j2 = 1, jmax1
                l2 = j2 + lmin(1) - 1
                alnq2 = l2 - nq
-c     vacmat(j1,j2) = alnq1*alnq2 * vacmat(j1,j2)
-c     vacmti(j1,j2) = alnq1*alnq2 * vacmti(j1,j2)
+
                vacmatu(j1,j2) = vacmat(j1,j2)
                vacmtiu(j1,j2) = vacmti(j1,j2)
             enddo
@@ -516,9 +521,7 @@ c     vacmti(j1,j2) = alnq1*alnq2 * vacmti(j1,j2)
          endif
       endif
       IF ( lsymz ) THEN
-c
-c.....symmetrize.
-c
+
          do 601 l1 = 1, jmax1
             do 600 l2 = l1, jmax1
                vacmat(l1,l2) = 0.5 * ( vacmat(l1,l2)+vacmat(l2,l1) )
@@ -544,7 +547,7 @@ c
             write ( 60, 555 )  ( vacmat(j1,j2), j2=1,jmax1 )
          enddo
          close ( 60 )
-      elseif ( ldcon .eq. 1 ) then
+      elseif ( (ldcon .eq. 1).or.(lgpec .eq. 1)) then
          open ( 62, file='vacdcon', status='unknown', form='formatted'
      .        ,recl=160)
          ndcon = n + 0.001
@@ -825,7 +828,7 @@ c-----------------------------------------------------------------------
          residu=0.0
          IF(j1 == j2)residu=two
 
-         IF(ishape < 10)THEN
+         IF(ishape < 10 .OR. ishape == 41)THEN
             resdg=(2-j1)*(2-j2)+(j1-1)*(j2-1)
             resk0=(2-j1)*(2-j2)+(j1-3)*(j2-1)
             residu=resdg+resk0
@@ -837,7 +840,7 @@ c-----------------------------------------------------------------------
          IF(iops == 1 .AND. iopw /= 0)THEN
             gren(j,js1)=gren(j,js1)-alg2/xs
             gren(j,js2)=gren(j,js2)-alg1/xs
-            gren(j,js3) =gren(j,js3)-alg0/xs
+            gren(j,js3)=gren(j,js3)-alg0/xs
             gren(j,js4)=gren(j,js4)-alg1/xs
             gren(j,js5)=gren(j,js5)-alg2/xs
          ENDIF
@@ -1057,7 +1060,10 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       IMPLICIT REAL*8 (a-h,o-z)
 
+      INTEGER:: npots0,npots
       logical infwal, lfix, insect
+      REAL*8, DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
+     $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp,rioptmp
       dimension xwal1(*), zwal1(*)
       dimension iop(2),xpp(nths),zpp(nths),ww1(nths),ww2(nths),
      $    ww3(nths),thet(nths),tabx(3),tabz(3)
@@ -1116,20 +1122,7 @@ c-----------------------------------------------------------------------
       go to 2000
    10 continue
       xshift = a
-c$$$      go to 20
-c$$$      if( .not. lfix) go to 15
-c$$$      if( bw .gt. 1.0 ) go to 20
-c$$$      write(iotty,1000)bw
-c$$$      write(outpest,1000)bw
-c$$$      write(outmod,1000)bw
-c$$$      call errmes(outpest,'vacdat')
-c$$$   15 continue
-c$$$      if( b .ge. 0.0) go to 20
-c$$$      write(iotty,1100)b
-c$$$      write(outpest,1100)b
-c$$$      write(outmod,1100)b
-c$$$      call errmes(outpest,'vacdat')
-c$$$   20 continue
+
       mthalf = mth2 / 2
       zmin = 3.4e38
       zmax = -3.4e38
@@ -1230,7 +1223,65 @@ c$$$   20 continue
          xwal1(i) =   cw + a*cos( the + dw*sin(the) )
          zwal1(i) = - bw * a*sin( the + tw*sn2th ) - aw*sn2th
       enddo
+      open(unit=41,file="vacuum_used_wall_ishape4.out",status='unknown',
+     $     form='FORMATTED')
+      do i=1,mth2
+         write(41,*) xwal1(i),zwal1(i)
+      enddo
+      close (41)
  320  continue
+      if ( ishape .ne. 41 ) go to 325
+      open(unit=41,file="wall_geo.dat",status='old',
+     $             form='FORMATTED')
+      read(41,'(I4)') npots0
+      read(41,'(F30.20)') wcentr
+c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
+      npots=npots0+5-1
+      allocate (thetatmp(npots),xwaltmp(npots),zwaltmp(npots),rioptmp(2)
+     $   ,xpptmp(npots),ww1tmp(npots),ww2tmp(npots),ww3tmp(npots),
+     $   tabtmp(3))
+      do i = 1, npots0
+         read (41,'(F30.20)')thetatmp(i)
+         read (41,'(F30.20)')xwaltmp(i)
+         read (41,'(F30.20)')zwaltmp(i)
+         xwaltmp(i)=xwaltmp(i)-wcentr
+      enddo
+      close (41)
+      rioptmp(1)=4
+      rioptmp(2)=4
+      call spl1d1(npots0,thetatmp,xwaltmp,xpptmp,rioptmp,1,
+     $            ww1tmp,ww2tmp,ww3tmp)
+      do i = 1, mth1
+         the0 = (i-1)*dth
+         call spl1d2(npots0,thetatmp,xwaltmp,xpptmp,1,the0,tabtmp)
+         xwal1(i)=tabtmp(1)*a+wcentr
+      enddo
+      rioptmp(1)=4
+      rioptmp(2)=4
+      call spl1d1(npots0,thetatmp,zwaltmp,xpptmp,rioptmp,1,
+     $            ww1tmp,ww2tmp,ww3tmp)
+      do i = 1, mth1
+         the0 = (i-1)*dth
+         call spl1d2(npots0,thetatmp,zwaltmp,xpptmp,1,the0,tabtmp)
+         zwal1(i)=tabtmp(1)*a
+      enddo
+      xwal1(1)=xwal1(mth1)
+      zwal1(1)=zwal1(mth1)
+      xwal1(mth2)=xwal1(2)
+      zwal1(mth2)=zwal1(2)
+      IF (.FALSE.) THEN
+         open(unit=41,file="vacuum_used_wall.out",status='unknown',
+     $        form='FORMATTED')
+         do i=1,mth2
+            write(41,*) xwal1(i),zwal1(i)
+         enddo
+         close (41)
+      ENDIF
+      deallocate(thetatmp,xwaltmp,zwaltmp,xpptmp,ww1tmp,ww2tmp,ww3tmp,
+     $           rioptmp,tabtmp)
+ 325  continue
+
+
       if ( ishape .ne. 5 ) go to 340
       wcentr = xmaj + cw*plrad
       do 330 i = 1, mth2
@@ -1411,11 +1462,7 @@ c$$$   20 continue
  1800 continue
       xmx = xma + xshift
       go to 145
-c$$$      iop(1) = 4
-c$$$      iop(2) = 4
-c$$$      do 110 il=mthalf+1,mth1
-c$$$      ilm = mth1 - il + 1
-c$$$      thet(il) = twopi - thet(ilm)
+
   110 continue
       call spl1d1(mth1,thet,xwal1,xpp,iop,1,ww1,ww2,ww3)
       call spl1d1(mth1,thet,zwal1,zpp,iop,1,ww1,ww2,ww3)
@@ -1701,8 +1748,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine adjustb(betin,betout,a_,bw_,cw_,dw_,xmaj,plrad,ishape_)
-     $     
+      subroutine adjustb(betin,betout,a_,bw_,cw_,dw_,xmaj_,plrad_,
+     $   ishape_)
       USE vglobal_mod
       IMPLICIT REAL*8 (a-h,o-z)
 c-----------------------------------------------------------------------
@@ -1713,8 +1760,8 @@ c-----------------------------------------------------------------------
          r  = a_
       endif
       if ( ishape_ .eq. 21 ) then
-         r0 = xmaj + cw_*plrad
-         r  = plrad * ( 1.0 + a_ - cw_ )
+         r0 = xmaj_ + cw_*plrad_
+         r  = plrad_ * ( 1.0 + a_ - cw_ )
       endif
       bet2 = betin
       betout = abs ( atan ( tan(bet2) / bw_ ) )
@@ -2109,30 +2156,7 @@ c-----------------------------------------------------------------------
       iops = 2
       call tmat ( coslt, wrkrt, iopc )
       call tmat ( sinlt, wrkit, iops )
-c$$$      go to 8881
-c$$$      write ( outmod, '(/,5x,"Sum over the finite els. for each  L:")')
-c$$$      do irow = 1, jmax1
-c$$$         ll = lmin(1) - 1 + irow
-c$$$         sumcol = 0.0
-c$$$         do icol = 1, mfel
-c$$$            sumcol = sumcol + wrkrt(icol,irow)
-c$$$         enddo
-c$$$         write ( outmod, '(2x,"L  = ", i4, " Sum = ", e11.4)' )
-c$$$     $        ll, sumcol
-c$$$      enddo
-c$$$ 8881 continue
-c$$$      go to 8882
-c$$$      write ( outmod, '(/,5x,"Sum over the finite els. for each  L:")')
-c$$$      do irow = 1, jmax1
-c$$$         ll = lmin(1) - 1 + irow
-c$$$         sumcol = 0.0
-c$$$         do icol = 1, mfel
-c$$$            sumcol = sumcol + wrkit(icol,irow)
-c$$$         enddo
-c$$$         write ( outmod, '(2x,"L  = ", i4, " Sum = ", e11.4)' )
-c$$$     $        ll, sumcol
-c$$$      enddo
-c$$$ 8882 continue
+
       do i = 1, mfel
          do m = 1, jmax1
             wrkr(i,m) = wrkrt(i,m)

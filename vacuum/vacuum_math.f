@@ -464,7 +464,7 @@ c-----------------------------------------------------------------------
       r1sq = sqrt( r14 )
       r1 = sqrt( r1sq )
       s  = (xp2 + zm2 )/r1sq
-      call aleg ( s,nloc, pm,pn,pp, aleg0,aleg1 )
+      call aleg_new ( s,nloc, pm,pn,pp, aleg0,aleg1 )
       kloc=0
       ak=zero
       if ( nloc .eq. 0 )  go to 10
@@ -509,7 +509,7 @@ c-----------------------------------------------------------------------
 
       REAL(8), PARAMETER :: pi=3.1415926535897931_8,pii=2/pi,
      $     sqpi=1.7724538509055159_8
-      REAL(8), PARAMETER :: 
+      REAL(8), PARAMETER ::
      $     ak0=1.38629436112_8,
      $     ak1=0.09666344259_8,
      $     ak2=0.03590092383_8,
@@ -660,22 +660,22 @@ c-----------------------------------------------------------------------
       vecin(mthin+2) = vecin(2)
 
       if ( (mth .ne. mthin) .or. (abs(dx0) .gt. 1.e-6) ) go to 20
-     
+
       do 10 i = 1, mth + 2
          vecout(i) = vecin(i)
  10   continue
-     
+
       return
-     
+
  20   continue
-     
+
       do 50 i = 1, mth
          ai = i-1 + dx1
          x = ai / mth + dx0 / mthin
          iop = 1
          call lagpe4 ( vecin,mthin, x, vecout(i), df, 1 )
  50   continue
-     
+
       mth1 = mth + 1
       mth2 = mth1 + 1
       vecout(mth1) = vecout(1)
@@ -1234,7 +1234,7 @@ c-----------------------------------------------------------------------
       implicit real*8 (a-h,o-z)
 
       epszer = 1e-30
- 
+
       if ( abs(x) .le. epszer ) then
          atan2m = sign ( pye/2.0, z )
          return
@@ -1247,4 +1247,4 @@ c-----------------------------------------------------------------------
       return
       end
 
-      
+

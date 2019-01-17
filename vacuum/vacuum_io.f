@@ -74,6 +74,7 @@ c-----------------------------------------------------------------------
      $     nxlpin,nzlpin,epslp,xlpmin,xlpmax,zlpmin,zlpmax,linterior
       namelist / shape  / ipshp, xpl, apl,bpl, dpl,  a, b, r,
      $     abulg, bbulg, tbulg, qain
+      namelist / timer / verbose_timer_output
 c-----------------------------------------------------------------------
 c     formats.
 c-----------------------------------------------------------------------
@@ -288,7 +289,7 @@ c
      $        mthin, lmin(1),lmax(1),ntor, qa1,
      $        xinf,zinf,delta, vecin, bnlr,bnli,
      $        mth,dx0,dx1, ieig)
-         
+
          mthin1 = mthin + 1
          mthin2 = mthin1 + 1
          n = ntor

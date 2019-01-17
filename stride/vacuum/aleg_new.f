@@ -1,11 +1,11 @@
 c-----------------------------------------------------------------------
-c     file aleg_old.f.
-c     computes Legendre functions, old way.
+c     file aleg_new.f.
+c     computes Legendre functions... in some new way <add description>.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     1. aleg_old
+c     1. aleg_new
 c-----------------------------------------------------------------------
 c     subprogram 1. aleg_new.
 c     computes Legendre functions.
@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE aleg(x,nloc,pm,pn,pp, aleg0,aleg1 )
+      SUBROUTINE aleg_new(x,nloc,pm,pn,pp, aleg0,aleg1 )
       IMPLICIT NONE
 
       REAL(8), INTENT(IN) :: x
