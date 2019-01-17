@@ -12,6 +12,7 @@ c     3. bin_close.
 c     4. ascii_open.
 c     5. ascii_close.
 c     6. program_stop.
+c     7. floored_log.
 c-----------------------------------------------------------------------
 c     subprogram 0. local.
 c     module declarations.
@@ -125,10 +126,10 @@ c-----------------------------------------------------------------------
      $        FORM="UNFORMATTED")
       CASE("big")
          OPEN(UNIT=unit,FILE=name,STATUS=stat,POSITION=pos,
-     $        FORM="UNFORMATTED") !,CONVERT="BIG_ENDIAN")
+     $        FORM="UNFORMATTED",CONVERT="BIG_ENDIAN")
       CASE("little")
          OPEN(UNIT=unit,FILE=name,STATUS=stat,POSITION=pos,
-     $        FORM="UNFORMATTED") !,CONVERT="LITTLE_ENDIAN")
+     $        FORM="UNFORMATTED",CONVERT="LITTLE_ENDIAN")
       CASE DEFAULT
          CALL program_stop
      $        ("Cannot recognize convert_type = "//TRIM(convert_type))
@@ -211,10 +212,36 @@ c     write completion message.
 c-----------------------------------------------------------------------
       CALL timer(1,out_unit)
       CALL ascii_close(out_unit)
-      WRITE(*,'(1x,2a)') 'DCON STOP => ', TRIM(message)
+      WRITE(*,'(1x,2a)') 'PROGRAM STOP => ', TRIM(message)
 c-----------------------------------------------------------------------
 c     write completion message.
 c-----------------------------------------------------------------------
       STOP
       END SUBROUTINE program_stop
+c-----------------------------------------------------------------------
+c     subprogram 7. floored_log.
+c     returns bounded log of specific component.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      FUNCTION floored_log(u) RESULT(ulog)
+
+      COMPLEX(r8), INTENT(IN) :: u
+      REAL(r4) :: ulog
+
+      REAL, PARAMETER :: minlog=-15
+c-----------------------------------------------------------------------
+c     computations.
+c-----------------------------------------------------------------------
+      IF(u == 0)THEN
+         ulog=minlog
+      ELSE
+         ulog=LOG10(ABS(u))
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END FUNCTION floored_log
       END MODULE local_mod
