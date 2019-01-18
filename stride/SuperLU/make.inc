@@ -17,10 +17,10 @@
 #
 #  The name of the libraries to be created/linked to
 #
-SuperLUroot	= /p/gpec/users/aglasser/gpec_stride/stride/SuperLU
-SUPERLULIB   	= $(SuperLUroot)/SuperLU_5.2.1/SRC/libsuperlu.a
+SuperLUroot	= $(CURDIR)
+SUPERLULIB  = $(SuperLUroot)/SuperLU_5.2.1/SRC/libsuperlu.a
 
-TMGLIB       	= libtmglib.a
+TMGLIB      = libtmglib.a
 
 BLASLIB	  	= $(SuperLUroot)/libblas.a
 LIBS		= $(SUPERLULIB) $(SuperLUroot)/libblas.a
