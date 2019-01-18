@@ -17,7 +17,7 @@ all: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw coil gpec stride mkbin
 
 allf: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum coil gpec stride mkbin
+	multi sum coil gpec superlu stride mkbin
 
 
 # executables:
@@ -69,6 +69,9 @@ gpec:
 
 pentrc:  
 	cd ../pentrc; make pentrc
+
+superlu:
+	cd ../superlu; make
 
 stride:
 	cd ../stride; make stride
@@ -128,6 +131,7 @@ clean:
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 	cd ../stride; make clean
+	cd ../superlu/SuperLU_5.2.1; make clean
 
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
