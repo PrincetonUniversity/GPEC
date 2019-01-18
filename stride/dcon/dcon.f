@@ -86,7 +86,7 @@ c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
       CALL timer(0,out_unit)
-      CALL ascii_open(in_unit,"dcon.in","OLD")
+      CALL ascii_open(in_unit,"stride.in","OLD")
       READ(UNIT=in_unit,NML=dcon_control)
       REWIND(UNIT=in_unit)
       READ(UNIT=in_unit,NML=dcon_output)
@@ -118,7 +118,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
-      CALL ascii_open(out_unit,"dcon.out","UNKNOWN")
+      CALL ascii_open(out_unit,"stride.out","UNKNOWN")
       CALL equil_read(out_unit)
       IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
       CALL equil_out_global
