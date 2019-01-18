@@ -123,7 +123,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(wv(1:mpert,1:mpert))
       CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,1.0_r8)
       CALL system("rm -f ahg2msc.out")
-      singfac=meg_newlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
+      singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
          wv(:,ipert)=wv(:,ipert)*singfac
