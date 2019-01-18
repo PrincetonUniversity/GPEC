@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
      $     solve_delta_prime_with_sparse_mat,axis_mid_pt_skew,
      $     big_soln_err_tol,use_new_spline, kill_big_soln_for_ideal_dW,
      $     ric_dt,ric_tol,riccati_bounce,verbose_riccati_output,
-     $     ric_negate_zero_evec_at_sing,verbose_performance_output,
+     $     riccati_match_hamiltonian_evals,verbose_performance_output,
      $     fourfit_metric_parallel,vac_parallel
 c-----------------------------------------------------------------------
 c     format statements.
@@ -112,7 +112,7 @@ c-----------------------------------------------------------------------
      $           "asymptotic expansions at singular surfaces.")
          ELSEIF (integrate_riccati) THEN
             CALL program_stop("Cannot calculate delta prime with " //
-     $           "riccati integration.")
+     $           "riccati integration.  Turn one of them off.")
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------

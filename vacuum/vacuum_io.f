@@ -61,14 +61,14 @@ c-----------------------------------------------------------------------
       character(8) under
       data under / "--------" /
       namelist / modes  / mfel,m,mth,n,mdiv,lsymz,lfunin,xiin,
-     .     leqarcw, lpest1, lnova, ladj, ldcon, lgato, lrgato, lspark, 
+     .     leqarcw, lpest1, lnova, ladj, ldcon, lgato, lrgato, lspark,
      $     ismth, lzio, mp0,mp1
       namelist / debugs / checkd, checke, check1, check2, checks,
      $     wall, lkplt
       namelist / vacdat / ishape,aw,bw,cw,dw,tw,nsing,epsq,noutv,delg,
      .     idgt, idot, delfac, idsk, cn0
       namelist / diagns / lkdis, ieig, iloop,
-     $     nloop,nloopr, 
+     $     nloop,nloopr,
      .     lpsub, nphil, nphse, mx, mz, nph, xofsl,
      $     aloop, bloop, dloop, rloop, ntloop, deloop,
      $     nxlpin,nzlpin,epslp,xlpmin,xlpmax,zlpmin,zlpmax,linterior
@@ -101,6 +101,7 @@ c-----------------------------------------------------------------------
       read(inmode,vacdat)
       read(inmode,shape)
       read(inmode,diagns)
+      read(inmode,timer)
       write(outmod,modes)
       write(outmod,debugs)
       write(outmod,vacdat)
@@ -133,9 +134,9 @@ c     special stuff for lspark .ne. 0.
 c-----------------------------------------------------------------------
       if ( lspark .ne. 0 ) then
          open (iodsk,file='vdata',status='unknown',form='formatted' )
-     $        
+     $
          write ( iodsk,8001) mp1
-         write ( iodsk,8002) 
+         write ( iodsk,8002)
          write ( iodsk,8002)
          write ( iodsk, 600 ) lmin(1), lmax(1), n
          lnsav = lmin(1)
@@ -149,7 +150,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
 c     subprogram 3. dskmd1.
-c     
+c
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -306,7 +307,7 @@ c-----------------------------------------------------------------------
          nadres = 1
          call zrd(iomode,ntitle(1),43,nadres,lgivup,999)
          write ( outmod, 9000 )   ntitle,dat
-         lj = 0 
+         lj = 0
          zma = 0.0
          write ( iodsk, 8011 ) nosurf,mthin, lj,mj,nj, xzero, r,
      $        upsiln, xma, zma

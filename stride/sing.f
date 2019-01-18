@@ -50,7 +50,7 @@ c     declarations for parallelization (of global variables)
 c-----------------------------------------------------------------------
       INTEGER :: sq_s_ix,fmats_s_ix,gmats_s_ix,kmats_s_ix
       REAL(r8), DIMENSION(:), ALLOCATABLE :: sq_s_f
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: 
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE ::
      $     fmats_s_f,gmats_s_f,kmats_s_f
 !$OMP THREADPRIVATE(
 !$OMP& sq_s_ix,fmats_s_ix,gmats_s_ix,kmats_s_ix,
@@ -82,7 +82,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(sq_s_f(SIZE(sq%f)),sq_s_f1(SIZE(sq%f1)),
      $     sq_s_f2(SIZE(sq%f2)),sq_s_f3(SIZE(sq%f3)))
       ALLOCATE(fmats_s_f(SIZE(fmats%f)),fmats_s_f1(SIZE(fmats%f1)),
-     $     fmats_s_f2(SIZE(fmats%f2)),fmats_s_f3(SIZE(fmats%f3)))      
+     $     fmats_s_f2(SIZE(fmats%f2)),fmats_s_f3(SIZE(fmats%f3)))
 !$OMP END PARALLEL
 c-----------------------------------------------------------------------
 c     terminate.
@@ -223,8 +223,8 @@ c-----------------------------------------------------------------------
          print '("Sing# = ",i12)',ising
          print '("--------------------")'
          print '("m = ",i12)',sing(ising)%m
-         print '("psifac = ",f12.5)',sing(ising)%psifac
-         print '("q = ",f12.8)',sing(ising)%q
+         print '("psifac = ",f15.9)',sing(ising)%psifac
+         print '("q = ",f15.9)',sing(ising)%q
          print '("--------------------")'
       ENDDO
       DEALLOCATE(psiex,qex)
@@ -844,7 +844,7 @@ c-----------------------------------------------------------------------
          dpsi=singp%psifac-psifac
       ELSE
          vmat => singp%vmatr
-         dpsi=psifac-singp%psifac         
+         dpsi=psifac-singp%psifac
       ENDIF
       r1 => singp%r1
       r2 => singp%r2

@@ -61,7 +61,6 @@ c-----------------------------------------------------------------------
       LOGICAL :: solve_delta_prime_with_sparse_mat
       LOGICAL :: kill_big_soln_for_ideal_dW
       LOGICAL :: calc_dp_with_vac
-      LOGICAL :: ric_negate_zero_evec_at_sing
 
       TYPE(sing_calculator), DIMENSION(:), TARGET, ALLOCATABLE :: scalc
       REAL(r8) :: axisPsi, outerPsi
@@ -85,6 +84,7 @@ c-----------------------------------------------------------------------
          INTEGER :: liw, lrw, lzw
          REAL(r8) :: startPsi, endPsi, psi0, psi1
          REAL(r8) :: t0, t1
+         REAL(r8) :: projectionFac
          !
          INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
          REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork
@@ -154,6 +154,8 @@ c-----------------------------------------------------------------------
      $           ABS(nn*sing(iS)%q1)
             scalc(iS)%singEdgesLR(2) = sing(iS)%psifac + singfac_min/
      $           ABS(nn*sing(iS)%q1)
+            print *,iS,": ",scalc(iS)%singEdgesLR(1)," ",
+     $           scalc(iS)%singEdgesLR(2)
 
             !This finds the index of the singular column
             scalc(iS)%sing_col = NINT(nn*sing(iS)%q)-mlow+1
@@ -212,9 +214,10 @@ c-----------------------------------------------------------------------
 !$OMP& SHARED(nIntervals,psiPoints,psiInters,psiDirs,sing,axisPsi,
 !$OMP& tol_nr,neq,lzw,lrw,liw,uFM_all,sTime0,cr,nn,
 !$OMP& asymp_at_sing,calc_delta_prime,integrate_riccati,
+!$OMP& riccati_match_hamiltonian_evals,projectionFac,
 !$OMP& uFM_sing_inv,uFM_sing_init,sing_order,outerPsi,psio,scalc,mlow,
 !$OMP& fmats,gmats,kmats,mpert,mband,identityMat,grid_packing,sq,
-!$OMP& u,X0,ric_dt,ric_tol,ric_negate_zero_evec_at_sing,psi0,psi1,
+!$OMP& u,X0,ric_dt,ric_tol,psi0,psi1,
 !$OMP& zIdx,eV,eD,ework,elwork,erwork,einfo,ej)
 !.......................................................................
 !$OMP& FIRSTPRIVATE(uFM,ipert,startPsi,endPsi,iopt,itask,itol,mf,
@@ -270,127 +273,137 @@ c-----------------------------------------------------------------------
                CALL program_stop("Integration direction not forward.")
             ENDIF
 c-----------------------------------------------------------------------
-c     prep and perform integration on intervals.
+c     prep interval details.
 c-----------------------------------------------------------------------
-            uFM = identityMat
             startPsi = t0
             endPsi = t1
             ising = psiInters(iInterval,3)
             IF (.NOT. ising == 0) THEN
                ipert0 = NINT(nn*sing(ising)%q)-mlow+1
             ENDIF
-
-            IF (psiInters(iInterval,1) == 2) THEN
+c-----------------------------------------------------------------------
+c     approach #1: riccati. (serial riccati integration)
+c-----------------------------------------------------------------------
+            IF (integrate_riccati) THEN
+               IF (iInterval == 1) THEN
+                  X0 = 0.0_r8
+                  CALL riccati_controller(startPsi,endPsi,X0,ric_dt,
+     $                 ric_tol,"inv_ric",.TRUE.,.FALSE.)
+                  CALL riccati_inv(X0)
+               ELSE
+                  IF (psiInters(iInterval,1) == 2) THEN
+                     !This is a singular layer crossing.
+                     !Perform eigendecomposition of X0.
+                     eV = (X0 + CONJG(TRANSPOSE(X0))) / 2.0_r8
+                     elwork = 2*mpert-1
+                     CALL zheev('V','U',mpert,eV,mpert,eD,ework,elwork,
+     $                    erwork,einfo)
+                     !Locate 0-evec, substract 2x its projection.
+                     zIdx = MINLOC(ABS(eD))
+                     IF (riccati_match_hamiltonian_evals) THEN
+                        projectionFac = 1.0_r8
+                     ELSE
+                        projectionFac = 2.0_r8
+                     ENDIF
+                     DO ej = 1,mpert
+                        !Recall: DOT_PRODUCT takes Hermitian dagger
+                        !of first argument for complex arguments.
+                        X0(:,ej) = X0(:,ej) - projectionFac *
+     $                       DOT_PRODUCT(eV(:,zIdx(1)),
+     $                       X0(:,ej))*eV(:,zIdx(1))
+                     ENDDO
+                     X0 = (X0 + CONJG(TRANSPOSE(X0))) / 2.0_r8
+                  ELSE
+                     psi0 = MIN(startPsi,endPsi)
+                     psi1 = MAX(startPsi,endPsi)
+                     IF (iInterval == nIntervals) THEN
+                        CALL riccati_controller(psi0,psi1,X0,ric_dt,
+     $                       ric_tol,"int_ric",.FALSE.,.TRUE.)
+                     ELSE
+                        CALL riccati_controller(psi0,psi1,X0,ric_dt,
+     $                       ric_tol,"int_ric",.FALSE.,.FALSE.)
+                     ENDIF
+                  ENDIF
+               ENDIF
+               !Overwrite u on each step, though only last matters.
+               u(:,:,1) = 0.0_r8
+               DO i = 1,mpert
+                  u(i,i,1) = 1.0_r8
+               ENDDO
+               u(:,:,2) = X0
+            ELSE
+c-----------------------------------------------------------------------
+c     approach #2: hamiltonian. (parallel hamiltonian integration)
+c-----------------------------------------------------------------------
+               !Initialize the state transition matrix as the Identity,
+               !then modify it where necessary.
+               uFM = identityMat
+               IF (psiInters(iInterval,1) == 2) THEN
 c-----------------------------------------------------------------------
 c     the inner layer itself (crossing singularity): initialize.
 c-----------------------------------------------------------------------
-               !For the inner layer itself, just omit integration
-               !of the big and small solutions. (Must be set to Id
-               !in those columns at the end.)  The projection of
-               !each mode on the resonant modes is zero'd.
-               uFM(ipert0,:) = 0
-               uFM(:,ipert0) = 0
-               uFM(ipert0+mpert,:) = 0
-               uFM(:,ipert0+mpert) = 0
+                  !For the inner layer itself, just omit integration
+                  !of the big and small solutions. (Must be set to Id
+                  !in those columns at the end.)  The projection of
+                  !each mode on the resonant modes is zero'd.
+                  uFM(ipert0,:) = 0
+                  uFM(:,ipert0) = 0
+                  uFM(ipert0+mpert,:) = 0
+                  uFM(:,ipert0+mpert) = 0
 c-----------------------------------------------------------------------
 c     the inner layer itself (crossing singularity): integrate.
 c-----------------------------------------------------------------------
-               CALL sing_derFM(neq,startPsi,uFM,duFM,rpar(1),iparC(1))
-               uFM = uFM + duFM * (endPsi-startPsi)
+                  CALL sing_derFM(neq,startPsi,uFM,duFM,rpar(1),
+     $                 iparC(1))
+                  uFM = uFM + duFM * (endPsi-startPsi)
 
-               !For the resonant modes, set to Id in the end,
-               !and remove all projections on these modes.
-               uFM(:,ipert0) = 0
-               uFM(:,ipert0+mpert) = 0
-               uFM(ipert0,:) = 0
-               uFM(ipert0+mpert,:) = 0
-               uFM(ipert0,ipert0) = 1
-               uFM(ipert0+mpert,ipert0+mpert) = 1
-            ELSE
+                  !For the resonant modes, set to Id in the end,
+                  !and remove all projections on these modes.
+                  uFM(:,ipert0) = 0
+                  uFM(:,ipert0+mpert) = 0
+                  uFM(ipert0,:) = 0
+                  uFM(ipert0+mpert,:) = 0
+                  uFM(ipert0,ipert0) = 1
+                  uFM(ipert0+mpert,ipert0+mpert) = 1
+               ELSE
 c-----------------------------------------------------------------------
 c     now for other intervals, set integration initial conditions.
 c-----------------------------------------------------------------------
-               IF (asymp_at_sing .AND. psiInters(iInterval,3)/=0) THEN
-                  !Perform asymptotic expansion at singular surface
-                  !Get q (big) and (p) small asymp expansions at t0
-                  !for resonant AND nonresonant modes.
-                  CALL sing_get_ua(ising,t0,ua)
-                  DO i = 1,mpert
-                     uFM(i,:) = ua(i,:,1)
-                     uFM(i+mpert,:) = ua(i,:,2)
-                  ENDDO
+                  IF(asymp_at_sing .AND. psiInters(iInterval,3)/=0)THEN
+                     !Perform asymptotic expansion at singular surface
+                     !Get q (big) and (p) small asymp expansions at t0
+                     !for resonant AND nonresonant modes.
+                     CALL sing_get_ua(ising,t0,ua)
+                     DO i = 1,mpert
+                        uFM(i,:) = ua(i,:,1)
+                        uFM(i+mpert,:) = ua(i,:,2)
+                     ENDDO
 
-                  !Invert the init. fund. matrix (/=Id), to save it.
-                  uFMInv = uFM
-                  CALL ZGETRF(2*mpert,2*mpert,uFMInv,2*mpert,ipiv,info)
-                  CALL ZGETRI(2*mpert,uFMInv,2*mpert,ipiv,uwork,2*mpert,
-     $                 info)
+                     !Invert the init. fund. matrix (/=Id), to save it.
+                     uFMInv = uFM
+                     CALL ZGETRF(2*mpert,2*mpert,uFMInv,2*mpert,ipiv,
+     $                    info)
+                     CALL ZGETRI(2*mpert,uFMInv,2*mpert,ipiv,uwork,
+     $                    2*mpert,info)
 c-----------------------------------------------------------------------
 c     save the interval's initial fundamental matrix and its inverse.
 c-----------------------------------------------------------------------
-                  IF (psiInters(iInterval,2) == 1) THEN
-                  !Right edge of the the interval is a singular surface
-                  !so it modifies the LEFT side of psi_s
-                     uFM_sing_inv(:,:,ising,1) = uFMInv
-                     uFM_sing_init(:,:,ising,1) = uFM
-                  ELSEIF (psiInters(iInterval,1) == 1) THEN
-                  !Left edge of the the interval is a singular surface
-                  !so it modifies the RIGHT side of psi_s
-                     uFM_sing_inv(:,:,ising,2) = uFMInv
-                     uFM_sing_init(:,:,ising,2) = uFM
-                  ELSE
-                     CALL program_stop("Unexpected psiInters !")
-                  ENDIF
-               ENDIF
-c-----------------------------------------------------------------------
-c     perform the integration
-c-----------------------------------------------------------------------
-               IF (integrate_riccati) THEN
-c-----------------------------------------------------------------------
-c     integration option #1: serial riccati integration.
-c-----------------------------------------------------------------------
-                  IF (iInterval == 1) THEN
-                     X0 = 0.0_r8
-                     CALL riccati_ode(startPsi,endPsi,X0,ric_dt,ric_tol,
-     $                    "inv_ric",.TRUE.,.FALSE.)
-                     CALL riccati_inv(X0)
-                  ELSE
-                     IF (psiInters(1,iInterval) == 2) THEN
-                        IF (ric_negate_zero_evec_at_sing) THEN
-                           !This is a singular layer crossing.
-                           !Perform eigendecomposition of X0.
-                           eV = (X0 + CONJG(TRANSPOSE(X0))) / 2.0_r8
-                           elwork = 2*mpert-1
-                           CALL zheev('V','U',mpert,eV,mpert,eD,
-     $                          ework,elwork,erwork,einfo)
-                           !Locate 0-evec, substract 2x its projection.
-                           zIdx = MINLOC(ABS(eD))
-                           DO ej = 1,mpert
-                              X0(:,ej) = X0(:,ej) - 2.0_r8*DOT_PRODUCT(
-     $                             eV(:,zIdx(1)),X0(:,ej))*eV(:,zIdx(1))
-                           ENDDO
-                        ENDIF
+                     IF (psiInters(iInterval,2) == 1) THEN
+                     !Right edge of the the interval is a sing surface
+                     !so it modifies the LEFT side of psi_s
+                        uFM_sing_inv(:,:,ising,1) = uFMInv
+                        uFM_sing_init(:,:,ising,1) = uFM
+                     ELSEIF (psiInters(iInterval,1) == 1) THEN
+                     !Left edge of the the interval is a sing surface
+                     !so it modifies the RIGHT side of psi_s
+                        uFM_sing_inv(:,:,ising,2) = uFMInv
+                        uFM_sing_init(:,:,ising,2) = uFM
                      ELSE
-                        psi0 = MIN(startPsi,endPsi)
-                        psi1 = MAX(startPsi,endPsi)
-                        IF (iInterval == nIntervals) THEN
-                           CALL riccati_ode(psi0,psi1,X0,ric_dt,ric_tol,
-     $                          "int_ric",.FALSE.,.TRUE.)
-                        ELSE
-                           CALL riccati_ode(psi0,psi1,X0,ric_dt,ric_tol,
-     $                          "int_ric",.FALSE.,.FALSE.)
-                        ENDIF
+                        CALL program_stop("Unexpected psiInters!")
                      ENDIF
                   ENDIF
-                  !Overwrite u on each step, though only last matters.
-                  u(:,:,1) = 0.0_r8
-                  DO i = 1,mpert
-                     u(i,i,1) = 1.0_r8
-                  ENDDO
-                  u(:,:,2) = X0
-               ELSE
 c-----------------------------------------------------------------------
-c     integration option #2: parallel hamiltonian integration.
+c     perform the integration: parallel hamiltonian integration.
 c-----------------------------------------------------------------------
                   iopt=1
                   itask=5
@@ -428,11 +441,11 @@ c-----------------------------------------------------------------------
      $                    REAL(fTime-sTime,8)/REAL(cr,8)
                   ENDIF
                ENDIF
+c-----------------------------------------------------------------------
+c     store integration output for hamiltonian ODE.
+c-----------------------------------------------------------------------
+               uFM_all(:,:,iInterval) = uFM
             ENDIF
-c-----------------------------------------------------------------------
-c     store integration output.
-c-----------------------------------------------------------------------
-            uFM_all(:,:,iInterval) = uFM
          ENDDO
 c-----------------------------------------------------------------------
 c     terminate parallel integration.
@@ -546,7 +559,7 @@ c-----------------------------------------------------------------------
                   ELSE
                      psiInters(cumulItvls+newItvls,1) = 0
                      psiInters(cumulItvls+newItvls,2) = 1
-                     psiInters(cumulItvls+newItvls,3) = 
+                     psiInters(cumulItvls+newItvls,3) =
      $                    psiInters(cumulItvls+1,3) + 1
                      psiInters(cumulItvls+1,2) = 0 !(,1) & (,3) are fine
                      psiInters(cumulItvls+2:cumulItvls+newItvls-1,:) = 0
@@ -554,9 +567,9 @@ c-----------------------------------------------------------------------
                   psiPoints(cumulItvls+newItvls,2) = s2
                   DO i=1,newItvls-1
                      psiPoints(i+cumulItvls,2) = s1 + i*(s2-s1)/newItvls
-                     psiPoints(i+1+cumulItvls,1) = 
+                     psiPoints(i+1+cumulItvls,1) =
      $                    psiPoints(i+cumulItvls,2)
-                     
+
                   ENDDO
                ENDIF
                cumulItvls = cumulItvls + newItvls
@@ -1182,7 +1195,7 @@ c-----------------------------------------------------------------------
                      k = k+m2
                      delta_prime_mat(dRow,2*ksing) = x(k+ipert0+mpert)
                   ENDDO
-               ENDDO            
+               ENDDO
             ENDDO
          ELSE
 c-----------------------------------------------------------------------
@@ -1237,7 +1250,7 @@ c-----------------------------------------------------------------------
          imag_unit = "+i*"
          WHERE(AIMAG(delta_prime_mat)<0.)imag_unit = '-i*'
          DO i=1,s2
-            write(delta_prime_out_unit,'(30(g12.5,a,g12.5,2x,a))') 
+            write(delta_prime_out_unit,'(30(g12.5,a,g12.5,2x,a))')
      $           ( REAL(delta_prime_mat(i,j)),imag_unit(i,j),
      $           ABS(AIMAG(delta_prime_mat(i,j))),"| ", j=1,s2 )
          ENDDO
@@ -1264,7 +1277,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_fixup(uT, uTNorm)
          COMPLEX(r8), DIMENSION(2*mpert,2*mpert), INTENT(INOUT) :: uT
-         COMPLEX(r8), DIMENSION(2*mpert,2*mpert), 
+         COMPLEX(r8), DIMENSION(2*mpert,2*mpert),
      $        INTENT(INOUT), OPTIONAL :: uTNorm
          COMPLEX(r8), DIMENSION(2*mpert,mpert) :: uT2
          REAL(r8), DIMENSION(mpert) :: unorm

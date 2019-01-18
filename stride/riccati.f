@@ -5,7 +5,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. riccati_mod.
+c     -. riccati_mod.
+c     0. riccati_controller.
 c     1. riccati_ode.
 c     2. riccati_der.
 c     3. riccati_inv_der.
@@ -28,7 +29,94 @@ c-----------------------------------------------------------------------
       USE zvode1_mod
       IMPLICIT NONE
 
+      INTEGER :: peig_out_unit=53
+      INTEGER :: peig_bin_unit=54
+      INTEGER :: peig_size_unit=55
+
       CONTAINS
+c-----------------------------------------------------------------------
+c     subprogram 0. riccati_controller.
+c     control the integration of the riccati ode.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE riccati_controller(t0,te,X0,ric_dt,ric_tol,
+     $     init_mode,first_call,last_call)
+
+      REAL(r8), INTENT (INOUT) :: t0
+      REAL(r8), INTENT(IN) :: te,ric_dt,ric_tol
+      COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(INOUT) :: X0
+      CHARACTER(7), INTENT(IN) :: init_mode
+      LOGICAL, INTENT(IN) :: first_call, last_call
+
+      CHARACTER(80) :: format1
+      CHARACTER(7) :: ode_ps_mode
+      LOGICAL :: bounce_it
+      INTEGER :: ric_dir,i
+c-----------------------------------------------------------------------
+c     formats.
+c-----------------------------------------------------------------------
+ 10   FORMAT('(/1x,"istep",5x,"psi",3x,',i2.2,'(5x,"pe",i2.2,2x)/)')
+c-----------------------------------------------------------------------
+c     prep verbose output.
+c-----------------------------------------------------------------------
+      IF ( verbose_riccati_output ) THEN
+         WRITE(format1,10)mpert
+         IF (first_call) THEN
+            OPEN(UNIT=peig_out_unit,FILE="peig.out",STATUS="REPLACE")
+            OPEN(UNIT=peig_size_unit,FILE="Psize.out",STATUS="REPLACE")
+            WRITE(peig_out_unit,format1)(i,i=1,mpert)
+            OPEN(UNIT=peig_bin_unit,FILE="peig.bin",STATUS="REPLACE",
+     $           FORM="UNFORMATTED")
+         ENDIF
+      ENDIF
+c-----------------------------------------------------------------------
+c     initialize integration.
+c-----------------------------------------------------------------------
+      IF ( t0 > te ) THEN
+         ric_dir = -1.0_r8
+      ELSE
+         ric_dir = 1.0_r8
+      ENDIF
+c-----------------------------------------------------------------------
+c     call riccati integrator.
+c-----------------------------------------------------------------------
+      ode_ps_mode = init_mode
+      DO
+         IF (t0*ric_dir .GE. te*ric_dir) EXIT
+         CALL riccati_ode(t0,te,X0,ric_dt,ric_tol,ode_ps_mode,bounce_it)
+         IF (bounce_it) THEN
+            SELECT CASE(ode_ps_mode)
+            CASE("int_ric")
+               ode_ps_mode = "inv_ric"
+            CASE("inv_ric")
+               ode_ps_mode = "int_ric"
+            CASE DEFAULT
+               CALL program_stop("Unknown riccati integration mode.")
+            END SELECT
+            CALL riccati_inv(X0)
+         ENDIF
+      ENDDO
+      IF ( ode_ps_mode .NE. init_mode ) THEN
+         CALL riccati_inv(X0)
+      ENDIF
+c-----------------------------------------------------------------------
+c     symmetrize result for accuracy.
+c-----------------------------------------------------------------------
+      X0 = (X0 + CONJG(TRANSPOSE(X0))) / 2.0_r8
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      IF (verbose_riccati_output .AND. last_call) THEN
+         WRITE(peig_out_unit,format1)(i,i=1,mpert)
+         CLOSE(UNIT=peig_out_unit)
+         CLOSE(UNIT=peig_bin_unit)
+         CLOSE(UNIT=peig_size_unit)
+      ENDIF
+
+      RETURN
+      END SUBROUTINE riccati_controller
 c-----------------------------------------------------------------------
 c     subprogram 1. riccati_ode.
 c     integrate the Riccati equations with ZVODE.
@@ -36,51 +124,37 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      RECURSIVE SUBROUTINE riccati_ode(t0,te,X0,ric_dt,ric_tol,
-     $     init_mode,first_call,last_call)
+      SUBROUTINE riccati_ode(t0,te,X0,ric_dt,ric_tol,ps_mode,
+     $     bounce_flag)
 
       REAL(r8), INTENT (INOUT) :: t0
       REAL(r8), INTENT(IN) :: te,ric_dt,ric_tol
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(INOUT) :: X0
-      CHARACTER(7), INTENT(IN) :: init_mode !inv_ric, int_ric
-      LOGICAL, INTENT(IN) :: first_call, last_call
+      CHARACTER(7), INTENT(IN) :: ps_mode !inv_ric, int_ric
+      LOGICAL, INTENT(OUT) :: bounce_flag
 
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: ident, pmat
-      INTEGER :: neq,liw,lrw,lzw,info,i
+      INTEGER :: neq,liw,lrw,lzw,info
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork, ipiv
       REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: zwork, work
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: atol
-      INTEGER :: iopt,itask,itol,mf,istate,ipert,istep
+      INTEGER :: iopt,itask,itol,mf,istate,ipert
       REAL(r8) :: rtol(1), atol0, maxatol
       COMPLEX(r8), DIMENSION(1) :: rpar
       INTEGER, DIMENSION(1) :: ipar
-      CHARACTER(7) :: other_mode
 
       REAL(r8) :: xcrit = 1.0E6
       REAL(r8) :: ric_dir
-
-      INTEGER :: peig_out_unit=53
-      INTEGER :: peig_bin_unit=54
-      CHARACTER(80) :: format1
-c-----------------------------------------------------------------------
-c     formats.
-c-----------------------------------------------------------------------
- 10   FORMAT('(/1x,"istep",5x,"psi",3x,',i2.2,'(5x,"pe",i2.2,2x)/)')
 c-----------------------------------------------------------------------
 c     initialize.
 c-----------------------------------------------------------------------
+      bounce_flag = .FALSE.
       neq = mpert*mpert
       liw = 30
       lrw = 20+neq
       lzw = 15*neq
       ALLOCATE(rwork(lrw), zwork(lzw), iwork(liw), atol(mpert,mpert),
      $     ipiv(mpert), work(mpert))
-
-      ident = 0.0_r8
-      DO i = 1,mpert
-         ident(i,i) = 1.0_r8
-      ENDDO
 c-----------------------------------------------------------------------
 c     prep the integration constants.
 c-----------------------------------------------------------------------
@@ -101,43 +175,9 @@ c-----------------------------------------------------------------------
       rwork(11)=rwork(5)
       rtol(1) = ric_tol
 c-----------------------------------------------------------------------
-c     prep verbose output.
-c-----------------------------------------------------------------------
-      IF ( verbose_riccati_output ) THEN
-         WRITE(format1,10)mpert
-         IF (first_call) THEN
-            OPEN(UNIT=peig_out_unit,FILE="peig.out",STATUS="REPLACE")
-            WRITE(peig_out_unit,format1)(i,i=1,mpert)
-            OPEN(UNIT=peig_bin_unit,FILE="peig.bin",STATUS="REPLACE",
-     $           FORM="UNFORMATTED")
-         ENDIF
-      ENDIF
-c-----------------------------------------------------------------------
 c     main riccati integration loop.
 c-----------------------------------------------------------------------
       DO
-c-----------------------------------------------------------------------
-c     write and print verbose output.
-c-----------------------------------------------------------------------
-         IF ( verbose_riccati_output ) THEN
-            WRITE(*,'(a,a,f13.11,a,f13.11,a,es13.7)')init_mode,
-     $           ": t0=",t0," of ",te," crit=",SUM(ABS(X0))
-
-            IF (SUM(ABS(X0)) > 0) THEN
-               pmat = X0
-               SELECT CASE(init_mode)
-               CASE("inv_ric")
-                  !pmat=S. Invert it so that pmat=P.
-                  CALL riccati_inv(pmat)
-               CASE DEFAULT
-                  !Nothing to do.
-               END SELECT
-
-               istep = 0
-               CALL riccati_eig(istep,t0,pmat,peig_out_unit,
-     $              peig_bin_unit)
-            ENDIF
-         ENDIF
 c-----------------------------------------------------------------------
 c     check integration exit condition.
 c-----------------------------------------------------------------------
@@ -154,17 +194,15 @@ c-----------------------------------------------------------------------
             atol=maxatol
          ENDWHERE
 
-         SELECT CASE(init_mode)
+         SELECT CASE(ps_mode)
          CASE("int_ric")
             CALL ZVODE1(riccati_der,neq,X0,t0,te,
      $           itol,rtol,atol,itask,istate,iopt,zwork,lzw,
      $           rwork,lrw,iwork,liw,riccati_nojac,mf,rpar,ipar)
-            other_mode = "inv_ric"
          CASE("inv_ric")
             CALL ZVODE1(riccati_inv_der,neq,X0,t0,te,
      $           itol,rtol,atol,itask,istate,iopt,zwork,lzw,
      $           rwork,lrw,iwork,liw,riccati_nojac,mf,rpar,ipar)
-            other_mode = "int_ric"
          CASE DEFAULT
             CALL program_stop("Unknown riccati integration mode.")
          END SELECT
@@ -173,27 +211,14 @@ c     toggle integration mode to control growth of matrix.
 c-----------------------------------------------------------------------
          IF (riccati_bounce) THEN
             IF (SUM(ABS(X0)) > xcrit) THEN
-               CALL riccati_inv(X0)
-               CALL riccati_ode(t0,te,X0,ric_dt,ric_tol,other_mode,
-     $              .FALSE.,.FALSE.)
-               CALL riccati_inv(X0)
-               istate = 1
+               bounce_flag = .TRUE.
+               RETURN
             ENDIF
          ENDIF
       ENDDO
 c-----------------------------------------------------------------------
-c     symmetrize result for accuracy.
-c-----------------------------------------------------------------------
-      X0 = (X0 + CONJG(TRANSPOSE(X0))) / 2.0_r8
-c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF (verbose_riccati_output .AND. last_call) THEN
-         WRITE(peig_out_unit,format1)(i,i=1,mpert)
-         CLOSE(UNIT=peig_out_unit)
-         CLOSE(UNIT=peig_bin_unit)
-      ENDIF
-
       RETURN
       END SUBROUTINE riccati_ode
 c-----------------------------------------------------------------------
@@ -212,11 +237,28 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), INTENT(IN) :: rpar, ipar
 
       COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: ac
+
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: pmat,pmat1
+      INTEGER :: istep
 c-----------------------------------------------------------------------
 c     calculate derivative.
 c-----------------------------------------------------------------------
       CALL sing_derL(startPsi,ac)
       CALL riccati_form_dx(mpert,ac,X,dX)
+c-----------------------------------------------------------------------
+c     write verbose riccati output.
+c-----------------------------------------------------------------------
+         IF ( verbose_riccati_output ) THEN
+            IF (SUM(ABS(X)) > 0) THEN
+               pmat = X
+               pmat1 = dX
+
+               istep = 0
+               CALL riccati_eig(istep,startPsi,pmat,peig_out_unit,
+     $              peig_bin_unit,pmat)
+               CALL riccati_modesize(startPsi,pmat)
+            ENDIF
+         ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -238,12 +280,37 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), INTENT(IN) :: rpar, ipar
 
       COMPLEX(r8), DIMENSION(2*mpert,2*mpert) :: ac
+
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: pmat,pmat1,pmat1t
+      INTEGER :: istep
 c-----------------------------------------------------------------------
 c     calculate derivative.
 c-----------------------------------------------------------------------
       CALL sing_derL(startPsi,ac)
       CALL riccati_inv_hamil_complex(mpert,ac)
       CALL riccati_form_dx(mpert,ac,X,dX)
+c-----------------------------------------------------------------------
+c     write verbose riccati output.
+c-----------------------------------------------------------------------
+         IF ( verbose_riccati_output ) THEN
+            IF (SUM(ABS(X)) > 0) THEN
+               pmat = X
+               pmat1 = dX
+               CALL riccati_inv(pmat)
+               ! (A^(-1))' = -A^(-1)*A'*A^(-1)
+               pmat1t = 0
+               CALL ZGEMM('N','N',mpert,mpert,mpert,one_c,pmat,mpert,
+     $              dX,mpert,zero_c,pmat1t,mpert)
+               CALL ZGEMM('N','N',mpert,mpert,mpert,one_c,pmat1t,mpert,
+     $              pmat,mpert,zero_c,pmat1,mpert)
+               pmat1 = -pmat1
+
+               istep = 0
+               CALL riccati_eig(istep,startPsi,pmat,peig_out_unit,
+     $              peig_bin_unit,pmat)
+               CALL riccati_modesize(startPsi,pmat)
+            ENDIF
+         ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -372,13 +439,6 @@ c-----------------------------------------------------------------------
       CALL ZHETRS('U',mpert,mpert,X,mpert,ipiv,Y,mpert,info)
       X = Y
 c-----------------------------------------------------------------------
-c     error check.
-c-----------------------------------------------------------------------
-      IF (verbose_riccati_output) THEN
-         WRITE(*,'(a,es11.3)')"inv error=",
-     $        SUM(ABS(MATMUL(X,X_init)-ident))
-      ENDIF
-c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -390,10 +450,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE riccati_eig(nstep,t,X,out_unit,bin_unit)
+      SUBROUTINE riccati_eig(nstep,t,X,out_unit,bin_unit,dX)
       INTEGER, INTENT(IN) :: nstep, out_unit, bin_unit
       REAL(r8), INTENT(IN) :: t
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: X
+      COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: dX
 
       CHARACTER(80) :: format2
       REAL(r8), DIMENSION(mpert) :: eigval
@@ -406,7 +467,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     formats.
 c-----------------------------------------------------------------------
- 20   FORMAT('(i6,1p,',i2.2,'e11.3)')
+ 20   FORMAT('(i6,1p,',i8.8,'e15.7)')
       WRITE(format2,20)mpert+1
 c-----------------------------------------------------------------------
 c     preliminaries.
@@ -428,6 +489,24 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE riccati_eig
+c-----------------------------------------------------------------------
+c     subprogram 9. riccati_modesize.
+c     just temporary for presentation purposes
+c-----------------------------------------------------------------------
+      SUBROUTINE riccati_modesize(t,X)
+      REAL(r8), INTENT(IN) :: t
+      COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: X
+      REAL(r8), DIMENSION(mpert) :: col_mod
+      CHARACTER(80) :: format3
+ 70   FORMAT('(',i8.8,'e15.7)')
+      WRITE(format3,70)mpert+1
+      col_mod = SUM(ABS(X),DIM=1)
+      WRITE(peig_size_unit,format3)t,col_mod
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE riccati_modesize
 c-----------------------------------------------------------------------
 c     subprogram 9. riccati_mylog10.
 c     computes and returns integer riccati_mylog10.

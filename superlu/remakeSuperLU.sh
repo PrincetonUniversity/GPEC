@@ -24,7 +24,7 @@ cp ../../F90_Code/d_sample.f90 d_sample.f90
 cp ../../F90_Code/Makefile Makefile
 make clean
 make
-#./d_sample
+./d_sample
 
 #If desired to work with SuperLU's code directly,
 #and not external wrappers, then run:

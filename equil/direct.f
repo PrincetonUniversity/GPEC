@@ -28,6 +28,8 @@ c-----------------------------------------------------------------------
       INTEGER, PRIVATE :: istep
       REAL(r8) :: rmin,rmax,zmin,zmax,rs1,rs2
       TYPE(bicube_type) :: psi_in
+      LOGICAL :: direct_infinite_loop_flag
+      INTEGER :: direct_infinite_loop_count = 2000
 
       TYPE :: direct_bfield_type
       REAL(r8) :: psi,psir,psiz,psirz,psirr,psizz,f,f1,p,p1
@@ -62,6 +64,7 @@ c-----------------------------------------------------------------------
       IF(psihigh >= 1-1e-6)WRITE(*,'(1x,a,es10.3,a)')
      $        "Warning: direct equilibrium with psihigh =",psihigh,
      $        " could hang on separatrix."
+      direct_infinite_loop_flag = .FALSE.
 c-----------------------------------------------------------------------
 c     fit input to cubic splines and diagnose.
 c-----------------------------------------------------------------------
@@ -290,10 +293,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_position
-      
+
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: ajac(2,2),det,dr,dz,fac,r,z
       TYPE(direct_bfield_type) :: bf
+      INTEGER :: ir
 c-----------------------------------------------------------------------
 c     scan to find zero crossing of bz on midplane.
 c-----------------------------------------------------------------------
@@ -301,10 +305,17 @@ c-----------------------------------------------------------------------
          r=(rmax+rmin)/2
          z=(zmax+zmin)/2
          dr=(rmax-rmin)/20
+         ir = 0
          DO
             CALL direct_get_bfield(r,z,bf,1)
             IF(bf%bz >= 0)EXIT
             r=r+dr
+
+            ir = ir+1
+            IF (ir  > direct_infinite_loop_count) THEN
+               direct_infinite_loop_flag = .TRUE.
+               CALL program_stop("Took too many steps to get bz=0.")
+            ENDIF
          ENDDO
       ELSE
          r=ro
@@ -313,6 +324,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     use newton iteration to find o-point.
 c-----------------------------------------------------------------------
+      ir = 0
       DO
          CALL direct_get_bfield(r,z,bf,2)
          ajac(1,1)=bf%brr
@@ -325,6 +337,12 @@ c-----------------------------------------------------------------------
          r=r+dr
          z=z+dz
          IF(ABS(dr) <= eps*r .AND. ABS(dz) <= eps*r)EXIT
+
+         ir = ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to find o-point.")
+         ENDIF
       ENDDO
       ro=r
       zo=z
@@ -343,22 +361,36 @@ c     use newton iteration to find inboard separatrix position.
 c-----------------------------------------------------------------------
       r=(3*rmin+ro)/4
       z=zo
+      ir = 0
       DO
          CALL direct_get_bfield(r,z,bf,1)
          dr=-bf%psi/bf%psir
          r=r+dr
          IF(ABS(dr) <= eps*r)EXIT
+
+         ir = ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to find inb spx.")
+         ENDIF
       ENDDO
       rs1=r
 c-----------------------------------------------------------------------
 c     use newton iteration to find outboard separatrix position.
 c-----------------------------------------------------------------------
       r=(ro+3*rmax)/4
+      ir = 0
       DO
          CALL direct_get_bfield(r,z,bf,1)
          dr=-bf%psi/bf%psir
          r=r+dr
          IF(ABS(dr) <= eps*r)EXIT
+
+         ir = ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to find outb spx.")
+         ENDIF
       ENDDO
       rs2=r
 c-----------------------------------------------------------------------
@@ -382,7 +414,7 @@ c-----------------------------------------------------------------------
       CHARACTER(64) :: message
 
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
-      INTEGER :: iopt,istate,itask,itol,jac,mf
+      INTEGER :: iopt,istate,itask,itol,jac,mf,ir
       INTEGER, DIMENSION(liw) :: iwork
       INTEGER, PARAMETER :: nstep=2048
       REAL(r8), PARAMETER :: eps=1e-12
@@ -404,11 +436,18 @@ c-----------------------------------------------------------------------
       psi0=psio*(1-psifac)
       r=ro+SQRT(psifac)*(rs2-ro)
       z=zo
+      ir = 0
       DO
          CALL direct_get_bfield(r,z,bf,1)
          dr=(psi0-bf%psi)/bf%psir
          r=r+dr
          IF(ABS(dr) <= eps*r)EXIT
+
+         ir = ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to find flux surf.")
+         ENDIF
       ENDDO
       psi0=bf%psi
 c-----------------------------------------------------------------------
@@ -490,7 +529,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_fl_der(neq,eta,y,dy)
-      
+
       INTEGER, INTENT(IN) :: neq
       REAL(r8), INTENT(IN) :: eta
       REAL(r8), INTENT(IN) :: y(neq)
@@ -531,12 +570,13 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_refine(rfac,eta,psi0)
-      
+
       REAL(r8) :: rfac,eta,psi0
-      
+
       REAL(r8) :: dpsi,cosfac,sinfac,drfac,r,z
       REAL(r8), PARAMETER :: eps=1e-12
       TYPE(direct_bfield_type) :: bf
+      INTEGER :: ir
 c-----------------------------------------------------------------------
 c     initialize iteration.
 c-----------------------------------------------------------------------
@@ -549,6 +589,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     refine rfac by newton iteration.
 c-----------------------------------------------------------------------
+      ir = 0
       DO
          drfac=-dpsi/(bf%psir*cosfac+bf%psiz*sinfac)
          rfac=rfac+drfac
@@ -557,6 +598,12 @@ c-----------------------------------------------------------------------
          CALL direct_get_bfield(r,z,bf,1)
          dpsi=bf%psi-psi0
          IF(ABS(dpsi) <= eps*psi0 .OR. ABS(drfac) <= eps*rfac)EXIT
+
+         ir = ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to refine rfac.")
+         ENDIF
       ENDDO
 c-----------------------------------------------------------------------
 c     terminate.

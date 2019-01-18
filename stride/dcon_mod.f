@@ -101,6 +101,6 @@ c-----------------------------------------------------------------------
       CHARACTER(len=:), ALLOCATABLE :: spline_str
 
       LOGICAL :: verbose_riccati_output, verbose_performance_output,
-     $     riccati_bounce
+     $     riccati_bounce,riccati_match_hamiltonian_evals
 
       END MODULE dcon_mod

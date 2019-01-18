@@ -19,7 +19,7 @@
 	tol_r=1e-8
 	crossover=1e-2
 
-	singfac_min=1e-4
+	singfac_min=1e-5
 	ucrit=1e4
 
 	sing_order=6
@@ -52,8 +52,8 @@
 
 	integrate_riccati = f
 	riccati_bounce = t
-	verbose_riccati_output = f
-	ric_negate_zero_evec_at_sing = f
+	riccati_match_hamiltonian_evals = f
+	verbose_riccati_output = t
 	ric_dt = 1e-8
         ric_tol = 1e-6
 
