@@ -8,8 +8,8 @@
 #
 #  Creation date:   May 10, 2015
 #
-#  Modified:	    
-#		    
+#  Modified:
+#
 #
 ############################################################################
 #
@@ -17,7 +17,7 @@
 #
 #  The name of the libraries to be created/linked to
 #
-SuperLUroot	= $(CURDIR)
+SuperLUroot	= $(CURDIR)/../..
 SUPERLULIB  = $(SuperLUroot)/SuperLU_5.2.1/SRC/libsuperlu.a
 
 TMGLIB      = libtmglib.a
@@ -34,7 +34,7 @@ ARCHFLAGS    = cr
 RANLIB       = ranlib
 
 CC           = gcc
-CFLAGS 	     = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_  
+CFLAGS 	     = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_
 NOOPTS       = -O0
 FORTRAN	     = ifort
 
