@@ -13,6 +13,7 @@ F90 = $(FC) $(FFLAGS) $(EXTRA_FFLAGS) $(IFLAGS)
 LIBDIR = ../lib
 
 SUPERLUDIR = ../superlu/SuperLU_5.2.1/SRC
+SUPERLUBLASDIR = ../superlu/
 
 LIBS = \
 	-L$(LIBDIR) \
@@ -21,6 +22,8 @@ LIBS = \
 	-lvac \
 	-L$(SUPERLUDIR) \
 	-lsuperlu \
+	-L$(SUPERLUBLASDIR) \
+	-lblas
 
 OBJS = \
 	debug.o \

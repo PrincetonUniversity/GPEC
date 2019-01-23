@@ -71,7 +71,7 @@ pentrc:
 	cd ../pentrc; make pentrc
 
 superlu:
-	cd ../superlu; make
+	$(SLU_COMMAND)
 
 stride:
 	cd ../stride; make stride
