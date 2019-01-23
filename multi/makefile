@@ -1,5 +1,5 @@
 
-FFLAGS =
+FFLAGS = -qopenmp
 F90 = $(FC) $(FFLAGS)
 
 .f.o:
