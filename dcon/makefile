@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
+#FFLAGS = -qopenmp    # Only valid for Intel compiler
 IFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
@@ -56,7 +56,7 @@ pentrc:
 
 # note we explicitly make pentrc to force sync the compile-time version variable
 dcon: pentrc $(OBJS)
-	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
 	mkdir -p ../bin
 	cp -f dcon ../bin
 
