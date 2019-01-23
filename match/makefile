@@ -1,7 +1,6 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -vec_report0
 IFLAGS = -I../equil
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
