@@ -13,11 +13,12 @@ export CFLAGS
 
 .IGNORE:
 
-all: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw coil gpec stride mkbin
 
-allf: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum coil gpec superlu stride mkbin
+# fortran only
+allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum coil gpec stride mkbin
 
 
 # executables:
@@ -33,6 +34,15 @@ xdraw:
 
 lsode:
 	cd ../lsode;  make liblsode
+
+superlu:
+	$(SLU_COMMAND)  # gets set in DEFAULTS.inc based on tarball status
+
+zlange:
+	cd ../zlange;  make libzlange
+
+zvode:
+	cd ../zvode;  make libzvode
 
 equil:
 	cd ../equil;  make libequil
@@ -69,9 +79,6 @@ gpec:
 
 pentrc:  
 	cd ../pentrc; make pentrc
-
-superlu:
-	$(SLU_COMMAND)
 
 stride:
 	cd ../stride; make stride

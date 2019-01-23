@@ -42,19 +42,19 @@ OBJS = \
 
 # targets
 
-all: lsode equil vacuum superlu stride
+all: lsode superlu equil vacuum zvode zvlode stride
 
 lsode:
 	cd ../lsode; make
+
+superlu:
+	$(SLU_COMMAND)
 
 equil:
 	cd ../equil; make
 
 vacuum:
 	cd ../vacuum; make
-
-superlu:
-	$(SLU_COMMAND)
 
 stride: $(OBJS)
 	$(F90) -o stride $(OBJS) $(LIBS) #-L$(MATHDIR) $(MATHLIBS)

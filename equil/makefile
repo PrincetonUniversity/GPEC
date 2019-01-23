@@ -35,11 +35,17 @@ OBJS = \
 	equil.o \
 	equil_out.o
 
+# targets
+
+all : superlu libequil
+
+# need this for STRIDE's new sparse.f
+superlu:
+	$(SLU_COMMAND)
+
 libequil: $(OBJS)
 	mkdir -p ../lib/
 	ar -r ../lib/libequil.a *.o
-
-# targets
 
 clean:
 	rm -f *.o *.mod
