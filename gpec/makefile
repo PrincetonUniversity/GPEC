@@ -1,7 +1,6 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -vec_report0
 IFLAGS = -I../equil -I../coil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
@@ -59,7 +58,7 @@ endif
 force:
 
 gpec: $(OBJS)
-	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libgpec.a *.o
 	mkdir -p ../bin
