@@ -64,7 +64,7 @@ c-----------------------------------------------------------------------
      .     leqarcw, lpest1, lnova, ladj, ldcon, lgato, lrgato, lspark,
      $     ismth, lzio, mp0,mp1
       namelist / debugs / checkd, checke, check1, check2, checks,
-     $     wall, lkplt
+     $     wall, lkplt, verbose_timer_output
       namelist / vacdat / ishape,aw,bw,cw,dw,tw,nsing,epsq,noutv,delg,
      .     idgt, idot, delfac, idsk, cn0
       namelist / diagns / lkdis, ieig, iloop,
@@ -74,7 +74,6 @@ c-----------------------------------------------------------------------
      $     nxlpin,nzlpin,epslp,xlpmin,xlpmax,zlpmin,zlpmax,linterior
       namelist / shape  / ipshp, xpl, apl,bpl, dpl,  a, b, r,
      $     abulg, bbulg, tbulg, qain
-      namelist / timer / verbose_timer_output
 c-----------------------------------------------------------------------
 c     formats.
 c-----------------------------------------------------------------------
@@ -101,7 +100,6 @@ c-----------------------------------------------------------------------
       read(inmode,vacdat)
       read(inmode,shape)
       read(inmode,diagns)
-      read(inmode,timer)
       write(outmod,modes)
       write(outmod,debugs)
       write(outmod,vacdat)

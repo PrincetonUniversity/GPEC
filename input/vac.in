@@ -19,6 +19,7 @@
 	checks=f
 	wall=f
 	lkplt=0
+	verbose_timer_output = f
 /
 
 &vacdat
@@ -104,8 +105,4 @@
 	lff=0
 	ff=1.6
 	fv=5*1.6 1.0 3*1.6 1.6 25*1.6
-/
-
-&timer
-	verbose_timer_output = f
 /
