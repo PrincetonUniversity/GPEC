@@ -17,6 +17,8 @@ SUPERLUBLASDIR = ../superlu/
 
 LIBS = \
 	-L$(LIBDIR) \
+	-lzvode \
+	-lzlange \
 	-llsode \
 	-lequil \
 	-lvac \
@@ -55,7 +57,7 @@ superlu:
 	$(SLU_COMMAND)
 
 stride: $(OBJS)
-	$(F90) -o stride $(OBJS) $(LIBS) -L$(MATHDIR) $(MATHLIBS)
+	$(F90) -o stride $(OBJS) $(LIBS) #-L$(MATHDIR) $(MATHLIBS)
 
 # dependencies
 
@@ -65,7 +67,7 @@ mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
 fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
 sing.o: fourfit.o
-zvode1.o:
+zvode1.o: ../zvode/zvode.o ../zlange/zlange.o
 riccati.o: sing.o
 ode.o: sing.o debug.o zvode1.o ../equil/sparse.o riccati.o
 free.o: ode.o
