@@ -3,8 +3,9 @@ include DEFAULTS.inc
 
 # extend these variables to sub-makes
 #FFLAGS?="-openmp -vec_report0"   # for when we get intel/2012
-FFLAGS ?= "-qopenmp"
-CFLAGS ?=
+# Set the default FFLAGS and CFLAGS compiler options to "-g".
+FFLAGS ?= "-g"
+CFLAGS ?= "-g"
 
 export FFLAGS
 export CFLAGS
