@@ -36,16 +36,23 @@ OBJS = \
 	sing.o \
 	zvode1.o \
 	ode.o \
+	stride_netcdf.o \
 	free.o \
 	riccati.o \
-	dcon.o
+	stride.o
 
 # targets
 
-all: lsode superlu equil vacuum zvode zvlode stride
+all: lsode zvode zlange superlu equil vacuum version stride
 
 lsode:
 	cd ../lsode; make
+
+zvode:
+	cd ../zvode; make
+
+zlange:
+	cd ../zlange; make
 
 superlu:
 	$(SLU_COMMAND)
@@ -57,12 +64,30 @@ vacuum:
 	cd ../vacuum; make
 
 stride: $(OBJS)
-	$(F90) -o stride $(OBJS) $(LIBS) #-L$(MATHDIR) $(MATHLIBS)
+	$(F90) -o stride $(OBJS) $(LIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
+
+ifeq ($(wildcard version.inc),)
+version.inc: force
+	@echo ">>> Creating version file"
+	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee version.inc
+else ifeq ($(shell grep -F "'"`git describe --tags`"'" version.inc),)
+version.inc: force
+	@echo ">>> Updating version file"
+	@echo "      CHARACTER(len=*), PARAMETER :: version ='"`git describe --tags`"'" | tee version.inc
+else
+version.inc:
+	@echo ">>> Git version unchanged!"
+endif
+
+force:
+
+clean:
+	rm -f *.o *.mod *.out *.bin *.dat *~ *.diff stride *.log *.optrpt *.dci *__genmod.f90 fort.[0123456789]*
 
 # dependencies
 
 dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
-	../equil/equil_mod.mod ../equil/equil_out_mod.mod
+	../equil/equil_mod.mod ../equil/equil_out_mod.mod version.inc
 mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
 fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
@@ -70,8 +95,6 @@ sing.o: fourfit.o
 zvode1.o: ../zvode/zvode.o ../zlange/zlange.o
 riccati.o: sing.o
 ode.o: sing.o debug.o zvode1.o ../equil/sparse.o riccati.o
-free.o: ode.o
-dcon.o: bal.o free.o mercier.o
-
-clean:
-	rm -f *.o *.mod *.out *.bin *.dat *~ *.diff stride *.log *.optrpt *.dci *__genmod.f90 fort.[0123456789]*
+stride_netcdf.o: dcon_mod.o
+free.o: ode.o stride_netcdf.o
+stride.o: bal.o free.o mercier.o

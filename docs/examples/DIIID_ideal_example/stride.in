@@ -1,4 +1,4 @@
-&dcon_control
+&stride_control
 	mat_flag=t
 	ode_flag=t
 	vac_flag=t
@@ -25,13 +25,14 @@
 	sing_order=6
 /
 
-&dcon_output
+&stride_output
 	crit_break=t
 	ahb_flag=f
 	msol_ahb=1
 	mthsurf0=1
 	bin_euler=f
 	euler_stride=1
+	netcdf_out=t
 /
 
 &stride_params

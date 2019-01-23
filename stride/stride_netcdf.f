@@ -1,20 +1,20 @@
 c-----------------------------------------------------------------------
-c     file dcon_netcdf.f
-c     writes dcon.out information to a netcdf file
+c     file stride_netcdf.f
+c     writes stride.out information to a netcdf file
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. dcon_netcdf_mod
+c     0. stride_netcdf_mod
 c     1. check
-c     2. dcon_netcdf_out
+c     2. stride_netcdf_out
 c-----------------------------------------------------------------------
-c     subprogram 0. dcon_netcdf_mod
+c     subprogram 0. stride_netcdf_mod
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      MODULE dcon_netcdf_mod
+      MODULE stride_netcdf_mod
       USE dcon_mod
       USE netcdf
       IMPLICIT NONE
@@ -42,36 +42,42 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE check
 c-----------------------------------------------------------------------
-c     subprogram 2. dcon_netcdf_out.
-c     Replicate dcon.out information in netcdf format.
+c     subprogram 2. stride_netcdf_out.
+c     Replicate stride.out information in netcdf format.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE dcon_netcdf_out(wp,wv,wt,ep,ev,et)
+      SUBROUTINE stride_netcdf_out(wp,wv,wt,epi,evi,eti)
 
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: ep,ev,et
+      REAL(r8), DIMENSION(mpert), INTENT(IN) :: epi,evi,eti
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id
+      COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
-      LOGICAL, PARAMETER :: debug_flag = .FALSE.
+      LOGICAL, PARAMETER :: debug_flag = .TRUE.
 c-----------------------------------------------------------------------
 c     set variables
 c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *,"Called dcon_netcdf_out"
+      IF(debug_flag) PRINT *,"Called stride_netcdf_out"
       IF (nn<10) THEN
          WRITE(UNIT=sn,FMT='(I1)')nn
          sn=ADJUSTL(sn)
       ELSE
          WRITE(UNIT=sn,FMT='(I2)')nn
       ENDIF
-      ncfile = "dcon_output_n"//TRIM(sn)//".nc"
+      ncfile = "stride_output_n"//TRIM(sn)//".nc"
+      IF(debug_flag) PRINT *, ncfile
+      ! stride has no kinetic effects, and thus strictly real deltaWs
+      ep = CMPLX(epi, 0.0)
+      ev = CMPLX(evi, 0.0)
+      et = CMPLX(eti, 0.0)
 c-----------------------------------------------------------------------
 c     open files
 c-----------------------------------------------------------------------
@@ -81,9 +87,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     define global file attributes
 c-----------------------------------------------------------------------
-      IF(debug_flag) PRINT *," - Defining modal netcdf globals"
+      IF(debug_flag) PRINT *," - Defining netcdf globals"
       CALL check( nf90_put_att(ncid,nf90_global,"title",
-     $     "DCON outputs"))
+     $     "STRIDE outputs"))
       ! define global attributes
       CALL check( nf90_put_att(ncid,nf90_global,"jacobian",
      $     trim(jac_type)))
@@ -129,6 +135,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,"n", nn))
       CALL check( nf90_put_att(ncid,nf90_global,"version", version))
       ! define dimensions
+      IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
       CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
       CALL check( nf90_def_var(ncid, "i", nf90_int, i_dim, i_id) )
       CALL check( nf90_def_dim(ncid, "m", mpert,  m_dim) )
@@ -138,6 +145,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
       ! define variables
+      IF(debug_flag) PRINT *," - Defining variables in netcdf"
       CALL check( nf90_def_var(ncid, "f", nf90_double, p_dim, f_id) )
       CALL check( nf90_def_var(ncid, "mu0p", nf90_double, p_dim, mu_id))
       CALL check( nf90_def_var(ncid, "dvdpsi", nf90_double,p_dim,dv_id))
@@ -199,6 +207,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE dcon_netcdf_out
+      END SUBROUTINE stride_netcdf_out
 
-      END MODULE dcon_netcdf_mod
+      END MODULE stride_netcdf_mod

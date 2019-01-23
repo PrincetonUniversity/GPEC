@@ -14,7 +14,10 @@ c-----------------------------------------------------------------------
       USE global_mod
       USE equil_mod
       USE equil_out_mod
+
       IMPLICIT NONE
+
+      INCLUDE "version.inc"
 
       INTEGER :: out_bal1_unit=21
       INTEGER :: out_bal2_unit=22
@@ -64,6 +67,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: crit_break=.TRUE.
       LOGICAL :: node_flag=.FALSE.
       LOGICAL :: ahb_flag=.FALSE.
+      LOGICAL :: netcdf_out=.TRUE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,

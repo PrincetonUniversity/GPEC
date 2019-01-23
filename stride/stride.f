@@ -1,20 +1,20 @@
 c-----------------------------------------------------------------------
-c     file dcon.f.
+c     file stride.f.
 c     performs ideal MHD stability analysis.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     1. dcon.
-c     2. dcon_dealloc.
+c     1. stride.
+c     2. stride_dealloc.
 c-----------------------------------------------------------------------
-c     subprogram 1. dcon.
+c     subprogram 1. stride.
 c     performs ideal MHD stability analysis.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      PROGRAM dcon
+      PROGRAM stride
       USE equil_mod
       USE equil_out_mod
       USE bal_mod
@@ -33,17 +33,17 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ithread, mainlevelThreads
 
-      NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
+      NAMELIST/stride_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     mer_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order
-      NAMELIST/dcon_output/interp,crit_break,out_bal1,
+      NAMELIST/stride_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb
+     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out
       NAMELIST/stride_params/grid_packing,asymp_at_sing,
      $     integrate_riccati,calc_delta_prime,calc_dp_with_vac,
      $     solve_delta_prime_with_sparse_mat,axis_mid_pt_skew,
@@ -87,9 +87,9 @@ c     read input data.
 c-----------------------------------------------------------------------
       CALL timer(0,out_unit)
       CALL ascii_open(in_unit,"stride.in","OLD")
-      READ(UNIT=in_unit,NML=dcon_control)
+      READ(UNIT=in_unit,NML=stride_control)
       REWIND(UNIT=in_unit)
-      READ(UNIT=in_unit,NML=dcon_output)
+      READ(UNIT=in_unit,NML=stride_output)
       REWIND(UNIT=in_unit)
       READ(UNIT=in_unit,NML=stride_params)
       CALL ascii_close(in_unit)
@@ -287,12 +287,12 @@ c-----------------------------------------------------------------------
       IF(vac_flag .AND. .NOT.
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          WRITE(*,*)"Computing free boundary energies"
-         CALL free_run(plasma1,vacuum1,total1)
+         CALL free_run(plasma1,vacuum1,total1,netcdf_out)
       ELSE
          plasma1=0
          vacuum1=0
          total1=0
-         CALL dcon_dealloc
+         CALL stride_dealloc
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
       IF(bin_euler)CALL bin_close(euler_bin_unit)
@@ -326,15 +326,15 @@ c-----------------------------------------------------------------------
      $        REAL(fTime-s0Time,8)/REAL(cr,8)
       ENDIF
       CALL program_stop("Normal termination.")
-      END PROGRAM dcon
+      END PROGRAM stride
 c-----------------------------------------------------------------------
-c     subprogram 2. dcon_dealloc.
+c     subprogram 2. stride_dealloc.
 c     deallocates internal memory.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE dcon_dealloc
+      SUBROUTINE stride_dealloc
       USE ode_mod
       IMPLICIT NONE
 
@@ -378,4 +378,4 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE dcon_dealloc
+      END SUBROUTINE stride_dealloc
