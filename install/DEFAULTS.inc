@@ -167,7 +167,7 @@ else ifdef ACML_HOME
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
 else
-    echo "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME"
+    $(info "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME")
 endif
 
 # specifics of which libraries are used
@@ -205,7 +205,7 @@ ifdef NETCDF_FORTRAN_HOME
 else
     ifndef NETCDFHOME
         ifndef NETCDF_DIR
-            echo "Must set NETCDF_FORTRAN_HOME, NETCDFHOME, or NETCDF_DIR"
+            $(info "Must set NETCDF_FORTRAN_HOME, NETCDFHOME, or NETCDF_DIR")
         else
             NETCDFHOME = $(NETCDF_DIR)
         endif
@@ -226,15 +226,18 @@ ifdef NETCDF_C_HOME
     NETCDFLIBS = -lnetcdff
     NETCDF_C_LIBS = -lnetcdf
     NETCDF_C_DIR = $(NETCDF_C_HOME)/lib
+    NETCDF_EXTRA_LIBS = -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
 else
     ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
         NETCDFLIBS = -lnetcdff
         NETCDF_C_LIBS = -lnetcdf
         NETCDF_C_DIR = $(NETCDFDIR)
+        NETCDF_EXTRA_LIBS = -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
     else
         NETCDFLIBS = -lnetcdf
-        NETCDF_C_LIBS = $(NETCDFDIR)
-        NETCDF_C_DIR = -lnetcdf
+        NETCDF_C_LIBS = -lnetcdf
+        NETCDF_C_DIR = $(NETCDFDIR)
+        NETCDF_EXTRA_LIBS =
     endif
 endif
 
@@ -246,12 +249,15 @@ ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
 #    FCLIBS = -lirc -limf # irc.a needed for static compile
     FCLIBS = -lintlc -limf # intel changed irc to intlc ~2013?
     FCINC = $(F90HOME)/include/intel64
+    NETCDF_EXTRA_LIBS += -L$(FCDIR) $(FCLIBS)
 else ifneq ($(wildcard $(F90HOME)/compiler/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
     FCLIBS = -lirc -limf # irc.a needed for static compile
     FCINC = $(F90HOME)/compiler/include/intel64
+    NETCDF_EXTRA_LIBS += -L$(FCDIR) $(FCLIBS)
 else
     FCDIR = .
     FCLIBS =
     FCINC = .
+    NETCDF_EXTRA_LIBS =
 endif
