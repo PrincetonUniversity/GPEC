@@ -15,11 +15,42 @@
 # command in order to compile.
 #
 # On portal.pppl.gov
-#   Developers should load the default intel/11.0.081 and associated libraries,
+#   Developers can always load the gpec/0.0 module (development branch module) to get the latest compiler settings
+#     $ module use /p/gpec/modules; load gpec/0.0
+#   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
+#     $ module load module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#   Note that before the netcdf module was properly set up, we had to manually load supporting modules
+#     $ module load module load intel/2018.u1 openmpi szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#   Any of these should properly set up your LD_LIBRARY_PATH and PATH. Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message,
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /usr/pppl/intel/2018.u1/bin/ifort
+#      using math libraries -lacml
+#      from /usr/pppl/acml/5.3.1/ifort64/lib
+#      including /usr/pppl/acml/5.3.1/ifort64/include
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /usr/pppl/intel/2018-pkgs/netcdf-fortran-4.4.4/lib /usr/pppl/intel/2018-pkgs/netcdf-c-4.6.0/lib
+#      including /usr/pppl/intel/2018-pkgs/netcdf-fortran-4.4.4/include
+#      and compiler libraries -lintlc -limf
+#      from /usr/pppl/intel/2018.u1/lib/intel64
+#      including /usr/pppl/intel/2018.u1/include/intel64
+#
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compiling using
+#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#   Should set all the right flags and run through.
+#
+#   Developers can also load the default intel/11.0.081 and associated libraries,
 #     $ module load intel openmpi netcdf acml/5.3.1/ifort64 git
 #   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
-#   in this install directory should produce the following verbose message,
+#   in this install directory should produce the following verbose message.
 #
 #   ------------------------------------------------------------
 #   Defaults tailored for
@@ -36,15 +67,71 @@
 #
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
 #   ------------------------------------------------------------
-#   
+#
+#   In this case, one should compile using
+#    $ make FFLAGS="-openmp -vec_report0" 2>&1 | tee make.log
+#
+# On ukstar
+#   Developers should use the default intel compiler and load the netcdf_intel module
+#     $ module load netcdf/netcdf_intel
+#     $ export F90HOME=/opt/intel/compilers_and_libraries_2018.1.163/linux
+#     $ export FC=/opt/intel/compilers_and_libraries_2018.1.163/linux/bin/intel64/ifort
+#   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /opt/intel/compilers_and_libraries_2018.1.163/linux/bin/intel64/ifort
+#      using math libraries -lmkl_rt
+#      from /opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/lib/intel64
+#      including /opt/intel/compilers_and_libraries_2018.1.163/linux/mkl/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /usr/local/netcdf/lib /usr/local/netcdf/lib
+#      including /usr/local/netcdf/include
+#      and compiler libraries -lirc -limf
+#      from /opt/intel/compilers_and_libraries_2018.1.163/linux/lib/intel64
+#      including /opt/intel/compilers_and_libraries_2018.1.163/linux/compiler/include/intel64
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
 #   Now compile using
-#    $ make FFLAGS="-openmp -vec_report0"
+#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
 #
 # On iris.gat.com
-#   <Proper compiler options need to be updated for v1.2>
+#   Developers should use the ifort compiler and associated netcdf module
+#     $ module load ifort/ifort2017 netcdf/4.4.1-mpich3.2-ifort2017
+#   Then set one undefined environement variable
+#     $ export F90HOME=/fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux
+#   Alternately, you can simply load the gpec module!
+#     $ module load gpec
+#   This should properly set up your LD_LIBRARY_PATH, PATH, and environment variables.
+#    Either way, executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux/bin/intel64/ifort
+#      using math libraries -lmkl_rt
+#      from /fusion/usc/opt/intel2017//compilers_and_libraries/linux/mkl/lib/intel64
+#      including /fusion/usc/opt/intel2017//compilers_and_libraries/linux/mkl/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/lib /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/lib
+#      including /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/include
+#      and compiler libraries -lirc -limf
+#      from /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux//lib/intel64
+#      including /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux//compiler/include/intel64
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
 #
 # On mac OSX
-#   With the move to licensed intel compilers, OSX is no longer supported.
+#   With the move to licensed intel compilers, OSX is no longer actively supported.
 #
 #
 # If your platform is not properly included in this make file
@@ -57,24 +144,33 @@
 #------------------
 
 # use acml or lapack based on what is loaded
-ifndef ACML_HOME
+ifdef MKLROOT
+    MATHHOME = $(MKLROOT)
+  	MATHLIBS = -lmkl_rt
+else ifdef LAPACKHOME
     MATHHOME = $(LAPACKHOME)
     MATHLIBS = -llapack -lblas
-else
+else ifdef ACML_HOME
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
+else
+    echo "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME"
 endif
 
 # specifics of which libraries are used
 #---------------------------------------
 
 # tack on lib and include directories to math home if necessary
-ifneq ($(wildcard $(MATHHOME)/lib/.),)
+ifneq ($(wildcard $(MATHHOME)/lib/intel64/.),)
+    MATHDIR = $(MATHHOME)/lib/intel64
+else ifneq ($(wildcard $(MATHHOME)/lib/.),)
     MATHDIR = $(MATHHOME)/lib
 else
     MATHDIR = $(MATHHOME)
 endif
-ifneq ($(wildcard $(MATHHOME)/include/.),)
+ifneq ($(wildcard $(MATHHOME)/include/intel64/lp64/.),)
+    MATHINC = $(MATHHOME)/include/intel64/lp64
+else ifneq ($(wildcard $(MATHHOME)/include/.),)
     MATHINC = $(MATHHOME)/include
 else
     MATHINC = $(MATHHOME)
@@ -94,6 +190,13 @@ ifdef NETCDF_FORTRAN_HOME
         NETCDFINC = $(NETCDF_FORTRAN_HOME)
     endif
 else
+    ifndef NETCDFHOME
+        ifndef NETCDF_DIR
+            echo "Must set NETCDF_FORTRAN_HOME, NETCDFHOME, or NETCDF_DIR"
+        else
+            NETCDFHOME = $(NETCDF_DIR)
+        endif
+    endif
     ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
         NETCDFDIR = $(NETCDFHOME)/lib
     else
@@ -127,12 +230,16 @@ endif
 # include compiler specific libs for intel fast moves
 ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
-    FCLIBS = -lirc -limf # irc.a needed for static compile
-    #FCLIBS = -lintlc -limf # intlc was new for intel?
+#    FCLIBS = -lirc -limf # irc.a needed for static compile
+    FCLIBS = -lintlc -limf # intel changed irc to intlc ~2013?
     FCINC = $(F90HOME)/include/intel64
+else ifneq ($(wildcard $(F90HOME)/compiler/lib/intel64/.),)
+    FCDIR = $(F90HOME)/lib/intel64
+    FCLIBS = -lirc -limf # irc.a needed for static compile
+    FCINC = $(F90HOME)/compiler/include/intel64
 else
     FCDIR = .
-    FCLIBS = 
+    FCLIBS =
     FCINC = .
 endif
 

@@ -384,7 +384,10 @@ c-----------------------------------------------------------------------
       CALL spline_eval(sq,psi,0)
       DO itheta=0,mthsurf
          CALL bicube_eval(rzphi,psi,theta(itheta),0)
+         rfac=SQRT(rzphi%f(1))
          etas(itheta)=twopi*(theta(itheta)+rzphi%f(2))
+         r(itheta)=ro+rfac*COS(etas(itheta))
+         z(itheta)=zo+rfac*SIN(etas(itheta))
          dphi(itheta)=rzphi%f(3)
       ENDDO
       IF(ALLOCATED(gdr))THEN
