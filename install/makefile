@@ -6,9 +6,11 @@ include DEFAULTS.inc
 # Set the default FFLAGS and CFLAGS compiler options to "-g".
 FFLAGS ?= "-g"
 CFLAGS ?= "-g"
+OMPFLAG ?= "-qopenmp"
 
 export FFLAGS
 export CFLAGS
+export OMPFLAG
 
 # compile package
 
