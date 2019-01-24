@@ -3,7 +3,7 @@ include ../install/DEFAULTS.inc
 
 #FFLAGS = -qopenmp    # Only valid for Intel compiler
 IFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
 .f.o:
