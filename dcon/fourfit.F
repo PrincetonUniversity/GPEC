@@ -956,8 +956,13 @@ c-----------------------------------------------------------------------
       debug_omp = .FALSE.
       IF(debug_omp)THEN
          print *,"In serial region..."
+#ifdef _OPENMP
          lThreads = OMP_GET_NUM_THREADS()
          print *,"# of OMP threads = ",lThreads
+#else
+         lThreads = 1
+         print *,"# NO OPENMP MULTITHREADING"
+#endif
       ENDIF
 c-----------------------------------------------------------------------
 c     some basic variables
@@ -1073,11 +1078,13 @@ c!!!!!!...from lsode2.f
 !$OMP& /DLS002/,
 c!!!!!!...from pitch.f90
 !$OMP& /lcom/)
+#ifdef _OPENMP
             IF(ipsi==0 .AND. OMP_GET_THREAD_NUM() == 0)THEN
                lThreads = OMP_GET_NUM_THREADS()
                WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
      $              lThreads," OMP threads"
             ENDIF
+#endif
             IF (ion_flag) THEN
 !$OMP DO
                DO l=-nl,nl  ! Parallel. Good. But often just 1 of the l's is slow and holds up the whole ipsi loop
