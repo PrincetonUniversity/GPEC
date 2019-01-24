@@ -1471,7 +1471,7 @@ c-----------------------------------------------------------------------
       i_recur=0
       i_depth=0
       x0=psilow
-      x1=psihigh
+      x1=psilim
 c-----------------------------------------------------------------------
 c     adaptively search the singular point.
 c-----------------------------------------------------------------------
@@ -1500,9 +1500,9 @@ c-----------------------------------------------------------------------
          singnum=singnum+1
          
       ENDIF
-      IF (psising(singnum)<psihigh) THEN
+      IF (psising(singnum)<psilim) THEN
          singnum=singnum+1
-         psising(singnum)=psihigh
+         psising(singnum)=psilim
       ENDIF
 c-----------------------------------------------------------------------
 c     Newton method to find the accurate local minimum point.

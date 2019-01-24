@@ -148,7 +148,7 @@ c-----------------------------------------------------------------------
 c     set global integration interval parameters.
 c-----------------------------------------------------------------------
          axisPsi = sq%xs(0)
-         outerPsi = psihigh*(1-eps)
+         outerPsi = psilim*(1-eps)
          DO iS = 1,msing
             scalc(iS)%singEdgesLR(1) = sing(iS)%psifac - singfac_min/
      $           ABS(nn*sing(iS)%q1)

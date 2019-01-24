@@ -5,7 +5,7 @@
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
     mer_flag=t           ! Evaluate the Mercier criterian
 
-    sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
