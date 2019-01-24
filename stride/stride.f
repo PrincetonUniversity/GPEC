@@ -23,7 +23,8 @@ c-----------------------------------------------------------------------
       USE free_mod
       IMPLICIT NONE
 
-      LOGICAL :: cyl_flag=.FALSE.
+      LOGICAL :: cyl_flag=.FALSE., use_notaknot_splines=.TRUE.,
+     $           use_classic_splines_for_stride
       INTEGER :: mmin
       REAL(r8) :: plasma1,vacuum1,total1
 
@@ -37,7 +38,8 @@ c-----------------------------------------------------------------------
      $     mer_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
-     $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order
+     $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,
+     $     use_classic_splines,use_notaknot_splines
       NAMELIST/stride_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -47,10 +49,10 @@ c-----------------------------------------------------------------------
       NAMELIST/stride_params/grid_packing,asymp_at_sing,
      $     integrate_riccati,calc_delta_prime,calc_dp_with_vac,
      $     solve_delta_prime_with_sparse_mat,axis_mid_pt_skew,
-     $     big_soln_err_tol,use_new_spline, kill_big_soln_for_ideal_dW,
+     $     big_soln_err_tol, kill_big_soln_for_ideal_dW,
      $     ric_dt,ric_tol,riccati_bounce,verbose_riccati_output,
      $     riccati_match_hamiltonian_evals,verbose_performance_output,
-     $     fourfit_metric_parallel,vac_parallel
+     $     fourfit_metric_parallel,vac_parallel,nIntervalsTot,nThreads
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -62,26 +64,7 @@ c-----------------------------------------------------------------------
 
       CALL SYSTEM_CLOCK(COUNT_RATE=cr)
       CALL SYSTEM_CLOCK(COUNT=s0Time)
-c-----------------------------------------------------------------------
-c     check datatypes of command line inputs.
-c-----------------------------------------------------------------------
       sTime = s0Time
-      nArg = iargc()
-      IF (nArg /= 2) THEN
-         CALL program_stop("Must input two integer arguments"//
-     $        "--nIntervalsTot nThreads")
-      ELSE
-         CALL getarg(1,arg_str1)
-         IF (VERIFY(arg_str1,"0123456789") /= LEN_TRIM(arg_str1)+1) THEN
-            CALL program_stop("Argument must be an integer.")
-         ENDIF
-         CALL getarg(2,arg_str2)
-         IF (VERIFY(arg_str2,"0123456789") /= LEN_TRIM(arg_str2)+1) THEN
-            CALL program_stop("Argument must be an integer.")
-         ENDIF
-      ENDIF
-      READ (arg_str1,'(I10)') nIntervalsTot
-      READ (arg_str2,'(I10)') nThreads
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
@@ -94,14 +77,33 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=stride_params)
       CALL ascii_close(in_unit)
 c-----------------------------------------------------------------------
+c     check datatypes of command line inputs.
+c-----------------------------------------------------------------------
+      nArg = iargc()
+      IF (nArg /=0 .AND. nArg /= 2) THEN
+         CALL program_stop("Must input two integer arguments"//
+     $        "--nIntervalsTot nThreads")
+      ELSEIF (nArg == 2) THEN
+         CALL getarg(1,arg_str1)
+         IF (VERIFY(arg_str1,"0123456789") /= LEN_TRIM(arg_str1)+1) THEN
+            CALL program_stop("Argument must be an integer.")
+         ENDIF
+         CALL getarg(2,arg_str2)
+         IF (VERIFY(arg_str2,"0123456789") /= LEN_TRIM(arg_str2)+1) THEN
+            CALL program_stop("Argument must be an integer.")
+         ENDIF
+         READ (arg_str1,'(I10)') nIntervalsTot
+         READ (arg_str2,'(I10)') nThreads
+      ENDIF
+c-----------------------------------------------------------------------
 c     set spline methodology for program.
 c-----------------------------------------------------------------------
-      IF (use_new_spline) THEN
+      IF (use_notaknot_splines) THEN
          ALLOCATE(CHARACTER(6) :: spline_str)
-         spline_str="extrap"
+         spline_str="not-a-knot"
       ELSE
          ALLOCATE(CHARACTER(7) :: spline_str)
-         spline_str="extrap1"
+         spline_str="extrap"
       ENDIF
 c-----------------------------------------------------------------------
 c     check consistency of input settings.
@@ -118,6 +120,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
+      use_classic_splines_for_stride = use_classic_splines ! allow equil to use or not
       CALL ascii_open(out_unit,"stride.out","UNKNOWN")
       CALL equil_read(out_unit)
       IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
@@ -130,6 +133,7 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"*** equil-input time=",REAL(fTime-sTime,8)/REAL(cr,8)
       ENDIF
+      use_classic_splines = use_classic_splines_for_stride
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
