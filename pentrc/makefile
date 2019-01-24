@@ -3,13 +3,16 @@ include ../install/DEFAULTS.inc
 
 #FFLAGS = -qopenmp
 IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS
 
 .f.o:
 	$(F90) -c $*.f
 
 %.o: %.f90
+	$(F90) -c $<
+
+%.o: %.F90
 	$(F90) -c $<
 
 LIBDIR = ../lib
