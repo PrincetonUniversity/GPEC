@@ -48,20 +48,22 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE stride_netcdf_out(wp,wv,wt,epi,evi,eti)
+      SUBROUTINE stride_netcdf_out(wp,wv,wt,epi,evi,eti,dp)
 
       REAL(r8), DIMENSION(mpert), INTENT(IN) :: epi,evi,eti
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: dp
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
-     $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id
+     $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
+     $    r_dim, rp_dim, r_id, rp_id, pr_id, qr_id, dp_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
-      LOGICAL, PARAMETER :: debug_flag = .TRUE.
+      LOGICAL, PARAMETER :: debug_flag = .FALSE.
 c-----------------------------------------------------------------------
 c     set variables
 c-----------------------------------------------------------------------
@@ -144,6 +146,14 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "mode", nf90_int, mo_dim, mo_id))
       CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
+      IF(msing>0)THEN
+         CALL check( nf90_def_dim(ncid,"r",msing,r_dim) )
+         CALL check( nf90_def_var(ncid,"r",nf90_int,r_dim,r_id))
+         CALL check( nf90_def_dim(ncid,"r_prime",msing,rp_dim) )
+         CALL check( nf90_def_var(ncid,"r_prime",nf90_int,rp_dim,rp_id))
+         CALL check( nf90_def_var(ncid,"psi_r",nf90_double,r_dim,pr_id))
+         CALL check( nf90_def_var(ncid,"q_rat",nf90_double,r_dim,qr_id))
+      ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
       CALL check( nf90_def_var(ncid, "f", nf90_double, p_dim, f_id) )
@@ -166,6 +176,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "W_t_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wtv_id) )
       ! end definitions
+      IF(msing>0 .AND. ALLOCATED(dp))THEN
+         CALL check( nf90_def_var(ncid, "Delta_prime", nf90_double,
+     $       (/r_dim, rp_dim, i_dim/), dp_id) )
+      ENDIF
       CALL check( nf90_enddef(ncid) )
 c-----------------------------------------------------------------------
 c     set variables
@@ -175,6 +189,14 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,m_id, (/(i+mlow, i=0,mpert-1)/)) )
       CALL check( nf90_put_var(ncid,mo_id, (/(i, i=1,mpert)/)) )
       CALL check( nf90_put_var(ncid,p_id, sq%xs(:)))
+      IF(msing>0)THEN
+         CALL check( nf90_put_var(ncid, r_id, (/(i, i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid,rp_id, (/(i, i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid,pr_id, (/(sing(i)%psifac,
+     $                                           i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid,qr_id, (/(sing(i)%q,
+     $                                           i=1,msing)/)) )
+      ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
       CALL check( nf90_put_var(ncid,f_id, sq%fs(:,1)/twopi))
@@ -198,6 +220,10 @@ c-----------------------------------------------------------------------
      $             AIMAG(wt)/),(/mpert,mpert,2/))) )
       CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),
      $             AIMAG(et)/),(/mpert,2/))) )
+      IF(msing>0 .AND. ALLOCATED(dp))THEN
+         CALL check( nf90_put_var(ncid,dp_id,RESHAPE((/REAL(dp),
+     $                AIMAG(dp)/),(/msing,msing,2/))) )
+      ENDIF
 c-----------------------------------------------------------------------
 c     close file
 c-----------------------------------------------------------------------
