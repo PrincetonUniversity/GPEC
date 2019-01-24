@@ -350,14 +350,26 @@ module torque
         enddo
 
         if (tdebug) then
+#ifdef _OPENMP
+        ! Compiled with OpenMP multithreading. Print out thread number.
            print *,"Pass1::: thread=",OMP_GET_THREAD_NUM(),"l=",l,"tspl%fs=",tspl%fs(:,1)
+#else
+        ! No OpenMP multithreading
+           print *,"Pass1::: l=",l,"tspl%fs=",tspl%fs(:,1)
+#endif
         endif
 
         ! clebsch conversion now in djdt o1*exp(-twopi*ifac*nn*q*theta)
         call spline_fit(tspl,"periodic")
 
         if (tdebug) then
+#ifdef _OPENMP
+        ! Compiled with OpenMP multithreading. Print out thread number.
            print *,"Pass2::: thread=",OMP_GET_THREAD_NUM(),"l=",l,"tspl%fs=",tspl%fs(:,1)
+#else
+        ! No OpenMP multithreading
+           print *,"Pass2::: l=",l,"tspl%fs=",tspl%fs(:,1)
+#endif
         endif
 
         bmax = maxval(tspl%fs(:,1),dim=1)
