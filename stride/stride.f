@@ -299,7 +299,6 @@ c-----------------------------------------------------------------------
          CALL stride_dealloc
       ENDIF
       IF(mat_flag .OR. ode_flag)DEALLOCATE(amat,bmat,cmat,ipiva,jmat)
-      IF(bin_euler)CALL bin_close(euler_bin_unit)
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
          print *,"*** free-run time=",REAL(fTime-sTime,8)/REAL(cr,8)

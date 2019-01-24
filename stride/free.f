@@ -234,14 +234,6 @@ c-----------------------------------------------------------------------
          DEALLOCATE(r,z,theta,dphi,thetas,project)
       ENDIF
 c-----------------------------------------------------------------------
-c     save eigenvalues and eigenvectors to file.
-c-----------------------------------------------------------------------
-      IF(bin_euler)THEN
-         WRITE(euler_bin_unit)3
-         WRITE(euler_bin_unit)et
-         WRITE(euler_bin_unit)wt
-      ENDIF
-c-----------------------------------------------------------------------
 c     write to screen and copy to output.
 c-----------------------------------------------------------------------
       WRITE(*,10)ep(1),ev(1),et(1)
