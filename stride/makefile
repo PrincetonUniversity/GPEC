@@ -82,7 +82,7 @@ endif
 force:
 
 clean:
-	rm -f *.o *.mod *.out *.bin *.dat *~ *.diff stride *.log *.optrpt *.dci *__genmod.f90 fort.[0123456789]*
+	rm -f *.o *.mod *.out *.bin *.dat *~ *.diff stride *.log *.optrpt *.dci *__genmod.f90
 
 # dependencies
 
