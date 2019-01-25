@@ -48,7 +48,7 @@ c-----------------------------------------------------------------------
 
       !Grid-packing variables.
       CHARACTER(20) :: grid_packing
-      INTEGER :: nIntervalsTot=16
+      INTEGER :: nIntervalsTot=33
       !Variables used in dcon.f.
       INTEGER :: ising,nzero
       REAL(r8) :: singfac_max=1e-4

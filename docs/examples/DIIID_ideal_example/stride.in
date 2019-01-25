@@ -46,11 +46,11 @@
 /
 
 &stride_params
-    nThreads=16                         ! Number of threads used to calculate intervals in parallel
+    nThreads=32                         ! Number of threads used to calculate intervals in parallel
     fourfit_metric_parallel=f           ! Compute equilibrium metric tensor components in parallel
     vac_parallel=t                      ! Doubles the number of main level threads, creating more threads than processors
 
-    nIntervalsTot=16                    ! Number of radial intervals calculated in separately and recombined at end
+    nIntervalsTot=33                    ! Number of radial intervals calculated in separately and recombined at end
     grid_packing="singularities"        ! Choose from "singularities" and "naive"
     axis_mid_pt_skew=12.0               ! Skews the distribution of intervals between psilow and psihigh
     asymp_at_sing=t                     ! Use asymptotic expansions at singular surfaces
