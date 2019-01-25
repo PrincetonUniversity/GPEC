@@ -1,6 +1,6 @@
 
 FFLAGS = -qopenmp
-EXTRA_FFLAGS = -xHost -mkl -diag-disable 10397 #-03  #-qopt-zmm-usage=high #-ipo
+EXTRA_FFLAGS = #-mkl #-diag-disable 10397 #-xHost #-03  #-qopt-zmm-usage=high #-ipo
 
 F90 = $(FC) $(FFLAGS) $(EXTRA_FFLAGS)
 
@@ -61,8 +61,8 @@ fft.o: local.o
 c_fortran_zgssv.o:
 sparse.o: local.o c_fortran_zgssv.o
 fspline.o: local.o spline.o cspline.o utils.o fft.o
-global.o: bicube.o
-inverse.o: global.o
+global.o: bicube.o cspline.o
+inverse.o: global.o utils.o
 direct.o: global.o
 read_eq.o: inverse.o direct.o
 lar.o: inverse.o
