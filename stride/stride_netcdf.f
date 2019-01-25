@@ -190,8 +190,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,mo_id, (/(i, i=1,mpert)/)) )
       CALL check( nf90_put_var(ncid,p_id, sq%xs(:)))
       IF(msing>0)THEN
-         CALL check( nf90_put_var(ncid, r_id, (/(i, i=1,msing)/)) )
-         CALL check( nf90_put_var(ncid,rp_id, (/(i, i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid, r_id, (/(sing(i)%m,
+     $                                           i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid,rp_id, (/(sing(i)%m,
+     $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,pr_id, (/(sing(i)%psifac,
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,qr_id, (/(sing(i)%q,

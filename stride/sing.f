@@ -98,6 +98,10 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE sing_asymp
       INTEGER :: ising, sTime, fTime, cr
+      REAL(r8) :: di0
+
+ 10   FORMAT(/2x,"i",5x,"psi",8x,"rho",9x,"q",10x,"q1",8x,"di0",9x,"di",
+     $     8x,"err"/)
 
       CALL SYSTEM_CLOCK(COUNT=sTime)
       CALL SYSTEM_CLOCK(COUNT_RATE=cr)
@@ -135,6 +139,19 @@ c-----------------------------------------------------------------------
       ENDDO
 !$OMP END DO
 !$OMP END PARALLEL
+c-----------------------------------------------------------------------
+c     write to table of singular surface quantities.
+c-----------------------------------------------------------------------
+      WRITE(out_unit,'(/1x,a)')"Singular Surfaces:"
+      WRITE(out_unit,10)
+      DO ising=1,msing
+         CALL spline_eval(locstab,sing(ising)%psifac,0)
+         di0=locstab%f(1)/sing(ising)%psifac
+         WRITE(out_unit,'(i3,1p,7e11.3)')ising,sing(ising)%psifac,
+     $         sing(ising)%rho,sing(ising)%q,sing(ising)%q1,
+     $         di0,sing(ising)%di,sing(ising)%di/di0-1
+      ENDDO
+      WRITE(out_unit,10)
 c-----------------------------------------------------------------------
 c     timer.
 c-----------------------------------------------------------------------
@@ -379,11 +396,6 @@ c-----------------------------------------------------------------------
       singp%power=0
       singp%power(ipert0)=-singp%alpha
       singp%power(ipert0+mpert)=singp%alpha
-c-----------------------------------------------------------------------
-c     write to table of singular surface quantities.
-c-----------------------------------------------------------------------
-      WRITE(out_unit,'(i3,1p,7e11.3)')ising,psifac,rho,q,q1,di0,
-     $     singp%di,singp%di/di0-1
 c-----------------------------------------------------------------------
 c     allocate vmatl and vmatr at singular surface.
 c-----------------------------------------------------------------------
