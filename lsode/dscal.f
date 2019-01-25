@@ -4,7 +4,7 @@ c     scales a vector by a constant.
 c     uses unrolled loops for increment equal to one.
 c     jack dongarra, linpack, 3/11/78.
 c
-      real*8 da,dx(1)
+      real*8 da,dx(*)
       integer i,incx,m,mp1,n,nincx
 c
       if(n.le.0)return

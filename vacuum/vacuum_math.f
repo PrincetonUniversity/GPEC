@@ -464,7 +464,7 @@ c-----------------------------------------------------------------------
       r1sq = sqrt( r14 )
       r1 = sqrt( r1sq )
       s  = (xp2 + zm2 )/r1sq
-      call aleg_new ( s,nloc, pm,pn,pp, aleg0,aleg1 )
+      call aleg ( s,nloc, pm,pn,pp, aleg0,aleg1 )
       kloc=0
       ak=zero
       if ( nloc .eq. 0 )  go to 10
