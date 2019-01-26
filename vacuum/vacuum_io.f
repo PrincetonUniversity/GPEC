@@ -448,34 +448,57 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine readahg ( ahgdir, mthin,lmin,lmax,ndcon,qa1,xinf,
      $     zinf, delta, vecin, mth )
+      use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
+     $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
       implicit real*8 (a-h,o-z)
       character(128) ahgdir
       integer mthin,lmin,lmax,ndcon,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*)
 c-----------------------------------------------------------------------
+c     don't bother with file io is passed in memory.
+c-----------------------------------------------------------------------
+      if(dcon_set)then
+         print *, 'dcon already set!'
+         mthin = mth_dcon
+         lmin = lmin_dcon
+         lmax = lmax_dcon
+         ndcon = nn_dcon
+         qa1 = qa1_dcon
+         print *, mthin, lmin, lmax, ndcon, qa1
+         ! note mthin is 1 less than len(x_dcon). bug? or vac doesn't close theta?
+         call trans ( x_dcon,mthin, xinf,mth )
+         call trans ( z_dcon,mthin, zinf,mth )
+         call trans ( delta_dcon,mthin, delta,mth )
+         vecin(1:mthin) = delta_dcon(1:mthin)
+         print *, xinf(1:3)
+         print *, xinf(mth-2:mth)
+      else
+c-----------------------------------------------------------------------
 c     read data.
 c-----------------------------------------------------------------------
-      open(unit=3,file=trim(ahgdir)//'/ahg2msc.out')
-      read(3,*)mthin
-      read(3,*)lmin
-      read(3,*)lmax
-      read(3,*)ndcon
-      read(3,*)qa1
-      mthin1 = mthin + 1
-      read(3,'(//)')
-      read(3,*)(vecin(ith),ith=1,mthin1)
-      read(3,'(//)')
-      read(3,*)(vecin(ith),ith=1,mthin1)
-      read(3,'(//)')
-      read(3,*)(vecin(ith),ith=1,mthin1)
-      call trans ( vecin,mthin, xinf,mth )
-      read(3,'(//)')
-      read(3,*)(vecin(ith),ith=1,mthin1)
-      call trans ( vecin,mthin, zinf,mth )
-      read(3,'(//)')
-      read(3,*)(vecin(ith),ith=1,mthin1)
-      call trans ( vecin,mthin, delta,mth )
-      close(unit=3)
+         print *, 'reading ahg2msc.out!'
+         open(unit=3,file=trim(ahgdir)//'/ahg2msc.out')
+         read(3,*)mthin
+         read(3,*)lmin
+         read(3,*)lmax
+         read(3,*)ndcon
+         read(3,*)qa1
+         mthin1 = mthin + 1
+         read(3,'(//)')
+         read(3,*)(vecin(ith),ith=1,mthin1)
+         read(3,'(//)')
+         read(3,*)(vecin(ith),ith=1,mthin1)
+         read(3,'(//)')
+         read(3,*)(vecin(ith),ith=1,mthin1)
+         call trans ( vecin,mthin, xinf,mth )
+         read(3,'(//)')
+         read(3,*)(vecin(ith),ith=1,mthin1)
+         call trans ( vecin,mthin, zinf,mth )
+         read(3,'(//)')
+         read(3,*)(vecin(ith),ith=1,mthin1)
+         call trans ( vecin,mthin, delta,mth )
+         close(unit=3)
+      endif
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -638,7 +661,7 @@ c-----------------------------------------------------------------------
 
 c-----------------------------------------------------------------------
 c     subprogram 7. setahgdir.
-c     read netcdf data.
+c     set path to dcon outputs in case they aren't in the current dir.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -650,6 +673,63 @@ c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
       ahgdir = directory
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      return
+      end
+
+c-----------------------------------------------------------------------
+c     subprogram 7. set_dcon_params.
+c     In memory io for DCON
+c     Speedup over original ascii io (readahg) for multiple calls
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      subroutine set_dcon_params ( mthin,lmin,lmax,nnin,qa1in,xin,
+     $     zin, deltain )
+      use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
+     $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
+      integer :: mthin,lmin,lmax,nnin,mthin1
+      real*8 :: qa1in
+      real*8, dimension(*) :: xin, zin, deltain
+c-----------------------------------------------------------------------
+c     computations.
+c-----------------------------------------------------------------------
+      mthin1 = mthin + 1
+      if(dcon_set) call unset_dcon_params
+      allocate(x_dcon(mthin1), z_dcon(mthin1), delta_dcon(mthin1))
+      mth_dcon = mthin
+      lmin_dcon = lmin
+      lmax_dcon = lmax
+      nn_dcon = nnin
+      qa1_dcon = qa1in
+      x_dcon(1:mthin1) = xin(1:mthin1)
+      z_dcon(1:mthin1) = zin(1:mthin1)
+      delta_dcon(1:mthin1) = deltain(1:mthin1)
+
+      dcon_set = .TRUE.
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      return
+      end
+
+c-----------------------------------------------------------------------
+c     subprogram 8. unset_dcon_params.
+c     Tell vacuum to ignore in-memory dcon params and read ascii values
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      subroutine unset_dcon_params
+      use vglobal_mod, only: dcon_set, x_dcon, z_dcon, delta_dcon
+c-----------------------------------------------------------------------
+c     computations.
+c-----------------------------------------------------------------------
+      deallocate(x_dcon, z_dcon, delta_dcon)
+      dcon_set = .FALSE.
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------

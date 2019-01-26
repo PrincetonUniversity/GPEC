@@ -18,7 +18,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE free_mod
-      USE ode_mod
+      USE sing_mod
       USE dcon_netcdf_mod
       IMPLICIT NONE
 
@@ -39,11 +39,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_run(plasma1,vacuum1,total1,nzero,final,netcdf_out)
+      SUBROUTINE free_run(plasma1,vacuum1,total1,netcdf_out,
+     $  ode_flag,u,asmat,bsmat,csmat,jmat,ipiva)
 
       COMPLEX(r8), INTENT(OUT) :: plasma1,vacuum1,total1
-      INTEGER, INTENT(IN) :: nzero
-      LOGICAL, INTENT(IN) :: final, netcdf_out
+      LOGICAL, INTENT(IN) :: netcdf_out, ode_flag
+      COMPLEX(r8), DIMENSION(:, :,:), INTENT(IN) :: u
+      COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: asmat,bsmat,csmat
+      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: jmat
+      INTEGER, DIMENSION(:), INTENT(INOUT) :: ipiva
 
       LOGICAL, PARAMETER :: normalize=.TRUE.
       CHARACTER(1), DIMENSION(mpert,msol) :: star
@@ -84,6 +88,11 @@ c-----------------------------------------------------------------------
  80   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum"/)
  90   FORMAT(i6,1p,2e11.3)
 c-----------------------------------------------------------------------
+c     Basic parameters at this psi
+c-----------------------------------------------------------------------
+      CALL spline_eval(sq,psilim,0)
+      v1=sq%f(3)
+c-----------------------------------------------------------------------
 c     compute plasma response matrix.
 c-----------------------------------------------------------------------
       IF(ode_flag)THEN
@@ -99,10 +108,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write file for mscvac, prepare input for ahb (deallocate moved to end).
 c-----------------------------------------------------------------------
-      CALL free_write_msc
-      IF(ahb_flag)CALL free_ahb_prep(wp,nmat,smat)
-      CALL spline_eval(sq,psilim,0)
-      v1=sq%f(3)
+      CALL free_write_msc(psilim)
+      IF(ahb_flag)THEN
+         CALL free_ahb_prep(wp,nmat,smat,asmat,bsmat,csmat,ipiva)
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
@@ -186,90 +195,88 @@ c-----------------------------------------------------------------------
       plasma1=REAL(ep(1))
       vacuum1=REAL(ev(1))
       total1=REAL(et(1))
-      IF(final)THEN
 c-----------------------------------------------------------------------
 c     write data for ahb and deallocate.
 c-----------------------------------------------------------------------
-         IF(ahb_flag)THEN
-            CALL free_ahb_write(nmat,smat,wt,et)
-            DEALLOCATE(r,z,theta,dphi,thetas,project)
-         ENDIF
+      IF(ahb_flag)THEN
+         CALL free_ahb_write(nmat,smat,wt,et)
+         DEALLOCATE(r,z,theta,dphi,thetas,project)
+      ENDIF
 c-----------------------------------------------------------------------
 c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
-         IF(bin_euler)THEN
-            WRITE(euler_bin_unit)3
-            WRITE(euler_bin_unit)ep
-            WRITE(euler_bin_unit)et
-            WRITE(euler_bin_unit)wt
-            WRITE(euler_bin_unit)wt0
-         ENDIF
+      IF(bin_euler)THEN
+         WRITE(euler_bin_unit)3
+         WRITE(euler_bin_unit)ep
+         WRITE(euler_bin_unit)et
+         WRITE(euler_bin_unit)wt
+         WRITE(euler_bin_unit)wt0
+      ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
 c-----------------------------------------------------------------------
-         IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
-     $        REAL(et(1)),AIMAG(et(1))
+      IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
+     $     REAL(et(1)),AIMAG(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
 c-----------------------------------------------------------------------
-         message=""
-         WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
-         WRITE(out_unit,20)
-         WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
-     $        REAL(et(isol)),AIMAG(et(isol)),
-     $        TRIM(message(isol)),isol=1,mpert)
-         WRITE(out_unit,20)
+      message=""
+      WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
+      WRITE(out_unit,20)
+      WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
+     $     REAL(et(isol)),AIMAG(et(isol)),
+     $     TRIM(message(isol)),isol=1,mpert)
+      WRITE(out_unit,20)
 c-----------------------------------------------------------------------
 c     write eigenvectors to file.
 c-----------------------------------------------------------------------
-         WRITE(out_unit,*)"Total Energy Eigenvectors:"
-         m=mlow+(/(isol,isol=0,mpert-1)/)
-         DO isol=1,mpert
-            WRITE(out_unit,40)
-            WRITE(out_unit,50)isol,imax(1),
-     $           REAL(ep(isol)),REAL(ev(isol)),
-     $           REAL(et(isol)),AIMAG(et(isol)),TRIM(message(isol))
-            WRITE(out_unit,60)
-            WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
-     $           ABS(wt(ipert,isol)),star(ipert,isol),ipert=1,mpert)
-            WRITE(out_unit,60)
-         ENDDO
+      WRITE(out_unit,*)"Total Energy Eigenvectors:"
+      m=mlow+(/(isol,isol=0,mpert-1)/)
+      DO isol=1,mpert
+         WRITE(out_unit,40)
+         WRITE(out_unit,50)isol,imax(1),
+     $        REAL(ep(isol)),REAL(ev(isol)),
+     $        REAL(et(isol)),AIMAG(et(isol)),TRIM(message(isol))
+         WRITE(out_unit,60)
+         WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
+     $        ABS(wt(ipert,isol)),star(ipert,isol),ipert=1,mpert)
+         WRITE(out_unit,60)
+      ENDDO
 c-----------------------------------------------------------------------
 c     write the plasma matrix.
 c-----------------------------------------------------------------------
-         WRITE(out_unit,'(/1x,a/)')"Plasma Energy Matrix:"
-         DO isol=1,mpert
-            WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,
-     $            ", m = ",m(isol)
-            WRITE(out_unit,
-     $            '(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
-            WRITE(out_unit,'(i3,1p,3e13.5)')
-     $          (ipert,wp(ipert,isol),ABS(wp(ipert,isol)),ipert=1,mpert)
-            WRITE(out_unit,
-     $            '(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
-         ENDDO
+      WRITE(out_unit,'(/1x,a/)')"Plasma Energy Matrix:"
+      DO isol=1,mpert
+         WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,
+     $         ", m = ",m(isol)
+         WRITE(out_unit,
+     $         '(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
+         WRITE(out_unit,'(i3,1p,3e13.5)')
+     $       (ipert,wp(ipert,isol),ABS(wp(ipert,isol)),ipert=1,mpert)
+         WRITE(out_unit,
+     $         '(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
+      ENDDO
 c-----------------------------------------------------------------------
 c     compute and print separate plasma and vacuum eigenvalues.
 c-----------------------------------------------------------------------
-         lwork=2*mpert+1
-         CALL zgeev('V','V',mpert,wp,mpert,ep,
-     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
-         eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
-         CALL bubble(REAL(ep),eindex,1,mpert)
-         tt=ep
-         DO ipert=1,mpert
-            ep(ipert)=tt(eindex(mpert+1-ipert))
-         ENDDO
-         CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
+      lwork=2*mpert+1
+      CALL zgeev('V','V',mpert,wp,mpert,ep,
+     $     vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+      eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+      CALL bubble(REAL(ep),eindex,1,mpert)
+      tt=ep
+      DO ipert=1,mpert
+         ep(ipert)=tt(eindex(mpert+1-ipert))
+      ENDDO
+      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
-         IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,ep,ev,et)
+      IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,ep,ev,et)
 c-----------------------------------------------------------------------
 c     deallocate
 c-----------------------------------------------------------------------
-         CALL dcon_dealloc
-      ENDIF
+      CALL dcon_dealloc
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -282,21 +289,34 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_write_msc
+      SUBROUTINE free_write_msc(psifac, inmemory_op)
+
+      REAL(r8), INTENT(IN) :: psifac
+      LOGICAL, OPTIONAL :: inmemory_op
+      LOGICAL :: inmemory = .FALSE.
 
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
       INTEGER :: itheta,n
       REAL(r8) :: qa
       REAL(r8), DIMENSION(0:mtheta) :: angle,r,z,delta,rfac,theta
+
+      IF(PRESENT(inmemory_op))THEN
+         inmemory = inmemory_op
+      ELSE
+         inmemory = .FALSE.
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute output.
 c-----------------------------------------------------------------------
+      CALL spline_eval(sq,psifac,1)
+      qa=sq%f(4)
+
       theta=rzphi%ys
       DO itheta=0,mtheta
-         CALL bicube_eval(rzphi,psilim,theta(itheta),0)
+         CALL bicube_eval(rzphi,psifac,theta(itheta),0)
          rfac(itheta)=SQRT(rzphi%f(1))
          angle(itheta)=twopi*(theta(itheta)+rzphi%f(2))
-         delta(itheta)=-rzphi%f(3)/qlim
+         delta(itheta)=-rzphi%f(3)/qa
       ENDDO
       r=ro+rfac*COS(angle)
       z=zo+rfac*SIN(angle)
@@ -304,43 +324,49 @@ c-----------------------------------------------------------------------
 c     invert values for nn < 0.
 c-----------------------------------------------------------------------
       n=nn
-      qa=qlim
       IF(nn < 0)THEN
          qa=-qa
          delta=-delta
          n=-n
       ENDIF
 c-----------------------------------------------------------------------
+c     pass all values in memory instead of over ascii io (faster).
+c-----------------------------------------------------------------------
+      IF(inmemory)THEN
+         CALL set_dcon_params(mtheta, mlow, mhigh, n, qa, r, z, delta)
+      ELSE
+c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------
-      CALL ascii_open(bin_unit,'ahg2msc.out',"UNKNOWN")
-      WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
-     $     //tab//"Number of poloidal nodes"
-      WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
-     $     //"Lowest poloidal harmonic"
-      WRITE(bin_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
-     $     //tab//"Highest poloidal harmonic"
-      WRITE(bin_unit,'(i4,a)')n,tab//tab//"nn"//tab//"nadj"//tab
-     $     //"Toroidal harmonic"
-      WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
-     $     //"Safety factor at plasma edge"
-c-----------------------------------------------------------------------
-c     write arrays.
-c-----------------------------------------------------------------------
-      WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
-     $     itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Polar Angle Eta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(twopi-angle(itheta),
-     $     itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Radial Coordinate X:"
-      WRITE(bin_unit,'(1p,4e18.10)')(r(itheta),itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Axial Coordinate Z:"
-      WRITE(bin_unit,'(1p,4e18.10)')(z(itheta),itheta=mtheta,0,-1)
-      WRITE(bin_unit,'(/a/)')"Toroidal Angle Difference Delta:"
-      WRITE(bin_unit,'(1p,4e18.10)')(delta(itheta),
-     $     itheta=mtheta,0,-1)
-      CALL ascii_close(bin_unit)
+         CALL ascii_open(bin_unit,'ahg2msc.out',"UNKNOWN")
+         WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
+     $        //tab//"Number of poloidal nodes"
+         WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
+     $        //"Lowest poloidal harmonic"
+         WRITE(bin_unit,'(i4,a,a)')mhigh,tab//tab//"mhigh"//tab//"lmax"
+     $        //tab//"Highest poloidal harmonic"
+         WRITE(bin_unit,'(i4,a)')n,tab//tab//"nn"//tab//"nadj"//tab
+     $        //"Toroidal harmonic"
+         WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
+     $        //"Safety factor at plasma edge"
+c-----   ------------------------------------------------------------------
+c        write arrays.
+c-----   ------------------------------------------------------------------
+         WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
+     $        itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Polar Angle Eta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(twopi-angle(itheta),
+     $        itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Radial Coordinate X:"
+         WRITE(bin_unit,'(1p,4e18.10)')(r(itheta),itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Axial Coordinate Z:"
+         WRITE(bin_unit,'(1p,4e18.10)')(z(itheta),itheta=mtheta,0,-1)
+         WRITE(bin_unit,'(/a/)')"Toroidal Angle Difference Delta:"
+         WRITE(bin_unit,'(1p,4e18.10)')(delta(itheta),
+     $        itheta=mtheta,0,-1)
+         CALL ascii_close(bin_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -353,10 +379,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_ahb_prep(wp,nmat,smat)
+      SUBROUTINE free_ahb_prep(wp,nmat,smat,asmat,bsmat,csmat,ipiva)
 
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(OUT) :: nmat,smat
+      COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: asmat,bsmat,csmat
+      INTEGER, DIMENSION(:), INTENT(INOUT) :: ipiva
 
       INTEGER :: itheta,iqty,ipert,info,neq
       REAL(r8) :: rfac,angle,bpfac,btfac,bfac,fac,jac,delpsi,psifac
@@ -580,4 +608,98 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE free_ahb_write
+c-----------------------------------------------------------------------
+c     subprogram 5. free_test.
+c     Trimmed down version of free_run computing total dW.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE free_test(total1,u,jmat,ipiva,psifac)
+
+      REAL(r8), INTENT(OUT) :: total1
+      REAL(r8), INTENT(IN) :: psifac
+      COMPLEX(r8), DIMENSION(:, :,:), INTENT(IN) :: u
+      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: jmat
+      INTEGER, DIMENSION(:), INTENT(INOUT) :: ipiva
+
+      LOGICAL, PARAMETER :: normalize=.TRUE.
+      INTEGER :: ipert,jpert,isol,info,lwork,i
+      INTEGER, DIMENSION(mpert) :: ipiv,m,eindex
+      REAL(r8) :: v1
+      REAL(r8), DIMENSION(mpert) :: singfac
+      ! eigenvalues are complex for gpec
+      COMPLEX(r8), DIMENSION(mpert) :: et,tt
+
+      REAL(r8), DIMENSION(2*mpert) :: rwork2
+      COMPLEX(r8) :: norm
+      COMPLEX(r8), DIMENSION(2*mpert+1) :: work2
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,wt0,temp
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: vl,vr
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      REAL(r8) :: kernelsignin
+c-----------------------------------------------------------------------
+c     Basic parameters at this psi
+c-----------------------------------------------------------------------
+      CALL spline_eval(sq,psifac,0)
+      v1=sq%f(3)
+c-----------------------------------------------------------------------
+c     compute plasma response matrix.
+c-----------------------------------------------------------------------
+      temp=CONJG(TRANSPOSE(u(:,1:mpert,1)))
+      wp=u(:,1:mpert,2)
+      wp=CONJG(TRANSPOSE(wp))
+      CALL zgetrf(mpert,mpert,temp,mpert,ipiv,info)
+      CALL zgetrs('N',mpert,mpert,temp,mpert,ipiv,wp,mpert,info)
+      wp=CONJG(TRANSPOSE(wp))/psio**2
+c-----------------------------------------------------------------------
+c     compute vacuum response matrix.
+c-----------------------------------------------------------------------
+      wv = 0
+      CALL free_write_msc(psifac, .TRUE.)
+      kernelsignin=1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
+     $     kernelsignin)
+      CALL unset_dcon_params
+      singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
+      DO ipert=1,mpert
+         wv(ipert,:)=wv(ipert,:)*singfac
+         wv(:,ipert)=wv(:,ipert)*singfac
+      ENDDO
+c-----------------------------------------------------------------------
+c     compute complex energy eigenvalues.
+c-----------------------------------------------------------------------
+      wt=wp+wv
+      wt0=wt
+      lwork=2*mpert+1
+      CALL zgeev('V','V',mpert,wt,mpert,et,
+     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+      eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+      CALL bubble(REAL(et),eindex,1,mpert)
+      tt=et
+      DO ipert=1,mpert
+         wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
+         et(ipert)=tt(eindex(mpert+1-ipert))
+      ENDDO
+c-----------------------------------------------------------------------
+c     normalize eigenfunction and energy.
+c-----------------------------------------------------------------------
+      IF(normalize)THEN
+         isol=1  ! only bother with the first one
+         norm=0
+         DO ipert=1,mpert
+            DO jpert=1,mpert
+               norm=norm+jmat(jpert-ipert)
+     $              *wt(ipert,isol)*CONJG(wt(jpert,isol))
+            ENDDO
+         ENDDO
+         norm=norm/v1
+         et(isol)=et(isol)/norm
+      ENDIF
+      total1=REAL(et(1))
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE free_test
       END MODULE free_mod

@@ -243,7 +243,8 @@ c-----------------------------------------------------------------------
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          IF(verbose) WRITE(*,*)"Computing free boundary energies"
          ALLOCATE(ud(mpert,mpert,2))
-         CALL free_run(plasma1,vacuum1,total1,nzero,.TRUE.,netcdf_out)
+         CALL free_run(plasma1,vacuum1,total1,netcdf_out,ode_flag,
+     $           u,asmat,bsmat,csmat,jmat,ipiva)
          DEALLOCATE(ud)
       ELSE
          plasma1=0

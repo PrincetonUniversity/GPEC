@@ -28,6 +28,7 @@ c-----------------------------------------------------------------------
       USE fourfit_mod
       USE ode_output_mod
       USE debug_mod
+      USE free_mod
       IMPLICIT NONE
 
       LOGICAL :: new
@@ -1141,24 +1142,32 @@ c-----------------------------------------------------------------------
       LOGICAL :: flag
 
       INTEGER :: isol
+      INTEGER, SAVE :: peak_calc_number = 0
       REAL(r8), SAVE :: singfac_old,powmax
       REAL(r8) :: dsingfac,norm,dnorm,powmax_old
       REAL(r8), DIMENSION(msol) :: power
       COMPLEX(r8), DIMENSION(mpert,msol,2) :: dca
-      COMPLEX(r8) :: plasma1,vacuum1,total1
-      COMPLEX(r8), SAVE :: total0=-huge(0.0_r8)
+      COMPLEX(r8), DIMENSION(mpert,mpert,2) :: ufree
+      REAL(r8) :: total1
+      REAL(r8), SAVE :: total0=-huge(0.0_r8)
 c-----------------------------------------------------------------------
-c     truncation test: local maximum in energy outside last singularity?
+c     truncation test: lsode limit or max dW outside last singularity
 c-----------------------------------------------------------------------
+      flag = psifac == psimax .OR. istep == nstep .OR. istate < 0
       IF(next=="finish" .AND. peak_flag)THEN ! we've past the last singularity
-         CALL free_run(plasma1,vacuum1,total1,nzero,.FLASE.,.FALSE.)
-         IF(total1 < total0) flag = .TRUE.
+         ufree = u(:, :, :)
+         CALL free_test(total1,ufree,jmat,ipiva,psifac)
+         peak_calc_number = peak_calc_number + 1
+         WRITE(*,'(i4,3(es12.3))')peak_calc_number,psifac,total0,total1
+         IF(total1 < total0)THEN
+            flag = .TRUE.
+            psilim = psifac
+         ENDIF
          total0 = total1
       ENDIF
 c-----------------------------------------------------------------------
 c     simple return.
 c-----------------------------------------------------------------------
-      flag = psifac == psimax .OR. istep == nstep .OR. istate < 0
       IF(.NOT. res_flag .OR. flag
      $     .OR. ising > msing .OR. singfac > singfac_max)RETURN
 c-----------------------------------------------------------------------
