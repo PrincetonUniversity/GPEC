@@ -1155,7 +1155,7 @@ c-----------------------------------------------------------------------
 c     truncation test: lsode limit or max dW outside last singularity
 c-----------------------------------------------------------------------
       flag = psifac == psimax .OR. istep == nstep .OR. istate < 0
-      IF(next=="finish" .AND. .TRUE.)THEN ! we've past the last singularity
+      IF(next=="finish" .AND. peak_flag)THEN ! we've past the last singularity
          CALL free_test(plasma1,vacuum1,total1,psifac)
          IF(debug) WRITE(*,'(i4,5(es12.3))')peak_calc_number,psifac,
      $           sq%f(4),total1,vacuum1,plasma1
