@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
      $     power_b,jac_method,convert_type,power_flag,ns1,
      $     sp_pfac,sp_nx,sp_dx1,sp_dx2,use_galgrid,etol,
-     $     use_classic_splines,psisup
+     $     use_classic_splines
       NAMELIST/equil_output/bin_2d,bin_eq_1d,bin_eq_2d,out_2d,out_eq_1d,
      $     out_eq_2d,bin_fl,out_fl,interp,gse_flag,dump_flag,verbose
 c-----------------------------------------------------------------------

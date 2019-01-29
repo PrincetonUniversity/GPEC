@@ -31,7 +31,6 @@ c-----------------------------------------------------------------------
       LoGICAL :: use_galgrid=.TRUE.
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6
-      REAL(r8) :: psisup=0.0
       REAL(r8) :: newq0=0
       REAL(r8) :: sp_pfac=1
       REAL(r8) :: sp_dx1=1e-3,sp_dx2=1e-3

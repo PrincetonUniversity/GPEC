@@ -32,7 +32,6 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: use_classic_splines_for_dcon=.FALSE., cyl_flag=.FALSE.
       INTEGER :: mmin,ipsi,m
-      REAL(r8) :: mat_p1sup=0, mat_f1sup=0
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mtmp
@@ -57,8 +56,7 @@ c-----------------------------------------------------------------------
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
-     $     use_classic_splines,
-     $     mat_p1sup,mat_f1sup,peak_flag
+     $     use_classic_splines
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -193,7 +191,7 @@ c-----------------------------------------------------------------------
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
          CALL fourfit_make_metric
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
-         CALL fourfit_make_matrix(mat_p1sup, mat_f1sup, out_fund)
+         CALL fourfit_make_matrix(out_fund)
          WRITE(out_unit,30)mlow,mhigh,mpert,mband,nn,sas_flag,dmlim,
      $        qlim,psilim
          IF(kin_flag)THEN

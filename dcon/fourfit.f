@@ -180,9 +180,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE fourfit_make_matrix(mat_p1sup, mat_f1sup, op_diagnose)
+      SUBROUTINE fourfit_make_matrix(op_diagnose)
 
-      REAL(r8), INTENT (IN) :: mat_p1sup, mat_f1sup
       LOGICAL, OPTIONAL, INTENT(IN) :: op_diagnose
 
       CHARACTER(128) :: message
@@ -272,14 +271,6 @@ c-----------------------------------------------------------------------
          chi1=twopi*psio
          nq=nn*q
          jtheta=-sq%fs1(ipsi,1)
-         IF (mat_p1sup > 0) THEN
-             p1 = p1 * 0.5*(1-tanh((psifac-psilim+mat_p1sup)
-     $                             /(0.5*mat_p1sup)))
-         END IF
-         IF (mat_f1sup > 0) THEN
-             jtheta = jtheta * 0.5*(1-tanh((psifac-psilim+mat_f1sup)
-     $                                     /(0.5*mat_f1sup)))
-         END IF
 c-----------------------------------------------------------------------
 c     compute lower half of matrices.
 c-----------------------------------------------------------------------

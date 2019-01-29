@@ -5,8 +5,8 @@
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
 
     sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
-    dmlim=0.5            ! See sas_flag
-	peak_flag=t
+    dmlim=0.2            ! See sas_flag
+	peak_flag=t          ! Stops integration at first local maximum beyond the last rational (may go beyond dmlim)
     qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=1e3            ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)

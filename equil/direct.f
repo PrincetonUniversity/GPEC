@@ -163,22 +163,6 @@ c-----------------------------------------------------------------------
          sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
          sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
          CALL spline_dealloc(ff)
-c-----------------------------------------------------------------------
-c     option to suppress edge pressure (not self consistent with equil)
-c-----------------------------------------------------------------------
-         IF(psisup > 0) THEN
-            ! smooth the pressure to zero at psihigh
-            sq%fs(ipsi,2)=bf%p*0.5*(1-tanh((sq%xs(ipsi)-psihigh+psisup)
-     $                                     /(0.5*psisup)))
-            IF(ipsi < mpsi) THEN
-              ! smooth the F derivative to 0 at psihigh
-              sq%fs(ipsi,1)=sq%fs(ipsi+1,1) -
-     $                      (sq%fs(ipsi+1,1)-bf%f*twopi)
-     $                      *0.5*(1-tanh((sq%xs(ipsi)-psihigh+psisup)
-     $                                   /(0.5*psisup)))
-              sq%fs(ipsi,4)=y_out(istep,3)*sq%fs(ipsi+1,1)/(twopi**2)
-            ENDIF
-         ENDIF
       ENDDO
 c-----------------------------------------------------------------------
 c     close output files.
