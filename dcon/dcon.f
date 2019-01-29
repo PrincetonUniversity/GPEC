@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
-     $     use_classic_splines
+     $     use_classic_splines,peak_flag
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
