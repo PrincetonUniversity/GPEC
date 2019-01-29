@@ -18,7 +18,10 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE free_mod
-      USE sing_mod
+      USE sing_mod, ONLY: sing_der, msol
+      USE fourfit_mod, ONLY: asmat, bsmat, csmat, jmat, ipiva,
+     $                       cspline_type
+      USE ode_output_mod, ONLY: u,du
       USE dcon_netcdf_mod
       IMPLICIT NONE
 
@@ -31,6 +34,7 @@ c-----------------------------------------------------------------------
       INTEGER :: nfm2,nths2
       REAL(8), DIMENSION(:,:), POINTER :: grri
 
+      TYPE(cspline_type) :: wvmats
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. free_run.
@@ -39,15 +43,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_run(plasma1,vacuum1,total1,netcdf_out,
-     $  ode_flag,u,asmat,bsmat,csmat,jmat,ipiva)
+      SUBROUTINE free_run(plasma1,vacuum1,total1,nzero,op_netcdf_out)
 
       COMPLEX(r8), INTENT(OUT) :: plasma1,vacuum1,total1
-      LOGICAL, INTENT(IN) :: netcdf_out, ode_flag
-      COMPLEX(r8), DIMENSION(:, :,:), INTENT(IN) :: u
-      COMPLEX(r8), DIMENSION(:,:), INTENT(IN) :: asmat,bsmat,csmat
-      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: jmat
-      INTEGER, DIMENSION(:), INTENT(INOUT) :: ipiva
+      INTEGER, INTENT(IN) :: nzero
+      LOGICAL, OPTIONAL :: op_netcdf_out
 
       LOGICAL, PARAMETER :: normalize=.TRUE.
       CHARACTER(1), DIMENSION(mpert,msol) :: star
@@ -234,8 +234,7 @@ c-----------------------------------------------------------------------
       m=mlow+(/(isol,isol=0,mpert-1)/)
       DO isol=1,mpert
          WRITE(out_unit,40)
-         WRITE(out_unit,50)isol,imax(1),
-     $        REAL(ep(isol)),REAL(ev(isol)),
+         WRITE(out_unit,50)isol,imax(1),REAL(ep(isol)),REAL(ev(isol)),
      $        REAL(et(isol)),AIMAG(et(isol)),TRIM(message(isol))
          WRITE(out_unit,60)
          WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
@@ -247,14 +246,11 @@ c     write the plasma matrix.
 c-----------------------------------------------------------------------
       WRITE(out_unit,'(/1x,a/)')"Plasma Energy Matrix:"
       DO isol=1,mpert
-         WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,
-     $         ", m = ",m(isol)
-         WRITE(out_unit,
-     $         '(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
+         WRITE(out_unit,'(1x,2(a,i3))')"isol = ",isol,", m = ",m(isol)
+         WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
          WRITE(out_unit,'(i3,1p,3e13.5)')
-     $       (ipert,wp(ipert,isol),ABS(wp(ipert,isol)),ipert=1,mpert)
-         WRITE(out_unit,
-     $         '(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
+     $        (ipert,wp(ipert,isol),ABS(wp(ipert,isol)),ipert=1,mpert)
+         WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
       ENDDO
 c-----------------------------------------------------------------------
 c     compute and print separate plasma and vacuum eigenvalues.
@@ -333,7 +329,8 @@ c-----------------------------------------------------------------------
 c     pass all values in memory instead of over ascii io (faster).
 c-----------------------------------------------------------------------
       IF(inmemory)THEN
-         CALL set_dcon_params(mtheta, mlow, mhigh, n, qa, r, z, delta)
+         CALL set_dcon_params(mtheta,mlow,mhigh,n,qa,r(mtheta:0:-1),
+     $                        z(mtheta:0:-1),delta(mtheta:0:-1))
       ELSE
 c-----------------------------------------------------------------------
 c     write scalars.
@@ -611,19 +608,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 5. free_test.
 c     Trimmed down version of free_run computing total dW.
+c     Can also calculate plasma and vacuum eigenvalues IFF debugging
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_test(total1,u,jmat,ipiva,psifac)
+      SUBROUTINE free_test(plasma1,vacuum1,total1,psifac)
 
-      REAL(r8), INTENT(OUT) :: total1
+      REAL(r8), INTENT(OUT) :: plasma1,vacuum1,total1
       REAL(r8), INTENT(IN) :: psifac
-      COMPLEX(r8), DIMENSION(:, :,:), INTENT(IN) :: u
-      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: jmat
-      INTEGER, DIMENSION(:), INTENT(INOUT) :: ipiva
 
-      LOGICAL, PARAMETER :: normalize=.TRUE.
+      LOGICAL, PARAMETER :: normalize=.TRUE., debug=.FALSE.
+      LOGICAL, SAVE :: first_call=.TRUE.
       INTEGER :: ipert,jpert,isol,info,lwork,i
       INTEGER, DIMENSION(mpert) :: ipiv,m,eindex
       REAL(r8) :: v1
@@ -656,16 +652,13 @@ c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
       wv = 0
-      CALL free_write_msc(psifac, .TRUE.)
-      kernelsignin=1.0
-      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin)
-      CALL unset_dcon_params
-      singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
-      DO ipert=1,mpert
-         wv(ipert,:)=wv(ipert,:)*singfac
-         wv(:,ipert)=wv(:,ipert)*singfac
-      ENDDO
+      ! calc a rough spline of wv so we don't call mscvac (slow) every time
+      IF(first_call)THEN
+         CALL free_wvmats(psifac, psilim)
+         first_call = .FALSE.
+      ENDIF
+      CALL cspline_eval(wvmats, psifac,0)
+      wv=RESHAPE(wvmats%f,(/mpert,mpert/))
 c-----------------------------------------------------------------------
 c     compute complex energy eigenvalues.
 c-----------------------------------------------------------------------
@@ -698,8 +691,90 @@ c-----------------------------------------------------------------------
       ENDIF
       total1=REAL(et(1))
 c-----------------------------------------------------------------------
+c     compute plasma and vacuum eigenvalues
+c     DIFFERS FROM free_run, which calcs energies of the total eigenmode
+c-----------------------------------------------------------------------
+      IF(debug)THEN
+         wt=wp
+         wt0=wt
+         lwork=2*mpert+1
+         CALL zgeev('V','V',mpert,wt,mpert,et,
+     $           vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+         eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+         CALL bubble(REAL(et),eindex,1,mpert)
+         tt=et
+         DO ipert=1,mpert
+            wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
+            et(ipert)=tt(eindex(mpert+1-ipert))
+         ENDDO
+         plasma1=REAL(et(1))
+
+         wt=wv
+         wt0=wt
+         lwork=2*mpert+1
+         CALL zgeev('V','V',mpert,wt,mpert,et,
+     $           vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+         eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+         CALL bubble(REAL(et),eindex,1,mpert)
+         tt=et
+         DO ipert=1,mpert
+            wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
+            et(ipert)=tt(eindex(mpert+1-ipert))
+         ENDDO
+         vacuum1=REAL(et(1))
+      ELSE
+         plasma1 = 0.0
+         vacuum1 = 0.0
+      ENDIF
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE free_test
+c-----------------------------------------------------------------------
+c     subprogram 6. free_wvmats.
+c     Forms a spline of the vacuum matrix over a specified range
+c     for rapid calls to free_test. Range is expected to be be between
+c     rationals.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE free_wvmats(psi1, psi2)
+
+      REAL(r8), INTENT(IN) :: psi1, psi2
+
+      INTEGER, PARAMETER :: npsi=8
+      INTEGER :: i,ipert
+      REAL(r8) :: dpsi
+      REAL(r8), DIMENSION(mpert) :: singfac
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      REAL(r8) :: kernelsignin
+c-----------------------------------------------------------------------
+c     Basic parameters for course scan of psi
+c-----------------------------------------------------------------------
+      dpsi = (psi2 - psi1) / npsi
+      CALL cspline_alloc(wvmats,npsi,mpert**2)
+      DO i=0,npsi
+         wvmats%xs(i) = psi1 + dpsi * i
+         CALL spline_eval(sq, wvmats%xs(i), 0)
+         CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.)
+         kernelsignin=1.0
+         CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,
+     $        complex_flag,kernelsignin)
+         singfac=mlow-nn*sq%f(4)+(/(ipert,ipert=0,mpert-1)/)
+         DO ipert=1,mpert
+            wv(ipert,:)=wv(ipert,:)*singfac
+            wv(:,ipert)=wv(:,ipert)*singfac
+         ENDDO
+         wvmats%fs(i,:)=RESHAPE(wv,(/mpert**2/))
+      ENDDO
+      CALL unset_dcon_params
+      CALL cspline_fit(wvmats,"extrap")
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE free_wvmats
       END MODULE free_mod

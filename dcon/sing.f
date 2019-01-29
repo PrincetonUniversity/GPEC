@@ -185,6 +185,10 @@ c-----------------------------------------------------------------------
             qlim=qlim-1._r8/nn
          ENDDO
       ENDIF
+      IF(peak_flag)THEN
+         ! hunt for peak dW in whatever rational window psihigh is in
+         qlim=(INT(nn*qlim)+0.9)/nn
+      ENDIF
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------

@@ -458,25 +458,21 @@ c-----------------------------------------------------------------------
 c     don't bother with file io is passed in memory.
 c-----------------------------------------------------------------------
       if(dcon_set)then
-         print *, 'dcon already set!'
          mthin = mth_dcon
          lmin = lmin_dcon
          lmax = lmax_dcon
          ndcon = nn_dcon
          qa1 = qa1_dcon
-         print *, mthin, lmin, lmax, ndcon, qa1
+         mthin1 = mthin + 1
          ! note mthin is 1 less than len(x_dcon). bug? or vac doesn't close theta?
          call trans ( x_dcon,mthin, xinf,mth )
          call trans ( z_dcon,mthin, zinf,mth )
          call trans ( delta_dcon,mthin, delta,mth )
          vecin(1:mthin) = delta_dcon(1:mthin)
-         print *, xinf(1:3)
-         print *, xinf(mth-2:mth)
       else
 c-----------------------------------------------------------------------
 c     read data.
 c-----------------------------------------------------------------------
-         print *, 'reading ahg2msc.out!'
          open(unit=3,file=trim(ahgdir)//'/ahg2msc.out')
          read(3,*)mthin
          read(3,*)lmin

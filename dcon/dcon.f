@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: use_classic_splines_for_dcon=.FALSE., cyl_flag=.FALSE.
       INTEGER :: mmin,ipsi,m
-      REAL(r8) :: mat_p1sup, mat_f1sup
+      REAL(r8) :: mat_p1sup=0, mat_f1sup=0
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mtmp
@@ -243,8 +243,7 @@ c-----------------------------------------------------------------------
      $     (ksing > 0 .AND. ksing <= msing+1 .AND. bin_sol))THEN
          IF(verbose) WRITE(*,*)"Computing free boundary energies"
          ALLOCATE(ud(mpert,mpert,2))
-         CALL free_run(plasma1,vacuum1,total1,netcdf_out,ode_flag,
-     $           u,asmat,bsmat,csmat,jmat,ipiva)
+         CALL free_run(plasma1,vacuum1,total1,nzero,netcdf_out)
          DEALLOCATE(ud)
       ELSE
          plasma1=0
