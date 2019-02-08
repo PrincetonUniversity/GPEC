@@ -5,7 +5,7 @@
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
     mer_flag=t           ! Evaluate the Mercier criterian
 
-    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
@@ -16,8 +16,8 @@
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
-    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
-    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
+    tol_nr=1e-8          ! Relative tolerance of dynamic integration steps away from rationals.
+    tol_r=1e-8           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
