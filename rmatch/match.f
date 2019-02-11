@@ -90,7 +90,7 @@ c-----------------------------------------------------------------------
       INTEGER :: msing,totmsing,nstep=32,scan_nstep,qscan_ising=1
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
       REAL(r8) :: eta(20),dlim=1000,massden(20)
-      REAL(r8) :: scan_x0,scan_x1
+      REAL(r8) :: scan_x0,scan_x1,relax_fac
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
       COMPLEX(r8) :: initguess
@@ -129,7 +129,7 @@ c-----------------------------------------------------------------------
      $                         deltar_flag,deltac_flag,deltaj_flag,
      $                         deflate,nroot,match_flag,ising_output,
      $                         match_sol,matrix_diagnose,fulldomain,
-     $                         coil,itermax 
+     $                         coil,itermax,relax_fac 
       NAMELIST/rmatch_output/ bin_rpecsol,out_rpecsol
       NAMELIST/nyquist_input/nyquist
 10    FORMAT(1x,"Eigenvalue=",1p,2e11.3)
@@ -302,7 +302,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ising,info,nmat
       INTEGER, DIMENSION(4*msing-1) :: ipiv
-      REAL(r8) :: dzfac=0.05, tol=1e-10, itmax=1000,relaxfac=0.1
+      REAL(r8) :: dzfac=0.05, tol=1e-10, itmax=1000
       COMPLEX(r8) :: z_old,f_old,f,dz
       COMPLEX(r8), DIMENSION(4*msing) :: cof
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
@@ -343,7 +343,7 @@ c-----------------------------------------------------------------------
             EXIT
          ENDIF
          z_old=z
-         z=z+dz*relaxfac
+         z=z+dz*relax_fac
          f_old=f
          f=ff(z,mat)
          dz=-f*(z-z_old)/(f-f_old)
