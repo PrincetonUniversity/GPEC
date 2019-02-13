@@ -3,7 +3,7 @@ include ../install/DEFAULTS.inc
 
 FFLAGS = -qopenmp
 # flags unique to stride (not to be clobbered by top level install/makefile options)
-EXTRA_FFLAGS = -xHost -mkl -diag-disable 10397 #-03 #-g #-check all #-warn all #-qopt-zmm-usage=high #-ipo #-traceback #-qoptrpt
+EXTRA_FFLAGS = -mkl -diag-disable 10397 #-xHost #-03 #-g #-check all #-warn all #-qopt-zmm-usage=high #-ipo #-traceback #-qoptrpt
 IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(EXTRA_FFLAGS) $(IFLAGS)
 
@@ -43,7 +43,7 @@ OBJS = \
 
 # targets
 
-all: lsode zvode zlange superlu equil vacuum version stride
+all: lsode zvode zlange superlu equil vacuum stride
 
 lsode:
 	cd ../lsode; make
