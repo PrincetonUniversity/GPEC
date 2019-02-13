@@ -53,6 +53,7 @@ C The following Fortran-77 declaration is to cause the values of the
 C listed (local) variables to be saved between calls to this routine.
 C-----------------------------------------------------------------------
       SAVE LUNIT, MESFLG
+!$OMP THREADPRIVATE(LUNIT, MESFLG)
       DATA LUNIT/-1/, MESFLG/1/
 C
 C***FIRST EXECUTABLE STATEMENT  IXSAV

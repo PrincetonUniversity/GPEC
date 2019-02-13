@@ -19,7 +19,7 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: lsymz,check1,check2,lanal,lkdis,lpest1,lpless,wall,
-     $     lnova,checks,lfunin,checke,checkd,symvac
+     $     lnova,checks,lfunin,checke,checkd,symvac,verbose_timer_output
 
       INTEGER, PARAMETER :: nc31=31,maxc1=100,maxa1=200,max2=3,
      $     nccl3=72,numvar=100,ndima=2,ndim0=5,neqv1=1
@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
      $     sp3sgn1,sp3sgn2,sp3sgn3,sp3sgn4,sp3sgn5,tbulg,tw,xofsl,xpl,
      $     xs,xt,xtp,zs,zt,ztp,
      $     epslp,xlpmin,xlpmax,zlpmin,zlpmax,plrad,xmaj,zmxp
-      
+
       REAL(8) :: kernelsign
       REAL(8), DIMENSION(numvar) :: vn,vrnat,vrtype
       REAL(8), DIMENSION(numvar,ndima) :: vvdims

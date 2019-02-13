@@ -30,6 +30,7 @@ docs/examples/*/gal_solution_cut.dat
 
 dcon/dcon
 rdcon/rdcon
+stride/stride
 gpec/gpec
 match/match
 rmatch/rmatch
@@ -39,3 +40,5 @@ pentrc/pentrc
 sum/sum
 xdraw/pspack
 xdraw/xdraw
+
+superlu/SuperLU_5.2.1/

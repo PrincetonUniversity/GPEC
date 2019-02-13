@@ -83,7 +83,7 @@ c     define global file attributes
 c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Defining modal netcdf globals"
       CALL check( nf90_put_att(ncid,nf90_global,"title",
-     $     "GPEC outputs in Fourier or alternate modal bases"))
+     $     "DCON outputs"))
       ! define global attributes
       CALL check( nf90_put_att(ncid,nf90_global,"jacobian",
      $     trim(jac_type)))

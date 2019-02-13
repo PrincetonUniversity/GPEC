@@ -242,3 +242,16 @@ else
     FCLIBS =
     FCINC = .
 endif
+
+# SuperLU options
+#------------------
+# determine if we need to unpack our own SuperLU tarball
+SLU_COMMAND = cd ../superlu; ./remakeSuperLU.sh
+# ... or if we just need to make our existing unpacked SuperLU
+ifneq ($(wildcard ../superlu/SuperLU_5.2.1/.),)
+	SLU_COMMAND = cd ../superlu/SuperLU_5.2.1; make
+endif
+# ... or if we already have a valid SuperLU and shouldn't bother
+#ifneq some_magic_test_if_necessary_libs_are_in_path
+#	SLU_COMMAND =
+#endif

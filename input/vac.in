@@ -10,7 +10,7 @@
 	lgato=0
 	lrgato=0
 /
-	
+
 &debugs
 	checkd=f
 	check1=f
@@ -19,8 +19,9 @@
 	checks=f
 	wall=f
 	lkplt=0
+	verbose_timer_output = f
 /
-	
+
 &vacdat
 	ishape=6
 	aw=.05
@@ -38,7 +39,7 @@
 	delfac=1e-3
 	cn0=1
 /
-	
+
 &shape
 	ipshp=0
 	xpl=100
@@ -53,13 +54,13 @@
 	tbulg=.02
 	qain=2.5
 /
-	
+
 &diagns
 	lkdis=f
 	ieig=0
 	iloop=0
 	lpsub=1
-	
+
 	nloop=128
 	nloopr=0
 	nphil=3
@@ -84,7 +85,7 @@
 	zlpmax = 1.5
 	linterior = 2
 /
-	
+
 &sprk
 	nminus=0
 	nplus=0
