@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
       CHARACTER, PARAMETER :: nul = char(0)
 
       NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
-     $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
+     $     mer_flag,res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
@@ -106,8 +106,10 @@ c-----------------------------------------------------------------------
       locstab%fs=0
       locstab%name="locstb"
       locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
-      IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
-      CALL mercier_scan
+      IF (mer_flag) THEN
+         WRITE(*,*)"Evaluating Mercier criterion"
+         CALL mercier_scan
+      ENDIF
       IF(bal_flag)THEN
          IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
          CALL bal_scan

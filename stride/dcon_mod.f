@@ -96,7 +96,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: sas_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
-      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3
+      REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
 
       INTEGER :: nThreads=32
       LOGICAL :: vac_parallel

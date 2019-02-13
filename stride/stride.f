@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,
-     $     use_classic_splines,use_notaknot_splines
+     $     use_classic_splines,use_notaknot_splines,qlow,qhigh
       NAMELIST/stride_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
