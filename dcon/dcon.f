@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
-     $     use_classic_splines
+     $     use_classic_splines,peak_flag
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -98,6 +98,21 @@ c-----------------------------------------------------------------------
       IF(direct_flag)CALL bicube_dealloc(psi_in)
       ! enables different settings for dcon and equilibrium splines
       use_classic_splines = use_classic_splines_for_dcon
+c-----------------------------------------------------------------------
+c     optionally reform the eq splines to concentrate at true truncation
+c-----------------------------------------------------------------------
+      CALL sing_lim  ! determine if qhigh is truncating before psihigh
+      IF(psilim /= psihigh)THEN
+         CALL equil_read(out_unit, psilim)
+         IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
+         CALL equil_out_global
+         CALL equil_out_qfind
+         CALL equil_out_diagnose(.FALSE.,out_unit)
+         CALL equil_out_write_2d
+         IF(direct_flag)CALL bicube_dealloc(psi_in)
+         ! enables different settings for dcon and equilibrium splines
+         use_classic_splines = use_classic_splines_for_dcon
+      ENDIF
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
@@ -143,7 +158,7 @@ c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
       CALL sing_find
-      CALL sing_lim
+      !CALL sing_lim  ! now done in above test for re-forming equil
       IF(cyl_flag)THEN
          mlow=delta_mlow
          mhigh=delta_mhigh

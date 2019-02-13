@@ -29,10 +29,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE equil_read(unit)
+      SUBROUTINE equil_read(unit, op_psihigh)
 
       LOGICAL :: file_stat
       INTEGER, INTENT(IN) :: unit
+      REAL(r8), OPTIONAL, INTENT(IN) :: op_psihigh
 
       NAMELIST/equil_control/eq_filename,eq_type,grid_type,mpsi,mtheta,
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
@@ -53,6 +54,10 @@ c-----------------------------------------------------------------------
          READ(UNIT=in_unit,NML=equil_output)
       ENDIF
       CALL ascii_close(in_unit)
+      IF(PRESENT(op_psihigh))THEN
+         psihigh = op_psihigh
+         IF(verbose) WRITE(*,*) "Reforming equilibrium with new psihigh"
+      ENDIF
       IF(verbose) WRITE(*,'(1x,a,es10.3)')"psihigh =",psihigh
       psihigh=MIN(psihigh,1._r8)
 c-----------------------------------------------------------------------

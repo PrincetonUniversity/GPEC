@@ -43,7 +43,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compiling using
-#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#    $ make
 #   Should set all the right flags and run through.
 #
 #   Developers can also load the default intel/11.0.081 and associated libraries,

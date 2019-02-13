@@ -92,6 +92,12 @@ c-----------------------------------------------------------------------
       REAL(8), DIMENSION(:,:), POINTER :: bxpwr,bxpwi,bzpwr,bzpwi,
      $     bnpwr,bnpwi
 
+      ! dcon interface
+      LOGICAL :: dcon_set = .FALSE.
+      INTEGER :: mth_dcon,lmin_dcon,lmax_dcon,nn_dcon
+      REAL(8) :: qa1_dcon
+      REAL(8), DIMENSION(:), ALLOCATABLE :: x_dcon, z_dcon, delta_dcon
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. global_alloc.
