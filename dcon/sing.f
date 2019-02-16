@@ -1551,7 +1551,7 @@ c-----------------------------------------------------------------------
          WRITE(sing_unit,'(1x,3(a16))') "psi","real(det)","imag(det)"
          DO i=1,singnum
             det0=sing_get_f_det(psising(i))
-            WRITE(sing_unit,'(1x,3(e16.9))') psising(i),
+            WRITE(sing_unit,'(1x,3(e16.8))') psising(i),
      $           REAL(det0), AIMAG(det0)
          ENDDO
       CLOSE (UNIT=sing_unit)
