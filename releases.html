@@ -3,13 +3,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>GPEC v1.2.3 &#8212; GPEC 1.2.3 documentation</title>
+    <title>GPEC v1.3.0 &#8212; GPEC 1.3.0 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.3',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
-    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -46,7 +46,7 @@
         <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.2</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.3</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -98,25 +98,31 @@
             <p class="logo"><a href="index.html">
               <img class="logo" src="_static/GPEC_logo.png" alt="Logo"/>
             </a></p><ul>
-<li><a class="reference internal" href="#">GPEC v1.2.3</a><ul>
+<li><a class="reference internal" href="#">GPEC v1.3.0</a><ul>
+<li><a class="reference internal" href="#adds">Adds</a></li>
 <li><a class="reference internal" href="#changes">Changes</a></li>
 <li><a class="reference internal" href="#fixes">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-2-2">GPEC v1.2.2</a><ul>
-<li><a class="reference internal" href="#adds">Adds</a></li>
+<li><a class="reference internal" href="#gpec-v1-2-3">GPEC v1.2.3</a><ul>
 <li><a class="reference internal" href="#id1">Changes</a></li>
 <li><a class="reference internal" href="#id2">Fixes</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#gpec-v1-2-2">GPEC v1.2.2</a><ul>
+<li><a class="reference internal" href="#id3">Adds</a></li>
+<li><a class="reference internal" href="#id4">Changes</a></li>
+<li><a class="reference internal" href="#id5">Fixes</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#gpec-v1-2-1">GPEC v1.2.1</a><ul>
-<li><a class="reference internal" href="#id3">Fixes</a></li>
+<li><a class="reference internal" href="#id6">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-2-0">GPEC v1.2.0</a><ul>
-<li><a class="reference internal" href="#id4">Adds</a></li>
-<li><a class="reference internal" href="#id5">Changes</a></li>
-<li><a class="reference internal" href="#id6">Fixes</a></li>
+<li><a class="reference internal" href="#id7">Adds</a></li>
+<li><a class="reference internal" href="#id8">Changes</a></li>
+<li><a class="reference internal" href="#id9">Fixes</a></li>
 <li><a class="reference internal" href="#removes">Removes</a></li>
 </ul>
 </li>
@@ -125,87 +131,87 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-1-6">GPEC v1.1.6</a><ul>
-<li><a class="reference internal" href="#id7">Fixes</a></li>
+<li><a class="reference internal" href="#id10">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-1-5">GPEC v1.1.5</a><ul>
-<li><a class="reference internal" href="#id8">Adds</a></li>
-<li><a class="reference internal" href="#id9">Fixes</a></li>
+<li><a class="reference internal" href="#id11">Adds</a></li>
+<li><a class="reference internal" href="#id12">Fixes</a></li>
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-1-4">GPEC v1.1.4</a><ul>
-<li><a class="reference internal" href="#id10">Fixes</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-1-3">GPEC v1.1.3</a><ul>
-<li><a class="reference internal" href="#id11">Fixes</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-1-2">GPEC v1.1.2</a><ul>
-<li><a class="reference internal" href="#id12">Fixes</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v1-1-1">GPEC v1.1.1</a><ul>
 <li><a class="reference internal" href="#id13">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v1-1-0">GPEC v1.1.0</a><ul>
-<li><a class="reference internal" href="#id14">Adds</a></li>
+<li><a class="reference internal" href="#gpec-v1-1-3">GPEC v1.1.3</a><ul>
+<li><a class="reference internal" href="#id14">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-1-2">GPEC v1.1.2</a><ul>
 <li><a class="reference internal" href="#id15">Fixes</a></li>
-<li><a class="reference internal" href="#id16">Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-1-1">GPEC v1.1.1</a><ul>
+<li><a class="reference internal" href="#id16">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v1-1-0">GPEC v1.1.0</a><ul>
+<li><a class="reference internal" href="#id17">Adds</a></li>
+<li><a class="reference internal" href="#id18">Fixes</a></li>
+<li><a class="reference internal" href="#id19">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-0-6">GPEC v1.0.6</a><ul>
-<li><a class="reference internal" href="#id17">Fixes</a></li>
+<li><a class="reference internal" href="#id20">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-0-5">GPEC v1.0.5</a><ul>
-<li><a class="reference internal" href="#id18">Fixes</a></li>
+<li><a class="reference internal" href="#id21">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-0-4">GPEC v1.0.4</a></li>
 <li><a class="reference internal" href="#gpec-v1-0-3">GPEC v1.0.3</a></li>
 <li><a class="reference internal" href="#gpec-v1-0-2">GPEC v1.0.2</a><ul>
-<li><a class="reference internal" href="#id19">Adds</a></li>
-<li><a class="reference internal" href="#id20">Fixes</a></li>
+<li><a class="reference internal" href="#id22">Adds</a></li>
+<li><a class="reference internal" href="#id23">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v1-0-1">GPEC v1.0.1</a></li>
 <li><a class="reference internal" href="#gpec-v1-0-0">GPEC v1.0.0</a><ul>
-<li><a class="reference internal" href="#id21">Adds</a></li>
-<li><a class="reference internal" href="#id22">Documentation</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#gpec-v0-4-0">GPEC v0.4.0</a><ul>
-<li><a class="reference internal" href="#id23">Fixes</a></li>
-<li><a class="reference internal" href="#id24">Features</a></li>
+<li><a class="reference internal" href="#id24">Adds</a></li>
 <li><a class="reference internal" href="#id25">Documentation</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#gpec-v0-3-5">GPEC v0.3.5</a><ul>
+<li><a class="reference internal" href="#gpec-v0-4-0">GPEC v0.4.0</a><ul>
 <li><a class="reference internal" href="#id26">Fixes</a></li>
+<li><a class="reference internal" href="#id27">Features</a></li>
+<li><a class="reference internal" href="#id28">Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#gpec-v0-3-5">GPEC v0.3.5</a><ul>
+<li><a class="reference internal" href="#id29">Fixes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-4">GPEC v0.3.4</a><ul>
-<li><a class="reference internal" href="#id27">Fixes</a></li>
-<li><a class="reference internal" href="#id28">Features</a></li>
+<li><a class="reference internal" href="#id30">Fixes</a></li>
+<li><a class="reference internal" href="#id31">Features</a></li>
 <li><a class="reference internal" href="#speed-and-stability">Speed and Stability</a></li>
-<li><a class="reference internal" href="#id29">Documentation</a></li>
+<li><a class="reference internal" href="#id32">Documentation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-3">GPEC v0.3.3</a></li>
 <li><a class="reference internal" href="#gpec-v0-3-2">GPEC v0.3.2</a></li>
 <li><a class="reference internal" href="#gpec-v0-3-1">GPEC v0.3.1</a><ul>
-<li><a class="reference internal" href="#id30">Fixes</a></li>
-<li><a class="reference internal" href="#id31">Features</a></li>
+<li><a class="reference internal" href="#id33">Fixes</a></li>
+<li><a class="reference internal" href="#id34">Features</a></li>
 <li><a class="reference internal" href="#performance">Performance</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#gpec-v0-3-0">GPEC v0.3.0</a><ul>
-<li><a class="reference internal" href="#id32">Fixes</a></li>
-<li><a class="reference internal" href="#id33">Features</a></li>
-<li><a class="reference internal" href="#id34">Performance</a></li>
+<li><a class="reference internal" href="#id35">Fixes</a></li>
+<li><a class="reference internal" href="#id36">Features</a></li>
+<li><a class="reference internal" href="#id37">Performance</a></li>
 </ul>
 </li>
 </ul>
@@ -229,16 +235,44 @@
 </ul>
 <p>Note, backwards compatibility is defined as the ability to return to a previous run and re-run any previously successful executable. This does not guarantee all output file formats are exactly maintained.</p>
 <p>The <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC/releases">github release notes</a> are reproduced below.</p>
-<div class="section" id="gpec-v1-2-3">
-<h1>GPEC v1.2.3<a class="headerlink" href="#gpec-v1-2-3" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="gpec-v1-3-0">
+<h1>GPEC v1.3.0<a class="headerlink" href="#gpec-v1-3-0" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="adds">
+<h2>Adds<a class="headerlink" href="#adds" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>STRIDE - Adds the State Transition Rapid Integration with DCON (Asymptotic) Expansions code
+* Citations included in docs (website)
+* Parallel calculations of plasma stability (delta-W and Delta-prime)</li>
+<li>DCON - Adds new peak_flag that checks the dW every step after the last rational and ends integration at the first local maximum
+* This provides a useful for consistent, physics based truncation choice that can be more robust to small EFIT changes</li>
+</ul>
+</div>
 <div class="section" id="changes">
 <h2>Changes<a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>DOCS - Modernizes online documentation</li>
+<li>DOCS - Improves online documentation</li>
+<li>INSTALL - Updates flags for intel 2018 and adds instructions for IPP Max-Planck Garching</li>
 </ul>
 </div>
 <div class="section" id="fixes">
 <h2>Fixes<a class="headerlink" href="#fixes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>DCON - Fixes a formatting error in sing_find.out</li>
+<li>DOCS - Fixes rmatch eta and massdens inputs for DIIID_resisitive_example</li>
+<li>DCON - Fixes inappropriate uses of psihigh, which may not be the end of integration psilim if sas_flag, qhigh, or peak_flag are used</li>
+</ul>
+</div>
+</div>
+<div class="section" id="gpec-v1-2-3">
+<h1>GPEC v1.2.3<a class="headerlink" href="#gpec-v1-2-3" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>Changes<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>DOCS - Modernizes online documentation</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h2>Fixes<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>GPEC - Fixes incorrect w_isl unit labeling in netcdf and makes it the full width for consistency with w_isl_v</li>
 </ul>
@@ -246,14 +280,14 @@
 </div>
 <div class="section" id="gpec-v1-2-2">
 <h1>GPEC v1.2.2<a class="headerlink" href="#gpec-v1-2-2" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="adds">
-<h2>Adds<a class="headerlink" href="#adds" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>Adds<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>GPEC - Adds new coils for DIII-D, COMPASS, ASDEX Upgrade, and NSTX-U</li>
 </ul>
 </div>
-<div class="section" id="id1">
-<h2>Changes<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>Changes<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DOCS - Updates documentation of authors, public installations, and compilation at each institution</li>
 <li>DCON - Makes formatting of surface quantities table in dcon.out consistent between DCON and RDCON</li>
@@ -261,8 +295,8 @@
 <li>GPEC - Singular coupling routines are skipped entirely (avoiding possible issues) if no rationals exist in the domain</li>
 </ul>
 </div>
-<div class="section" id="id2">
-<h2>Fixes<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>Fixes<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>GPEC - Fixes a ss_flag bug so the penetrated vacuum field is calculated on the correct surfaces</li>
 </ul>
@@ -270,8 +304,8 @@
 </div>
 <div class="section" id="gpec-v1-2-1">
 <h1>GPEC v1.2.1<a class="headerlink" href="#gpec-v1-2-1" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id3">
-<h2>Fixes<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>Fixes<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DOCS - Fixes a mismatch in the jacobian’s between GPEC and PENTRC (the torques profiles now match)</li>
 </ul>
@@ -279,8 +313,8 @@
 </div>
 <div class="section" id="gpec-v1-2-0">
 <h1>GPEC v1.2.0<a class="headerlink" href="#gpec-v1-2-0" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id4">
-<h2>Adds<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h2>Adds<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>RDCON &amp; RMATCH - Adds resistive DCON packages
 * Calculates inner layer model and performs matching with ideal outer layer
@@ -299,8 +333,8 @@
 * Previous tri-diagonal spline solutions can be recovered by setting use_classic_splines to false</li>
 </ul>
 </div>
-<div class="section" id="id5">
-<h2>Changes<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id8">
+<h2>Changes<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON - Improves clarity of singular surface search messages</li>
 <li>GPEC - Improves clarity and consistency of singular coupling outputs
@@ -310,8 +344,8 @@
 <li>PYPEC - Improves automatic selection of partitions and threads in job submission and adds rdcon to exe options</li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h2>Fixes<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id9">
+<h2>Fixes<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON - Fixes only the the plasma energy matrix written to dcon.out to include full matrix (previously only 2 columns)</li>
 <li>GPEC - Improves clarity and consistency of singular coupling outputs
@@ -345,8 +379,8 @@
 <div class="section" id="gpec-v1-1-6">
 <h1>GPEC v1.1.6<a class="headerlink" href="#gpec-v1-1-6" title="Permalink to this headline">¶</a></h1>
 <p>This release corrects a bug that may have made previous GPEC electron NTV have the incorrect sign.</p>
-<div class="section" id="id7">
-<h2>Fixes<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id10">
+<h2>Fixes<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>PENTRC - Corrected the sign of the charge (diamagnetic frequencies, etc) for electron calculations.</li>
 </ul>
@@ -355,16 +389,16 @@
 <div class="section" id="gpec-v1-1-5">
 <h1>GPEC v1.1.5<a class="headerlink" href="#gpec-v1-1-5" title="Permalink to this headline">¶</a></h1>
 <p>This version includes a minor but important change to make the ideal GPEC eigenfunctions almost identical to those from DCON in IPEC. A power extraction essential for numerical stability when forming the fundamental H and G matrices in the kinetic solutions has been removed from the ideal calculations for consistency with the previous calculations in the ideal case.</p>
-<div class="section" id="id8">
-<h2>Adds<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id11">
+<h2>Adds<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>COIL - New coils are available for JET, NSTX, and COMPASS. The number of coils usable in a run increased.</li>
 <li>GPEC - The q, rho, and volume profiles are included in the netcdf output if any profile output is requested.</li>
 <li>GPEC - The local coupling matrix between opsi1 and opsi2 and corresponding svd vectors are available. <strong>needs netcdf output??</strong></li>
 </ul>
 </div>
-<div class="section" id="id9">
-<h2>Fixes<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id12">
+<h2>Fixes<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON - Fundamental matrices only use power extraction technique when kin_flag is true.</li>
 <li>PENTRC - Progressbars are now called at the end of do loops for more precise reporting.</li>
@@ -382,8 +416,8 @@
 </div>
 <div class="section" id="gpec-v1-1-4">
 <h1>GPEC v1.1.4<a class="headerlink" href="#gpec-v1-1-4" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id10">
-<h2>Fixes<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id13">
+<h2>Fixes<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>COIL - Fixed faulty 1.1.3 implementation of increasing the east coil windings.</li>
 </ul>
@@ -391,8 +425,8 @@
 </div>
 <div class="section" id="gpec-v1-1-3">
 <h1>GPEC v1.1.3<a class="headerlink" href="#gpec-v1-1-3" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id11">
-<h2>Fixes<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id14">
+<h2>Fixes<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>COIL - Increased the number of windings for the up and down EAST coil arrays</li>
 </ul>
@@ -400,8 +434,8 @@
 </div>
 <div class="section" id="gpec-v1-1-2">
 <h1>GPEC v1.1.2<a class="headerlink" href="#gpec-v1-1-2" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id12">
-<h2>Fixes<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id15">
+<h2>Fixes<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>PENTRC - Now successfully writes kinetic profiles on the equilibrium grid to netcdf files</li>
 </ul>
@@ -409,8 +443,8 @@
 </div>
 <div class="section" id="gpec-v1-1-1">
 <h1>GPEC v1.1.1<a class="headerlink" href="#gpec-v1-1-1" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id13">
-<h2>Fixes<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id16">
+<h2>Fixes<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>PYPEC - A bug was fixed in the python processing tools’ optimize_torque function</li>
 </ul>
@@ -419,8 +453,8 @@
 <div class="section" id="gpec-v1-1-0">
 <h1>GPEC v1.1.0<a class="headerlink" href="#gpec-v1-1-0" title="Permalink to this headline">¶</a></h1>
 <p>This release includes a new DCON netcdf output file and SLURM job submission interface in PYPEC for compatibility with the new portal and iris computing standards. Details are below.</p>
-<div class="section" id="id14">
-<h2>Adds<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id17">
+<h2>Adds<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON - A clean, efficient netcdf file replicates the information in the complicated dcon.out ascii.</li>
 <li>DCON - The new namelist variable, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).</li>
@@ -436,8 +470,8 @@
 <li>REGRESSION - Tools for comparing versions are available.</li>
 </ul>
 </div>
-<div class="section" id="id15">
-<h2>Fixes<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id18">
+<h2>Fixes<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON, GPEC, PENTRC - Timers were fixed to correctly handle multi-day runs.</li>
 <li>DCON - Ascii formatting is updated for complex eigenvalue energies.</li>
@@ -445,8 +479,8 @@
 <li>GPEC - Appropriate ascii closing was added.</li>
 </ul>
 </div>
-<div class="section" id="id16">
-<h2>Documentation<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id19">
+<h2>Documentation<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DOCS - Documentation includes compare module.</li>
 <li>INPUT - Annotations and settings of default input namelists include minor changes.</li>
@@ -456,8 +490,8 @@
 <div class="section" id="gpec-v1-0-6">
 <h1>GPEC v1.0.6<a class="headerlink" href="#gpec-v1-0-6" title="Permalink to this headline">¶</a></h1>
 <p>This patch features fixes to a number of deeply embedded indexing and memory allocation bugs. This is necessary for compiler robustness. The regression examples show essentially no change in the results to machine precision on portal.</p>
-<div class="section" id="id17">
-<h2>Fixes<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id20">
+<h2>Fixes<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>VACUUM &amp; LSODE - This patch fixes the misallocation of memory for input arrays in a number of old subroutines.</li>
 <li>EQUIL - This patch fixes the misallocation of memory for temporary arrays in Fourier spline fitting.</li>
@@ -467,8 +501,8 @@
 </div>
 <div class="section" id="gpec-v1-0-5">
 <h1>GPEC v1.0.5<a class="headerlink" href="#gpec-v1-0-5" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id18">
-<h2>Fixes<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id21">
+<h2>Fixes<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed normalization of filter_flag energy normalized field decomposition.</li>
 </ul>
@@ -487,14 +521,14 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <div class="section" id="gpec-v1-0-2">
 <h1>GPEC v1.0.2<a class="headerlink" href="#gpec-v1-0-2" title="Permalink to this headline">¶</a></h1>
 <p>This patch features one bug fix and one addition to the netcdf output.</p>
-<div class="section" id="id19">
-<h2>Adds<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id22">
+<h2>Adds<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>A transform matrix J_surf_2 has been added to the control netcdf. This matrix applies a dimensionless half-area weighting.</li>
 </ul>
 </div>
-<div class="section" id="id20">
-<h2>Fixes<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id23">
+<h2>Fixes<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The netcdf output Phi_xe has been changed from “energy-normalized flux” with units Wb/m to “energy-normalized field” with units of Tesla. The related *_xe matrices have been similarly normalized. No physics is changed, only the scalar area normalization.</li>
 </ul>
@@ -509,8 +543,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <p>This major release marks the true transition from individual ideal perturbed equilibrium calculations to a fully generalized perturbed equilibrium package.</p>
 <p>The Perturbed Equilibrium Nonambipolar TRansport Code (PENTRC) is used to calculate the neoclassical drift kinetic pressure matrixes required to minimize the hybrid kinetic-MHD perturbed energy and find a set of force balance states. The computational structure of the ideal DCON code is largely maintained in finding these states, although generalizations and modifications have been made to account for new mathematical properties. Foremost among these are 1) the absence of hermitian properties and 2) the integrable nature of singularities near the rational surfaces. Generalization of the linear algebra and new decomposition / recomposition of the matrices required by these changes are now used for both the ideal and kinetic calculations.</p>
 <p>The Ideal Perturbed Equilibrium Code (IPEC) has officially been deprecated and is now the package namesake: the Generalized Perturbed Equilibrium Code (GPEC). The foundational computational changes are much less than in the above case however, with only a few minor generalizations of hermitian linear algebra assumptions.</p>
-<div class="section" id="id21">
-<h2>Adds<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id24">
+<h2>Adds<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul>
 <li><p class="first">DCON inclusion of kinetic terms is now determined by the kin_flag input.</p>
@@ -534,8 +568,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id22">
-<h2>Documentation<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id25">
+<h2>Documentation<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li>Example runs have been split into ideal and kinetic examples to show the kinetic effects</li>
@@ -547,15 +581,15 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <div class="section" id="gpec-v0-4-0">
 <h1>GPEC v0.4.0<a class="headerlink" href="#gpec-v0-4-0" title="Permalink to this headline">¶</a></h1>
 <p>This release includes a number of minor I/O changes and convenient default input features as well as a few minor bug fixes.</p>
-<div class="section" id="id23">
-<h2>Fixes<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id26">
+<h2>Fixes<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>MATCH updated interface for changes DCON file formats</li>
 <li>IPEC fixed alignment of columns in xclebsch_fun output</li>
 </ul>
 </div>
-<div class="section" id="id24">
-<h2>Features<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id27">
+<h2>Features<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON, IPEC, PENTRC all accept the additional Jacobian type ‘park’<ul>
 <li>Sets the power of (b,bp,r) to (1,0,0)</li>
@@ -573,8 +607,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </li>
 </ul>
 </div>
-<div class="section" id="id25">
-<h2>Documentation<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id28">
+<h2>Documentation<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Example namelists updated to use native coordinates throughout for increased speed and clarity</li>
 </ul>
@@ -583,8 +617,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <div class="section" id="gpec-v0-3-5">
 <h1>GPEC v0.3.5<a class="headerlink" href="#gpec-v0-3-5" title="Permalink to this headline">¶</a></h1>
 <p>This release includes critical bug fixes for the nonambipolar transport calculations in PENTRC.</p>
-<div class="section" id="id26">
-<h2>Fixes<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id29">
+<h2>Fixes<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>PENTRC a correction factor of 1/2 has been applied to the fcgl, *gar, and *mm methods to correctly represent quadratic terms using complex analysis</li>
 <li>PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.</li>
@@ -594,8 +628,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <div class="section" id="gpec-v0-3-4">
 <h1>GPEC v0.3.4<a class="headerlink" href="#gpec-v0-3-4" title="Permalink to this headline">¶</a></h1>
 <p>This release includes a number of critical bug fixes found and fixed in a general review of the ideal MHD package in preparation of the move to kinetic MHD version 0.4.0 under development. It also includes a few (re-)standardizations of features.</p>
-<div class="section" id="id27">
-<h2>Fixes<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id30">
+<h2>Fixes<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>PENTRC +/- omega_b included for passing and not trapped particles, removing unphysical symmetry in ell of trapped particle torques<ul>
 <li><strong>All previous 0.3 version torques should be considered incorrect</strong></li>
@@ -617,8 +651,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li>IPEC ipeq_fcoordsout and ipeq_bcoordsout always perform transformation on larger of the working/output m grids (not expected to be an issue for previous versions)</li>
 </ul>
 </div>
-<div class="section" id="id28">
-<h2>Features<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id31">
+<h2>Features<a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>IPEC output coordinate m range is now determined by a new IPEC_OUTPUT variable mlim_out</li>
 <li>IPEC the control surface theta-space function values are now always calculated and output</li>
@@ -641,8 +675,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li>INSTALL and all individual makefiles have updated from the develop branch, reorganizing the linking order and allowing diverse machine/compiler options.</li>
 </ul>
 </div>
-<div class="section" id="id29">
-<h2>Documentation<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id32">
+<h2>Documentation<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Updated input and example namelists and their annotation</li>
 </ul>
@@ -671,8 +705,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </div>
 <div class="section" id="gpec-v0-3-1">
 <h1>GPEC v0.3.1<a class="headerlink" href="#gpec-v0-3-1" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id30">
-<h2>Fixes<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id33">
+<h2>Fixes<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>IPEC fixed mistaken use of Hermitian lapack subroutines for permeability matrix</li>
 <li>PYPEC synthetics properly closes synthetic surfaces that cover the full poloidal angle (vessel wall, etc.)</li>
@@ -680,8 +714,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li>PYPEC updated to reflect move from xray to xarray</li>
 </ul>
 </div>
-<div class="section" id="id31">
-<h2>Features<a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id34">
+<h2>Features<a class="headerlink" href="#id34" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>IPEC netcdf additions, including control surface matrices, profile quantities, shot/time/machine, and more</li>
 <li>IPEC netcdf names conform to netcdf conventions</li>
@@ -708,8 +742,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </div>
 <div class="section" id="gpec-v0-3-0">
 <h1>GPEC v0.3.0<a class="headerlink" href="#gpec-v0-3-0" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id32">
-<h2>Fixes<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id35">
+<h2>Fixes<a class="headerlink" href="#id35" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DCON qhigh is enforced independent of sas_flag</li>
 <li>IPEC longstanding bug that caused crashes when brzphi was requested without eqbrzphi is fixed</li>
@@ -719,8 +753,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 </li>
 </ul>
 </div>
-<div class="section" id="id33">
-<h2>Features<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id36">
+<h2>Features<a class="headerlink" href="#id36" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>COIL now includes 4x48 RFX-mod coils</li>
 <li>IPEC netCDF output is now available for major output flags (more will be transitioned soon)<ul>
@@ -732,8 +766,8 @@ Note this is not critical for the netcdf, but necessary for the way pypec and xa
 <li>IPEC reduced terminal printing - no longer is every eigenmode printed to the terminal</li>
 </ul>
 </div>
-<div class="section" id="id34">
-<h2>Performance<a class="headerlink" href="#id34" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id37">
+<h2>Performance<a class="headerlink" href="#id37" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>IPEC speed was increased by saving coordinate transformation information on a surface when performing multiple transformations on one surface</li>
 <li>IPEC brzphi speed was increase by 1-2 orders of magnitude by calculating (r,z,phi) quantities on the requested grid points instead of across surfaces</li>

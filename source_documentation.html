@@ -3,13 +3,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>PYPEC Source documentation &#8212; GPEC 1.2.3 documentation</title>
+    <title>PYPEC Source documentation &#8212; GPEC 1.3.0 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.3',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
-    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -46,7 +46,7 @@
         <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.2</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.3</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -121,10 +121,7 @@
 <li><a class="reference internal" href="#id1">Examples</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#pypec-modplot-matplotlib-customizations"><code class="docutils literal"><span class="pre">pypec.modplot</span></code> – matplotlib Customizations</a><ul>
-<li><a class="reference internal" href="#id2">Examples</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#pypec-modplot-matplotlib-customizations"><code class="docutils literal"><span class="pre">pypec.modplot</span></code> – matplotlib Customizations</a></li>
 <li><a class="reference internal" href="#regression-compare-for-comparing-restults"><code class="docutils literal"><span class="pre">regression.compare</span></code> – For Comparing Restults</a><ul>
 <li><a class="reference internal" href="#interface">Interface</a></li>
 </ul>
@@ -182,12 +179,6 @@ large data files.</p>
 to your installation of the GPEC package (containing the pypec directory).</p>
 <p>For tcsh shell users, replace export with setenv syntax
 and insert in .cshrc.</p>
-<dl class="docutils">
-<dt>..note: Mayavi’s default gui api is not consistent with the anaconda</dt>
-<dd>interactive python default. To enable 3D plotting, you must add
-“export QT_API=pyqt” and “ETS_TOOLKIT=qt4” to your .bashrc or a similar 
-line to your .cshrc.</dd>
-</dl>
 <p>To put the changes into effect:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span>$ source ~/.bashrc
 </pre></div>
@@ -222,6 +213,12 @@ interactivity for displaying figures. To do this enter:</p>
 In [1]: import mayavi
 In [2]: %pylab
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Mayavi’s API settings will still conflict with matplotlib if
+it is not imported in the above order! For this reason, we cannot use
+the –pylab call option with ipython.</p>
 </div>
 <p>Look into online tutorial on numpy and matplotlib. Advanced users 
 are recommended to edit ~/.matplotlib/matplotlibrc and
@@ -738,7 +735,7 @@ add_offset</cite>, where <cite>_FillValue</cite>, <cite>scale_factor</cite> and 
 taken from variable attributes (if they exist).  If the <cite>_FillValue</cite> or
 <cite>missing_value</cite> attribute contains multiple values a warning will be
 issued and all array values matching one of the multiple values will
-be replaced by NA. mask_and_scale defaults to True except for the 
+be replaced by NA. mask_and_scale defaults to True except for the
 pseudonetcdf backend.</dd>
 <dt>decode_times <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
 <dd>If True, decode times encoded in the standard NetCDF datetime format
@@ -755,20 +752,20 @@ used as the last dimension of character arrays.</dd>
 <dt>decode_coords <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
 <dd>If True, decode the ‘coordinates’ attribute to identify coordinates in
 the resulting dataset.</dd>
-<dt>engine <span class="classifier-delimiter">:</span> <span class="classifier">{‘netcdf4’, ‘scipy’, ‘pydap’, ‘h5netcdf’, ‘pynio’, ‘pseudonetcdf’}, optional</span></dt>
-<dd>Engine to use when reading files. If not provided, the default engine
+<dt>engine <span class="classifier-delimiter">:</span> <span class="classifier">{‘netcdf4’, ‘scipy’, ‘pydap’, ‘h5netcdf’, ‘pynio’, ‘cfgrib’,</span></dt>
+<dd>‘pseudonetcdf’}, optional
+Engine to use when reading files. If not provided, the default engine
 is chosen based on available dependencies, with a preference for
 ‘netcdf4’.</dd>
 <dt>chunks <span class="classifier-delimiter">:</span> <span class="classifier">int or dict, optional</span></dt>
 <dd>If chunks is provided, it used to load the new dataset into dask
 arrays. <code class="docutils literal"><span class="pre">chunks={}</span></code> loads the dataset with dask using a single
 chunk for all arrays.</dd>
-<dt>lock <span class="classifier-delimiter">:</span> <span class="classifier">False, True or threading.Lock, optional</span></dt>
-<dd>If chunks is provided, this argument is passed on to
-<code class="xref py py-func docutils literal"><span class="pre">dask.array.from_array()</span></code>. By default, a global lock is
-used when reading data from netCDF files with the netcdf4 and h5netcdf
-engines to avoid issues with concurrent access when using dask’s
-multithreaded backend.</dd>
+<dt>lock <span class="classifier-delimiter">:</span> <span class="classifier">False or duck threading.Lock, optional</span></dt>
+<dd>Resource lock to use when reading data from disk. Only relevant when
+using dask or another form of parallelism. By default, appropriate
+locks are chosen to safely read and write files with the currently
+active dask scheduler.</dd>
 <dt>cache <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
 <dd>If True, cache data loaded from the underlying datastore in memory as
 NumPy arrays when accessed to avoid reading from the underlying data-
@@ -782,7 +779,7 @@ dataset. This may be useful to drop variables with problems or
 inconsistent values.</dd>
 <dt>backend_kwargs: dictionary, optional</dt>
 <dd>A dictionary of keyword arguments to pass on to the backend. This
-may be useful when backend options would improve performance or 
+may be useful when backend options would improve performance or
 allow user control of dataset processing.</dd>
 </dl>
 <p>Returns
@@ -1209,7 +1206,7 @@ are correct and will not result in life crushing disaster for themselves
 or a friend when that super special file gets over-written.</p>
 <dl class="class">
 <dt id="pypec.gpec.InputSet">
-<em class="property">class </em><code class="descclassname">pypec.gpec.</code><code class="descname">InputSet</code><span class="sig-paren">(</span><em>rundir='/p/gpec/GPEC-1.2/bin'</em>, <em>indir='/p/gpec/GPEC-1.2/input'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#InputSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.InputSet" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pypec.gpec.</code><code class="descname">InputSet</code><span class="sig-paren">(</span><em>rundir='/p/gpec/users/nlogan/gpec/bin'</em>, <em>indir='/p/gpec/users/nlogan/gpec/input'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#InputSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.InputSet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class designed to hold the standard inputs for a run.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1292,7 +1289,7 @@ on each surface to obtain the scaled rotation.</p>
 
 <dl class="function">
 <dt id="pypec.gpec.optntv">
-<code class="descclassname">pypec.gpec.</code><code class="descname">optntv</code><span class="sig-paren">(</span><em>mlist</em>, <em>maxiter=50</em>, <em>loc='.'</em>, <em>rundir='/p/gpec/GPEC-1.2/bin/'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#optntv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.optntv" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pypec.gpec.</code><code class="descname">optntv</code><span class="sig-paren">(</span><em>mlist</em>, <em>maxiter=50</em>, <em>loc='.'</em>, <em>rundir='/p/gpec/users/nlogan/gpec/bin/'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#optntv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.optntv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Python wrapper for running gpec package multiple times in
 a search for the normalized spectrum that maximizes NTV.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1325,7 +1322,7 @@ a search for the normalized spectrum that maximizes NTV.</p>
 
 <dl class="function">
 <dt id="pypec.gpec.optpentrc">
-<code class="descclassname">pypec.gpec.</code><code class="descname">optpentrc</code><span class="sig-paren">(</span><em>ms=[-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24], ttype='tgar', tfac=-1, perp1=False, norm=0.001, qsub=True, method='Powell', maxiter=1000, loc='.', rundir='/p/gpec/GPEC-1.2/bin/', **kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#optpentrc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.optpentrc" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pypec.gpec.</code><code class="descname">optpentrc</code><span class="sig-paren">(</span><em>ms=[-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24], ttype='tgar', tfac=-1, perp1=False, norm=0.001, qsub=True, method='Powell', maxiter=1000, loc='.', rundir='/p/gpec/users/nlogan/gpec/bin/', **kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#optpentrc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.optpentrc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Python wrapper for running gpec packages multiple times in
 a search for the normalized spectrum that maximizes NTV.</p>
 <p>Approach is as follows:
@@ -1371,7 +1368,7 @@ a search for the normalized spectrum that maximizes NTV.</p>
 
 <dl class="function">
 <dt id="pypec.gpec.run">
-<code class="descclassname">pypec.gpec.</code><code class="descname">run</code><span class="sig-paren">(</span><em>loc='.'</em>, <em>rundir='/p/gpec/GPEC-1.2/bin/'</em>, <em>submit=True</em>, <em>return_on_complete=False</em>, <em>rerun=False</em>, <em>rundcon=True</em>, <em>rungpec=True</em>, <em>runpentrc=True</em>, <em>runrdcon=False</em>, <em>cleandcon=False</em>, <em>fill_inputs=False</em>, <em>version='1.2'</em>, <em>mailon='NONE'</em>, <em>email=''</em>, <em>mem=3000.0</em>, <em>hours=36</em>, <em>partition='sque'</em>, <em>runipec=False</em>, <em>qsub=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.run" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pypec.gpec.</code><code class="descname">run</code><span class="sig-paren">(</span><em>loc='.'</em>, <em>rundir='/p/gpec/users/nlogan/gpec/bin/'</em>, <em>submit=True</em>, <em>return_on_complete=False</em>, <em>rerun=False</em>, <em>rundcon=True</em>, <em>rungpec=True</em>, <em>runpentrc=True</em>, <em>runrdcon=False</em>, <em>cleandcon=False</em>, <em>fill_inputs=False</em>, <em>version='1.2'</em>, <em>mailon='NONE'</em>, <em>email=''</em>, <em>mem=3000.0</em>, <em>hours=36</em>, <em>partition='sque'</em>, <em>runipec=False</em>, <em>qsub=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pypec/gpec.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pypec.gpec.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Python wrapper for running gpec package.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1526,8 +1523,14 @@ un-ordered.</p>
 <span class="target" id="module-pypec.modplot"></span><div class="section" id="pypec-modplot-matplotlib-customizations">
 <h2><a class="reference internal" href="#module-pypec.modplot" title="pypec.modplot"><code class="xref py py-mod docutils literal"><span class="pre">pypec.modplot</span></code></a> – matplotlib Customizations<a class="headerlink" href="#pypec-modplot-matplotlib-customizations" title="Permalink to this headline">¶</a></h2>
 <p>Collection of modified matplotlib functions and objects.</p>
-<div class="section" id="id2">
-<h3>Examples<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Examples:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
 <p>Plot complex arguments.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">subplots</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">lines</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mf">0.5</span><span class="n">j</span><span class="p">),</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
@@ -1616,7 +1619,7 @@ which the colorbar applies; this argument is mandatory for the Figure
 pyplot <code class="xref py py-func docutils literal"><span class="pre">colorbar()</span></code> function, which sets the
 default to the current image.</dd>
 <dt>cax <span class="classifier-delimiter">:</span> <span class="classifier"><code class="xref py py-class docutils literal"><span class="pre">Axes</span></code> object, optional</span></dt>
-<dd>Axis into which the colorbar will be drawn</dd>
+<dd>Axes into which the colorbar will be drawn.</dd>
 <dt>ax <span class="classifier-delimiter">:</span> <span class="classifier"><code class="xref py py-class docutils literal"><span class="pre">Axes</span></code>, list of Axes, optional</span></dt>
 <dd>Parent axes from which space for a new colorbar axes will be stolen.
 If a list of axes is given they will all be resized to make room for the
@@ -1714,7 +1717,7 @@ maximum colorbar extensions respectively as a
 fraction of the interior colorbar length.</td>
 </tr>
 <tr class="row-even"><td><em>extendrect</em></td>
-<td>[ <em>False</em> | <em>True</em> ]
+<td>bool
 If <em>False</em> the minimum and maximum colorbar extensions
 will be triangular (the default). If <em>True</em> the
 extensions will be rectangular.</td>
@@ -1740,8 +1743,8 @@ used. An alternative
 given instead.</td>
 </tr>
 <tr class="row-even"><td><em>drawedges</em></td>
-<td>[ False | True ] If true, draw lines at color
-boundaries.</td>
+<td>bool
+Whether to draw lines at color boundaries.</td>
 </tr>
 </tbody>
 </table>
@@ -1775,11 +1778,9 @@ will be used.</td>
 </div></blockquote>
 <p>If <em>mappable</em> is a <code class="xref py py-class docutils literal"><span class="pre">ContourSet</span></code>, its <em>extend</em>
 kwarg is included automatically.</p>
-<p>Note that the <em>shrink</em> kwarg provides a simple way to keep a vertical
-colorbar, for example, from being taller than the axes of the mappable
-to which the colorbar is attached; but it is a manual method requiring
-some trial and error. If the colorbar is too tall (or a horizontal
-colorbar is too wide) use a smaller value of <em>shrink</em>.</p>
+<p>The <em>shrink</em> kwarg provides a simple way to scale the colorbar with respect
+to the axes. Note that if <em>cax</em> is specified it determines the size of the
+colorbar and <em>shrink</em> and <em>aspect</em> kwargs are ignored.</p>
 <p>For more precise control, you can manually specify the positions of
 the axes objects in which the mappable and the colorbar are drawn.  In
 this case, do not use any of the axes properties kwargs.</p>
@@ -2000,21 +2001,22 @@ independent.</li>
 </ul>
 </div></blockquote>
 <p class="last">When subplots have a shared x-axis along a column, only the x tick
-labels of the bottom subplot are visible.  Similarly, when subplots
+labels of the bottom subplot are created. Similarly, when subplots
 have a shared y-axis along a row, only the y tick labels of the first
-column subplot are visible.</p>
+column subplot are created. To later turn other subplots’ ticklabels
+on, use <code class="xref py py-meth docutils literal"><span class="pre">tick_params()</span></code>.</p>
 </dd>
 <dt>squeeze <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional, default: True</span></dt>
 <dd><ul class="first last">
-<li><p class="first">If True, extra dimensions are squeezed out from the returned Axes
-object:</p>
+<li><p class="first">If True, extra dimensions are squeezed out from the returned
+array of Axes:</p>
 <blockquote>
 <div><ul class="simple">
 <li>if only one subplot is constructed (nrows=ncols=1), the
 resulting single Axes object is returned as a scalar.</li>
-<li>for Nx1 or 1xN subplots, the returned object is a 1D numpy
-object array of Axes objects are returned as numpy 1D arrays.</li>
-<li>for NxM, subplots with N&gt;1 and M&gt;1 are returned as a 2D arrays.</li>
+<li>for Nx1 or 1xM subplots, the returned object is a 1D numpy
+object array of Axes objects.</li>
+<li>for NxM, subplots with N&gt;1 and M&gt;1 are returned as a 2D array.</li>
 </ul>
 </div></blockquote>
 </li>
@@ -2032,7 +2034,7 @@ subplot.</dd>
 <dd>Dict with keywords passed to the
 <code class="xref py py-class docutils literal"><span class="pre">GridSpec</span></code> constructor used to create the
 grid the subplots are placed on.</dd>
-<dt><a href="#id3"><span class="problematic" id="id4">**</span></a>fig_kw :</dt>
+<dt><a href="#id2"><span class="problematic" id="id3">**</span></a>fig_kw :</dt>
 <dd>All additional keyword arguments are passed to the <a class="reference internal" href="#pypec.modplot.figure" title="pypec.modplot.figure"><code class="xref py py-func docutils literal"><span class="pre">figure()</span></code></a> call.</dd>
 </dl>
 <p>fig : <code class="xref py py-class docutils literal"><span class="pre">matplotlib.figure.Figure</span></code> object</p>
@@ -2111,7 +2113,6 @@ subplot</p>
 <p>All other kwargs passed to hlines and vlines functions.</p>
 </dd></dl>
 
-</div>
 </div>
 <span class="target" id="module-regression"></span><span class="target" id="module-regression.compare"></span><div class="section" id="regression-compare-for-comparing-restults">
 <h2><a class="reference internal" href="#module-regression.compare" title="regression.compare"><code class="xref py py-mod docutils literal"><span class="pre">regression.compare</span></code></a> – For Comparing Restults<a class="headerlink" href="#regression-compare-for-comparing-restults" title="Permalink to this headline">¶</a></h2>

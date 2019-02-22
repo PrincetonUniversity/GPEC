@@ -3,13 +3,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Coordinates &#8212; GPEC 1.2.3 documentation</title>
+    <title>Coordinates &#8212; GPEC 1.3.0 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.3',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
-    <script type="text/javascript" src="_static/bootstrap-3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -46,7 +46,7 @@
         <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.2</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.3</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -227,22 +227,25 @@
 <div class="section" id="the-dcon-namelist">
 <h2>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Permalink to this headline">¶</a></h2>
 <p>This namelist controls the behavior of the DCON code and determines its outputs.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;DCON_CONTROL
+<pre class="literal-block">
+&amp;DCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
-    ode_flag=t           ! Integrate ODE&#39;s for determining stability of internal long-wavelength mode (must be true for GPEC)
+    ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
+    mer_flag=t           ! Evaluate the Mercier criterian
 
     sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
+        peak_flag=t          ! Stops integration at first local maximum beyond the last rational (may go beyond dmlim)
     qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
-    sing_start=0         ! Start integration at the sing_start&#39;th rational from the axis (psilow)
+    sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
     delta_mlow=8         ! Expands lower bound of Fourier harmonics
     delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
-    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m&#39;
+    delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
@@ -278,7 +281,7 @@
     mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
 
     bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
-    euler_stride=1       ! Output only every euler_stride&#39;th psi step to binary file
+    euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions
     bin_bal1=f           ! Binary output for bal_flag poloidal functions
@@ -287,8 +290,8 @@
 
     netcdf_out=t         ! Replicate ascii dcon.out information in a netcdf file
 /
-</pre></div>
-</div>
+
+</pre>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Additional DCON documentation can be found in the pre-GPEC documentation <a class="reference internal" href="dcon_readme.html#dcon"><span class="std std-ref">here</span></a>.</p>
