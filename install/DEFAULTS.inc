@@ -102,7 +102,7 @@
 # On iris.gat.com
 #   Developers should use the ifort compiler and associated netcdf module
 #     $ module load ifort/ifort2017 netcdf/4.4.1-mpich3.2-ifort2017
-#   Then set one undefined environement variable
+#   Then set one undefined environment variable
 #     $ export F90HOME=/fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux
 #   Alternately, you can simply load the gpec module!
 #     $ module load gpec
@@ -129,6 +129,41 @@
 #
 #   Now compile using
 #    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#
+# On toki0*.aug.ipp.mpg.de
+#   Developers should use the ifort compiler as well as the associated impi and netcdf modules
+#     $ module load intel/14.0 impi netcdf-mpi/4.3.2 mkl git
+#   Then set undefined environment variables
+#     $ export F90HOME=/afs/@cell/common/soft/intel/ics2013/14.0
+#     $ export FC=/afs/@cell/common/soft/intel/ics2016.3/16.0/linux/bin/intel64/bin/ifort
+#     $ export NETCDFHOME=/afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3
+#   Alternately, you can simply load the gpec module!
+#     $ module use /afs/ipp-garching.mpg.de/home/n/nlogan/modulefiles
+#     $ module load gpec
+#   This should properly set up your LD_LIBRARY_PATH, PATH, and environment variables.
+#   Either way, executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#
+#   nlogan@toki02 105)
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /afs/@cell/common/soft/intel/ics2013/14.0/bin/intel64/bin/ifort
+#      using math libraries -lmkl_rt
+#      from /afs/@cell/common/soft/intel/ics2013/14.0/mkl/lib/intel64
+#      including /afs/@cell/common/soft/intel/ics2013/14.0/mkl/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/lib /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/lib
+#      including /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/include
+#      and compiler libraries -lirc -limf
+#      from /afs/@cell/common/soft/intel/ics2013/14.0//lib/intel64
+#      including /afs/@cell/common/soft/intel/ics2013/14.0//compiler/include/intel64
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#    $ make FFLAGS='-openmp' 2>&1 | tee make.log
 #
 # On mac OSX
 #   With the move to licensed intel compilers, OSX is no longer actively supported.
