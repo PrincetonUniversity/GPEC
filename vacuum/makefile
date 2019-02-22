@@ -1,5 +1,6 @@
+# This is the makefile for VACUUM.
 
-FFLAGS = -vec_report0
+FFLAGS = -O3 -qopenmp -xHost #-qopt-zmm-usage=high #-ipo
 
 F90 = $(FC) $(FFLAGS)
 
@@ -8,6 +9,7 @@ F90 = $(FC) $(FFLAGS)
 
 OBJS = \
 	bzio.o \
+    aleg_new.o \
 	vacuum_global.o \
 	vacuum_io.o \
 	vacuum_ma.o \

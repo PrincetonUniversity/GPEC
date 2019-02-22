@@ -61,6 +61,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: mat_flag=.FALSE.
       LOGICAL :: ode_flag=.FALSE.
       LOGICAL :: vac_flag=.FALSE.
+      LOGICAL :: mer_flag=.FALSE.
 
       LOGICAL :: crit_break=.TRUE.
       LOGICAL :: node_flag=.FALSE.
@@ -96,7 +97,7 @@ c-----------------------------------------------------------------------
       TYPE(sing_type), DIMENSION(:), POINTER :: sing
       TYPE(sing_type), DIMENSION(:), POINTER :: kinsing
 
-      LOGICAL :: sas_flag=.FALSE.,lim_flag
+      LOGICAL :: sas_flag=.FALSE.,peak_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
 

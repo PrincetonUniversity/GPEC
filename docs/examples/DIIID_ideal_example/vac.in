@@ -16,6 +16,7 @@
    checks = .FALSE.
    wall = .FALSE.
    lkplt = 0
+   verbose_timer_output = f
 /
 &VACDAT
    ishape = 6

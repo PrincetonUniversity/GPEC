@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
+FFLAGS =  -qopenmp
 IFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
@@ -25,10 +25,10 @@ OBJS = \
 	bal.o \
 	fourfit.o \
 	sing.o \
+	free.o \
 	ode_output.o \
 	ode.o \
 	dcon_netcdf.o \
-	free.o \
 	resist.o \
 	dcon.o
 
@@ -76,9 +76,9 @@ fourfit.o: ../equil/fspline_mod.mod ../equil/global_mod.mod \
 sing.o: fourfit.o
 debug.o: ../equil/local_mod.mod
 ode_output.o: dcon_mod.o sing.o debug.o
-ode.o: ode_output.o
+ode.o: ode_output.o free.o
 dcon_netcdf.o: dcon_mod.o
-free.o: ode.o dcon_netcdf.o
+free.o: dcon_netcdf.o
 resist.o: dcon_mod.o
 dcon.o: ../equil/equil_mod.mod ../equil/equil_out_mod.mod \
 	../pentrc/inputs.o ../pentrc/pentrc_interface.o \

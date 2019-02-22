@@ -143,7 +143,7 @@ c-----------------------------------------------------------------------
          xm=(rhohigh+rholow)/2
          dx=(rhohigh-rholow)/2
          sq%xs=xm+dx*mypack(mpsi/2,sp_pfac,"both")
-         sq%xs=sq%xs**2         
+         sq%xs=sq%xs**2
       CASE default
          CALL program_stop("Cannot recognize grid_type "//grid_type)
       END SELECT
@@ -437,7 +437,7 @@ c-----------------------------------------------------------------------
          xm=(rhohigh+rholow)/2
          dx=(rhohigh-rholow)/2
          sq%xs=xm+dx*mypack(mpsi/2,sp_pfac,"both")
-         sq%xs=sq%xs**2         
+         sq%xs=sq%xs**2
       CASE default
          CALL program_stop("Cannot recognize grid_type "//grid_type)
       END SELECT

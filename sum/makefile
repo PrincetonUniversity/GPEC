@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -vec_report0
+FFLAGS = -qopenmp
 F90 = $(FC) $(FFLAGS)
 
 .f.o:

@@ -3,6 +3,7 @@
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
+    mer_flag=t           ! Evaluate the Mercier criterian
 
     sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
