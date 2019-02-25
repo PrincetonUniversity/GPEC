@@ -1,0 +1,4 @@
+The example is used to show how to show the workflow of getting resistive response.
+../../../bin/rdcon
+../../../bin/rmatch
+../../../bin/gpec 
