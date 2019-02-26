@@ -327,7 +327,7 @@ c-----------------------------------------------------------------------
      $        *(spl%xs(spl%mx)-spl%xs(spl%mx-1)))
      $        /(spl%xs(spl%mx)-spl%xs(spl%mx-1))
 c-----------------------------------------------------------------------
-c     periodic boudary conditions.
+c     periodic boundary conditions.
 c-----------------------------------------------------------------------
       CASE("periodic")
          spl%periodic=.TRUE.
@@ -573,18 +573,20 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE cspline_eval_external(spl,x,s_ix,s_f)
+      SUBROUTINE cspline_eval_external(spl,x,s_ix,s_f,s_f1,s_f2,s_f3)
 
       TYPE(cspline_type), INTENT(IN) :: spl
       REAL(r8), INTENT(IN) :: x
 
       INTEGER :: iqty,iside
       REAL(r8) :: xx,d,z,z1,dx
+      COMPLEX(r8) :: g,g1,g2,g3
 
       INTEGER, INTENT(INOUT) :: s_ix
       COMPLEX(r8), DIMENSION(:), INTENT(INOUT) :: s_f
+      COMPLEX(r8), DIMENSION(:),OPTIONAL,INTENT(OUT) :: s_f1,s_f2,s_f3
 
-      REAL(r8) :: xpow
+      REAL(r8) :: xpow,xfac
 c-----------------------------------------------------------------------
 c     zero out external array.
 c-----------------------------------------------------------------------
@@ -635,15 +637,55 @@ c-----------------------------------------------------------------------
      $     +d*z*z1*(spl%fs1(s_ix,:)*z1
      $     -spl%fs1(s_ix+1,:)*z)
 c-----------------------------------------------------------------------
+c     evaluate first derivatives.
+c-----------------------------------------------------------------------
+      IF(PRESENT(s_f1))THEN
+         s_f1=6*(spl%fs(s_ix+1,:)
+     $        -spl%fs(s_ix,:))*z*z1/d
+     $        +spl%fs1(s_ix,:)*z1*(3*z1-2)
+     $        +spl%fs1(s_ix+1,:)*z*(3*z-2)
+      ENDIF
+c-----------------------------------------------------------------------
+c     evaluate second derivatives.
+c-----------------------------------------------------------------------
+      IF(PRESENT(s_f2))THEN
+         s_f2=(6*(spl%fs(s_ix+1,:)
+     $        -spl%fs(s_ix,:))*(z1-z)/d
+     $        -spl%fs1(s_ix,:)*(6*z1-2)
+     $        +spl%fs1(s_ix+1,:)*(6*z-2))/d
+      ENDIF
+c-----------------------------------------------------------------------
+c     evaluate third derivatives.
+c-----------------------------------------------------------------------
+      IF(PRESENT(s_f3))THEN
+         s_f3=(12*(spl%fs(s_ix,:)
+     $        -spl%fs(s_ix+1,:))/d
+     $        +6*(spl%fs1(s_ix,:)
+     $        +spl%fs1(s_ix+1,:)))/(d*d)
+      ENDIF
+c-----------------------------------------------------------------------
 c     restore powers.
 c-----------------------------------------------------------------------
       DO iside=1,2
          dx=ABS(x-spl%x0(iside))
          DO iqty=1,spl%nqty
             xpow = spl%xpower(iside,iqty)
-            IF(xpow /= 0)THEN
-               s_f(iqty)=s_f(iqty)*(dx**xpow)
-            ENDIF
+            IF(xpow == 0)CYCLE
+            xfac=dx**xpow
+            g=s_f(iqty)*xfac
+            IF(PRESENT(s_f1))g1=(s_f1(iqty)+s_f(iqty)
+     $           *spl%xpower(iside,iqty)/dx)*xfac
+            IF(PRESENT(s_f2))g2=(s_f2(iqty)+spl%xpower(iside,iqty)/dx
+     $           *(2*s_f1(iqty)+(spl%xpower(iside,iqty)-1)
+     $           *s_f(iqty)/dx))*xfac
+            IF(PRESENT(s_f3))g3=(s_f3(iqty)+spl%xpower(iside,iqty)/dx
+     $           *(3*s_f2(iqty)+(spl%xpower(iside,iqty)-1)/dx
+     $           *(3*s_f1(iqty)+(spl%xpower(iside,iqty)-2)/dx
+     $           *s_f(iqty))))*xfac
+            s_f(iqty)=g
+            IF(PRESENT(s_f1))s_f1(iqty)=g1
+            IF(PRESENT(s_f2))s_f2(iqty)=g2
+            IF(PRESENT(s_f3))s_f3(iqty)=g3
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------

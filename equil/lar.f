@@ -285,7 +285,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: r
       REAL(r8), INTENT(OUT) :: p,pp,sigma,bsq,q
       REAL(r8), DIMENSION(:), INTENT(IN) :: y
-      
+
       REAL(r8) :: x,xfac
 c-----------------------------------------------------------------------
 c     compute equilibrium profiles.

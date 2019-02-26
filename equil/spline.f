@@ -40,7 +40,7 @@ c-----------------------------------------------------------------------
       MODULE spline_mod
       USE local_mod
       IMPLICIT NONE
-     
+
       LOGICAL :: use_classic_splines = .FALSE.
       TYPE :: spline_type
       INTEGER :: mx,nqty,ix
@@ -154,10 +154,10 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE spline_fit_ahg(spl,endmode)
-      
+
       TYPE(spline_type), INTENT(INOUT) :: spl
       CHARACTER(*), INTENT(IN) :: endmode
-      
+
       INTEGER :: iqty,iside
       REAL(r8), DIMENSION(-1:1,0:spl%mx) :: a
       REAL(r8), DIMENSION(spl%mx) :: b
@@ -865,7 +865,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE spline_eval_external(spl,x,s_ix,s_f,s_f1,mode)
+      SUBROUTINE spline_eval_external(spl,x,s_ix,s_f,s_f1,s_f2,s_f3)
 
       TYPE(spline_type), INTENT(IN) :: spl
       REAL(r8), INTENT(IN) :: x
@@ -875,14 +875,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: g,g1,g2,g3
 
       INTEGER, INTENT(INOUT) :: s_ix
-      REAL(r8), DIMENSION(:), INTENT(INOUT) :: s_f,s_f1
-
-      INTEGER, INTENT(IN) :: mode
-c-----------------------------------------------------------------------
-c     zero out external arrays.
-c-----------------------------------------------------------------------
-      s_f = 0
-      s_f1 = 0
+      REAL(r8), DIMENSION(:), INTENT(OUT) :: s_f
+      REAL(r8), DIMENSION(:), OPTIONAL, INTENT(OUT) :: s_f1,s_f2,s_f3
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
@@ -929,11 +923,29 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     evaluate first derivatives.
 c-----------------------------------------------------------------------
-      IF(mode > 0)THEN
+      IF(PRESENT(s_f1))THEN
          s_f1=6*(spl%fs(s_ix+1,1:spl%nqty)
      $        -spl%fs(s_ix,1:spl%nqty))*z*z1/d
      $        +spl%fs1(s_ix,1:spl%nqty)*z1*(3*z1-2)
      $        +spl%fs1(s_ix+1,1:spl%nqty)*z*(3*z-2)
+      ENDIF
+c-----------------------------------------------------------------------
+c     evaluate second derivatives.
+c-----------------------------------------------------------------------
+      IF(PRESENT(s_f2))THEN
+         s_f2=(6*(spl%fs(s_ix+1,1:spl%nqty)
+     $        -spl%fs(s_ix,1:spl%nqty))*(z1-z)/d
+     $        -spl%fs1(s_ix,1:spl%nqty)*(6*z1-2)
+     $        +spl%fs1(s_ix+1,1:spl%nqty)*(6*z-2))/d
+      ENDIF
+c-----------------------------------------------------------------------
+c     evaluate third derivatives.
+c-----------------------------------------------------------------------
+      IF(PRESENT(s_f3))THEN
+         s_f3=(12*(spl%fs(s_ix,1:spl%nqty)
+     $        -spl%fs(s_ix+1,1:spl%nqty))/d
+     $        +6*(spl%fs1(s_ix,1:spl%nqty)
+     $        +spl%fs1(s_ix+1,1:spl%nqty)))/(d*d)
       ENDIF
 c-----------------------------------------------------------------------
 c     restore powers.
@@ -944,10 +956,19 @@ c-----------------------------------------------------------------------
             IF(spl%xpower(iside,iqty) == 0)CYCLE
             xfac=ABS(dx)**spl%xpower(iside,iqty)
             g=s_f(iqty)*xfac
-            IF(mode > 0)g1=(s_f1(iqty)+s_f(iqty)
+            IF(PRESENT(s_f1))g1=(s_f1(iqty)+s_f(iqty)
      $           *spl%xpower(iside,iqty)/dx)*xfac
+            IF(PRESENT(s_f2))g2=(s_f2(iqty)+spl%xpower(iside,iqty)/dx
+     $           *(2*s_f1(iqty)+(spl%xpower(iside,iqty)-1)
+     $           *s_f(iqty)/dx))*xfac
+            IF(PRESENT(s_f3))g3=(s_f3(iqty)+spl%xpower(iside,iqty)/dx
+     $           *(3*s_f2(iqty)+(spl%xpower(iside,iqty)-1)/dx
+     $           *(3*s_f1(iqty)+(spl%xpower(iside,iqty)-2)/dx
+     $           *s_f(iqty))))*xfac
             s_f(iqty)=g
-            IF(mode > 0)s_f1(iqty)=g1
+            IF(PRESENT(s_f1))s_f1(iqty)=g1
+            IF(PRESENT(s_f2))s_f2(iqty)=g2
+            IF(PRESENT(s_f3))s_f3(iqty)=g3
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------

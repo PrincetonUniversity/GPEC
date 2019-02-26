@@ -271,8 +271,8 @@ module torque
         ! for calling this in function parallel
         integer :: OMP_GET_THREAD_NUM
         integer :: ix, iy
-        real(r8), dimension(3) :: geom_f, geom_f1, eqfun_f, eqfun_fx, eqfun_fy
-        real(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy, sq_s_f, sq_s_f1
+        real(r8), dimension(3) :: geom_f, eqfun_f, eqfun_fx, eqfun_fy
+        real(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy, sq_s_f
         real(r8), dimension(8) :: kin_f, kin_f1
         complex(r8), dimension(mpert) :: xs_m1_f, xs_m2_f, xs_m3_f
         complex(r8), dimension(mpert) :: dbob_m_f, divx_m_f
@@ -374,9 +374,9 @@ module torque
         if(tdebug) print *,"  bmin,bo,bmax = ",bmin,bo,bmax
         
         ! flux function variables  !!WARNING WHEN MODIFYING: THESE ARE CALCULATED SEPARATELY FOR I/O!!
-        call spline_eval_external(sq,psi,ix,sq_s_f,sq_s_f1,1)
-        call spline_eval_external(kin,psi,ix,kin_f,kin_f1,1)
-        call spline_eval_external(geom,psi,ix,geom_f,geom_f1,0)
+        call spline_eval_external(sq,psi,ix,sq_s_f)
+        call spline_eval_external(kin,psi,ix,kin_f,kin_f1)
+        call spline_eval_external(geom,psi,ix,geom_f)
         q     = sq_s_f(4)
         welec = kin_f(5)                            ! electric precession
         wdian =-twopi*kin_f(s+2)*kin_f1(s)/(chrg*chi1*kin_f(s)) ! density gradient drive
