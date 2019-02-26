@@ -10,12 +10,11 @@
     deflate=f
     nroot=5
     itermax=5000
-    msing=20
-    initguess = ( 0,10)    !n=1
-
-    eta=8e-8,8e-8,8e-8,8e-8,8e-8,8e-8
-    massden=3.3e-07, 3.3e-07,3.3e-07,3.3e-07,3.3e-07,3.3e-07
-
+    relax_fac=0.5
+    msing=1
+    initguess = ( 15,0)
+    eta=1e-9,
+    massden=2.67e-7
     scan_x1 =  1e-9
     scan_x0 = 1.90E-10
 
@@ -51,7 +50,7 @@
 
     rescale=t
     pfac=0.1
-    xfac=10.0
+    xfac=20.0
     gal_method="normal"
     noexp=t
     nx=128
