@@ -4,8 +4,9 @@ Summary of workflow:
 ../../../bin/rmatch
 
 In rdcon.in, it is essential to set
-gal_flag=t
-coil%rpec_flag=f
+gal_flag=t        #turn on delta' calucation
+coil%rpec_flag=f  #turn off computation of resistive response
+Note: rpect_flag = t RDCON will prepare the solution for the computation of resistive plasma response.
 
 Then, run
 ../../../bin/rdcon
