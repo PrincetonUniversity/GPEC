@@ -1,4 +1,4 @@
-This is an example showing how to use RDCON and RMATCH to find tearing mode growth rate.
+This is an example showing how to use RDCON and RMATCH to find tearing mode growth rates.
 Summary of workflow:
 ../../../bin/rdcon
 ../../../bin/rmatch
@@ -6,7 +6,7 @@ Summary of workflow:
 In rdcon.in, it is essential to set
 gal_flag=t        #turn on delta' calucation
 coil%rpec_flag=f  #turn off computation of resistive response
-Note: rpect_flag = t RDCON will prepare the solution for the computation of resistive plasma response.
+Note: rpec_flag = t RDCON will prepare the solution for the computation of resistive plasma response.
 
 Then, run
 ../../../bin/rdcon
