@@ -1495,10 +1495,6 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       zwal1(iq1) = - ww2(i)
   140 continue
   145 continue
-      write(333,*) mth1
-      do ii=1,mth1
-         write(333,*) xwal1(ii),zwal1(ii)
-      enddo
       if ( leqarcw .eq. 1 ) then
          call  eqarcw ( xwal1,zwal1, xpp,zpp, ww1,ww2,ww3, mth1 )
          do i = 1, mth1
