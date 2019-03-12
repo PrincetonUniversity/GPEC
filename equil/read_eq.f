@@ -840,12 +840,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     ignore high-q region
 c-----------------------------------------------------------------------
+      write(*,*) "Input psihigh=",psihigh
       do ii=0,mx
          if( q(ii)>10.0 ) then
-            psihigh=(psi(ii)-psi(0))/(psi(mx)-psi(0))
+            psihigh=min(psihigh,(psi(ii)-psi(0))/(psi(mx)-psi(0)))
+            write(*,*) "Setting psihigh=",psihigh
             exit
          endif
       enddo
+      if( psihigh<psilow ) then
+         write(*,*) "ERROR: psihigh is less than psilow."
+      endif
 c-----------------------------------------------------------------------
 c     copy and revise 1D arrays.
 c-----------------------------------------------------------------------
