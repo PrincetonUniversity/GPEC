@@ -248,7 +248,7 @@ c-----------------------------------------------------------------------
       IF (match_flag) THEN
          nroot=1
          eigval=initguess
-         CALL match_newton_mod(match_delta,eigval,err,iter)
+         CALL match_newton(match_delta,eigval,err,iter)
          WRITE (*,10) eigval
          WRITE(out_unit,10) eigval
          DO ising=1,msing
@@ -259,11 +259,11 @@ c-----------------------------------------------------------------------
             WRITE(*,30) ising,zi_in(ising),zi_in(ising)*SQRT(10.0)
             WRITE(out_unit,30)ising,zi_in(ising),zi_in(ising)*SQRT(10.0)
          ENDDO
-c         CALL match_solution(eigval)
-c         DO ising=1,msing
-c            WRITE(*,40) ising,zo_out(ising),zo_out(ising)/10
-c            WRITE(out_unit,40) ising,zo_out(ising),zo_out(ising)/10
-c         ENDDO
+         CALL match_solution(eigval)
+         DO ising=1,msing
+            WRITE(*,40) ising,zo_out(ising),zo_out(ising)/10
+            WRITE(out_unit,40) ising,zo_out(ising),zo_out(ising)/10
+         ENDDO
          CALL ascii_close(match_unit)
          CALL program_stop("Normal termination for solution match.")
       ENDIF
@@ -320,6 +320,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(4*msing) :: cof
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
       COMPLEX(r8), DIMENSION(4*msing-1,4*msing-1) :: cmat
+      REAL(r8) :: h
+      COMPLEX(r8) :: zp1r,zm1r,zp1i,zm1i,zp2r,zm2r,zp2i,zm2i
+      COMPLEX(r8) :: fp1r,fm1r,fp1i,fm1i,fp2r,fm2r,fp2i,fm2i
+      COMPLEX(r8) :: rderiv, ideriv, rderiv2, ideriv2
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -348,6 +352,12 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,20)it,err,REAL(z),AIMAG(z),REAL(f),AIMAG(f)
          WRITE(out_unit,*)
 
+         IF( ISNAN(REAL(f)) ) THEN
+            WRITE(*,*) "Solution is NaN. it=", it
+            WRITE(out_unit,*) "Solution is NaN. it=", it
+            it=-1
+            EXIT
+         ENDIF
          IF(err < tol) EXIT
          IF(it > itmax) THEN
             it=-1
@@ -361,6 +371,53 @@ c-----------------------------------------------------------------------
          f=ff(z,mat)
          dz=-f*(z-z_old)/(f-f_old)
       ENDDO
+
+c-----------------------------------------------------------------------
+c     evaluate derivatives around solution
+c-----------------------------------------------------------------------
+      h=1e-8
+      zp1r = z + real(z)*(1+h)
+      zm1r = z + real(z)*(1-h)
+      zp1i = z + aimag(z)*(1+h)
+      zm1i = z + aimag(z)*(1-h)
+      zp2r = z + real(z)*(1+2*h)
+      zm2r = z + real(z)*(1-2*h)
+      zp2i = z + aimag(z)*(1+2*h)
+      zm2i = z + aimag(z)*(1-2*h)
+      fp1r = ff(zp1r,mat)
+      fm1r = ff(zm1r,mat)
+      fp1i = ff(zp1i,mat)
+      fm1i = ff(zm1i,mat)
+      fp2r = ff(zp2r,mat)
+      fm2r = ff(zm2r,mat)
+      fp2i = ff(zp2i,mat)
+      fm2i = ff(zm2i,mat)
+      
+      !3-point stencils
+      rderiv  = (fp1r-fm1r)/(2*h*real(z) )
+      ideriv  = (fp1i-fm1i)/(2*h*aimag(z))
+      rderiv2 = (fp1r+fm1r-2*f)/((h*real(z) )**2)
+      ideriv2 = (fp1i+fm1i-2*f)/((h*aimag(z))**2)
+      !5-point stencils
+      rderiv  = (fm2r-8*fm1r+8*fp1r-fp2r)/(12*h*real(z))
+      ideriv  = (fm2i-8*fm1i+8*fp1i-fp2i)/(12*h*aimag(z))
+      rderiv2 = (-fm2r+16*fm1r-30*f+16*fp1r-fp2r)/(12*(h*real(z))**2)
+      ideriv2 = (-fm2i+16*fm1i-30*f+16*fp1i-fp2i)/(12*(h*aimag(z))**2)
+
+      !WRITE (*,11) "Eigenvalue=", z
+      WRITE (*,11) "f(eigenvalue)=", f
+      WRITE (*,11) "rderiv=", rderiv,  rderiv/f
+      WRITE (*,11) "ideriv=", ideriv,  ideriv/f
+      WRITE (*,11) "rderiv2=", rderiv2, rderiv2/f
+      WRITE (*,11) "ideriv2=", ideriv2, ideriv2/f
+      !WRITE(out_unit,11) z
+      WRITE (out_unit,11) "f(eigenvalue)=", f
+      WRITE (out_unit,11) "rderiv=", rderiv,  rderiv/f
+      WRITE (out_unit,11) "ideriv=", ideriv,  ideriv/f
+      WRITE (out_unit,11) "rderiv2=", rderiv2, rderiv2/f
+      WRITE (out_unit,11) "ideriv2=", ideriv2, ideriv2/f
+      
+11    FORMAT(1x,A,1p,4e11.3)
 c-----------------------------------------------------------------------
 c     compute the coefficients of outter and inner region solutions.
 c-----------------------------------------------------------------------
