@@ -1,14 +1,13 @@
-General Perturbed Equilibrium Codes
-===================================
 
-This package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, GPEC, RPEC, GPEC, and PENTRC.
+This **Generalized Perturbed Equilibrium Code** package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, RDCON, STRIDE, GPEC, and PENTRC.
 
-The primary purpose of this package is to calculated the nonaxisymmetric force balance in tokamak plasmas.
+The primary purpose of this package is to calculated the stability to nonaxisymmetric modes and (if stable) the nonaxisymmetric force balance in tokamak plasmas.
 
-Note that the DCON code was developed by Alan H. Glasser at Los Alamos National Laboratory, while GPEC and PENTRC were developed and are maintained by the GPEC team at the Princeton Plasma Physics Laboratory.
+Please contact the authors if interested in becoming a contributor to this project. Refer to the `contacts and research pages <http://princetonuniversity.github.io/GPEC/>`_ for details.
 
-Development
-------------
+
+Code Development
+------------------
 
 There is a `Github repository <https://github.com/PrincetonUniversity/GPEC>`_ for this package to facilitate version control and collaborative contributions.
 
@@ -70,6 +69,8 @@ Documentation of the GPEC package has been created using sphinx and is hosted by
 The documentation for the entire package is contained within the top level docs directory, and uses rst files with syntax that should be straight forward to mimic. If creating a new .rst file be sure to include it in the top level organization of the index.rst file.
 
 **Building the documentation**
+
+The documentation uses a sphinx module called "sphinx_bootstrap_theme". This theme comes with the python environments maintained by public OMFIT installations, so it is recommended that the OMFIT module by loaded when building the documentation. The gpec module should also be loaded, since the source code documentation will try to load the pypec module.
 
 The very first time, starting from the root of the repo::
 

@@ -59,6 +59,7 @@ c-----------------------------------------------------------------------
          REAL(8), DIMENSION(:,:), INTENT(OUT) :: grdgre
          REAL(8), DIMENSION(:,:), INTENT(OUT), TARGET :: gren
          INTEGER, INTENT(IN) :: j1,j2,isgn,iopw,iops,ischk
+         INTEGER :: sTime, fTime, cr
          END SUBROUTINE kernel
       END INTERFACE
 c-----------------------------------------------------------------------
@@ -272,7 +273,7 @@ c-----------------------------------------------------------------------
          DO i=1,nths2
             grdgre(i,i)=grdgre(i,i)+2.0
          ENDDO
-      ENDIF      
+      ENDIF
 
       call gelimb (grdgre,nths2,dummy,nths2,mth12,lmax2,
      $        grri,nths2,work1,ier )
@@ -615,15 +616,16 @@ c-----------------------------------------------------------------------
      $     j1,j2,isgn,iopw,iops,ischk)
       USE vglobal_mod
       IMPLICIT NONE
-      
+
       REAL(8), DIMENSION(:), INTENT(IN) :: xobs,zobs,xsce,zsce
       REAL(8), DIMENSION(:,:), INTENT(OUT) :: grdgre
       REAL(8), DIMENSION(:,:), INTENT(OUT), TARGET :: gren
       INTEGER, INTENT(IN) :: j1,j2,isgn,iopw,iops,ischk
-      
+
       INTEGER  :: i,ic,iend,ig,ilr,isph,istart,j,j1j2,jres,js1,js2,
      $     js3,js4,js5,mthm,mths
       INTEGER, DIMENSION(2) :: iop
+      INTEGER :: sTime, fTime, cr
 
       REAL(8) :: a0,ak0i,alg,alg0,alg1,alg2,algdth,am,amm,ap,app,
      $     aval1,resdg,residu,resk0,slog0,slog1m,slog1p,tdth,
@@ -716,6 +718,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     begin loop over intervals.
 c-----------------------------------------------------------------------
+      CALL SYSTEM_CLOCK(COUNT_RATE=cr)
+      CALL SYSTEM_CLOCK(COUNT=sTime)
       DO j=1,mth
          xs=xobs(j)
          zs=zobs(j)
@@ -760,10 +764,10 @@ c-----------------------------------------------------------------------
          ENDDO
 
          j1j2=j1+j2
-         
+
          IF(j1j2 /= 2 .AND. isph == 1 .AND. j > jbot .AND. j < jtop)
      $        go to 175
-         
+
          thes=the(j)
          js1=MOD(j-iend+mth-1,mth)+1
          js2=MOD(j-iend+mth,mth)+1
@@ -850,6 +854,10 @@ c-----------------------------------------------------------------------
             gren(j,ic)=gren(j,ic)/twopi
          ENDDO
       ENDDO
+      CALL SYSTEM_CLOCK(COUNT=fTime)
+      IF (verbose_timer_output) THEN
+         print *,"vac loop time=",REAL(fTime-sTime,8)/REAL(cr,8)
+      ENDIF
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------

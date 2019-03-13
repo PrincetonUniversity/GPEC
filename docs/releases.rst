@@ -1,31 +1,4 @@
-******************
-Accessing Releases
-******************
-
-
-Official releases are available for download from the `github release page <https://github.com/PrincetonUniversity/GPEC/releases>`_.
-
-On the PPPL portal computers, releases are available at /p/gpec. To use a release,::
-
-    module use /p/gpec/modules
-
-will give you access to the official gpec modules. Use,::
-
-    module avail
-
-to see the available releases, or simply,::
-
-    module load gpec
-
-to load the current default. This will add the appropriate directories to your path, such that you can simply
-call the executables (i.e. dcon, etc.).
-
-On the General Atomics iris computer, releases are available at /fusion/projects/codes/gpec. To use a release, simply load the publicly available gpec module.
-
-
-******************
-Release Notes
-******************
+.. _releases:
 
 This is an active, developing scientific research code. The release structure attempt to follow the semantic versioning guidelines. Given a version number MAJOR.MINOR.PATCH,
 
@@ -36,6 +9,59 @@ This is an active, developing scientific research code. The release structure at
 Note, backwards compatibility is defined as the ability to return to a previous run and re-run any previously successful executable. This does not guarantee all output file formats are exactly maintained.
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
+
+GPEC v1.3.0
+===========
+
+Adds
+------
+- STRIDE - Adds the State Transition Rapid Integration with DCON (Asymptotic) Expansions code
+  * Citations included in docs (website)
+  * Parallel calculations of plasma stability (delta-W and Delta-prime)
+- DCON - Adds new peak_flag that checks the dW every step after the last rational and ends integration at the first local maximum
+  * This provides a useful for consistent, physics based truncation choice that can be more robust to small EFIT changes
+
+Changes
+--------
+- DOCS - Improves online documentation
+- INSTALL - Updates flags for intel 2018 and adds instructions for IPP Max-Planck Garching
+
+Fixes
+------
+- DCON - Fixes a formatting error in sing_find.out
+- DOCS - Fixes rmatch eta and massdens inputs for DIIID_resisitive_example
+- DCON - Fixes inappropriate uses of psihigh, which may not be the end of integration psilim if sas_flag, qhigh, or peak_flag are used
+
+GPEC v1.2.3
+===========
+
+Changes
+-------
+- DOCS - Modernizes online documentation
+
+Fixes
+------
+- GPEC - Fixes incorrect w_isl unit labeling in netcdf and makes it the full width for consistency with w_isl_v
+
+
+GPEC v1.2.2
+===========
+
+Adds
+------
+- GPEC - Adds new coils for DIII-D, COMPASS, ASDEX Upgrade, and NSTX-U
+
+Changes
+--------
+- DOCS - Updates documentation of authors, public installations, and compilation at each institution
+- DCON - Makes formatting of surface quantities table in dcon.out consistent between DCON and RDCON
+- DCON - Makes sum1.bin (previously sum1.dat) outputs consistent with CALTRANS DCON.
+- GPEC - Singular coupling routines are skipped entirely (avoiding possible issues) if no rationals exist in the domain
+
+Fixes
+------
+- GPEC - Fixes a ss_flag bug so the penetrated vacuum field is calculated on the correct surfaces
+
 
 GPEC v1.2.1
 ===========
@@ -176,13 +202,13 @@ This release includes a new DCON netcdf output file and SLURM job submission int
 Adds
 ---------
 - DCON - A clean, efficient netcdf file replicates the information in the complicated dcon.out ascii.
-- DCON - The _new namelist variable_, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).
+- DCON - The new namelist variable, out_fund, toggles fundamental matrix output (ABCDEH in imats.out fs.bin, ks.bin and gs.bin).
 - COIL - KSTAR and EAST coils are available.
 - COIL - A NSTX-U error field model is available.
 - GPEC - Control netcdf outputs include the external flux applied from each coil and coil names.
 - GPEC - Profile netcdf outputs include rational surface quantities, coil names, and vsbrzphi, xbrzphifun, and arzphifun outputs.
 - GPEC - Code is robust to singfld_flag with con_flag.
-- GPEC - The _new namelist variables_, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.
+- GPEC - The new namelist variables, ascii_flag and netcdf_flag, toggle all ascii and netcdf outputs respectively.
 - PYPEC - SLURM job submission.
 - PYPEC - Post processing includes a function that updates netcdf naming conventions to be consistent with the latest version.
 - PYPEC - Backwards compatibility for running ipec is available.
@@ -267,11 +293,14 @@ The Ideal Perturbed Equilibrium Code (IPEC) has officially been deprecated and i
 Adds
 -------------
  - DCON inclusion of kinetic terms is now determined by the kin_flag input.
-  - Additional dcon_control namelist inputs can be used to control the kinetic calculations
+
+    - Additional dcon_control namelist inputs can be used to control the kinetic calculations
+
  - IPEC now calculates generalized perturbed equilibrium (no assumption that the force balance states form a hermitian matrix)
  - IPEC netcdf output is nearly complete and naming conventions are official
  - PENTRC now has fully netcdf output unless ascii is specifically requested by the user
-  - Output is now separated from calculations, setting the stage for parallelization
+
+    - Output is now separated from calculations, setting the stage for parallelization
 
 Documentation
 ----------------------
@@ -321,7 +350,7 @@ This release includes critical bug fixes for the nonambipolar transport calculat
 Fixes
 --------------
 
-- PENTRC a correction factor of 1/2 has been applied to the fcgl, *gar, and *mm methods to correctly represent quadratic terms using complex analysis
+- PENTRC a correction factor of 1/2 has been applied to the fcgl, \*gar, and \*mm methods to correctly represent quadratic terms using complex analysis
 - PENTRC xclebsch is now correctly transformed back to DCON working coordinates when output on more m than the DCON mpert.
 
 

@@ -33,7 +33,7 @@ init:
 
 ghpages: html
 	cp -r _build/html/* $(GH_PAGES_DIR)
-	cd $(GH_PAGES_DIR) &&  git add -A && git commit -a -m "Updated docs" && git push origin gh-pages
+	cd $(GH_PAGES_DIR) &&  git add -A && git commit -a -m "Updated docs" && git push -f origin gh-pages
 	
 html:
 	mkdir -p _build/html _build/doctrees

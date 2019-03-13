@@ -36,6 +36,9 @@ c-----------------------------------------------------------------------
      $     c=2.997925e10,jzero=2.4048255577_r8,ev=e
       REAL(r8), PARAMETER :: zero=0,one=1,two=2,half=.5
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
+      COMPLEX(r8), PARAMETER :: one_c=(1,0)
+      COMPLEX(r8), PARAMETER :: negone_c=(-1,0)
+      COMPLEX(r8), PARAMETER :: zero_c=(0,0)
 
       CONTAINS
 c-----------------------------------------------------------------------

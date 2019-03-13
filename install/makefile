@@ -13,11 +13,12 @@ export CFLAGS
 
 .IGNORE:
 
-all: v lsode harvest equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw coil gpec mkbin
+all: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum xdraw coil gpec stride mkbin
 
-allf: v harvest lsode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum coil gpec mkbin
+# fortran only
+allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum coil gpec stride mkbin
 
 
 # executables:
@@ -33,6 +34,15 @@ xdraw:
 
 lsode:
 	cd ../lsode;  make liblsode
+
+superlu:
+	$(SLU_COMMAND)  # gets set in DEFAULTS.inc based on tarball status
+
+zlange:
+	cd ../zlange;  make libzlange
+
+zvode:
+	cd ../zvode;  make libzvode
 
 equil:
 	cd ../equil;  make libequil
@@ -70,6 +80,9 @@ gpec:
 pentrc:  
 	cd ../pentrc; make pentrc
 
+stride:
+	cd ../stride; make stride
+
 mkbin:
 	mkdir -p ../bin
 	cp -f ../orbit/orbit ../bin
@@ -82,6 +95,7 @@ mkbin:
 	cp -f ../sum/sum ../bin
 	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
+	cp -f ../stride/stride ../bin
 
 # print verbose info
 
@@ -123,6 +137,8 @@ clean:
 	cd ../coil;   make clean
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
+	cd ../stride; make clean
+	cd ../superlu/SuperLU_5.2.1; make clean
 
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
