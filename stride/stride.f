@@ -99,10 +99,8 @@ c-----------------------------------------------------------------------
 c     set spline methodology for program.
 c-----------------------------------------------------------------------
       IF (use_notaknot_splines) THEN
-         ALLOCATE(CHARACTER(6) :: spline_str)
          spline_str="not-a-knot"
       ELSE
-         ALLOCATE(CHARACTER(7) :: spline_str)
          spline_str="extrap"
       ENDIF
 c-----------------------------------------------------------------------
