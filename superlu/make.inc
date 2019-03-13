@@ -17,7 +17,7 @@
 #
 #  The name of the libraries to be created/linked to
 #
-SuperLUroot	= $(CURDIR)/../..
+SuperLUroot	= CURDIR
 SUPERLULIB  = $(SuperLUroot)/SuperLU_5.2.1/SRC/libsuperlu.a
 
 TMGLIB      = libtmglib.a
