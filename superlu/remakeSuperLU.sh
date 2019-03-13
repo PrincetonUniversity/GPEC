@@ -8,6 +8,7 @@ rm *~
 rm -rf SuperLU_5.2.1
 tar -zxvf superlu_5.2.1.tar.gz
 cp make.inc SuperLU_5.2.1/make.inc
+sed -i 's@CURDIR@'"$PWD"'@' SuperLU_5.2.1/make.inc
 cp Makefile SuperLU_5.2.1/Makefile
 #Note: libblas.a NEEDN'T BE COPIED BY cp HERE,
 #      (LIKE THE 'make' FILES ABOVE ARE)
