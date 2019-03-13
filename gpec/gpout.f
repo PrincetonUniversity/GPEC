@@ -14,16 +14,18 @@ c      5. gpout_vsingfld
 c      6. gpout_pmodb
 c      7. gpout_xbnormal
 c      8. gpout_vbnormal
-c      9. gpout_xtangent
-c     10. gpout_xbrzphi
-c     11. gpout_vsbrzphi
-c     12. gpout_xbrzphifun
-c     13. gpout_arzphifun
-c     14. gpout_control_filter
-c     15. gpout_qrv
-c     16. check
-c     17. gpout_init_netcdf
-c     18. gpout_close_netcdf
+c      9. gpout_jprofile
+c     10. gpout_xtangent
+c     11. gpout_xbrzphi
+c     12. gpout_vsbrzphi
+c     13. gpout_xbrzphifun
+c     14. gpout_arzphifun
+c     15. gpout_xclebsch
+c     16. gpout_control_filter
+c     17. gpout_qrv
+c     18. check
+c     19. gpout_init_netcdf
+c     20. gpout_close_netcdf
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -3478,7 +3480,195 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_vbnormal
 c-----------------------------------------------------------------------
-c     subprogram 9. gpout_xbtangent.
+c     subprogram 9. gpout_jprofile
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     print out jprofile
+c-----------------------------------------------------------------------
+      SUBROUTINE gpout_jprofile(egnum,xspmn)
+      INTEGER, INTENT(IN) :: egnum
+      INTEGER :: istep,ipert,itheta,iindex
+      INTEGER :: p_id,m_id,t_id,i_id,jp_id,jm_id,jt_id,jz_id,j_p_id,
+     $           j_t_id,j_z_id
+      REAL(r8) :: ileft,psi
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: jwpmns,jwtmns,
+     $     jwzmns,jvpmns,jvtmns,jvzmns,jpamns
+c-----------------------------------------------------------------------
+c     allocation puts memory in heap, avoiding stack overfill
+c-----------------------------------------------------------------------
+      ALLOCATE(jwpmns(mstep,lmpert),jwtmns(mstep,lmpert),
+     $   jwzmns(mstep,lmpert),jvpmns(mstep,lmpert),jvtmns(mstep,lmpert),
+     $   jvzmns(mstep,lmpert),jpamns(mstep,lmpert))
+      jwpmns=0
+      jwtmns=0
+      jwzmns=0
+      jvpmns=0
+      jvtmns=0
+      jvzmns=0
+      jpamns=0
+c-----------------------------------------------------------------------
+c     compute solutions and contravariant/additional components.
+c-----------------------------------------------------------------------
+      IF(timeit) CALL gpec_timer(-2)
+      IF(verbose) WRITE(*,*)"Computing current profile components"
+
+      CALL idcon_build(egnum,xspmn)
+      CALL gpeq_alloc
+
+      DO istep=1,mstep
+         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
+         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
+         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose) THEN
+            WRITE(*,'(1x,a9,i3,a)') "volume = ",iindex,
+     $        "% current profile calculations"
+         ENDIF
+         psi = psifac(istep)
+         CALL gpeq_cur(psi)
+         ! todo: do we need to use ji=1 or divide by area?
+         IF ((jac_out /= jac_type).OR.(tmag_out==0)) THEN
+            CALL gpeq_bcoordsout(jwpmns(istep,:),jwp_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jwtmns(istep,:),jwt_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jwzmns(istep,:),jwz_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jvpmns(istep,:),jvp_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jvtmns(istep,:),jvt_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jvzmns(istep,:),jvz_mn,psi,ji=0)
+            CALL gpeq_bcoordsout(jpamns(istep,:),jpa_mn,psi,ji=0)
+         ELSE
+            jwpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwp_mn
+            jwtmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwt_mn
+            jwzmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jwz_mn
+            jvpmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jvp_mn
+            jvtmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jvt_mn
+            jvzmns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jvz_mn
+            jpamns(istep,mlow-lmlow+1:mlow-lmlow+mpert)=jpa_mn
+         ENDIF
+      ENDDO
+
+      CALL gpeq_dealloc
+
+c-----------------------------------------------------------------------
+c     write outputs.
+c-----------------------------------------------------------------------
+      IF (ascii_flag) THEN
+         CALL ascii_open(out_unit,"gpec_jprofile_n"//TRIM(sn)
+     $       //".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_JPROFILE: "//
+     $        "Components of the current profile"
+         WRITE(out_unit,*)version
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
+         WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
+     $        "mpsi =",mpsi,"mpert =",lmpert
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(2(1x,a16),1x,a4,8(1x,a16))')"psi","m",
+     $        "real(jwp)","imag(jwp)","real(jwt)","imag(jwt)",
+     $        "real(jwz)","imag(jwz)","real(jpa)","imag(jpa)"
+         DO istep=1,mstep
+            DO ipert=1,lmpert
+               WRITE(out_unit,'(1(es17.8e3),1x,I4,8(es17.8e3))')
+     $              psifac(istep),lmfac(ipert),
+     $             REAL(jwpmns(istep,ipert)),AIMAG(jwpmns(istep,ipert)),
+     $             REAL(jwtmns(istep,ipert)),AIMAG(jwtmns(istep,ipert)),
+     $             REAL(jwzmns(istep,ipert)),AIMAG(jwzmns(istep,ipert)),
+     $             REAL(jpamns(istep,ipert)),AIMAG(jpamns(istep,ipert))
+            ENDDO
+         ENDDO
+         WRITE(out_unit,*)
+         CALL ascii_close(out_unit)
+      END IF
+
+      IF (bin_flag) THEN
+         CALL bin_open(bin_unit,
+     $           "jprofile.bin","UNKNOWN","REWIND","none")
+         DO ipert = 1,mpert
+             DO istep = 1,mstep
+                 WRITE(bin_unit)REAL(psifac(istep), 4),
+     $              REAL(REAL(jwpmns(istep, ipert)), 4),
+     $              REAL(AIMAG(jwpmns(istep, ipert)), 4),
+     $              REAL(REAL(jwtmns(istep, ipert)), 4),
+     $              REAL(AIMAG(jwtmns(istep, ipert)), 4),
+     $              REAL(REAL(jwzmns(istep, ipert)), 4),
+     $              REAL(AIMAG(jwzmns(istep, ipert)), 4),
+     $              REAL(REAL(jpamns(istep, ipert)), 4),
+     $              REAL(AIMAG(jpamns(istep, ipert)), 4)
+             ENDDO
+             WRITE(bin_unit)
+         ENDDO
+         CALL bin_close(bin_unit)
+      ENDIF
+
+      IF(netcdf_flag)THEN
+         CALL check( nf90_open(fncfile,nf90_write,fncid) )
+         CALL check( nf90_inq_dimid(fncid,"i",i_id) )
+         CALL check( nf90_inq_dimid(fncid,"m_out",m_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n",p_id) )
+         CALL check( nf90_inq_dimid(fncid,"theta_dcon",t_id) )
+         CALL check( nf90_redef(fncid))
+         CALL check( nf90_def_var(fncid, "jgradpsi", nf90_double,
+     $               (/p_id,m_id,i_id/),jp_id) )
+         CALL check( nf90_put_att(fncid,jp_id,"long_name",
+     $        "Contravariant psi component of perturbed current") )
+         CALL check( nf90_put_att(fncid,jp_id,"jacobian",jac_out) )
+         !CALL check( nf90_put_att(fncid,jp_id,"units","Amps") ) ! todo: check this
+         CALL check( nf90_def_var(fncid, "jgradtheta", nf90_double,
+     $               (/p_id,m_id,i_id/),jt_id) )
+         CALL check( nf90_put_att(fncid,jt_id,"long_name",
+     $        "Contravariant theta component of perturbed current") )
+         CALL check( nf90_put_att(fncid,jt_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "jgradphi", nf90_double,
+     $               (/p_id,m_id,i_id/),jz_id) )
+         CALL check( nf90_put_att(fncid,jz_id,"long_name",
+     $        "Contravariant phi component of perturbed current") )
+         CALL check( nf90_put_att(fncid,jz_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "j_psi", nf90_double,
+     $               (/p_id,m_id,i_id/),j_p_id) )
+         CALL check( nf90_put_att(fncid,j_p_id,"long_name",
+     $        "Covariant psi component of perturbed current") )
+         CALL check( nf90_put_att(fncid,j_p_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "j_theta", nf90_double,
+     $               (/p_id,m_id,i_id/),j_t_id) )
+         CALL check( nf90_put_att(fncid,j_t_id,"long_name",
+     $        "Covariant theta component of perturbed current") )
+         CALL check( nf90_put_att(fncid,j_t_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "j_phi", nf90_double,
+     $               (/p_id,m_id,i_id/),j_z_id) )
+         CALL check( nf90_put_att(fncid,j_z_id,"long_name",
+     $        "Covariant phi component of perturbed current") )
+         CALL check( nf90_put_att(fncid,j_z_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "j_parallel", nf90_double,
+     $               (/p_id,m_id,i_id/),jm_id) )
+         CALL check( nf90_put_att(fncid,jm_id,"long_name",
+     $               "Perturbed current along the field line") )
+         !CALL check( nf90_put_att(fncid,jm_id,"units","Amps") ) ! todo: check this
+         CALL check( nf90_put_att(fncid,jm_id,"jacobian",jac_out) )
+         CALL check( nf90_enddef(fncid) )
+         CALL check( nf90_put_var(fncid,jp_id,RESHAPE((/REAL(jwpmns),
+     $               AIMAG(jwpmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,jt_id,RESHAPE((/REAL(jwtmns),
+     $               AIMAG(jwtmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,jz_id,RESHAPE((/REAL(jwzmns),
+     $               AIMAG(jwzmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,j_p_id,RESHAPE((/REAL(jvpmns),
+     $               AIMAG(jvpmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,j_t_id,RESHAPE((/REAL(jvtmns),
+     $               AIMAG(jvtmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,j_z_id,RESHAPE((/REAL(jvzmns),
+     $               AIMAG(jvzmns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_put_var(fncid,jm_id,RESHAPE((/REAL(jpamns),
+     $               AIMAG(jpamns)/),(/mstep,lmpert,2/))))
+         CALL check( nf90_close(fncid) )
+      ENDIF
+
+      DEALLOCATE(jwpmns,jwtmns,jwzmns,jvpmns,jvtmns,jvzmns,jpamns)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      IF(timeit) CALL gpec_timer(-2)
+      RETURN
+      END SUBROUTINE gpout_jprofile
+c-----------------------------------------------------------------------
+c     subprogram 10. gpout_xbtangent.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbtangent(egnum,xspmn,rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
@@ -3668,11 +3858,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbtangent
 c-----------------------------------------------------------------------
-c     subprogram 10. gpout_xbrzphi.
-c     write perturbed rzphi components on rzphi grid.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     subprogram 10. gpout_xbrzphi.
+c     subprogram 11. gpout_xbrzphi.
 c     write perturbed rzphi components on rzphi grid.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbrzphi(egnum,xspmn,nr,nz,bnimn,bnomn)
@@ -4433,7 +4619,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbrzphi
 c-----------------------------------------------------------------------
-c     subprogram 10. gpout_vsbrzphi.
+c     subprogram 12. gpout_vsbrzphi.
 c     write brzphi components restored by removing shielding currents.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_vsbrzphi(snum,nr,nz)
@@ -4541,7 +4727,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_vsbrzphi
 c-----------------------------------------------------------------------
-c     subprogram 11. gpout_xbrzphifun
+c     subprogram 13. gpout_xbrzphifun
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbrzphifun(egnum,xspmn)
 c-----------------------------------------------------------------------
@@ -4748,7 +4934,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbrzphifun
 c-----------------------------------------------------------------------
-c     subprogram 12. gpout_arzphifun
+c     subprogram 14. gpout_arzphifun
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_arzphifun(egnum,xspmn)
 c-----------------------------------------------------------------------
@@ -4949,7 +5135,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_arzphifun
 c-----------------------------------------------------------------------
-c     subprogram 13. gpout_xclebsch.
+c     subprogram 15. gpout_xclebsch.
 c     Write Clebsch coordinate displacements.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xclebsch(egnum,xspmn)
@@ -5109,7 +5295,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xclebsch
 c-----------------------------------------------------------------------
-c     subprogram 14. gpout_control_filter.
+c     subprogram 16. gpout_control_filter.
 c     Filter control surface flux vector in flux bases with energy norms
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_control_filter(finmn,foutmn,ftypes,fmodes,
@@ -5890,7 +6076,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_control_filter
 c-----------------------------------------------------------------------
-c     subprogram 15. gpout_qrv.
+c     subprogram 17. gpout_qrv.
 c     Add some basic alternative x coordinates into the profile outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_qrv
@@ -5942,7 +6128,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_qrv
 c-----------------------------------------------------------------------
-c     subprogram 16. check.
+c     subprogram 18. check.
 c     Check status of netcdf file.
 c-----------------------------------------------------------------------
       SUBROUTINE check(stat)
@@ -5963,7 +6149,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE check
 c-----------------------------------------------------------------------
-c     subprogram 17. gpout_init_netcdf.
+c     subprogram 19. gpout_init_netcdf.
 c     Initialize the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_init_netcdf
@@ -6121,7 +6307,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_init_netcdf
 c-----------------------------------------------------------------------
-c     subprogram 18. gpout_close_netcdf.
+c     subprogram 20. gpout_close_netcdf.
 c     Close the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_close_netcdf

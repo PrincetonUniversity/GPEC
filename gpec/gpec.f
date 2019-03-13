@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag
+     $     filter_flag,gal_flag,jprof_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -59,7 +59,7 @@ c-----------------------------------------------------------------------
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
-     $     netcdf_flag,ascii_flag
+     $     netcdf_flag,ascii_flag,jprof_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -471,8 +471,8 @@ c     full analysis.
 c-----------------------------------------------------------------------
       IF (netcdf_flag) CALL gpout_init_netcdf
       IF (resp_flag) THEN
-         CALL gpout_response(power_rout,power_bpout,
-     $        power_bout,power_rcout,tmag_out,jsurf_out)
+         CALL gpout_response(power_rout,power_bpout,      
+     $        power_bout,power_rcout,tmag_out,jsurf_out) 
       ENDIF
       DO i=1,LEN_TRIM(filter_types)
          IF(filter_types(i:i)=='s') singcoup_flag=.TRUE.
@@ -516,15 +516,16 @@ c-----------------------------------------------------------------------
          CALL gpout_vsingfld()
       ENDIF
       IF(netcdf_flag.and.(xclebsch_flag.or.dw_flag.or.pmodb_flag
-     $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag))THEN
+     $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag
+     $   .or.jprof_flag))THEN
          CALL gpout_qrv
       ENDIF
       IF (xclebsch_flag) THEN
-         CALL gpout_xclebsch(mode,xspmn)
+         CALL gpout_xclebsch(mode,xspmn) 
       ENDIF
       IF (kin_flag .AND. dw_flag) THEN
-         CALL gpout_dw(mode,xspmn)
-         CALL gpout_dw_matrix(coil_flag)
+        CALL gpout_dw(mode,xspmn)  
+        CALL gpout_dw_matrix(coil_flag)
       ENDIF
       IF (pmodb_flag) THEN
          CALL gpout_pmodb(mode,xspmn)
@@ -723,6 +724,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      PRINT * ,"test new routine"
+      CALL gpeq_alloc
+      CALL gpout_jprofile(mode,xspmn)
+      PRINT * ,"end of test"
+      CALL gpeq_dealloc
       CALL gpec_dealloc
       CALL gpec_stop("Normal termination.")
       END PROGRAM gpec_main
