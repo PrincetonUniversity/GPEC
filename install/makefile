@@ -14,11 +14,11 @@ export CFLAGS
 .IGNORE:
 
 all: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw coil gpec stride mkbin
+	multi sum xdraw coil gpec mkbin #stride mkbin
 
 # fortran only
 allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum coil gpec stride mkbin
+	multi sum coil gpec mkbin #stride mkbin
 
 
 # executables:
@@ -95,7 +95,7 @@ mkbin:
 	cp -f ../sum/sum ../bin
 	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
-	cp -f ../stride/stride ../bin
+	#cp -f ../stride/stride ../bin
 
 # print verbose info
 
