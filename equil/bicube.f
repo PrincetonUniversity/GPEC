@@ -450,6 +450,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
+      if( bcs%mx==0 .OR. bcs%my== 0) then
+         write(*,'(2(A,I5))')" Error: bcs%mx=",bcs%mx,", bcs%my=",bcs%my
+         stop
+      endif
       bcs%ix=max(bcs%ix,0)
       bcs%ix=min(bcs%ix,bcs%mx-1)
       bcs%iy=max(bcs%iy,0)
