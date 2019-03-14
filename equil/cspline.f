@@ -134,7 +134,7 @@ c-----------------------------------------------------------------------
 c     switch between csplines.
 c-----------------------------------------------------------------------
       IF (use_classic_splines .AND.
-     $    (TRIM(endmode).EQ."extrap".OR.TRIM(endmode).EQ."natural"))THEN
+     $    (endmode.EQ."extrap".OR.endmode.EQ."natural"))THEN
          CALL cspline_fit_classic(spl,endmode)
       ELSE
          CALL cspline_fit_ahg(spl,endmode)
@@ -206,7 +206,7 @@ c-----------------------------------------------------------------------
       ENDDO
       r(spl%mx,:)=0
 
-      IF (TRIM(endmode)=="extrap") THEN
+      IF (endmode=="extrap") THEN
          CALL cspline_get_yp(spl%xs(0:3),spl%fs(0:3,:),
      $                      spl%xs(0),r(0,:),spl%nqty)
          CALL cspline_get_yp(spl%xs(spl%mx-3:spl%mx),
@@ -292,7 +292,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     extrapolation boundary conditions.
 c-----------------------------------------------------------------------
-      SELECT CASE(TRIM(endmode))
+      SELECT CASE(endmode)
       CASE("extrap")
          DO iqty=1,spl%nqty
             spl%fs1(0,iqty)=SUM(cl(1:4)*spl%fs(0:3,iqty))
