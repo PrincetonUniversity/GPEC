@@ -258,12 +258,12 @@ c-----------------------------------------------------------------------
          DO ising=1,msing
             WRITE(*,30) ising,zi_in(ising),zi_in(ising)*SQRT(10.0)
             WRITE(out_unit,30)ising,zi_in(ising),zi_in(ising)*SQRT(10.0)
-         ENDDO
-         CALL match_solution(eigval)
-         DO ising=1,msing
-            WRITE(*,40) ising,zo_out(ising),zo_out(ising)/10
-            WRITE(out_unit,40) ising,zo_out(ising),zo_out(ising)/10
-         ENDDO
+         ENDDO         
+c         CALL match_solution(eigval)
+c         DO ising=1,msing
+c            WRITE(*,40) ising,zo_out(ising),zo_out(ising)/10
+c            WRITE(out_unit,40) ising,zo_out(ising),zo_out(ising)/10
+c         ENDDO
          CALL ascii_close(match_unit)
          CALL program_stop("Normal termination for solution match.")
       ENDIF
@@ -298,7 +298,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       END SUBROUTINE match_init
-
 c-----------------------------------------------------------------------
 c     subprogram 3. match_newton.
 c     uses Newton's method to find root of scalar complex f(z).
@@ -320,10 +319,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(4*msing) :: cof
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
       COMPLEX(r8), DIMENSION(4*msing-1,4*msing-1) :: cmat
-      REAL(r8) :: h
-      COMPLEX(r8) :: zp1r,zm1r,zp1i,zm1i,zp2r,zm2r,zp2i,zm2i
-      COMPLEX(r8) :: fp1r,fm1r,fp1i,fm1i,fp2r,fm2r,fp2i,fm2i
-      COMPLEX(r8) :: rderiv, ideriv, rderiv2, ideriv2
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -352,12 +347,6 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,20)it,err,REAL(z),AIMAG(z),REAL(f),AIMAG(f)
          WRITE(out_unit,*)
 
-         IF( ISNAN(REAL(f)) ) THEN
-            WRITE(*,*) "Solution is NaN. it=", it
-            WRITE(out_unit,*) "Solution is NaN. it=", it
-            it=-1
-            EXIT
-         ENDIF
          IF(err < tol) EXIT
          IF(it > itmax) THEN
             it=-1
@@ -371,53 +360,6 @@ c-----------------------------------------------------------------------
          f=ff(z,mat)
          dz=-f*(z-z_old)/(f-f_old)
       ENDDO
-
-c-----------------------------------------------------------------------
-c     evaluate derivatives around solution
-c-----------------------------------------------------------------------
-      h=1e-8
-      zp1r = z + real(z)*(1+h)
-      zm1r = z + real(z)*(1-h)
-      zp1i = z + aimag(z)*(1+h)
-      zm1i = z + aimag(z)*(1-h)
-      zp2r = z + real(z)*(1+2*h)
-      zm2r = z + real(z)*(1-2*h)
-      zp2i = z + aimag(z)*(1+2*h)
-      zm2i = z + aimag(z)*(1-2*h)
-      fp1r = ff(zp1r,mat)
-      fm1r = ff(zm1r,mat)
-      fp1i = ff(zp1i,mat)
-      fm1i = ff(zm1i,mat)
-      fp2r = ff(zp2r,mat)
-      fm2r = ff(zm2r,mat)
-      fp2i = ff(zp2i,mat)
-      fm2i = ff(zm2i,mat)
-      
-      !3-point stencils
-      rderiv  = (fp1r-fm1r)/(2*h*real(z) )
-      ideriv  = (fp1i-fm1i)/(2*h*aimag(z))
-      rderiv2 = (fp1r+fm1r-2*f)/((h*real(z) )**2)
-      ideriv2 = (fp1i+fm1i-2*f)/((h*aimag(z))**2)
-      !5-point stencils
-      rderiv  = (fm2r-8*fm1r+8*fp1r-fp2r)/(12*h*real(z))
-      ideriv  = (fm2i-8*fm1i+8*fp1i-fp2i)/(12*h*aimag(z))
-      rderiv2 = (-fm2r+16*fm1r-30*f+16*fp1r-fp2r)/(12*(h*real(z))**2)
-      ideriv2 = (-fm2i+16*fm1i-30*f+16*fp1i-fp2i)/(12*(h*aimag(z))**2)
-
-      !WRITE (*,11) "Eigenvalue=", z
-      WRITE (*,11) "f(eigenvalue)=", f
-      WRITE (*,11) "rderiv=", rderiv,  rderiv/f
-      WRITE (*,11) "ideriv=", ideriv,  ideriv/f
-      WRITE (*,11) "rderiv2=", rderiv2, rderiv2/f
-      WRITE (*,11) "ideriv2=", ideriv2, ideriv2/f
-      !WRITE(out_unit,11) z
-      WRITE (out_unit,11) "f(eigenvalue)=", f
-      WRITE (out_unit,11) "rderiv=", rderiv,  rderiv/f
-      WRITE (out_unit,11) "ideriv=", ideriv,  ideriv/f
-      WRITE (out_unit,11) "rderiv2=", rderiv2, rderiv2/f
-      WRITE (out_unit,11) "ideriv2=", ideriv2, ideriv2/f
-      
-11    FORMAT(1x,A,1p,4e11.3)
 c-----------------------------------------------------------------------
 c     compute the coefficients of outter and inner region solutions.
 c-----------------------------------------------------------------------
@@ -445,270 +387,6 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_newton
-c-----------------------------------------------------------------------
-c     subprogram 3a. match_newton_mod.
-c     uses Newton's method to find root of scalar complex f(z).
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE match_newton_mod(ff,z,err,it)
-
-      COMPLEX(r8) :: ff
-      COMPLEX(r8), INTENT(INOUT) :: z
-      REAL(r8), INTENT(OUT) :: err
-      INTEGER, INTENT(OUT) :: it
-
-      INTEGER :: ising,info,nmat,count
-      INTEGER :: rpass,ipass,radius,theta
-      REAL(r8) :: zreal,zimag
-      INTEGER, PARAMETER :: imax=4
-      COMPLEX(r8), DIMENSION(2*imax**2) :: zlist, flist
-
-      INTEGER, DIMENSION(4*msing-1) :: ipiv
-      REAL(r8) :: dzfac=0.05, itmax=300, relaxfac=0.1
-      REAL(r8) :: tol_pass1=1e-6, tol_pass2=1e-10
-      COMPLEX(r8) :: z_old,f_old,f,dz,z_best,f_best,z_next,f_next
-      COMPLEX(r8), DIMENSION(4*msing) :: cof
-      COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
-      COMPLEX(r8), DIMENSION(4*msing-1,4*msing-1) :: cmat
-      INTEGER :: ii,jj,kk
-c-----------------------------------------------------------------------
-c     format statements.
-c-----------------------------------------------------------------------
-10    FORMAT("it",9x,"err",7x,"re z",7x,"im z",7x,"re f",7x,"im f",$)
-20    FORMAT(i5,1x,5(1p,e11.3),$)
-30    FORMAT(1x,"cof_out(",i2,") CL=",1p,2e11.3,"  CR=",1p,2e11.3)
-40    FORMAT(1x,"cof_in(",i2,")  d+=",1p,2e11.3,"  d-=",1p,2e11.3)
-c      itmax=itermax
-c-----------------------------------------------------------------------
-c     Use initial guess but ignore complex component of z.
-c-----------------------------------------------------------------------
-      zreal=REAL(z)*10
-      zimag=AIMAG(z)*10
-      z_best=z
-      f_best=ff(z,mat)
-
-      DO ii=1000,6000
-         DO jj=1,1
-            z = COMPLEX( DBLE(ii)/abs(ii)*10.0**(0.001*abs(ii)),1.0)
-	!	    z = z+COMPLEX(0,DBLE(jj)/abs(jj)*10.0**(0.1*abs(jj))*0.001)
-            f = ff(z,mat)
-            WRITE(776,*) REAL(z), AIMAG(z), REAL(f), AIMAG(f)
-         ENDDO
-         !WRITE(776,*)
-      ENDDO
-
-      DO ii=-140,140
-         DO jj=-70,70
-            z = COMPLEX( DBLE(ii)/abs(ii)*10.0**(0.05*abs(ii))*0.1,0)
-		    z = z+COMPLEX(0,DBLE(jj)/abs(jj)*10.0**(0.1*abs(jj))*0.1)
-            f = ff(z,mat)
-            WRITE(777,*) REAL(z), AIMAG(z), REAL(f), AIMAG(f)
-         ENDDO
-         WRITE(777,*)
-      ENDDO
-      
-      count=0
-      DO rpass=-imax,imax
-         DO ipass=1,imax
-
-c           Setup starting position
-            IF( rpass>0 ) THEN
-               z=COMPLEX( zreal*0.1**ABS(rpass),zimag*0.1**ABS(ipass))
-            ELSEIF( rpass<0 ) THEN
-               z=COMPLEX(-zreal*0.1**ABS(rpass),zimag*0.1**ABS(ipass))
-            ELSEIF( rpass==0 ) THEN
-               CYCLE
-            ENDIF
-          WRITE(*,'(A,1p,2(1x,e12.5))')"Starting at z=",REAL(z),AIMAG(z)
-
-            count=count+1
-
-            f = ff(z,mat)
-            dz=z*dzfac
-            it=0
-c-----------------------------------------------------------------------
-c     iterate
-c     For pass1, allow only the real component of z to move.
-c     For pass2, allow both components of z to move.
-c-----------------------------------------------------------------------
-            DO
-               it=it+1
-               err=ABS(dz/z)
-               IF (it==1) THEN
-                  WRITE (out_unit,10)
-                  WRITE(out_unit,*)
-                  WRITE(out_unit,*)            
-               ENDIF
-              WRITE(out_unit,20)it,err,REAL(z),AIMAG(z),REAL(f),AIMAG(f)
-               WRITE(out_unit,*)
-               
-               IF( err < tol_pass1) EXIT
-               IF( ISNAN(REAL(f)) ) THEN
-                  WRITE(*,*) "First pass generated NaN. it=", it
-                  WRITE(out_unit,*) "First pass generated NaN. it=", it
-                  it=-1
-                  EXIT
-               ENDIF
-               IF(it > itmax) THEN
-                  it=-1
-                  WRITE(*,*) "First pass is not well converged."
-                  WRITE(out_unit,*) "First pass is not well converged."
-                  EXIT
-               ENDIF
-               z_old=z
-               z=z+dz*relaxfac
-               f_old=f
-               f=ff(z,mat)
-               dz=-f*(z-z_old)/(f-f_old)
-               IF( ABS(dz)>ABS(z) ) THEN
-                  dz = dz/ABS(dz)*ABS(z)
-               ENDIF
-            ENDDO
-            WRITE(*,'(A,1p,2(1x,e12.5))')"Finished z=",REAL(z),AIMAG(z)
-      WRITE(*,'(A,1p,3(1x,e12.5))')"         f=",REAL(f),AIMAG(f),ABS(f)
-
-            zlist(count) = z
-            flist(count) = f
-      
-
-            !IF( ABS(f)<ABS(f_best) )THEN
-            !   z_best=z
-            !   f_best=f
-            !ENDIF
-         ENDDO
-      ENDDO
-      WRITE(*,*)
-
- 88   FORMAT(A,1p,3(1x,e12.5))
-
-c     Insertion sort of f-values
-      DO ii = 2,2*imax**2
-         DO kk=ii,2,-1
-            IF( abs(flist(kk))<abs(flist(kk-1)) ) THEN
-               z_old=zlist(kk)
-               f_old=flist(kk)
-               zlist(kk)=zlist(kk-1)
-               flist(kk)=flist(kk-1)
-               zlist(kk-1)=z_old
-               flist(kk-1)=f_old
-            ENDIF
-         ENDDO
-      ENDDO
-
-c     Find number of good minima with |f|<10*|f_best|
-      DO ii = 2,2*imax**2
-         IF( ABS(flist(ii))>10*ABS(flist(1)) ) THEN
-            count=ii-1
-            EXIT
-         ENDIF
-      ENDDO
-      WRITE(*,*) "Count=",count
-
-      WRITE(*,*)"After sort"
-      DO ii = 1,2*imax**2
-         WRITE(*,88)"z=",REAL(zlist(ii)),AIMAG(zlist(ii))
-         WRITE(*,88)"f=",REAL(flist(ii)),AIMAG(flist(ii)),ABS(flist(ii))
-         if( ii==count ) WRITE(*,'(A,i3)') "------ cutoff count=", count
-      ENDDO
-      WRITE(*,*)
-
-c     Choose the good minimum with the biggest real component
-      z_next=0
-      f_next=0
-      z_best=zlist(1)
-      f_best=flist(1)
-      DO ii = 2,count
-         IF( REAL(zlist(ii))>REAL(z_best) ) THEN
-            z_next=z_best
-            f_next=z_best
-            z_best=zlist(ii)
-            f_best=flist(ii)
-         ELSEIF( REAL(zlist(ii))>REAL(z_next) ) THEN
-            z_next=zlist(ii)
-            f_next=flist(ii)
-         ENDIF
-      ENDDO
-
-c     Final pass at small tolerance using eigenvalue with biggest real component
-      z=z_best
-      f=f_best
-      dz=z*dzfac
-      it=0
-      
-      DO
-         it=it+1
-         err=ABS(dz/z)
-         IF (it==1) THEN
-            WRITE (out_unit,10)
-            WRITE(out_unit,*)
-            WRITE(out_unit,*)            
-         ENDIF
-         WRITE(out_unit,20)it,err,REAL(z),AIMAG(z),REAL(f),AIMAG(f)
-         WRITE(out_unit,*)
-         
-         IF( err < tol_pass2) EXIT
-         IF( ISNAN(REAL(f)) ) THEN
-            WRITE(*,*) "Solution is NaN. it=", it
-            WRITE(out_unit,*) "Solution is NaN. it=", it
-            it=-1
-            EXIT
-         ENDIF
-         IF(it > itermax) THEN
-            it=-1
-            WRITE(*,*) "Solution is not well converged."
-            WRITE(out_unit,*) "Solution is not well converged."
-            EXIT
-         ENDIF
-         z_old=z
-         z=z+dz*relaxfac
-         f_old=f
-         f=ff(z,mat)
-         dz=-f*(z-z_old)/(f-f_old)
-         IF( ABS(dz)>ABS(z) ) THEN
-            dz = dz/ABS(dz)*ABS(z)
-         ENDIF
-      ENDDO
-      WRITE(*,'(A,1p,2(1x,e12.5))')"Best z=",REAL(z),AIMAG(z)
-      WRITE(*,'(A,1p,3(1x,e12.5))')"Best f=",REAL(f),AIMAG(f),ABS(f)
-
-!     DO ii=-120,120
-!     DO jj=1,60
-!            z = COMPLEX( DBLE(ii)/abs(ii)*10.0**(0.05*abs(ii))*0.01,0)
-!		    z = z+COMPLEX(0,DBLE(jj)/abs(jj)*10.0**(0.1*abs(jj))*0.01)
-      !      f = ff(z,mat)
-      !      WRITE(778,*) REAL(z), AIMAG(z), REAL(f), AIMAG(f)
-      !   ENDDO
-      !   WRITE(778,*)
-      !ENDDO
-c-----------------------------------------------------------------------
-c     compute the coefficients of outter and inner region solutions.
-c-----------------------------------------------------------------------
-      IF (match_flag) THEN
-         cmat=mat(2:4*msing,2:4*msing)
-         cof=0
-         cof(1)=1
-         nmat=4*msing
-         cof(2:4*msing)=-mat(2:4*msing,1)
-         CALL zgetrf(nmat-1,nmat-1,cmat,nmat-1,ipiv,info)
-         CALL zgetrs('N',nmat-1,1,cmat,nmat-1,ipiv,
-     $        cof(2:nmat),nmat-1,info)          
-         IF(matrix_diagnose)CALL match_matrix_diagnose(mat,cof)
-         DO ising=1,msing
-            WRITE (*,30) ising,cof(2*ising-1),cof(2*ising)
-            WRITE (*,40) ising,cof(2*msing+2*ising-1),
-     $                         cof(2*msing+2*ising)
-         ENDDO
-         cofout=cof(1:2*msing)
-         cofin=cof(2*msing+1:4*msing)
-         
-      ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE match_newton_mod
 c-----------------------------------------------------------------------
 c     subprogram 4. match_delta.
 c     get determinant of matching matrix (dispersion relation.
