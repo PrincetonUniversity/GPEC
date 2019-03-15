@@ -185,6 +185,10 @@ c-----------------------------------------------------------------------
             qlim=qlim-1._r8/nn
          ENDDO
       ENDIF
+      IF(peak_flag)THEN
+         ! hunt for peak dW in whatever rational window psihigh is in
+         qlim=(INT(nn*qlim)+0.9)/nn
+      ENDIF
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
@@ -1471,7 +1475,7 @@ c-----------------------------------------------------------------------
       i_recur=0
       i_depth=0
       x0=psilow
-      x1=psihigh
+      x1=psilim
 c-----------------------------------------------------------------------
 c     adaptively search the singular point.
 c-----------------------------------------------------------------------
@@ -1500,9 +1504,9 @@ c-----------------------------------------------------------------------
          singnum=singnum+1
          
       ENDIF
-      IF (psising(singnum)<psihigh) THEN
+      IF (psising(singnum)<psilim) THEN
          singnum=singnum+1
-         psising(singnum)=psihigh
+         psising(singnum)=psilim
       ENDIF
 c-----------------------------------------------------------------------
 c     Newton method to find the accurate local minimum point.
@@ -1547,7 +1551,7 @@ c-----------------------------------------------------------------------
          WRITE(sing_unit,'(1x,3(a16))') "psi","real(det)","imag(det)"
          DO i=1,singnum
             det0=sing_get_f_det(psising(i))
-            WRITE(sing_unit,'(1x,3(e16.9))') psising(i),
+            WRITE(sing_unit,'(1x,3(e16.8))') psising(i),
      $           REAL(det0), AIMAG(det0)
          ENDDO
       CLOSE (UNIT=sing_unit)

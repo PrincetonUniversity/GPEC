@@ -10,6 +10,35 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.3.1
+===========
+
+Fixes
+------
+- INSTALL - Fixes a makefile error
+
+GPEC v1.3.0
+===========
+
+Adds
+------
+- STRIDE - Adds the State Transition Rapid Integration with DCON (Asymptotic) Expansions code
+  * Citations included in docs (website)
+  * Parallel calculations of plasma stability (delta-W and Delta-prime)
+- DCON - Adds new peak_flag that checks the dW every step after the last rational and ends integration at the first local maximum
+  * This provides a useful for consistent, physics based truncation choice that can be more robust to small EFIT changes
+
+Changes
+--------
+- DOCS - Improves online documentation
+- INSTALL - Updates flags for intel 2018 and adds instructions for IPP Max-Planck Garching
+
+Fixes
+------
+- DCON - Fixes a formatting error in sing_find.out
+- DOCS - Fixes rmatch eta and massdens inputs for DIIID_resisitive_example
+- DCON - Fixes inappropriate uses of psihigh, which may not be the end of integration psilim if sas_flag, qhigh, or peak_flag are used
+
 GPEC v1.2.3
 ===========
 

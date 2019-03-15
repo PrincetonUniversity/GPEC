@@ -52,7 +52,7 @@ mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
 fourfit.o: ../equil/fspline_mod.mod dcon_mod.o toolbox.o
 sing1.o: fourfit.o
-sing.o: sing1.o 
+sing.o: sing1.o
 ode_output.o: sing.o debug.o
 ode.o: ode_output.o
 free.o: ode.o

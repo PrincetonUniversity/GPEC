@@ -49,14 +49,14 @@ c-----------------------------------------------------------------------
       CHARACTER, PARAMETER :: nul = char(0)
 
       NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
-     $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
+     $     mer_flag,res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
-     $     use_classic_splines
+     $     use_classic_splines,peak_flag
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -106,6 +106,21 @@ c-----------------------------------------------------------------------
       ! enables different settings for dcon and equilibrium splines
       use_classic_splines = use_classic_splines_for_dcon
 c-----------------------------------------------------------------------
+c     optionally reform the eq splines to concentrate at true truncation
+c-----------------------------------------------------------------------
+      CALL sing_lim  ! determine if qhigh is truncating before psihigh
+      IF(psilim /= psihigh)THEN
+         CALL equil_read(out_unit, psilim)
+         IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
+         CALL equil_out_global
+         CALL equil_out_qfind
+         CALL equil_out_diagnose(.FALSE.,out_unit)
+         CALL equil_out_write_2d
+         IF(direct_flag)CALL bicube_dealloc(psi_in)
+         ! enables different settings for dcon and equilibrium splines
+         use_classic_splines = use_classic_splines_for_dcon
+      ENDIF
+c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
       CALL spline_alloc(locstab,mpsi,5)
@@ -113,8 +128,10 @@ c-----------------------------------------------------------------------
       locstab%fs=0
       locstab%name="locstb"
       locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
-      IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
-      CALL mercier_scan
+      IF (mer_flag) THEN
+         WRITE(*,*)"Evaluating Mercier criterion"
+         CALL mercier_scan
+      ENDIF
       IF(bal_flag)THEN
          IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
          CALL bal_scan
@@ -148,7 +165,7 @@ c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
       CALL sing_find
-      CALL sing_lim
+      !CALL sing_lim  ! now done in above test for re-forming equil
       IF(cyl_flag)THEN
          mlow=delta_mlow
          mhigh=delta_mhigh
