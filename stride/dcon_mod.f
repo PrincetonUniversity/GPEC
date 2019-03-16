@@ -101,7 +101,7 @@ c-----------------------------------------------------------------------
       INTEGER :: nThreads=32
       LOGICAL :: vac_parallel
 
-      CHARACTER(*) :: spline_str
+      CHARACTER(10) :: spline_str
 
       LOGICAL :: verbose_riccati_output, verbose_performance_output,
      $     riccati_bounce,riccati_match_hamiltonian_evals

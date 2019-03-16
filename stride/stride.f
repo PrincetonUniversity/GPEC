@@ -101,6 +101,7 @@ c-----------------------------------------------------------------------
       IF (use_notaknot_splines) THEN
          spline_str="not-a-knot"
       ELSE
+         ! ok because fortran standard fills the shorter string with spaces when checking equality
          spline_str="extrap"
       ENDIF
 c-----------------------------------------------------------------------

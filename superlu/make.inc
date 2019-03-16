@@ -25,6 +25,9 @@ TMGLIB      = libtmglib.a
 BLASLIB	  	= $(SuperLUroot)/libblas.a
 LIBS		= $(SUPERLULIB) $(SuperLUroot)/libblas.a
 
+# include gpec specific flags and settings
+include $(SuperLUroot)/../install/DEFAULTS.inc
+
 #
 #  The archiver and the flag(s) to use when building archive (library)
 #  If your system has no ranlib, set RANLIB = echo.
@@ -36,7 +39,7 @@ RANLIB       = ranlib
 CC           = gcc
 CFLAGS 	     = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_
 NOOPTS       = -O0
-FORTRAN	     = ifort
+FORTRAN	     = $(FC)
 
 LOADER       = $(CC)
 LOADOPTS     = -g
