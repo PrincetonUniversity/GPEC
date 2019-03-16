@@ -1484,11 +1484,13 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ix,imap,ipert,ip,npp
       INTEGER :: ix0,np0
+      INTEGER :: imap_error
       TYPE(interval_type), POINTER :: intvl
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
 c     start loops over intervals and grid cells.
 c-----------------------------------------------------------------------
+      imap_error=0
       gal%rhs=0
       intvl => gal%intvl
       ix0=1
@@ -1514,8 +1516,12 @@ c-----------------------------------------------------------------------
             DO ipert=1,mpert
                imap=cell%map(ipert,ip)
                IF (imap>gal%ndim) THEN
-                  WRITE (*,*) "ERROR: imap error."
+                  imap_error = imap
                   CYCLE
+               ENDIF
+               IF( imap_error>0 ) THEN
+                  WRITE (*,*) "ERROR: imap error. imap=",imap_error,
+     $              " gal%ndim=",gal%ndim
                ENDIF
                SELECT CASE (fulldomain)
                CASE (0)
@@ -1853,8 +1859,7 @@ c-----------------------------------------------------------------------
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
       ENDDO
       IF (istep >= nstep) THEN 
-         WRITE (*,*)"Warning: LSODE exceeds nstep."
-         READ (*,*)
+         WRITE (*,*)"Warning: LSODE exceeds nstep. x=",x
       ENDIF
 c-----------------------------------------------------------------------
 c     output and deallocate.

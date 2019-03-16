@@ -168,6 +168,18 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"msing is larger than totmsing."
          msing=totmsing
       ENDIF
+      IF( ANY(eta(1:msing)==0.0) ) THEN
+         write(*,'(A,I3,A)') " ERROR: eta requires ",
+     $    msing," non-zero elements"
+         write(*,*) "  eta=",eta(1:msing)
+         stop
+      ENDIF
+      IF( ANY(massden(1:msing)==0.0) ) THEN
+         write(*,'(A,I3,A)') " ERROR: massden requires ",
+     $    msing," non-zero elements"
+         write(*,*) "  massden=",massden(1:msing)
+         stop
+      ENDIF
       ALLOCATE (cofout(2*msing),cofin(2*msing))
       READ(bin_unit)delta
       DO ising=1,totmsing
@@ -385,7 +397,7 @@ c-----------------------------------------------------------------------
       FUNCTION match_delta(guess,mat) RESULT(det)
 
       COMPLEX(r8), INTENT(IN) :: guess
-      COMPLEX(r8), DIMENSION(4*msing,4*msing),INTENT(INOUT) :: mat
+      COMPLEX(r8), DIMENSION(4*msing,4*msing),INTENT(OUT) :: mat
       COMPLEX(r8):: det
 
       INTEGER :: m,info,i,d,ising,idx1,idx2,idx3,idx4
