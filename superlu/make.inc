@@ -17,6 +17,8 @@
 #
 #  The name of the libraries to be created/linked to
 #
+include CURDIR/../install/DEFAULTS.inc
+
 SuperLUroot	= CURDIR
 SUPERLULIB  = $(SuperLUroot)/SuperLU_5.2.1/SRC/libsuperlu.a
 
@@ -36,7 +38,7 @@ RANLIB       = ranlib
 CC           = gcc
 CFLAGS 	     = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_
 NOOPTS       = -O0
-FORTRAN	     = ifort
+FORTRAN	     = $(FC)
 
 LOADER       = $(CC)
 LOADOPTS     = -g
