@@ -90,7 +90,7 @@ c-----------------------------------------------------------------------
       INTEGER :: msing,totmsing,nstep=32,scan_nstep,qscan_ising=1
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
       REAL(r8) :: eta(20),dlim=1000,massden(20)
-      REAL(r8) :: scan_x0,scan_x1,relax_fac
+      REAL(r8) :: scan_x0,scan_x1,relax_fac=0.1
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
       COMPLEX(r8) :: initguess
