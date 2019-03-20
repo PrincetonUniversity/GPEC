@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
 c     read and preprocess ideal DCON/VACUUM data
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
