@@ -7,12 +7,12 @@
 
    gal_flag = t             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
 
-   jac_in=""                ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
+   jac_in="hamada"          ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
    jsurf_in=0               ! True(1) if external perturbation is area weighted (i.e. flux)
    tmag_in =1               ! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
    mthsurf =0               ! Number of poloidal angle gridpoints. Minimum of twice the Nyquist condition from DCON m limits is enforced.
 
-   coil_flag=t              ! Calculate external perturbation from coils in coil.in
+   coil_flag=f              ! Calculate external perturbation from coils in coil.in
 
    data_flag=f              ! Apply perturbation from thrid party code output
    data_type="surfmn"       ! Name of said code. Choose: surfmn,??
@@ -29,8 +29,8 @@
    displacement_flag=f      ! Perturbations are displacement (m). Default is field (T).
    fixed_boundary_flag=f    ! Total perturbation = external perturbation
 
-   mode_flag = f            ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
-   mode  = 0                ! DCON eigen function index (1 is least stable)
+   mode_flag = t            ! Return only a single DCON eigenfunction defined by mode (ignores external pert.)
+   mode  = 1                ! DCON eigen function index (1 is least stable)
    filter_types = 'w'       ! Isolate the filter_modes of energy (w), reluctance (r), permiability (p) or singular coupling (s) eigenvectors/singular-vectors
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
 /
@@ -45,7 +45,7 @@
    use_classic_splines = f  ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
 &GPEC_OUTPUT
-   jac_out=""               ! Coordinate system of outputs
+   jac_out="hamada"         ! Coordinate system of outputs
    jsurf_out=0              ! True(1) for area weighted outputs (only appends standard gpec_control output)
    tmag_out=1               ! True(1) for magnetic toroidal angle outputs (affects singcoup and singfld, appends gpec_control)
    mlim_out=64              ! Fourier decomposed outputs will span -mlim_out<=m<=mlim_out when jac_out/=jac_type or tmag_out/=tmag_in
@@ -59,7 +59,7 @@
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
    vbnormal_flag=t          ! Outputs vacuum normal displacement and field in plasma
-   xclebsch_flag=t          ! Outputs clebsch coordinate displacement for PENT
+   xclebsch_flag=f          ! Outputs clebsch coordinate displacement for PENT
    dw_flag=t                ! Outputs self-consistent energy and torque profiles (when kin_flag=t from DCON)
 
    eqbrzphi_flag=t          ! Outputs equilibrium field on regular (r,z) grid
@@ -69,16 +69,16 @@
    vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to external perturbation surface current (not a real field)
    vsbrzphi_flag=f          ! Outputs the field on regular (r,z) grid due to singular surface currents
    ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
-   xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
+   xbrzphifun_flag=t        ! Outputs r,z, and perturbation vectors on psi,theta grid
    arzphifun_flag=f         ! Outputs r,z, and vector potential on psi,theta grid
 
    nr = 128                 ! Number of radial grid points in rzphi outputs
    nz = 128                 ! Number of vertical grid points in rzphi outputs
    fun_flag=f               ! Write outputs to (r,z) in addition to default (psi,m)
-   flux_flag=f              ! Write outputs to (psi,theta) in addition to default (psi,m)
+   flux_flag=t              ! Write outputs to (psi,theta) in addition to default (psi,m)
 
    netcdf_flag=t            ! Write all outputs in netcdf files
-   ascii_flag=f             ! Write all outputs in ascii tables
+   ascii_flag=t             ! Write all outputs in ascii tables
    max_linesout=0           ! Maximum length of ascii data tables enforced by increasing radial step size (iff .gt. 0).
    bin_flag=f               ! Write binary outputs for use with xdraw
    bin_2d_flag=f            ! Write 2D binary outputs for use with xdraw
