@@ -3747,6 +3747,13 @@ c-----------------------------------------------------------------------
 
       CALL idcon_build(egnum,xspmn)
 
+      IF (mode_flag) THEN
+         CALL gpeq_alloc
+         CALL gpeq_sol(psilim)
+         bnomn=bwp_mn
+         CALL gpeq_dealloc
+      ENDIF
+
       IF (eqbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing equilibrium magnetic fields"
          IF(timeit) CALL gpec_timer(-2)
