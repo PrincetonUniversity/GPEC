@@ -8,8 +8,8 @@ c-----------------------------------------------------------------------
 c     1. dcon.
 c     2. dcon_dealloc.
 c-----------------------------------------------------------------------
-c     subprogram 1. kinetic dcon.
-c     performs ideal MHD stability analysis.
+c     subprogram 1. dcon.
+c     performs ideal & kinetic MHD stability analysis.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.

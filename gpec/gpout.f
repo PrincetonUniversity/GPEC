@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
 c     write various output results of gpec routines
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -11,19 +11,22 @@ c      2. gpout_singcoup
 c      3. gpout_control
 c      4. gpout_singfld
 c      5. gpout_vsingfld
-c      6. gpout_pmodb
-c      7. gpout_xbnormal
-c      8. gpout_vbnormal
-c      9. gpout_xtangent
-c     10. gpout_xbrzphi
-c     11. gpout_vsbrzphi
-c     12. gpout_xbrzphifun
-c     13. gpout_arzphifun
-c     14. gpout_control_filter
-c     15. gpout_qrv
-c     16. check
-c     17. gpout_init_netcdf
-c     18. gpout_close_netcdf
+c      6. gpout_dw
+c      7. gpout_dw_matrix
+c      8. gpout_pmodb
+c      9. gpout_xbnormal
+c     10. gpout_vbnormal
+c     11. gpout_xtangent
+c     12. gpout_xbrzphi
+c     13. gpout_vsbrzphi
+c     14. gpout_xbrzphifun
+c     15. gpout_arzphifun
+c     16. gpout_clebsch
+c     17. gpout_control_filter
+c     18. gpout_qrv
+c     19. check
+c     20. gpout_init_netcdf
+c     21. gpout_close_netcdf
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -2294,7 +2297,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_dw_matrix
 c-----------------------------------------------------------------------
-c     subprogram 6. gpout_pmodb.
+c     subprogram 8. gpout_pmodb.
 c     compute perturbed mod b.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_pmodb(egnum,xspmn)
@@ -2773,7 +2776,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_pmodb
 c-----------------------------------------------------------------------
-c     subprogram 7. gpout_xbnormal.
+c     subprogram 9. gpout_xbnormal.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbnormal(egnum,xspmn,spot,nspot)
 c-----------------------------------------------------------------------
@@ -3231,7 +3234,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbnormal
 c-----------------------------------------------------------------------
-c     subprogram 8. gpout_vbnormal.
+c     subprogram 10. gpout_vbnormal.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_vbnormal(rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
@@ -3483,7 +3486,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_vbnormal
 c-----------------------------------------------------------------------
-c     subprogram 9. gpout_xbtangent.
+c     subprogram 11. gpout_xbtangent.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbtangent(egnum,xspmn,rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
@@ -3673,7 +3676,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbtangent
 c-----------------------------------------------------------------------
-c     subprogram 10. gpout_xbrzphi.
+c     subprogram 12. gpout_xbrzphi.
 c     write perturbed rzphi components on rzphi grid.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -3748,6 +3751,13 @@ c-----------------------------------------------------------------------
       vvbp = 0
 
       CALL idcon_build(egnum,xspmn)
+
+      IF (mode_flag) THEN
+         CALL gpeq_alloc
+         CALL gpeq_sol(psilim)
+         bnomn=bwp_mn
+         CALL gpeq_dealloc
+      ENDIF
 
       IF (eqbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing equilibrium magnetic fields"
@@ -4438,7 +4448,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbrzphi
 c-----------------------------------------------------------------------
-c     subprogram 10. gpout_vsbrzphi.
+c     subprogram 13. gpout_vsbrzphi.
 c     write brzphi components restored by removing shielding currents.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_vsbrzphi(snum,nr,nz)
@@ -4546,7 +4556,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_vsbrzphi
 c-----------------------------------------------------------------------
-c     subprogram 11. gpout_xbrzphifun
+c     subprogram 14. gpout_xbrzphifun
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbrzphifun(egnum,xspmn)
 c-----------------------------------------------------------------------
@@ -4753,7 +4763,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbrzphifun
 c-----------------------------------------------------------------------
-c     subprogram 12. gpout_arzphifun
+c     subprogram 15. gpout_arzphifun
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_arzphifun(egnum,xspmn)
 c-----------------------------------------------------------------------
@@ -4954,7 +4964,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_arzphifun
 c-----------------------------------------------------------------------
-c     subprogram 13. gpout_xclebsch.
+c     subprogram 16. gpout_xclebsch.
 c     Write Clebsch coordinate displacements.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xclebsch(egnum,xspmn)
@@ -5114,7 +5124,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xclebsch
 c-----------------------------------------------------------------------
-c     subprogram 14. gpout_control_filter.
+c     subprogram 17. gpout_control_filter.
 c     Filter control surface flux vector in flux bases with energy norms
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_control_filter(finmn,foutmn,ftypes,fmodes,
@@ -5895,7 +5905,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_control_filter
 c-----------------------------------------------------------------------
-c     subprogram 15. gpout_qrv.
+c     subprogram 18. gpout_qrv.
 c     Add some basic alternative x coordinates into the profile outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_qrv
@@ -5947,7 +5957,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_qrv
 c-----------------------------------------------------------------------
-c     subprogram 16. check.
+c     subprogram 19. check.
 c     Check status of netcdf file.
 c-----------------------------------------------------------------------
       SUBROUTINE check(stat)
@@ -5968,7 +5978,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE check
 c-----------------------------------------------------------------------
-c     subprogram 17. gpout_init_netcdf.
+c     subprogram 20. gpout_init_netcdf.
 c     Initialize the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_init_netcdf
@@ -6126,7 +6136,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_init_netcdf
 c-----------------------------------------------------------------------
-c     subprogram 18. gpout_close_netcdf.
+c     subprogram 21. gpout_close_netcdf.
 c     Close the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_close_netcdf

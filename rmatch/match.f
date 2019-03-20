@@ -90,7 +90,7 @@ c-----------------------------------------------------------------------
       INTEGER :: msing,totmsing,nstep=32,scan_nstep,qscan_ising=1
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
       REAL(r8) :: eta(20),dlim=1000,massden(20)
-      REAL(r8) :: scan_x0,scan_x1,relax_fac
+      REAL(r8) :: scan_x0,scan_x1,relax_fac=0.1
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
       COMPLEX(r8) :: initguess
@@ -167,6 +167,18 @@ c-----------------------------------------------------------------------
       IF (totmsing.LT.msing) THEN
          WRITE(*,*)"msing is larger than totmsing."
          msing=totmsing
+      ENDIF
+      IF( ANY(eta(1:msing)==0.0) ) THEN
+         write(*,'(A,I3,A)') " ERROR: eta requires ",
+     $    msing," non-zero elements"
+         write(*,*) "  eta=",eta(1:msing)
+         stop
+      ENDIF
+      IF( ANY(massden(1:msing)==0.0) ) THEN
+         write(*,'(A,I3,A)') " ERROR: massden requires ",
+     $    msing," non-zero elements"
+         write(*,*) "  massden=",massden(1:msing)
+         stop
       ENDIF
       ALLOCATE (cofout(2*msing),cofin(2*msing))
       READ(bin_unit)delta
@@ -385,7 +397,7 @@ c-----------------------------------------------------------------------
       FUNCTION match_delta(guess,mat) RESULT(det)
 
       COMPLEX(r8), INTENT(IN) :: guess
-      COMPLEX(r8), DIMENSION(4*msing,4*msing),INTENT(INOUT) :: mat
+      COMPLEX(r8), DIMENSION(4*msing,4*msing),INTENT(OUT) :: mat
       COMPLEX(r8):: det
 
       INTEGER :: m,info,i,d,ising,idx1,idx2,idx3,idx4

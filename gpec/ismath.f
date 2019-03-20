@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     ISMATH: simple math routines
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
+c     simple math routines
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
@@ -13,7 +13,8 @@ c     4. issurfint
 c     5. issurfave
 c     6. isbubble
 c     7. iszinv
-c     8. ipidl_3dsurfc-----------------------------------------------------------------------
+c     8. ipidl_3dsurf
+c-----------------------------------------------------------------------
 c     subprogram 0. ismath_mod.
 c     module declarations.
 c-----------------------------------------------------------------------

@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     GPEQ: calculate functions for perturbed equilibrium.
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
+c     calculate functions for perturbed equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.

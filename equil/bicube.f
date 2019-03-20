@@ -450,6 +450,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
+      IF(bcs%mx==0 .OR. bcs%my==0)THEN
+         WRITE(*, *) 'ERROR: Bicubic spline entitled "',bcs%title,'"'
+         IF(bcs%mx==0)THEN
+            WRITE(*, *) 'has 0 elements specified for x axis '
+     $                  //TRIM(bcs%xtitle)
+         ELSE
+            WRITE(*, *) 'has 0 elements specified for y axis '
+     $                  //TRIM(bcs%ytitle)
+         ENDIF
+         STOP
+      ENDIF
       bcs%ix=max(bcs%ix,0)
       bcs%ix=min(bcs%ix,bcs%mx-1)
       bcs%iy=max(bcs%iy,0)

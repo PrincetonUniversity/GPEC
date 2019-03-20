@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     GPGLOBAL: global definition
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
+c     global definition
 c-----------------------------------------------------------------------
       MODULE gpglobal_mod
       USE bicube_mod
