@@ -86,6 +86,7 @@ module pentrc_interface
         eqpsi_out=.false.,&
         equil_grid=.false.,&
         input_grid=.false.,&
+        dynamic_grid=.true.,&
         fnml_flag=.false.,&
         ellip_flag=.false.,&
         diag_flag=.false.,&
@@ -148,7 +149,7 @@ module pentrc_interface
             use_classic_splines
 
     namelist/pent_output/moment, output_ascii, output_netcdf, &
-            eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, &
+            eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, dynamic_grid, &
             fgar_flag, tgar_flag, pgar_flag, clar_flag, rlar_flag, fcgl_flag, &
             wxyz_flag, psi_out, fkmm_flag, tkmm_flag, pkmm_flag, frmm_flag, trmm_flag, prmm_flag, &
             fwmm_flag, twmm_flag, pwmm_flag, ftmm_flag, ttmm_flag, ptmm_flag, &

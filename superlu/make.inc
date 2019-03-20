@@ -17,6 +17,8 @@
 #
 #  The name of the libraries to be created/linked to
 #
+include CURDIR/../install/DEFAULTS.inc
+
 SuperLUroot	= CURDIR
 SUPERLULIB  = $(SuperLUroot)/SuperLU_5.2.1/SRC/libsuperlu.a
 
