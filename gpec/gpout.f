@@ -1810,7 +1810,7 @@ c-----------------------------------------------------------------------
 
          IF(osing<msing)THEN
             DO icoup=1,nsingcoup
-               DO ising=1,msing
+               DO ising=1,osing
                   olap(icoup, ising) = DOT_PRODUCT(
      $               localcoup_out_vecs(icoup,:,ising),
      $               sbno_mn(:)) / SQRT(2.0)
