@@ -97,7 +97,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#    $ make 2>&1 | tee make.log
 #
 # On iris.gat.com
 #   Developers should use the ifort compiler and associated netcdf module
@@ -128,7 +128,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#    $ make 2>&1 | tee make.log
 #
 # On toki0*.aug.ipp.mpg.de
 #   Developers should use the ifort compiler as well as the associated impi and netcdf modules
@@ -189,6 +189,8 @@
 #     $ make FFLAGS="-qopenmp -qopt-report -g -O0 -check all"  # for debugging
 #     $ make FFLAGS="-qopenmp -O3"     # for optimized version
 #     $ make FFLAGS="-qopenmp  -xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
+# If using a compiler other than intel, set OMPFLAG to whatever the equivalent of
+# -qopenmp is for your compiler.
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
