@@ -3,11 +3,11 @@
 # based on what libraries are available on the current machine.
 #
 # Prior to version 1.2, GPEC could be compiled using ifort, pgf, gfortran,
-# or lfc. All public releases on portal wheree compiled using lfc, which
+# or lfc. All public releases on portal were compiled using lfc, which
 # required only default user path libraries.
 #
-# With the release of 1.2, the options have been greatly simplified by
-# restricting all compilation to intel compilers compatible wth openmpi.
+# With the release of 1.2, the options restricted to more modern compilers
+# compatible wth openmpi.
 # Machine specific instructions are below.
 #
 # Note that GPEC uses git to fetch/update the harvest repository as well as
@@ -45,9 +45,6 @@
 #   Now compiling using
 #    $ make
 #   Should set all the right flags and run through.
-#
-#   Compiler with:   make FFLAGS="-qopenmp -g -O0"  # for debugging
-#                    make FFLAGS="-qopenmp -O3"     # for optimized version
 #
 #   Developers can also load the default intel/11.0.081 and associated libraries,
 #     $ module load intel openmpi netcdf acml/5.3.1/ifort64 git
@@ -166,11 +163,32 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS='-openmp' 2>&1 | tee make.log
+#     $ make FFLAGS='-openmp' 2>&1 | tee make.log
 #
 # On mac OSX
-#   With the move to licensed intel compilers, OSX is no longer actively supported.
+#   If one has installed the free gfortran compiler and built netcdf and lapack,
+#   a typical set of paths looks like the following.
+#     $ make v
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /usr/local/bin/gfortran
+#      using math libraries -llapack -lblas
+#      from /usr/lib
+#      including /usr/lib
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /opt/local/lib /opt/local/lib
+#      including /opt/local/include
+#      and compiler libraries
+#      from .
+#      including .
 #
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+# Some common modifications of the above settings might include,
+#     $ make FFLAGS="-qopenmp -qopt-report -g -O0 -check all"  # for debugging
+#     $ make FFLAGS="-qopenmp -O3"     # for optimized version
+#     $ make FFLAGS="-qopenmp  -xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and

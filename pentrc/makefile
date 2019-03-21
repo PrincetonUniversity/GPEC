@@ -1,7 +1,6 @@
 
 include ../install/DEFAULTS.inc
 
-#FFLAGS = -qopenmp
 IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS
