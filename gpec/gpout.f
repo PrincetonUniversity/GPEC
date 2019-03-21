@@ -2845,6 +2845,11 @@ c-----------------------------------------------------------------------
          CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
       ENDIF
 
+      ! these surfaces are phsyically independent
+      ! just repeating some generic geometric and coordinate conversion stuff in a loop
+      ! filling in the xnomns, bnomns, xnofuns, bnofuns matrices
+      ! The parallelization catch might be that we use these common fourier (iscdftb, iscdftf)
+      ! and coordinate converting (gpeq_bcoordsout) subroutines? Will they confuse themselves in parallel?
       DO istep=1,mstep
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
          ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex

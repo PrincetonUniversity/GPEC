@@ -192,7 +192,7 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDIF
          WRITE(unit)REAL(psifac,4),REAL(sol,4),
-     $             REAL(IMAG(sol),4),mylog(sol)
+     $             REAL(IMAG(sol),4),floored_log(sol)
          psifac=psifac+dpsi
       ENDDO
       WRITE(unit)
