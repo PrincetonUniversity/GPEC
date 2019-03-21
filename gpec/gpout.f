@@ -1665,7 +1665,7 @@ c     compute coordinate-independent resonant field.
 c----------------------------------------------------------------------- 
          IF (vsbrzphi_flag) THEN
             singbno_mn(:,ising)=-singflx_mn(:,ising)
-            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
+!            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
          ENDIF
          singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)
 c-----------------------------------------------------------------------
@@ -4526,17 +4526,17 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(cncid,"z",z_id) )
          CALL check( nf90_redef(cncid))
          CALL check( nf90_def_var(cncid, "b_r_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),br_id) )
+     $       nf90_double, (/r_id,z_id,i_id/),br_id) )
          CALL check( nf90_put_att(cncid,br_id,"units","T") )
          CALL check( nf90_put_att(cncid,br_id,"long_name",
      $      "Radial field from rational surface "//trim(ss)) )
          CALL check( nf90_def_var(cncid, "b_z_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),bz_id) )
+     $       nf90_double, (/r_id,z_id,i_id/),bz_id) )
          CALL check( nf90_put_att(cncid,bz_id,"units","T") )
          CALL check( nf90_put_att(cncid,bz_id,"long_name",
      $      "Vertical field from rational surface "//trim(ss)) )
          CALL check( nf90_def_var(cncid, "b_phi_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),bp_id) )
+     $       nf90_double, (/r_id,z_id,i_id/),bp_id) )
          CALL check( nf90_put_att(cncid,bp_id,"units","T") )
          CALL check( nf90_put_att(cncid,bp_id,"long_name",
      $      "Toroidal field from rational surface "//trim(ss)) )
