@@ -504,7 +504,7 @@ c-----------------------------------------------------------------------
       CHARACTER(72), DIMENSION(nsingcoup) :: titles, names
       CHARACTER(4), DIMENSION(nsingcoup) :: units
       CHARACTER(1), DIMENSION(nsingcoup) :: tags
-      INTEGER :: idid, mdid, cdid, mc_id
+      INTEGER :: idid, mdid, odid, cdid, mc_id, mo_id
       INTEGER, DIMENSION(msing) :: modec
       INTEGER, DIMENSION(nsingcoup) :: c_id, r_id, s_id,
      $     cl_id, rl_id, sl_id
@@ -963,6 +963,11 @@ c-----------------------------------------------------------------------
      $               mc_id) )
          CALL check( nf90_put_att(mncid, mc_id ,"long_name",
      $    "Singular coupling mode index") )
+         CALL check( nf90_def_dim(mncid,"mode_C_local",osing,odid) )
+         CALL check( nf90_def_var(mncid,"mode_C_local",nf90_int,odid,
+     $               mo_id) )
+         CALL check( nf90_put_att(mncid, mo_id ,"long_name",
+     $    "Localized singular coupling mode index") )
 
          DO i=1,nsingcoup
             CALL check( nf90_def_var(mncid,"C_"//tags(i)//"_x_out",
@@ -983,18 +988,18 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(mncid,s_id(i),"units",units(i)) )
             IF(osing<msing)THEN
                CALL check( nf90_def_var(mncid,"C_l"//tags(i)//"_x_out",
-     $              nf90_double, (/mdid,cdid,idid/), cl_id(i)) )
+     $              nf90_double, (/mdid,odid,idid/), cl_id(i)) )
                CALL check( nf90_put_att(mncid,cl_id(i),"long_name",
      $           "Local "//trim(names(i))//"coupling to external flux"))
                CALL check(nf90_put_att(mncid,cl_id(i),"units",units(i)))
                CALL check( nf90_def_var(mncid,
      $              "C_l"//tags(i)//"_xb_out_singvec",
-     $              nf90_double,(/mdid,cdid,idid/),rl_id(i)) )
+     $              nf90_double,(/mdid,odid,idid/),rl_id(i)) )
                CALL check( nf90_put_att(mncid,rl_id(i),"long_name",
      $          "Local "//trim(names(i))//" coupling right singular"))
                CALL check( nf90_def_var(mncid,
      $              "C_l"//tags(i)//"_xe_out_singval",
-     $              nf90_double,(/cdid/),sl_id(i)) )
+     $              nf90_double,(/odid/),sl_id(i)) )
                CALL check( nf90_put_att(mncid,sl_id(i),"long_name",
      $          "Local "//trim(names(i))//" coupling singular values"))
                CALL check(nf90_put_att(mncid,sl_id(i),"units",units(i)))
@@ -1007,6 +1012,7 @@ c-----------------------------------------------------------------------
          ! write variables
          modec = (/(i,i=1,msing)/)
          CALL check( nf90_put_var(mncid,mc_id,modec) )
+         CALL check( nf90_put_var(mncid,mo_id,modec(1:osing)) )
          DO i=1,nsingcoup
             CALL check( nf90_put_var(mncid,c_id(i),RESHAPE(
      $           (/REAL(singcoup_out(i,:,:)),
@@ -1020,11 +1026,11 @@ c-----------------------------------------------------------------------
             IF(osing<msing)THEN
                CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
      $              (/REAL(localcoup_out(i,:,:)),
-     $              AIMAG(localcoup_out(i,:,:))/),(/tmpert,msing,2/))))
+     $              AIMAG(localcoup_out(i,:,:))/),(/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,rl_id(i),RESHAPE(
      $              (/REAL(localcoup_out_bvecs(i,:,:)),
      $              AIMAG(localcoup_out_bvecs(i,:,:))/),
-     $              (/tmpert,msing,2/))))
+     $              (/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,sl_id(i),
      $              localcoup_out_vals(i,:)))
             ENDIF
