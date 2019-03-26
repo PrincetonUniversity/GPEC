@@ -4452,42 +4452,57 @@ c-----------------------------------------------------------------------
 c     subprogram 13. gpout_vsbrzphi.
 c     write brzphi components restored by removing shielding currents.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_vsbrzphi(snum,nr,nz)
+      SUBROUTINE gpout_vsbrzphi(ss_flag,nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: snum,nr,nz
+      LOGICAL, DIMENSION(100), INTENT(IN) :: ss_flag
+      INTEGER, INTENT(IN) :: nr,nz
 
-      INTEGER :: i,j
-      INTEGER :: i_id, r_id, z_id, br_id, bz_id, bp_id
+      INTEGER :: i,j,k,snum,iss,ns
+      INTEGER :: i_id, r_id, z_id, br_id, bz_id, bp_id, s_id, sdid
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
 
-      INTEGER, DIMENSION(0:nr,0:nz) :: vgdl
-      REAL(r8), DIMENSION(0:nr,0:nz) :: vgdr,vgdz
-      COMPLEX(r8), DIMENSION(0:nr,0:nz) :: vbr,vbz,vbp
+      INTEGER, DIMENSION(:), ALLOCATABLE :: snums
+      INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: vgdl
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: vgdr,vgdz
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: vbr,vbz,vbp
+
+c-----------------------------------------------------------------------
+c     Find out how many surfaces we are calculating
+c-----------------------------------------------------------------------
+      ns = 0
+      DO i=1,msing
+         IF (ss_flag(i)) ns = ns + 1
+      ENDDO
+      IF (ns == 0) RETURN ! only bother is any ss_flags are true
+      ALLOCATE(snums(ns), vgdl(ns,0:nr,0:nz), vgdr(ns,0:nr,0:nz),
+     $         vgdz(ns,0:nr,0:nz), vbr(ns,0:nr,0:nz), vbz(ns,0:nr,0:nz),
+     $         vbp(ns,0:nr,0:nz))
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
+      IF(timeit) CALL gpec_timer(-2)
       vbr = 0
       vbz = 0
       vbp = 0
 
-      IF (snum<10) THEN
-         WRITE(UNIT=ss,FMT='(I1)')snum
-         ss=TRIM(ADJUSTL(ss))
-      ELSE
-         WRITE(UNIT=ss,FMT='(I2)')snum
-      ENDIF
-
-      IF(timeit) CALL gpec_timer(-2)
-      IF(verbose) WRITE(*,*)"Computing vacuum fields by "//
-     $     TRIM(ss)//"th resonant field"
-      CALL gpvacuum_bnormal(singtype(snum)%psifac,
-     $     singbno_mn(:,snum),nr,nz)
-      CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
-     $     nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
+      iss = 0
+      DO snum=1,msing
+         IF (ss_flag(snum)) THEN
+            iss = iss + 1
+            snums(iss) = iss
+            IF(verbose) WRITE(*,'(1x,a55,I2)')"Computing vacuum "//
+     $           "fields from resonant surface current #",snum
+            CALL gpvacuum_bnormal(singtype(snum)%psifac,
+     $           singbno_mn(:,snum),nr,nz)
+            CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,
+     $           complex_flag,nr,nz,vgdl(iss,:,:),vgdr(iss,:,:),
+     $           vgdz(iss,:,:),vbr(iss,:,:),vbz(iss,:,:),vbp(iss,:,:))
+         ENDIF
+      ENDDO
       IF (helicity<0) THEN
          vbr=CONJG(vbr)
          vbz=CONJG(vbz)
@@ -4498,23 +4513,25 @@ c     write results.
 c-----------------------------------------------------------------------
       IF(ascii_flag)THEN
          CALL ascii_open(out_unit,"gpec_vsbrzphi_n"//
-     $        TRIM(sn)//"_s"//TRIM(ss)//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_VSBRZPHI: Vacuum field in rzphi grid "//
      $        "by "//TRIM(ss)//"th resonant field"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a2,8(1x,a16))')"l","r","z",
-     $        "real(vsb_r)","imag(vsb_r)","real(vsb_z)","imag(vsb_z)",
-     $        "real(vsb_phi)","imag(vsb_phi)"
-         DO i=0,nr
-            DO j=0,nz
-               WRITE(out_unit,'(1x,I2,8(es17.8e3))')
-     $              vgdl(i,j),vgdr(i,j),vgdz(i,j),
-     $              REAL(vbr(i,j)),AIMAG(vbr(i,j)),
-     $              REAL(vbz(i,j)),AIMAG(vbz(i,j)),
-     $              REAL(vbp(i,j)),AIMAG(vbp(i,j))
+         WRITE(out_unit,'(1x,a2,2(1x,a16),a2,6(1x,a16))')"s","r","z",
+     $        "l","real(vsb_r)","imag(vsb_r)","real(vsb_z)",
+     $        "imag(vsb_z)","real(vsb_phi)","imag(vsb_phi)"
+         DO i=1,ns
+            DO j=0,nr
+               DO k=0,nz
+                  WRITE(out_unit,'(1x,I2,2(es17.8e3),I2,6(es17.8e3))')
+     $                 snums(i),vgdr(i,j,k),vgdz(i,j,k),vgdl(i,j,k),
+     $                 REAL(vbr(i,j,k)),AIMAG(vbr(i,j,k)),
+     $                 REAL(vbz(i,j,k)),AIMAG(vbz(i,j,k)),
+     $                 REAL(vbp(i,j,k)),AIMAG(vbp(i,j,k))
+               ENDDO
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
@@ -4525,34 +4542,41 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(cncid,"i",i_id) )
          CALL check( nf90_inq_dimid(cncid,"R",r_id) )
          CALL check( nf90_inq_dimid(cncid,"z",z_id) )
+
          CALL check( nf90_redef(cncid))
+         CALL check( nf90_def_dim(cncid,"s",ns,sdid) )
+         CALL check( nf90_def_var(cncid,"s",nf90_int,sdid,s_id) )
+         CALL check( nf90_put_att(cncid, s_id ,"long_name",
+     $    "Singular surface number from core") )
          CALL check( nf90_def_var(cncid, "b_r_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),br_id) )
+     $       nf90_double, (/sdid,r_id,z_id,i_id/),br_id) )
          CALL check( nf90_put_att(cncid,br_id,"units","T") )
          CALL check( nf90_put_att(cncid,br_id,"long_name",
      $      "Radial field from rational surface "//trim(ss)) )
          CALL check( nf90_def_var(cncid, "b_z_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),bz_id) )
+     $       nf90_double, (/sdid,r_id,z_id,i_id/),bz_id) )
          CALL check( nf90_put_att(cncid,bz_id,"units","T") )
          CALL check( nf90_put_att(cncid,bz_id,"long_name",
      $      "Vertical field from rational surface "//trim(ss)) )
-         CALL check( nf90_def_var(cncid, "b_phi_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),bp_id) )
+         CALL check( nf90_def_var(cncid, "b_t_rational"//trim(ss),
+     $       nf90_double, (/sdid,r_id,z_id,i_id/),bp_id) )
          CALL check( nf90_put_att(cncid,bp_id,"units","T") )
          CALL check( nf90_put_att(cncid,bp_id,"long_name",
      $      "Toroidal field from rational surface "//trim(ss)) )
          CALL check( nf90_enddef(cncid) )
+         CALL check( nf90_put_var(cncid,s_id,snums) )
          CALL check( nf90_put_var(cncid,br_id,RESHAPE((/REAL(vbr),
-     $                AIMAG(vbr)/),(/nr+1,nz+1,2/))) )
+     $                AIMAG(vbr)/),(/ns,nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,bz_id,RESHAPE((/REAL(vbz),
-     $                AIMAG(vbz)/),(/nr+1,nz+1,2/))) )
+     $                AIMAG(vbz)/),(/ns,nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,bp_id,RESHAPE((/REAL(vbp),
-     $                AIMAG(vbp)/),(/nr+1,nz+1,2/))) )
+     $                AIMAG(vbp)/),(/ns,nr+1,nz+1,2/))) )
          CALL check( nf90_close(cncid) )
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      DEALLOCATE(snums, vgdl, vgdr, vgdz, vbr, vbz, vbp)
       IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE gpout_vsbrzphi
