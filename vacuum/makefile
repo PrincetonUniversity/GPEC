@@ -1,3 +1,4 @@
+# This is the makefile for VACUUM.
 
 FFLAGS = -g
 
@@ -8,6 +9,7 @@ F90 = $(FC) $(FFLAGS)
 
 OBJS = \
 	bzio.o \
+    aleg_new.o \
 	vacuum_global.o \
 	vacuum_io.o \
 	vacuum_ma.o \

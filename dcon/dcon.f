@@ -49,14 +49,14 @@ c-----------------------------------------------------------------------
       CHARACTER, PARAMETER :: nul = char(0)
 
       NAMELIST/dcon_control/bal_flag,mat_flag,ode_flag,vac_flag,
-     $     res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
+     $     mer_flag,res_flag,fft_flag,node_flag,mthvac,sing_start,nn,
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
-     $     use_classic_splines
+     $     use_classic_splines,peak_flag
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -68,7 +68,7 @@ c     format statements.
 c-----------------------------------------------------------------------
  10   FORMAT(/'ipsi',2x,'psifac',6x,'f',7x,'mu0 p',5x,'dvdpsi',
      $     6x,'q',10x,'di',9x,'dr',8x,'ca1'/)
- 20   FORMAT(i3,1p,5e10.3,3e11.3)
+ 20   FORMAT(i4,1p,8e11.3)
  30   FORMAT(/3x,"mlow",1x,"mhigh",1x,"mpert",1x,"mband",3x,"nn",2x,
      $     "lim_fl",2x,"dmlim",7x,"qlim",6x,"psilim"//5i6,l6,1p,3e11.3/)
 c-----------------------------------------------------------------------
@@ -99,6 +99,21 @@ c-----------------------------------------------------------------------
       ! enables different settings for dcon and equilibrium splines
       use_classic_splines = use_classic_splines_for_dcon
 c-----------------------------------------------------------------------
+c     optionally reform the eq splines to concentrate at true truncation
+c-----------------------------------------------------------------------
+      CALL sing_lim  ! determine if qhigh is truncating before psihigh
+      IF(psilim /= psihigh)THEN
+         CALL equil_read(out_unit, psilim)
+         IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
+         CALL equil_out_global
+         CALL equil_out_qfind
+         CALL equil_out_diagnose(.FALSE.,out_unit)
+         CALL equil_out_write_2d
+         IF(direct_flag)CALL bicube_dealloc(psi_in)
+         ! enables different settings for dcon and equilibrium splines
+         use_classic_splines = use_classic_splines_for_dcon
+      ENDIF
+c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
       CALL spline_alloc(locstab,mpsi,5)
@@ -106,8 +121,10 @@ c-----------------------------------------------------------------------
       locstab%fs=0
       locstab%name="locstb"
       locstab%title=(/"  di  ","  dr  ","  h   "," ca1  "," ca2  "/)
-      IF(verbose) WRITE(*,*)"Evaluating Mercier criterion"
-      CALL mercier_scan
+      IF (mer_flag) THEN
+         WRITE(*,*)"Evaluating Mercier criterion"
+         CALL mercier_scan
+      ENDIF
       IF(bal_flag)THEN
          IF(verbose) WRITE(*,*)"Evaluating ballooning criterion"
          CALL bal_scan
@@ -141,7 +158,7 @@ c-----------------------------------------------------------------------
 c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
       CALL sing_find
-      CALL sing_lim
+      !CALL sing_lim  ! now done in above test for re-forming equil
       IF(cyl_flag)THEN
          mlow=delta_mlow
          mhigh=delta_mhigh
@@ -264,7 +281,7 @@ c-----------------------------------------------------------------------
      $     REAL(psio,4),REAL(betap1,4),REAL(betap2,4),REAL(betap3,4),
      $     REAL(betat,4),REAL(betan,4),REAL(bt0,4),REAL(q0,4),
      $     REAL(qmin,4),REAL(qmax,4),REAL(qa,4),REAL(crnt,4),
-     $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1),REAL(q95),
+     $     REAL(plasma1,4),REAL(vacuum1,4),REAL(total1,4),REAL(q95,4),
      $     REAL(bwall,4),REAL(betaj,4)
       CALL bin_close(sum_unit)
 c-----------------------------------------------------------------------

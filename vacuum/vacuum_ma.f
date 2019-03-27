@@ -554,7 +554,7 @@ c-----------------------------------------------------------------------
 
       dimension z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
      $     zorkpr(nths), zorkpi(nths), zork3(nths), chlagdy(nths,nfm),
-     $     thph(nths), cppgr(nths),cppgi(nths), 
+     $     thph(nths), cppgr(nths),cppgi(nths),
      $     cplgr(nths), cplgi(nths), cplgtr(nths), cplgti(nths),
      $     chwr1(nths),chwi1(nths),
      $     dxdt(nths), dzdt(nths), zkt(nths,2), zkp(nths,2)
@@ -632,20 +632,20 @@ c-----------------------------------------------------------------------
 
       lfarw = 1
       ndlp = mth / ntloop
-     
+
       jmax1 = lmax(1) - lmin(1) + 1
       mth2 = 2*mth
       if ( lfarw .gt. 0 ) mth2 = mth
-     
+
       call bounds(xpla,zpla,1,mth,xmnp,xmxp,zmnp,zmxp)
       xmin = xmnp
       xmax = xmxp
       zmin = zmnp
       zmax = zmxp
-     
+
       plrad = 0.5 * ( xmxp - xmnp )
       xmaj = 0.5 * ( xmxp + xmnp )
-     
+
       do i = 1, ndimlp
          bxr(i) = 0.0
          bxi(i) = 0.0
@@ -659,37 +659,37 @@ c-----------------------------------------------------------------------
          bpr(i) = 0.0
          bpi(i) = 0.0
       end do
-     
+
       if ( lfarw .gt. 0 ) go to 20
-     
-      call bounds(xwal,zwal,1,mw,xmnw,xmxw,zmnw,zmxw)     
+
+      call bounds(xwal,zwal,1,mw,xmnw,xmxw,zmnw,zmxw)
       xmin = min(xmnp,xmnw)
       xmax = max(xmxp,xmxw)
       zmin = min(zmnp,zmnw)
       zmax = max(zmxp,zmxw)
-     
+
  20   CONTINUE
-     
+
       CALL loops
-     
+
       nobs = nloop + 3*nloopr
-     
+
       call bounds ( xloop,zloop,1, nobs, xmn,xmx, zmn,zmx )
       xmin = min( xmin,xmn )
       xmax = max( xmax,xmx )
       zmin = min( zmin,zmn )
       zmax = max( zmax,zmx )
-     
+
       dtpw = dth
       ns = mth
       delx = plrad * deloop
       delz = plrad * deloop
-     
+
       igdl = 8
       isgchi = -1
 
       DO i = 1, nobs
-         
+
          xloops(i) = xloop(i)
          zloops(i) = zloop(i)
 
@@ -698,18 +698,18 @@ c-----------------------------------------------------------------------
             dxjj = xloop(i) - xinf(jj)
             dzjj = zloop(i) - zinf(jj)
             rhoj2 = dxjj**2 + dzjj**2
-            
+
             IF ( rhoj2 < 1.0e-16 ) GO TO 238
             fintjj = fintjj +
      $           ( zplap(jj)*dxjj - xplap(jj)*dzjj ) / rhoj2
          END DO
          fintjj = fintjj / mth
-         
+
          IF ( fintjj > 0.1 ) THEN ! interior
             igdl(i) = 1
             rgdl(i) = -1.0
 
-            IF ( linterior == 0 ) GO TO 239 
+            IF ( linterior == 0 ) GO TO 239
          END IF
          IF ( fintjj < 0.1 ) THEN ! exterior
             igdl(i) = 0
@@ -718,29 +718,29 @@ c-----------------------------------------------------------------------
             IF ( linterior == 1 ) GO TO 239
          END IF
          rwall(i) = -1.0
-         
+
  238     CONTINUE
 
          DO j = 1, mth
-            IF ( (xinf(j)-xloop(i))**2 + (zinf(j)-zloop(i))**2 
+            IF ( (xinf(j)-xloop(i))**2 + (zinf(j)-zloop(i))**2
      $           < (epslp*plrad)**2 )  THEN ! points on surface for these.
                igdl(i) = -1
-               
+
                xloops(i) = xinf(j)
                zloops(i) = zinf(j)
-               
+
                isgchix = int(rgdl(i))*isgchi
                k = max(1,j-1)
                alph = atan2m (xinf(j+1)-xinf(k),zinf(k)-zinf(j+1))
                cosalph = COS(alph)
-               sinalph = SIN(alph) 
-               bxr(i) = bnkr(j)*cosalph/gpsjp(j) + 
+               sinalph = SIN(alph)
+               bxr(i) = bnkr(j)*cosalph/gpsjp(j) +
      $              isgchix*bthpr(j)*sinalph
-               bxi(i) = bnki(j)*cosalph/gpsjp(j) + 
+               bxi(i) = bnki(j)*cosalph/gpsjp(j) +
      $              isgchix*bthpi(j)*sinalph
-               bzr(i) = bnkr(j)*sinalph/gpsjp(j) - 
+               bzr(i) = bnkr(j)*sinalph/gpsjp(j) -
      $              isgchix*bthpr(j)*cosalph
-               bzi(i) = bnki(j)*sinalph/gpsjp(j) - 
+               bzi(i) = bnki(j)*sinalph/gpsjp(j) -
      $              isgchix*bthpi(j)*cosalph
                zchipr(i) = isgchix*chipr(j)
                zchipi(i) = isgchix*chipi(j)
@@ -750,105 +750,105 @@ c-----------------------------------------------------------------------
          END DO
 
  239     CONTINUE
-         
+
       ENDDO
 
       chir = 0.0
       chii = 0.0
-      
+
       DO NSEW = 1, 5
-         
+
          DO i = 1, nobs
 
             chir(nsew,i) = 0.0
             chii(nsew,i) = 0.0
             cwrkr(nsew,i) = 0.0
             cwrki(nsew,i) = 0.0
-            
+
             go to ( 51, 52, 53, 54, 55), nsew
-            
+
  51         continue
 
             xobp(i) = xloop(i)
             zobp(i) = zloop(i) + delz
             go to 90
-            
+
  52         continue
 
             xobp(i) = xloop(i)
             zobp(i) = zloop(i) - delz
             go to 90
-            
+
  53         continue
 
             xobp(i) = xloop(i) + delx
             zobp(i) = zloop(i)
             go to 90
-            
+
  54         continue
 
             xobp(i) = xloop(i) - delx
             zobp(i) = zloop(i)
             GO TO 90
-            
+
  55         CONTINUE
 
-            xobp(i) = xloop(i) 
+            xobp(i) = xloop(i)
             zobp(i) = zloop(i)
-            
+
  90         CONTINUE
 
-         END DO           
-         
+         END DO
+
          do l1 = 1, jmax1
             do i = 1, mth
                chiwc(i,l1) = grri(i,l1)
                chiws(i,l1) = grri(i,jmax1+l1)
             end do
          end do
-         
+
          isg = -1
-         
+
          call chi ( xpla,zpla,xplap,zplap,isg, chiwc,chiws, ns,1,
-     $        cwrkr,cwrki,nsew, blr,bli,rgdl )     
-         
+     $        cwrkr,cwrki,nsew, blr,bli,rgdl )
+
          do  i = 1, nobs
             chir(nsew,i) = cwrkr(nsew,i)
             chii(nsew,i) = cwrki(nsew,i)
          end do
-         
+
          if ( lfarw .gt. 0 ) go to 200
-         
+
          do l1 = 1, jmax1
             do i = 1, mw
                chiwc(i,l1) = grri(mth+i,l1)
                chiws(i,l1) = grri(mth+i,jmax1+l1)
             end do
          end do
-         
+
          do i = 1, nobs
             cwrkr(nsew,i) = 0.0
             cwrki(nsew,i) = 0.0
          end do
-         
+
          isg = 1
-         
+
          call chi ( xwal,zwal,xwalp,zwalp,isg,chiwc,chiws, ns,0,
      $        cwrkr,cwrki,nsew, blr,bli,rwall )
-         
+
          do  i = 1, nobs
             chir(nsew,i) = chir(nsew,i) + cwrkr(nsew,i)
             chii(nsew,i) = chii(nsew,i) + cwrki(nsew,i)
          end do
-         
- 200     CONTINUE
-         
-      END DO   
-         
-      DO i = 1, nobs  
 
-         IF (igdl(i) .EQ. -1) GOTO 300 
-            
+ 200     CONTINUE
+
+      END DO
+
+      DO i = 1, nobs
+
+         IF (igdl(i) .EQ. -1) GOTO 300
+
          bxr(i) = ( chir(3,i) - chir(4,i) ) / (2.0*delx)
          bxi(i) = ( chii(3,i) - chii(4,i) ) / (2.0*delx)
          bzr(i) = ( chir(1,i) - chir(2,i) ) / (2.0*delz)
@@ -859,7 +859,7 @@ c-----------------------------------------------------------------------
          bphii(i) = - n * chir(5,i) / xloop(i)
 
  300     CONTINUE
-         
+
       END DO
 
       DO i = 1, nxlpin
@@ -926,7 +926,7 @@ c-----------------------------------------------------------------------
 
       IF ( a < 10.0 ) THEN
          drl = plrad * a / (nloopr)
-      ELSE 
+      ELSE
          drl = 2.0 * plrad / nloopr
       ENDIF
 
@@ -934,14 +934,14 @@ c-----------------------------------------------------------------------
          xloop(nloop+i) = xmaj + plrad + i * drl - drl/2.0
          zloop(nloop+i) = zpla(ixx)
       END DO
-c     
+c
       DO i = 1, nloopr
          il = nloop + nloopr + i
          xloop(il) = xmaj - plrad - i * drl + drl/2.0
          IF ( xloop(il) <= .01*xmaj ) xloop(il) = .01*xmaj
          zloop(il) = zpla(ixn)
       END DO
-c     
+c
       DO i = 1, nloopr
          il = nloop + 2*nloopr + i
          xloop(il) = xpla(izx)
@@ -978,17 +978,17 @@ c-----------------------------------------------------------------------
 
       nq = n * q
       dtpw = twopi / ns
-   
+
       ns1 = ns + 1
       nobs = nloop + 3*nloopr
-     
+
       do io = 1, nobs
-  
+
          xs = xobp(io)
          zs = zobp(io)
 
          do is = 1, ns
-            
+
             xt = xsce(is)
             zt = zsce(is)
             xtp = xscp(is)
@@ -997,34 +997,34 @@ c-----------------------------------------------------------------------
             call green
 
             bval = bval / factpi
-     
+
             do l1 = 1, jmax1
-     
+
                zbr = blr(l1)
                zbi = bli(l1)
-               chir(nsew,io) = chir(nsew,io) + 
+               chir(nsew,io) = chir(nsew,io) +
      $              aval * ( creal(is,l1)*zbr - cimag(is,l1)*zbi )
                chii(nsew,io) = chii(nsew,io) +
      $              aval * ( cimag(is,l1)*zbr + creal(is,l1)*zbi )
-     
+
                if ( ip .eq. 0 ) go to 60
 
                chir(nsew,io) = chir(nsew,io) + rgdl(io) * bval
      $              * ( cslth(is,l1)*zbr - snlth(is,l1)*zbi )
                chii(nsew,io) = chii(nsew,io) + rgdl(io) * bval
      $              * ( snlth(is,l1)*zbr + cslth(is,l1)*zbi )
-     
+
  60            continue
             end do
          end do
-     
+
          chir(nsew,io) = 0.5 * isg*dtpw * chir(nsew,io)
          chii(nsew,io) = 0.5 * isg*dtpw * chii(nsew,io)
-     
+
       end do
 c-----------------------------------------------------------------------
 c     termination.
-c-----------------------------------------------------------------------     
+c-----------------------------------------------------------------------
       return
       end
 

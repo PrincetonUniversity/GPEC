@@ -15,11 +15,42 @@
 # command in order to compile.
 #
 # On portal.pppl.gov
-#   Developers should load the default intel/11.0.081 and associated libraries,
+#   Developers can always load the gpec/0.0 module (development branch module) to get the latest compiler settings
+#     $ module use /p/gpec/modules; load gpec/0.0
+#   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
+#     $ module load module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#   Note that before the netcdf module was properly set up, we had to manually load supporting modules
+#     $ module load module load intel/2018.u1 openmpi szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#   Any of these should properly set up your LD_LIBRARY_PATH and PATH. Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message,
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /usr/pppl/intel/2018.u1/bin/ifort
+#      using math libraries -lacml
+#      from /usr/pppl/acml/5.3.1/ifort64/lib
+#      including /usr/pppl/acml/5.3.1/ifort64/include
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /usr/pppl/intel/2018-pkgs/netcdf-fortran-4.4.4/lib /usr/pppl/intel/2018-pkgs/netcdf-c-4.6.0/lib
+#      including /usr/pppl/intel/2018-pkgs/netcdf-fortran-4.4.4/include
+#      and compiler libraries -lintlc -limf
+#      from /usr/pppl/intel/2018.u1/lib/intel64
+#      including /usr/pppl/intel/2018.u1/include/intel64
+#
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compiling using
+#    $ make
+#   Should set all the right flags and run through.
+#
+#   Developers can also load the default intel/11.0.081 and associated libraries,
 #     $ module load intel openmpi netcdf acml/5.3.1/ifort64 git
 #   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
-#   in this install directory should produce the following verbose message,
+#   in this install directory should produce the following verbose message.
 #
 #   ------------------------------------------------------------
 #   Defaults tailored for
@@ -37,18 +68,17 @@
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
 #   ------------------------------------------------------------
 #
-#   Now compile using
-#    $ make FFLAGS="-openmp -vec_report0"
+#   In this case, one should compile using
+#    $ make FFLAGS="-openmp -vec_report0" 2>&1 | tee make.log
 #
 # On ukstar
 #   Developers should use the default intel compiler and load the netcdf_intel module
 #     $ module load netcdf/netcdf_intel
 #     $ export F90HOME=/opt/intel/compilers_and_libraries_2018.1.163/linux
 #     $ export FC=/opt/intel/compilers_and_libraries_2018.1.163/linux/bin/intel64/ifort
-
 #   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
-#   in this install directory should produce the following verbose message,
+#   in this install directory should produce the following verbose message.
 #
 #   ------------------------------------------------------------
 #   Defaults tailored for
@@ -67,10 +97,73 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS="-qopenmp"
+#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
 #
 # On iris.gat.com
-#   With the move to licensed intel compilers, OSX is no longer actively supported.
+#   Developers should use the ifort compiler and associated netcdf module
+#     $ module load ifort/ifort2017 netcdf/4.4.1-mpich3.2-ifort2017
+#   Then set one undefined environment variable
+#     $ export F90HOME=/fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux
+#   Alternately, you can simply load the gpec module!
+#     $ module load gpec
+#   This should properly set up your LD_LIBRARY_PATH, PATH, and environment variables.
+#    Either way, executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux/bin/intel64/ifort
+#      using math libraries -lmkl_rt
+#      from /fusion/usc/opt/intel2017//compilers_and_libraries/linux/mkl/lib/intel64
+#      including /fusion/usc/opt/intel2017//compilers_and_libraries/linux/mkl/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/lib /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/lib
+#      including /fusion/usc/opt/netcdf/netcdf-4.4.1_mpich-3.2_ifort2017/include
+#      and compiler libraries -lirc -limf
+#      from /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux//lib/intel64
+#      including /fusion/usc/opt/intel2018/compilers_and_libraries_2018.2.199/linux//compiler/include/intel64
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#
+# On toki0*.aug.ipp.mpg.de
+#   Developers should use the ifort compiler as well as the associated impi and netcdf modules
+#     $ module load intel/14.0 impi netcdf-mpi/4.3.2 mkl git
+#   Then set undefined environment variables
+#     $ export F90HOME=/afs/@cell/common/soft/intel/ics2013/14.0
+#     $ export FC=/afs/@cell/common/soft/intel/ics2016.3/16.0/linux/bin/intel64/bin/ifort
+#     $ export NETCDFHOME=/afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3
+#   Alternately, you can simply load the gpec module!
+#     $ module use /afs/ipp-garching.mpg.de/home/n/nlogan/modulefiles
+#     $ module load gpec
+#   This should properly set up your LD_LIBRARY_PATH, PATH, and environment variables.
+#   Either way, executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#
+#   nlogan@toki02 105)
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /afs/@cell/common/soft/intel/ics2013/14.0/bin/intel64/bin/ifort
+#      using math libraries -lmkl_rt
+#      from /afs/@cell/common/soft/intel/ics2013/14.0/mkl/lib/intel64
+#      including /afs/@cell/common/soft/intel/ics2013/14.0/mkl/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/lib /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/lib
+#      including /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/include
+#      and compiler libraries -lirc -limf
+#      from /afs/@cell/common/soft/intel/ics2013/14.0//lib/intel64
+#      including /afs/@cell/common/soft/intel/ics2013/14.0//compiler/include/intel64
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#    $ make FFLAGS='-openmp' 2>&1 | tee make.log
 #
 # On mac OSX
 #   With the move to licensed intel compilers, OSX is no longer actively supported.
@@ -164,8 +257,8 @@ endif
 # include compiler specific libs for intel fast moves
 ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
-    FCLIBS = -lirc -limf # irc.a needed for static compile
-    #FCLIBS = -lintlc -limf # intlc was new for intel?
+#    FCLIBS = -lirc -limf # irc.a needed for static compile
+    FCLIBS = -lintlc -limf # intel changed irc to intlc ~2013?
     FCINC = $(F90HOME)/include/intel64
 else
     FCDIR = /usr/lib64
@@ -173,5 +266,15 @@ else
     FCINC = /usr/include
 endif
 
-
-########################
+# SuperLU options
+#------------------
+# determine if we need to unpack our own SuperLU tarball
+SLU_COMMAND = cd ../superlu; ./remakeSuperLU.sh
+# ... or if we just need to make our existing unpacked SuperLU
+ifneq ($(wildcard ../superlu/SuperLU_5.2.1/.),)
+	SLU_COMMAND = cd ../superlu/SuperLU_5.2.1; make
+endif
+# ... or if we already have a valid SuperLU and shouldn't bother
+#ifneq some_magic_test_if_necessary_libs_are_in_path
+#	SLU_COMMAND =
+#endif

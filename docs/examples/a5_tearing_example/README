@@ -1,0 +1,34 @@
+This is an example showing how to use RDCON and RMATCH to find tearing mode growth rates.
+Summary of workflow:
+../../../bin/rdcon
+../../../bin/rmatch
+
+In rdcon.in, it is essential to set
+gal_flag=t        #turn on delta' calucation
+coil%rpec_flag=f  #turn off computation of resistive response
+Note: rpec_flag = t RDCON will prepare the solution for the computation of resistive plasma response.
+
+Then, run
+../../../bin/rdcon
+
+You can check delta prime here.
+more pest3_data_re.out 
+ PEST3 matching data real part:
+  i   j  Aij        Bij        Gammaij    Deltaij
+  1   1  2.363E+03  1.393E+03  1.640E+03  1.290E+01
+
+Deltaij is real part of delta prime
+
+In rmatch, the parameters related to inner region should be set.
+msing (type:int scalar, number of singular sufaces included for matching)
+initguess (type: complex scalar, init value of eigenvalue for root finder)
+eta (type: real array, resistivity for each singular surface)
+massden (type: real array, mass density for each singular surface)
+Now, run rmatch
+../../../bin/rmatch
+
+The result should be
+Eigenvalue=  9.391E+00  4.133E-01
+
+
+ 

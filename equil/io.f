@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: out1_unit=21
       INTEGER :: bin1_unit=22
-      
+
       INTEGER :: gal_out_unit=31
       INTEGER :: gal_bin_unit=32
 
