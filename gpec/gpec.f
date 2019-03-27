@@ -549,9 +549,7 @@ c-----------------------------------------------------------------------
          CALL gpout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
       ENDIF
       IF (singfld_flag .AND. vsbrzphi_flag) THEN
-         DO i=1,msing
-            IF (ss_flag(i)) CALL gpout_vsbrzphi(i,nr,nz)
-         ENDDO
+         CALL gpout_vsbrzphi(ss_flag,nr,nz)
       ENDIF
 
       IF (xbrzphifun_flag) THEN
