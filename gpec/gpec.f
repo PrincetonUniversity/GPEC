@@ -515,6 +515,10 @@ c-----------------------------------------------------------------------
       IF (coil_flag .AND. vsingfld_flag) THEN
          CALL gpout_vsingfld()
       ENDIF
+      ! here we see the subroutine is simply called in series with other
+      ! similar subroutines by the driving program here
+      ! this and gpec_pmodb, for example, are completely independent
+      ! (just different ways of breaking up the components of the fields/displacements)
       IF(netcdf_flag.and.(xclebsch_flag.or.dw_flag.or.pmodb_flag
      $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag))THEN
          CALL gpout_qrv

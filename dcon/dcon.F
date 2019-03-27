@@ -83,7 +83,14 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
+#ifdef _OPENMP
+c The code is compiled with the OpenMP option so the preprocessor
+c will pick include the following line
       CALL OMP_SET_NUM_THREADS(parallel_threads)
+#else
+c No OpenMP so the following line will appear in source code
+      parallel_threads = 1
+#endif
       delta_mhigh=delta_mhigh*2
       use_classic_splines_for_dcon = use_classic_splines
 c-----------------------------------------------------------------------

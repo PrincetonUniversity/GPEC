@@ -1,7 +1,6 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
 IFLAGS = -I../equil -I$(MATHINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS

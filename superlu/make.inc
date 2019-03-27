@@ -27,6 +27,9 @@ TMGLIB      = libtmglib.a
 BLASLIB	  	= $(SuperLUroot)/libblas.a
 LIBS		= $(SUPERLULIB) $(SuperLUroot)/libblas.a
 
+# include gpec specific flags and settings
+include $(SuperLUroot)/../install/DEFAULTS.inc
+
 #
 #  The archiver and the flag(s) to use when building archive (library)
 #  If your system has no ranlib, set RANLIB = echo.

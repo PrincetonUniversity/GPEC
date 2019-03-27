@@ -3,11 +3,11 @@
 # based on what libraries are available on the current machine.
 #
 # Prior to version 1.2, GPEC could be compiled using ifort, pgf, gfortran,
-# or lfc. All public releases on portal wheree compiled using lfc, which
+# or lfc. All public releases on portal were compiled using lfc, which
 # required only default user path libraries.
 #
-# With the release of 1.2, the options have been greatly simplified by
-# restricting all compilation to intel compilers compatible wth openmpi.
+# With the release of 1.2, the options restricted to more modern compilers
+# compatible wth openmpi.
 # Machine specific instructions are below.
 #
 # Note that GPEC uses git to fetch/update the harvest repository as well as
@@ -163,11 +163,32 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS='-openmp' 2>&1 | tee make.log
+#     $ make FFLAGS='-openmp' 2>&1 | tee make.log
 #
 # On mac OSX
-#   With the move to licensed intel compilers, OSX is no longer actively supported.
+#   If one has installed the free gfortran compiler and built netcdf and lapack,
+#   a typical set of paths looks like the following.
+#     $ make v
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /usr/local/bin/gfortran
+#      using math libraries -llapack -lblas
+#      from /usr/lib
+#      including /usr/lib
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /opt/local/lib /opt/local/lib
+#      including /opt/local/include
+#      and compiler libraries
+#      from .
+#      including .
 #
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+# Some common modifications of the above settings might include,
+#     $ make FFLAGS="-qopenmp -qopt-report -g -O0 -check all"  # for debugging
+#     $ make FFLAGS="-qopenmp -O3"     # for optimized version
+#     $ make FFLAGS="-qopenmp  -xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
@@ -177,6 +198,16 @@
 
 # general defaults
 #------------------
+
+# The new modules on portal at PPPL now use LAPACK_HOME instead of LAPACKHOME
+ifndef LAPACKHOME
+   ifdef LAPACK_HOME
+         LAPACKHOME = $(LAPACK_HOME)
+   endif
+endif
+
+# If using the Intel compiler, the MKL library is a better choice for lapack+blas
+# The ACML library is not being maintained anymore but we can leave it there for now
 
 # use acml or lapack based on what is loaded
 ifdef MKLROOT
@@ -189,7 +220,7 @@ else ifdef ACML_HOME
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
 else
-    echo "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME"
+    $(info "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME")
 endif
 
 # specifics of which libraries are used
@@ -227,7 +258,7 @@ ifdef NETCDF_FORTRAN_HOME
 else
     ifndef NETCDFHOME
         ifndef NETCDF_DIR
-            echo "Must set NETCDF_FORTRAN_HOME, NETCDFHOME, or NETCDF_DIR"
+            $(info "Must set NETCDF_FORTRAN_HOME, NETCDFHOME, or NETCDF_DIR")
         else
             NETCDFHOME = $(NETCDF_DIR)
         endif
@@ -248,15 +279,18 @@ ifdef NETCDF_C_HOME
     NETCDFLIBS = -lnetcdff
     NETCDF_C_LIBS = -lnetcdf
     NETCDF_C_DIR = $(NETCDF_C_HOME)/lib
+    NETCDF_EXTRA_LIBS = -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
 else
     ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
         NETCDFLIBS = -lnetcdff
         NETCDF_C_LIBS = -lnetcdf
         NETCDF_C_DIR = $(NETCDFDIR)
+        NETCDF_EXTRA_LIBS = -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
     else
         NETCDFLIBS = -lnetcdf
-        NETCDF_C_LIBS = $(NETCDFDIR)
-        NETCDF_C_DIR = -lnetcdf
+        NETCDF_C_LIBS = -lnetcdf
+        NETCDF_C_DIR = $(NETCDFDIR)
+        NETCDF_EXTRA_LIBS =
     endif
 endif
 
@@ -268,14 +302,17 @@ ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
 #    FCLIBS = -lirc -limf # irc.a needed for static compile
     FCLIBS = -lintlc -limf # intel changed irc to intlc ~2013?
     FCINC = $(F90HOME)/include/intel64
+    NETCDF_EXTRA_LIBS += -L$(FCDIR) $(FCLIBS)
 else ifneq ($(wildcard $(F90HOME)/compiler/lib/intel64/.),)
     FCDIR = $(F90HOME)/lib/intel64
     FCLIBS = -lirc -limf # irc.a needed for static compile
     FCINC = $(F90HOME)/compiler/include/intel64
+    NETCDF_EXTRA_LIBS += -L$(FCDIR) $(FCLIBS)
 else
     FCDIR = .
     FCLIBS =
     FCINC = .
+    NETCDF_EXTRA_LIBS =
 endif
 
 # SuperLU options

@@ -1,15 +1,17 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
 IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS
 
 .f.o:
 	$(F90) -c $*.f
 
 %.o: %.f90
+	$(F90) -c $<
+
+%.o: %.F90
 	$(F90) -c $<
 
 LIBDIR = ../lib
@@ -65,7 +67,7 @@ endif
 force:
 
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
 	mkdir -p ../bin

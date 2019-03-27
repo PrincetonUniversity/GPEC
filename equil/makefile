@@ -1,8 +1,5 @@
 
-FFLAGS = -qopenmp
-EXTRA_FFLAGS = #-mkl #-diag-disable 10397 #-xHost #-03  #-qopt-zmm-usage=high #-ipo
-
-F90 = $(FC) $(FFLAGS) $(EXTRA_FFLAGS)
+F90 = $(FC) $(FFLAGS)
 
 CFLAGS = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_
 CC = gcc $(CFLAGS)

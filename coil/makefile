@@ -1,5 +1,4 @@
 
-FFLGAS =
 IFLAGS = -I../equil
 
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
