@@ -504,8 +504,7 @@ c-----------------------------------------------------------------------
       CHARACTER(72), DIMENSION(nsingcoup) :: titles, names
       CHARACTER(4), DIMENSION(nsingcoup) :: units
       CHARACTER(1), DIMENSION(nsingcoup) :: tags
-      INTEGER :: idid, mdid, odid, cdid, mc_id, mo_id
-      INTEGER, DIMENSION(msing) :: modec
+      INTEGER :: idid, mdid, odid, cdid
       INTEGER, DIMENSION(nsingcoup) :: c_id, r_id, s_id,
      $     cl_id, rl_id, sl_id
 
@@ -955,20 +954,11 @@ c-----------------------------------------------------------------------
          ! references to pre-defined dimensions
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
          CALL check( nf90_inq_dimid(mncid,"m_out",mdid) )
+         CALL check( nf90_inq_dimid(mncid,"mode_C",cdid) )
+         CALL check( nf90_inq_dimid(mncid,"mode_C_local",odid) )
 
          ! start definitions
          CALL check( nf90_redef(mncid))
-         CALL check( nf90_def_dim(mncid,"mode_C",msing,cdid) )
-         CALL check( nf90_def_var(mncid,"mode_C",nf90_int,cdid,
-     $               mc_id) )
-         CALL check( nf90_put_att(mncid, mc_id ,"long_name",
-     $    "Singular coupling mode index") )
-         CALL check( nf90_def_dim(mncid,"mode_C_local",osing,odid) )
-         CALL check( nf90_def_var(mncid,"mode_C_local",nf90_int,odid,
-     $               mo_id) )
-         CALL check( nf90_put_att(mncid, mo_id ,"long_name",
-     $    "Localized singular coupling mode index") )
-
          DO i=1,nsingcoup
             CALL check( nf90_def_var(mncid,"C_"//tags(i)//"_x_out",
      $           nf90_double, (/mdid,cdid,idid/), c_id(i)) )
@@ -1010,9 +1000,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_enddef(mncid) )
 
          ! write variables
-         modec = (/(i,i=1,msing)/)
-         CALL check( nf90_put_var(mncid,mc_id,modec) )
-         CALL check( nf90_put_var(mncid,mo_id,modec(1:osing)) )
          DO i=1,nsingcoup
             CALL check( nf90_put_var(mncid,c_id(i),RESHAPE(
      $           (/REAL(singcoup_out(i,:,:)),
@@ -1571,7 +1558,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i_id,q_id,p_id,c_id,w_id,k_id,n_id,d_id,
+      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,
      $           pp_id,cp_id,wp_id,np_id,dp_id
 
       INTEGER :: itheta,ising,icoup
@@ -1733,7 +1720,7 @@ c-----------------------------------------------------------------------
       IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-         CALL check( nf90_inq_dimid(fncid,"psi_n_rat",q_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n_rational",q_id) )
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
      $      (/q_id,i_id/), p_id) )
@@ -1811,77 +1798,77 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF(netcdf_flag .AND. msing>0)THEN
-            CALL check( nf90_open(fncfile,nf90_write,fncid) )
-            CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-            CALL check( nf90_inq_dimid(fncid,"psi_n_rat",q_id) )
-            CALL check( nf90_redef(fncid))
-            CALL check( nf90_def_var(fncid, "Phi_overlap", nf90_double,
-     $         (/q_id,i_id/), p_id) )
-            CALL check( nf90_put_att(fncid, p_id, "units", "unitless") )
-            CALL check( nf90_put_att(fncid, p_id, "long_name",
+            CALL check( nf90_open(mncfile,nf90_write,mncid) )
+            CALL check( nf90_inq_dimid(mncid,"i",i_id) )
+            CALL check( nf90_inq_dimid(mncid,"mode_C",m_id) )
+            CALL check( nf90_redef(mncid))
+            CALL check( nf90_def_var(mncid, "Phi_overlap", nf90_double,
+     $         (/m_id,i_id/), p_id) )
+            CALL check( nf90_put_att(mncid, p_id, "units", "unitless") )
+            CALL check( nf90_put_att(mncid, p_id, "long_name",
      $        "Pitch resonant flux overlap") )
-            CALL check( nf90_def_var(fncid, "Phi_overlap_norm",
-     $         nf90_double,(/q_id/), pp_id) )
-            CALL check( nf90_put_att(fncid, pp_id, "units", "unitless"))
-            CALL check( nf90_put_att(fncid, pp_id, "long_name",
+            CALL check( nf90_def_var(mncid, "Phi_overlap_norm",
+     $         nf90_double,(/m_id/), pp_id) )
+            CALL check( nf90_put_att(mncid, pp_id, "units", "unitless"))
+            CALL check( nf90_put_att(mncid, pp_id, "long_name",
      $        "Pitch resonant flux overlap percentage") )
-            CALL check( nf90_def_var(fncid, "I_overlap", nf90_double,
-     $         (/q_id,i_id/), c_id) )
-            CALL check( nf90_put_att(fncid, c_id, "units", "unitless") )
-            CALL check( nf90_put_att(fncid, c_id, "long_name",
+            CALL check( nf90_def_var(mncid, "I_overlap", nf90_double,
+     $         (/m_id,i_id/), c_id) )
+            CALL check( nf90_put_att(mncid, c_id, "units", "unitless") )
+            CALL check( nf90_put_att(mncid, c_id, "long_name",
      $        "Pitch resonant current overlap") )
-            CALL check( nf90_def_var(fncid, "I_overlap_norm",
-     $         nf90_double,(/q_id,i_id/), cp_id) )
-            CALL check( nf90_put_att(fncid, cp_id, "units", "unitless"))
-            CALL check( nf90_put_att(fncid, cp_id, "long_name",
+            CALL check( nf90_def_var(mncid, "I_overlap_norm",
+     $         nf90_double,(/m_id,i_id/), cp_id) )
+            CALL check( nf90_put_att(mncid, cp_id, "units", "unitless"))
+            CALL check( nf90_put_att(mncid, cp_id, "long_name",
      $        "Pitch resonant current overlap percentage") )
-            CALL check( nf90_def_var(fncid, "w_overlap", nf90_double,
-     $         (/q_id,i_id/), w_id) )
-            CALL check( nf90_put_att(fncid, w_id, "units", "untiless") )
-            CALL check( nf90_put_att(fncid, w_id, "long_name",
+            CALL check( nf90_def_var(mncid, "w_overlap", nf90_double,
+     $         (/m_id,i_id/), w_id) )
+            CALL check( nf90_put_att(mncid, w_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, w_id, "long_name",
      $        "Full width of saturated island overlap") )
-            CALL check( nf90_def_var(fncid, "w_overlap_norm",
-     $         nf90_double,(/q_id/), wp_id) )
-            CALL check( nf90_put_att(fncid, wp_id, "units", "untiless"))
-            CALL check( nf90_put_att(fncid, wp_id, "long_name",
+            CALL check( nf90_def_var(mncid, "w_overlap_norm",
+     $         nf90_double,(/m_id/), wp_id) )
+            CALL check( nf90_put_att(mncid, wp_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, wp_id, "long_name",
      $        "Full width of saturated island overlap percentage") )
-            CALL check( nf90_def_var(fncid, "Pen_overlap", nf90_double,
-     $         (/q_id, i_id/), n_id) )
-            CALL check( nf90_put_att(fncid, n_id, "units", "untiless") )
-            CALL check( nf90_put_att(fncid, n_id, "long_name",
+            CALL check( nf90_def_var(mncid, "Pen_overlap", nf90_double,
+     $         (/m_id, i_id/), n_id) )
+            CALL check( nf90_put_att(mncid, n_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, n_id, "long_name",
      $        "Penetrated flux overlap") )
-            CALL check( nf90_def_var(fncid, "Pen_overlap_norm",
-     $         nf90_double,(/q_id/), np_id) )
-            CALL check( nf90_put_att(fncid, np_id, "units", "untiless"))
-            CALL check( nf90_put_att(fncid, np_id, "long_name",
+            CALL check( nf90_def_var(mncid, "Pen_overlap_norm",
+     $         nf90_double,(/m_id/), np_id) )
+            CALL check( nf90_put_att(mncid, np_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, np_id, "long_name",
      $        "Penetrated flux overlap percentage") )
-            CALL check( nf90_def_var(fncid, "Delta_overlap",nf90_double,
-     $         (/q_id, i_id/), d_id) )
-            CALL check( nf90_put_att(fncid, d_id, "units", "untiless") )
-            CALL check( nf90_put_att(fncid, d_id, "long_name",
+            CALL check( nf90_def_var(mncid, "Delta_overlap",nf90_double,
+     $         (/m_id, i_id/), d_id) )
+            CALL check( nf90_put_att(mncid, d_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, d_id, "long_name",
      $        "Extrenal Delta prime overlap") )
-            CALL check( nf90_def_var(fncid, "Delta_overlap_norm",
-     $         nf90_double,(/q_id/), dp_id) )
-            CALL check( nf90_put_att(fncid, dp_id, "units", "untiless"))
-            CALL check( nf90_put_att(fncid, dp_id, "long_name",
+            CALL check( nf90_def_var(mncid, "Delta_overlap_norm",
+     $         nf90_double,(/m_id/), dp_id) )
+            CALL check( nf90_put_att(mncid, dp_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, dp_id, "long_name",
      $        "Extrenal Delta prime overlap percentage") )
-            CALL check( nf90_enddef(fncid) )
-            CALL check( nf90_put_var(fncid, p_id, RESHAPE((/
+            CALL check( nf90_enddef(mncid) )
+            CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
      $         REAL(olap(1,:)),AIMAG(olap(1,:))/), (/msing,2/))) )
-            CALL check( nf90_put_var(fncid, c_id, RESHAPE((/
+            CALL check( nf90_put_var(mncid, c_id, RESHAPE((/
      $         REAL(olap(2,:)),AIMAG(olap(2,:))/), (/msing,2/))) )
-            CALL check( nf90_put_var(fncid, w_id, RESHAPE((/
+            CALL check( nf90_put_var(mncid, w_id, RESHAPE((/
      $         REAL(olap(3,:)),AIMAG(olap(3,:))/), (/msing,2/))) )
-            CALL check( nf90_put_var(fncid, n_id, RESHAPE((/
+            CALL check( nf90_put_var(mncid, n_id, RESHAPE((/
      $         REAL(olap(4,:)),AIMAG(olap(4,:))/), (/msing,2/))) )
-            CALL check( nf90_put_var(fncid, d_id, RESHAPE((/
+            CALL check( nf90_put_var(mncid, d_id, RESHAPE((/
      $         REAL(olap(5,:)),AIMAG(olap(5,:))/), (/msing,2/))) )
-            CALL check( nf90_put_var(fncid, pp_id, op(1,:)) )
-            CALL check( nf90_put_var(fncid, cp_id, op(2,:)) )
-            CALL check( nf90_put_var(fncid, wp_id, op(3,:)) )
-            CALL check( nf90_put_var(fncid, np_id, op(4,:)) )
-            CALL check( nf90_put_var(fncid, dp_id, op(5,:)) )
-            CALL check( nf90_close(fncid) )
+            CALL check( nf90_put_var(mncid, pp_id, op(1,:)) )
+            CALL check( nf90_put_var(mncid, cp_id, op(2,:)) )
+            CALL check( nf90_put_var(mncid, wp_id, op(3,:)) )
+            CALL check( nf90_put_var(mncid, np_id, op(4,:)) )
+            CALL check( nf90_put_var(mncid, dp_id, op(5,:)) )
+            CALL check( nf90_close(mncid) )
          ENDIF
 
          ! information already in netcdf from control_filter subroutine
@@ -1921,82 +1908,82 @@ c-----------------------------------------------------------------------
             ENDIF
 
             IF(netcdf_flag .AND. osing>0)THEN
-               CALL check( nf90_open(fncfile,nf90_write,fncid) )
-               CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-               CALL check( nf90_inq_dimid(fncid,"psi_n_local",q_id) )
-               CALL check( nf90_redef(fncid))
-               CALL check( nf90_def_var(fncid, "Phi_local_overlap",
-     $            nf90_double,(/q_id,i_id/), p_id) )
-               CALL check( nf90_put_att(fncid, p_id,"units","unitless"))
-               CALL check( nf90_put_att(fncid, p_id, "long_name",
+               CALL check( nf90_open(mncfile,nf90_write,mncid) )
+               CALL check( nf90_inq_dimid(mncid,"i",i_id) )
+               CALL check( nf90_inq_dimid(mncid,"mode_C_local",m_id) )
+               CALL check( nf90_redef(mncid))
+               CALL check( nf90_def_var(mncid, "Phi_local_overlap",
+     $            nf90_double,(/m_id,i_id/), p_id) )
+               CALL check( nf90_put_att(mncid, p_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, p_id, "long_name",
      $           "Local pitch resonant flux overlap") )
-               CALL check( nf90_def_var(fncid, "Phi_local_overlap_norm",
-     $            nf90_double,(/q_id/), pp_id) )
-               CALL check( nf90_put_att(fncid,pp_id,"units","unitless"))
-               CALL check( nf90_put_att(fncid, pp_id, "long_name",
+               CALL check( nf90_def_var(mncid, "Phi_local_overlap_norm",
+     $            nf90_double,(/m_id/), pp_id) )
+               CALL check( nf90_put_att(mncid,pp_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, pp_id, "long_name",
      $           "Local pitch resonant flux overlap percentage") )
-               CALL check( nf90_def_var(fncid, "I_local_overlap",
-     $            nf90_double,(/q_id,i_id/), c_id) )
-               CALL check( nf90_put_att(fncid, c_id,"units","unitless"))
-               CALL check( nf90_put_att(fncid, c_id, "long_name",
+               CALL check( nf90_def_var(mncid, "I_local_overlap",
+     $            nf90_double,(/m_id,i_id/), c_id) )
+               CALL check( nf90_put_att(mncid, c_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, c_id, "long_name",
      $           "Local pitch resonant current overlap") )
-               CALL check( nf90_def_var(fncid, "I_local_overlap_norm",
-     $            nf90_double,(/q_id/), cp_id) )
-               CALL check( nf90_put_att(fncid,cp_id,"units","unitless"))
-               CALL check( nf90_put_att(fncid, cp_id, "long_name",
+               CALL check( nf90_def_var(mncid, "I_local_overlap_norm",
+     $            nf90_double,(/m_id/), cp_id) )
+               CALL check( nf90_put_att(mncid,cp_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, cp_id, "long_name",
      $           "Local pitch resonant current overlap percentage") )
-               CALL check( nf90_def_var(fncid, "w_local_overlap",
-     $            nf90_double,(/q_id,i_id/), w_id) )
-               CALL check( nf90_put_att(fncid, w_id,"units","untiless"))
-               CALL check( nf90_put_att(fncid, w_id, "long_name",
+               CALL check( nf90_def_var(mncid, "w_local_overlap",
+     $            nf90_double,(/m_id,i_id/), w_id) )
+               CALL check( nf90_put_att(mncid, w_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, w_id, "long_name",
      $           "Local full width of saturated island overlap") )
-               CALL check( nf90_def_var(fncid, "w_local_overlap_norm",
-     $            nf90_double,(/q_id/), wp_id) )
-               CALL check( nf90_put_att(fncid,wp_id,"units","untiless"))
-               CALL check( nf90_put_att(fncid, wp_id, "long_name",
+               CALL check( nf90_def_var(mncid, "w_local_overlap_norm",
+     $            nf90_double,(/m_id/), wp_id) )
+               CALL check( nf90_put_att(mncid,wp_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, wp_id, "long_name",
      $      "Local full width of saturated island overlap percentage") )
-               CALL check( nf90_def_var(fncid, "Pen_local_overlap",
-     $            nf90_double,(/q_id, i_id/), n_id) )
-               CALL check( nf90_put_att(fncid, n_id,"units","untiless"))
-               CALL check( nf90_put_att(fncid, n_id, "long_name",
+               CALL check( nf90_def_var(mncid, "Pen_local_overlap",
+     $            nf90_double,(/m_id, i_id/), n_id) )
+               CALL check( nf90_put_att(mncid, n_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, n_id, "long_name",
      $           "Local penetrated flux overlap") )
-               CALL check( nf90_def_var(fncid, "Pen_local_overlap_norm",
-     $            nf90_double,(/q_id/), np_id) )
-               CALL check( nf90_put_att(fncid,np_id,"units","untiless"))
-               CALL check( nf90_put_att(fncid, np_id, "long_name",
+               CALL check( nf90_def_var(mncid, "Pen_local_overlap_norm",
+     $            nf90_double,(/m_id/), np_id) )
+               CALL check( nf90_put_att(mncid,np_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, np_id, "long_name",
      $           "Local penetrated flux overlap percentage") )
-               CALL check( nf90_def_var(fncid, "Delta_local_overlap",
-     $            nf90_double,(/q_id, i_id/), d_id) )
-               CALL check( nf90_put_att(fncid, d_id,"units","untiless"))
-               CALL check( nf90_put_att(fncid, d_id, "long_name",
+               CALL check( nf90_def_var(mncid, "Delta_local_overlap",
+     $            nf90_double,(/m_id, i_id/), d_id) )
+               CALL check( nf90_put_att(mncid, d_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, d_id, "long_name",
      $           "Local extrenal Delta prime overlap") )
-              CALL check( nf90_def_var(fncid,"Delta_local_overlap_norm",
-     $            nf90_double,(/q_id/), dp_id) )
-               CALL check( nf90_put_att(fncid,dp_id,"units","untiless"))
-               CALL check( nf90_put_att(fncid, dp_id, "long_name",
+              CALL check( nf90_def_var(mncid,"Delta_local_overlap_norm",
+     $            nf90_double,(/m_id/), dp_id) )
+               CALL check( nf90_put_att(mncid,dp_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, dp_id, "long_name",
      $           "Local extrenal Delta prime overlap percentage") )
-               CALL check( nf90_enddef(fncid) )
-               CALL check( nf90_put_var(fncid, p_id, RESHAPE((/
+               CALL check( nf90_enddef(mncid) )
+               CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
      $            REAL(olap(1,:osing)),AIMAG(olap(1,:osing))/),
      $            (/osing,2/))) )
-               CALL check( nf90_put_var(fncid, c_id, RESHAPE((/
+               CALL check( nf90_put_var(mncid, c_id, RESHAPE((/
      $            REAL(olap(2,:osing)),AIMAG(olap(2,:osing))/),
      $            (/osing,2/))) )
-               CALL check( nf90_put_var(fncid, w_id, RESHAPE((/
+               CALL check( nf90_put_var(mncid, w_id, RESHAPE((/
      $            REAL(olap(3,:osing)),AIMAG(olap(3,:osing))/),
      $            (/osing,2/))) )
-               CALL check( nf90_put_var(fncid, n_id, RESHAPE((/
+               CALL check( nf90_put_var(mncid, n_id, RESHAPE((/
      $            REAL(olap(4,:osing)),AIMAG(olap(4,:osing))/),
      $            (/osing,2/))) )
-               CALL check( nf90_put_var(fncid, d_id, RESHAPE((/
+               CALL check( nf90_put_var(mncid, d_id, RESHAPE((/
      $            REAL(olap(5,:osing)),AIMAG(olap(5,:osing))/),
      $            (/osing,2/))) )
-               CALL check( nf90_put_var(fncid, pp_id, op(1,1:osing)) )
-               CALL check( nf90_put_var(fncid, cp_id, op(2,1:osing)) )
-               CALL check( nf90_put_var(fncid, wp_id, op(3,1:osing)) )
-               CALL check( nf90_put_var(fncid, np_id, op(4,1:osing)) )
-               CALL check( nf90_put_var(fncid, dp_id, op(5,1:osing)) )
-               CALL check( nf90_close(fncid) )
+               CALL check( nf90_put_var(mncid, pp_id, op(1,1:osing)) )
+               CALL check( nf90_put_var(mncid, cp_id, op(2,1:osing)) )
+               CALL check( nf90_put_var(mncid, wp_id, op(3,1:osing)) )
+               CALL check( nf90_put_var(mncid, np_id, op(4,1:osing)) )
+               CALL check( nf90_put_var(mncid, dp_id, op(5,1:osing)) )
+               CALL check( nf90_close(mncid) )
             ENDIF
 
          ENDIF
@@ -2103,7 +2090,7 @@ c-----------------------------------------------------------------------
       IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-         CALL check( nf90_inq_dimid(fncid,"psi_n_rat",q_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n_rational",q_id) )
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res_v", nf90_double,
      $      (/q_id,i_id/), p_id) )
@@ -5609,9 +5596,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
          CALL check( nf90_inq_dimid(mncid,"m",mdid) )
          CALL check( nf90_inq_dimid(mncid,"theta",tdid) )
-         IF(singcoup_Set)THEN
-            CALL check( nf90_inq_dimid(mncid,"mode_C",sdid) )
-         ENDIF
+         CALL check( nf90_inq_dimid(mncid,"mode_C",sdid) )
 
          ! Start definitions
          CALL check( nf90_redef(mncid))
@@ -6165,13 +6150,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER:: i,midid,mmdid,modid,medid,mtdid,
-     $   fidid,fmdid,fldid,fpdid,ftdid,cidid,crdid,czdid,clvid,
-     $   mivid,mmvid,movid,mevid,mtvid,fivid,fmvid,fpvid,ftvid,flvid,
-     $   mrvid,mjdid,mjvid,mqvid,frvid,frdid,fqvid,civid,crvid,czvid,
-     $   fq1vid,id,fileids(3),ising
+      INTEGER:: i,midid,mmdid,mcdid,mldid,modid,medid,mtdid,mjdid,
+     $   mivid,mmvid,mcvid,mlvid,movid,mevid,mtvid,mrvid,mjvid,mqvid,
+     $   fidid,fmdid,fpdid,ftdid,
+     $   fivid,fmvid,fpvid,ftvid,frvid,frdid,fqvid,fq1vid,
+     $   cidid,crdid,czdid,
+     $   clvid,civid,crvid,czvid,
+     $   id,fileids(3),ising
       INTEGER, DIMENSION(mpert) :: mmodes
-      REAL(r8), DIMENSION(osing) :: opsifac
 c-----------------------------------------------------------------------
 c     set variables
 c-----------------------------------------------------------------------
@@ -6207,11 +6193,23 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
       CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
       IF(msing>0)THEN
-         CALL check( nf90_def_dim(mncid,"psi_n_rat",msing, mjdid) )
-         CALL check(nf90_def_var(mncid,"psi_n_rat",nf90_double,mjdid,
-     $      mjvid))
-         CALL check(nf90_def_var(mncid,"q_rat",nf90_double,mjdid,mqvid))
-         CALL check( nf90_def_var(mncid,"m_rat",nf90_int,mjdid,mrvid))
+         CALL check( nf90_def_dim(mncid,"psi_n_rational", msing, mjdid))
+         CALL check( nf90_def_var(mncid,"psi_n_rational", nf90_double,
+     $      mjdid, mjvid) )
+         CALL check( nf90_def_var(mncid,"q_rational",nf90_double, mjdid,
+     $      mqvid) )
+         CALL check( nf90_def_var(mncid,"m_rational", nf90_int, mjdid,
+     $      mrvid) )
+         CALL check( nf90_def_dim(mncid,"mode_C", msing, mcdid) )
+         CALL check( nf90_def_var(mncid,"mode_C", nf90_double,
+     $      mcdid, mcvid) )
+         CALL check( nf90_put_att(mncid, mcvid ,"long_name",
+     $    "Singular coupling mode index") )
+         CALL check( nf90_def_dim(mncid,"mode_C_local", osing, mldid) )
+         CALL check( nf90_def_var(mncid,"mode_C_local", nf90_double,
+     $      mldid,mlvid) )
+         CALL check( nf90_put_att(mncid, mlvid ,"long_name",
+     $    "Local singular coupling mode index") )
       ENDIF
       CALL check( nf90_put_att(mncid,nf90_global,"jacobian",jac_type))
       CALL check( nf90_put_att(mncid,nf90_global,"helicity",helicity))
@@ -6232,17 +6230,13 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"theta_dcon",nf90_double,
      $     ftdid,ftvid) )
       IF(msing>0)THEN
-         CALL check( nf90_def_dim(fncid,"psi_n_rat",msing, frdid) )
-         CALL check( nf90_def_var(fncid,"psi_n_rat",nf90_double,
+         CALL check( nf90_def_dim(fncid,"psi_n_rational",msing, frdid) )
+         CALL check( nf90_def_var(fncid,"psi_n_rational",nf90_double,
      $        frdid,frvid))
-         CALL check(nf90_def_var(fncid,"q_rat",nf90_double,frdid,fqvid))
-         CALL check(nf90_def_var(fncid,"dqdpsi_n_rat",nf90_double,
+         CALL check(nf90_def_var(fncid,"q_rational", nf90_double, frdid,
+     $        fqvid))
+         CALL check(nf90_def_var(fncid,"dqdpsi_n_rational",nf90_double,
      $        frdid,fq1vid))
-         IF(osing < msing .AND. osing>0)THEN
-            CALL check( nf90_def_dim(fncid,"psi_n_local",osing, fldid) )
-            CALL check(nf90_def_var(fncid,"psi_n_local",nf90_double,
-     $         fldid,flvid))
-         ENDIF
       ENDIF
       CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
 
@@ -6290,6 +6284,8 @@ c-----------------------------------------------------------------------
      $      (/(INT(singtype(i)%q*nn),i=1,msing)/)) )
          CALL check( nf90_put_var(mncid,mqvid,
      $      (/(singtype(i)%q,i=1,msing)/)) )
+         CALL check( nf90_put_var(mncid, mcvid, (/(i,i=1,msing)/)) )
+         CALL check( nf90_put_var(mncid, mlvid, (/(i,i=1,osing)/)) )
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
@@ -6304,17 +6300,6 @@ c-----------------------------------------------------------------------
      $      (/(singtype(i)%q,i=1,msing)/)) )
          CALL check( nf90_put_var(fncid,fq1vid,
      $      (/(singtype(i)%q1,i=1,msing)/)) )
-         IF(osing<msing .AND. osing>0) THEN
-            i = 0
-            DO ising=1,msing
-               IF ((singtype(ising)%psifac.GE.opsi1).AND.
-     $              (singtype(ising)%psifac.LE.opsi2)) THEN
-                  i=i+1
-                  opsifac(i) = singtype(ising)%psifac
-               ENDIF
-            ENDDO
-            CALL check( nf90_put_var(fncid,flvid,opsifac) )
-         ENDIF
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting coordinates in cyl. netcdfs"
