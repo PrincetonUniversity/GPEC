@@ -1935,7 +1935,7 @@ c              dua1(1,:)=CONJG(dua(:,tid(ip)))
                du_h2(:,ip,jp:jp)=TRANSPOSE(
      $              MATMUL(dua1,imat)*hermite%qb(jp)
      $              +MATMUL(ua1,vmat)*hermite%qb(jp)
-     $              +MATMUL(ua1,umat)*hermite%pb(jp)
+     $              +MATMUL(ua1,umat)*hermite%pb(jp) )
             ENDDO
          ENDDO
       ENDIF
