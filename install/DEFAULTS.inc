@@ -18,9 +18,9 @@
 #   Developers can always load the gpec/0.0 module (development branch module) to get the latest compiler settings
 #     $ module use /p/gpec/modules; load gpec/0.0
 #   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
-#     $ module load module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#     $ module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Note that before the netcdf module was properly set up, we had to manually load supporting modules
-#     $ module load module load intel/2018.u1 openmpi szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#     $ module load intel/2018.u1 openmpi szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Any of these should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message,
