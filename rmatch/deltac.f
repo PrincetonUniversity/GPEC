@@ -1932,9 +1932,10 @@ c              ua1(1,:)=CONJG(ua(:,tid(ip)))
 c              dua1(1,:)=CONJG(dua(:,tid(ip)))
                ua1(1,:)=ua(:,tid(ip))
                dua1(1,:)=dua(:,tid(ip))
-               du_h2(:,ip,jp:jp)=MATMUL(dua1,imat)*hermite%qb(jp) ! LHS is (M,1), RHS is (1,3) . (3,3) * float ?
-     $              +MATMUL(ua1,vmat)*hermite%qb(jp) ! (1,3) . (3,3) * float is (1,3)
-     $              +MATMUL(ua1,umat)*hermite%pb(jp) ! (1,3) . (3,3) * float is (1,3)
+               du_h2(:,ip,jp:jp)=TRANSPOSE(
+     $              MATMUL(dua1,imat)*hermite%qb(jp)
+     $              +MATMUL(ua1,vmat)*hermite%qb(jp)
+     $              +MATMUL(ua1,umat)*hermite%pb(jp)
             ENDDO
          ENDDO
       ENDIF
