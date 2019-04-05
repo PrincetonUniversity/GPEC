@@ -2,6 +2,7 @@
 !     Queue to maintain equation terms in general FEM solver.
 !-----------------------------------------------------------------------
 MODULE DeltagQueueMod
+   USE local_mod
    IMPLICIT NONE
 
    INTEGER, PARAMETER :: maxQueueSize = 500		!define max size of term queue
@@ -13,7 +14,7 @@ MODULE DeltagQueueMod
       CHARACTER (len = nameSize) :: varName       !variable name in corresponding equation
       CHARACTER (len = nameSize) :: matCoef       !Coefficient matrix name of term
       INTEGER                    :: varOrder      !variable: order of derivative (0: zeroth order derivative, 1: first order derivative)
-      COMPLEX                    :: scalCoef=1.0  !scalar coefficient of term
+      COMPLEX(r8)                :: scalCoef=1.0  !scalar coefficient of term
    END TYPE QueueElement
 
    !Queue to maintain equation terms
@@ -33,9 +34,7 @@ MODULE DeltagQueueMod
       CLASS(DeltagTermsQueue), INTENT(INOUT) :: self
       CHARACTER(len=*), INTENT(IN) :: equName, varName, matCoef
       INTEGER, INTENT(IN) :: varOrder
-      COMPLEX, OPTIONAL, INTENT(IN) :: scalCoef
-      PRINT *, equName
-      PRINT *, varName
+      COMPLEX(r8), OPTIONAL, INTENT(IN) :: scalCoef
       self%queueSize=self%queueSize+1
       self%qelement(self%queueSize)%equName=equName
       self%qelement(self%queueSize)%varName=varName
@@ -53,8 +52,8 @@ PROGRAM test
    USE DeltagQueueMod
    IMPLICIT NONE
    TYPE(DeltagTermsQueue) :: queue
-   REAL:: res
-   COMPLEX :: cof
+   REAL(r8) :: res
+   COMPLEX(r8) :: cof
    cof=CMPLX(-1,0)
    CALL queue%addTerm('Xi1','B1','G11',0)
    CALL queue%addTerm('Xi1','B2','G22',1,cof)
