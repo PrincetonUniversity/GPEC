@@ -6,7 +6,7 @@
     mer_flag=t           ! Evaluate the Mercier criterian
     sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
-	peak_flag=t          ! Stops integration at first local maximum beyond the last rational (may go beyond dmlim)
+	peak_flag=f          ! Stops integration at first local maximum beyond the last rational (may go beyond dmlim)
     qlow=0.0            ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
@@ -49,7 +49,7 @@
     msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
     mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
 
-    bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    bin_euler=f          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
     euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions

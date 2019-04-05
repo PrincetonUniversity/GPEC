@@ -1233,17 +1233,15 @@ c-----------------------------------------------------------------------
       if ( ishape .ne. 41 ) go to 325
       open(unit=41,file="wall_geo.dat",status='old',
      $             form='FORMATTED')
-      read(41,'(I4)') npots0
-      read(41,'(F30.20)') wcentr
+      read(41,*) npots0
+      read(41,*) wcentr
 c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       npots=npots0+5-1
       allocate (thetatmp(npots),xwaltmp(npots),zwaltmp(npots),rioptmp(2)
      $   ,xpptmp(npots),ww1tmp(npots),ww2tmp(npots),ww3tmp(npots),
      $   tabtmp(3))
       do i = 1, npots0
-         read (41,'(F30.20)')thetatmp(i)
-         read (41,'(F30.20)')xwaltmp(i)
-         read (41,'(F30.20)')zwaltmp(i)
+         read (41,*) xwaltmp(i),zwaltmp(i),thetatmp(i)
          xwaltmp(i)=xwaltmp(i)-wcentr
       enddo
       close (41)
@@ -1269,7 +1267,7 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       zwal1(1)=zwal1(mth1)
       xwal1(mth2)=xwal1(2)
       zwal1(mth2)=zwal1(2)
-      IF (.FALSE.) THEN
+      IF (.TRUE.) THEN
          open(unit=41,file="vacuum_used_wall.out",status='unknown',
      $        form='FORMATTED')
          do i=1,mth2

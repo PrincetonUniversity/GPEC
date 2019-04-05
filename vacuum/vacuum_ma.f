@@ -630,7 +630,7 @@ c-----------------------------------------------------------------------
       CHARACTER(130), DIMENSION(10) :: string
       COMPLEX(8), PARAMETER :: ifac=(0,1)
 
-      lfarw = 1
+      lfarw = 0
       ndlp = mth / ntloop
 
       jmax1 = lmax(1) - lmin(1) + 1
