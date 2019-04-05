@@ -295,7 +295,6 @@ module torque
             call spline_eval(tspl, extrema(i), 0)
             if(tspl%f(1) < bmin)then
                 bmin = tspl%f(1)
-                bmax = tspl%f(1)
                 theta_bmin = extrema(i)
              endif
              if (tspl%f(1) > bmax) then
@@ -483,7 +482,10 @@ module torque
                                 vpar = vspl%f(1)
                            endif
                         enddo
-                        if (vpar==0) print *, "ERROR: Could not find good potential well"
+                        if (vpar==0) then
+                            print *, "psi =",psi,", lambda =",lmda,", lambdamax =",lmdamax
+                            stop "ERROR: Could not find potential well with positive vpar"
+                        end if
                     end if
                     turns%fs(ilmda-1,1) = t1
                     call bicube_eval(rzphi,psi,t1,0)
@@ -566,16 +568,17 @@ module torque
                 lmdatpe = min(bo/(tspl%fs(ibmax+1,1)),bo/(tspl%fs(ibmax-1,1)))
                 lmdamax = bo/bmin
                 if(method(1:1)=='t')then
-                    ldl_inc = powspace(lmdatpb,lmdamax,1,1+nlmda,"both") ! trapped space including boundary
-                    ldl = ldl_inc(:,2:) ! exclude boundary
+                    ldl_inc = powspace(lmdatpb,lmdamax,1,2+nlmda,"both") ! trapped space including boundary
+                    ldl = ldl_inc(:,2:1+nlmda) ! exclude boundary and max (both only have 1 bounce point)
                 elseif(method(1:1)=='p')then
                     ldl_inc = powspace(lmdamin,lmdatpb,1,1+nlmda,"both") ! passing space including boundary
                     ldl = ldl_inc(:,:nlmda) ! exclude boundary
                 else
-                    ldl_p = powspace(lmdamin,lmdatpb,2,1+nlmda/2,"upper") ! passing space including boundary
-                    ldl_t = powspace(lmdatpb,lmdamax,2,1+nlmda-nlmda/2,"lower") ! trapped space including boundary
-                    ldl(1,:) = (/ldl_p(1,:nlmda/2),ldl_t(1,2:)/) ! full space with no point on boundary
-                    ldl(2,:) = (/ldl_p(2,:nlmda/2),ldl_t(2,2:)/)
+                    if(lmdatpb==lmdamax) print *,'WARNING: bmax = bmin @ psi',psi
+                    ldl_p = powspace(lmdamin,lmdatpb,2,2+nlmda/2,"upper") ! passing space including boundary
+                    ldl_t = powspace(lmdatpb,lmdamax,2,2+nlmda-nlmda/2,"lower") ! trapped space including boundary
+                    ldl(1,:) = (/ldl_p(1,2:nlmda/2),ldl_t(1,2:1+nlmda-nlmda/2)/) ! full space with no point on boundary or max
+                    ldl(2,:) = (/ldl_p(2,2:nlmda/2),ldl_t(2,2:1+nlmda-nlmda/2)/)
                 endif
                 if(tdebug) print *," Lambda space ",ldl(1,1),ldl(1,nlmda),", t/p boundary = ",lmdatpb
                 ! form smooth pitch angle functions
@@ -596,6 +599,8 @@ module torque
                         call spline_roots(vspl, 1, nbpts, bpts)
                         if(nbpts < 1)then
                             print *, "WARNING: Found passing particle in bounce particle integrals"
+                            print *, "  > psi =",psi,", lambda=",lmda
+                            print *, "  > lambda min, boundary, max =",lmdamin, lmdatpb, lmdamax
                             print *, "  > Consider refining equilibrium or changing equil spline sizes"
                             t1 = tspl%xs(ibmax)
                             t2 = tspl%xs(ibmax) + 1
@@ -628,11 +633,11 @@ module torque
                             enddo
                             if (vpar==0) print *, "ERROR: Could not find potential well with potive vpar"
                         end if
-                        print *,'---------------'
-                        print *, ilmda * 1.0/nlmda, (lmda - lmdamin) / (lmdamax - lmdamin)
-                        print *, bpts(:nbpts)
-                        print *, t1, t2
-                        print *,'---------------'
+                        if(t1==t2)then
+                            print *,"psi, lmda = ",psi,lmda
+                            print *,"lmdamin, lambdatpb, lambdamax =",lmdamin,lmdatpb,lmdamax
+                            print *,"t1 = t2 =",t1
+                        end if
                         tdt = powspace(t1,t2,4,ntheta,"both")
                     else ! transit -> full theta integral
                         t1 = tspl%xs(ibmax)
@@ -723,11 +728,6 @@ module torque
                             jvtheta(2:i-1) = jvtheta(i)
                         endif
                     enddo
-                    print *, '...............'
-                    print *, sigma
-                    print *, bspl%fs(:4,1), '...', bspl%fs(ntheta-4:,1)
-                    print *, real(jvtheta(:4))
-                    print *, '...............'
                     call spline_fit(bspl,"extrap")
                     call spline_int(bspl)
                     ! Bounce averaged Lambda functions
@@ -738,7 +738,6 @@ module torque
                     dhat = (kin_f(s+2)/chrg)/(bo*ro*ro)
                     fbnce%fs(ilmda-1,1) = wbbar*bhat
                     fbnce%fs(ilmda-1,2) = wdbar*dhat
-                    print *, 'debug', 1
                     ! phase factor and action
                     !if(welec<fbnce%fs(ilmda-1,2))then ! mag prec. dominates h
                     !    pl=exp(-twopi*xj*lnq* bspl%fsi(0:,2)/((2-sigma)*bspl%fsi(bspl%mx,2)))
@@ -748,7 +747,6 @@ module torque
                     bjspl%fs(0:,1) =conjg(jvtheta(:))*(pl(:)+(1-sigma)/pl(:))
                     call cspline_fit(bjspl,"extrap")
                     call cspline_int(bjspl)
-                    print *, 'debug', 2
                     ! division by 2 corrects quadratic use of 2A_+n instead of proper A_+n + A_-n
                     fbnce%fs(ilmda-1,3) = wbbar * abs(bjspl%fsi(bjspl%mx, 1))**2 / 2 / ro**2
 
@@ -792,7 +790,6 @@ module torque
 
 
                     ! optional deeply trapped bounce motion output for nlambda_out pitches
-                    print *, 'debug', 3
                     if(orecord .and. any(ilambda_out==ilmda))then
                         if(tdebug) print *, "  recording bounce functions"
                         do i=1,ntheta
@@ -812,10 +809,8 @@ module torque
                     endif
 
 
-                    print *, 'debug', 4
                 enddo ! lambda loop
                 ! normalize lambda functions for lsode (note: no resonant operator yet)
-                    print *, 'debug', 5
                 allocate(fbnce_norm(fbnce%nqty-2))
                 do i=1,fbnce%nqty-2
                     fbnce_norm(i) = 1.0/median(abs(fbnce%fs(:,i+2)))!maxval(abs(fbnce%fs(:,i+2)),1)!median(fbnce%fs(:,i+2))!
@@ -823,7 +818,6 @@ module torque
                 enddo
                 call cspline_fit(fbnce,'extrap')
                 call spline_fit(turns,'extrap')
-                    print *, 'debug', 6
 
                 if(tdebug)then
                     print *,"lambda ~ ",ldl(1,::10),ldl(1,nlmda)
@@ -836,7 +830,6 @@ module torque
 
 
                 ! energy space integrations
-                    print *, 'debug', 7
                 allocate(lxint(fbnce%nqty-2))
                 wtwnorm = 1.0 ! euler-lagrange real energy matrices (default)
                 rex = 1.0 ! include real part of resonance operator (default)
@@ -847,14 +840,8 @@ module torque
                     imx = 0.0
                     wtwnorm = -1.0
                 endif
-                print *,'lambdaintgrl_lsode fbnce'
-                do i=0,fbnce%mx
-                   print *, fbnce%xs(i), fbnce%fs(i, :)
-                end do
-                print *,'lambdaintgrl_lsode start'
                 lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
                     epsr,q,fbnce,l,n,rex,imx,psi,turns,method,op_record=erecord)
-                print *,'lambdaintgrl_lsode done'
 
                 ! dT/dpsi
                 tnorm = (-2 * n**2 / sqrt(pi)) * (ro / bo) * kin_f(s) * kin_f(s + 2) & ! Eq (19) [N.C. Logan, et al., Physics of Plasmas 20, (2013)]
@@ -1065,7 +1052,6 @@ module torque
         enddo
         istop = i
         mx = istop-istrt
-        print *,mx
 
         ! prep allocations
         allocate(profiles(10+nfluxfuns,mx+1),ellprofiles(10,(1+2*nl)*(mx+1)))
@@ -1281,9 +1267,7 @@ module torque
             xlast = x
             call lsode(tintgrnd, neqarray, y, x, xout, itol, rtol,&
                 atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
-            print *,"lsode done"
             call dintdy(x, 1, rwork(21), neq, dky, iflag)
-            print *,"stepped"
 
             ! flux/diffusivity profiles
             call spline_eval(sq,x,0)
@@ -1299,7 +1283,6 @@ module torque
             chi = -gam/(drive)
 
             ! save tables for ascii output
-            print *,"appending"
             call append_2d(profiles, (/ x, sq%f(3), &
                 sum(gam(1:neq:2),dim=1),sum(gam(2:neq:2),dim=1),&
                 sum(chi(1:neq:2),dim=1),sum(chi(2:neq:2),dim=1),&
@@ -1315,7 +1298,6 @@ module torque
             enddo
 
             ! save matrix of coefficients
-            print *,"saving matrix coeffs"
             if(index(method,'mm')>0)then
                 if(tdebug) print *, "Euler-Lagrange tmp vars, iwork(11)=",iwork(11)
                 do j=1,6
@@ -1402,6 +1384,27 @@ module torque
         complex(r8), dimension (mpert,mpert,6) :: wtw_l
 
         common /tcom/ wdfac,xfac,method,ffuns
+
+        !declarations for parallelization.
+        LOGICAL :: debug_omp
+        INTEGER :: sTime, fTime, cr, lsTime, lfTime
+        REAL(r8) :: tsec,lsec
+        REAL(r8) xcom_real
+        COMMON /xcom/ xcom_real(8)
+        REAL(r8) dls011_real
+        INTEGER dls011_int
+        COMMON /DLS011/ dls011_real(218), dls011_int(37)
+        REAL(r8) dls002_real
+        INTEGER dls002_int
+        COMMON /DLS002/ dls002_real(218), dls002_int(37)
+        REAL(r8) :: lcom_real1
+        INTEGER :: lcom_int
+        REAL(r8) :: lcom_real2
+        COMMON /lcom/ lcom_real1(7), lcom_int(2), lcom_real2(2)
+        INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM,lThreads
+        !$omp threadprivate(/xcom/,/dls011/,/dls002/,/lcom/)
+
+
         if(tdebug .and. x<1e-2) print *, "torque - lsode subroutine wdfac ",wdfac
         if(tdebug .and. x<1e-2) print *, "torque - lsode subroutine method "//method
 
@@ -1420,6 +1423,14 @@ module torque
         elems = 0
 
         psi = 1.0*x
+
+        !$omp parallel default(shared) &
+        !$omp private(l,wtw_l,trq,lsec,lstime,lftime) &
+        !$omp reduction(+:elems) &
+        !$omp copyin(dbob_m,divx_m,kin,xs_m,fnml, &
+        !$omp geom, sq, kin, &
+        !$omp /lcom/, /xcom/, /dls011/, /dls002/)
+        !$omp do
         do l=-nl,nl
             if(l==0)then
                 if(index(method,'mm')>0)then
@@ -1442,6 +1453,8 @@ module torque
             ydot(2*(l+nl)+1) = real(trq)
             ydot(2*(l+nl)+2) = aimag(trq)
         enddo
+        !$omp end do
+        !$omp end parallel
 
         if(tdebug)then
             print *,'torque - intgrnd complete at psi ',x

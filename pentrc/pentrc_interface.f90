@@ -106,7 +106,8 @@ module pentrc_interface
         power_bin = -1,&
         power_bpin = -1,&
         power_rin = -1,&
-        power_rcin = -1
+        power_rcin = -1,&
+        openmp_threads = 1
 
     real(r8) ::    &
         atol_xlmda=1e-6, &
@@ -146,7 +147,7 @@ module pentrc_interface
 
     namelist/pent_control/nfac, tfac, wefac, wdfac, wpfac, nufac, divxfac, &
             atol_xlmda, rtol_xlmda, atol_psi, rtol_psi, nlmda, ntheta, ximag, xmax, psilims, &
-            use_classic_splines
+            use_classic_splines,openmp_threads
 
     namelist/pent_output/moment, output_ascii, output_netcdf, &
             eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, dynamic_grid, &

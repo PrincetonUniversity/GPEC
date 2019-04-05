@@ -53,7 +53,7 @@ module pitch_integration
 
     ! global variables for internal use
     integer, parameter :: maxstep = 10000, nfs = 14
-    real(r8) :: pitch_psi !wn_g,wt_g,we_g,nuk_g,l_g,n_g,bobmax_g,epsr_g
+    real(r8) :: pitch_psi
     character(4) :: pitch_method
     type(cspline_type) :: eqspl_g
     type(spline_type) :: turns_g
@@ -72,8 +72,8 @@ module pitch_integration
     integer :: int_lcom
     real(r8) :: real2_lcom
     common /lcom/ real1_lcom(7), int_lcom(2), real2_lcom(2)
-!$OMP THREADPRIVATE(/lcom/)
-!$OMP THREADPRIVATE(pitch_record,eqspl_g,turns_g)
+    !$omp threadprivate(/lcom/)
+    !$omp threadprivate(pitch_record,eqspl_g,turns_g)
 
     contains
 
@@ -169,7 +169,7 @@ module pitch_integration
 
         common /lcom/ wn_g,wt_g,we_g,nuk_g,bobmax_g,epsr_g, &
                     q_g,l_g,n_g,rex_g,imx_g
-!$OMP THREADPRIVATE(/lcom/)
+        !$omp threadprivate(/lcom/)
 
         ! set lsode options - see lsode package for documentation
         neq = 2*(eq_spl%nqty-2)
@@ -246,7 +246,7 @@ module pitch_integration
             call lsode1(lintgrnd, neqarray, y, x, xout, itol, rtol,atol, &
                 itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
         endif
-        
+
         ! write error file and stop program if integration fials
         if(iwork(11)>iwork(6)/2 .and. istate/=-1) then
             print *, "WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in lambda integration"
@@ -332,7 +332,7 @@ module pitch_integration
         complex(r8) :: xint,fres
     
         common /lcom/ wn,wt,we,nuk,bobmax,epsr,q,l,n,rex,imx
-!$OMP THREADPRIVATE(/lcom/)
+        !$omp threadprivate(/lcom/)
 
         ! use (input or) global variables
         if(lambdadebug) print *,'lintgrnd - lambda =',x
