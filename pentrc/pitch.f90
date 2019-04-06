@@ -27,10 +27,10 @@ module pitch_integration
         nmethods, methods, version
     use utilities, only : get_free_file_unit,append_2d,check
     use special, only : ellipk
-    use cspline_mod, only: cspline_type,cspline_eval
-    use spline_mod, only: spline_type,spline_eval,spline_alloc,&
-                            spline_dealloc,spline_fit,spline_int
-    use bicube_mod, only: bicube_type,bicube_eval
+    use cspline_mod, only: cspline_type,cspline_eval,cspline_eval_external
+    use spline_mod, only: spline_type,spline_eval,spline_eval_external, &
+        spline_alloc,spline_dealloc,spline_fit,spline_int
+    use bicube_mod, only: bicube_type,bicube_eval_external
     use energy_integration, only: xintgrl_lsode
     use lsode1_mod
     use dcon_interface, only : shotnum, shottime, machine
@@ -155,11 +155,13 @@ module pitch_integration
         logical, optional :: op_record
         ! declare variables
         logical :: record_this
-        integer :: istep, ilambda, j, l_g, n_g, out_unit
+        integer :: istep, ilambda, j, l_g, n_g, out_unit, ix
         real(r8) :: lmda,wb,wd,nueff,lnq,wn_g,wt_g,we_g,nuk_g,&
             bobmax_g,epsr_g,q_g,rex_g,imx_g
         complex(r8) :: xint
         real(r8), dimension(nfs,maxstep) :: fs
+        real(r8), dimension(turns%nqty) :: turns_f
+        complex(r8), dimension(eq_spl%nqty) :: eqspl_f
         ! declare lsode input variables
         integer  iopt, istate, itask, itol, mf, iflag, neqarray(1), &
             neq, liw, lrw
@@ -217,13 +219,15 @@ module pitch_integration
         if(record_this) then
             istep = 0
             itask = 5              ! single step
+            ix = 0
             do while (x<xout)
                 call lsode1(lintgrnd, neqarray, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                 call dintdy1(x, 1, rwork(21), neqarray(1), dky, iflag)
-                call spline_eval(turns_g,x,0)
+                call spline_eval_external(turns_g,x,ix,turns_f)
+                call cspline_eval_external(eqspl_g,x,ix,eqspl_f)
                 istep = istep + 1
-                fs(:,istep) = (/x, dky(1:2), y(1:2), real(eqspl_g%f(1:3)), turns_g%f(1:6)/)
+                fs(:,istep) = (/x, dky(1:2), y(1:2), real(eqspl_f(1:3)), turns_f(1:6)/)
             enddo
             ! write select energy integral output files
             do ilambda = 0,nlambda_out-1
@@ -327,26 +331,28 @@ module pitch_integration
         integer ::  neq
         real*8 x, y(neq), ydot(neq)
     
-        integer :: l,n,i
+        integer :: l,n,i,ix
         real(r8) :: wn,wt,we,wd,wb,nuk,bobmax,epsr,lnq,q,fl,nueff,rex,imx
         complex(r8) :: xint,fres
-    
+        complex(r8), dimension(turns_g%nqty) :: eqspl_f
+
         common /lcom/ wn,wt,we,nuk,bobmax,epsr,q,l,n,rex,imx
         !$omp threadprivate(/lcom/)
 
         ! use (input or) global variables
         if(lambdadebug) print *,'lintgrnd - lambda =',x
-        call cspline_eval(eqspl_g,x,0)
-        wb = real(eqspl_g%f(1))
-        wd = real(eqspl_g%f(2))
-        fl = real(eqspl_g%f(3))
+        ix = eqspl_g%mx / 2
+        call cspline_eval_external(eqspl_g,x,ix,eqspl_f)
+        wb = real(eqspl_f(1))
+        wd = real(eqspl_f(2))
+        fl = real(eqspl_f(3))
         
         if(lambdadebug)then
             print *,'lambda,bobmax = ',x,bobmax
             print *,'nuk = ',nuk
             print *,'omegas = ',wn,wt,we,wd,wb
-            print *,'f(lmda)= ',eqspl_g%f(3), &
-                minval(abs(eqspl_g%f(4:))),maxval(abs(eqspl_g%f(4:)))
+            print *,'f(lmda)= ',eqspl_f(3), &
+                minval(abs(eqspl_f(4:))),maxval(abs(eqspl_f(4:)))
             print *,'n,l    = ',n,l
        endif
         
@@ -366,7 +372,7 @@ module pitch_integration
         
         ! form full lambda function and decouple two real space solutions
         do i=3,eqspl_g%nqty
-            fres = eqspl_g%f(i)*(rex*real(xint)+xj*imx*aimag(xint))
+            fres = eqspl_f(i)*(rex*real(xint)+xj*imx*aimag(xint))
             ydot(1+2*(i-3)) = real(fres)
             ydot(2+2*(i-3)) = aimag(fres)
             !if(mod(i,100)==0 .or. i==3 .or. i==eqspl_g%nqty) print *,size(ydot),2+2*(i-3),aimag(fres)
@@ -471,8 +477,9 @@ module pitch_integration
         type(bicube_type) :: fnml
         ! declare local variables
         integer, parameter :: nk = 50
-        integer :: i,j,k,mstart,mpert
+        integer :: i,j,k,mstart,mpert,ix,iy
         real(r8) :: kappa
+        real(r8), dimension(1) :: fnml_f, fnml_fx, fnml_fy
         type(spline_type) :: kspl
         
         mpert = size(marray,1)
@@ -490,9 +497,11 @@ module pitch_integration
                   stop "ERROR: pitch - RLAR approximation m-nq-l out of Fkmnql range"
                endif
                ! calculate for forward and backward banana
-               call bicube_eval(fnml,kappa,marray(i)-n*q-l,0)
+               call bicube_eval_external(fnml,kappa,marray(i)-n*q-l,0, &
+                       ix, iy, fnml_f, fnml_fx, fnml_fy)
                fm(i,1) = fnml%f(1)
-               call bicube_eval(fnml,kappa,marray(i)-n*q+l,0)
+               call bicube_eval_external(fnml,kappa,marray(i)-n*q+l,0, &
+                       ix, iy, fnml_f, fnml_fx, fnml_fy)
                fm(i,2) = fnml%f(1)
             enddo
             do i = 1,mpert
@@ -557,8 +566,9 @@ module pitch_integration
         type(bicube_type) :: fnml
         ! declare local variables
         integer, parameter :: nk = 50
-        integer :: i,j,mstart,mpert
+        integer :: i,j,mstart,mpert,ix,iy
         real(r8) :: kappa
+        real(r8), dimension(1) :: fnml_f, fnml_fx, fnml_fy
 
         kappadjsum = 0
         mpert = size(marray,1)
@@ -572,10 +582,12 @@ module pitch_integration
               stop "ERROR: pitch - RLAR approximation m-nq-l out of Fkmnql range"
            endif
            ! calculate for forward and backward banana
-           call bicube_eval(fnml,kappa,marray(i)-n*q-l,0)
-           fm(i,1) = fnml%f(1)
-           call bicube_eval(fnml,kappa,marray(i)-n*q+l,0)
-           fm(i,2) = fnml%f(1)
+           call bicube_eval_external(fnml,kappa,marray(i)-n*q-l,0, &
+                       ix, iy, fnml_f, fnml_fx, fnml_fy)
+           fm(i,1) = fnml_f(1)
+           call bicube_eval_external(fnml,kappa,marray(i)-n*q+l,0, &
+                       ix, iy, fnml_f, fnml_fx, fnml_fy)
+           fm(i,2) = fnml_f(1)
         enddo
         ! sum over m,m'
         do i = 1,mpert
