@@ -152,9 +152,9 @@ module torque
         real(r8), dimension(nlmda*3) :: bpts
         real(r8), dimension(mthsurf*3) :: extrema
         real(r8), dimension(2,nlmda) :: ldl
-        real(r8), dimension(2,1+nlmda) :: ldl_inc
-        real(r8), dimension(2,1+nlmda/2) :: ldl_p
-        real(r8), dimension(2,1+nlmda-nlmda/2) :: ldl_t
+        real(r8), dimension(2,2+nlmda) :: ldl_inc
+        real(r8), dimension(2,2+nlmda/2) :: ldl_p
+        real(r8), dimension(2,2+nlmda-nlmda/2) :: ldl_t
         real(r8), dimension(2,ntheta) :: tdt
         real(r8), dimension(:), allocatable :: dbfun,dxfun
         complex(r8) :: dbob,divx,kapx,xint,wtwnorm
@@ -571,14 +571,14 @@ module torque
                     ldl_inc = powspace(lmdatpb,lmdamax,1,2+nlmda,"both") ! trapped space including boundary
                     ldl = ldl_inc(:,2:1+nlmda) ! exclude boundary and max (both only have 1 bounce point)
                 elseif(method(1:1)=='p')then
-                    ldl_inc = powspace(lmdamin,lmdatpb,1,1+nlmda,"both") ! passing space including boundary
-                    ldl = ldl_inc(:,:nlmda) ! exclude boundary
+                    ldl_inc = powspace(lmdamin,lmdatpb,1,2+nlmda,"both") ! passing space including boundary
+                    ldl = ldl_inc(:,2:1+nlmda) ! exclude boundary
                 else
                     if(lmdatpb==lmdamax) print *,'WARNING: bmax = bmin @ psi',psi
                     ldl_p = powspace(lmdamin,lmdatpb,2,2+nlmda/2,"upper") ! passing space including boundary
                     ldl_t = powspace(lmdatpb,lmdamax,2,2+nlmda-nlmda/2,"lower") ! trapped space including boundary
-                    ldl(1,:) = (/ldl_p(1,2:nlmda/2),ldl_t(1,2:1+nlmda-nlmda/2)/) ! full space with no point on boundary or max
-                    ldl(2,:) = (/ldl_p(2,2:nlmda/2),ldl_t(2,2:1+nlmda-nlmda/2)/)
+                    ldl(1,:) = (/ldl_p(1,2:1+nlmda/2),ldl_t(1,2:1+nlmda-nlmda/2)/) ! full space with no point on boundary or max
+                    ldl(2,:) = (/ldl_p(2,2:1+nlmda/2),ldl_t(2,2:1+nlmda-nlmda/2)/)
                 endif
                 if(tdebug) print *," Lambda space ",ldl(1,1),ldl(1,nlmda),", t/p boundary = ",lmdatpb
                 ! form smooth pitch angle functions
