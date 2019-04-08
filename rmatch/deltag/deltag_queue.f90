@@ -8,11 +8,11 @@ MODULE DeltagQueueMod
    INTEGER, PARAMETER :: maxQueueSize = 500		!define max size of term queue
    INTEGER, PARAMETER :: nameSize = 10            !max size of variable name
 
-   !define equation term (scalCoef * matCoef * varName in equName)
+   !define equation term (scalCoef * coefName * varName in equName)
    TYPE :: QueueElement
       CHARACTER (len = nameSize) :: equName       !equation name
       CHARACTER (len = nameSize) :: varName       !variable name in corresponding equation
-      CHARACTER (len = nameSize) :: matCoef       !Coefficient matrix name of term
+      CHARACTER (len = nameSize) :: coefName      !Coefficient matrix name of term
       INTEGER                    :: varOrder      !variable: order of derivative (0: zeroth order derivative, 1: first order derivative)
       COMPLEX(r8)                :: scalCoef=1.0  !scalar coefficient of term
    END TYPE QueueElement
@@ -30,15 +30,15 @@ MODULE DeltagQueueMod
 
    CONTAINS
 
-   SUBROUTINE deltagAddTerm (self,equName,varName,matCoef,varOrder,scalCoef)
+   SUBROUTINE deltagAddTerm (self,equName,varName,coefName,varOrder,scalCoef)
       CLASS(DeltagTermsQueue), INTENT(INOUT) :: self
-      CHARACTER(len=*), INTENT(IN) :: equName, varName, matCoef
+      CHARACTER(len=*), INTENT(IN) :: equName, varName, coefName
       INTEGER, INTENT(IN) :: varOrder
       COMPLEX(r8), OPTIONAL, INTENT(IN) :: scalCoef
       self%queueSize=self%queueSize+1
       self%qelement(self%queueSize)%equName=equName
       self%qelement(self%queueSize)%varName=varName
-      self%qelement(self%queueSize)%matCoef=matCoef
+      self%qelement(self%queueSize)%coefName=coefName
       self%qelement(self%queueSize)%varOrder=varOrder
       IF (PRESENT(scalCoef)) THEN
          self%qelement(self%queueSize)%scalCoef=scalCoef         

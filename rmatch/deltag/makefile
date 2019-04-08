@@ -4,9 +4,15 @@ F90 = ifort $(FFLAGS)
 
 LIBDIR = ../../lib
 
+LAPACKDIR = -L /u/zwang/numericalLib/lapack_3.4.2
+
 LIBS = \
 	$(LIBDIR) \
-	-lequil
+	-lequil \
+     $(LAPACKDIR) \
+     -llapack \
+     -lblas
+
 
 OBJS = \
 	deltag_queue.o \
