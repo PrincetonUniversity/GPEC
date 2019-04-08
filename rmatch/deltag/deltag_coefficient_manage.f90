@@ -5,9 +5,9 @@ MODULE DeltagCoeffcientMod
    USE fspline_mod
    IMPLICIT NONE
 
-   INTEGER, PARAMETER :: maxQueueSize = 500		!define max size of term queue
-   INTEGER, PARAMETER :: nameSize = 10            !max size of variable name
-
+   INTEGER, PRIVATE, PARAMETER :: maxQueueSize = 500	    !define max size of term queue
+   INTEGER, PRIVATE, PARAMETER :: nameSize = 10            !max size of variable name
+   LOGICAL, PRIVATE, PARAMETER :: fft_flag = .FALSE.       !choose type of fft
    !element coefficient spline 
    TYPE :: CoefElement
       CHARACTER (len = nameSize) :: coefName      !coefficient name
@@ -48,6 +48,11 @@ MODULE DeltagCoeffcientMod
       self%coefElement(self%queueSize)%coefSpline%ys=theta
       self%coefElement(self%queueSize)%coefSpline%fs(:,:,1)=values
 
+      IF (fft_flag) THEN
+         CALL fspline_fit_2(self%coefElement(self%queueSize)%coefSpline, "extrap",.FALSE.)
+      ELSE
+         CALL fspline_fit_1(self%coefElement(self%queueSize)%coefSpline, "extrap",.FALSE.)
+      ENDIF
    END SUBROUTINE deltagAddCoef
 
    FUNCTION deltagFindCoefIndex(self,coefName) RESULT(idx)
@@ -64,5 +69,6 @@ MODULE DeltagCoeffcientMod
      ENDDO
      idx=-1
    END FUNCTION deltagFindCoefIndex
+
 END MODULE DeltagCoeffcientMod
 
