@@ -1267,14 +1267,6 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       zwal1(1)=zwal1(mth1)
       xwal1(mth2)=xwal1(2)
       zwal1(mth2)=zwal1(2)
-      IF (.TRUE.) THEN
-         open(unit=41,file="vacuum_used_wall.out",status='unknown',
-     $        form='FORMATTED')
-         do i=1,mth2
-            write(41,*) xwal1(i),zwal1(i)
-         enddo
-         close (41)
-      ENDIF
       deallocate(thetatmp,xwaltmp,zwaltmp,xpptmp,ww1tmp,ww2tmp,ww3tmp,
      $           rioptmp,tabtmp)
  325  continue
@@ -1505,6 +1497,14 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
             zwal1(i) = zpp(i)
          enddo
       endif
+
+      open(unit=41,file="vacuum_used_wall.out",status='unknown',
+     $     form='FORMATTED')
+      do i=1,mth2
+         write(41,*) xwal1(i),zwal1(i)
+      enddo
+      close (41)
+
       if ( iplt .gt. 0 ) go to 146
       xmx = xmaj
       zma = 0.0
