@@ -11,6 +11,7 @@ MODULE DeltagCoeffcientMod
    !element coefficient spline 
    TYPE :: CoefElement
       CHARACTER (len = nameSize) :: coefName      !coefficient name
+      INTEGER ::                    mband         !band of fourier spectrum
       TYPE(fspline_type)         :: coefSpline    !fourier spline of coefficient
    END TYPE CoefElement
 
@@ -22,8 +23,8 @@ MODULE DeltagCoeffcientMod
 
    CONTAINS
       PROCEDURE :: addCoef => deltagAddCoef                !add coefficient into coefficient manage
-      PROCEDURE :: findCoefIndex => deltagFindCoefIndex    !find index by coefficient spline
-
+      PROCEDURE :: findCoefIndex => deltagFindCoefIndex    !find index by coefficient name
+      PROCEDURE :: getCoefMat => deltagGetCoefMat          !return coeefficient matrix with mlow and mhigh
    END TYPE CoefManage
 
    CONTAINS
@@ -47,11 +48,12 @@ MODULE DeltagCoeffcientMod
       self%coefElement(self%queueSize)%coefSpline%xs=psi
       self%coefElement(self%queueSize)%coefSpline%ys=theta
       self%coefElement(self%queueSize)%coefSpline%fs(:,:,1)=values
+      self%coefElement(self%queueSize)%mband=mband
 
       IF (fft_flag) THEN
-         CALL fspline_fit_2(self%coefElement(self%queueSize)%coefSpline, "extrap",.FALSE.)
+         CALL fspline_fit_2(self%coefElement(self%queueSize)%coefSpline, "extrap",.TRUE.)
       ELSE
-         CALL fspline_fit_1(self%coefElement(self%queueSize)%coefSpline, "extrap",.FALSE.)
+         CALL fspline_fit_1(self%coefElement(self%queueSize)%coefSpline, "extrap",.TRUE.)
       ENDIF
    END SUBROUTINE deltagAddCoef
 
@@ -70,5 +72,24 @@ MODULE DeltagCoeffcientMod
      idx=-1
    END FUNCTION deltagFindCoefIndex
 
+   SUBROUTINE deltagGetCoefMat(self, coefName, psi, mlow,mhigh,mat)
+      CLASS(CoefManage), INTENT(INOUT) :: self
+      CHARACTER(len=*), INTENT(IN) :: coefName
+      REAL(r8) :: psi
+      INTEGER, INTENT(IN) :: mlow, mhigh
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: mat
+
+      INTEGER :: cofIdx
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: harmo
+
+      cofIdx = self%deltagFindCoefIndex(coefName)
+
+      ALLOCATE(harmo(self%coefElement(cofIdx)%mband))
+      CALL cspline_fit(%fst%cs,endmode)
+      CALL cspline_eval( self%coefElement(cofIdx)%coefSpline,psi,0 )
+      spf = self%coefElement(cofIdx)%coefSpline%f
+      harmo(0:-mband:-1)=f
+
+   END SUBROUTINE deltagGetCoefMat
 END MODULE DeltagCoeffcientMod
 
