@@ -1241,7 +1241,7 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
      $   ,xpptmp(npots),ww1tmp(npots),ww2tmp(npots),ww3tmp(npots),
      $   tabtmp(3))
       do i = 1, npots0
-         read (41,*) xwaltmp(i),zwaltmp(i),thetatmp(i)
+         read (41,*) thetatmp(i),xwaltmp(i),zwaltmp(i)
          xwaltmp(i)=xwaltmp(i)-wcentr
       enddo
       close (41)
