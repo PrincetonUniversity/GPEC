@@ -27,6 +27,7 @@ c     19. fotofi
 c     20. orchek
 c     21. tmat
 c     22. wtopest
+c     23. savewall
 c-----------------------------------------------------------------------
 c     subprogram 1. vaccal.
 c     solution of the vacuum integral equations.
@@ -1223,18 +1224,13 @@ c-----------------------------------------------------------------------
          xwal1(i) =   cw + a*cos( the + dw*sin(the) )
          zwal1(i) = - bw * a*sin( the + tw*sn2th ) - aw*sn2th
       enddo
-      open(unit=41,file="vacuum_used_wall_ishape4.out",status='unknown',
-     $     form='FORMATTED')
-      do i=1,mth2
-         write(41,*) xwal1(i),zwal1(i)
-      enddo
-      close (41)
  320  continue
       if ( ishape .ne. 41 ) go to 325
-      open(unit=41,file="wall_geo.dat",status='old',
+      open(unit=41,file="wall_geo.in",status='old',
      $             form='FORMATTED')
       read(41,*) npots0
       read(41,*) wcentr
+      read(41,*)
 c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       npots=npots0+5-1
       allocate (thetatmp(npots),xwaltmp(npots),zwaltmp(npots),rioptmp(2)
@@ -1270,8 +1266,34 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
       deallocate(thetatmp,xwaltmp,zwaltmp,xpptmp,ww1tmp,ww2tmp,ww3tmp,
      $           rioptmp,tabtmp)
  325  continue
-
-
+      if ( ishape .ne. 42 ) go to 326
+      open(unit=41,file="wall_geo.in",status='old',
+     $             form='FORMATTED')
+      read(41,*) npots0
+      read(41,*) wcentr
+      read(41,*)
+      if( npots0 .ne. mth+2 ) then
+         write(*,'(A,A)') 'ERROR: Number of points in wall_geo.in',
+     $        ' must be equal to mth+2.'
+         stop
+      endif
+      allocate (thetatmp(npots0))
+      do i = 1, npots0
+         read (41,*) thetatmp(i),xwal1(i),zwal1(i)
+      enddo
+      close (41)
+      deallocate(thetatmp)
+      if( xwal1(mth1).ne.xwal1(1) .or. zwal1(mth1).ne.zwal1(1) ) then
+         write(*,'(A,A)') 'ERROR: First point in wall_geo.in',
+     $        ' must be equal to 2nd last point.'
+         stop
+      endif
+      if( xwal1(mth2).ne.xwal1(2) .or. zwal1(mth2).ne.zwal1(2) ) then
+         write(*,'(A,A)') 'ERROR: Last point in wall_geo.in',
+     $        ' must be equal to 2nd point.'
+         stop
+      endif
+ 326  continue
       if ( ishape .ne. 5 ) go to 340
       wcentr = xmaj + cw*plrad
       do 330 i = 1, mth2
@@ -1497,14 +1519,7 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
             zwal1(i) = zpp(i)
          enddo
       endif
-
-      open(unit=41,file="vacuum_used_wall.out",status='unknown',
-     $     form='FORMATTED')
-      do i=1,mth2
-         write(41,*) xwal1(i),zwal1(i)
-      enddo
-      close (41)
-
+      call savewall(wcentr,xwal1,zwal1)
       if ( iplt .gt. 0 ) go to 146
       xmx = xmaj
       zma = 0.0
@@ -2314,3 +2329,81 @@ c-----------------------------------------------------------------------
       return
  999  call errmes ( outpest, 'wtopest' )
       end subroutine wtopest
+c-----------------------------------------------------------------------
+c     subprogram 23. savewall
+c     After processing the wall, save coordinates to be used.
+c-----------------------------------------------------------------------
+      subroutine savewall(wcentr,xwal1,zwal1)
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      USE vglobal_mod
+      !implicit none
+      IMPLICIT REAL*8 (a-h,o-z)
+
+      real*8 :: wcentr
+      dimension xwal1(*), zwal1(*)
+      INTEGER :: firstpos, i
+      real*8 :: thwal0,thwal1
+      logical :: retro
+c-----------------------------------------------------------------------
+c     computations.
+c-----------------------------------------------------------------------
+      retro=.false.
+
+      open(unit=41,file="wall_geo.out",status='unknown',
+     $             form='FORMATTED')
+      write(41,'(i6,A,A)') mth2,' = number of points below ',
+     $     '(theta must span 0 to 2*pi at a minimum)'
+      write(41,'(g14.6,A,A)') wcentr,' = R_0(m), a-parameter ',
+     $     'scaling uses this as origin'
+      write(41,'(A)') '  theta(rad)    R(m)          Z(m)'
+
+c     find first point above angle zero (slightly clockwise from R-direction)
+      thwal0=atan2(-zwal1(mth1),xwal1(mth1)-wcentr)
+      do i=1,mth1
+         thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+         if(thwal1>0.0 .and. thwal0<0.0) then
+            firstpos=i
+            exit
+         endif
+         thwal0=thwal1
+      enddo
+
+c     first point
+      i=firstpos-1
+      thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+      write(41,'(3e14.6)') thwal1,xwal1(i),zwal1(i)
+c     points in clockwise direction at end of array
+      do i=firstpos,mth
+         thwal0 = thwal1
+         thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+         if(thwal1<0.0) thwal1=thwal1+twopi
+         if( thwal1<thwal0 ) retro=.true.
+         write(41,'(3e14.6)') thwal1,xwal1(i),zwal1(i)
+      enddo
+c     points in clockwise direction at beginning of array
+      do i=1,firstpos-1
+         thwal0 = thwal1
+         thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+         if(thwal1<0.0) thwal1=thwal1+twopi
+         if( thwal1<thwal0 ) retro=.true.
+         write(41,'(3e14.6)') thwal1,xwal1(i),zwal1(i)
+      enddo
+c     last point
+      i=firstpos
+      thwal0 = thwal1
+      thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+      thwal1=thwal1+twopi
+      if( thwal1<thwal0 ) retro=.true.
+      write(41,'(3e14.6)') thwal1,xwal1(i),zwal1(i)
+      close (41)
+
+      if( retro ) then
+         write(*,*) "WARNING: Retrograde angles present in wall"
+      endif
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      return
+      end subroutine
