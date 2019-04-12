@@ -79,16 +79,33 @@ MODULE DeltagCoeffcientMod
       INTEGER, INTENT(IN) :: mlow, mhigh
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: mat
 
-      INTEGER :: cofIdx
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: harmo
+      INTEGER :: cofIdx,ipert,jpert,mpert,mband,m1,dm
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: harmo,spf
 
-      cofIdx = self%deltagFindCoefIndex(coefName)
+      cofIdx = self%findCoefIndex(coefName)
+      mband=self%coefElement(cofIdx)%mband
 
-      ALLOCATE(harmo(self%coefElement(cofIdx)%mband))
-      CALL cspline_fit(%fst%cs,endmode)
-      CALL cspline_eval( self%coefElement(cofIdx)%coefSpline,psi,0 )
+      ALLOCATE(harmo(-mband:mband),spf(mband))
+
+      CALL cspline_eval( self%coefElement(cofIdx)%coefSpline%cs,psi,0 )
       spf = self%coefElement(cofIdx)%coefSpline%f
-      harmo(0:-mband:-1)=f
+      !from mband to 0
+      harmo(0:-mband:-1)=spf
+      !from 0 to -mband
+      harmo(1:mband)=CONJG(spf)
+      !create matrix for convolution
+      mat=0.
+      mpert=mhigh-mlow+1
+      ipert=0
+      DO m1=mlow,mhigh
+         ipert=ipert+1
+         DO dm=MAX(1-ipert,-mband), MIN(mpert-ipert,mband)
+            jpert=ipert+dm
+            mat(ipert,jpert) = harmo(dm)
+         ENDDO
+      ENDDO
+      
+      DEALLOCATE(harmo,mband) 
 
    END SUBROUTINE deltagGetCoefMat
 END MODULE DeltagCoeffcientMod
