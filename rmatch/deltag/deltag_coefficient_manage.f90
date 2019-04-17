@@ -59,17 +59,17 @@ MODULE DeltagCoeffcientMod
 
    FUNCTION deltagFindCoefIndex(self,coefName) RESULT(idx)
 	CLASS(CoefManage), INTENT(INOUT) :: self
-     CHARACTER(len=*), INTENT(IN) :: coefName
-     INTEGER :: idx
-     INTEGER :: i
+      CHARACTER(len=*), INTENT(IN) :: coefName
+      INTEGER :: idx
+      INTEGER :: i
 
-     DO i = 1, self.queueSize, 1
-        IF (coefName == self%coefElement(i)%coefName ) THEN
-           idx=i
-           return
-        ENDIF
-     ENDDO
-     idx=-1
+      DO i = 1, self%queueSize, 1
+         IF (coefName == self%coefElement(i)%coefName ) THEN
+            idx=i
+            return
+         ENDIF
+      ENDDO
+      idx=-1
    END FUNCTION deltagFindCoefIndex
 
    SUBROUTINE deltagGetCoefMat(self, coefName, psi, mlow,mhigh,mat)

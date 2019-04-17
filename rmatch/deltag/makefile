@@ -15,7 +15,7 @@ LIBS = \
 
 
 OBJS = \
-	deltag_queue.o \
+	deltag_terms_queue.o \
 	deltag_coefficient_manage.o \
 
 all: equil deltag
@@ -29,7 +29,7 @@ deltag: $(OBJS)
 
 # dependencies
 
-deltag_queue.o: ../../equil/local.o
+deltag_terms_queue.o: ../../equil/local.o
 deltag_coefficient_manage.o: ../../equil/fspline.o
 
 clean:
