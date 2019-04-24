@@ -64,6 +64,14 @@ program pentrc
         call diagnose_all
     else
 
+    ! set the number of threads for OPENMP
+#ifdef _OPENMP
+    CALL OMP_SET_NUM_THREADS(openmp_threads)
+#else
+    if(openmp_threads /= 1) print *,"WARNING: Not compiled with OPENMP. Forcing openmp_threads = 1."
+    openmp_threads = 1
+#endif
+
     ! run models
         ! start log with harvest
         ierr=init_harvest('CODEDB_PENT'//nul,hlog,len(hlog))

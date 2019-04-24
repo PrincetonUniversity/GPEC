@@ -22,9 +22,9 @@ LIBS = \
 	-lharvest
 
 OBJS = \
-	dcon_interface.o \
-	utilities.o \
     params.o \
+	utilities.o \
+	dcon_interface.o \
 	lsode1.o \
 	lsode2.o \
 	special.o \
@@ -81,8 +81,7 @@ params.o: version.inc
 grid.o: 
 utilities.o: params.o
 special.o: params.o utilities.o
-dcon_interface.o: ../equil/spline_mod.mod ../equil/fspline_mod.mod ../equil/cspline_mod.mod ../equil/bicube_mod.mod \
-	params.o utilities.o
+dcon_interface.o: params.o utilities.o ../equil/spline_mod.mod ../equil/fspline_mod.mod ../equil/cspline_mod.mod ../equil/bicube_mod.mod
 inputs.o:  params.o utilities.o special.o dcon_interface.o
 energy.o:  params.o utilities.o lsode2.o
 pitch.o:   params.o utilities.o lsode1.o energy.o special.o

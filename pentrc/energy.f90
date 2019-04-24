@@ -77,7 +77,7 @@ module energy_integration
 
     real(r8) xcom_real
     common /xcom/ xcom_real(8)
-!$OMP THREADPRIVATE(/xcom/)
+    !$omp threadprivate(/xcom/)
 
     contains
 
@@ -157,9 +157,7 @@ module energy_integration
                 y(neq(1)),yi(neq(1)),dky(neq(1))
         
         common /xcom/ wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
-
-!$OMP THREADPRIVATE(/xcom/)
-
+        !$omp threadprivate(/xcom/)
 
         ! set default recording flag
         i = 0
