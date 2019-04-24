@@ -37,10 +37,10 @@ module torque
     use bicube_mod, only : bicube_eval,bicube_type,bicube_eval_external
     use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappadjsum
     use energy_integration, only : xintgrl_lsode,qt
-    use dcon_interface, only : issurfint
+    use dcon_interface, only : issurfint,mpert                  ! intel	< 2018 doesn't like mpert from inputs
     use inputs, only : eqfun,sq,geom,rzphi,smats,tmats,xmats,ymats,zmats,&
         kin,xs_m,dbob_m,divx_m,fnml, &                          ! equilib and pert. equilib splines
-        chi1,ro,zo,bo,mfac,mpert,mthsurf,shotnum,shottime, &    ! reals or integers
+        chi1,ro,zo,bo,mfac,mthsurf,shotnum,shottime, &          ! reals or integers
         verbose, &                                              ! logical
         machine                                                 ! character
     use netcdf
