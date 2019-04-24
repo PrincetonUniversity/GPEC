@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
 c     read and preprocess ideal DCON/VACUUM data
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -60,7 +60,7 @@ c-----------------------------------------------------------------------
          jac_type="pest"
       ELSE IF ((power_b==0).AND.(power_bp==1).AND.(power_r==0)) THEN
          jac_type="equal_arc"
-      ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN  
+      ELSE IF ((power_b==2).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="boozer"
       ELSE IF ((power_b==1).AND.(power_bp==0).AND.(power_r==0)) THEN
          jac_type="park"
@@ -83,7 +83,7 @@ c-----------------------------------------------------------------------
       ENDIF
       chi1=twopi*psio
       mpert=mhigh-mlow+1
-      
+
       IF ((mlim_out<MAX(ABS(mlow),ABS(mhigh))).OR.
      $     ((jac_out==jac_type).AND.(tmag_out==1))) THEN ! default outputs on mfac
           lmlow = mlow
@@ -265,8 +265,15 @@ c-----------------------------------------------------------------------
          END SELECT
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
-         WRITE(message,'(a)')"Terminated by zero crossing"
-         CALL gpec_stop(message)
+         ! this could be due to termination at a zero crossing (bad)
+         ! but it could also be due to peak_flag termination (good)
+         IF(verbose)THEN
+            WRITE(*,*)"WARNING: psilim does not match eigenmode psifac"
+            WRITE(*,*)"        > Forcing psilim to last psifac"
+         ENDIF
+         psilim = psifac(mstep)
+         CALL spline_eval(sq,psilim,0)
+         qlim = sq%f(4)
       ENDIF
       rhofac=SQRT(psifac)
 c-----------------------------------------------------------------------
@@ -343,11 +350,11 @@ c-----------------------------------------------------------------------
             eta=twopi*(theta(itheta)+rzphi%f(2))
             r(itheta)=ro+rfac*COS(eta)
             z(itheta)=zo+rfac*SIN(eta)
-         ENDDO  
+         ENDDO
          rmin=0.75*MINVAL(r)
          rmax=1.5*MAXVAL(r)
          zlim=1.5*MAXVAL(z)
-      ENDIF      
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -624,7 +631,7 @@ c-----------------------------------------------------------------------
       qs%fs(1:mpsi+1,1)=sq%fs(:,4)
       CALL spline_eval(sq,val2,0)
       qs%fs(mpsi+2,1)=sq%f(4)
-      CALL spline_fit(qs,"extrap") 
+      CALL spline_fit(qs,"extrap")
       CALL spline_int(qs)
       qintb=qs%fsi(mpsi+2,1)
       psitor(:)=qs%fsi(1:mpsi+1,1)/qintb
@@ -919,7 +926,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi,angle,rs,
      $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht
 
-      COMPLEX(r8), DIMENSION(-mband:mband) :: 
+      COMPLEX(r8), DIMENSION(-mband:mband) ::
      $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
       COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
 
@@ -988,7 +995,7 @@ c-----------------------------------------------------------------------
             g22=SUM(v(2,:)**2)
             g23=v(2,3)*v(3,3)
             g33=v(3,3)*v(3,3)
-            
+
             fmodb%fs(ipsi,itheta,1)=jac*(p1+b2hp)
      $           -chi1**2*b2ht*(g12+q*g13)/(jac*b2h*2)
             fmodb%fs(ipsi,itheta,2)=

@@ -1,11 +1,9 @@
 # This is the makefile for STRIDE.
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
 # flags unique to stride (not to be clobbered by top level install/makefile options)
-EXTRA_FFLAGS = -mkl -diag-disable 10397 #-xHost #-03 #-g #-check all #-warn all #-qopt-zmm-usage=high #-ipo #-traceback #-qoptrpt
 IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(EXTRA_FFLAGS) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
@@ -24,8 +22,8 @@ LIBS = \
 	-lvac \
 	-L$(SUPERLUDIR) \
 	-lsuperlu \
-	-L$(SUPERLUBLASDIR) \
-	-lblas
+	-L$(MATHDIR) \
+	$(MATHLIBS)
 
 OBJS = \
 	debug.o \

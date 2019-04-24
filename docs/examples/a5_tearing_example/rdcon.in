@@ -1,13 +1,35 @@
-&DCON_CONTROL
+&gal_input
+    nx=256               ! The number of elements in each interval between two singular surfaces
+    pfac=0.001           ! Packing ratio near the singular surface
+    gal_tol=1e-10        ! Tolerance of lsode integration
+    dx1dx2_flag=t        ! Flag to include the special dx1 and dx2 treatments for resonant and extension element
+    dx0=5e-4             ! The distance to the singular surface to truncate the lsode integration in resonant element
+    dx1=1.e-3            ! The size of resonant element
+    dx2=1.e-3            ! The size of extension element
+    cutoff=10            ! The number of elements include the large solution as the driving term
+    solver="LU"          ! LU factorization of solving Galerkinn matrix
+    nq=6                 ! The number of Gaussian points in each Galerkin element
+/
+&gal_output
+    interp_np=3          ! The number of interpration points for outputting Galerkin solution
+    restore_uh=t         ! Include the Hermite solution in Galerkin soluitn
+    restore_us=t         ! Include the small solution in Galerkin solution
+    restore_ul=t         ! Include the larger solution in Galerkin solution
+    bin_delmatch=t       ! Output solution for rmatch
+    out_galsol=f         ! Output Galerkin solution in ascii files
+    bin_galsol=f         ! Output Galerkin solution in binary files
+    b_flag=f             ! Output the perturbation of radial b field
+    coil%rpec_flag=f     ! Resistive perturbed equilibrium computation
+/
+&rdcon_control
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
+    gal_flag=t           ! Compute outer regime using resonant Galerkin method
 
     sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
-    qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
-    qhigh=1e3            ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
@@ -17,30 +39,22 @@
     mthvac=960           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
-    kin_flag = f         ! Kinetic EL equation (default: false)
-    con_flag = f         ! Continue integration through layers (default: false)
-    kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
-    kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
-    kingridtype = 0      ! Regular grid method (default : 0)
-    passing_flag = t     ! Includes passing particle effects in kinetic EL equation (default: false)
-    trapped_flag = t     ! Includes trapped particle effects in kinetic EL equation  (default: true)
-    ktanh_flag = t       ! Ignore kinetic effects in the core smoothly (default: false)
-    ktc = 0.1            ! Parameter activated by ktanh_flag: roughly corresponds to core width ignored (default: 0.1)
-    ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
-    ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
-    electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
-
     tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
     tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 
-    termbycross_flag = f ! Terminate ODE solver in the event of a zero crossing
+    cyl_flag=f           ! Make delta_mlow and delta_mhigh set the actual m truncation bounds. Default is to expand (n*qmin-4, n*qmax).
 
-    use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    sing1_flag=f         ! Special power series treatment
+    sing_order=6         ! The highest order of power series to be retained
+    sing_order_ceiling=t ! Auto detect the minium order to be retained in power series
+
+    regrid_flag=f        ! Redo the grid generation for galerkin method
 /
-&DCON_OUTPUT
+
+&rdcon_output
     crit_break=t         ! Color of the crit curve changes when crossing a singular surface
 
     ahb_flag=f           ! Output normal magnetic field eigenvalues and eigenfunctons at plasma-vacuum interface (must be false for GPEC)
@@ -54,4 +68,9 @@
     bin_bal1=f           ! Binary output for bal_flag poloidal functions
     out_bal2=f           ! Ascii output for bal_flag functions
     bin_bal2=f           ! Binary output for bal_flag functions
+/
+
+&ua_diagnose_list
+    uad%flag=f
+    uad%phase=t
 /

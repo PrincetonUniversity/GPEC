@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     IPRESP: computation of plasma response
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
+c     computation of plasma response
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.

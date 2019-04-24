@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
 c     GPEC: main program
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -515,6 +515,10 @@ c-----------------------------------------------------------------------
       IF (coil_flag .AND. vsingfld_flag) THEN
          CALL gpout_vsingfld()
       ENDIF
+      ! here we see the subroutine is simply called in series with other
+      ! similar subroutines by the driving program here
+      ! this and gpec_pmodb, for example, are completely independent
+      ! (just different ways of breaking up the components of the fields/displacements)
       IF(netcdf_flag.and.(xclebsch_flag.or.dw_flag.or.pmodb_flag
      $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag))THEN
          CALL gpout_qrv
@@ -542,36 +546,10 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (eqbrzphi_flag .OR. brzphi_flag .OR. xrzphi_flag .OR. 
      $     vbrzphi_flag .OR. vvbrzphi_flag .OR. pbrzphi_flag) THEN
-         IF (.NOT.mode_flag) THEN
-            CALL gpout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
-         ELSE
-            ALLOCATE(ipiv(mpert),
-     $           invmats(mpert,mpert),temp1(mpert,mpert))
-            DO i=1,mpert
-               invmats(i,i)=1.0
-            ENDDO
-            temp1=TRANSPOSE(permeabmats(resp_index,:,:))
-            CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
-            CALL zgetrs('N',mpert,mpert,temp1,mpert,
-     $           ipiv,invmats,mpert,info)
-            invmats=TRANSPOSE(invmats)
-            CALL idcon_build(mode,xspmn)
-            CALL gpeq_alloc
-            CALL gpeq_sol(psilim)
-            CALL gpeq_contra(psilim)
-            CALL gpeq_dealloc
-            CALL gpeq_weight(psilim,foutmn,mfac,mpert,1)
-            finmn = MATMUL(invmats,foutmn)
-            CALL gpeq_weight(psilim,foutmn,mfac,mpert,0)
-            CALL gpeq_weight(psilim,finmn,mfac,mpert,0)
-            CALL gpout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
-            DEALLOCATE(ipiv,invmats,temp1)
-         ENDIF
+         CALL gpout_xbrzphi(mode,xspmn,nr,nz,finmn,foutmn)
       ENDIF
       IF (singfld_flag .AND. vsbrzphi_flag) THEN
-         DO i=1,msing
-            IF (ss_flag(i)) CALL gpout_vsbrzphi(i,nr,nz)
-         ENDDO
+         CALL gpout_vsbrzphi(ss_flag,nr,nz)
       ENDIF
 
       IF (xbrzphifun_flag) THEN

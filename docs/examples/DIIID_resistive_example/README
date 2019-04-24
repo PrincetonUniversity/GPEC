@@ -1,0 +1,10 @@
+The example is used to show how to show the workflow of getting resistive response.
+
+Note: rpec_flag = t needs to be set in rdcon.in to run resistive plasma response.
+It generates the independent resistive and ideal solutions for rmatch and gpec.
+RMATCH combines ideal and resistive solutions from RDCON, providing mpert individual resistive solutions for the GPEC run.
+GPEC then couples the mpert resistive solutions to the coils to get the resistive plasma response to the applied field.
+
+../../../bin/rdcon
+../../../bin/rmatch
+../../../bin/gpec 

@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     IPVACUUM: manipulate vacuum code separately.
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
+c     manipulate vacuum code separately.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.

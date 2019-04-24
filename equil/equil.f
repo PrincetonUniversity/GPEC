@@ -92,14 +92,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write equilibrium and jacobian data.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,'(1x,4a/1x,2a,3(a,i1))')
-     $     "Equilibrium: ",TRIM(eq_filename),", Type: ",TRIM(eq_type),
-     $     "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
-     $     ", power_b = ",power_b,", power_r = ",power_r
-      WRITE(unit,'(1x,4a//1x,2a,3(a,i1))')
-     $     "Equilibrium: ",TRIM(eq_filename),", Type: ",TRIM(eq_type),
-     $     "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
-     $     ", power_b = ",power_b,", power_r = ",power_r
+      IF(.NOT. PRESENT(op_psihigh))THEN  ! only need this once
+        IF(verbose) WRITE(*,'(1x,4a/1x,2a,3(a,i1))')
+     $       "Equilibrium: ",TRIM(eq_filename),", Type: ",TRIM(eq_type),
+     $       "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
+     $       ", power_b = ",power_b,", power_r = ",power_r
+        WRITE(unit,'(1x,4a//1x,2a,3(a,i1))')
+     $       "Equilibrium: ",TRIM(eq_filename),", Type: ",TRIM(eq_type),
+     $       "Jac_type = ",TRIM(jac_type),", power_bp = ",power_bp,
+     $       ", power_b = ",power_b,", power_r = ",power_r
+      ENDIF
 c-----------------------------------------------------------------------
 c     read equilibrium data and diagnose.
 c-----------------------------------------------------------------------
