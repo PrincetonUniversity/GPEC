@@ -10,6 +10,35 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.3.2
+===========
+
+Adds
+------
+- INSTALL - Generalizes makefiles for better portability (intel/pgi/gfortran)
+- INSTALL - Enables parallel or serial compilation (controlled by OMPFLAG)
+- EXAMPLES - Adds a new example showing how to run rdcon and rmatch to determine tearing instability
+- EQUIL - Adds spline root finding subroutines
+- DCON - Adds the reform_eq_with_psilim flag to avoid reforming the equilibrium splines to psilim
+- GPEC - Adds explicit signfld overlap quantities to netcdf, identical to ascii values
+- PENTRC - Adds new dynamic_grid flag to enable skipping dynamic integration if only a static grid output is desired
+- PENTRC - Parallelizes pentrc bounce harmonic integrations
+
+Changes
+--------
+- INSTALL - Updates instructions for new AUG cluster
+- GPEC - Moves overlap outputs to control netcdf, consistent with correct dimensions (mode, not psi_rational)
+- GPEC - Renames netcdf dimensions *_rat to *_rational for clarity
+
+Fixes
+------
+- DCON - Makes dcon robust to peak_flag when truncation is already very near the seperatrix
+- GPEC - Fixes calculation of vacuum fields when using mode_flag
+- GPEC - Fixes dimension of local coupling matrices in netcdf
+- GPEC - Fixes netcdf output of full complex vsbrzphi
+- GPEC - Enables GPEC when DCON used peak_flag
+- PENTRC - Makes pitch integration spline evaluations external to avoid conflicts that caused LSODE to fail
+
 GPEC v1.3.1
 ===========
 
