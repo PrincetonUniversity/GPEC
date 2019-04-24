@@ -132,13 +132,13 @@
 #
 # On toki0*.aug.ipp.mpg.de
 #   Developers should use the ifort compiler as well as the associated impi and netcdf modules
-#     $ module load intel/14.0 impi netcdf-mpi/4.3.2 mkl git
+#     $ module load intel/17.0 impi/4.1.3 netcdf-mpi/4.3.2 mkl/2017 git
 #   Then set undefined environment variables
-#     $ export F90HOME=/afs/@cell/common/soft/intel/ics2013/14.0
-#     $ export FC=/afs/@cell/common/soft/intel/ics2016.3/16.0/linux/bin/intel64/bin/ifort
+#     $ export F90HOME=/afs/@cell/common/soft/intel/ics2017.1/17.0/linux
+#     $ export FC=/afs/@cell/common/soft/intel/ics2017.1/17.0/linux/bin/intel64/bin/ifort
 #     $ export NETCDFHOME=/afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3
 #   Alternately, you can simply load the gpec module!
-#     $ module use /afs/ipp-garching.mpg.de/home/n/nlogan/modulefiles
+#     $ module use /afs/.ipp/amd64_sles15/modules.addon.2019/TOK
 #     $ module load gpec
 #   This should properly set up your LD_LIBRARY_PATH, PATH, and environment variables.
 #   Either way, executing,
@@ -148,16 +148,16 @@
 #   nlogan@toki02 105)
 #   ------------------------------------------------------------
 #   Defaults tailored for
-#   Compiling with FC = /afs/@cell/common/soft/intel/ics2013/14.0/bin/intel64/bin/ifort
+#   Compiling with FC = /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/bin/intel64/bin/ifort
 #      using math libraries -lmkl_rt
-#      from /afs/@cell/common/soft/intel/ics2013/14.0/mkl/lib/intel64
-#      including /afs/@cell/common/soft/intel/ics2013/14.0/mkl/include/intel64/lp64
+#      from /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/mkl/lib/intel64
+#      including /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/mkl/include/intel64/lp64
 #      and netcdf libraries -lnetcdff -lnetcdf
 #      from /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/lib /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/lib
 #      including /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/include
 #      and compiler libraries -lirc -limf
-#      from /afs/@cell/common/soft/intel/ics2013/14.0//lib/intel64
-#      including /afs/@cell/common/soft/intel/ics2013/14.0//compiler/include/intel64
+#      from /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/compiler/lib/intel64
+#      including /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/compiler/include/intel64
 #
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
 #   ------------------------------------------------------------
@@ -304,7 +304,7 @@ ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
     FCINC = $(F90HOME)/include/intel64
     NETCDF_EXTRA_LIBS += -L$(FCDIR) $(FCLIBS)
 else ifneq ($(wildcard $(F90HOME)/compiler/lib/intel64/.),)
-    FCDIR = $(F90HOME)/lib/intel64
+    FCDIR = $(F90HOME)/compiler/lib/intel64
     FCLIBS = -lirc -limf # irc.a needed for static compile
     FCINC = $(F90HOME)/compiler/include/intel64
     NETCDF_EXTRA_LIBS += -L$(FCDIR) $(FCLIBS)
