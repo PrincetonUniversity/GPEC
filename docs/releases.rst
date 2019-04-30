@@ -10,6 +10,13 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.3.3
+===========
+
+Fixes
+------
+- DCON - Re-enables inverse equilibria, which raised errors in the more rigorous bicube checking introduced in 1.3.2
+
 GPEC v1.3.2
 ===========
 
