@@ -39,8 +39,8 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,itheta,mx,my
       INTEGER, PARAMETER :: me=3
       REAL(r8) :: psifac,theta,f0,f0fac,ffac,r,rfac,jacfac,w11,w12,bp,
-     $     bt,b,xm,dx,rholow,rhohigh
-c      REAL(r8), DIMENSION(0:rz_in%mx,0:rz_in%my) :: x,y,r2,deta
+     $     bt,b,xm,dx,rholow,rhohigh,eta,delpsi,q
+      REAL(r8), DIMENSION(3,3) :: v
       REAL(r8),DIMENSION(:,:),ALLOCATABLE :: x,y,r2,deta
       TYPE(spline_type) :: spl
 c-----------------------------------------------------------------------
@@ -152,11 +152,15 @@ c     prepare new bicube type for coordinates.
 c-----------------------------------------------------------------------
       IF(mtheta == 0)mtheta=rz_in%my
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
+      CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
       rzphi%xs=sq%xs
       rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
       rzphi%xtitle="psifac"
       rzphi%ytitle="theta "
       rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/)
+      eqfun%title=(/"  b0  ","      ","      " /)
+      eqfun%xs=sq%xs
+      eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
 c-----------------------------------------------------------------------
 c     prepare local splines and start loop over new surfaces.
 c-----------------------------------------------------------------------
@@ -271,6 +275,38 @@ c-----------------------------------------------------------------------
 
       DEALLOCATE(x,y,r2,deta)
 c-----------------------------------------------------------------------
+c     evaluate eqfun.
+c-----------------------------------------------------------------------
+      DO ipsi=0,mpsi
+         CALL spline_eval(sq,sq%xs(ipsi),0)
+         q=sq%f(4)
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(itheta/REAL(mtheta,r8)+rzphi%f(2))
+            r=ro+rfac*COS(eta)
+            jacfac=rzphi%f(4)
+            v(1,1)=rzphi%fx(1)/(2*rfac)
+            v(1,2)=rzphi%fx(2)*twopi*rfac
+            v(1,3)=rzphi%fx(3)*r
+            v(2,1)=rzphi%fy(1)/(2*rfac)
+            v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+            v(2,3)=rzphi%fy(3)*r
+            v(3,3)=twopi*r
+            w11=(1+rzphi%fy(2))*twopi**2*rfac*r/jacfac
+            w12=-rzphi%fy(1)*pi*r/(rfac*jacfac)
+
+            delpsi=SQRT(w11**2+w12**2)
+            eqfun%fs(ipsi,itheta,1)=SQRT(((twopi*psio*delpsi)**2+
+     $           sq%f(1)**2)/(twopi*r)**2)
+            eqfun%fs(ipsi,itheta,2)=(SUM(v(1,:)*v(2,:))+q*v(3,3)*v(1,3))
+     $           /(jacfac*eqfun%fs(ipsi,itheta,1)**2)
+            eqfun%fs(ipsi,itheta,3)=(v(2,3)*v(3,3)+q*v(3,3)*v(3,3))
+     $           /(jacfac*eqfun%fs(ipsi,itheta,1)**2)
+         ENDDO
+      ENDDO
+      CALL bicube_fit(eqfun,"extrap","periodic")
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -367,8 +403,8 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,itheta,mx,my
       INTEGER, PARAMETER :: me=3
       REAL(r8) :: psifac,theta,f0,f0fac,ffac,r,rfac,jacfac,w11,w12,bp,
-     $     bt,b,xm,dx,rholow,rhohigh
-c      REAL(r8), DIMENSION(0:rz_in%mx,0:rz_in%my) :: x,y,r2,deta
+     $     bt,b,xm,dx,rholow,rhohigh,eta,delpsi,q
+      REAL(r8), DIMENSION(3,3) :: v
       REAL(r8),DIMENSION(:,:),ALLOCATABLE :: x,y,r2,deta
       TYPE(spline_type) :: spl
 c-----------------------------------------------------------------------
@@ -446,11 +482,15 @@ c     prepare new bicube type for coordinates.
 c-----------------------------------------------------------------------
       IF(mtheta == 0) mtheta=rz_in%my
       CALL bicube_alloc(rzphi,mpsi,mtheta,4)
+      CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
       rzphi%xs=sq%xs
       rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
       rzphi%xtitle="psifac"
       rzphi%ytitle="theta "
       rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/)
+      eqfun%title=(/"  b0  ","      ","      " /)
+      eqfun%xs=sq%xs
+      eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
 c-----------------------------------------------------------------------
 c     prepare local splines and start loop over new surfaces.
 c-----------------------------------------------------------------------
@@ -571,6 +611,38 @@ c-----------------------------------------------------------------------
       ENDIF
 
       DEALLOCATE(x,y,r2,deta)
+c-----------------------------------------------------------------------
+c     evaluate eqfun.
+c-----------------------------------------------------------------------
+      DO ipsi=0,mpsi
+         CALL spline_eval(sq,sq%xs(ipsi),0)
+         q=sq%f(4)
+         DO itheta=0,mtheta
+            CALL bicube_eval(rzphi,rzphi%xs(ipsi),rzphi%ys(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(itheta/REAL(mtheta,r8)+rzphi%f(2))
+            r=ro+rfac*COS(eta)
+            jacfac=rzphi%f(4)
+            v(1,1)=rzphi%fx(1)/(2*rfac)
+            v(1,2)=rzphi%fx(2)*twopi*rfac
+            v(1,3)=rzphi%fx(3)*r
+            v(2,1)=rzphi%fy(1)/(2*rfac)
+            v(2,2)=(1+rzphi%fy(2))*twopi*rfac
+            v(2,3)=rzphi%fy(3)*r
+            v(3,3)=twopi*r
+            w11=(1+rzphi%fy(2))*twopi**2*rfac*r/jacfac
+            w12=-rzphi%fy(1)*pi*r/(rfac*jacfac)
+
+            delpsi=SQRT(w11**2+w12**2)
+            eqfun%fs(ipsi,itheta,1)=SQRT(((twopi*psio*delpsi)**2+
+     $           sq%f(1)**2)/(twopi*r)**2)
+            eqfun%fs(ipsi,itheta,2)=(SUM(v(1,:)*v(2,:))+q*v(3,3)*v(1,3))
+     $           /(jacfac*eqfun%fs(ipsi,itheta,1)**2)
+            eqfun%fs(ipsi,itheta,3)=(v(2,3)*v(3,3)+q*v(3,3)*v(3,3))
+     $           /(jacfac*eqfun%fs(ipsi,itheta,1)**2)
+         ENDDO
+      ENDDO
+      CALL bicube_fit(eqfun,"extrap","periodic")
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
