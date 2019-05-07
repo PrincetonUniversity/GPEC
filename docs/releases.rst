@@ -10,6 +10,17 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.3.4
+===========
+
+Fixes
+------
+- STRIDE - Fixes faulty writing of 2Nx2N Delta matrix into a NxN Delta_prime in netcdf
+
+Adds
+------
+- STRIDE - Writes full 2Nx2N Delta matrix as well as NxN A', B', Gamma', & Delta' sub-matrices to netcdf
+
 GPEC v1.3.3
 ===========
 
