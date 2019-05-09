@@ -26,7 +26,7 @@ allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match 
 
 harvest:
 	cd ../; git submodule init; git submodule update
-	cd ../harvest; make FC=$(FC) CC=$(CC) GACODE_ROOT= -f Makefile libharvest.a
+	cd ../harvest; make FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/
 
