@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-F90 = $(FC) $(FFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG)
 
 .f.o: 
 	$(F90) -c $*.f

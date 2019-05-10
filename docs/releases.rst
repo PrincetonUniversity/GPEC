@@ -10,6 +10,13 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.3.5
+===========
+
+Fixes
+------
+- INSTALL - Minor makefile robustness improvements
+
 GPEC v1.3.4
 ===========
 
