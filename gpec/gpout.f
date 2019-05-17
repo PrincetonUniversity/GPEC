@@ -1765,13 +1765,13 @@ c-----------------------------------------------------------------------
 
       IF (singcoup_set .AND. ALLOCATED(sbno_fun)) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
-     $        sbno_fun(1:mthsurf)))/mthsurf/2.0)
+     $        sbno_fun(1:mthsurf)))/mthsurf)
          sbno_mn = MATMUL(fldflxmat,sbno_mn)
          DO icoup=1,nsingcoup
             DO ising=1,msing
                olap(icoup, ising) = DOT_PRODUCT(
      $            singcoup_out_vecs(icoup,:,ising),
-     $            sbno_mn(:)) / SQRT(2.0)
+     $            sbno_mn(:))
             ENDDO
          ENDDO
          op = ABS(olap) / sbnosurf * 1e2
@@ -1881,7 +1881,7 @@ c-----------------------------------------------------------------------
                DO ising=1,osing
                   olap(icoup, ising) = DOT_PRODUCT(
      $               localcoup_out_vecs(icoup,:,ising),
-     $               sbno_mn(:)) / SQRT(2.0)
+     $               sbno_mn(:))
                ENDDO
             ENDDO
             op = ABS(olap) / sbnosurf * 1e2
