@@ -13,17 +13,20 @@ c     3. match_newton.
 c     4. match_delta.
 c     5. match_solution.
 c     6. match_eta_scan.
-c     7. match_qscan.
-c     8. match_delta_jardin.
-c     9. match_nyquist.
-c     10. match_branch.
-c     11. match_solve.
-c     12. match_matrix_diagnose.
-c     13. match_rpec.
-c     14. match_alloc_sol.
-c     15. match_dealloc_sol.
-c     16. match_output_solution.
-c     17. match_main.
+c     7. match_branch_scan
+c     8. match_eigenvalue_scan.
+c     9. match_qscan.
+c     10. match_delta_jardin.
+c     11. match_nyquist.
+c     12. match_branch.
+c     13. match_solve.
+c     14. match_matrix_diagnose.
+c     15. match_rpec.
+c     16. match_alloc_sol.
+c     17. match_dealloc_sol.
+c     18. match_output_solution.
+c     19. match_auto_connect.
+c     20. match_main.
 c-----------------------------------------------------------------------
 c     subprogram 0. match_mod.
 c     module declarations.
@@ -81,7 +84,7 @@ c-----------------------------------------------------------------------
       END TYPE insol_type
       
       LOGICAL :: scan_flag=.FALSE.,sol_flag=.FALSE.,qscan_flag=.FALSE.,
-     $     matrix_diagnose=.FALSE.
+     $     matrix_diagnose=.FALSE.,branch_scan_flag=.FALSE.
       LOGICAL :: qscan_out=.TRUE.,deltar_flag=.FALSE.,deflate=.FALSE.,
      $           deltac_flag=.FALSE.,deltaj_flag=.FALSE.,
      $           match_flag=.FALSE.
@@ -129,7 +132,7 @@ c-----------------------------------------------------------------------
      $                         deltar_flag,deltac_flag,deltaj_flag,
      $                         deflate,nroot,match_flag,ising_output,
      $                         match_sol,matrix_diagnose,fulldomain,
-     $                         coil,itermax,relax_fac 
+     $                         coil,itermax,relax_fac,branch_scan_flag
       NAMELIST/rmatch_output/ bin_rpecsol,out_rpecsol
       NAMELIST/nyquist_input/nyquist
 10    FORMAT(1x,"Eigenvalue=",1p,2e11.3)
@@ -239,9 +242,13 @@ c     nyquist plot.
 c-----------------------------------------------------------------------
       IF(nyquist%flag)CALL match_nyquist
 c-----------------------------------------------------------------------
-c     scan over resistivity.
+c     simple scan over resistivity.
 c-----------------------------------------------------------------------
       IF (scan_flag) CALL match_eta_scan
+c-----------------------------------------------------------------------
+c     scan over resistivity by tracking solution branches
+c-----------------------------------------------------------------------
+      IF (branch_scan_flag) CALL match_branch_scan
 c-----------------------------------------------------------------------
 c     construct the global solution in both outer and inner regions.
 c-----------------------------------------------------------------------
@@ -320,10 +327,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(4*msing) :: cof
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
       COMPLEX(r8), DIMENSION(4*msing-1,4*msing-1) :: cmat
-      REAL(r8) :: h
-      COMPLEX(r8) :: zp1r,zm1r,zp1i,zm1i,zp2r,zm2r,zp2i,zm2i
-      COMPLEX(r8) :: fp1r,fm1r,fp1i,fm1i,fp2r,fm2r,fp2i,fm2i
-      COMPLEX(r8) :: rderiv, ideriv, rderiv2, ideriv2
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -371,53 +374,6 @@ c-----------------------------------------------------------------------
          f=ff(z,mat)
          dz=-f*(z-z_old)/(f-f_old)
       ENDDO
-
-c-----------------------------------------------------------------------
-c     evaluate derivatives around solution
-c-----------------------------------------------------------------------
-      h=1e-8
-      zp1r = z + real(z)*(1+h)
-      zm1r = z + real(z)*(1-h)
-      zp1i = z + aimag(z)*(1+h)
-      zm1i = z + aimag(z)*(1-h)
-      zp2r = z + real(z)*(1+2*h)
-      zm2r = z + real(z)*(1-2*h)
-      zp2i = z + aimag(z)*(1+2*h)
-      zm2i = z + aimag(z)*(1-2*h)
-      fp1r = ff(zp1r,mat)
-      fm1r = ff(zm1r,mat)
-      fp1i = ff(zp1i,mat)
-      fm1i = ff(zm1i,mat)
-      fp2r = ff(zp2r,mat)
-      fm2r = ff(zm2r,mat)
-      fp2i = ff(zp2i,mat)
-      fm2i = ff(zm2i,mat)
-      
-      !3-point stencils
-      rderiv  = (fp1r-fm1r)/(2*h*real(z) )
-      ideriv  = (fp1i-fm1i)/(2*h*aimag(z))
-      rderiv2 = (fp1r+fm1r-2*f)/((h*real(z) )**2)
-      ideriv2 = (fp1i+fm1i-2*f)/((h*aimag(z))**2)
-      !5-point stencils
-      rderiv  = (fm2r-8*fm1r+8*fp1r-fp2r)/(12*h*real(z))
-      ideriv  = (fm2i-8*fm1i+8*fp1i-fp2i)/(12*h*aimag(z))
-      rderiv2 = (-fm2r+16*fm1r-30*f+16*fp1r-fp2r)/(12*(h*real(z))**2)
-      ideriv2 = (-fm2i+16*fm1i-30*f+16*fp1i-fp2i)/(12*(h*aimag(z))**2)
-
-      !WRITE (*,11) "Eigenvalue=", z
-      WRITE (*,11) "f(eigenvalue)=", f
-      WRITE (*,11) "rderiv=", rderiv,  rderiv/f
-      WRITE (*,11) "ideriv=", ideriv,  ideriv/f
-      WRITE (*,11) "rderiv2=", rderiv2, rderiv2/f
-      WRITE (*,11) "ideriv2=", ideriv2, ideriv2/f
-      !WRITE(out_unit,11) z
-      WRITE (out_unit,11) "f(eigenvalue)=", f
-      WRITE (out_unit,11) "rderiv=", rderiv,  rderiv/f
-      WRITE (out_unit,11) "ideriv=", ideriv,  ideriv/f
-      WRITE (out_unit,11) "rderiv2=", rderiv2, rderiv2/f
-      WRITE (out_unit,11) "ideriv2=", ideriv2, ideriv2/f
-      
-11    FORMAT(1x,A,1p,4e11.3)
 c-----------------------------------------------------------------------
 c     compute the coefficients of outter and inner region solutions.
 c-----------------------------------------------------------------------
@@ -1141,7 +1097,236 @@ c-----------------------------------------------------------------------
       CALL program_stop("Normal termination for eta scan.")
       END SUBROUTINE match_eta_scan
 c-----------------------------------------------------------------------
-c     subprogram 7. match_qscan.
+c     subprogram 7. match_branch_scan.
+c     track multiple solution branches while scanning eta
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------            
+      SUBROUTINE match_branch_scan
+      INTEGER :: istep,ising,iter
+      REAL(r8) :: step,eta_scan,log_scan_x0,err
+      REAL(r8) :: slope12, slope01, var2, re_eigval
+      COMPLEX(r8) :: eigval,eigvalm0,eigvalm1,eigvalm2
+      COMPLEX(r8),DIMENSION(-2:scan_nstep,msing+1) :: eigvals
+      INTEGER,DIMENSION(-2:scan_nstep) :: nbranch
+      INTEGER ibranch,jbranch,attempt
+      LOGICAL valid
+      INTEGER,DIMENSION(msing+1) :: order
+c-----------------------------------------------------------------------
+c     format output.
+c-----------------------------------------------------------------------                  
+10    FORMAT(/12x,"#eta",10x,"re_gr",10x,"im_gr",2x,"iter",3x,"ising",
+     $       13x,"zi",13x,"zo",4x,"zi*SQRT(10)",10x,"zo/10",
+     $       7x,"re(q_in)",7x,"im(q_in)"/)
+20    FORMAT(1p,3e15.5,i6,i8,8e15.5)
+c-----------------------------------------------------------------------
+c     scan constant eta parameter.
+c-----------------------------------------------------------------------
+      !Scan step size
+      log_scan_x0=log10(scan_x0)
+      step=(log10(scan_x1)-log_scan_x0)/scan_nstep
+
+      !Branch initialization
+      nbranch(-2:0)=1
+      eigvals(-2:-1,1)=initguess
+      
+      !I/O setup
+      CALL bin_open(bin_unit,"scanres.bin","UNKNOWN","REWIND","none")
+      CALL ascii_open(debug_unit,"scanres.out","UNKNOWN")
+      WRITE (debug_unit,10)
+
+      !Scan eta values
+      DO istep=0,scan_nstep
+         eta_scan=10**(log_scan_x0+istep*step)
+         DO ising=1,totmsing
+            restype(ising)%taur=taur_save(ising)
+     $                         /(eta_scan*eta(ising)/eta(1))
+         ENDDO
+         WRITE(*,51) istep,eta_scan
+ 51      FORMAT("***istep=",i5,", eta_scan=",1P,e11.3)
+
+         !First pass to find next eigenvalue
+         DO ibranch=1,nbranch(istep-1)
+            eigval=eigvals(istep-1,ibranch)
+            CALL match_newton(match_delta,eigval,err,iter)
+            eigvals(istep,ibranch)=eigval
+            WRITE(*,52) ibranch, eigval
+ 52         FORMAT(" ibranch=",i2,": eigval=(",1P,e11.3,e11.3," )")
+         ENDDO
+
+         !Skip 2nd pass during initialization
+         if( istep==0 ) then
+            eigvals(-2:-1,1)=eigval
+            cycle
+         endif
+
+         !Check if 2nd pass is necessary to start new branch
+         nbranch(istep)=nbranch(istep-1)
+         DO ibranch=1,nbranch(istep-1)
+            
+           !Compare slope to previous segment
+           eigvalm0 = eigvals(istep-0,ibranch)
+           eigvalm1 = eigvals(istep-1,ibranch)
+           eigvalm2 = eigvals(istep-2,ibranch)
+           slope12 = REAL(eigvalm1-eigvalm2)
+           slope01 = REAL(eigvalm0-eigvalm1)
+
+           !if( (slope01/slope12-1.0)>0.2 ) then
+           if( slope12*slope01<0.0 ) then
+              write(*,53) slope12, slope01
+ 53           FORMAT(' New branch found. s12=',e11.3,' s01=',e11.3)
+
+             DO attempt=1,5
+               eigval=eigvalm1-2**(attempt-1)*slope01
+               CALL match_newton(match_delta,eigval,err,iter)
+               !Check that solution is valid
+               valid=.true.
+  
+               !not too close to other solutions
+               DO jbranch=1,nbranch(istep)
+                  var2=abs(eigval-eigvals(istep,jbranch))/abs(eigval**2)
+                  if( var2<1e-5 ) then
+                     valid=.false.
+                     write(*,54) jbranch,attempt
+ 54           FORMAT("  Ignore: Similar to branch ",i2,'. Attempt #',i1)
+                  endif
+               ENDDO
+
+               !not too close to zero
+               if( abs(eigval)<1e-5 ) then
+                  valid=.false.
+                  write(*,55) attempt
+ 55               FORMAT("  Ignore: Too close to zero. Attempt #",i1)
+               endif
+
+               if( nbranch(istep)>msing ) then
+                  write(*,56) attempt
+                  write(*,57)
+ 56            FORMAT("  Error: More branches than msing. Attempt #",i1)
+ 57               FORMAT("         Try increasing step number")
+                  exit
+               endif
+               
+               if( valid ) then
+                !Valid, so start new branch
+                nbranch(istep) = nbranch(istep)+1
+                write(*,58) nbranch(istep), attempt
+ 58             FORMAT("  Adding valid nbranch=",i3,". Attempt #",i1)
+                eigvals(istep-2,nbranch(istep))=eigvals(istep-2,ibranch)
+                eigvals(istep-1,nbranch(istep))=eigvals(istep-1,ibranch)
+                eigvals(istep-0,nbranch(istep))=eigval
+                exit
+               endif
+             ENDDO    
+           endif
+         ENDDO
+
+         DO ibranch=1,nbranch(istep)
+            eigval=eigvals(istep,ibranch)
+
+            ising=ising_output
+         WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
+     $      REAL(eigval,4),REAL(AIMAG(eigval),4),
+     $      mylog(eigval),
+     $      REAL(zi_in(ising),4),REAL(zo_out(ising),4),
+     $      REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,4),
+     $      REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
+     $      mylog(q_in(ising)),REAL(iter,4)
+         WRITE(debug_unit,20)eta_scan,
+     $    REAL(eigval),IMAG(eigval),nbranch(istep),ising,zi_in(ising),
+     $    zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,
+     $    REAL(q_in(ising)),IMAG(q_in(ising))
+
+         ENDDO
+      ENDDO
+
+      !Print results in descending order of final real component
+      order = real_order(nbranch(scan_nstep),eigvals(scan_nstep,:))
+      DO ibranch=1,nbranch(scan_nstep)
+         eigval = eigvals(scan_nstep,order(ibranch))
+         WRITE(*,59) ibranch, REAL(eigval), AIMAG(eigval)
+ 59      FORMAT("Branch ",i2," eigval=(",1P,e14.6,1x,e14.6," )")
+      ENDDO
+
+      WRITE(bin_unit)
+      CALL ascii_close(debug_unit)
+      CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      CALL program_stop("Normal termination for eta scan.")
+      END SUBROUTINE match_branch_scan
+c-----------------------------------------------------------------------
+c     subprogram 8. match_eigenvalue_scan.
+c     scan parameter.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------            
+      SUBROUTINE match_eigenvalue_scan
+      INTEGER :: rstep,istep,ising,iter
+      REAL(r8) :: real_step,imag_step,eta_scan,err
+      REAL(r8) :: log_scan_real0, log_scan_real1
+      REAL(r8) :: log_scan_imag0, log_scan_imag1
+      REAL(r8) :: real_eigval, imag_eigval
+      COMPLEX(r8) :: eigval
+c-----------------------------------------------------------------------
+c     format output.
+c-----------------------------------------------------------------------                  
+10    FORMAT(/12x,"re_guess   im_guess",10x,"re_gr",10x,"im_gr",2x,
+     $       "iter",3x,"ising",13x,"zi",13x,"zo",4x,"zi*SQRT(10)",
+     $       10x,"zo/10",7x,"re(q_in)",7x,"im(q_in)"/)
+20    FORMAT(1p,4e15.5,i6,i8,8e15.5)
+c-----------------------------------------------------------------------
+c     scan constant eta parameter.
+c-----------------------------------------------------------------------
+      log_scan_real0=log10(real(initguess))
+      log_scan_real1=log10(scan_x0)
+      log_scan_imag0=log10(AIMAG(initguess))
+      log_scan_imag1=log10(scan_x1)
+
+      real_step=log_scan_real1/scan_nstep
+      imag_step=log_scan_imag1/5.0
+
+      CALL bin_open(bin_unit,"scaneigen.bin","UNKNOWN","REWIND","none")
+      CALL ascii_open(debug_unit,"scaneigen.out","UNKNOWN")
+      WRITE (debug_unit,10)
+      DO istep=0,5
+         DO rstep=0,scan_nstep
+            
+            real_eigval = 10**(log_scan_real0+rstep*real_step)
+            imag_eigval = 10**(log_scan_imag0+istep*imag_step)
+            eigval = COMPLEX( real_eigval, imag_eigval )
+
+
+            CALL match_newton(match_delta,eigval,err,iter)
+
+            ising=ising_output
+            WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
+     $           REAL(eigval,4),REAL(AIMAG(eigval),4),
+     $           mylog(eigval),
+     $           REAL(zi_in(ising),4),REAL(zo_out(ising),4),
+     $           REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,
+     $           4),REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
+     $           mylog(q_in(ising)),REAL(iter,4)
+            WRITE(debug_unit,20)real_eigval,imag_eigval,
+     $           REAL(eigval),IMAG(eigval),iter,ising,zi_in(ising),
+     $           zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,
+     $           REAL(q_in(ising)),IMAG(q_in(ising))
+         ENDDO
+         WRITE(debug_unit,*) " "
+      ENDDO
+      WRITE(bin_unit)
+      CALL ascii_close(debug_unit)
+      CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      CALL program_stop("Normal termination for eta scan.")
+      END SUBROUTINE match_eigenvalue_scan
+c-----------------------------------------------------------------------
+c     subprogram 9. match_qscan.
 c     scan q for different inner layer model.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1250,7 +1435,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE match_qscan
       
 c-----------------------------------------------------------------------
-c     subprogram 8. match_delta_jardin.
+c     subprogram 10. match_delta_jardin.
 c     finite differential method of GGJ.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1299,7 +1484,7 @@ c     terminate.
 c-----------------------------------------------------------------------      
       END SUBROUTINE match_delta_jardin
 c-----------------------------------------------------------------------
-c     subprogram 9. match_nyquist.
+c     subprogram 11. match_nyquist.
 c     draws nyquist plot.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1413,7 +1598,7 @@ c-----------------------------------------------------------------------
       CALL program_stop("Normal termination for nyquist plot.")
       END SUBROUTINE match_nyquist
 c-----------------------------------------------------------------------
-c     subprogram 10. match_branch.
+c     subprogram 12. match_branch.
 c     draws one branch of nyquist plot.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1476,7 +1661,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_branch      
 c-----------------------------------------------------------------------
-c     subprogram 11. match_solve.
+c     subprogram 13. match_solve.
 c     solves for one root.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1515,7 +1700,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_solve     
 c-----------------------------------------------------------------------
-c     subprogram 12. match_matrix_diagnose
+c     subprogram 14. match_matrix_diagnose
 c     solves for one root.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1560,7 +1745,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_matrix_diagnose
 c-----------------------------------------------------------------------
-c     subprogram 13. match_rpec.
+c     subprogram 15. match_rpec.
 c     construct resistive perturbed equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1680,7 +1865,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_rpec
 c-----------------------------------------------------------------------
-c     subprogram 14. match_alloc_sol.
+c     subprogram 16. match_alloc_sol.
 c     allocate and read inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1739,7 +1924,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_alloc_sol
 c-----------------------------------------------------------------------
-c     subprogram 15. match_dealloc_sol.
+c     subprogram 17. match_dealloc_sol.
 c     deallocate inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2010,7 +2195,7 @@ c-----------------------------------------------------------------------
       RETURN      
       END SUBROUTINE match_output_solution
 c-----------------------------------------------------------------------
-c     subprogram 17. match_auto_connect.
+c     subprogram 18. match_auto_connect.
 c     auto connect the outer and inner region.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2145,9 +2330,47 @@ c-----------------------------------------------------------------------
       RETURN      
       END SUBROUTINE match_auto_connect
       
+c-----------------------------------------------------------------------
+c     function 19. real_order
+c     return an array of 'n' indices for complex array 'y' sorted
+c     in descending order by the real components of the elements.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------   
+      FUNCTION real_order(n,y)
+      INTEGER :: n
+      COMPLEX(r8),DIMENSION(n) :: y
+      INTEGER,DIMENSION(n) :: real_order, mask
+      REAL(r8) :: maxval
+      INTEGER :: i,j
+
+      mask=0
+c-----------------------------------------------------------------------
+c     Cycle over outputs
+c-----------------------------------------------------------------------
+      DO i=1,n
+c-----------------------------------------------------------------------
+c        Cycle over inputs
+c-----------------------------------------------------------------------
+         maxval=-9e37
+         DO j=1,n
+            if( mask(j)==0 .and. REAL(y(j))>maxval ) then
+               maxval=REAL(y(j))
+               real_order(i)=j
+            endif
+         ENDDO
+         mask(real_order(i))=1
+         
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      END FUNCTION
+
       END MODULE match_mod
 c-----------------------------------------------------------------------
-c     subprogram 18. match_main.
+c     subprogram 20. match_main.
 c     trivial main program.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
