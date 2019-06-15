@@ -881,8 +881,19 @@ c-----------------------------------------------------------------------
 c     compute relative tolerances.
 c-----------------------------------------------------------------------
       singfac=HUGE(singfac)
-      IF(ising<=msing)singfac=ABS(sing(ising)%m-nn*q)
-      IF(ising>1)singfac=MIN(singfac,ABS(sing(ising-1)%m-nn*q))
+      IF(kin_flag)THEN
+         IF(ising==1 .AND. kmsing>=1)THEN
+            singfac = abs(psifac - kinsing(ising)%psifac) /
+     $                (kinsing(ising)%psifac - psilow)
+         ELSEIF(ising<=kmsing)THEN
+            singfac = MIN(abs(psifac - kinsing(ising)%psifac),
+     $              abs(psifac - kinsing(ising-1)%psifac)) /
+     $              abs(kinsing(ising)%psifac - kinsing(ising-1)%psifac)
+         ENDIF
+      ELSE
+          IF(ising<=msing)singfac=ABS(sing(ising)%m-nn*q)
+          IF(ising>1)singfac=MIN(singfac,ABS(sing(ising-1)%m-nn*q))
+      ENDIF
       IF(singfac<crossover)THEN
          tol=tol_r
       ELSE
