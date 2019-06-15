@@ -334,7 +334,7 @@ module pitch_integration
         integer :: l,n,i,ix
         real(r8) :: wn,wt,we,wd,wb,nuk,bobmax,epsr,lnq,q,fl,nueff,rex,imx
         complex(r8) :: xint,fres
-        complex(r8), dimension(turns_g%nqty) :: eqspl_f
+        complex(r8), dimension(eqspl_g%nqty) :: eqspl_f
 
         common /lcom/ wn,wt,we,nuk,bobmax,epsr,q,l,n,rex,imx
         !$omp threadprivate(/lcom/)
