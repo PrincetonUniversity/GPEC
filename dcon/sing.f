@@ -1474,6 +1474,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(nsing) :: psising,psising_check
 
       LOGICAL :: sing_flag
+      LOGICAL, PARAMETER :: debug = .FALSE.
       INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check
       REAL(r8) :: x0,x1,eps,reps
       COMPLEX(r8) :: det0,det1,sing_det
@@ -1536,8 +1537,9 @@ c-----------------------------------------------------------------------
       psising_check=psising
       psising=-1
       singnum=1
-      WRITE(*,'(a,es10.3,a,es10.3)') ' Looking for singularities below',
-     $      keps1, 'x the maximum determinant of', ABS(det_max)
+      IF(verbose) WRITE(*,'(a,es10.3,a,es10.3)')
+     $   ' Looking for singularities below', keps1,
+     $   'x the maximum determinant of', ABS(det_max)
       psising(1)=psising_check(1)
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
@@ -1546,11 +1548,11 @@ c-----------------------------------------------------------------------
          IF (ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)
-            WRITE(*,'(a,es10.3,a,es10.3,a)') '  > psi',psising_check(i),
-     $        ' is singular'
+            IF(debug) WRITE(*,'(a,es10.3,a,es10.3,a)') '  > psi',
+     $        psising_check(i), ' is singular'
          ELSE
-            WRITE(*,'(a,es10.3,a,es10.3,a)') '  - psi',psising_check(i),
-     $        ' is not singular. Determinant is ',
+            IF(debug) WRITE(*,'(a,es10.3,a,es10.3,a)') '  - psi',
+     $        psising_check(i), ' is not singular. Determinant is ',
      $        ABS(det0)/(ABS(det_max)*eps), 'x the threshold'
          ENDIF
       ENDDO
@@ -1573,8 +1575,16 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sq,psising(ising+1),1)
          kinsing(ising)%q=sq%f(4)
          kinsing(ising)%q1=sq%f1(4)
-         WRITE(*,*)kinsing(ising)%psifac,kinsing(ising)%q
       ENDDO
+
+      IF(verbose)THEN
+         WRITE(*,*) " > Found the following signular surfaces"
+         WRITE(*,'(3x,a16, a16)')"psi","q"
+         DO ising=1,kmsing
+            WRITE(*,'(3x,2(es16.8))') kinsing(ising)%psifac,
+     $         kinsing(ising)%q
+         ENDDO
+      ENDIF
 
       END SUBROUTINE ksing_find
 c-----------------------------------------------------------------------
