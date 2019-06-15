@@ -1539,15 +1539,15 @@ C-----------------------------------------------------------------------
  280  IF ((TN + H) .NE. TN) GO TO 290
       NHNIL = NHNIL + 1
       IF (NHNIL .GT. MXHNIL) GO TO 290
-      MSG = 'LSODE-  Warning..internal T (=R1) and H (=R2) are'
-      CALL XERRWD (MSG, 50, 101, 0, 0, 0, 0, 0, 0.0, 0.0)
+      MSG = 'LSODE- Energy-  Warning..internal T (=R1) and H (=R2) are '
+      CALL XERRWD (MSG, 58, 101, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG='      such that in the machine, T + H = T on the next step  '
       CALL XERRWD (MSG, 60, 101, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG = '      (H = step size). Solver will continue anyway'
       CALL XERRWD (MSG, 50, 101, 0, 0, 0, 0, 2, TN, H)
       IF (NHNIL .LT. MXHNIL) GO TO 290
-      MSG = 'LSODE-  Above warning has been issued I1 times.  '
-      CALL XERRWD (MSG, 50, 102, 0, 0, 0, 0, 0, 0.0, 0.0)
+      MSG = 'LSODE- Energy-  Above warning has been issued I1 times.  '
+      CALL XERRWD (MSG, 58, 102, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG = '      It will not be issued again for this problem'
       CALL XERRWD (MSG, 50, 102, 0, 1, MXHNIL, 0, 0, 0.0, 0.0)
  290  CONTINUE
@@ -1622,36 +1622,36 @@ C Then Y is loaded from YH and T is set to TN.  The optional outputs
 C are loaded into the work arrays before returning.
 C-----------------------------------------------------------------------
 C The maximum number of steps was taken before reaching TOUT. ----------
- 500  MSG = 'LSODE-  At current T (=R1), MXSTEP (=I1) steps   '
-      CALL XERRWD (MSG, 50, 201, 0, 0, 0, 0, 0, 0.0, 0.0)
+ 500  MSG = 'LSODE- Energy-  At current T (=R1), MXSTEP (=I1) steps   '
+      CALL XERRWD (MSG, 58, 201, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG = '      taken on this call before reaching TOUT     '
       CALL XERRWD (MSG, 50, 201, 0, 1, MXSTEP, 0, 1, TN, 0.0)
       ISTATE = -1
       GO TO 580
 C EWT(I) .LE. 0.0 for some I (not at start of problem). ----------------
  510  EWTI = RWORK(LEWT+I-1)
-      MSG = 'LSODE-  At T (=R1), EWT(I1) has become R2 .LE. 0.'
-      CALL XERRWD (MSG, 50, 202, 0, 1, I, 0, 2, TN, EWTI)
+      MSG = 'LSODE- Energy-  At T (=R1), EWT(I1) has become R2 .LE. 0.'
+      CALL XERRWD (MSG, 58, 202, 0, 1, I, 0, 2, TN, EWTI)
       ISTATE = -6
       GO TO 580
 C Too much accuracy requested for machine precision. -------------------
- 520  MSG = 'LSODE-  At T (=R1), too much accuracy requested  '
-      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 0, 0.0, 0.0)
+ 520  MSG = 'LSODE- Energy-  At T (=R1), too much accuracy requested  '
+      CALL XERRWD (MSG, 58, 203, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG = '      for precision of machine..  see TOLSF (=R2) '
       CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 2, TN, TOLSF)
       RWORK(14) = TOLSF
       ISTATE = -2
       GO TO 580
 C KFLAG = -1.  Error test failed repeatedly or with ABS(H) = HMIN. -----
- 530  MSG = 'LSODE-  At T(=R1) and step size H(=R2), the error'
-      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 0, 0.0, 0.0)
+ 530  MSG = 'LSODE- Energy-  At T(=R1) and step size H(=R2), the error'
+      CALL XERRWD (MSG, 58, 204, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG = '      test failed repeatedly or with ABS(H) = HMIN'
       CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 2, TN, H)
       ISTATE = -4
       GO TO 560
 C KFLAG = -2.  Convergence failed repeatedly or with ABS(H) = HMIN. ----
- 540  MSG = 'LSODE-  At T (=R1) and step size H (=R2), the    '
-      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0, 0.0)
+ 540  MSG = 'LSODE- Energy-  At T (=R1) and step size H (=R2), the    '
+      CALL XERRWD (MSG, 58, 205, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG = '      corrector convergence failed repeatedly     '
       CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG = '      or with ABS(H) = HMIN   '
@@ -1687,105 +1687,109 @@ C (ISTATE = -3), as detected before calling the core integrator.
 C First the error message routine is called.  If the illegal input 
 C is a negative ISTATE, the run is aborted (apparent infinite loop).
 C-----------------------------------------------------------------------
- 601  MSG = 'LSODE-  ISTATE (=I1) illegal '
-      CALL XERRWD (MSG, 30, 1, 0, 1, ISTATE, 0, 0, 0.0, 0.0)
+ 601  MSG = 'LSODE- Energy-  ISTATE (=I1) illegal '
+      CALL XERRWD (MSG, 38, 1, 0, 1, ISTATE, 0, 0, 0.0, 0.0)
       IF (ISTATE .LT. 0) GO TO 800
       GO TO 700
- 602  MSG = 'LSODE-  ITASK (=I1) illegal  '
-      CALL XERRWD (MSG, 30, 2, 0, 1, ITASK, 0, 0, 0.0, 0.0)
+ 602  MSG = 'LSODE- Energy-  ITASK (=I1) illegal  '
+      CALL XERRWD (MSG, 38, 2, 0, 1, ITASK, 0, 0, 0.0, 0.0)
       GO TO 700
- 603  MSG = 'LSODE-  ISTATE .GT. 1 but LSODE not initialized '
-      CALL XERRWD (MSG, 50, 3, 0, 0, 0, 0, 0, 0.0, 0.0)
+ 603  MSG = 'LSODE- Energy-  ISTATE .GT. 1 but LSODE not initialized '
+      CALL XERRWD (MSG, 58, 3, 0, 0, 0, 0, 0, 0.0, 0.0)
       GO TO 700
- 604  MSG = 'LSODE-  NEQ (=I1) .LT. 1     '
-      CALL XERRWD (MSG, 30, 4, 0, 1, NEQ(1), 0, 0, 0.0, 0.0)
+ 604  MSG = 'LSODE- Energy-  NEQ (=I1) .LT. 1     '
+      CALL XERRWD (MSG, 38, 4, 0, 1, NEQ(1), 0, 0, 0.0, 0.0)
       GO TO 700
- 605  MSG = 'LSODE-  ISTATE = 3 and NEQ increased (I1 to I2)  '
-      CALL XERRWD (MSG, 50, 5, 0, 2, N, NEQ(1), 0, 0.0, 0.0)
+ 605  MSG = 'LSODE- Energy-  ISTATE = 3 and NEQ increased (I1 to I2)  '
+      CALL XERRWD (MSG, 58, 5, 0, 2, N, NEQ(1), 0, 0.0, 0.0)
       GO TO 700
- 606  MSG = 'LSODE-  ITOL (=I1) illegal   '
-      CALL XERRWD (MSG, 30, 6, 0, 1, ITOL, 0, 0, 0.0, 0.0)
+ 606  MSG = 'LSODE- Energy-  ITOL (=I1) illegal   '
+      CALL XERRWD (MSG, 38, 6, 0, 1, ITOL, 0, 0, 0.0, 0.0)
       GO TO 700
- 607  MSG = 'LSODE-  IOPT (=I1) illegal   '
-      CALL XERRWD (MSG, 30, 7, 0, 1, IOPT, 0, 0, 0.0, 0.0)
+ 607  MSG = 'LSODE- Energy-  IOPT (=I1) illegal   '
+      CALL XERRWD (MSG, 38, 7, 0, 1, IOPT, 0, 0, 0.0, 0.0)
       GO TO 700
- 608  MSG = 'LSODE-  MF (=I1) illegal     '
-      CALL XERRWD (MSG, 30, 8, 0, 1, MF, 0, 0, 0.0, 0.0)
+ 608  MSG = 'LSODE- Energy-  MF (=I1) illegal     '
+      CALL XERRWD (MSG, 38, 8, 0, 1, MF, 0, 0, 0.0, 0.0)
       GO TO 700
- 609  MSG = 'LSODE-  ML (=I1) illegal.. .LT.0 or .GE.NEQ (=I2)'
-      CALL XERRWD (MSG, 50, 9, 0, 2, ML, NEQ(1), 0, 0.0, 0.0)
+ 609  MSG = 'LSODE- Energy-  ML (=I1) illegal.. .LT.0 or .GE.NEQ (=I2)'
+      CALL XERRWD (MSG, 58, 9, 0, 2, ML, NEQ(1), 0, 0.0, 0.0)
       GO TO 700
- 610  MSG = 'LSODE-  MU (=I1) illegal.. .LT.0 or .GE.NEQ (=I2)'
-      CALL XERRWD (MSG, 50, 10, 0, 2, MU, NEQ(1), 0, 0.0, 0.0)
+ 610  MSG = 'LSODE- Energy-  MU (=I1) illegal.. .LT.0 or .GE.NEQ (=I2)'
+      CALL XERRWD (MSG, 58, 10, 0, 2, MU, NEQ(1), 0, 0.0, 0.0)
       GO TO 700
- 611  MSG = 'LSODE-  MAXORD (=I1) .LT. 0  '
-      CALL XERRWD (MSG, 30, 11, 0, 1, MAXORD, 0, 0, 0.0, 0.0)
+ 611  MSG = 'LSODE- Energy-  MAXORD (=I1) .LT. 0  '
+      CALL XERRWD (MSG, 38, 11, 0, 1, MAXORD, 0, 0, 0.0, 0.0)
       GO TO 700
- 612  MSG = 'LSODE-  MXSTEP (=I1) .LT. 0  '
-      CALL XERRWD (MSG, 30, 12, 0, 1, MXSTEP, 0, 0, 0.0, 0.0)
+ 612  MSG = 'LSODE- Energy-  MXSTEP (=I1) .LT. 0  '
+      CALL XERRWD (MSG, 38, 12, 0, 1, MXSTEP, 0, 0, 0.0, 0.0)
       GO TO 700
- 613  MSG = 'LSODE-  MXHNIL (=I1) .LT. 0  '
-      CALL XERRWD (MSG, 30, 13, 0, 1, MXHNIL, 0, 0, 0.0, 0.0)
+ 613  MSG = 'LSODE- Energy-  MXHNIL (=I1) .LT. 0  '
+      CALL XERRWD (MSG, 38, 13, 0, 1, MXHNIL, 0, 0, 0.0, 0.0)
       GO TO 700
- 614  MSG = 'LSODE-  TOUT (=R1) behind T (=R2)      '
-      CALL XERRWD (MSG, 40, 14, 0, 0, 0, 0, 2, TOUT, T)
+ 614  MSG = 'LSODE- Energy-  TOUT (=R1) behind T (=R2)      '
+      CALL XERRWD (MSG, 48, 14, 0, 0, 0, 0, 2, TOUT, T)
       MSG = '      Integration direction is given by H0 (=R1)  '
       CALL XERRWD (MSG, 50, 14, 0, 0, 0, 0, 1, H0, 0.0)
       GO TO 700
- 615  MSG = 'LSODE-  HMAX (=R1) .LT. 0.0  '
-      CALL XERRWD (MSG, 30, 15, 0, 0, 0, 0, 1, HMAX, 0.0)
+ 615  MSG = 'LSODE- Energy-  HMAX (=R1) .LT. 0.0  '
+      CALL XERRWD (MSG, 38, 15, 0, 0, 0, 0, 1, HMAX, 0.0)
       GO TO 700
- 616  MSG = 'LSODE-  HMIN (=R1) .LT. 0.0  '
-      CALL XERRWD (MSG, 30, 16, 0, 0, 0, 0, 1, HMIN, 0.0)
+ 616  MSG = 'LSODE- Energy-  HMIN (=R1) .LT. 0.0  '
+      CALL XERRWD (MSG, 38, 16, 0, 0, 0, 0, 1, HMIN, 0.0)
       GO TO 700
  617  CONTINUE
-      MSG='LSODE-  RWORK length needed, LENRW (=I1), exceeds LRW (=I2)'
-      CALL XERRWD (MSG, 60, 17, 0, 2, LENRW, LRW, 0, 0.0, 0.0)
+      MSG='LSODE- Energy-  RWORK length needed, LENRW (=I1), exceeds LRW (=I2)'
+      CALL XERRWD (MSG, 68, 17, 0, 2, LENRW, LRW, 0, 0.0, 0.0)
       GO TO 700
  618  CONTINUE
-      MSG='LSODE-  IWORK length needed, LENIW (=I1), exceeds LIW (=I2)'
-      CALL XERRWD (MSG, 60, 18, 0, 2, LENIW, LIW, 0, 0.0, 0.0)
+      MSG='LSODE- Energy-  IWORK length needed, LENIW (=I1), exceeds LIW (=I2)'
+      CALL XERRWD (MSG, 68, 18, 0, 2, LENIW, LIW, 0, 0.0, 0.0)
       GO TO 700
- 619  MSG = 'LSODE-  RTOL(I1) is R1 .LT. 0.0        '
-      CALL XERRWD (MSG, 40, 19, 0, 1, I, 0, 1, RTOLI, 0.0)
+ 619  MSG = 'LSODE- Energy-  RTOL(I1) is R1 .LT. 0.0        '
+      CALL XERRWD (MSG, 48, 19, 0, 1, I, 0, 1, RTOLI, 0.0)
       GO TO 700
- 620  MSG = 'LSODE-  ATOL(I1) is R1 .LT. 0.0        '
-      CALL XERRWD (MSG, 40, 20, 0, 1, I, 0, 1, ATOLI, 0.0)
+ 620  MSG = 'LSODE- Energy-  ATOL(I1) is R1 .LT. 0.0        '
+      CALL XERRWD (MSG, 48, 20, 0, 1, I, 0, 1, ATOLI, 0.0)
       GO TO 700
  621  EWTI = RWORK(LEWT+I-1)
-      MSG = 'LSODE-  EWT(I1) is R1 .LE. 0.0         '
-      CALL XERRWD (MSG, 40, 21, 0, 1, I, 0, 1, EWTI, 0.0)
+      MSG = 'LSODE- Energy-  EWT(I1) is R1 .LE. 0.0         '
+      CALL XERRWD (MSG, 48, 21, 0, 1, I, 0, 1, EWTI, 0.0)
       GO TO 700
  622  CONTINUE
-      MSG='LSODE-  TOUT (=R1) too close to T(=R2) to start integration'
-      CALL XERRWD (MSG, 60, 22, 0, 0, 0, 0, 2, TOUT, T)
+      MSG='LSODE- Energy-  TOUT (=R1) too close to T(=R2) '//
+     $    'to start integration'
+      CALL XERRWD (MSG, 68, 22, 0, 0, 0, 0, 2, TOUT, T)
       GO TO 700
  623  CONTINUE
-      MSG='LSODE-  ITASK = I1 and TOUT (=R1) behind TCUR - HU (= R2)  '
-      CALL XERRWD (MSG, 60, 23, 0, 1, ITASK, 0, 2, TOUT, TP)
+      MSG='LSODE- Energy-  ITASK = I1 and TOUT (=R1) behind '//
+     $    'TCUR - HU (= R2)  '
+      CALL XERRWD (MSG, 68, 23, 0, 1, ITASK, 0, 2, TOUT, TP)
       GO TO 700
  624  CONTINUE
-      MSG='LSODE-  ITASK = 4 OR 5 and TCRIT (=R1) behind TCUR (=R2)   '
-      CALL XERRWD (MSG, 60, 24, 0, 0, 0, 0, 2, TCRIT, TN)
+      MSG='LSODE- Energy-  ITASK = 4 OR 5 and TCRIT (=R1) '//
+     $    'behind TCUR (=R2)   '
+      CALL XERRWD (MSG, 68, 24, 0, 0, 0, 0, 2, TCRIT, TN)
       GO TO 700
  625  CONTINUE
-      MSG='LSODE-  ITASK = 4 or 5 and TCRIT (=R1) behind TOUT (=R2)   '
-      CALL XERRWD (MSG, 60, 25, 0, 0, 0, 0, 2, TCRIT, TOUT)
+      MSG='LSODE- Energy-  ITASK = 4 or 5 and TCRIT (=R1) '//
+     $    'behind TOUT (=R2)   '
+      CALL XERRWD (MSG, 68, 25, 0, 0, 0, 0, 2, TCRIT, TOUT)
       GO TO 700
- 626  MSG = 'LSODE-  At start of problem, too much accuracy   '
-      CALL XERRWD (MSG, 50, 26, 0, 0, 0, 0, 0, 0.0, 0.0)
+ 626  MSG = 'LSODE- Energy-  At start of problem, too much accuracy   '
+      CALL XERRWD (MSG, 58, 26, 0, 0, 0, 0, 0, 0.0, 0.0)
       MSG='      requested for precision of machine..  See TOLSF (=R1) '
       CALL XERRWD (MSG, 60, 26, 0, 0, 0, 0, 1, TOLSF, 0.0)
       RWORK(14) = TOLSF
       GO TO 700
- 627  MSG = 'LSODE-  Trouble in DINTDY2.  ITASK = I1, TOUT = R1'
-      CALL XERRWD (MSG, 50, 27, 0, 1, ITASK, 0, 1, TOUT, 0.0)
+ 627  MSG = 'LSODE- Energy-  Trouble in DINTDY2.  ITASK = I1, TOUT = R1'
+      CALL XERRWD (MSG, 58, 27, 0, 1, ITASK, 0, 1, TOUT, 0.0)
 C
  700  ISTATE = -3
       RETURN
 C
- 800  MSG = 'LSODE-  Run aborted.. apparent infinite loop     '
-      CALL XERRWD (MSG, 50, 303, 2, 0, 0, 0, 0, 0.0, 0.0)
+ 800  MSG = 'LSODE- Energy-  Run aborted.. apparent infinite loop     '
+      CALL XERRWD (MSG, 58, 303, 2, 0, 0, 0, 0, 0.0, 0.0)
       RETURN
 C----------------------- END OF SUBROUTINE LSODE ----------------------
       END SUBROUTINE LSODE2
