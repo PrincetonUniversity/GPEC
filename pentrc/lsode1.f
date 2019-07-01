@@ -1740,11 +1740,13 @@ C-----------------------------------------------------------------------
       CALL XERRWD (MSG, 38, 16, 0, 0, 0, 0, 1, HMIN, 0.0)
       GO TO 700
  617  CONTINUE
-      MSG='LSODE- Pitch -  RWORK length needed, LENRW (=I1), exceeds LRW (=I2)'
+      MSG='LSODE- Pitch -  RWORK length needed, LENRW (=I1), '//
+     $    'exceeds LRW (=I2)'
       CALL XERRWD (MSG, 68, 17, 0, 2, LENRW, LRW, 0, 0.0, 0.0)
       GO TO 700
  618  CONTINUE
-      MSG='LSODE- Pitch -  IWORK length needed, LENIW (=I1), exceeds LIW (=I2)'
+      MSG='LSODE- Pitch -  IWORK length needed, LENIW (=I1), '//
+     $    'exceeds LIW (=I2)'
       CALL XERRWD (MSG, 68, 18, 0, 2, LENIW, LIW, 0, 0.0, 0.0)
       GO TO 700
  619  MSG = 'LSODE- Pitch -  RTOL(I1) is R1 .LT. 0.0        '
