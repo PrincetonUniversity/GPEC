@@ -1502,6 +1502,7 @@ c-----------------------------------------------------------------------
       sing_det=det0
       sing_flag=.TRUE.
       OPEN(UNIT=100,FILE="grid.out",STATUS="UNKNOWN")
+      WRITE(100,'(1x,4(a16))')"psi","absdetF","real(detF)","imag(detF)"
       CALL bin_open(bin_unit,"grid.bin","UNKNOWN","REWIND","none")
       CALL sing_adp_find_sing(x0,x1,det0,det1,nsing,psising,singnum,
      $     i_recur,i_depth,tol,sing_det,sing_flag)
@@ -1578,12 +1579,16 @@ c-----------------------------------------------------------------------
       ENDDO
 
       IF(verbose)THEN
-         WRITE(*,*) " > Found the following signular surfaces"
-         WRITE(*,'(3x,a16, a16)')"psi","q"
-         DO ising=1,kmsing
-            WRITE(*,'(3x,2(es16.8))') kinsing(ising)%psifac,
-     $         kinsing(ising)%q
-         ENDDO
+         IF(kmsing>0)THEN
+            WRITE(*,*) " > Found kinetic signular surfaces:"
+            WRITE(*,'(3x,a16, a16)')"psi","q"
+            DO ising=1,kmsing
+               WRITE(*,'(3x,2(es16.8))') kinsing(ising)%psifac,
+     $            kinsing(ising)%q
+            ENDDO
+         ELSE
+            WRITE(*,*) " > Found no kinetic singular surfaces"
+         ENDIF
       ENDIF
 
       END SUBROUTINE ksing_find
@@ -1694,8 +1699,10 @@ c-----------------------------------------------------------------------
          IF (tmp1==0.OR.tmp2==0) THEN
             CALL program_stop("det(2)-det(1)=0 or det(3)-det(2)=0")
          ENDIF
-         WRITE(100,*) x(2),ABS(det(2)),REAL(det(2)),IMAG(det(2))
-         WRITE(100,*) x(3),ABS(det(3)),REAL(det(3)),IMAG(det(3))
+         WRITE(100,'(1x,4(es16.8))') x(2),ABS(det(2)),REAL(det(2)),
+     $      IMAG(det(2))
+         WRITE(100,'(1x,4(es16.8))') x(3),ABS(det(3)),REAL(det(3)),
+     $      IMAG(det(3))
          WRITE(bin_unit)REAL(x(2),4),REAL(LOG10(ABS(det(2))),4),
      $        REAL(REAL(det(2)),4),REAL(AIMAG(det(2)),4)
          WRITE(bin_unit)REAL(x(3),4),REAL(LOG10(ABS(det(3))),4),
@@ -1708,7 +1715,7 @@ c-----------------------------------------------------------------------
 c     subprogram 16. sing_newton.
 c     newton iteration for singular surface finder.
 c-----------------------------------------------------------------------
-      SUBROUTINE sing_newton(ff,z,bo0,bo1)
+            SUBROUTINE sing_newton(ff,z,bo0,bo1)
 
       COMPLEX(r8) :: ff
       REAL(r8), INTENT(INOUT) :: z
@@ -1717,22 +1724,22 @@ c-----------------------------------------------------------------------
       INTEGER :: it
 
       INTEGER :: ising,info
-      REAL(r8) :: dzfac=1e-6,dfac=1e-2, tol=1e-15, itmax=1000,dz,dz1,dz2
+      REAL(r8) :: dzfac=1e-6,dbfac=1e-1,tol=1e-15,itmax=1000,dz,dz1,dz2
       REAL(r8) :: z_old,f_old,f,b0,b1,zopt,fopt
 c-----------------------------------------------------------------------
 c     find initial guess.
 c-----------------------------------------------------------------------
-      b0=z-(z-bo0)*dfac
-      b1=z+(bo1-z)*dfac
+      b0=z-(z-bo0)*dbfac ! bounds well inside of estimated neighboring minima
+      b1=z+(bo1-z)*dbfac
       f=ABS(ff(z))
       zopt=z
       fopt=f
 
-      dz=(b0+b1)*0.5-z
+      ! first step is a fraction of a half step towards the nearer boundary
       dz1=(b0+z)*0.5-z
       dz2=(b1+z)*0.5-z
-      IF (ABS(dz)<ABS(dz1)) dz=dz1
-      IF (ABS(dz)<ABS(dz2)) dz=dz2
+      dz = dz1 * dzfac
+      IF (ABS(dz2)<ABS(dz1)) dz = dz1 * dzfac
       it=0
 c-----------------------------------------------------------------------
 c     iterate.
@@ -1752,6 +1759,9 @@ c-----------------------------------------------------------------------
             EXIT
          ENDIF
          IF (z+dz<=b0.OR.z+dz>=b1) THEN
+            ! we've climbed out of the sharp local well
+            ! case 1: we are on the right side, but near a peak so the ~0 gradient way overshoots to the other side
+            ! case 2: we are already on the other side of a peak and falling down towards the neighboring mininum
             dz=dz*0.5
          ELSE
             z_old=z
