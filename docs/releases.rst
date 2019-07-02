@@ -10,6 +10,14 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.3.7
+===========
+
+Fixes
+------
+- PENTRC - Corrects sqdivxi_perp_SA output, which was being overwritten with sqdBoB_L_SA
+
+
 GPEC v1.3.6
 ===========
 
