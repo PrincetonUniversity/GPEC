@@ -10,6 +10,13 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.3.6
+===========
+
+Fixes
+------
+- DCON - Fixes openmp reduction of kinetic matrices when kin_flag=t
+
 GPEC v1.3.5
 ===========
 
