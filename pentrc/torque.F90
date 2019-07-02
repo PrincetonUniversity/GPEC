@@ -30,11 +30,11 @@ module torque
     use grid, only : powspace,linspace
     ! use lsode_mod just a subroutine in the lsode directory...
     use spline_mod, only :  spline_type,spline_eval,spline_alloc,spline_dealloc,&
-                            spline_fit,spline_int,spline_write1,spline_eval_external
+                            spline_fit,spline_int,spline_write1,spline_eval_external,&
+                            spline_roots
     use cspline_mod, only : cspline_type,cspline_eval,cspline_alloc,cspline_dealloc,&
-                            cspline_fit,cspline_int,cspline_eval_external,spline_roots
-    use fspline_mod, only : fspline_eval
-    use bicube_mod, only : bicube_eval,bicube_type,bicube_eval_external
+                            cspline_fit,cspline_int,cspline_eval_external
+    use bicube_mod, only : bicube_eval_external
     use pitch_integration, only : lambdaintgrl_lsode,kappaintgrl,kappadjsum
     use energy_integration, only : xintgrl_lsode,qt
     use dcon_interface, only : issurfint,mpert                  ! intel	< 2018 doesn't like mpert from inputs
@@ -135,7 +135,7 @@ module torque
         integer, intent(in) :: l,n,zi,mi
         real(r8), intent(in) :: psi,wdfac,divxfac
         character(*), intent(in) :: method
-        logical, optional :: op_erecord, op_orecord
+        logical, optional, intent(in) :: op_erecord, op_orecord
         real(r8), dimension(nfluxfuns), optional, intent(out) :: op_ffuns
         complex(r8), dimension(mpert,mpert,6), optional, intent(out) :: op_wmats
         ! declare local variables
@@ -156,7 +156,7 @@ module torque
         real(r8), dimension(2,2+nlmda/2) :: ldl_p
         real(r8), dimension(2,2+nlmda-nlmda/2) :: ldl_t
         real(r8), dimension(2,ntheta) :: tdt
-        real(r8), dimension(:), allocatable :: dbfun,dxfun
+        real(r8), dimension(:), allocatable :: dbfun,dxfun,fbnce_norm
         complex(r8) :: dbob,divx,kapx,xint,wtwnorm
         complex(r8), dimension(mpert) :: expm
         complex(r8), dimension(ntheta) :: jvtheta,pl
@@ -165,7 +165,7 @@ module torque
         complex(r8), dimension(1,mpert) :: wmmt,wemt,wxmt,wymt,wzmt
         complex(r8), dimension(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
         complex(r8), dimension(mpert,1) :: wxmc,wymc,wzmc,xix,xiy,xiz
-        complex(r8), dimension(:), allocatable :: lxint,fbnce_norm
+        complex(r8), dimension(:), allocatable :: lxint
         type(spline_type) :: tspl,vspl,bspl,cglspl,turns,dbdtspl
         type(cspline_type) :: bjspl,bwspl(2),fbnce
         ! for euclidean norm of wtw
@@ -488,13 +488,13 @@ module torque
                         end if
                     end if
                     turns%fs(ilmda-1,1) = t1
-                    call bicube_eval(rzphi,psi,t1,0)
-                    turns%fs(ilmda-1,2)=ro+SQRT(rzphi%f(1))*COS(twopi*(t1+rzphi%f(2)))
-                    turns%fs(ilmda-1,3)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t1+rzphi%f(2)))
+                    call bicube_eval_external(rzphi, psi, t1, 0, ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
+                    turns%fs(ilmda-1,2)=ro+SQRT(rzphi_f(1))*COS(twopi*(t1+rzphi_f(2)))
+                    turns%fs(ilmda-1,3)=zo+SQRT(rzphi_f(1))*SIN(twopi*(t1+rzphi_f(2)))
                     turns%fs(ilmda-1,4) = t2
-                    call bicube_eval(rzphi,psi,t2,0)
-                    turns%fs(ilmda-1,5)=ro+SQRT(rzphi%f(1))*COS(twopi*(t2+rzphi%f(2)))
-                    turns%fs(ilmda-1,6)=zo+SQRT(rzphi%f(1))*SIN(twopi*(t2+rzphi%f(2)))
+                    call bicube_eval_external(rzphi, psi, t2, 0, ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
+                    turns%fs(ilmda-1,5)=ro+SQRT(rzphi_f(1))*COS(twopi*(t2+rzphi_f(2)))
+                    turns%fs(ilmda-1,6)=zo+SQRT(rzphi_f(1))*SIN(twopi*(t2+rzphi_f(2)))
                     turns%xs(ilmda-1) = lmda
                 enddo
                 allocate(fbnce_norm(1))
@@ -1386,23 +1386,7 @@ module torque
         common /tcom/ wdfac,xfac,method,ffuns
 
         !declarations for parallelization.
-        LOGICAL :: debug_omp
-        INTEGER :: sTime, fTime, cr, lsTime, lfTime
-        REAL(r8) :: tsec,lsec
-        REAL(r8) xcom_real
-        COMMON /xcom/ xcom_real(8)
-        REAL(r8) dls011_real
-        INTEGER dls011_int
-        COMMON /DLS011/ dls011_real(218), dls011_int(37)
-        REAL(r8) dls002_real
-        INTEGER dls002_int
-        COMMON /DLS002/ dls002_real(218), dls002_int(37)
-        REAL(r8) :: lcom_real1
-        INTEGER :: lcom_int
-        REAL(r8) :: lcom_real2
-        COMMON /lcom/ lcom_real1(7), lcom_int(2), lcom_real2(2)
-        INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM,lThreads
-        !$omp threadprivate(/xcom/,/dls011/,/dls002/,/lcom/)
+        integer :: omp_get_num_threads,omp_get_thread_num,lthreads
 
 
         if(tdebug .and. x<1e-2) print *, "torque - lsode subroutine wdfac ",wdfac
@@ -1425,11 +1409,18 @@ module torque
         psi = 1.0*x
 
         !$omp parallel default(shared) &
-        !$omp private(l,wtw_l,trq,lsec,lstime,lftime) &
-        !$omp reduction(+:elems) &
-        !$omp copyin(dbob_m,divx_m,kin,xs_m,fnml, &
-        !$omp geom, sq, kin, &
-        !$omp /lcom/, /xcom/, /dls011/, /dls002/)
+        !$omp& private(l,wtw_l,trq) &
+        !$omp& reduction(+:elems) &
+        !$omp& copyin(dbob_m,divx_m,kin,xs_m,fnml, &
+        !$omp& geom, sq, eqfun, rzphi, kin, &
+        !$omp& smats, tmats, xmats, ymats, zmats)
+#ifdef _OPENMP
+            IF(first .and. omp_get_thread_num() == 0)then
+               lthreads = omp_get_num_threads()
+               WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",lthreads," OMP threads"
+            ENDIF
+#endif
+
         !$omp do
         do l=-nl,nl
             if(l==0)then
