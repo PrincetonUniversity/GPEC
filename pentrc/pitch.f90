@@ -27,7 +27,7 @@ module pitch_integration
         nmethods, methods, version
     use utilities, only : get_free_file_unit,append_2d,check
     use special, only : ellipk
-    use cspline_mod, only: cspline_type,cspline_eval,cspline_eval_external
+    use cspline_mod, only: cspline_type,cspline_copy,cspline_eval_external
     use spline_mod, only: spline_type,spline_eval,spline_eval_external, &
         spline_alloc,spline_dealloc,spline_fit,spline_int
     use bicube_mod, only: bicube_type,bicube_eval_external
@@ -42,7 +42,7 @@ module pitch_integration
     public &
         lambdaatol,lambdartol, &                            ! real
         lambdadebug, &                                      ! logical
-        lambdaintgrl_lsode,kappaintgrl,kappadjsum, &       ! functions
+        lambdaintgrl_lsode,kappaintgrl,kappadjsum, &        ! functions
         output_pitch_netcdf,output_pitch_ascii              ! subroutines
     
     ! global variables with defaults
@@ -53,10 +53,25 @@ module pitch_integration
 
     ! global variables for internal use
     integer, parameter :: maxstep = 10000, nfs = 14
-    real(r8) :: pitch_psi
+    integer :: pitch_ell,pitch_n
+    real(r8) :: &
+        pitch_psi,&
+        pitch_wn,&
+        pitch_wt,&
+        pitch_we,&
+        pitch_nuk,&
+        pitch_bobmax,&
+        pitch_epsr,&
+        pitch_q,&
+        pitch_rex,&
+        pitch_imx
     character(4) :: pitch_method
-    type(cspline_type) :: eqspl_g
-    type(spline_type) :: turns_g
+    type(cspline_type) :: pitch_flambda
+    !$omp threadprivate(pitch_ell,pitch_n,&
+    !$omp&      pitch_psi,pitch_wn,pitch_wt,pitch_we,pitch_nuk,&
+    !$omp&      pitch_bobmax,pitch_epsr,pitch_q,pitch_rex,pitch_imx,&
+    !$omp&      pitch_method,pitch_flambda)
+
 
     type record
         logical :: is_recorded
@@ -66,19 +81,11 @@ module pitch_integration
         real(r8), dimension(:,:,:,:), allocatable :: fs
     endtype record
     type(record) :: pitch_record(nmethods)
-
-    ! parallel LSODE protection
-    real(r8) :: real1_lcom
-    integer :: int_lcom
-    real(r8) :: real2_lcom
-    common /lcom/ real1_lcom(7), int_lcom(2), real2_lcom(2)
-    !$omp threadprivate(/lcom/)
-    !$omp threadprivate(pitch_record,eqspl_g,turns_g)
-
+    
     contains
 
     !=======================================================================
-    function lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,eq_spl,ell,n,&
+    function lambdaintgrl_lsode(wn,wt,we,nuk,bobmax,epsr,q,flambda,ell,n,&
                                 rex,imx,psi,turns,method,op_record)
     !----------------------------------------------------------------------- 
     !*DESCRIPTION: 
@@ -86,10 +93,10 @@ module pitch_integration
     !   lambdaatol, lambdartol are used for tolerances.
     !
     !   Integrand is defined by flux functions (wn,wt,we), mode numbers
-    !   (l,n) and equilibrium pitch functions (eq_spl). See below for
+    !   (l,n) and equilibrium pitch functions (flambda). See below for
     !   details.
     !
-    !   Integral limits defined by range of eq_spl%xs.
+    !   Integral limits defined by range of flambda%xs.
     !
     !   Pro-tip: To calculate offset rotation use we=-wn-wt.
     !
@@ -107,7 +114,7 @@ module pitch_integration
     !   epsr : real.
     !       Inverse aspect ratio. Trapped particles have an effective
     !       collisionaity nuk/2epsr
-    !   eq_spl : cspline_type.
+    !   flambda : cspline_type.
     !       Equilibrium pitch angle functions. Must be following order
     !           wb(Lambda) : Bounce frequency
     !           wd(Lambda) : Bounce avaraged magnetic precession /x
@@ -141,7 +148,7 @@ module pitch_integration
     !*RETURNS:
     !     complex.
     !       Integral int{dLambda f(Lambda)*int{dx Rln(x,Lambda)}, where
-    !       f is input in the eq_spl and Rln is the resonance operator.
+    !       f is input in the flambda and Rln is the resonance operator.
     !-----------------------------------------------------------------------
         implicit none
         ! declare function
@@ -150,18 +157,17 @@ module pitch_integration
         integer, intent(in) :: n,ell
         real(r8), intent(in) :: wn,wt,we,nuk,bobmax,epsr,q,psi,rex,imx
         character(*), intent(in) :: method
-        type(cspline_type) eq_spl      
+        type(cspline_type) flambda      
         type(spline_type) :: turns
         logical, optional :: op_record
         ! declare variables
         logical :: record_this
-        integer :: istep, ilambda, j, l_g, n_g, out_unit, ix
-        real(r8) :: lmda,wb,wd,nueff,lnq,wn_g,wt_g,we_g,nuk_g,&
-            bobmax_g,epsr_g,q_g,rex_g,imx_g
+        integer :: istep, ilambda, j, out_unit, ix
+        real(r8) :: lmda,wb,wd,nueff,lnq
         complex(r8) :: xint
         real(r8), dimension(nfs,maxstep) :: fs
         real(r8), dimension(turns%nqty) :: turns_f
-        complex(r8), dimension(eq_spl%nqty) :: eqspl_f
+        complex(r8), dimension(flambda%nqty) :: flmabda_f
         ! declare lsode input variables
         integer  iopt, istate, itask, itol, mf, iflag, neqarray(1), &
             neq, liw, lrw
@@ -169,48 +175,42 @@ module pitch_integration
         real*8 :: x,xout
         real*8, dimension(:), allocatable ::  atol,rtol,rwork,y,dky
 
-        common /lcom/ wn_g,wt_g,we_g,nuk_g,bobmax_g,epsr_g, &
-                    q_g,l_g,n_g,rex_g,imx_g
-        !$omp threadprivate(/lcom/)
-
         ! set lsode options - see lsode package for documentation
-        neq = 2*(eq_spl%nqty-2)
+        neq = 2*(flambda%nqty-2)
         liw  = 20 + neq         ! for mf 22 ! only uses 20 if mf 10
         lrw  = 20 + 16*neq      ! for mf 10
         allocate(iwork(liw))
         allocate(atol(neq),rtol(neq),rwork(lrw),y(neq),dky(neq))
         neqarray(:) = (/ neq /)
-        y(:) = 0                    ! initial value of integral
-        x = eq_spl%xs(0)            ! lower bound of integration
-        xout = eq_spl%xs(eq_spl%mx) ! upper bound of integration
-        itol = 2                    ! rtol and atol are arrays
-        rtol = lambdartol           !1.d-7!9              ! 14
-        atol = lambdaatol           !1.d-7!9              ! 15
-        istate = 1                  ! first step
-        iopt = 1                    ! optional inputs
-        iwork(:) = 0                ! defaults
-        rwork(:) = 0                ! defaults
-        rwork(1) = xout             ! only used if itask 4,5
-        iwork(6) = maxstep          ! max number steps
-        mf = 10                     ! not stiff with unknown J
+        y(:) = 0                      ! initial value of integral
+        x = flambda%xs(0)             ! lower bound of integration
+        xout = flambda%xs(flambda%mx) ! upper bound of integration
+        itol = 2                      ! rtol and atol are arrays
+        rtol = lambdartol             ! 1.d-7!9              ! 14
+        atol = lambdaatol             ! 1.d-7!9              ! 15
+        istate = 1                    ! first step
+        iopt = 1                      ! optional inputs
+        iwork(:) = 0                  ! defaults
+        rwork(:) = 0                  ! defaults
+        rwork(1) = xout               ! only used if itask 4,5
+        iwork(6) = maxstep            ! max number steps
+        mf = 10                       ! not stiff with unknown J
     
         ! set module variables for access in integrand
-        wn_g = wn
-        wt_g = wt
-        we_g = we
-        nuk_g = nuk
-        bobmax_g = bobmax
-        epsr_g = epsr
-        q_g = q
-        l_g  = ell
-        n_g = n
-        eqspl_g = eq_spl
-        turns_g = turns
-        rex_g = rex
-        imx_g = imx
-
+        pitch_wn = wn
+        pitch_wt = wt
+        pitch_we = we
+        pitch_nuk = nuk
+        pitch_bobmax = bobmax
+        pitch_epsr = epsr
+        pitch_q = q
+        pitch_ell  = ell
+        pitch_n = n
+        pitch_rex = rex
+        pitch_imx = imx
         pitch_psi = psi
         pitch_method = method
+        call cspline_copy(flambda, pitch_flambda)
 
         ! set default recording flag
         record_this = .false.
@@ -224,17 +224,17 @@ module pitch_integration
                 call lsode1(lintgrnd, neqarray, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                 call dintdy1(x, 1, rwork(21), neqarray(1), dky, iflag)
-                call spline_eval_external(turns_g,x,ix,turns_f)
-                call cspline_eval_external(eqspl_g,x,ix,eqspl_f)
+                call spline_eval_external(turns,x,ix,turns_f)
+                call cspline_eval_external(flambda,x,ix,flmabda_f)
                 istep = istep + 1
-                fs(:,istep) = (/x, dky(1:2), y(1:2), real(eqspl_f(1:3)), turns_f(1:6)/)
+                fs(:,istep) = (/x, dky(1:2), y(1:2), real(flmabda_f(1:3)), turns_f(1:6)/)
             enddo
             ! write select energy integral output files
             do ilambda = 0,nlambda_out-1
-                lmda = eq_spl%xs(0) + (ilambda/(nlambda_out-1.0))*(xout-eq_spl%xs(0))
-                call cspline_eval(eq_spl,lmda,0)
-                wb = real(eq_spl%f(1))
-                wd = real(eq_spl%f(2))
+                lmda = flambda%xs(0) + (ilambda/(nlambda_out-1.0))*(xout-flambda%xs(0))
+                call cspline_eval_external(flambda,lmda,ix,flmabda_f)
+                wb = real(flmabda_f(1))
+                wd = real(flmabda_f(2))
                 if(lmda>bobmax)then
                     nueff = nuk/(2*epsr)
                     lnq = real(ell,r8)
@@ -262,7 +262,7 @@ module pitch_integration
             write(out_unit,'(5(1x,a16))') "lambda","t_phi","2ndeltaw","int(t_phi)","int(2ndeltaw)"
             itask = 2
             y(1:2) = (/ 0,0 /)
-            x = eq_spl%xs(0)       ! lower bound
+            x = flambda%xs(0)      ! lower bound
             istate = 1             ! first step
             iwork(:) = 0           ! defaults
             rwork(:) = 0           ! defaults
@@ -331,52 +331,51 @@ module pitch_integration
         integer ::  neq
         real*8 x, y(neq), ydot(neq)
     
-        integer :: l,n,i,ix
-        real(r8) :: wn,wt,we,wd,wb,nuk,bobmax,epsr,lnq,q,fl,nueff,rex,imx
+        integer :: i,ix
+        real(r8) :: wd,wb,lnq,fl,nueff
         complex(r8) :: xint,fres
-        complex(r8), dimension(turns_g%nqty) :: eqspl_f
+        complex(r8), dimension(pitch_flambda%nqty) :: flmabda_f
 
-        common /lcom/ wn,wt,we,nuk,bobmax,epsr,q,l,n,rex,imx
-        !$omp threadprivate(/lcom/)
-
-        ! use (input or) global variables
+        ! use module's lambda function spline to get local variables
         if(lambdadebug) print *,'lintgrnd - lambda =',x
-        ix = eqspl_g%mx / 2
-        call cspline_eval_external(eqspl_g,x,ix,eqspl_f)
-        wb = real(eqspl_f(1))
-        wd = real(eqspl_f(2))
-        fl = real(eqspl_f(3))
+        ix = pitch_flambda%mx / 2
+        call cspline_eval_external(pitch_flambda,x,ix,flmabda_f)
+        wb = real(flmabda_f(1))
+        wd = real(flmabda_f(2))
+        fl = real(flmabda_f(3))
         
         if(lambdadebug)then
-            print *,'lambda,bobmax = ',x,bobmax
-            print *,'nuk = ',nuk
-            print *,'omegas = ',wn,wt,we,wd,wb
-            print *,'f(lmda)= ',eqspl_f(3), &
-                minval(abs(eqspl_f(4:))),maxval(abs(eqspl_f(4:)))
-            print *,'n,l    = ',n,l
+            print *,'lambda,bobmax = ',x,pitch_bobmax
+            print *,'nuk = ',pitch_nuk
+            print *,'omegas = ',pitch_wn,pitch_wt,pitch_we,wd,wb
+            print *,'f(lmda)= ',flmabda_f(3), &
+                minval(abs(flmabda_f(4:))),maxval(abs(flmabda_f(4:)))
+            print *,'n,l    = ',pitch_n,pitch_ell
        endif
         
         ! energy integration of resonance operator
-        if(x<=bobmax)then      ! circulating particles
-            nueff = nuk
-            lnq = l+n*q
-            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,lnq,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
-            xint = xint + xintgrl_lsode(wn,wt,we,wd,-wb,nueff,l,lnq,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
+        if(x<=pitch_bobmax)then      ! circulating particles
+            nueff = pitch_nuk
+            lnq = pitch_ell+pitch_n*pitch_q
+            xint = xintgrl_lsode(pitch_wn,pitch_wt,pitch_we,wd,wb,nueff,pitch_ell,lnq,pitch_n,&
+                                 pitch_psi,real(x,r8),pitch_method,op_record=.false.)
+            xint = xint + xintgrl_lsode(pitch_wn,pitch_wt,pitch_we,wd,-wb,nueff,pitch_ell,lnq,pitch_n,&
+                                 pitch_psi,real(x,r8),pitch_method,op_record=.false.)
         else                        ! trapped particles
-            nueff = nuk/(2*epsr)    ! effective collisionality
-            lnq = real(l,r8)
-            xint = xintgrl_lsode(wn,wt,we,wd,wb,nueff,l,lnq,n,pitch_psi,real(x,r8),pitch_method,op_record=.false.)
+            nueff = pitch_nuk/(2*pitch_epsr)    ! effective collisionality
+            lnq = real(pitch_ell,r8)
+            xint = xintgrl_lsode(pitch_wn,pitch_wt,pitch_we,wd,wb,nueff,pitch_ell,lnq,pitch_n,&
+                                 pitch_psi,real(x,r8),pitch_method,op_record=.false.)
         endif
         
         if(lambdadebug) print *,"lnq, nueff = ",lnq,nueff
         
         ! form full lambda function and decouple two real space solutions
-        do i=3,eqspl_g%nqty
-            fres = eqspl_f(i)*(rex*real(xint)+xj*imx*aimag(xint))
+        do i=3,pitch_flambda%nqty
+            fres = flmabda_f(i)*(pitch_rex*real(xint)+xj*pitch_imx*aimag(xint))
             ydot(1+2*(i-3)) = real(fres)
             ydot(2+2*(i-3)) = aimag(fres)
-            !if(mod(i,100)==0 .or. i==3 .or. i==eqspl_g%nqty) print *,size(ydot),2+2*(i-3),aimag(fres)
-        enddo        
+        enddo
         return
     end subroutine lintgrnd
 

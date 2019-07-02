@@ -26,7 +26,7 @@ module params
     integer, parameter :: &
         r4=selected_real_kind(6,37), & ! originally in spline_mod->local_mod
         r8=selected_real_kind(13,307)
-    real(r8) :: &
+    real(r8), parameter :: &
         inf = huge(0.0_r8)
         
     ! physics
