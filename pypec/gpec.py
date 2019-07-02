@@ -145,7 +145,7 @@ def _newloc(loc):
 
 
 def run(loc='.', rundir=default.rundir, submit=True, return_on_complete=False, rerun=False,
-        rundcon=True, rungpec=True, runpentrc=True, runrdcon=False, cleandcon=False, fill_inputs=False, version='1.2',
+        rundcon=True, rungpec=True, runpentrc=True, runrdcon=False, cleandcon=False, fill_inputs=False, version='1.3',
         mailon='NONE', email='', mem=3e3, hours=36, partition='sque', runipec=False, qsub=None, **kwargs):
     """
     Python wrapper for running gpec package.
