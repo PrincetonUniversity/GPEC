@@ -253,7 +253,7 @@ module torque
            expm = exp(xj*twopi*mfac*theta)
            jbb  = rzphi_f(4)*eqfun_f(1)**2 ! chi1 cuz its the DCON working J
            dbfun(i) = ABS( sum(dbob_m_f(:)*expm) )**2
-           dxfun(i) = ABS( sum(dbob_m_f(:)*expm) * divxfac )**2
+           dxfun(i) = ABS( sum(divx_m_f(:)*expm) * divxfac )**2
         enddo
 
         if (tdebug) then
