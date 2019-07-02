@@ -57,6 +57,7 @@ c-----------------------------------------------------------------------
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id
+      REAL(4) :: cpusec, wallsec
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
@@ -72,6 +73,7 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=sn,FMT='(I2)')nn
       ENDIF
       ncfile = "dcon_output_n"//TRIM(sn)//".nc"
+      CALL timer(1,0,cpusec,wallsec)
 c-----------------------------------------------------------------------
 c     open files
 c-----------------------------------------------------------------------
@@ -128,6 +130,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,"time",INT(shottime)) )
       CALL check( nf90_put_att(ncid,nf90_global,"n", nn))
       CALL check( nf90_put_att(ncid,nf90_global,"version", version))
+      CALL check( nf90_put_att(ncid,nf90_global,"cpu_time",cpusec) )
+      CALL check( nf90_put_att(ncid,nf90_global,"wall_time",wallsec))
       ! define dimensions
       CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
       CALL check( nf90_def_var(ncid, "i", nf90_int, i_dim, i_id) )
