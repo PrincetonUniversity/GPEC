@@ -48,7 +48,7 @@ c-----------------------------------------------------------------------
 
       TYPE(fspline_type), PRIVATE :: metric,fmodb
       TYPE(cspline_type) :: dmats,emats,hmats,dbats,ebats,fbats,
-     $     fmats,kmats,gmats,baats,caats,eaats,kaats,gaats,
+     $     fmats,kmats,gmats,kaats,gaats,
      $     f0mats,pmats,paats,kkmats,kkaats,r1mats,r2mats,r3mats,
      $     akmats,bkmats,ckmats
       TYPE(spline_type) :: k0s
@@ -917,37 +917,34 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations for diagnostics.
 c-----------------------------------------------------------------------
-      INTEGER :: info,iqty,jpert
+      INTEGER :: info,iqty,jpert,ix,idone
       INTEGER, DIMENSION(mpert) :: ipiv
       CHARACTER(128) :: message
-      COMPLEX(r8), DIMENSION(mpert*mpert) :: work
+      COMPLEX(r8), DIMENSION(mpert*mpert) :: work,amats_f,bmats_f,
+     $     cmats_f,dmats_f,emats_f,hmats_f,dbats_f,ebats_f,fbats_f
       COMPLEX(r8), DIMENSION(mpert,mpert) :: amat,bmat,cmat,dmat,emat,
-     $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,baat,caat,eaat,gaat,
+     $     fmat,gmat,hmat,kmat,temp0,temp1,temp2,caat,gaat,
      $     f0mat,pmat,paat,kkmat,kkaat,r1mat,r2mat,r3mat,
      $     dbat,ebat,umat,aamat,bkmat,bkaat,b1mat
       COMPLEX(r8), DIMENSION(3*mband+1,mpert) :: amatlu
 c-----------------------------------------------------------------------
 c     declarations for parallelization.
 c-----------------------------------------------------------------------
-      LOGICAL :: debug_omp
-      INTEGER :: sTime, fTime, cr, lsTime, lfTime
-      REAL(r8) :: tsec,lsec
-
-      INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM,lthreads,ithread
+      LOGICAL :: debug_omp = .FALSE.
+      INTEGER :: t_start, t_end, cr, num_threads, ithread
+      REAL(r8) :: t_sec
+      INTEGER :: OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
 c-----------------------------------------------------------------------
 c     output formats
 c-----------------------------------------------------------------------
- 10   FORMAT(' ',A4,I4,A1,I4,A6,I4,A1,I4,A8,E10.3,SP,E10.3,"i",A9,F8.2)
-
-      debug_omp = .FALSE.
       IF(debug_omp)THEN
-         print *,"In serial region..."
+         PRINT *,"In serial region..."
 #ifdef _OPENMP
-         lthreads = OMP_GET_NUM_THREADS()
-         print *,"# of OMP threads = ",lthreads
+         num_threads = OMP_GET_NUM_THREADS()
+         PRINT *,"# of OMP threads = ",num_threads
 #else
-         lthreads = 1
-         print *,"# NO OPENMP MULTITHREADING"
+         num_threads = 1
+         PRINT *,"# NO OPENMP MULTITHREADING"
 #endif
       ENDIF
 c-----------------------------------------------------------------------
@@ -1039,79 +1036,72 @@ c-----------------------------------------------------------------------
             ktmats(i)%xs=rzphi%xs
          ENDDO
 
+         idone = -1
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
-         CALL SYSTEM_CLOCK(COUNT=sTime)
-         DO ipsi=0,mpsi  ! each of these surfaces is independent - could be parallel
-            kwmat = 0
-            ktmat = 0
-            psifac=rzphi%xs(ipsi)
-            ! get ion matrices for all ell at this one psi
-
-!$OMP PARALLEL DEFAULT(SHARED)
-!$OMP& PRIVATE(l,kwmat_l,ktmat_l,tphi,lsec,lsTime,lfTime)
+!$OMP PARALLEL DO DEFAULT(NONE)
+!$OMP& PRIVATE(
+!$OMP& ipsi,ix,psifac,l,num_threads,t_start,t_end,t_sec,
+!$OMP& tphi,kwmat_l,ktmat_l,kwmat,ktmat,
+!$OMP& amats_f,bmats_f,cmats_f,dmats_f,emats_f,hmats_f,
+!$OMP& dbats_f,ebats_f,fbats_f,
+!$OMP& amat,bmat,cmat,dmat,emat,hmat,dbat,ebat,fmat,b1mat,caat,
+!$OMP& amatlu,umat,ipiv,info,message,temp1,f0mat,temp2,aamat,bkmat,
+!$OMP& bkaat,pmat,paat,r1mat,kkmat,kkaat,r2mat,r3mat,gaat,iqty)
+!$OMP& SHARED(
+!$OMP& rzphi,amats,bmats,cmats,dmats,emats,hmats,dbats,ebats,fbats,
+!$OMP& ion_flag,electron_flag,debug_omp,verbose,cr,idone,
+!$OMP& nn,nl,ft,zi,mi,wdfac,divxfac,chi1,mpert,mband,mpsi,
+!$OMP& kinfac1,kinfac2,ktc,ktw,ktanh_flag,
+!$OMP& kwmats,ktmats,akmats,bkmats,ckmats,gaats,
+!$OMP& f0mats,pmats,paats,kkmats,kkaats,r1mats,r2mats,r3mats)
+!$OMP& COPYIN(
 c!!!!!!...from inputs.f90...
-!$OMP& COPYIN(dbob_m,divx_m,kin,xs_m,fnml,
+!$OMP& dbob_m,divx_m,kin,xs_m,fnml,
 c!!!!!!...from dcon_interface.f90
 !$OMP& geom, dcon_int_sq,dcon_int_eqfun,dcon_int_rzphi,
 !$OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
 !$OMP& dcon_int_zmats)
+         DO ipsi=0,mpsi  ! each of these surfaces is independent (can be parallel)
+            CALL SYSTEM_CLOCK(COUNT=t_start)
 #ifdef _OPENMP
-            IF(ipsi==0 .AND. OMP_GET_THREAD_NUM() == 0)THEN
-               lthreads = OMP_GET_NUM_THREADS()
+            IF(ipsi==0)THEN
+               num_threads = OMP_GET_NUM_THREADS()
                WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
-     $              lthreads," OMP threads"
+     $              num_threads," OMP threads"
             ENDIF
 #endif
+
+            ! convinience variables
+            psifac=rzphi%xs(ipsi)
+
+            ! get ion matrices for all ell at this one psi
+            kwmat = 0
+            ktmat = 0
             IF (ion_flag) THEN
-!$OMP DO
                DO l=-nl,nl  ! Parallel. Good. But often just 1 of the l's is slow and holds up the whole ipsi loop
-                  IF(debug_omp) CALL SYSTEM_CLOCK(COUNT=lsTime)
                   kwmat_l = 0
                   ktmat_l = 0
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $                 ft//"wmm",op_wmats=kwmat_l)
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
-!$OMP CRITICAL
                   kwmat = kwmat + kwmat_l
                   ktmat = ktmat + ktmat_l
-!$OMP END CRITICAL
-
-                  IF(debug_omp)THEN
-                     CALL SYSTEM_CLOCK(COUNT=lfTime)
-                     lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
-                     WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
-     $                    l,"/",nl," lTime=",lsec
-                  ENDIF
                ENDDO
-!$OMP END DO
             ENDIF
 
             IF (electron_flag) THEN
-!$OMP DO
                DO l=-nl,nl
-                  IF(debug_omp) CALL SYSTEM_CLOCK(COUNT=lsTime)
                   kwmat_l = 0
                   ktmat_l = 0
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"wmm",op_wmats=ktmat_l)
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
-!$OMP CRITICAL
                   kwmat = kwmat+kwmat_l
                   ktmat = ktmat+ktmat_l
-!$OMP END CRITICAL
-
-                  IF(debug_omp)THEN
-                     CALL SYSTEM_CLOCK(COUNT=lfTime)
-                     lsec = REAL(lfTime-lsTime,8)/REAL(cr,8)
-                     WRITE(*,10) "psi=",ipsi,"/",mpsi," loop=",
-     $                    l,"/",nl," lTime=",lsec
-                  ENDIF
                ENDDO
-!$OMP END DO
             ENDIF
-!$OMP END PARALLEL
 
             ! apply normalizations and hypertangent smoothing for core
             IF (ktanh_flag) THEN
@@ -1129,25 +1119,26 @@ c!!!!!!...from dcon_interface.f90
 c-----------------------------------------------------------------------
 c     Pass only essential matrices to splines
 c-----------------------------------------------------------------------
-            CALL cspline_eval(amats,psifac,0)
-            CALL cspline_eval(bmats,psifac,0)
-            CALL cspline_eval(cmats,psifac,0)
-            CALL cspline_eval(dmats,psifac,0)
-            CALL cspline_eval(emats,psifac,0)
-            CALL cspline_eval(hmats,psifac,0)
-            CALL cspline_eval(dbats,psifac,0)
-            CALL cspline_eval(ebats,psifac,0)
-            CALL cspline_eval(fbats,psifac,0)
+            ix = ipsi
+            CALL cspline_eval_external(amats,psifac,ix,amats_f)
+            CALL cspline_eval_external(bmats,psifac,ix,bmats_f)
+            CALL cspline_eval_external(cmats,psifac,ix,cmats_f)
+            CALL cspline_eval_external(dmats,psifac,ix,dmats_f)
+            CALL cspline_eval_external(emats,psifac,ix,emats_f)
+            CALL cspline_eval_external(hmats,psifac,ix,hmats_f)
+            CALL cspline_eval_external(dbats,psifac,ix,dbats_f)
+            CALL cspline_eval_external(ebats,psifac,ix,ebats_f)
+            CALL cspline_eval_external(fbats,psifac,ix,fbats_f)
             
-            amat=RESHAPE(amats%f,(/mpert,mpert/))
-            bmat=RESHAPE(bmats%f,(/mpert,mpert/))
-            cmat=RESHAPE(cmats%f,(/mpert,mpert/))
-            dmat=RESHAPE(dmats%f,(/mpert,mpert/))
-            emat=RESHAPE(emats%f,(/mpert,mpert/))
-            hmat=RESHAPE(hmats%f,(/mpert,mpert/))
-            dbat=RESHAPE(dbats%f,(/mpert,mpert/))
-            ebat=RESHAPE(ebats%f,(/mpert,mpert/))
-            fmat=RESHAPE(fbats%f,(/mpert,mpert/))
+            amat=RESHAPE(amats_f,(/mpert,mpert/))
+            bmat=RESHAPE(bmats_f,(/mpert,mpert/))
+            cmat=RESHAPE(cmats_f,(/mpert,mpert/))
+            dmat=RESHAPE(dmats_f,(/mpert,mpert/))
+            emat=RESHAPE(emats_f,(/mpert,mpert/))
+            hmat=RESHAPE(hmats_f,(/mpert,mpert/))
+            dbat=RESHAPE(dbats_f,(/mpert,mpert/))
+            ebat=RESHAPE(ebats_f,(/mpert,mpert/))
+            fmat=RESHAPE(fbats_f,(/mpert,mpert/))
                
             amat=amat+kwmat(:,:,1)+ktmat(:,:,1)
             bmat=bmat+kwmat(:,:,2)+ktmat(:,:,2)
@@ -1155,9 +1146,7 @@ c-----------------------------------------------------------------------
             dmat=dmat+kwmat(:,:,4)+ktmat(:,:,4)
             emat=emat+kwmat(:,:,5)+ktmat(:,:,5)
             hmat=hmat+kwmat(:,:,6)+ktmat(:,:,6)
-            baat=bmat-2*ktmat(:,:,2)
             caat=cmat-2*ktmat(:,:,3)
-            eaat=emat-2*ktmat(:,:,5)
             b1mat=ifac*dbat
 
             ! invert non-hermitian a matrix
@@ -1276,12 +1265,18 @@ c-----------------------------------------------------------------------
 c     print out timed loop over ipsi
 c-----------------------------------------------------------------------
             IF(debug_omp)THEN
-               CALL SYSTEM_CLOCK(COUNT=fTime)
-               tsec = REAL(fTime-sTime,8)/REAL(cr,8)
-               write(*, *),"ipsi=",ipsi," ended at tsec=",tsec
+               CALL SYSTEM_CLOCK(COUNT=t_end)
+               t_sec = REAL(t_end-t_start,8)/REAL(cr,8)
+               WRITE(*,'(1x,a5,i3,a6,es16.8,a8)')
+     $            "ipsi=",ipsi," took ",t_sec," seconds"
             ENDIF
-         IF(verbose) CALL progressbar(ipsi,0,mpsi,op_percent=10)
+!$OMP CRITICAL
+            idone = idone + 1
+!$OMP END CRITICAL
+            IF(verbose) CALL progressbar(idone,0,mpsi,op_percent=10)
          ENDDO
+!$OMP END PARALLEL DO
+
 c-----------------------------------------------------------------------
 c     fit splines
 c-----------------------------------------------------------------------
