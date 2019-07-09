@@ -31,7 +31,7 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: use_classic_splines_for_dcon=.FALSE., cyl_flag=.FALSE.,
-     $ reform_eq_with_psilim=.TRUE.
+     $ reform_eq_with_psilim=.FALSE.
       INTEGER :: mmin,ipsi,m
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
