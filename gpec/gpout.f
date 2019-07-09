@@ -5601,8 +5601,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
          CALL check( nf90_inq_dimid(mncid,"m",mdid) )
          CALL check( nf90_inq_dimid(mncid,"theta",tdid) )
-         CALL check( nf90_inq_dimid(mncid,"mode_C",sdid) )
-
+         IF (singcoup_set) THEN
+            CALL check( nf90_inq_dimid(mncid,"mode_C",sdid) )
+         ENDIF
          ! Start definitions
          CALL check( nf90_redef(mncid))
 
