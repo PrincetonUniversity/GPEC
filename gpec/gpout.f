@@ -5604,6 +5604,7 @@ c-----------------------------------------------------------------------
          IF (singcoup_set) THEN
             CALL check( nf90_inq_dimid(mncid,"mode_C",sdid) )
          ENDIF
+
          ! Start definitions
          CALL check( nf90_redef(mncid))
 

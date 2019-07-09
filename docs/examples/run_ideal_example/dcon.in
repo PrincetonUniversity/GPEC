@@ -10,6 +10,7 @@
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
     reform_eq_with_psilim=f ! Reforms equilibrium splines between psilow and psilim determined by psihigh/sas_flag/qhigh/peak_flag
+
     nn=1                 ! Toroidal mode number
     delta_mlow=8         ! Expands lower bound of Fourier harmonics
     delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
