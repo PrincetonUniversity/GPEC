@@ -10,6 +10,15 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.3.8
+===========
+
+Fixes
+------
+- GPEC - Fixes bug that caused GPEC netcdf to crash when there are no rational surfaces (common when running DCON with kin_flag)
+- DCON - Defaults the reform_eq_with_psilim flag to false for better consistency with earlier versions
+
+
 GPEC v1.3.7
 ===========
 
