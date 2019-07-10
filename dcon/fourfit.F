@@ -1038,7 +1038,7 @@ c-----------------------------------------------------------------------
 
          idone = -1
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
-!$OMP PARALLEL DO DEFAULT(NONE)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC) DEFAULT(NONE)
 !$OMP& PRIVATE(
 !$OMP& ipsi,ix,psifac,l,num_threads,t_start,t_end,t_sec,
 !$OMP& tphi,kwmat_l,ktmat_l,kwmat,ktmat,
