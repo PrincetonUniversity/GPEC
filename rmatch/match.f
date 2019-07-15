@@ -16,17 +16,19 @@ c     6. match_eta_scan.
 c     7. match_branch_scan
 c     8. match_eigenvalue_scan.
 c     9. match_qscan.
-c     10. match_delta_jardin.
-c     11. match_nyquist.
-c     12. match_branch.
-c     13. match_solve.
-c     14. match_matrix_diagnose.
-c     15. match_rpec.
-c     16. match_alloc_sol.
-c     17. match_dealloc_sol.
-c     18. match_output_solution.
-c     19. match_auto_connect.
-c     20. match_main.
+c     10. match_init_scan.
+c     11. match_delta_jardin.
+c     12. match_nyquist.
+c     13. match_branch.
+c     14. match_solve.
+c     15. match_matrix_diagnose.
+c     16. match_rpec.
+c     17. match_alloc_sol.
+c     18. match_dealloc_sol.
+c     19. match_output_solution.
+c     20. match_auto_connect.
+c     21. real_order
+c     22. match_main.
 c-----------------------------------------------------------------------
 c     subprogram 0. match_mod.
 c     module declarations.
@@ -84,7 +86,7 @@ c-----------------------------------------------------------------------
       END TYPE insol_type
       
       LOGICAL :: scan_flag=.FALSE.,sol_flag=.FALSE.,qscan_flag=.FALSE.,
-     $     matrix_diagnose=.FALSE.,branch_scan_flag=.FALSE.
+     $     matrix_diagnose=.FALSE.,init_scan_flag=.FALSE.
       LOGICAL :: qscan_out=.TRUE.,deltar_flag=.FALSE.,deflate=.FALSE.,
      $           deltac_flag=.FALSE.,deltaj_flag=.FALSE.,
      $           match_flag=.FALSE.
@@ -132,7 +134,7 @@ c-----------------------------------------------------------------------
      $                         deltar_flag,deltac_flag,deltaj_flag,
      $                         deflate,nroot,match_flag,ising_output,
      $                         match_sol,matrix_diagnose,fulldomain,
-     $                         coil,itermax,relax_fac,branch_scan_flag
+     $                         coil,itermax,relax_fac,init_scan_flag
       NAMELIST/rmatch_output/ bin_rpecsol,out_rpecsol
       NAMELIST/nyquist_input/nyquist
 10    FORMAT(1x,"Eigenvalue=",1p,2e11.3)
@@ -167,6 +169,10 @@ c-----------------------------------------------------------------------
       ALLOCATE (deltaf(totmsing,2,2))
       ALLOCATE (taur_save(totmsing))
       ALLOCATE (zi_in(msing),zo_out(msing),q_in(msing))
+      IF (totmsing.EQ.0) THEN
+         WRITE(*,*)"No singular surfaces."
+         stop
+      ENDIF
       IF (totmsing.LT.msing) THEN
          WRITE(*,*)"msing is larger than totmsing."
          msing=totmsing
@@ -232,7 +238,7 @@ c-----------------------------------------------------------------------
          coil%m2=totnsol
          CALL match_rpec
          CALL program_stop("RPEC termination.")
-      ENDIF      
+      ENDIF   
 c-----------------------------------------------------------------------
 c     scan eigen value (Q) for different inner models.
 c-----------------------------------------------------------------------
@@ -248,7 +254,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     scan over resistivity by tracking solution branches
 c-----------------------------------------------------------------------
-      IF (branch_scan_flag) CALL match_branch_scan
+      IF (init_scan_flag) CALL match_init_scan
 c-----------------------------------------------------------------------
 c     construct the global solution in both outer and inner regions.
 c-----------------------------------------------------------------------
@@ -327,6 +333,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(4*msing) :: cof
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
       COMPLEX(r8), DIMENSION(4*msing-1,4*msing-1) :: cmat
+      REAL(r8) :: nan
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -335,6 +342,11 @@ c-----------------------------------------------------------------------
 30    FORMAT(1x,"cof_out(",i2,") CL=",1p,2e11.3,"  CR=",1p,2e11.3)
 40    FORMAT(1x,"cof_in(",i2,")  d+=",1p,2e11.3,"  d-=",1p,2e11.3)
       itmax=itermax
+c-----------------------------------------------------------------------
+c     Setup NaN value
+c-----------------------------------------------------------------------
+      nan=0
+      nan=0/nan
 c-----------------------------------------------------------------------
 c     find initial guess.
 c-----------------------------------------------------------------------
@@ -347,18 +359,22 @@ c-----------------------------------------------------------------------
       DO
          it=it+1
          err=ABS(dz/z)
-         IF (it==1) THEN
-            WRITE (out_unit,10)
+         IF(.not.(scan_flag .or. qscan_flag .or. init_scan_flag)) then
+c           These write statements are too verbose for scans
+            IF (it==1) THEN
+               WRITE (out_unit,10)
+               WRITE(out_unit,*)
+               WRITE(out_unit,*)            
+            ENDIF
+            WRITE(out_unit,20)it,err,REAL(z),AIMAG(z),REAL(f),AIMAG(f)
             WRITE(out_unit,*)
-            WRITE(out_unit,*)            
          ENDIF
-         WRITE(out_unit,20)it,err,REAL(z),AIMAG(z),REAL(f),AIMAG(f)
-         WRITE(out_unit,*)
 
          IF( ISNAN(REAL(f)) ) THEN
             WRITE(*,*) "Solution is NaN. it=", it
             WRITE(out_unit,*) "Solution is NaN. it=", it
             it=-1
+            z=COMPLEX( nan,nan ) !NaN
             EXIT
          ENDIF
          IF(err < tol) EXIT
@@ -366,6 +382,7 @@ c-----------------------------------------------------------------------
             it=-1
             WRITE(*,*) "Solution is not well converged."
             WRITE(out_unit,*) "Solution is not well converged."
+            z=COMPLEX( nan,nan ) !NaN
             EXIT
          ENDIF
          z_old=z
@@ -1143,6 +1160,7 @@ c-----------------------------------------------------------------------
             restype(ising)%taur=taur_save(ising)
      $                         /(eta_scan*eta(ising)/eta(1))
          ENDDO
+         WRITE(out_unit,51) istep,eta_scan
          WRITE(*,51) istep,eta_scan
  51      FORMAT("***istep=",i5,", eta_scan=",1P,e11.3)
 
@@ -1151,6 +1169,7 @@ c-----------------------------------------------------------------------
             eigval=eigvals(istep-1,ibranch)
             CALL match_newton(match_delta,eigval,err,iter)
             eigvals(istep,ibranch)=eigval
+            WRITE(out_unit,52) ibranch, eigval
             WRITE(*,52) ibranch, eigval
  52         FORMAT(" ibranch=",i2,": eigval=(",1P,e11.3,e11.3," )")
          ENDDO
@@ -1166,19 +1185,20 @@ c-----------------------------------------------------------------------
          DO ibranch=1,nbranch(istep-1)
             
            !Compare slope to previous segment
-           eigvalm0 = eigvals(istep-0,ibranch)
-           eigvalm1 = eigvals(istep-1,ibranch)
-           eigvalm2 = eigvals(istep-2,ibranch)
-           slope12 = REAL(eigvalm1-eigvalm2)
+           !eigvalm0 = eigvals(istep-0,ibranch)
+           !eigvalm1 = eigvals(istep-1,ibranch)
+           !eigvalm2 = eigvals(istep-2,ibranch)
+           !slope12 = REAL(eigvalm1-eigvalm2)
            slope01 = REAL(eigvalm0-eigvalm1)
 
            !if( (slope01/slope12-1.0)>0.2 ) then
-           if( slope12*slope01<0.0 ) then
-              write(*,53) slope12, slope01
+           !if( slope12*slope01<0.0 ) then
+           !   write(out_unit,53) slope12, slope01
  53           FORMAT(' New branch found. s12=',e11.3,' s01=',e11.3)
 
-             DO attempt=1,5
-               eigval=eigvalm1-2**(attempt-1)*slope01
+             DO attempt=1,1
+               !eigval=eigvalm1-2**(attempt-1)*slope01
+               eigval=eigvalm1+abs(slope01)
                CALL match_newton(match_delta,eigval,err,iter)
                !Check that solution is valid
                valid=.true.
@@ -1188,7 +1208,7 @@ c-----------------------------------------------------------------------
                   var2=abs(eigval-eigvals(istep,jbranch))/abs(eigval**2)
                   if( var2<1e-5 ) then
                      valid=.false.
-                     write(*,54) jbranch,attempt
+                     write(out_unit,54) jbranch,attempt
  54           FORMAT("  Ignore: Similar to branch ",i2,'. Attempt #',i1)
                   endif
                ENDDO
@@ -1196,13 +1216,13 @@ c-----------------------------------------------------------------------
                !not too close to zero
                if( abs(eigval)<1e-5 ) then
                   valid=.false.
-                  write(*,55) attempt
+                  write(out_unit,55) attempt
  55               FORMAT("  Ignore: Too close to zero. Attempt #",i1)
                endif
 
                if( nbranch(istep)>msing ) then
-                  write(*,56) attempt
-                  write(*,57)
+                  write(out_unit,56) attempt
+                  write(out_unit,57)
  56            FORMAT("  Error: More branches than msing. Attempt #",i1)
  57               FORMAT("         Try increasing step number")
                   exit
@@ -1211,7 +1231,7 @@ c-----------------------------------------------------------------------
                if( valid ) then
                 !Valid, so start new branch
                 nbranch(istep) = nbranch(istep)+1
-                write(*,58) nbranch(istep), attempt
+                write(out_unit,58) nbranch(istep), attempt
  58             FORMAT("  Adding valid nbranch=",i3,". Attempt #",i1)
                 eigvals(istep-2,nbranch(istep))=eigvals(istep-2,ibranch)
                 eigvals(istep-1,nbranch(istep))=eigvals(istep-1,ibranch)
@@ -1219,7 +1239,7 @@ c-----------------------------------------------------------------------
                 exit
                endif
              ENDDO    
-           endif
+           !endif
          ENDDO
 
          DO ibranch=1,nbranch(istep)
@@ -1245,6 +1265,7 @@ c-----------------------------------------------------------------------
       order = real_order(nbranch(scan_nstep),eigvals(scan_nstep,:))
       DO ibranch=1,nbranch(scan_nstep)
          eigval = eigvals(scan_nstep,order(ibranch))
+         WRITE(out_unit,59) ibranch, REAL(eigval), AIMAG(eigval)
          WRITE(*,59) ibranch, REAL(eigval), AIMAG(eigval)
  59      FORMAT("Branch ",i2," eigval=(",1P,e14.6,1x,e14.6," )")
       ENDDO
@@ -1435,7 +1456,101 @@ c-----------------------------------------------------------------------
       END SUBROUTINE match_qscan
       
 c-----------------------------------------------------------------------
-c     subprogram 10. match_delta_jardin.
+c     subprogram 10. match_init_scan.
+c     scan initguess and sort results by real component of eigenvalue
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------            
+      SUBROUTINE match_init_scan
+      INTEGER :: istep,ising,iter,num_vals
+      REAL(r8) :: step,eta_scan,log_scan_x0,err
+      COMPLEX(r8) :: eigval0,eigval,detval
+      COMPLEX(r8), dimension(scan_nstep+1) :: eigvals, detvals
+      INTEGER, dimension(scan_nstep+1) :: order
+      COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
+c-----------------------------------------------------------------------
+c     format output.
+c-----------------------------------------------------------------------                  
+10    FORMAT(/9x,"#re_gr",10x,"im_gr",2x,"iter",3x,"ising",
+     $       13x,"zi",13x,"zo",4x,"zi*SQRT(10)",10x,"zo/10",
+     $       7x,"re(q_in)",7x,"im(q_in)"/)
+20    FORMAT(1p,2e15.5,i6,i8,8e15.5)
+c-----------------------------------------------------------------------
+c     scan constant eta parameter.
+c-----------------------------------------------------------------------                  
+      log_scan_x0=log10(scan_x0)
+      step=(log10(scan_x1)-log_scan_x0)/scan_nstep
+      CALL bin_open(bin_unit,"scanres.bin","UNKNOWN","REWIND","none")
+      CALL ascii_open(debug_unit,"scanres.out","UNKNOWN")
+      WRITE (debug_unit,10)
+      !Scan real space for eigenvalues
+      num_vals=0
+      DO istep=0,scan_nstep
+         eigval=COMPLEX( 10**(log_scan_x0+istep*step), AIMAG(initguess))
+         eigval0=eigval
+         CALL match_newton(match_delta,eigval,err,iter)
+         detval=match_delta(eigval,mat)
+         IF( .not. ISNAN(REAL(eigval)) ) THEN
+            num_vals=num_vals+1
+            eigvals(num_vals)=eigval
+            detvals(num_vals)=detval
+         ENDIF
+         WRITE(out_unit,61) eigval0, eigval, detval
+         WRITE(*,61) eigval0, eigval, detval
+ 61      FORMAT(" init=(",1P,e11.3,e11.3," ) eigval=(",e11.3,e11.3,
+     $        " ) detval=(",e11.3,e11.3," )")
+      ENDDO
+
+      order = real_order(num_vals,eigvals)
+
+      !Print results
+      eigval0 = 0.0
+      iter=0
+      DO istep=1,num_vals
+
+         eigval=eigvals(order(istep))
+         detval=detvals(order(istep))
+         IF( abs(eigval-eigval0)/abs(eigval)>1e-3 ) THEN
+            iter = iter+1
+
+            ising=ising_output
+            WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
+     $         REAL(eigval,4),REAL(AIMAG(eigval),4),
+     $         mylog(eigval),
+     $         REAL(zi_in(ising),4),REAL(zo_out(ising),4),
+     $         REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,4),
+     $         REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
+     $         mylog(q_in(ising)),REAL(iter,4)
+            WRITE(debug_unit,20)
+     $         REAL(eigval),IMAG(eigval),iter,ising,zi_in(ising),
+     $         zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,
+     $         REAL(q_in(ising)),IMAG(q_in(ising))
+            
+            WRITE(out_unit,62) iter, REAL(eigval), AIMAG(eigval), 
+     $           REAL(detval), AIMAG(detval)
+            WRITE(*,62) iter, REAL(eigval), AIMAG(eigval),
+     $           REAL(detval), AIMAG(detval)
+ 62         FORMAT("Branch ",i2," eigval=(",1P,e14.6,1x,e14.6,
+     $           " ) detval=("e14.6,1x,e14.6," )")
+
+            eigval0=eigval
+
+         ENDIF
+      
+      ENDDO
+
+      WRITE(bin_unit)
+      CALL ascii_close(debug_unit)
+      CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      CALL program_stop("Normal termination for init scan.")
+      END SUBROUTINE match_init_scan
+
+c-----------------------------------------------------------------------
+c     subprogram 11. match_delta_jardin.
 c     finite differential method of GGJ.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1484,7 +1599,7 @@ c     terminate.
 c-----------------------------------------------------------------------      
       END SUBROUTINE match_delta_jardin
 c-----------------------------------------------------------------------
-c     subprogram 11. match_nyquist.
+c     subprogram 12. match_nyquist.
 c     draws nyquist plot.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1598,7 +1713,7 @@ c-----------------------------------------------------------------------
       CALL program_stop("Normal termination for nyquist plot.")
       END SUBROUTINE match_nyquist
 c-----------------------------------------------------------------------
-c     subprogram 12. match_branch.
+c     subprogram 13. match_branch.
 c     draws one branch of nyquist plot.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1661,7 +1776,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_branch      
 c-----------------------------------------------------------------------
-c     subprogram 13. match_solve.
+c     subprogram 14. match_solve.
 c     solves for one root.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1700,7 +1815,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_solve     
 c-----------------------------------------------------------------------
-c     subprogram 14. match_matrix_diagnose
+c     subprogram 15. match_matrix_diagnose
 c     solves for one root.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1745,7 +1860,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_matrix_diagnose
 c-----------------------------------------------------------------------
-c     subprogram 15. match_rpec.
+c     subprogram 16. match_rpec.
 c     construct resistive perturbed equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1865,7 +1980,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_rpec
 c-----------------------------------------------------------------------
-c     subprogram 16. match_alloc_sol.
+c     subprogram 17. match_alloc_sol.
 c     allocate and read inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1924,7 +2039,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_alloc_sol
 c-----------------------------------------------------------------------
-c     subprogram 17. match_dealloc_sol.
+c     subprogram 18. match_dealloc_sol.
 c     deallocate inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1953,7 +2068,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_dealloc_sol
 c-----------------------------------------------------------------------
-c     subprogram 16. match_output_solution.
+c     subprogram 19. match_output_solution.
 c     output inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2195,7 +2310,7 @@ c-----------------------------------------------------------------------
       RETURN      
       END SUBROUTINE match_output_solution
 c-----------------------------------------------------------------------
-c     subprogram 18. match_auto_connect.
+c     subprogram 20. match_auto_connect.
 c     auto connect the outer and inner region.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2329,9 +2444,9 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN      
       END SUBROUTINE match_auto_connect
-      
+
 c-----------------------------------------------------------------------
-c     function 19. real_order
+c     function 20. real_order
 c     return an array of 'n' indices for complex array 'y' sorted
 c     in descending order by the real components of the elements.
 c-----------------------------------------------------------------------
@@ -2370,7 +2485,7 @@ c-----------------------------------------------------------------------
 
       END MODULE match_mod
 c-----------------------------------------------------------------------
-c     subprogram 20. match_main.
+c     subprogram 22. match_main.
 c     trivial main program.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2387,3 +2502,4 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------               
       END PROGRAM match_main
+
