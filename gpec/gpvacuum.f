@@ -54,8 +54,8 @@ c-----------------------------------------------------------------------
 c     specify whatever boundary here with normal polar angles.
 c-----------------------------------------------------------------------
       vmtheta=256
-      vmlow=-10
-      vmhigh=10
+      vmlow=mlow
+      vmhigh=mhigh
       vmpert=vmhigh-vmlow+1
       qlim=1.0
       vn=nn
@@ -503,12 +503,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      REAL(r8) :: majr,minr,psi,dist,err1,err2
+      REAL(r8) :: majr,minr,psi,dist,err1,err2,rval
       INTEGER :: vmpert,i,info,lwork
+      INTEGER, DIMENSION(:), POINTER :: ipiv
       REAL(r8), DIMENSION(:), POINTER :: d1,rwork
-      COMPLEX(r8), DIMENSION(:), POINTER :: work
+      COMPLEX(r8), DIMENSION(:), POINTER :: d2,work
       COMPLEX(r8), DIMENSION(:,:),POINTER :: lmat1,lmat2,lmat12,lmat21,
-     $     ilmat1,ilmat2,mmat,immat,dmat,temp1,temp2
+     $     ilmat1,ilmat2,mmat,immat,dmat,temp1,temp2,vl,vr
 
       CALL gpvacuum_arbsurf(psi=psilim)
       vmpert=SIZE(vsurf_indev)
@@ -516,18 +517,12 @@ c-----------------------------------------------------------------------
       lmat1=vsurf_indmats
       DEALLOCATE(vsurf_indmats,vsurf_indev)
 
-      dist=prad*0.1
+      dist=prad*0.25
       CALL gpvacuum_arbsurf(psi=psilim,dist=dist)
       vmpert=SIZE(vsurf_indev)
       ALLOCATE(lmat2(vmpert,vmpert))
       lmat2=vsurf_indmats
       DEALLOCATE(vsurf_indmats,vsurf_indev)
-
-
-
-
-
-
 
       ALLOCATE(lmat12(vmpert,vmpert),lmat21(vmpert,vmpert),
      $     ilmat1(vmpert,vmpert),ilmat2(vmpert,vmpert),
@@ -535,13 +530,8 @@ c-----------------------------------------------------------------------
      $     temp1(vmpert,vmpert),temp2(vmpert,vmpert))
       lmat12=MATMUL(lmat1,lmat2)
       lmat21=MATMUL(lmat2,lmat1)
-c      DO i=1,vmpert
-c         WRITE(*,*)ABS(lmat12(10,i)),ABS(lmat21(10,i))
-c      ENDDO
       err1=MAXVAL(ABS(lmat2-TRANSPOSE(CONJG(lmat2))))/MAXVAL(ABS(lmat2))
       err2=MAXVAL(ABS(lmat12-lmat21))/MAXVAL(ABS(lmat12))
-      WRITE(*,*)"err1=",err1
-      WRITE(*,*)"err2=",err2
 c-----------------------------------------------------------------------
 c     invert self inductance matrices.
 c-----------------------------------------------------------------------
@@ -557,62 +547,71 @@ c-----------------------------------------------------------------------
 c     calculate mutual inductance matrices.
 c-----------------------------------------------------------------------
       mmat=MATMUL(lmat2,ilmat1)
-      err1=MAXVAL(ABS(mmat-TRANSPOSE(CONJG(mmat))))/MAXVAL(ABS(mmat))
+      ! It's not a hermitian as expected.
+c      err1=MAXVAL(ABS(mmat-TRANSPOSE(CONJG(mmat))))/MAXVAL(ABS(mmat))
 c      WRITE(*,*)"diag_err=",err1
 c      mmat=0.5*(mmat+TRANSPOSE(CONJG(mmat)))
-
-      lwork=2*vmpert-1
-      ALLOCATE(d1(vmpert),rwork(3*vmpert-2),work(lwork))
-      ALLOCATE(dmat(vmpert,vmpert))
-
-      temp1=mmat
-      CALL zheev('V','U',vmpert,temp1,vmpert,d1,work,lwork,rwork,info)
-      dmat=0
-      DO i=1,vmpert
-         dmat(i,i)=SQRT(d1(i))
-      ENDDO
-
-      mmat=MATMUL(temp1,MATMUL(dmat,CONJG(TRANSPOSE(temp1))))
-      temp1=mmat
-      CALL zpotrf('U',vmpert,temp1,vmpert,info)
-      CALL zpotri('U',vmpert,temp1,vmpert,info)
-      immat=temp1
-
-      mmat=MATMUL(lmat1,mmat)
-      immat=MATMUL(lmat2,immat)
-      err1=MAXVAL(ABS(mmat-immat))/MAXVAL(ABS(mmat))
-      WRITE(*,*)"mutual_err=",err1
-
 c      lwork=2*vmpert-1
 c      ALLOCATE(d1(vmpert),rwork(3*vmpert-2),work(lwork))
 c      ALLOCATE(dmat(vmpert,vmpert))
-c      mmat=0.5*(lmat12+lmat21)
 c      temp1=mmat
 c      CALL zheev('V','U',vmpert,temp1,vmpert,d1,work,lwork,rwork,info)
 c      dmat=0
 c      DO i=1,vmpert
-c         dmat(i,i)=d1(i)
-c      ENDDO
-c      temp2=MATMUL(temp1,MATMUL(dmat,CONJG(TRANSPOSE(temp1))))
-c      err1=MAXVAL(ABS(temp2-mmat))/MAXVAL(ABS(mmat))
-c      WRITE(*,*)"diag_err=",err1
-c      dmat=0
-c      DO i=1,vmpert
 c         dmat(i,i)=SQRT(d1(i))
 c      ENDDO
-c      mmat=MATMUL(temp1,MATMUL(dmat,CONJG(TRANSPOSE(temp1))))
-c      temp1=mmat
-c      CALL zpotrf('U',vmpert,temp1,vmpert,info)
-c      CALL zpotri('U',vmpert,temp1,vmpert,info)
-c      immat=temp1
 
-c      temp1=MATMUL(mmat,ilmat1)
-c      temp2=MATMUL(immat,lmat2)
-c      err1=MAXVAL(ABS(temp1-temp2))/MAXVAL(ABS(temp1))
-c      WRITE(*,*)"mutual_err=",err1
+      lwork=2*vmpert+1
+      ALLOCATE(ipiv(vmpert))
+      ALLOCATE(d2(vmpert),rwork(2*vmpert),work(lwork))
+      ALLOCATE(dmat(vmpert,vmpert),vl(vmpert,vmpert),vr(vmpert,vmpert))
+      temp1=mmat
+      CALL zgeev('V','V',vmpert,temp1,vmpert,d2,
+     $        vl,vmpert,vr,vmpert,work,lwork,rwork,info)
+      dmat=0
+      ! approximate for dmat^2=(a+bi)^2=d2 for a>0, a>>b
+      DO i=1,vmpert
+                  rval=SQRT(REAL(d2(i)))
+         dmat(i,i)=rval+ifac*AIMAG(d2(i))/(2.0*rval)
+      ENDDO
+      DEALLOCATE(work)
+      lwork=vmpert
+      ALLOCATE(work(lwork))
+      temp1=vr
+      ipiv=0
+      CALL zgetrf(vmpert,vmpert,temp1,vmpert,ipiv,info)
+      CALL zgetri(vmpert,temp1,vmpert,ipiv,work,lwork,info)      
+      mmat=MATMUL(vr,MATMUL(dmat,temp1))
+      mmat=MATMUL(mmat,lmat1)
+      ! Here we complete M=(L2#L1^(-1))^(1/2)#L_1 in a matrix form.
 
+      DEALLOCATE(work)
+      lwork=2*vmpert+1
+      ALLOCATE(work(lwork))
+      immat=MATMUL(lmat1,ilmat2)
+      temp1=immat
+      CALL zgeev('V','V',vmpert,temp1,vmpert,d2,
+     $        vl,vmpert,vr,vmpert,work,lwork,rwork,info)
+      dmat=0
+      DO i=1,vmpert
+         WRITE(*,*)d2(i)
+         rval=SQRT(REAL(d2(i)))
+         dmat(i,i)=rval+ifac*AIMAG(d2(i))/(2.0*rval)
+      ENDDO
+      DEALLOCATE(work)
+      lwork=vmpert
+      ALLOCATE(work(lwork))
+      temp1=vr
+      ipiv=0
+      CALL zgetrf(vmpert,vmpert,temp1,vmpert,ipiv,info)
+      CALL zgetri(vmpert,temp1,vmpert,ipiv,work,lwork,info)     
+      immat=MATMUL(vr,MATMUL(dmat,temp1))
+      immat=MATMUL(immat,lmat2)
+      ! Here we complete M=(L1#L2^(-1))^(1/2)#L_2 in a matrix form.
 
-           
+      err1=MAXVAL(ABS(mmat-immat))/MAXVAL(ABS(mmat))
+      WRITE(*,*)"mutual_err=",err1
+          
       DEALLOCATE(lmat1,lmat2,lmat12,lmat21)
 c-----------------------------------------------------------------------
 c     terminate.

@@ -595,8 +595,8 @@ c-----------------------------------------------------------------------
          CALL gpdiag_magpot
       ENDIF
       IF (arbsurf_flag) THEN
-         CALL gpdiag_arbsurf(majr,minr)
-c         CALL gpvacuum_mutuals
+c         CALL gpdiag_arbsurf(majr,minr)
+         CALL gpvacuum_mutuals
       ENDIF         
       IF (angles_flag) THEN
          CALL gpdiag_angles
