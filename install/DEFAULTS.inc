@@ -197,12 +197,12 @@
 #------------------------------------------------------------------
 
 #CentOS 5.4
-#LAPACKHOME=/usr/local/lib
-#NETCDFHOME=/usr/local/netcdf
+LAPACKHOME=/usr/local/lib
+NETCDFHOME=/usr/local/netcdf
 
 #Kubuntu 18.04
-LAPACKHOME=/usr/lib/x86_64-linux-gnu
-NETCDFHOME=/usr/include
+#LAPACKHOME=/usr/lib/x86_64-linux-gnu
+#NETCDFHOME=/usr/include
 
 # general defaults
 #------------------
@@ -221,9 +221,6 @@ endif
 ifndef ACML_HOME
     MATHHOME = $(LAPACKHOME)
     MATHLIBS = -llapack -lblas
-else
-    MATHHOME = $(ACML_HOME)
-    MATHLIBS = -lacml
 else
     $(info "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME")
 endif

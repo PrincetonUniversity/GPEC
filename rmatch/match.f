@@ -1248,11 +1248,11 @@ c-----------------------------------------------------------------------
             ising=ising_output
          WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
      $      REAL(eigval,4),REAL(AIMAG(eigval),4),
-     $      mylog(eigval),
+     $      floored_log(eigval),
      $      REAL(zi_in(ising),4),REAL(zo_out(ising),4),
      $      REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,4),
      $      REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
-     $      mylog(q_in(ising)),REAL(iter,4)
+     $      floored_log(q_in(ising)),REAL(iter,4)
          WRITE(debug_unit,20)eta_scan,
      $    REAL(eigval),IMAG(eigval),nbranch(istep),ising,zi_in(ising),
      $    zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,
@@ -1326,11 +1326,11 @@ c-----------------------------------------------------------------------
             ising=ising_output
             WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
      $           REAL(eigval,4),REAL(AIMAG(eigval),4),
-     $           mylog(eigval),
+     $           floored_log(eigval),
      $           REAL(zi_in(ising),4),REAL(zo_out(ising),4),
      $           REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,
      $           4),REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
-     $           mylog(q_in(ising)),REAL(iter,4)
+     $           floored_log(q_in(ising)),REAL(iter,4)
             WRITE(debug_unit,20)real_eigval,imag_eigval,
      $           REAL(eigval),IMAG(eigval),iter,ising,zi_in(ising),
      $           zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,
@@ -1517,11 +1517,11 @@ c-----------------------------------------------------------------------
             ising=ising_output
             WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
      $         REAL(eigval,4),REAL(AIMAG(eigval),4),
-     $         mylog(eigval),
+     $         floored_log(eigval),
      $         REAL(zi_in(ising),4),REAL(zo_out(ising),4),
      $         REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,4),
      $         REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
-     $         mylog(q_in(ising)),REAL(iter,4)
+     $         floored_log(q_in(ising)),REAL(iter,4)
             WRITE(debug_unit,20)
      $         REAL(eigval),IMAG(eigval),iter,ising,zi_in(ising),
      $         zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,

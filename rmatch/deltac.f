@@ -2057,6 +2057,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltac_ua_diagnose
 
+      USE local_mod
+
       INTEGER :: ix,t
       REAL(r8) ::dx,x,logx,logx0,logx1
       COMPLEX(r8), DIMENSION(mpert,6) :: ua,dua,d2ua
