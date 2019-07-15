@@ -16,6 +16,8 @@ c-----------------------------------------------------------------------
       USE equil_out_mod
       IMPLICIT NONE
 
+      INCLUDE "version.inc"
+
       INTEGER :: out_bal1_unit=21
       INTEGER :: out_bal2_unit=22
       INTEGER :: bin_bal1_unit=23
@@ -97,7 +99,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: msing
       TYPE(sing_type), DIMENSION(:), POINTER :: sing,sing_non0,sing_0
-      
+
       LOGICAL :: sas_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8

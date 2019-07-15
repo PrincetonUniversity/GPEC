@@ -181,7 +181,7 @@ c-----------------------------------------------------------------------
 c     define flux surface quantities.
 c-----------------------------------------------------------------------
       IF (dpsi_intvl>0 .AND. .FALSE.) THEN
-         CALL ascii_open(preflat_unit,"flat_prof.out","UNKNOWN")
+         CALL ascii_open(out2_unit,"flat_prof.out","UNKNOWN")
          DO ipsi=0,mpsi
             psifac=sq%xs(ipsi)
             CALL toolbox_preflatcof(psifac,dpsi_intvl,dpsi1_intvl,
@@ -189,9 +189,9 @@ c-----------------------------------------------------------------------
             pre=sq%fs(ipsi,2)
             p1=sq%fs1(ipsi,2)
             q=sq%fs(ipsi,4)
-            WRITE(preflat_unit,30) psifac,cof,cof1,p1*cof,pre,q
+            WRITE(out2_unit,30) psifac,cof,cof1,p1*cof,pre,q
          ENDDO
-         CALL ascii_close(preflat_unit)
+         CALL ascii_close(out2_unit)
          WRITE (*,*)"dpsi_intvl>0: output flatten profile."
       ENDIF
 c-----------------------------------------------------------------------

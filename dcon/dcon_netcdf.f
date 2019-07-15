@@ -16,6 +16,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE dcon_netcdf_mod
       USE dcon_mod
+      USE sing_mod, ONLY: sing_detf
       USE netcdf
       IMPLICIT NONE
 
@@ -56,7 +57,9 @@ c-----------------------------------------------------------------------
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
-     $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id
+     $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
+     $    pd_dim, pd_id, df_id
+      REAL(4) :: cpusec, wallsec
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
@@ -72,6 +75,7 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=sn,FMT='(I2)')nn
       ENDIF
       ncfile = "dcon_output_n"//TRIM(sn)//".nc"
+      CALL timer(1,0,cpusec,wallsec)
 c-----------------------------------------------------------------------
 c     open files
 c-----------------------------------------------------------------------
@@ -128,6 +132,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(ncid,nf90_global,"time",INT(shottime)) )
       CALL check( nf90_put_att(ncid,nf90_global,"n", nn))
       CALL check( nf90_put_att(ncid,nf90_global,"version", version))
+      CALL check( nf90_put_att(ncid,nf90_global,"cpu_time",cpusec) )
+      CALL check( nf90_put_att(ncid,nf90_global,"wall_time",wallsec))
       ! define dimensions
       CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
       CALL check( nf90_def_var(ncid, "i", nf90_int, i_dim, i_id) )
@@ -137,6 +143,12 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "mode", nf90_int, mo_dim, mo_id))
       CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
+      IF(ALLOCATED(sing_detf))THEN
+         CALL check( nf90_def_dim(ncid, "psi_n_detf", 
+     $       SIZE(sing_detf, 2), pd_dim) )
+         CALL check( nf90_def_var(ncid, "psi_n_detf", nf90_double, 
+     $       pd_dim, pd_id))
+      ENDIF
       ! define variables
       CALL check( nf90_def_var(ncid, "f", nf90_double, p_dim, f_id) )
       CALL check( nf90_def_var(ncid, "mu0p", nf90_double, p_dim, mu_id))
@@ -157,6 +169,10 @@ c-----------------------------------------------------------------------
      $    (/m_dim, mo_dim, i_dim/), wt_id) )
       CALL check( nf90_def_var(ncid, "W_t_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wtv_id) )
+      IF(ALLOCATED(sing_detf))THEN
+         CALL check( nf90_def_var(ncid, "detF", nf90_double,
+     $       (/pd_dim, i_dim/), df_id) )
+      ENDIF
       ! end definitions
       CALL check( nf90_enddef(ncid) )
 c-----------------------------------------------------------------------
@@ -190,6 +206,12 @@ c-----------------------------------------------------------------------
      $             AIMAG(wt)/),(/mpert,mpert,2/))) )
       CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),
      $             AIMAG(et)/),(/mpert,2/))) )
+      IF(ALLOCATED(sing_detf))THEN
+         CALL check( nf90_put_var(ncid,pd_id, REAL(sing_detf(1,:))) )
+         CALL check( nf90_put_var(ncid,df_id,RESHAPE(
+     $               (/REAL(sing_detf(2,:)), AIMAG(sing_detf(2,:))/),
+     $               (/SIZE(sing_detf,2),2/))) )
+      ENDIF
 c-----------------------------------------------------------------------
 c     close file
 c-----------------------------------------------------------------------

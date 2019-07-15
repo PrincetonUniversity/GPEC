@@ -1,8 +1,8 @@
 # This is the makefile for ZVODE.
 
-#FFLAGS = -qopt-report -xHost -g -check all -qopenmp
-FFLAGS = -xHost -O3 -qopenmp #-qopt-zmm-usage=high #-ipo
-F90 = ifort $(FFLAGS)
+include ../install/DEFAULTS.inc
+
+F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f

@@ -146,6 +146,7 @@ c-----------------------------------------------------------------------
             rzphi%xtitle="psifac"
             rzphi%ytitle="theta "
             rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/)
+            eqfun%title=(/"  b0  ","      ","      " /)
             eqfun%xs=sq%xs
             eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
          ENDIF

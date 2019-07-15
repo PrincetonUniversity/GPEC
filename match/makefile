@@ -3,7 +3,7 @@ include ../install/DEFAULTS.inc
 
 FFLAGS = -g
 IFLAGS = -I../equil
-F90 = $(FC) $(FFLAGS) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
 

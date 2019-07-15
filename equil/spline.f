@@ -30,6 +30,8 @@ c     18. spline_copy.
 c     19. spline_fill_matrix.
 c     20. spline_get_yp.
 c     21. spline_thomas.
+c     22. spline_roots.
+c     23. spline_refine_root.
 c-----------------------------------------------------------------------
 c     subprogram 0. spline_type definition.
 c     defines spline_type.
@@ -39,6 +41,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE spline_mod
       USE local_mod
+      USE utils_mod, ONLY: bubble
       IMPLICIT NONE
 
       LOGICAL :: use_classic_splines = .FALSE.
@@ -51,7 +54,7 @@ c-----------------------------------------------------------------------
       CHARACTER(6) :: name
       LOGICAL :: periodic, allocated
       END TYPE spline_type
-      
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. spline_alloc.
@@ -61,7 +64,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE spline_alloc(spl,mx,nqty)
-      
+
       INTEGER, INTENT(IN) :: mx,nqty
       TYPE(spline_type), INTENT(INOUT) :: spl
 c-----------------------------------------------------------------------
@@ -100,7 +103,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE spline_dealloc(spl)
-      
+
       TYPE(spline_type), INTENT(INOUT) :: spl
 c-----------------------------------------------------------------------
 c     deallocate space.
@@ -648,13 +651,13 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE spline_fac(spl,a,b,cl,cr,endmode)
-      
+
       TYPE(spline_type), INTENT(IN) :: spl
       REAL(r8), DIMENSION(-1:1,0:spl%mx), INTENT(OUT) :: a
       REAL(r8), DIMENSION(spl%mx), INTENT(OUT) :: b
       REAL(r8), DIMENSION(4), INTENT(OUT) :: cl,cr
       CHARACTER(*), INTENT(IN) :: endmode
-      
+
       INTEGER :: j
 c-----------------------------------------------------------------------
 c     compute interior matrix.
@@ -751,11 +754,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE spline_eval(spl,x,mode)
-      
+
       TYPE(spline_type), INTENT(INOUT) :: spl
       REAL(r8), INTENT(IN) :: x
       INTEGER, INTENT(IN) :: mode
-      
+
       INTEGER :: iqty,iside
       REAL(r8) :: xx,d,z,z1,xfac,dx
       REAL(r8) :: g,g1,g2,g3
@@ -1052,7 +1055,7 @@ c-----------------------------------------------------------------------
             IF(mode > 1)g2=(f2(:,iqty)+spl%xpower(iside,iqty)/dx
      $           *(2*f1(:,iqty)+(spl%xpower(iside,iqty)-1)
      $           *f(:,iqty)/dx))*xfac
-     $           
+     $
             IF(mode > 2)g3=(f3(:,iqty)+spl%xpower(iside,iqty)/dx
      $           *(3*f2(:,iqty)+(spl%xpower(iside,iqty)-1)/dx
      $           *(3*f1(:,iqty)+(spl%xpower(iside,iqty)-2)/dx
@@ -1563,4 +1566,275 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE spline_thomas
+c-----------------------------------------------------------------------
+c     subprogram 22. spline_roots.
+c     Calculate all the roots of a cubic spline.
+c     Necessary because simple iterative techniques may miss cases with
+c     multiple roots between knots.
+c     Analytics from https://www.e-education.psu.edu/png520/m11_p6.html
+c
+c     Note: Doesn't handle powers (what are those?)
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_roots(spl, iqty, nroots, roots,op_extrap,op_eps)
+
+      TYPE(spline_type), INTENT(INOUT) :: spl
+      INTEGER, INTENT(IN):: iqty
+      INTEGER, INTENT(OUT) :: nroots
+      REAL(r8), DIMENSION(*), INTENT(OUT):: roots ! should be DIMENSION(1:spl%mx*3)
+      LOGICAL, INTENT(IN), OPTIONAL :: op_extrap
+      REAL(r8), INTENT(IN), OPTIONAL :: op_eps
+
+      LOGICAL, PARAMETER :: debug = .FALSE.
+
+      LOGICAL :: extrap
+      INTEGER:: ix, jroot, lx, nzvalid
+      REAL(r8)::  f_0, f1_0, f_1, f1_1,
+     $  c3, c2, c1, c0, a, b, c, q, r, m, s, t, theta,
+     $  z1, z2, z3, x1, x2, x3, last1, last2, last3,
+     $  dx, eps, tol
+      INTEGER, DIMENSION(:), ALLOCATABLE :: index
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: tmproots
+
+      ! allow optional accuracy manipulation repeated solutions
+      ! within eps*stepsize are rejected
+      IF(PRESENT(op_eps))THEN
+         eps = op_eps
+      ELSE
+         eps = 1e-6
+      ENDIF
+
+      ! allow optional extrapolation beyond ends of the spline
+      IF(PRESENT(op_extrap))THEN
+         extrap = op_extrap
+      ELSE
+         extrap = .FALSE.
+      ENDIF
+
+      roots(1:spl%mx*3) = spl%xs(0) - HUGE(last1)
+      last1 = spl%xs(0) - HUGE(last1)
+      last2 = spl%xs(0) - HUGE(last2)
+      last3 = spl%xs(0) - HUGE(last3)
+      lx = spl%mx-1
+      jroot = 0
+      ! find the analytic roots of a cubic polynomial between each knot
+      DO ix=0, lx
+         nzvalid = 0
+         ! step size and associated tolerance for repeated roots
+         dx=spl%xs(ix+1)-spl%xs(ix)
+         tol = eps * dx
+         ! get the value and derivatives for this step span
+         f_0 = spl%fs(ix,iqty)
+         f1_0 = spl%fs1(ix,iqty)
+         f_1 = spl%fs(ix+1,iqty)
+         f1_1 = spl%fs1(ix+1,iqty)
+         ! starting from the equation for f(x) in spline_eval,
+         ! we reorganize into a classic c3 z^3 + c2 z^2 + c1 z + c0
+         c3 = -2*f_0 - 2*f_1 +   dx*f1_0 + dx*f1_1
+         c2 =  5*f_0 + 3*f_1 - 2*dx*f1_0 - dx*f1_1
+         c1 = -4*f_0 + dx*f1_0
+         c0 = f_0
+         c3 =  2*f_0 - 2*f_1 +   dx*f1_0 - dx*f1_1
+         c2 = -3*f_0 + 3*f_1 - 2*dx*f1_0 + dx*f1_1
+         c1 = dx*f1_0
+         c0 = f_0
+         c3 =  2*f_0 - 2*f_1 +   dx*f1_0 + dx*f1_1
+         c2 = -3*f_0 + 3*f_1 - 2*dx*f1_0 - dx*f1_1
+         c1 = dx*f1_0
+         c0 = f_0
+         ! we have to watch out for secret reductions!
+         IF(c3==0)THEN
+            IF(debug) PRINT *, "  >> Spline quadratic @",spl%xs(ix)
+            a = c2
+            b = c1
+            c = c0
+            IF(b**2 - 4.0*a*c >= 0)THEN
+               z1 = (-b + sqrt(b**2 - 4.0*a*c)) / (2.0 * a)
+               z2 = (-b - sqrt(b**2 - 4.0*a*c)) / (2.0 * a)
+               nzvalid = 2
+            ELSEIF(a==0)THEN
+               IF(debug) PRINT *, "  >> Spline linear @",spl%xs(ix)
+               z1 = -c / b
+               z2 = -huge(z2)
+               nzvalid = 1
+            ELSEIF(a==0 .and. b==0 .and. c==0)THEN
+               IF(debug) PRINT *, "  >> Spline all 0 @",spl%xs(ix)
+               z1 = 0
+               nzvalid = 1
+            ELSE
+               z1 = -huge(z1)
+               z2 = -huge(z2)
+               nzvalid = 0
+            ENDIF
+           z3 = -huge(z3)
+         ELSE
+            ! truely a cubic case
+            ! since we want f = 0 we can normalize out the c3
+            ! so 0 = z^3 + a z^2 + b z + c
+            a = c2 / c3
+            b = c1 / c3
+            c = c0 / c3
+            ! now we just get the analytic solutions
+            q = (a * a - 3.0 * b) / 9.0
+            r = (2.0 * a * a * a - 9.0 * a * b + 27.0 * c) / 54.0
+            m = r**2 - q**3  ! discrimenent
+            IF(m > 0)THEN ! one real root
+               s = -sign(1.0_r8, r) * (abs(r) + sqrt(m))**(1.0/3.0)
+               t = q / s
+               z1 = s + t - (a / 3.0)
+               z2 = -huge(z2)
+               z3 = -huge(z3)
+               nzvalid = 1
+            ELSE  ! three real roots (watch out for repeates)
+               theta = acos(r / sqrt(q**3))
+               z1 = -2*sqrt(q)*cos(theta/3.0) - a/3.0
+               z2 = -2*sqrt(q)*cos((theta+twopi)/3.0) - a/3.0
+               z3 = -2*sqrt(q)*cos((theta-twopi)/3.0) - a/3.0
+               nzvalid = 3
+               IF(abs(z2-z3)<tol) nzvalid = 2  ! double root
+            ENDIF
+         ENDIF
+         ! note spline_eval uses step-size normalized coordinate z,
+         ! but we want real x values
+         x1 = spl%xs(ix) + z1 * dx
+         x2 = spl%xs(ix) + z2 * dx
+         x3 = spl%xs(ix) + z3 * dx
+         ! check if they are in the knot interval (exclude repeats if perioic)
+         IF(debug .AND. (f_0*f_1 <= 0))THEN
+            PRINT *," > f zero crossing between",spl%xs(ix),spl%xs(ix+1)
+            PRINT *,"  >> f_0, f_1 =",f_0,f_1
+            PRINT *,"  >> nzvalid =",nzvalid
+            PRINT *,"  >> z1, z2, z3 = ",z1,z2,z3
+            PRINT *,"  >> c3,c2,c1,c0 =",c3,c2,c1,c0
+         ENDIF
+         IF(nzvalid>0 .AND. (z1>-eps .OR. (ix==0 .AND. extrap)))THEN
+            IF(z1<=1+eps .OR. (ix==lx .AND. extrap)) THEN
+               IF(debug) PRINT '(a12,es17.8e3,a4,es17.8e3,a15,'//
+     $            'I3,a1,I3,a11,es13.4e3,a1,es13.4)',
+     $            "  > Found z1",z1,", x1",x1," between knots ",ix,",",
+     $            ix+1," where x =",spl%xs(ix),",",spl%xs(ix+1)
+               ! refine solution numerically (analytics vs reality of interp)
+               CALL spline_refine_root(spl,iqty,x1)
+               ! avoid repeated left/right solutions at a f=0 knot
+               IF(abs(last1-x1)>tol .AND. abs(last2-x1)>tol .AND.
+     $            abs(last3-x1)>tol) THEN
+                  jroot = jroot + 1
+                  roots(jroot) = x1
+               ENDIF
+            ENDIF
+         ENDIF
+         IF(nzvalid>1 .AND. (z2>-eps .OR. (ix==0 .AND. extrap)))THEN
+            IF(z2<=1+eps .OR. (ix==lx .AND. extrap)) THEN
+               IF(debug) PRINT '(a12,es17.8e3,a4,es17.8e3,a15,'//
+     $            'I3,a1,I3,a11,es13.4e3,a1,es13.4)',
+     $            "  > Found z2",z2,", x2",x2," between knots ",ix,
+     $            ",",ix+1," where x =",spl%xs(ix),",",spl%xs(ix+1)
+               ! refine solution numerically (analytics vs reality of interp)
+               CALL spline_refine_root(spl,iqty,x2)
+               ! avoid double roots or repeats right at a knot location
+               IF(abs(last1-x2)>tol .AND. abs(last2-x2)>tol .AND.
+     $            abs(last3-x2)>tol .AND. abs(x1-x2)>tol) THEN
+                  jroot = jroot + 1
+                  roots(jroot) = x2
+               ENDIF
+            ENDIF
+         ENDIF
+         IF(nzvalid>2 .AND. (z3>-eps .OR. (ix==0 .AND. extrap)))THEN
+            IF(z3<=1+eps .OR. (ix==lx .AND. extrap)) THEN
+               IF(debug) PRINT '(a12,es17.8e3,a4,es17.8e3,a15,'//
+     $            'I3,a1,I3,a11,es13.4e3,a1,es13.4)',
+     $            "  > Found z3",z3,", x3",x3," between knots ",ix,
+     $            ",",ix+1," where x =",spl%xs(ix),",",spl%xs(ix+1)
+               ! refine solution numerically (analytics vs reality of interp)
+               CALL spline_refine_root(spl,iqty,x3)
+               ! avoid double roots or repeats right at a knot location
+               IF(abs(last1-x3)>tol .AND. abs(last2-x3)>tol .AND.
+     $            abs(last3-x3)>tol .AND. abs(x1-x3)>tol .AND.
+     $            abs(x2-x3)>tol) THEN
+                  jroot = jroot + 1
+                  roots(jroot) = x3
+               ENDIF
+            ENDIF
+         ENDIF
+         last1 = roots(max(1,jroot))
+         last2 = roots(max(1,jroot-1))
+         last3 = roots(max(1,jroot-2))
+      ENDDO
+      nroots = jroot
+      ! sort the roots lowest to highest
+      ALLOCATE(index(nroots), tmproots(nroots))
+      index=(/(ix,ix=1,nroots)/)
+      tmproots(1:nroots) = roots(1:nroots)
+      CALL bubble(tmproots,index,1,nroots)
+      DO ix=1,nroots
+         tmproots(ix) = roots(index(nroots + 1 - ix))
+      ENDDO
+      roots(1:nroots) = tmproots(1:nroots)
+      IF(nroots>0 .AND. debug)
+     $   PRINT *," > Sorted roots are",roots(1:nroots)
+      DEALLOCATE(index, tmproots)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_roots
+
+c-----------------------------------------------------------------------
+c     subprogram 23. spline_refine_root.
+c     Calculate the root of a spline using newton iteration from an
+c     initial guess.
+c     Doesn't handle powers (what are those?)
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE spline_refine_root(spl, iqty, x, op_tol)
+
+      TYPE(spline_type), INTENT(INOUT) :: spl
+      INTEGER, INTENT(IN):: iqty
+      REAL(r8), INTENT(INOUT) :: x
+      REAL(r8), INTENT(IN), OPTIONAL :: op_tol
+      ! declare variables
+      INTEGER :: iroot,it,nroots
+      INTEGER, PARAMETER :: itmax=500
+      REAL(r8) :: tol=1e-12
+      REAL(r8) :: dx,lx,lf,f,df
+
+      ! set optional tolerance
+      tol = 1e-12
+      IF(PRESENT(op_tol)) tol = op_tol
+
+      ! if its exact, we don't need to do anything
+      CALL spline_eval(spl,x,1)
+      IF(spl%f(iqty) == 0) RETURN
+      ! otherwise, we'll iterate
+      lx=spl%xs(spl%ix+1)-spl%xs(spl%ix)  ! note ix set in above eval
+      lf = maxval(spl%fs(:,iqty))-minval(spl%fs(:,iqty))
+      dx=lx
+      f=huge(f)
+      it=0
+      DO
+         CALL spline_eval(spl,x,1)
+         df=spl%f(iqty)-f
+         !IF(abs(dx) < tol*lx .OR. abs(df) < tol*lf .OR. it >= itmax)EXIT
+         IF(abs(dx) <= abs(tol*lx) .OR. it >= itmax)EXIT
+         it=it+1
+         f=spl%f(iqty)
+         dx=-spl%f(iqty)/spl%f1(iqty)
+         x=x+dx
+      ENDDO
+      ! abort on failure.
+      IF(it >= itmax)THEN
+         WRITE(*,*) "WARNING: root refining convergence failure!"
+         WRITE(*,*) " -> estimated root ",x,
+     $              " has error/tol ",abs(dx)/(tol*lx),abs(df)/(tol*lf)
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE spline_refine_root
+
       END MODULE spline_mod

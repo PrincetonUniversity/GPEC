@@ -3,11 +3,11 @@
 # based on what libraries are available on the current machine.
 #
 # Prior to version 1.2, GPEC could be compiled using ifort, pgf, gfortran,
-# or lfc. All public releases on portal wheree compiled using lfc, which
+# or lfc. All public releases on portal were compiled using lfc, which
 # required only default user path libraries.
 #
-# With the release of 1.2, the options have been greatly simplified by
-# restricting all compilation to intel compilers compatible wth openmpi.
+# With the release of 1.2, the options restricted to more modern compilers
+# compatible wth openmpi.
 # Machine specific instructions are below.
 #
 # Note that GPEC uses git to fetch/update the harvest repository as well as
@@ -18,9 +18,9 @@
 #   Developers can always load the gpec/0.0 module (development branch module) to get the latest compiler settings
 #     $ module use /p/gpec/modules; load gpec/0.0
 #   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
-#     $ module load module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#     $ module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Note that before the netcdf module was properly set up, we had to manually load supporting modules
-#     $ module load module load intel/2018.u1 openmpi szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#     $ module load intel/2018.u1 openmpi szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Any of these should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message,
@@ -132,13 +132,13 @@
 #
 # On toki0*.aug.ipp.mpg.de
 #   Developers should use the ifort compiler as well as the associated impi and netcdf modules
-#     $ module load intel/14.0 impi netcdf-mpi/4.3.2 mkl git
+#     $ module load intel/17.0 impi/4.1.3 netcdf-mpi/4.3.2 mkl/2017 git
 #   Then set undefined environment variables
-#     $ export F90HOME=/afs/@cell/common/soft/intel/ics2013/14.0
-#     $ export FC=/afs/@cell/common/soft/intel/ics2016.3/16.0/linux/bin/intel64/bin/ifort
+#     $ export F90HOME=/afs/@cell/common/soft/intel/ics2017.1/17.0/linux
+#     $ export FC=/afs/@cell/common/soft/intel/ics2017.1/17.0/linux/bin/intel64/bin/ifort
 #     $ export NETCDFHOME=/afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3
 #   Alternately, you can simply load the gpec module!
-#     $ module use /afs/ipp-garching.mpg.de/home/n/nlogan/modulefiles
+#     $ module use /afs/.ipp/amd64_sles15/modules.addon.2019/TOK
 #     $ module load gpec
 #   This should properly set up your LD_LIBRARY_PATH, PATH, and environment variables.
 #   Either way, executing,
@@ -148,26 +148,47 @@
 #   nlogan@toki02 105)
 #   ------------------------------------------------------------
 #   Defaults tailored for
-#   Compiling with FC = /afs/@cell/common/soft/intel/ics2013/14.0/bin/intel64/bin/ifort
+#   Compiling with FC = /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/bin/intel64/bin/ifort
 #      using math libraries -lmkl_rt
-#      from /afs/@cell/common/soft/intel/ics2013/14.0/mkl/lib/intel64
-#      including /afs/@cell/common/soft/intel/ics2013/14.0/mkl/include/intel64/lp64
+#      from /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/mkl/lib/intel64
+#      including /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/mkl/include/intel64/lp64
 #      and netcdf libraries -lnetcdff -lnetcdf
 #      from /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/lib /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/lib
 #      including /afs/rzg/common/soft/netcdf/4.3.2/amd64_sles11/intel/14.0/impi-4.1.3/include
 #      and compiler libraries -lirc -limf
-#      from /afs/@cell/common/soft/intel/ics2013/14.0//lib/intel64
-#      including /afs/@cell/common/soft/intel/ics2013/14.0//compiler/include/intel64
+#      from /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/compiler/lib/intel64
+#      including /afs/@cell/common/soft/intel/ics2017.1/17.0/linux/compiler/include/intel64
 #
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS='-openmp' 2>&1 | tee make.log
+#     $ make FFLAGS='-openmp' 2>&1 | tee make.log
 #
 # On mac OSX
-#   With the move to licensed intel compilers, OSX is no longer actively supported.
+#   If one has installed the free gfortran compiler and built netcdf and lapack,
+#   a typical set of paths looks like the following.
+#     $ make v
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /usr/local/bin/gfortran
+#      using math libraries -llapack -lblas
+#      from /usr/lib
+#      including /usr/lib
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /opt/local/lib /opt/local/lib
+#      including /opt/local/include
+#      and compiler libraries
+#      from .
+#      including .
 #
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+# Some common modifications of the above settings might include,
+#     $ make FFLAGS="-qopenmp -qopt-report -g -O0 -check all"  # for debugging
+#     $ make FFLAGS="-qopenmp -O3"     # for optimized version
+#     $ make FFLAGS="-qopenmp  -xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
@@ -186,6 +207,16 @@ NETCDFHOME=/usr/include
 # general defaults
 #------------------
 
+# The new modules on portal at PPPL now use LAPACK_HOME instead of LAPACKHOME
+ifndef LAPACKHOME
+   ifdef LAPACK_HOME
+         LAPACKHOME = $(LAPACK_HOME)
+   endif
+endif
+
+# If using the Intel compiler, the MKL library is a better choice for lapack+blas
+# The ACML library is not being maintained anymore but we can leave it there for now
+
 # use acml or lapack based on what is loaded
 ifndef ACML_HOME
     MATHHOME = $(LAPACKHOME)
@@ -193,6 +224,8 @@ ifndef ACML_HOME
 else
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml
+else
+    $(info "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME")
 endif
 
 # specifics of which libraries are used
@@ -224,6 +257,13 @@ ifdef NETCDF_FORTRAN_HOME
         NETCDFINC = $(NETCDF_FORTRAN_HOME)
     endif
 else
+    ifndef NETCDFHOME
+        ifndef NETCDF_DIR
+            $(info "Must set NETCDF_FORTRAN_HOME, NETCDFHOME, or NETCDF_DIR")
+        else
+            NETCDFHOME = $(NETCDF_DIR)
+        endif
+    endif
     ifneq ($(wildcard $(NETCDFHOME)/lib/.),)
         NETCDFDIR = $(NETCDFHOME)/lib
     else
@@ -240,15 +280,18 @@ ifdef NETCDF_C_HOME
     NETCDFLIBS = -lnetcdff
     NETCDF_C_LIBS = -lnetcdf
     NETCDF_C_DIR = $(NETCDF_C_HOME)/lib
+    NETCDF_EXTRA_LIBS = -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
 else
     ifneq ($(shell ls $(NETCDFDIR) | grep netcdff),)
         NETCDFLIBS = -lnetcdff
         NETCDF_C_LIBS = -lnetcdf
         NETCDF_C_DIR = $(NETCDFDIR)
+        NETCDF_EXTRA_LIBS = -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS)
     else
-        NETCDFLIBS = -lnetcdff
+        NETCDFLIBS = -lnetcdf
         NETCDF_C_LIBS = -lnetcdf
         NETCDF_C_DIR = $(NETCDFDIR)
+        NETCDF_EXTRA_LIBS =
     endif
 endif
 

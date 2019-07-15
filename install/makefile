@@ -1,13 +1,14 @@
 
 include DEFAULTS.inc
 
-# extend these variables to sub-makes
-FFLAGS?="-fopenmp -g"
-#FFLAGS ?= "-qopenmp"  # for when we get intel/2017 sorted out
-CFLAGS?="-g"
+# extend these variables to sub-makes (?= sets a default if user doesn't specify options)
+FFLAGS ?= -g
+CFLAGS ?= -g
+#OMPFLAG ?= -qopenmp
 
 export FFLAGS
 export CFLAGS
+export OMPFLAG
 
 # compile package
 
@@ -25,7 +26,7 @@ allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match 
 
 harvest:
 	cd ../; git submodule init; git submodule update
-	cd ../harvest; make FC=$(FC) CC=$(CC) GACODE_ROOT= -f Makefile libharvest.a
+	cd ../harvest; make FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/
 
@@ -77,7 +78,7 @@ coil:
 gpec:
 	cd ../gpec;   make gpec
 
-pentrc:  
+pentrc:
 	cd ../pentrc; make pentrc
 
 stride:

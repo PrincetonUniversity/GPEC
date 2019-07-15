@@ -851,10 +851,10 @@ c-----------------------------------------------------------------------
 c     open output files.
 c-----------------------------------------------------------------------
       IF(out)THEN
-         OPEN(UNIT=sol_out_unit,FILE="vsol.out",STATUS="REPLACE")
-         WRITE(sol_out_unit,10)(ieq,ieq,ieq=1,4)
+         OPEN(UNIT=vsol_out_unit,FILE="vsol.out",STATUS="REPLACE")
+         WRITE(vsol_out_unit,10)(ieq,ieq,ieq=1,4)
       ENDIF
-      IF(bin)OPEN(UNIT=sol_bin_unit,FILE="vsol.bin",STATUS="REPLACE",
+      IF(bin)OPEN(UNIT=vsol_bin_unit,FILE="vsol.bin",STATUS="REPLACE",
      $     FORM="UNFORMATTED")
 c-----------------------------------------------------------------------
 c     format statements.
@@ -868,23 +868,23 @@ c-----------------------------------------------------------------------
       x=0
       DO ix=0,nx
          CALL deltar_sol_int(x,vsol)
-         IF(out)WRITE(sol_out_unit,20)ix,x,vsol
-         IF(bin)WRITE(sol_bin_unit)REAL(x,4),
+         IF(out)WRITE(vsol_out_unit,20)ix,x,vsol
+         IF(bin)WRITE(vsol_bin_unit)REAL(x,4),
      $        (REAL(REAL(vsol(ieq)),4),REAL(IMAG(vsol(ieq)),4),
      $        ieq=1,neqc)
          x=x+dx
       ENDDO
-      IF(out)WRITE(sol_out_unit,10)(ieq,ieq,ieq=1,4)
+      IF(out)WRITE(vsol_out_unit,10)(ieq,ieq,ieq=1,4)
 c-----------------------------------------------------------------------
 c     close output files.
 c-----------------------------------------------------------------------
       IF(out)THEN
-         WRITE(sol_out_unit,10)(ieq,ieq,ieq=1,4)
-         CLOSE(UNIT=sol_out_unit)
+         WRITE(vsol_out_unit,10)(ieq,ieq,ieq=1,4)
+         CLOSE(UNIT=vsol_out_unit)
       ENDIF
       IF(bin)THEN
-         WRITE(sol_bin_unit)
-         CLOSE(UNIT=sol_bin_unit)
+         WRITE(vsol_bin_unit)
+         CLOSE(UNIT=vsol_bin_unit)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

@@ -99,10 +99,9 @@ c-----------------------------------------------------------------------
 c     set spline methodology for program.
 c-----------------------------------------------------------------------
       IF (use_notaknot_splines) THEN
-         ALLOCATE(CHARACTER(6) :: spline_str)
          spline_str="not-a-knot"
       ELSE
-         ALLOCATE(CHARACTER(7) :: spline_str)
+         ! ok because fortran standard fills the shorter string with spaces when checking equality
          spline_str="extrap"
       ENDIF
 c-----------------------------------------------------------------------
@@ -162,6 +161,7 @@ c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
       CALL sing_find
       CALL sing_lim
+      delta_mhigh=delta_mhigh*2  ! added for consistency with dcon
       IF(cyl_flag)THEN
          mlow=delta_mlow
          mhigh=delta_mhigh

@@ -91,7 +91,7 @@ c-----------------------------------------------------------------------
       TYPE(fixfac_type), DIMENSION(:), ALLOCATABLE :: fixtype
       TYPE(sing_type), DIMENSION(:), ALLOCATABLE :: singtype
 
-!$OMP THREADPRIVATE(geom,sq)
+!$OMP THREADPRIVATE(geom,sq,eqfun,rzphi)
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -1002,7 +1002,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE idcon_action_matrices
 c-----------------------------------------------------------------------
 c     compute root of discrete function by the secant method.
-c     use when only function is monotonic.
+c     use only when function is monotonic.
 c-----------------------------------------------------------------------
       FUNCTION issect(gridnum,xvec,yvec,yval)
 c-----------------------------------------------------------------------
@@ -1175,7 +1175,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: rfac,eta,jac,area
       REAL(r8), DIMENSION(1,2) :: w
       REAL(r8), DIMENSION(0:fs) :: z,thetas
-      REAL(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy, sq_s_f, sq_s_f1
+      REAL(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy
 
       issurfint=0
       area=0

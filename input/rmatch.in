@@ -1,7 +1,7 @@
 &RMATCH_INPUT
-    galsol_filename = "../dcon/gal_solution.dat"
-    galsol_filename_cut = "../dcon/gal_solution_cut.dat"
-    deltabin_filename = "../dcon/delta_gw.dat"
+    galsol_filename = "gal_solution.dat"
+    galsol_filename_cut = "gal_solution_cut.dat"
+    deltabin_filename = "delta_gw.dat"
 
     match_flag=t
     scan_flag=f
@@ -84,7 +84,7 @@
 
     nyquist%out=t
     nyquist%bin=t
-/    
+/
 &MSING_LIST
     msing_diagnose=f
     vmat_filename="../dcon/vmat.bin"

@@ -67,8 +67,7 @@ module inputs
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
-
-!$OMP THREADPRIVATE(dbob_m, divx_m, kin, xs_m, fnml)
+    !$omp threadprivate(dbob_m, divx_m, kin, xs_m, fnml)
 
     contains
 

@@ -945,21 +945,7 @@ c-----------------------------------------------------------------------
       INTEGER :: sTime, fTime, cr, lsTime, lfTime
       REAL(r8) :: tsec,lsec
 
-      REAL(r8) xcom_real
-      COMMON /xcom/ xcom_real(8)
-      REAL(r8) dls011_real
-      INTEGER dls011_int
-      COMMON /DLS011/ dls011_real(218), dls011_int(37)
-      REAL(r8) dls002_real
-      INTEGER dls002_int
-      COMMON /DLS002/ dls002_real(218), dls002_int(37)
-      REAL(r8) :: lcom_real1
-      INTEGER :: lcom_int
-      REAL(r8) :: lcom_real2
-      COMMON /lcom/ lcom_real1(7), lcom_int(2), lcom_real2(2)
-      INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM,lThreads
-      INTEGER :: eqfun_my
-!$OMP THREADPRIVATE(/xcom/,/DLS011/,/DLS002/,/lcom/)
+      INTEGER :: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM,lthreads,ithread
 c-----------------------------------------------------------------------
 c     output formats
 c-----------------------------------------------------------------------
@@ -968,8 +954,13 @@ c-----------------------------------------------------------------------
       debug_omp = .FALSE.
       IF(debug_omp)THEN
          print *,"In serial region..."
-         lThreads = OMP_GET_NUM_THREADS()
-         print *,"# of OMP threads = ",lThreads
+#ifdef _OPENMP
+         lthreads = OMP_GET_NUM_THREADS()
+         print *,"# of OMP threads = ",lthreads
+#else
+         lthreads = 1
+         print *,"# NO OPENMP MULTITHREADING"
+#endif
       ENDIF
 c-----------------------------------------------------------------------
 c     some basic variables
@@ -1040,6 +1031,19 @@ c-----------------------------------------------------------------------
          r2mats%fs=0
          r3mats%fs=0
 
+         ! The slow part of this code is filling up these 12 N by M by M complex splines.
+         ! Here, M is typically ~100 and N is typically ~500.
+         ! Each NxMxM element requires energy integrals that take time, so this takes hrs.
+         ! once the spline is in hand, the code takes ~1-10sec
+         ! So restarting after a crash in the middle of this loop would be useful.
+         ! Since the rest of the code before & after is so fast, I think we would really just need
+         ! to write these splines to disk (every ~64 ipsi steps or so?).
+         ! Maybe as a temp binary backup file? Then we could
+         ! check for said backup file at the begining of the loop and optionally load it + jump
+         ! ahead in ipsi. We would need a flag to not use the backup if we want to actually
+         ! re-run (maybe we changed an input profile or something), right?
+         ! Is there a better way?
+         ! Better parallelization might just make this a moot point
          DO i=1,6
             CALL cspline_alloc(kwmats(i),mpsi,mpert**2)
             CALL cspline_alloc(ktmats(i),mpsi,mpert**2)
@@ -1049,48 +1053,41 @@ c-----------------------------------------------------------------------
 
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
          CALL SYSTEM_CLOCK(COUNT=sTime)
-         DO ipsi=0,mpsi
+         DO ipsi=0,mpsi  ! each of these surfaces is independent - could be parallel
             kwmat = 0
             ktmat = 0
             psifac=rzphi%xs(ipsi)
             ! get ion matrices for all ell at this one psi
 
-            eqfun_my = eqfun%my
-
 !$OMP PARALLEL DEFAULT(SHARED)
 !$OMP& PRIVATE(l,kwmat_l,ktmat_l,tphi,lsec,lsTime,lfTime)
-!$OMP& REDUCTION(+:kwmat,ktmat)
 c!!!!!!...from inputs.f90...
 !$OMP& COPYIN(dbob_m,divx_m,kin,xs_m,fnml,
 c!!!!!!...from dcon_interface.f90
-!$OMP& geom, dcon_int_sq,
-c!!!!!!...from energy.f90
-!$OMP& /xcom/,
-c!!!!!!...from lsode1.f
-!$OMP& /DLS011/,
-c!!!!!!...from lsode2.f
-!$OMP& /DLS002/,
-c!!!!!!...from pitch.f90
-!$OMP& /lcom/)
+!$OMP& geom, dcon_int_sq,dcon_int_eqfun,dcon_int_rzphi,
+!$OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
+!$OMP& dcon_int_zmats)
+#ifdef _OPENMP
             IF(ipsi==0 .AND. OMP_GET_THREAD_NUM() == 0)THEN
-               lThreads = OMP_GET_NUM_THREADS()
+               lthreads = OMP_GET_NUM_THREADS()
                WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
-     $              lThreads," OMP threads"
+     $              lthreads," OMP threads"
             ENDIF
+#endif
             IF (ion_flag) THEN
 !$OMP DO
-               DO l=-nl,nl
-                  CALL SYSTEM_CLOCK(COUNT=lsTime)
+               DO l=-nl,nl  ! Parallel. Good. But often just 1 of the l's is slow and holds up the whole ipsi loop
+                  IF(debug_omp) CALL SYSTEM_CLOCK(COUNT=lsTime)
                   kwmat_l = 0
                   ktmat_l = 0
-
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $                 ft//"wmm",op_wmats=kwmat_l)
-                  kwmat = kwmat+kwmat_l
-
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
-                  ktmat = ktmat+ktmat_l
+!$OMP CRITICAL
+                  kwmat = kwmat + kwmat_l
+                  ktmat = ktmat + ktmat_l
+!$OMP END CRITICAL
 
                   IF(debug_omp)THEN
                      CALL SYSTEM_CLOCK(COUNT=lfTime)
@@ -1105,17 +1102,17 @@ c!!!!!!...from pitch.f90
             IF (electron_flag) THEN
 !$OMP DO
                DO l=-nl,nl
-                  CALL SYSTEM_CLOCK(COUNT=lsTime)
+                  IF(debug_omp) CALL SYSTEM_CLOCK(COUNT=lsTime)
                   kwmat_l = 0
                   ktmat_l = 0
-
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"wmm",op_wmats=ktmat_l)
-                  kwmat = kwmat+kwmat_l
-
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
+!$OMP CRITICAL
+                  kwmat = kwmat+kwmat_l
                   ktmat = ktmat+ktmat_l
+!$OMP END CRITICAL
 
                   IF(debug_omp)THEN
                      CALL SYSTEM_CLOCK(COUNT=lfTime)

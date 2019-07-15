@@ -832,8 +832,8 @@ c-----------------------------------------------------------------------
 30    FORMAT(/4x,"is",5x,"xvar",6x,"re x1",6x,"im x1",
      $     6x,"re x2",6x,"im x2"/)
 40    FORMAT(i6,1p,5e11.3)
-50    FORMAT(1x,"delta+=",1p,e11.3,1x"+",e11.3,1x,"i")
-60    FORMAT(1x,"delta-=",1p,e11.3,1x"+",e11.3,1x,"i")
+50    FORMAT(1x,"delta+=",1p,e11.3,1x,"+",e11.3,1x,"i")
+60    FORMAT(1x,"delta-=",1p,e11.3,1x,"+",e11.3,1x,"i")
 c-----------------------------------------------------------------------
 c     read outer region solutions.
 c-----------------------------------------------------------------------
@@ -944,7 +944,7 @@ c-----------------------------------------------------------------------
             WRITE (bin_unit) REAL(psi(ip),4),
      $                       REAL(outtotsol(ipert,ip),4),
      $                       REAL(IMAG(outtotsol(ipert,ip)),4),
-     $                       mylog(outtotsol(ipert,ip))
+     $                       floored_log(outtotsol(ipert,ip))
          ENDDO
          WRITE(bin_unit)
       ENDDO  
@@ -985,7 +985,7 @@ c-----------------------------------------------------------------------
                      WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
      $                                REAL(insol,4),
      $                                REAL(IMAG(insol),4),
-     $                                mylog(insol)
+     $                                floored_log(insol)
 	                 WRITE (match_unit,20) inpsifac(ip,ising),
      $                                REAL(insol),
      $                                IMAG(insol)
@@ -997,7 +997,7 @@ c-----------------------------------------------------------------------
                WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
      $                          REAL(insol,4),
      $                          REAL(IMAG(insol),4),
-     $                          mylog(insol)
+     $                          floored_log(insol)
 	           WRITE (match_unit,20) inpsifac(ip,ising),
      $                          REAL(insol),
      $                          IMAG(insol)
@@ -1024,7 +1024,7 @@ c-----------------------------------------------------------------------
             WRITE (bin_unit) REAL(psi(ip),4),
      $                       REAL(outtotsol(ipert,ip),4),
      $                       REAL(IMAG(outtotsol(ipert,ip)),4),
-     $                       mylog(outtotsol(ipert,ip))
+     $                       floored_log(outtotsol(ipert,ip))
          ENDDO
          WRITE(bin_unit)
          CALL bin_close(bin_unit)
@@ -1095,11 +1095,11 @@ c-----------------------------------------------------------------------
          ising=ising_output
          WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
      $      REAL(eigval,4),REAL(AIMAG(eigval),4),
-     $      mylog(eigval),
+     $      floored_log(eigval),
      $      REAL(zi_in(ising),4),REAL(zo_out(ising),4),
      $      REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,4),
      $      REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
-     $      mylog(q_in(ising)),REAL(iter,4)
+     $      floored_log(q_in(ising)),REAL(iter,4)
          WRITE(debug_unit,20)eta_scan,
      $    REAL(eigval),IMAG(eigval),iter,ising,zi_in(ising),
      $    zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,
@@ -1396,9 +1396,9 @@ c-----------------------------------------------------------------------
      $      (ABS(deltar(1))==ABS(deltar(1))) .AND.
      $      (ABS(deltar(2))==ABS(deltar(2)))) THEN
                  WRITE(out1_unit,10)REAL(qlog),
-     $           mylog(deltar(1)),REAL(deltar(2))
+     $           floored_log(deltar(1)),REAL(deltar(2))
                  WRITE(bin1_unit)REAL(qlog,4),
-     $           mylog(deltar(1)),REAL(deltar(2),4)
+     $           floored_log(deltar(1)),REAL(deltar(2),4)
             ENDIF 
          ENDIF
 c-----------------------------------------------------------------------
@@ -1410,9 +1410,9 @@ c-----------------------------------------------------------------------
      $      (ABS(deltac(1))==ABS(deltac(1))) .AND.
      $      (ABS(deltac(2))==ABS(deltac(2)))) THEN
                 WRITE(out2_unit,10)REAL(qlog),
-     $           mylog(deltac(1)),REAL(deltac(2))
+     $           floored_log(deltac(1)),REAL(deltac(2))
                 WRITE(bin2_unit)REAL(qlog,4),
-     $          mylog(deltac(1)),REAL(deltac(2),4)
+     $          floored_log(deltac(1)),REAL(deltac(2),4)
             ENDIF
          ENDIF
 c-----------------------------------------------------------------------
@@ -1425,9 +1425,9 @@ c-----------------------------------------------------------------------
      $      (ABS(deltaj(1))==ABS(deltaj(1))) .AND.
      $      (ABS(deltaj(2))==ABS(deltaj(2)))) THEN
                WRITE(out3_unit,10)REAL(qlog),
-     $           mylog(deltaj(1)),REAL(deltaj(2))
+     $           floored_log(deltaj(1)),REAL(deltaj(2))
                WRITE(bin3_unit)REAL(qlog,4),
-     $         mylog(deltaj(1)),REAL(deltaj(2),4)
+     $         floored_log(deltaj(1)),REAL(deltaj(2),4)
             ENDIF
          ENDIF
       ENDDO
@@ -2184,7 +2184,7 @@ c-----------------------------------------------------------------------
                WRITE (bin_unit) REAL(outs%psi(ip),4),
      $                          REAL(outtotsol(ipert,ip),4),
      $                          REAL(IMAG(outtotsol(ipert,ip)),4),
-     $                          mylog(outtotsol(ipert,ip))
+     $                          floored_log(outtotsol(ipert,ip))
             ENDDO
             WRITE(bin_unit)
          ENDDO
@@ -2257,7 +2257,7 @@ c-----------------------------------------------------------------------
                         WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
      $                                   REAL(insol,4),
      $                                   REAL(IMAG(insol),4),
-     $                                   mylog(insol)
+     $                                   floored_log(insol)
                      ENDIF
                   ENDDO
                ELSE
@@ -2265,7 +2265,7 @@ c-----------------------------------------------------------------------
                   WRITE (bin_unit) REAL(inpsifac(ip,ising),4),
      $                             REAL(insol,4),
      $                             REAL(IMAG(insol),4),
-     $                             mylog(insol)
+     $                             floored_log(insol)
 
                ENDIF
             ENDDO
@@ -2289,7 +2289,7 @@ c               WRITE(bin_unit)
             WRITE (bin_unit) REAL(outs%psi(ip),4),
      $                       REAL(outtotsol(ipert,ip),4),
      $                       REAL(IMAG(outtotsol(ipert,ip)),4),
-     $                       mylog(outtotsol(ipert,ip))
+     $                       floored_log(outtotsol(ipert,ip))
          ENDDO
          WRITE(bin_unit)
          CALL bin_close(bin_unit)

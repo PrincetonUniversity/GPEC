@@ -523,7 +523,7 @@ c                                  backward substitutions)
    10 continue
       if (ier .eq. 0) go to 9005
  9000 continue
-      call uertst (ier,6hleqt1f)
+      call uertst (ier,'leqt1f')
  9005 return
       end subroutine
       subroutine ludatf (a,lu,n,ia,idgt,d1,d2,ipvt,equil,wa,ier)
@@ -719,7 +719,7 @@ c                                  algorithmic singularity
       d2 = 0.0
  9000 continue
 c                                  print error
-      call uertst(ier,6hludatf)
+      call uertst(ier,'ludatf')
  9005 return
       end subroutine
       subroutine luelmf (a,b,ipvt,n,ia,x)

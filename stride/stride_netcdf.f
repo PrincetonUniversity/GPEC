@@ -58,10 +58,14 @@ c-----------------------------------------------------------------------
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
-     $    r_dim, rp_dim, r_id, rp_id, pr_id, qr_id, dp_id
+     $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
+     $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
+
+      INTEGER :: ising,jsing
+      COMPLEX(r8), DIMENSION(msing,msing) :: ap,bp,gammap,deltap
 
       LOGICAL, PARAMETER :: debug_flag = .FALSE.
 c-----------------------------------------------------------------------
@@ -147,12 +151,19 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
       IF(msing>0)THEN
+         CALL check( nf90_def_dim(ncid,"lr_index",2*msing,l_dim) )
+         CALL check( nf90_def_var(ncid,"lr_index",nf90_int,l_dim,l_id))
+         CALL check( nf90_def_dim(ncid,"lr_prime",2*msing,lp_dim) )
+         CALL check( nf90_def_var(ncid,"lr_prime",nf90_int,lp_dim,
+     $                            lp_id) )
          CALL check( nf90_def_dim(ncid,"r",msing,r_dim) )
          CALL check( nf90_def_var(ncid,"r",nf90_int,r_dim,r_id))
          CALL check( nf90_def_dim(ncid,"r_prime",msing,rp_dim) )
          CALL check( nf90_def_var(ncid,"r_prime",nf90_int,rp_dim,rp_id))
-         CALL check( nf90_def_var(ncid,"psi_r",nf90_double,r_dim,pr_id))
-         CALL check( nf90_def_var(ncid,"q_rat",nf90_double,r_dim,qr_id))
+         CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
+     $                            r_dim,pr_id) )
+         CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
+     $                            r_dim,qr_id) )
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
@@ -177,8 +188,16 @@ c-----------------------------------------------------------------------
      $    (/mo_dim, i_dim/), wtv_id) )
       ! end definitions
       IF(msing>0 .AND. ALLOCATED(dp))THEN
+         CALL check( nf90_def_var(ncid, "Delta", nf90_double,
+     $       (/l_dim, lp_dim, i_dim/), dp_id) )
+         CALL check( nf90_def_var(ncid, "A_prime", nf90_double,
+     $       (/r_dim, rp_dim, i_dim/), ap_id) )
+         CALL check( nf90_def_var(ncid, "B_prime", nf90_double,
+     $       (/r_dim, rp_dim, i_dim/), bp_id) )
+         CALL check( nf90_def_var(ncid, "Gamma_prime", nf90_double,
+     $       (/r_dim, rp_dim, i_dim/), gp_id) )
          CALL check( nf90_def_var(ncid, "Delta_prime", nf90_double,
-     $       (/r_dim, rp_dim, i_dim/), dp_id) )
+     $       (/r_dim, rp_dim, i_dim/), dpp_id) )
       ENDIF
       CALL check( nf90_enddef(ncid) )
 c-----------------------------------------------------------------------
@@ -190,6 +209,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,mo_id, (/(i, i=1,mpert)/)) )
       CALL check( nf90_put_var(ncid,p_id, sq%xs(:)))
       IF(msing>0)THEN
+         CALL check( nf90_put_var(ncid, l_id, (/(i, i=1,2*msing)/)) )
+         CALL check( nf90_put_var(ncid, lp_id, (/(i, i=1,2*msing)/)) )
          CALL check( nf90_put_var(ncid, r_id, (/(sing(i)%m,
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,rp_id, (/(sing(i)%m,
@@ -223,8 +244,41 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),
      $             AIMAG(et)/),(/mpert,2/))) )
       IF(msing>0 .AND. ALLOCATED(dp))THEN
+         ! construct PEST3 matching data (keep synced with RDCON!)
+         ap=0.0
+         bp=0.0
+         gammap=0.0
+         deltap=0.0
+         DO ising=1,msing
+            DO jsing=1,msing
+               ap(ising,jsing)=dp(2*ising,2*jsing)
+     $              +dp(2*ising,2*jsing-1)
+     $              +dp(2*ising-1,2*jsing)
+     $              +dp(2*ising-1,2*jsing-1)
+               bp(ising,jsing)=dp(2*ising,2*jsing)
+     $              -dp(2*ising,2*jsing-1)
+     $              +dp(2*ising-1,2*jsing)
+     $              -dp(2*ising-1,2*jsing-1)
+               gammap(ising,jsing)=dp(2*ising,2*jsing)
+     $              +dp(2*ising,2*jsing-1)
+     $              -dp(2*ising-1,2*jsing)
+     $              -dp(2*ising-1,2*jsing-1)
+               deltap(ising,jsing)=dp(2*ising,2*jsing)
+     $              -dp(2*ising,2*jsing-1)
+     $              -dp(2*ising-1,2*jsing)
+     $              +dp(2*ising-1,2*jsing-1)
+            ENDDO
+         ENDDO
          CALL check( nf90_put_var(ncid,dp_id,RESHAPE((/REAL(dp),
-     $                AIMAG(dp)/),(/msing,msing,2/))) )
+     $                AIMAG(dp)/),(/2*msing,2*msing,2/))) )
+         CALL check( nf90_put_var(ncid,ap_id,RESHAPE((/REAL(ap),
+     $                AIMAG(ap)/),(/msing,msing,2/))) )
+         CALL check( nf90_put_var(ncid,bp_id,RESHAPE((/REAL(bp),
+     $                AIMAG(bp)/),(/msing,msing,2/))) )
+         CALL check( nf90_put_var(ncid,gp_id,RESHAPE((/REAL(gammap),
+     $                AIMAG(gammap)/),(/msing,msing,2/))) )
+         CALL check( nf90_put_var(ncid,dpp_id,RESHAPE((/REAL(deltap),
+     $                AIMAG(deltap)/),(/msing,msing,2/))) )
       ENDIF
 c-----------------------------------------------------------------------
 c     close file
