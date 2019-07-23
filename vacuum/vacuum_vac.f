@@ -27,6 +27,7 @@ c     19. fotofi
 c     20. orchek
 c     21. tmat
 c     22. wtopest
+c     23. savewall
 c-----------------------------------------------------------------------
 c     subprogram 1. vaccal.
 c     solution of the vacuum integral equations.
@@ -1093,34 +1094,43 @@ c-----------------------------------------------------------------------
       bwsave = bw
       insect = .false.
       isph = 0
-      if ( a .ge. -100.0 ) go to 9
-      isph = 1
-      ishape = -10
-      call bounds(xinf,zinf,1,mth,xmnp,xmxp,zmnp,zmxp)
-      xmin = xmnp
-      xmax = xmxp
-      zmin = zmnp
-      zmax = zmxp
-      plrad = 0.5 * ( xmxp - xmnp )
-      xmaj = 0.5 * ( xmxp + xmnp )
-      zmid = 0.5 * ( zmnp + zmxp )
-      hrad = xmax + aw*(xmax-xmaj)
-      vrad = zmax + bw*(zmax-zmid)
-      do i = 1, mth1
-      xi = xinf(i) - xmaj
-      zeta = zinf(i) - zmid
-      bbb = (xi*vrad)**2 + (zeta*hrad)**2
-      ccc = -xmaj*vrad*xi + hrad*sqrt( bbb - (zeta*xmaj)**2 )
-      xwal1(i) = xmaj + xi*vrad*ccc/bbb
-      zwal1(i) = zmid + zeta*vrad*ccc/bbb
-      enddo
-      go to 145
-    9 continue
+c-----------------------------------------------------------------------
+c     ishape< 0 Spherical topology
+c     ishape<10 Closed toroidal topology
+c     ishape<20 Solid conductors not linking plasma
+c     ishape<30 Toroidal conductor with a toroidally symmetric gap.
+c               Geometry correlated to plasma position and geometry.
+c     ishape<40 Toroidal conductor with a toroidally symmetric gap.
+c               Geometry independent of plasma.
+c-----------------------------------------------------------------------
+      if ( a < -100.0 ) then
+        isph = 1
+        ishape = -10
+        call bounds(xinf,zinf,1,mth,xmnp,xmxp,zmnp,zmxp)
+        xmin = xmnp
+        xmax = xmxp
+        zmin = zmnp
+        zmax = zmxp
+        plrad = 0.5 * ( xmxp - xmnp )
+        xmaj = 0.5 * ( xmxp + xmnp )
+        zmid = 0.5 * ( zmnp + zmxp )
+        hrad = xmax + aw*(xmax-xmaj)
+        vrad = zmax + bw*(zmax-zmid)
+        do i = 1, mth1
+          xi = xinf(i) - xmaj
+          zeta = zinf(i) - zmid
+          bbb = (xi*vrad)**2 + (zeta*hrad)**2
+          ccc = -xmaj*vrad*xi + hrad*sqrt( bbb - (zeta*xmaj)**2 )
+          xwal1(i) = xmaj + xi*vrad*ccc/bbb
+          zwal1(i) = zmid + zeta*vrad*ccc/bbb
+        enddo
+        go to 145 !go directly to cleanup
+      endif
       if(a .gt. -10.)lfix=.true.
-      if( a .lt. 10. ) go to 10
-      infwal = .true.
-      go to 2000
-   10 continue
+      if( a >= 10. ) then
+        infwal = .true.
+        return !early exit because there is no wall
+      endif
       xshift = a
 
       mthalf = mth2 / 2
@@ -1129,10 +1139,10 @@ c-----------------------------------------------------------------------
       xmin = 3.4e38
       xmax = -3.4e38
       do i = 1, mth
-      if(xmax .lt. xinf(i))xmax = xinf(i)
-      if(xmin .gt. xinf(i))xmin = xinf(i)
-      if(zmax .lt. zinf(i)) zmax = zinf(i)
-      if(zmin .gt. zinf(i))zmin = zinf(i)
+        if(xmax .lt. xinf(i))xmax = xinf(i)
+        if(xmin .gt. xinf(i))xmin = xinf(i)
+        if(zmax .lt. zinf(i)) zmax = zinf(i)
+        if(zmin .gt. zinf(i))zmin = zinf(i)
       enddo
       plrad = 0.5 * ( xmax-xmin )
       xmaj = 0.5 * ( xmax + xmin )
@@ -1144,361 +1154,448 @@ c-----------------------------------------------------------------------
       aw = aw * scale
       bw = bw * scale
       delta1 = dw * (xinf(1) - xma)
-      if ( ishape .ne. 2 ) go to 295
-      zh = sqrt ( abs(zrad**2 - plrad**2) )   ! h metric
-      zah = a / zh                            
-      zph = plrad / zh
-      zmup = 0.5*dlog ((zrad+plrad)/(zrad-plrad))  ! mu-plas
-      zmuw = dlog( zah + sqrt(zah**2 + 1) )  ! mu-wall
-      zxmup = exp(zmup)
-      zxmuw = exp(zmuw)
-      zbwal = zh * cosh ( zmuw )              ! Major radius of wall
-      bw = zbwal / a                          ! Elongation of wall
-      do i = 1, mth2
-         the = (i-1) * dth 
-         xwal1(i) =   xmaj + a*cos( the )
-         zwal1(i) = - bw * a*sin( the )
-      enddo
-      write ( outmod, '(/,"Confocal Ellipse:"/,
+c-----------------------------------------------------------------------
+c     ishape=2 Elliptical shell confocal to the plasma's radius and
+c              height. The radius of the shell is a.
+c-----------------------------------------------------------------------
+      if ( ishape==2 ) then
+        zh = sqrt ( abs(zrad**2 - plrad**2) ) ! h metric
+        zah = a / zh                            
+        zph = plrad / zh
+        zmup = 0.5*dlog ((zrad+plrad)/(zrad-plrad)) ! mu-plas
+        zmuw = dlog( zah + sqrt(zah**2 + 1) ) ! mu-wall
+        zxmup = exp(zmup)
+        zxmuw = exp(zmuw)
+        zbwal = zh * cosh ( zmuw ) ! Major radius of wall
+        bw = zbwal / a          ! Elongation of wall
+        do i = 1, mth2
+          the = (i-1) * dth 
+          xwal1(i) =   xmaj + a*cos( the )
+          zwal1(i) = - bw * a*sin( the )
+        enddo
+        write ( outmod, '(/,"Confocal Ellipse:"/,
      $     "mup, expmup = ", 1p2e13.5,/,
      $     "muw, expmuw = ", 1p2e13.5,/)') zmup, zxmup, zmuw, zxmuw
-      write ( iotty,  '(/,"Confocal Ellipse:"/,
+        write ( iotty,  '(/,"Confocal Ellipse:"/,
      $     "mup, expmup = ", 1p2e13.5,/,
      $     "muw, expmuw = ", 1p2e13.5,/)') zmup, zxmup, zmuw, zxmuw
- 295  continue
-      if ( ishape .ne. 3 ) go to 300
-      do 100 i = 1, mth2
-      rr = (xinf(i)-xma)**2 + (zinf(i)-zma)**2
-      ro = sqrt(rr)
-      the = atan((zinf(i)-zma)/(xinf(i)-xma))
-      thex = abs(the)
-      lsgn = 1
-      if(xma .gt. xinf(i)) the = the + pye
-      if(i .gt. mthalf) go to 45
-      if(xma .gt. xinf(i)) thex = pye - thex
-      thet(i) =abs(thex)
-   45 continue
-      if(lfix) go to 50
-      ro = ro + delta1
-      xwal1(i) = xma + lsgn * ro * cos ( the )
-      zwal1(i) = zma + lsgn * ro * sin ( the )
-      go to 60
-   50 continue
-      xshift = ( xmax + xmin ) / 2.0
-      xshift = a
-      the = (i-1) * dth
-      xwal1(i) = xshift + aw * cos(the + dw*sin(the) )
-      zwal1(i) = zma - bw * sin(the)
-   60 continue
-      if(i .gt. mthalf)go to 100
-      if(zwal1(i) .lt. zmin) go to 100
-      j = i
-      insect = .false.
-      jsmall = j
-      jlarge = j
-      ics = 1
-      if(xma .ge. xinf(i))ics = -1
-   70 continue
-      if(zinf(j) .lt. (zwal1(i)))go to 80
-      jsmall = j
-   80 if(zinf(j) .lt. zwal1(i)) go to 90
-      if(j.ge. mthalf)go to 100
-      if(j.lt.1)go to 100
-      j = j + ics
-      go to 70
-   90 continue
-      jlarge = j
-      if(abs(xinf(jsmall)-xma).ge.abs(xwal1(i)-xma))insect=.true.
-      if(abs(xinf(jlarge)-xma).ge.abs(xwal1(i)-xma))insect=.true.
-      if(.not. insect) go to 100
-      inside = inside + 1
-  100 continue
-  300 continue
-      if ( ishape .ne. 4 ) go to 320
-      wcentr = cw
-      do i = 1, mth2
-         the0 = (i-1) * dth 
-         the = the0
-         sn2th = sin(2.0*the)
-         xwal1(i) =   cw + a*cos( the + dw*sin(the) )
-         zwal1(i) = - bw * a*sin( the + tw*sn2th ) - aw*sn2th
-      enddo
-      open(unit=41,file="vacuum_used_wall_ishape4.out",status='unknown',
-     $     form='FORMATTED')
-      do i=1,mth2
-         write(41,*) xwal1(i),zwal1(i)
-      enddo
-      close (41)
- 320  continue
-      if ( ishape .ne. 41 ) go to 325
-      open(unit=41,file="wall_geo.dat",status='old',
+      endif
+c-----------------------------------------------------------------------
+c     ishape=3 
+c-----------------------------------------------------------------------
+      if ( ishape==3 ) then
+        do i = 1, mth2
+          rr = (xinf(i)-xma)**2 + (zinf(i)-zma)**2
+          ro = sqrt(rr)
+          the = atan((zinf(i)-zma)/(xinf(i)-xma))
+          thex = abs(the)
+          lsgn = 1
+          if(xma .gt. xinf(i)) the = the + pye
+          if(i <= mthalf) then
+            if(xma .gt. xinf(i)) thex = pye - thex
+            thet(i) =abs(thex)
+          endif
+          if(.not. lfix) then
+            ro = ro + delta1
+            xwal1(i) = xma + lsgn * ro * cos ( the )
+            zwal1(i) = zma + lsgn * ro * sin ( the )
+          else
+            xshift = ( xmax + xmin ) / 2.0
+            xshift = a
+            the = (i-1) * dth
+            xwal1(i) = xshift + aw * cos(the + dw*sin(the) )
+            zwal1(i) = zma - bw * sin(the)
+          endif
+          if(i .gt. mthalf) cycle
+          if(zwal1(i) .lt. zmin) cycle
+          j = i
+          insect = .false.
+          jsmall = j
+          jlarge = j
+          ics = 1
+          if(xma .ge. xinf(i))ics = -1
+          do
+            if(zinf(j) .ge. zwal1(i)) then
+              jsmall = j
+            else
+              exit
+            endif
+            if(j.ge. mthalf) cycle
+            if(j.lt.1) cycle
+            j = j + ics
+          enddo
+          jlarge = j
+          if(abs(xinf(jsmall)-xma).ge.abs(xwal1(i)-xma))insect=.true.
+          if(abs(xinf(jlarge)-xma).ge.abs(xwal1(i)-xma))insect=.true.
+          if(.not. insect) cycle
+          inside = inside + 1
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=4 Modified dee-shaped wall independent of plasma gerometry
+c              with triangularity, dw, squareness and 2nd harmonic of zwall
+c              in aw and tw. Centered at cw, radius a and elongation bw.
+c              dee-shaped wall scaled to the radius and geometric center of the
+c-----------------------------------------------------------------------
+      if ( ishape==4 ) then
+        wcentr = cw
+        do i = 1, mth2
+          the0 = (i-1) * dth 
+          the = the0
+          sn2th = sin(2.0*the)
+          xwal1(i) =   cw + a*cos( the + dw*sin(the) )
+          zwal1(i) = - bw * a*sin( the + tw*sn2th ) - aw*sn2th
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=5 Dee-shaped wall scaled to the radius and geometric center of the
+c              plasma. Offset of cw. Other variables as ishape=4.
+c-----------------------------------------------------------------------
+      if ( ishape==5 ) then
+        wcentr = xmaj + cw*plrad
+        do i = 1, mth2
+          the0 = (i-1) * dth
+          the = the0
+          sn2th = sin(2.0*the)
+          xwal1(i) = xmaj + cw*plrad +
+     $         plrad*(1.0+a-cw)*cos(the+dw*sin(the))
+          zwal1(i) = - bw*plrad*(1.0+a-cw) * sin( the + tw*sn2th ) -
+     $         aw*plrad*sn2th
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=6 Conforming shell at distance a*prad. This is best option for a
+c              close fitting shell since the plasma and shell nodes are aligned.
+c-----------------------------------------------------------------------
+      if ( ishape==6 ) then
+        wcentr = xmaj
+        do i = 2, mth1
+          alph = atan2 ( xinf(i+1)-xinf(i-1), zinf(i-1)-zinf(i+1) )
+          xwal1(i) = xinf(i) + a*plrad * cos(alph)
+          zwal1(i) = zinf(i) + a*plrad * sin(alph)
+        enddo
+        xwal1(1) = xwal1(mth1)
+        zwal1(1) = zwal1(mth1)
+        xwal1(mth2) = xwal1(2)
+        zwal1(mth2) = zwal1(2)
+      endif
+c-----------------------------------------------------------------------
+c     ishape=7 Enclosing bean-shaped wall. Consult paper.
+c              [Physics of Plasmas, 4, June 1997, 2161]. 
+c-----------------------------------------------------------------------
+      if ( ishape==7 ) then
+        cwr = cw * pye / 180.0
+        do i = 1, mth2
+          the0 = (i-1)*dth
+          the = the0
+          rho = aw * ( 1.0 + bw*cos(the) )
+          the2 = cwr * sin(the)
+          xofsw = xmax + a*plrad - aw*(1.0+bw)
+          xwal1(i) = xofsw + rho*cos(the2)
+          zwal1(i) = - b*rho*sin(the2)
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=8 Wall of DIII-D.
+c-----------------------------------------------------------------------
+      if ( ishape==8 ) then
+        call d3dwall ( xwal1, zwal1, mth, outmod, iotty )
+      endif
+c-----------------------------------------------------------------------
+c     ishape=11 Dee-shaped conductor.
+c-----------------------------------------------------------------------
+      if ( ishape==11 ) then
+        do i = 1, mth2
+          the = (i-1) * dth
+          plrad = 0.5 * ( xmax - xmin )
+          xwal1(i) = xmax + plrad*( a + aw - aw*cos(the + dw*sin(the)) )
+          zwal1(i) = - plrad * bw * sin(the)
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=12 Solid bean-shaped conductor on right.
+c-----------------------------------------------------------------------
+      if ( ishape==12 ) then
+        plrad = 0.5 * ( xmax-xmin )
+        xmaj = 0.5 * ( xmax + xmin )
+        a0 = plrad * ( 1.0 + aw - cw + a )
+        brad = b * pye / 180.0
+        do i = 1, mth2
+          the0 = (i-1) * dth
+          the = the0
+          rho = a0 - aw*plrad*cos(the)
+          the2 = brad * sin(the)
+          xwal1(i) = xmaj + cw*plrad + rho * cos(the2)
+          zwal1(i) = - bw * rho * sin(the2)
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=13 Solid bean-shaped conductor on left.
+c-----------------------------------------------------------------------
+      if ( ishape==13 ) then
+        plrad = 0.5 * ( xmax-xmin )
+        xmaj = 0.5 * ( xmax + xmin )
+        a0 = plrad * ( 1.0 + aw - cw + a )
+        brad = b * pye / 180.0
+        do i = 1, mth2
+          the0 = (i-1) * dth
+          the = the0
+          rho = a0 + aw*plrad*cos(the)
+          the2 = brad * sin(the)
+          xwal1(i) = xmaj + cw*plrad - rho * cos(the2)
+          zwal1(i) = - bw * rho * sin(the2)
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=21 Shell scaled to plasma. Gap on the inner side.
+c-----------------------------------------------------------------------
+      if ( ishape==21 ) then
+        plrad = 0.5 * ( xmax-xmin )
+        xmaj = 0.5 * ( xmax + xmin )
+        a0 = plrad * ( 1.0 + aw - cw + a )
+        a0b = (a0 + plrad*aw)*bw
+        brad0 = b * pye / 180.0
+        brad = brad0
+        blgrad0 = bbulg * pye / 180.0
+        wcentr = xmaj + cw*plrad
+        call adjustb ( blgrad0, blgrado, a, bw, cw, dw, xmaj, plrad,
+     $       ishape )
+        dthb = ( 2.0*aw*plrad / a0b )
+     $       * ( 1.0 - sin(blgrado) ) / cos(blgrado)
+        blgrad0 = blgrad0 - dthb
+        call adjustb ( blgrad0, blgradi, a, bw, cw, dw, xmaj, plrad,
+     $       ishape )
+        do i = 1, mth2
+          the0 = (i-1) * dth
+          if ( the0 .gt. 0.5*pye .and. the0 .lt. 1.5*pye ) then
+            thbulg = blgrado
+          else 
+            thbulg = blgradi
+          endif
+          cost2b = cos(2*thbulg)
+          the = the0
+          cost = cos(the)
+          ferm = +1.0 - 2.0 / ( exp(cost/tw) + 1.0 )
+          rho = a0 - aw*plrad*ferm
+          the2 = brad * sin(the)
+          cost2 = cos(2.0*the2)
+          fermb = 1.0 / ( exp( (cost2b - cost2)/tbulg ) + 1.0 )
+          bulge = abulg*plrad*fermb
+          xwal1(i) = xmaj + cw*plrad + rho * cos(the2+dw*sin(the2))
+     $         + bulge
+          zwal1(i) = - bw * rho * sin(the2)
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=24 Shell scaled to plasma. Gap on the outer side.
+c-----------------------------------------------------------------------
+      if ( ishape==24 ) then
+        plrad = 0.5 * ( xmax-xmin )
+        xmaj = 0.5 * ( xmax + xmin )
+        a0 = plrad * ( 1.0 + aw - cw + a )
+        brad = b * pye / 180.0
+        wcentr = xmaj + cw*plrad
+        do i = 1, mth2
+          the0 = (i-1) * dth
+          the = the0
+          cost = cos(the)
+          ferm = +1.0 - 2.0 / ( exp(cost/tw) + 1.0 )
+          rho = a0 + aw*plrad*ferm
+          the2 = brad * sin(the)
+          xwal1(i) = xmaj + cw*plrad - rho * cos(the2-dw*sin(the2))
+          zwal1(i) = - bw * rho * sin(the2)
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=31 Shell independent of plasma. Gap on the inner side.
+c-----------------------------------------------------------------------
+      if ( ishape==31 ) then
+        a0 = a + aw
+        a0b = (a0 + aw)*bw
+        brad0 = b * pye / 180.0
+        brad = brad0
+        blgrad0 = bbulg * pye / 180.0
+        wcentr = cw
+        call adjustb ( blgrad0, blgrado, a, bw, cw, dw, xmaj, plrad,
+     $       ishape )
+        dthb = ( 2.0*aw / a0b )
+     $       * ( 1.0 - sin(blgrado) ) / cos(blgrado)
+        blgrad0 = blgrad0 - dthb
+        call adjustb ( blgrad0, blgradi, a, bw, cw, dw, xmaj, plrad,
+     $       ishape )
+        do i = 1, mth2
+          the0 = (i-1) * dth
+          if ( the0 .gt. 0.5*pye .and. the0 .lt. 1.5*pye ) then
+            thbulg = blgrado
+          else 
+            thbulg = blgradi
+          endif
+          cost2b = cos(2.0*thbulg)
+          the = the0
+          cost = cos(the)
+          ferm = +1.0 - 2.0 / ( exp(cost/tw) + 1.0 )
+          rho = a0 - aw*ferm
+          the2 = brad * sin(the)
+          cost2 = cos(2.0*the2)
+          fermb = 1.0 / ( exp( (cost2b - cost2)/tbulg ) + 1.0 )
+          bulge = abulg*fermb
+          xwal1(i) = cw + rho * cos(the2+dw*sin(the2)) + bulge
+          zwal1(i) = - bw * rho * sin(the2)
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=34 Shell independent of plasma. Gap on the outer side.
+c-----------------------------------------------------------------------
+      if ( ishape==34 ) then
+        a0 = a + aw
+        brad = b * pye / 180.0
+        wcentr = cw
+        do i = 1, mth2
+          the0 = (i-1) * dth
+          the = the0
+          cost = cos(the)
+          ferm = +1.0 - 2.0 / ( exp(cost/tw) + 1.0 )
+          rho = a0 + aw*ferm
+          the2 = brad * sin(the)
+          xwal1(i) = cw - rho * cos(the2-dw*sin(the2))
+          zwal1(i) = - bw * rho * sin(the2)
+        enddo
+      endif
+c-----------------------------------------------------------------------
+c     ishape=41 Arbitrary wall generated by spline data in wall_geo.in.
+c
+c               npots0 is number of points
+c               wcentr is radial offset
+c               thetatmp, xwaltmp, zwaltmp are columns containing angle
+c               and position of each point for generating splines
+c-----------------------------------------------------------------------
+      if ( ishape==41 ) then
+        open(unit=41,file="wall_geo.in",status='old',
      $             form='FORMATTED')
-      read(41,'(I4)') npots0
-      read(41,'(F30.20)') wcentr
-c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
-      npots=npots0+5-1
-      allocate (thetatmp(npots),xwaltmp(npots),zwaltmp(npots),rioptmp(2)
-     $   ,xpptmp(npots),ww1tmp(npots),ww2tmp(npots),ww3tmp(npots),
-     $   tabtmp(3))
-      do i = 1, npots0
-         read (41,'(F30.20)')thetatmp(i)
-         read (41,'(F30.20)')xwaltmp(i)
-         read (41,'(F30.20)')zwaltmp(i)
-         xwaltmp(i)=xwaltmp(i)-wcentr
-      enddo
-      close (41)
-      rioptmp(1)=4
-      rioptmp(2)=4
-      call spl1d1(npots0,thetatmp,xwaltmp,xpptmp,rioptmp,1,
-     $            ww1tmp,ww2tmp,ww3tmp)
-      do i = 1, mth1
-         the0 = (i-1)*dth
-         call spl1d2(npots0,thetatmp,xwaltmp,xpptmp,1,the0,tabtmp)
-         xwal1(i)=tabtmp(1)*a+wcentr
-      enddo
-      rioptmp(1)=4
-      rioptmp(2)=4
-      call spl1d1(npots0,thetatmp,zwaltmp,xpptmp,rioptmp,1,
-     $            ww1tmp,ww2tmp,ww3tmp)
-      do i = 1, mth1
-         the0 = (i-1)*dth
-         call spl1d2(npots0,thetatmp,zwaltmp,xpptmp,1,the0,tabtmp)
-         zwal1(i)=tabtmp(1)*a
-      enddo
-      xwal1(1)=xwal1(mth1)
-      zwal1(1)=zwal1(mth1)
-      xwal1(mth2)=xwal1(2)
-      zwal1(mth2)=zwal1(2)
-      IF (.FALSE.) THEN
-         open(unit=41,file="vacuum_used_wall.out",status='unknown',
-     $        form='FORMATTED')
-         do i=1,mth2
-            write(41,*) xwal1(i),zwal1(i)
-         enddo
-         close (41)
-      ENDIF
-      deallocate(thetatmp,xwaltmp,zwaltmp,xpptmp,ww1tmp,ww2tmp,ww3tmp,
-     $           rioptmp,tabtmp)
- 325  continue
-
-
-      if ( ishape .ne. 5 ) go to 340
-      wcentr = xmaj + cw*plrad
-      do 330 i = 1, mth2
-         the0 = (i-1) * dth
-          the = the0
-        sn2th = sin(2.0*the)
-         xwal1(i) = xmaj + cw*plrad +
-     $        plrad*(1.0+a-cw)*cos(the+dw*sin(the))
-         zwal1(i) = - bw*plrad*(1.0+a-cw) * sin( the + tw*sn2th ) -
-     $        aw*plrad*sn2th
-  330 continue
-  340 continue
-      if ( ishape .ne. 6 ) go to 338
-      wcentr = xmaj
-      do 337 i = 2, mth1
-      alph = atan2 ( xinf(i+1)-xinf(i-1), zinf(i-1)-zinf(i+1) )
-      xwal1(i) = xinf(i) + a*plrad * cos(alph)
-      zwal1(i) = zinf(i) + a*plrad * sin(alph)
-  337 continue
-      xwal1(1) = xwal1(mth1)
-      zwal1(1) = zwal1(mth1)
-      xwal1(mth2) = xwal1(2)
-      zwal1(mth2) = zwal1(2)
-  338 continue
-      if ( ishape .ne. 7 ) go to 348
-      cwr = cw * pye / 180.0
-      do 347 i = 1, mth2
-      the0 = (i-1)*dth
-         the = the0
-      rho = aw * ( 1.0 + bw*cos(the) )
-      the2 = cwr * sin(the)
-      xofsw = xmax + a*plrad - aw*(1.0+bw)
-      xwal1(i) = xofsw + rho*cos(the2)
-      zwal1(i) = - b*rho*sin(the2)
-  347 continue
-  348 continue
-      if ( ishape .ne. 8 ) go to 349
-      call d3dwall ( xwal1, zwal1, mth, outmod, iotty )
- 349  continue
-      if ( ishape .ne. 11 ) go to 400
-      do 350 i = 1, mth2
-      the = (i-1) * dth
-      plrad = 0.5 * ( xmax - xmin )
-      xwal1(i) = xmax + plrad * ( a + aw - aw*cos(the + dw*sin(the)) )
-      zwal1(i) = - plrad * bw * sin(the)
-  350 continue
-  400 continue
-      if ( ishape .ne. 12 ) go to 500
-      plrad = 0.5 * ( xmax-xmin )
-      xmaj = 0.5 * ( xmax + xmin )
-      a0 = plrad * ( 1.0 + aw - cw + a )
-      brad = b * pye / 180.0
-      do 450 i = 1, mth2
-      the0 = (i-1) * dth
-         the = the0
-      rho = a0 - aw*plrad*cos(the)
-      the2 = brad * sin(the)
-      xwal1(i) = xmaj + cw*plrad + rho * cos(the2)
-      zwal1(i) = - bw * rho * sin(the2)
-  450 continue
-  500 continue
-      if ( ishape .ne. 13 ) go to 600
-      plrad = 0.5 * ( xmax-xmin )
-      xmaj = 0.5 * ( xmax + xmin )
-      a0 = plrad * ( 1.0 + aw - cw + a )
-      brad = b * pye / 180.0
-      do 550 i = 1, mth2
-      the0 = (i-1) * dth
-          the = the0
-      rho = a0 + aw*plrad*cos(the)
-      the2 = brad * sin(the)
-      xwal1(i) = xmaj + cw*plrad - rho * cos(the2)
-      zwal1(i) = - bw * rho * sin(the2)
-  550 continue
-  600 continue
-      if ( ishape .ne. 21 ) go to 700
-      plrad = 0.5 * ( xmax-xmin )
-      xmaj = 0.5 * ( xmax + xmin )
-      a0 = plrad * ( 1.0 + aw - cw + a )
-      a0b = (a0 + plrad*aw)*bw
-      brad0 = b * pye / 180.0
-      brad = brad0
-      blgrad0 = bbulg * pye / 180.0
-      wcentr = xmaj + cw*plrad
-      call adjustb ( blgrad0, blgrado, a, bw, cw, dw, xmaj, plrad,
-     $     ishape )
-      dthb = ( 2.0*aw*plrad / a0b )
-     $        * ( 1.0 - sin(blgrado) ) / cos(blgrado)
-      blgrad0 = blgrad0 - dthb
-      call adjustb ( blgrad0, blgradi, a, bw, cw, dw, xmaj, plrad,
-     $     ishape )
-      do 650 i = 1, mth2
-      the0 = (i-1) * dth
-      if ( the0 .gt. 0.5*pye .and. the0 .lt. 1.5*pye ) then
-         thbulg = blgrado
-      else 
-         thbulg = blgradi
+        read(41,*) npots0
+        read(41,*) wcentr
+        read(41,*)
+c       follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
+        npots=npots0+5-1
+        allocate (thetatmp(npots),xwaltmp(npots),zwaltmp(npots),
+     $       rioptmp(2),xpptmp(npots),ww1tmp(npots),ww2tmp(npots),
+     $       ww3tmp(npots),tabtmp(3))
+        do i = 1, npots0
+          read (41,*) thetatmp(i),xwaltmp(i),zwaltmp(i)
+          xwaltmp(i)=xwaltmp(i)-wcentr
+        enddo
+        close (41)
+        rioptmp(1)=4
+        rioptmp(2)=4
+        call spl1d1(npots0,thetatmp,xwaltmp,xpptmp,rioptmp,1,
+     $              ww1tmp,ww2tmp,ww3tmp)
+        do i = 1, mth1
+          the0 = (i-1)*dth
+          call spl1d2(npots0,thetatmp,xwaltmp,xpptmp,1,the0,tabtmp)
+          xwal1(i)=tabtmp(1)*a+wcentr
+        enddo
+        rioptmp(1)=4
+        rioptmp(2)=4
+        call spl1d1(npots0,thetatmp,zwaltmp,xpptmp,rioptmp,1,
+     $              ww1tmp,ww2tmp,ww3tmp)
+        do i = 1, mth1
+          the0 = (i-1)*dth
+          call spl1d2(npots0,thetatmp,zwaltmp,xpptmp,1,the0,tabtmp)
+          zwal1(i)=tabtmp(1)*a
+        enddo
+        xwal1(1)=xwal1(mth1)
+        zwal1(1)=zwal1(mth1)
+        xwal1(mth2)=xwal1(2)
+        zwal1(mth2)=zwal1(2)
+        deallocate(thetatmp,xwaltmp,zwaltmp,xpptmp,ww1tmp,ww2tmp,ww3tmp,
+     $             rioptmp,tabtmp)
       endif
-      cost2b = cos(2*thbulg)
-      the = the0
-      cost = cos(the)
-      ferm = +1.0 - 2.0 / ( exp(cost/tw) + 1.0 )
-      rho = a0 - aw*plrad*ferm
-      the2 = brad * sin(the)
-      cost2 = cos(2.0*the2)
-      fermb = 1.0 / ( exp( (cost2b - cost2)/tbulg ) + 1.0 )
-      bulge = abulg*plrad*fermb
-      xwal1(i) = xmaj + cw*plrad + rho * cos(the2+dw*sin(the2))
-     $     + bulge
-      zwal1(i) = - bw * rho * sin(the2)
-  650 continue
-  700 continue
-      if ( ishape .ne. 24 ) go to 800
-      plrad = 0.5 * ( xmax-xmin )
-      xmaj = 0.5 * ( xmax + xmin )
-      a0 = plrad * ( 1.0 + aw - cw + a )
-      brad = b * pye / 180.0
-      wcentr = xmaj + cw*plrad
-      do 750 i = 1, mth2
-      the0 = (i-1) * dth
-          the = the0
-      cost = cos(the)
-      ferm = +1.0 - 2.0 / ( exp(cost/tw) + 1.0 )
-      rho = a0 + aw*plrad*ferm
-      the2 = brad * sin(the)
-      xwal1(i) = xmaj + cw*plrad - rho * cos(the2-dw*sin(the2))
-      zwal1(i) = - bw * rho * sin(the2)
-  750 continue
-  800 continue
-      if ( ishape .ne. 31 ) go to 1700
-      a0 = a + aw
-      a0b = (a0 + aw)*bw
-      brad0 = b * pye / 180.0
-      brad = brad0
-      blgrad0 = bbulg * pye / 180.0
-      wcentr = cw
-      call adjustb ( blgrad0, blgrado, a, bw, cw, dw, xmaj, plrad,
-     $     ishape )
-      dthb = ( 2.0*aw / a0b )
-     $        * ( 1.0 - sin(blgrado) ) / cos(blgrado)
-      blgrad0 = blgrad0 - dthb
-      call adjustb ( blgrad0, blgradi, a, bw, cw, dw, xmaj, plrad,
-     $     ishape )
-      do 1650 i = 1, mth2
-      the0 = (i-1) * dth
-      if ( the0 .gt. 0.5*pye .and. the0 .lt. 1.5*pye ) then
-         thbulg = blgrado
-      else 
-         thbulg = blgradi
+c-----------------------------------------------------------------------
+c     ishape=42 Arbitrary wall generated by position data in wall_geo.in.
+c               Similar to ishape=42, except points are used directly without
+c               splining.  Therefore, thetatmp is read but ignored.
+c
+c               npots0 is number of points and must be equal to mth+2.
+c               wcentr is radial offset
+c               thetatmp, xwaltmp, zwaltmp are columns containing angle
+c               and position of each point in wall
+c-----------------------------------------------------------------------
+      if ( ishape==42 ) then
+        open(unit=41,file="wall_geo.in",status='old',
+     $       form='FORMATTED')
+        read(41,*) npots0
+        read(41,*) wcentr
+        read(41,*)
+        if( npots0 .ne. mth+2 ) then
+          write(*,'(A,A)') 'ERROR: Number of points in wall_geo.in',
+     $         ' must be equal to mth+2.'
+          stop
+        endif
+        allocate (thetatmp(npots0))
+        do i = 1, npots0
+          read (41,*) thetatmp(i),xwal1(i),zwal1(i)
+        enddo
+        close (41)
+        deallocate(thetatmp)
+        if( xwal1(mth1).ne.xwal1(1) .or. zwal1(mth1).ne.zwal1(1) ) then
+          write(*,'(A,A)') 'ERROR: First point in wall_geo.in',
+     $         ' must be equal to 2nd last point.'
+          stop
+        endif
+        if( xwal1(mth2).ne.xwal1(2) .or. zwal1(mth2).ne.zwal1(2) ) then
+          write(*,'(A,A)') 'ERROR: Last point in wall_geo.in',
+     $         ' must be equal to 2nd point.'
+          stop
+        endif
       endif
-      cost2b = cos(2.0*thbulg)
-         the = the0
-      cost = cos(the)
-      ferm = +1.0 - 2.0 / ( exp(cost/tw) + 1.0 )
-      rho = a0 - aw*ferm
-      the2 = brad * sin(the)
-      cost2 = cos(2.0*the2)
-      fermb = 1.0 / ( exp( (cost2b - cost2)/tbulg ) + 1.0 )
-      bulge = abulg*fermb
-      xwal1(i) = cw + rho * cos(the2+dw*sin(the2)) + bulge
-      zwal1(i) = - bw * rho * sin(the2)
- 1650 continue
- 1700 continue
-      if ( ishape .ne. 34 ) go to 1800
-      a0 = a + aw
-      brad = b * pye / 180.0
-      wcentr = cw
-      do 1750 i = 1, mth2
-      the0 = (i-1) * dth
-         the = the0
-      cost = cos(the)
-      ferm = +1.0 - 2.0 / ( exp(cost/tw) + 1.0 )
-      rho = a0 + aw*ferm
-      the2 = brad * sin(the)
-      xwal1(i) = cw - rho * cos(the2-dw*sin(the2))
-      zwal1(i) = - bw * rho * sin(the2)
- 1750 continue
- 1800 continue
+
       xmx = xma + xshift
-      go to 145
 
-  110 continue
-      call spl1d1(mth1,thet,xwal1,xpp,iop,1,ww1,ww2,ww3)
-      call spl1d1(mth1,thet,zwal1,zpp,iop,1,ww1,ww2,ww3)
-      do 125 i=2,mthalf-1
-      xs = xinf(i)
-      zs = zinf(i)
-      xt = xwal1(i)
-      zt = zwal1(i)
-      tt = thet(i)
-      do 120 k=1,20
-      call spl1d2(mth1,thet,xwal1,xpp,1,tt,tabx)
-      call spl1d2(mth1,thet,zwal1,zpp,1,tt,tabz)
-      xt = tabx(1)
-      zt = tabz(1)
-      xmx1 = xs - xt
-      zmz1 = zs - zt
-      f = xmx1 * tabx(2) + zmz1 * tabz(2)
-      fp = xmx1*tabx(3) + zmz1*tabz(3) - (tabx(2))**2 - (tabz(2))**2
-      delt = f / fp
-      if(abs(delt).lt.1.0e-4 .and. abs(f) .lt. 1.0e-4) go to 124
-      tt = tt - delt
-  120 continue
-      write(iotty,1430)i,xs,zs,xt,zt,tt,f,fp
-      write(outpest,1430)i,xs,zs,xt,zt,tt,f,fp
-      call errmes(outpest,'vacdat')
-  124 continue
-      ww1(i) = xt
-      ww2(i) = zt
-  125 continue
-      do 140 i = 2, mthalf - 1
-      iq1 = mth1 - i + 1
-      xwal1(i) = ww1(i)
-      xwal1(iq1) = ww1(i)
-      zwal1(i) = ww2(i)
-      zwal1(iq1) = - ww2(i)
-  140 continue
+c-----------------------------------------------------------------------
+c     This section is never called
+c-----------------------------------------------------------------------
+c      if( .false. ) then
+c        call spl1d1(mth1,thet,xwal1,xpp,iop,1,ww1,ww2,ww3)
+c        call spl1d1(mth1,thet,zwal1,zpp,iop,1,ww1,ww2,ww3)
+c        do i=2,mthalf-1
+c          xs = xinf(i)
+c          zs = zinf(i)
+c          xt = xwal1(i)
+c          zt = zwal1(i)
+c          tt = thet(i)
+c          do k=1,20
+c            call spl1d2(mth1,thet,xwal1,xpp,1,tt,tabx)
+c            call spl1d2(mth1,thet,zwal1,zpp,1,tt,tabz)
+c            xt = tabx(1)
+c            zt = tabz(1)
+c            xmx1 = xs - xt
+c            zmz1 = zs - zt
+c            f = xmx1 * tabx(2) + zmz1 * tabz(2)
+c            fp = xmx1*tabx(3) +zmz1*tabz(3) -(tabx(2))**2 -(tabz(2))**2
+c            delt = f / fp
+c            if(abs(delt).lt.1.0e-4 .and. abs(f) .lt. 1.0e-4) exit
+c            tt = tt - delt
+c            if( k==20 ) then
+c              write(iotty,1430)i,xs,zs,xt,zt,tt,f,fp
+c              write(outpest,1430)i,xs,zs,xt,zt,tt,f,fp
+c              call errmes(outpest,'vacdat')
+c            endif
+c          enddo
+c          ww1(i) = xt
+c          ww2(i) = zt
+c        enddo
+c        do i = 2, mthalf - 1
+c          iq1 = mth1 - i + 1
+c          xwal1(i) = ww1(i)
+c          xwal1(iq1) = ww1(i)
+c          zwal1(i) = ww2(i)
+c          zwal1(iq1) = - ww2(i)
+c        enddo
+c      endif
+
+c-----------------------------------------------------------------------
+c     Do cleanup
+c-----------------------------------------------------------------------
   145 continue
       if ( leqarcw .eq. 1 ) then
          call  eqarcw ( xwal1,zwal1, xpp,zpp, ww1,ww2,ww3, mth1 )
@@ -1507,19 +1604,20 @@ c     follow nth=nth0+5  nth0=mth  mth2=mth+2 mth1=mth+1=npots0
             zwal1(i) = zpp(i)
          enddo
       endif
-      if ( iplt .gt. 0 ) go to 146
-      xmx = xmaj
-      zma = 0.0
-      iplt = 1
-  146 continue
-      if(.not. insect) go to 2000
-      write(iotty,1450)inside
-      write(outpest,1450)inside
-      write(outmod,1450)inside
-      call errmes(outpest,'vacdat')
- 2000 continue
-      aw = awsave
-      bw = bwsave
+      call savewall(wcentr,xwal1,zwal1) !Write wall shape to disk
+      if ( iplt .le. 0 ) then
+        xmx = xmaj
+        zma = 0.0
+        iplt = 1
+      endif
+      if(insect) then
+        write(iotty,1450)inside
+        write(outpest,1450)inside
+        write(outmod,1450)inside
+        call errmes(outpest,'vacdat')
+      endif
+      aw = awsave !restore value of aw that was saved at beginning of function
+      bw = bwsave !restore value of bw that was saved at beginning of function
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -2316,3 +2414,82 @@ c-----------------------------------------------------------------------
       return
  999  call errmes ( outpest, 'wtopest' )
       end subroutine wtopest
+c-----------------------------------------------------------------------
+c     subprogram 23. savewall
+c     After processing the wall, write the coordinates to be used
+c     to wall_geo.out.
+c-----------------------------------------------------------------------
+      subroutine savewall(wcentr,xwal1,zwal1)
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      USE vglobal_mod
+      !implicit none
+      IMPLICIT REAL*8 (a-h,o-z)
+
+      real*8 :: wcentr
+      dimension xwal1(*), zwal1(*)
+      INTEGER :: firstpos, i
+      real*8 :: thwal0,thwal1
+      logical :: retro
+c-----------------------------------------------------------------------
+c     computations.
+c-----------------------------------------------------------------------
+      retro=.false.
+
+      open(unit=41,file="wall_geo.out",status='unknown',
+     $             form='FORMATTED')
+      write(41,'(i6,A,A)') mth2,' = number of points below ',
+     $     '(theta must span 0 to 2*pi at a minimum)'
+      write(41,'(g14.6,A,A)') wcentr,' = R_0(m), a-parameter ',
+     $     'scaling uses this as origin'
+      write(41,'(A)') '  theta(rad)    R(m)          Z(m)'
+
+c     find first point above angle zero (slightly clockwise from R-direction)
+      thwal0=atan2(-zwal1(mth1),xwal1(mth1)-wcentr)
+      do i=1,mth1
+         thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+         if(thwal1>0.0 .and. thwal0<0.0) then
+            firstpos=i
+            exit
+         endif
+         thwal0=thwal1
+      enddo
+
+c     first point
+      i=firstpos-1
+      thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+      write(41,'(3e14.6)') thwal1,xwal1(i),zwal1(i)
+c     points in clockwise direction at end of array
+      do i=firstpos,mth
+         thwal0 = thwal1
+         thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+         if(thwal1<0.0) thwal1=thwal1+twopi
+         if( thwal1<thwal0 ) retro=.true.
+         write(41,'(3e14.6)') thwal1,xwal1(i),zwal1(i)
+      enddo
+c     points in clockwise direction at beginning of array
+      do i=1,firstpos-1
+         thwal0 = thwal1
+         thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+         if(thwal1<0.0) thwal1=thwal1+twopi
+         if( thwal1<thwal0 ) retro=.true.
+         write(41,'(3e14.6)') thwal1,xwal1(i),zwal1(i)
+      enddo
+c     last point
+      i=firstpos
+      thwal0 = thwal1
+      thwal1 = atan2(-zwal1(i),xwal1(i)-wcentr)
+      thwal1=thwal1+twopi
+      if( thwal1<thwal0 ) retro=.true.
+      write(41,'(3e14.6)') thwal1,xwal1(i),zwal1(i)
+      close (41)
+
+      if( retro ) then
+         write(*,*) "WARNING: Retrograde angles present in wall"
+      endif
+c-----------------------------------------------------------------------
+c     termination.
+c-----------------------------------------------------------------------
+      return
+      end subroutine
