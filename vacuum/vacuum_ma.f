@@ -630,7 +630,11 @@ c-----------------------------------------------------------------------
       CHARACTER(130), DIMENSION(10) :: string
       COMPLEX(8), PARAMETER :: ifac=(0,1)
 
-      lfarw = 0
+      if( a >= 10. ) then
+         lfarw = 1 !assume conducting wall is far away
+      else
+         lfarw = 0
+      endif
       ndlp = mth / ntloop
 
       jmax1 = lmax(1) - lmin(1) + 1
