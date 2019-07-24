@@ -4,7 +4,16 @@ include DEFAULTS.inc
 # extend these variables to sub-makes (?= sets a default if user doesn't specify options)
 FFLAGS ?= -g
 CFLAGS ?= -g
-OMPFLAG ?= -qopenmp
+#Common compiler flags for OpenMP
+ifeq ($(FC), ifort)
+	OMPFLAG ?= -qopenmp
+else ifeq ($(FC), gfortran)
+	OMPFLAG ?= -fopenmp
+else ifeq ($(FC), pgfortran)
+	OMPFLAG ?= -mp
+else
+	OMPFLAG ?= -openmp
+endif
 
 export FFLAGS
 export CFLAGS
