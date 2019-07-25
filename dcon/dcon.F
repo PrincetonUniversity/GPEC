@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: use_classic_splines_for_dcon=.FALSE., cyl_flag=.FALSE.,
      $ reform_eq_with_psilim=.FALSE.
-      INTEGER :: mmin,ipsi,m
+      INTEGER :: mmin,ipsi,m,peak_index
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mtmp
@@ -57,7 +57,8 @@ c-----------------------------------------------------------------------
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
-     $     use_classic_splines,peak_flag,reform_eq_with_psilim
+     $     use_classic_splines,peak_flag,reform_eq_with_psilim,
+     $     peak_nq,peak_npts
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -241,6 +242,19 @@ c-----------------------------------------------------------------------
       IF(ode_flag)THEN
          IF(verbose) WRITE(*,*)"Starting integration of ODE's"
          CALL ode_run
+         IF(peak_flag)THEN
+            peak_index = MAXLOC(peak_dw, dim=1)
+            qhigh = peak_q(peak_index)
+            sas_flag = .FALSE.
+            peak_flag = .FALSE.
+            CALL sing_lim
+            WRITE(*,'(1x,a34,f10.6,a10,f10.6)') "Re-Integrating to "
+     $            "peak dW @ qlim =",qlim,", psilim =",psilim
+            ! full re-run because outputs were written to disk each step
+            ! making it hard to backtrack
+            IF(bin_euler)CALL bin_close(euler_bin_unit)
+            CALL ode_run
+         ENDIF
       ENDIF
       DEALLOCATE(ud)
 c-----------------------------------------------------------------------

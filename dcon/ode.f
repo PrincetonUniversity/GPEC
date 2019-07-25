@@ -1154,7 +1154,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL, PARAMETER :: debug=.FALSE.
       INTEGER :: isol
-      INTEGER, SAVE :: peak_calc_number = 0
+      INTEGER, SAVE :: peak_calc_number = 0, peak_index=1
       REAL(r8), SAVE :: singfac_old,powmax
       REAL(r8) :: dsingfac,norm,dnorm,powmax_old
       REAL(r8), DIMENSION(msol) :: power
@@ -1166,18 +1166,20 @@ c-----------------------------------------------------------------------
 c     truncation test: lsode limit or max dW outside last singularity
 c-----------------------------------------------------------------------
       flag = psifac == psimax .OR. istep == nstep .OR. istate < 0
-      IF(next=="finish" .AND. peak_flag)THEN ! we've past the last singularity
+      CALL spline_eval(sq,psifac,0)
+      IF(peak_flag .AND. sq%f(4) >= peak_q(peak_index))THEN
          CALL free_test(plasma1,vacuum1,total1,psifac)
-         IF(debug) WRITE(*,'(i4,5(es12.3))')peak_calc_number,psifac,
-     $           sq%f(4),total1,vacuum1,plasma1
+         CALL spline_eval(sq,psifac,0)
+         IF(debug) WRITE(*,'(i4,5(es12.3))')peak_calc_number,peak_index,
+     $      psifac,sq%f(4),total1,vacuum1,plasma1
          peak_calc_number = peak_calc_number + 1
-         IF(total1 < total0)THEN
-            flag = .TRUE.
-            psilim = psifac
-            CALL spline_eval(sq,psifac,0)
-            qlim = sq%f(4)
-         ENDIF
-         total0 = total1
+         peak_dw(peak_index) = total1
+         peak_q(peak_index) = sq%f(4)
+         DO
+             IF(peak_index == SIZE(peak_q))EXIT
+             peak_index = peak_index + 1
+             IF(sq%f(4) < peak_q(peak_index)) EXIT
+         ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     simple return.

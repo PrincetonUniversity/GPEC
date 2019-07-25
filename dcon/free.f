@@ -655,6 +655,7 @@ c-----------------------------------------------------------------------
       ! calc a rough spline of wv so we don't call mscvac (slow) every time
       IF(first_call)THEN
          CALL free_wvmats(psifac, psilim)
+         CALL spline_eval(sq,psifac,0)
          first_call = .FALSE.
       ENDIF
       CALL cspline_eval(wvmats, psifac,0)

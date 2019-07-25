@@ -159,6 +159,9 @@ c-----------------------------------------------------------------------
       INTEGER :: it,itmax=50
       INTEGER, DIMENSION(1) :: jpsi
       REAL(r8) :: dpsi,q,q1,eps=1e-10
+
+      INTEGER :: npeak,i
+      REAL(r8) :: peak_qstart
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
 c-----------------------------------------------------------------------
@@ -185,15 +188,6 @@ c-----------------------------------------------------------------------
             IF(qlim <= qmax)EXIT
             qlim=qlim-1._r8/nn
          ENDDO
-      ENDIF
-      IF(peak_flag)THEN
-         IF(qlim + 0.95/nn < qmax)THEN
-            ! hunt for peak dW in whatever rational window psihigh is in
-            qlim=(INT(nn*qlim)+0.95)/nn
-         ELSE
-            ! hunt for peak in last available full rational window
-            qlim = (INT(nn*qlim)-0.05)/nn
-         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
@@ -223,6 +217,16 @@ c-----------------------------------------------------------------------
          qlim = qmax
          q1lim=sq%fs1(mpsi,4)
          psilim=psihigh
+      ENDIF
+c-----------------------------------------------------------------------
+c     set up record for determining the peak in dW near the boundary.
+c-----------------------------------------------------------------------
+      IF(peak_flag)THEN
+        peak_qstart = (INT(nn*qlim) - peak_nq) / (1.0 * nn)
+        npeak = CEILING((qlim - peak_qstart) * nn * peak_npts)
+        ALLOCATE(peak_dw(npeak), peak_q(npeak))
+        peak_q(:) = peak_qstart + (/(i*1.0,i=1,npeak)/) / (peak_npts*nn)
+        peak_dw(:) = -huge(0.0_r8)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

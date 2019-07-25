@@ -115,4 +115,8 @@ c-----------------------------------------------------------------------
       LOGICAL :: theta_out = .FALSE.
       LOGICAL :: xlmda_out = .FALSE.
 
+      ! for recording dw(q) near the boundary
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: peak_q, peak_dw
+      INTEGER :: peak_nq=3, peak_npts = 20
+
       END MODULE dcon_mod

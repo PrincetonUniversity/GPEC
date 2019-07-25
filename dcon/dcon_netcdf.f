@@ -50,6 +50,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE dcon_netcdf_out(wp,wv,wt,ep,ev,et)
+      ! todo: Add peak_dw and peak_q
 
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: ep,ev,et
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
