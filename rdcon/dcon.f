@@ -294,6 +294,7 @@ c-----------------------------------------------------------------------
       CALL equil_out_diagnose(.FALSE.,out_unit)
       CALL equil_out_write_2d
       IF(direct_flag)CALL bicube_dealloc(psi_in)
+
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
@@ -435,10 +436,18 @@ c     declarations.
 c-----------------------------------------------------------------------
       PROGRAM dcon_main
       USE dcon_run_mod
+      USE lib_interface_mod
       IMPLICIT NONE
 c-----------------------------------------------------------------------
 c     do it.
 c-----------------------------------------------------------------------
+      WRITE(*,*) run_lib_interface
+      CALL lib_interface_init
+      WRITE(*,*) '2 ',run_lib_interface
+      IF (run_lib_interface) THEN
+         CALL lib_interface_input
+         CALL lib_interface_set_equil
+      ENDIF
       CALL dcon_run
 c-----------------------------------------------------------------------
 c     terminate.

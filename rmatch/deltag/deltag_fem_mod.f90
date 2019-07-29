@@ -8,6 +8,10 @@ MODULE DeltagFEMMod
    !define equation term (scalCoef * coefName * varName in equName)
    TYPE :: LocalElementMatrix
       COMPLEX(r8), DIMENSION(:,:,:,:), ALLOCATABLE :: mat  ! local FEM matrix mat(basis_i, basis_j, equIndex*mpert, varIndex*mpert)
+      INTEGER, DIMENSION(:,:), ALLOCATABLE :: map  ! maping between local and global matrix, location index of variables, map(basis_i, varIndex * mpert)
+      CHARACTER, DIMENSION(:,:), ALLOCATABLE :: varNameList  !save variable list
+      INTEGER, DIMENSION(:), ALLOCATABLE :: varMpert         !save mpert for each vairable
+      REAL(r8), DIMENSION(2) :: x                            !start and end point
    END TYPE LocalElementMatrix
 
    !Manage FEM matrix
@@ -16,7 +20,7 @@ MODULE DeltagFEMMod
       INTEGER :: elementNum = 0                 !number of elements
       INTEGER :: mpert
 
-      TYPE(LocalElementMatrix), DIMENSION (:), ALLOCATABLE :: locMatArray
+      TYPE(LocalElementMatrix), DIMENSION (:), ALLOCATABLE :: locMats
 
    CONTAINS
       PROCEDURE :: initFEMManage => deltagInitFEMManage                !Init FEM matrix Manage
@@ -25,27 +29,32 @@ MODULE DeltagFEMMod
 
    CONTAINS
 
-   SUBROUTINE deltagInitFEMManage (self,equNameList,varNameList,mpert,elementNum)
+   SUBROUTINE deltagInitFEMManage (self,elementNum)
       CLASS(CoefManage), INTENT(INOUT) :: self
-      CHARACTER,DIMENSION(:,:),ALLOCATABLE, INTENT(IN) :: equNameList, varNameList
       INTEGER, INTENT(IN) :: mpert, elementNum
-      INTEGER :: i, equNum,varNum,compNum
+      self%elementNum = elementNum
+      ALLOCATE(self%locMats(elementNum))
+   END SUBROUTINE deltagInitFEMManage
+
+   SUBROUTINE deltagInitNormalElement (self,eleidx,varNameList,mpert)
+      CLASS(CoefManage), INTENT(INOUT) :: self
+      CHARACTER,DIMENSION(:,:),ALLOCATABLE, INTENT(IN) :: varNameList
+      INTEGER, INTENT(IN) :: eleidx, mpert
+      INTEGER :: equNum,varNum,compNum
       equNum = size(equNameList,1)
       varNum = size(varNameList,1)
-      compNum = equNum * varNum * mpert
-      self%elementNum = elementNum
-      ALLOCATE(self%locMatArray(elementNum))
-      DO i = 1, self%elementNum, 1
-         ALLOCATE(self%locMatArray(i)%mat(4,4,compNum,compNum))
-      ENDDO
-   END SUBROUTINE deltagInitFEMManage
+      compNum = varNum * mpert
+      ALLOCATE(self%locMatArray(i)%mat(4,4,compNum,compNum))
+      ALLOCATE(self%locMatArray(i)%map(4,4,compNum,compNum))
+   END SUBROUTINE deltagInitElement
 
    SUBROUTINE deltagDeallocate(self)
       CLASS(FiniteElementMethodMatrixManage), INTENT(INOUT) :: self
       INTEGER :: i
 
       DO i = 1, self%elementNum, 1
-         DEALLOCATE(self%locMatArray(i)%mat)
+         DEALLOCATE(self%locMats(i)%mat)
+         DEALLOCATE(self%locMats(i)%map)
       ENDDO
 
       DEALLOCATE(self%locMatArray)

@@ -30,7 +30,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE equil_read(unit, op_psihigh)
-
+      USE inverse_mod
       LOGICAL :: file_stat
       INTEGER, INTENT(IN) :: unit
       REAL(r8), OPTIONAL, INTENT(IN) :: op_psihigh
@@ -172,6 +172,8 @@ c-----------------------------------------------------------------------
          CALL read_eq_hansen_inverse
       CASE("pfrc")
          CALL read_eq_pfrc
+      CASE("transp_interface")
+         CALL inverse_run
       CASE DEFAULT
          CALL program_stop("Cannot recognize eq_type "//TRIM(eq_type))
       END SELECT
