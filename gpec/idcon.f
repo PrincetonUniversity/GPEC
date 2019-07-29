@@ -875,36 +875,47 @@ c-----------------------------------------------------------------------
       SUBROUTINE idcon_vacuum
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
+      LOGICAL :: farwal_flag=.TRUE.
+      INTEGER :: mths
       REAL(r8) :: kernelsignin
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
       IF(mthsurf==mthvac)THEN
+         nths=mthvac+5
+         nths2=nths*2
+         nfm2=mpert*2
+         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),grrw(nths2,nfm2),
+     $        xzpts(nths,4))
          IF(verbose) WRITE(*,*)"Reading vacuum energy matrices"
          CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
-         READ(bin_unit)nths2,nfm2
-         ALLOCATE(grri(nths2,nfm2))
          READ(bin_unit)grri
-         READ(bin_unit)nths2,nfm2
-         ALLOCATE(grre(nths2,nfm2))
          READ(bin_unit)grre
+         READ(bin_unit)grrw
+         READ(bin_unit)xzpts
          CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
 c     get grri and grre matrices by calling mscvac functions.
 c-----------------------------------------------------------------------
       ELSE
+         nths=mthsurf+5
+         nths2=nths*2
+         nfm2=mpert*2
+         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),grrw(nths2,nfm2),
+     $        xzpts(nths,4))        
          IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
+         farwal_flag=.TRUE.
          kernelsignin = -1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $               kernelsignin,wall_flag)
-         IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
-         ALLOCATE(grri(nths2,nfm2))
-         CALL grrget(nfm2,nths2,grri)
+         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,grri,xzpts)
          kernelsignin = 1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $               kernelsignin,wall_flag)
-         ALLOCATE(grre(nths2,nfm2))
-         CALL grrget(nfm2,nths2,grre) ! grre is nths2 by nfm2 by definition
+         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,grre,xzpts)
+         
+         farwal_flag=.FALSE.
+         kernelsignin = 1.0
+         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,grrw,xzpts)
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

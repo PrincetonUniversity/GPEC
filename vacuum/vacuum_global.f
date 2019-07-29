@@ -115,7 +115,7 @@ c-----------------------------------------------------------------------
       ntsin=ntsin0+5
       nsf=nsf0+1
       nfe=1+nsf/2
-      nths=nths0+5
+      nths=nths0+5 !!
       nths2=2*nths
       nfm2=2*nfm
       nwrkl=nths2**2+3*nths2
@@ -259,7 +259,7 @@ c     deallocate arrays.
 c-----------------------------------------------------------------------
       DEALLOCATE(xirc,xirs,xiic,xiis,fv)
       DEALLOCATE(grpssq,xsq,gpsdth,xsqdth,xjacob,delta,xjdtxj,xsdtxs,
-     $     gpdtgp,slngth,xinf,zinf,xplap,zplap)
+     $     gpdtgp,slngth,xplap,zplap,xinf,zinf)
       DEALLOCATE(vacmat,vacmatu,vacmtiu)
       DEALLOCATE(val0,vals)
       DEALLOCATE(xwal,zwal,xwalp,zwalp,cnqd,snqd)
@@ -269,7 +269,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     modification.
 c-----------------------------------------------------------------------
-      DEALLOCATE(grwp)
+      DEALLOCATE(grwp,grri)
 c-----------------------------------------------------------------------
       DEALLOCATE(gatovac)
       DEALLOCATE(bxpwr,bxpwi,bzpwr,bzpwi,bnpwr,bnpwi)

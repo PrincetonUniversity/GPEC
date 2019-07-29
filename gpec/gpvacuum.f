@@ -40,13 +40,14 @@ c-----------------------------------------------------------------------
       REAL(r8) :: qa,kernelsignin,rplus,thetai
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
       LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
+      LOGICAL, PARAMETER :: farwal_flag=.TRUE.
 
       INTEGER, DIMENSION(:), POINTER :: ipiv,vmfac
       REAL(r8), DIMENSION(:), POINTER :: vtheta,vrfac,veta,vr,vz,
      $     dphi,delte,grri_real,grri_imag,grre_real,grre_imag,rwork
       COMPLEX(r8), DIMENSION(:), POINTER :: vbwp_mn,rbwp_mn,vbwp_fun,
      $     rbwp_fun,chi_fun,che_fun,flx_fun,kax_fun,work
-      REAL(r8), DIMENSION(:,:), POINTER :: vgrri,vgrre
+      REAL(r8), DIMENSION(:,:), POINTER :: vgrri,vgrre,vxzpts
       COMPLEX(r8), DIMENSION(:,:), POINTER :: vflxmats,vkaxmats,
      $     temp1,temp2,vwv
 
@@ -145,16 +146,16 @@ c-----------------------------------------------------------------------
 c     get grri and grre matrices by calling mscvac function.
 c-----------------------------------------------------------------------
       ALLOCATE(vwv(vmpert,vmpert))
+      nths=vmtheta+5
+      nths2=nths*2
+      nfm2=vmpert*2
+      ALLOCATE(vgrri(nths2,nfm2),vgrre(nths2,nfm2),vxzpts(nths,4))
       kernelsignin=-1.0
-      CALL mscvac(vwv,vmpert,vmtheta,vmtheta,nfm2,nths2,complex_flag,
-     $     kernelsignin,wall_flag)
-      ALLOCATE(vgrri(nths2,nfm2))
-      CALL grrget(nfm2,nths2,vgrri)
+      CALL mscvac(vwv,vmpert,vmtheta,vmtheta,complex_flag,
+     $     kernelsignin,wall_flag,farwal_flag,vgrri,vxzpts)
       kernelsignin=1.0
-      CALL mscvac(vwv,vmpert,vmtheta,vmtheta,nfm2,nths2,complex_flag,
-     $     kernelsignin,wall_flag)
-      ALLOCATE(vgrre(nths2,nfm2))
-      CALL grrget(nfm2,nths2,vgrre)
+      CALL mscvac(vwv,vmpert,vmtheta,vmtheta,complex_flag,
+     $     kernelsignin,wall_flag,farwal_flag,vgrre,vxzpts)
       !vgrre(i+vmtheta,:) possibly provides coupling and mutuals!
 c-----------------------------------------------------------------------
 c     construct surface inductance matrix for specified boundary.
@@ -220,7 +221,7 @@ c-----------------------------------------------------------------------
       DEALLOCATE(vbwp_mn,rbwp_mn,vbwp_fun,rbwp_fun,chi_fun,che_fun,
      $     flx_fun,kax_fun,grri_real,grri_imag,grre_real,grre_imag,
      $     vflxmats,ipiv,rwork,work,temp1,temp2,
-     $     vgrri,vgrre,vwv)
+     $     vgrri,vgrre,vwv,vxzpts)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -240,6 +241,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: qa,kernelsignin
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
       LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.      
+      LOGICAL, PARAMETER :: farwal_flag=.TRUE.
 
       INTEGER, DIMENSION(mpert) :: ipiv
       REAL(r8), DIMENSION(3*mpert-2) :: rwork
@@ -256,7 +258,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), POINTER :: grri_real,grri_imag,
      $     grre_real,grre_imag
-      REAL(r8), DIMENSION(:,:), POINTER :: vgrri,vgrre
+      REAL(r8), DIMENSION(:,:), POINTER :: vgrri,vgrre,vxzpts
 c-----------------------------------------------------------------------
 c     specify flux surface in hamada given by equilibrium file.
 c-----------------------------------------------------------------------
@@ -315,16 +317,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     get grri and grre matrices by calling mscvac functions.
 c-----------------------------------------------------------------------
+      nths=mthsurf+5
+      nths2=nths*2
+      nfm2=mpert*2
+      ALLOCATE(vgrri(nths2,nfm2),vgrre(nths2,nfm2),vxzpts(nths,4))
       kernelsignin=-1.0
-      CALL mscvac(vwv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $     kernelsignin,wall_flag)
-      ALLOCATE(vgrri(nths2,nfm2))
-      CALL grrget(nfm2,nths2,vgrri)
+      CALL mscvac(vwv,mpert,mtheta,mthsurf,complex_flag,
+     $     kernelsignin,wall_flag,farwal_flag,vgrri,vxzpts)
       kernelsignin=1.0
-      CALL mscvac(vwv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $     kernelsignin,wall_flag)
-      ALLOCATE(vgrre(nths2,nfm2))
-      CALL grrget(nfm2,nths2,vgrre)
+      CALL mscvac(vwv,mpert,mtheta,mthsurf,complex_flag,
+     $     kernelsignin,wall_flag,farwal_flag,vgrre,vxzpts)
 c-----------------------------------------------------------------------
 c     construct surface inductance matrix for specified boundary.
 c-----------------------------------------------------------------------
@@ -377,7 +379,8 @@ c-----------------------------------------------------------------------
       CALL zheev('V','U',mpert,temp1,mpert,fsurf_indev,work,
      $     lwork,rwork,info)
 
-      DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag,vgrri,vgrre)
+      DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag,vgrri,vgrre,
+     $     vxzpts)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

@@ -31,8 +31,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: theta,dphi,r,z
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
-      INTEGER :: nfm2,nths2
-      REAL(8), DIMENSION(:,:), POINTER :: grri
+      REAL(8), DIMENSION(:,:), POINTER :: grri,xzpts
 
       TYPE(cspline_type) :: wvmats
       CONTAINS
@@ -69,6 +68,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
+      LOGICAL :: farwal_flag
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       COMPLEX(r8), DIMENSION(mpert) :: diff
@@ -116,25 +116,32 @@ c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
       vac_unit=4
+      farwal_flag=.TRUE.
       kernelsignin=-1.0
-      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin,wall_flag)
-      ALLOCATE(grri(nths2,nfm2))
-      CALL grrget(nfm2,nths2,grri)
+      ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
       CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
-      WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)
       WRITE(vac_unit)grri
-      DEALLOCATE(grri)
 
       kernelsignin=1.0
-      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin,wall_flag)
-      ALLOCATE(grri(nths2,nfm2))
-      CALL grrget(nfm2,nths2,grri)
-      WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
       WRITE(vac_unit)grri
-      DEALLOCATE(grri)
+
+      farwal_flag=.FALSE.
+      kernelsignin=1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
+      WRITE(vac_unit)grri
+      WRITE(vac_unit)xzpts
+!     xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
+!      DO ipert=1,mthvac+5
+!         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),grri(ipert,10),
+!     $        xzpts(ipert,3),grri(ipert+mthvac+5,10)
+!      ENDDO
       CALL bin_close(vac_unit)
+      DEALLOCATE(grri,xzpts)
 
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
@@ -346,9 +353,9 @@ c-----------------------------------------------------------------------
      $        //"Toroidal harmonic"
          WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
      $        //"Safety factor at plasma edge"
-c-----   ------------------------------------------------------------------
+c-----------------------------------------------------------------------
 c        write arrays.
-c-----   ------------------------------------------------------------------
+c-----------------------------------------------------------------------
          WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
          WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
      $        itheta=mtheta,0,-1)
@@ -749,8 +756,10 @@ c-----------------------------------------------------------------------
       REAL(r8) :: dpsi
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
+      LOGICAL :: farwal_flag=.FALSE.
       REAL(r8) :: kernelsignin
+      INTEGER :: vac_unit
 c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
@@ -761,14 +770,16 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sq, wvmats%xs(i), 0)
          CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.)
          kernelsignin=1.0
-         CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,
-     $        complex_flag,kernelsignin)
+         ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+         CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $        wall_flag,farwal_flag,grri,xzpts)
          singfac=mlow-nn*sq%f(4)+(/(ipert,ipert=0,mpert-1)/)
          DO ipert=1,mpert
             wv(ipert,:)=wv(ipert,:)*singfac
             wv(:,ipert)=wv(:,ipert)*singfac
          ENDDO
          wvmats%fs(i,:)=RESHAPE(wv,(/mpert**2/))
+         DEALLOCATE(grri,xzpts)         
       ENDDO
       CALL unset_dcon_params
       CALL cspline_fit(wvmats,"extrap")

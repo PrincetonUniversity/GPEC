@@ -47,6 +47,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(chimats(mpert,mpert),chemats(mpert,mpert),
      $     kaxmats(mpert,mpert),flxmats(mpert,mpert),
      $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert))
+      ALLOCATE(chwmats(mpert,mpert))
       IF(verbose) WRITE(*,*)"Building free boundary solutions"
       DO i=1,mpert
          edge_mn=0
@@ -56,7 +57,8 @@ c-----------------------------------------------------------------------
 c     compute the perturbed quantities and contruct hermitian matrices.
 c-----------------------------------------------------------------------
          ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
-     $        kap_mn(4,mpert),kax_mn(mpert))
+     $        kap_mn(4,mpert),kax_mn(mpert),chw_mn(mpert))
+         ALLOCATE(chw_fun(0:mthsurf))
          CALL gpeq_alloc
          surface_flag=.FALSE.
          CALL gpeq_sol(psilim)
@@ -73,6 +75,7 @@ c-----------------------------------------------------------------------
          kaxmats(:,i)=kax_mn
          chpmats(:,:,i)=chp_mn
          kapmats(:,:,i)=kap_mn
+         chwmats(:,i)=chw_mn
 c-----------------------------------------------------------------------
 c     estimate errors in magnetic scalar potentials.
 c-----------------------------------------------------------------------
@@ -137,9 +140,9 @@ c     $           ABS(1-surfet(2,i)/surfet(1,i))
          ENDIF
 
          CALL gpeq_dealloc
-         DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
+         DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn,chw_mn,chw_fun)
       ENDDO
-      DEALLOCATE(grri,grre)
+      DEALLOCATE(grri,grre,grrw)
       IF(debug_flag) PRINT *, "->Leaving gpresp_eigen"
 c-----------------------------------------------------------------------
 c     terminate.

@@ -520,10 +520,11 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(4,0:mthsurf) :: chp_fun,kap_fun
 
       REAL(r8), DIMENSION(:), POINTER :: grri_real,grri_imag,
-     $     grre_real,grre_imag
+     $     grre_real,grre_imag,grrw_real,grrw_imag
 
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
-     $     grre_real(nths2),grre_imag(nths2))
+     $     grre_real(nths2),grre_imag(nths2),
+     $     grrw_real(nths2),grrw_imag(nths2))
       IF(debug_flag) PRINT *, "Entering gpeq_surface"
 c-----------------------------------------------------------------------
 c     take into account reverse-theta in vacuum code.
@@ -553,6 +554,8 @@ c-----------------------------------------------------------------------
       grri_imag=MATMUL(grri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
       grre_real=MATMUL(grre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
       grre_imag=MATMUL(grre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
+      grrw_real=MATMUL(grrw,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
+      grrw_imag=MATMUL(grrw,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
 c-----------------------------------------------------------------------
 c     return into original coordinates.
 c-----------------------------------------------------------------------
@@ -565,6 +568,12 @@ c-----------------------------------------------------------------------
       ENDDO
       chi_fun(0)=chi_fun(mthsurf)
       che_fun(0)=che_fun(mthsurf)
+      ! mutual inductance
+      DO itheta=0,mthsurf-1
+         rtheta=2*mthsurf-itheta
+         chw_fun(itheta+1)=grrw_real(rtheta)-ifac*grrw_imag(rtheta)
+      ENDDO
+      chw_fun(0)=chw_fun(mthsurf)
 c-----------------------------------------------------------------------
 c     normalize chi functions of vacuum.
 c-----------------------------------------------------------------------
@@ -603,8 +612,11 @@ c-----------------------------------------------------------------------
       ENDDO
       kax_fun=(chi_fun-che_fun)/mu0
       CALL iscdftf(mfac,mpert,kax_fun,mthsurf,kax_mn)
+      chw_fun=chw_fun/(twopi**2)/mu0
+      CALL iscdftf(mfac,mpert,chw_fun,mthsurf,chw_mn)
      
       DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag)
+      DEALLOCATE(grrw_real,grrw_imag)
       IF(debug_flag) PRINT *, "->Leaving gpeq_surface"
 c-----------------------------------------------------------------------
 c     terminate.

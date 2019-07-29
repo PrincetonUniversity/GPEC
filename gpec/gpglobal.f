@@ -19,7 +19,7 @@ c-----------------------------------------------------------------------
      $     netcdf_flag,ascii_flag
 
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
-     $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
+     $     mfix,mhigh,mlow,msing,nfm2,nths,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,jsurf_in,jsurf_out,mlim_out,
      $     power_bin,power_rin,power_bpin,power_rcin,tmag_in,
      $     power_bout,power_rout,power_bpout,power_rcout,tmag_out,
@@ -56,8 +56,8 @@ c-----------------------------------------------------------------------
      $     r,z,theta,ee,surfee,surfei,rpsifac,
      $     surf_indev,vsurf_indev,fsurf_indev,surf_indinvev
      $     ,eft,efp
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
-     $     chperr,chpsqr,grri,grre,gdr,gdz,gdpsi,gdthe,gdphi
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xzpts,
+     $     chperr,chpsqr,grri,grre,grrw,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
 
@@ -68,14 +68,14 @@ c-----------------------------------------------------------------------
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
      $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
-     $     edge_mn,edge_fun
+     $     edge_mn,edge_fun,chw_mn,chw_fun
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     surf_indinvmats,surf_indinvevmats,surfet,surfep,
-     $     amat,bmat,cmat,fmats,gmats,kmats,coil_indmat
-     $     ,wft,wtraw
+     $     amat,bmat,cmat,fmats,gmats,kmats,coil_indmat,
+     $     wft,wtraw,chwmats,mutual_indmats
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: chpmats,kapmats,
      $     plas_indmats,plas_indinvmats,permeabmats,diff_indmats,
      $     plas_indevmats,plas_indinvevmats,indrelmats,indrelevmats,

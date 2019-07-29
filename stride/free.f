@@ -103,8 +103,9 @@ c-----------------------------------------------------------------------
       SUBROUTINE free_calc_wv()
 
       REAL(r8), DIMENSION(mpert) :: singfac
-      INTEGER :: ipert, sTime, fTime, cr, nfm2, nths2
+      INTEGER :: ipert, sTime, fTime, cr
       LOGICAL, PARAMETER :: complex_flag=.FALSE.
+      REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
 c-----------------------------------------------------------------------
 c     initialize.
 c-----------------------------------------------------------------------
@@ -122,7 +123,10 @@ c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
       ALLOCATE(wv(1:mpert,1:mpert))
-      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,1.0_r8)
+      ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,1.0_r8,
+     $     .FALSE.,.FALSE.,grri,xzpts)
+      DEALLOCATE(grri,xzpts)
       CALL system("rm -f ahg2msc.out")
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
