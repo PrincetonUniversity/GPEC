@@ -914,6 +914,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: tphi
       COMPLEX(r8), DIMENSION(mpert,mpert,6) :: kwmat,kwmat_l,
      $     ktmat,ktmat_l
+      COMPLEX(r8), DIMENSION(:,:,:,:,:), ALLOCATABLE :: kwmatls, ktmatls
 c-----------------------------------------------------------------------
 c     declarations for diagnostics.
 c-----------------------------------------------------------------------
@@ -965,6 +966,8 @@ c-----------------------------------------------------------------------
          CALL program_stop("Kinetic calculations require "//
      $                "passing_flag and/or trapped_flag")
       ENDIF
+      ALLOCATE(kwmatls(mpert,mpert,6,0:mpsi,-nl:nl),
+     $         ktmatls(mpert,mpert,6,0:mpsi,-nl:nl))
 c-----------------------------------------------------------------------
 c     Original approach using eqgrid loop to calculate kinetic matrices
 c-----------------------------------------------------------------------
@@ -1016,19 +1019,6 @@ c-----------------------------------------------------------------------
          r2mats%fs=0
          r3mats%fs=0
 
-         ! The slow part of this code is filling up these 12 N by M by M complex splines.
-         ! Here, M is typically ~100 and N is typically ~500.
-         ! Each NxMxM element requires energy integrals that take time, so this takes hrs.
-         ! once the spline is in hand, the code takes ~1-10sec
-         ! So restarting after a crash in the middle of this loop would be useful.
-         ! Since the rest of the code before & after is so fast, I think we would really just need
-         ! to write these splines to disk (every ~64 ipsi steps or so?).
-         ! Maybe as a temp binary backup file? Then we could
-         ! check for said backup file at the begining of the loop and optionally load it + jump
-         ! ahead in ipsi. We would need a flag to not use the backup if we want to actually
-         ! re-run (maybe we changed an input profile or something), right?
-         ! Is there a better way?
-         ! Better parallelization might just make this a moot point
          DO i=1,6
             CALL cspline_alloc(kwmats(i),mpsi,mpert**2)
             CALL cspline_alloc(ktmats(i),mpsi,mpert**2)
@@ -1036,24 +1026,18 @@ c-----------------------------------------------------------------------
             ktmats(i)%xs=rzphi%xs
          ENDDO
 
-         idone = -1
+c-----------------------------------------------------------------------
+c     Parallel calls of expensive kinetic calculations for each psi,ell
+c-----------------------------------------------------------------------
+         idone = 0
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC) DEFAULT(NONE)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,8) DEFAULT(NONE) COLLAPSE(2)
 !$OMP& PRIVATE(
 !$OMP& ipsi,ix,psifac,l,num_threads,t_start,t_end,t_sec,
-!$OMP& tphi,kwmat_l,ktmat_l,kwmat,ktmat,
-!$OMP& amats_f,bmats_f,cmats_f,dmats_f,emats_f,hmats_f,
-!$OMP& dbats_f,ebats_f,fbats_f,
-!$OMP& amat,bmat,cmat,dmat,emat,hmat,dbat,ebat,fmat,b1mat,caat,
-!$OMP& amatlu,umat,ipiv,info,message,temp1,f0mat,temp2,aamat,bkmat,
-!$OMP& bkaat,pmat,paat,r1mat,kkmat,kkaat,r2mat,r3mat,gaat,iqty)
+!$OMP& tphi,kwmat_l,ktmat_l,kwmat,ktmat)
 !$OMP& SHARED(
-!$OMP& rzphi,amats,bmats,cmats,dmats,emats,hmats,dbats,ebats,fbats,
-!$OMP& ion_flag,electron_flag,debug_omp,verbose,cr,idone,
-!$OMP& nn,nl,ft,zi,mi,wdfac,divxfac,chi1,mpert,mband,mpsi,
-!$OMP& kinfac1,kinfac2,ktc,ktw,ktanh_flag,
-!$OMP& kwmats,ktmats,akmats,bkmats,ckmats,gaats,
-!$OMP& f0mats,pmats,paats,kkmats,kkaats,r1mats,r2mats,r3mats)
+!$OMP& rzphi,ion_flag,electron_flag,debug_omp,verbose,cr,idone,
+!$OMP& nn,nl,ft,zi,mi,wdfac,divxfac,mpsi,kwmatls,ktmatls)
 !$OMP& COPYIN(
 c!!!!!!...from inputs.f90...
 !$OMP& dbob_m,divx_m,kin,xs_m,fnml,
@@ -1061,47 +1045,66 @@ c!!!!!!...from dcon_interface.f90
 !$OMP& geom, dcon_int_sq,dcon_int_eqfun,dcon_int_rzphi,
 !$OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
 !$OMP& dcon_int_zmats)
-         DO ipsi=0,mpsi  ! each of these surfaces is independent (can be parallel)
-            CALL SYSTEM_CLOCK(COUNT=t_start)
+         DO ipsi=0,mpsi
+            DO l=-nl,nl
+               CALL SYSTEM_CLOCK(COUNT=t_start)
 #ifdef _OPENMP
-            IF(ipsi==0)THEN
-               num_threads = OMP_GET_NUM_THREADS()
-               WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
-     $              num_threads," OMP threads"
-            ENDIF
+               IF(ipsi==0 .AND. l==-nl)THEN
+                  num_threads = OMP_GET_NUM_THREADS()
+                  WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
+     $                 num_threads," OMP threads"
+               ENDIF
 #endif
-
-            ! convinience variables
-            psifac=rzphi%xs(ipsi)
-
-            ! get ion matrices for all ell at this one psi
-            kwmat = 0
-            ktmat = 0
-            IF (ion_flag) THEN
-               DO l=-nl,nl  ! Parallel. Good. But often just 1 of the l's is slow and holds up the whole ipsi loop
+               psifac=rzphi%xs(ipsi)
+               IF (ion_flag) THEN
                   kwmat_l = 0
                   ktmat_l = 0
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $                 ft//"wmm",op_wmats=kwmat_l)
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
-                  kwmat = kwmat + kwmat_l
-                  ktmat = ktmat + ktmat_l
-               ENDDO
-            ENDIF
-
-            IF (electron_flag) THEN
-               DO l=-nl,nl
+                  kwmatls(:,:,:,ipsi,l) = kwmatls(:,:,:,ipsi,l)+kwmat_l
+                  ktmatls(:,:,:,ipsi,l) = ktmatls(:,:,:,ipsi,l)+ktmat_l
+               ENDIF
+               IF (electron_flag) THEN
                   kwmat_l = 0
                   ktmat_l = 0
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"wmm",op_wmats=ktmat_l)
                   tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
-                  kwmat = kwmat+kwmat_l
-                  ktmat = ktmat+ktmat_l
-               ENDDO
+                  kwmatls(:,:,:,ipsi,l) = kwmatls(:,:,:,ipsi,l)+kwmat_l
+                  ktmatls(:,:,:,ipsi,l) = ktmatls(:,:,:,ipsi,l)+ktmat_l
+               ENDIF
+            ! helpful status messages
+!$OMP CRITICAL
+            idone = idone + 1
+!$OMP END CRITICAL
+            IF(verbose) CALL progressbar(idone,1,(mpsi+1)*(2*nl+1),
+     $         op_percent=10)
+            IF(debug_omp)THEN
+               CALL SYSTEM_CLOCK(COUNT=t_end)
+               t_sec = REAL(t_end-t_start,8)/REAL(cr,8)
+               WRITE(*,'(1x,a5,i3,a6,es16.8,a8)')
+     $            "ipsi=",ipsi," took ",t_sec," seconds"
             ENDIF
+            ENDDO
+         ENDDO
+!$OMP END PARALLEL DO
+
+c-----------------------------------------------------------------------
+c     Now go back totypical serial psi operations
+c-----------------------------------------------------------------------
+         DO ipsi=0,mpsi
+            psifac=rzphi%xs(ipsi)
+
+            ! collect all the ell for a given psi from the collapsed parallel calcs
+            kwmat = 0
+            ktmat = 0
+            DO l=-nl,nl
+               kwmat = kwmat + kwmatls(:,:,:,ipsi,l)
+               ktmat = ktmat + ktmatls(:,:,:,ipsi,l)
+            ENDDO
 
             ! apply normalizations and hypertangent smoothing for core
             IF (ktanh_flag) THEN
@@ -1261,22 +1264,8 @@ c-----------------------------------------------------------------------
                   iqty=iqty+1
                ENDDO
             ENDDO
-c-----------------------------------------------------------------------
-c     print out timed loop over ipsi
-c-----------------------------------------------------------------------
-            IF(debug_omp)THEN
-               CALL SYSTEM_CLOCK(COUNT=t_end)
-               t_sec = REAL(t_end-t_start,8)/REAL(cr,8)
-               WRITE(*,'(1x,a5,i3,a6,es16.8,a8)')
-     $            "ipsi=",ipsi," took ",t_sec," seconds"
-            ENDIF
-!$OMP CRITICAL
-            idone = idone + 1
-!$OMP END CRITICAL
-            IF(verbose) CALL progressbar(idone,0,mpsi,op_percent=10)
          ENDDO
-!$OMP END PARALLEL DO
-
+         DEALLOCATE(kwmatls, ktmatls)  ! these are really big, get rid of them asap
 c-----------------------------------------------------------------------
 c     fit splines
 c-----------------------------------------------------------------------
