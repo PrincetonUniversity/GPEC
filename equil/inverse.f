@@ -41,6 +41,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psifac,theta,f0,f0fac,ffac,r,rfac,jacfac,w11,w12,bp,
      $     bt,b,xm,dx,rholow,rhohigh,eta,delpsi,q
       REAL(r8), DIMENSION(3,3) :: v
+      REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8),DIMENSION(:,:),ALLOCATABLE :: x,y,r2,deta
       TYPE(spline_type) :: spl
 c-----------------------------------------------------------------------
@@ -133,6 +134,12 @@ c-----------------------------------------------------------------------
       CASE("ldp")
          sq%xs=(/(ipsi,ipsi=0,mpsi)/)/REAL(mpsi,r8)
          sq%xs=psilow+(psihigh-psilow)*SIN(sq%xs*pi/2)**2
+      CASE("pow1")
+         xdx = powspace(psilow, psihigh, 1, mpsi+1, "upper")
+         sq%xs=xdx(1,:)
+      CASE("pow2")
+         xdx = powspace(psilow, psihigh, 2, mpsi+1, "upper")
+         sq%xs=xdx(1,:)
       CASE("rho")
          sq%xs=psihigh*(/(ipsi**2,ipsi=1,mpsi+1)/)/(mpsi+1)**2
       CASE("original","orig")
