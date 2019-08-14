@@ -1,7 +1,5 @@
 # This is the makefile for VACUUM.
 
-FFLAGS = -g
-
 F90 = $(FC) $(FFLAGS)
 
 .f.o:

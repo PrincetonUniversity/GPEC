@@ -24,11 +24,11 @@ GPEC
 Ideal
 ------
 
-`Park, J.-K., Boozer, A.H., Menard, J.E., Garofalo, A.M., et al., 2009. Importance of plasma response to nonaxisymmetric perturbations in tokamaks. Physics of Plasmas, 16(5), p.056115 <http://link.aip.org/link/PHPAEN/v16/i5/p056115/s1&Agg=doi>`_.
+`Park, J.-K., Boozer, A.H., Menard, J.E., Garofalo, A.M., et al., 2009. Importance of plasma response to nonaxisymmetric perturbations in tokamaks. Physics of Plasmas, 16(5), p.056115 <https://aip.scitation.org/doi/abs/10.1063/1.3122862>`_.
 
-`Park, J.-K., Boozer, A.H., Menard, J.E., Gerhardt, S.P., et al., 2009. Shielding of external magnetic perturbations by torque in rotating tokamak plasmas. Physics of Plasmas, 16(8), p.082512 <http://link.aip.org/link/PHPAEN/v16/i8/p082512/s1&Agg=doi>`_.
+`Park, J.-K., Boozer, A.H., Menard, J.E., Gerhardt, S.P., et al., 2009. Shielding of external magnetic perturbations by torque in rotating tokamak plasmas. Physics of Plasmas, 16(8), p.082512 <http://aip.scitation.org/doi/10.1063/1.3206668>`_.
 
-`Park, J.-K., Boozer, A.H. & Glasser, A.H., 2007. Computation of three-dimensional tokamak and spherical torus equilibria. Physics of Plasmas, 14(5), p.052110 <http://link.aip.org/link/PHPAEN/v14/i5/p052110/s1&Agg=doi>`_.
+`Park, J.-K., Boozer, A.H. & Glasser, A.H., 2007. Computation of three-dimensional tokamak and spherical torus equilibria. Physics of Plasmas, 14(5), p.052110 <http://aip.scitation.org/doi/10.1063/1.2732170>`_.
 
 Kinetic
 --------

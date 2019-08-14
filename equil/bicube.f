@@ -37,17 +37,17 @@ c-----------------------------------------------------------------------
 
       TYPE :: bicube_type
       INTEGER :: mx,my,nqty,ix,iy
-      REAL(r8), DIMENSION(:,:), POINTER :: xext,yext,fext
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xext,yext,fext
       REAL(r8), DIMENSION(2) :: x0,y0
-      REAL(r8), DIMENSION(:), POINTER :: xs,ys
-      REAL(r8), DIMENSION(:,:), POINTER :: xpower,ypower
-      REAL(r8), DIMENSION(:,:,:), POINTER :: fs,fsx,fsy,fsxy
-      REAL(r8), DIMENSION(:), POINTER :: f,fx,fy,fxx,fxy,fyy
-      REAL(r8), DIMENSION(:,:,:,:,:), POINTER :: cmats
-      REAL(r8), DIMENSION(:,:,:,:,:), POINTER :: gs,gsx,gsy,gsxy,
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: xs,ys
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xpower,ypower
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: fs,fsx,fsy,fsxy
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: f,fx,fy,fxx,fxy,fyy
+      REAL(r8), DIMENSION(:,:,:,:,:), ALLOCATABLE :: cmats
+      REAL(r8), DIMENSION(:,:,:,:,:), ALLOCATABLE :: gs,gsx,gsy,gsxy,
      $     gsxx,gsyy
       CHARACTER(6) :: xtitle,ytitle
-      CHARACTER(6), DIMENSION(:), POINTER :: title
+      CHARACTER(6), DIMENSION(:), ALLOCATABLE :: title
       CHARACTER(6) :: name
       LOGICAL, DIMENSION(2) :: periodic
       END TYPE bicube_type
@@ -96,16 +96,6 @@ c-----------------------------------------------------------------------
       bcs%x0=0
       bcs%y0=0
 c-----------------------------------------------------------------------
-c     nullify.
-c-----------------------------------------------------------------------
-      NULLIFY(bcs%cmats)
-      NULLIFY(bcs%gs)
-      NULLIFY(bcs%gsx)
-      NULLIFY(bcs%gsy)
-      NULLIFY(bcs%gsxx)
-      NULLIFY(bcs%gsxy)
-      NULLIFY(bcs%gsyy)
-c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -138,13 +128,13 @@ c-----------------------------------------------------------------------
       DEALLOCATE(bcs%fyy)
       DEALLOCATE(bcs%xpower,bcs%ypower)
       DEALLOCATE(bcs%xext,bcs%yext,bcs%fext)
-      IF(ASSOCIATED(bcs%cmats))DEALLOCATE(bcs%cmats)
-      IF(ASSOCIATED(bcs%gs))DEALLOCATE(bcs%gs)
-      IF(ASSOCIATED(bcs%gsx))DEALLOCATE(bcs%gsx)
-      IF(ASSOCIATED(bcs%gsy))DEALLOCATE(bcs%gsy)
-      IF(ASSOCIATED(bcs%gsxx))DEALLOCATE(bcs%gsxx)
-      IF(ASSOCIATED(bcs%gsxy))DEALLOCATE(bcs%gsxy)
-      IF(ASSOCIATED(bcs%gsyy))DEALLOCATE(bcs%gsyy)
+      IF(ALLOCATED(bcs%cmats))DEALLOCATE(bcs%cmats)
+      IF(ALLOCATED(bcs%gs))DEALLOCATE(bcs%gs)
+      IF(ALLOCATED(bcs%gsx))DEALLOCATE(bcs%gsx)
+      IF(ALLOCATED(bcs%gsy))DEALLOCATE(bcs%gsy)
+      IF(ALLOCATED(bcs%gsxx))DEALLOCATE(bcs%gsxx)
+      IF(ALLOCATED(bcs%gsxy))DEALLOCATE(bcs%gsxy)
+      IF(ALLOCATED(bcs%gsyy))DEALLOCATE(bcs%gsyy)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -159,7 +149,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE bicube_fit(bcs,endmode1,endmode2)
 
-      TYPE(bicube_type), INTENT(INOUT) :: bcs
+      TYPE(bicube_type), INTENT(INOUT), TARGET :: bcs
       CHARACTER(*), INTENT(IN) :: endmode1,endmode2
 
       INTEGER :: iqty,iside,ix,iy
@@ -524,7 +514,7 @@ c     find offsets and compute local coefficients.
 c-----------------------------------------------------------------------
       dx=xx-bcs%xs(bcs%ix)
       dy=yy-bcs%ys(bcs%iy)
-      IF(ASSOCIATED(bcs%cmats))THEN
+      IF(ALLOCATED(bcs%cmats))THEN
          c=bcs%cmats(:,:,bcs%ix+1,bcs%iy+1,:)
       ELSE
          c=bicube_getco(bcs)
@@ -1231,7 +1221,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     allocate space.
 c-----------------------------------------------------------------------
-      IF(ASSOCIATED(bcs%cmats))THEN
+      IF(ALLOCATED(bcs%cmats))THEN
          RETURN
       ELSE
          ALLOCATE(bcs%cmats(4,4,bcs%mx,bcs%my,bcs%nqty))
@@ -1595,7 +1585,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
-      IF(ASSOCIATED(bcs2%xs))CALL bicube_dealloc(bcs2)
+      IF(ALLOCATED(bcs2%xs))CALL bicube_dealloc(bcs2)
       CALL bicube_alloc(bcs2,bcs1%mx,bcs1%my,bcs1%nqty)
       bcs2%xs=bcs1%xs
       bcs2%ys=bcs1%ys

@@ -1,6 +1,4 @@
 
-FFLAGS = -g
-
 F90 = $(FC) $(FFLAGS)
 
 CFLAGS = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_

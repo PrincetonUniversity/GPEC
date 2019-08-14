@@ -405,7 +405,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:mstep,0:mtheta) :: xi_psi,b_psi,
      $     xi_norm,b_norm
 
-      LOGICAL, PARAMETER :: diagnose=.TRUE.
+      LOGICAL, PARAMETER :: diagnose=.FALSE.
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------

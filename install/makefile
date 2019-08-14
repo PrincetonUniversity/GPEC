@@ -4,7 +4,16 @@ include DEFAULTS.inc
 # extend these variables to sub-makes (?= sets a default if user doesn't specify options)
 FFLAGS ?= -g
 CFLAGS ?= -g
-#OMPFLAG ?= -qopenmp
+#Common compiler flags for OpenMP
+ifeq ($(FC), ifort)
+	OMPFLAG ?= -qopenmp
+else ifeq ($(FC), gfortran)
+	OMPFLAG ?= -fopenmp
+else ifeq ($(FC), pgfortran)
+	OMPFLAG ?= -mp
+else
+	OMPFLAG ?= -openmp
+endif
 
 export FFLAGS
 export CFLAGS
@@ -15,11 +24,11 @@ export OMPFLAG
 .IGNORE:
 
 all: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw coil gpec mkbin #stride mkbin
+	multi sum xdraw coil gpec stride mkbin
 
 # fortran only
 allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum coil gpec mkbin #stride mkbin
+	multi sum coil gpec stride mkbin
 
 
 # executables:
@@ -96,7 +105,7 @@ mkbin:
 	cp -f ../sum/sum ../bin
 	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
-	#cp -f ../stride/stride ../bin
+	cp -f ../stride/stride ../bin
 
 # print verbose info
 

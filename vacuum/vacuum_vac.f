@@ -1062,7 +1062,7 @@ c-----------------------------------------------------------------------
       IMPLICIT REAL*8 (a-h,o-z)
 
       INTEGER:: npots0,npots
-      logical infwal, lfix, insect
+      logical lfix, insect
       REAL*8, DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
      $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp,rioptmp
       dimension xwal1(*), zwal1(*)
@@ -1127,8 +1127,7 @@ c-----------------------------------------------------------------------
         go to 145 !go directly to cleanup
       endif
       if(a .gt. -10.)lfix=.true.
-      if( a >= 10. ) then
-        infwal = .true.
+      if( farwal ) then
         return !early exit because there is no wall
       endif
       xshift = a

@@ -173,7 +173,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE dcon_regrid
 c-----------------------------------------------------------------------
 c     subprogram 3. dcon_qpack.
-c     transfer equilibruim to new packed grid.
+c     transfer equilibrium to new packed grid.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -284,11 +284,11 @@ c-----------------------------------------------------------------------
       mband=mpert-1-delta_mband
       mband=MIN(MAX(mband,0),mpert-1)
 c-----------------------------------------------------------------------
-c     transfer equilibruim to packed spline grid.
+c     transfer equilibrium to packed spline grid.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,'(a,l1)')" Regrid_flag = ",regrid_flag
       IF (regrid_flag) THEN
-         IF(verbose) WRITE(*,*)"Regriding equilibruim with qpack"
+         IF(verbose) WRITE(*,*)"Regriding equilibrium with qpack"
          CALL dcon_qpack
       ENDIF
 c-----------------------------------------------------------------------
