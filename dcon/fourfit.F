@@ -1032,6 +1032,7 @@ c-----------------------------------------------------------------------
          idone = 0
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,8) DEFAULT(NONE) COLLAPSE(2)
+!$OMP& PROC_BIND(CLOSE)
 !$OMP& PRIVATE(
 !$OMP& ipsi,ix,psifac,l,num_threads,t_start,t_end,t_sec,
 !$OMP& tphi,kwmat_l,ktmat_l,kwmat,ktmat)
