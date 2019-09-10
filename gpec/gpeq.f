@@ -515,7 +515,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: chi_fun,che_fun,kax_fun,
-     $     xwp_fun,xwt_fun,bvt_fun,bvz_fun,bwp_fun
+     $     xwp_fun,xwt_fun,bvt_fun,bvz_fun,bwp_fun,chx_fun,chw_fun
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
       COMPLEX(r8), DIMENSION(4,0:mthsurf) :: chp_fun,kap_fun
 
@@ -565,9 +565,12 @@ c-----------------------------------------------------------------------
      $        *EXP(-ifac*nn*dphi(itheta+1))
          che_fun(itheta+1)=(grre_real(rtheta)-ifac*grre_imag(rtheta))
      $        *EXP(-ifac*nn*dphi(itheta+1))
+         chx_fun(itheta+1)=(grrw_real(rtheta)-ifac*grrw_imag(rtheta))
+     $        *EXP(-ifac*nn*dphi(itheta+1))
       ENDDO
       chi_fun(0)=chi_fun(mthsurf)
       che_fun(0)=che_fun(mthsurf)
+      chx_fun(0)=chx_fun(mthsurf)
       ! mutual inductance
       DO itheta=0,mthsurf-1
          rtheta=2*mthsurf-itheta
@@ -579,8 +582,12 @@ c     normalize chi functions of vacuum.
 c-----------------------------------------------------------------------
       chi_fun=chi_fun/(twopi**2)
       che_fun=-che_fun/(twopi**2)
+      chx_fun=-chx_fun/(twopi**2)
+      chw_fun=chw_fun/(twopi**2)
       CALL iscdftf(mfac,mpert,chi_fun,mthsurf,chi_mn)
       CALL iscdftf(mfac,mpert,che_fun,mthsurf,che_mn)
+      CALL iscdftf(mfac,mpert,chx_fun,mthsurf,chx_mn)
+      CALL iscdftf(mfac,mpert,chw_fun,mthsurf,chw_mn)
 c-----------------------------------------------------------------------
 c     compute plasma magnetic potential on the surface.
 c-----------------------------------------------------------------------
@@ -612,8 +619,6 @@ c-----------------------------------------------------------------------
       ENDDO
       kax_fun=(chi_fun-che_fun)/mu0
       CALL iscdftf(mfac,mpert,kax_fun,mthsurf,kax_mn)
-      chw_fun=chw_fun/(twopi**2)/mu0
-      CALL iscdftf(mfac,mpert,chw_fun,mthsurf,chw_mn)
      
       DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag)
       DEALLOCATE(grrw_real,grrw_imag)

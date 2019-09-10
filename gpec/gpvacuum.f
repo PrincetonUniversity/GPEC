@@ -499,10 +499,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpvacuum_bnormal
 c-----------------------------------------------------------------------
-c     subprogram 4. gpvacuum_mutuals.
-c     calculate mutual inductances.  
+c     subprogram 4. gpvacuum_ideal_mutuals.
+c     calculate ideal mutual inductances.  
 c-----------------------------------------------------------------------
-      SUBROUTINE gpvacuum_mutuals
+      SUBROUTINE gpvacuum_ideal_mutuals
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -620,7 +620,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE gpvacuum_mutuals
+      END SUBROUTINE gpvacuum_ideal_mutuals
 
       END MODULE gpvacuum_mod
       

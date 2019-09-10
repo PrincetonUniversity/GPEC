@@ -135,11 +135,11 @@ c-----------------------------------------------------------------------
      $     wall_flag,farwal_flag,grri,xzpts)
       WRITE(vac_unit)grri
       WRITE(vac_unit)xzpts
-!     xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
-!      DO ipert=1,mthvac+5
-!         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),grri(ipert,10),
-!     $        xzpts(ipert,3),grri(ipert+mthvac+5,10)
-!      ENDDO
+      ! xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
+      DO ipert=1,mthvac+5
+         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),xzpts(ipert,2),
+     $        xzpts(ipert,3),xzpts(ipert,4)
+      ENDDO
       CALL bin_close(vac_unit)
       DEALLOCATE(grri,xzpts)
 

@@ -457,6 +457,11 @@ c-----------------------------------------------------------------------
       CALL gpresp_sinduct
       CALL gpresp_permeab
       CALL gpresp_reluct
+      CALL gpresp_minduct
+      DO i=1,mpert
+         WRITE(*,*)surf_indev(i),REAL(mutual_indev(i)),
+     $        AIMAG(mutual_indev(i))
+      ENDDO
       IF(timeit) CALL gpec_timer(2)
 c-----------------------------------------------------------------------
 c     Set parameters for outputs.
@@ -596,7 +601,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (arbsurf_flag) THEN
 c         CALL gpdiag_arbsurf(majr,minr)
-         CALL gpvacuum_mutuals
+         CALL gpvacuum_ideal_mutuals
       ENDIF         
       IF (angles_flag) THEN
          CALL gpdiag_angles
