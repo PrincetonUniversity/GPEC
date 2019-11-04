@@ -12,7 +12,7 @@ else ifeq ($(FC), gfortran)
 else ifeq ($(FC), pgfortran)
 	OMPFLAG ?= -mp
 else
-	OMPFLAG ?= -openmp
+	OMPFLAG ?= -qopenmp #(JKP) openmp is not supported anymore?
 endif
 
 export FFLAGS
