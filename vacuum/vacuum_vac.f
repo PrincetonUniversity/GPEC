@@ -114,7 +114,7 @@ c-----------------------------------------------------------------------
       tmth = 2*mth
       mthsq = tmth * tmth
       lmth = tmth * 2*jmax1
-      farwal = .false.
+!      farwal = .false.
       if ( (a .ge. 10.0) .or. (lspark .ne. 0) ) farwal = .true.
       j1v = nfm
       j2v = nfm

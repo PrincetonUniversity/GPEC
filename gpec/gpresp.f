@@ -524,10 +524,11 @@ c-----------------------------------------------------------------------
       CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
       CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
       
-      temp1=MATMUL(flxmats,TRANSPOSE(temp2))*mu0 ! why /mu0?
+      temp1=MATMUL(flxmats,TRANSPOSE(temp2))*mu0
       mutual_indmats=temp1
       work=0
       rwork=0      
+
       CALL zgeev('V','V',mpert,temp1,mpert,mutual_indev,
      $     vl,mpert,vr,mpert,work,lwork,rwork,info)
       mutual_indevmats=vr

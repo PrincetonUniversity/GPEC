@@ -57,7 +57,8 @@ c-----------------------------------------------------------------------
       nfm=mpert
       mtot=mpert
       call global_alloc(nths0,nfm,mtot,ntsin0)
-      IF (farwal_flag) farwal=.TRUE.
+      farwal=.false.
+      IF (farwal_flag) farwal=.true.
 c-----------------------------------------------------------------------
 c     initialization.
 c-----------------------------------------------------------------------
