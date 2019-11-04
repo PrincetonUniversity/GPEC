@@ -18,7 +18,8 @@ LIBS = \
 	-lequil \
 	-lvac \
 	-lharvest \
-	-lpentrc
+	-lpentrc \
+	-lzvode
 
 OBJS = \
 	debug.o \
@@ -46,6 +47,9 @@ harvest:
 
 lsode:
 	cd ../lsode; make
+
+zvode:
+	cd ../zvode; make
 
 equil:
 	cd ../equil; make

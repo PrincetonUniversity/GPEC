@@ -35,10 +35,14 @@ c-----------------------------------------------------------------------
       LOGICAL, PARAMETER :: diagnose_ca=.FALSE.
       CHARACTER(12) :: next
       INTEGER, PRIVATE :: istate,liw,lrw,iopt,itask,itol,mf,ix
+      INTEGER, PRIVATE :: lzw,zliw,zlrw
       INTEGER, DIMENSION(20), PRIVATE :: iwork
+      INTEGER, DIMENSION(30), PRIVATE :: ziwork
       REAL(r8), PRIVATE :: psiout
       REAL(r8), PARAMETER, PRIVATE :: eps=1e-10
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: rwork
+      REAL(r8), DIMENSION(:), POINTER, PRIVATE :: zrwork
+      COMPLEX(r8), DIMENSION(:), POINTER, PRIVATE :: zwork
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: atol
 
       INTEGER, DIMENSION(:), POINTER :: index
@@ -47,6 +51,9 @@ c-----------------------------------------------------------------------
 
       CHARACTER(4) :: sort_type="absm"
       INTEGER :: flag_count
+
+      INTEGER :: ipar
+      COMPLEX(r8) :: rpar
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -62,6 +69,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     initialize.
 c-----------------------------------------------------------------------
+ 
       IF(sing_start <= 0)THEN
          CALL ode_axis_init
       ELSE IF(sing_start <= msing)THEN
@@ -274,6 +282,13 @@ c-----------------------------------------------------------------------
       rwork(1)=psimax
       rwork(5)=psifac*1e-3
       rwork(11)=rwork(5)
+c-----------------------------------------------------------------------
+c     set up zwork arrays.
+c-----------------------------------------------------------------------
+      zliw=size(ziwork)
+      zlrw=20+neq
+      lzw=15*neq
+      ALLOCATE(zrwork(zlrw),zwork(lzw))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -928,8 +943,13 @@ c-----------------------------------------------------------------------
 c     advance differential equations.
 c-----------------------------------------------------------------------
       istep=istep+1
-      CALL lsode(sing_der,neq,u,psifac,psiout,itol,rtol,atol,
-     $     itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+c      CALL lsode(sing_der,neq,u,psifac,psiout,itol,rtol,atol,
+c     $     itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+      ipar=1
+      rpar=ifac
+      CALL zvode(sing_der_complex,neq,u,psifac,psiout,itol,rtol,atol,
+     $     itask,istate,iopt,zwork,lzw,zrwork,zlrw,ziwork,zliw,jac,mf,
+     $     rpar,ipar)      
 c-----------------------------------------------------------------------
 c     diagnose error.
 c-----------------------------------------------------------------------
