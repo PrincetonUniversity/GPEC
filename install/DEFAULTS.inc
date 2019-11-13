@@ -312,7 +312,7 @@ else
     FCDIR = .
     FCLIBS =
     FCINC = .
-    NETCDF_EXTRA_LIBS =
+#    NETCDF_EXTRA_LIBS =
 endif
 
 # SuperLU options
@@ -327,3 +327,10 @@ endif
 #ifneq some_magic_test_if_necessary_libs_are_in_path
 #	SLU_COMMAND =
 #endif
+
+# XDRAW options
+#----------------
+ifdef X11_HOME
+    X11_INC_DIR = -I$(X11_HOME)/include
+    X11_LIB_DIR = -L$(X11_HOME)/lib
+endif

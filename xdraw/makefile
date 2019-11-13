@@ -1,7 +1,8 @@
 # This is the makefile for XDRAW on Linux computers.
+include ../install/DEFAULTS.inc
 
-CFLAGS = -DUNIX -O2
-CC = cc $(CFLAGS)
+CFLAGS = -DUNIX -O2 $(X11_INC_DIR)
+CC += $(CFLAGS)
 
 .c.o:
 	$(CC) -c $*.c
@@ -9,7 +10,8 @@ CC = cc $(CFLAGS)
 # Linux and OSX standards
 LIBDIR= \
 	-L/usr/X11R6/lib64 \
-	-L/opt/local/include
+	-L/opt/local/include \
+	$(X11_LIB_DIR)
 
 LIBS = \
 	$(LIBDIR) \
