@@ -426,6 +426,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
       END SUBROUTINE dcon_run
+
       END MODULE dcon_run_mod
 c-----------------------------------------------------------------------
 c     subprogram 5. dcon_main.
@@ -441,16 +442,23 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     do it.
 c-----------------------------------------------------------------------
-      WRITE(*,*) run_lib_interface
-      CALL lib_interface_init
-      WRITE(*,*) '2 ',run_lib_interface
-      IF (run_lib_interface) THEN
-         CALL lib_interface_input
-         CALL lib_interface_set_equil
-      ENDIF
       CALL dcon_run
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
       END PROGRAM dcon_main
+
+      SUBROUTINE dcon_interface_run(eqin)
+         USE lib_interface_mod
+         USE dcon_run_mod
+         TYPE(transpeq) :: eqin
+         teq=eqin
+         CALL lib_interface_init
+         IF (run_lib_interface) THEN
+            CALL lib_interface_input
+            CALL lib_interface_set_equil
+         ENDIF
+         CALL dcon_run
+      END SUBROUTINE dcon_interface_run
+      

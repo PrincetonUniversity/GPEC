@@ -23,7 +23,9 @@ c     13. match_rpec.
 c     14. match_alloc_sol.
 c     15. match_dealloc_sol.
 c     16. match_output_solution.
-c     17. match_main.
+c     17. match_auto_connect.
+c     18. match_eqscan.
+c     19. match_main.
 c-----------------------------------------------------------------------
 c     subprogram 0. match_mod.
 c     module declarations.
@@ -38,6 +40,7 @@ c-----------------------------------------------------------------------
       USE innerc_module
       USE deltac_mod
       USE msing_mod
+      
       IMPLICIT NONE
       
       TYPE :: branch_type
@@ -81,16 +84,17 @@ c-----------------------------------------------------------------------
       END TYPE insol_type
       
       LOGICAL :: scan_flag=.FALSE.,sol_flag=.FALSE.,qscan_flag=.FALSE.,
-     $     matrix_diagnose=.FALSE.
+     $     matrix_diagnose=.FALSE.,eqscan_flag=.FALSE.
       LOGICAL :: qscan_out=.TRUE.,deltar_flag=.FALSE.,deflate=.FALSE.,
      $           deltac_flag=.FALSE.,deltaj_flag=.FALSE.,
      $           match_flag=.FALSE.
       LOGICAL :: bin_rpecsol=.FALSE.,out_rpecsol=.FALSE.
       CHARACTER(10) :: model="deltac"
-      INTEGER :: msing,totmsing,nstep=32,scan_nstep,qscan_ising=1
+      INTEGER :: msing,totmsing,nstep=32,qscan_ising=1
+      INTEGER :: scan_nstep, scan_estep
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
       REAL(r8) :: eta(20),dlim=1000,massden(20)
-      REAL(r8) :: scan_x0,scan_x1,relax_fac
+      REAL(r8) :: scan_x0,scan_x1,relax_fac,scan_e0,scan_e1
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
       COMPLEX(r8) :: initguess
@@ -129,7 +133,8 @@ c-----------------------------------------------------------------------
      $                         deltar_flag,deltac_flag,deltaj_flag,
      $                         deflate,nroot,match_flag,ising_output,
      $                         match_sol,matrix_diagnose,fulldomain,
-     $                         coil,itermax,relax_fac 
+     $                         coil,itermax,relax_fac,
+     $                         scan_e0,scan_e1,eqscan_flag,scan_estep
       NAMELIST/rmatch_output/ bin_rpecsol,out_rpecsol
       NAMELIST/nyquist_input/nyquist
 10    FORMAT(1x,"Eigenvalue=",1p,2e11.3)
@@ -217,7 +222,8 @@ c-----------------------------------------------------------------------
          coil%m2=totnsol
          CALL match_rpec
          CALL program_stop("RPEC termination.")
-      ENDIF      
+      ENDIF
+      IF(eqscan_flag) CALL match_eqscan
 c-----------------------------------------------------------------------
 c     scan eigen value (Q) for different inner models.
 c-----------------------------------------------------------------------
@@ -247,11 +253,11 @@ c-----------------------------------------------------------------------
             WRITE(*,30) ising,zi_in(ising),zi_in(ising)*SQRT(10.0)
             WRITE(out_unit,30)ising,zi_in(ising),zi_in(ising)*SQRT(10.0)
          ENDDO         
-c         CALL match_solution(eigval)
-c         DO ising=1,msing
-c            WRITE(*,40) ising,zo_out(ising),zo_out(ising)/10
+         CALL match_solution(eigval)
+         DO ising=1,msing
+            WRITE(*,40) ising,zo_out(ising),zo_out(ising)/10
 c            WRITE(out_unit,40) ising,zo_out(ising),zo_out(ising)/10
-c         ENDDO
+         ENDDO
          CALL ascii_close(match_unit)
          CALL program_stop("Normal termination for solution match.")
       ENDIF
@@ -423,7 +429,8 @@ c-----------------------------------------------------------------------
          CASE ("deltac")
             CALL deltac_run(restype(ising),guess,deltar(ising,:),
      $                      deltaf(ising,:,:))
-            zi_in(ising)=zi_deltac
+c            zi_in(ising)=zi_deltac
+            zi_in(ising)=0
             q_in(ising)=q_deltac
             sol=0
          END SELECT
@@ -1810,10 +1817,80 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN      
       END SUBROUTINE match_auto_connect
+
+c-----------------------------------------------------------------------
+c     subprogram 18. match_eqscan.
+c     scan e and q
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------            
+      SUBROUTINE match_eqscan
+      INTEGER :: istep,kstep
+      REAL(r8) :: log_scan_x0,qstep,qlog,estep,e_scan
+      COMPLEX(r8) :: q_scan
+      COMPLEX(r8), DIMENSION(2) :: deltac,deltar
+      COMPLEX(r8), DIMENSION(2,2) :: df
+      COMPLEX(r8), DIMENSION(4,2) :: sol
+      TYPE(resist_type):: rt
+c-----------------------------------------------------------------------
+c     open output files.
+c-----------------------------------------------------------------------
+      OPEN(UNIT=bin2_unit,FILE="scaneq.bin",STATUS="REPLACE",
+     $     FORM="UNFORMATTED")
+      rt%e=0
+      rt%f=0
+      rt%g=0
+      rt%h=0
+      rt%k=0
+      rt%m=1.0
+      rt%v1=1.0
+      rt%taua=1.0
+      rt%taur=1.0
+      rt%ising=1    
+c-----------------------------------------------------------------------
+c     start loops over E and Q.
+c-----------------------------------------------------------------------
+      log_scan_x0=log10(scan_x0)
+      qstep=(log10(scan_x1)-log_scan_x0)/scan_nstep
+      estep=(scan_e1-scan_e0)/scan_estep
+      DO kstep=0,scan_estep
+         e_scan=scan_e0 + estep*kstep
+         rt%e=e_scan
+         DO istep=0,scan_nstep
+            qlog=log_scan_x0+istep*qstep
+            q_scan=10**(qlog)
+c-----------------------------------------------------------------------
+c     run deltac code and record output.
+c-----------------------------------------------------------------------
+            CALL deltac_run(rt,q_scan,deltac,df)
+            CALL deltar_run(rt,q_scan,deltar,sol)
+c            WRITE(out2_unit,10)REAL(qlog),
+c     $            mylog(deltac(1)),REAL(deltac(2))
+c            WRITE(bin2_unit)REAL(qlog,4),
+c     $            mylog(deltac(1)),REAL(deltac(2),4)
+            WRITE(bin2_unit)REAL(qlog,4),
+     $            REAL(deltac(1),4),REAL(IMAG(deltac(1)),4),
+     $            REAL(deltac(2),4),REAL(IMAG(deltac(2)),4),
+     $            REAL(deltar(1),4),REAL(IMAG(deltar(1)),4),
+     $            REAL(deltar(2),4),REAL(IMAG(deltar(2)),4)
+
+         ENDDO
+         WRITE(bin2_unit)
+      ENDDO
+c-----------------------------------------------------------------------
+c     close output files.
+c-----------------------------------------------------------------------
+         CLOSE(UNIT=bin2_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      CALL program_stop("Normal termination for q scan.")
+      END SUBROUTINE match_eqscan
       
       END MODULE match_mod
 c-----------------------------------------------------------------------
-c     subprogram 18. match_main.
+c     subprogram 19. match_main.
 c     trivial main program.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------

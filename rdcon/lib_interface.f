@@ -6,10 +6,10 @@ c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
 c     0. lib_interface_mod.
-c     1. lib_interface_input.
+c     1. lib_interface_init.
 c     2. lib_interface_set_equil.
 c-----------------------------------------------------------------------
-c     subprogram 0. toolbox_mod.
+c     subprogram 0. lib_interface_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -20,8 +20,15 @@ c-----------------------------------------------------------------------
       USE global_mod
       USE local_mod
       USE inverse_mod
-
       IMPLICIT NONE
+
+      TYPE transpeq         
+      INTEGER :: nsm1, ntm1     !R_minor, poloidal angle dimensions respectively
+      INTEGER :: nr, nz         !Cylindrical dims for inverse equilibrium
+      REAL(r8), DIMENSION(:),   POINTER :: psis, qs, fs, ps  !Flux, safety factor, R*B_T, pressure (0:nsm1)
+      REAL(r8), DIMENSION(:,:), POINTER :: rg, zg            !Cylindrical (R,Z) coords (0:nsm1,0:ntm1)
+      REAL(r8), DIMENSION(:,:), POINTER :: psirz             !Inverse equilibrium psi(R,z) (1:nr,1:nz)
+      END TYPE transpeq
 
       TYPE :: lib_interface_data
       REAL(r8) :: time
@@ -30,24 +37,106 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rg,zg
       END TYPE lib_interface_data
 
+      TYPE(transpeq) :: teq
       TYPE(lib_interface_data) :: lib_input
+
+      PUBLIC :: teq
 
       LOGICAL :: run_lib_interface
       CONTAINS
+c-----------------------------------------------------------------------
+c     subprogram 1. lib_interface_init.
+c     init interface for external call.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
       SUBROUTINE lib_interface_init()
          run_lib_interface=.TRUE.
       END SUBROUTINE lib_interface_init
-
+c-----------------------------------------------------------------------
+c     subprogram 2. lib_interface_input.
+c     set equilibrium input to prepare DCON run.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
       SUBROUTINE lib_interface_input()
+         CALL lib_interface_input_memory()
 C         CALL lib_interface_input_reorder()
 C         CALL lib_interface_input_1()
-         CALL lib_interface_input_chease()
-      
+C         CALL lib_interface_input_chease()
       END SUBROUTINE lib_interface_input
+c-----------------------------------------------------------------------
+c     subprogram 3. lib_interface_set_equil.
+c     set equilibrium spline to prepare DCON run.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
       SUBROUTINE lib_interface_set_equil()
-C         CALL lib_interface_set_equil_transp()
-         CALL lib_interface_set_equil_chease()
+         CALL lib_interface_set_equil_transp()
+C         CALL lib_interface_set_equil_chease()
       END SUBROUTINE lib_interface_set_equil
+
+
+      SUBROUTINE lib_interface_input_memory()
+      INTEGER :: isurf,itheta,ntheta,nsurf,nr,nz,idx,idx1,dir
+      REAL(r8) :: time,maxr
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: norpsi,psi,t,mu0p,q
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq,jaceq,g12l,rg,zg
+c-----------------------------------------------------------------------
+c     open file and read sizes.
+c-----------------------------------------------------------------------
+
+      lib_input%time=0
+      lib_input%ntheta=teq%nsm1
+      lib_input%nsurf=teq%ntm1
+      ntheta=lib_input%ntheta
+      nsurf=lib_input%nsurf
+c-----------------------------------------------------------------------
+c     allocate arrays.
+c-----------------------------------------------------------------------
+      ALLOCATE(lib_input%psis(nsurf),lib_input%ps(nsurf),
+     $         lib_input%qs(nsurf),lib_input%fs(nsurf))
+      ALLOCATE(lib_input%rg(nsurf,ntheta),
+     $         lib_input%zg(nsurf,ntheta))
+      ALLOCATE(rg(nsurf,ntheta),zg(nsurf,ntheta))
+c-----------------------------------------------------------------------
+c     assign profile
+c-----------------------------------------------------------------------
+      lib_input%psis=teq%psis
+      lib_input%ps=teq%ps
+      lib_input%qs=teq%qs
+      lib_input%fs=teq%fs
+      rg=teq%rg
+      zg=teq%zg
+
+      maxr=rg(nsurf,1)
+      idx=1
+      DO itheta=2,ntheta
+         IF (rg(nsurf,itheta)>maxr) THEN 
+            maxr=rg(nsurf,itheta)
+            idx=itheta
+         ENDIF
+      ENDDO
+      idx1=MOD(idx,ntheta)+1
+      IF (zg(nsurf,idx1)>zg(nsurf,idx)) THEN
+         dir=1
+      ELSE
+         dir=-1
+      ENDIF
+      DO itheta=0,ntheta-1
+         idx1=mod(idx-1+itheta*dir+ntheta,ntheta)+1
+         lib_input%rg(:,itheta+1)=rg(:,idx1)
+         lib_input%zg(:,itheta+1)=zg(:,idx1)
+      ENDDO
+      DEALLOCATE(rg,zg)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE lib_interface_input_memory
 
       SUBROUTINE lib_interface_input_reorder()
       INTEGER :: isurf,itheta,ntheta,nsurf,nr,nz,idx,idx1,dir
@@ -57,12 +146,11 @@ C         CALL lib_interface_set_equil_transp()
 c-----------------------------------------------------------------------
 c     open file and read sizes.
 c-----------------------------------------------------------------------
-10    FORMAT(1p,4e20.12)
-      CALL ascii_open(in_unit,"dconeq_inv.dat","OLD")
+10    FORMAT(1p,3e24.16)
+      CALL ascii_open(in_unit,"dconeq_tftr.dat","OLD")
 c      OPEN(in_unit,"dconeq.dat","OLD")
       READ(in_unit,'(1e14.6)') time
-      READ(in_unit,'(I7)') ntheta
-      READ(in_unit,'(I7)') nsurf
+      READ(in_unit,'(2I7)') ntheta,nsurf
       READ(in_unit,'(2I7)') nr,nz
       lib_input%time=time
       lib_input%ntheta=ntheta
@@ -78,38 +166,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read local arrays and close file.
 c-----------------------------------------------------------------------
-c      DO isurf=1,nsurf
-c         READ(in_unit,10) lib_input%psis(isurf)
-c      ENDDO
       READ(in_unit,10) (lib_input%psis(isurf),isurf=1,nsurf)
-c      DO isurf=1,nsurf
-c         READ(in_unit,10) lib_input%ps(isurf)
-c      ENDDO
       READ(in_unit,10) (lib_input%ps(isurf),isurf=1,nsurf)
-c      DO isurf=1,nsurf
-c         READ(in_unit,10) lib_input%qs(isurf)
-c      ENDDO
       READ(in_unit,10) (lib_input%qs(isurf),isurf=1,nsurf)
-
-c      DO isurf=1,nsurf
-c         READ(in_unit,10) lib_input%fs(isurf)
-c      ENDDO
       READ(in_unit,10) (lib_input%fs(isurf),isurf=1,nsurf)
-
-c      DO isurf=1,nsurf
-c         DO itheta=1,ntheta
-c            READ(in_unit,10) lib_input%rg(isurf,itheta)
-c         ENDDO
-c      ENDDO
-       READ(in_unit,10) 
+      READ(in_unit,10) 
      $     (rg(1:nsurf,itheta),itheta=1,ntheta)
-
-c      DO isurf=1,nsurf
-c         DO itheta=1,ntheta
-c            READ(in_unit,10) lib_input%zg(isurf,itheta)
-c         ENDDO
-c      ENDDO
-       READ(in_unit,10) 
+      READ(in_unit,10) 
      $     (zg(1:nsurf,itheta),itheta=1,ntheta)
 
       CALL ascii_close(in_unit)
@@ -139,7 +202,70 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE lib_interface_input_reorder
 
+      SUBROUTINE lib_interface_input_reorder_good()
+      INTEGER :: isurf,itheta,ntheta,nsurf,nr,nz,idx,idx1,dir
+      REAL(r8) :: time,maxr
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: norpsi,psi,t,mu0p,q
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq,jaceq,g12l,rg,zg
+c-----------------------------------------------------------------------
+c     open file and read sizes.
+c-----------------------------------------------------------------------
+10    FORMAT(1p,4e20.12)
+      CALL ascii_open(in_unit,"dconeq_inv.dat","OLD")
+c      OPEN(in_unit,"dconeq.dat","OLD")
+      READ(in_unit,'(1e14.6)') time
+      READ(in_unit,'(I7)') ntheta
+      READ(in_unit,'(I7)') nsurf
+      READ(in_unit,'(2I7)') nr,nz
+      lib_input%time=time
+      lib_input%ntheta=ntheta
+      lib_input%nsurf=nsurf
+c-----------------------------------------------------------------------
+c     allocate arrays.
+c-----------------------------------------------------------------------
+      ALLOCATE(lib_input%psis(nsurf),lib_input%ps(nsurf),
+     $         lib_input%qs(nsurf),lib_input%fs(nsurf))
+      ALLOCATE(lib_input%rg(nsurf,ntheta),
+     $         lib_input%zg(nsurf,ntheta))
+      ALLOCATE(rg(nsurf,ntheta),zg(nsurf,ntheta))
+c-----------------------------------------------------------------------
+c     read local arrays and close file.
+c-----------------------------------------------------------------------
+      READ(in_unit,10) (lib_input%psis(isurf),isurf=1,nsurf)
+      READ(in_unit,10) (lib_input%ps(isurf),isurf=1,nsurf)
+      READ(in_unit,10) (lib_input%qs(isurf),isurf=1,nsurf)
+      READ(in_unit,10) (lib_input%fs(isurf),isurf=1,nsurf)
+      READ(in_unit,10) 
+     $     (rg(1:nsurf,itheta),itheta=1,ntheta)
+      READ(in_unit,10) 
+     $     (zg(1:nsurf,itheta),itheta=1,ntheta)
 
+      CALL ascii_close(in_unit)
+      maxr=rg(nsurf,1)
+      idx=1
+      DO itheta=2,ntheta
+         IF (rg(nsurf,itheta)>maxr) THEN 
+            maxr=rg(nsurf,itheta)
+            idx=itheta
+         ENDIF
+      ENDDO
+      idx1=MOD(idx,ntheta)+1
+      IF (zg(nsurf,idx1)>zg(nsurf,idx)) THEN
+         dir=1
+      ELSE
+         dir=-1
+      ENDIF
+      DO itheta=0,ntheta-1
+         idx1=mod(idx-1+itheta*dir+ntheta,ntheta)+1
+         lib_input%rg(:,itheta+1)=rg(:,idx1)
+         lib_input%zg(:,itheta+1)=zg(:,idx1)
+      ENDDO
+      DEALLOCATE(rg,zg)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE lib_interface_input_reorder_good
 
 
 
@@ -152,20 +278,20 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE lib_interface_input_1()
-      INTEGER :: isurf,itheta,ntheta,nsurf
+      INTEGER :: isurf,itheta,ntheta,nsurf,nr,nz
       REAL(r8) :: time
       REAL(r8), DIMENSION(:), ALLOCATABLE :: norpsi,psi,t,mu0p,q
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: req,zeq,jaceq,g12l
 c-----------------------------------------------------------------------
 c     open file and read sizes.
 c-----------------------------------------------------------------------
-10    FORMAT(1p,5e14.6)
-c10    FORMAT(1e14.6)
-      CALL ascii_open(in_unit,"dconeq.dat","OLD")
+10    FORMAT(1p,4e20.12)
+      CALL ascii_open(in_unit,"dconeq_inv.dat","OLD")
 c      OPEN(in_unit,"dconeq.dat","OLD")
       READ(in_unit,'(1e14.6)') time
       READ(in_unit,'(I7)') ntheta
       READ(in_unit,'(I7)') nsurf
+      READ(in_unit,'(2I7)') nr,nz
       lib_input%time=time
       lib_input%ntheta=ntheta
       lib_input%nsurf=nsurf
@@ -179,39 +305,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read local arrays and close file.
 c-----------------------------------------------------------------------
-c      DO isurf=1,nsurf
-c         READ(in_unit,10) lib_input%psis(isurf)
-c      ENDDO
       READ(in_unit,10) (lib_input%psis(isurf),isurf=1,nsurf)
-c      DO isurf=1,nsurf
-c         READ(in_unit,10) lib_input%ps(isurf)
-c      ENDDO
       READ(in_unit,10) (lib_input%ps(isurf),isurf=1,nsurf)
-c      DO isurf=1,nsurf
-c         READ(in_unit,10) lib_input%qs(isurf)
-c      ENDDO
       READ(in_unit,10) (lib_input%qs(isurf),isurf=1,nsurf)
-
-c      DO isurf=1,nsurf
-c         READ(in_unit,10) lib_input%fs(isurf)
-c      ENDDO
       READ(in_unit,10) (lib_input%fs(isurf),isurf=1,nsurf)
+      READ(in_unit,10) 
+     $     (lib_input%rg(1:nsurf,itheta),itheta=1,ntheta)
+      READ(in_unit,10) 
+     $     (lib_input%zg(1:nsurf,itheta),itheta=1,ntheta)
 
-c      DO isurf=1,nsurf
-c         DO itheta=1,ntheta
-c            READ(in_unit,10) lib_input%rg(isurf,itheta)
-c         ENDDO
-c      ENDDO
-       READ(in_unit,10) 
-     $     (lib_input%rg(isurf,1:ntheta),isurf=1,nsurf)
-
-c      DO isurf=1,nsurf
-c         DO itheta=1,ntheta
-c            READ(in_unit,10) lib_input%zg(isurf,itheta)
-c         ENDDO
-c      ENDDO
-       READ(in_unit,10) 
-     $     (lib_input%zg(isurf,1:ntheta),isurf=1,nsurf)
 
       CALL ascii_close(in_unit)
 

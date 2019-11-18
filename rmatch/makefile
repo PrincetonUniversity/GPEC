@@ -6,7 +6,7 @@ F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
 
 .f.o:
-	$(F90) -c $*.f
+	$(F90) -g -c $*.f
 
 LIBDIR = ../lib
 
@@ -21,9 +21,12 @@ OBJS = \
 	deltar.o \
 	inner.o  \
 	jacobi.o \
+        inps.o \
+        inpso.o \
 	deltac.o \
 	msing.o \
-	match.o
+	match.o 
+
 
 all: rmatch
 
@@ -40,7 +43,9 @@ rmatch: $(OBJS)
 msing.o: local.o
 gamma.o: local.o
 deltar.o: gamma.o
-deltac.o: jacobi.o
+inps.o:  local.o
+inpso.o: inps.o
+deltac.o: jacobi.o inpso.o
 inner.o: deltac.o
 match.o: deltar.o deltac.o inner.o msing.o
 

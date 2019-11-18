@@ -1,6 +1,6 @@
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp -g
+FFLAGS = -qopenmp -g -fPIC
 IFLAGS = -I../equil -I$(MATHINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
@@ -31,7 +31,7 @@ OBJS = \
 	ode.o \
 	free.o \
 	resist.o \
-        lib_interface.o \
+     lib_interface.o \
 	dcon.o
 
 all: rdcon
@@ -40,9 +40,8 @@ equil:
 	cd ../equil; make
 
 rdcon: $(OBJS)
-	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
-	mkdir -p ../bin
-	cp -f rdcon ../bin
+	ifort -o dcon.so -shared *.o
+#	ar -r dcon.a *.o
 
 # dependencies
 

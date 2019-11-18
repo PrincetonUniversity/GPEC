@@ -22,6 +22,11 @@ c     13. sing1_vmat_d.
 c     14. sing1_solve_d.
 c     15. sing1_get_ua_d.
 c     16. sing1_get_dua_d.
+c     17. sing1_get_ua_d_cut.
+c     18. sing1_get_ua_cut.
+c     19. sing1_delta.
+c     20. sing1_kxscan.
+c     21. sing1_xmin.
 c-----------------------------------------------------------------------
 c     subprogram 0. sing1_mod.
 c     module declarations.
@@ -61,7 +66,6 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: ising
 
-      CHARACTER(5), DIMENSION(2) :: side=(/"left ","right"/)
       INTEGER :: ipert0,ipert,jpert,kpert,isol,iqty,info,msol,m,i,j,n,
      $     fac0,fac1
       INTEGER, DIMENSION(mpert) :: mvec
@@ -87,7 +91,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     evaluate cubic splines.
 c-----------------------------------------------------------------------
-      IF(.TRUE.) THEN
+      IF(1) THEN
          kpot=>kmats
          gpot=>gmats
       ELSE
@@ -438,7 +442,6 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: ising
 
-      CHARACTER(5), DIMENSION(2) :: side=(/"left ","right"/)
       INTEGER :: ipert0,ipert,k
       REAL(r8) :: psifac,di,di0,q,q1,rho
       REAL(r8), PARAMETER :: half=.5_r8
@@ -490,8 +493,8 @@ c-----------------------------------------------------------------------
       singp%alpha=SQRT(-CMPLX(singp%di))
 c      singp%degen=.TRUE.
       singp%degen=ABS(di+0.25_r8) < degen_tol
-      WRITE(*,*)'SINGP%DEGEN=',singp%degen,'di+0.25=',di+0.25_r8
-      WRITE(*,*) 'degen_tol=',degen_tol
+c$$$      WRITE(*,*)'SINGP%DEGEN=',singp%degen,'di+0.25=',di+0.25_r8
+c$$$      WRITE(*,*) 'degen_tol=',degen_tol
 c-----------------------------------------------------------------------
 c     reset order and compute higher-order terms.
 c-----------------------------------------------------------------------
@@ -712,7 +715,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE sing1_der(neq,psifac,u,du)
 
-      INTEGER, INTENT(IN) :: neq
+      INTEGER, INTENT(INOUT) :: neq
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8), DIMENSION(mpert,msol,2), INTENT(IN) :: u
       COMPLEX(r8), DIMENSION(mpert,msol,2), INTENT(OUT) :: du
@@ -726,6 +729,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     cubic spline evaluation.
 c-----------------------------------------------------------------------
+      neq=neq
       CALL spline_eval(sq,psifac,0)
       CALL cspline_eval(fmats,psifac,0)
       CALL cspline_eval(gmats,psifac,0)
@@ -943,14 +947,14 @@ c-----------------------------------------------------------------------
       WRITE(debug_unit,20)(i,mat2(i,:),i=1,2)
       WRITE(debug_unit,10)(TRIM(name),iqty,TRIM(name),iqty,iqty=1,2)
       WRITE(debug_unit,'(1p,2(a,e10.3),a,l1/)')
-     $     " ABS(detfac) =",ABS(detfac),", degen_tol =",degen_tol,
+     $     " ABS(detfac) = ",ABS(detfac),", degen_tol = ",degen_tol,
      $     ", degen = ",degen
 c-----------------------------------------------------------------------
 c     write output.
 c-----------------------------------------------------------------------
       WRITE(unit,'(a/)')TRIM(name)//":"
       DO iorder=0,norder
-         WRITE(debug_unit,'(a,i2,a,1p,e10.3)')" iorder =",iorder,
+         WRITE(debug_unit,'(a,i2,a,1p,e10.3)')" iorder = ",iorder,
      $        ", MAXVAL("//TRIM(name)//") = ",
      $        MAXVAL(ABS(mat(:,:,:,iorder)))
          WRITE(debug_unit,30)(TRIM(name),iqty,TRIM(name),iqty,iqty=1,2)
@@ -1000,9 +1004,9 @@ c-----------------------------------------------------------------------
       WRITE(debug_unit,'(1p,2(a,e10.3),a,2i3)')" q = ",singp%q,
      $     ", di = ",singp%di,", r2 = ",singp%r2
       WRITE(debug_unit,'(1p,3(a,e10.3)/)')
-     $     " alpha =",REAL(singp%alpha),
-     $     ", alpha+0.5 =",REAL(singp%alpha)+.5,
-     $     ", alpha-0.5 =",REAL(singp%alpha)-.5
+     $     " alpha = ",REAL(singp%alpha),
+     $     ", alpha+0.5 = ",REAL(singp%alpha)+.5,
+     $     ", alpha-0.5 = ",REAL(singp%alpha)-.5
 c-----------------------------------------------------------------------
 c     write matrices.
 c-----------------------------------------------------------------------
@@ -1031,7 +1035,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: ising
 
       INTEGER, PARAMETER :: nz=10
-      INTEGER :: isol,iqty,iz,neq=1,mz,msol_old,r1
+      INTEGER :: isol,iqty,iz,mz,msol_old,r1
       REAL(r8) :: psi0,psi,psim,psip,z,zlog,dzlog,singfac,singlog
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2,-1:1) :: u
       COMPLEX(r8), DIMENSION(mpert,2*mpert,2,3) :: du
@@ -1127,7 +1131,6 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: ising
       COMPLEX(r8), DIMENSION(:,:,:,0:), INTENT(OUT) :: amat,bmat
       
-      CHARACTER(5), DIMENSION(2) :: side=(/"left ","right"/)
       INTEGER :: k,k1,info,order,r1,ipert,jpert
       INTEGER, DIMENSION(2) :: ipiv
       INTEGER, DIMENSION(2*mpert) :: p
@@ -1229,7 +1232,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:,0:), INTENT(IN) :: matrix
       COMPLEX(r8), DIMENSION(:,:,:,0:), INTENT(INOUT) :: vector
 
-      INTEGER :: l,info,ipert,jpert
+      INTEGER :: l,info
       INTEGER, DIMENSION(2*mpert) :: ipiv
       REAL(r8), PARAMETER :: half=.5
       COMPLEX(r8), DIMENSION(2*mpert,2) :: vec
@@ -1280,7 +1283,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8), DIMENSION(:,:,:), INTENT(INOUT) :: ua
 
-      INTEGER :: iorder,ipert,r1
+      INTEGER :: iorder,r1
       INTEGER, DIMENSION(:), POINTER :: r2
       COMPLEX(r8), PARAMETER :: half=.5_r8,zero=0,one=1
       COMPLEX(r8) :: z,sqrtfac
@@ -1348,12 +1351,12 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8), DIMENSION(:,:,:), INTENT(OUT) :: dua
 
-      INTEGER :: iorder,ipert,r1,i
+      INTEGER :: r1,iorder
       INTEGER, DIMENSION(:), POINTER :: r2
       COMPLEX(r8), PARAMETER :: half=.5_r8,zero=0,one=1
       COMPLEX(r8) :: z,sqrtfac
       COMPLEX(r8), DIMENSION(2,2) :: b0mat,b0exp,smat,mmat2,
-     $     tmat,xmat,zdb0exp,zdtmat,shear,zdshear
+     $     tmat,zdb0exp,zdtmat,shear,zdshear
       COMPLEX(r8), DIMENSION(mpert,2,2,0:2*sing(ising)%order) :: vmat
       COMPLEX(r8), DIMENSION(2*mpert,2) :: xa
       COMPLEX(r8), DIMENSION(2*mpert,2,4) :: zdxai
@@ -1453,7 +1456,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8), DIMENSION(:,:,:), INTENT(INOUT) :: ua
 
-      INTEGER :: iorder,ipert,r1
+      INTEGER :: r1
       INTEGER, DIMENSION(:), POINTER :: r2
       COMPLEX(r8), PARAMETER :: half=.5_r8,zero=0,one=1
       COMPLEX(r8) :: z,sqrtfac
@@ -1521,7 +1524,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8), DIMENSION(:,:,:), INTENT(OUT) :: ua
 
-      INTEGER :: iorder,isol
+      INTEGER :: isol
       INTEGER, DIMENSION(:), POINTER :: r1,r2
       COMPLEX(r8) :: pfac,z,sqrtfac,phase
       COMPLEX(r8), DIMENSION(:,:,:,:), POINTER :: vmat
@@ -1569,5 +1572,192 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing1_get_ua_cut
+c-----------------------------------------------------------------------
+c     subprogram 19. sing1_delta.
+c     computes delta.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE sing1_delta(ising,psifac,delta)
+      
+      INTEGER, INTENT(IN) :: ising
+      REAL(r8), INTENT(IN) :: psifac
+      REAL(r8), DIMENSION(2), INTENT(OUT) :: delta
 
+      INTEGER :: j,ipert0,neq=1
+      INTEGER :: msol_save
+      INTEGER :: range(2)
+      REAL(r8), DIMENSION(0:2) :: norm
+      COMPLEX(r8), DIMENSION(mpert,2,2,0:2) ::matvec
+      COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua,dua
+      COMPLEX(r8), DIMENSION(mpert,2,2) :: du
+      TYPE(sing_type), POINTER :: singp
+c-----------------------------------------------------------------------
+c     choose singular solutions.
+c-----------------------------------------------------------------------
+      singp => sing(ising)
+      ipert0=singp%m-mlow+1
+      range=(/ipert0,ipert0+mpert/)
+      msol_save=msol
+      msol=2
+c-----------------------------------------------------------------------
+c     compute ua, dua, and du.
+c-----------------------------------------------------------------------
+      CALL sing1_get_ua(ising,psifac,ua)
+      CALL sing1_get_dua(ising,psifac,dua)
+      CALL sing1_der(neq,psifac,ua(:,range,:),du)
+c-----------------------------------------------------------------------
+c     compute matvec.
+c-----------------------------------------------------------------------
+      matvec(:,:,:,1)=dua(:,range,:)
+      matvec(:,:,:,2)=-du
+      matvec(:,:,:,0)=SUM(matvec(:,:,:,1:2),4)
+c-----------------------------------------------------------------------
+c     compute delta.
+c-----------------------------------------------------------------------
+      DO j=1,2
+         norm=MAXVAL(MAXVAL(ABS(matvec(:,j,:,:)),1),1)
+         delta(j)=norm(0)/MAXVAL(norm(1:2))
+      ENDDO
+      msol=msol_save
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE sing1_delta 
+c-----------------------------------------------------------------------
+c     subprogram 20. sing1_kxscan.
+c     tests convergence of differential equation.
+c----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE sing1_kxscan
+
+      INTEGER :: ua_bin_unit=51
+      INTEGER :: klow,khigh,kmax,dkmax,ixlog,mxlog,nxlog,ik,nk,
+     $     ising,order_save
+      REAL(r8) :: xlogmin,xlogmax,xmax,xlog,dxlog,x,dxfac,psifac
+      REAL(r8), DIMENSION(2) :: delta
+      TYPE(sing_type), POINTER :: singp
+
+      NAMELIST/kxscan_list/ising,klow,khigh,dkmax,xlogmin,xlogmax,mxlog
+c-----------------------------------------------------------------------
+c     read input.
+c-----------------------------------------------------------------------
+      OPEN(UNIT=in_unit,FILE="dcon.in",STATUS="OLD")
+      READ(in_unit,NML=kxscan_list)
+      CLOSE(UNIT=in_unit)
+c-----------------------------------------------------------------------
+c     set pointer and save order.
+c-----------------------------------------------------------------------
+      singp => sing(ising)
+      order_save=singp%order
+c-----------------------------------------------------------------------
+c     prepare for scans.
+c-----------------------------------------------------------------------
+      dxlog=-one/mxlog
+      nxlog=(xlogmax-xlogmin)*mxlog
+      dxfac=10**dxlog
+      xmax=10**xlogmax
+      nk=(khigh-klow)/dkmax
+      kmax=klow
+c-----------------------------------------------------------------------
+c     scans over kmax and x.
+c-----------------------------------------------------------------------
+      OPEN(UNIT=ua_bin_unit,FILE="kxscan.bin",STATUS="REPLACE",
+     $     FORM="UNFORMATTED")
+      DO ik=0,nk
+         sing_order=kmax
+         CALL sing1_vmat(ising)
+         x=xmax
+         xlog=xlogmax
+         DO ixlog=0,nxlog
+            psifac=singp%psifac+x
+            CALL sing1_delta(ising,psifac,delta)
+            WRITE(ua_bin_unit)REAL(xlog,4),REAL(LOG10(delta),4)
+            xlog=xlog+dxlog
+            x=x*dxfac
+         ENDDO
+         WRITE(ua_bin_unit)
+         DEALLOCATE(singp%vmat,singp%mmat)
+         kmax=kmax+dkmax
+      ENDDO
+      CLOSE(UNIT=ua_bin_unit)
+c-----------------------------------------------------------------------
+c     restore order.
+c-----------------------------------------------------------------------
+      singp%order=order_save
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE sing1_kxscan
+c-----------------------------------------------------------------------
+c     subprogram 21. sing1_xmin.
+c     computes xmin.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE sing1_xmin(ising,eps,xmin)
+
+      INTEGER, INTENT(IN) :: ising
+      REAL(r8), DIMENSION(0:2), INTENT(IN) :: eps
+      REAL(r8), DIMENSION(0:2), INTENT(OUT) :: xmin
+
+      LOGICAL, DIMENSION(0:1) :: set
+      CHARACTER(64) :: message
+      REAL(r8), PARAMETER :: xlogmax=-1,dxlog=-.01
+      INTEGER :: ixlog,nxlog=5000,i
+      REAL(r8) :: xlog,x,dxfac,psifac
+      REAL(r8), DIMENSION(2) :: delta
+      TYPE(sing_type), POINTER :: singp
+c-----------------------------------------------------------------------
+c     prepare for scan.
+c-----------------------------------------------------------------------
+      set=.TRUE.
+      dxfac=10**dxlog
+      xlog=xlogmax
+      x=10**xlog
+      ixlog=0
+      singp => sing(ising)
+c-----------------------------------------------------------------------
+c     start loops over x.
+c-----------------------------------------------------------------------
+      DO
+         psifac=singp%psifac+x
+         CALL sing1_delta(ising,psifac,delta)
+         DO i=0,1
+            IF(MAXVAL(delta) < eps(i) .AND. set(i))THEN
+               xmin(i)=x
+               set(i)=.FALSE.
+            ENDIF
+         ENDDO
+         IF(MAXVAL(delta) < eps(2))THEN
+            xmin(2)=x
+            EXIT
+         ENDIF
+c-----------------------------------------------------------------------
+c     abort if ixlog = nxlog.
+c-----------------------------------------------------------------------
+         IF(ixlog == nxlog)THEN
+            WRITE(message,'(a,g0,a,es10.3)')
+     $           "sing1_xmin: abort with ixlog = nxlog = ",nxlog,
+     $           ", xlog = ",xlog
+            CALL program_stop(message)
+         ENDIF
+c-----------------------------------------------------------------------
+c     finish loop over x.
+c-----------------------------------------------------------------------
+         ixlog=ixlog+1
+         xlog=xlog+dxlog
+         x=x*dxfac
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE sing1_xmin
       END MODULE sing1_mod

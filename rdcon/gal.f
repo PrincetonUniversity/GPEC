@@ -94,6 +94,8 @@ c-----------------------------------------------------------------------
       INTEGER, PRIVATE :: jsing,np=3
       REAL(r8) :: dx0,dx1,dx2,pfac
       REAL(r8) :: gal_tol=1e-10
+      LOGICAL :: gal_xmin_flag = .FALSE.
+      REAL(r8), DIMENSION(0:2) :: gal_eps_xmin = 1e-6
       TYPE(cell_type), POINTER, PRIVATE :: cell
       TYPE(coil_type), SAVE, PRIVATE :: coil
       CONTAINS
@@ -331,6 +333,7 @@ c-----------------------------------------------------------------------
       TYPE(interval_type), INTENT(INOUT) :: intvl
 
       INTEGER :: ixmin,ixmax,ix,mx
+      REAL(r8), DIMENSION(0:2) :: myxmin
       REAL(r8) :: x0,x1,xm,dx,nq1
 c-----------------------------------------------------------------------
 c     set default extra.
@@ -339,6 +342,14 @@ c-----------------------------------------------------------------------
          intvl%cell(ix)%extra="none"
          intvl%cell(ix)%etype="none"
       ENDDO
+      IF (ising>0 .AND. gal_xmin_flag .AND. sing1_flag) THEN
+         CALL sing1_xmin(ising,gal_eps_xmin,myxmin)
+         WRITE(*,*) "ising=",ising
+         WRITE(*,*) "xmin(0)=",myxmin(0)
+         WRITE(*,*) "xmin(1)=",myxmin(1)
+         WRITE(*,*) "xmin(2)=",myxmin(2)
+         WRITE(*,*) "=================="
+      ENDIF
 c-----------------------------------------------------------------------
 c     set lower bound.
 c-----------------------------------------------------------------------
@@ -1661,7 +1672,7 @@ c-----------------------------------------------------------------------
       NAMELIST/gal_input/nx,nq,dx0,dx1,dx2,pfac,diagnose_map,solver,
      $     diagnose_grid,diagnose_lsode,ndiagnose,diagnose_integrand,
      $     diagnose_mat,gal_tol,dx1dx2_flag,cutoff,prefac,dpsi_intvl,
-     $     dpsi1_intvl
+     $     dpsi1_intvl,gal_xmin_flag,gal_eps_xmin
       NAMELIST /gal_output/interp_np,restore_uh,restore_us,
      $     restore_ul,bin_delmatch,out_galsol,bin_galsol,b_flag,coil,
      $     bin_coilsol

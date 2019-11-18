@@ -35,9 +35,24 @@ c-----------------------------------------------------------------------
       INTEGER :: out2_unit=22
       INTEGER :: out3_unit=23
 
+      INTEGER :: grid_out_unit=24
+
       INTEGER :: bin1_unit=31
       INTEGER :: bin2_unit=32
       INTEGER :: bin3_unit=33
       
       INTEGER :: match_unit=41
+      INTEGER :: array_unit=42
+
+      INTEGER :: lyap_unit=51
+      INTEGER :: jmat_unit=52
+      INTEGER :: split_unit=53
+      INTEGER :: coefs_unit=54
+      INTEGER :: delta_out_unit=55
+      INTEGER :: delta_bin_unit=56
+
+      INTEGER :: deltac_out_unit=57
+      INTEGER :: deltac_bin_unit=58
+      INTEGER :: inpso_out_unit=59
+      INTEGER :: inpso_bin_unit=60
       END MODULE io_mod
