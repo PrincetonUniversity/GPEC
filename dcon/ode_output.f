@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
       CHARACTER(6), DIMENSION(:), POINTER :: name
       INTEGER, DIMENSION(:), POINTER :: sol_out_unit,sol_bin_unit
       
-      INTEGER :: neq,ising,istep,m1,nzero
+      INTEGER :: neq,ising,istep,m1,nzero,zneq
       REAL(r8) :: psifac,psizero,singfac,q,psi_save,psimax,singfac_old,
      $     psifac_old
       REAL(r8) :: singfac_min=1e-5,singfac_max=1e-4

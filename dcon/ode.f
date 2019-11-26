@@ -43,6 +43,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: rwork
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: zrwork
       COMPLEX(r8), DIMENSION(:), POINTER, PRIVATE :: zwork
+      REAL(r8), DIMENSION(:,:,:), POINTER :: zatol
       COMPLEX(r8), DIMENSION(:,:,:), POINTER :: atol
 
       INTEGER, DIMENSION(:), POINTER :: index
@@ -115,7 +116,7 @@ c-----------------------------------------------------------------------
 c     finalize.
 c-----------------------------------------------------------------------
       CALL ode_output_close
-      DEALLOCATE(rwork,atol,unorm0,unorm,index,fixfac)
+      DEALLOCATE(rwork,atol,zrwork,zatol,unorm0,unorm,index,fixfac)
       IF(diagnose_ca)CALL ascii_close(ca_unit)
 c-----------------------------------------------------------------------
 c     terminate.
@@ -242,6 +243,7 @@ c-----------------------------------------------------------------------
       ENDDO
       msol=mpert
       neq=4*mpert*msol
+      zneq=2*mpert*msol
       u_save=u
       psi_save=psifac
 c-----------------------------------------------------------------------
@@ -286,9 +288,14 @@ c-----------------------------------------------------------------------
 c     set up zwork arrays.
 c-----------------------------------------------------------------------
       zliw=size(ziwork)
-      zlrw=20+neq
-      lzw=15*neq
-      ALLOCATE(zrwork(zlrw),zwork(lzw))
+      zlrw=20+zneq
+      lzw=15*zneq
+      ALLOCATE(zrwork(zlrw),zwork(lzw),zatol(mpert,msol,2))
+      ziwork=0
+      zrwork=0
+      zrwork(1)=psimax
+      zrwork(5)=psifac*1e-3
+      zrwork(11)=zrwork(5)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -344,6 +351,7 @@ c-----------------------------------------------------------------------
       psi_save=psifac
       msol=mpert
       neq=4*mpert*msol
+      zneq=2*mpert*msol
 c-----------------------------------------------------------------------
 c     diagnose output.
 c-----------------------------------------------------------------------
@@ -488,8 +496,10 @@ c-----------------------------------------------------------------------
       IF (.NOT. con_flag) THEN
          u(:,index(1),:)=0 !originally, u(ipert0,:,:)=0
       ENDIF
-      CALL sing_der(neq,psi_old,u,du1)
-      CALL sing_der(neq,psifac,u,du2)
+      ipar=1
+      rpar=ifac
+      CALL sing_der_complex(zneq,psi_old,u,du1,rpar,ipar)
+      CALL sing_der_complex(zneq,psifac,u,du2,rpar,ipar)
       u=u+(du1+du2)*dpsi
       IF (.NOT. con_flag) THEN
          u(ipert0,:,:)=0
@@ -555,6 +565,7 @@ c-----------------------------------------------------------------------
       istate=1
       istep=istep+1
       rwork(1)=psimax
+      zrwork(1)=psimax
       new=.TRUE.
       u_save=u
       psi_save=psifac
@@ -923,6 +934,7 @@ c-----------------------------------------------------------------------
             atol0=MAXVAL(ABS(u(:,isol,ieq)))*tol
             IF(atol0 == 0)atol0=HUGE(atol0)
             atol(:,isol,ieq)=DCMPLX(atol0,atol0)
+            zatol(:,isol,ieq)=atol0
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -947,7 +959,7 @@ c      CALL lsode(sing_der,neq,u,psifac,psiout,itol,rtol,atol,
 c     $     itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
       ipar=1
       rpar=ifac
-      CALL zvode(sing_der_complex,neq,u,psifac,psiout,itol,rtol,atol,
+      CALL zvode(sing_der_complex,zneq,u,psifac,psiout,itol,rtol,atol,
      $     itask,istate,iopt,zwork,lzw,zrwork,zlrw,ziwork,zliw,jac,mf,
      $     rpar,ipar)      
 c-----------------------------------------------------------------------
