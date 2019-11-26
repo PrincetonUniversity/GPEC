@@ -95,7 +95,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: dx0,dx1,dx2,pfac
       REAL(r8) :: gal_tol=1e-10
       LOGICAL :: gal_xmin_flag = .FALSE.
-      REAL(r8), DIMENSION(0:2) :: gal_eps_xmin = 1e-6
+      REAL(r8), DIMENSION(0:2) :: gal_eps_xmin = (/1e-2,1e-6,5e-7/)
       TYPE(cell_type), POINTER, PRIVATE :: cell
       TYPE(coil_type), SAVE, PRIVATE :: coil
       CONTAINS

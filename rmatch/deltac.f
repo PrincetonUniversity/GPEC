@@ -90,7 +90,6 @@ c-----------------------------------------------------------------------
       INTEGER :: nx=128,nq=4
       INTEGER :: cutoff=5
       INTEGER, DIMENSION(4), PRIVATE:: tid=(/3,5,6,4/)
-c      REAL(r8) :: dx1=1e-2,dx2=1e-2
       REAL(r8) :: xmin=0,deltac_tol=1e-5,pfac=1
       COMPLEX(r8) :: q_deltac
       TYPE(cell_type), POINTER :: cell  
@@ -1856,7 +1855,7 @@ c-----------------------------------------------------------------------
      $     cutoff,deltac_tol,pfac,xmax,diagnose_res,outt,fulldomain,
      $     nx_ua,x0_ua,x1_ua,tid,dx1dx2_flag,dx1,dx2,gal_method,
      $     side,xfac,rescale,diagnose_params,noexp,
-     $     inps_type,kmax,inps_xfac,inps_eps1,inps_eps2
+     $     inps_type,kmax,inps_xfac,inps_eps
 c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------

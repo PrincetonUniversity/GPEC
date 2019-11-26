@@ -34,7 +34,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: q
       END TYPE resist_type_inps
 
-      LOGICAL :: extract=.FALSE.
       INTEGER, PRIVATE :: kmax=8
       INTEGER, DIMENSION(2), PARAMETER, PRIVATE :: r1=(/1,2/)
       INTEGER, DIMENSION(4), PARAMETER, PRIVATE :: r2=(/3,4,5,6/)
@@ -508,7 +507,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(6,2), INTENT(OUT), OPTIONAL :: dua
       LOGICAL, INTENT(IN), OPTIONAL :: tflag
 
-      REAL(r8) :: xfac,power
+      REAL(r8) :: xfac
       REAL(r8), DIMENSION(4) :: rvec
       COMPLEX(r8), DIMENSION(4) :: yy,dyy
       COMPLEX(r8), DIMENSION(12) :: zz,dzz
@@ -571,19 +570,6 @@ c-----------------------------------------------------------------------
          dua=MATMUL(pp,dqsy)+MATMUL(dpp,qsy)
          IF(PRESENT(tflag) .AND. tflag .OR. .NOT. PRESENT(tflag))
      $        dua=MATMUL(tmat,dua)
-      ENDIF
-c-----------------------------------------------------------------------
-c     extract mercier power.
-c-----------------------------------------------------------------------
-      IF(extract)THEN
-         power=rt%r(1)-1.5
-         xfac=x**power
-         ua(:,1)=ua(:,1)/xfac
-         ua(:,2)=ua(:,2)*xfac
-         IF(PRESENT(dua))THEN
-            dua(:,1)=dua(:,1)/xfac
-            dua(:,2)=dua(:,2)*xfac
-         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -649,22 +635,22 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE inps_xmax(eps1,eps2,x1,x2)
+      SUBROUTINE inps_xmax(eps,xmax)
 
-      REAL(r8), INTENT(IN) :: eps1,eps2
-      REAL(r8), INTENT(OUT) :: x1,x2
+      REAL(r8), DIMENSION(0:2), INTENT(IN) :: eps
+      REAL(r8), DIMENSION(0:2), INTENT(OUT) :: xmax
 
       LOGICAL, PARAMETER :: diagnose=.FALSE.
-      LOGICAL :: set1
+      LOGICAL, DIMENSION(0:1) :: set
       CHARACTER(64) :: message
       REAL(r8), PARAMETER :: xlogmin=-1,dxlog=.01
-      INTEGER :: ixlog,nxlog=1000
+      INTEGER :: ixlog,nxlog=1000,i
       REAL(r8) :: xlog,x,dxfac
       REAL(r8), DIMENSION(2) :: delta
 c-----------------------------------------------------------------------
 c     start loops over x.
 c-----------------------------------------------------------------------
-      set1=.TRUE.
+      set=.TRUE.
       dxfac=10**dxlog
       xlog=xlogmin
       x=10**xlog
@@ -685,12 +671,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute x1 and x2.
 c-----------------------------------------------------------------------
-         IF(MAXVAL(delta) < eps1 .AND. set1)THEN
-            x1=x
-            set1=.FALSE.
-         ENDIF
-         IF(MAXVAL(delta) < eps2)THEN
-            x2=x
+         DO i=0,1
+            IF(MAXVAL(delta) < eps(i) .AND. set(i))THEN
+               xmax(i)=x
+               set(i)=.FALSE.
+            ENDIF
+         ENDDO
+         IF(MAXVAL(delta) < eps(2))THEN
+            xmax(2)=x
             EXIT
          ENDIF
 c-----------------------------------------------------------------------
@@ -728,20 +716,14 @@ c-----------------------------------------------------------------------
 
       INTEGER :: j
       REAL(r8) :: xfac
-      REAL(r8), DIMENSION(2) :: xrfac
       REAL(r8), DIMENSION(2,0:2) :: norm
       COMPLEX(r8), DIMENSION(6,2,0:2) ::matvec
       COMPLEX(r8), DIMENSION(6,2) :: ua,dua
       COMPLEX(r8), DIMENSION(6,6) :: matrix
 c-----------------------------------------------------------------------
-c     compute ua and dua and remove mercier powers.
+c     compute ua and dua.
 c-----------------------------------------------------------------------
       CALL inps_ua(x,ua,dua,.FALSE.)
-      xrfac=x**rt%r
-      DO j=1,2
-         ua(:,j)=ua(:,j)/xrfac(j)
-         dua(:,j)=dua(:,j)/xrfac(j)
-      ENDDO
 c-----------------------------------------------------------------------
 c     compute matrix, matvec, and errmat.
 c-----------------------------------------------------------------------

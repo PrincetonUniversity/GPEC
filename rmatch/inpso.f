@@ -56,11 +56,11 @@ c      END TYPE resist_type
       INTEGER, DIMENSION(2) :: rp=(/3,4/)
       INTEGER :: order_pow=10,order_exp=3,fulldomain=0,
      $     mpert=3,kmax=8,nx_ua=100,outt=3
-      REAL(r8) :: inps_xmax1,inps_xmax2,inps_xfac,
-     $     inps_eps1=1e-2,inps_eps2=1e-6
+      REAL(r8) :: inps_xfac
+      REAL(r8), DIMENSION(0:2) :: inps_eps=(/1e-2,5e-7,1e-7/),inps_xmaxx
       REAL(r8) :: xmax=1,xfac=1
       REAL(r8) :: x0_ua=0.01,x1_ua=1
-      REAL(r8) :: dx1=1e-2,dx2=1e-2
+      REAL(r8) :: dx1,dx2
       TYPE(inner_type) :: in
       TYPE(asymp_type) :: asp
       TYPE(resist_type_inps) :: rt_in
@@ -90,7 +90,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     initialize inps.
 c-----------------------------------------------------------------------
-      IF(inps_type == "inps")THEN
+      SELECT CASE(inps_type)
+      CASE("inps")
          rt_in%e=in%e
          rt_in%f=in%f
          rt_in%h=in%h
@@ -99,141 +100,147 @@ c-----------------------------------------------------------------------
          rt_in%q=in%q
          CALL inps_init(rt_in,.FALSE.)
          CALL inps_split(kmax,.FALSE.)
-         RETURN
-      ENDIF
 c-----------------------------------------------------------------------
 c     initialize the parameters (f,h,k,g,h,q) and the coefficients v
 c-----------------------------------------------------------------------
-      e=in%e
-      f=in%f
-      k=in%k
-      g=in%g
-      h=in%h
-      q=in%q
-      in%dr=in%e+in%f+in%h*in%h
-      in%di=in%e+in%f+in%h-0.25
-      in%p1=SQRT(-in%di)
+      CASE("gjt")
+         e=in%e
+         f=in%f
+         k=in%k
+         g=in%g
+         h=in%h
+         q=in%q
+         in%dr=in%e+in%f+in%h*in%h
+         in%di=in%e+in%f+in%h-0.25
+         in%p1=SQRT(-in%di)
 c-----------------------------------------------------------------------
 c     p power of large and small solutions (T_3,4).
 c-----------------------------------------------------------------------
-      order=order_pow
-      IF (order < order_exp) order=order_exp
-      ALLOCATE(asp%v(3,6,order+1))
-      asp%v=0
-      p(1)=-0.5+in%p1
-      p(2)=-0.5-in%p1
-      asp%p=p
+         order=order_pow
+         IF (order < order_exp) order=order_exp
+         ALLOCATE(asp%v(3,6,order+1))
+         asp%v=0
+         p(1)=-0.5+in%p1
+         p(2)=-0.5-in%p1
+         asp%p=p
 c-----------------------------------------------------------------------
 c     solve large and small power-like solutions.
 c-----------------------------------------------------------------------
-      DO i=1,2
-         t=2+i
+         DO i=1,2
+            t=2+i
 c-----------------------------------------------------------------------
 c     zeroth order term.
 c-----------------------------------------------------------------------
-         j=0
-         l=j+1
-         asp%v(:,t,l)=1
+            j=0
+            l=j+1
+            asp%v(:,t,l)=1
 c-----------------------------------------------------------------------
 c     solve high order term.
 c-----------------------------------------------------------------------
-         mata(1,1)=q
-         mata(1,2)=-q
-         mata(1,3)=0.0
-         mata(2,2)=0.0
-         mata(3,1)=1
-         mata(3,2)=0.0
-         mata(3,3)=-1
-         DO j=1,order_pow
-            l=j+1
-            mata(2,1)=(p(i)-2*j+h)*(p(i)-2*j+1)
-            mata(2,3)=-(h*(p(i)-2*j)-e-f)
+            mata(1,1)=q
+            mata(1,2)=-q
+            mata(1,3)=0.0
+            mata(2,2)=0.0
+            mata(3,1)=1
+            mata(3,2)=0.0
+            mata(3,3)=-1
+            DO j=1,order_pow
+               l=j+1
+               mata(2,1)=(p(i)-2*j+h)*(p(i)-2*j+1)
+               mata(2,3)=-(h*(p(i)-2*j)-e-f)
 
-            matb(1)=(p(i)-2*j+2)*(p(i)-2*j+3)*asp%v(1,t,l-1)
-     $           -h*(p(i)-2*j+2)*asp%v(3,t,l-1)
-            matb(2)=-q*q*(p(i)-2*j+2)*(p(i)-2*j+1)*asp%v(2,t,l-1)
-            matb(3)=h*k*q*q*(p(i)-2*j+3)*asp%v(1,t,l-1)
-     $           -(g-e*k)*q*q*asp%v(2,t,l-1)
-     $           +(g+f*k)*q*q*asp%v(3,t,l-1)
-            IF (j > 1) matb(3)=matb(3)
-     $           -q*(p(i)-2*j+4)*(p(i)-2*j+3)*asp%v(3,t,l-2)
-            mat=mata
-            asp%v(:,t,l)=matb
-            CALL zgesv(3,1,mat,3,ipiv,asp%v(:,t,l),3,info)
+               matb(1)=(p(i)-2*j+2)*(p(i)-2*j+3)*asp%v(1,t,l-1)
+     $              -h*(p(i)-2*j+2)*asp%v(3,t,l-1)
+               matb(2)=-q*q*(p(i)-2*j+2)*(p(i)-2*j+1)*asp%v(2,t,l-1)
+               matb(3)=h*k*q*q*(p(i)-2*j+3)*asp%v(1,t,l-1)
+     $              -(g-e*k)*q*q*asp%v(2,t,l-1)
+     $              +(g+f*k)*q*q*asp%v(3,t,l-1)
+               IF (j > 1) matb(3)=matb(3)
+     $              -q*(p(i)-2*j+4)*(p(i)-2*j+3)*asp%v(3,t,l-2)
+               mat=mata
+               asp%v(:,t,l)=matb
+               CALL zgesv(3,1,mat,3,ipiv,asp%v(:,t,l),3,info)
+            ENDDO
          ENDDO
-      ENDDO
 c-----------------------------------------------------------------------
 c     s power of T_5,6, exponential power series.
 c-----------------------------------------------------------------------
-      sq=sqrt(q)
-      term(1)=-sq*q*(1+g+k*(f+h*h))*0.25
-      term(2)=(g+k*f-1)**2.0
-      tmp=k*h*h
-      term(3)=tmp*(tmp+(g+k*f+1)*2.0)
-      term(4)=((g-k*e-1.0)*in%dr+h*h)*4.0
-      tmp=sqrt(q**3.0*(term(2)+term(3))+term(4))*0.25
-      s(1)=term(1)+tmp-0.5
-      s(2)=term(1)-tmp-0.5
-      asp%s=s
+         sq=sqrt(q)
+         term(1)=-sq*q*(1+g+k*(f+h*h))*0.25
+         term(2)=(g+k*f-1)**2.0
+         tmp=k*h*h
+         term(3)=tmp*(tmp+(g+k*f+1)*2.0)
+         term(4)=((g-k*e-1.0)*in%dr+h*h)*4.0
+         tmp=sqrt(q**3.0*(term(2)+term(3))+term(4))*0.25
+         s(1)=term(1)+tmp-0.5
+         s(2)=term(1)-tmp-0.5
+         asp%s=s
 c-----------------------------------------------------------------------
 c     solve coefficients of small exponential solutions T5 and T6.
 c-----------------------------------------------------------------------
-      DO i=1,2
-         mata(1,1)=1.0/q
-         mata(1,2)=q
-         mata(1,3)=h/sq
-         mata(2,1)=q-h/sq
-         mata(2,2)=-q*sq*(2*s(i)+1)
-         mata(2,3)=e+f
-         mata(3,1)=q*sq*k*h+1
-         mata(3,2)=q*q*(g-k*e)
-         mata(3,3)=-q*q*(g+k*f)-sq*(2.0*s(i)+1.0)
+         DO i=1,2
+            mata(1,1)=1.0/q
+            mata(1,2)=q
+            mata(1,3)=h/sq
+            mata(2,1)=q-h/sq
+            mata(2,2)=-q*sq*(2*s(i)+1)
+            mata(2,3)=e+f
+            mata(3,1)=q*sq*k*h+1
+            mata(3,2)=q*q*(g-k*e)
+            mata(3,3)=-q*q*(g+k*f)-sq*(2.0*s(i)+1.0)
 c-----------------------------------------------------------------------
 c     solve zeroth order term.
 c-----------------------------------------------------------------------
-         t=4+i
-         j=0
-         l=j+1
+            t=4+i
+            j=0
+            l=j+1
 
-         asp%v(1,t,l)=1
-         
-         matb(1)=-1.0/q
-         matb(2)=-(q-h/sq)
-         
-         asp%v(2:3,t,l)=matb(1:2)
-         mat=mata
-         CALL zgesv(2,1,mat(1:2,2:3),2,ipiv(1:2),
-     $        asp%v(2:3,t,l),2,info)
+            asp%v(1,t,l)=1
+            
+            matb(1)=-1.0/q
+            matb(2)=-(q-h/sq)
+            
+            asp%v(2:3,t,l)=matb(1:2)
+            mat=mata
+            CALL zgesv(2,1,mat(1:2,2:3),2,ipiv(1:2),
+     $           asp%v(2:3,t,l),2,info)
 c-----------------------------------------------------------------------
 c     solve high order.
 c-----------------------------------------------------------------------
-         DO j=1,order_exp
-            l=j+1
-            
-            mata(2,2)=-q*sq*(2*s(i)-4*j+1)
-            mata(3,3)=-q*q*(g+k*f)-sq*(2.0*s(i)-4*j+1.0)
-            
-            matb(1)=((2.0*s(i)-4.0*j+3)/sq+q)*asp%v(1,t,l-1)
-            matb(1)=matb(1)+h*(s(i)-2*j+2)*asp%v(3,t,l-1)
-            IF (j > 1) matb(1)=-(s(i)+3-2*j)*(s(i)+2-2*j)
-     $           *asp%v(1,t,l-2)
-            matb(2)=-h*(s(i)+1.0-2.0*j)*asp%v(1,t,l-1)
-            matb(2)=matb(2)-q*q*(s(i)-2*j+2)*(s(i)-2*j+1)
-     $           *asp%v(2,t,l-1)
-            matb(3)=q*q*k*h*(s(i)+1.0-2.0*j)
-     $           *asp%v(1,t,l-1)
-     $           -q*(s(i)-2*j+2)*(s(i)-2*j+1)
-     $           *asp%v(3,t,l-1)
-            mat=mata
-            asp%v(:,t,l)=matb
-            CALL zgesv(3,1,mat,3,ipiv,asp%v(:,t,l),3,info)
-         ENDDO
-      ENDDO     
+            DO j=1,order_exp
+               l=j+1
+               
+               mata(2,2)=-q*sq*(2*s(i)-4*j+1)
+               mata(3,3)=-q*q*(g+k*f)-sq*(2.0*s(i)-4*j+1.0)
+               
+               matb(1)=((2.0*s(i)-4.0*j+3)/sq+q)*asp%v(1,t,l-1)
+               matb(1)=matb(1)+h*(s(i)-2*j+2)*asp%v(3,t,l-1)
+               IF (j > 1) matb(1)=-(s(i)+3-2*j)*(s(i)+2-2*j)
+     $              *asp%v(1,t,l-2)
+               matb(2)=-h*(s(i)+1.0-2.0*j)*asp%v(1,t,l-1)
+               matb(2)=matb(2)-q*q*(s(i)-2*j+2)*(s(i)-2*j+1)
+     $              *asp%v(2,t,l-1)
+               matb(3)=q*q*k*h*(s(i)+1.0-2.0*j)
+     $              *asp%v(1,t,l-1)
+     $              -q*(s(i)-2*j+2)*(s(i)-2*j+1)
+     $              *asp%v(3,t,l-1)
+               mat=mata
+               asp%v(:,t,l)=matb
+               CALL zgesv(3,1,mat,3,ipiv,asp%v(:,t,l),3,info)
+            ENDDO
+         ENDDO     
+c-----------------------------------------------------------------------
+c     abort.
+c-----------------------------------------------------------------------
+      CASE DEFAULT
+         CALL program_stop("inpso_init: cannot recognize inps_type = "
+     $        //TRIM(inps_type))
+      END SELECT
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN      
-      END SUBROUTINE inpso_init
+         RETURN      
+         END SUBROUTINE inpso_init
 c-----------------------------------------------------------------------
 c     subprogram 2. inpso_get_ua.
 c     get the value of the asymptotic solutions at large x.
@@ -606,9 +613,6 @@ c-----------------------------------------------------------------------
       SUBROUTINE inpso_xmax(xmax)
 
       REAL(r8), INTENT(OUT) :: xmax
-
-      CHARACTER(80) :: message
-      REAL(r8) :: tmp1,tmp2,tmp3,tmp4
 c-----------------------------------------------------------------------
 c     compute xmax for inps.
 c-----------------------------------------------------------------------
@@ -616,14 +620,14 @@ c-----------------------------------------------------------------------
       CASE("inps")
          dx1dx2_flag=.TRUE.
          gal_method="resonant"
-         CALL inps_xmax(inps_eps1,inps_eps2,inps_xmax1,inps_xmax2)
-         inps_xmax1=inps_xmax1*inps_xfac
-         inps_xmax2=inps_xmax2*inps_xfac
-         xmax=inps_xmax2
-         dx1=inps_xmax2-inps_xmax1
+         CALL inps_xmax(inps_eps,inps_xmaxx)
+         inps_xmaxx(1)=inps_xmaxx(1)*inps_xfac
+         inps_xmaxx(2)=inps_xmaxx(2)*inps_xfac
+         xmax=inps_xmaxx(2)
+         dx1=inps_xmaxx(2)-inps_xmaxx(1)
          dx2=dx1/2
-         IF(grid_diagnose)WRITE(*,'(2(a,es10.3))')
-     $        " inps_xmax1 = ",inps_xmax1," inps_xmax2 = ",inps_xmax2
+         IF(grid_diagnose)WRITE(*,'(a,3es10.3)')
+     $        " inps_xmaxx = ",inps_xmaxx
 c-----------------------------------------------------------------------
 c     compute xmax for inps.
 c-----------------------------------------------------------------------
@@ -670,7 +674,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(2), INTENT(OUT) :: delta
 
       INTEGER :: j
-      REAL(r8),DIMENSION(2) :: xrfac
       REAL(r8), DIMENSION(2,0:3) :: norm
       COMPLEX(r8), DIMENSION(3,6) :: ua6,dua6,d2ua6
       COMPLEX(r8), DIMENSION(3,2) :: ua,dua,d2ua
@@ -684,17 +687,11 @@ c-----------------------------------------------------------------------
       CALL inpso_get_d2ua(x,d2ua6)
       CALL inpso_get_uv(x,imat,umat,vmat)
 c-----------------------------------------------------------------------
-c     extract power-like solutions and remove Mercier powers.
+c     extract power-like solutions.
 c-----------------------------------------------------------------------
       ua=ua6(:,rp)
       dua=dua6(:,rp)
       d2ua=d2ua6(:,rp)
-      xrfac=x**(-asp%p)
-      DO j=1,2
-         ua(:,j)=ua(:,j)*xrfac(j)
-         dua(:,j)=dua(:,j)*xrfac(j)
-         d2ua(:,j)=dua(:,j)*xrfac(j)
-      ENDDO
 c-----------------------------------------------------------------------
 c     compute matvec.
 c-----------------------------------------------------------------------
