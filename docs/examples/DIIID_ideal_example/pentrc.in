@@ -23,6 +23,8 @@
     nufac = 1                           ! Artificial factor applied to collision operator
     divxfac = 1                         ! Artificial factor applied to div xi_perp
 
+    force_xialpha = .false.             ! Calculates tangential displacement from radial displacement and toroidal force balance (overwrites peq_file values)
+
     atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
     rtol_xlmda = 1e-6                   ! Relative tolerance in energy and pitch integration
     atol_psi = 1e-4                     ! Absolute tolerance in psi_n integration
@@ -63,7 +65,7 @@
     fnml_flag = .false.                 ! Special function matrix [JKP PRL 2009]
     ellip_flag = .false.                ! Elliptic integral functions
     diag_flag = .false.                 ! Diagnostic module
-    indebug = .false.                   ! Debug input file parsing and manipulations
+    indebug = .true.                   ! Debug input file parsing and manipulations
     tdebug = .false.                    ! Debug psi integration
     lambdadebug = .false.               ! Debug pitch integration
     xdebug = .false.                    ! Debug energy integration

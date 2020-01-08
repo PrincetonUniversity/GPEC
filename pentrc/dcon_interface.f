@@ -677,6 +677,18 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: dmat,emat,fmat,gmat,hmat,
      $     kmat,temp1,temp2,temp3
 
+c-----------------------------------------------------------------------
+c     allocate the basic matrix arrays if they aren't already
+c-----------------------------------------------------------------------
+      IF(.not.ALLOCATED(amat)) ALLOCATE(amat(mpert,mpert))
+      IF(.not.ALLOCATED(bmat)) ALLOCATE(bmat(mpert,mpert))
+      IF(.not.ALLOCATED(cmat)) ALLOCATE(cmat(mpert,mpert))
+      IF(.not.ALLOCATED(fmats)) ALLOCATE(fmats(mband+1,mpert))
+      IF(.not.ALLOCATED(gmats)) ALLOCATE(gmats(mband+1,mpert))
+      IF(.not.ALLOCATED(kmats)) ALLOCATE(kmats(2*mband+1,mpert))
+c-----------------------------------------------------------------------
+c     local variables
+c-----------------------------------------------------------------------
       imat=0
       imat(0)=1
       CALL spline_eval(sq,psi,1)

@@ -122,6 +122,7 @@ v:
 	@echo "   and compiler libraries $(FCLIBS)"
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
+	@echo "   and using OMPFLAG $(OMPFLAG)"
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
