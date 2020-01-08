@@ -12,7 +12,7 @@ else ifeq ($(FC), gfortran)
 else ifeq ($(FC), pgfortran)
 	OMPFLAG ?= -mp
 else
-	OMPFLAG ?= -openmp
+	OMPFLAG ?= -qopenmp
 endif
 
 export FFLAGS
@@ -164,3 +164,5 @@ clear:
 realclean: clean
 	clear
 	rm -rf ../lib ../bin
+
+print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true
