@@ -6111,7 +6111,6 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"rho",nf90_double,p_id,rn_id) )
       CALL check( nf90_put_att(fncid,rn_id,"long_name",
      $   "Normalized flux surface average minor radius") )
-      CALL check( nf90_put_att(fncid,rn_id,"units","m") )
       CALL check( nf90_def_var(fncid,"dvdpsi_n",nf90_double,p_id,dv_id))
       CALL check( nf90_put_att(fncid,dv_id,"long_name",
      $   "Differential volume per normalized poloidal flux") )
