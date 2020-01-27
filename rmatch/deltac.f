@@ -624,7 +624,7 @@ c     check pack output
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
-      IF(grid_diagnose)THEN
+      IF(.FALSE.)THEN
          OPEN(UNIT=grid_out_unit,FILE="grid.out",STATUS="REPLACE")
          WRITE(grid_out_unit,'(2a)')" inps_type = ",TRIM(inps_type)
          WRITE(grid_out_unit,'(a,g0,2(a,es10.3)/3(a,es10.3))')
@@ -1855,7 +1855,7 @@ c-----------------------------------------------------------------------
      $     cutoff,deltac_tol,pfac,xmax,diagnose_res,outt,fulldomain,
      $     nx_ua,x0_ua,x1_ua,tid,dx1dx2_flag,dx1,dx2,gal_method,
      $     side,xfac,rescale,diagnose_params,noexp,
-     $     inps_type,kmax,inps_xfac,inps_eps
+     $     inps_type,kmax,inps_xfac,inps_eps,grid_diagnose
 c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------

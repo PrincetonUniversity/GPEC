@@ -345,9 +345,7 @@ c-----------------------------------------------------------------------
       IF (ising>0 .AND. gal_xmin_flag .AND. sing1_flag) THEN
          CALL sing1_xmin(ising,gal_eps_xmin,myxmin)
          WRITE(*,*) "ising=",ising
-         WRITE(*,*) "xmin(0)=",myxmin(0)
-         WRITE(*,*) "xmin(1)=",myxmin(1)
-         WRITE(*,*) "xmin(2)=",myxmin(2)
+         WRITE(*,'(a,3es10.3)') "xmin=",myxmin
          WRITE(*,*) "=================="
       ENDIF
 c-----------------------------------------------------------------------
@@ -360,13 +358,21 @@ c-----------------------------------------------------------------------
          x0=sing(ising)%psifac
          nq1=ABS(nn*sing(ising)%q1)
          intvl%x(0)=x0
-         intvl%cell(1)%x_lsode=x0+dx0/nq1
-         IF (dx1dx2_flag) THEN
-            intvl%x(1)=x0+(dx1)/nq1
-            intvl%x(2)=x0+(dx1+dx2)/nq1
+         IF (gal_xmin_flag .AND. sing1_flag) THEN
+            CALL sing1_xmin(ising,gal_eps_xmin,myxmin)
+            intvl%cell(1)%x_lsode=x0+myxmin(2)/nq1
+            intvl%x(1)=x0+myxmin(1)/nq1
+            intvl%x(2)=x0+2*myxmin(1)/nq1
             ixmin=2
          ELSE
-            ixmin=0
+            intvl%cell(1)%x_lsode=x0+dx0/nq1
+            IF (dx1dx2_flag) THEN
+               intvl%x(1)=x0+(dx1)/nq1
+               intvl%x(2)=x0+(dx1+dx2)/nq1
+               ixmin=2
+            ELSE
+               ixmin=0
+            ENDIF
          ENDIF
          intvl%cell(1)%extra="right"
          intvl%cell(2)%extra="right"
@@ -394,13 +400,21 @@ c-----------------------------------------------------------------------
          x1=sing(ising+1)%psifac
          nq1=ABS(sing(ising+1)%q1)
          intvl%x(nx)=x1
-         intvl%cell(nx)%x_lsode=x1-dx0/nq1
-         IF (dx1dx2_flag) THEN
-            intvl%x(nx-1)=x1-(dx1)/nq1
-            intvl%x(nx-2)=x1-(dx1+dx2)/nq1
+         IF (gal_xmin_flag .AND. sing1_flag) THEN
+            CALL sing1_xmin(ising+1,gal_eps_xmin,myxmin)
+            intvl%cell(nx)%x_lsode=x1-myxmin(2)/nq1
+            intvl%x(nx-1)=x1-myxmin(1)/nq1
+            intvl%x(nx-2)=x1-2*myxmin(1)/nq1
             ixmax=nx-2
          ELSE
-            ixmax=nx
+            intvl%cell(nx)%x_lsode=x1-dx0/nq1
+            IF (dx1dx2_flag) THEN
+               intvl%x(nx-1)=x1-(dx1)/nq1
+               intvl%x(nx-2)=x1-(dx1+dx2)/nq1
+               ixmax=nx-2
+            ELSE
+               ixmax=nx
+            ENDIF
          ENDIF
          intvl%cell(nx-1)%extra="left"
          intvl%cell(nx)%extra="left"
