@@ -7,10 +7,10 @@ CFLAGS ?= -g
 #Common compiler flags for OpenMP
 ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
+else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
+        OMPFLAG ?= -mp
 else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp
-else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
-	OMPFLAG ?= -mp
 else
 	OMPFLAG ?= -openmp
 endif
