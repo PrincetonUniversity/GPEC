@@ -1408,12 +1408,12 @@ module torque
 
         psi = 1.0*x
 
-        !$omp parallel default(shared) &
-        !$omp& private(l,wtw_l,trq) &
-        !$omp& reduction(+:elems) &
-        !$omp& copyin(dbob_m,divx_m,kin,xs_m,fnml, &
-        !$omp& geom, sq, eqfun, rzphi, kin, &
-        !$omp& smats, tmats, xmats, ymats, zmats)
+        !!omp parallel default(shared) &
+        !!omp& private(l,wtw_l,trq) &
+        !!omp& reduction(+:elems) &
+        !!omp& copyin(dbob_m,divx_m,kin,xs_m,fnml, &
+        !!omp& geom, sq, eqfun, rzphi, kin, &
+        !!omp& smats, tmats, xmats, ymats, zmats)
 #ifdef _OPENMP
             IF(first .and. omp_get_thread_num() == 0)then
                lthreads = omp_get_num_threads()
@@ -1445,7 +1445,7 @@ module torque
             ydot(2*(l+nl)+2) = aimag(trq)
         enddo
         !$omp end do
-        !$omp end parallel
+        !!omp end parallel
 
         if(tdebug)then
             print *,'torque - intgrnd complete at psi ',x
