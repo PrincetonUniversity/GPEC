@@ -755,7 +755,7 @@ c-----------------------------------------------------------------------
      $   singcoup_out_bvecs(nsingcoup,tmpert,msing))
 
       ! get inverse of fldflxmat for converting to flux to power normalized field ((bA^1/2)_m / A^1/2)
-      CALL iszinv(fldflxmat,tmpert,flxtofld)
+      CALL iszhinv(fldflxmat,tmpert,flxtofld)
 
       ! calculate the output coodinat matrix SVD 
       ! re-normalize such that overlap dot products operate on unweighted fields
@@ -5385,7 +5385,7 @@ c-----------------------------------------------------------------------
          CALL gpeq_weight(psilim,sqrtamat(:,i),mfac,mpert,2) ! A^1/2
       ENDDO
       ptof = sqrtamat * sqrt(jarea) ! transform power-norm field to flux
-      CALL iszinv(ptof,mpert,ftop)
+      CALL iszhinv(ptof,mpert,ftop)
 c-----------------------------------------------------------------------
 c     compute DCON energy per displacement eigenvalues and eigenvectors.
 c-----------------------------------------------------------------------
@@ -6111,7 +6111,6 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"rho",nf90_double,p_id,rn_id) )
       CALL check( nf90_put_att(fncid,rn_id,"long_name",
      $   "Normalized flux surface average minor radius") )
-      CALL check( nf90_put_att(fncid,rn_id,"units","m") )
       CALL check( nf90_def_var(fncid,"dvdpsi_n",nf90_double,p_id,dv_id))
       CALL check( nf90_put_att(fncid,dv_id,"long_name",
      $   "Differential volume per normalized poloidal flux") )

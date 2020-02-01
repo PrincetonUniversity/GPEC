@@ -38,8 +38,8 @@ module inputs
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
     
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
-        idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
-        geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
+        idcon_matrix,idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
+        geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,amat,bmat,cmat,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         shotnum,shottime,machine,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
@@ -502,7 +502,8 @@ module inputs
 
 
     !=======================================================================
-    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug,op_powin)
+    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,force_xialpha,debug, &
+            op_powin)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Read psi,m matrix of displacements.
@@ -516,6 +517,8 @@ module inputs
     !       Surface weigted inputs should be 1
     !   tmag_in : int.
     !       Input toroidal angle specification: 1 = magnetic, 0 = cylindrical
+    !   force_xialpha : logical
+    !       Recalculate xi^alpha from xi^psi and xi^psi' using toroidal force balance
     !   debug : logical
     !       Print intermidient messages to terminal.
     !
@@ -529,7 +532,7 @@ module inputs
         implicit none
 
         ! declare arguments
-        logical, intent(in) :: debug
+        logical, intent(in) :: debug,force_xialpha
         integer, intent(in) :: jsurf_in,tmag_in
         integer, dimension(4), intent(in), optional :: op_powin
         character(32), intent(inout) :: jac_in
@@ -543,6 +546,12 @@ module inputs
         complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns,xmp1mni,xspmni,xmsmni
         character(3) :: nstr
         character(32), dimension(:), allocatable :: titles
+
+        ! variables for inverting complex mpert-by-mpert matrix
+        INTEGER :: info
+        INTEGER, DIMENSION(mpert) :: ipiv
+        COMPLEX(r8), DIMENSION(mpert,mpert) :: ainv
+        COMPLEX(r8), DIMENSION(mpert) :: uwork
 
         ! file consistency check (requires naming convention)
         write(nstr,'(i3)') nn
@@ -676,7 +685,23 @@ module inputs
                 xmsmns(i,:) = newm(nm,ms,xmsmni(i,:),mpert,mfac)
             enddo
         endif
-        
+
+        ! optionally replace tangential displacement using radial displacement and toroidal force balance
+        if(force_xialpha)then
+            if(verbose) print *,'  Forcing tangential displacement to satisfy toroidal force balance'
+            do i=1,npsi
+                ! calculate A,B,C matrices on each surface
+                call idcon_matrix(psi(i))
+                ! calculate inverse of A - should be well behaved
+                ainv(:, :) = amat(:, :)
+                call zgetrf(mpert,mpert,ainv,mpert,ipiv,info)
+                call zgetri(mpert,ainv,mpert,ipiv,uwork,mpert,info)
+                ! calculate new xialpha based on Eq. (21) of [Park, Logan, PoP 2017]
+                xmsmns(i,:) = (1.0/chi1) * matmul(ainv, &
+                    -1*(matmul(bmat, xmp1mns(i,:)) + matmul(cmat, xspmns(i,:))) )
+            end do
+        end if
+
         ! set global variables (perturbed quantity csplines)
         call set_peq(psi,mfac,xmp1mns,xspmns,xmsmns,.true.,debug)
         

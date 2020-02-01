@@ -23,6 +23,8 @@
     nufac = 1                           ! Artificial factor applied to collision operator
     divxfac = 1                         ! Artificial factor applied to div xi_perp
 
+    force_xialpha = .false.             ! Calculates tangential displacement from radial displacement and toroidal force balance (overwrites peq_file values)
+
     atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
     rtol_xlmda = 1e-5                   ! Relative tolerance in energy and pitch integration
     atol_psi = 1e-4                     ! Absolute tolerance in psi_n integration
