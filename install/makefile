@@ -9,15 +9,20 @@ ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
 else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
         OMPFLAG ?= -mp
+        ACCFLAG ?= -acc
 else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp
+        ACCFLAG ?= -fopenacc
 else
 	OMPFLAG ?= -openmp
 endif
 
+
+
 export FFLAGS
 export CFLAGS
 export OMPFLAG
+export ACCFLAG
 
 # compile package
 
