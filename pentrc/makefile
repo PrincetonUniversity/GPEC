@@ -2,7 +2,7 @@
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS
 
 .f.o:
