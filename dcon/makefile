@@ -2,7 +2,7 @@
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(ACCFLAG)  $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(ACCFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
 .f.o:

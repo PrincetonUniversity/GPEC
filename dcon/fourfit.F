@@ -1046,11 +1046,9 @@ c!!!!!!...from dcon_interface.f90
 !OMP& geom, dcon_int_sq,dcon_int_eqfun,dcon_int_rzphi,
 !OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
 !OMP& dcon_int_zmats)
-         PRINT *, "The program reaches the intended loop"
-!$acc parallel loop collapse(1)
-         DO l=-nl,nl
-            PRINT *, "The program has reached loop ", ipsi, " of ", mpsi
-            DO ipsi=0,mpsi
+!$acc kernels loop collapse(1)
+         DO ipsi=0,mpsi
+            DO l=-nl,nl
                CALL SYSTEM_CLOCK(COUNT=t_start)
 #ifdef _OPENMP
                IF(ipsi==0 .AND. l==-nl)THEN
