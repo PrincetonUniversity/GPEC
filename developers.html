@@ -2,24 +2,16 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Code Development &#8212; GPEC 1.3.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>Code Development &#8212; GPEC 1.3.8 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
     <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
@@ -31,8 +23,7 @@
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-  </head>
-  <body>
+  </head><body>
 
   <div id="navbar" class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -102,6 +93,10 @@
 <li><a class="reference internal" href="#documentation">Documentation</a></li>
 </ul>
 
+<div id="sourcelink">
+  <a href="_sources/developers.rst.txt"
+     rel="nofollow">Source</a>
+</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -111,7 +106,7 @@
 </form>
         </div>
       </div>
-    <div class="col-md-12 content">
+    <div class="col-md-9 content">
       
   <p id="developing">This <strong>Generalized Perturbed Equilibrium Code</strong> package contains a suite of nonaxisymmetric stability and perturbed equilibrium codes including DCON, RDCON, STRIDE, GPEC, and PENTRC.</p>
 <p>The primary purpose of this package is to calculated the stability to nonaxisymmetric modes and (if stable) the nonaxisymmetric force balance in tokamak plasmas.</p>
@@ -121,45 +116,44 @@
 <p>There is a <a class="reference external" href="https://github.com/PrincetonUniversity/GPEC">Github repository</a> for this package to facilitate version control and collaborative contributions.</p>
 <p>To become a contributor to the GPEC package, contact <a class="reference external" href="mailto:nlogan&#37;&#52;&#48;pppl&#46;gov">nlogan<span>&#64;</span>pppl<span>&#46;</span>gov</a> to be added to the development team. Next, go the the Github repository to familiarize yourself with the documentation, branch structure, latest commits, etc. While there, go ahead and copy the HTTPS clone URL from the box in the right side panel. Finally, create a directory on your local machine, clone the repository, and checkout the appropriate branch in order to start contributing.</p>
 <p>On the PPPL portal computers, navigate to a directory in which you want to do your development (something like /p/gpec/users/&lt;username&gt;/gpec) and use following commands:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">&lt;</span><span class="n">copied</span><span class="o">-</span><span class="n">url</span><span class="o">-</span><span class="n">from</span><span class="o">-</span><span class="n">github</span><span class="o">&gt;</span> <span class="n">gpec</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="o">&lt;</span><span class="n">copied</span><span class="o">-</span><span class="n">url</span><span class="o">-</span><span class="n">from</span><span class="o">-</span><span class="n">github</span><span class="o">&gt;</span> <span class="n">gpec</span>
 <span class="n">cd</span> <span class="n">gpec</span>
 <span class="n">git</span> <span class="n">checkout</span> <span class="o">-</span><span class="n">b</span> <span class="n">develop</span>
 <span class="n">git</span> <span class="n">pull</span> <span class="n">origin</span> <span class="n">develop</span>
 </pre></div>
 </div>
 <p>This will create a directory ‘gpec’ and with the developmental branch of the repository in it. For more on branches, see the workflow section below. For compile instructions, see the install section. Now you are free to add/edit files in this branch. Be sure to use:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">add</span> <span class="o">&lt;</span><span class="n">new</span><span class="o">-</span><span class="n">file</span><span class="o">&gt;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">add</span> <span class="o">&lt;</span><span class="n">new</span><span class="o">-</span><span class="n">file</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 <p>when creating new files, so that they come under version control. Be sure to make regular commits:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">commit</span> <span class="o">-</span><span class="n">a</span> <span class="c1"># Will open $EDITOR for message</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">commit</span> <span class="o">-</span><span class="n">a</span> <span class="c1"># Will open $EDITOR for message</span>
 </pre></div>
 </div>
 <p>as you go. You can’t go wrong with more commits. Especially when developing as a team.</p>
 <p>When you have finished a significant addition/improvement push it to Github using:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">push</span> <span class="o">-</span><span class="n">u</span> <span class="n">origin</span> <span class="n">develop</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">push</span> <span class="o">-</span><span class="n">u</span> <span class="n">origin</span> <span class="n">develop</span>
 </pre></div>
 </div>
 <p>so that others working on the same branch can stay in sync with your developments. Similarly, you should be regularly pulling from the branch in order to stay in sync with what others are doing. To do so, use:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">pull</span> <span class="n">origin</span> <span class="n">develop</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">pull</span> <span class="n">origin</span> <span class="n">develop</span>
 </pre></div>
 </div>
 <p>There are many great git tutorials on the web, and great documentation for all the commands. Use them!</p>
 <p><strong>GIT Workflow</strong></p>
 <p>All developers need to use Vincent Driessen’s <a class="reference external" href="http://nvie.com/posts/a-successful-git-branching-model">GitFlow</a> workflow when editing the GPEC package. PLEASE READ THE ENTIRE POST. It is short, very thorough, and good for both experienced and new git users.</p>
-<dl class="docutils">
-<dt>The highlights are,</dt>
-<dd><ul class="first last simple">
-<li>There are two permanent branches: master and develop</li>
-<li>The master branch is only updated for at release ready stages</li>
-<li>New features should be developed in short-lived (days) branches coming off of and merging back to the development branch.</li>
+<dl class="simple">
+<dt>The highlights are,</dt><dd><ul class="simple">
+<li><p>There are two permanent branches: master and develop</p></li>
+<li><p>The master branch is only updated for at release ready stages</p></li>
+<li><p>New features should be developed in short-lived (days) branches coming off of and merging back to the development branch.</p></li>
 </ul>
 </dd>
 </dl>
 <p>Specific instructions are given in the link above as to exactly how to branch and merge these various branches. For example, the –no-ff option should be used when merging in order to keep branch histories. Just follow the examples and you wont go wrong!</p>
 <p><strong>Debugging</strong></p>
 <p>To do a thorough debugging, try adding more flags with the FFLAGS variable. A good set might be,:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-g -O0 -Wall -fbacktrace -fcheck=all&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-g -O0 -Wall -fbacktrace -fcheck=all&quot;</span>
 </pre></div>
 </div>
 <p>for example.</p>
@@ -171,12 +165,12 @@
 <p><strong>Building the documentation</strong></p>
 <p>The documentation uses a sphinx module called “sphinx_bootstrap_theme”. This theme comes with the python environments maintained by public OMFIT installations, so it is recommended that the OMFIT module by loaded when building the documentation. The gpec module should also be loaded, since the source code documentation will try to load the pypec module.</p>
 <p>The very first time, starting from the root of the repo:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">docs</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">docs</span>
 <span class="n">make</span> <span class="n">init</span>
 </pre></div>
 </div>
 <p>This creates a new gpec-docs directory in the same directory that contains the local repository (not in the repository itself) and checks out a devoted documentation branch. With that set up, the following will build the documentation and push it to the proper place:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">ghpages</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">ghpages</span>
 </pre></div>
 </div>
 <p>This is now all you need to do in order to update docs for that local repo from there on out.</p>
@@ -202,7 +196,7 @@
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
     </p>
   </div>
 </footer>

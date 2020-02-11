@@ -2,24 +2,16 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>DCON README &#8212; GPEC 1.3.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>DCON README &#8212; GPEC 1.3.8 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
     <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
@@ -31,8 +23,7 @@
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-  </head>
-  <body>
+  </head><body>
 
   <div id="navbar" class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -116,6 +107,10 @@
 </li>
 </ul>
 
+<div id="sourcelink">
+  <a href="_sources/dcon_readme.rst.txt"
+     rel="nofollow">Source</a>
+</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -125,29 +120,30 @@
 </form>
         </div>
       </div>
-    <div class="col-md-12 content">
+    <div class="col-md-9 content">
       
   <div class="section" id="dcon-readme">
 <span id="dcon"></span><h1>DCON README<a class="headerlink" href="#dcon-readme" title="Permalink to this headline">¶</a></h1>
-<p>Download a pdf copy of the <a class="reference download internal" href="_downloads/dcon_readme.pdf" download=""><code class="xref download docutils literal"><span class="pre">DCON</span> <span class="pre">readme</span></code></a>.</p>
+<p>Download a pdf copy of the <a class="reference download internal" download="" href="_downloads/c79dc3c78a23034f3db87c07c8671d70/dcon_readme.pdf"><code class="xref download docutils literal notranslate"><span class="pre">DCON</span> <span class="pre">readme</span></code></a>.</p>
 <div class="section" id="determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas">
 <h2>Determining the MHD Stability of Axisymmetric Toroidal Plasmas<a class="headerlink" href="#determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas" title="Permalink to this headline">¶</a></h2>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Version:</th><td class="field-body">3.60, September 5, 2002</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Author:</th><td class="field-body">Alan H. Glasser</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Location:</th><td class="field-body">Los Alamos National Laboratory</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Phone:</th><td class="field-body">505-667-7723</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Email:</th><td class="field-body"><a class="reference external" href="mailto:ahg&#37;&#52;&#48;lanl&#46;gov">ahg<span>&#64;</span>lanl<span>&#46;</span>gov</a></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Version</dt>
+<dd class="field-odd"><p>3.60, September 5, 2002</p>
+</dd>
+<dt class="field-even">Author</dt>
+<dd class="field-even"><p>Alan H. Glasser</p>
+</dd>
+<dt class="field-odd">Location</dt>
+<dd class="field-odd"><p>Los Alamos National Laboratory</p>
+</dd>
+<dt class="field-even">Phone</dt>
+<dd class="field-even"><p>505-667-7723</p>
+</dd>
+<dt class="field-odd">Email</dt>
+<dd class="field-odd"><p><a class="reference external" href="mailto:ahg&#37;&#52;&#48;lanl&#46;gov">ahg<span>&#64;</span>lanl<span>&#46;</span>gov</a></p>
+</dd>
+</dl>
 <div class="section" id="section-1-introduction">
 <h3>Section 1. Introduction<a class="headerlink" href="#section-1-introduction" title="Permalink to this headline">¶</a></h3>
 <p>DCON is a code for determining the MHD stability of static
@@ -233,45 +229,45 @@ proportional to B_p**power_bp * B**power_b / R**power_r, with B_p the
 poloidal field strength, B the total field strength, R the major radius,
 and power_bp, power_b, and power_r input integers.  Some commonly-used
 and named coordinate systems are:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="29%" />
-<col width="29%" />
-<col width="20%" />
-<col width="23%" />
+<col style="width: 29%" />
+<col style="width: 29%" />
+<col style="width: 20%" />
+<col style="width: 23%" />
 </colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">name</th>
-<th class="head">power_bp</th>
-<th class="head">power_b</th>
-<th class="head">power_r</th>
+<thead>
+<tr class="row-odd"><th class="head"><p>name</p></th>
+<th class="head"><p>power_bp</p></th>
+<th class="head"><p>power_b</p></th>
+<th class="head"><p>power_r</p></th>
 </tr>
 </thead>
-<tbody valign="top">
-<tr class="row-even"><td>hamada</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
+<tbody>
+<tr class="row-even"><td><p>hamada</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>pest</td>
-<td>0</td>
-<td>0</td>
-<td>2</td>
+<tr class="row-odd"><td><p>pest</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>2</p></td>
 </tr>
-<tr class="row-even"><td>equal_arc</td>
-<td>1</td>
-<td>0</td>
-<td>0</td>
+<tr class="row-even"><td><p>equal_arc</p></td>
+<td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>boozer</td>
-<td>0</td>
-<td>2</td>
-<td>0</td>
+<tr class="row-odd"><td><p>boozer</p></td>
+<td><p>0</p></td>
+<td><p>2</p></td>
+<td><p>0</p></td>
 </tr>
 </tbody>
 </table>
 <p>The (ignorable) toroidal coordinate is:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">zeta</span> <span class="o">=</span> <span class="n">phi</span><span class="o">/</span><span class="n">twopi</span> <span class="o">+</span> <span class="n">nu</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span><span class="n">theta</span><span class="p">),</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zeta</span> <span class="o">=</span> <span class="n">phi</span><span class="o">/</span><span class="n">twopi</span> <span class="o">+</span> <span class="n">nu</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span><span class="n">theta</span><span class="p">),</span>
 </pre></div>
 </div>
 <p>where nu is a single-valued function of theta.  PEST coordinates have
@@ -296,56 +292,56 @@ monitor the convergence.</p>
 <p>gzip -cd dcon_3.50.tar.gz | tar -xvf -</p>
 <p>It will create a subdirectory ./dcon_3.50 and place its files there.
 The contents of the dcon package are as follows:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="18%" />
-<col width="82%" />
+<col style="width: 18%" />
+<col style="width: 82%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>README:</td>
-<td>this file.</td>
+<tbody>
+<tr class="row-odd"><td><p>README:</p></td>
+<td><p>this file.</p></td>
 </tr>
-<tr class="row-even"><td>equil:</td>
-<td>source code for equilibrium data processing</td>
+<tr class="row-even"><td><p>equil:</p></td>
+<td><p>source code for equilibrium data processing</p></td>
 </tr>
-<tr class="row-odd"><td>dcon:</td>
-<td>source code for DCON, stability code</td>
+<tr class="row-odd"><td><p>dcon:</p></td>
+<td><p>source code for DCON, stability code</p></td>
 </tr>
-<tr class="row-even"><td>match:</td>
-<td>source code for MATCH, future code for resistive modes</td>
+<tr class="row-even"><td><p>match:</p></td>
+<td><p>source code for MATCH, future code for resistive modes</p></td>
 </tr>
-<tr class="row-odd"><td>orbit:</td>
-<td>source code for ORBIT, full-orbit particle tracking</td>
+<tr class="row-odd"><td><p>orbit:</p></td>
+<td><p>source code for ORBIT, full-orbit particle tracking</p></td>
 </tr>
-<tr class="row-even"><td>multi:</td>
-<td>source code for MULTI, multiple runs of DCON</td>
+<tr class="row-even"><td><p>multi:</p></td>
+<td><p>source code for MULTI, multiple runs of DCON</p></td>
 </tr>
-<tr class="row-odd"><td>sum:</td>
-<td>source code for SUM, data extraction from MULTI runs</td>
+<tr class="row-odd"><td><p>sum:</p></td>
+<td><p>source code for SUM, data extraction from MULTI runs</p></td>
 </tr>
-<tr class="row-even"><td>draw:</td>
-<td>xdraw control files draw*.in</td>
+<tr class="row-even"><td><p>draw:</p></td>
+<td><p>xdraw control files draw*.in</p></td>
 </tr>
-<tr class="row-odd"><td>equilibria:</td>
-<td>sample equilibrium files</td>
+<tr class="row-odd"><td><p>equilibria:</p></td>
+<td><p>sample equilibrium files</p></td>
 </tr>
-<tr class="row-even"><td>input:</td>
-<td>dcon control files</td>
+<tr class="row-even"><td><p>input:</p></td>
+<td><p>dcon control files</p></td>
 </tr>
-<tr class="row-odd"><td>lsode:</td>
-<td>source code for ODE solver</td>
+<tr class="row-odd"><td><p>lsode:</p></td>
+<td><p>source code for ODE solver</p></td>
 </tr>
-<tr class="row-even"><td>makefile:</td>
-<td>master makefile for all codes on all machines</td>
+<tr class="row-even"><td><p>makefile:</p></td>
+<td><p>master makefile for all codes on all machines</p></td>
 </tr>
-<tr class="row-odd"><td>tex:</td>
-<td>preprint on the theory of DCON and equations for ORBIT</td>
+<tr class="row-odd"><td><p>tex:</p></td>
+<td><p>preprint on the theory of DCON and equations for ORBIT</p></td>
 </tr>
-<tr class="row-even"><td>vacuum:</td>
-<td>source code for Morrell Chance’s VACUUM code</td>
+<tr class="row-even"><td><p>vacuum:</p></td>
+<td><p>source code for Morrell Chance’s VACUUM code</p></td>
 </tr>
-<tr class="row-odd"><td>xdraw:</td>
-<td>source code for XDRAW graphics code</td>
+<tr class="row-odd"><td><p>xdraw:</p></td>
+<td><p>source code for XDRAW graphics code</p></td>
 </tr>
 </tbody>
 </table>
@@ -387,90 +383,90 @@ commentary.</p>
 <p>This specifies the type of the input file.  It allows DCON to determine
 whether the file is ascii or binary, whether it is direct or inverse,
 and how to interpret the data.  Here is a list of allowed types:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="20%" />
-<col width="48%" />
-<col width="20%" />
-<col width="13%" />
+<col style="width: 20%" />
+<col style="width: 48%" />
+<col style="width: 20%" />
+<col style="width: 13%" />
 </colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">Name</th>
-<th class="head">Description</th>
-<th class="head">Data Type</th>
-<th class="head">Format</th>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Data Type</p></th>
+<th class="head"><p>Format</p></th>
 </tr>
 </thead>
-<tbody valign="top">
-<tr class="row-even"><td>“fluxgrid”</td>
-<td>NIMROD data file</td>
-<td>inverse</td>
-<td>ascii</td>
+<tbody>
+<tr class="row-even"><td><p>“fluxgrid”</p></td>
+<td><p>NIMROD data file</p></td>
+<td><p>inverse</p></td>
+<td><p>ascii</p></td>
 </tr>
-<tr class="row-odd"><td>“miller”</td>
-<td>Bob Miller’s TOQ code</td>
-<td>inverse</td>
-<td>binary_8</td>
+<tr class="row-odd"><td><p>“miller”</p></td>
+<td><p>Bob Miller’s TOQ code</p></td>
+<td><p>inverse</p></td>
+<td><p>binary_8</p></td>
 </tr>
-<tr class="row-even"><td>“chease”</td>
-<td>Lausanne CHEASE code, 8-byte</td>
-<td>inverse</td>
-<td>binary_8</td>
+<tr class="row-even"><td><p>“chease”</p></td>
+<td><p>Lausanne CHEASE code, 8-byte</p></td>
+<td><p>inverse</p></td>
+<td><p>binary_8</p></td>
 </tr>
-<tr class="row-odd"><td>“chease4”</td>
-<td>Lausanne CHEASE code</td>
-<td>inverse</td>
-<td>binary_4</td>
+<tr class="row-odd"><td><p>“chease4”</p></td>
+<td><p>Lausanne CHEASE code</p></td>
+<td><p>inverse</p></td>
+<td><p>binary_4</p></td>
 </tr>
-<tr class="row-even"><td>“chum”</td>
-<td>Modified Miller code</td>
-<td>inverse</td>
-<td>binary_4</td>
+<tr class="row-even"><td><p>“chum”</p></td>
+<td><p>Modified Miller code</p></td>
+<td><p>inverse</p></td>
+<td><p>binary_4</p></td>
 </tr>
-<tr class="row-odd"><td>“galkin”</td>
-<td>Sergei Galkin’s code</td>
-<td>inverse</td>
-<td>binary_8</td>
+<tr class="row-odd"><td><p>“galkin”</p></td>
+<td><p>Sergei Galkin’s code</p></td>
+<td><p>inverse</p></td>
+<td><p>binary_8</p></td>
 </tr>
-<tr class="row-even"><td>“efit”</td>
-<td>GA EFIT code</td>
-<td>direct</td>
-<td>ascii</td>
+<tr class="row-even"><td><p>“efit”</p></td>
+<td><p>GA EFIT code</p></td>
+<td><p>direct</p></td>
+<td><p>ascii</p></td>
 </tr>
-<tr class="row-odd"><td>“rsteq”</td>
-<td>ORNL RSTEQ code</td>
-<td>direct</td>
-<td>binary_8</td>
+<tr class="row-odd"><td><p>“rsteq”</p></td>
+<td><p>ORNL RSTEQ code</p></td>
+<td><p>direct</p></td>
+<td><p>binary_8</p></td>
 </tr>
-<tr class="row-even"><td>“ldp_d”</td>
-<td>Don Pearlstein’s TEQ code</td>
-<td>direct</td>
-<td>binary_8</td>
+<tr class="row-even"><td><p>“ldp_d”</p></td>
+<td><p>Don Pearlstein’s TEQ code</p></td>
+<td><p>direct</p></td>
+<td><p>binary_8</p></td>
 </tr>
-<tr class="row-odd"><td>“ldp_i”</td>
-<td>Don Pearlstein’s inverse code</td>
-<td>inverse</td>
-<td>binary_8</td>
+<tr class="row-odd"><td><p>“ldp_i”</p></td>
+<td><p>Don Pearlstein’s inverse code</p></td>
+<td><p>inverse</p></td>
+<td><p>binary_8</p></td>
 </tr>
-<tr class="row-even"><td>“jsolver”</td>
-<td>Steve Jardin’s JSOLVER code</td>
-<td>inverse</td>
-<td>ascii</td>
+<tr class="row-even"><td><p>“jsolver”</p></td>
+<td><p>Steve Jardin’s JSOLVER code</p></td>
+<td><p>inverse</p></td>
+<td><p>ascii</p></td>
 </tr>
-<tr class="row-odd"><td>“lez”</td>
-<td>Leonid Zakharov’v code</td>
-<td>inverse</td>
-<td>binary_4</td>
+<tr class="row-odd"><td><p>“lez”</p></td>
+<td><p>Leonid Zakharov’v code</p></td>
+<td><p>inverse</p></td>
+<td><p>binary_4</p></td>
 </tr>
-<tr class="row-even"><td>“transp”</td>
-<td>Data from the TRANSP code</td>
-<td>inverse</td>
-<td>ascii</td>
+<tr class="row-even"><td><p>“transp”</p></td>
+<td><p>Data from the TRANSP code</p></td>
+<td><p>inverse</p></td>
+<td><p>ascii</p></td>
 </tr>
-<tr class="row-odd"><td>“sontag”</td>
-<td>Aaron Sontag’s direct solver</td>
-<td>direct</td>
-<td>ascii</td>
+<tr class="row-odd"><td><p>“sontag”</p></td>
+<td><p>Aaron Sontag’s direct solver</p></td>
+<td><p>direct</p></td>
+<td><p>ascii</p></td>
 </tr>
 </tbody>
 </table>
@@ -495,26 +491,26 @@ accordingly and ignores the input values.  To use any other values,
 choose jac_type=”other” and set the integer variables power_b and
 power_r.</p>
 <p>Next come specifications of grid parameters.</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="25%" />
-<col width="75%" />
+<col style="width: 25%" />
+<col style="width: 75%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>grid_type=”ldp”</td>
-<td>type of radial grid packing</td>
+<tbody>
+<tr class="row-odd"><td><p>grid_type=”ldp”</p></td>
+<td><p>type of radial grid packing</p></td>
 </tr>
-<tr class="row-even"><td>psilow=1e-4</td>
-<td>minimum value of psi, normalized from 0 to 1</td>
+<tr class="row-even"><td><p>psilow=1e-4</p></td>
+<td><p>minimum value of psi, normalized from 0 to 1</p></td>
 </tr>
-<tr class="row-odd"><td>psihigh=1</td>
-<td>maximum value of psi, normalized from 0 to 1</td>
+<tr class="row-odd"><td><p>psihigh=1</p></td>
+<td><p>maximum value of psi, normalized from 0 to 1</p></td>
 </tr>
-<tr class="row-even"><td>mpsi=128</td>
-<td>number of radial grid intervals</td>
+<tr class="row-even"><td><p>mpsi=128</p></td>
+<td><p>number of radial grid intervals</p></td>
 </tr>
-<tr class="row-odd"><td>mtheta=128</td>
-<td>number of poloidal grid intervals</td>
+<tr class="row-odd"><td><p>mtheta=128</p></td>
+<td><p>number of poloidal grid intervals</p></td>
 </tr>
 </tbody>
 </table>
@@ -562,33 +558,33 @@ they are not used wastes cpu time and disk space.  The ascii files are
 readable by any text editor and can also be printed.  The binary files
 are intended for viewing with XDRAW.  Here is a brief description of the
 optional output files.</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="22%" />
-<col width="78%" />
+<col style="width: 22%" />
+<col style="width: 78%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>gse_flag=f</td>
-<td>produces diagnostic output for accuracy of solution to
-Grad-Shafranov equation</td>
+<tbody>
+<tr class="row-odd"><td><p>gse_flag=f</p></td>
+<td><p>produces diagnostic output for accuracy of solution to
+Grad-Shafranov equation</p></td>
 </tr>
-<tr class="row-even"><td>out_eq_1d=f</td>
-<td>ascii output of 1D equilibrium file data</td>
+<tr class="row-even"><td><p>out_eq_1d=f</p></td>
+<td><p>ascii output of 1D equilibrium file data</p></td>
 </tr>
-<tr class="row-odd"><td>bin_eq_1d=f</td>
-<td>binary output of 1D equilibrium file data</td>
+<tr class="row-odd"><td><p>bin_eq_1d=f</p></td>
+<td><p>binary output of 1D equilibrium file data</p></td>
 </tr>
-<tr class="row-even"><td>out_eq_2d=f</td>
-<td>ascii output of 1D equilibrium file data</td>
+<tr class="row-even"><td><p>out_eq_2d=f</p></td>
+<td><p>ascii output of 1D equilibrium file data</p></td>
 </tr>
-<tr class="row-odd"><td>bin_eq_2d=f</td>
-<td>binary output of 2D equilibrium file data</td>
+<tr class="row-odd"><td><p>bin_eq_2d=f</p></td>
+<td><p>binary output of 2D equilibrium file data</p></td>
 </tr>
-<tr class="row-even"><td>out_2d=f</td>
-<td>ascii output of processed 2D data</td>
+<tr class="row-even"><td><p>out_2d=f</p></td>
+<td><p>ascii output of processed 2D data</p></td>
 </tr>
-<tr class="row-odd"><td>bin_2d=f</td>
-<td>binary output of processed 2D data</td>
+<tr class="row-odd"><td><p>bin_2d=f</p></td>
+<td><p>binary output of processed 2D data</p></td>
 </tr>
 </tbody>
 </table>
@@ -605,35 +601,35 @@ The pressure profile is given by p0*(1-(r/a))**p_pres, and the profile
 of sigma=J.B/B^2 is given by sigma0*(1-(r/a))**p_pres.  Changing these
 to something more interesting would be very simple.  Here are sample
 input parameters:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="22%" />
-<col width="78%" />
+<col style="width: 22%" />
+<col style="width: 78%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>ma=64</td>
-<td>number of radial grid points</td>
+<tbody>
+<tr class="row-odd"><td><p>ma=64</p></td>
+<td><p>number of radial grid points</p></td>
 </tr>
-<tr class="row-even"><td>mtau=64</td>
-<td>number of azimuthal grid points</td>
+<tr class="row-even"><td><p>mtau=64</p></td>
+<td><p>number of azimuthal grid points</p></td>
 </tr>
-<tr class="row-odd"><td>lar_r0=10</td>
-<td>major radium</td>
+<tr class="row-odd"><td><p>lar_r0=10</p></td>
+<td><p>major radium</p></td>
 </tr>
-<tr class="row-even"><td>lar_a=1</td>
-<td>minor radius</td>
+<tr class="row-even"><td><p>lar_a=1</p></td>
+<td><p>minor radius</p></td>
 </tr>
-<tr class="row-odd"><td>beta0=0</td>
-<td>value of beta (pressure ratio) on axis</td>
+<tr class="row-odd"><td><p>beta0=0</p></td>
+<td><p>value of beta (pressure ratio) on axis</p></td>
 </tr>
-<tr class="row-even"><td>q0=3.2</td>
-<td>value of q (safety factor) on axis</td>
+<tr class="row-even"><td><p>q0=3.2</p></td>
+<td><p>value of q (safety factor) on axis</p></td>
 </tr>
-<tr class="row-odd"><td>p_pres=2</td>
-<td>power used in specifying pressure profile</td>
+<tr class="row-odd"><td><p>p_pres=2</p></td>
+<td><p>power used in specifying pressure profile</p></td>
 </tr>
-<tr class="row-even"><td>p_sig=2</td>
-<td>power used in specifying current profile</td>
+<tr class="row-even"><td><p>p_sig=2</p></td>
+<td><p>power used in specifying current profile</p></td>
 </tr>
 </tbody>
 </table>
@@ -642,32 +638,32 @@ eq_type=”soloviev” and eq_filename=”sol.in”.  See Berger et al
 [D. Berger,L.C. Bernard, R. Gruber,and 6. Troyon, J. Appl. Math.
 Phys. (ZAMP) 31 (1980) 113] for a published stability analysis of this
 equilibrium.  Here are input parameters:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="22%" />
-<col width="78%" />
+<col style="width: 22%" />
+<col style="width: 78%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>mr=128</td>
-<td>number of radial grid points</td>
+<tbody>
+<tr class="row-odd"><td><p>mr=128</p></td>
+<td><p>number of radial grid points</p></td>
 </tr>
-<tr class="row-even"><td>mz=128</td>
-<td>number of axial grid points</td>
+<tr class="row-even"><td><p>mz=128</p></td>
+<td><p>number of axial grid points</p></td>
 </tr>
-<tr class="row-odd"><td>ma=128</td>
-<td>number of flux surfaces for surface quantities</td>
+<tr class="row-odd"><td><p>ma=128</p></td>
+<td><p>number of flux surfaces for surface quantities</p></td>
 </tr>
-<tr class="row-even"><td>e=1</td>
-<td>vertical elongation factor</td>
+<tr class="row-even"><td><p>e=1</p></td>
+<td><p>vertical elongation factor</p></td>
 </tr>
-<tr class="row-odd"><td>a=1</td>
-<td>minor radius</td>
+<tr class="row-odd"><td><p>a=1</p></td>
+<td><p>minor radius</p></td>
 </tr>
-<tr class="row-even"><td>r0=3</td>
-<td>major radius</td>
+<tr class="row-even"><td><p>r0=3</p></td>
+<td><p>major radius</p></td>
 </tr>
-<tr class="row-odd"><td>q0=1.26</td>
-<td>value of q (safety factor) on axis</td>
+<tr class="row-odd"><td><p>q0=1.26</p></td>
+<td><p>value of q (safety factor) on axis</p></td>
 </tr>
 </tbody>
 </table>
@@ -678,23 +674,23 @@ equilibrium.  Here are input parameters:</p>
 dcon.in, containing two namelists, dcon_control and dcon_output.  The
 first begins with a set of flags which determine which features of DCON
 are exercised:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="13%" />
-<col width="87%" />
+<col style="width: 13%" />
+<col style="width: 87%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>bal_flag=t</td>
-<td>Ideal MHD ballooning criterion for short wavelengths</td>
+<tbody>
+<tr class="row-odd"><td><p>bal_flag=t</p></td>
+<td><p>Ideal MHD ballooning criterion for short wavelengths</p></td>
 </tr>
-<tr class="row-even"><td>mat_flag=t</td>
-<td>Construct coefficient matrices for diagnostic purposes</td>
+<tr class="row-even"><td><p>mat_flag=t</p></td>
+<td><p>Construct coefficient matrices for diagnostic purposes</p></td>
 </tr>
-<tr class="row-odd"><td>ode_flag=t</td>
-<td>Integrate ODE’s for determining stability of internal long-wavelength mode</td>
+<tr class="row-odd"><td><p>ode_flag=t</p></td>
+<td><p>Integrate ODE’s for determining stability of internal long-wavelength mode</p></td>
 </tr>
-<tr class="row-even"><td>vac_flag=t</td>
-<td>Compute plasma, vacuum, and total energies for free-boundary modes</td>
+<tr class="row-even"><td><p>vac_flag=t</p></td>
+<td><p>Compute plasma, vacuum, and total energies for free-boundary modes</p></td>
 </tr>
 </tbody>
 </table>
@@ -807,26 +803,26 @@ is done.  It should be left at 1e4 by the casual user.</p>
 output options.  Many of the optional outputs of interest only to the
 developer have been removed to avoid confusion.  The only remaining ones
 are:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="18%" />
-<col width="82%" />
+<col style="width: 18%" />
+<col style="width: 82%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>crit_break=t</td>
-<td>determines whether the color of the crit curve (see
-below) changes after crossing a singular surface</td>
+<tbody>
+<tr class="row-odd"><td><p>crit_break=t</p></td>
+<td><p>determines whether the color of the crit curve (see
+below) changes after crossing a singular surface</p></td>
 </tr>
-<tr class="row-even"><td>ahb_flag=f</td>
-<td>produces output on normal magnetic field eigenvalues and
+<tr class="row-even"><td><p>ahb_flag=f</p></td>
+<td><p>produces output on normal magnetic field eigenvalues and
 eigenfunctions at plasma-vacuum interface (in honor of
-Allen H. Boozer)</td>
+Allen H. Boozer)</p></td>
 </tr>
-<tr class="row-odd"><td>mthsurf0</td>
-<td>real variable, provides user control over number of boundary
+<tr class="row-odd"><td><p>mthsurf0</p></td>
+<td><p>real variable, provides user control over number of boundary
 points used to display surface eigenfunctions for
 ahgb_flag=t.  Default value 1, number of points
-increases linearly with mthsurf0</td>
+increases linearly with mthsurf0</p></td>
 </tr>
 </tbody>
 </table>
@@ -851,7 +847,7 @@ contains a complete description of the input.  Use LaTeX.</p>
 <p>During the running of DCON, the code writes terse messages to
 the screen to inform the user of its progress.  Here is the output of a
 typical run:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$
 $ dcon
  Equilibrium: ../../equilibria/efit/82205-1.25X, Type: efit
  Jac_type = hamada, power_b = 0, power_r = 0
@@ -1075,15 +1071,15 @@ information is better obtained in graphical form.</p>
 <p>To view the main graphical output, do “xdraw orbit”.  This
 produces 9 graphs:</p>
 <ol class="arabic simple">
-<li>Radial Position, R vs. tau</li>
-<li>Axial Position, Z vs. tau</li>
-<li>Orbit in Poloidal Plane, Z vs. R</li>
-<li>Normalized Poloidal Flux, psi vs. tau</li>
-<li>Parallel Velocity, v_parallel vs. tau</li>
-<li>Orbit Viewed Along Axis, R*sin(phi) vs. R*cos(phi)</li>
-<li>Relative Change in Energy, error vs. tau</li>
-<li>Relative Change in Magnetic Moment, d_mu/mu_0</li>
-<li>Larmor Radius / Radius of Curvature, rl/R</li>
+<li><p>Radial Position, R vs. tau</p></li>
+<li><p>Axial Position, Z vs. tau</p></li>
+<li><p>Orbit in Poloidal Plane, Z vs. R</p></li>
+<li><p>Normalized Poloidal Flux, psi vs. tau</p></li>
+<li><p>Parallel Velocity, v_parallel vs. tau</p></li>
+<li><p>Orbit Viewed Along Axis, R*sin(phi) vs. R*cos(phi)</p></li>
+<li><p>Relative Change in Energy, error vs. tau</p></li>
+<li><p>Relative Change in Magnetic Moment, d_mu/mu_0</p></li>
+<li><p>Larmor Radius / Radius of Curvature, rl/R</p></li>
 </ol>
 <p>The color changes each time the particle crosses the separatrix.</p>
 </div>
@@ -1092,11 +1088,11 @@ produces 9 graphs:</p>
 <p>There is a subdirectory ./tex containing miscellaneous
 documentation.  Here is a brief description.</p>
 <ol class="arabic simple">
-<li>tex/dcon/manuscript:</li>
+<li><p>tex/dcon/manuscript:</p></li>
 </ol>
 <p>An unpublished manuscript on the theory of DCON.</p>
 <ol class="arabic simple" start="2">
-<li>tex/dcon/notebook:</li>
+<li><p>tex/dcon/notebook:</p></li>
 </ol>
 <p>Raw equations on the theory of DCON:</p>
 <p>dcon.tex        Raw equations on the theory of DCON
@@ -1131,7 +1127,7 @@ metric.tex      Expressions for the metric tensor</p>
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
     </p>
   </div>
 </footer>

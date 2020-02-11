@@ -2,24 +2,16 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>GPEC User Agreement &#8212; GPEC 1.3.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>GPEC User Agreement &#8212; GPEC 1.3.8 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
     <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
@@ -31,8 +23,7 @@
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-  </head>
-  <body>
+  </head><body>
 
   <div id="navbar" class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -111,6 +102,10 @@
 </li>
 </ul>
 
+<div id="sourcelink">
+  <a href="_sources/index.rst.txt"
+     rel="nofollow">Source</a>
+</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -120,25 +115,22 @@
 </form>
         </div>
       </div>
-    <div class="col-md-12 content">
+    <div class="col-md-9 content">
       
   <div class="section" id="gpec-user-agreement">
 <h1>GPEC User Agreement<a class="headerlink" href="#gpec-user-agreement" title="Permalink to this headline">¶</a></h1>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Date:</th><td class="field-body">2016.03.18</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Date</dt>
+<dd class="field-odd"><p>2016.03.18</p>
+</dd>
+</dl>
 <p>GPEC development is funded by the US Department of Energy (DoE) through the Princeton Plasma Physics Laboratory (PPPL), and distribution is subject to DoE and PPPL requirements and restrictions.</p>
 <p>The scientific results from the use of GPEC are intended for publication and sharing in the open scientific community.</p>
 <p>In order to acquire access to the code sources and/or executables, the user must agree to the following:</p>
 <ol class="arabic simple">
-<li>The user will not rename, modify or redistribute the code, in whole or in part, to 3rd parties without consent of the authors, although the code may be imbedded unmodified and shared within a larger software project.</li>
-<li>If modifications or improvements are needed, these will be developed in collaboration with the authors, so that they may be redistributed through the GPEC git versioning distributions to the benefit of all GPEC users.</li>
-<li>The users will include the proper code name(s) and appropriate references in published results and presentations. The will must email a draft of any article/report/presentation/etc. using GPEC results to the authors prior to publishing.</li>
+<li><p>The user will not rename, modify or redistribute the code, in whole or in part, to 3rd parties without consent of the authors, although the code may be imbedded unmodified and shared within a larger software project.</p></li>
+<li><p>If modifications or improvements are needed, these will be developed in collaboration with the authors, so that they may be redistributed through the GPEC git versioning distributions to the benefit of all GPEC users.</p></li>
+<li><p>The users will include the proper code name(s) and appropriate references in published results and presentations. The will must email a draft of any article/report/presentation/etc. using GPEC results to the authors prior to publishing.</p></li>
 </ol>
 </div>
 <div class="section" id="installations">
@@ -148,22 +140,22 @@
 <p>Public installations are available at PPPL (portal.pppl.gov), GA (iris.gat.com), and NFRI (ukstar). Public installations are regularly cloned and kept up to date with the <a class="reference internal" href="releases.html#releases"><span class="std std-ref">official releases</span></a>.</p>
 <p>The default gpec module at each institution tracks the latest release. Public installations of the “development” (beta) branch are also available if you should happen to need a new feature right away.</p>
 <p>On any of the above clusters, use the module system to obtain the appropriate gpec environment. For example, use:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">avail</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">avail</span>
 </pre></div>
 </div>
 <p>to see the available releases or simply,:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">load</span> <span class="n">gpec</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">load</span> <span class="n">gpec</span>
 </pre></div>
 </div>
 <p>to load the current default. This will load the necessary compiler modules and add the appropriate directories to your path, such that you can simply call the executables (i.e. dcon, gpec, etc.).</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last"><strong>For PPPL Users</strong>
-On the Princeton portal.pppl.gov computers, users must first execute <code class="code docutils literal"><span class="pre">module</span> <span class="pre">use</span> <span class="pre">/p/gpec/modules</span></code>. It is recommended this be included in a .bashrc or similar file.</p>
+<p class="admonition-title">Note</p>
+<p><strong>For PPPL Users</strong>
+On the Princeton portal.pppl.gov computers, users must first execute <code class="code docutils literal notranslate"><span class="pre">module</span> <span class="pre">use</span> <span class="pre">/p/gpec/modules</span></code>. It is recommended this be included in a .bashrc or similar file.</p>
 </div>
-<p>Loading the gpec module sets the <code class="code docutils literal"><span class="pre">$GPECHOME</span></code> environment variable. This is helpful for find the path to source code, including such helpful things as the <a class="reference external" href="https://docs.python.org/3/distutils/examples.html#examples" title="(in Python v3.7)"><span>Examples</span></a> at <code class="code docutils literal"><span class="pre">$GPECHOME/docs/examples</span></code>.</p>
+<p>Loading the gpec module sets the <code class="code docutils literal notranslate"><span class="pre">$GPECHOME</span></code> environment variable. This is helpful for find the path to source code, including such helpful things as the <span class="xref std std-ref">examples</span> at <code class="code docutils literal notranslate"><span class="pre">$GPECHOME/docs/examples</span></code>.</p>
 <p>Modules for any past minor release versions installed are retained on the cluster, so you can always go back to re-run old work. The latest development branch is also available using,:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">load</span> <span class="n">gpec</span><span class="o">/</span><span class="mf">0.0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">load</span> <span class="n">gpec</span><span class="o">/</span><span class="mf">0.0</span>
 </pre></div>
 </div>
 <p>but this should be used with the understanding that many of it’s features are in beta testing and no guaranties are made for its stability. We ask that users always <a class="reference internal" href="contact.html#contacts"><span class="std std-ref">contact a developer</span></a> if/when thinking of using a beta feature.</p>
@@ -174,7 +166,7 @@ On the Princeton portal.pppl.gov computers, users must first execute <code class
 <p>The global makefile can be found in the install directory. This essentially enters and makes each individual subdirectory. Each subdirectory’s makefile references the DEFAULTS.inc file, also in install.
 Compiled using this install makefile, the executables will then be available in their individual subdirectories as well as collected in the bin directory.</p>
 <p>Compiling should use intel compilers with the -qopenmp flag for parallel kinetic calculations in the gpec executable. An example make command might be,:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-qopenmp&quot;</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span> <span class="o">|</span> <span class="n">tee</span> <span class="n">make</span><span class="o">.</span><span class="n">log</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">FFLAGS</span><span class="o">=</span><span class="s2">&quot;-qopenmp&quot;</span> <span class="mi">2</span><span class="o">&gt;&amp;</span><span class="mi">1</span> <span class="o">|</span> <span class="n">tee</span> <span class="n">make</span><span class="o">.</span><span class="n">log</span>
 </pre></div>
 </div>
 <p>where the logging part is merely a useful suggestion. Appropriate compiler details for the major fusion clusters on which public installations are maintained is recorded in the $GPECHOME/install/DEFAULTS.inc file annotations.</p>
@@ -190,35 +182,41 @@ Compiled using this install makefile, the executables will then be available in 
 <h1>Manual Run Process<a class="headerlink" href="#manual-run-process" title="Permalink to this headline">¶</a></h1>
 <p>This section outlines the basic run process with reference to some of the most common input-output manipulation in GPEC runs. This is not meant to be a complete coverage of the many options and capabilities available to the user during this process. For a complete list of the input and output control variables please see the <span class="xref std std-ref">Inputs</span> section.</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The use of $GPECHOME and executable commands such as <cite>dcon</cite>, <cite>gpec</cite> or <cite>pentrc</cite> assumes the appropriate environement variables have been set. The easiest way to do this is to use the module commands associated with one of the public installations.</p>
+<p class="admonition-title">Note</p>
+<p>The use of $GPECHOME and executable commands such as <cite>dcon</cite>, <cite>gpec</cite> or <cite>pentrc</cite> assumes the appropriate environement variables have been set. The easiest way to do this is to use the module commands associated with one of the public installations.</p>
 </div>
 <p>To run GPEC, a user should first navigate to a directory in which they wish to run and write outputs. Once in the run-directory the user needs (at a minimum) the dcon, equil, vac, and gpec namelist files, which can be copied from $GPECHOME/input for example. The user can then follow these simple steps to complete a GPEC run:</p>
 <ol class="arabic simple">
-<li>Edit the dcon.in file<ul>
-<li>DCON will only run for a single toroidal mode number. Set the toroidal mode number for the entire run here using the crucial parameter nn. GPEC outputs for multiple toroidal mode numbers can be added together in the post-processing.</li>
+<li><p>Edit the dcon.in file</p>
+<ul class="simple">
+<li><p>DCON will only run for a single toroidal mode number. Set the toroidal mode number for the entire run here using the crucial parameter nn. GPEC outputs for multiple toroidal mode numbers can be added together in the post-processing.</p></li>
 </ul>
 </li>
-<li>Edit the equil.in file<ul>
-<li>Specify the specific plasma shot of interest by setting the initial equilibrium file (ex: EFIT output g-file).</li>
-<li>Set the range of normalized flux to be included in the calculation.</li>
+<li><p>Edit the equil.in file</p>
+<ul class="simple">
+<li><p>Specify the specific plasma shot of interest by setting the initial equilibrium file (ex: EFIT output g-file).</p></li>
+<li><p>Set the range of normalized flux to be included in the calculation.</p></li>
 </ul>
 </li>
-<li>$GPECHOME/bin/dcon<ul>
-<li>This creates the euler.bin file, which provides a orthonormal basis of force balance states for GPEC.</li>
-<li>Once this is created, you can various effects on this equilibrium by changing the 3D field input in gpec.in without having to run DCON again.</li>
+<li><p>$GPECHOME/bin/dcon</p>
+<ul class="simple">
+<li><p>This creates the euler.bin file, which provides a orthonormal basis of force balance states for GPEC.</p></li>
+<li><p>Once this is created, you can various effects on this equilibrium by changing the 3D field input in gpec.in without having to run DCON again.</p></li>
 </ul>
 </li>
-<li>Edit the gpec.in file<ul>
-<li>Specify the 3D error field input file to be used in GPEC to perturb the 2D equilibrium.<ul>
-<li>This must match the psihigh variable used in equil.in.</li>
+<li><p>Edit the gpec.in file</p>
+<ul class="simple">
+<li><p>Specify the 3D error field input file to be used in GPEC to perturb the 2D equilibrium.</p>
+<ul>
+<li><p>This must match the psihigh variable used in equil.in.</p></li>
 </ul>
 </li>
-<li>Set the flags to specify the desired outputs.</li>
+<li><p>Set the flags to specify the desired outputs.</p></li>
 </ul>
 </li>
-<li>$GPECHOME/bin/gpec<ul>
-<li>That’s it! Now go look at your output files.</li>
+<li><p>$GPECHOME/bin/gpec</p>
+<ul class="simple">
+<li><p>That’s it! Now go look at your output files.</p></li>
 </ul>
 </li>
 </ol>
@@ -230,7 +228,7 @@ Compiled using this install makefile, the executables will then be available in 
 <p>The GPEC repository contains a number of examples intended to provide both consistent regression testing and a useful reseource for users looking to manually run straightforward examples. These examples are located in $GPECHOME/docs/examples, and contain all the necessary inputs and namelists to run the appropriate suite of codes. Ideal and kinetic examples use dcon, gpec, and pentrc. Resistive examples contain the necessary inputs to run dcon, rdcon, rmatch and gpec.</p>
 <p>Example console commands and output are given below.</p>
 <ul class="simple">
-<li><a class="reference internal" href="examples.html#diiid-ideal-example"><span class="std std-ref">DIII-D Ideal Example</span></a></li>
+<li><p><a class="reference internal" href="examples.html#diiid-ideal-example"><span class="std std-ref">DIII-D Ideal Example</span></a></p></li>
 </ul>
 </div>
 </div>
@@ -255,7 +253,7 @@ Compiled using this install makefile, the executables will then be available in 
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
     </p>
   </div>
 </footer>

@@ -2,24 +2,16 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>GPEC DIII-D Ideal Example &#8212; GPEC 1.3.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>GPEC DIII-D Ideal Example &#8212; GPEC 1.3.8 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
     <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
@@ -31,8 +23,7 @@
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-  </head>
-  <body>
+  </head><body>
 
   <div id="navbar" class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -101,6 +92,10 @@
 <li><a class="reference internal" href="#">GPEC DIII-D Ideal Example</a></li>
 </ul>
 
+<div id="sourcelink">
+  <a href="_sources/examples.rst.txt"
+     rel="nofollow">Source</a>
+</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -110,14 +105,14 @@
 </form>
         </div>
       </div>
-    <div class="col-md-12 content">
+    <div class="col-md-9 content">
       
   <div class="section" id="gpec-diii-d-ideal-example">
 <span id="diiid-ideal-example"></span><h1>GPEC DIII-D Ideal Example<a class="headerlink" href="#gpec-diii-d-ideal-example" title="Permalink to this headline">¶</a></h1>
 <p>This example uses a baseline H-mode Error Field Correction (EFC) plasma from a n=1 EFC study done in 2013. The equilibrium used is a kinetic EFIT from DIII-D shot 147131 at 2300ms, and the profiles are self consistent with the equilibrium. Pre-GPEC results using a combination of GPEC and PENT for this calculation are published in <a class="reference external" href="http://scitation.aip.org/content/aip/journal/pop/21/7/10.1063/1.4886795">[C. Paz-Soldan, M. J. Lanctot, N. C. Logan, et al., Phys. Plasmas 21, 072503 (2014).]</a>.</p>
 <p>Note that the coil and pentrc input namelists use relative paths to the package’s data files. If you would like to run the example in a different location, you must change the input appropriately.</p>
 <p>Following a typical workflow we first cd to the example’s directory, then run DCON:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">dcon</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dcon</span>
 
  <span class="n">DCON</span> <span class="n">START</span> <span class="o">=&gt;</span> <span class="n">GPEC</span> <span class="n">version</span> <span class="mf">1.0</span><span class="o">.</span><span class="mi">0</span>
  <span class="n">__________________________________________</span>
@@ -150,7 +145,7 @@
 <p>From the positive total energy, we see that the plasma is reasonably stable for n=1 perturbations. Totals are often of this order 1e0-1e-2, while numbers of order 1e-3 or smaller might be considered approching instability and require some investigation. It is
 always a good idea to check any solution, using xdraw or just skimming dcon.out.</p>
 <p>Satisfied with the DCON result, we run GPEC:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">gpec</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gpec</span>
 
  <span class="n">GPEC</span> <span class="n">START</span> <span class="o">=&gt;</span> <span class="n">GPEC</span> <span class="n">version</span> <span class="mf">1.0</span><span class="o">.</span><span class="mi">0</span>
  <span class="n">__________________________________________</span>
@@ -223,7 +218,7 @@ always a good idea to check any solution, using xdraw or just skimming dcon.out.
 </div>
 <p>Here we see the plasma has a single mode permeability ~8, meaning that the application of the first permeability eigenmode on the plasma control surface would result in a total flux (external + plasma response) 8 times the applied mode. The full permeability eigenmode and eigevector information can be found in gpec_response_n1.out. We also see a preview of the resonant field information, a more detailed collection of which is in gpec_singfld_n1.out. Finally, we have told GPEC to calculate and output the clebsch coordinate displacments in gpec_xclebsch_n1.out. This becomes an input for PENT.</p>
 <p>Finally, we run PENT:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>pentrc
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>pentrc
 
  PENTRC START =&gt; GPEC version 1.0.0
  __________________________________________
@@ -328,8 +323,8 @@ PENTRC STOP =&gt; Normal termination.
 </pre></div>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The warnings about magnetic wells are ok in this case.</p>
+<p class="admonition-title">Note</p>
+<p>The warnings about magnetic wells are ok in this case.</p>
 </div>
 <p>We see that the full and trapped-only calculations of the torque agree reasonably well, which is consistent with the understanding that particles on banana orbits dominate the nonambipolar transport. The RLAR result in this case is orders of magnitude off, but does have generaly the correct qualitative behavior.</p>
 </div>
@@ -354,7 +349,7 @@ PENTRC STOP =&gt; Normal termination.
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
     </p>
   </div>
 </footer>

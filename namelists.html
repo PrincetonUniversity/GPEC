@@ -2,24 +2,16 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>The EQUIL Namelist &#8212; GPEC 1.3.0 documentation</title>
+    <meta charset="utf-8" />
+    <title>The EQUIL Namelist &#8212; GPEC 1.3.8 documentation</title>
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.3.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
     <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
@@ -31,8 +23,7 @@
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-  </head>
-  <body>
+  </head><body>
 
   <div id="navbar" class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -104,6 +95,10 @@
 <li><a class="reference internal" href="#the-pentrc-namelist">The PENTRC Namelist</a></li>
 </ul>
 
+<div id="sourcelink">
+  <a href="_sources/namelists.rst.txt"
+     rel="nofollow">Source</a>
+</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -113,14 +108,14 @@
 </form>
         </div>
       </div>
-    <div class="col-md-12 content">
+    <div class="col-md-9 content">
       
   <p>Fully annotated namelist input files can be found in the $GPECHOME/input directory and any of the examples in $GPECHOME/docs/examples directories of any <cite>public installation &lt;installation&gt;</cite>.</p>
 <p>The major input files requiring user interaction are as follows.</p>
 <div class="section" id="the-equil-namelist">
 <h1>The EQUIL Namelist<a class="headerlink" href="#the-equil-namelist" title="Permalink to this headline">¶</a></h1>
 <p>This namelist specifies the equilibrium inputs and how equilibrium quantities are splined for use in the various executables.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;EQUIL_CONTROL
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;EQUIL_CONTROL
     eq_type=&quot;efit&quot;       ! Type of the input 2D equilibrium file. Accepts efit, chease, fluxgrid, transp, jsolver, lar, sol, etc.
     eq_filename=&quot;mypath&quot; ! Path to input file (geqdsk, etc.) Must specified (no default).
 
@@ -129,14 +124,14 @@
     power_b=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
     power_r=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
 
-    grid_type=&quot;ldp&quot;      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp or original. ldp packs points near the core and edge.
+    grid_type=&quot;ldp&quot;      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp, pow1, pow2, or original. ldp packs points near the core and edge. pow* packs near the edge.
     psilow=1e-2          ! Minimum value of psi, normalized from 0 to 1
     psihigh=0.992        ! Maximum value of psi, normalized from 0 to 1
     mpsi=128              ! Number of radial grid intervals for equilibrium quantities
     mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
     newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
     etol = 1e-7          ! Tolerance for direct equilibrium reconstruction of flux surfaces/coordinates
-    use_classic_splines = t ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 
     input_only=f         ! Generate information about the input and then quit with no further calculation
     use_galgrid=t        ! Use the same grid as galerkin method when regrid=.True.
@@ -157,8 +152,7 @@
 <div class="section" id="the-dcon-namelist">
 <h1>The DCON Namelist<a class="headerlink" href="#the-dcon-namelist" title="Permalink to this headline">¶</a></h1>
 <p>This namelist controls the behavior of the DCON code and determines its outputs.</p>
-<pre class="literal-block">
-&amp;DCON_CONTROL
+<pre class="literal-block">&amp;DCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
     mat_flag=t           ! Construct coefficient matrices for diagnostic purposes
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
@@ -171,6 +165,7 @@
     qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
+    reform_eq_with_psilim=f ! Reforms equilibrium splines between psilow and psilim determined by psihigh/sas_flag/qhigh/peak_flag
 
     nn=1                 ! Toroidal mode number
     delta_mlow=8         ! Expands lower bound of Fourier harmonics
@@ -199,6 +194,8 @@
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 
+    termbycross_flag = f ! Terminate ODE solver in the event of a zero crossing
+
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
 &amp;DCON_OUTPUT
@@ -220,17 +217,16 @@
 
     netcdf_out=t         ! Replicate ascii dcon.out information in a netcdf file
 /
-
 </pre>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Additional DCON documentation can be found in the pre-GPEC documentation <a class="reference internal" href="dcon_readme.html#dcon"><span class="std std-ref">here</span></a>.</p>
+<p class="admonition-title">Note</p>
+<p>Additional DCON documentation can be found in the pre-GPEC documentation <a class="reference internal" href="dcon_readme.html#dcon"><span class="std std-ref">here</span></a>.</p>
 </div>
 </div>
 <div class="section" id="the-gpec-namelist">
 <h1>The GPEC Namelist<a class="headerlink" href="#the-gpec-namelist" title="Permalink to this headline">¶</a></h1>
 <p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;GPEC_INPUT
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&amp;GPEC_INPUT
    dcon_dir   = &quot;&quot;                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = &quot;euler.bin&quot;          ! Eigenfunctions output by DCON run
    ieqfile    = &quot;psi_in.bin&quot;         ! Flux surfaces output by DCON run
@@ -327,8 +323,7 @@
 <div class="section" id="the-pentrc-namelist">
 <h1>The PENTRC Namelist<a class="headerlink" href="#the-pentrc-namelist" title="Permalink to this headline">¶</a></h1>
 <p>This namelist sets the inputs, controls the behavior, and determines the outputs of the GPEC code.</p>
-<pre class="literal-block">
-&amp;PENT_INPUT
+<pre class="literal-block">&amp;PENT_INPUT
     idconfile  = &quot;euler.bin&quot;            ! Eigenfunctions output by DCON run
     kinetic_file = &quot;kinetic.txt&quot;        ! Ascii profiles. columns: psi_n, ni(m^-3), ne(m^-3), ti(eV), te(eV), omega_EXB(rad/s)
     data_dir = &quot;&quot;                       ! Location of pre-formed fnml matrix used in rlar and clar methods. &quot;default&quot; uses $GPECHOME/pentrc.
@@ -352,6 +347,8 @@
     wpfac = 1                           ! Artificial factor applied to omega_phi
     nufac = 1                           ! Artificial factor applied to collision operator
     divxfac = 1                         ! Artificial factor applied to div xi_perp
+
+    force_xialpha = .false.             ! Calculates tangential displacement from radial displacement and toroidal force balance (overwrites peq_file values)
 
     atol_xlmda = 1e-9                   ! Absolute tolerance in energy and pitch integration
     rtol_xlmda = 1e-5                   ! Relative tolerance in energy and pitch integration
@@ -386,6 +383,7 @@
     theta_out = f                       ! Output bounce integrands on psi_out
     psi_out = 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0   ! 10 surfaces for energy, pitch, and poloidal outputs
 
+    dynamic_grid = t                    ! Calculate each requested method using dynamic radial integration controlled by atol_psi and rtol_psi
     equil_grid = f                      ! Recalculate each requested method on equilibrium grid from DCON
     input_grid = f                      ! Recalculate each requested method on input displacements' grid
 
@@ -401,7 +399,6 @@
     lambdadebug = f                     ! Debug pitch integration
     xdebug = f                          ! Debug energy integration
 /
-
 
 </pre>
 </div>
@@ -426,7 +423,7 @@
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
     </p>
   </div>
 </footer>
