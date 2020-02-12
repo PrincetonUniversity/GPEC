@@ -172,7 +172,7 @@
 #   ------------------------------------------------------------
 #   Defaults tailored for
 #   Compiling with FC = /usr/local/bin/gfortran
-#      using math libraries -llapack -lblas
+#      using math libraries -llapack -lrefblas
 #      from /usr/lib
 #      including /usr/lib
 #      and netcdf libraries -lnetcdff -lnetcdf
@@ -215,7 +215,7 @@ ifdef MKLROOT
   	MATHLIBS = -lmkl_rt
 else ifdef LAPACKHOME
     MATHHOME = $(LAPACKHOME)
-    MATHLIBS = -llapack -lblas
+    MATHLIBS = -llapack -lrefblas
 else ifdef ACML_HOME
     MATHHOME = $(ACML_HOME)
     MATHLIBS = -lacml

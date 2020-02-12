@@ -149,7 +149,8 @@ module torque
             vpar,kappaint,kappa,kk,djdj,jbb,&
             rex,imx,tnorm,he_t,hd_t,wb_t,wd_t
         real(r8), dimension(nthetafuns,ntheta) :: orbitfs
-        real(r8), dimension(nlmda*3) :: bpts
+        !This only works when tspl%mx=512, a more permanent solution will be needed in the future
+        real(r8), dimension(512*3) :: bpts
         real(r8), dimension(mthsurf*3) :: extrema
         real(r8), dimension(2,nlmda) :: ldl
         real(r8), dimension(2,2+nlmda) :: ldl_inc
@@ -1408,12 +1409,12 @@ module torque
 
         psi = 1.0*x
 
-        !$omp parallel default(shared) &
-        !$omp& private(l,wtw_l,trq) &
-        !$omp& reduction(+:elems) &
-        !$omp& copyin(dbob_m,divx_m,kin,xs_m,fnml, &
-        !$omp& geom, sq, eqfun, rzphi, kin, &
-        !$omp& smats, tmats, xmats, ymats, zmats)
+        !!omp parallel default(shared) &
+        !!omp& private(l,wtw_l,trq) &
+        !!omp& reduction(+:elems) &
+        !!omp& copyin(dbob_m,divx_m,kin,xs_m,fnml, &
+        !!omp& geom, sq, eqfun, rzphi, kin, &
+        !!omp& smats, tmats, xmats, ymats, zmats)
 #ifdef _OPENMP
             IF(first .and. omp_get_thread_num() == 0)then
                lthreads = omp_get_num_threads()
@@ -1445,7 +1446,7 @@ module torque
             ydot(2*(l+nl)+2) = aimag(trq)
         enddo
         !$omp end do
-        !$omp end parallel
+        !!omp end parallel
 
         if(tdebug)then
             print *,'torque - intgrnd complete at psi ',x
