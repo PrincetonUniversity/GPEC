@@ -1031,22 +1031,25 @@ c     Parallel calls of expensive kinetic calculations for each psi,ell
 c-----------------------------------------------------------------------
          idone = 0
          CALL SYSTEM_CLOCK(COUNT_RATE=cr)
-!OMP PARALLEL DO SCHEDULE(DYNAMIC,8) DEFAULT(NONE) COLLAPSE(2)
-!OMP& PROC_BIND(CLOSE)
-!OMP& PRIVATE(
-!OMP& ipsi,ix,psifac,l,num_threads,t_start,t_end,t_sec,
-!OMP& tphi,kwmat_l,ktmat_l,kwmat,ktmat)
-!OMP& SHARED(
-!OMP& rzphi,ion_flag,electron_flag,debug_omp,verbose,cr,idone,
-!OMP& nn,nl,ft,zi,mi,wdfac,divxfac,mpsi,kwmatls,ktmatls)
-!OMP& COPYIN(
+#ifndef OACC
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,8) DEFAULT(NONE) COLLAPSE(2)
+!$OMP& PROC_BIND(CLOSE)
+!$OMP& PRIVATE(
+!$OMP& ipsi,ix,psifac,l,num_threads,t_start,t_end,t_sec,
+!$OMP& tphi,kwmat_l,ktmat_l,kwmat,ktmat)
+!$OMP& SHARED(
+!$OMP& rzphi,ion_flag,electron_flag,debug_omp,verbose,cr,idone,
+!$OMP& nn,nl,ft,zi,mi,wdfac,divxfac,mpsi,kwmatls,ktmatls)
+!$OMP& COPYIN(
 c!!!!!!...from inputs.f90...
-!OMP& dbob_m,divx_m,kin,xs_m,fnml,
+!$OMP& dbob_m,divx_m,kin,xs_m,fnml,
 c!!!!!!...from dcon_interface.f90
-!OMP& geom, dcon_int_sq,dcon_int_eqfun,dcon_int_rzphi,
-!OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
-!OMP& dcon_int_zmats)
+!$OMP& geom, dcon_int_sq,dcon_int_eqfun,dcon_int_rzphi,
+!$OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
+!$OMP& dcon_int_zmats)
+#else
 !$acc kernels loop collapse(1)
+#endif
          DO ipsi=0,mpsi
             DO l=-nl,nl
                CALL SYSTEM_CLOCK(COUNT=t_start)

@@ -23,6 +23,7 @@ export FFLAGS
 export CFLAGS
 export OMPFLAG
 export ACCFLAG
+export OACC
 
 # compile package
 
