@@ -312,7 +312,6 @@ else
     FCDIR = .
     FCLIBS =
     FCINC = .
-#    NETCDF_EXTRA_LIBS =
 endif
 
 # SuperLU options
