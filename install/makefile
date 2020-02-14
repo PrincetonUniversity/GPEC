@@ -8,7 +8,7 @@ CFLAGS ?= -g
 ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
 else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
-        OMPFLAG ?= -mp
+        OMPFLAG ?= ''
         ACCFLAG ?= -acc
 else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp

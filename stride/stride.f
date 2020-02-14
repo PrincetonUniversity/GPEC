@@ -33,6 +33,7 @@ c-----------------------------------------------------------------------
       INTEGER :: s0Time, sTime, fTime, cr
 
       INTEGER :: ithread, mainlevelThreads
+      INTEGER :: iargc
 
       NAMELIST/stride_control/bal_flag,mat_flag,ode_flag,vac_flag,
      $     mer_flag,fft_flag,node_flag,mthvac,sing_start,nn,
