@@ -1167,20 +1167,20 @@ c     truncation test: lsode limit or max dW outside last singularity
 c-----------------------------------------------------------------------
       flag = psifac == psimax .OR. istep == nstep .OR. istate < 0
       CALL spline_eval(sq,psifac,0)
-      IF(peak_flag .AND. sq%f(4) >= peak_q(peak_index))THEN
+      IF(psiedge < psihigh .AND. sq%f(4) >= q_edge(peak_index))THEN
          CALL free_test(plasma1,vacuum1,total1,psifac)
          CALL spline_eval(sq,psifac,0)
          IF(debug) WRITE(*,'(2(i4),5(es12.3))')peak_calc_number,
      $      peak_index,psifac,sq%f(4),total1,vacuum1,plasma1
          peak_calc_number = peak_calc_number + 1
-         peak_dw(peak_index) = total1
-         peak_q(peak_index) = sq%f(4)
-         peak_psi(peak_index) = psifac
+         dw_edge(peak_index) = total1
+         q_edge(peak_index) = sq%f(4)
+         psi_edge(peak_index) = psifac
          ! only increment the index if we've progressed to the next q
          DO
-             IF(peak_index == sizeedge)EXIT
+             IF(peak_index == size_edge)EXIT
              peak_index = peak_index + 1
-             IF(sq%f(4) < peak_q(peak_index)) EXIT
+             IF(sq%f(4) < q_edge(peak_index)) EXIT
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------

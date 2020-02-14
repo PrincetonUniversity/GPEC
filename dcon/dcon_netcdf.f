@@ -145,8 +145,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
       CALL check( nf90_put_att(ncid,p_id, "long_name",
      $       "Normalized Poloidal Flux") )
-      IF(sizeedge > 0)THEN  ! note, we force off peak_flag for the final integration
-         CALL check( nf90_def_dim(ncid, "psi_n_edge", sizeedge, ep_dim) )
+      IF(size_edge > 0)THEN
+         CALL check( nf90_def_dim(ncid, "psi_n_edge", size_edge,ep_dim))
          CALL check( nf90_def_var(ncid, "psi_n_edge", nf90_double,
      $       ep_dim, ep_id))
          CALL check( nf90_put_att(ncid,ep_id,"long_name",
@@ -194,7 +194,7 @@ c-----------------------------------------------------------------------
      $    "Total Energy Eigenmodes") )
       CALL check( nf90_put_att(ncid,wtv_id,"long_name",
      $    "Total Energy Eigenvalues") )
-      IF(sizeedge > 0)THEN  ! note, we force off peak_flag for the final integration
+      IF(size_edge > 0)THEN
          CALL check( nf90_def_var(ncid, "dW_edge", nf90_double,
      $       ep_dim, ew_id) )
          CALL check( nf90_put_att(ncid,ew_id,"long_name",
@@ -218,8 +218,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,m_id, (/(i+mlow, i=0,mpert-1)/)) )
       CALL check( nf90_put_var(ncid,mo_id, (/(i, i=1,mpert)/)) )
       CALL check( nf90_put_var(ncid,p_id, sq%xs(:)))
-      IF(sizeedge > 0)THEN  ! note, we force off peak_flag for the final integration
-         CALL check( nf90_put_var(ncid,ep_id, peak_psi))
+      IF(size_edge > 0)THEN
+         CALL check( nf90_put_var(ncid,ep_id, psi_edge))
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
@@ -230,9 +230,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,di_id, locstab%fs(:,1)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
-      IF(sizeedge > 0)THEN  ! note, we force off peak_flag for the final integration
-         CALL check( nf90_put_var(ncid,ew_id, peak_dw))
-         CALL check( nf90_put_var(ncid,eq_id, peak_q))
+      IF(size_edge > 0)THEN
+         CALL check( nf90_put_var(ncid,ew_id, dw_edge))
+         CALL check( nf90_put_var(ncid,eq_id, q_edge))
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"

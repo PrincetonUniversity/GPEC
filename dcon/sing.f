@@ -161,7 +161,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: dpsi,q,q1,eps=1e-10
 
       INTEGER :: i
-      REAL(r8) :: peak_qstart
+      REAL(r8) :: qedgestart
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
 c-----------------------------------------------------------------------
@@ -221,13 +221,23 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set up record for determining the peak in dW near the boundary.
 c-----------------------------------------------------------------------
-      IF(peak_flag)THEN
-        peak_qstart = (INT(nn*qlim) - peak_nq) / (1.0 * nn)
-        npeak = CEILING((qlim - peak_qstart) * nn * peak_npts)
-        ALLOCATE(peak_dw(npeak), peak_q(npeak), peak_psi(npeak))
-        peak_q(:) = peak_qstart + (/(i*1.0,i=0,npeak-1)/)/(peak_npts*nn)
-        peak_psi(:) = 0.0
-        peak_dw(:) = -huge(0.0_r8)
+      IF(psiedge < psihigh)THEN
+        CALL spline_eval(sq, psiedge, 0)
+        qedgestart = INT(sq%f(4))
+        size_edge = CEILING((qlim - qedgestart) * nn * nperq_edge)
+        ALLOCATE(dw_edge(size_edge), q_edge(size_edge),
+     $     psi_edge(size_edge))
+        q_edge(:) = qedgestart + (/(i*1.0,i=0,size_edge-1)/) /
+     $     (nperq_edge*nn)
+        psi_edge(:) = 0.0
+        dw_edge(:) = -huge(0.0_r8)
+        ! we monitor some deeper points for an informative profile
+        ! output over a full rational window
+        ! but we still respect the user psiedge when looking for peak dW
+        pre_edge = 1
+        DO i=1,size_edge
+           IF(q_edge(i) < qedgestart) pre_edge = pre_edge + 1
+        ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

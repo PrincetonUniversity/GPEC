@@ -97,7 +97,7 @@ c-----------------------------------------------------------------------
       TYPE(sing_type), DIMENSION(:), POINTER :: sing
       TYPE(sing_type), DIMENSION(:), POINTER :: kinsing
 
-      LOGICAL :: sas_flag=.FALSE.,peak_flag=.FALSE.,lim_flag
+      LOGICAL :: sas_flag=.FALSE.,lim_flag
       EQUIVALENCE (sas_flag,lim_flag)
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
 
@@ -116,7 +116,8 @@ c-----------------------------------------------------------------------
       LOGICAL :: xlmda_out = .FALSE.
 
       ! for recording dw(q) near the boundary
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: peak_q, peak_dw, peak_psi
-      INTEGER :: peak_nq=1, peak_npts=20, sizeedge=0
+      REAL(r8) :: psiedge = 1.0
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: q_edge, dw_edge, psi_edge
+      INTEGER :: nperq_edge=20, size_edge=0, pre_edge=1
 
       END MODULE dcon_mod
