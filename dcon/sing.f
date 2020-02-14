@@ -160,7 +160,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(1) :: jpsi
       REAL(r8) :: dpsi,q,q1,eps=1e-10
 
-      INTEGER :: npeak,i
+      INTEGER :: i
       REAL(r8) :: peak_qstart
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
@@ -224,8 +224,9 @@ c-----------------------------------------------------------------------
       IF(peak_flag)THEN
         peak_qstart = (INT(nn*qlim) - peak_nq) / (1.0 * nn)
         npeak = CEILING((qlim - peak_qstart) * nn * peak_npts)
-        ALLOCATE(peak_dw(npeak), peak_q(npeak))
-        peak_q(:) = peak_qstart + (/(i*1.0,i=1,npeak)/) / (peak_npts*nn)
+        ALLOCATE(peak_dw(npeak), peak_q(npeak), peak_psi(npeak))
+        peak_q(:) = peak_qstart + (/(i*1.0,i=0,npeak-1)/)/(peak_npts*nn)
+        peak_psi(:) = 0.0
         peak_dw(:) = -huge(0.0_r8)
       ENDIF
 c-----------------------------------------------------------------------

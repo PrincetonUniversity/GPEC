@@ -116,7 +116,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: xlmda_out = .FALSE.
 
       ! for recording dw(q) near the boundary
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: peak_q, peak_dw
-      INTEGER :: peak_nq=3, peak_npts = 20
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: peak_q, peak_dw, peak_psi
+      INTEGER :: peak_nq=1, peak_npts=20, sizeedge=0
 
       END MODULE dcon_mod

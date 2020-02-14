@@ -243,12 +243,13 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)"Starting integration of ODE's"
          CALL ode_run
          IF(peak_flag)THEN
+
             peak_index = MAXLOC(peak_dw, dim=1)
             qhigh = peak_q(peak_index)
             sas_flag = .FALSE.
             peak_flag = .FALSE.
             CALL sing_lim
-            WRITE(*,'(1x,a34,f10.6,a10,f10.6)') "Re-Integrating to "
+            WRITE(*,'(1x,a34,f10.6,a10,f10.6)') "Re-Integrating to "//
      $            "peak dW @ qlim =",qlim,", psilim =",psilim
             ! full re-run because outputs were written to disk each step
             ! making it hard to backtrack
