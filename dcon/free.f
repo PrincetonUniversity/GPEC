@@ -745,8 +745,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), INTENT(IN) :: psi1, psi2
 
-      INTEGER, PARAMETER :: npsi=12
-      INTEGER :: i,ipert,it,itmax=50
+      INTEGER :: npsi,i,ipert,it,itmax=50
       REAL(r8) :: qi, psii, dpsi, eps=1e-9
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
@@ -755,8 +754,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
-      CALL cspline_alloc(wvmats,npsi,mpert**2)
       npsi = CEILING((qlim - q_edge(1)) * nn * 4)  ! 4 pts per q window
+      CALL cspline_alloc(wvmats,npsi,mpert**2)
       DO i=0,npsi
          ! space point evenly in q
          qi = q_edge(1) + (qlim - q_edge(1)) * i * 1.0/npsi
