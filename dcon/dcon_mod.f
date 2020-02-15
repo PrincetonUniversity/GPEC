@@ -118,6 +118,6 @@ c-----------------------------------------------------------------------
       ! for recording dw(q) near the boundary
       REAL(r8) :: psiedge = 1.0
       REAL(r8), DIMENSION(:), ALLOCATABLE :: q_edge, dw_edge, psi_edge
-      INTEGER :: nperq_edge=20, size_edge=0, pre_edge=1
+      INTEGER :: nperq_edge=20, size_edge=0, pre_edge=1, i_edge=1
 
       END MODULE dcon_mod

@@ -221,7 +221,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set up record for determining the peak in dW near the boundary.
 c-----------------------------------------------------------------------
-      IF(psiedge < psihigh)THEN
+      IF(psiedge < psilim)THEN
         CALL spline_eval(sq, psiedge, 0)
         qedgestart = INT(sq%f(4))
         size_edge = CEILING((qlim - qedgestart) * nn * nperq_edge)
@@ -236,7 +236,7 @@ c-----------------------------------------------------------------------
         ! but we still respect the user psiedge when looking for peak dW
         pre_edge = 1
         DO i=1,size_edge
-           IF(q_edge(i) < qedgestart) pre_edge = pre_edge + 1
+           IF(q_edge(i) < sq%f(4)) pre_edge = pre_edge + 1
         ENDDO
       ENDIF
 c-----------------------------------------------------------------------
