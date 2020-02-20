@@ -77,5 +77,5 @@ gpeq.o: idcon.o ismath.o
 gpresp.o: gpeq.o
 gpvacuum.o : gpeq.o
 gpdiag.o: gpresp.o gpvacuum.o
-gpout.o: gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o version.inc
+gpout.o: gpdiag.o gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o version.inc
 gpec.o: gpdiag.o gpout.o rdcon.o
