@@ -655,6 +655,7 @@ c-----------------------------------------------------------------------
       ! calc a rough spline of wv so we don't call mscvac (slow) every time
       IF(first_call)THEN
          CALL free_wvmats(psifac, psilim)
+         CALL spline_eval(sq,psifac,0)
          first_call = .FALSE.
       ENDIF
       CALL cspline_eval(wvmats, psifac,0)
@@ -744,9 +745,8 @@ c-----------------------------------------------------------------------
 
       REAL(r8), INTENT(IN) :: psi1, psi2
 
-      INTEGER, PARAMETER :: npsi=8
-      INTEGER :: i,ipert
-      REAL(r8) :: dpsi
+      INTEGER :: npsi,i,ipert,it,itmax=50
+      REAL(r8) :: qi, psii, dpsi, eps=1e-9
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
@@ -754,10 +754,22 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
-      dpsi = (psi2 - psi1) / npsi
+      npsi = CEILING((qlim - q_edge(1)) * nn * 4)  ! 4 pts per q window
       CALL cspline_alloc(wvmats,npsi,mpert**2)
       DO i=0,npsi
-         wvmats%xs(i) = psi1 + dpsi * i
+         ! space point evenly in q
+         qi = q_edge(1) + (qlim - q_edge(1)) * i * 1.0/npsi
+         ! use newton iteration to find psilim.
+         it=0
+         DO
+            it=it+1
+            CALL spline_eval(sq, psii, 1)
+            dpsi=(qi-sq%f(4)) / sq%f1(4)
+            psii = psii + dpsi
+            IF(ABS(dpsi) < eps*ABS(psii) .OR. it > itmax)EXIT
+         ENDDO
+         ! call mscvac and save matrices to spline
+         wvmats%xs(i) = psii
          CALL spline_eval(sq, wvmats%xs(i), 0)
          CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.)
          kernelsignin=1.0

@@ -55,10 +55,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
 
       INTEGER :: i, ncid,
-     $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
+     $    i_dim, m_dim, mo_dim, p_dim, ep_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
-     $    pd_dim, pd_id, df_id
+     $    pd_dim, pd_id, df_id, ep_id, ew_id, eq_id
       REAL(4) :: cpusec, wallsec
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
@@ -143,17 +143,30 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(ncid, "mode", nf90_int, mo_dim, mo_id))
       CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
+      CALL check( nf90_put_att(ncid,p_id, "long_name",
+     $       "Normalized Poloidal Flux") )
+      IF(size_edge > 0)THEN
+         CALL check( nf90_def_dim(ncid, "psi_n_edge", size_edge,ep_dim))
+         CALL check( nf90_def_var(ncid, "psi_n_edge", nf90_double,
+     $       ep_dim, ep_id))
+         CALL check( nf90_put_att(ncid,ep_id,"long_name",
+     $       "Normalized Poloidal Flux") )
+      ENDIF
       IF(ALLOCATED(sing_detf))THEN
          CALL check( nf90_def_dim(ncid, "psi_n_detf", 
      $       SIZE(sing_detf, 2), pd_dim) )
          CALL check( nf90_def_var(ncid, "psi_n_detf", nf90_double, 
      $       pd_dim, pd_id))
+         CALL check( nf90_put_att(ncid,pd_id,"long_name",
+     $       "Normalized Poloidal Flux") )
       ENDIF
       ! define variables
       CALL check( nf90_def_var(ncid, "f", nf90_double, p_dim, f_id) )
       CALL check( nf90_def_var(ncid, "mu0p", nf90_double, p_dim, mu_id))
       CALL check( nf90_def_var(ncid, "dvdpsi", nf90_double,p_dim,dv_id))
       CALL check( nf90_def_var(ncid, "q", nf90_double, p_dim, q_id) )
+         CALL check( nf90_put_att(ncid,q_id,"long_name",
+     $       "Safety Factor") )
       CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
       CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
       CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
@@ -161,14 +174,36 @@ c-----------------------------------------------------------------------
      $    (/m_dim, mo_dim, i_dim/), wp_id) )
       CALL check( nf90_def_var(ncid, "W_p_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wpv_id) )
+      CALL check( nf90_put_att(ncid,wp_id,"long_name",
+     $    "Plasma Energy Eigenmodes") )
+      CALL check( nf90_put_att(ncid,wpv_id,"long_name",
+     $    "Plasma Energy Eigenvalues") )
       CALL check( nf90_def_var(ncid, "W_v_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wv_id) )
       CALL check( nf90_def_var(ncid, "W_v_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wvv_id) )
+      CALL check( nf90_put_att(ncid,wv_id,"long_name",
+     $    "Vacuum Energy Eigenmodes") )
+      CALL check( nf90_put_att(ncid,wvv_id,"long_name",
+     $    "Vacuum Energy Eigenvalues") )
       CALL check( nf90_def_var(ncid, "W_t_eigenvector", nf90_double,
      $    (/m_dim, mo_dim, i_dim/), wt_id) )
       CALL check( nf90_def_var(ncid, "W_t_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wtv_id) )
+      CALL check( nf90_put_att(ncid,wt_id,"long_name",
+     $    "Total Energy Eigenmodes") )
+      CALL check( nf90_put_att(ncid,wtv_id,"long_name",
+     $    "Total Energy Eigenvalues") )
+      IF(size_edge > 0)THEN
+         CALL check( nf90_def_var(ncid, "dW_edge", nf90_double,
+     $       ep_dim, ew_id) )
+         CALL check( nf90_put_att(ncid,ew_id,"long_name",
+     $       "Least Stable Total Energy Eigenvalues") )
+         CALL check( nf90_def_var(ncid, "q_edge", nf90_double,
+     $       ep_dim, eq_id) )
+         CALL check( nf90_put_att(ncid,eq_id,"long_name",
+     $       "Safety Factor") )
+      ENDIF
       IF(ALLOCATED(sing_detf))THEN
          CALL check( nf90_def_var(ncid, "detF", nf90_double,
      $       (/pd_dim, i_dim/), df_id) )
@@ -183,6 +218,9 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,m_id, (/(i+mlow, i=0,mpert-1)/)) )
       CALL check( nf90_put_var(ncid,mo_id, (/(i, i=1,mpert)/)) )
       CALL check( nf90_put_var(ncid,p_id, sq%xs(:)))
+      IF(size_edge > 0)THEN
+         CALL check( nf90_put_var(ncid,ep_id, psi_edge))
+      ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
       CALL check( nf90_put_var(ncid,f_id, sq%fs(:,1)/twopi))
@@ -192,6 +230,10 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,di_id, locstab%fs(:,1)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
+      IF(size_edge > 0)THEN
+         CALL check( nf90_put_var(ncid,ew_id, dw_edge))
+         CALL check( nf90_put_var(ncid,eq_id, q_edge))
+      ENDIF
 
       IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
       CALL check( nf90_put_var(ncid,wp_id,RESHAPE((/REAL(wp),
