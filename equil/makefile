@@ -2,7 +2,7 @@
 F90 = $(FC) $(FFLAGS)
 
 CFLAGS = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_
-CC = gcc $(CFLAGS)
+CC += $(CFLAGS)
 HEADER = ../superlu/SuperLU_5.2.1/SRC
 
 .f.o:

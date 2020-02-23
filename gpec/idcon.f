@@ -266,7 +266,7 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
          ! this could be due to termination at a zero crossing (bad)
-         ! but it could also be due to peak_flag termination (good)
+         ! but it could also be due to psiedge termination (good)
          IF(verbose)THEN
             WRITE(*,*)"WARNING: psilim does not match eigenmode psifac"
             WRITE(*,*)"        > Forcing psilim to last psifac"

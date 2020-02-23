@@ -4,7 +4,16 @@ include DEFAULTS.inc
 # extend these variables to sub-makes (?= sets a default if user doesn't specify options)
 FFLAGS ?= -g
 CFLAGS ?= -g
-OMPFLAG ?= -qopenmp
+#Common compiler flags for OpenMP
+ifeq ($(findstring ifort,$(FC)),ifort)
+	OMPFLAG ?= -qopenmp
+else ifeq ($(findstring gfortran,$(FC)),gfortran)
+	OMPFLAG ?= -fopenmp
+else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
+	OMPFLAG ?= -mp
+else
+	OMPFLAG ?= -openmp
+endif
 
 export FFLAGS
 export CFLAGS
@@ -113,6 +122,7 @@ v:
 	@echo "   and compiler libraries $(FCLIBS)"
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
+	@echo "   and using OMPFLAG $(OMPFLAG)"
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
@@ -154,3 +164,5 @@ clear:
 realclean: clean
 	clear
 	rm -rf ../lib ../bin
+
+print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true

@@ -161,6 +161,7 @@ c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
       CALL sing_find
       CALL sing_lim
+      delta_mhigh=delta_mhigh*2  ! added for consistency with dcon
       IF(cyl_flag)THEN
          mlow=delta_mlow
          mhigh=delta_mhigh

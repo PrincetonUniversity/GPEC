@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: det_max
       INTEGER, DIMENSION(:), POINTER :: r1,r2,n1,n2
       COMPLEX(r8), DIMENSION(2,2) :: m0mat
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: sing_detf
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -158,6 +159,9 @@ c-----------------------------------------------------------------------
       INTEGER :: it,itmax=50
       INTEGER, DIMENSION(1) :: jpsi
       REAL(r8) :: dpsi,q,q1,eps=1e-10
+
+      INTEGER :: i
+      REAL(r8) :: qedgestart
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
 c-----------------------------------------------------------------------
@@ -184,15 +188,6 @@ c-----------------------------------------------------------------------
             IF(qlim <= qmax)EXIT
             qlim=qlim-1._r8/nn
          ENDDO
-      ENDIF
-      IF(peak_flag)THEN
-         IF(qlim + 0.95/nn < qmax)THEN
-            ! hunt for peak dW in whatever rational window psihigh is in
-            qlim=(INT(nn*qlim)+0.95)/nn
-         ELSE
-            ! hunt for peak in last available full rational window
-            qlim = (INT(nn*qlim)-0.05)/nn
-         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
@@ -222,6 +217,27 @@ c-----------------------------------------------------------------------
          qlim = qmax
          q1lim=sq%fs1(mpsi,4)
          psilim=psihigh
+      ENDIF
+c-----------------------------------------------------------------------
+c     set up record for determining the peak in dW near the boundary.
+c-----------------------------------------------------------------------
+      IF(psiedge < psilim)THEN
+        CALL spline_eval(sq, psiedge, 0)
+        qedgestart = INT(sq%f(4))
+        size_edge = CEILING((qlim - qedgestart) * nn * nperq_edge)
+        ALLOCATE(dw_edge(size_edge), q_edge(size_edge),
+     $     psi_edge(size_edge))
+        q_edge(:) = qedgestart + (/(i*1.0,i=0,size_edge-1)/) /
+     $     (nperq_edge*nn)
+        psi_edge(:) = 0.0
+        dw_edge(:) = -huge(0.0_r8)
+        ! we monitor some deeper points for an informative profile
+        ! output over a full rational window
+        ! but we still respect the user psiedge when looking for peak dW
+        pre_edge = 1
+        DO i=1,size_edge
+           IF(q_edge(i) < sq%f(4)) pre_edge = pre_edge + 1
+        ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1470,20 +1486,23 @@ c-----------------------------------------------------------------------
       SUBROUTINE ksing_find
 
       REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,keps1=1e-10,keps2=1e-4
-      INTEGER, PARAMETER :: nsing=1000
+      INTEGER, PARAMETER :: nsing=1000, maxstep=100000
       REAL(r8), DIMENSION(nsing) :: psising,psising_check
 
       LOGICAL :: sing_flag
       LOGICAL, PARAMETER :: debug = .FALSE.
-      INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check
+      INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check,i_record
       REAL(r8) :: x0,x1,eps,reps
       COMPLEX(r8) :: det0,det1,sing_det
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: tmp_record
 
       WRITE(*, *) "Finding kinetically displaced singular surfaces"
+      ALLOCATE(tmp_record(2, maxstep))
       singnum=0
       psising=-1
       i_recur=0
       i_depth=0
+      i_record=0
       x0=psilow
       x1=psilim
 c-----------------------------------------------------------------------
@@ -1501,13 +1520,16 @@ c-----------------------------------------------------------------------
       psising(singnum)=x0
       sing_det=det0
       sing_flag=.TRUE.
-      OPEN(UNIT=100,FILE="grid.out",STATUS="UNKNOWN")
+      OPEN(UNIT=100,FILE="dcon_detf.out",STATUS="UNKNOWN")
       WRITE(100,'(1x,4(a16))')"psi","absdetF","real(detF)","imag(detF)"
-      CALL bin_open(bin_unit,"grid.bin","UNKNOWN","REWIND","none")
+      CALL bin_open(bin_unit,"dcon_detf.bin","UNKNOWN","REWIND","none")
       CALL sing_adp_find_sing(x0,x1,det0,det1,nsing,psising,singnum,
-     $     i_recur,i_depth,tol,sing_det,sing_flag)
+     $     i_recur,i_depth,i_record,tol,sing_det,sing_flag,tmp_record)
       CLOSE (UNIT=100)
       CALL bin_close(bin_unit)
+      ALLOCATE(sing_detf(2, i_record))
+      sing_detf(:,:) = tmp_record(:, :i_record)
+      DEALLOCATE(tmp_record)
 
       IF (psising(1)>psilow) THEN
          psising(2:singnum+1)=psising(1:singnum)
@@ -1597,17 +1619,18 @@ c     subprogram 15. sing_adp_find_sing.
 c     adaptive finder.
 c-----------------------------------------------------------------------
       RECURSIVE SUBROUTINE sing_adp_find_sing(x0,x1,det0,det1,
-     $     m_singpos,singpos,singnum,i_recur,i_depth,
-     $     tol,sing_det,sing_flag)
+     $     m_singpos,singpos,singnum,i_recur,i_depth,i_record,
+     $     tol,sing_det,sing_flag,record)
       LOGICAL,INTENT(INOUT) :: sing_flag
       INTEGER,INTENT(IN) :: m_singpos
       INTEGER,INTENT(INOUT) :: singnum
-      INTEGER,INTENT(INOUT) :: i_recur,i_depth
+      INTEGER,INTENT(INOUT) :: i_recur,i_depth,i_record
       REAL(r8),INTENT(IN) :: x0,x1,tol
       REAL(r8),DIMENSION(m_singpos),INTENT(INOUT) :: singpos
       REAL(r8),PARAMETER :: grid_tol =1e-6
       COMPLEX(r8),INTENT(IN) :: det0,det1
       COMPLEX(r8),INTENT(INOUT) :: sing_det
+      COMPLEX(r8),INTENT(INOUT), DIMENSION(2,*) :: record
 
       INTEGER :: i
       REAL(r8) :: tmp1,tmpm,tmp2
@@ -1630,12 +1653,12 @@ c-----------------------------------------------------------------------
       tmpm=ABS(det(2))*2
       IF (ABS(tmpm-tmp1)>tol*tmp1 .AND. x(3)-x(1)>grid_tol ) THEN
          CALL sing_adp_find_sing(x(1),x(2),det(1),det(2),
-     $   m_singpos,singpos,singnum,i_recur,i_depth
-     $   ,tol,sing_det,sing_flag)
+     $      m_singpos,singpos,singnum,i_recur,i_depth,i_record,
+     $      tol,sing_det,sing_flag,record)
 
          CALL sing_adp_find_sing(x(2),x(3),det(2),det(3),
-     $   m_singpos,singpos,singnum,i_recur,i_depth
-     $   ,tol,sing_det,sing_flag)
+     $      m_singpos,singpos,singnum,i_recur,i_depth,i_record,
+     $      tol,sing_det,sing_flag,record)
       ELSE
 c-----------------------------------------------------------------------
 c     judge the local singularity with the gradient of ABS(det).
@@ -1699,6 +1722,8 @@ c-----------------------------------------------------------------------
          IF (tmp1==0.OR.tmp2==0) THEN
             CALL program_stop("det(2)-det(1)=0 or det(3)-det(2)=0")
          ENDIF
+
+         ! write record to file
          WRITE(100,'(1x,4(es16.8))') x(2),ABS(det(2)),REAL(det(2)),
      $      IMAG(det(2))
          WRITE(100,'(1x,4(es16.8))') x(3),ABS(det(3)),REAL(det(3)),
@@ -1707,6 +1732,11 @@ c-----------------------------------------------------------------------
      $        REAL(REAL(det(2)),4),REAL(AIMAG(det(2)),4)
          WRITE(bin_unit)REAL(x(3),4),REAL(LOG10(ABS(det(3))),4),
      $        REAL(REAL(det(3)),4),REAL(AIMAG(det(3)),4)
+         ! store record in memory
+         i_record = i_record + 1
+         record(:, i_record) = (/ x(2) * one_c, det(2) /)
+         i_record = i_record + 1
+         record(:, i_record) = (/ x(3) * one_c, det(3) /)
 
       ENDIF
       i_depth=i_depth-1

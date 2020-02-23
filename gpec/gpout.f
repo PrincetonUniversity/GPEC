@@ -755,7 +755,7 @@ c-----------------------------------------------------------------------
      $   singcoup_out_bvecs(nsingcoup,tmpert,msing))
 
       ! get inverse of fldflxmat for converting to flux to power normalized field ((bA^1/2)_m / A^1/2)
-      CALL iszinv(fldflxmat,tmpert,flxtofld)
+      CALL iszhinv(fldflxmat,tmpert,flxtofld)
 
       ! calculate the output coodinat matrix SVD 
       ! re-normalize such that overlap dot products operate on unweighted fields
@@ -1765,13 +1765,13 @@ c-----------------------------------------------------------------------
 
       IF (singcoup_set .AND. ALLOCATED(sbno_fun)) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
-     $        sbno_fun(1:mthsurf)))/mthsurf/2.0)
+     $        sbno_fun(1:mthsurf)))/mthsurf)
          sbno_mn = MATMUL(fldflxmat,sbno_mn)
          DO icoup=1,nsingcoup
             DO ising=1,msing
                olap(icoup, ising) = DOT_PRODUCT(
      $            singcoup_out_vecs(icoup,:,ising),
-     $            sbno_mn(:)) / SQRT(2.0)
+     $            sbno_mn(:))
             ENDDO
          ENDDO
          op = ABS(olap) / sbnosurf * 1e2
@@ -1881,7 +1881,7 @@ c-----------------------------------------------------------------------
                DO ising=1,osing
                   olap(icoup, ising) = DOT_PRODUCT(
      $               localcoup_out_vecs(icoup,:,ising),
-     $               sbno_mn(:)) / SQRT(2.0)
+     $               sbno_mn(:))
                ENDDO
             ENDDO
             op = ABS(olap) / sbnosurf * 1e2
@@ -5385,7 +5385,7 @@ c-----------------------------------------------------------------------
          CALL gpeq_weight(psilim,sqrtamat(:,i),mfac,mpert,2) ! A^1/2
       ENDDO
       ptof = sqrtamat * sqrt(jarea) ! transform power-norm field to flux
-      CALL iszinv(ptof,mpert,ftop)
+      CALL iszhinv(ptof,mpert,ftop)
 c-----------------------------------------------------------------------
 c     compute DCON energy per displacement eigenvalues and eigenvectors.
 c-----------------------------------------------------------------------
@@ -6111,7 +6111,6 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"rho",nf90_double,p_id,rn_id) )
       CALL check( nf90_put_att(fncid,rn_id,"long_name",
      $   "Normalized flux surface average minor radius") )
-      CALL check( nf90_put_att(fncid,rn_id,"units","m") )
       CALL check( nf90_def_var(fncid,"dvdpsi_n",nf90_double,p_id,dv_id))
       CALL check( nf90_put_att(fncid,dv_id,"long_name",
      $   "Differential volume per normalized poloidal flux") )

@@ -843,6 +843,7 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (istep >= nstep) THEN 
          WRITE (*,*)"Warning: LSODE exceeds nstep."
+         WRITE (*,*)"  ABS(t-1)=",ABS(t-1)," > gal_tol=",gal_tol
       ENDIF
       IF(cell%extra == "right")u=-u
 c-----------------------------------------------------------------------

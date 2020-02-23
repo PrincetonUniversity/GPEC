@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
      $     rfac,taue,theta,twopif,v1,v2,v21,v22,v23,v33
       REAL(r8), PARAMETER :: ne=1e14,te=3e3,mi=2*mp,gamma=5._r8/3._r8
       REAL(r8), DIMENSION(:), POINTER :: avg
-      TYPE(spline_type) :: ff
+      TYPE(spline_type), TARGET :: ff
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------

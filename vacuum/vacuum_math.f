@@ -7,7 +7,6 @@ c     code organization.
 c-----------------------------------------------------------------------
 c      1. spl1d1
 c      2. spl1d2
-c      3. labrt
 c      4. search
 c      5. searchx
 c      6. green
@@ -37,9 +36,6 @@ c-----------------------------------------------------------------------
       subroutine spl1d1(n,x,f,w,iop,ij,a,b,c)
       implicit real*8 (a-h,o-z)
       dimension iop(*),x(*),f(*),w(*),a(*),b(*),c(*)
-      real*8 comm(6)
-      data  comm          /8hspl1d1 n,8h less th,8han 4. re,8hsults in,
-     1 8hcorrect.,8h        /
       data zz,oz,tz,sz/0.0e0,1.0e0,3.0e0,6.0e0/
 c-----------------------------------------------------------------------
 c     computations.
@@ -203,7 +199,7 @@ c-----------------------------------------------------------------------
       m=(i-1)*ij+1
   110 w(m)=w(m)+a(i)*w(1)+c(i)*w(k4)
       go to 305
-  300 call labrt(1,comm,1)
+  300 write(3,*) ' spl1d1: Results incorrect because n<4.'
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -250,45 +246,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 3. labrt.
-c     incomprehensible spaghetti code.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      subroutine labrt(isw,lhol,inx)
-      implicit real*8 (a-h,o-z)
-
-      real*8 lhol(8)
-      logical ps, ts
-      data np/10/,ps/.true./,ts/.false./
-c-----------------------------------------------------------------------
-c     format statements.
-c-----------------------------------------------------------------------
- 27   format(1h0,9x,8a10,3x,z4)
-c-----------------------------------------------------------------------
-c     computations.
-c-----------------------------------------------------------------------
-      if((isw.eq.0).or.(isw.gt.5))return
-      go to ( 1,2,3,4,5 ), isw
-    1 if ( ps .and. (np .gt. 0) )   write ( 3, 27 )   lhol, inx
-      np=np-1
-      if ( ts )   stop
-      return
-    2 ps=.false.
-      return
-    3 ps=.true.
-      np=inx
-      return
-    4 ts=.true.
-      return
-    5 ts=.false.
-c-----------------------------------------------------------------------
-c     termination.
-c-----------------------------------------------------------------------
-      return
-      end
-c-----------------------------------------------------------------------
 c     subprogram 4. search.
 c     finds cubic spline interval.
 c-----------------------------------------------------------------------
@@ -297,9 +254,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine search(xbar,x,n,i,mflag)
       implicit real*8 (a-h,o-z)
-      character(8) com1(5)
       dimension x(*)
-      data com1/ 'search  ','xbar is ','outside ','range of',' table'/
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
@@ -347,7 +302,7 @@ c-----------------------------------------------------------------------
       go to 111
    14 mflag=0
       return
-   16 call labrt(1,com1,1)
+   16 write(3,*) ' search: xbar is outside range of table.'
       mflag=2
       return
   20   if(ixbar-sign(1.0d0,a) ) 2120,2121,111
@@ -369,13 +324,11 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine searchx(xbar,x,n,i,mflag)
       implicit real*8 (a-h,o-z)
-      character(8) com1(5)
       integer xbar,x(1)
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
       if(.false.) go to 8888
-      data com1/ "search  ","xbar is ","outside ","range of"," table"/
       mflag=0
       i=n
       if(xbar.eq.x(n))return
@@ -420,7 +373,7 @@ c-----------------------------------------------------------------------
       go to 111
    14 mflag=0
       return
-   16 call labrt(1,com1,1)
+   16 write(3,*) ' searchx: xbar is outside range of table.'
       mflag=2
       return
   20   if(ixbar-isign(1,ia) ) 2120,2121,111

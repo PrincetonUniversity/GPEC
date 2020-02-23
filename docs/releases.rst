@@ -10,6 +10,26 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.4.0
+===========
+
+Fixes
+------
+- INSTALL - Support added for compiling on MacOS as well as with gfortran on linux
+- VACUUM - Makes ishape 41 use on manual wall robust to a>10 infinite wall tests
+- DCON - Corrects for wall time wrap-around when run spans multiple days
+- GPEC - Removes (incorrect) units from normalized minor radius netcdf output
+
+Changes
+--------
+- DCON - Improves parallel assembly of kinetic matrices using collapsed psi and ell loops and dynamic scheduling. This enables efficient use of large parallel_threads.
+
+Adds
+------
+- EQUIL - Adds new pow1 and pow2 grid_type options. These grids are linear in core psi_n and approach zero spacing at psihigh linearly/quadratically (packed in the edge).
+- DCON - Adds new psiedge variable to dcon_control. When this is below psihigh, DCON records dW(psi) between psiedge and psihigh and re-runs the integration with truncation adjusted to max(dW).
+- PENTRC - Adds new option (force_xialpha) that triggers a calculation of tangential from radial displacement (useful for radial displacement inputs from nonlinear codes like JOREK and M3DC1).
+
 GPEC v1.3.8
 ===========
 
