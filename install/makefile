@@ -136,7 +136,6 @@ clean:
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 	cd ../stride; make clean
-	cd ../superlu/SuperLU_5.2.1; make clean
 
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc

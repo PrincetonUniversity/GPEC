@@ -17,8 +17,6 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-L$(SUPERLUDIR) \
-	-lsuperlu \
 	-L$(MATHDIR) \
 	$(MATHLIBS)
 
@@ -86,7 +84,7 @@ fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
 sing.o: fourfit.o
 zvode1.o: ../zvode/zvode.o ../zlange/zlange.o
 riccati.o: sing.o
-ode.o: sing.o debug.o zvode1.o sparse.o riccati.o
+ode.o: sing.o debug.o zvode1.o riccati.o
 stride_netcdf.o: dcon_mod.o
 free.o: ode.o stride_netcdf.o
 stride.o: bal.o free.o mercier.o
