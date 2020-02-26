@@ -345,8 +345,8 @@ module inputs
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
-        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeates
-        nm = nunique(table(:,2),op_sorted=.True.)
+        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeats
+        nm = nunique(table(:,2))
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
             stop "ERROR - inputs - size of table not equal to product of unique psi & m"
@@ -539,7 +539,7 @@ module inputs
         character(512), intent(in) :: file
         ! declare local variables
         logical :: ncheck
-        integer :: i,j,npsi,nm,ndigit,firstnm, powin(4)
+        integer :: i, j, npsi, nm, ndigit, firstnm, powin(4), ipsilow, ipsihigh
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
@@ -576,7 +576,7 @@ module inputs
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
         !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeats
-        nm = nunique(table(:,2),op_sorted=.True.)
+        nm = nunique(table(:,2))
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
             stop "ERROR - inputs - size of table not equal to product of unique psi & m"
@@ -686,10 +686,26 @@ module inputs
             enddo
         endif
 
+        ! idcon_matrix can have issues outside dcon limits
+        ipsilow = 1
+        ipsihigh = npsi
+        do i=1,npsi
+           if(psi(i) >= sq%xs(0))then
+              ipsilow = i
+              exit
+           endif
+        enddo
+        do i=npsi,1,-1
+           if(psi(i) <= sq%xs(sq%mx))then
+              ipsihigh = i
+              exit
+           endif
+        enddo
+
         ! optionally replace tangential displacement using radial displacement and toroidal force balance
         if(force_xialpha)then
             if(verbose) print *,'  Forcing tangential displacement to satisfy toroidal force balance'
-            do i=1,npsi
+            do i=ipsilow,ipsihigh
                 ! calculate A,B,C matrices on each surface
                 call idcon_matrix(psi(i))
                 ! calculate inverse of A - should be well behaved
@@ -703,7 +719,8 @@ module inputs
         end if
 
         ! set global variables (perturbed quantity csplines)
-        call set_peq(psi,mfac,xmp1mns,xspmns,xmsmns,.true.,debug)
+        call set_peq(psi(ipsilow:ipsihigh),mfac,xmp1mns(ipsilow:ipsihigh,:),xspmns(ipsilow:ipsihigh,:),&
+                     xmsmns(ipsilow:ipsihigh,:),.true.,debug)
         
         deallocate(ms,psi,xmp1mns,xspmns,xmsmns)
         
