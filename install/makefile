@@ -13,11 +13,11 @@ export OMPFLAG
 
 .IGNORE:
 
-all: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw coil gpec stride mkbin
 
 # fortran only
-allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum coil gpec stride mkbin
 
 
@@ -34,9 +34,6 @@ xdraw:
 
 lsode:
 	cd ../lsode;  make liblsode
-
-superlu:
-	$(SLU_COMMAND)  # gets set in DEFAULTS.inc based on tarball status
 
 zlange:
 	cd ../zlange;  make libzlange
