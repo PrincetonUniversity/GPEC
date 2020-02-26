@@ -1035,7 +1035,7 @@ c-----------------------------------------------------------------------
          REAL(r8), DIMENSION(:,:), ALLOCATABLE :: atol
 
          INTEGER :: nMat, nSp, i, j, k, jsing, ksing, s2, m2
-         INTEGER :: iChg, sparse_mode, info, ipert0, dRow
+         INTEGER :: iChg, info, ipert0, dRow
          REAL(r8) :: rcond, mnorm, ZLANGE
          INTEGER, DIMENSION(:), ALLOCATABLE :: isp, jsp
          COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: asp, b, x
