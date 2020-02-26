@@ -5,8 +5,15 @@ include ../install/DEFAULTS.inc
 IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 
+CFLAGS = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_
+CC += $(CFLAGS)
+HEADER = ../superlu/SuperLU_5.2.1/SRC
+
 .f.o:
 	$(F90) -c $*.f
+
+.c.o:
+	$(CC) -I$(HEADER) -c $<
 
 LIBDIR = ../lib
 
@@ -33,6 +40,8 @@ OBJS = \
 	fourfit.o \
 	sing.o \
 	zvode1.o \
+	c_fortran_zgssv.o \
+	sparse.o \
 	ode.o \
 	stride_netcdf.o \
 	free.o \
@@ -91,8 +100,10 @@ bal.o: dcon_mod.o
 fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
 sing.o: fourfit.o
 zvode1.o: ../zvode/zvode.o ../zlange/zlange.o
+c_fortran_zgssv.o:
+sparse.o: ../equil/local_mod.mod c_fortran_zgssv.o
 riccati.o: sing.o
-ode.o: sing.o debug.o zvode1.o ../equil/sparse.o riccati.o
+ode.o: sing.o debug.o zvode1.o sparse.o riccati.o
 stride_netcdf.o: dcon_mod.o
 free.o: ode.o stride_netcdf.o
 stride.o: bal.o free.o mercier.o

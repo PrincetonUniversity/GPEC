@@ -333,3 +333,14 @@ ifdef X11_HOME
     X11_INC_DIR = -I$(X11_HOME)/include
     X11_LIB_DIR = -L$(X11_HOME)/lib
 endif
+
+#Common compiler flags for OpenMP
+ifeq ($(findstring ifort,$(FC)),ifort)
+	OMPFLAG ?= -qopenmp
+else ifeq ($(findstring gfortran,$(FC)),gfortran)
+	OMPFLAG ?= -fopenmp
+else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
+	OMPFLAG ?= -mp
+else
+	OMPFLAG ?= -openmp
+endif
