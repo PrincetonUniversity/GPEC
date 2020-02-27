@@ -30,7 +30,6 @@ c-----------------------------------------------------------------------
       USE debug_mod
       USE sing_mod
       USE zvode1_mod
-      USE sparse_mod
       USE riccati_mod
       IMPLICIT NONE
 
@@ -58,7 +57,6 @@ c-----------------------------------------------------------------------
       LOGICAL :: asymp_at_sing
       LOGICAL :: integrate_riccati
       LOGICAL :: calc_delta_prime
-      LOGICAL :: solve_delta_prime_with_sparse_mat
       LOGICAL :: kill_big_soln_for_ideal_dW
       LOGICAL :: calc_dp_with_vac
 
@@ -1037,7 +1035,7 @@ c-----------------------------------------------------------------------
          REAL(r8), DIMENSION(:,:), ALLOCATABLE :: atol
 
          INTEGER :: nMat, nSp, i, j, k, jsing, ksing, s2, m2
-         INTEGER :: iChg, sparse_mode, info, ipert0, dRow
+         INTEGER :: iChg, info, ipert0, dRow
          REAL(r8) :: rcond, mnorm, ZLANGE
          INTEGER, DIMENSION(:), ALLOCATABLE :: isp, jsp
          COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: asp, b, x
@@ -1046,7 +1044,6 @@ c-----------------------------------------------------------------------
          COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: uwork, cwork,
      $        cworkTemp
          REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork, rworkTemp
-         TYPE(sparse_array) :: A
          TYPE(sing_calculator), POINTER :: s
 
          CHARACTER(LEN=3),DIMENSION(:,:), ALLOCATABLE :: imag_unit
@@ -1185,85 +1182,49 @@ c-----------------------------------------------------------------------
          CALL ZGECON('O',nMat,MInv,nMat,mnorm,rcond,cwork,rwork,info)
          print *,"Delta' sparse matrix condition number = ",rcond
 c-----------------------------------------------------------------------
-c     solve BVP matrix with sparse matrix.
-c-----------------------------------------------------------------------
-         IF (solve_delta_prime_with_sparse_mat) THEN
-            CALL sparse_form_array(nSp, nMat, asp, isp, jsp, A)
-            !Loop over big solution driving terms.
-            sparse_mode = 1
-            DO jsing = 1,msing
-               DO i = 1,2
-                  k = -mpert !Thus easy to add m2 each time (past uAxis)
-                  b = 0.0
-                  IF (i == 1) THEN
-                     !Left side driving term
-                     b(nMat-s2+2*jsing-1) = 1.0
-                     dRow = 2*jsing-1
-                  ELSE
-                     !Right side driving term
-                     b(nMat-s2+2*jsing) = 1.0
-                     dRow = 2*jsing
-                  ENDIF
-                  CALL sparse_solve_A_x_equals_b(A, b, x, sparse_mode)
-                  sparse_mode = 2
-                  DO ksing = 1,msing
-                     s => scalc(ksing)
-                     ipert0 = s%sing_col
-
-                     !Find the small solution coeffs (p mode, so +mpert)
-                     k = k+m2
-                     delta_prime_mat(dRow,2*ksing-1) = x(k+ipert0+mpert)
-                     k = k+m2
-                     delta_prime_mat(dRow,2*ksing) = x(k+ipert0+mpert)
-                  ENDDO
-               ENDDO
-            ENDDO
-         ELSE
-c-----------------------------------------------------------------------
 c     solve BVP matrix without sparse matrix.
 c-----------------------------------------------------------------------
-            !Loop over big solution driving terms.
-            DO jsing = 1,msing
-               DO i = 1,2
-                  b = 0.0
-                  IF (i == 1) THEN
-                     !Left side driving term
-                     b(nMat-s2+2*jsing-1) = 1.0
-                     dRow = 2*jsing-1
-                  ELSE
-                     !Right side driving term
-                     b(nMat-s2+2*jsing) = 1.0
-                     dRow = 2*jsing
-                  ENDIF
-                  x = b
-                  CALL ZGETRS('N',nMat,1,MInv,nMat,ipiv,x,nMat,info)
-                  IF (info /= 0) THEN
-                     print *,"info was not zero! info=",info
-                  ENDIF
+         !Loop over big solution driving terms.
+         DO jsing = 1,msing
+            DO i = 1,2
+               b = 0.0
+               IF (i == 1) THEN
+                  !Left side driving term
+                  b(nMat-s2+2*jsing-1) = 1.0
+                  dRow = 2*jsing-1
+               ELSE
+                  !Right side driving term
+                  b(nMat-s2+2*jsing) = 1.0
+                  dRow = 2*jsing
+               ENDIF
+               x = b
+               CALL ZGETRS('N',nMat,1,MInv,nMat,ipiv,x,nMat,info)
+               IF (info /= 0) THEN
+                  print *,"info was not zero! info=",info
+               ENDIF
 
-                  k = -mpert
-                  DO ksing = 1,msing
-                     s => scalc(ksing)
-                     ipert0 = s%sing_col
+               k = -mpert
+               DO ksing = 1,msing
+                  s => scalc(ksing)
+                  ipert0 = s%sing_col
 
-                     !Find the small solution coeffs (p mode, so +mpert)
-                     k = k+m2
-                     delta_prime_mat(dRow,2*ksing-1) = x(k+ipert0+mpert)
-                     k = k+m2
-                     delta_prime_mat(dRow,2*ksing) = x(k+ipert0+mpert)
-                  ENDDO
+                  !Find the small solution coeffs (p mode, so +mpert)
+                  k = k+m2
+                  delta_prime_mat(dRow,2*ksing-1) = x(k+ipert0+mpert)
+                  k = k+m2
+                  delta_prime_mat(dRow,2*ksing) = x(k+ipert0+mpert)
+               ENDDO
 c-----------------------------------------------------------------------
 c     error-check non-sparse matrix solution.
 c-----------------------------------------------------------------------
-                  !Error-check big solution elements by backward solve.
-                  b = ABS(MATMUL(M,x))
-                  IF (ABS(1-SUM(ABS(b))) > big_soln_err_tol) THEN
-                     print *,"Big sol'n error, surface #",jsing,"side",i
-                     print *,"=",ABS(1-SUM(ABS(b)))
-                  ENDIF
-               ENDDO
+               !Error-check big solution elements by backward solve.
+               b = ABS(MATMUL(M,x))
+               IF (ABS(1-SUM(ABS(b))) > big_soln_err_tol) THEN
+                  print *,"Big sol'n error, surface #",jsing,"side",i
+                  print *,"=",ABS(1-SUM(ABS(b)))
+               ENDIF
             ENDDO
-         ENDIF
+         ENDDO
 
          CALL ascii_open(delta_prime_out_unit,"delta_prime.out",
      $        "UNKNOWN")

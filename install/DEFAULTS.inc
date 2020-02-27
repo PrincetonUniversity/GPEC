@@ -314,22 +314,20 @@ else
     FCINC = .
 endif
 
-# SuperLU options
-#------------------
-# determine if we need to unpack our own SuperLU tarball
-SLU_COMMAND = cd ../superlu; ./remakeSuperLU.sh
-# ... or if we just need to make our existing unpacked SuperLU
-ifneq ($(wildcard ../superlu/SuperLU_5.2.1/.),)
-	SLU_COMMAND = cd ../superlu/SuperLU_5.2.1; make
-endif
-# ... or if we already have a valid SuperLU and shouldn't bother
-#ifneq some_magic_test_if_necessary_libs_are_in_path
-#	SLU_COMMAND =
-#endif
-
 # XDRAW options
 #----------------
 ifdef X11_HOME
     X11_INC_DIR = -I$(X11_HOME)/include
     X11_LIB_DIR = -L$(X11_HOME)/lib
+endif
+
+#Common compiler flags for OpenMP
+ifeq ($(findstring ifort,$(FC)),ifort)
+	OMPFLAG ?= -qopenmp
+else ifeq ($(findstring gfortran,$(FC)),gfortran)
+	OMPFLAG ?= -fopenmp
+else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
+	OMPFLAG ?= -mp
+else
+	OMPFLAG ?= -openmp
 endif

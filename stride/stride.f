@@ -48,7 +48,7 @@ c-----------------------------------------------------------------------
      $     ahb_flag,mthsurf0,msol_ahb,netcdf_out
       NAMELIST/stride_params/grid_packing,asymp_at_sing,
      $     integrate_riccati,calc_delta_prime,calc_dp_with_vac,
-     $     solve_delta_prime_with_sparse_mat,axis_mid_pt_skew,
+     $     axis_mid_pt_skew,
      $     big_soln_err_tol, kill_big_soln_for_ideal_dW,
      $     ric_dt,ric_tol,riccati_bounce,verbose_riccati_output,
      $     riccati_match_hamiltonian_evals,verbose_performance_output,
