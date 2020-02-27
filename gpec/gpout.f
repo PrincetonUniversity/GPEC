@@ -3987,6 +3987,13 @@ c-----------------------------------------------------------------------
                   brz(i,j) = (t21*bwp+t22*bwt)/jac
                   xrp(i,j) = t33*xvz
                   brp(i,j) = t33*bvz
+                  ! machine toroidal angle ! it matters.
+                  xrr(i,j) = xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brr(i,j) = brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  xrz(i,j) = xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brz(i,j) = brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  xrp(i,j) = xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brp(i,j) = brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
                   ! Correction for helicity
                   IF(helicity>0)THEN
                      xrr(i,j) = CONJG(xrr(i,j))
@@ -3996,13 +4003,6 @@ c-----------------------------------------------------------------------
                      xrp(i,j) = CONJG(xrp(i,j))
                      brp(i,j) = CONJG(brp(i,j))
                   ENDIF
-                  ! machine toroidal angle
-                  xrr(i,j) = xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  brr(i,j) = brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  xrz(i,j) = xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  brz(i,j) = brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  xrp(i,j) = xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  brp(i,j) = brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
                ENDIF
             ENDDO
          ENDDO
@@ -4036,13 +4036,6 @@ c-----------------------------------------------------------------------
          IF(timeit) CALL gpec_timer(2)
       ENDIF
       
-      IF (divzero_flag) THEN
-         CALL gpeq_rzpdiv(nr,nz,gdr,gdz,brr,brz,brp)
-      ENDIF
-      IF (div_flag) THEN
-         CALL gpdiag_rzpdiv(nr,nz,gdl,gdr,gdz,brr,brz,brp)
-      ENDIF
-
       IF (brzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing total perturbed fields"
          bnomn=bnomn-bnimn
@@ -4057,8 +4050,15 @@ c-----------------------------------------------------------------------
 
          IF (coil_flag) THEN
             IF(verbose) WRITE(*,*)"Computing vacuum fields by coils"
-            np=nn*16
+            np=nn*48 ! make it consistent with cmzeta later.
             CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp)
+            IF (divzero_flag) THEN
+               CALL gpeq_rzpdiv(nr,nz,gdr,gdz,vcbr,vcbz,vcbp)
+            ENDIF
+            IF (div_flag) THEN
+               CALL gpdiag_rzpdiv(nr,nz,gdl,gdr,gdz,
+     $              vcbr,vcbz,vcbp,"c")
+            ENDIF
          ENDIF
          
          DO i=0,nr
@@ -4082,6 +4082,12 @@ c-----------------------------------------------------------------------
                
             ENDDO
          ENDDO
+         IF (divzero_flag) THEN
+            CALL gpeq_rzpdiv(nr,nz,gdr,gdz,btr,btz,btp)
+         ENDIF
+         IF (div_flag) THEN
+            CALL gpdiag_rzpdiv(nr,nz,gdl,gdr,gdz,btr,btz,btp,"b")
+         ENDIF
       ENDIF
 
       IF (chebyshev_flag) THEN

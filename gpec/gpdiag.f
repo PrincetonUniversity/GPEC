@@ -1642,7 +1642,7 @@ c-----------------------------------------------------------------------
 c     subprogram 14. gpdiag_rzpdiv.
 c     check divergence of rzphi functions.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
+      SUBROUTINE gpdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp,label)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1650,8 +1650,10 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(0:nr,0:nz), INTENT(IN) :: lval
       REAL(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: rval,zval
       COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: fr,fz,fp
+      CHARACTER(*), INTENT(IN) :: label
 
       INTEGER :: i,j
+      REAL(r8) :: fabs
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: div
 
       TYPE(bicube_type) :: rfr,ifr,rfz,ifz
@@ -1690,10 +1692,13 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(rfz,rval(i,j),zval(i,j),1)
             CALL bicube_eval(ifz,rval(i,j),zval(i,j),1)
 
+            fabs=sqrt(abs(fr(i,j))**2.0+abs(fz(i,j))**2.0+
+     $           abs(fp(i,j))**2.0)
             div(i,j)=rfr%fx(1)/rval(i,j)+rfz%fy(1)+
      $           nn*AIMAG(fp(i,j))/rval(i,j)+ifac*
      $           (ifr%fx(1)/rval(i,j)+ifz%fy(1)-
      $           nn*REAL(fp(i,j))/rval(i,j))
+            div(i,j)=div(i,j)/fabs
 
          ENDDO
       ENDDO
@@ -1703,10 +1708,11 @@ c-----------------------------------------------------------------------
       CALL bicube_dealloc(rfz)
       CALL bicube_dealloc(ifz)
 
-      CALL ascii_open(out_unit,"gpec_diagnostics_rzpdiv_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_rzpdiv_"//label//"_n"//
      $     TRIM(sn)//".out","UNKNOWN")
 
-      WRITE(out_unit,*)"GPEC_RZPDIV: Divergence in rzphi grid"
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_RZPDIV: "//
+     $     "Divergence in rzphi grid"
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
      $     "re(div)","im(div)","abs(div)"
 
