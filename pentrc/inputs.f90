@@ -43,7 +43,8 @@ module inputs
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         shotnum,shottime,machine,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
-        idcon_coords
+        idcon_coords,&
+        verbose
     
     implicit none
     
@@ -63,7 +64,6 @@ module inputs
         verbose
     
     ! global variables with defaults
-    logical :: verbose=.TRUE.
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
