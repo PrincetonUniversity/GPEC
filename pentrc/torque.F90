@@ -1039,8 +1039,8 @@ module torque
         endif
 
         ! enforce integration bounds
-        psilim(1) = max(psilim(1),xs(0))
-        psilim(2) = min(psilim(2),xs(mx))
+        psilim(1) = max(psilim(1), sq%xs(0), xs_m(1)%xs(0))
+        psilim(2) = min(psilim(2), sq%xs(sq%mx), xs_m(1)%xs(xs_m(1)%mx))
         istrt = -1
         istop = -1
         do i=0,mx
@@ -1084,7 +1084,7 @@ module torque
             endif
 
             ! log progress
-            if(mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==xs(0) .and. verbose)then
+            if((mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==xs(0)) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'
             endif
@@ -1200,7 +1200,7 @@ module torque
         ! declare variables
         integer, parameter :: maxsteps = 10000
         integer :: j,l,s
-        real(r8) :: xlast,wdcom,dxcom,chrg,drive
+        real(r8) :: x0, xlast,wdcom,dxcom,chrg,drive
         real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: gam,chi
         real(r8), dimension(:,:), allocatable :: profiles,ellprofiles
@@ -1231,8 +1231,9 @@ module torque
         allocate(gam(neq),chi(neq))
         neqarray(:) = (/neq,n,nl,zi,mi,btoi(electron)/)
         y(:) = 0
-        x = sq%xs(0)
-        xout = min(xs_m(1)%xs(xs_m(1)%mx),sq%xs(sq%mx)) ! psilim, psihigh
+        x    = max(psilim(1), sq%xs(0), xs_m(1)%xs(0)) ! xi grid and EQUIL grid might not match (DCON using qlow, etc.)
+        x0 = x
+        xout = min(psilim(2), sq%xs(sq%mx), xs_m(1)%xs(xs_m(1)%mx)) ! xi and equil grid might not match (psilim vs psihigh)
         itol = 2                  ! rtol and atol are arrays
         rtol(:) = rtol_psi              !1.d-7!9              ! 14
         atol(:) = atol_psi              !1.d-7!9              ! 15
@@ -1243,10 +1244,6 @@ module torque
         rwork(1) = xout           ! only used if itask 4,5
         iwork(6) = maxsteps       ! max number steps
         mf = 10                   ! not stiff with unknown J
-        ! enforce integration bounds
-        x = max(psilim(1),x)
-        xout = min(psilim(2),xout)
-        rwork(1) = xout
         if(tdebug) print *,"psilim = ",psilim
         if(tdebug) print *,"sq lim = ",sq%xs(0),sq%xs(sq%mx)
         if(tdebug) print *,"xs lim = ",xs_m(1)%xs(0),xs_m(1)%xs(xs_m(1)%mx)
@@ -1306,7 +1303,7 @@ module torque
             endif
 
             ! print progress
-            if(mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==sq%xs(0) .and. verbose)then
+            if((mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==x0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> T_phi = ",sum(y(1:neq:2),dim=1),sum(y(2:neq:2),dim=1),'j'
             endif
@@ -1853,7 +1850,7 @@ module torque
         character(16) :: nstring,suffix
         character(128) :: ncfile
 
-        print *,"Writing output to netcdf"
+        if(verbose) print *,"Writing output to netcdf"
 
         ! set species
         if(electron)then
@@ -2118,7 +2115,7 @@ module torque
 
         logical :: debug = .false.
 
-        print *,"Writing orbit record output to netcdf"
+        if(verbose) print *,"Writing orbit record output to netcdf"
 
         ! optional labeling
         label = ''

@@ -223,6 +223,10 @@ program pentrc
     ierr=harvest_send(hlog)
     
     ! display timer and stop
-    call timer(mode=1)
-    stop "PENTRC STOP=> normal termination."
+    if(verbose)then
+        call timer(mode=1)
+        stop " PENTRC STOP => normal termination."
+    else
+        stop
+    end if
 end program pentrc
