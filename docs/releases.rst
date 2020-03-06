@@ -10,6 +10,18 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.4.2
+===========
+
+Fixes
+------
+- PENTRC - Respects the namelist verbose setting throughout the program
+
+Changes
+------
+- COIL - Updates ASDEX Upgrade coil geometry to have more accurate, rounded cornering
+
+
 GPEC v1.4.1
 ===========
 

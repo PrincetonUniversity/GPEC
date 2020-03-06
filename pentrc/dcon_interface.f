@@ -501,7 +501,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(3,3) :: w,v
       TYPE(spline_type) :: qs
 
-      WRITE(*,*)"  Reconstructing flux functions and metric tensors"
+      IF(verbose)THEN
+          WRITE(*,*)"  Reconstructing flux functions and metric tensors"
+      ENDIF
 c-----------------------------------------------------------------------
 c     set up fourier-spline type for metric tensors.
 c-----------------------------------------------------------------------
