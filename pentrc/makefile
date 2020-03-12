@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../harvest -I../cvode -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS
 
@@ -19,7 +19,8 @@ LIBDIR = ../lib
 LIBS = \
 	-llsode \
 	-lequil \
-	-lharvest
+	-lharvest \
+	-lcvode
 
 OBJS = \
     params.o \
@@ -37,7 +38,7 @@ OBJS = \
 	pentrc_interface.o \
 	pentrc.o
 
-all: harvest lsode equil pentrc
+all: harvest lsode equil cvode pentrc
 
 harvest:
 	cd ../; git submodule init; git submodule update
@@ -66,8 +67,11 @@ endif
 
 force:
 
+cvode:
+	cd ../cvode; make
+
 pentrc: $(OBJS)
-	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o pentrc $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) -ldl
 	mkdir -p ../lib
 	ar -r ../lib/libpentrc.a *.o
 	mkdir -p ../bin

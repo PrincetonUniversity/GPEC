@@ -29,6 +29,7 @@ module energy_integration
     use utilities, only : get_free_file_unit,append_2d,check
     use dcon_interface, only : shotnum, shottime, machine
     use netcdf
+    use cvode
     
     use lsode2_mod
     
@@ -198,7 +199,7 @@ module energy_integration
             if(record_this) then
                 itask = 2              ! single step
                 do while (x<xout)
-                    call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,&
+                    call lsode2(newxintgrnd, neq, yi, x, xout, itol, rtol,&
                         atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                     call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                     i = i+1
@@ -206,7 +207,7 @@ module energy_integration
                 enddo
             else
                 itask = 1              ! full integral
-                call lsode2(xintgrnd, neq, yi, x, xout, itol, rtol,atol, &
+                call lsode2(newxintgrnd, neq, yi, x, xout, itol, rtol,atol, &
                     itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
             endif
 
@@ -230,7 +231,7 @@ module energy_integration
         if(record_this) then
             itask = 2              ! single step
             do while (x<xout)
-                call lsode2(xintgrnd, neq, y, x, xout, itol, rtol,&
+                call lsode2(newxintgrnd, neq, y, x, xout, itol, rtol,&
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                 call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                 i = i+1
@@ -238,7 +239,7 @@ module energy_integration
             enddo
         else
             itask = 1              ! full integral
-            call lsode2(xintgrnd, neq, y, x, xout, itol, rtol,atol, &
+            call lsode2(newxintgrnd, neq, y, x, xout, itol, rtol,atol, &
                 itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
         endif
 
@@ -260,7 +261,7 @@ module energy_integration
             rwork(1) = xmax        ! only used if itask 4,5
             iwork(6) = maxstep       ! max number steps
             do while (x<xout .and. iwork(11)<iwork(6))
-                call lsode2(xintgrnd, neq, y, x, xout, itol, rtol, &
+                call lsode2(newxintgrnd, neq, y, x, xout, itol, rtol, &
                     atol,itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
                call dintdy2(x, 1, rwork(21), neq(1), dky, iflag)
                write(xout_unit,'(1x,5(1x,es16.8e3))') x,dky(1:2),y(1:2)
@@ -291,7 +292,49 @@ module energy_integration
     
     
     
-    
+
+subroutine newxintgrnd(neq,x,y,ydot)
+        use iso_c_binding
+        implicit none
+        integer ::  neq, xnu, xf0t
+        real*8 x, y(neq), ydot(neq)
+        real*8 temp(neq), tempdot(neq)
+        real*8 testval
+        complex(r8) :: original_val
+
+        complex(r8) :: denom,fx,cx,nux
+
+        select case (xnutype)
+            case ("zero")
+                xnu = 0
+            case ("small")
+                xnu = 1
+            case ("krook")
+                xnu = 2
+            case ("harmonic")
+                xnu = 3
+            case default
+                Stop "ERROR: xintgrnd - nutype must be zero, small, krook, or harmonic"
+        end select
+
+        select case (xf0type)
+            ! Standard solution from [Logan, Park, et al., Phys. Plasma, 2013]
+            case ("maxwellian")
+                xf0t = 0
+            ! Jong-Kyu Park [Park,Boozer,Menard, PRL 2009] approx neoclassical offset
+            case ("jkp")
+                xf0t = 1
+            ! Chew-Goldberger-Low limit (we+wd -> inf)
+            case ("cgl")
+                xf0t = 2
+            case default
+                Stop "ERROR: xintgrnd - f0 type must be maxwellian, jkp, or cgl"
+        end select
+
+        testval = cxintgrnd(neq, x, temp, tempdot, energy_imaxis,ximag,xnu,energy_we,energy_nuk,energy_leff,xnufac,energy_wb, &
+            energy_n, energy_wd, xf0t, energy_wn, energy_wt, qt)
+end subroutine newxintgrnd
+
 
     !=======================================================================
     subroutine xintgrnd(neq,x,y,ydot)
@@ -330,7 +373,6 @@ module energy_integration
         implicit none
         integer ::  neq
         real*8 x, y(neq), ydot(neq)
-
         complex(r8) :: denom,fx,cx,nux
 
         ! complex contour determined by global variable for module
@@ -339,7 +381,6 @@ module energy_integration
         else
            cx = x + xj*ximag
         endif
-
         ! collisionality determined by global variable for module
         select case (xnutype)
             case ("zero")
@@ -392,8 +433,9 @@ module energy_integration
         ! decouple two real space solutions
         ydot(1) = real(fx)
         ydot(2) = aimag(fx)
-        
+
         return
+
     end subroutine xintgrnd
 
     

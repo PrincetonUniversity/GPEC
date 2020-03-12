@@ -94,7 +94,7 @@ gpec:
 	cd ../gpec;   make gpec
 
 pentrc:
-	cd ../pentrc; make pentrc
+	cd ../pentrc; make
 
 stride:
 	cd ../stride; make stride

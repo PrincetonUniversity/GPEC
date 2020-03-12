@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../harvest -I../pentrc -I../cvode -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(ACCFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
@@ -18,7 +18,8 @@ LIBS = \
 	-lequil \
 	-lvac \
 	-lharvest \
-	-lpentrc
+	-lpentrc \
+	-lcvode
 
 OBJS = \
 	debug.o \
@@ -58,7 +59,7 @@ pentrc:
 
 # note we explicitly make pentrc to force sync the compile-time version variable
 dcon: pentrc $(OBJS)
-	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) -ldl
 	mkdir -p ../bin
 	cp -f dcon ../bin
 
