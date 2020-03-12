@@ -24,7 +24,7 @@
     out_eq_1d=f          ! Ascii output of 1D equilibrium file data
     bin_eq_1d=f          ! Binary output of 1D equilibrium file data
     out_eq_2d=f          ! Ascii output of 2D equilibrium file data
-    bin_eq_2d=f          ! Binary output of 2D equilibrium file data (set true for GPEC)
+    bin_eq_2d=t          ! Binary output of 2D equilibrium file data (set true for GPEC)
     out_2d=f             ! Ascii output of processed 2D data
     bin_2d=f             ! Binary output of processed 2D data
     dump_flag=f          ! Binary dump of basic equilibrium data and 2D rzphi spline
