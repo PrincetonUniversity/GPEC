@@ -62,10 +62,12 @@ module cvode
             energy_wd, xf0type, energy_wn, energy_wt, qt)
  
         call free_dll (os, dll, errstat, errmsg )
+#ifdef TDEBUG
         if (errstat /= 0) then
             write(*,*)"load_dll: errstat=", errstat
             print *, errmsg
         end if
+#endif
    else
         write(*,*)"load_dll: errstat=", errstat
         print *, errmsg

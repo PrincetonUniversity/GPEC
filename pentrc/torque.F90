@@ -189,16 +189,17 @@ module torque
         real(r8), dimension(0:mthsurf) :: jacs,delpsi,rsurf,asurf
         logical :: firstsurf
 
-        ! debug initiation
-        if(tdebug) print *,"torque - tpsi function, psi = ",psi
-        if(tdebug) print *,"  electron ",electron
-        if(tdebug) print *,"  ell ",l
-        if(tdebug) print *,"  mpert ",mpert
-        if(tdebug) print *,"  mfac ",mfac
-        if(tdebug) print *,"  sq   psi ",sq%xs(0:sq%mx:sq%mx/5)
-        if(tdebug) print *,"  dbob psi ",dbob_m%xs(0:dbob_m%mx:dbob_m%mx/5)
-        if(tdebug) print *,"  db ",dbob_m%fs(0:dbob_m%mx:dbob_m%mx/5,1)
-        if(tdebug) print *,"  xs ",xs_m(1)%fs(0:xs_m(1)%mx:xs_m(1)%mx/5,1)
+#ifdef TDEBUG
+        print *,"torque - tpsi function, psi = ",psi
+        print *,"  electron ",electron
+        print *,"  ell ",l
+        print *,"  mpert ",mpert
+        print *,"  mfac ",mfac
+        print *,"  sq   psi ",sq%xs(0:sq%mx:sq%mx/5)
+        print *,"  dbob psi ",dbob_m%xs(0:dbob_m%mx:dbob_m%mx/5)
+        print *,"  db ",dbob_m%fs(0:dbob_m%mx:dbob_m%mx/5,1)
+        print *,"  xs ",xs_m(1)%fs(0:xs_m(1)%mx:xs_m(1)%mx/5,1)
+#endif
 
         ! defaults of optional arguments
         if(present(op_erecord))then
@@ -256,22 +257,18 @@ module torque
            dxfun(i) = ABS( sum(divx_m_f(:)*expm) * divxfac )**2
         enddo
 
-        if (tdebug) then
-#ifdef _OPENMP
+#if defined(_OPENMP) && defined(TDEBUG)
         ! Compiled with OpenMP multithreading. Print out thread number.
            print *,"Pass1::: thread=",OMP_GET_THREAD_NUM(),"l=",l,"tspl%fs=",tspl%fs(:,1)
 #endif
-        endif
 
         ! clebsch conversion now in djdt o1*exp(-twopi*ifac*nn*q*theta)
         call spline_fit(tspl,"periodic")
 
-        if (tdebug) then
-#ifdef _OPENMP
+#if defined(_OPENMP) && defined(TDEBUG)
         ! Compiled with OpenMP multithreading. Print out thread number.
            print *,"Pass2::: thread=",OMP_GET_THREAD_NUM(),"l=",l,"tspl%fs=",tspl%fs(:,1)
 #endif
-        endif
 
         ! rough estimate of bmin & bmax defining range of lambda
         bmax = maxval(tspl%fs(:,1),dim=1)
@@ -303,8 +300,10 @@ module torque
              end if
         end do
         call spline_dealloc(dbdtspl)
-        if(tdebug) print *,"  bmin,bo,bmax = ", bmin, bo, bmax
-        if(tdebug) print *,"  theta bmin,bmax = ", theta_bmin, theta_bmax  ! expect ~ 0, 0.5 (theta 0 is LFS)
+#ifdef TDEBUG
+        print *,"  bmin,bo,bmax = ", bmin, bo, bmax
+        print *,"  theta bmin,bmax = ", theta_bmin, theta_bmax  ! expect ~ 0, 0.5 (theta 0 is LFS)
+#endif
 
         ! flux function variables  !!WARNING WHEN MODIFYING: THESE ARE CALCULATED SEPARATELY FOR I/O!!
         call spline_eval_external(sq,psi,ix,sq_s_f)
@@ -342,12 +341,16 @@ module torque
         dxave = issurfint(dxfun,mthsurf,psi,0,1,fsave,psave,jacs,delpsi,rsurf,asurf,firstsurf)
 
         deallocate(dbfun,dxfun)
-        if(tdebug) print('(a15,7(es10.1E2),i4)'), "   eq values = ",wdian,&
+#ifdef TDEBUG
+        print('(a15,7(es10.1E2),i4)'), "   eq values = ",wdian,&
                         wdiat,welec,wdhat,wbhat,nueff,q
+#endif
 
         ! optional record of flux functions
         if(present(op_ffuns)) then
-            if(tdebug) print *, "  storing ",nfluxfuns," flux functions in ",size(op_ffuns,dim=1)
+#ifdef TDEBUG
+            print *, "  storing ",nfluxfuns," flux functions in ",size(op_ffuns,dim=1)
+#endif
             op_ffuns = (/ epsr, kin_f(1:8), q, sq_s_f(2), &
                 wdian, wdiat, wtran, wgyro, wbhat, wdhat, dbave, dxave /)
         endif
@@ -358,12 +361,15 @@ module torque
         endif
 
 
-
-        if(tdebug) print *,'  method = '//method
+#ifdef TDEBUG
+        print *,'  method = '//method
+#endif
         select case(method)
 
             case('fcgl')
-                if(tdebug) print *,'  fcgl integrand. modes = ',n,l
+#ifdef TDEBUG
+                print *,'  fcgl integrand. modes = ',n,l
+#endif
                 if(l==0)then
                     ! Poloidal functions (with jacobian!)
                     call spline_alloc(cglspl,mthsurf,2)
@@ -401,19 +407,24 @@ module torque
                 lnq = 1.0*l
                 sigma = 0
                 ! independent energy integration
-                if(tdebug) print *,'  rlar integrations. modes = ',n,l
+#ifdef TDEBUG
+                print *,'  rlar integrations. modes = ',n,l
+#endif
                 ! energy space integrations
                 lmdamax = min(1.0/(1-epsr),bo/bmin) ! just for record keeping - not rigorous
                 xint = xintgrl_lsode(wdian,wdiat,welec,wdhat,wbhat,nueff,l,lnq,n,&
                     psi,lmdamax,method,op_record=erecord)
                 ! kappa integration
-                if(tdebug) print *,"  <|dB/B|> = ",sum(abs(dbob_m_f(:))/mpert)
+#ifdef TDEBUG
+                print *,"  <|dB/B|> = ",sum(abs(dbob_m_f(:))/mpert)
+#endif
                 kappaint = kappaintgrl(n,l,q,mfac,dbob_m_f(:),fnml)
                 ! dT/dpsi
                 tpsi = sq_s_f(3)*kappaint*0.5*(-xint) &
                      *SQRT(epsr/(2*pi**3))*n*n*kin_f(s)*kin_f(s+2)
-                if(tdebug) print *,'  ->  xint',xint,', kint',kappaint,', tpsi ',tpsi
-
+#ifdef TDEBUG
+                print *,'  ->  xint',xint,', kint',kappaint,', tpsi ',tpsi
+#endif
 
 
 
@@ -513,7 +524,9 @@ module torque
                 tpsi = (-2*n**2/sqrt(pi))*(ro/bo)*kin_f(s)*kin_f(s+2) &
                     *lxint(1)/fbnce_norm(1) &       ! lsode normalization
                     *(chi1/twopi)
-                if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
+#ifdef TDEBUG
+                print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
+#endif
 
                 ! wrap up
                 deallocate(fbnce_norm,lxint)
@@ -580,7 +593,9 @@ module torque
                     ldl(1,:) = (/ldl_p(1,2:1+nlmda/2),ldl_t(1,2:1+nlmda-nlmda/2)/) ! full space with no point on boundary or max
                     ldl(2,:) = (/ldl_p(2,2:1+nlmda/2),ldl_t(2,2:1+nlmda-nlmda/2)/)
                 endif
-                if(tdebug) print *," Lambda space ",ldl(1,1),ldl(1,nlmda),", t/p boundary = ",lmdatpb
+#ifdef TDEBUG
+                print *," Lambda space ",ldl(1,1),ldl(1,nlmda),", t/p boundary = ",lmdatpb
+#endif
                 ! form smooth pitch angle functions
                 do ilmda=1,nlmda
                     lmda = ldl(1,ilmda)
@@ -644,12 +659,12 @@ module torque
                         t2 = tspl%xs(ibmax)+1
                         tdt = powspace(t1,t2,2,ntheta,"both")
                     endif
-                    if(tdebug) then
+#ifdef TDEBUG
                         if(mod(ilmda,ntheta/10)==0)then
                             print *,"(t1,t2) = ",t1,t2
                             print *,"tdt rng = ",tdt(1,1),tdt(1,ntheta)
                         endif
-                    endif
+#endif
                     ! bounce locations recorded for optional output
                     turns%fs(ilmda-1,1) = t1
                     call bicube_eval_external(rzphi, psi, t1, 0, ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
@@ -791,7 +806,9 @@ module torque
 
                     ! optional deeply trapped bounce motion output for nlambda_out pitches
                     if(orecord .and. any(ilambda_out==ilmda))then
-                        if(tdebug) print *, "  recording bounce functions"
+#ifdef TDEBUG
+                        print *, "  recording bounce functions"
+#endif
                         do i=1,ntheta
                             expm = exp(xj*twopi*mfac*tdt(1,i))
                             dbob = sum(dbob_m_f(:)*expm)
@@ -819,14 +836,14 @@ module torque
                 call cspline_fit(fbnce,'extrap')
                 call spline_fit(turns,'extrap')
 
-                if(tdebug)then
-                    print *,"lambda ~ ",ldl(1,::10),ldl(1,nlmda)
-                    print *,"wb(lmda) ~ ",fbnce%fs(::10,1),fbnce%fs(nlmda-1,1)
-                    print *,"wd(lmda) ~ ",fbnce%fs(::10,2),fbnce%fs(nlmda-1,2)
-                    do i=fbnce%nqty/2,fbnce%nqty/2 !3,fbnce%nqty
-                        print *,"dJdJ(lmda) ~ ",fbnce%fs(::10,i)
-                    enddo
-                endif
+#ifdef TDEBUG
+                print *,"lambda ~ ",ldl(1,::10),ldl(1,nlmda)
+                print *,"wb(lmda) ~ ",fbnce%fs(::10,1),fbnce%fs(nlmda-1,1)
+                print *,"wd(lmda) ~ ",fbnce%fs(::10,2),fbnce%fs(nlmda-1,2)
+                do i=fbnce%nqty/2,fbnce%nqty/2 !3,fbnce%nqty
+                    print *,"dJdJ(lmda) ~ ",fbnce%fs(::10,i)
+                enddo
+#endif
 
 
                 ! energy space integrations
@@ -847,7 +864,9 @@ module torque
                 tnorm = (-2 * n**2 / sqrt(pi)) * (ro / bo) * kin_f(s) * kin_f(s + 2) & ! Eq (19) [N.C. Logan, et al., Physics of Plasmas 20, (2013)]
                     * (chi1 / twopi) ! unit conversion from psi to psi_n, theta_n to theta
                 tpsi = tnorm * ( lxint(1) / fbnce_norm(1) )       ! remove lsode normalization
-                if(tdebug) print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
+#ifdef TDEBUG
+                print *,'  ->  lxint',lxint(1),', tpsi ',tpsi
+#endif
 
                 ! Euler lagrange matrices (wtw ~ dW ~ T/i)
                 if(present(op_wmats))then
@@ -886,7 +905,9 @@ module torque
                             lwork=3*mpert
                             call zgesvd('S','S',mpert,mpert,a,mpert,svals,u, &
                                 mpert,vt,mpert,work,lwork,rwork,info)
-                            if(tdebug) print *,i,maxval(svals)
+#ifdef TDEBUG
+                            print *,i,maxval(svals)
+#endif
                             tpsi = tpsi + maxval(svals) ! euclidean (spectral) norm
                         enddo
                         tpsi = (rex+imx*xj)*sqrt(tpsi) ! euclidean norm of the 6 norms
@@ -907,14 +928,14 @@ module torque
                         tpsi = (2*n*xj/(2*mu0))*(t_zz(1,1)+t_xx(1,1)+t_yy(1,1) &
                             +      t_zx(1,1)+t_zy(1,1)+t_xy(1,1) &
                             +wtwnorm*conjg(t_zx(1,1)+t_zy(1,1)+t_xy(1,1)))
-                        if(tdebug)then
-                            print *," -> WxWx ~ ",op_wmats(20:25,20,1)
-                            print *,"expected to be all real (wmm) or all imag (tmm):"
-                            print *,"  xx = ",t_xx
-                            print *,"  yy = ",t_yy
-                            print *,"  zz = ",t_zz
-                        endif
-                    endif
+#ifdef TDEBUG
+                        print *," -> WxWx ~ ",op_wmats(20:25,20,1)
+                        print *,"expected to be all real (wmm) or all imag (tmm):"
+                        print *,"  xx = ",t_xx
+                        print *,"  yy = ",t_yy
+                        print *,"  zz = ",t_zz
+#endif
+                      endif
 
                 endif
 
@@ -931,7 +952,9 @@ module torque
                 stop "ERROR: torque - unknown method"
         end select
 
-        if(tdebug) print *,"torque - end function, psi = ",psi
+#ifdef TDEBUG
+        print *,"torque - end function, psi = ",psi
+#endif
 
         return
     end function tpsi
