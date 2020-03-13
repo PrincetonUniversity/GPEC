@@ -53,6 +53,9 @@ module energy_integration
     character(32) :: &
         xnutype = "harmonic", &
         xf0type = "maxwellian"
+    integer :: &
+        xnu = 0, &
+        xf0t = 0
     logical :: &
         qt     = .false., &
         xdebug = .false.
@@ -160,6 +163,33 @@ module energy_integration
         integer iwork(liw)
         real*8  atol(neq(1)),rtol(neq(1)),rwork(lrw),x,xout,&
                 y(neq(1)),yi(neq(1)),dky(neq(1))
+
+        select case (xnutype)
+            case ("zero")
+                xnu = 0
+            case ("small")
+                xnu = 1
+            case ("krook")
+                xnu = 2
+            case ("harmonic")
+                xnu = 3
+            case default
+                Stop "ERROR: xintgrnd - nutype must be zero, small, krook, or harmonic"
+        end select
+
+        select case (xf0type)
+            ! Standard solution from [Logan, Park, et al., Phys. Plasma, 2013]
+            case ("maxwellian")
+                xf0t = 0
+            ! Jong-Kyu Park [Park,Boozer,Menard, PRL 2009] approx neoclassical offset
+            case ("jkp")
+                xf0t = 1
+            ! Chew-Goldberger-Low limit (we+wd -> inf)
+            case ("cgl")
+                xf0t = 2
+            case default
+                Stop "ERROR: xintgrnd - f0 type must be maxwellian, jkp, or cgl"
+        end select
         
         ! set default recording flag
         i = 0
@@ -293,47 +323,17 @@ module energy_integration
     
     
 
-subroutine newxintgrnd(neq,x,y,ydot)
+    subroutine newxintgrnd(neq,x,y,ydot)
         use iso_c_binding
         implicit none
-        integer ::  neq, xnu, xf0t
-        real*8 x, y(neq), ydot(neq)
-        real*8 temp(neq), tempdot(neq)
-        real*8 testval
-        complex(r8) :: original_val
+        integer ::  neq
+        real*8 x, y(neq), ydot(neq), testval
 
         complex(r8) :: denom,fx,cx,nux
 
-        select case (xnutype)
-            case ("zero")
-                xnu = 0
-            case ("small")
-                xnu = 1
-            case ("krook")
-                xnu = 2
-            case ("harmonic")
-                xnu = 3
-            case default
-                Stop "ERROR: xintgrnd - nutype must be zero, small, krook, or harmonic"
-        end select
-
-        select case (xf0type)
-            ! Standard solution from [Logan, Park, et al., Phys. Plasma, 2013]
-            case ("maxwellian")
-                xf0t = 0
-            ! Jong-Kyu Park [Park,Boozer,Menard, PRL 2009] approx neoclassical offset
-            case ("jkp")
-                xf0t = 1
-            ! Chew-Goldberger-Low limit (we+wd -> inf)
-            case ("cgl")
-                xf0t = 2
-            case default
-                Stop "ERROR: xintgrnd - f0 type must be maxwellian, jkp, or cgl"
-        end select
-
-        testval = cxintgrnd(neq, x, temp, tempdot, energy_imaxis,ximag,xnu,energy_we,energy_nuk,energy_leff,xnufac,energy_wb, &
+        testval = cxintgrnd(neq, x, y, ydot, energy_imaxis,ximag,xnu,energy_we,energy_nuk,energy_leff,xnufac,energy_wb, &
             energy_n, energy_wd, xf0t, energy_wn, energy_wt, qt)
-end subroutine newxintgrnd
+    end subroutine newxintgrnd
 
 
     !=======================================================================
