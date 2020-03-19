@@ -10,6 +10,8 @@ c     1. free_run.
 c     2. free_write_msc.
 c     3. free_ahb_prep.
 c     4. free_ahb_write.
+c     5. free_test.
+c     6. free_wvmats
 c-----------------------------------------------------------------------
 c     subprogram 0. free_mod.
 c     module declarations.
@@ -615,7 +617,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE free_test(plasma1,vacuum1,total1,psifac)
 
-      REAL(r8), INTENT(OUT) :: plasma1,vacuum1,total1
+      COMPLEX(r8), INTENT(OUT) :: plasma1,vacuum1,total1
       REAL(r8), INTENT(IN) :: psifac
 
       LOGICAL, PARAMETER :: normalize=.TRUE., debug=.FALSE.
@@ -654,7 +656,7 @@ c-----------------------------------------------------------------------
       wv = 0
       ! calc a rough spline of wv so we don't call mscvac (slow) every time
       IF(first_call)THEN
-         CALL free_wvmats(psifac, psilim)
+         CALL free_wvmats
          CALL spline_eval(sq,psifac,0)
          first_call = .FALSE.
       ENDIF
@@ -690,7 +692,7 @@ c-----------------------------------------------------------------------
          norm=norm/v1
          et(isol)=et(isol)/norm
       ENDIF
-      total1=REAL(et(1))
+      total1=et(1)
 c-----------------------------------------------------------------------
 c     compute plasma and vacuum eigenvalues
 c     DIFFERS FROM free_run, which calcs energies of the total eigenmode
@@ -708,7 +710,7 @@ c-----------------------------------------------------------------------
             wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
             et(ipert)=tt(eindex(mpert+1-ipert))
          ENDDO
-         plasma1=REAL(et(1))
+         plasma1=et(1)
 
          wt=wv
          wt0=wt
@@ -722,7 +724,7 @@ c-----------------------------------------------------------------------
             wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
             et(ipert)=tt(eindex(mpert+1-ipert))
          ENDDO
-         vacuum1=REAL(et(1))
+         vacuum1=et(1)
       ELSE
          plasma1 = 0.0
          vacuum1 = 0.0
@@ -741,9 +743,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_wvmats(psi1, psi2)
-
-      REAL(r8), INTENT(IN) :: psi1, psi2
+      SUBROUTINE free_wvmats
 
       INTEGER :: npsi,i,ipert,it,itmax=50
       REAL(r8) :: qi, psii, dpsi, eps=1e-9
@@ -755,6 +755,7 @@ c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
       npsi = CEILING((qlim - q_edge(1)) * nn * 4)  ! 4 pts per q window
+      psii = psiedge  ! should start exactly here
       CALL cspline_alloc(wvmats,npsi,mpert**2)
       DO i=0,npsi
          ! space point evenly in q

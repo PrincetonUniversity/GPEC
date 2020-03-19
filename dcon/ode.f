@@ -1286,7 +1286,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE ode_record_edge
       LOGICAL, PARAMETER :: debug=.FALSE.
       INTEGER, SAVE :: calc_number = 0
-      REAL(r8) :: total1, vacuum1, plasma1
+      COMPLEX(r8) :: total1, vacuum1, plasma1
 
       CALL spline_eval(sq,psifac,0)
       IF(size_edge > 0)THEN
@@ -1294,18 +1294,12 @@ c-----------------------------------------------------------------------
             CALL free_test(plasma1,vacuum1,total1,psifac)
             IF(debug) WRITE(*,'(2(i4),6(es12.3))') calc_number,
      $         i_edge,psifac,sq%f(4),q_edge(i_edge),
-     $         total1,vacuum1,plasma1
+     $         REAL(total1),REAL(vacuum1),REAL(plasma1)
             calc_number = calc_number + 1
             dw_edge(i_edge) = total1
             q_edge(i_edge) = sq%f(4)
             psi_edge(i_edge) = psifac
             i_edge = MIN(i_edge + 1, size_edge)  ! just to be extra safe
-!           ! only increment the index if we've progressed to the next q
-!           DO
-!               IF(i_edge == size_edge)EXIT
-!               i_edge = i_edge + 1
-!               IF(sq%f(4) < q_edge(i_edge)) EXIT
-!           ENDDO
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------

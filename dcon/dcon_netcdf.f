@@ -196,7 +196,7 @@ c-----------------------------------------------------------------------
      $    "Total Energy Eigenvalues") )
       IF(size_edge > 0)THEN
          CALL check( nf90_def_var(ncid, "dW_edge", nf90_double,
-     $       ep_dim, ew_id) )
+     $       (/ep_dim, i_dim/), ew_id) )
          CALL check( nf90_put_att(ncid,ew_id,"long_name",
      $       "Least Stable Total Energy Eigenvalues") )
          CALL check( nf90_def_var(ncid, "q_edge", nf90_double,
@@ -231,7 +231,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,dr_id, locstab%fs(:,2)/sq%xs(:)))
       CALL check( nf90_put_var(ncid,ca_id, locstab%fs(:,4)))
       IF(size_edge > 0)THEN
-         CALL check( nf90_put_var(ncid,ew_id, dw_edge))
+         CALL check( nf90_put_var(ncid,ew_id, RESHAPE((/REAL(dw_edge),
+     $             AIMAG(dw_edge)/),(/size_edge,2/))) )
          CALL check( nf90_put_var(ncid,eq_id, q_edge))
       ENDIF
 
