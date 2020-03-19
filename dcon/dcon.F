@@ -243,7 +243,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)"Starting integration of ODE's"
          CALL ode_run
          IF(size_edge > 0)THEN
-            peak_index = MAXLOC(dw_edge(pre_edge:i_edge),dim=1) +
+            peak_index = MAXLOC(REAL(dw_edge(pre_edge:i_edge)),dim=1) +
      $         (pre_edge - 1)
             qhigh = q_edge(peak_index)
             sas_flag = .FALSE.

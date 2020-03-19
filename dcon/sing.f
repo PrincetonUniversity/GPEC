@@ -230,7 +230,7 @@ c-----------------------------------------------------------------------
         q_edge(:) = qedgestart + (/(i*1.0,i=0,size_edge-1)/) /
      $     (nperq_edge*nn)
         psi_edge(:) = 0.0
-        dw_edge(:) = -huge(0.0_r8)
+        dw_edge(:) = -huge(0.0_r8) * (1 + ifac)
         ! we monitor some deeper points for an informative profile
         ! output over a full rational window
         ! but we still respect the user psiedge when looking for peak dW
