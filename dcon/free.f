@@ -10,6 +10,8 @@ c     1. free_run.
 c     2. free_write_msc.
 c     3. free_ahb_prep.
 c     4. free_ahb_write.
+c     5. free_test.
+c     6. free_wvmats
 c-----------------------------------------------------------------------
 c     subprogram 0. free_mod.
 c     module declarations.
