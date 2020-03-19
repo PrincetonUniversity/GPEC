@@ -81,7 +81,7 @@ c-----------------------------------------------------------------------
      $     cslth,cwali,cwalli,cwallr,cwalr,cwpti,cwptr,cwwti,cwwtr,
      $     sinlt,snlth,wrktr1,wrktr2,gatovac
 
-      LOGICAL :: farwal
+      LOGICAL :: farwal = .false.
       INTEGER :: mw,jtop,jbot
       REAL(8), DIMENSION(:), POINTER :: xpass,zpass,xpla,zpla
       REAL(8), DIMENSION(:,:), POINTER :: grwp,grri,chiwc,chiws

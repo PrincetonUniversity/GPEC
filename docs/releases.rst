@@ -10,6 +10,19 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.4.3
+===========
+
+Fixes
+------
+- VACUUM - Respects the namelist a and lspark when determining whether to write a wall geometry file output
+- DCON - Properly spaces the vacuum matrices used when finding the peak dW with psiedge < psilim
+
+Changes
+------
+- DCON - dW_edge in the netcdf output now includes the imaginary component of the least stable eigenvalue
+
+
 GPEC v1.4.2
 ===========
 

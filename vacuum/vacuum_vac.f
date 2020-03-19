@@ -115,8 +115,6 @@ c-----------------------------------------------------------------------
       tmth = 2*mth
       mthsq = tmth * tmth
       lmth = tmth * 2*jmax1
-      farwal = .false.
-      if ( (a .ge. 10.0) .or. (lspark .ne. 0) ) farwal = .true.
       j1v = nfm
       j2v = nfm
       if ( check1 )
@@ -2438,10 +2436,8 @@ c-----------------------------------------------------------------------
 
       open(unit=41,file="wall_geo.out",status='unknown',
      $             form='FORMATTED')
-      write(41,'(i6,A,A)') mth2,' = number of points below ',
-     $     '(theta must span 0 to 2*pi at a minimum)'
-      write(41,'(g14.6,A,A)') wcentr,' = R_0(m), a-parameter ',
-     $     'scaling uses this as origin'
+      write(41,'(1x,a7,i6)') 'mth2 = ', mth2
+      write(41,'(1x,a7,g14.6)') 'ro = ',wcentr
       write(41,'(A)') '  theta(rad)    R(m)          Z(m)'
 
 c     find first point above angle zero (slightly clockwise from R-direction)
