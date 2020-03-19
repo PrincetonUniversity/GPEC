@@ -5,7 +5,7 @@
    ivacuumfile= "vacuum.bin"         ! Vacuum info output by DCON run
    rdconfile  = "globalsol.bin"      ! Galerkin eigenfunctions output by resistive DCON run
 
-   gal_flag = t             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
+   gal_flag = f             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
 
    jac_in=""                ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
    jsurf_in=0               ! True(1) if external perturbation is area weighted (i.e. flux)

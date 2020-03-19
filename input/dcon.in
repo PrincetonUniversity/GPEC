@@ -7,7 +7,7 @@
 
     sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
-	psiedge=0.98         ! If less then psilim, calculates dW(psi) between psiedge and psilim, then runs with truncation at max(dW)
+	psiedge=0.988        ! If less then psilim, calculates dW(psi) between psiedge and psilim, then runs with truncation at max(dW)
     qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
@@ -40,7 +40,7 @@
     singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 
-    termbycross_flag = f ! Terminate ODE solver in the event of a zero crossing
+    termbycross_flag = t ! Terminate ODE solver in the event of a zero crossing
 
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 /
