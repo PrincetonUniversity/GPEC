@@ -10,6 +10,14 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.4.4
+===========
+
+Fixes
+------
+- DCON - Fixes output of plasma energy eigenvectors in netcdf
+
+
 GPEC v1.4.3
 ===========
 
