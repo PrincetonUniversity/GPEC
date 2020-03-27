@@ -264,6 +264,7 @@ c-----------------------------------------------------------------------
       CALL bubble(REAL(ep),eindex,1,mpert)
       tt=ep
       DO ipert=1,mpert
+         wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
       CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
