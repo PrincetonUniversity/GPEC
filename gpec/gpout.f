@@ -3299,10 +3299,11 @@ c-----------------------------------------------------------------------
      $               "Perturbed field normal to the flux surface") )
          CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,bm_id,"jacobian",jac_out) )
-         CALL check( nf90_def_var(fncid, "bgradpsi", nf90_double,
+         CALL check( nf90_def_var(fncid, "Jbgradpsi", nf90_double,
      $               (/p_id,m_id,i_id/),wm_id) )
          CALL check( nf90_put_att(fncid,wm_id,"long_name",
-     $               "Contravarient radial perturbed field") )
+     $      "Jaconbian weighted contravariant psi component of "//
+     $      "the perturbed field") )
          CALL check( nf90_put_att(fncid,wm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,wm_id,"jacobian",jac_out) )
          CALL check( nf90_def_var(fncid, "xi_n_fun", nf90_double,
@@ -3534,20 +3535,22 @@ c-----------------------------------------------------------------------
      $      "Externally applied normal field") )
          CALL check( nf90_put_att(fncid,vn_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,vn_id,"jacobian",jac_out) )
-         CALL check( nf90_def_var(fncid, "bgradpsi_x", nf90_double,
+         CALL check( nf90_def_var(fncid, "Jbgradpsi_x", nf90_double,
      $      (/p_id,m_id,i_id/),vw_id) )
          CALL check( nf90_put_att(fncid,vw_id,"long_name",
-     $      "Contravariant psi component of applied field") )
+     $      "Jacobian weighted contravariant psi component "//
+     $      "of the applied field") )
          CALL check( nf90_put_att(fncid,vw_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,vw_id,"jacobian",jac_out) )
          IF(TRIM(jac_out)/="pest" .and. bwp_pest_flag)THEN
             CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
             CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
      $         mpv_id) )
-            CALL check( nf90_def_var(fncid, "bgradpsi_x_pest",
+            CALL check( nf90_def_var(fncid, "Jbgradpsi_x_pest",
      $         nf90_double, (/p_id, mp_id, i_id/), pw_id) )
             CALL check( nf90_put_att(fncid,pw_id,"long_name",
-     $         "Contravariant psi component of applied field") )
+     $         "Jacobian weighted contravariant psi component "//
+     $         "of the applied field") )
             CALL check( nf90_put_att(fncid,pw_id,"units","Tesla") )
             CALL check( nf90_put_att(fncid,pw_id,"jacobian","pest") )
          ENDIF
