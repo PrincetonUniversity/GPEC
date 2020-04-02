@@ -1727,6 +1727,11 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, p_id, "units", "T") )
          CALL check( nf90_put_att(fncid, p_id, "long_name",
      $     "Pitch resonant flux normalized by the surface area") )
+         CALL check( nf90_def_var(fncid, "Delta", nf90_double,
+     $      (/q_id,i_id/), d_id) )
+         CALL check( nf90_put_att(fncid, d_id, "long_name",
+     $     "Unitless Resonance Parameter $\partial_\psi \frac{"//
+     $     "\delta B \cdot \nabla \psi}{B \cdot \nabla \theta}$") )
          CALL check( nf90_def_var(fncid, "I_res", nf90_double,
      $      (/q_id,i_id/), c_id) )
          CALL check( nf90_put_att(fncid, c_id, "units", "A") )
@@ -1745,6 +1750,8 @@ c-----------------------------------------------------------------------
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, d_id,
+     $      RESHAPE((/REAL(delta), AIMAG(delta)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
@@ -2934,8 +2941,8 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,xm_id,x_id,
-     $   rv_id,zv_id,rzstat
+      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,
+     $   wm_id,xm_id,x_id,rv_id,zv_id,rzstat
 
       INTEGER :: i,istep,ipert,iindex,itheta,tout
       REAL(r8) :: ileft,ximax,rmax,area
@@ -3292,6 +3299,13 @@ c-----------------------------------------------------------------------
      $               "Perturbed field normal to the flux surface") )
          CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,bm_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "Jbgradpsi", nf90_double,
+     $               (/p_id,m_id,i_id/),wm_id) )
+         CALL check( nf90_put_att(fncid,wm_id,"long_name",
+     $      "Jaconbian weighted contravariant psi component of "//
+     $      "the perturbed field") )
+         CALL check( nf90_put_att(fncid,wm_id,"units","Tesla") )
+         CALL check( nf90_put_att(fncid,wm_id,"jacobian",jac_out) )
          CALL check( nf90_def_var(fncid, "xi_n_fun", nf90_double,
      $               (/p_id,t_id,i_id/),x_id) )
          CALL check( nf90_put_att(fncid,x_id,"long_name",
@@ -3320,6 +3334,8 @@ c-----------------------------------------------------------------------
      $                AIMAG(xnomns)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,bm_id,RESHAPE((/REAL(bnomns),
      $                AIMAG(bnomns)/),(/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(fncid,wm_id,RESHAPE((/REAL(bwpmns),
+     $                AIMAG(bwpmns)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,x_id,RESHAPE((/REAL(xnofuns),
      $               -helicity*AIMAG(xnofuns)/),(/mstep,mthsurf+1,2/))))
          CALL check( nf90_put_var(fncid,b_id,RESHAPE((/REAL(bnofuns),
@@ -3519,20 +3535,22 @@ c-----------------------------------------------------------------------
      $      "Externally applied normal field") )
          CALL check( nf90_put_att(fncid,vn_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,vn_id,"jacobian",jac_out) )
-         CALL check( nf90_def_var(fncid, "bgradpsi_x", nf90_double,
+         CALL check( nf90_def_var(fncid, "Jbgradpsi_x", nf90_double,
      $      (/p_id,m_id,i_id/),vw_id) )
          CALL check( nf90_put_att(fncid,vw_id,"long_name",
-     $      "Contravariant psi component of applied field") )
+     $      "Jacobian weighted contravariant psi component "//
+     $      "of the applied field") )
          CALL check( nf90_put_att(fncid,vw_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,vw_id,"jacobian",jac_out) )
          IF(TRIM(jac_out)/="pest" .and. bwp_pest_flag)THEN
             CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
             CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
      $         mpv_id) )
-            CALL check( nf90_def_var(fncid, "bgradpsi_x_pest",
+            CALL check( nf90_def_var(fncid, "Jbgradpsi_x_pest",
      $         nf90_double, (/p_id, mp_id, i_id/), pw_id) )
             CALL check( nf90_put_att(fncid,pw_id,"long_name",
-     $         "Contravariant psi component of applied field") )
+     $         "Jacobian weighted contravariant psi component "//
+     $         "of the applied field") )
             CALL check( nf90_put_att(fncid,pw_id,"units","Tesla") )
             CALL check( nf90_put_att(fncid,pw_id,"jacobian","pest") )
          ENDIF
