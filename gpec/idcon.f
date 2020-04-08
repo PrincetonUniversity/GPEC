@@ -885,12 +885,13 @@ c-----------------------------------------------------------------------
          nths=mthvac+5
          nths2=nths*2
          nfm2=mpert*2
-         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),grrw(nths2,nfm2),
-     $        xzpts(nths,4))
+         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
+     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))
          IF(verbose) WRITE(*,*)"Reading vacuum energy matrices"
          CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
          READ(bin_unit)grri
          READ(bin_unit)grre
+         READ(bin_unit)griw
          READ(bin_unit)grrw
          READ(bin_unit)xzpts
          CALL bin_close(bin_unit)
@@ -901,8 +902,8 @@ c-----------------------------------------------------------------------
          nths=mthsurf+5
          nths2=nths*2
          nfm2=mpert*2
-         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),grrw(nths2,nfm2),
-     $        xzpts(nths,4))        
+         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
+     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
          IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
          farwal_flag=.TRUE.
          kernelsignin = -1.0
@@ -913,6 +914,9 @@ c-----------------------------------------------------------------------
      $               kernelsignin,wall_flag,farwal_flag,grre,xzpts)
          
          farwal_flag=.FALSE.
+         kernelsignin = -1.0
+         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,griw,xzpts)
          kernelsignin = 1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
      $               kernelsignin,wall_flag,farwal_flag,grrw,xzpts)

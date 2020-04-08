@@ -46,9 +46,10 @@ c-----------------------------------------------------------------------
       ALLOCATE(surfet(4,mpert),surfep(4,mpert),
      $     surfee(mpert),surfei(mpert),chperr(2,mpert),chpsqr(4,mpert))
       ALLOCATE(chimats(mpert,mpert),chemats(mpert,mpert),
+     $     chymats(mpert,mpert),chxmats(mpert,mpert),
+     $     chwmats(mpert,mpert),kawmats(mpert,mpert),
      $     kaxmats(mpert,mpert),flxmats(mpert,mpert),
      $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert))
-      ALLOCATE(chxmats(mpert,mpert),chwmats(mpert,mpert))
       IF(verbose) WRITE(*,*)"Building free boundary solutions"
       DO i=1,mpert
          edge_mn=0
@@ -58,8 +59,8 @@ c-----------------------------------------------------------------------
 c     compute the perturbed quantities and contruct hermitian matrices.
 c-----------------------------------------------------------------------
          ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
-     $        kap_mn(4,mpert),kax_mn(mpert),
-     $        chx_mn(mpert),chw_mn(mpert))
+     $        kap_mn(4,mpert),kax_mn(mpert),kaw_mn(mpert),
+     $        chy_mn(mpert),chx_mn(mpert),chw_mn(mpert))
          CALL gpeq_alloc
          surface_flag=.FALSE.
          CALL gpeq_sol(psilim)
@@ -76,8 +77,10 @@ c-----------------------------------------------------------------------
          kaxmats(:,i)=kax_mn
          chpmats(:,:,i)=chp_mn
          kapmats(:,:,i)=kap_mn
+         chymats(:,i)=chy_mn
          chxmats(:,i)=chx_mn
          chwmats(:,i)=chw_mn
+         kawmats(:,i)=kaw_mn
 c-----------------------------------------------------------------------
 c     estimate errors in magnetic scalar potentials.
 c-----------------------------------------------------------------------
@@ -137,9 +140,10 @@ c-----------------------------------------------------------------------
          ENDIF
 
          CALL gpeq_dealloc
-         DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn,chx_mn,chw_mn)
+         DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
+         DEALLOCATE(chy_mn,chx_mn,chw_mn,kaw_mn)
       ENDDO
-      DEALLOCATE(grri,grre,grrw)
+      DEALLOCATE(grri,grre,griw,grrw)
       IF(debug_flag) PRINT *, "->Leaving gpresp_eigen"
 c-----------------------------------------------------------------------
 c     terminate.
@@ -508,23 +512,26 @@ c-----------------------------------------------------------------------
 
       lwork=2*mpert+1
 
-      temp1=chemats
-      temp2=chxmats
+!      temp1=chemats
+!      temp2=chxmats
+!      CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
+!      CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
+!      temp1=temp2
+!      temp2=0
+!      DO i=1,mpert
+!         temp2(i,i)=1.0
+!      ENDDO
+!      temp2=TRANSPOSE(temp2-temp1)
 
-      CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
-      CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
-      temp1=temp2
-      temp2=0
-      DO i=1,mpert
-         temp2(i,i)=1.0
-      ENDDO
-      temp2=TRANSPOSE(temp2-temp1)
-      temp1=TRANSPOSE(chwmats)
+      temp2=flxmats-MATMUL(surf_indmats,kawmats)
+      temp2=TRANSPOSE(temp2)
+      temp1=TRANSPOSE(chwmats)/mu0
 
       CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
       CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
       
-      temp1=MATMUL(flxmats,TRANSPOSE(temp2))*mu0
+!      temp1=MATMUL(flxmats,TRANSPOSE(temp2))
+      temp1=TRANSPOSE(temp2)
       mutual_indmats=temp1
       work=0
       rwork=0      

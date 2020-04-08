@@ -57,7 +57,7 @@ c-----------------------------------------------------------------------
      $     surf_indev,vsurf_indev,fsurf_indev,surf_indinvev
      $     ,eft,efp
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: xzpts,
-     $     chperr,chpsqr,grri,grre,grrw,gdr,gdz,gdpsi,gdthe,gdphi
+     $     chperr,chpsqr,grri,grre,griw,grrw,gdr,gdz,gdpsi,gdthe,gdphi
       REAL(r8), DIMENSION(3,3) :: w,v
 
 
@@ -67,15 +67,16 @@ c-----------------------------------------------------------------------
      $     xvp_mn,xvt_mn,xvz_mn,bvp_mn,bvt_mn,bvz_mn,xmz_mn,bmz_mn,
      $     xno_mn,xta_mn,xpa_mn,bno_mn,bta_mn,bpa_mn,
      $     xrr_mn,xrz_mn,xrp_mn,brr_mn,brz_mn,brp_mn,
-     $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,
-     $     edge_mn,edge_fun,chx_mn,chw_mn,mutual_indev,mutual_indinvev
+     $     chi_mn,che_mn,kax_mn,sbno_mn,sbno_fun,edge_mn,edge_fun,
+     $     chy_mn,chx_mn,chw_mn,kaw_mn,mutual_indev,mutual_indinvev
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wt,wt0,chp_mn,kap_mn,
      $     permeabev,chimats,chemats,flxmats,kaxmats,singbno_mn,
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     surf_indinvmats,surf_indinvevmats,surfet,surfep,
      $     amat,bmat,cmat,fmats,gmats,kmats,coil_indmat,
-     $     wft,wtraw,chxmats,chwmats,mutual_indmats,mutual_indevmats,
+     $     wft,wtraw,chymats,chxmats,chwmats,kawmats,
+     $     mutual_indmats,mutual_indevmats,
      $     mutual_indinvmats,mutual_indinvevmats
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: chpmats,kapmats,
      $     plas_indmats,plas_indinvmats,permeabmats,diff_indmats,

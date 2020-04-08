@@ -515,15 +515,18 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(0:mthsurf) :: dphi,jacs
       COMPLEX(r8), DIMENSION(0:mthsurf) :: chi_fun,che_fun,kax_fun,
-     $     xwp_fun,xwt_fun,bvt_fun,bvz_fun,bwp_fun,chx_fun,chw_fun
+     $     xwp_fun,xwt_fun,bvt_fun,bvz_fun,bwp_fun,
+     $     chy_fun,chx_fun,chw_fun,kaw_fun
       COMPLEX(r8), DIMENSION(mpert) :: rbwp_mn
       COMPLEX(r8), DIMENSION(4,0:mthsurf) :: chp_fun,kap_fun
 
-      REAL(r8), DIMENSION(:), POINTER :: grri_real,grri_imag,
-     $     grre_real,grre_imag,grrw_real,grrw_imag
+      REAL(r8), DIMENSION(:), POINTER :: 
+     $     grri_real,grri_imag,grre_real,grre_imag,
+     $     griw_real,griw_imag,grrw_real,grrw_imag
 
       ALLOCATE(grri_real(nths2),grri_imag(nths2),
      $     grre_real(nths2),grre_imag(nths2),
+     $     griw_real(nths2),griw_imag(nths2),
      $     grrw_real(nths2),grrw_imag(nths2))
       IF(debug_flag) PRINT *, "Entering gpeq_surface"
 c-----------------------------------------------------------------------
@@ -554,6 +557,8 @@ c-----------------------------------------------------------------------
       grri_imag=MATMUL(grri,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
       grre_real=MATMUL(grre,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
       grre_imag=MATMUL(grre,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
+      griw_real=MATMUL(griw,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
+      griw_imag=MATMUL(griw,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
       grrw_real=MATMUL(grrw,(/REAL(rbwp_mn),-AIMAG(rbwp_mn)/))
       grrw_imag=MATMUL(grrw,(/AIMAG(rbwp_mn),REAL(rbwp_mn)/))
 c-----------------------------------------------------------------------
@@ -565,11 +570,14 @@ c-----------------------------------------------------------------------
      $        *EXP(-ifac*nn*dphi(itheta+1))
          che_fun(itheta+1)=(grre_real(rtheta)-ifac*grre_imag(rtheta))
      $        *EXP(-ifac*nn*dphi(itheta+1))
+         chy_fun(itheta+1)=(griw_real(rtheta)-ifac*griw_imag(rtheta))
+     $        *EXP(-ifac*nn*dphi(itheta+1))
          chx_fun(itheta+1)=(grrw_real(rtheta)-ifac*grrw_imag(rtheta))
      $        *EXP(-ifac*nn*dphi(itheta+1))
       ENDDO
       chi_fun(0)=chi_fun(mthsurf)
       che_fun(0)=che_fun(mthsurf)
+      chy_fun(0)=chy_fun(mthsurf)
       chx_fun(0)=chx_fun(mthsurf)
       ! mutual inductance
       DO itheta=0,mthsurf-1
@@ -582,10 +590,12 @@ c     normalize chi functions of vacuum.
 c-----------------------------------------------------------------------
       chi_fun=chi_fun/(twopi**2)
       che_fun=-che_fun/(twopi**2)
+      chy_fun=chy_fun/(twopi**2)
       chx_fun=-chx_fun/(twopi**2)
-      chw_fun=chw_fun/(twopi**2)
+      chw_fun=-chw_fun/(twopi**2)
       CALL iscdftf(mfac,mpert,chi_fun,mthsurf,chi_mn)
       CALL iscdftf(mfac,mpert,che_fun,mthsurf,che_mn)
+      CALL iscdftf(mfac,mpert,chy_fun,mthsurf,chy_mn)
       CALL iscdftf(mfac,mpert,chx_fun,mthsurf,chx_mn)
       CALL iscdftf(mfac,mpert,chw_fun,mthsurf,chw_mn)
 c-----------------------------------------------------------------------
@@ -618,10 +628,12 @@ c-----------------------------------------------------------------------
          CALL iscdftf(mfac,mpert,kap_fun(j,:),mthsurf,kap_mn(j,:))
       ENDDO
       kax_fun=(chi_fun-che_fun)/mu0
+      kaw_fun=(chy_fun-chx_fun)/mu0
       CALL iscdftf(mfac,mpert,kax_fun,mthsurf,kax_mn)
+      CALL iscdftf(mfac,mpert,kaw_fun,mthsurf,kaw_mn)
      
       DEALLOCATE(grri_real,grri_imag,grre_real,grre_imag)
-      DEALLOCATE(grrw_real,grrw_imag)
+      DEALLOCATE(griw_real,griw_imag,grrw_real,grrw_imag)
       IF(debug_flag) PRINT *, "->Leaving gpeq_surface"
 c-----------------------------------------------------------------------
 c     terminate.
