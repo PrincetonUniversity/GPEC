@@ -132,7 +132,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(5*mpert) :: rwork
       COMPLEX(r8), DIMENSION(3*mpert) :: work
 
-      INTEGER :: idid,mdid,edid,l_id,r_id,la_id,p_id
+      INTEGER :: idid,mdid,edid,l_id,r_id,la_id,p_id,w_id,wi_id
       COMPLEX(r8), DIMENSION(lmpert) :: vL,vL1,vLi,vP,vP1,vR,vW,templ
       COMPLEX(r8), DIMENSION(mpert,mpert) :: matmm
       COMPLEX(r8), DIMENSION(lmpert,mpert) :: coordmat
@@ -193,6 +193,14 @@ c-----------------------------------------------------------------------
      $                  (/mdid,edid,idid/),r_id) )
          CALL check( nf90_put_att(mncid,r_id,"long_name",
      $       "Reluctance") )
+         CALL check( nf90_def_var(mncid,"M_w",nf90_double,
+     $                  (/mdid,edid,idid/),w_id) )
+         CALL check( nf90_put_att(mncid,w_id,"long_name",
+     $       "Mutual Inductance with Wall") )
+         CALL check( nf90_def_var(mncid,"M_w_inv",nf90_double,
+     $                  (/mdid,edid,idid/),wi_id) )
+         CALL check( nf90_put_att(mncid,wi_id,"long_name",
+     $       "Inverse of Mutual Inductance with Wall") )
          CALL check( nf90_enddef(mncid) )
          matmm = surf_indmats
          CALL check( nf90_put_var(mncid,l_id,RESHAPE((/REAL(matmm),
@@ -205,6 +213,12 @@ c-----------------------------------------------------------------------
      $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
          matmm = reluctmats(resp_index,:,:)
          CALL check( nf90_put_var(mncid,r_id,RESHAPE((/REAL(matmm),
+     $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
+         matmm = mutual_indmats
+         CALL check( nf90_put_var(mncid,w_id,RESHAPE((/REAL(matmm),
+     $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
+         matmm = mutual_indinvmats
+         CALL check( nf90_put_var(mncid,wi_id,RESHAPE((/REAL(matmm),
      $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
          CALL check( nf90_close(mncid) )
       ENDIF
