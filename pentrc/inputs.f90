@@ -38,12 +38,13 @@ module inputs
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
     
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
-        idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
-        geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
+        idcon_matrix,idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
+        geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,amat,bmat,cmat,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         shotnum,shottime,machine,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
-        idcon_coords
+        idcon_coords,&
+        verbose
     
     implicit none
     
@@ -63,7 +64,6 @@ module inputs
         verbose
     
     ! global variables with defaults
-    logical :: verbose=.TRUE.
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
@@ -345,8 +345,8 @@ module inputs
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
-        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeates
-        nm = nunique(table(:,2),op_sorted=.True.)
+        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeats
+        nm = nunique(table(:,2))
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
             stop "ERROR - inputs - size of table not equal to product of unique psi & m"
@@ -502,7 +502,8 @@ module inputs
 
 
     !=======================================================================
-    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug,op_powin)
+    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,force_xialpha,debug, &
+            op_powin)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Read psi,m matrix of displacements.
@@ -516,6 +517,8 @@ module inputs
     !       Surface weigted inputs should be 1
     !   tmag_in : int.
     !       Input toroidal angle specification: 1 = magnetic, 0 = cylindrical
+    !   force_xialpha : logical
+    !       Recalculate xi^alpha from xi^psi and xi^psi' using toroidal force balance
     !   debug : logical
     !       Print intermidient messages to terminal.
     !
@@ -529,20 +532,26 @@ module inputs
         implicit none
 
         ! declare arguments
-        logical, intent(in) :: debug
+        logical, intent(in) :: debug,force_xialpha
         integer, intent(in) :: jsurf_in,tmag_in
         integer, dimension(4), intent(in), optional :: op_powin
         character(32), intent(inout) :: jac_in
         character(512), intent(in) :: file
         ! declare local variables
         logical :: ncheck
-        integer :: i,j,npsi,nm,ndigit,firstnm, powin(4)
+        integer :: i, j, npsi, nm, ndigit, firstnm, powin(4), ipsilow, ipsihigh
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
         complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns,xmp1mni,xspmni,xmsmni
         character(3) :: nstr
         character(32), dimension(:), allocatable :: titles
+
+        ! variables for inverting complex mpert-by-mpert matrix
+        INTEGER :: info
+        INTEGER, DIMENSION(mpert) :: ipiv
+        COMPLEX(r8), DIMENSION(mpert,mpert) :: ainv
+        COMPLEX(r8), DIMENSION(mpert) :: uwork
 
         ! file consistency check (requires naming convention)
         write(nstr,'(i3)') nn
@@ -567,7 +576,7 @@ module inputs
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
         !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeats
-        nm = nunique(table(:,2),op_sorted=.True.)
+        nm = nunique(table(:,2))
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
             stop "ERROR - inputs - size of table not equal to product of unique psi & m"
@@ -676,9 +685,42 @@ module inputs
                 xmsmns(i,:) = newm(nm,ms,xmsmni(i,:),mpert,mfac)
             enddo
         endif
-        
+
+        ! idcon_matrix can have issues outside dcon limits
+        ipsilow = 1
+        ipsihigh = npsi
+        do i=1,npsi
+           if(psi(i) >= sq%xs(0))then
+              ipsilow = i
+              exit
+           endif
+        enddo
+        do i=npsi,1,-1
+           if(psi(i) <= sq%xs(sq%mx))then
+              ipsihigh = i
+              exit
+           endif
+        enddo
+
+        ! optionally replace tangential displacement using radial displacement and toroidal force balance
+        if(force_xialpha)then
+            if(verbose) print *,'  Forcing tangential displacement to satisfy toroidal force balance'
+            do i=ipsilow,ipsihigh
+                ! calculate A,B,C matrices on each surface
+                call idcon_matrix(psi(i))
+                ! calculate inverse of A - should be well behaved
+                ainv(:, :) = amat(:, :)
+                call zgetrf(mpert,mpert,ainv,mpert,ipiv,info)
+                call zgetri(mpert,ainv,mpert,ipiv,uwork,mpert,info)
+                ! calculate new xialpha based on Eq. (21) of [Park, Logan, PoP 2017]
+                xmsmns(i,:) = (1.0/chi1) * matmul(ainv, &
+                    -1*(matmul(bmat, xmp1mns(i,:)) + matmul(cmat, xspmns(i,:))) )
+            end do
+        end if
+
         ! set global variables (perturbed quantity csplines)
-        call set_peq(psi,mfac,xmp1mns,xspmns,xmsmns,.true.,debug)
+        call set_peq(psi(ipsilow:ipsihigh),mfac,xmp1mns(ipsilow:ipsihigh,:),xspmns(ipsilow:ipsihigh,:),&
+                     xmsmns(ipsilow:ipsihigh,:),.true.,debug)
         
         deallocate(ms,psi,xmp1mns,xspmns,xmsmns)
         

@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: bsq,chi1,di,dpsisq,eta,h,jac,p1,psifac,q,q1,r,
      $     rfac,term,theta,twopif,v1,v2,v21,v22,v23,v33
       REAL(r8), DIMENSION(:), POINTER :: avg
-      TYPE(spline_type) :: ff
+      TYPE(spline_type), TARGET :: ff
 c-----------------------------------------------------------------------
 c     prepare spline types.
 c-----------------------------------------------------------------------

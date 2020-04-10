@@ -4,7 +4,6 @@ include DEFAULTS.inc
 # extend these variables to sub-makes (?= sets a default if user doesn't specify options)
 FFLAGS ?= -g
 CFLAGS ?= -g
-OMPFLAG ?= -qopenmp
 
 export FFLAGS
 export CFLAGS
@@ -14,11 +13,11 @@ export OMPFLAG
 
 .IGNORE:
 
-all: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw coil gpec stride mkbin
 
 # fortran only
-allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum coil gpec stride mkbin
 
 
@@ -35,9 +34,6 @@ xdraw:
 
 lsode:
 	cd ../lsode;  make liblsode
-
-superlu:
-	$(SLU_COMMAND)  # gets set in DEFAULTS.inc based on tarball status
 
 zlange:
 	cd ../zlange;  make libzlange
@@ -113,6 +109,7 @@ v:
 	@echo "   and compiler libraries $(FCLIBS)"
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
+	@echo "   and using OMPFLAG $(OMPFLAG)"
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
@@ -139,7 +136,6 @@ clean:
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 	cd ../stride; make clean
-	cd ../superlu/SuperLU_5.2.1; make clean
 
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
@@ -154,3 +150,5 @@ clear:
 realclean: clean
 	clear
 	rm -rf ../lib ../bin
+
+print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true

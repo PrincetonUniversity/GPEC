@@ -159,6 +159,9 @@ c-----------------------------------------------------------------------
       INTEGER :: it,itmax=50
       INTEGER, DIMENSION(1) :: jpsi
       REAL(r8) :: dpsi,q,q1,eps=1e-10
+
+      INTEGER :: i
+      REAL(r8) :: qedgestart
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
 c-----------------------------------------------------------------------
@@ -185,15 +188,6 @@ c-----------------------------------------------------------------------
             IF(qlim <= qmax)EXIT
             qlim=qlim-1._r8/nn
          ENDDO
-      ENDIF
-      IF(peak_flag)THEN
-         IF(qlim + 0.95/nn < qmax)THEN
-            ! hunt for peak dW in whatever rational window psihigh is in
-            qlim=(INT(nn*qlim)+0.95)/nn
-         ELSE
-            ! hunt for peak in last available full rational window
-            qlim = (INT(nn*qlim)-0.05)/nn
-         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
@@ -223,6 +217,27 @@ c-----------------------------------------------------------------------
          qlim = qmax
          q1lim=sq%fs1(mpsi,4)
          psilim=psihigh
+      ENDIF
+c-----------------------------------------------------------------------
+c     set up record for determining the peak in dW near the boundary.
+c-----------------------------------------------------------------------
+      IF(psiedge < psilim)THEN
+        CALL spline_eval(sq, psiedge, 0)
+        qedgestart = INT(sq%f(4))
+        size_edge = CEILING((qlim - qedgestart) * nn * nperq_edge)
+        ALLOCATE(dw_edge(size_edge), q_edge(size_edge),
+     $     psi_edge(size_edge))
+        q_edge(:) = qedgestart + (/(i*1.0,i=0,size_edge-1)/) /
+     $     (nperq_edge*nn)
+        psi_edge(:) = 0.0
+        dw_edge(:) = -huge(0.0_r8) * (1 + ifac)
+        ! we monitor some deeper points for an informative profile
+        ! output over a full rational window
+        ! but we still respect the user psiedge when looking for peak dW
+        pre_edge = 1
+        DO i=1,size_edge
+           IF(q_edge(i) < sq%f(4)) pre_edge = pre_edge + 1
+        ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

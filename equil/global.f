@@ -51,7 +51,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: shotnum=0, shottime=0
       REAL(r8), DIMENSION(2) :: rext,rsep,zsep
       TYPE(spline_type) :: sq,sq_in
-      TYPE(bicube_type) :: eqfun,rzphi
+      TYPE(bicube_type) :: eqfun
+      TYPE(bicube_type), TARGET :: rzphi
       TYPE(cspline_type) :: amats,bmats,cmats,
      $     smats,tmats,xmats,ymats,zmats
 

@@ -47,10 +47,10 @@ c-----------------------------------------------------------------------
       LOGICAL :: use_classic_splines = .FALSE.
       TYPE :: spline_type
       INTEGER :: mx,nqty,ix
-      REAL(r8), DIMENSION(:), POINTER :: xs,f,f1,f2,f3
-      REAL(r8), DIMENSION(:,:), POINTER :: fs,fs1,fsi,xpower
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: xs,f,f1,f2,f3
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: fs,fs1,fsi,xpower
       REAL(r8), DIMENSION(2) :: x0
-      CHARACTER(6), DIMENSION(:), POINTER :: title
+      CHARACTER(6), DIMENSION(:), ALLOCATABLE :: title
       CHARACTER(6) :: name
       LOGICAL :: periodic, allocated
       END TYPE spline_type
@@ -88,7 +88,6 @@ c-----------------------------------------------------------------------
       ALLOCATE(spl%xpower(2,nqty))
       spl%xpower=0
       spl%x0=0
-      NULLIFY(spl%fsi)
       spl%allocated=.TRUE.
 c-----------------------------------------------------------------------
 c     terminate.
@@ -117,7 +116,7 @@ c-----------------------------------------------------------------------
       DEALLOCATE(spl%fs)
       DEALLOCATE(spl%fs1)
       DEALLOCATE(spl%xpower)
-      IF(ASSOCIATED(spl%fsi))DEALLOCATE(spl%fsi)
+      IF(ALLOCATED(spl%fsi))DEALLOCATE(spl%fsi)
       spl%allocated=.FALSE.
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1266,7 +1265,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     preliminary computations.
 c-----------------------------------------------------------------------
-      IF(.NOT.ASSOCIATED(spl%fsi))ALLOCATE(spl%fsi(0:spl%mx,spl%nqty))
+      IF(.NOT.ALLOCATED(spl%fsi))ALLOCATE(spl%fsi(0:spl%mx,spl%nqty))
       dx=spl%xs(1:spl%mx)-spl%xs(0:spl%mx-1)
       term=0
 c-----------------------------------------------------------------------
@@ -1443,7 +1442,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
-      IF(ASSOCIATED(spl2%xs))CALL spline_dealloc(spl2)
+      IF(ALLOCATED(spl2%xs))CALL spline_dealloc(spl2)
       CALL spline_alloc(spl2,spl1%mx,spl1%nqty)
       spl2%xs=spl1%xs
       spl2%fs=spl1%fs

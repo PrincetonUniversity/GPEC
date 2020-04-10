@@ -799,37 +799,32 @@ c-----------------------------------------------------------------------
 c   latest revision     - august 1, 1973
 c
       character*6 name
-      dimension          ityp(2,4),ibit(4)
-      character*8 ityp
-      integer            warn,warf,term,printr
+      dimension          ibit(4)
+      character*14 ityp
+      integer            warn,warf,term
       equivalence        (ibit(1),warn),(ibit(2),warf),(ibit(3),term)
-      data     ityp       /8hwarning   ,8h          ,
-     *                    8h warn(wi  ,8hth fix)   ,
-     *                    8hterminal  ,8h          ,
-     *                    8hnon-def   ,8hd         /,
-     *         ibit      / 32,64,128,0/
-      data               printr/59/
+      data ibit      / 32,64,128,0/
+
       ier2=ier
-      if (ier2 .ge. warn) go to 5
-c                                  non-defined
-      ier1=4
-      go to 20
-   5  if (ier2 .lt. term) go to 10
-c                                  terminal
-      ier1=3
-      go to 20
-  10  if (ier2 .lt. warf) go to 15
-c                                  warning(with fix)
-      ier1=2
-      go to 20
-c                                  warning
-  15  ier1=1
-c                                  extract *n*
-  20  ier2=ier2-ibit(ier1)
-c                                  print error message
-c     write (printr,25) (ityp(i,ier1),i=1,2),name,ier2,ier
-   25 format(26h *** i m s l(uertst) ***  ,2a10,4x,a6,4x,i2,
-     1   8h (ier = ,i3,1h))
+      if (ier2 .lt. warn) then
+        ier1=4                  !non-defined
+        ityp='non-defined   '
+      elseif (ier2 .ge. term) then
+        ier1=3                  !terminal
+        ityp='terminal      '
+      elseif (ier2 .ge. warf) then
+        ier1=2                  !warning(with fix)
+        ityp='warn(with fix)'
+      else
+        ier1=1                  !warning
+        ityp='warning       '
+      endif                        
+      ier2=ier2-ibit(ier1)      !extract *n*
+
+c     print error message
+      write (3,25) ityp,name,ier2,ier
+   25 format(' *** i m s l(uertst) *** ',a14,1x,a6,1x,i2,
+     &     ' (ier = ',i3,')')
       return
       end subroutine
       subroutine leqt3fc(c,b,n)

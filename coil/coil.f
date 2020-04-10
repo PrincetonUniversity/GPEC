@@ -139,8 +139,8 @@ c-----------------------------------------------------------------------
 c     initialize variables.
 c-----------------------------------------------------------------------
       cmpsi=MAXVAL((/64,cmpsi/))
-      cmtheta=MAXVAL((/400,cmtheta/))
-      cmzeta=cnn*MAXVAL((/40,cmzeta/))
+      cmtheta=MAXVAL((/480,cmtheta/))
+      cmzeta=cnn*MAXVAL((/32,cmzeta/))
       cmpert=cmhigh-cmlow+1
       ALLOCATE(cmfac(cmpert))
       cmfac=(/(cm,cm=cmlow,cmhigh)/)
