@@ -68,7 +68,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
-      LOGICAL :: farwal_flag
+      LOGICAL :: farwal_flag,wv_farwall_flag
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       COMPLEX(r8), DIMENSION(mpert) :: diff
@@ -115,6 +115,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
+      wv_farwall_flag=.TRUE.
       vac_unit=4
       farwal_flag=.TRUE.
       kernelsignin=-1.0
@@ -129,6 +130,10 @@ c-----------------------------------------------------------------------
      $     wall_flag,farwal_flag,grri,xzpts)
       WRITE(vac_unit)grri
 
+      IF(wv_farwall_flag)THEN
+         temp=wv
+      ENDIF         
+
       farwal_flag=.FALSE.
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
@@ -140,14 +145,18 @@ c-----------------------------------------------------------------------
      $     wall_flag,farwal_flag,grri,xzpts)
       WRITE(vac_unit)grri
       WRITE(vac_unit)xzpts
-      ! xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
-      DO ipert=1,mthvac+5
-         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),xzpts(ipert,2),
-     $        xzpts(ipert,3),xzpts(ipert,4)
-      ENDDO
+! xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
+!      DO ipert=1,mthvac+5
+!         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),xzpts(ipert,2),
+!     $        xzpts(ipert,3),xzpts(ipert,4)
+!      ENDDO
       CALL bin_close(vac_unit)
       DEALLOCATE(grri,xzpts)
 
+      IF(wv_farwall_flag)THEN
+         wv=temp
+      ENDIF
+       
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac

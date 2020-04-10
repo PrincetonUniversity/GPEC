@@ -266,6 +266,11 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
 c-----------------------------------------------------------------------
+c     temporary variables for diagnostics.
+c-----------------------------------------------------------------------
+      COMPLEX(r8), DIMENSION(mpert) :: b0,i0
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: b0fun,i0fun
+c-----------------------------------------------------------------------
 c     calculate surface inductance matrix by vacuum consideration.
 c-----------------------------------------------------------------------
       ALLOCATE(surf_indev(mpert),surf_indmats(mpert,mpert),
@@ -299,6 +304,20 @@ c-----------------------------------------------------------------------
       CALL zheev('V','U',mpert,temp1,mpert,surf_indinvev,work,
      $     lwork,rwork,info)
       surf_indinvevmats=temp1
+c-----------------------------------------------------------------------
+c     diagnostic outputs.
+c-----------------------------------------------------------------------
+      b0=flxmats(:,1)/mu0
+      i0=MATMUL(surf_indinvmats,b0)
+      CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
+      CALL iscdftb(mfac,mpert,i0fun,mthsurf,i0)
+      CALL ascii_open(out_unit,"gpec_self_test.out","UNKNOWN")
+      DO i=0,mthsurf
+         WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,1),xzpts(i+1,2),
+     $        REAL(b0fun(i)),AIMAG(b0fun(i)),
+     $        REAL(i0fun(i)),AIMAG(i0fun(i))
+      ENDDO
+      CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -496,6 +515,11 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mpert+1) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,vr,vl
 c-----------------------------------------------------------------------
+c     temporary variables for diagnostics.
+c-----------------------------------------------------------------------
+      COMPLEX(r8), DIMENSION(mpert) :: b0,i1
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: b0fun,i1fun
+c-----------------------------------------------------------------------
 c     calculate plasma inductance matrix by surface consideration.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,*)"Calculating mutual inductance"
@@ -512,17 +536,6 @@ c-----------------------------------------------------------------------
 
       lwork=2*mpert+1
 
-!      temp1=chemats
-!      temp2=chxmats
-!      CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
-!      CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
-!      temp1=temp2
-!      temp2=0
-!      DO i=1,mpert
-!         temp2(i,i)=1.0
-!      ENDDO
-!      temp2=TRANSPOSE(temp2-temp1)
-
       temp2=flxmats-MATMUL(surf_indmats,kawmats)
       temp2=TRANSPOSE(temp2)
       temp1=TRANSPOSE(chwmats)/mu0
@@ -530,7 +543,6 @@ c-----------------------------------------------------------------------
       CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
       CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
       
-!      temp1=MATMUL(flxmats,TRANSPOSE(temp2))
       temp1=TRANSPOSE(temp2)
       mutual_indmats=temp1
       work=0
@@ -555,6 +567,20 @@ c-----------------------------------------------------------------------
       CALL zgeev('V','V',mpert,temp1,mpert,mutual_indinvev,
      $     vl,mpert,vr,mpert,work,lwork,rwork,info)
       mutual_indinvevmats=vr
+c-----------------------------------------------------------------------
+c     diagnostic outputs.
+c-----------------------------------------------------------------------
+      b0=flxmats(:,1)/mu0
+      i1=MATMUL(mutual_indinvmats,b0)
+      CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
+      CALL iscdftb(mfac,mpert,i1fun,mthsurf,i1)
+      CALL ascii_open(out_unit,"gpec_mutual_test.out","UNKNOWN")
+      DO i=0,mthsurf
+         WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,3),xzpts(i+1,4),
+     $        REAL(b0fun(i)),AIMAG(b0fun(i)),
+     $        REAL(i1fun(i)),AIMAG(i1fun(i))
+      ENDDO
+      CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

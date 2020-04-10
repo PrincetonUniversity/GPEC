@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
+      INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
 
       NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
@@ -458,10 +459,29 @@ c-----------------------------------------------------------------------
       CALL gpresp_permeab
       CALL gpresp_reluct
       CALL gpresp_minduct
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      ALLOCATE(maxs(mpert),maxm(mpert),indexs(mpert),indexm(mpert))
       DO i=1,mpert
-         WRITE(*,*)surf_indev(i),REAL(mutual_indev(i)),
-     $        AIMAG(mutual_indev(i))
+         maxs(i)=MAXLOC(ABS(surf_indevmats(:,i)),DIM=1)
+         surf_indevmats(maxs(i),:)=0
+         maxm(i)=MAXLOC(ABS(mutual_indevmats(:,i)),DIM=1)
+         mutual_indevmats(maxm(i),:)=0
+         indexs(i)=i
+         indexm(i)=i
       ENDDO
+      CALL isbubble(REAL(maxs,r8),indexs,1,mpert)
+      CALL isbubble(REAL(maxm,r8),indexm,1,mpert)
+      CALL ascii_open(out_unit,"gpec_eigen_test.out","UNKNOWN")
+      DO i=1,mpert
+         WRITE(out_unit,'(I4,3(es17.8e3))')mfac(i),
+     $        surf_indev(indexs(mpert-i+1)),
+     $        REAL(mutual_indev(indexm(mpert-i+1))),
+     $        AIMAG(mutual_indev(indexm(mpert-i+1)))
+      ENDDO
+      CALL ascii_close(out_unit)
+      DEALLOCATE(maxs,maxm,indexs,indexm)
       IF(timeit) CALL gpec_timer(2)
 c-----------------------------------------------------------------------
 c     Set parameters for outputs.
