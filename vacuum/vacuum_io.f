@@ -129,8 +129,8 @@ c-----------------------------------------------------------------------
       endif
       if ( (a .ge. 10.0) .or. (lspark .ne. 0) ) then
          farwal = .true.
-      else
-         farwal = .false.
+!      else
+!         farwal = .false.
       endif
 c-----------------------------------------------------------------------
 c     special stuff for lspark .ne. 0.
