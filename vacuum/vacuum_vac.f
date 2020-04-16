@@ -1061,6 +1061,7 @@ c-----------------------------------------------------------------------
 
       INTEGER:: npots0,npots
       logical lfix, insect
+      REAL*8 :: csmin
       REAL*8, DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
      $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp,rioptmp
       dimension xwal1(*), zwal1(*)
@@ -1266,10 +1267,15 @@ c              close fitting shell since the plasma and shell nodes are aligned.
 c-----------------------------------------------------------------------
       if ( ishape==6 ) then
         wcentr = xmaj
+        csmin = 1e-4 * plrad
         do i = 2, mth1
           alph = atan2 ( xinf(i+1)-xinf(i-1), zinf(i-1)-zinf(i+1) )
           xwal1(i) = xinf(i) + a*plrad * cos(alph)
           zwal1(i) = zinf(i) + a*plrad * sin(alph)
+          ! if the wall crosses the R=0 axis, force a thin center stack
+          if ( xwal1(i)<=csmin ) then
+            xwal1(i) = csmin
+          endif
         enddo
         xwal1(1) = xwal1(mth1)
         zwal1(1) = zwal1(mth1)
