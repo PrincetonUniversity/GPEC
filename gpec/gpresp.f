@@ -540,47 +540,49 @@ c-----------------------------------------------------------------------
       temp2=TRANSPOSE(temp2)
       temp1=TRANSPOSE(chwmats)/mu0
 
-      CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
-      CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
+      ! If vac.in has inf wall, all mutual inductance outputs remain dummy zeros
+      IF (any(temp1 /= 0)) then
+         CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
       
-      temp1=TRANSPOSE(temp2)
-      mutual_indmats=temp1
-      work=0
-      rwork=0      
-
-      CALL zgeev('V','V',mpert,temp1,mpert,mutual_indev,
-     $     vl,mpert,vr,mpert,work,lwork,rwork,info)
-      mutual_indevmats=vr
+         temp1=TRANSPOSE(temp2)
+         mutual_indmats=temp1
+         work=0
+         rwork=0
+         CALL zgeev('V','V',mpert,temp1,mpert,mutual_indev,
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         mutual_indevmats=vr
 c-----------------------------------------------------------------------
 c     calculate inverse of the plasma mutual inductance
 c-----------------------------------------------------------------------
-      mutual_indinvevmats = 0
-      DO i=1,mpert
-         temp1(i,i)=1
-      ENDDO
-      temp2=mutual_indmats
-      CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
-      CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
-      mutual_indinvmats=temp1
-      work=0
-      rwork=0
-      CALL zgeev('V','V',mpert,temp1,mpert,mutual_indinvev,
-     $     vl,mpert,vr,mpert,work,lwork,rwork,info)
-      mutual_indinvevmats=vr
+         mutual_indinvevmats = 0
+         DO i=1,mpert
+            temp1(i,i)=1
+         ENDDO
+         temp2=mutual_indmats
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+         mutual_indinvmats=temp1
+         work=0
+         rwork=0
+         CALL zgeev('V','V',mpert,temp1,mpert,mutual_indinvev,
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         mutual_indinvevmats=vr
 c-----------------------------------------------------------------------
 c     diagnostic outputs.
 c-----------------------------------------------------------------------
-      b0=flxmats(:,1)/mu0
-      i1=MATMUL(mutual_indinvmats,b0)
-      CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
-      CALL iscdftb(mfac,mpert,i1fun,mthsurf,i1)
-      CALL ascii_open(out_unit,"gpec_mutual_test.out","UNKNOWN")
-      DO i=0,mthsurf
-         WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,3),xzpts(i+1,4),
-     $        REAL(b0fun(i)),AIMAG(b0fun(i)),
-     $        REAL(i1fun(i)),AIMAG(i1fun(i))
-      ENDDO
-      CALL ascii_close(out_unit)
+         b0=flxmats(:,1)/mu0
+         i1=MATMUL(mutual_indinvmats,b0)
+         CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
+         CALL iscdftb(mfac,mpert,i1fun,mthsurf,i1)
+         CALL ascii_open(out_unit,"gpec_mutual_test.out","UNKNOWN")
+         DO i=0,mthsurf
+            WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,3),xzpts(i+1,4),
+     $           REAL(b0fun(i)),AIMAG(b0fun(i)),
+     $           REAL(i1fun(i)),AIMAG(i1fun(i))
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
