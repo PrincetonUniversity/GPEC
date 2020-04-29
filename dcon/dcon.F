@@ -197,7 +197,7 @@ c-----------------------------------------------------------------------
      $        ", qlim = ",qlim,", psilim = ",psilim
          IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betap1 = ",betap1
-         IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
+         IF(verbose) WRITE(*,'(1x,5(a,i4))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
          CALL fourfit_make_metric
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"

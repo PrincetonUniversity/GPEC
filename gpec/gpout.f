@@ -1364,10 +1364,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(mncid,"i",i_id) )
          CALL check( nf90_inq_dimid(mncid,"m",m_id) )
          CALL check( nf90_inq_dimid(mncid,"m_out",modid) )
+         CALL check( nf90_inq_dimid(mncid,"m_prime",mpdid) )
          CALL check( nf90_redef(mncid))
-         CALL check( nf90_def_dim(mncid, "m_prime", mpert, mpdid) )
-         CALL check( nf90_def_var(mncid, "m_prime", nf90_int, mpdid,
-     $      mp_id))
          CALL check( nf90_put_att(mncid,nf90_global,
      $               "energy_vacuum",vengy) )
          CALL check( nf90_put_att(mncid,nf90_global,
@@ -1419,7 +1417,6 @@ c-----------------------------------------------------------------------
      $             AIMAG(xinmn)/),(/mpert,2/))) )
          CALL check( nf90_put_var(mncid,xm_id,RESHAPE((/REAL(xoutmn),
      $             AIMAG(xoutmn)/),(/mpert,2/))) )
-         CALL check( nf90_put_var(mncid,mp_id,mfac) )
          tempml = TRANSPOSE(coordmat)
          CALL check( nf90_put_var(mncid,jo_id,RESHAPE((/REAL(tempml),
      $             AIMAG(tempml)/),(/mpert,lmpert,2/))) )
@@ -6194,8 +6191,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER:: i,midid,mmdid,mcdid,mldid,modid,medid,mtdid,mjdid,
+      INTEGER:: i,midid,mmdid,mcdid,mldid,modid,medid,mtdid,mjdid,mpdid,
      $   mivid,mmvid,mcvid,mlvid,movid,mevid,mtvid,mrvid,mjvid,mqvid,
+     $   mpvid,
      $   fidid,fmdid,fpdid,ftdid,
      $   fivid,fmvid,fpvid,ftvid,frvid,frdid,fqvid,fq1vid,
      $   cidid,crdid,czdid,
@@ -6232,6 +6230,8 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(mncid,"m",nf90_int,mmdid,mmvid) )
       CALL check( nf90_def_dim(mncid,"m_out",lmpert, modid) )
       CALL check( nf90_def_var(mncid,"m_out",nf90_int,modid,movid) )
+      CALL check( nf90_def_dim(mncid,"m_prime",mpert,  mpdid) )
+      CALL check( nf90_def_var(mncid,"m_prime",nf90_int,mpdid,mpvid) )
       CALL check( nf90_def_dim(mncid,"mode",mpert,   medid) )
       CALL check( nf90_def_var(mncid,"mode",nf90_int,medid,mevid))
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
@@ -6318,6 +6318,7 @@ c-----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Putting coordinates in control netcdfs"
       CALL check( nf90_put_var(mncid,mivid,(/0,1/)) )
       CALL check( nf90_put_var(mncid,mmvid,mfac) )
+      CALL check( nf90_put_var(mncid,mpvid,mfac) )
       CALL check( nf90_put_var(mncid,movid,lmfac) )
       CALL check( nf90_put_var(mncid,mevid,mmodes) )
       CALL check( nf90_put_var(mncid,mtvid,theta) )
