@@ -1267,7 +1267,8 @@ c              close fitting shell since the plasma and shell nodes are aligned.
 c-----------------------------------------------------------------------
       if ( ishape==6 ) then
         wcentr = xmaj
-        csmin = 1e-4 * plrad
+        ! force a 10cm center stack or one tenth of the plasma R if it is a super small tokamak
+        csmin = min(0.1, 1e-1 * minval(xinf(2:mth1)))
         do i = 2, mth1
           alph = atan2 ( xinf(i+1)-xinf(i-1), zinf(i-1)-zinf(i+1) )
           xwal1(i) = xinf(i) + a*plrad * cos(alph)
