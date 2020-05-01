@@ -93,7 +93,7 @@ c-----------------------------------------------------------------------
       INTEGER :: msing,totmsing,nstep=32,qscan_ising=1
       INTEGER :: scan_nstep, scan_estep
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
-      REAL(r8) :: eta(20),dlim=1000,massden(20)
+      REAL(r8) :: eta(20),dlim=1000,massden(20),rotation(20)=0,ntor=1
       REAL(r8) :: scan_x0,scan_x1,relax_fac,scan_e0,scan_e1
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
@@ -125,7 +125,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: eigval
       
       NAMELIST/rmatch_input/ deltabin_filename,galsol_filename,
-     $                         galsol_filename_cut,
+     $                         galsol_filename_cut,rotation,ntor,
      $                         initguess,msing,eta,sol_flag,massden,
      $                         nstep,rtol,atol,fmin,fmax,lam,
      $                         scan_flag,scan_x0,scan_x1,scan_nstep,
@@ -392,7 +392,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), INTENT(IN) :: guess
       COMPLEX(r8), DIMENSION(4*msing,4*msing),INTENT(INOUT) :: mat
-      COMPLEX(r8):: det
+      COMPLEX(r8):: det, guess_modify
 
       INTEGER :: m,info,i,d,ising,idx1,idx2,idx3,idx4
       COMPLEX(r8) :: delta1,delta2,drl,drr,dll,dlr
@@ -417,17 +417,19 @@ c-----------------------------------------------------------------------
          idx2=ising*2
          idx3=idx1+2*msing
          idx4=idx2+2*msing
+         guess_modify=guess+ifac*ntor*rotation(ising)
 c-----------------------------------------------------------------------
 c     compute inner region matching data.
 c-----------------------------------------------------------------------
          SELECT CASE(model)
          CASE ("deltaj")
-            CALL match_delta_jardin(restype(ising),guess,
+            CALL match_delta_jardin(restype(ising),guess_modify,
      $           deltar(ising,:),sol)     
          CASE ("deltar")
-            CALL deltar_run(restype(ising),guess,deltar(ising,:),sol)
+            CALL deltar_run(restype(ising),guess_modify,deltar(ising,:),
+     $           sol)
          CASE ("deltac")
-            CALL deltac_run(restype(ising),guess,deltar(ising,:),
+            CALL deltac_run(restype(ising),guess_modify,deltar(ising,:),
      $                      deltaf(ising,:,:))
 c            zi_in(ising)=zi_deltac
             zi_in(ising)=0
