@@ -10,6 +10,69 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.4.4
+===========
+
+Fixes
+------
+- DCON - Fixes output of plasma energy eigenvectors in netcdf
+
+
+GPEC v1.4.3
+===========
+
+Fixes
+------
+- VACUUM - Respects the namelist a and lspark when determining whether to write a wall geometry file output
+- DCON - Properly spaces the vacuum matrices used when finding the peak dW with psiedge < psilim
+
+Changes
+------
+- DCON - dW_edge in the netcdf output now includes the imaginary component of the least stable eigenvalue
+
+
+GPEC v1.4.2
+===========
+
+Fixes
+------
+- PENTRC - Respects the namelist verbose setting throughout the program
+
+Changes
+------
+- COIL - Updates ASDEX Upgrade coil geometry to have more accurate, rounded cornering
+
+
+GPEC v1.4.1
+===========
+
+Fixes
+------
+- GPEC - Corrects helicity for brzphi calculations in machine angle
+- PENTRC - Fixes reading of xclebsch displacements from other codes that use psi as the outer loop
+
+
+GPEC v1.4.0
+===========
+
+Fixes
+------
+- INSTALL - Support added for compiling on MacOS as well as with gfortran on linux
+- VACUUM - Makes ishape 41 use on manual wall robust to a>10 infinite wall tests
+- DCON - Corrects for wall time wrap-around when run spans multiple days
+- GPEC - Removes (incorrect) units from normalized minor radius netcdf output
+
+Changes
+--------
+- DCON - Improves parallel assembly of kinetic matrices using collapsed psi and ell loops and dynamic scheduling. This enables efficient use of large parallel_threads.
+
+Adds
+------
+- EQUIL - Adds new pow1 and pow2 grid_type options. These grids are linear in core psi_n and approach zero spacing at psihigh linearly/quadratically (packed in the edge).
+- DCON - Adds new psiedge variable to dcon_control. When this is below psihigh, DCON records dW(psi) between psiedge and psihigh and re-runs the integration with truncation adjusted to max(dW).
+- PENTRC - Adds new option (force_xialpha) that triggers a calculation of tangential from radial displacement (useful for radial displacement inputs from nonlinear codes like JOREK and M3DC1).
+
+
 GPEC v1.3.8
 ===========
 
