@@ -5,16 +5,17 @@ include DEFAULTS.inc
 FFLAGS ?= -g
 CFLAGS ?= -g
 #Common compiler flags for OpenMP
-ifeq ($(FC), ifort)
+ifeq ($(findstring ifort,$(FC)),ifort)
 	OMPFLAG ?= -qopenmp
-else ifeq ($(FC), gfortran)
+else ifeq ($(findstring gfortran,$(FC)),gfortran)
 	OMPFLAG ?= -fopenmp
-else ifeq ($(FC), pgfortran)
+else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
 	OMPFLAG ?= -mp
 else
 	OMPFLAG ?= -openmp
 endif
 
+OMPFLAG=
 export FFLAGS
 export CFLAGS
 export OMPFLAG
