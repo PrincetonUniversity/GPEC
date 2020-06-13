@@ -491,13 +491,13 @@ c     perturbed equilibria with a given equilibrium and external field.
 c-----------------------------------------------------------------------
       IF (data_flag.OR.harmonic_flag.OR.coil_flag)THEN
          edge_flag=.TRUE.
-         CALL gpout_control(infile,finmn,foutmn,xspmn,power_rin,
-     $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
-     $        power_rout,power_bpout,power_bout,power_rcout,tmag_out,
-     $        jsurf_out,filter_types,filter_modes,filter_flag)
       ELSE IF (mode_flag) THEN
          edge_flag=.FALSE.
       ENDIF
+      CALL gpout_control(mode,infile,finmn,foutmn,xspmn,power_rin,
+     $     power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
+     $     power_rout,power_bpout,power_bout,power_rcout,tmag_out,
+     $     jsurf_out,filter_types,filter_modes,filter_flag)
 
       IF (singfld_flag) THEN
          IF (con_flag) THEN
@@ -617,7 +617,7 @@ c-----------------------------------------------------------------------
          CALL gpeq_fcoords(psilim,fxmn,mfac,mpert,0,1,0,1,0,0)
          fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
          CALL gpeq_weight(psilim,fxmn,mfac,mpert,0)
-         CALL gpout_control(infile,fxmn,foutmn,xspmn,
+         CALL gpout_control(mode,infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
@@ -637,7 +637,7 @@ c-----------------------------------------------------------------------
          power_rcout = 0
          tmag_out = 1
          CALL gpeq_fcoords(psilim,fxmn,mfac,mpert,0,0,2,0,1,0)
-         CALL gpout_control(infile,finmn,foutmn,xspmn,power_rin,
+         CALL gpout_control(mode,infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)

@@ -1045,7 +1045,7 @@ c-----------------------------------------------------------------------
 c     subprogram 3. gpout_control
 c     calculate response from external field on the control surface.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_control(ifile,finmn,foutmn,xspmn,
+      SUBROUTINE gpout_control(mode, ifile,finmn,foutmn,xspmn,
      $     rin,bpin,bin,rcin,tin,jin,rout,bpout,bout,rcout,tout,jout,
      $     filter_types,filter_modes,filter_out)
 c-----------------------------------------------------------------------
@@ -1053,7 +1053,7 @@ c     declaration.
 c-----------------------------------------------------------------------
       CHARACTER(128), INTENT(IN) :: ifile
       INTEGER, INTENT(IN) :: rin,bpin,bin,rcin,tin,jin,
-     $     rout,bpout,bout,rcout,tout,jout,filter_modes
+     $     rout,bpout,bout,rcout,tout,jout,filter_modes,mode
       LOGICAL, INTENT(IN) :: filter_out
       CHARACTER(len=*), INTENT(IN) :: filter_types
       
@@ -1165,16 +1165,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     filter external flux
 c-----------------------------------------------------------------------
-      CALL gpout_control_filter(finmn,foutmn,filter_types,filter_modes,
-     $           rout,bpout,bout,rcout,tout,filter_out)
+      CALL gpout_control_filter(mode,finmn,foutmn,filter_types,
+     $        filter_modes,rout,bpout,bout,rcout,tout,filter_out)
 c-----------------------------------------------------------------------
 c     get plasma response on the control surface.
 c-----------------------------------------------------------------------
-      IF (fixed_boundary_flag) THEN
-         foutmn=finmn
-      ELSE
-         foutmn=MATMUL(permeabmats(resp_index,:,:),finmn)
-      ENDIF
       xspmn=foutmn/(chi1*twopi*ifac*(mfac-nn*qlim))
       binmn=finmn
       boutmn=foutmn
@@ -5323,12 +5318,12 @@ c-----------------------------------------------------------------------
 c     subprogram 17. gpout_control_filter.
 c     Filter control surface flux vector in flux bases with energy norms
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_control_filter(finmn,foutmn,ftypes,fmodes,
+      SUBROUTINE gpout_control_filter(mode,finmn,foutmn,ftypes,fmodes,
      $           rout,bpout,bout,rcout,tout,op_write)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: fmodes,rout,bpout,bout,rcout,tout
+      INTEGER, INTENT(IN) :: fmodes,rout,bpout,bout,rcout,tout,mode
       CHARACTER(len=*), INTENT(IN) :: ftypes
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: finmn,foutmn
       LOGICAL, INTENT(IN), OPTIONAL :: op_write
@@ -5352,7 +5347,8 @@ c-----------------------------------------------------------------------
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,rl_id,
      $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,ex_id,et_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id,
-     $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id
+     $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id,
+     $   wtv_id, wte_id, wt_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(0:mthsurf) :: units
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
@@ -5369,10 +5365,10 @@ c-----------------------------------------------------------------------
 
       INTEGER,  DIMENSION(mpert) :: aindx,indx
       REAL(r8), DIMENSION(mpert) :: xvals,wvals,rvals,pvals,avals,
-     $    rlvals,sengys,vengys,pengys
+     $    rlvals,sengys,vengys,pengys,wtvals
       REAL(r8), DIMENSION(msing) :: svals
       COMPLEX(r8), DIMENSION(mpert,mpert)::xvecs,wvecs,rvecs,pvecs,
-     $    avecs,wmat,rmat,pmat
+     $    avecs,wmat,rmat,pmat,wmatt,wtvecs
       COMPLEX(r8), DIMENSION(mpert,msing) :: svecs
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert)::wfuns,rfuns
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::sfuns
@@ -5441,12 +5437,16 @@ c-----------------------------------------------------------------------
       j = mpert-malias
       wvecs = 0
       wvecs(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j)
+      ! store total flux matrix
+      wmatt = wvecs
       ! convert to external flux
       mat = permeabmats(resp_index,:,:)
       wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wvecs),mat)
       ! convert to bsqrtA/|sqrtA|
       wmat = MATMUL(MATMUL(ptof,wvecs),ptof)*2*mu0
+      wmatt = MATMUL(MATMUL(ptof,wmatt),ptof)*2*mu0
       wvecs = wmat
+      wtvecs = wmatt
       ! get eigenvalues and eigenvectors
       work = 0
       rwork = 0
@@ -5455,6 +5455,15 @@ c-----------------------------------------------------------------------
       ! put in descending order like zgesvd
       wvals(:)   = wvals(mpert:1:-1)
       wvecs(:,:) = wvecs(:,mpert:1:-1)
+      ! repeat for total flux matrix
+      work = 0
+      rwork = 0
+      lwork=2*mpert-1
+      CALL zheev('V','U',mpert,wtvecs,mpert,wtvals,work,lwork,rwork,
+     $        info)
+      ! put in descending order like zgesvd
+      wtvals(:)   = wtvals(mpert:1:-1)
+      wtvecs(:,:) = wtvecs(:,mpert:1:-1)
 c-----------------------------------------------------------------------
 c     re-order energy eigenmodes by amplification dW_vac/dW.
 c-----------------------------------------------------------------------
@@ -5551,7 +5560,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Filter to keep desired physics modes
 c-----------------------------------------------------------------------
-      foutmn = MATMUL(permeabmats(resp_index,:,:),finmn) ! total flux
+      IF (mode_flag) THEN
+         finmn = 0
+         foutmn = wt(:,mode)
+      ELSEIF (fixed_boundary_flag) THEN
+         foutmn=finmn
+      ELSE
+         foutmn=MATMUL(permeabmats(resp_index,:,:),finmn)
+      ENDIF
       IF(fmodes/=0)THEN
          DO k=1,LEN_TRIM(ftypes)
             filmn = 0
@@ -5613,7 +5629,14 @@ c-----------------------------------------------------------------------
             finmn = filmn
          ENDDO
       ENDIF
-      foutmn = MATMUL(permeabmats(resp_index,:,:),finmn) ! total flux
+      IF (mode_flag) THEN
+         finmn = 0
+         foutmn = wt(:,mode)
+      ELSEIF (fixed_boundary_flag) THEN
+         foutmn=finmn
+      ELSE
+         foutmn=MATMUL(permeabmats(resp_index,:,:),finmn)
+      ENDIF
 c-----------------------------------------------------------------------
 c     Write outputs
 c-----------------------------------------------------------------------
@@ -5650,7 +5673,20 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_dim(mncid,"mode_W",mpert,   wdid) )
          CALL check( nf90_def_var(mncid,"mode_W",nf90_int,wdid,mw_id))
          CALL check( nf90_put_att(mncid, mw_id ,"long_name",
-     $    "Energy-norm external flux energy eigenmode index") )
+     $    "Energy-norm flux energy eigenmode index") )
+         CALL check( nf90_def_var(mncid,"W_e",
+     $               nf90_double,(/mdid,wdid,idid/),wt_id) )
+         CALL check( nf90_put_att(mncid,wt_id,"long_name",
+     $    "Energy-norm total flux energy matrix") )
+         CALL check( nf90_def_var(mncid,"W_e_eigenvector",
+     $               nf90_double,(/mdid,wdid,idid/),wtv_id) )
+         CALL check( nf90_put_att(mncid,wtv_id,"long_name",
+     $    "Energy-norm total flux energy eigendecomposition") )
+         CALL check( nf90_def_var(mncid,"W_e_eigenvalue",
+     $               nf90_double,(/wdid/),wte_id) )
+         CALL check( nf90_put_att(mncid,wte_id,"units","J/T^2") )
+         CALL check( nf90_put_att(mncid,wte_id,"long_name",
+     $    "Energy-norm total flux energy eigenvalues") )
          CALL check( nf90_def_var(mncid,"W_xe",
      $               nf90_double,(/mdid,wdid,idid/),wm_id) )
          CALL check( nf90_put_att(mncid,wm_id,"long_name",
@@ -5901,6 +5937,8 @@ c-----------------------------------------------------------------------
          ! energy normalized matrices
          CALL check( nf90_put_var(mncid,wm_id,RESHAPE((/REAL(wmat),
      $               AIMAG(wmat)/),(/mpert,mpert,2/))) )
+         CALL check( nf90_put_var(mncid,wt_id,RESHAPE((/REAL(wmatt),
+     $               AIMAG(wmatt)/),(/mpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,rm_id,RESHAPE((/REAL(rmat),
      $               AIMAG(rmat)/),(/mpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,pm_id,RESHAPE((/REAL(pmat),
@@ -5913,6 +5951,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,w_id,RESHAPE((/REAL(wvecs),
      $               AIMAG(wvecs)/),(/mpert,mpert,2/))) )
          CALL check( nf90_put_var(mncid,we_id,wvals) )
+         CALL check( nf90_put_var(mncid,wtv_id,RESHAPE((/REAL(wtvecs),
+     $               AIMAG(wtvecs)/),(/mpert,mpert,2/))) )
+         CALL check( nf90_put_var(mncid,wte_id,wtvals) )
          CALL check( nf90_put_var(mncid,wa_id,avals) )
          CALL check( nf90_put_var(mncid,r_id,RESHAPE((/REAL(rvecs),
      $               AIMAG(rvecs)/),(/mpert,mpert,2/))) )
