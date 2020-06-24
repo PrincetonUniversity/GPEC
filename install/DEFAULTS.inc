@@ -186,9 +186,9 @@
 #   ------------------------------------------------------------
 #
 # Some common modifications of the above settings might include,
-#     $ make FFLAGS="-qopenmp -qopt-report -g -O0 -check all"  # for debugging
-#     $ make FFLAGS="-qopenmp -O3"     # for optimized version
-#     $ make FFLAGS="-qopenmp  -xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
+#     $ make FFLAGS="-qopt-report -g -O0 -check all"  # for debugging
+#     $ make FFLAGS="-O3"     # for optimized version
+#     $ make FFLAGS="-xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
