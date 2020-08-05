@@ -9,6 +9,7 @@
     qlow=0               ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
+    reform_eq_with_psilim=f ! Reforms equilibrium splines between psilow and psilim determined by psihigh/sas_flag/qhigh/peak_flag
 
     nn=1                 ! Toroidal mode number
     delta_mlow=8         ! Expands lower bound of Fourier harmonics
@@ -29,7 +30,7 @@
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
     electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
-    parallel_threads=16  ! Parallel calculations of the kinetic matrix components (2*nl+1 is recommended, where nl is defined in pentrc.in)
+    parallel_threads=16  ! Parallel calculations of the kinetic matrix components (parallel execution of mpsi*(2*nl+1) calculations where mpsi is set in equil.in and nl in pentrc.in)
     tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
     tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r

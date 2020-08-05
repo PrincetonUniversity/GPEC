@@ -86,10 +86,12 @@ module pentrc_interface
         eqpsi_out=.false.,&
         equil_grid=.false.,&
         input_grid=.false.,&
+        dynamic_grid=.true.,&
         fnml_flag=.false.,&
         ellip_flag=.false.,&
         diag_flag=.false.,&
         term_flag=.false.,&
+        force_xialpha=.false.,&
         clean=.true.,&
         flags(nmethods)=.false.,&
         indebug=.false.
@@ -105,7 +107,8 @@ module pentrc_interface
         power_bin = -1,&
         power_bpin = -1,&
         power_rin = -1,&
-        power_rcin = -1
+        power_rcin = -1,&
+        openmp_threads = 1
 
     real(r8) ::    &
         atol_xlmda=1e-6, &
@@ -145,10 +148,10 @@ module pentrc_interface
 
     namelist/pent_control/nfac, tfac, wefac, wdfac, wpfac, nufac, divxfac, &
             atol_xlmda, rtol_xlmda, atol_psi, rtol_psi, nlmda, ntheta, ximag, xmax, psilims, &
-            use_classic_splines
+            use_classic_splines,openmp_threads, force_xialpha
 
     namelist/pent_output/moment, output_ascii, output_netcdf, &
-            eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, &
+            eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, dynamic_grid, &
             fgar_flag, tgar_flag, pgar_flag, clar_flag, rlar_flag, fcgl_flag, &
             wxyz_flag, psi_out, fkmm_flag, tkmm_flag, pkmm_flag, frmm_flag, trmm_flag, prmm_flag, &
             fwmm_flag, twmm_flag, pwmm_flag, ftmm_flag, ttmm_flag, ptmm_flag, &
@@ -233,7 +236,7 @@ module pentrc_interface
                write(nstr,'(i3)')nn
                peq_file="gpec_xclebsch_n"//trim(adjustl(nstr))//".out" 
             endif            
-            call read_peq(peq_file,jac_in,jsurf_in,tmag_in,indebug,&
+            call read_peq(peq_file,jac_in,jsurf_in,tmag_in,force_xialpha,indebug,&
                           op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
             !if(gpec_file=="")then
             !   write(nstr,'(i3)')nn

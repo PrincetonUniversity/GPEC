@@ -1,8 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
-F90 = $(FC) $(FFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG)
 
 .f.o: 
 	$(F90) -c $*.f

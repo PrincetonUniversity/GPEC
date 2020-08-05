@@ -868,7 +868,7 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (istep >= nstep) THEN 
          WRITE (*,*)"Warning: LSODE exceeds nstep."
-         READ (*,*)
+         WRITE (*,*)"  ABS(t-1)=",ABS(t-1)," > gal_tol=",gal_tol
       ENDIF
       IF(cell%extra == "right")u=-u
 c-----------------------------------------------------------------------
@@ -1464,8 +1464,10 @@ c     write delta to ascii file.
 c-----------------------------------------------------------------------
       OPEN(UNIT=gal_out_unit,FILE=TRIM(name)//".out",STATUS="UNKNOWN")
       WRITE(gal_out_unit,'(a)')" Delta matrix:"
-      WRITE(gal_out_unit,format1)((ising,side(iside),ising,side(iside),
-     $     iside=1,2),ising=1,msing)
+      IF( msing>0 ) THEN
+         WRITE(gal_out_unit,format1)((ising,side(iside),ising,
+     $     side(iside),iside=1,2),ising=1,msing)
+      ENDIF
       i=0
       DO ising=1,msing
          DO iside=1,2
@@ -1479,8 +1481,10 @@ c-----------------------------------------------------------------------
             WRITE(gal_out_unit,format3)ising-2*msing,delta(i,:)
          ENDDO
       ENDIF
-      WRITE(gal_out_unit,format1)((ising,side(iside),ising,side(iside),
-     $     iside=1,2),ising=1,msing)
+      IF( msing>0 ) THEN
+         WRITE(gal_out_unit,format1)((ising,side(iside),ising,
+     $     side(iside),iside=1,2),ising=1,msing)
+      ENDIF
       CLOSE(UNIT=gal_out_unit)
 c-----------------------------------------------------------------------
 c     write binary data for matching.

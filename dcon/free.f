@@ -10,6 +10,8 @@ c     1. free_run.
 c     2. free_write_msc.
 c     3. free_ahb_prep.
 c     4. free_ahb_write.
+c     5. free_test.
+c     6. free_wvmats
 c-----------------------------------------------------------------------
 c     subprogram 0. free_mod.
 c     module declarations.
@@ -262,6 +264,7 @@ c-----------------------------------------------------------------------
       CALL bubble(REAL(ep),eindex,1,mpert)
       tt=ep
       DO ipert=1,mpert
+         wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
       CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
@@ -615,7 +618,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE free_test(plasma1,vacuum1,total1,psifac)
 
-      REAL(r8), INTENT(OUT) :: plasma1,vacuum1,total1
+      COMPLEX(r8), INTENT(OUT) :: plasma1,vacuum1,total1
       REAL(r8), INTENT(IN) :: psifac
 
       LOGICAL, PARAMETER :: normalize=.TRUE., debug=.FALSE.
@@ -654,7 +657,8 @@ c-----------------------------------------------------------------------
       wv = 0
       ! calc a rough spline of wv so we don't call mscvac (slow) every time
       IF(first_call)THEN
-         CALL free_wvmats(psifac, psilim)
+         CALL free_wvmats
+         CALL spline_eval(sq,psifac,0)
          first_call = .FALSE.
       ENDIF
       CALL cspline_eval(wvmats, psifac,0)
@@ -689,7 +693,7 @@ c-----------------------------------------------------------------------
          norm=norm/v1
          et(isol)=et(isol)/norm
       ENDIF
-      total1=REAL(et(1))
+      total1=et(1)
 c-----------------------------------------------------------------------
 c     compute plasma and vacuum eigenvalues
 c     DIFFERS FROM free_run, which calcs energies of the total eigenmode
@@ -707,7 +711,7 @@ c-----------------------------------------------------------------------
             wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
             et(ipert)=tt(eindex(mpert+1-ipert))
          ENDDO
-         plasma1=REAL(et(1))
+         plasma1=et(1)
 
          wt=wv
          wt0=wt
@@ -721,7 +725,7 @@ c-----------------------------------------------------------------------
             wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
             et(ipert)=tt(eindex(mpert+1-ipert))
          ENDDO
-         vacuum1=REAL(et(1))
+         vacuum1=et(1)
       ELSE
          plasma1 = 0.0
          vacuum1 = 0.0
@@ -740,13 +744,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_wvmats(psi1, psi2)
+      SUBROUTINE free_wvmats
 
-      REAL(r8), INTENT(IN) :: psi1, psi2
-
-      INTEGER, PARAMETER :: npsi=8
-      INTEGER :: i,ipert
-      REAL(r8) :: dpsi
+      INTEGER :: npsi,i,ipert,it,itmax=50
+      REAL(r8) :: qi, psii, dpsi, eps=1e-9
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
@@ -754,10 +755,23 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
-      dpsi = (psi2 - psi1) / npsi
+      npsi = CEILING((qlim - q_edge(1)) * nn * 4)  ! 4 pts per q window
+      psii = psiedge  ! should start exactly here
       CALL cspline_alloc(wvmats,npsi,mpert**2)
       DO i=0,npsi
-         wvmats%xs(i) = psi1 + dpsi * i
+         ! space point evenly in q
+         qi = q_edge(1) + (qlim - q_edge(1)) * i * 1.0/npsi
+         ! use newton iteration to find psilim.
+         it=0
+         DO
+            it=it+1
+            CALL spline_eval(sq, psii, 1)
+            dpsi=(qi-sq%f(4)) / sq%f1(4)
+            psii = psii + dpsi
+            IF(ABS(dpsi) < eps*ABS(psii) .OR. it > itmax)EXIT
+         ENDDO
+         ! call mscvac and save matrices to spline
+         wvmats%xs(i) = psii
          CALL spline_eval(sq, wvmats%xs(i), 0)
          CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.)
          kernelsignin=1.0

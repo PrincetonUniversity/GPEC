@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
-c     ISMATH: simple math routines
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
+c     simple math routines
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
@@ -12,8 +12,9 @@ c     3. issect
 c     4. issurfint
 c     5. issurfave
 c     6. isbubble
-c     7. iszinv
-c     8. ipidl_3dsurfc-----------------------------------------------------------------------
+c     7. iszhinv
+c     8. ipidl_3dsurf
+c-----------------------------------------------------------------------
 c     subprogram 0. ismath_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
@@ -274,10 +275,10 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE isbubble
 c-----------------------------------------------------------------------
-c     subprogram 7. iszinv.
+c     subprogram 7. iszhinv.
 c     Common control surface basis conversions and normalizations.
 c-----------------------------------------------------------------------
-      SUBROUTINE iszinv(mat_in, m, mat_out)
+      SUBROUTINE iszhinv(mat_in, m, mat_out)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -306,7 +307,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE iszinv
+      END SUBROUTINE iszhinv
 c-----------------------------------------------------------------------
 c     subprogram 8. ipidl_3dsurf.
 c     convert 2d data into 3d data.

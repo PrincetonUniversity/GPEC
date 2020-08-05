@@ -15,8 +15,6 @@ LIBS = \
 	-lequil
 
 OBJS = \
-	io.o \
-	local.o \
 	gamma.o \
 	deltar.o \
 	inner.o  \
@@ -25,8 +23,7 @@ OBJS = \
         inpso.o \
 	deltac.o \
 	msing.o \
-	match.o 
-
+	match.o
 
 all: rmatch
 
@@ -40,10 +37,10 @@ rmatch: $(OBJS)
 
 # dependencies
 
-msing.o: local.o
-gamma.o: local.o
+msing.o: ../equil/local.o
+gamma.o: ../equil/local.o
 deltar.o: gamma.o
-inps.o:  local.o
+inps.o:  ../equil/local.o ../equil/utils.o
 inpso.o: inps.o
 deltac.o: jacobi.o inpso.o
 inner.o: deltac.o

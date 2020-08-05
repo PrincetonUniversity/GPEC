@@ -10,7 +10,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#if !defined(__MACH__)
 #include <malloc.h>
+#endif
 #include <string.h>
 #include <fcntl.h>
 #include <math.h>

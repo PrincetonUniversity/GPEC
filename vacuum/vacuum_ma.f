@@ -630,12 +630,11 @@ c-----------------------------------------------------------------------
       CHARACTER(130), DIMENSION(10) :: string
       COMPLEX(8), PARAMETER :: ifac=(0,1)
 
-      lfarw = 1
       ndlp = mth / ntloop
 
       jmax1 = lmax(1) - lmin(1) + 1
       mth2 = 2*mth
-      if ( lfarw .gt. 0 ) mth2 = mth
+      IF ( farwal ) mth2 = mth
 
       call bounds(xpla,zpla,1,mth,xmnp,xmxp,zmnp,zmxp)
       xmin = xmnp
@@ -660,15 +659,13 @@ c-----------------------------------------------------------------------
          bpi(i) = 0.0
       end do
 
-      if ( lfarw .gt. 0 ) go to 20
-
-      call bounds(xwal,zwal,1,mw,xmnw,xmxw,zmnw,zmxw)
-      xmin = min(xmnp,xmnw)
-      xmax = max(xmxp,xmxw)
-      zmin = min(zmnp,zmnw)
-      zmax = max(zmxp,zmxw)
-
- 20   CONTINUE
+      if ( .not. farwal ) then
+        call bounds(xwal,zwal,1,mw,xmnw,xmxw,zmnw,zmxw)
+        xmin = min(xmnp,xmnw)
+        xmax = max(xmxp,xmxw)
+        zmin = min(zmnp,zmnw)
+        zmax = max(zmxp,zmxw)
+      endif
 
       CALL loops
 
@@ -817,49 +814,43 @@ c-----------------------------------------------------------------------
             chii(nsew,i) = cwrki(nsew,i)
          end do
 
-         if ( lfarw .gt. 0 ) go to 200
-
-         do l1 = 1, jmax1
-            do i = 1, mw
+         IF ( .not. farwal ) THEN
+           do l1 = 1, jmax1
+             do i = 1, mw
                chiwc(i,l1) = grri(mth+i,l1)
                chiws(i,l1) = grri(mth+i,jmax1+l1)
-            end do
-         end do
+             end do
+           end do
 
-         do i = 1, nobs
-            cwrkr(nsew,i) = 0.0
-            cwrki(nsew,i) = 0.0
-         end do
+           do i = 1, nobs
+             cwrkr(nsew,i) = 0.0
+             cwrki(nsew,i) = 0.0
+           end do
+           
+           isg = 1
+           
+           call chi ( xwal,zwal,xwalp,zwalp,isg,chiwc,chiws, ns,0,
+     $          cwrkr,cwrki,nsew, blr,bli,rwall )
 
-         isg = 1
-
-         call chi ( xwal,zwal,xwalp,zwalp,isg,chiwc,chiws, ns,0,
-     $        cwrkr,cwrki,nsew, blr,bli,rwall )
-
-         do  i = 1, nobs
-            chir(nsew,i) = chir(nsew,i) + cwrkr(nsew,i)
-            chii(nsew,i) = chii(nsew,i) + cwrki(nsew,i)
-         end do
-
- 200     CONTINUE
+           do  i = 1, nobs
+             chir(nsew,i) = chir(nsew,i) + cwrkr(nsew,i)
+             chii(nsew,i) = chii(nsew,i) + cwrki(nsew,i)
+           end do
+         ENDIF !.not. farwal
 
       END DO
 
       DO i = 1, nobs
-
-         IF (igdl(i) .EQ. -1) GOTO 300
-
-         bxr(i) = ( chir(3,i) - chir(4,i) ) / (2.0*delx)
-         bxi(i) = ( chii(3,i) - chii(4,i) ) / (2.0*delx)
-         bzr(i) = ( chir(1,i) - chir(2,i) ) / (2.0*delz)
-         bzi(i) = ( chii(1,i) - chii(2,i) ) / (2.0*delz)
-         zchipr(i) = chir(5,i)
-         zchipi(i) = chii(5,i)
-         bphir(i) =   n * chii(5,i) / xloop(i)
-         bphii(i) = - n * chir(5,i) / xloop(i)
-
- 300     CONTINUE
-
+        IF (igdl(i) .NE. -1) THEN
+          bxr(i) = ( chir(3,i) - chir(4,i) ) / (2.0*delx)
+          bxi(i) = ( chii(3,i) - chii(4,i) ) / (2.0*delx)
+          bzr(i) = ( chir(1,i) - chir(2,i) ) / (2.0*delz)
+          bzi(i) = ( chii(1,i) - chii(2,i) ) / (2.0*delz)
+          zchipr(i) = chir(5,i)
+          zchipi(i) = chii(5,i)
+          bphir(i) =   n * chii(5,i) / xloop(i)
+          bphii(i) = - n * chir(5,i) / xloop(i)
+        ENDIF
       END DO
 
       DO i = 1, nxlpin

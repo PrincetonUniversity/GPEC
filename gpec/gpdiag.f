@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
 c     diagnose various features.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -23,6 +23,7 @@ c     14. gpdiag_rzpdiv
 c     15. gpdiag_radvar
 c     16. gpdiag_permeabev_orthogonality
 c     17. gpdiag_dw_matrix
+c     18. gpdiag_spline_roots
 c-----------------------------------------------------------------------
 c     subprogram 0. gpdiag_mod.
 c     module declarations.
@@ -61,7 +62,7 @@ c-----------------------------------------------------------------------
       DO i=1,mpert
          DO j=1,mpert
             xrmn=0
-            ximn=0        
+            ximn=0
             xrmn(i)=1.0
             ximn(j)=1.0
             xinmn=xrmn+ifac*ximn
@@ -124,7 +125,7 @@ c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
       CALL gpvacuum_arbsurf(majr,minr)
       vmpert=SIZE(vsurf_indev)
-      
+
       WRITE(UNIT=smajr, FMT='(I4)')INT(100*majr)
       WRITE(UNIT=sminr, FMT='(I4)')INT(100*minr)
       CALL ascii_open(out_unit,"gpec_diagnostics_arbsurf_R"//smajr//
@@ -134,7 +135,7 @@ c-----------------------------------------------------------------------
       WRITE(out_unit,'(1x,a4,1x,a16)')"mode","surf_ind"
       DO i=1,vmpert
          WRITE(out_unit,'(1x,I4,1x,es16.8)')i,vsurf_indev(i)
-      ENDDO      
+      ENDDO
       CALL ascii_close(out_unit)
       DEALLOCATE(vsurf_indmats,vsurf_indev)
 c-----------------------------------------------------------------------
@@ -154,12 +155,12 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,etas,dphi
       REAL(r8), DIMENSION(0:mthsurf,0:4) :: thetas,thetais
-      
+
       REAL(r8), DIMENSION(:), POINTER :: psi,thetai,angles
       REAL(r8), DIMENSION(:,:), POINTER :: plerror,haerror
       REAL(r8), DIMENSION(:,:,:), POINTER :: rs,zs,omega
-      
-      TYPE(spline_type) :: spl,sdphi    
+
+      TYPE(spline_type) :: spl,sdphi
 c-----------------------------------------------------------------------
 c     write data for indicating used angles.
 c-----------------------------------------------------------------------
@@ -174,7 +175,7 @@ c-----------------------------------------------------------------------
       angles=(/(inum,inum=0,angnum-1)/)/REAL(angnum,r8)
       DO istep=1,rstep
          psi(istep)=(istep/REAL(rstep,r8))*psilim
-         
+
          CALL spline_alloc(spl,mthsurf,5)
          CALL spline_alloc(sdphi,mthsurf,1)
          spl%xs=theta
@@ -195,7 +196,7 @@ c-----------------------------------------------------------------------
             bfac=SQRT(bpfac*bpfac+btfac*btfac)
             fac=r(itheta)**power_r/(bpfac**power_bp*bfac**power_b)
             spl%fs(itheta,1)=fac*twopi*bpfac/rfac
-            spl%fs(itheta,2)=fac                        
+            spl%fs(itheta,2)=fac
             spl%fs(itheta,3)=fac/r(itheta)**2
             spl%fs(itheta,4)=fac*bpfac
             spl%fs(itheta,5)=fac*bfac**2
@@ -223,7 +224,7 @@ c-----------------------------------------------------------------------
          haerror(istep,:)=thetas(:,1)-thetais(:,1)
 c-----------------------------------------------------------------------
 c     store visualizing data.
-c-----------------------------------------------------------------------         
+c-----------------------------------------------------------------------
          DO iqty=1,5
             DO inum=0,angnum-1
                thetai(inum)=issect(mthsurf,theta(:),thetas(:,iqty-1),
@@ -231,7 +232,7 @@ c-----------------------------------------------------------------------
             ENDDO
             DO inum=0,angnum-1
                CALL bicube_eval(rzphi,psi(istep),thetai(inum),0)
-               rfac=SQRT(rzphi%f(1)) 
+               rfac=SQRT(rzphi%f(1))
                eta=twopi*(thetai(inum)+rzphi%f(2))
                rs(istep,inum,iqty)=ro+rfac*COS(eta)
                zs(istep,inum,iqty)=zo+rfac*SIN(eta)
@@ -240,7 +241,7 @@ c-----------------------------------------------------------------------
       ENDDO
 c-----------------------------------------------------------------------
 c     write data.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"gpec_diagnostics_angles.out","UNKNOWN")
       WRITE(out_unit,*)"GPEC_DIAGNOSTICS_ANGLES: "//
      $     "Diagnose and visualize magnetic angles"
@@ -254,7 +255,7 @@ c-----------------------------------------------------------------------
      $           psi(istep),plerror(istep,itheta),haerror(istep,itheta)
          ENDDO
       ENDDO
-      
+
       DO iqty=1,5
          WRITE(out_unit,'(1x,a8,1x,I2)')"iqty=",iqty
          WRITE(out_unit,'(3(1x,a16))')"r","z","angles"
@@ -274,9 +275,9 @@ c-----------------------------------------------------------------------
      $           psi(istep),theta(itheta),omega(istep,itheta,0),
      $           omega(istep,itheta,1),omega(istep,itheta,2),
      $           omega(istep,itheta,3),omega(istep,itheta,4)
-         ENDDO      
+         ENDDO
       ENDDO
-      CALL ascii_close(out_unit)      
+      CALL ascii_close(out_unit)
 
       DEALLOCATE(psi,thetai,angles,plerror,haerror,rs,zs,omega)
 c-----------------------------------------------------------------------
@@ -303,13 +304,13 @@ c-----------------------------------------------------------------------
       mnum=highmode-lowmode+1
       ALLOCATE(binmn(mnum,mpert),boutmn(mnum,mpert),finmn(mnum,mpert),
      $     binfun(mnum,0:mthsurf),boutfun(mnum,0:mthsurf))
-     
+
       DO i=lowmode,highmode
          j=i-lowmode+1
          binmn(j,:)=0
          binmn(j,i-mlow+1)=1
          finmn(j,:)=binmn(j,:)
-         CALL iscdftb(mfac,mpert,binfun(j,:),mthsurf,finmn(j,:))         
+         CALL iscdftb(mfac,mpert,binfun(j,:),mthsurf,finmn(j,:))
          CALL gpeq_fcoords(psilim,finmn(j,:),mfac,mpert,
      $        rin,bpin,bin,rcin,tin,jin)
          CALL gpeq_weight(psilim,finmn(j,:),mfac,mpert,1)
@@ -317,7 +318,7 @@ c-----------------------------------------------------------------------
             boutmn(j,:)=finmn(j,:)
          ELSE
             boutmn(j,:)=MATMUL(permeabmats(resp_index,:,:),finmn(j,:))
-         ENDIF       
+         ENDIF
          CALL gpeq_weight(psilim,finmn(j,:),mfac,mpert,0)
          CALL gpeq_bcoords(psilim,boutmn(j,:),mfac,mpert,
      $        rin,bpin,bin,rcin,tin,jin)
@@ -575,7 +576,7 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,ipert
       COMPLEX(r8), DIMENSION(mpert) :: xwd_mn,bwd_mn
 
-      TYPE(cspline_type) :: u5         
+      TYPE(cspline_type) :: u5
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
@@ -619,7 +620,7 @@ c-----------------------------------------------------------------------
          CALL cspline_eval(u5,psifac(istep),1)
          xwd_mn(:)=u1%f1(:)
          bwd_mn(:)=u5%f1(:)
-         IF (jac_type /= jac_out) THEN 
+         IF (jac_type /= jac_out) THEN
             CALL gpeq_bcoords(psifac(istep),xwp_mn,mfac,mpert,
      $           rin,bpin,bin,rcin,tin,0)
             CALL gpeq_bcoords(psifac(istep),xwt_mn,mfac,mpert,
@@ -658,7 +659,7 @@ c-----------------------------------------------------------------------
      $           REAL(xsp1_mn(ipert)),AIMAG(xsp1_mn(ipert)),
      $           REAL(bwd_mn(ipert)),AIMAG(bwd_mn(ipert)),
      $           REAL(bwp1_mn(ipert)),AIMAG(bwp1_mn(ipert)),
-     $           REAL(xsp_mn(ipert)),AIMAG(xsp_mn(ipert))          
+     $           REAL(xsp_mn(ipert)),AIMAG(xsp_mn(ipert))
          ENDDO
       ENDDO
 
@@ -700,7 +701,7 @@ c-----------------------------------------------------------------------
      $     norvec(0:mthnum),nozvec(0:mthnum),
      $     xno_fun(0:mthnum),bno_fun(0:mthnum))
       mthang=(/(i,i=0,mthnum)/)/REAL(mthnum,r8)
-      
+
       DO ithnum=0,mthnum
          CALL bicube_eval(rzphi,psilim,mthang(ithnum),1)
          rfac=SQRT(rzphi%f(1))
@@ -729,7 +730,7 @@ c-----------------------------------------------------------------------
       CALL iscdftb(mfac,mpert,xno_fun,mthnum,xno_mn)
       CALL iscdftb(mfac,mpert,bno_fun,mthnum,bno_mn)
       CALL gpeq_dealloc
-      
+
       xnorvc=xno_fun*norvec
       xnozvc=xno_fun*nozvec
       bnorvc=bno_fun*norvec
@@ -740,7 +741,7 @@ c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"gpec_diagnostics_xnobo_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"GPEC_DIAGNOSTICS_XNOBO: "//
-     $     "Perturbed normal displacement vectors on the boundary"      
+     $     "Perturbed normal displacement vectors on the boundary"
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(xnor)","real(xnoz)","imag(xnor)","imag(xnoz)"
       DO ithnum=0,mthnum
@@ -751,7 +752,7 @@ c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"gpec_diagnostics_bnobo_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"GPEC_DIAGNOSTICS_BNOBO: "//
-     $     "perturbed normal field vectors on the boundary"      
+     $     "perturbed normal field vectors on the boundary"
       WRITE(out_unit,'(6(1x,a16))')"r","z",
      $     "real(bnor)","real(bnoz)","imag(bnor)","imag(bnoz)"
       DO ithnum=0,mthnum
@@ -769,9 +770,9 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1p,5es16.8)')rs
          WRITE(out_unit,'(1p,5es16.8)')zs
          WRITE(out_unit,'(1p,5es16.8)')REAL(xno_fun)
-         WRITE(out_unit,'(1p,5es16.8)')AIMAG(xno_fun)      
+         WRITE(out_unit,'(1p,5es16.8)')AIMAG(xno_fun)
          CALL ascii_close(out_unit)
-         
+
          filein="gptemp.txt"
          file1="gpidl_3dsurf_xnobo_n"//TRIM(sn)//".out"
 
@@ -786,9 +787,9 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1p,5es16.8)')rs
          WRITE(out_unit,'(1p,5es16.8)')zs
          WRITE(out_unit,'(1p,5es16.8)')REAL(bno_fun)
-         WRITE(out_unit,'(1p,5es16.8)')AIMAG(bno_fun)      
+         WRITE(out_unit,'(1p,5es16.8)')AIMAG(bno_fun)
          CALL ascii_close(out_unit)
-         
+
          filein="gptemp.txt"
          file1="gpidl_3dsurf_bnobo_n"//TRIM(sn)//".out"
 
@@ -797,7 +798,7 @@ c-----------------------------------------------------------------------
          nnn=nn
          np=144
          nt=144
-         CALL ipidl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1) 
+         CALL ipidl_3dsurf(filein,nnn,mmtheta,np,nt,ddist,file1)
       ENDIF
       DEALLOCATE(rs,zs,xno_fun,bno_fun)
 c-----------------------------------------------------------------------
@@ -832,7 +833,7 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"Computing x and b field strength"
 
       CALL idcon_build(egnum,xspmn)
-      
+
       CALL gpeq_alloc
       DO istep=1,mstep
 c-----------------------------------------------------------------------
@@ -883,16 +884,16 @@ c-----------------------------------------------------------------------
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
 c     write data.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       CALL ascii_open(out_unit,"gpec_diagnostics_xbst_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"GPEC_DIAGNOSTICS_XBST: "//
      $     "Perturbed x and b strength on flux surfaces"
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a16,1x,a4,8(1x,a16))')"psi","m",
      $     "real(x1)","imag(x1)","real(x2)","imag(x2)",
      $     "real(b1)","imag(b2)","real(b2)","imag(b2)"
@@ -942,7 +943,7 @@ c-----------------------------------------------------------------------
      $     divxfun,curvfun,divxmns,curvmns,
      $     divx2fun,curv2fun,divx2mns,curv2mns,lllagbparmns,cdeltamns
 
-      TYPE(cspline_type) :: cspl       
+      TYPE(cspline_type) :: cspl
 c-----------------------------------------------------------------------
 c     compute necessary components.
 c-----------------------------------------------------------------------
@@ -1022,14 +1023,14 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(eqfun,psifac(istep),theta(itheta),1)
             CALL bicube_eval(rzphi,psifac(istep),theta(itheta),1)
             CALL cspline_eval(cspl,theta(itheta),1)
- 
+
             rfac=SQRT(rzphi%f(1))
             eta=twopi*(itheta/REAL(mthsurf,r8)+rzphi%f(2))
             rs(istep,itheta)=ro+rfac*COS(eta)
             zs(istep,itheta)=zo+rfac*SIN(eta)
             jac=rzphi%f(4)
             jac1=rzphi%fx(4)
- 
+
             v(1,1)=rzphi%fx(1)/(2*rfac)
             v(1,2)=rzphi%fx(2)*twopi*rfac
             v(1,3)=rzphi%fx(3)*rs(istep,itheta)
@@ -1111,11 +1112,11 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IDIAG_PMODB: "//
      $     "Components in perturbed mod b"
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
 
       WRITE(out_unit,'(1x,a16,1x,a4,14(1x,a16))')"psi","m",
      $     "real(lagb)","imag(lagb)","real(llagb)","imag(llagb)",
@@ -1168,7 +1169,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi,angle,rs,
      $     g12,g22,g13,g23,g33,singfac2,b2h,b2hp,b2ht
 
-      COMPLEX(r8), DIMENSION(-mband:mband) :: 
+      COMPLEX(r8), DIMENSION(-mband:mband) ::
      $     sband,tband,xband,yband1,yband2,zband1,zband2,zband3
       COMPLEX(r8), DIMENSION(0:mtheta) :: divxfun,curvfun
       COMPLEX(r8), DIMENSION(mpert,mpert) :: smat,tmat,xmat,ymat,zmat
@@ -1241,7 +1242,7 @@ c-----------------------------------------------------------------------
             g22=SUM(v(2,:)**2)
             g23=v(2,3)*v(3,3)
             g33=v(3,3)*v(3,3)
-            
+
             fmodb%fs(ipsi,itheta,1)=jac*(p1+b2hp)
      $           -chi1**2*b2ht*(g12+q*g13)/(jac*b2h*2)
             fmodb%fs(ipsi,itheta,2)=
@@ -1264,7 +1265,7 @@ c-----------------------------------------------------------------------
       ENDIF
 
       DO ipsi=0,mpsi
-         
+
          q=sq%fs(ipsi,4)
          sband(0:-mband:-1)=fmodb%cs%fs(ipsi,1:mband+1)
          tband(0:-mband:-1)=fmodb%cs%fs(ipsi,mband+2:2*mband+2)
@@ -1337,7 +1338,7 @@ c     compute mod b variations.
 c-----------------------------------------------------------------------
          curvmns(istep,:)=MATMUL(smat,xsp_mn)+MATMUL(tmat,xms_mn)/chi1
          divxmns(istep,:)=MATMUL(xmat,xmp1_mn)+
-     $        MATMUL(ymat,xsp_mn)+MATMUL(zmat,xms_mn)/chi1            
+     $        MATMUL(ymat,xsp_mn)+MATMUL(zmat,xms_mn)/chi1
 c-----------------------------------------------------------------------
 c     compute mod b variations for direct comparison to gpout_pmodb
 c-----------------------------------------------------------------------
@@ -1359,11 +1360,11 @@ c-----------------------------------------------------------------------
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"IDIAG_PMODBMN: "//
      $     "Components in perturbed mod b"
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
       WRITE(out_unit,'(1x,a13,a8)')"jac_out = ",jac_out
       WRITE(out_unit,'(1x,a12,1x,I6,1x,2(a12,I4))')
      $     "mstep =",mstep,"mpert =",mpert,"mthsurf =",mthsurf
-      WRITE(out_unit,*)     
+      WRITE(out_unit,*)
 
       WRITE(out_unit,'(1x,a16,1x,a4,8(1x,a16))')"psi","m",
      $     "real(JBBkx)","imag(JBBkx)","real(JBBdivx)","imag(JBBdivx)",
@@ -1565,8 +1566,8 @@ c-----------------------------------------------------------------------
          x1 = rmin
          x2 = rmax
          z1 = -zlim
-         z2 = zlim      
-      ENDIF     
+         z2 = zlim
+      ENDIF
 
       xint=(x2-x1)/nr
       zint=(z2-z1)/nz
@@ -1587,7 +1588,7 @@ c-----------------------------------------------------------------------
       rbeta%fs(:,1)=rbarr
       CALL spline_fit(rbeta,"periodic")
 
-      DO i=0,nr 
+      DO i=0,nr
          DO j=0,nz
             gdr(i,j)=x1+i*xint
             gdz(i,j)=z1+j*zint
@@ -1601,12 +1602,12 @@ c-----------------------------------------------------------------------
             ENDIF
 
             ttheta=ATAN2((gdz(i,j)-zo),(gdr(i,j)-ro))
-            IF (ttheta >= 0) THEN 
+            IF (ttheta >= 0) THEN
                ptheta=ttheta/twopi
             ELSE
                ptheta=1+ttheta/twopi
             ENDIF
-            
+
             IF (gdpsi(i,j)<psilim) THEN
                CALL spline_eval(rbeta,ptheta,0)
                IF (SQRT((gdr(i,j)-ro)**2+(gdz(i,j)-zo)**2)<rbeta%f(1))
@@ -1622,13 +1623,13 @@ c-----------------------------------------------------------------------
                   gdphi(i,j)=-rzphi%f(3)/twopi
                ENDIF
             ENDIF
-            
+
             WRITE(out_unit,'(6(1x,es12.3))')gdr(i,j),gdz(i,j),gdl(i,j),
      $           gdpsi(i,j),gdthe(i,j),gdphi(i,j)
-            
+
          ENDDO
       ENDDO
-         
+
       CALL ascii_close(out_unit)
       DEALLOCATE(gdr,gdz,gdl,gdpsi,gdthe,gdphi)
       CALL spline_dealloc(rbeta)
@@ -1641,7 +1642,7 @@ c-----------------------------------------------------------------------
 c     subprogram 14. gpdiag_rzpdiv.
 c     check divergence of rzphi functions.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
+      SUBROUTINE gpdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp,label)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1649,8 +1650,10 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(0:nr,0:nz), INTENT(IN) :: lval
       REAL(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: rval,zval
       COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: fr,fz,fp
- 
+      CHARACTER(*), INTENT(IN) :: label
+
       INTEGER :: i,j
+      REAL(r8) :: fabs
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: div
 
       TYPE(bicube_type) :: rfr,ifr,rfz,ifz
@@ -1665,12 +1668,12 @@ c-----------------------------------------------------------------------
       rfr%xs=rval(:,0)
       ifr%xs=rval(:,0)
       rfz%xs=rval(:,0)
-      ifz%xs=rval(:,0) 
+      ifz%xs=rval(:,0)
 
       rfr%ys=zval(0,:)
       ifr%ys=zval(0,:)
       rfz%ys=zval(0,:)
-      ifz%ys=zval(0,:) 
+      ifz%ys=zval(0,:)
 
       rfr%fs(:,:,1)=rval*REAL(fr)
       ifr%fs(:,:,1)=rval*AIMAG(fr)
@@ -1680,7 +1683,7 @@ c-----------------------------------------------------------------------
       CALL bicube_fit(rfr,"extrap","extrap")
       CALL bicube_fit(ifr,"extrap","extrap")
       CALL bicube_fit(rfz,"extrap","extrap")
-      CALL bicube_fit(ifz,"extrap","extrap")      
+      CALL bicube_fit(ifz,"extrap","extrap")
 
       DO i=0,nr
          DO j=0,nz
@@ -1689,26 +1692,30 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(rfz,rval(i,j),zval(i,j),1)
             CALL bicube_eval(ifz,rval(i,j),zval(i,j),1)
 
+            fabs=sqrt(abs(fr(i,j))**2.0+abs(fz(i,j))**2.0+
+     $           abs(fp(i,j))**2.0)
             div(i,j)=rfr%fx(1)/rval(i,j)+rfz%fy(1)+
      $           nn*AIMAG(fp(i,j))/rval(i,j)+ifac*
      $           (ifr%fx(1)/rval(i,j)+ifz%fy(1)-
      $           nn*REAL(fp(i,j))/rval(i,j))
+            div(i,j)=div(i,j)/fabs
 
          ENDDO
       ENDDO
-       
+
       CALL bicube_dealloc(rfr)
       CALL bicube_dealloc(ifr)
       CALL bicube_dealloc(rfz)
       CALL bicube_dealloc(ifz)
 
-      CALL ascii_open(out_unit,"gpec_diagnostics_rzpdiv_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_rzpdiv_"//label//"_n"//
      $     TRIM(sn)//".out","UNKNOWN")
-      
-      WRITE(out_unit,*)"GPEC_RZPDIV: Divergence in rzphi grid"
+
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_RZPDIV: "//
+     $     "Divergence in rzphi grid"
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
      $     "re(div)","im(div)","abs(div)"
-      
+
       DO i=0,nr
          DO j=0,nz
             WRITE(out_unit,'(1x,I2,5(es16.8))')
@@ -1716,7 +1723,7 @@ c-----------------------------------------------------------------------
      $           REAL(div(i,j)),AIMAG(div(i,j)),ABS(div(i,j))
          ENDDO
       ENDDO
-      CALL ascii_close(out_unit)   
+      CALL ascii_close(out_unit)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1735,10 +1742,10 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mstep) :: psitor,rhotor
       TYPE(spline_type) :: qs
 
-      CALL spline_alloc(qs,mstep,1)      
+      CALL spline_alloc(qs,mstep,1)
       qs%xs=psifac
       qs%fs(:,1)=qfac
-      CALL spline_fit(qs,"extrap") 
+      CALL spline_fit(qs,"extrap")
       CALL spline_int(qs)
       qintb=qs%fsi(mstep,1)
       psitor(:)=qs%fsi(:,1)/qintb
@@ -1799,7 +1806,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_permeabev_orthogonality
-      
+
 c-----------------------------------------------------------------------
 c     subprogram 16. gpdiag_reluctpowout.
 c     diagnose coordinate independence of power normalized eigenvalues.
@@ -1815,7 +1822,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: temp,ev,evo
       COMPLEX(r8), DIMENSION(mpert,mpert) :: sqrta,mat,mato,
      $   sqrtao
-      
+
       WRITE(*,*) 'Diagnosing reluctance power eigenvalues in out coords'
 c-----------------------------------------------------------------------
 c     calculate sqrt(A) weighting matrix.
@@ -1855,7 +1862,7 @@ c-----------------------------------------------------------------------
       rwork = 0
       lwork=2*mpert-1
       CALL zheev('V','U',mpert,mato,mpert,evo,work,lwork,rwork,info)
-      
+
       CALL ascii_open(out_unit,"gpec_diagnostics_reluctpowout_n"//
      $     TRIM(sn)//".out","UNKNOWN")
       WRITE(out_unit,*)"GPEC_DIAGNOSTICS_RELUCTPOWOUT: Reluctance "//
@@ -1873,7 +1880,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,I4,8(1x,es16.8))') i,ev(i),evo(i)
       ENDDO
       WRITE(out_unit,*)
-      
+
       WRITE(out_unit,*)"Eigenvectors"
       WRITE(out_unit,*)"  rho = Reluctance (power norm)"
       WRITE(out_unit,*)
@@ -1883,7 +1890,7 @@ c-----------------------------------------------------------------------
          DO j=1,mpert
             WRITE(out_unit,'(2(1x,I4),4(1x,es16.8))')i,mfac(j),
      $           mat(j,i),mato(j,i)
-         ENDDO 
+         ENDDO
       ENDDO
       WRITE(out_unit,*)
       CALL ascii_close(out_unit)
@@ -2328,5 +2335,75 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_dw_matrix
+c-----------------------------------------------------------------------
+c     subprogram 18. gpdiag_spline_roots.
+c     Make sure the spline_root finder is working.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpdiag_spline_roots
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, PARAMETER :: mx = 30
+      INTEGER :: i, nroots
+      REAL(r8) :: xx, dx
+      REAL(r8), DIMENSION(mx*3) :: roots
+      TYPE(spline_type) :: spl
+c-----------------------------------------------------------------------
+c     construct 2d eigenvector sets in fourier space.
+c-----------------------------------------------------------------------
+      ! my basic spline x^3 + 2*x^2 + x + 0
+      ! has a root at 0 and a double root at -1
+      dx = 4.0 / mx
+      call spline_alloc(spl, mx, 1)
+      spl%title=(/"  x   ","  y   "/)
+      print *,"Testing linear spline with single root"
+      do i=0,mx
+        xx = -2 + i * 4.0 / mx
+        spl%xs(i) = xx
+        spl%fs(i, 1) = 3.0*xx
+      enddo
+      call spline_fit(spl, "extrap")
+      call spline_roots(spl, 1, nroots, roots)
+      print *, 1," roots expected: ", 0.0_r8
+      print *, nroots," roots found at: ",roots(1:nroots)
+      if(abs(roots(1)) < 1e-9 .and. nroots==1) THEN
+         print *," > Spline root finder passes the test!"
+      else
+         print *, " > *** Spline root finder FAILED ***"
+      endif
+      open(unit=out_unit,file="spline_roots_linear.out",
+     $     status="unknown")
+      call spline_write1(spl,.true.,.false.,out_unit,0,.true.)
+      close(out_unit)
+
+      print *,"Testing full cubic with a double root"
+      do i=0,mx
+        xx = -2 + 4 * sin((pi / 2) * (i * 1.0 / mx))
+        ! make sure there is a knot on the double root
+        ! otherwise, chances are the spline curve below 0
+        if(xx<-1 .AND. -2+4*sin((pi/2)*((i+1)*1.0/mx)) > -1) xx=-1.0
+        spl%xs(i) = xx
+        spl%fs(i, 1) = xx**3 + 2 * xx**2 + xx + 0.0
+      enddo
+      call spline_fit(spl, "extrap")
+      call spline_roots(spl, 1, nroots, roots)
+      print *, 2," roots expected: ", -1.0_r8, 0.0_r8
+      print *, nroots," roots found at: ",roots(1:nroots)
+      if(abs(roots(1)+1)<1e-9 .and. abs(roots(2))<1e-9 .and. nroots==2)
+     $  then
+         print *," > Spline root finder passes the test!"
+      else
+         print *, " > *** Spline root finder FAILED ***"
+      endif
+      open(unit=out_unit,file="spline_roots_cubic.out",
+     $     status="unknown")
+      call spline_write1(spl,.true.,.false.,out_unit,0,.true.)
+      close(out_unit)
+      call spline_dealloc(spl)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpdiag_spline_roots
 
       END MODULE gpdiag_mod

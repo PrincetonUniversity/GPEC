@@ -10,6 +10,154 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.4.4
+===========
+
+Fixes
+------
+- DCON - Fixes output of plasma energy eigenvectors in netcdf
+
+
+GPEC v1.4.3
+===========
+
+Fixes
+------
+- VACUUM - Respects the namelist a and lspark when determining whether to write a wall geometry file output
+- DCON - Properly spaces the vacuum matrices used when finding the peak dW with psiedge < psilim
+
+Changes
+------
+- DCON - dW_edge in the netcdf output now includes the imaginary component of the least stable eigenvalue
+
+
+GPEC v1.4.2
+===========
+
+Fixes
+------
+- PENTRC - Respects the namelist verbose setting throughout the program
+
+Changes
+------
+- COIL - Updates ASDEX Upgrade coil geometry to have more accurate, rounded cornering
+
+
+GPEC v1.4.1
+===========
+
+Fixes
+------
+- GPEC - Corrects helicity for brzphi calculations in machine angle
+- PENTRC - Fixes reading of xclebsch displacements from other codes that use psi as the outer loop
+
+
+GPEC v1.4.0
+===========
+
+Fixes
+------
+- INSTALL - Support added for compiling on MacOS as well as with gfortran on linux
+- VACUUM - Makes ishape 41 use on manual wall robust to a>10 infinite wall tests
+- DCON - Corrects for wall time wrap-around when run spans multiple days
+- GPEC - Removes (incorrect) units from normalized minor radius netcdf output
+
+Changes
+--------
+- DCON - Improves parallel assembly of kinetic matrices using collapsed psi and ell loops and dynamic scheduling. This enables efficient use of large parallel_threads.
+
+Adds
+------
+- EQUIL - Adds new pow1 and pow2 grid_type options. These grids are linear in core psi_n and approach zero spacing at psihigh linearly/quadratically (packed in the edge).
+- DCON - Adds new psiedge variable to dcon_control. When this is below psihigh, DCON records dW(psi) between psiedge and psihigh and re-runs the integration with truncation adjusted to max(dW).
+- PENTRC - Adds new option (force_xialpha) that triggers a calculation of tangential from radial displacement (useful for radial displacement inputs from nonlinear codes like JOREK and M3DC1).
+
+
+GPEC v1.3.8
+===========
+
+Fixes
+------
+- GPEC - Fixes bug that caused GPEC netcdf to crash when there are no rational surfaces (common when running DCON with kin_flag)
+- DCON - Defaults the reform_eq_with_psilim flag to false for better consistency with earlier versions
+
+
+GPEC v1.3.7
+===========
+
+Fixes
+------
+- PENTRC - Corrects sqdivxi_perp_SA output, which was being overwritten with sqdBoB_L_SA
+
+
+GPEC v1.3.6
+===========
+
+Fixes
+------
+- DCON - Fixes openmp reduction of kinetic matrices when kin_flag=t
+
+GPEC v1.3.5
+===========
+
+Fixes
+------
+- INSTALL - Minor makefile robustness improvements
+
+GPEC v1.3.4
+===========
+
+Fixes
+------
+- STRIDE - Fixes faulty writing of 2Nx2N Delta matrix into a NxN Delta_prime in netcdf
+
+Adds
+------
+- STRIDE - Writes full 2Nx2N Delta matrix as well as NxN A', B', Gamma', & Delta' sub-matrices to netcdf
+
+GPEC v1.3.3
+===========
+
+Fixes
+------
+- DCON - Re-enables inverse equilibria, which raised errors in the more rigorous bicube checking introduced in 1.3.2
+
+GPEC v1.3.2
+===========
+
+Adds
+------
+- INSTALL - Generalizes makefiles for better portability (intel/pgi/gfortran)
+- INSTALL - Enables parallel or serial compilation (controlled by OMPFLAG)
+- EXAMPLES - Adds a new example showing how to run rdcon and rmatch to determine tearing instability
+- EQUIL - Adds spline root finding subroutines
+- DCON - Adds the reform_eq_with_psilim flag to avoid reforming the equilibrium splines to psilim
+- GPEC - Adds explicit signfld overlap quantities to netcdf, identical to ascii values
+- PENTRC - Adds new dynamic_grid flag to enable skipping dynamic integration if only a static grid output is desired
+- PENTRC - Parallelizes pentrc bounce harmonic integrations
+
+Changes
+--------
+- INSTALL - Updates instructions for new AUG cluster
+- GPEC - Moves overlap outputs to control netcdf, consistent with correct dimensions (mode, not psi_rational)
+- GPEC - Renames netcdf dimensions *_rat to *_rational for clarity
+
+Fixes
+------
+- DCON - Makes dcon robust to peak_flag when truncation is already very near the seperatrix
+- GPEC - Fixes calculation of vacuum fields when using mode_flag
+- GPEC - Fixes dimension of local coupling matrices in netcdf
+- GPEC - Fixes netcdf output of full complex vsbrzphi
+- GPEC - Enables GPEC when DCON used peak_flag
+- PENTRC - Makes pitch integration spline evaluations external to avoid conflicts that caused LSODE to fail
+
+GPEC v1.3.1
+===========
+
+Fixes
+------
+- INSTALL - Fixes a makefile error
+
 GPEC v1.3.0
 ===========
 

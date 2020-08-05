@@ -123,7 +123,7 @@ c-----------------------------------------------------------------------
 !$OMP& nn,fmats,gmats,kmats,sTime,cr,mpert,mband,
 !$OMP& verbose_performance_output)
 !$OMP& PRIVATE(ising,fTime)
-!$OMP& COPYIN(sq,sq_s_f,fmats_s_f,locstab_s_f,sq_s_f1,sq_s_f2,sq_s_f3,
+!$OMP& COPYIN(sq_s_f,fmats_s_f,locstab_s_f,sq_s_f1,sq_s_f2,sq_s_f3,
 !$OMP& fmats_s_f1,fmats_s_f2,fmats_s_f3,locstab_s_ix,sq_s_ix,fmats_s_ix)
 !$OMP DO SCHEDULE(GUIDED)
 c-----------------------------------------------------------------------

@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: det_max
       INTEGER, DIMENSION(:), POINTER :: r1,r2,n1,n2
       COMPLEX(r8), DIMENSION(2,2) :: m0mat
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: sing_detf
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -158,6 +159,9 @@ c-----------------------------------------------------------------------
       INTEGER :: it,itmax=50
       INTEGER, DIMENSION(1) :: jpsi
       REAL(r8) :: dpsi,q,q1,eps=1e-10
+
+      INTEGER :: i
+      REAL(r8) :: qedgestart
 c-----------------------------------------------------------------------
 c     compute psilim and qlim.
 c-----------------------------------------------------------------------
@@ -185,14 +189,10 @@ c-----------------------------------------------------------------------
             qlim=qlim-1._r8/nn
          ENDDO
       ENDIF
-      IF(peak_flag)THEN
-         ! hunt for peak dW in whatever rational window psihigh is in
-         qlim=(INT(nn*qlim)+0.9)/nn
-      ENDIF
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
-      IF(qlim/=qmax)THEN
+      IF(qlim<qmax)THEN
          jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
          IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
          psilim=sq%xs(jpsi(1))
@@ -213,6 +213,31 @@ c-----------------------------------------------------------------------
          IF(it > itmax)THEN
             CALL program_stop("Can't find psilim.")
          ENDIF
+      ELSE
+         qlim = qmax
+         q1lim=sq%fs1(mpsi,4)
+         psilim=psihigh
+      ENDIF
+c-----------------------------------------------------------------------
+c     set up record for determining the peak in dW near the boundary.
+c-----------------------------------------------------------------------
+      IF(psiedge < psilim)THEN
+        CALL spline_eval(sq, psiedge, 0)
+        qedgestart = INT(sq%f(4))
+        size_edge = CEILING((qlim - qedgestart) * nn * nperq_edge)
+        ALLOCATE(dw_edge(size_edge), q_edge(size_edge),
+     $     psi_edge(size_edge))
+        q_edge(:) = qedgestart + (/(i*1.0,i=0,size_edge-1)/) /
+     $     (nperq_edge*nn)
+        psi_edge(:) = 0.0
+        dw_edge(:) = -huge(0.0_r8) * (1 + ifac)
+        ! we monitor some deeper points for an informative profile
+        ! output over a full rational window
+        ! but we still respect the user psiedge when looking for peak dW
+        pre_edge = 1
+        DO i=1,size_edge
+           IF(q_edge(i) < sq%f(4)) pre_edge = pre_edge + 1
+        ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -951,7 +976,7 @@ c            ENDDO
             b1mat=ifac*dbat
 c-----------------------------------------------------------------------
 c     factor kinetic non-Hermitian matrix A.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
             amatlu=0
             umat=0
             DO jpert=1,mpert
@@ -959,7 +984,7 @@ c-----------------------------------------------------------------------
                   amatlu(2*mband+1+ipert-jpert,jpert)=amat(ipert,jpert)
                   IF(ipert==jpert)umat(ipert,jpert)=1
                ENDDO
-            ENDDO            
+            ENDDO
             CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
      $           ipiv,info)
             IF(info /= 0)THEN
@@ -969,19 +994,19 @@ c-----------------------------------------------------------------------
                CALL program_stop(message)
             ENDIF
 
-            temp1=dbat 
+            temp1=dbat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp1,mpert,info)
             f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
 c-----------------------------------------------------------------------
 c     prepare matrices to separate Q factors.
-c-----------------------------------------------------------------------  
+c-----------------------------------------------------------------------
             temp2=amat
             CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp2,mpert,info) ! close to unit matrix.
             aamat=CONJG(TRANSPOSE(temp2))
             umat=umat-aamat
-            
+
             bkmat=kwmat(:,:,2)+ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
      $           (kwmat(:,:,1)+ktmat(:,:,1))
             bkaat=kwmat(:,:,2)-ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
@@ -990,14 +1015,14 @@ c-----------------------------------------------------------------------
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp2,mpert,info)
             pmat=MATMUL(CONJG(TRANSPOSE(b1mat)),temp2)
-            
+
             temp2=b1mat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp2,mpert,info)
             paat=MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
      $           -ifac*chi1/(twopi*nn)*MATMUL(umat,b1mat)
             paat=CONJG(TRANSPOSE(paat))
-            
+
             temp1=kwmat(:,:,1)+ktmat(:,:,1)
             temp2=bkmat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
@@ -1006,8 +1031,8 @@ c-----------------------------------------------------------------------
      $           (chi1/(twopi*nn))**2*CONJG(TRANSPOSE(temp1))+
      $           ifac*chi1/(twopi*nn)*CONJG(TRANSPOSE(bkaat))-
      $           ifac*chi1/(twopi*nn)*MATMUL(aamat,bkmat)-
-     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2) 
-            
+     $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
+
             temp1=kwmat(:,:,5)+ktmat(:,:,5)-ifac*chi1/(twopi*nn)*
      $           (kwmat(:,:,3)+ktmat(:,:,3))
             temp2=cmat
@@ -1015,7 +1040,7 @@ c-----------------------------------------------------------------------
      $           3*mband+1,ipiv,temp2,mpert,info)
             r2mat=temp1+ifac*chi1/(twopi*nn)*MATMUL(umat,cmat)-
      $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
-            
+
             temp1=kwmat(:,:,5)-ktmat(:,:,5)-ifac*chi1/(twopi*nn)*
      $           (kwmat(:,:,3)-ktmat(:,:,3))
             temp2=bkmat
@@ -1023,12 +1048,12 @@ c-----------------------------------------------------------------------
      $           3*mband+1,ipiv,temp2,mpert,info)
             r3mat=CONJG(TRANSPOSE(temp1))-
      $           MATMUL(CONJG(TRANSPOSE(caat)),temp2)
-           
+
             temp1=cmat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp1,mpert,info)
             kkmat=ebat-MATMUL(CONJG(TRANSPOSE(b1mat)),temp1)
-            
+
             temp1=b1mat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp1,mpert,info)
@@ -1038,8 +1063,8 @@ c-----------------------------------------------------------------------
             temp2=cmat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp2,mpert,info)
-            gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2)    
-      
+            gaat=hmat-MATMUL(CONJG(TRANSPOSE(caat)),temp2)
+
             iqty=1
             DO jpert=1,mpert
                DO ipert=MAX(1,jpert-mband),MIN(mpert,jpert+mband)
@@ -1067,7 +1092,7 @@ c            kaat=CONJG(TRANSPOSE(eaat))-
 c     $           MATMUL(CONJG(TRANSPOSE(caat)),temp1)
 c-----------------------------------------------------------------------
 c     calculate kinetic non-Hermitian FK.
-c-----------------------------------------------------------------------  
+c-----------------------------------------------------------------------
          DO ipert=1,mpert
             m1=mlow+ipert-1
             singfac1=m1-nn*q
@@ -1079,18 +1104,18 @@ c-----------------------------------------------------------------------
      $              CONJG(paat(jpert,ipert))*singfac2+
      $              r1mat(ipert,jpert)
                kmat(ipert,jpert)=singfac1*kkmat(ipert,jpert)+
-     $              r2mat(ipert,jpert)  
+     $              r2mat(ipert,jpert)
                kaat(ipert,jpert)=kkaat(ipert,jpert)*singfac2+
-     $              r3mat(ipert,jpert)  
+     $              r3mat(ipert,jpert)
             ENDDO
          ENDDO
 c-----------------------------------------------------------------------
 c     obsolete diagnostics.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
 c         f1mats=RESHAPE(fmat,(/mpert**2/))
 c         k1mats=RESHAPE(kmat,(/mpert**2/))
 c         k1aats=RESHAPE(kaat,(/mpert**2/))
-c         g1aats=RESHAPE(gaat,(/mpert**2/))     
+c         g1aats=RESHAPE(gaat,(/mpert**2/))
 c-----------------------------------------------------------------------
 c    store FKG in banded matrix forms.
 c-----------------------------------------------------------------------
@@ -1177,7 +1202,7 @@ c-----------------------------------------------------------------------
             CALL zgbmv('N',mpert,mpert,mband,mband,-one,kmatb,
      $           2*mband+1,u(:,isol,1),1,one,du(:,isol,1),1)
          ENDDO
-         
+
          CALL zgbtrf(mpert,mpert,mband,mband,fmatlu,3*mband+1,
      $        ipiv,info)
          IF(info /= 0)THEN
@@ -1194,27 +1219,27 @@ c-----------------------------------------------------------------------
      $           2*mband+1,u(:,isol,1),1,one,du(:,isol,2),1)
             CALL zgbmv('N',mpert,mpert,mband,mband,one,kaatb,
      $           2*mband+1,du(:,isol,1),1,one,du(:,isol,2),1)
-         ENDDO   
+         ENDDO
       ELSE
          DO isol=1,msol
             du(:,isol,1)=u(:,isol,2)*singfac
             CALL zgbmv('N',mpert,mpert,mband,mband,-one,kmatb,
      $           2*mband+1,u(:,isol,1),1,one,du(:,isol,1),1)
          ENDDO
-         CALL zpbtrs('L',mpert,mband,msol,fmatb,mband+1,du,mpert,info) 
+         CALL zpbtrs('L',mpert,mband,msol,fmatb,mband+1,du,mpert,info)
          DO isol=1,msol
             CALL zhbmv('L',mpert,mband,one,gmatb,
      $           mband+1,u(:,isol,1),1,one,du(:,isol,2),1 )
             CALL zgbmv('C',mpert,mpert,mband,mband,one,kmatb,
      $           2*mband+1,du(:,isol,1),1,one,du(:,isol,2),1)
             du(:,isol,1)=du(:,isol,1)*singfac
-         ENDDO         
+         ENDDO
       ENDIF
 c-----------------------------------------------------------------------
 c     calculate and store u-derivative and xss.
 c-----------------------------------------------------------------------
       ud(:,:,1)=du(:,:,1)
-      ud(:,:,2)=-MATMUL(bmat,du(:,:,1))-MATMUL(cmat,u(:,:,1)) 
+      ud(:,:,2)=-MATMUL(bmat,du(:,:,1))-MATMUL(cmat,u(:,:,1))
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1274,7 +1299,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), INTENT(IN) :: psifac
       COMPLEX(r8) :: det
-      
+
       INTEGER :: ipert,jpert,iqty,isol,m1,m2,dm
       INTEGER :: ldab,kl,ku,info,m,n,i
 
@@ -1301,7 +1326,7 @@ c-----------------------------------------------------------------------
       chi1=twopi*psio
 c-----------------------------------------------------------------------
 c     compute F matrix.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       IF (kin_flag) THEN
          IF (fkg_kmats_flag) THEN
             CALL cspline_eval(f0mats,psifac,0)
@@ -1329,7 +1354,7 @@ c-----------------------------------------------------------------------
             b1mat=ifac*dbat
 c-----------------------------------------------------------------------
 c     factor kinetic non-Hermitian matrix A.
-c----------------------------------------------------------------------- 
+c-----------------------------------------------------------------------
             amatlu=0
             umat=0
             DO jpert=1,mpert
@@ -1338,7 +1363,7 @@ c-----------------------------------------------------------------------
                   IF(ipert==jpert)umat(ipert,jpert)=1
                ENDDO
             ENDDO
-         
+
             CALL zgbtrf(mpert,mpert,mband,mband,amatlu,3*mband+1,
      $           ipiv,info)
             IF(info /= 0)THEN
@@ -1347,17 +1372,17 @@ c-----------------------------------------------------------------------
      $              ", ipert = ",info,", reduce delta_mband"
                CALL program_stop(message)
             ENDIF
-            temp1=dbat 
+            temp1=dbat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp1,mpert,info)
             f0mat=fmat-MATMUL(CONJG(TRANSPOSE(dbat)),temp1)
-            
+
             temp2=amat
             CALL zgbtrs("C",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp2,mpert,info) ! close to unit matrix.
             aamat=CONJG(TRANSPOSE(temp2))
             umat=umat-aamat
-            
+
             bkmat=kwmat(:,:,2)+ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
      $           (kwmat(:,:,1)+ktmat(:,:,1))
             bkaat=kwmat(:,:,2)-ktmat(:,:,2)+ifac*chi1/(twopi*nn)*
@@ -1366,14 +1391,14 @@ c-----------------------------------------------------------------------
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp2,mpert,info)
             pmat=MATMUL(CONJG(TRANSPOSE(b1mat)),temp2)
-            
+
             temp2=b1mat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
      $           3*mband+1,ipiv,temp2,mpert,info)
             paat=MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
      $           -ifac*chi1/(twopi*nn)*MATMUL(umat,b1mat)
             paat=CONJG(TRANSPOSE(paat))
-            
+
             temp1=kwmat(:,:,1)+ktmat(:,:,1)
             temp2=bkmat
             CALL zgbtrs("N",mpert,mband,mband,mpert,amatlu,
@@ -1383,7 +1408,7 @@ c-----------------------------------------------------------------------
      $           ifac*chi1/(twopi*nn)*CONJG(TRANSPOSE(bkaat))-
      $           ifac*chi1/(twopi*nn)*MATMUL(aamat,bkmat)-
      $           MATMUL(CONJG(TRANSPOSE(bkaat)),temp2)
-         ENDIF         
+         ENDIF
          DO ipert=1,mpert
             m1=mlow+ipert-1
             singfac1=m1-nn*q
@@ -1429,10 +1454,10 @@ c-----------------------------------------------------------------------
 
       kl=mpert-1
       ku=mpert-1
-      ldab=2*kl+ku+1 
+      ldab=2*kl+ku+1
       m=mpert
       n=mpert
-      ALLOCATE(lumat(ldab,n),fpiv(min(m,n))) 
+      ALLOCATE(lumat(ldab,n),fpiv(min(m,n)))
       DO jpert=1,mpert
          DO ipert=1,mpert
             lumat(kl+ku+1+ipert-jpert,jpert)=f(ipert,jpert)
@@ -1461,19 +1486,23 @@ c-----------------------------------------------------------------------
       SUBROUTINE ksing_find
 
       REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,keps1=1e-10,keps2=1e-4
-      INTEGER, PARAMETER :: nsing=1000
+      INTEGER, PARAMETER :: nsing=1000, maxstep=100000
       REAL(r8), DIMENSION(nsing) :: psising,psising_check
 
       LOGICAL :: sing_flag
-      INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check
+      LOGICAL, PARAMETER :: debug = .FALSE.
+      INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check,i_record
       REAL(r8) :: x0,x1,eps,reps
       COMPLEX(r8) :: det0,det1,sing_det
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: tmp_record
 
       WRITE(*, *) "Finding kinetically displaced singular surfaces"
+      ALLOCATE(tmp_record(2, maxstep))
       singnum=0
       psising=-1
       i_recur=0
       i_depth=0
+      i_record=0
       x0=psilow
       x1=psilim
 c-----------------------------------------------------------------------
@@ -1491,18 +1520,22 @@ c-----------------------------------------------------------------------
       psising(singnum)=x0
       sing_det=det0
       sing_flag=.TRUE.
-      OPEN(UNIT=100,FILE="grid.out",STATUS="UNKNOWN")
-      CALL bin_open(bin_unit,"grid.bin","UNKNOWN","REWIND","none")
+      OPEN(UNIT=100,FILE="dcon_detf.out",STATUS="UNKNOWN")
+      WRITE(100,'(1x,4(a16))')"psi","absdetF","real(detF)","imag(detF)"
+      CALL bin_open(bin_unit,"dcon_detf.bin","UNKNOWN","REWIND","none")
       CALL sing_adp_find_sing(x0,x1,det0,det1,nsing,psising,singnum,
-     $     i_recur,i_depth,tol,sing_det,sing_flag)
+     $     i_recur,i_depth,i_record,tol,sing_det,sing_flag,tmp_record)
       CLOSE (UNIT=100)
       CALL bin_close(bin_unit)
-      
+      ALLOCATE(sing_detf(2, i_record))
+      sing_detf(:,:) = tmp_record(:, :i_record)
+      DEALLOCATE(tmp_record)
+
       IF (psising(1)>psilow) THEN
          psising(2:singnum+1)=psising(1:singnum)
          psising(1)=psilow
          singnum=singnum+1
-         
+
       ENDIF
       IF (psising(singnum)<psilim) THEN
          singnum=singnum+1
@@ -1510,7 +1543,7 @@ c-----------------------------------------------------------------------
       ENDIF
 c-----------------------------------------------------------------------
 c     Newton method to find the accurate local minimum point.
-c-----------------------------------------------------------------------           
+c-----------------------------------------------------------------------
       DO i=2,singnum-1
          x1=psising(i)
          CALL sing_newton(sing_get_f_det,x1,psising(i-1),psising(i+1))
@@ -1527,8 +1560,9 @@ c-----------------------------------------------------------------------
       psising_check=psising
       psising=-1
       singnum=1
-      WRITE(*,'(a,es10.3,a,es10.3)') ' Looking for singularities below',
-     $      keps1, 'x the maximum determinant of', ABS(det_max)
+      IF(verbose) WRITE(*,'(a,es10.3,a,es10.3)')
+     $   ' Looking for singularities below', keps1,
+     $   'x the maximum determinant of', ABS(det_max)
       psising(1)=psising_check(1)
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
@@ -1537,11 +1571,11 @@ c-----------------------------------------------------------------------
          IF (ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)
-            WRITE(*,'(a,es10.3,a,es10.3,a)') '  > psi',psising_check(i),
-     $        ' is singular'
+            IF(debug) WRITE(*,'(a,es10.3,a,es10.3,a)') '  > psi',
+     $        psising_check(i), ' is singular'
          ELSE
-            WRITE(*,'(a,es10.3,a,es10.3,a)') '  - psi',psising_check(i),
-     $        ' is not singular. Determinant is ',
+            IF(debug) WRITE(*,'(a,es10.3,a,es10.3,a)') '  - psi',
+     $        psising_check(i), ' is not singular. Determinant is ',
      $        ABS(det0)/(ABS(det_max)*eps), 'x the threshold'
          ENDIF
       ENDDO
@@ -1564,58 +1598,71 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sq,psising(ising+1),1)
          kinsing(ising)%q=sq%f(4)
          kinsing(ising)%q1=sq%f1(4)
-         WRITE(*,*)kinsing(ising)%psifac,kinsing(ising)%q
       ENDDO
- 
+
+      IF(verbose)THEN
+         IF(kmsing>0)THEN
+            WRITE(*,*) " > Found kinetic signular surfaces:"
+            WRITE(*,'(3x,a16, a16)')"psi","q"
+            DO ising=1,kmsing
+               WRITE(*,'(3x,2(es16.8))') kinsing(ising)%psifac,
+     $            kinsing(ising)%q
+            ENDDO
+         ELSE
+            WRITE(*,*) " > Found no kinetic singular surfaces"
+         ENDIF
+      ENDIF
+
       END SUBROUTINE ksing_find
 c-----------------------------------------------------------------------
 c     subprogram 15. sing_adp_find_sing.
 c     adaptive finder.
 c-----------------------------------------------------------------------
       RECURSIVE SUBROUTINE sing_adp_find_sing(x0,x1,det0,det1,
-     $     m_singpos,singpos,singnum,i_recur,i_depth,
-     $     tol,sing_det,sing_flag)
+     $     m_singpos,singpos,singnum,i_recur,i_depth,i_record,
+     $     tol,sing_det,sing_flag,record)
       LOGICAL,INTENT(INOUT) :: sing_flag
       INTEGER,INTENT(IN) :: m_singpos
       INTEGER,INTENT(INOUT) :: singnum
-      INTEGER,INTENT(INOUT) :: i_recur,i_depth
+      INTEGER,INTENT(INOUT) :: i_recur,i_depth,i_record
       REAL(r8),INTENT(IN) :: x0,x1,tol
-      REAL(r8),DIMENSION(m_singpos),INTENT(INOUT) :: singpos 
+      REAL(r8),DIMENSION(m_singpos),INTENT(INOUT) :: singpos
       REAL(r8),PARAMETER :: grid_tol =1e-6
       COMPLEX(r8),INTENT(IN) :: det0,det1
       COMPLEX(r8),INTENT(INOUT) :: sing_det
-      
+      COMPLEX(r8),INTENT(INOUT), DIMENSION(2,*) :: record
+
       INTEGER :: i
       REAL(r8) :: tmp1,tmpm,tmp2
       REAL(r8),DIMENSION(3) :: x
       COMPLEX(r8),DIMENSION(3) :: det
 
-      i_depth=i_depth+1            
+      i_depth=i_depth+1
       i_recur=i_recur+1
       x(1)=x0
       x(3)=x1
       x(2)=0.5*(x(1)+x(3))
       det(1)=det0
       det(2)=sing_get_f_det(x(2))
-      det(3)=det1 
+      det(3)=det1
       IF (ABS(det(2))>ABS(det_max)) det_max=det(2)
 c-----------------------------------------------------------------------
 c     criteria of grid partition.
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
       tmp1=ABS(det(1)+det(3))
       tmpm=ABS(det(2))*2
       IF (ABS(tmpm-tmp1)>tol*tmp1 .AND. x(3)-x(1)>grid_tol ) THEN
          CALL sing_adp_find_sing(x(1),x(2),det(1),det(2),
-     $   m_singpos,singpos,singnum,i_recur,i_depth
-     $   ,tol,sing_det,sing_flag)
-     
+     $      m_singpos,singpos,singnum,i_recur,i_depth,i_record,
+     $      tol,sing_det,sing_flag,record)
+
          CALL sing_adp_find_sing(x(2),x(3),det(2),det(3),
-     $   m_singpos,singpos,singnum,i_recur,i_depth
-     $   ,tol,sing_det,sing_flag)
+     $      m_singpos,singpos,singnum,i_recur,i_depth,i_record,
+     $      tol,sing_det,sing_flag,record)
       ELSE
 c-----------------------------------------------------------------------
 c     judge the local singularity with the gradient of ABS(det).
-c-----------------------------------------------------------------------      
+c-----------------------------------------------------------------------
          tmp1 = ABS(det(2))-ABS(det(1))
          tmp2 = ABS(det(3))-ABS(det(2))
          IF (tmp1<0.AND.tmp2<0)THEN
@@ -1634,7 +1681,7 @@ c-----------------------------------------------------------------------
                sing_flag=.TRUE.
             ENDIF
          ENDIF
-         
+
          IF (tmp1<0.AND.tmp2>0)THEN
             IF (sing_flag) THEN
                IF (ABS(sing_det)>ABS(det(2))) THEN
@@ -1651,7 +1698,7 @@ c-----------------------------------------------------------------------
                sing_flag=.TRUE.
             ENDIF
          ENDIF
-         
+
          IF (tmp1>0.AND.tmp2>0)THEN
             IF (sing_flag) THEN
                sing_flag=.FALSE.
@@ -1661,7 +1708,7 @@ c-----------------------------------------------------------------------
                singpos(singnum)=x(1)
             ENDIF
          ENDIF
-         
+
          IF (tmp1>0.AND.tmp2<0)THEN
             IF (sing_flag) THEN
                sing_flag=.FALSE.
@@ -1671,26 +1718,35 @@ c-----------------------------------------------------------------------
                singpos(singnum)=x(1)
             ENDIF
          ENDIF
-         
+
          IF (tmp1==0.OR.tmp2==0) THEN
             CALL program_stop("det(2)-det(1)=0 or det(3)-det(2)=0")
          ENDIF
-         WRITE(100,*) x(2),ABS(det(2)),REAL(det(2)),IMAG(det(2))
-         WRITE(100,*) x(3),ABS(det(3)),REAL(det(3)),IMAG(det(3))
+
+         ! write record to file
+         WRITE(100,'(1x,4(es16.8))') x(2),ABS(det(2)),REAL(det(2)),
+     $      IMAG(det(2))
+         WRITE(100,'(1x,4(es16.8))') x(3),ABS(det(3)),REAL(det(3)),
+     $      IMAG(det(3))
          WRITE(bin_unit)REAL(x(2),4),REAL(LOG10(ABS(det(2))),4),
      $        REAL(REAL(det(2)),4),REAL(AIMAG(det(2)),4)
          WRITE(bin_unit)REAL(x(3),4),REAL(LOG10(ABS(det(3))),4),
      $        REAL(REAL(det(3)),4),REAL(AIMAG(det(3)),4)
-         
+         ! store record in memory
+         i_record = i_record + 1
+         record(:, i_record) = (/ x(2) * one_c, det(2) /)
+         i_record = i_record + 1
+         record(:, i_record) = (/ x(3) * one_c, det(3) /)
+
       ENDIF
-      i_depth=i_depth-1      
-      END SUBROUTINE sing_adp_find_sing      
+      i_depth=i_depth-1
+      END SUBROUTINE sing_adp_find_sing
 c-----------------------------------------------------------------------
 c     subprogram 16. sing_newton.
 c     newton iteration for singular surface finder.
 c-----------------------------------------------------------------------
-      SUBROUTINE sing_newton(ff,z,bo0,bo1)
-      
+            SUBROUTINE sing_newton(ff,z,bo0,bo1)
+
       COMPLEX(r8) :: ff
       REAL(r8), INTENT(INOUT) :: z
       REAL(r8), INTENT(IN) :: bo0,bo1
@@ -1698,22 +1754,22 @@ c-----------------------------------------------------------------------
       INTEGER :: it
 
       INTEGER :: ising,info
-      REAL(r8) :: dzfac=1e-6,dfac=1e-2, tol=1e-15, itmax=1000,dz,dz1,dz2
+      REAL(r8) :: dzfac=1e-6,dbfac=1e-1,tol=1e-15,itmax=1000,dz,dz1,dz2
       REAL(r8) :: z_old,f_old,f,b0,b1,zopt,fopt
 c-----------------------------------------------------------------------
 c     find initial guess.
 c-----------------------------------------------------------------------
-      b0=z-(z-bo0)*dfac
-      b1=z+(bo1-z)*dfac
+      b0=z-(z-bo0)*dbfac ! bounds well inside of estimated neighboring minima
+      b1=z+(bo1-z)*dbfac
       f=ABS(ff(z))
       zopt=z
       fopt=f
-      
-      dz=(b0+b1)*0.5-z
+
+      ! first step is a fraction of a half step towards the nearer boundary
       dz1=(b0+z)*0.5-z
       dz2=(b1+z)*0.5-z
-      IF (ABS(dz)<ABS(dz1)) dz=dz1
-      IF (ABS(dz)<ABS(dz2)) dz=dz2
+      dz = dz1 * dzfac
+      IF (ABS(dz2)<ABS(dz1)) dz = dz1 * dzfac
       it=0
 c-----------------------------------------------------------------------
 c     iterate.
@@ -1733,9 +1789,12 @@ c-----------------------------------------------------------------------
             EXIT
          ENDIF
          IF (z+dz<=b0.OR.z+dz>=b1) THEN
+            ! we've climbed out of the sharp local well
+            ! case 1: we are on the right side, but near a peak so the ~0 gradient way overshoots to the other side
+            ! case 2: we are already on the other side of a peak and falling down towards the neighboring mininum
             dz=dz*0.5
          ELSE
-            z_old=z         
+            z_old=z
             z=z+dz
             f_old=f
             f=ABS(ff(z))
@@ -1749,7 +1808,7 @@ c-----------------------------------------------------------------------
       IF (f<fopt) THEN
          fopt=f
          zopt=z
-      ENDIF      
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

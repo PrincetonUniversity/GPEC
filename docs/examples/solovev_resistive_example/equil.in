@@ -7,14 +7,14 @@
     power_b=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
     power_r=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
 
-    grid_type="ldp"      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp or original. ldp packs points near the core and edge.
+    grid_type="ldp"      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp, pow1, pow2, or original. ldp packs points near the core and edge. pow* packs near the edge.
     psilow=1e-4          ! Minimum value of psi, normalized from 0 to 1
     psihigh=0.99999      ! Maximum value of psi, normalized from 0 to 1
     mpsi=128             ! Number of radial grid intervals for equilibrium quantities
     mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
     newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
 	etol = 1e-7          ! Tolerance for direct equilibrium reconstruction of flux surfaces/coordinates
-    use_classic_splines = t ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 
     input_only=f         ! Generate information about the input and then quit with no further calculation
 

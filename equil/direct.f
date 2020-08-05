@@ -52,6 +52,7 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: nstep=2048
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
       REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
+      REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
 
       REAL(r8) :: xm,dx,rholow,rhohigh
@@ -96,6 +97,12 @@ c-----------------------------------------------------------------------
       CASE("ldp")
          sq%xs=(/(ipsi,ipsi=0,mpsi)/)/REAL(mpsi,r8)
          sq%xs=psilow+(psihigh-psilow)*SIN(sq%xs*pi/2)**2
+      CASE("pow1")
+         xdx = powspace(psilow, psihigh, 1, mpsi+1, "upper")
+         sq%xs=xdx(1,:)
+      CASE("pow2")
+         xdx = powspace(psilow, psihigh, 2, mpsi+1, "upper")
+         sq%xs=xdx(1,:)
       CASE("rho")
          sq%xs=psihigh*(/(ipsi**2,ipsi=1,mpsi+1)/)/(mpsi+1)**2
       CASE("original","orig")
@@ -146,6 +153,7 @@ c-----------------------------------------------------------------------
             rzphi%xtitle="psifac"
             rzphi%ytitle="theta "
             rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/)
+            eqfun%title=(/"  b0  ","      ","      " /)
             eqfun%xs=sq%xs
             eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
          ENDIF

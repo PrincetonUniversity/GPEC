@@ -1,23 +1,23 @@
 
 include DEFAULTS.inc
 
-# extend these variables to sub-makes
-#FFLAGS?="-openmp -vec_report0"   # for when we get intel/2012
-FFLAGS ?= "-qopenmp"
-CFLAGS ?=
+# extend these variables to sub-makes (?= sets a default if user doesn't specify options)
+FFLAGS ?= -g
+CFLAGS ?= -g
 
 export FFLAGS
 export CFLAGS
+export OMPFLAG
 
 # compile package
 
 .IGNORE:
 
-all: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+all: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum xdraw coil gpec stride mkbin
 
 # fortran only
-allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+allf: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
 	multi sum coil gpec stride mkbin
 
 
@@ -25,7 +25,7 @@ allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match 
 
 harvest:
 	cd ../; git submodule init; git submodule update
-	cd ../harvest; make FC=$(FC) CC=$(CC) GACODE_ROOT= -f Makefile libharvest.a
+	cd ../harvest; make FC='$(FC)' CC='$(CC)' GACODE_ROOT= -f Makefile libharvest.a
 	mkdir -p ../lib
 	cp -f ../harvest/libharvest.a ../lib/
 
@@ -34,9 +34,6 @@ xdraw:
 
 lsode:
 	cd ../lsode;  make liblsode
-
-superlu:
-	$(SLU_COMMAND)  # gets set in DEFAULTS.inc based on tarball status
 
 zlange:
 	cd ../zlange;  make libzlange
@@ -77,7 +74,7 @@ coil:
 gpec:
 	cd ../gpec;   make gpec
 
-pentrc:  
+pentrc:
 	cd ../pentrc; make pentrc
 
 stride:
@@ -112,6 +109,7 @@ v:
 	@echo "   and compiler libraries $(FCLIBS)"
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
+	@echo "   and using OMPFLAG $(OMPFLAG)"
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
@@ -138,7 +136,6 @@ clean:
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 	cd ../stride; make clean
-	cd ../superlu/SuperLU_5.2.1; make clean
 
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
@@ -153,3 +150,5 @@ clear:
 realclean: clean
 	clear
 	rm -rf ../lib ../bin
+
+print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true

@@ -583,13 +583,13 @@ c     write graphical output.
 c-----------------------------------------------------------------------
          logx=log10(x)
          WRITE(inpso_bin_unit)REAL(x,4),REAL(logx,4),
-     $        mylog(res(1,outt)),
-     $        mylog(res(2,outt)),
-     $        mylog(res(3,outt))
+     $        floored_log(res(1,outt)),
+     $        floored_log(res(2,outt)),
+     $        floored_log(res(3,outt))
          WRITE(inpso_out_unit,'(5(e30.10))')x,logx,
-     $        mylog(res(1,outt)),
-     $        mylog(res(2,outt)),
-     $        mylog(res(3,outt))
+     $        floored_log(res(1,outt)),
+     $        floored_log(res(2,outt)),
+     $        floored_log(res(3,outt))
       ENDDO
       WRITE(inpso_bin_unit)
 c-----------------------------------------------------------------------

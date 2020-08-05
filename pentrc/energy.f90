@@ -36,22 +36,41 @@ module energy_integration
     
     private
     public &
-        maxstep, & ! integer
         xatol,xrtol,xmax,ximag,xnufac, &    ! real
-        xnutype,xf0type,methods, &                  ! character
+        xnutype,xf0type, &                  ! character
         qt,xdebug, &                        ! logical
         xintgrl_lsode, &                    ! function
-        output_energy_netcdf,output_energy_ascii                ! subroutine
+        output_energy_netcdf,output_energy_ascii  ! subroutine
     
     ! global variables with defaults
-    integer :: &
-        maxstep = 10000
     real(r8) :: &
         xatol = 1e-12, &
         xrtol = 1e-9, &
         xmax  = 72.0, &
         ximag = 0.00, &
         xnufac = 1.00
+    character(32) :: &
+        xnutype = "harmonic", &
+        xf0type = "maxwellian"
+    logical :: &
+        qt     = .false., &
+        xdebug = .false.
+
+    ! module variables for internal use
+    integer, parameter :: maxstep = 10000
+    complex(r8), parameter :: xj = (0,1)
+    logical :: energy_imaxis = .false.
+    integer :: energy_n
+    real(r8) :: &
+            energy_wn,&
+            energy_wt,&
+            energy_we,&
+            energy_wd,&
+            energy_wb,&
+            energy_nuk,&
+            energy_leff
+    !$omp threadprivate(energy_wn,energy_wt,energy_we,energy_wd,energy_wb,&
+    !$omp&              energy_nuk,energy_leff,energy_n)
 
     type record
         logical :: is_recorded
@@ -64,20 +83,6 @@ module energy_integration
     type(record) :: energy_record(nmethods)
 
 
-    character(32) :: &
-        xnutype = "harmonic", &
-        xf0type = "maxwellian"
-    logical :: &
-        qt     = .false., &
-        xdebug = .false.
-    ! global variables for internal use
-    complex(r8), parameter :: xj = (0,1)
-    !real(r8) :: wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
-    logical :: imaxis_g = .false.
-
-    real(r8) xcom_real
-    common /xcom/ xcom_real(8)
-!$OMP THREADPRIVATE(/xcom/)
 
     contains
 
@@ -142,7 +147,6 @@ module energy_integration
         logical, intent(in), optional :: op_record
         ! declare variables
         integer :: i, j, xout_unit
-        real(r8) :: wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
         real(r8), dimension(6,maxstep) :: xprofile
         logical :: record_this
         ! declare lsode input variables
@@ -156,11 +160,6 @@ module energy_integration
         real*8  atol(neq(1)),rtol(neq(1)),rwork(lrw),x,xout,&
                 y(neq(1)),yi(neq(1)),dky(neq(1))
         
-        common /xcom/ wn_g,wt_g,we_g,wd_g,wb_g,nuk_g,l_g,n_g
-
-!$OMP THREADPRIVATE(/xcom/)
-
-
         ! set default recording flag
         i = 0
         xprofile = 0.0
@@ -177,18 +176,18 @@ module energy_integration
         mf = 10                   ! not stiff with unknown J
 
         ! set common variables for access in integrand
-        wn_g = wn
-        wt_g = wt
-        we_g = we
-        wd_g = wd
-        wb_g = wb
-        nuk_g = nuk
-        l_g  = leff
-        n_g =1.0*n
+        energy_wn = wn
+        energy_wt = wt
+        energy_we = we
+        energy_wd = wd
+        energy_wb = wb
+        energy_nuk = nuk
+        energy_leff = leff
+        energy_n = n
         
         ! optionally step off real axis to avoid poles
         if(ximag/=0.0)then
-            imaxis_g = .true.
+            energy_imaxis = .true.
             x = 1e-15               ! lower bound of integration
             xout = ximag            ! upper bound of integration
             iwork(:) = 0            ! default
@@ -220,7 +219,7 @@ module energy_integration
         endif
 
         ! integration in real space to xmax
-        imaxis_g = .false.
+        energy_imaxis = .false.
         x = 1e-15               ! lower bound of integration
         xout = xmax             ! upper bound of integration
         iwork(:) = 0            ! default
@@ -331,17 +330,11 @@ module energy_integration
         implicit none
         integer ::  neq
         real*8 x, y(neq), ydot(neq)
-        !real(r8), dimension(8), optional :: wntedbk_ln
-    
-        complex(r8) :: denom,fx,cx,nux
-        real(r8) :: wn,wt,we,wd,wb,nuk,l,n
-    
-        common /xcom/ wn,wt,we,wd,wb,nuk,l,n
 
-!$OMP THREADPRIVATE(/xcom/)
+        complex(r8) :: denom,fx,cx,nux
 
         ! complex contour determined by global variable for module
-        if(imaxis_g)then
+        if(energy_imaxis)then
            cx = xj*x
         else
            cx = x + xj*ximag
@@ -352,14 +345,14 @@ module energy_integration
             case ("zero")
                 nux = 0.0
             case ("small")
-                nux = 1e-5*we
+                nux = 1e-5*energy_we
             case ("krook")
-                nux = nuk
+                nux = energy_nuk
             case ("harmonic")
                 if(x==0)then        ! (0+0i)^-3 = (nan,nan) -> causes error
                     nux= HUGE(1.0_r8) !0.0**(-1.5) ! 0^-3 = inf -> smooth arithmatic
                 else
-                    nux = nuk*(1+0.25*l*l)*cx**(-1.5)
+                    nux = energy_nuk*(1+0.25*energy_leff*energy_leff)*cx**(-1.5)
                 endif
             case default
                 Stop "ERROR: xintgrnd - nutype must be zero, small, krook, or harmonic"
@@ -367,17 +360,17 @@ module energy_integration
         nux = xnufac*nux 
         
         ! zeroth order distribution behavior determined by global variable for module
-        denom = xj*(l*wb*sqrt(cx)+n*(we+wd*cx))-nux
+        denom = xj*(energy_leff*energy_wb*sqrt(cx)+energy_n*(energy_we+energy_wd*cx))-nux
         select case (xf0type)
             ! Standard solution from [Logan, Park, et al., Phys. Plasma, 2013]
             case ("maxwellian")
-                fx = (we+wn+wt*(cx-1.5))*cx**2.5*exp(-cx) /denom
+                fx = (energy_we+energy_wn+energy_wt*(cx-1.5))*cx**2.5*exp(-cx) /denom
             ! Jong-Kyu Park [Park,Boozer,Menard, PRL 2009] approx neoclassical offset
             case ("jkp")
-                fx = (we+wn+wt*2)*cx**2.5*exp(-cx) /denom
+                fx = (energy_we+energy_wn+energy_wt*2)*cx**2.5*exp(-cx) /denom
             ! Chew-Goldberger-Low limit (we+wd -> inf)
             case ("cgl") 
-                fx = cx**2.5*exp(-cx)/(xj*n) /1.0
+                fx = cx**2.5*exp(-cx)/(xj*energy_n) /1.0
             case default
                 Stop "ERROR: xintgrnd - f0 type must be maxwellian, jkp, or cgl"
         end select
@@ -389,9 +382,9 @@ module energy_integration
             print *,'nutype = ',xnutype
             print *,'f0type = ',xf0type
             print *,'ximag  = ',ximag
-            print *,'imaxis = ',imaxis_g
-            print *,'omegas = ',wn,wt,we,wd,wb,nuk
-            print *,'n,l    = ',n,l
+            print *,'imaxis = ',energy_imaxis
+            print *,'omegas = ',energy_wn,energy_wt,energy_we,energy_wd,energy_wb,energy_nuk
+            print *,'n,l    = ',energy_n,energy_leff
             print *,'x      = ',x
             print *,'fx      = ',fx
         endif

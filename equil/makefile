@@ -1,18 +1,8 @@
 
-FFLAGS = -qopenmp
-EXTRA_FFLAGS = #-mkl #-diag-disable 10397 #-xHost #-03  #-qopt-zmm-usage=high #-ipo
-
-F90 = $(FC) $(FFLAGS) $(EXTRA_FFLAGS)
-
-CFLAGS = -O3 -DNDEBUG -DPRNTlevel=0 -DAdd_
-CC = gcc $(CFLAGS)
-HEADER = ../superlu/SuperLU_5.2.1/SRC
+F90 = $(FC) $(FFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
-
-.c.o:
-	$(CC) -I$(HEADER) -c $<
 
 OBJS = \
 	io.o \
@@ -22,8 +12,6 @@ OBJS = \
 	bicube.o \
 	cspline.o \
 	fft.o \
-	c_fortran_zgssv.o \
-	sparse.o \
 	fspline.o \
 	global.o \
 	inverse.o \
@@ -37,11 +25,7 @@ OBJS = \
 
 # targets
 
-all : superlu libequil
-
-# need this for STRIDE's new sparse.f
-superlu:
-	$(SLU_COMMAND)
+all : libequil
 
 libequil: $(OBJS)
 	mkdir -p ../lib/
@@ -58,8 +42,6 @@ spline.o: local.o
 bicube.o: spline.o
 cspline.o: local.o
 fft.o: local.o
-c_fortran_zgssv.o:
-sparse.o: local.o c_fortran_zgssv.o
 fspline.o: local.o spline.o cspline.o utils.o fft.o
 global.o: bicube.o cspline.o
 inverse.o: global.o utils.o

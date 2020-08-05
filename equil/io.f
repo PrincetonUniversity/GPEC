@@ -25,12 +25,28 @@ c-----------------------------------------------------------------------
       INTEGER :: lar_bin_unit=14
 
       INTEGER :: out1_unit=21
-      INTEGER :: bin1_unit=22
+      INTEGER :: out2_unit=22
+      INTEGER :: out3_unit=23
+      INTEGER :: gal_out_unit=24
 
-      INTEGER :: gal_out_unit=31
-      INTEGER :: gal_bin_unit=32
+      INTEGER :: bin1_unit=31
+      INTEGER :: bin2_unit=32
+      INTEGER :: bin3_unit=33
+      INTEGER :: gal_bin_unit=34
 
-      INTEGER :: preflat_unit=41
+      ! rmatch specific units
+      INTEGER :: match_unit=41
+      INTEGER :: vsol_out_unit=42
+      INTEGER :: vsol_bin_unit=43
+      INTEGER :: jmat_unit=52
+      INTEGER :: coefs_unit=54
+      INTEGER :: split_unit=53
+      INTEGER :: deltac_out_unit=57
+      INTEGER :: deltac_bin_unit=58
+      INTEGER :: inpso_out_unit=59
+      INTEGER :: inpso_bin_unit=60
+      INTEGER :: array_unit=61
+      INTEGER :: grid_out_unit=62
 
       INTEGER :: debug_unit=99
       END MODULE io_mod

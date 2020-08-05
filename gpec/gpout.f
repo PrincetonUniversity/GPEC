@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     IDEAL PERTURBED EQUILIBRIUM CONTROL
+c     GENERAL PERTURBED EQUILIBRIUM CONTROL
 c     write various output results of gpec routines
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -11,19 +11,22 @@ c      2. gpout_singcoup
 c      3. gpout_control
 c      4. gpout_singfld
 c      5. gpout_vsingfld
-c      6. gpout_pmodb
-c      7. gpout_xbnormal
-c      8. gpout_vbnormal
-c      9. gpout_xtangent
-c     10. gpout_xbrzphi
-c     11. gpout_vsbrzphi
-c     12. gpout_xbrzphifun
-c     13. gpout_arzphifun
-c     14. gpout_control_filter
-c     15. gpout_qrv
-c     16. check
-c     17. gpout_init_netcdf
-c     18. gpout_close_netcdf
+c      6. gpout_dw
+c      7. gpout_dw_matrix
+c      8. gpout_pmodb
+c      9. gpout_xbnormal
+c     10. gpout_vbnormal
+c     11. gpout_xtangent
+c     12. gpout_xbrzphi
+c     13. gpout_vsbrzphi
+c     14. gpout_xbrzphifun
+c     15. gpout_arzphifun
+c     16. gpout_clebsch
+c     17. gpout_control_filter
+c     18. gpout_qrv
+c     19. check
+c     20. gpout_init_netcdf
+c     21. gpout_close_netcdf
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -501,8 +504,7 @@ c-----------------------------------------------------------------------
       CHARACTER(72), DIMENSION(nsingcoup) :: titles, names
       CHARACTER(4), DIMENSION(nsingcoup) :: units
       CHARACTER(1), DIMENSION(nsingcoup) :: tags
-      INTEGER :: idid, mdid, cdid, mc_id
-      INTEGER, DIMENSION(msing) :: modec
+      INTEGER :: idid, mdid, odid, cdid
       INTEGER, DIMENSION(nsingcoup) :: c_id, r_id, s_id,
      $     cl_id, rl_id, sl_id
 
@@ -753,7 +755,7 @@ c-----------------------------------------------------------------------
      $   singcoup_out_bvecs(nsingcoup,tmpert,msing))
 
       ! get inverse of fldflxmat for converting to flux to power normalized field ((bA^1/2)_m / A^1/2)
-      CALL iszinv(fldflxmat,tmpert,flxtofld)
+      CALL iszhinv(fldflxmat,tmpert,flxtofld)
 
       ! calculate the output coodinat matrix SVD 
       ! re-normalize such that overlap dot products operate on unweighted fields
@@ -952,15 +954,11 @@ c-----------------------------------------------------------------------
          ! references to pre-defined dimensions
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
          CALL check( nf90_inq_dimid(mncid,"m_out",mdid) )
+         CALL check( nf90_inq_dimid(mncid,"mode_C",cdid) )
+         CALL check( nf90_inq_dimid(mncid,"mode_C_local",odid) )
 
          ! start definitions
          CALL check( nf90_redef(mncid))
-         CALL check( nf90_def_dim(mncid,"mode_C",msing,cdid) )
-         CALL check( nf90_def_var(mncid,"mode_C",nf90_int,cdid,
-     $               mc_id) )
-         CALL check( nf90_put_att(mncid, mc_id ,"long_name",
-     $    "Singular coupling mode index") )
-
          DO i=1,nsingcoup
             CALL check( nf90_def_var(mncid,"C_"//tags(i)//"_x_out",
      $           nf90_double, (/mdid,cdid,idid/), c_id(i)) )
@@ -980,18 +978,18 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_att(mncid,s_id(i),"units",units(i)) )
             IF(osing<msing)THEN
                CALL check( nf90_def_var(mncid,"C_l"//tags(i)//"_x_out",
-     $              nf90_double, (/mdid,cdid,idid/), cl_id(i)) )
+     $              nf90_double, (/mdid,odid,idid/), cl_id(i)) )
                CALL check( nf90_put_att(mncid,cl_id(i),"long_name",
      $           "Local "//trim(names(i))//"coupling to external flux"))
                CALL check(nf90_put_att(mncid,cl_id(i),"units",units(i)))
                CALL check( nf90_def_var(mncid,
      $              "C_l"//tags(i)//"_xb_out_singvec",
-     $              nf90_double,(/mdid,cdid,idid/),rl_id(i)) )
+     $              nf90_double,(/mdid,odid,idid/),rl_id(i)) )
                CALL check( nf90_put_att(mncid,rl_id(i),"long_name",
      $          "Local "//trim(names(i))//" coupling right singular"))
                CALL check( nf90_def_var(mncid,
      $              "C_l"//tags(i)//"_xe_out_singval",
-     $              nf90_double,(/cdid/),sl_id(i)) )
+     $              nf90_double,(/odid/),sl_id(i)) )
                CALL check( nf90_put_att(mncid,sl_id(i),"long_name",
      $          "Local "//trim(names(i))//" coupling singular values"))
                CALL check(nf90_put_att(mncid,sl_id(i),"units",units(i)))
@@ -1002,8 +1000,6 @@ c-----------------------------------------------------------------------
          CALL check( nf90_enddef(mncid) )
 
          ! write variables
-         modec = (/(i,i=1,msing)/)
-         CALL check( nf90_put_var(mncid,mc_id,modec) )
          DO i=1,nsingcoup
             CALL check( nf90_put_var(mncid,c_id(i),RESHAPE(
      $           (/REAL(singcoup_out(i,:,:)),
@@ -1017,11 +1013,11 @@ c-----------------------------------------------------------------------
             IF(osing<msing)THEN
                CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
      $              (/REAL(localcoup_out(i,:,:)),
-     $              AIMAG(localcoup_out(i,:,:))/),(/tmpert,msing,2/))))
+     $              AIMAG(localcoup_out(i,:,:))/),(/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,rl_id(i),RESHAPE(
      $              (/REAL(localcoup_out_bvecs(i,:,:)),
      $              AIMAG(localcoup_out_bvecs(i,:,:))/),
-     $              (/tmpert,msing,2/))))
+     $              (/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,sl_id(i),
      $              localcoup_out_vals(i,:)))
             ENDIF
@@ -1562,7 +1558,8 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i_id,q_id,p_id,c_id,w_id,k_id
+      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,
+     $           pp_id,cp_id,wp_id,np_id,dp_id
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1662,7 +1659,7 @@ c     compute coordinate-independent resonant field.
 c----------------------------------------------------------------------- 
          IF (vsbrzphi_flag) THEN
             singbno_mn(:,ising)=-singflx_mn(:,ising)
-            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
+!            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
          ENDIF
          singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)
 c-----------------------------------------------------------------------
@@ -1723,13 +1720,18 @@ c-----------------------------------------------------------------------
       IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-         CALL check( nf90_inq_dimid(fncid,"psi_n_rat",q_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n_rational",q_id) )
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
      $      (/q_id,i_id/), p_id) )
          CALL check( nf90_put_att(fncid, p_id, "units", "T") )
          CALL check( nf90_put_att(fncid, p_id, "long_name",
      $     "Pitch resonant flux normalized by the surface area") )
+         CALL check( nf90_def_var(fncid, "Delta", nf90_double,
+     $      (/q_id,i_id/), d_id) )
+         CALL check( nf90_put_att(fncid, d_id, "long_name",
+     $     "Unitless Resonance Parameter $\partial_\psi \frac{"//
+     $     "\delta B \cdot \nabla \psi}{B \cdot \nabla \theta}$") )
          CALL check( nf90_def_var(fncid, "I_res", nf90_double,
      $      (/q_id,i_id/), c_id) )
          CALL check( nf90_put_att(fncid, c_id, "units", "A") )
@@ -1748,6 +1750,8 @@ c-----------------------------------------------------------------------
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, d_id,
+     $      RESHAPE((/REAL(delta), AIMAG(delta)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
@@ -1768,13 +1772,13 @@ c-----------------------------------------------------------------------
 
       IF (singcoup_set .AND. ALLOCATED(sbno_fun)) THEN
          sbnosurf=SQRT(ABS(DOT_PRODUCT(sbno_fun(1:mthsurf),
-     $        sbno_fun(1:mthsurf)))/mthsurf/2.0)
+     $        sbno_fun(1:mthsurf)))/mthsurf)
          sbno_mn = MATMUL(fldflxmat,sbno_mn)
          DO icoup=1,nsingcoup
             DO ising=1,msing
                olap(icoup, ising) = DOT_PRODUCT(
      $            singcoup_out_vecs(icoup,:,ising),
-     $            sbno_mn(:)) / SQRT(2.0)
+     $            sbno_mn(:))
             ENDDO
          ENDDO
          op = ABS(olap) / sbnosurf * 1e2
@@ -1800,6 +1804,80 @@ c-----------------------------------------------------------------------
             WRITE(out_unit,*)
          ENDIF
 
+         IF(netcdf_flag .AND. msing>0)THEN
+            CALL check( nf90_open(mncfile,nf90_write,mncid) )
+            CALL check( nf90_inq_dimid(mncid,"i",i_id) )
+            CALL check( nf90_inq_dimid(mncid,"mode_C",m_id) )
+            CALL check( nf90_redef(mncid))
+            CALL check( nf90_def_var(mncid, "Phi_overlap", nf90_double,
+     $         (/m_id,i_id/), p_id) )
+            CALL check( nf90_put_att(mncid, p_id, "units", "unitless") )
+            CALL check( nf90_put_att(mncid, p_id, "long_name",
+     $        "Pitch resonant flux overlap") )
+            CALL check( nf90_def_var(mncid, "Phi_overlap_norm",
+     $         nf90_double,(/m_id/), pp_id) )
+            CALL check( nf90_put_att(mncid, pp_id, "units", "unitless"))
+            CALL check( nf90_put_att(mncid, pp_id, "long_name",
+     $        "Pitch resonant flux overlap percentage") )
+            CALL check( nf90_def_var(mncid, "I_overlap", nf90_double,
+     $         (/m_id,i_id/), c_id) )
+            CALL check( nf90_put_att(mncid, c_id, "units", "unitless") )
+            CALL check( nf90_put_att(mncid, c_id, "long_name",
+     $        "Pitch resonant current overlap") )
+            CALL check( nf90_def_var(mncid, "I_overlap_norm",
+     $         nf90_double,(/m_id,i_id/), cp_id) )
+            CALL check( nf90_put_att(mncid, cp_id, "units", "unitless"))
+            CALL check( nf90_put_att(mncid, cp_id, "long_name",
+     $        "Pitch resonant current overlap percentage") )
+            CALL check( nf90_def_var(mncid, "w_overlap", nf90_double,
+     $         (/m_id,i_id/), w_id) )
+            CALL check( nf90_put_att(mncid, w_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, w_id, "long_name",
+     $        "Full width of saturated island overlap") )
+            CALL check( nf90_def_var(mncid, "w_overlap_norm",
+     $         nf90_double,(/m_id/), wp_id) )
+            CALL check( nf90_put_att(mncid, wp_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, wp_id, "long_name",
+     $        "Full width of saturated island overlap percentage") )
+            CALL check( nf90_def_var(mncid, "Pen_overlap", nf90_double,
+     $         (/m_id, i_id/), n_id) )
+            CALL check( nf90_put_att(mncid, n_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, n_id, "long_name",
+     $        "Penetrated flux overlap") )
+            CALL check( nf90_def_var(mncid, "Pen_overlap_norm",
+     $         nf90_double,(/m_id/), np_id) )
+            CALL check( nf90_put_att(mncid, np_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, np_id, "long_name",
+     $        "Penetrated flux overlap percentage") )
+            CALL check( nf90_def_var(mncid, "Delta_overlap",nf90_double,
+     $         (/m_id, i_id/), d_id) )
+            CALL check( nf90_put_att(mncid, d_id, "units", "untiless") )
+            CALL check( nf90_put_att(mncid, d_id, "long_name",
+     $        "Extrenal Delta prime overlap") )
+            CALL check( nf90_def_var(mncid, "Delta_overlap_norm",
+     $         nf90_double,(/m_id/), dp_id) )
+            CALL check( nf90_put_att(mncid, dp_id, "units", "untiless"))
+            CALL check( nf90_put_att(mncid, dp_id, "long_name",
+     $        "Extrenal Delta prime overlap percentage") )
+            CALL check( nf90_enddef(mncid) )
+            CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
+     $         REAL(olap(1,:)),AIMAG(olap(1,:))/), (/msing,2/))) )
+            CALL check( nf90_put_var(mncid, c_id, RESHAPE((/
+     $         REAL(olap(2,:)),AIMAG(olap(2,:))/), (/msing,2/))) )
+            CALL check( nf90_put_var(mncid, w_id, RESHAPE((/
+     $         REAL(olap(3,:)),AIMAG(olap(3,:))/), (/msing,2/))) )
+            CALL check( nf90_put_var(mncid, n_id, RESHAPE((/
+     $         REAL(olap(4,:)),AIMAG(olap(4,:))/), (/msing,2/))) )
+            CALL check( nf90_put_var(mncid, d_id, RESHAPE((/
+     $         REAL(olap(5,:)),AIMAG(olap(5,:))/), (/msing,2/))) )
+            CALL check( nf90_put_var(mncid, pp_id, op(1,:)) )
+            CALL check( nf90_put_var(mncid, cp_id, op(2,:)) )
+            CALL check( nf90_put_var(mncid, wp_id, op(3,:)) )
+            CALL check( nf90_put_var(mncid, np_id, op(4,:)) )
+            CALL check( nf90_put_var(mncid, dp_id, op(5,:)) )
+            CALL check( nf90_close(mncid) )
+         ENDIF
+
          ! information already in netcdf from control_filter subroutine
          ! log svd overlap with harvest
          ierr=set_harvest_payload_dbl_array(hlog,'overlap_percent'//nul,
@@ -1807,10 +1885,10 @@ c-----------------------------------------------------------------------
 
          IF(osing<msing)THEN
             DO icoup=1,nsingcoup
-               DO ising=1,msing
+               DO ising=1,osing
                   olap(icoup, ising) = DOT_PRODUCT(
      $               localcoup_out_vecs(icoup,:,ising),
-     $               sbno_mn(:)) / SQRT(2.0)
+     $               sbno_mn(:))
                ENDDO
             ENDDO
             op = ABS(olap) / sbnosurf * 1e2
@@ -1819,14 +1897,14 @@ c-----------------------------------------------------------------------
                WRITE(out_unit,*)"Local overlap fields, overlap "//
      $              "singular currents, and overlap islands"
                WRITE(out_unit,*)
-            WRITE(out_unit,'(1x,a6,15(1x,a16))') "mode",
+               WRITE(out_unit,'(1x,a6,15(1x,a16))') "mode",
      $           "real(ovf)","imag(ovf)","overlap(%)",  ! Resonant flux RSV overlap
      $           "real(ovs)","imag(ovs)","overlap(%)",  ! Resonant current RSV overlap
      $           "real(ovi)","imag(ovi)","overlap(%)",  ! Island width RSV overlap
      $           "real(ovp)","imag(ovp)","overlap(%)",  ! Penetrated flux RSV overlap
      $           "real(ovd)","imag(ovd)","overlap(%)"   ! Unitless Delta RSV overlap
-            DO ising=1,osing
-               WRITE(out_unit,'(1x,I6,15(es17.8e3))') ising,
+               DO ising=1,osing
+                  WRITE(out_unit,'(1x,I6,15(es17.8e3))') ising,
      $             REAL(olap(1,ising)),AIMAG(olap(1,ising)),op(1,ising),
      $             REAL(olap(2,ising)),AIMAG(olap(2,ising)),op(2,ising),
      $             REAL(olap(3,ising)),AIMAG(olap(3,ising)),op(3,ising),
@@ -1835,6 +1913,86 @@ c-----------------------------------------------------------------------
                ENDDO
                WRITE(out_unit,*)
             ENDIF
+
+            IF(netcdf_flag .AND. osing>0)THEN
+               CALL check( nf90_open(mncfile,nf90_write,mncid) )
+               CALL check( nf90_inq_dimid(mncid,"i",i_id) )
+               CALL check( nf90_inq_dimid(mncid,"mode_C_local",m_id) )
+               CALL check( nf90_redef(mncid))
+               CALL check( nf90_def_var(mncid, "Phi_local_overlap",
+     $            nf90_double,(/m_id,i_id/), p_id) )
+               CALL check( nf90_put_att(mncid, p_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, p_id, "long_name",
+     $           "Local pitch resonant flux overlap") )
+               CALL check( nf90_def_var(mncid, "Phi_local_overlap_norm",
+     $            nf90_double,(/m_id/), pp_id) )
+               CALL check( nf90_put_att(mncid,pp_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, pp_id, "long_name",
+     $           "Local pitch resonant flux overlap percentage") )
+               CALL check( nf90_def_var(mncid, "I_local_overlap",
+     $            nf90_double,(/m_id,i_id/), c_id) )
+               CALL check( nf90_put_att(mncid, c_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, c_id, "long_name",
+     $           "Local pitch resonant current overlap") )
+               CALL check( nf90_def_var(mncid, "I_local_overlap_norm",
+     $            nf90_double,(/m_id/), cp_id) )
+               CALL check( nf90_put_att(mncid,cp_id,"units","unitless"))
+               CALL check( nf90_put_att(mncid, cp_id, "long_name",
+     $           "Local pitch resonant current overlap percentage") )
+               CALL check( nf90_def_var(mncid, "w_local_overlap",
+     $            nf90_double,(/m_id,i_id/), w_id) )
+               CALL check( nf90_put_att(mncid, w_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, w_id, "long_name",
+     $           "Local full width of saturated island overlap") )
+               CALL check( nf90_def_var(mncid, "w_local_overlap_norm",
+     $            nf90_double,(/m_id/), wp_id) )
+               CALL check( nf90_put_att(mncid,wp_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, wp_id, "long_name",
+     $      "Local full width of saturated island overlap percentage") )
+               CALL check( nf90_def_var(mncid, "Pen_local_overlap",
+     $            nf90_double,(/m_id, i_id/), n_id) )
+               CALL check( nf90_put_att(mncid, n_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, n_id, "long_name",
+     $           "Local penetrated flux overlap") )
+               CALL check( nf90_def_var(mncid, "Pen_local_overlap_norm",
+     $            nf90_double,(/m_id/), np_id) )
+               CALL check( nf90_put_att(mncid,np_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, np_id, "long_name",
+     $           "Local penetrated flux overlap percentage") )
+               CALL check( nf90_def_var(mncid, "Delta_local_overlap",
+     $            nf90_double,(/m_id, i_id/), d_id) )
+               CALL check( nf90_put_att(mncid, d_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, d_id, "long_name",
+     $           "Local extrenal Delta prime overlap") )
+              CALL check( nf90_def_var(mncid,"Delta_local_overlap_norm",
+     $            nf90_double,(/m_id/), dp_id) )
+               CALL check( nf90_put_att(mncid,dp_id,"units","untiless"))
+               CALL check( nf90_put_att(mncid, dp_id, "long_name",
+     $           "Local extrenal Delta prime overlap percentage") )
+               CALL check( nf90_enddef(mncid) )
+               CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
+     $            REAL(olap(1,:osing)),AIMAG(olap(1,:osing))/),
+     $            (/osing,2/))) )
+               CALL check( nf90_put_var(mncid, c_id, RESHAPE((/
+     $            REAL(olap(2,:osing)),AIMAG(olap(2,:osing))/),
+     $            (/osing,2/))) )
+               CALL check( nf90_put_var(mncid, w_id, RESHAPE((/
+     $            REAL(olap(3,:osing)),AIMAG(olap(3,:osing))/),
+     $            (/osing,2/))) )
+               CALL check( nf90_put_var(mncid, n_id, RESHAPE((/
+     $            REAL(olap(4,:osing)),AIMAG(olap(4,:osing))/),
+     $            (/osing,2/))) )
+               CALL check( nf90_put_var(mncid, d_id, RESHAPE((/
+     $            REAL(olap(5,:osing)),AIMAG(olap(5,:osing))/),
+     $            (/osing,2/))) )
+               CALL check( nf90_put_var(mncid, pp_id, op(1,1:osing)) )
+               CALL check( nf90_put_var(mncid, cp_id, op(2,1:osing)) )
+               CALL check( nf90_put_var(mncid, wp_id, op(3,1:osing)) )
+               CALL check( nf90_put_var(mncid, np_id, op(4,1:osing)) )
+               CALL check( nf90_put_var(mncid, dp_id, op(5,1:osing)) )
+               CALL check( nf90_close(mncid) )
+            ENDIF
+
          ENDIF
       ENDIF
         
@@ -1939,7 +2097,7 @@ c-----------------------------------------------------------------------
       IF(netcdf_flag .AND. msing>0)THEN
          CALL check( nf90_open(fncfile,nf90_write,fncid) )
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
-         CALL check( nf90_inq_dimid(fncid,"psi_n_rat",q_id) )
+         CALL check( nf90_inq_dimid(fncid,"psi_n_rational",q_id) )
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res_v", nf90_double,
      $      (/q_id,i_id/), p_id) )
@@ -2197,7 +2355,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(fncid, "T_xe", nf90_double,
      $               (/p_id,m_id,j_id,i_id/), te_id) )
          CALL check( nf90_put_att(fncid, te_id, "long_name",
-     $               "Energy-norm external flux torque matrix") )
+     $               "Energy norm external flux torque matrix") )
          CALL check( nf90_put_att(fncid, te_id, "units", "Nm/T^2") )
          CALL check( nf90_enddef(fncid) )
          CALL check( nf90_put_var(fncid, m1_id, mfac) )
@@ -2294,7 +2452,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_dw_matrix
 c-----------------------------------------------------------------------
-c     subprogram 6. gpout_pmodb.
+c     subprogram 8. gpout_pmodb.
 c     compute perturbed mod b.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_pmodb(egnum,xspmn)
@@ -2773,7 +2931,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_pmodb
 c-----------------------------------------------------------------------
-c     subprogram 7. gpout_xbnormal.
+c     subprogram 9. gpout_xbnormal.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbnormal(egnum,xspmn,spot,nspot)
 c-----------------------------------------------------------------------
@@ -2783,8 +2941,8 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,xm_id,x_id,
-     $   rv_id,zv_id,rzstat
+      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,
+     $   wm_id,xm_id,x_id,rv_id,zv_id,rzstat
 
       INTEGER :: i,istep,ipert,iindex,itheta,tout
       REAL(r8) :: ileft,ximax,rmax,area
@@ -2842,6 +3000,11 @@ c-----------------------------------------------------------------------
          CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
       ENDIF
 
+      ! these surfaces are phsyically independent
+      ! just repeating some generic geometric and coordinate conversion stuff in a loop
+      ! filling in the xnomns, bnomns, xnofuns, bnofuns matrices
+      ! The parallelization catch might be that we use these common fourier (iscdftb, iscdftf)
+      ! and coordinate converting (gpeq_bcoordsout) subroutines? Will they confuse themselves in parallel?
       DO istep=1,mstep
          iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
          ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
@@ -3136,6 +3299,13 @@ c-----------------------------------------------------------------------
      $               "Perturbed field normal to the flux surface") )
          CALL check( nf90_put_att(fncid,bm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,bm_id,"jacobian",jac_out) )
+         CALL check( nf90_def_var(fncid, "Jbgradpsi", nf90_double,
+     $               (/p_id,m_id,i_id/),wm_id) )
+         CALL check( nf90_put_att(fncid,wm_id,"long_name",
+     $      "Jaconbian weighted contravariant psi component of "//
+     $      "the perturbed field") )
+         CALL check( nf90_put_att(fncid,wm_id,"units","Tesla") )
+         CALL check( nf90_put_att(fncid,wm_id,"jacobian",jac_out) )
          CALL check( nf90_def_var(fncid, "xi_n_fun", nf90_double,
      $               (/p_id,t_id,i_id/),x_id) )
          CALL check( nf90_put_att(fncid,x_id,"long_name",
@@ -3164,6 +3334,8 @@ c-----------------------------------------------------------------------
      $                AIMAG(xnomns)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,bm_id,RESHAPE((/REAL(bnomns),
      $                AIMAG(bnomns)/),(/mstep,lmpert,2/))) )
+         CALL check( nf90_put_var(fncid,wm_id,RESHAPE((/REAL(bwpmns),
+     $                AIMAG(bwpmns)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,x_id,RESHAPE((/REAL(xnofuns),
      $               -helicity*AIMAG(xnofuns)/),(/mstep,mthsurf+1,2/))))
          CALL check( nf90_put_var(fncid,b_id,RESHAPE((/REAL(bnofuns),
@@ -3226,7 +3398,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbnormal
 c-----------------------------------------------------------------------
-c     subprogram 8. gpout_vbnormal.
+c     subprogram 10. gpout_vbnormal.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_vbnormal(rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
@@ -3363,20 +3535,22 @@ c-----------------------------------------------------------------------
      $      "Externally applied normal field") )
          CALL check( nf90_put_att(fncid,vn_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,vn_id,"jacobian",jac_out) )
-         CALL check( nf90_def_var(fncid, "bgradpsi_x", nf90_double,
+         CALL check( nf90_def_var(fncid, "Jbgradpsi_x", nf90_double,
      $      (/p_id,m_id,i_id/),vw_id) )
          CALL check( nf90_put_att(fncid,vw_id,"long_name",
-     $      "Contravariant psi component of applied field") )
+     $      "Jacobian weighted contravariant psi component "//
+     $      "of the applied field") )
          CALL check( nf90_put_att(fncid,vw_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,vw_id,"jacobian",jac_out) )
          IF(TRIM(jac_out)/="pest" .and. bwp_pest_flag)THEN
             CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
             CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
      $         mpv_id) )
-            CALL check( nf90_def_var(fncid, "bgradpsi_x_pest",
+            CALL check( nf90_def_var(fncid, "Jbgradpsi_x_pest",
      $         nf90_double, (/p_id, mp_id, i_id/), pw_id) )
             CALL check( nf90_put_att(fncid,pw_id,"long_name",
-     $         "Contravariant psi component of applied field") )
+     $         "Jacobian weighted contravariant psi component "//
+     $         "of the applied field") )
             CALL check( nf90_put_att(fncid,pw_id,"units","Tesla") )
             CALL check( nf90_put_att(fncid,pw_id,"jacobian","pest") )
          ENDIF
@@ -3478,7 +3652,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_vbnormal
 c-----------------------------------------------------------------------
-c     subprogram 9. gpout_xbtangent.
+c     subprogram 11. gpout_xbtangent.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbtangent(egnum,xspmn,rout,bpout,bout,rcout,tout)
 c-----------------------------------------------------------------------
@@ -3668,7 +3842,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbtangent
 c-----------------------------------------------------------------------
-c     subprogram 10. gpout_xbrzphi.
+c     subprogram 12. gpout_xbrzphi.
 c     write perturbed rzphi components on rzphi grid.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -3743,6 +3917,13 @@ c-----------------------------------------------------------------------
       vvbp = 0
 
       CALL idcon_build(egnum,xspmn)
+
+      IF (mode_flag) THEN
+         CALL gpeq_alloc
+         CALL gpeq_sol(psilim)
+         bnomn=bwp_mn
+         CALL gpeq_dealloc
+      ENDIF
 
       IF (eqbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing equilibrium magnetic fields"
@@ -3824,6 +4005,13 @@ c-----------------------------------------------------------------------
                   brz(i,j) = (t21*bwp+t22*bwt)/jac
                   xrp(i,j) = t33*xvz
                   brp(i,j) = t33*bvz
+                  ! machine toroidal angle ! it matters.
+                  xrr(i,j) = xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brr(i,j) = brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  xrz(i,j) = xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brz(i,j) = brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  xrp(i,j) = xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
+                  brp(i,j) = brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
                   ! Correction for helicity
                   IF(helicity>0)THEN
                      xrr(i,j) = CONJG(xrr(i,j))
@@ -3833,13 +4021,6 @@ c-----------------------------------------------------------------------
                      xrp(i,j) = CONJG(xrp(i,j))
                      brp(i,j) = CONJG(brp(i,j))
                   ENDIF
-                  ! machine toroidal angle
-                  xrr(i,j) = xrr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  brr(i,j) = brr(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  xrz(i,j) = xrz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  brz(i,j) = brz(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  xrp(i,j) = xrp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
-                  brp(i,j) = brp(i,j)*EXP(-twopi*ifac*nn*gdphi(i,j))
                ENDIF
             ENDDO
          ENDDO
@@ -3873,13 +4054,6 @@ c-----------------------------------------------------------------------
          IF(timeit) CALL gpec_timer(2)
       ENDIF
       
-      IF (divzero_flag) THEN
-         CALL gpeq_rzpdiv(nr,nz,gdr,gdz,brr,brz,brp)
-      ENDIF
-      IF (div_flag) THEN
-         CALL gpdiag_rzpdiv(nr,nz,gdl,gdr,gdz,brr,brz,brp)
-      ENDIF
-
       IF (brzphi_flag) THEN
          IF(verbose) WRITE(*,*)"Computing total perturbed fields"
          bnomn=bnomn-bnimn
@@ -3894,8 +4068,15 @@ c-----------------------------------------------------------------------
 
          IF (coil_flag) THEN
             IF(verbose) WRITE(*,*)"Computing vacuum fields by coils"
-            np=nn*16
+            np=nn*48 ! make it consistent with cmzeta later.
             CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp)
+            IF (divzero_flag) THEN
+               CALL gpeq_rzpdiv(nr,nz,gdr,gdz,vcbr,vcbz,vcbp)
+            ENDIF
+            IF (div_flag) THEN
+               CALL gpdiag_rzpdiv(nr,nz,gdl,gdr,gdz,
+     $              vcbr,vcbz,vcbp,"c")
+            ENDIF
          ENDIF
          
          DO i=0,nr
@@ -3919,6 +4100,12 @@ c-----------------------------------------------------------------------
                
             ENDDO
          ENDDO
+         IF (divzero_flag) THEN
+            CALL gpeq_rzpdiv(nr,nz,gdr,gdz,btr,btz,btp)
+         ENDIF
+         IF (div_flag) THEN
+            CALL gpdiag_rzpdiv(nr,nz,gdl,gdr,gdz,btr,btz,btp,"b")
+         ENDIF
       ENDIF
 
       IF (chebyshev_flag) THEN
@@ -4433,45 +4620,60 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbrzphi
 c-----------------------------------------------------------------------
-c     subprogram 10. gpout_vsbrzphi.
+c     subprogram 13. gpout_vsbrzphi.
 c     write brzphi components restored by removing shielding currents.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_vsbrzphi(snum,nr,nz)
+      SUBROUTINE gpout_vsbrzphi(ss_flag,nr,nz)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: snum,nr,nz
+      LOGICAL, DIMENSION(100), INTENT(IN) :: ss_flag
+      INTEGER, INTENT(IN) :: nr,nz
 
-      INTEGER :: i,j
-      INTEGER :: i_id, r_id, z_id, br_id, bz_id, bp_id
+      INTEGER :: i,j,k,snum,iss,ns
+      INTEGER :: i_id, r_id, z_id, br_id, bz_id, bp_id, s_id, sdid
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
 
-      INTEGER, DIMENSION(0:nr,0:nz) :: vgdl
-      REAL(r8), DIMENSION(0:nr,0:nz) :: vgdr,vgdz
-      COMPLEX(r8), DIMENSION(0:nr,0:nz) :: vbr,vbz,vbp
+      INTEGER, DIMENSION(:), ALLOCATABLE :: snums
+      INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: vgdl
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: vgdr,vgdz
+      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: vbr,vbz,vbp
+
+c-----------------------------------------------------------------------
+c     Find out how many surfaces we are calculating
+c-----------------------------------------------------------------------
+      ns = 0
+      DO i=1,msing
+         IF (ss_flag(i)) ns = ns + 1
+      ENDDO
+      IF (ns == 0) RETURN ! only bother is any ss_flags are true
+      ALLOCATE(snums(ns), vgdl(ns,0:nr,0:nz), vgdr(ns,0:nr,0:nz),
+     $         vgdz(ns,0:nr,0:nz), vbr(ns,0:nr,0:nz), vbz(ns,0:nr,0:nz),
+     $         vbp(ns,0:nr,0:nz))
 c-----------------------------------------------------------------------
 c     build solutions.
 c-----------------------------------------------------------------------
+      IF(timeit) CALL gpec_timer(-2)
       vbr = 0
       vbz = 0
       vbp = 0
 
-      IF (snum<10) THEN
-         WRITE(UNIT=ss,FMT='(I1)')snum
-         ss=TRIM(ADJUSTL(ss))
-      ELSE
-         WRITE(UNIT=ss,FMT='(I2)')snum
-      ENDIF
-
-      IF(timeit) CALL gpec_timer(-2)
-      IF(verbose) WRITE(*,*)"Computing vacuum fields by "//
-     $     TRIM(ss)//"th resonant field"
-      CALL gpvacuum_bnormal(singtype(snum)%psifac,
-     $     singbno_mn(:,snum),nr,nz)
-      CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
-     $     nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
+      iss = 0
+      DO snum=1,msing
+         IF (ss_flag(snum)) THEN
+            iss = iss + 1
+            snums(iss) = iss
+            IF(verbose) WRITE(*,'(1x,a55,I2)')"Computing vacuum "//
+     $           "fields from resonant surface current #",snum
+            CALL gpvacuum_bnormal(singtype(snum)%psifac,
+     $           singbno_mn(:,snum),nr,nz)
+            CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,
+     $           complex_flag,nr,nz,vgdl(iss,:,:),vgdr(iss,:,:),
+     $           vgdz(iss,:,:),vbr(iss,:,:),vbz(iss,:,:),vbp(iss,:,:))
+         ENDIF
+      ENDDO
       IF (helicity<0) THEN
          vbr=CONJG(vbr)
          vbz=CONJG(vbz)
@@ -4482,23 +4684,25 @@ c     write results.
 c-----------------------------------------------------------------------
       IF(ascii_flag)THEN
          CALL ascii_open(out_unit,"gpec_vsbrzphi_n"//
-     $        TRIM(sn)//"_s"//TRIM(ss)//".out","UNKNOWN")
+     $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_VSBRZPHI: Vacuum field in rzphi grid "//
      $        "by "//TRIM(ss)//"th resonant field"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a2,8(1x,a16))')"l","r","z",
-     $        "real(vsb_r)","imag(vsb_r)","real(vsb_z)","imag(vsb_z)",
-     $        "real(vsb_phi)","imag(vsb_phi)"
-         DO i=0,nr
-            DO j=0,nz
-               WRITE(out_unit,'(1x,I2,8(es17.8e3))')
-     $              vgdl(i,j),vgdr(i,j),vgdz(i,j),
-     $              REAL(vbr(i,j)),AIMAG(vbr(i,j)),
-     $              REAL(vbz(i,j)),AIMAG(vbz(i,j)),
-     $              REAL(vbp(i,j)),AIMAG(vbp(i,j))
+         WRITE(out_unit,'(1x,a2,2(1x,a16),a2,6(1x,a16))')"s","r","z",
+     $        "l","real(vsb_r)","imag(vsb_r)","real(vsb_z)",
+     $        "imag(vsb_z)","real(vsb_phi)","imag(vsb_phi)"
+         DO i=1,ns
+            DO j=0,nr
+               DO k=0,nz
+                  WRITE(out_unit,'(1x,I2,2(es17.8e3),I2,6(es17.8e3))')
+     $                 snums(i),vgdr(i,j,k),vgdz(i,j,k),vgdl(i,j,k),
+     $                 REAL(vbr(i,j,k)),AIMAG(vbr(i,j,k)),
+     $                 REAL(vbz(i,j,k)),AIMAG(vbz(i,j,k)),
+     $                 REAL(vbp(i,j,k)),AIMAG(vbp(i,j,k))
+               ENDDO
             ENDDO
          ENDDO
          CALL ascii_close(out_unit)
@@ -4509,39 +4713,46 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(cncid,"i",i_id) )
          CALL check( nf90_inq_dimid(cncid,"R",r_id) )
          CALL check( nf90_inq_dimid(cncid,"z",z_id) )
+
          CALL check( nf90_redef(cncid))
+         CALL check( nf90_def_dim(cncid,"s",ns,sdid) )
+         CALL check( nf90_def_var(cncid,"s",nf90_int,sdid,s_id) )
+         CALL check( nf90_put_att(cncid, s_id ,"long_name",
+     $    "Singular surface number from core") )
          CALL check( nf90_def_var(cncid, "b_r_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),br_id) )
+     $       nf90_double, (/sdid,r_id,z_id,i_id/),br_id) )
          CALL check( nf90_put_att(cncid,br_id,"units","T") )
          CALL check( nf90_put_att(cncid,br_id,"long_name",
      $      "Radial field from rational surface "//trim(ss)) )
          CALL check( nf90_def_var(cncid, "b_z_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),bz_id) )
+     $       nf90_double, (/sdid,r_id,z_id,i_id/),bz_id) )
          CALL check( nf90_put_att(cncid,bz_id,"units","T") )
          CALL check( nf90_put_att(cncid,bz_id,"long_name",
      $      "Vertical field from rational surface "//trim(ss)) )
-         CALL check( nf90_def_var(cncid, "b_phi_rational"//trim(ss),
-     $       nf90_double, (/r_id,z_id/),bp_id) )
+         CALL check( nf90_def_var(cncid, "b_t_rational"//trim(ss),
+     $       nf90_double, (/sdid,r_id,z_id,i_id/),bp_id) )
          CALL check( nf90_put_att(cncid,bp_id,"units","T") )
          CALL check( nf90_put_att(cncid,bp_id,"long_name",
      $      "Toroidal field from rational surface "//trim(ss)) )
          CALL check( nf90_enddef(cncid) )
+         CALL check( nf90_put_var(cncid,s_id,snums) )
          CALL check( nf90_put_var(cncid,br_id,RESHAPE((/REAL(vbr),
-     $                AIMAG(vbr)/),(/nr+1,nz+1,2/))) )
+     $                AIMAG(vbr)/),(/ns,nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,bz_id,RESHAPE((/REAL(vbz),
-     $                AIMAG(vbz)/),(/nr+1,nz+1,2/))) )
+     $                AIMAG(vbz)/),(/ns,nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,bp_id,RESHAPE((/REAL(vbp),
-     $                AIMAG(vbp)/),(/nr+1,nz+1,2/))) )
+     $                AIMAG(vbp)/),(/ns,nr+1,nz+1,2/))) )
          CALL check( nf90_close(cncid) )
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
+      DEALLOCATE(snums, vgdl, vgdr, vgdz, vbr, vbz, vbp)
       IF(timeit) CALL gpec_timer(2)
       RETURN
       END SUBROUTINE gpout_vsbrzphi
 c-----------------------------------------------------------------------
-c     subprogram 11. gpout_xbrzphifun
+c     subprogram 14. gpout_xbrzphifun
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xbrzphifun(egnum,xspmn)
 c-----------------------------------------------------------------------
@@ -4748,7 +4959,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xbrzphifun
 c-----------------------------------------------------------------------
-c     subprogram 12. gpout_arzphifun
+c     subprogram 15. gpout_arzphifun
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_arzphifun(egnum,xspmn)
 c-----------------------------------------------------------------------
@@ -4949,7 +5160,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_arzphifun
 c-----------------------------------------------------------------------
-c     subprogram 13. gpout_xclebsch.
+c     subprogram 16. gpout_xclebsch.
 c     Write Clebsch coordinate displacements.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_xclebsch(egnum,xspmn)
@@ -5109,7 +5320,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_xclebsch
 c-----------------------------------------------------------------------
-c     subprogram 14. gpout_control_filter.
+c     subprogram 17. gpout_control_filter.
 c     Filter control surface flux vector in flux bases with energy norms
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_control_filter(finmn,foutmn,ftypes,fmodes,
@@ -5136,12 +5347,13 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,k,maxmode
       INTEGER :: idid,mdid,xdid,wdid,rdid,pdid,sdid,tdid,cdid,
      $   mx_id,mw_id,mr_id,mp_id,mc_id,
-     $   we_id,re_id,pe_id,se_id,fc_id,fcf_id,sl_id,cn_id,
-     $   w_id,r_id,p_id,s_id, sc_id,wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
+     $   we_id,re_id,pe_id,se_id,fc_id,fcf_id,pc_id,sl_id,cn_id,
+     $   w_id,r_id,p_id,sc_id,sv_id,wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,rl_id,
      $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,ex_id,et_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id,
-     $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id
+     $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id,
+     $   cc_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(0:mthsurf) :: units
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
@@ -5162,12 +5374,14 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: svals
       COMPLEX(r8), DIMENSION(mpert,mpert)::xvecs,wvecs,rvecs,pvecs,
      $    avecs,wmat,rmat,pmat
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: coil_xe,coilcoupmat,
+     $    matcs
       COMPLEX(r8), DIMENSION(mpert,msing) :: svecs
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert)::wfuns,rfuns
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::sfuns
 
       IF(timeit) CALL gpec_timer(-2)
-      IF(verbose) WRITE(*,*)"Computing Energy-Normalized flux bases"
+      IF(verbose) WRITE(*,*)"Computing energy normalized flux bases"
 c-----------------------------------------------------------------------
 c     basic definitions
 c-----------------------------------------------------------------------
@@ -5198,7 +5412,12 @@ c-----------------------------------------------------------------------
          CALL gpeq_weight(psilim,sqrtamat(:,i),mfac,mpert,2) ! A^1/2
       ENDDO
       ptof = sqrtamat * sqrt(jarea) ! transform power-norm field to flux
-      CALL iszinv(ptof,mpert,ftop)
+      CALL iszhinv(ptof,mpert,ftop)
+      IF(coil_flag)THEN
+           ! Compute power normalized flux per coil
+           ALLOCATE(coil_xe(mpert, coil_num))
+           coil_xe = MATMUL(ftop, coil_indmat)
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute DCON energy per displacement eigenvalues and eigenvectors.
 c-----------------------------------------------------------------------
@@ -5336,6 +5555,11 @@ c-----------------------------------------------------------------------
          CALL zgesvd('S','O',msing,mpert,matsm,msing,svals, !'O' writes VT to A
      $        matss,msing,matsm,msing,worksvd,lwork,sworksvd,info)
          svecs=CONJG(TRANSPOSE(matsm))
+         IF(coil_flag)THEN
+              ALLOCATE(coilcoupmat(msing,coil_num),
+     $                 matcs(coil_num, msing))
+              coilcoupmat = MATMUL(singcoupmat, coil_xe)
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     Filter to keep desired physics modes
@@ -5414,7 +5638,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(mncid,"i",idid) )
          CALL check( nf90_inq_dimid(mncid,"m",mdid) )
          CALL check( nf90_inq_dimid(mncid,"theta",tdid) )
-         IF(singcoup_Set)THEN
+         IF (singcoup_set) THEN
             CALL check( nf90_inq_dimid(mncid,"mode_C",sdid) )
          ENDIF
 
@@ -5439,87 +5663,87 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_dim(mncid,"mode_W",mpert,   wdid) )
          CALL check( nf90_def_var(mncid,"mode_W",nf90_int,wdid,mw_id))
          CALL check( nf90_put_att(mncid, mw_id ,"long_name",
-     $    "Energy-norm external flux energy eigenmode index") )
+     $    "Energy norm external field energy eigenmode index") )
          CALL check( nf90_def_var(mncid,"W_xe",
      $               nf90_double,(/mdid,wdid,idid/),wm_id) )
          CALL check( nf90_put_att(mncid,wm_id,"long_name",
-     $    "Energy-norm external flux energy matrix") )
+     $    "Energy norm external field energy matrix") )
          CALL check( nf90_def_var(mncid,"W_xe_eigenvector",
      $               nf90_double,(/mdid,wdid,idid/),w_id) )
          CALL check( nf90_put_att(mncid,w_id,"long_name",
-     $    "Energy-norm external flux energy eigendecomposition") )
+     $    "Energy norm external field energy eigendecomposition") )
          CALL check( nf90_def_var(mncid,"W_xe_eigenvalue",
      $               nf90_double,(/wdid/),we_id) )
          CALL check( nf90_put_att(mncid,we_id,"units","J/T^2") )
          CALL check( nf90_put_att(mncid,we_id,"long_name",
-     $    "Energy-norm external flux energy eigenvalues") )
+     $    "Energy norm external field energy eigenvalues") )
          CALL check( nf90_def_var(mncid,"W_xe_amp",nf90_double,
      $                         (/wdid/),wa_id) )
          CALL check( nf90_put_att(mncid,wa_id,"long_name",
-     $    "Energy-norm ex. flux energy eigenmode amplifications") )
+     $    "Energy norm ex. field energy eigenmode amplifications") )
          CALL check( nf90_def_var(mncid,"W_xe_energyv",nf90_double,
      $                         (/wdid/),wev_id) )
          CALL check( nf90_put_att(mncid,wev_id,"long_name",
-     $    "Energy-norm ex. flux energy eigenmode vacuum energy") )
+     $    "Energy norm ex. field energy eigenmode vacuum energy") )
          CALL check( nf90_def_var(mncid,"W_xe_energys",nf90_double,
      $                         (/wdid/),wes_id) )
          CALL check( nf90_put_att(mncid,wes_id,"long_name",
-     $    "Energy-norm ex. flux energy eigenmode surface energy") )
+     $    "Energy norm ex. field energy eigenmode surface energy") )
          CALL check( nf90_def_var(mncid,"W_xe_energyp",nf90_double,
      $                         (/wdid/),wep_id) )
          CALL check( nf90_put_att(mncid,wep_id,"long_name",
-     $    "Energy-norm ex. flux energy eigenmode total energy") )
+     $    "Energy norm ex. field energy eigenmode total energy") )
 
          CALL check( nf90_def_dim(mncid,"mode_R",mpert,   rdid) )
          CALL check( nf90_def_var(mncid,"mode_R",nf90_int,rdid,mr_id))
          CALL check( nf90_put_att(mncid, mr_id ,"long_name",
-     $    "Energy-norm external flux reluctance eigenmode index"))
+     $    "Energy norm external field reluctance eigenmode index"))
          CALL check( nf90_def_var(mncid,"R_xe",nf90_double,
      $               (/mdid,rdid,idid/),rm_id) )
          CALL check( nf90_put_att(mncid,rm_id,"long_name",
-     $    "Energy-norm external flux reluctance matrix") )
+     $    "Energy norm external field reluctance matrix") )
          CALL check( nf90_def_var(mncid,"R_xe_eigenvector",nf90_double,
      $               (/mdid,rdid,idid/),r_id) )
          CALL check( nf90_put_att(mncid,r_id,"long_name",
-     $    "Energy-norm external flux reluctance eigendecomposition") )
+     $    "Energy norm external field reluctance eigendecomposition") )
          CALL check( nf90_def_var(mncid,"R_xe_eigenvalue",nf90_double,
      $                         (/rdid/),re_id) )
          CALL check( nf90_put_att(mncid,re_id,"long_name",
-     $    "Energy-norm external flux reluctance eigenvalues") )
+     $    "Energy norm external field reluctance eigenvalues") )
          CALL check( nf90_put_att(mncid,re_id,"units","A/T") )
          CALL check( nf90_def_var(mncid,"R_xe_RL",nf90_double,
      $                         (/rdid/),rl_id) )
          CALL check( nf90_put_att(mncid,rl_id,"long_name",
-     $    "Energy-norm ex. flux reluctance eigenmode RL-normalized") )
+     $    "Energy norm ex. field reluctance eigenmode RL-normalized") )
          CALL check( nf90_def_var(mncid,"R_xe_energyv",nf90_double,
      $                         (/rdid/),rev_id) )
          CALL check( nf90_put_att(mncid,rev_id,"long_name",
-     $    "Energy-norm ex. flux reluctance eigenmode vacuum energy") )
+     $    "Energy norm ex. field reluctance eigenmode vacuum energy") )
          CALL check( nf90_def_var(mncid,"R_xe_energys",nf90_double,
      $                         (/rdid/),res_id) )
          CALL check( nf90_put_att(mncid,res_id,"long_name",
-     $    "Energy-norm ex. flux reluctance eigenmode surface energy") )
+     $    "Energy norm ex. field reluctance eigenmode surface energy") )
          CALL check( nf90_def_var(mncid,"R_xe_energyp",nf90_double,
      $                         (/rdid/),rep_id) )
          CALL check( nf90_put_att(mncid,rep_id,"long_name",
-     $    "Energy-norm ex. flux reluctance eigenmode total energy") )
+     $    "Energy norm ex. field reluctance eigenmode total energy") )
 
          CALL check( nf90_def_dim(mncid,"mode_P",mpert,   pdid) )
          CALL check( nf90_def_var(mncid,"mode_P",nf90_int,pdid,mp_id))
          CALL check( nf90_put_att(mncid, mp_id ,"long_name",
-     $    "Energy-norm external flux permeability eigenmode index") )
+     $    "Energy norm external field permeability eigenmode index") )
          CALL check( nf90_def_var(mncid,"P_xe",nf90_double,
      $               (/mdid,pdid,idid/),pm_id) )
          CALL check( nf90_put_att(mncid,pm_id,"long_name",
-     $    "Energy-norm external flux permeability matrix") )
+     $    "Energy norm external field permeability matrix") )
          CALL check( nf90_def_var(mncid,"P_xe_eigenvector",nf90_double,
      $               (/mdid,pdid,idid/),p_id) )
          CALL check( nf90_put_att(mncid,p_id,"long_name",
-     $    "Energy-norm external flux permeability eigendecomposition") )
+     $    "Energy norm external field permeability eigendecomposition"))
          CALL check( nf90_def_var(mncid,"P_xe_eigenvalue",nf90_double,
      $               (/pdid/),pe_id) )
          CALL check( nf90_put_att(mncid,pe_id,"long_name",
-     $    "Energy-norm external flux permeability eigenvalues") )
+     $    "Energy norm external field permeability eigenvalues") )
 
          CALL check( nf90_def_var(mncid,"O_WR",nf90_double,
      $               (/wdid,rdid/),wr_id) )
@@ -5541,30 +5765,31 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(mncid,"O_WPhi_xe",nf90_double,
      $               (/xdid,idid/),wx_id) )
          CALL check( nf90_put_att(mncid,wx_id,"long_name","Energy "//
-     $    "normalized external flux decomposed in energy eigenmodes") )
+     $    "normalized external field decomposed in energy eigenmodes") )
          CALL check( nf90_def_var(mncid,"O_RPhi_xe",nf90_double,
      $               (/rdid,idid/),rx_id) )
-         CALL check( nf90_put_att(mncid,rx_id,"long_name","Energy no"//
-     $    "rmalized external flux decomposed in reluctance eigenmodes"))
+         CALL check( nf90_put_att(mncid,rx_id,"long_name","Energy "//
+     $    "norm external fierld decomposed in reluctance eigenmodes"))
          CALL check( nf90_def_var(mncid,"O_PPhi_xe",nf90_double,
      $               (/pdid,idid/),px_id) )
-         CALL check( nf90_put_att(mncid,px_id,"long_name","Energy no"//
-     $  "rmalized external flux decomposed in permeability eigenmodes"))
+         CALL check( nf90_put_att(mncid,px_id,"long_name","Energy "//
+     $    "norm external field decomposed in permeability eigenmodes"))
 
          IF(singcoup_set)THEN
             CALL check( nf90_def_var(mncid,"C_xe",nf90_double,
      $                  (/mdid,sdid,idid/),sc_id) )
             CALL check( nf90_put_att(mncid,sc_id,"long_name",
-     $       "Energy normalized external flux singular-coupling") )
+     $       "Energy normalized external field to singular field "//
+     $       "coupling") )
             CALL check( nf90_def_var(mncid,"C_xe_eigenvector",
-     $                  nf90_double,(/mdid,sdid,idid/),s_id) )
-            CALL check( nf90_put_att(mncid,s_id,"long_name",
-     $       "Energy normalized external flux singular-coupling "//
-     $       "SVD right-singular vectors") )
+     $                  nf90_double,(/mdid,sdid,idid/),sv_id) )
+            CALL check( nf90_put_att(mncid,sv_id,"long_name",
+     $       "Energy normalized external field to singular field "//
+     $       "right-singular vectors") )
             CALL check( nf90_def_var(mncid,"C_xe_eigenvalue",
      $                            nf90_double,(/sdid/),se_id) )
             CALL check( nf90_put_att(mncid,se_id,"long_name",
-     $       "Energy normalized external flux singular-coupling "//
+     $       "Energy normalized external field to singular field "//
      $       "SVD singular values") )
             CALL check( nf90_put_att(mncid,se_id,"units","unitless") )
             CALL check( nf90_def_var(mncid,"C_xe_energyv",nf90_double,
@@ -5594,8 +5819,8 @@ c-----------------------------------------------------------------------
             CALL check( nf90_def_var(mncid,"O_CPhi_xe",nf90_double,
      $                       (/sdid,idid/),sx_id) )
             CALL check( nf90_put_att(mncid,sx_id,"long_name",
-     $       "Energy normalized external flux decomposed in singular "//
-     $       "coupling modes"))
+     $       "Energy normalized external field decomposed in "//
+     $       "singular coupling modes"))
 
          ENDIF
 
@@ -5603,7 +5828,7 @@ c-----------------------------------------------------------------------
      $               (/mdid,idid/),ex_id) )
          CALL check( nf90_put_att(mncid,ex_id,"units","T") )
          CALL check( nf90_put_att(mncid,ex_id,"long_name",
-     $    "Energy-norm external field") )
+     $    "Energy norm external field") )
          CALL check( nf90_def_var(mncid,"Phi_x",nf90_double,
      $               (/mdid,idid/),fx_id) )
          CALL check( nf90_put_att(mncid,fx_id,"units","Wb") )
@@ -5613,7 +5838,7 @@ c-----------------------------------------------------------------------
      $               (/mdid,idid/),et_id) )
          CALL check( nf90_put_att(mncid,et_id,"units","T") )
          CALL check( nf90_put_att(mncid,et_id,"long_name",
-     $    "Energy-norm total field") )
+     $    "Energy norm total field") )
          CALL check( nf90_def_var(mncid,"Phi",nf90_double,
      $               (/mdid,idid/),ft_id) )
          CALL check( nf90_put_att(mncid,ft_id,"units","Wb") )
@@ -5631,6 +5856,17 @@ c-----------------------------------------------------------------------
            CALL check( nf90_put_att(mncid,fc_id,"units","Wb") )
            CALL check( nf90_put_att(mncid,fc_id,"long_name",
      $      "Coil flux") )
+           CALL check( nf90_def_var(mncid,"Phi_coile",nf90_double,
+     $                 (/mdid,cdid,idid/),pc_id) )
+           CALL check( nf90_put_att(mncid,pc_id,"units","T") )
+           CALL check( nf90_put_att(mncid,pc_id,"long_name",
+     $      "Coil energy norm field") )
+           IF(singcoup_set)THEN
+             CALL check( nf90_def_var(mncid,"C_coil",nf90_double,
+     $                   (/cdid,sdid,idid/),cc_id) )
+             CALL check( nf90_put_att(mncid,cc_id,"long_name",
+     $        "Coil to singular field coupling") )
+           ENDIF
          ENDIF
 
          IF(fun_flag)THEN
@@ -5638,7 +5874,7 @@ c-----------------------------------------------------------------------
      $                  (/tdid,idid/),exf_id) )
             CALL check( nf90_put_att(mncid,exf_id,"units","T") )
             CALL check( nf90_put_att(mncid,exf_id,"long_name",
-     $       "Energy-norm external flux") )
+     $       "Energy norm external field") )
             CALL check( nf90_def_var(mncid,"Phi_x_fun",nf90_double,
      $                  (/tdid,idid/),fxf_id) )
             CALL check( nf90_put_att(mncid,fxf_id,"units","Wb") )
@@ -5648,7 +5884,7 @@ c-----------------------------------------------------------------------
      $                  (/tdid,idid/),etf_id) )
             CALL check( nf90_put_att(mncid,etf_id,"units","T") )
             CALL check( nf90_put_att(mncid,etf_id,"long_name",
-     $       "Energy-norm total flux") )
+     $       "Energy norm total field") )
             CALL check( nf90_def_var(mncid,"Phi_fun",nf90_double,
      $                  (/tdid,idid/),ftf_id) )
             CALL check( nf90_put_att(mncid,ftf_id,"units","Wb") )
@@ -5664,16 +5900,16 @@ c-----------------------------------------------------------------------
             CALL check( nf90_def_var(mncid,"W_xe_eigenvector_fun",
      $               nf90_double,(/tdid,wdid,idid/),wf_id) )
             CALL check( nf90_put_att(mncid,wf_id,"long_name",
-     $         "Energy-norm external flux energy eigenmodes") )
+     $         "Energy norm external field energy eigenmodes") )
             CALL check( nf90_def_var(mncid,"R_xe_eigenvector_fun",
      $               nf90_double,(/tdid,rdid,idid/),rf_id) )
             CALL check( nf90_put_att(mncid,rf_id,"long_name",
-     $         "Energy-norm external flux reluctance eigenmodes") )
+     $         "Energy norm external field reluctance eigenmodes") )
             IF(singcoup_set)THEN
                CALL check( nf90_def_var(mncid,"C_xe_eigenvector_fun",
      $                  nf90_double,(/tdid,sdid,idid/),sf_id) )
                CALL check( nf90_put_att(mncid,sf_id,"long_name",
-     $            "Energy-norm external flux resonant-coupling modes") )
+     $          "Energy norm external field resonant-coupling modes") )
             ENDIF
          ENDIF
          ! End definitions
@@ -5713,7 +5949,7 @@ c-----------------------------------------------------------------------
             matms = TRANSPOSE(singcoupmat)
             CALL check( nf90_put_var(mncid,sc_id,RESHAPE(
      $       (/REAL(matms),AIMAG(matms)/),(/mpert,msing,2/))))
-            CALL check( nf90_put_var(mncid,s_id,RESHAPE(
+            CALL check( nf90_put_var(mncid,sv_id,RESHAPE(
      $       (/REAL(svecs),AIMAG(svecs)/),(/mpert,msing,2/))))
             CALL check( nf90_put_var(mncid,se_id,svals) )
          ENDIF
@@ -5824,6 +6060,14 @@ c-----------------------------------------------------------------------
            CALL check( nf90_put_var(mncid,fc_id,
      $                 RESHAPE((/REAL(coil_indmat),AIMAG(coil_indmat)/),
      $                         (/mpert,coil_num,2/))) )
+           CALL check( nf90_put_var(mncid,pc_id,
+     $                 RESHAPE((/REAL(coil_xe),AIMAG(coil_xe)/),
+     $                         (/mpert,coil_num,2/))) )
+           IF(singcoup_set) THEN
+              matcs = TRANSPOSE(coilcoupmat)
+              CALL check( nf90_put_var(mncid,cc_id,RESHAPE(
+     $         (/REAL(matcs),AIMAG(matcs)/),(/coil_num,msing,2/))))
+           ENDIF
            IF(fun_flag)THEN
              DO i=1,coil_num
                CALL iscdftb(mfac,mpert,tempfun,mthsurf,coil_indmat(:,i))
@@ -5890,7 +6134,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_control_filter
 c-----------------------------------------------------------------------
-c     subprogram 15. gpout_qrv.
+c     subprogram 18. gpout_qrv.
 c     Add some basic alternative x coordinates into the profile outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_qrv
@@ -5924,7 +6168,6 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"rho",nf90_double,p_id,rn_id) )
       CALL check( nf90_put_att(fncid,rn_id,"long_name",
      $   "Normalized flux surface average minor radius") )
-      CALL check( nf90_put_att(fncid,rn_id,"units","m") )
       CALL check( nf90_def_var(fncid,"dvdpsi_n",nf90_double,p_id,dv_id))
       CALL check( nf90_put_att(fncid,dv_id,"long_name",
      $   "Differential volume per normalized poloidal flux") )
@@ -5942,7 +6185,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_qrv
 c-----------------------------------------------------------------------
-c     subprogram 16. check.
+c     subprogram 19. check.
 c     Check status of netcdf file.
 c-----------------------------------------------------------------------
       SUBROUTINE check(stat)
@@ -5963,18 +6206,20 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE check
 c-----------------------------------------------------------------------
-c     subprogram 17. gpout_init_netcdf.
+c     subprogram 20. gpout_init_netcdf.
 c     Initialize the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_init_netcdf
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      INTEGER:: i,midid,mmdid,modid,medid,mtdid,
-     $   fidid,fmdid,fpdid,ftdid,cidid,crdid,czdid,clvid,
-     $   mivid,mmvid,movid,mevid,mtvid,fivid,fmvid,fpvid,ftvid,
-     $   mrvid,mjdid,mjvid,mqvid,frvid,frdid,fqvid,civid,crvid,czvid,
-     $   fq1vid,id,fileids(3)
+      INTEGER:: i,midid,mmdid,mcdid,mldid,modid,medid,mtdid,mjdid,
+     $   mivid,mmvid,mcvid,mlvid,movid,mevid,mtvid,mrvid,mjvid,mqvid,
+     $   fidid,fmdid,fpdid,ftdid,
+     $   fivid,fmvid,fpvid,ftvid,frvid,frdid,fqvid,fq1vid,
+     $   cidid,crdid,czdid,
+     $   clvid,civid,crvid,czvid,
+     $   id,fileids(3),ising
       INTEGER, DIMENSION(mpert) :: mmodes
 c-----------------------------------------------------------------------
 c     set variables
@@ -6011,11 +6256,23 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(mncid,"theta",mthsurf+1,  mtdid) )
       CALL check( nf90_def_var(mncid,"theta",nf90_double,mtdid,mtvid) )
       IF(msing>0)THEN
-         CALL check( nf90_def_dim(mncid,"psi_n_rat",msing, mjdid) )
-         CALL check(nf90_def_var(mncid,"psi_n_rat",nf90_double,mjdid,
-     $      mjvid))
-         CALL check(nf90_def_var(mncid,"q_rat",nf90_double,mjdid,mqvid))
-         CALL check( nf90_def_var(mncid,"m_rat",nf90_int,mjdid,mrvid))
+         CALL check( nf90_def_dim(mncid,"psi_n_rational", msing, mjdid))
+         CALL check( nf90_def_var(mncid,"psi_n_rational", nf90_double,
+     $      mjdid, mjvid) )
+         CALL check( nf90_def_var(mncid,"q_rational",nf90_double, mjdid,
+     $      mqvid) )
+         CALL check( nf90_def_var(mncid,"m_rational", nf90_int, mjdid,
+     $      mrvid) )
+         CALL check( nf90_def_dim(mncid,"mode_C", msing, mcdid) )
+         CALL check( nf90_def_var(mncid,"mode_C", nf90_double,
+     $      mcdid, mcvid) )
+         CALL check( nf90_put_att(mncid, mcvid ,"long_name",
+     $    "Singular coupling mode index") )
+         CALL check( nf90_def_dim(mncid,"mode_C_local", osing, mldid) )
+         CALL check( nf90_def_var(mncid,"mode_C_local", nf90_double,
+     $      mldid,mlvid) )
+         CALL check( nf90_put_att(mncid, mlvid ,"long_name",
+     $    "Local singular coupling mode index") )
       ENDIF
       CALL check( nf90_put_att(mncid,nf90_global,"jacobian",jac_type))
       CALL check( nf90_put_att(mncid,nf90_global,"helicity",helicity))
@@ -6036,11 +6293,12 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_var(fncid,"theta_dcon",nf90_double,
      $     ftdid,ftvid) )
       IF(msing>0)THEN
-         CALL check( nf90_def_dim(fncid,"psi_n_rat",msing, frdid) )
-         CALL check( nf90_def_var(fncid,"psi_n_rat",nf90_double,
+         CALL check( nf90_def_dim(fncid,"psi_n_rational",msing, frdid) )
+         CALL check( nf90_def_var(fncid,"psi_n_rational",nf90_double,
      $        frdid,frvid))
-         CALL check(nf90_def_var(fncid,"q_rat",nf90_double,frdid,fqvid))
-         CALL check(nf90_def_var(fncid,"dqdpsi_n_rat",nf90_double,
+         CALL check(nf90_def_var(fncid,"q_rational", nf90_double, frdid,
+     $        fqvid))
+         CALL check(nf90_def_var(fncid,"dqdpsi_n_rational",nf90_double,
      $        frdid,fq1vid))
       ENDIF
       CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
@@ -6089,6 +6347,8 @@ c-----------------------------------------------------------------------
      $      (/(INT(singtype(i)%q*nn),i=1,msing)/)) )
          CALL check( nf90_put_var(mncid,mqvid,
      $      (/(singtype(i)%q,i=1,msing)/)) )
+         CALL check( nf90_put_var(mncid, mcvid, (/(i,i=1,msing)/)) )
+         CALL check( nf90_put_var(mncid, mlvid, (/(i,i=1,osing)/)) )
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting coordinates in flux netcdfs"
@@ -6121,7 +6381,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_init_netcdf
 c-----------------------------------------------------------------------
-c     subprogram 18. gpout_close_netcdf.
+c     subprogram 21. gpout_close_netcdf.
 c     Close the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_close_netcdf

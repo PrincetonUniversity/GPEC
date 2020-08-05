@@ -26,6 +26,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE inps_mod
       USE local_mod
+      USE utils_mod
       IMPLICIT NONE
 
       TYPE :: resist_type_inps

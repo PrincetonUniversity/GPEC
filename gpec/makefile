@@ -1,7 +1,6 @@
 
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
 IFLAGS = -I../equil -I../coil -I../harvest -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
@@ -59,7 +58,7 @@ endif
 force:
 
 gpec: $(OBJS)
-	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) -L$(NETCDF_C_DIR) $(NETCDF_C_LIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
 	mkdir -p ../lib
 	ar -r ../lib/libgpec.a *.o
 	mkdir -p ../bin
@@ -78,5 +77,5 @@ gpeq.o: idcon.o ismath.o
 gpresp.o: gpeq.o
 gpvacuum.o : gpeq.o
 gpdiag.o: gpresp.o gpvacuum.o
-gpout.o: gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o version.inc
+gpout.o: gpdiag.o gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o version.inc
 gpec.o: gpdiag.o gpout.o rdcon.o

@@ -1,19 +1,14 @@
 # This is the makefile for STRIDE.
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
 # flags unique to stride (not to be clobbered by top level install/makefile options)
-EXTRA_FFLAGS = -mkl -diag-disable 10397 #-xHost #-03 #-g #-check all #-warn all #-qopt-zmm-usage=high #-ipo #-traceback #-qoptrpt
 IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(EXTRA_FFLAGS) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
 
 LIBDIR = ../lib
-
-SUPERLUDIR = ../superlu/SuperLU_5.2.1/SRC
-SUPERLUBLASDIR = ../superlu/
 
 LIBS = \
 	-L$(LIBDIR) \
@@ -22,10 +17,8 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-L$(SUPERLUDIR) \
-	-lsuperlu \
-	-L$(SUPERLUBLASDIR) \
-	-lblas
+	-L$(MATHDIR) \
+	$(MATHLIBS)
 
 OBJS = \
 	debug.o \
@@ -43,7 +36,7 @@ OBJS = \
 
 # targets
 
-all: lsode zvode zlange superlu equil vacuum stride
+all: lsode zvode zlange equil vacuum stride
 
 lsode:
 	cd ../lsode; make
@@ -53,9 +46,6 @@ zvode:
 
 zlange:
 	cd ../zlange; make
-
-superlu:
-	$(SLU_COMMAND)
 
 equil:
 	cd ../equil; make
@@ -94,7 +84,7 @@ fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
 sing.o: fourfit.o
 zvode1.o: ../zvode/zvode.o ../zlange/zlange.o
 riccati.o: sing.o
-ode.o: sing.o debug.o zvode1.o ../equil/sparse.o riccati.o
+ode.o: sing.o debug.o zvode1.o riccati.o
 stride_netcdf.o: dcon_mod.o
 free.o: ode.o stride_netcdf.o
 stride.o: bal.o free.o mercier.o

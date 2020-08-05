@@ -28,9 +28,9 @@ c-----------------------------------------------------------------------
       USE free_mod
       USE resist_mod
       USE gal_mod
-      
+
       IMPLICIT NONE
-      
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     subprogram 1. dcon_dealloc.
@@ -40,7 +40,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE dcon_dealloc(opt)
-      
+
       INTEGER, INTENT(IN) :: opt
       TYPE(sing_type), POINTER :: singp
 c-----------------------------------------------------------------------
@@ -173,7 +173,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE dcon_regrid
 c-----------------------------------------------------------------------
 c     subprogram 3. dcon_qpack.
-c     transfer equilibruim to new packed grid.
+c     transfer equilibrium to new packed grid.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
@@ -189,7 +189,7 @@ c-----------------------------------------------------------------------
          sp_pfac=pfac
       ENDIF
       mpsi=(sp_nx+1)*(msing+1)-2*msing-1
-      ALLOCATE (xs_pack(0:mpsi))   
+      ALLOCATE (xs_pack(0:mpsi))
       CALL gal_spline_pack (sp_nx,sp_dx1,sp_dx2,sp_pfac,xs_pack)
       CALL dcon_regrid
       CALL equil_out_global
@@ -200,7 +200,7 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE dcon_qpack            
+      END SUBROUTINE dcon_qpack
 c-----------------------------------------------------------------------
 c     subprogram 4. dcon_run.
 c     performs ideal MHD stability analysis.
@@ -210,7 +210,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE dcon_run
 
-      LOGICAL :: cyl_flag=.FALSE.,regrid_flag=.FALSE.
+      LOGICAL :: cyl_flag=.FALSE.,regrid_flag=.FALSE.,verbose=.TRUE.
       INTEGER :: mmin,ipsi
       REAL(r8) :: plasma1,vacuum1,total1
 
@@ -226,7 +226,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb,diagnose_fixup
+     $     ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -238,6 +238,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
+      IF(verbose) WRITE(*,*)""
+      IF(verbose) WRITE(*,*)"RDCON START => "//TRIM(version)
+      IF(verbose) WRITE(*,*)"__________________________________________"
       CALL timer(0,out_unit)
       CALL ascii_open(in_unit,"rdcon.in","OLD")
       READ(UNIT=in_unit,NML=rdcon_control)
@@ -281,13 +284,13 @@ c-----------------------------------------------------------------------
       mband=mpert-1-delta_mband
       mband=MIN(MAX(mband,0),mpert-1)
 c-----------------------------------------------------------------------
-c     transfer equilibruim to packed spline grid.
+c     transfer equilibrium to packed spline grid.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,'(a,l1)')" Regrid_flag = ",regrid_flag
       IF (regrid_flag) THEN
-         IF(verbose) WRITE(*,*)"Regriding equilibruim with qpack"
+         IF(verbose) WRITE(*,*)"Regriding equilibrium with qpack"
          CALL dcon_qpack
-      ENDIF    
+      ENDIF
 c-----------------------------------------------------------------------
 c     open output files, read, process, and diagnose equilibrium.
 c-----------------------------------------------------------------------
