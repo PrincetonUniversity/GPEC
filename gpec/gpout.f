@@ -2350,7 +2350,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(fncid, "T_xe", nf90_double,
      $               (/p_id,m_id,j_id,i_id/), te_id) )
          CALL check( nf90_put_att(fncid, te_id, "long_name",
-     $               "Energy-norm external flux torque matrix") )
+     $               "Energy norm external flux torque matrix") )
          CALL check( nf90_put_att(fncid, te_id, "units", "Nm/T^2") )
          CALL check( nf90_enddef(fncid) )
          CALL check( nf90_put_var(fncid, m1_id, mfac) )
@@ -5342,13 +5342,13 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,k,maxmode
       INTEGER :: idid,mdid,xdid,wdid,rdid,pdid,sdid,tdid,cdid,
      $   mx_id,mw_id,mr_id,mp_id,mc_id,
-     $   we_id,re_id,pe_id,se_id,fc_id,fcf_id,sl_id,cn_id,
-     $   w_id,r_id,p_id,s_id, sc_id,wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
+     $   we_id,re_id,pe_id,se_id,fc_id,fcf_id,pc_id,sl_id,cn_id,
+     $   w_id,r_id,p_id,sc_id,sv_id,wr_id,wp_id,rp_id,ws_id,rs_id,ps_id,
      $   ft_id,fx_id,wx_id,rx_id,px_id,sx_id,wa_id,rl_id,
      $   x_id,xe_id,xt_id,wf_id,rf_id,sf_id,ex_id,et_id,
      $   wev_id,wes_id,wep_id,rev_id,res_id,rep_id,sev_id,ses_id,sep_id,
      $   etf_id,ftf_id,exf_id,fxf_id,rm_id,wm_id,pm_id,
-     $   wtv_id, wte_id, wt_id
+     $   wtv_id, wte_id, wt_id,cc_id
       REAL(r8) :: norm
       REAL(r8), DIMENSION(0:mthsurf) :: units
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
@@ -5369,12 +5369,14 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: svals
       COMPLEX(r8), DIMENSION(mpert,mpert)::xvecs,wvecs,rvecs,pvecs,
      $    avecs,wmat,rmat,pmat,wmatt,wtvecs
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: coil_xe,coilcoupmat,
+     $    matcs
       COMPLEX(r8), DIMENSION(mpert,msing) :: svecs
       COMPLEX(r8), DIMENSION(0:mthsurf,mpert)::wfuns,rfuns
       COMPLEX(r8), DIMENSION(0:mthsurf,msing)::sfuns
 
       IF(timeit) CALL gpec_timer(-2)
-      IF(verbose) WRITE(*,*)"Computing Energy-Normalized flux bases"
+      IF(verbose) WRITE(*,*)"Computing energy normalized flux bases"
 c-----------------------------------------------------------------------
 c     basic definitions
 c-----------------------------------------------------------------------
@@ -5406,6 +5408,11 @@ c-----------------------------------------------------------------------
       ENDDO
       ptof = sqrtamat * sqrt(jarea) ! transform power-norm field to flux
       CALL iszhinv(ptof,mpert,ftop)
+      IF(coil_flag)THEN
+           ! Compute power normalized flux per coil
+           ALLOCATE(coil_xe(mpert, coil_num))
+           coil_xe = MATMUL(ftop, coil_indmat)
+      ENDIF
 c-----------------------------------------------------------------------
 c     compute DCON energy per displacement eigenvalues and eigenvectors.
 c-----------------------------------------------------------------------
@@ -5556,6 +5563,11 @@ c-----------------------------------------------------------------------
          CALL zgesvd('S','O',msing,mpert,matsm,msing,svals, !'O' writes VT to A
      $        matss,msing,matsm,msing,worksvd,lwork,sworksvd,info)
          svecs=CONJG(TRANSPOSE(matsm))
+         IF(coil_flag)THEN
+              ALLOCATE(coilcoupmat(msing,coil_num),
+     $                 matcs(coil_num, msing))
+              coilcoupmat = MATMUL(singcoupmat, coil_xe)
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     Filter to keep desired physics modes
@@ -5673,100 +5685,100 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_dim(mncid,"mode_W",mpert,   wdid) )
          CALL check( nf90_def_var(mncid,"mode_W",nf90_int,wdid,mw_id))
          CALL check( nf90_put_att(mncid, mw_id ,"long_name",
-     $    "Energy-norm flux energy eigenmode index") )
+     $    "Energy norm external field energy eigenmode index") )
          CALL check( nf90_def_var(mncid,"W_e",
      $               nf90_double,(/mdid,wdid,idid/),wt_id) )
          CALL check( nf90_put_att(mncid,wt_id,"long_name",
-     $    "Energy-norm total flux energy matrix") )
+     $    "Energy norm total field energy matrix") )
          CALL check( nf90_def_var(mncid,"W_e_eigenvector",
      $               nf90_double,(/mdid,wdid,idid/),wtv_id) )
          CALL check( nf90_put_att(mncid,wtv_id,"long_name",
-     $    "Energy-norm total flux energy eigendecomposition") )
+     $    "Energy norm total field energy eigendecomposition") )
          CALL check( nf90_def_var(mncid,"W_e_eigenvalue",
      $               nf90_double,(/wdid/),wte_id) )
          CALL check( nf90_put_att(mncid,wte_id,"units","J/T^2") )
          CALL check( nf90_put_att(mncid,wte_id,"long_name",
-     $    "Energy-norm total flux energy eigenvalues") )
+     $    "Energy norm total field energy eigenvalues") )
          CALL check( nf90_def_var(mncid,"W_xe",
      $               nf90_double,(/mdid,wdid,idid/),wm_id) )
          CALL check( nf90_put_att(mncid,wm_id,"long_name",
-     $    "Energy-norm external flux energy matrix") )
+     $    "Energy norm external field energy matrix") )
          CALL check( nf90_def_var(mncid,"W_xe_eigenvector",
      $               nf90_double,(/mdid,wdid,idid/),w_id) )
          CALL check( nf90_put_att(mncid,w_id,"long_name",
-     $    "Energy-norm external flux energy eigendecomposition") )
+     $    "Energy norm external field energy eigendecomposition") )
          CALL check( nf90_def_var(mncid,"W_xe_eigenvalue",
      $               nf90_double,(/wdid/),we_id) )
          CALL check( nf90_put_att(mncid,we_id,"units","J/T^2") )
          CALL check( nf90_put_att(mncid,we_id,"long_name",
-     $    "Energy-norm external flux energy eigenvalues") )
+     $    "Energy norm external field energy eigenvalues") )
          CALL check( nf90_def_var(mncid,"W_xe_amp",nf90_double,
      $                         (/wdid/),wa_id) )
          CALL check( nf90_put_att(mncid,wa_id,"long_name",
-     $    "Energy-norm ex. flux energy eigenmode amplifications") )
+     $    "Energy norm ex. field energy eigenmode amplifications") )
          CALL check( nf90_def_var(mncid,"W_xe_energyv",nf90_double,
      $                         (/wdid/),wev_id) )
          CALL check( nf90_put_att(mncid,wev_id,"long_name",
-     $    "Energy-norm ex. flux energy eigenmode vacuum energy") )
+     $    "Energy norm ex. field energy eigenmode vacuum energy") )
          CALL check( nf90_def_var(mncid,"W_xe_energys",nf90_double,
      $                         (/wdid/),wes_id) )
          CALL check( nf90_put_att(mncid,wes_id,"long_name",
-     $    "Energy-norm ex. flux energy eigenmode surface energy") )
+     $    "Energy norm ex. field energy eigenmode surface energy") )
          CALL check( nf90_def_var(mncid,"W_xe_energyp",nf90_double,
      $                         (/wdid/),wep_id) )
          CALL check( nf90_put_att(mncid,wep_id,"long_name",
-     $    "Energy-norm ex. flux energy eigenmode total energy") )
+     $    "Energy norm ex. field energy eigenmode total energy") )
 
          CALL check( nf90_def_dim(mncid,"mode_R",mpert,   rdid) )
          CALL check( nf90_def_var(mncid,"mode_R",nf90_int,rdid,mr_id))
          CALL check( nf90_put_att(mncid, mr_id ,"long_name",
-     $    "Energy-norm external flux reluctance eigenmode index"))
+     $    "Energy norm external field reluctance eigenmode index"))
          CALL check( nf90_def_var(mncid,"R_xe",nf90_double,
      $               (/mdid,rdid,idid/),rm_id) )
          CALL check( nf90_put_att(mncid,rm_id,"long_name",
-     $    "Energy-norm external flux reluctance matrix") )
+     $    "Energy norm external field reluctance matrix") )
          CALL check( nf90_def_var(mncid,"R_xe_eigenvector",nf90_double,
      $               (/mdid,rdid,idid/),r_id) )
          CALL check( nf90_put_att(mncid,r_id,"long_name",
-     $    "Energy-norm external flux reluctance eigendecomposition") )
+     $    "Energy norm external field reluctance eigendecomposition") )
          CALL check( nf90_def_var(mncid,"R_xe_eigenvalue",nf90_double,
      $                         (/rdid/),re_id) )
          CALL check( nf90_put_att(mncid,re_id,"long_name",
-     $    "Energy-norm external flux reluctance eigenvalues") )
+     $    "Energy norm external field reluctance eigenvalues") )
          CALL check( nf90_put_att(mncid,re_id,"units","A/T") )
          CALL check( nf90_def_var(mncid,"R_xe_RL",nf90_double,
      $                         (/rdid/),rl_id) )
          CALL check( nf90_put_att(mncid,rl_id,"long_name",
-     $    "Energy-norm ex. flux reluctance eigenmode RL-normalized") )
+     $    "Energy norm ex. field reluctance eigenmode RL-normalized") )
          CALL check( nf90_def_var(mncid,"R_xe_energyv",nf90_double,
      $                         (/rdid/),rev_id) )
          CALL check( nf90_put_att(mncid,rev_id,"long_name",
-     $    "Energy-norm ex. flux reluctance eigenmode vacuum energy") )
+     $    "Energy norm ex. field reluctance eigenmode vacuum energy") )
          CALL check( nf90_def_var(mncid,"R_xe_energys",nf90_double,
      $                         (/rdid/),res_id) )
          CALL check( nf90_put_att(mncid,res_id,"long_name",
-     $    "Energy-norm ex. flux reluctance eigenmode surface energy") )
+     $    "Energy norm ex. field reluctance eigenmode surface energy") )
          CALL check( nf90_def_var(mncid,"R_xe_energyp",nf90_double,
      $                         (/rdid/),rep_id) )
          CALL check( nf90_put_att(mncid,rep_id,"long_name",
-     $    "Energy-norm ex. flux reluctance eigenmode total energy") )
+     $    "Energy norm ex. field reluctance eigenmode total energy") )
 
          CALL check( nf90_def_dim(mncid,"mode_P",mpert,   pdid) )
          CALL check( nf90_def_var(mncid,"mode_P",nf90_int,pdid,mp_id))
          CALL check( nf90_put_att(mncid, mp_id ,"long_name",
-     $    "Energy-norm external flux permeability eigenmode index") )
+     $    "Energy norm external field permeability eigenmode index") )
          CALL check( nf90_def_var(mncid,"P_xe",nf90_double,
      $               (/mdid,pdid,idid/),pm_id) )
          CALL check( nf90_put_att(mncid,pm_id,"long_name",
-     $    "Energy-norm external flux permeability matrix") )
+     $    "Energy norm external field permeability matrix") )
          CALL check( nf90_def_var(mncid,"P_xe_eigenvector",nf90_double,
      $               (/mdid,pdid,idid/),p_id) )
          CALL check( nf90_put_att(mncid,p_id,"long_name",
-     $    "Energy-norm external flux permeability eigendecomposition") )
+     $    "Energy norm external field permeability eigendecomposition"))
          CALL check( nf90_def_var(mncid,"P_xe_eigenvalue",nf90_double,
      $               (/pdid/),pe_id) )
          CALL check( nf90_put_att(mncid,pe_id,"long_name",
-     $    "Energy-norm external flux permeability eigenvalues") )
+     $    "Energy norm external field permeability eigenvalues") )
 
          CALL check( nf90_def_var(mncid,"O_WR",nf90_double,
      $               (/wdid,rdid/),wr_id) )
@@ -5788,30 +5800,31 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(mncid,"O_WPhi_xe",nf90_double,
      $               (/xdid,idid/),wx_id) )
          CALL check( nf90_put_att(mncid,wx_id,"long_name","Energy "//
-     $    "normalized external flux decomposed in energy eigenmodes") )
+     $    "normalized external field decomposed in energy eigenmodes") )
          CALL check( nf90_def_var(mncid,"O_RPhi_xe",nf90_double,
      $               (/rdid,idid/),rx_id) )
-         CALL check( nf90_put_att(mncid,rx_id,"long_name","Energy no"//
-     $    "rmalized external flux decomposed in reluctance eigenmodes"))
+         CALL check( nf90_put_att(mncid,rx_id,"long_name","Energy "//
+     $    "norm external fierld decomposed in reluctance eigenmodes"))
          CALL check( nf90_def_var(mncid,"O_PPhi_xe",nf90_double,
      $               (/pdid,idid/),px_id) )
-         CALL check( nf90_put_att(mncid,px_id,"long_name","Energy no"//
-     $  "rmalized external flux decomposed in permeability eigenmodes"))
+         CALL check( nf90_put_att(mncid,px_id,"long_name","Energy "//
+     $    "norm external field decomposed in permeability eigenmodes"))
 
          IF(singcoup_set)THEN
             CALL check( nf90_def_var(mncid,"C_xe",nf90_double,
      $                  (/mdid,sdid,idid/),sc_id) )
             CALL check( nf90_put_att(mncid,sc_id,"long_name",
-     $       "Energy normalized external flux singular-coupling") )
+     $       "Energy normalized external field to singular field "//
+     $       "coupling") )
             CALL check( nf90_def_var(mncid,"C_xe_eigenvector",
-     $                  nf90_double,(/mdid,sdid,idid/),s_id) )
-            CALL check( nf90_put_att(mncid,s_id,"long_name",
-     $       "Energy normalized external flux singular-coupling "//
-     $       "SVD right-singular vectors") )
+     $                  nf90_double,(/mdid,sdid,idid/),sv_id) )
+            CALL check( nf90_put_att(mncid,sv_id,"long_name",
+     $       "Energy normalized external field to singular field "//
+     $       "right-singular vectors") )
             CALL check( nf90_def_var(mncid,"C_xe_eigenvalue",
      $                            nf90_double,(/sdid/),se_id) )
             CALL check( nf90_put_att(mncid,se_id,"long_name",
-     $       "Energy normalized external flux singular-coupling "//
+     $       "Energy normalized external field to singular field "//
      $       "SVD singular values") )
             CALL check( nf90_put_att(mncid,se_id,"units","unitless") )
             CALL check( nf90_def_var(mncid,"C_xe_energyv",nf90_double,
@@ -5841,8 +5854,8 @@ c-----------------------------------------------------------------------
             CALL check( nf90_def_var(mncid,"O_CPhi_xe",nf90_double,
      $                       (/sdid,idid/),sx_id) )
             CALL check( nf90_put_att(mncid,sx_id,"long_name",
-     $       "Energy normalized external flux decomposed in singular "//
-     $       "coupling modes"))
+     $       "Energy normalized external field decomposed in "//
+     $       "singular coupling modes"))
 
          ENDIF
 
@@ -5850,7 +5863,7 @@ c-----------------------------------------------------------------------
      $               (/mdid,idid/),ex_id) )
          CALL check( nf90_put_att(mncid,ex_id,"units","T") )
          CALL check( nf90_put_att(mncid,ex_id,"long_name",
-     $    "Energy-norm external field") )
+     $    "Energy norm external field") )
          CALL check( nf90_def_var(mncid,"Phi_x",nf90_double,
      $               (/mdid,idid/),fx_id) )
          CALL check( nf90_put_att(mncid,fx_id,"units","Wb") )
@@ -5860,7 +5873,7 @@ c-----------------------------------------------------------------------
      $               (/mdid,idid/),et_id) )
          CALL check( nf90_put_att(mncid,et_id,"units","T") )
          CALL check( nf90_put_att(mncid,et_id,"long_name",
-     $    "Energy-norm total field") )
+     $    "Energy norm total field") )
          CALL check( nf90_def_var(mncid,"Phi",nf90_double,
      $               (/mdid,idid/),ft_id) )
          CALL check( nf90_put_att(mncid,ft_id,"units","Wb") )
@@ -5878,6 +5891,17 @@ c-----------------------------------------------------------------------
            CALL check( nf90_put_att(mncid,fc_id,"units","Wb") )
            CALL check( nf90_put_att(mncid,fc_id,"long_name",
      $      "Coil flux") )
+           CALL check( nf90_def_var(mncid,"Phi_coile",nf90_double,
+     $                 (/mdid,cdid,idid/),pc_id) )
+           CALL check( nf90_put_att(mncid,pc_id,"units","T") )
+           CALL check( nf90_put_att(mncid,pc_id,"long_name",
+     $      "Coil energy norm field") )
+           IF(singcoup_set)THEN
+             CALL check( nf90_def_var(mncid,"C_coil",nf90_double,
+     $                   (/cdid,sdid,idid/),cc_id) )
+             CALL check( nf90_put_att(mncid,cc_id,"long_name",
+     $        "Coil to singular field coupling") )
+           ENDIF
          ENDIF
 
          IF(fun_flag)THEN
@@ -5885,7 +5909,7 @@ c-----------------------------------------------------------------------
      $                  (/tdid,idid/),exf_id) )
             CALL check( nf90_put_att(mncid,exf_id,"units","T") )
             CALL check( nf90_put_att(mncid,exf_id,"long_name",
-     $       "Energy-norm external flux") )
+     $       "Energy norm external field") )
             CALL check( nf90_def_var(mncid,"Phi_x_fun",nf90_double,
      $                  (/tdid,idid/),fxf_id) )
             CALL check( nf90_put_att(mncid,fxf_id,"units","Wb") )
@@ -5895,7 +5919,7 @@ c-----------------------------------------------------------------------
      $                  (/tdid,idid/),etf_id) )
             CALL check( nf90_put_att(mncid,etf_id,"units","T") )
             CALL check( nf90_put_att(mncid,etf_id,"long_name",
-     $       "Energy-norm total flux") )
+     $       "Energy norm total field") )
             CALL check( nf90_def_var(mncid,"Phi_fun",nf90_double,
      $                  (/tdid,idid/),ftf_id) )
             CALL check( nf90_put_att(mncid,ftf_id,"units","Wb") )
@@ -5911,16 +5935,16 @@ c-----------------------------------------------------------------------
             CALL check( nf90_def_var(mncid,"W_xe_eigenvector_fun",
      $               nf90_double,(/tdid,wdid,idid/),wf_id) )
             CALL check( nf90_put_att(mncid,wf_id,"long_name",
-     $         "Energy-norm external flux energy eigenmodes") )
+     $         "Energy norm external field energy eigenmodes") )
             CALL check( nf90_def_var(mncid,"R_xe_eigenvector_fun",
      $               nf90_double,(/tdid,rdid,idid/),rf_id) )
             CALL check( nf90_put_att(mncid,rf_id,"long_name",
-     $         "Energy-norm external flux reluctance eigenmodes") )
+     $         "Energy norm external field reluctance eigenmodes") )
             IF(singcoup_set)THEN
                CALL check( nf90_def_var(mncid,"C_xe_eigenvector_fun",
      $                  nf90_double,(/tdid,sdid,idid/),sf_id) )
                CALL check( nf90_put_att(mncid,sf_id,"long_name",
-     $            "Energy-norm external flux resonant-coupling modes") )
+     $          "Energy norm external field resonant-coupling modes") )
             ENDIF
          ENDIF
          ! End definitions
@@ -5965,7 +5989,7 @@ c-----------------------------------------------------------------------
             matms = TRANSPOSE(singcoupmat)
             CALL check( nf90_put_var(mncid,sc_id,RESHAPE(
      $       (/REAL(matms),AIMAG(matms)/),(/mpert,msing,2/))))
-            CALL check( nf90_put_var(mncid,s_id,RESHAPE(
+            CALL check( nf90_put_var(mncid,sv_id,RESHAPE(
      $       (/REAL(svecs),AIMAG(svecs)/),(/mpert,msing,2/))))
             CALL check( nf90_put_var(mncid,se_id,svals) )
          ENDIF
@@ -6076,6 +6100,14 @@ c-----------------------------------------------------------------------
            CALL check( nf90_put_var(mncid,fc_id,
      $                 RESHAPE((/REAL(coil_indmat),AIMAG(coil_indmat)/),
      $                         (/mpert,coil_num,2/))) )
+           CALL check( nf90_put_var(mncid,pc_id,
+     $                 RESHAPE((/REAL(coil_xe),AIMAG(coil_xe)/),
+     $                         (/mpert,coil_num,2/))) )
+           IF(singcoup_set) THEN
+              matcs = TRANSPOSE(coilcoupmat)
+              CALL check( nf90_put_var(mncid,cc_id,RESHAPE(
+     $         (/REAL(matcs),AIMAG(matcs)/),(/coil_num,msing,2/))))
+           ENDIF
            IF(fun_flag)THEN
              DO i=1,coil_num
                CALL iscdftb(mfac,mpert,tempfun,mthsurf,coil_indmat(:,i))
