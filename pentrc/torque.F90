@@ -1715,7 +1715,7 @@ module torque
         integer, intent(in) :: n
         character(*), intent(in) :: method
         logical :: electron
-        real(r8), dimension(:,:), intent(inout) :: prof,profl
+        real(r8), dimension(:,:), intent(in) :: prof,profl
         integer :: zi, mi
 
         integer :: i,s,nrow,ncol,nrowl,ncoll,out_unit,unit1,unit2
@@ -1795,13 +1795,9 @@ module torque
 
         ! write tables
         write(fmt,*) '(',10+nfluxfuns,'(es17.8E3))'
-	prof(7,:)=prof(7,:)/prof(2,:)
-	prof(8,:)=prof(8,:)/prof(2,:)
         do i=1,nrow
             write(unit1,fmt) prof(:,i)
         enddo
-	profl(7,:)=profl(7,:)/profl(2,:)
-	profl(8,:)=profl(8,:)/profl(2,:)
         do i=1,nrowl
             write(unit2,'(10(es17.8E3))') profl(:,i)
         enddo
