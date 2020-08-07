@@ -3941,7 +3941,7 @@ c-----------------------------------------------------------------------
                CALL bicube_eval(psi_in,gdr(i,j),gdz(i,j),1)
                ebr(i,j) = -psi_in%fy(1)/gdr(i,j)*psio
                ebz(i,j) = psi_in%fx(1)/gdr(i,j)*psio
-               IF (gdl(i,j) == 1) THEN  
+               IF (gdl(i,j) >= 1) THEN  
                   CALL spline_eval(sq,gdpsi(i,j),0)
                   ebp(i,j) = abs(sq%f(1))/(twopi*gdr(i,j))
                ELSE
@@ -4031,7 +4031,7 @@ c-----------------------------------------------------------------------
 
       IF (brzphi_flag .AND. vbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)
-     $      "Computing vacuum fields by surface currents"
+     $      "Computing external vacuum fields by surface currents"
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
@@ -4042,7 +4042,7 @@ c-----------------------------------------------------------------------
          ENDIF
          DO i=0,nr
             DO j=0,nz
-               IF (gdl(i,j)/=1) THEN
+               IF (gdl(i,j)<1) THEN
                   gdl(i,j)=vgdl(i,j)
                   brr(i,j)=vbr(i,j)
                   brz(i,j)=vbz(i,j)
@@ -4055,7 +4055,8 @@ c-----------------------------------------------------------------------
       ENDIF
       
       IF (brzphi_flag) THEN
-         IF(verbose) WRITE(*,*)"Computing total perturbed fields"
+         IF(verbose) WRITE(*,*)
+     $        "Constructing total perturbed fields"
          bnomn=bnomn-bnimn
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
@@ -4081,7 +4082,7 @@ c-----------------------------------------------------------------------
          
          DO i=0,nr
             DO j=0,nz                  
-               IF (gdl(i,j)/=1) THEN
+               IF (gdl(i,j)<1) THEN
                   gdl(i,j)=vgdl(i,j)
                   bpr(i,j)=vpbr(i,j)
                   bpz(i,j)=vpbz(i,j)
@@ -4089,7 +4090,7 @@ c-----------------------------------------------------------------------
                   btr(i,j)=vpbr(i,j)+vcbr(i,j)
                   btz(i,j)=vpbz(i,j)+vcbz(i,j)
                   btp(i,j)=vpbp(i,j)+vcbp(i,j)
-               ELSE
+               ELSE IF (gdl(i,j)==1) THEN
                   bpr(i,j)=brr(i,j)-vcbr(i,j)
                   bpz(i,j)=brz(i,j)-vcbz(i,j)
                   bpp(i,j)=brp(i,j)-vcbp(i,j)
@@ -4253,7 +4254,8 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (pbrzphi_flag) THEN
-         IF(verbose) WRITE(*,*)"Computing total perturbed fields"
+         IF(verbose) WRITE(*,*)
+     $        "Computing vacuum fields by plasma surface currents"
          bnomn=bnomn-bnimn
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
@@ -4267,7 +4269,7 @@ c-----------------------------------------------------------------------
 
       IF (vvbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)
-     $      "Computing vacuum fields without plasma response"
+     $      "Computing vacuum fields by external surface currents"
          CALL gpvacuum_bnormal(psilim,bnimn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp)
@@ -4564,7 +4566,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"gpec_vpbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_VPBRZPHI: Vacuum field by "//
-     $        "surface currents"
+     $        "plasma surface currents"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -4589,7 +4591,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"gpec_vvbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_VVBRZPHI: Vacuum field by "//
-     $        "surface currents"
+     $        "external surface currents"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
