@@ -5421,7 +5421,7 @@ c-----------------------------------------------------------------------
       i = malias+1
       j = mpert-malias
       xvecs = 0
-      xvecs(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j)
+      xvecs(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j) * 2*mu0
       ! convert to displacement
       xvecs = MATMUL(MATMUL(singmat,xvecs),CONJG(singmat))
       ! get eigenvalues and eigenvectors
@@ -5442,16 +5442,15 @@ c-----------------------------------------------------------------------
       ! remove border of modes/solutions (diagnostic only)
       i = malias+1
       j = mpert-malias
-      wvecs = 0
-      wvecs(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j)
-      ! store total flux matrix
-      wmatt = wvecs
+      wmatt = 0
+      ! total flux matrix
+      wmatt(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j) *2*mu0
       ! convert to external flux
       mat = permeabmats(resp_index,:,:)
-      wvecs=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wvecs),mat)
+      wmat=MATMUL(MATMUL(CONJG(TRANSPOSE(mat)),wmatt),mat)
       ! convert to bsqrtA/|sqrtA|
-      wmat = MATMUL(MATMUL(ptof,wvecs),ptof)*2*mu0
-      wmatt = MATMUL(MATMUL(ptof,wmatt),ptof)*2*mu0
+      wmat = MATMUL(MATMUL(ptof,wvecs),ptof)
+      wmatt = MATMUL(MATMUL(ptof,wmatt),ptof)
       wvecs = wmat
       wtvecs = wmatt
       ! get eigenvalues and eigenvectors
