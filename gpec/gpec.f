@@ -360,6 +360,7 @@ c-----------------------------------------------------------------------
          CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert))
          ALLOCATE(coil_indmat(mpert,coil_num))
+         coil_indmat=0
          DO j=1,coil_num
             coilmn=0
             CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
