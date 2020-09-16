@@ -1,11 +1,12 @@
 include ../install/DEFAULTS.inc
 
+FFLAGS = -qopenmp
 IFLAGS = -I../equil -I$(MATHINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
 
 .f.o:
-	$(F90) -c $*.f
+	$(F90) -g -c $*.f
 
 LIBDIR = ../lib
 
@@ -18,6 +19,8 @@ OBJS = \
 	deltar.o \
 	inner.o  \
 	jacobi.o \
+        inps.o \
+        inpso.o \
 	deltac.o \
 	msing.o \
 	match.o
@@ -34,10 +37,12 @@ rmatch: $(OBJS)
 
 # dependencies
 
-msing.o: ../equil/local_mod.mod
-gamma.o: ../equil/local_mod.mod
+msing.o: ../equil/local.o
+gamma.o: ../equil/local.o
 deltar.o: gamma.o
-deltac.o: jacobi.o
+inps.o:  ../equil/local.o ../equil/utils.o
+inpso.o: inps.o
+deltac.o: jacobi.o inpso.o
 inner.o: deltac.o
 match.o: deltar.o deltac.o inner.o msing.o
 
