@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag
+     $     filter_flag,gal_flag,deltathresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -59,7 +59,7 @@ c-----------------------------------------------------------------------
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
-     $     netcdf_flag,ascii_flag
+     $     netcdf_flag,ascii_flag,deltathresh_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -143,6 +143,7 @@ c-----------------------------------------------------------------------
       bin_2d_flag=.TRUE.
       netcdf_flag=.TRUE.
       ascii_flag=.TRUE.
+      deltathresh_flag=.False.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
       max_linesout=0
@@ -560,6 +561,9 @@ c-----------------------------------------------------------------------
          CALL gpout_arzphifun(mode,xspmn)
       ENDIF
 
+      IF (deltathresh_flag) THEN
+         CALL gpout_deltathresh(mode,xspmn,sing_spot,sing_npsi)
+      ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
