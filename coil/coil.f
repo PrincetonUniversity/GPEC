@@ -99,7 +99,7 @@ c-----------------------------------------------------------------------
      $         TRIM(coil_name(ci))//".dat"
          CALL ascii_open(coil_unit,cfile,"old")
          coil(ci)%coil_name=TRIM(coil_name(ci))
-         READ(coil_unit,'(3(1x,I4),1x,f7.2)')
+         READ(coil_unit, *)
      $        coil(ci)%ncoil,coil(ci)%s,coil(ci)%nsec,coil(ci)%nw
          ALLOCATE(coil(ci)%cur(coil(ci)%ncoil))
          ALLOCATE(coil(ci)%x(coil(ci)%ncoil,coil(ci)%s,coil(ci)%nsec),
