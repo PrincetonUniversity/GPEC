@@ -24,7 +24,8 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: cyl_flag=.FALSE., use_notaknot_splines=.TRUE.,
-     $           use_classic_splines_for_stride
+     $           use_classic_splines_for_stride,
+     $           reform_eq_with_psilim=.FALSE.
       INTEGER :: mmin
       REAL(r8) :: plasma1,vacuum1,total1
 
@@ -39,7 +40,8 @@ c-----------------------------------------------------------------------
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,
-     $     use_classic_splines,use_notaknot_splines,qlow,qhigh
+     $     use_classic_splines,use_notaknot_splines,qlow,qhigh,
+     $     reform_eq_with_psilim
       NAMELIST/stride_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -125,6 +127,18 @@ c-----------------------------------------------------------------------
       IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
       CALL equil_out_global
       CALL equil_out_qfind
+c-----------------------------------------------------------------------
+c     optionally reform the eq splines to concentrate at true truncation
+c-----------------------------------------------------------------------
+      CALL sing_lim  ! determine if qhigh is truncating before psihigh
+      IF(psilim /= psihigh .AND. reform_eq_with_psilim)THEN
+         CALL equil_read(out_unit, psilim)
+         CALL equil_out_global
+         CALL equil_out_qfind
+      ENDIF
+c-----------------------------------------------------------------------
+c     record the equilibrium properties
+c-----------------------------------------------------------------------
       CALL equil_out_diagnose(.FALSE.,out_unit)
       CALL equil_out_write_2d
       IF(direct_flag)CALL bicube_dealloc(psi_in)
@@ -132,7 +146,7 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"*** equil-input time=",REAL(fTime-sTime,8)/REAL(cr,8)
       ENDIF
-      use_classic_splines = use_classic_splines_for_stride
+      use_classic_splines = use_classic_splines_for_stride  ! optionaly different from equil
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
@@ -160,7 +174,6 @@ c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
       CALL sing_find
-      CALL sing_lim
       delta_mhigh=delta_mhigh*2  ! added for consistency with dcon
       IF(cyl_flag)THEN
          mlow=delta_mlow
@@ -248,6 +261,8 @@ c     integrate main ODE's.
 c-----------------------------------------------------------------------
             IF(ode_flag)THEN
                WRITE(*,*)"Starting ODE integration..."
+               WRITE(*, '(1x,a5,2(a11))') "ising",'left','right'
+               WRITE(*, '(1x,a27)')'---------------------------'
                CALL ode_run
                IF (integrate_riccati) THEN
                   CALL free_calc_wp

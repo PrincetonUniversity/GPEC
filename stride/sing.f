@@ -112,6 +112,9 @@ c-----------------------------------------------------------------------
       sq_s_ix = sq%ix
       fmats_s_ix = fmats%ix
 
+      WRITE(*, '(1x,a5,a12)'),'ising','di'
+      WRITE(*, '(1x,a17)'),'---------------'
+
       !Note: nThreads faster than nThreads-1, despite creating with
       !      vac_parallel more threads than processors.
       IF (verbose_performance_output) THEN
@@ -221,6 +224,7 @@ c-----------------------------------------------------------------------
             q1sing(ising)=sq%f1(4)
             psising(ising)=psifac
             m=m+dm
+            IF(REAL(m,r8)/nn > qlim)EXIT
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -228,6 +232,7 @@ c     transfer to permanent storage.
 c-----------------------------------------------------------------------
       msing=ising
       ALLOCATE(sing(msing))
+      WRITE(*, '(1x,a5,a5,a13,a13)')'ising','m','psifac','q'
       DO ising=1,msing
          sing(ising)%m=m_sing(ising)
          sing(ising)%psifac=psising(ising)
@@ -237,12 +242,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     print singular surfaces details.
 c-----------------------------------------------------------------------
-         print '("Sing# = ",i12)',ising
-         print '("--------------------")'
-         print '("m = ",i12)',sing(ising)%m
-         print '("psifac = ",f15.9)',sing(ising)%psifac
-         print '("q = ",f15.9)',sing(ising)%q
-         print '("--------------------")'
+         WRITE(*, '(1x,i5,i5,es13.5,es13.5)')ising,sing(ising)%m,
+     $      sing(ising)%psifac,sing(ising)%q
       ENDDO
       DEALLOCATE(psiex,qex)
 c-----------------------------------------------------------------------
@@ -292,7 +293,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
-      IF(qlim/=qmax)THEN
+      IF(qlim<qmax)THEN
          jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
          IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
          psilim=sq%xs(jpsi(1))
@@ -313,6 +314,10 @@ c-----------------------------------------------------------------------
          IF(it > itmax)THEN
             CALL program_stop("Can't find psilim.")
          ENDIF
+      ELSE
+         qlim = qmax
+         q1lim=sq%fs1(mpsi,4)
+         psilim=psihigh
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -380,7 +385,7 @@ c-----------------------------------------------------------------------
       CALL sing_mmat(ising,r1,r2,n1,n2)
       m0mat=TRANSPOSE(singp%mmatr(r1(1),r2,:,0))
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
-      WRITE (*,*) "di=",di,"ising=",ising
+      WRITE(*, '(1x,i5,1x,es11.3)') ising, di
       singp%di=di
       singp%alpha=SQRT(-CMPLX(singp%di))
 c-----------------------------------------------------------------------

@@ -173,7 +173,7 @@ c-----------------------------------------------------------------------
      $           ABS(nn*sing(iS)%q1)
             scalc(iS)%singEdgesLR(2) = sing(iS)%psifac + singfac_min/
      $           ABS(nn*sing(iS)%q1)
-            print *,iS,": ",scalc(iS)%singEdgesLR(1)," ",
+            WRITE(*,'(1x,i5,2(es11.3))') iS,scalc(iS)%singEdgesLR(1),
      $           scalc(iS)%singEdgesLR(2)
 
             !This finds the index of the singular column
