@@ -52,7 +52,7 @@ Casting table 12 into Data object.
 import numpy as np                               # math
 
 #in this package
-import data
+from . import data
 
 ######################################################## Global Variables
 

@@ -54,29 +54,28 @@ or a friend when that super special file gets over-written.
     @email nlogan@pppl.gov
 """
 
-#basics
+# basics
 import os                               # operating system commands
 import sys,copy
 import time,pickle
 import subprocess
 import numpy as np                      # math
 from scipy import optimize
-from string import join                 # string manipulation
 
 #in this package
-import data                             # read/write .out files
-import namelist                         # read/write fortran namelist .in files
-from _bashjob_ import bashjob            # bash script skeleton
+from . import data                             # read/write .out files
+from . import namelist                         # read/write fortran namelist .in files
+from ._bashjob_ import bashjob            # bash script skeleton
 try:
     import gui
 except ImportError: # not supported at GA
     print('Failed to import gui - must have enthought.traits')
     
 if os.getenv('HOST',default='').startswith('sunfire'):
-    print 'WARNING: USING PORTAL - "use -w 24:00:00 -l mem=8gb" recomended for heavy computation'
+    print('WARNING: USING PORTAL - "use -w 24:00:00 -l mem=8gb" recomended for heavy computation')
 
 # make sure package is in path
-packagedir = join(os.path.abspath(__file__).split('/')[:-2],'/')+'/' # one directory up
+packagedir = '/'.join(os.path.abspath(__file__).split('/')[:-2])+'/' # one directory up
 sys.path.insert(0,packagedir+'pypec')
 sys.path.insert(0,packagedir+'bin')
 
@@ -133,7 +132,7 @@ def _newloc(loc):
     """
     dirs = os.path.abspath(loc).split('/')
     for i in range(2,len(dirs)+1):
-        tmp = join(dirs[0:i],'/')
+        tmp = '/'.join(dirs[0:i])
         if not os.path.exists(tmp):
             try:
                 os.system('mkdir '+tmp)
@@ -146,7 +145,7 @@ def _newloc(loc):
 
 def run(loc='.', rundir=default.rundir, submit=True, return_on_complete=False, rerun=False,
         rundcon=True, rungpec=True, runpentrc=True, runrdcon=False, runstride=False, cleandcon=False, fill_inputs=False, version='1.3',
-        mailon='NONE', email='', mem=3e3, hours=36, partition='sque', runipec=False, qsub=None, **kwargs):
+        mailon='NONE', email='', mem=3e3, hours=36, partition='general', runipec=False, qsub=None, **kwargs):
     """
     Python wrapper for running gpec package.
     
@@ -168,7 +167,7 @@ def run(loc='.', rundir=default.rundir, submit=True, return_on_complete=False, r
     :param email: str. Email address (default is submitting user).
     :param mem: floatMemory request of q-submission in megabytes (converted to integer).
     :param hours: int. Number of hours requested from job manager.
-    :param partition: str. Specify a specific computing queue (e.g. 'ellis'). Default auto-chooses based on threads and memory.
+    :param partition: str. Specify a specific computing queue.
     :param kwargs: dict. namelist instance(s) written to <kwarg>.in file(s).
 
     .. note::
@@ -245,15 +244,7 @@ def run(loc='.', rundir=default.rundir, submit=True, return_on_complete=False, r
             if 'parallel_threads' in dcon.get('DCON_CONTROL', {}):
                 ntasks = dcon['DCON_CONTROL']['parallel_threads']
                 print(' > Requesting {:} threads'.format(ntasks))
-        # set partition based on needs
-        if partition == 'sque':
-            if mem > 5.7e4:  # ellis nodes have 62G of memory
-                partition = 'mque'
-            elif ntasks > 4:
-                partition = 'dawson'
-            else:
-                partition = 'ellis'
-    
+
     # actual run
     if submit:
         # name the job based on the directory it is run in
@@ -759,7 +750,7 @@ def nustarscan(base='.',scale=(0.1,1.0,10.0),pentfile='pent.in',
         tscale = scalet*s**(scalen*(-1./3)-0.5*(not scalen)) + (not scalet)
         print('nuscale = {:.3e} \n tscale = {:.3e}, nscale = {:.3e}, 1/tscale = {:.3e}'.format(s,nscale,tscale,1.0/tscale))
         if(nscale and tscale): assert(np.isclose(nscale,1.0/tscale)) # double check NT constant scaling
-        newkfile = (join(kfile.split('.')[:-1],'.')
+        newkfile = ('.'.join(kfile.split('.')[:-1])
                 +'_nustar{:.2e}.dat'.format(s))
         kcop = copy.deepcopy(kin)
         kcop.y[ynames[0]]*=nscale
