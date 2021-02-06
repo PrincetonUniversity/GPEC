@@ -131,7 +131,17 @@ c-----------------------------------------------------------------------
 c     optionally reform the eq splines to concentrate at true truncation
 c-----------------------------------------------------------------------
       CALL sing_lim  ! determine if qhigh is truncating before psihigh
-      IF(psilim /= psihigh .AND. reform_eq_with_psilim)THEN
+      CALL sing_min  ! dettermine if qlow excludes more of the core
+      ! Unlike DCON, we fore a resplining.
+      ! The equil_out_qfind propogates to sing_find and then to the
+      ! parallelized intervals in a complicated web. Thus, it is not
+      ! sufficient to simply set the axisPsi to "start" the ODE somewhere new
+      IF(.NOT. reform_eq_with_psilim)THEN
+         PRINT *, "** STRIDE requires reformation of equil splines "//
+     $            "on q-based sub-interval."
+         PRINT *, " > Forcing reform_eq_with_psilim=t"
+      ENDIF
+      IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
          CALL equil_read(out_unit, psilim)
          CALL equil_out_global
          CALL equil_out_qfind
