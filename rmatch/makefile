@@ -1,12 +1,12 @@
 include ../install/DEFAULTS.inc
 
-FFLAGS = -qopenmp
+FFLAGS = $(OMPFLAG) -g
 IFLAGS = -I../equil -I$(MATHINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 export FFLAGS # for sub-makes
 
 .f.o:
-	$(F90) -g -c $*.f
+	$(F90) -c $*.f
 
 LIBDIR = ../lib
 

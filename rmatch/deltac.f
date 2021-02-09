@@ -1135,11 +1135,13 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ix,imap,ipert,ip,npp
       INTEGER :: ix0,np0
+      INTEGER :: imap_error
       TYPE(interval_type), POINTER :: intvl
       TYPE(cell_type), POINTER :: cell
 c-----------------------------------------------------------------------
 c     start loops over intervals and grid cells.
 c-----------------------------------------------------------------------
+      imap_error=0
       gal%rhs=0
       intvl => gal%intvl
       ix0=1
@@ -1165,8 +1167,12 @@ c-----------------------------------------------------------------------
             DO ipert=1,mpert
                imap=cell%map(ipert,ip)
                IF (imap>gal%ndim) THEN
-C                  WRITE (*,*) "ERROR: imap error."
+                  imap_error = imap
                   CYCLE
+               ENDIF
+               IF( imap_error>0 ) THEN
+                  WRITE (*,*) "ERROR: imap error. imap=",imap_error,
+     $              " gal%ndim=",gal%ndim
                ENDIF
                SELECT CASE (fulldomain)
                CASE (0)
@@ -1504,8 +1510,7 @@ c-----------------------------------------------------------------------
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
       ENDDO
       IF (istep >= nstep) THEN 
-         WRITE (*,*)"Warning: LSODE exceeds nstep."
-         READ (*,*)
+         WRITE (*,*)"Warning: LSODE exceeds nstep. x=",x
       ENDIF
 c-----------------------------------------------------------------------
 c     output and deallocate.
@@ -1574,12 +1579,13 @@ c-----------------------------------------------------------------------
          DO ip=1,3
             DO jp=0,1
 c              ua1(1,:)=CONJG(ua(:,tid(ip)))
-c              dua1(1,:)=CONJG(dua(:,tid(ip)))    
+c              dua1(1,:)=CONJG(dua(:,tid(ip)))
                ua1(1,:)=ua(:,tid(ip))
-               dua1(1,:)=dua(:,tid(ip))         
-               du_h2(:,ip,jp:jp)=MATMUL(dua1,imat)*hermite%qb(jp)
+               dua1(1,:)=dua(:,tid(ip))
+               du_h2(:,ip,jp:jp)=TRANSPOSE(
+     $              MATMUL(dua1,imat)*hermite%qb(jp)
      $              +MATMUL(ua1,vmat)*hermite%qb(jp)
-     $              +MATMUL(ua1,umat)*hermite%pb(jp)
+     $              +MATMUL(ua1,umat)*hermite%pb(jp) )
             ENDDO
          ENDDO
       ENDIF
