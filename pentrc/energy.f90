@@ -249,7 +249,7 @@ module energy_integration
             print *, "WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in x integration"
         endif
         if(istate==-1) then
-            print *, "psi =", psi, ", lambda =",lamnda, ", leff =",energy_leff
+            print *, "psi =", psi, ", lambda =",lambda, ", leff =",energy_leff
             xout_unit = get_free_file_unit(-1)
             open(unit=xout_unit,file="pentrc_xintrgl_lsode.err",status="unknown")
             write(xout_unit,*) "psi = ",psi," lambda = ",lambda, " leff = ",energy_leff
