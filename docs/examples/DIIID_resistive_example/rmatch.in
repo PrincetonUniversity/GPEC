@@ -47,7 +47,6 @@
     tid=3,5,6,4
     deltac_bin_sol=f
     deltac_out_sol=f
-    xmax_method=1
 
     rescale=t
     pfac=0.1
