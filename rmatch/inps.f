@@ -521,7 +521,7 @@ c     compute y and its derivatives with rvec.
 c-----------------------------------------------------------------------
       xfac=1/x**2
       rvec=-(/rt%r(1),rt%r(1),rt%r(2),rt%r(2)/)/2
-      cc=RESHAPE(ymat,(/4,kmax/))
+      cc=RESHAPE(ymat,(/4,kmax+1/))
       IF(PRESENT(dua))THEN
          CALL inps_horner(xfac,cc,yy,dyy,rvec)
          dy=-RESHAPE(dyy,(/2,2/))*2*xfac/x
