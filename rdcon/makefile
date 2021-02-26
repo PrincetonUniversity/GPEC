@@ -88,9 +88,3 @@ resist.o: dcon_mod.o toolbox.o
 gal.o: jacobi.o sing.o free.o
 lib_interface.o: ../equil/local.o ../equil/global.o ../equil/utils.o ../equil/inverse.o
 dcon.o: bal.o mercier.o ode.o resist.o gal.o lib_interface.o
-
-clean:
-	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff rdcon
-
-rclean: clean
-	cd ../equil; make clean
