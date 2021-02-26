@@ -234,7 +234,6 @@ module inputs
 
         ! collisionalities **assumes si units for n,t**
         zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
-
         zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)   
         kin%fs(:,6) = 17.3-0.5*log(kin%fs(:,2)/1.0e20) &
             +1.5*log(kin%fs(:,4)/1.602e-16)
@@ -242,7 +241,6 @@ module inputs
             /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
         kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
             /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
-        write(*,*)kin%fs(:,1:2)
 
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
@@ -276,6 +274,7 @@ module inputs
             call spline_write1(kin,.true.,.false.,out_unit,0,.true.)
             close(out_unit)
         endif
+
     end subroutine read_kin
 
 
