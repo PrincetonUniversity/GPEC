@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../coil -I../harvest -I../pentrc -I../dcon -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../harvest -I../pentrc -I../coil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
@@ -11,12 +11,12 @@ export FFLAGS # for sub-makes
 LIBDIR = ../lib
 
 LIBS = \
+	-lpentrc \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lcoil \
 	-lharvest \
-	-lpentrc
+	-lcoil
 
 OBJS = \
 	gpglobal.o \
@@ -32,22 +32,15 @@ OBJS = \
 
 # targets
 
-all: dcon coil lsode equil pentrc gpec
+all: pentrc coil gpec
 
-dcon:
-	cd ../dcon; make all
+# takes care of harvest, equil, lsode, etc.
+pentrc:
+	cd ../pentrc; make all
 
 coil:
 	cd ../coil; make
 
-lsode:
-	cd ../lsode; make
-
-equil:
-	cd ../equil; make
-
-pentrc:
-	cd ../pentrc; make pentrc
 
 # decide if we need to update the version
 # note gpec keeps track of its own version, which can differ from the synced dcon & pentrc one
@@ -89,5 +82,6 @@ gpvacuum.o : gpeq.o
 gpdiag.o: gpresp.o gpvacuum.o
 gpout.o: gpdiag.o gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o \
     ../equil/equil_mod.mod ../equil/equil_out_mod.mod \
-    ../pentrc/inputs.o ../pentrc/pentrc_interface.o ../pentrc/dcon_interface.mod ../dcon/ode_mod.mod version.inc
+    ../pentrc/pentrc_interface.mod ../pentrc/inputs.mod \
+	version.inc
 gpec.o: gpdiag.o gpout.o rdcon.o
