@@ -1585,7 +1585,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
 
       INTEGER :: resm
-      REAL(r8) :: qintb, bt, rho_gyro, delta_o, wpol
+      REAL(r8) :: qintb, rho_gyro, wpol, delta_callen, delta_rmp
       REAL(r8), DIMENSION(0:mpsi) :: psitor, rhotor
       TYPE(spline_type) :: sr
 
@@ -1605,7 +1605,7 @@ c-----------------------------------------------------------------------
       CALL spline_int(sq)
       qintb = sq%fsi(mpsi, 4)
       psitor(:) = sq%fsi(:, 4) / qintb  ! normalized toroidal flux
-      rhotor(:) = SQRT(psitor) * amean ! effective minor radius
+      rhotor(:) = SQRT(psitor / (pi * bt0))  ! effective minor radius in Callen
       CALL spline_alloc(sr,mpsi,1)
       sr%xs = sq%xs
       sr%fs(:, 1) = rhotor(:)
@@ -1701,24 +1701,21 @@ c-----------------------------------------------------------------------
             resm = mfac(resnum(ising))
             CALL spline_eval(sr,respsi,1)
             CALL spline_eval(kin,respsi,0)
-            bt = abs(sq%f(1)) / (twopi*ro)
-            ! Delta'_RMP in Callen
-            delta_o = ( abs(delta(ising) )/ (twopi*ro*sq%f(4))) * bt
-     $                / abs(singflx(ising))
             ! gyro radius ~ 1e-3 meters in DIII-D_ideal_example
-            rho_gyro = sqrt(2*kin%f(3)/(mi*mp)) / (zi*e*bt / (mi*mp))
+            rho_gyro = sqrt(2*kin%f(3)/(mi*mp)) / (zi*e*bt0 / (mi*mp))
             ! Callen estimates wpol~1.5e-2 meters in DIII-D Hmode pedestal top. DIII-D_ideal_example confirms
             wpol = 0.5 * sq%f(4) * rho_gyro / sqrt(sr%f(1) / ro)
+            ! Delta'_RMP in Callen, but using the total dB instead of the dB_vac approximation
+            delta_rmp = ( abs(delta(ising)) / (twopi*ro*sq%f(4))) * bt0
+     $                / abs(singflx_mn(resnum(ising),ising))
+            ! Delta'_m/n in Callen... should the 2 be generalized to nn?
+            delta_callen = -2 * resm / sr%f(1)
             ! this uses rho*Delta' -> 2*m in the numerator.... why?
             hw_crit(ising) = 0.5 * wpol ** (2./3) * sr%f(1) ** (1./3)
-     $                    * ((27. / 4) * 2 * resm) ** (1./6)
-     $                    / sqrt(sr%f(1) * delta_o)
+     $         * ((27. / 4) * abs(sr%f(1) * delta_callen) ) ** (1./6)
+     $         / sqrt(sr%f(1) * delta_rmp)
             ! convert from meters to psi_n for clear comparision to island_hwidth
             hw_crit(ising) = hw_crit(ising) / sr%f1(1)  !! should be ~1e-2 but is currently ~1
-            ! debugging
-            !print *, sr%f(1), delta_o, rho_gyro, wpol
-            !print *, wpol ** (2./3) * sr%f(1) ** (1./3)  ! order 1e-2
-            !print *, ((27. / 4) * 2 * resm) ** (1./6) / sqrt(sr%f(1) * delta_o) ! order 1e2 -> makes hw_crit ~1 (2 orders too large)
             IF(verbose)THEN
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
      $             "psi", "q", "singflx", "chirikov","w_island","w_crit"
@@ -1738,6 +1735,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ENDIF
       ENDDO
+      CALL spline_dealloc(sr)
       CALL cspline_dealloc(fsp_sol)
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
