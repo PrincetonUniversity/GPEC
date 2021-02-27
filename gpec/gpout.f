@@ -1562,7 +1562,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id
+     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1753,21 +1753,22 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,13(1x,a16))')"q","psi",
+         WRITE(out_unit,'(1x,a6,14(1x,a16))')"q","psi",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
-     $        "islandhwidth","chirikov"
+     $        "islandhwidth","chirikov","crithwidth"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,13(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,14(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           REAL(singflx_mn(resnum(ising),ising)),
      $           AIMAG(singflx_mn(resnum(ising),ising)),
      $           REAL(singcur(ising)),AIMAG(singcur(ising)),
      $           REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(delta(ising)),AIMAG(delta(ising)),
-     $           island_hwidth(ising),chirikov(ising)
+     $           island_hwidth(ising),chirikov(ising),
+     $           hw_crit(ising)
          ENDDO
          WRITE(out_unit,*)
       ENDIF
@@ -1797,6 +1798,11 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, w_id, "long_name",
      $     "Full width of saturated island") )
+         CALL check( nf90_def_var(fncid, "w_crit", nf90_double,
+     $      (/q_id/), wc_id) )
+         CALL check( nf90_put_att(fncid, wc_id, "units", "psi_n") )
+         CALL check( nf90_put_att(fncid, wc_id, "long_name",
+     $     "Critical width for island growth") )
          CALL check( nf90_def_var(fncid, "K_isl", nf90_double,
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
@@ -1810,6 +1816,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
+         CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_close(fncid) )
       ENDIF
