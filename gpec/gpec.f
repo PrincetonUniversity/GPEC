@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag,deltathresh_flag
+     $     filter_flag,gal_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -59,7 +59,7 @@ c-----------------------------------------------------------------------
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
-     $     netcdf_flag,ascii_flag,deltathresh_flag
+     $     netcdf_flag,ascii_flag,singthresh_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -143,7 +143,7 @@ c-----------------------------------------------------------------------
       bin_2d_flag=.TRUE.
       netcdf_flag=.TRUE.
       ascii_flag=.TRUE.
-      deltathresh_flag=.False.
+      singthresh_flag=.False.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
       max_linesout=0
@@ -208,7 +208,7 @@ c-----------------------------------------------------------------------
       galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
 c-----------------------------------------------------------------------
-c     Deprecated variable errors
+c     deprecated variable errors
 c-----------------------------------------------------------------------
       IF((pmode/=0).or.(p1mode/=0).or.(dmode/=0).or.(d1mode/=0).or.
      $   (fmode/=0).or.(rmode/=0).or.(smode/=0))THEN
@@ -219,6 +219,10 @@ c-----------------------------------------------------------------------
       IF(malias/=0) THEN
        PRINT *,"WARNING: malias may not be supported in future versions"
       ENDIF
+c-----------------------------------------------------------------------
+c     forced ralational settings
+c-----------------------------------------------------------------------
+      IF(singthresh_flag) singfld_flag = .TRUE.
 c-----------------------------------------------------------------------
 c     define relative file paths.
 c-----------------------------------------------------------------------
@@ -511,7 +515,12 @@ c-----------------------------------------------------------------------
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE
-            CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
+            IF (singthresh_flag) THEN
+               CALL initialize_pentrc(op_kin=.TRUE.,op_deq=.FALSE.,
+     $                op_peq=.FALSE.)
+            ENDIF
+            CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
+     $                         singthresh_flag)
          ENDIF
       ENDIF
       IF (coil_flag .AND. vsingfld_flag) THEN
@@ -561,9 +570,6 @@ c-----------------------------------------------------------------------
          CALL gpout_arzphifun(mode,xspmn)
       ENDIF
 
-      IF (deltathresh_flag) THEN
-         CALL gpout_deltathresh(mode,xspmn,sing_spot,sing_npsi)
-      ENDIF
 c-----------------------------------------------------------------------
 c     diagnose.
 c-----------------------------------------------------------------------
@@ -625,7 +631,8 @@ c-----------------------------------------------------------------------
          CALL gpout_control(infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
+         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
+     $                      singthresh_flag)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -647,7 +654,8 @@ c-----------------------------------------------------------------------
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
+         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
+     $                      singthresh_flag)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
          CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)

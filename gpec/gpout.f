@@ -40,26 +40,8 @@ c-----------------------------------------------------------------------
       USE gpdiag_mod
       USE field_mod
       USE netcdf
-      USE inputs, only : kin
-      USE pentrc_interface,
-     $    pentrc_version=>version,  ! should get a more fundamental fix
-     $    pentrc_to_upper=>to_upper,
-     $    pentrc_mfac=>mfac,
-     $    pentrc_jac_in=>jac_in,
-     $    pentrc_IDCONFILE=>IDCONFILE,
-     $    pentrc_JSURF_IN=>JSURF_IN,
-     $    pentrc_POWER_BIN=>POWER_BIN,
-     $    pentrc_POWER_BPIN=>POWER_BPIN,
-     $    pentrc_POWER_RCIN=>POWER_RCIN,
-     $    pentrc_POWER_RIN=>POWER_RIN,
-     $    pentrc_TMAG_IN=>TMAG_IN,
-     $    pentrc_verbose=>verbose,
-     $    pentrc_mpert=>mpert,
-     $    pentrc_nn=>nn,
-     $    pentrc_r8=>r8,
-     $    pentrc_timer=>timer
-
-      use inputs, only : geom
+      USE inputs, ONLY : kin
+      USE pentrc_interface, ONLY : zi, mi, initialize_pentrc
 
       IMPLICIT NONE
 
@@ -1570,10 +1552,11 @@ c-----------------------------------------------------------------------
 c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot)
+      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot, thresh_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
+      LOGICAL, INTENT(IN) :: thresh_flag
       INTEGER, INTENT(IN) :: egnum,nspot
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
@@ -1590,7 +1573,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
 
-      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov
+      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,hw_crit
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
      $     singflx,singbwp
@@ -1600,6 +1583,12 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
+
+      INTEGER :: resm
+      REAL(r8) :: qintb, bt, rho_gyro, delta_o, wpol
+      REAL(r8), DIMENSION(0:mpsi) :: psitor, rhotor
+      TYPE(spline_type) :: sr
+
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
@@ -1611,6 +1600,17 @@ c-----------------------------------------------------------------------
       CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
 
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
+
+      ! minor radius defined using toroidal flux. Used for threshold
+      CALL spline_int(sq)
+      qintb = sq%fsi(mpsi, 4)
+      psitor(:) = sq%fsi(:, 4) / qintb  ! normalized toroidal flux
+      rhotor(:) = SQRT(psitor) * amean ! effective minor radius
+      CALL spline_alloc(sr,mpsi,1)
+      sr%xs = sq%xs
+      sr%fs(:, 1) = rhotor(:)
+      CALL spline_fit(sr,"extrap")
+
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c-----------------------------------------------------------------------
@@ -1694,13 +1694,50 @@ c-----------------------------------------------------------------------
      $           respsi-singtype(ising-1)%psifac)/2.0
          ENDIF
          chirikov(ising)=island_hwidth(ising)/hdist
-         IF(verbose) WRITE(*,'(1x,a6,es10.3,a6,f6.3,a25,es10.3)')
-     $        "psi = ",singtype(ising)%psifac,
-     $        ", q = ",singtype(ising)%q,
-     $        ", total resonant field = ",
-     $        ABS(singflx_mn(resnum(ising),ising))
+c-----------------------------------------------------------------------
+c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
+c-----------------------------------------------------------------------
+         IF(thresh_flag)THEN
+            resm = mfac(resnum(ising))
+            CALL spline_eval(sr,respsi,1)
+            CALL spline_eval(kin,respsi,0)
+            bt = abs(sq%f(1)) / (twopi*ro)
+            ! Delta'_RMP in Callen
+            delta_o = ( abs(delta(ising) )/ (twopi*ro*sq%f(4))) * bt
+     $                / abs(singflx(ising))
+            ! gyro radius ~ 1e-3 meters in DIII-D_ideal_example
+            rho_gyro = sqrt(2*kin%f(3)/(mi*mp)) / (zi*e*bt / (mi*mp))
+            ! Callen estimates wpol~1.5e-2 meters in DIII-D Hmode pedestal top. DIII-D_ideal_example confirms
+            wpol = 0.5 * sq%f(4) * rho_gyro / sqrt(sr%f(1) / ro)
+            ! this uses rho*Delta' -> 2*m in the numerator.... why?
+            hw_crit(ising) = 0.5 * wpol ** (2./3) * sr%f(1) ** (1./3)
+     $                    * ((27. / 4) * 2 * resm) ** (1./6)
+     $                    / sqrt(sr%f(1) * delta_o)
+            ! convert from meters to psi_n for clear comparision to island_hwidth
+            hw_crit(ising) = hw_crit(ising) / sr%f1(1)  !! should be ~1e-2 but is currently ~1
+            ! debugging
+            !print *, sr%f(1), delta_o, rho_gyro, wpol
+            !print *, wpol ** (2./3) * sr%f(1) ** (1./3)  ! order 1e-2
+            !print *, ((27. / 4) * 2 * resm) ** (1./6) / sqrt(sr%f(1) * delta_o) ! order 1e2 -> makes hw_crit ~1 (2 orders too large)
+            IF(verbose)THEN
+               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
+     $             "psi", "q", "singflx", "chirikov","w_island","w_crit"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3,es12.3)')
+     $            respsi, sq%f(4), ABS(singflx_mn(resnum(ising),ising)),
+     $            chirikov(ising), 2*island_hwidth(ising),
+     $            2*hw_crit(ising)
+            ENDIF
+         ELSE
+            hw_crit(ising) = 0.0
+            IF(verbose)THEN
+               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12)') "psi",
+     $             "q", "singflx", "chirikov"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3)')
+     $            respsi, sq%f(4), ABS(singflx_mn(resnum(ising),ising)),
+     $            chirikov(ising)
+            ENDIF
+         ENDIF
       ENDDO
-
       CALL cspline_dealloc(fsp_sol)
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
@@ -2036,7 +2073,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE gpout_vsingfld()
 c-----------------------------------------------------------------------
       INTEGER :: ising,i
-      REAL(r8) :: hdist,shear,area
+      REAL(r8) :: respsi,hdist,shear,area
       INTEGER, DIMENSION(msing) :: resnum
       REAL(r8), DIMENSION(msing) :: visland_hwidth,vchirikov
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
@@ -2053,7 +2090,8 @@ c-----------------------------------------------------------------------
       ALLOCATE(vcmn(cmpert))
       vcmn=0
       DO ising=1,msing
-         CALL field_bs_psi(singtype(ising)%psifac,vcmn,2)
+         respsi = singtype(ising)%psifac
+         CALL field_bs_psi(respsi,vcmn,2)
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          DO i=1,cmpert
             IF (cmlow-mlow+i==resnum(ising)) THEN
@@ -2066,25 +2104,26 @@ c-----------------------------------------------------------------------
          shear=mfac(resnum(ising))*
      $        singtype(ising)%q1/singtype(ising)%q**2
          unitfun=1.0
-         area=issurfint(unitfun,mthsurf,singtype(ising)%psifac,0,0)
+         area=issurfint(unitfun,mthsurf,respsi,0,0)
          visland_hwidth(ising)=
      $        SQRT(ABS(4*vflxmn(ising)*area/
      $        (twopi*shear*singtype(ising)%q*chi1)))
          IF (ising==1) THEN 
-            hdist=(singtype(ising+1)%psifac-singtype(ising)%psifac)/2.0
+            hdist=(singtype(ising+1)%psifac-respsi)/2.0
          ELSE IF (ising==msing) THEN
-            hdist=(singtype(ising)%psifac-singtype(ising-1)%psifac)/2.0
+            hdist=(respsi-singtype(ising-1)%psifac)/2.0
          ELSE IF ((ising/=1).AND.(ising/=msing)) THEN
-            hdist=MIN(singtype(ising+1)%psifac-singtype(ising)%psifac,
-     $           singtype(ising)%psifac-singtype(ising-1)%psifac)/2.0
+            hdist=MIN(singtype(ising+1)%psifac-respsi,
+     $           respsi-singtype(ising-1)%psifac)/2.0
          ENDIF
          vchirikov(ising)=visland_hwidth(ising)/hdist
-         IF(verbose) WRITE(*,'(1x,a6,es10.3,a6,f6.3,a25,es10.3)')
-     $        "psi = ",singtype(ising)%psifac,
-     $        ", q = ",singtype(ising)%q,
-     $        ", vacuum resonant field = ",
-     $        ABS(vflxmn(ising))         
-         
+         IF(verbose)THEN
+            IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12)') "psi", "q",
+     $         "singflx", "chirikov"
+            WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3)')
+     $         respsi, sq%f(4), ABS(vflxmn(ising)),
+     $         vchirikov(ising)
+         ENDIF
       ENDDO
       DEALLOCATE(vcmn)
 c-----------------------------------------------------------------------
@@ -6418,419 +6457,5 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_close_netcdf
-c-----------------------------------------------------------------------
-c     subprogram 22. gpout_deltathresh.
-c     calcaulate analytical threshold.
-c-----------------------------------------------------------------------
-      SUBROUTINE gpout_deltathresh(egnum,xspmn,spot,nspot)
-c-----------------------------------------------------------------------
-c     test
-c-----------------------------------------------------------------------
-
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT(IN) :: egnum,nspot
-      REAL(r8), INTENT(IN) :: spot
-      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
-
-      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id
-
-      INTEGER :: itheta,ising,icoup
-      REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
-      COMPLEX(r8) :: lbwp1mn,rbwp1mn
-
-      INTEGER, DIMENSION(msing) :: resnum
-      REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx,tmp2
-      REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
-      COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
-
-      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov
-      REAL(r8), DIMENSION(msing) :: rhotor_3
-
-      REAL(r8), DIMENSION(nsingcoup,msing) :: op
-      COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
-     $     singflx,singbwp,delta_o,w_crit
-      COMPLEX(r8), DIMENSION(nsingcoup, msing) :: olap
-      COMPLEX(r8), DIMENSION(mpert,msing) :: singflx_mn
-      REAL(r8), DIMENSION(0:mstep) :: psitor_2,rhotor_2
-      REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
-
-
-      TYPE(spline_type) :: spl
-      TYPE(cspline_type) :: fsp_sol
-      COMPLEX(r8), DIMENSION(mpert) :: interpbwn
-
-c-----------------------------------------------------------------------
-c     new variable defined
-c-----------------------------------------------------------------------
-      character(512) :: kinetic_file='kin.dat'
-
-      integer :: i, mi=2, zi=1, zimp=6, mimp=12
-      real(r8) :: nfac=1.0, tfac=1.0, wefac=1.0, wpfac=1.0
-      logical :: debug=.false.
-      integer, parameter :: nkin = 100
-      real(r8) :: psi
-      real(r8), dimension(0:nkin) :: zeff,welec,wdian,wdiat,wpefac
-      real(r8), dimension(:,:), allocatable :: table
-      type(spline_type) :: tmp
-      type(spline_type) :: tmp3
-
-      INTEGER :: istep
-      REAL(r8) :: qintb
-      REAL(r8), DIMENSION(0:mstep) :: psitor,rhotor
-      TYPE(spline_type) :: qs
-
-c-----------------------------------------------------------------------
-c     new variable defined
-c-----------------------------------------------------------------------
-
-      integer :: ix, iy
-
-      real(r8), dimension(3) :: geom_f, eqfun_f, eqfun_fx, eqfun_fy
-
-
-c      call spline_eval_external(geom,psi,ix,geom_f)
-
-c      WRITE(*,*) geom_f(2)
-
-c-----------------------------------------------------------------------
-c     solve equation from the given poloidal perturbation.
-c-----------------------------------------------------------------------
-      IF(timeit) CALL gpec_timer(-2)
-      IF(verbose) WRITE(*,*)"Computing total resonant fields"
-      CALL gpeq_alloc
-      CALL idcon_build(egnum,xspmn)
-
-      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
-
-      IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
-c-----------------------------------------------------------------------
-c     evaluate delta and singular currents.
-c-----------------------------------------------------------------------
-!     j_c is j_c/(chi1*sq%f(4))
-      DO ising=1,msing
-         resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
-         respsi=singtype(ising)%psifac
-         CALL spline_eval(sq,respsi,1)
-       area(ising)=0
-       j_c(ising)=0
-       DO itheta=0,mthsurf
-          CALL bicube_eval(rzphi,respsi,theta(itheta),1)
-          rfac=SQRT(rzphi%f(1))
-          eta=twopi*(theta(itheta)+rzphi%f(2))
-          r(itheta)=ro+rfac*COS(eta)
-          z(itheta)=zo+rfac*SIN(eta)
-          jac=rzphi%f(4)
-          w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-          w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-          delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
-            sqreqb(itheta)=(sq%f(1)**2+chi1**2*delpsi(itheta)**2)
-     $           /(twopi*r(itheta))**2
-            jcfun(itheta)=sqreqb(itheta)/(delpsi(itheta)**3)
-            area(ising)=area(ising)+jac*delpsi(itheta)/mthsurf
-            j_c(ising)=j_c(ising)+jac*delpsi(itheta)
-     $           *jcfun(itheta)/mthsurf
-         ENDDO
-         area(ising)=area(ising)-jac*delpsi(mthsurf)/mthsurf
-         j_c(ising)=j_c(ising)-jac*delpsi(mthsurf)*
-     $        jcfun(mthsurf)/mthsurf
-
-         j_c(ising)=1.0/j_c(ising)*chi1**2*sq%f(4)/mu0
-         shear=mfac(resnum(ising))*sq%f1(4)/sq%f(4)**2
-
-         CALL gpeq_interp_sol(fsp_sol,respsi,interpbwn)
-         singbwp(ising)=interpbwn(resnum(ising))
-
-         lpsi=respsi-spot/(nn*ABS(singtype(ising)%q1))
-         CALL gpeq_sol(lpsi)
-         lbwp1mn=bwp1_mn(resnum(ising))
-
-         rpsi=respsi+spot/(nn*ABS(singtype(ising)%q1))
-         CALL gpeq_sol(rpsi)
-         rbwp1mn=bwp1_mn(resnum(ising))
-
-         delta(ising) = (rbwp1mn - lbwp1mn) / (twopi * chi1)
-         delcur(ising)= (rbwp1mn - lbwp1mn) * j_c(ising) * ifac /
-     $        (twopi*mfac(resnum(ising)))
-         singcur(ising)=-delcur(ising)/ifac
-
-
-         fkaxmn=0
-         fkaxmn(resnum(ising))=singcur(ising)/(twopi*nn)
-
-         ALLOCATE(fsurf_indev(mpert),fsurf_indmats(mpert,mpert))
-         CALL gpvacuum_flxsurf(respsi)
-         singflx_mn(:,ising)=MATMUL(fsurf_indmats,fkaxmn)
-         DEALLOCATE(fsurf_indmats,fsurf_indev)
-c-----------------------------------------------------------------------
-c     compute half-width of magnetic island.
-c-----------------------------------------------------------------------
-         island_hwidth(ising)=
-     $        SQRT(ABS(4*singflx_mn(resnum(ising),ising)/
-     $        (twopi*shear*sq%f(4)*chi1)))
-c-----------------------------------------------------------------------
-c     compute coordinate-independent resonant field.
-c-----------------------------------------------------------------------
-         IF (vsbrzphi_flag) THEN
-            singbno_mn(:,ising)=-singflx_mn(:,ising)
-!            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
-         ENDIF
-         singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)
-      ENDDO
-
-
-      DO ising=1,msing
-          WRITE(*,*) ising
-
-          WRITE(*,*)"Delta"
-          WRITE(*,*)delta(ising)
-
-          WRITE(*,*)"Sing_fld"
-          WRITE(*,*)singflx_mn(resnum(ising),ising)
-          delta_o(ising)=
-     $    abs(sq%f(1))/(twopi*ro)/singflx_mn(resnum(ising),ising)*
-     $    (delta(ising)/(twopi*mfac(resnum(ising))/nn*ro))
-
-c          WRITE(*,*)"q at rational surface"
-c          WRITE(*,*)mfac(resnum(ising))/nn
-
-          WRITE(*,*)"Delta_o"
-          WRITE(*,*)delta_o(ising)
-
-          WRITE(*,*)"Vacuum island half width"
-          WRITE(*,*)island_hwidth(ising)
-      ENDDO
-      WRITE(*,*)"R0"
-      WRITE(*,*)ro
-      WRITE(*,*)"Bt0"
-      WRITE(*,*)abs(sq%f(1))/(twopi*ro)
-
-
-      CALL spline_alloc(qs,mstep,1)
-      qs%xs=psifac
-      qs%fs(:,1)=qfac
-      CALL spline_fit(qs,"extrap")
-      CALL spline_int(qs)
-      qintb=qs%fsi(mstep,1)
-      psitor_2(:)=qs%fsi(:,1)/qintb
-      rhotor(:)=SQRT(psitor(:))
-
-c      WRITE(*,*)"qs%fsi(:,1)   "
-c      WRITE(*,*) qs%fsi(:,1)
-      WRITE(*,*)"qintb"
-      WRITE(*,*) qintb
-
-      rhotor_2=sqrt(twopi*qs%fsi(:,1)*psio/
-     $         pi/(abs(sq%f(1))/(twopi*ro)))
-
-
-c      WRITE(*,*)"rhotor_2"
-c      WRITE(*,*) rhotor_2
-
-c      WRITE(*,*) "psi otor"
-c      WRITE(*,*) sqrt(qintb*psio)
-
-      WRITE(*,*)"psi_edge =",psio,
-     $     "psitor_edge =",qintb*psio
-
-
-      CALL spline_alloc(tmp,mstep,1)
-      DO ising=1,msing
-         resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
-         respsi=singtype(ising)%psifac
-         tmp%xs=psifac
-         tmp%fs(:,1)=rhotor_2
-         CALL spline_eval(tmp,respsi,0)
-         rhotor_3(ising)=tmp%f(1)
-
-      ENDDO
-      CALL spline_dealloc(tmp)
-
-       write(*,*) "betap1"
-       write(*,*) betap1
-
-       write(*,*) "rhotor_3"
-       write(*,*) rhotor_3
-
-      CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
-     $              tfac,wefac,wpfac,debug)
-      WRITE(*,*)"Ti(ev)"
-c      WRITE(*,*) kin%fs(:,3:4)/1.602e-19
-
-
-      CALL spline_alloc(tmp,nkin,1)
-      tmp%xs=kin%xs(:)
-      tmp%fs(:,1)=kin%fs(:,3)/1.602e-19
-      DO ising=1,msing
-
-         resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
-         respsi=singtype(ising)%psifac
-         CALL spline_eval(tmp,respsi,1)
-         tmp2(ising)=tmp%f(1)
-         WRITE(*,*)"Ti"
-         WRITE(*,*)tmp%f(1)
-
-         tmp2(ising)=sqrt(2*tmp%f(1)*1.602e-19/(2*mp))
-     $               /(1.602e-19*abs(sq%f(1))/(twopi*ro)/(2*mp))
-
-
-         WRITE(*,*)"gyro radius"
-         WRITE(*,*)tmp2(ising)
-
-
-         tmp2(ising)=mfac(resnum(ising))/nn
-     $               *sqrt(2*tmp%f(1)*1.602e-19/(2*mp))
-     $               /(1.602e-19*abs(sq%f(1))/(twopi*ro)/(2*mp))
-     $               /sqrt((MAXVAL(r_tmp)-MINVAL(r_tmp))/2/ro)
-
-         WRITE(*,*)"wib"
-         WRITE(*,*)tmp2(ising)
-      ENDDO
-      CALL spline_eval(tmp,psifac(i),1)
-
-c      WRITE(*,*) kin%xs(:)
-c      WRITE(*,*) kin%fs(:,3)/1.602e-19
-
-      WRITE(*,*) tmp%f(1)
-
-      WRITE(*,*) "rzphi%f(1)"
-      WRITE(*,*) rzphi%f(1)
-      WRITE(*,*) "rzphi%f(2)"
-      WRITE(*,*) "rzphi%ys(itheta)"
-      WRITE(*,*) rzphi%ys(itheta)
-      WRITE(*,*) ro+SQRT(rzphi%f(1))*COS(twopi*rzphi%f(2))
-      WRITE(*,*) ro+SQRT(rzphi%f(1))
-     $           *COS(rzphi%ys(itheta)+twopi*rzphi%f(2))
-
-      DO ising=1,msing
-          DO itheta=0,mthsurf
-c              CALL bicube_eval(rzphi,rzphi%xs(istep),rzphi%ys(itheta),1)
-c              CALL bicube_eval(rzphi,psifac(istep),theta(itheta),0)
-
-
-              resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
-              respsi=singtype(ising)%psifac
-              CALL bicube_eval(rzphi,respsi,theta(itheta),1)
-
-
-
-c             WRITE(*,*) "rzphi test",itheta
-              r_tmp(itheta)=ro+SQRT(rzphi%f(1))
-     $                      *COS(twopi*(theta(itheta)+rzphi%f(2)))
-
-
-
-           ENDDO
-
-
-            WRITE(*,*) "ro"
-            WRITE(*,*) ro
-            WRITE(*,*) "SQRT(rzphi%f(1))"
-            WRITE(*,*) SQRT(rzphi%f(1))
-            WRITE(*,*) "HFS R"
-            WRITE(*,*) MINVAL(r_tmp)
-            WRITE(*,*) "LFS R"
-            WRITE(*,*) MAXVAL(r_tmp)
-            WRITE(*,*) "aminor"
-            WRITE(*,*) (MAXVAL(r_tmp)-MINVAL(r_tmp))/2
-
-      ENDDO
-
-
-
-c         rfac=SQRT(rzphi%f(1))
-c         eta=twopi*rzphi%f(2)
-c         rlim=ro+rfac*COS(eta)
-
-
-c      CALL fourfit_action_matrix
-c      CALL initialize_pentrc()
-
-c      CALL initialize_pentrc(debug,debug,debug)
-c      CALL initialize_pentrc(op_kin=.FALSE.,op_deq=.FALSE.,
-c     $          op_peq=.FALSE.)
-c     WRITE(*,*)kinetic_file
-c      WRITE(*,*)"ni, ne"
-c      WRITE(*,*) kin%fs(:,1:2)
-
-
-c      WRITE(*,*) tmp%xs(0:)
-
-c      WRITE(*,*) tmp%fs(0:,1)
-c      WRITE(*,*) kin%xs
-c      WRITE(*,*) kin%fs(:,1:2)
-c      WRITE(*,*) table(1:,i+1)
-
-ccccccccccccccccccccccccccccccccccccccccc Restart  ccccccccccccccccccc
-      CALL spline_dealloc(tmp)
-      CALL spline_dealloc(qs)
-
-      CALL spline_alloc(qs,mstep,1)
-      qs%xs=psifac
-      qs%fs(:,1)=qfac
-      CALL spline_fit(qs,"extrap")
-      CALL spline_int(qs)
-      qintb=qs%fsi(mstep,1)
-      psitor_2(:)=qs%fsi(:,1)/qintb
-
-
-      rhotor_2=sqrt(twopi*qs%fsi(:,1)*psio/
-     $         pi/(abs(sq%f(1))/(twopi*ro)))
-      CALL spline_alloc(tmp,nkin,1)
-      CALL spline_alloc(tmp3,mstep,1)
-      tmp%xs=kin%xs(:)
-      tmp%fs(:,1)=kin%fs(:,3)/1.602e-19
-
-      DO ising=1,msing
-
-          delta_o(ising)=
-     $    abs(sq%f(1))/(twopi*ro)/singflx_mn(resnum(ising),ising)*
-     $    (delta(ising)/(twopi*mfac(resnum(ising))/nn*ro))
-          WRITE(*,*)ising
-
-          WRITE(*,*)"Delta_o"
-          WRITE(*,*)delta_o(ising)
-
-
-          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
-          respsi=singtype(ising)%psifac
-          CALL spline_eval(tmp,respsi,1)
-
-
-
-          tmp2(ising)=mfac(resnum(ising))/nn
-     $               *sqrt(2*tmp%f(1)*1.602e-19/(2*mp))
-     $               /(1.602e-19*abs(sq%f(1))/(twopi*ro)/(2*mp))
-     $               /sqrt((MAXVAL(r_tmp)-MINVAL(r_tmp))/2/ro)
-
-          WRITE(*,*)"wib"
-          WRITE(*,*)tmp2(ising)
-          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
-          respsi=singtype(ising)%psifac
-          tmp3%xs=psifac
-          tmp3%fs(:,1)=rhotor_2
-          CALL spline_eval(tmp3,respsi,0)
-          rhotor_3(ising)=tmp3%f(1)
-
-          w_crit(ising)=0.5*tmp2(ising)**(2./3)*rhotor_3(ising)**(1./3)
-c     $                  *((27./4)*2*mfac(resnum(ising)))**(1./6)
-c     $                  /(rhotor_3(ising)*delta_o(ising))**(1./2)
-          WRITE(*,*)"w_crit"
-          WRITE(*,*)w_crit(ising)
-
-          WRITE(*,*)"Vacuum island half width"
-          WRITE(*,*)island_hwidth(ising)
-      ENDDO
-
-
-
-c      CALL read_kin()
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE gpout_deltathresh
 
       END MODULE gpout_mod
