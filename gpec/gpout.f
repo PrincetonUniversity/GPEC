@@ -1798,7 +1798,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, w_id, "long_name",
      $     "Full width of saturated island") )
-         CALL check( nf90_def_var(fncid, "w_crit", nf90_double,
+         CALL check( nf90_def_var(fncid, "w_isl_crit", nf90_double,
      $      (/q_id/), wc_id) )
          CALL check( nf90_put_att(fncid, wc_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, wc_id, "long_name",
