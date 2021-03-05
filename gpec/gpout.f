@@ -1587,6 +1587,9 @@ c-----------------------------------------------------------------------
       INTEGER :: resm
       REAL(r8) :: qintb, rho_gyro, wpol, delta_callen, delta_rmp
       REAL(r8), DIMENSION(0:mpsi) :: psitor, rhotor
+      REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
+
+      TYPE(spline_type) :: qs
       TYPE(spline_type) :: sr
 
 c-----------------------------------------------------------------------
@@ -1602,12 +1605,27 @@ c-----------------------------------------------------------------------
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
 
       ! minor radius defined using toroidal flux. Used for threshold
+
+
+
+
+      !Niks version
+
       CALL spline_int(sq)
       qintb = sq%fsi(mpsi, 4)
+      write(*,*)"qintb"
+      write(*,*)qintb
       psitor(:) = sq%fsi(:, 4) / qintb  ! normalized toroidal flux
-      rhotor(:) = SQRT(psitor / (pi * bt0))  ! effective minor radius in Callen
+      write(*,*)"psitor"
+      write(*,*)psitor
+      rhotor(:) = SQRT(sq%fsi(:, 4)*twopi*psio / (pi * bt0))  ! effective minor radius in Callen
+
+      write(*,*)"rhotor"
+      write(*,*)rhotor
       CALL spline_alloc(sr,mpsi,1)
       sr%xs = sq%xs
+      write(*,*)"psi norm"
+      write(*,*)sr%xs
       sr%fs(:, 1) = rhotor(:)
       CALL spline_fit(sr,"extrap")
 
@@ -1637,7 +1655,17 @@ c-----------------------------------------------------------------------
             area(ising)=area(ising)+jac*delpsi(itheta)/mthsurf
             j_c(ising)=j_c(ising)+jac*delpsi(itheta)
      $           *jcfun(itheta)/mthsurf
+
+
+              CALL bicube_eval(rzphi,respsi,theta(itheta),1) !added for r calculation for apsect ratio. Do we need this?
+              r_tmp(itheta)=ro+SQRT(rzphi%f(1))
+     $                      *COS(twopi*(theta(itheta)+rzphi%f(2)))
+
+
+
          ENDDO
+         WRITE(*,*) "aminor"
+         WRITE(*,*) (MAXVAL(r_tmp)-MINVAL(r_tmp))/2
          area(ising)=area(ising)-jac*delpsi(mthsurf)/mthsurf
          j_c(ising)=j_c(ising)-jac*delpsi(mthsurf)*
      $        jcfun(mthsurf)/mthsurf
@@ -1703,11 +1731,23 @@ c-----------------------------------------------------------------------
             CALL spline_eval(kin,respsi,0)
             ! gyro radius ~ 1e-3 meters in DIII-D_ideal_example
             rho_gyro = sqrt(2*kin%f(3)/(mi*mp)) / (zi*e*bt0 / (mi*mp))
+
+            write(*,*)'Ti'
+            write(*,*)kin%f(3)/1.6e-19
+            write(*,*)'rho_gyro'
+            write(*,*)rho_gyro
             ! Callen estimates wpol~1.5e-2 meters in DIII-D Hmode pedestal top. DIII-D_ideal_example confirms
-            wpol = 0.5 * sq%f(4) * rho_gyro / sqrt(sr%f(1) / ro)
+            wpol = 0.5 * sq%f(4) * rho_gyro
+     $            / sqrt((MAXVAL(r_tmp)-MINVAL(r_tmp))/2 / ro) ! use r definition
+            write(*,*)'wib'
+            write(*,*)wpol*2
+            write(*,*)'rhotor'
+            write(*,*)sr%f(1)
             ! Delta'_RMP in Callen, but using the total dB instead of the dB_vac approximation
             delta_rmp = ( abs(delta(ising)) / (twopi*ro*sq%f(4))) * bt0
      $                / abs(singflx_mn(resnum(ising),ising))
+            write(*,*)'delta_rmp'
+            write(*,*)abs(delta_rmp)
             ! Delta'_m/n in Callen... should the 2 be generalized to nn?
             delta_callen = -2 * resm / sr%f(1)
             ! this uses rho*Delta' -> 2*m in the numerator.... why?
@@ -1715,7 +1755,10 @@ c-----------------------------------------------------------------------
      $         * ((27. / 4) * abs(sr%f(1) * delta_callen) ) ** (1./6)
      $         / sqrt(sr%f(1) * delta_rmp)
             ! convert from meters to psi_n for clear comparision to island_hwidth
-            hw_crit(ising) = hw_crit(ising) / sr%f1(1)  !! should be ~1e-2 but is currently ~1
+            hw_crit(ising) = hw_crit(ising)/sr%f1(1) !! should be ~1e-2 but is currently ~1. conversion from m to psi unit
+
+            write(*,*)'drho/dpsi'
+            write(*,*)sr%f1(1)
             IF(verbose)THEN
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
      $             "psi", "q", "singflx", "chirikov","w_island","w_crit"
