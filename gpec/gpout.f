@@ -1702,21 +1702,22 @@ c-----------------------------------------------------------------------
             resm = mfac(resnum(ising))
             CALL spline_eval(sr,respsi,1)
             CALL spline_eval(kin,respsi,0)
+            ! rho = 0.7188 at 8/2 surface in DIII-D 158115 benchmark. Callen paper estimates it as 0.73
             ! gyro radius ~ 1e-3 meters in DIII-D_ideal_example
             rho_gyro = sqrt(2*kin%f(3)/(mi*mp)) / (zi*e*bt0 / (mi*mp))
-            ! Callen estimates wpol~1.5e-2 meters in DIII-D Hmode pedestal top. DIII-D_ideal_example confirms
+            ! Callen estimates wpol~1.5e-2 meters in DIII-D 158115 Hmode pedestal top. Benchmark confirms
             wpol = 0.5 * sq%f(4) * rho_gyro / sqrt(sr%f(1) / ro)
-            ! Delta'_RMP in Callen, but using the total dB instead of the dB_vac approximation
+            ! Delta'_RMP in Callen, but using the total 1/dB instead of the 1/dB_vac approximation
             delta_rmp = ( abs(delta(ising)) / (twopi*ro*sq%f(4))) * bt0
      $                / abs(singflx_mn(resnum(ising),ising))
             ! Delta'_m/n in Callen... should the 2 be generalized to nn?
             delta_callen = -2 * resm / sr%f(1)
-            ! this uses rho*Delta' -> 2*m in the numerator.... why?
+            ! Callen critical vac width
             hw_crit(ising) = 0.5 * wpol ** (2./3) * sr%f(1) ** (1./3)
      $         * ((27. / 4) * abs(sr%f(1) * delta_callen) ) ** (1./6)
      $         / sqrt(sr%f(1) * delta_rmp)
             ! convert from meters to psi_n for clear comparision to island_hwidth
-            hw_crit(ising) = hw_crit(ising) / sr%f1(1)  !! conversion from meters to psi_n units
+            hw_crit(ising) = hw_crit(ising) / sr%f1(1)
 
             IF(verbose)THEN
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
@@ -2167,9 +2168,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res_v", nf90_double,
      $      (/q_id,i_id/), p_id) )
-         CALL check( nf90_put_att(fncid, p_id, "units", "Wb") )
+         CALL check( nf90_put_att(fncid, p_id, "units", "T") )
          CALL check( nf90_put_att(fncid, p_id, "long_name",
-     $     "Pitch resonant vacuum flux") )
+     $     "Pitch resonant vacuum flux normalized by the surface area") )
          CALL check( nf90_def_var(fncid, "w_isl_v", nf90_double,
      $      (/q_id/), w_id) )
          CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
