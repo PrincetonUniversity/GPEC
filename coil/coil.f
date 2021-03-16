@@ -109,7 +109,7 @@ c-----------------------------------------------------------------------
             coil(ci)%cur(cj)=coil_cur(ci,cj)
             DO ck=1,coil(ci)%s
                DO cl=1,coil(ci)%nsec
-                  READ(coil_unit,'(3(1x,e12.4))')coil(ci)%x(cj,ck,cl),
+                  READ(coil_unit,*)coil(ci)%x(cj,ck,cl),
      $                 coil(ci)%y(cj,ck,cl),coil(ci)%z(cj,ck,cl)
                ENDDO
             ENDDO
