@@ -27,7 +27,7 @@ c-----------------------------------------------------------------------
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
-     $     d3_flag,xbst_flag,rzphibx_flag,dw_flag,
+     $     d3_flag,xbst_flag,rzphibx_flag,jacfac_flag,dw_flag,
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
      $     netcdf_flag,ascii_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
-     $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
+     $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
@@ -163,6 +163,7 @@ c-----------------------------------------------------------------------
       xbst_flag=.FALSE.
       pmodbmn_flag=.FALSE.
       rzphibx_flag=.FALSE.
+      jacfac_flag=.FALSE.
       radvar_flag=.TRUE.
       eigen_flag=.FALSE.
       magpot_flag=.FALSE.
@@ -582,6 +583,9 @@ c-----------------------------------------------------------------------
       ENDIF            
       IF (rzphibx_flag) THEN
          CALL gpdiag_rzphibx(mode,xspmn)
+      ENDIF
+      IF (jacfac_flag) THEN
+         CALL gpdiag_jacfac()
       ENDIF
 c-----------------------------------------------------------------------
 c     diagnose without a given error field.
