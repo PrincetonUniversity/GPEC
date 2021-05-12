@@ -3302,7 +3302,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(fncid, "Jbgradpsi", nf90_double,
      $               (/p_id,m_id,i_id/),wm_id) )
          CALL check( nf90_put_att(fncid,wm_id,"long_name",
-     $      "Jaconbian weighted contravariant psi component of "//
+     $      "Jacobian weighted contravariant psi component of "//
      $      "the perturbed field") )
          CALL check( nf90_put_att(fncid,wm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,wm_id,"jacobian",jac_out) )
