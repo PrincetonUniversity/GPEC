@@ -3863,7 +3863,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: xwp,bwp,xwt,bwt,xvz,bvz
 
       INTEGER :: r_id,z_id,i_id,xr_id,xz_id,xp_id,br_id,bz_id,bp_id,
-     $   bre_id,bze_id,bpe_id,brp_id,bzp_id,bpp_id
+     $   bre_id,bze_id,bpe_id,brp_id,bzp_id,bpp_id,ar_id,az_id,ap_id
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
@@ -3872,7 +3872,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:nr,0:nz) :: vgdr,vgdz,ebr,ebz,ebp
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: xrr,xrz,xrp,brr,brz,brp,
      $     bpr,bpz,bpp,vbr,vbz,vbp,vpbr,vpbz,vpbp,vvbr,vvbz,vvbp,
-     $     btr,btz,btp,vcbr,vcbz,vcbp,xcr,xcz,xcp,bcr,bcz,bcp
+     $     btr,btz,btp,vcbr,vcbz,vcbp,xcr,xcz,xcp,bcr,bcz,bcp,
+     $     atr,atz,atp
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: chex,chey
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: chear,cheaz,
@@ -3903,6 +3904,9 @@ c-----------------------------------------------------------------------
       bpr = 0
       bpz = 0
       bpp = 0
+      atr = 0
+      atz = 0
+      atp = 0
       vbr = 0
       vbz = 0
       vbp = 0
@@ -4108,6 +4112,12 @@ c-----------------------------------------------------------------------
             CALL gpdiag_rzpdiv(nr,nz,gdl,gdr,gdz,btr,btz,btp,"b")
          ENDIF
       ENDIF
+
+      ! Vector potential in cylindrical coordinates
+      ! db = curl(dA) -> dA = -(iR^2/n) gradphi x dB
+      atr =-ifac*(gdr/nn)*btz
+      atz = ifac*(gdr/nn)*btr
+      atp = 0
 
       IF (chebyshev_flag) THEN
          IF(verbose) WRITE(*,*)"Computing chebyshev for xbrzphi"
@@ -4333,6 +4343,21 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(cncid,bp_id,"long_name",
      $               "Toroidal nonaxisymmetric field") )
          CALL check( nf90_put_att(cncid,bp_id,"units","Tesla") )
+         CALL check( nf90_def_var(cncid, "A_r", nf90_double,
+     $               (/r_id,z_id,i_id/),ar_id) )
+         CALL check( nf90_put_att(cncid,ar_id,"long_name",
+     $               "Radial nonaxisymmetric vector potential") )
+         CALL check( nf90_put_att(cncid,ar_id,"units","Vs/m") )
+         CALL check( nf90_def_var(cncid, "A_z", nf90_double,
+     $               (/r_id,z_id,i_id/),az_id) )
+         CALL check( nf90_put_att(cncid,az_id,"long_name",
+     $               "Vertical nonaxisymmetric vector potential") )
+         CALL check( nf90_put_att(cncid,az_id,"units","Vs/m") )
+         CALL check( nf90_def_var(cncid, "A_t", nf90_double,
+     $               (/r_id,z_id,i_id/),ap_id) )
+         CALL check( nf90_put_att(cncid,ap_id,"long_name",
+     $               "Toroidal nonaxisymmetric vector potential") )
+         CALL check( nf90_put_att(cncid,ap_id,"units","Vs/m") )
          CALL check( nf90_def_var(cncid, "xi_r", nf90_double,
      $               (/r_id,z_id,i_id/),xr_id) )
          CALL check( nf90_put_att(cncid,xr_id,"long_name",
@@ -4342,12 +4367,12 @@ c-----------------------------------------------------------------------
      $               (/r_id,z_id,i_id/),xz_id) )
          CALL check( nf90_put_att(cncid,xz_id,"long_name",
      $               "Vertical nonaxisymmetric displacement") )
-         CALL check( nf90_put_att(cncid,bz_id,"units","m") )
+         CALL check( nf90_put_att(cncid,xz_id,"units","m") )
          CALL check( nf90_def_var(cncid, "xi_t", nf90_double,
      $               (/r_id,z_id,i_id/),xp_id) )
          CALL check( nf90_put_att(cncid,xp_id,"long_name",
      $               "Toroidal nonaxisymmetric displacement") )
-         CALL check( nf90_put_att(cncid,bp_id,"units","m") )
+         CALL check( nf90_put_att(cncid,xp_id,"units","m") )
          CALL check( nf90_enddef(cncid) )
          CALL check( nf90_put_var(cncid,bre_id,ebr) )
          CALL check( nf90_put_var(cncid,bze_id,ebz) )
@@ -4364,6 +4389,12 @@ c-----------------------------------------------------------------------
      $                AIMAG(bpz)/),(/nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,bpp_id,RESHAPE((/REAL(bpp),
      $                AIMAG(bpp)/),(/nr+1,nz+1,2/))) )
+         CALL check( nf90_put_var(cncid,ar_id,RESHAPE((/REAL(atr),
+     $                AIMAG(atr)/),(/nr+1,nz+1,2/))) )
+         CALL check( nf90_put_var(cncid,az_id,RESHAPE((/REAL(atz),
+     $                AIMAG(atz)/),(/nr+1,nz+1,2/))) )
+         CALL check( nf90_put_var(cncid,ap_id,RESHAPE((/REAL(atp),
+     $                AIMAG(atp)/),(/nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,xr_id,RESHAPE((/REAL(xrr),
      $                AIMAG(xrr)/),(/nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,xz_id,RESHAPE((/REAL(xrz),
