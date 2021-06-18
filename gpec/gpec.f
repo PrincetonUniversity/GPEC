@@ -229,7 +229,6 @@ c-----------------------------------------------------------------------
          ENDIF
          IF(coil_flag)THEN
             singfld_flag = .TRUE.
-            vsingfld_flag = .TRUE.
          ELSE
             PRINT *, "WARNING: "//
      $               "singthresh_flag requires coil vacuum fields"

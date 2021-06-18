@@ -1712,7 +1712,7 @@ c-----------------------------------------------------------------------
             wpol = 0.5 * sq%f(4) * rho_gyro / sqrt(sr%f(1) / ro)
             ! Delta'_RMP in Callen, but using the total 1/dB instead of the 1/dB_vac approximation
             delta_rmp = ( abs(delta(ising)) / (twopi*ro*sq%f(4))) * bt0
-     $                / abs(vsingfld(ising))  ! / abs(singflx_mn(resnum(ising),ising))
+     $                / abs(singflx_mn(resnum(ising),ising))
             ! Delta'_m/n in Callen... should the 2 be generalized to nn?
             delta_callen = -2 * resm / sr%f(1)
             ! Callen critical vac width
