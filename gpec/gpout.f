@@ -64,6 +64,8 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: nsingcoup=5             ! number of resonant coupling models
       LOGICAL :: singcoup_set = .FALSE.             ! whether singcoup subroutine has been run
       REAL(r8) :: jarea                             ! control surface area
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE ::
+     $   vsingfld                                   ! Vacuum resonant energy-normalized field with units of Tesla
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE ::
      $   singcoup,                                  ! Resonant coupling to external field (b_x) in working coordinates
      $   singcoup_out_vecs,                         ! Right singular vectors of power normalized resonant coupling matrices in output coordinates
@@ -1561,8 +1563,9 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id
+      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
+     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,
+     $           astat
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1670,19 +1673,19 @@ c-----------------------------------------------------------------------
          singflx_mn(:,ising)=MATMUL(fsurf_indmats,fkaxmn)
          DEALLOCATE(fsurf_indmats,fsurf_indev)
 c-----------------------------------------------------------------------
-c     compute half-width of magnetic island.
-c-----------------------------------------------------------------------
-         island_hwidth(ising)=
-     $        SQRT(ABS(4*singflx_mn(resnum(ising),ising)/
-     $        (twopi*shear*sq%f(4)*chi1)))
-c-----------------------------------------------------------------------
 c     compute coordinate-independent resonant field.
 c----------------------------------------------------------------------- 
          IF (vsbrzphi_flag) THEN
             singbno_mn(:,ising)=-singflx_mn(:,ising)
 !            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
          ENDIF
-         singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)
+         singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)  ! Tesla
+c-----------------------------------------------------------------------
+c     compute half-width of magnetic island.
+c-----------------------------------------------------------------------
+         island_hwidth(ising)=
+     $        SQRT(ABS(4*singflx_mn(resnum(ising),ising)*area(ising)/
+     $        (twopi*shear*sq%f(4)*chi1)))
 c-----------------------------------------------------------------------
 c     compute pseudo-chirikov parameter.
 c-----------------------------------------------------------------------
@@ -1709,7 +1712,7 @@ c-----------------------------------------------------------------------
             wpol = 0.5 * sq%f(4) * rho_gyro / sqrt(sr%f(1) / ro)
             ! Delta'_RMP in Callen, but using the total 1/dB instead of the 1/dB_vac approximation
             delta_rmp = ( abs(delta(ising)) / (twopi*ro*sq%f(4))) * bt0
-     $                / abs(singflx_mn(resnum(ising),ising))
+     $                / abs(vsingfld(ising))  ! / abs(singflx_mn(resnum(ising),ising))
             ! Delta'_m/n in Callen... should the 2 be generalized to nn?
             delta_callen = -2 * resm / sr%f(1)
             ! Callen critical vac width
@@ -1810,6 +1813,14 @@ c-----------------------------------------------------------------------
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
      $     "Chirikov parameter of fully saturated islands") )
+         astat = nf90_inq_varid(fncid, "area_rational", a_id) ! check if area already stored
+         IF(astat/=nf90_noerr)THEN
+            CALL check( nf90_def_var(fncid, "area_rational",
+     $         nf90_double, (/q_id/), a_id) )
+            CALL check( nf90_put_att(fncid, a_id, "units", "m^2") )
+            CALL check( nf90_put_att(fncid, a_id, "long_name",
+     $        "Surface area of rational surface") )
+         ENDIF
          CALL check( nf90_enddef(fncid) )
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
@@ -1821,6 +1832,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
          CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
+         IF(astat/=nf90_noerr)THEN
+            CALL check( nf90_put_var(fncid, a_id, area) )
+         ENDIF
          CALL check( nf90_close(fncid) )
       ENDIF
 
@@ -2083,23 +2097,23 @@ c-----------------------------------------------------------------------
       INTEGER :: ising,i
       REAL(r8) :: respsi,hdist,shear,area
       INTEGER, DIMENSION(msing) :: resnum
-      REAL(r8), DIMENSION(msing) :: visland_hwidth,vchirikov
+      REAL(r8), DIMENSION(msing) :: visland_hwidth,vchirikov,areas
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
 
       COMPLEX(r8), DIMENSION(msing) :: vflxmn
       REAL(r8), DIMENSION(0:mthsurf) :: unitfun
 
-      INTEGER :: i_id,q_id,p_id,w_id,k_id
+      INTEGER :: i_id,q_id,p_id,w_id,k_id,a_id
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing resonant field from coils"
-      ALLOCATE(vcmn(cmpert))
+      ALLOCATE(vcmn(cmpert), vsingfld(msing))
       vcmn=0
       DO ising=1,msing
          respsi = singtype(ising)%psifac
-         CALL field_bs_psi(respsi,vcmn,2)
+         CALL field_bs_psi(respsi,vcmn,2)  ! wegt=2 is flux with area normalization (inits Tesla)
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          DO i=1,cmpert
             IF (cmlow-mlow+i==resnum(ising)) THEN
@@ -2113,6 +2127,8 @@ c-----------------------------------------------------------------------
      $        singtype(ising)%q1/singtype(ising)%q**2
          unitfun=1.0
          area=issurfint(unitfun,mthsurf,respsi,0,0)
+         vsingfld(ising) = vflxmn(ising)  ! Tesla
+         areas(ising) = area
          visland_hwidth(ising)=
      $        SQRT(ABS(4*vflxmn(ising)*area/
      $        (twopi*shear*singtype(ising)%q*chi1)))
@@ -2170,7 +2186,7 @@ c-----------------------------------------------------------------------
      $      (/q_id,i_id/), p_id) )
          CALL check( nf90_put_att(fncid, p_id, "units", "T") )
          CALL check( nf90_put_att(fncid, p_id, "long_name",
-     $     "Pitch resonant vacuum flux normalized by the surface area") )
+     $    "Pitch resonant vacuum flux normalized by the surface area") )
          CALL check( nf90_def_var(fncid, "w_isl_v", nf90_double,
      $      (/q_id/), w_id) )
          CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
@@ -2180,11 +2196,17 @@ c-----------------------------------------------------------------------
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
      $     "Chirikov parameter of vacuum islands") )
+         CALL check( nf90_def_var(fncid, "area_rational", nf90_double,
+     $      (/q_id/), a_id) )
+         CALL check( nf90_put_att(fncid, a_id, "long_name",
+     $     "Surface area of rational surface") )
+         CALL check( nf90_put_att(fncid, a_id, "units", "m^2") )
          CALL check( nf90_enddef(fncid) )
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(vflxmn), AIMAG(vflxmn)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*visland_hwidth) )
          CALL check( nf90_put_var(fncid, k_id, vchirikov) )
+         CALL check( nf90_put_var(fncid, a_id, areas) )
          CALL check( nf90_close(fncid) )
       ENDIF
 c-----------------------------------------------------------------------
@@ -3613,6 +3635,7 @@ c-----------------------------------------------------------------------
             CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
             CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
      $         mpv_id) )
+            ENDIF
             CALL check( nf90_def_var(fncid, "Jbgradpsi_x_pest",
      $         nf90_double, (/p_id, mp_id, i_id/), pw_id) )
             CALL check( nf90_put_att(fncid,pw_id,"long_name",
@@ -3758,11 +3781,7 @@ c-----------------------------------------------------------------------
 
       CALL gpeq_alloc
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% xi and b computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
          CALL gpeq_contra(psifac(istep))
          CALL gpeq_cova(psifac(istep))

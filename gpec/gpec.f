@@ -222,7 +222,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     forced ralational settings
 c-----------------------------------------------------------------------
-      IF(singthresh_flag) singfld_flag = .TRUE.
+      IF(singthresh_flag)THEN
+         IF(data_flag .OR. harmonic_flag)THEN
+            PRINT *, "WARNING: "//
+     $               "singthresh_flag uses coil vacuum fields only"
+         ENDIF
+         IF(coil_flag)THEN
+            singfld_flag = .TRUE.
+            vsingfld_flag = .TRUE.
+         ELSE
+            PRINT *, "WARNING: "//
+     $               "singthresh_flag requires coil vacuum fields"
+         ENDIF
+      ENDIF
 c-----------------------------------------------------------------------
 c     define relative file paths.
 c-----------------------------------------------------------------------
@@ -505,6 +517,9 @@ c-----------------------------------------------------------------------
          edge_flag=.FALSE.
       ENDIF
 
+      IF (coil_flag .AND. vsingfld_flag) THEN
+         CALL gpout_vsingfld()
+      ENDIF
       IF (singfld_flag) THEN
          IF (con_flag) THEN
             PRINT *,"WARNING: singfld_flag not supported with con_flag"
@@ -522,9 +537,6 @@ c-----------------------------------------------------------------------
             CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
      $                         singthresh_flag)
          ENDIF
-      ENDIF
-      IF (coil_flag .AND. vsingfld_flag) THEN
-         CALL gpout_vsingfld()
       ENDIF
       ! here we see the subroutine is simply called in series with other
       ! similar subroutines by the driving program here
