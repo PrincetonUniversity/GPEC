@@ -3030,8 +3030,8 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,
-     $   wm_id,xm_id,x_id,rv_id,zv_id,rzstat
+      INTEGER :: p_id,t_id,i_id,m_id,mp_id,r_id,z_id,bm_id,b_id,
+     $   wm_id,pwm_id, xm_id,x_id,rv_id,zv_id,mpv_id,rzstat
 
       INTEGER :: i,istep,ipert,iindex,itheta,tout
       REAL(r8) :: ileft,ximax,rmax,area
@@ -3395,6 +3395,18 @@ c-----------------------------------------------------------------------
      $      "the perturbed field") )
          CALL check( nf90_put_att(fncid,wm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,wm_id,"jacobian",jac_out) )
+         IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
+            CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
+            CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
+     $         mpv_id) )
+            CALL check( nf90_def_var(fncid, "Jbgradpsi_pest",
+     $                  nf90_double, (/p_id,mp_id,i_id/),pwm_id) )
+            CALL check( nf90_put_att(fncid,pwm_id,"long_name",
+     $         "Jaconbian weighted contravariant psi component of "//
+     $         "the perturbed field") )
+            CALL check( nf90_put_att(fncid,pwm_id,"units","Tesla") )
+            CALL check( nf90_put_att(fncid,pwm_id,"jacobian","pest") )
+         ENDIF
          CALL check( nf90_def_var(fncid, "xi_n_fun", nf90_double,
      $               (/p_id,t_id,i_id/),x_id) )
          CALL check( nf90_put_att(fncid,x_id,"long_name",
@@ -3425,6 +3437,11 @@ c-----------------------------------------------------------------------
      $                AIMAG(bnomns)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,wm_id,RESHAPE((/REAL(bwpmns),
      $                AIMAG(bwpmns)/),(/mstep,lmpert,2/))) )
+         IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
+            CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
+            CALL check( nf90_put_var(fncid,pwm_id,RESHAPE((/
+     $          REAL(pwpmns),AIMAG(pwpmns)/),(/mstep,mpert_pest,2/))) )
+         ENDIF
          CALL check( nf90_put_var(fncid,x_id,RESHAPE((/REAL(xnofuns),
      $               -helicity*AIMAG(xnofuns)/),(/mstep,mthsurf+1,2/))))
          CALL check( nf90_put_var(fncid,b_id,RESHAPE((/REAL(bnofuns),
@@ -3501,7 +3518,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
 
       INTEGER :: p_id,m_id,t_id,i_id,mp_id,
-     $    mpv_id,qs_id,vn_id,vw_id,pw_id
+     $    mpv_id,qs_id,vn_id,vw_id,pw_id,mpstat
 
       REAL(r8), DIMENSION(cmpsi) :: qs
       REAL(r8), DIMENSION(cmpsi,lmpert) :: xmns,ymns
@@ -3631,9 +3648,11 @@ c-----------------------------------------------------------------------
      $      "of the applied field") )
          CALL check( nf90_put_att(fncid,vw_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,vw_id,"jacobian",jac_out) )
-         IF(TRIM(jac_out)/="pest" .and. bwp_pest_flag)THEN
-            CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
-            CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
+         IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
+            mpstat = nf90_inq_dimid(fncid, "m_pest", mp_id) ! check if already stored
+            IF(mpstat/=nf90_noerr)THEN
+              CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id))
+              CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
      $         mpv_id) )
             ENDIF
             CALL check( nf90_def_var(fncid, "Jbgradpsi_x_pest",
@@ -3649,8 +3668,10 @@ c-----------------------------------------------------------------------
      $      vnomns_mstep), AIMAG(vnomns_mstep)/), (/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,vw_id,RESHAPE((/REAL(
      $      vwpmns_mstep), AIMAG(vwpmns_mstep)/), (/mstep,lmpert,2/))) )
-         IF(TRIM(jac_out)/="pest")THEN
-            CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
+         IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
+            IF(mpstat/=nf90_noerr)THEN
+               CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
+            ENDIF
             CALL check( nf90_put_var(fncid,pw_id,RESHAPE(
      $         (/REAL(pwpmns_mstep),AIMAG(pwpmns_mstep)/),
      $         (/mstep,mpert_pest,2/))) )
