@@ -41,6 +41,7 @@ c-----------------------------------------------------------------------
       USE field_mod
       USE netcdf
       USE inputs, ONLY : kin
+      USE utilities, ONLY : progressbar
       USE pentrc_interface, ONLY : zi, mi, initialize_pentrc
 
       IMPLICIT NONE
@@ -572,6 +573,7 @@ c-----------------------------------------------------------------------
       singcurs=0
       CALL gpeq_alloc
       ALLOCATE(singbnoflxs(msing,mpert),singbwp(msing,mpert))
+      IF(verbose) WRITE(*,'(1x,a4,1x,a10)') "m", "singflx"
       DO i=1,mpert
          finmn=0
          finmn(i)=1.0                                 ! unit field
@@ -625,9 +627,8 @@ c     deallocate fsp_sol.
 c-----------------------------------------------------------------------
          CALL cspline_dealloc(fsp_sol)
 
-         IF(verbose) WRITE(*,'(1x,a16,i4,a22,es10.3)')
-     $        "poloidal mode =",mfac(i),", resonant coupling =",
-     $        SUM(ABS(singbnoflxs(:,i)))/msing
+         IF(verbose) WRITE(*,'(1x,i4,1x,es10.3)') mfac(i),
+     $        SQRT(SUM(ABS(singbnoflxs(:,i))**2))
       ENDDO
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
@@ -2301,8 +2302,8 @@ c     declaration.
 c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: coil_flag
 
-      INTEGER :: ipert,istep,i,j,iindex
-      REAL(r8) :: jarea,ileft
+      INTEGER :: ipert,istep,i,j
+      REAL(r8) :: jarea
       COMPLEX(r8) :: t1,t2
 
       INTEGER, DIMENSION(mpert) :: ipiv
@@ -2358,11 +2359,7 @@ c     construct dws response matrix (normalized by xi).
 c-----------------------------------------------------------------------
       WRITE(*,*)"Build general response matrix functions"
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a30)')
-     $        "volume = ",iindex,"% response matrix calculations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          temp1=CONJG(TRANSPOSE(soltype(istep)%u(:,:,1)))
          temp2=CONJG(TRANSPOSE(soltype(istep)%u(:,:,2)))
          CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
@@ -2551,8 +2548,8 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i,istep,ipert,itheta,iindex,cstep,tout
-      REAL(r8) :: ileft,jac,psi
+      INTEGER :: i,istep,ipert,itheta,cstep,tout
+      REAL(r8) :: jac,psi
 
       INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,b_id,bme_id,be_id,
      $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat
@@ -2604,11 +2601,7 @@ c-----------------------------------------------------------------------
       tout = tmag_out
 
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a32)')
-     $        "volume = ",iindex,"% |b| and del.x_prp computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces with regulation.
 c-----------------------------------------------------------------------
@@ -3033,8 +3026,8 @@ c-----------------------------------------------------------------------
       INTEGER :: p_id,t_id,i_id,m_id,mp_id,r_id,z_id,bm_id,b_id,
      $   wm_id,pwm_id, xm_id,x_id,rv_id,zv_id,mpv_id,rzstat
 
-      INTEGER :: i,istep,ipert,iindex,itheta,tout
-      REAL(r8) :: ileft,ximax,rmax,area
+      INTEGER :: i,istep,ipert,itheta,tout
+      REAL(r8) :: ximax,rmax,area
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
@@ -3095,11 +3088,7 @@ c-----------------------------------------------------------------------
       ! The parallelization catch might be that we use these common fourier (iscdftb, iscdftf)
       ! and coordinate converting (gpeq_bcoordsout) subroutines? Will they confuse themselves in parallel?
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% xi and b computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
          CALL gpeq_contra(psifac(istep))
 
@@ -3512,8 +3501,7 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
       
-      INTEGER :: ipsi,ipert,i,iindex
-      REAL(r8) :: ileft
+      INTEGER :: ipsi,ipert,i
       REAL(r8), DIMENSION(0:cmpsi) :: psi
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
 
@@ -3558,11 +3546,7 @@ c-----------------------------------------------------------------------
       vwpmns=0
 
       DO ipsi=1,cmpsi
-         iindex = FLOOR(REAL(ipsi,8)/FLOOR(cmpsi/10.0))*10
-         ileft = REAL(ipsi,8)/FLOOR(cmpsi/10.0)*10-iindex
-         IF ((ipsi-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a24)')
-     $        "volume = ",iindex,"% vacuum b computations"
+         IF(verbose) CALL progressbar(ipsi,1,cmpsi,op_percent=10)
          CALL spline_eval(sq,psi(ipsi),0)
          qs(ipsi)=sq%f(4)
          CALL field_bs_psi(psi(ipsi),vcmn,0)
@@ -3772,8 +3756,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ipert,iindex,itheta
-      REAL(r8) :: ileft
+      INTEGER :: istep,ipert,itheta
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,psis,
      $     rvecs,zvecs,vecs
@@ -3964,8 +3947,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnimn,bnomn
 
-      INTEGER :: i,j,k,l,iindex,np
-      REAL(r8) :: mid,btlim,rlim,ileft,delr,delz,cha,chb,chc,chd,
+      INTEGER :: i,j,k,l,np
+      REAL(r8) :: mid,btlim,rlim,delr,delz,cha,chb,chc,chd,
      $   rij,zij,t11,t12,t21,t22,t33
       COMPLEX(r8) :: xwp,bwp,xwt,bwt,xvz,bvz
 
@@ -4072,11 +4055,7 @@ c-----------------------------------------------------------------------
 
       IF (brzphi_flag .OR. xrzphi_flag) THEN
          DO i=0,nr
-         iindex = FLOOR(REAL(i,8)/FLOOR((nr-1)/10.0))*10
-         ileft = REAL(i,8)/FLOOR((nr-1)/10.0)*10-iindex
-         IF ((i /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a10)')
-     $        "volume = ",iindex,"% mappings"
+         IF(verbose) CALL progressbar(i,0,nr,op_percent=10)
             DO j=0,nz
                IF (gdl(i,j)==1) THEN
                   CALL gpeq_sol(gdpsi(i,j))
@@ -4871,8 +4850,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id, p_id, t_id, xr_id,xz_id,xp_id, br_id,bz_id,bp_id
-      INTEGER :: istep,iindex,itheta
-      REAL(r8) :: ileft
+      INTEGER :: istep,itheta
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,dphi,t11,t12,t21,t22,t33
@@ -4897,11 +4875,7 @@ c-----------------------------------------------------------------------
 
       CALL gpeq_alloc
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a29)')
-     $        "volume = ",iindex,"% xi and b rzphi computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
          CALL gpeq_contra(psifac(istep))
          CALL gpeq_cova(psifac(istep))
@@ -5079,8 +5053,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i_id,p_id,t_id, er_id,ez_id,ep_id, ar_id,az_id,ap_id
 
-      INTEGER :: istep,iindex,itheta
-      REAL(r8) :: ileft
+      INTEGER :: istep,itheta
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
@@ -5105,11 +5078,7 @@ c-----------------------------------------------------------------------
 
       CALL gpeq_alloc
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a37)')
-     $        "volume = ",iindex,"% vector potential rzphi computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
 c-----------------------------------------------------------------------
 c     normal and two tangent components to flux surface.
@@ -5279,9 +5248,9 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i,istep,ipert,itheta,iindex,ids(3)
+      INTEGER :: i,istep,ipert,itheta,ids(3)
       INTEGER :: i_id,m_id,p_id,dp_id,xp_id,xa_id
-      REAL(r8) :: ileft, psi, rfac, eta, rs, zs
+      REAL(r8) ::  psi, rfac, eta, rs, zs
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmp1out,xspout,xmsout
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmp1funs,xspfuns,
@@ -5303,11 +5272,7 @@ c-----------------------------------------------------------------------
       CALL gpeq_alloc
 
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% Clebsch decomposition"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          ! compute contravarient displacement on surface with regulation
          psi = psifac(istep)
          CALL spline_eval(sq,psi,1)
