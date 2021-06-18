@@ -55,6 +55,7 @@
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
+   singthresh_flag=f        ! Calculate Callen resonant field penetration threshold (requires kinetic profiles from pentrc.in)
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
