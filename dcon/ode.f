@@ -60,6 +60,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE ode_run
 
       CHARACTER(64) :: message
+      LOGICAL :: force_output, test, first
 c-----------------------------------------------------------------------
 c     initialize.
 c-----------------------------------------------------------------------
@@ -79,12 +80,19 @@ c-----------------------------------------------------------------------
 c     integrate.
 c-----------------------------------------------------------------------
       DO
+         first = .TRUE.
          DO
             IF(istep > 0)CALL ode_unorm(.FALSE.)
-            CALL ode_output_step(unorm)
+            ! always record the first and last point in an inter-rational region
+            ! these are important for resonant quantities
+            ! recording the last point is cirtical for matching the nominal edge
+            test = ode_test()
+            force_output = first .OR. test
+            CALL ode_output_step(unorm, op_force=force_output)
             CALL ode_record_edge
-            IF(ode_test())EXIT
+            IF(test)EXIT
             CALL ode_step
+            first = .FALSE.
          ENDDO
 c-----------------------------------------------------------------------
 c     re-initialize.
