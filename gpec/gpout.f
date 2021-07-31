@@ -4304,7 +4304,7 @@ c-----------------------------------------------------------------------
             CALL ascii_close(out_unit)
          ENDIF
 
-         IF(verbose) WRITE(*,*)"Recontructing xbrzphi by chebyshev"
+         IF(verbose) WRITE(*,*)"Reconstructing xbrzphi by chebyshev"
 
          DO i=0,nr
             DO j=0,nz
