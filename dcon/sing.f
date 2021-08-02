@@ -1458,13 +1458,13 @@ c-----------------------------------------------------------------------
 
       LOGICAL, INTENT(IN) :: diagnose_detf
 
-      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,keps1=1e-10,keps2=1e-4
+      REAL(r8),PARAMETER :: tol=1e-3,dfac=1e-4,eps=1e-4 ! eps~1e-10 for ideal DCON
       INTEGER, PARAMETER :: nsing=1000
       REAL(r8), DIMENSION(nsing) :: psising,psising_check
 
       LOGICAL :: sing_flag
       INTEGER :: ising,i_recur,i_depth,i,singnum,singnum_check
-      REAL(r8) :: x0,x1,eps,reps
+      REAL(r8) :: x0,x1
       COMPLEX(r8) :: det0,det1,sing_det
 
       WRITE(*, *) "Finding kinetically displaced singular surfaces"
@@ -1527,22 +1527,21 @@ c-----------------------------------------------------------------------
       psising_check=psising
       psising=-1
       singnum=1
-      WRITE(*,'(a,E10.3,a,E10.3)') 'ABS(det_max) =', ABS(det_max),
-     $     ' eps =', keps1
+      WRITE(*,'(1x,a,I4,a)') 'Found',singnum_check-2,'minima in |F|'
       psising(1)=psising_check(1)
       DO i=2,singnum_check-1
          det0=sing_get_f_det(psising_check(i))
-         WRITE(*,'(a,E10.3,a,E10.3)') '- psi',psising_check(i),
-     $        ' determinant of F is', ABS(det0)
-         reps=keps1/keps2
-         eps=keps2*reps*10**(psising_check(i)/DLOG10(reps))
-         eps = 1e-4
-         ! always record the effective surface, even if it isn't very singular
-         IF ABS(det0)<=ABS(det_max)*eps) THEN
+         ! record the effective surface even if it is only ~"singular" (decrease eps to ~1e-10 for actual singularities)
+         IF (ABS(det0)<=ABS(det_max)*eps) THEN
             singnum=singnum+1
             psising(singnum)=psising_check(i)
+            WRITE(*,'(2x,a,ES10.3,a,es10.3,a)')'psi =',psising_check(i),
+     $      ', |F|/|F|_max =', ABS(det0)/ABS(det_max),' -> is signular'
+         ELSE
+            WRITE(*,'(2x,a,ES10.3,a,es10.3,a)')'psi =',psising_check(i),
+     $      ', |F|/|F|_max =', ABS(det0)/ABS(det_max),' -> not signular'
          ENDIF
-      ENDDO
+          ENDDO
       singnum=singnum+1
       psising(singnum)=psising_check(singnum_check)
       OPEN(UNIT=sing_unit,FILE="sing_find.out",STATUS="UNKNOWN")
@@ -1562,7 +1561,6 @@ c-----------------------------------------------------------------------
          CALL spline_eval(sq,psising(ising+1),1)
          kinsing(ising)%q=sq%f(4)
          kinsing(ising)%q1=sq%f1(4)
-         WRITE(*,*)kinsing(ising)%psifac,kinsing(ising)%q
       ENDDO
  
       END SUBROUTINE ksing_find
@@ -1606,11 +1604,11 @@ c-----------------------------------------------------------------------
       IF (ABS(tmpm-tmp1)>tol*tmp1 .AND. x(3)-x(1)>grid_tol ) THEN
          CALL sing_adp_find_sing(x(1),x(2),det(1),det(2),
      $   m_singpos,singpos,singnum,i_recur,i_depth
-     $   ,tol,sing_det,sing_flag)
+     $   ,tol,sing_det,sing_flag,diagnose_detf)
      
          CALL sing_adp_find_sing(x(2),x(3),det(2),det(3),
      $   m_singpos,singpos,singnum,i_recur,i_depth
-     $   ,tol,sing_det,sing_flag)
+     $   ,tol,sing_det,sing_flag,diagnose_detf)
       ELSE
 c-----------------------------------------------------------------------
 c     judge the local singularity with the gradient of ABS(det).
@@ -1678,7 +1676,7 @@ c-----------------------------------------------------------------------
              WRITE(100,*) x(2),ABS(det(2)),REAL(det(2)),IMAG(det(2))
              WRITE(bin_unit)REAL(x(2),4),REAL(LOG10(ABS(det(2))),4),
      $        REAL(REAL(det(2)),4),REAL(AIMAG(det(2)),4)
-
+          ENDIF
       ENDIF
       i_depth=i_depth-1      
       END SUBROUTINE sing_adp_find_sing      
