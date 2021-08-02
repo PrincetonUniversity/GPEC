@@ -5695,7 +5695,7 @@ c-----------------------------------------------------------------------
      $    "Energy norm total field energy eigendecomposition") )
          CALL check( nf90_def_var(mncid,"W_e_eigenvalue",
      $               nf90_double,(/wdid/),wte_id) )
-         CALL check( nf90_put_att(mncid,wte_id,"units","J/T^2") )
+!        CALL check( nf90_put_att(mncid,wte_id,"units","J/T^2") )  ! requires benchmark to check factors of 2*mu0
          CALL check( nf90_put_att(mncid,wte_id,"long_name",
      $    "Energy norm total field energy eigenvalues") )
          CALL check( nf90_def_var(mncid,"W_xe",
@@ -5708,7 +5708,7 @@ c-----------------------------------------------------------------------
      $    "Energy norm external field energy eigendecomposition") )
          CALL check( nf90_def_var(mncid,"W_xe_eigenvalue",
      $               nf90_double,(/wdid/),we_id) )
-         CALL check( nf90_put_att(mncid,we_id,"units","J/T^2") )
+!        CALL check( nf90_put_att(mncid,we_id,"units","J/T^2") )  ! requires benchmark to check factors of 2*mu0
          CALL check( nf90_put_att(mncid,we_id,"long_name",
      $    "Energy norm external field energy eigenvalues") )
          CALL check( nf90_def_var(mncid,"W_xe_amp",nf90_double,
