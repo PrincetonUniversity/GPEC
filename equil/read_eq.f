@@ -658,8 +658,8 @@ c-----------------------------------------------------------------------
       psi_in%my=mz
       rmin=rgrid
       rmax=rgrid+xdim
-      zmin=-zdim/2
-      zmax=zdim/2
+      zmin=-zdim/2 + zmid
+      zmax=zdim/2 + zmid
       psio=ssibry1-ssimag1
       sq_in%xs=(/(ia,ia=0,ma)/)/dfloat(ma)
       sq_in%fs(:,1)=ABS(sq_in%fs(:,1))

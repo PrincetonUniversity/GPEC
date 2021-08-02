@@ -105,11 +105,6 @@ c-----------------------------------------------------------------------
          REAL(r8), DIMENSION(3*mpert-2) :: erwork
          INTEGER :: elwork, einfo, ej
 
-         ! variables used in initial qlow finder
-         INTEGER :: it,itmax=50
-         INTEGER, DIMENSION(1) :: jpsi
-         REAL(r8) :: dpsi,q,q1,eps=1e-10
-
          !Variables related to asymptotic expansions at sing surfs
          INTEGER :: ipert0
          COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua
@@ -151,29 +146,13 @@ c-----------------------------------------------------------------------
 c     set global integration interval parameters.
 c-----------------------------------------------------------------------
          axisPsi = sq%xs(0)
-         ! use newton iteration to find starting psi if qlow it is above q0
-         IF(qlow > sq%fs(0, 4))THEN
-            jpsi=MINLOC(ABS(sq%fs(:,4)-qlow))
-            IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
-            axisPsi=sq%xs(jpsi(1))
-            it=0
-            DO
-               it=it+1
-               CALL spline_eval(sq,axisPsi,1)
-               q=sq%f(4)
-               q1=sq%f1(4)
-               dpsi=(qlow-q)/q1
-               axisPsi=axisPsi+dpsi
-               IF(ABS(dpsi) < eps*ABS(axisPsi) .OR. it > itmax)EXIT
-            ENDDO
-         ENDIF
          outerPsi = psilim*(1-eps)
          DO iS = 1,msing
             scalc(iS)%singEdgesLR(1) = sing(iS)%psifac - singfac_min/
      $           ABS(nn*sing(iS)%q1)
             scalc(iS)%singEdgesLR(2) = sing(iS)%psifac + singfac_min/
      $           ABS(nn*sing(iS)%q1)
-            print *,iS,": ",scalc(iS)%singEdgesLR(1)," ",
+            WRITE(*,'(1x,i5,2(es11.3))') iS,scalc(iS)%singEdgesLR(1),
      $           scalc(iS)%singEdgesLR(2)
 
             !This finds the index of the singular column

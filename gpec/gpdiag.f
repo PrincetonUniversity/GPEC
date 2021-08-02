@@ -24,6 +24,7 @@ c     15. gpdiag_radvar
 c     16. gpdiag_permeabev_orthogonality
 c     17. gpdiag_dw_matrix
 c     18. gpdiag_spline_roots
+c     19. gpdiag_jacfac
 c-----------------------------------------------------------------------
 c     subprogram 0. gpdiag_mod.
 c     module declarations.
@@ -2405,5 +2406,77 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_spline_roots
+c-----------------------------------------------------------------------
+c     subprogram 5. gpdiag_surfmode.
+c     response to fourier modes for the control surface.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpdiag_jacfac()
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,j,istep,itheta
+      INTEGER :: stepsize=10  ! speed this up
+
+      COMPLEX(r8), DIMENSION(mpert) :: boutmn
+      COMPLEX(r8), DIMENSION(mstep, mpert) :: boutmns
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: boutfun
+      COMPLEX(r8), DIMENSION(mstep, 0:mthsurf) :: boutfuns
+
+      CHARACTER(2) :: si
+
+      boutmn(:) = 1
+
+      DO i=-2,2
+         IF (i>=0) THEN
+            WRITE(UNIT=si,FMT='(I1)')i
+            si=ADJUSTL(si)
+         ELSE
+            WRITE(UNIT=si,FMT='(I2)')i
+         ENDIF
+         print *, "Running diagnostic for jacfac="//TRIM(si)
+         DO istep=1,mstep,stepsize
+            CALL gpeq_bcoordsout(boutmns(istep,:),boutmn,
+     $                           psifac(istep),ji=i)
+            CALL iscdftb(mfac,mpert,boutfuns(istep,:),mthsurf,
+     $                   boutmns(istep,:))
+         ENDDO
+c-----------------------------------------------------------------------
+c     write results.
+c-----------------------------------------------------------------------
+         CALL ascii_open(out_unit,"gpec_diagnostics_jacfac_"//TRIM(si)
+     $     //".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_DIAGNOSTICS_JACFAC: "//
+     $     "Jacobian weightings for tmag_out and jac_out"
+         WRITE(out_unit,'(1x,a16,1x,a4,2(1x,a16))')"psi","m",
+     $     "real(jacfac)","imag(jacfac)"
+         DO istep=1,mstep,stepsize
+            DO j=1,mpert
+               WRITE(out_unit,'(1x,es16.8,1x,I4,2(1x,es16.8))')
+     $               psifac(istep),mfac(j),REAL(boutmns(istep,j)),
+     $               AIMAG(boutmns(istep,j))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         CALL ascii_open(out_unit,"gpec_diagnostics_jacfac_"//TRIM(si)
+     $     //"_fun.out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_DIAGNOSTICS_JACFAC_FUN: "//
+     $     "Jacobian weightings for tmag_out and jac_out"
+         WRITE(out_unit,'(4(1x,a16))')"psi","theta",
+     $     "real(jacfac)","imag(jacfac)"
+         DO istep=1,mstep,stepsize
+            DO itheta=0,mthsurf
+               WRITE(out_unit,'(1x,4(1x,es16.8))') psifac(istep),
+     $               theta(itheta),REAL(boutfuns(istep,itheta)),
+     $               AIMAG(boutfuns(istep,itheta))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDDO
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpdiag_jacfac
 
       END MODULE gpdiag_mod

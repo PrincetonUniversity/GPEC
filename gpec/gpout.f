@@ -40,6 +40,9 @@ c-----------------------------------------------------------------------
       USE gpdiag_mod
       USE field_mod
       USE netcdf
+      USE inputs, ONLY : kin
+      USE utilities, ONLY : progressbar
+      USE pentrc_interface, ONLY : zi, mi, initialize_pentrc
 
       IMPLICIT NONE
 
@@ -62,6 +65,8 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: nsingcoup=5             ! number of resonant coupling models
       LOGICAL :: singcoup_set = .FALSE.             ! whether singcoup subroutine has been run
       REAL(r8) :: jarea                             ! control surface area
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE ::
+     $   vsingfld                                   ! Vacuum resonant energy-normalized field with units of Tesla
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE ::
      $   singcoup,                                  ! Resonant coupling to external field (b_x) in working coordinates
      $   singcoup_out_vecs,                         ! Right singular vectors of power normalized resonant coupling matrices in output coordinates
@@ -568,6 +573,7 @@ c-----------------------------------------------------------------------
       singcurs=0
       CALL gpeq_alloc
       ALLOCATE(singbnoflxs(msing,mpert),singbwp(msing,mpert))
+      IF(verbose) WRITE(*,'(1x,a4,1x,a10)') "m", "singflx"
       DO i=1,mpert
          finmn=0
          finmn(i)=1.0                                 ! unit field
@@ -621,9 +627,8 @@ c     deallocate fsp_sol.
 c-----------------------------------------------------------------------
          CALL cspline_dealloc(fsp_sol)
 
-         IF(verbose) WRITE(*,'(1x,a16,i4,a22,es10.3)')
-     $        "poloidal mode =",mfac(i),", resonant coupling =",
-     $        SUM(ABS(singbnoflxs(:,i)))/msing
+         IF(verbose) WRITE(*,'(1x,i4,1x,es10.3)') mfac(i),
+     $        SQRT(SUM(ABS(singbnoflxs(:,i))**2))
       ENDDO
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
@@ -1545,16 +1550,18 @@ c-----------------------------------------------------------------------
 c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot)
+      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot, thresh_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
+      LOGICAL, INTENT(IN) :: thresh_flag
       INTEGER, INTENT(IN) :: egnum,nspot
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id
+      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
+     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,
+     $           astat
 
       INTEGER :: itheta,ising,icoup
       REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
@@ -1565,7 +1572,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
 
-      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov
+      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,hw_crit
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
      $     singflx,singbwp
@@ -1575,6 +1582,13 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
       COMPLEX(r8), DIMENSION(mpert) :: interpbwn
+
+      INTEGER :: resm
+      REAL(r8) :: qintb, rho_gyro, wpol, delta_callen, delta_rmp
+      REAL(r8), DIMENSION(0:mpsi) :: psitor, rhotor
+      REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
+      TYPE(spline_type) :: sr
+
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
@@ -1586,6 +1600,17 @@ c-----------------------------------------------------------------------
       CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
 
       IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
+
+      ! minor radius defined using toroidal flux. Used for threshold
+      CALL spline_int(sq)
+      qintb = sq%fsi(mpsi, 4)
+      psitor(:) = sq%fsi(:, 4) / qintb  ! normalized toroidal flux
+      rhotor(:) = SQRT(sq%fsi(:, 4)*twopi*psio / (pi * bt0))  ! effective minor radius in Callen
+      CALL spline_alloc(sr,mpsi,1)
+      sr%xs = sq%xs
+      sr%fs(:, 1) = rhotor(:)
+      CALL spline_fit(sr,"extrap")
+
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c-----------------------------------------------------------------------
@@ -1644,19 +1669,19 @@ c-----------------------------------------------------------------------
          singflx_mn(:,ising)=MATMUL(fsurf_indmats,fkaxmn)
          DEALLOCATE(fsurf_indmats,fsurf_indev)
 c-----------------------------------------------------------------------
-c     compute half-width of magnetic island.
-c-----------------------------------------------------------------------
-         island_hwidth(ising)=
-     $        SQRT(ABS(4*singflx_mn(resnum(ising),ising)/
-     $        (twopi*shear*sq%f(4)*chi1)))
-c-----------------------------------------------------------------------
 c     compute coordinate-independent resonant field.
 c----------------------------------------------------------------------- 
          IF (vsbrzphi_flag) THEN
             singbno_mn(:,ising)=-singflx_mn(:,ising)
 !            CALL gpeq_weight(respsi,singbno_mn(:,ising),mfac,mpert,0)
          ENDIF
-         singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)
+         singflx_mn(:,ising)=singflx_mn(:,ising)/area(ising)  ! Tesla
+c-----------------------------------------------------------------------
+c     compute half-width of magnetic island.
+c-----------------------------------------------------------------------
+         island_hwidth(ising)=
+     $        SQRT(ABS(4*singflx_mn(resnum(ising),ising)*area(ising)/
+     $        (twopi*shear*sq%f(4)*chi1)))
 c-----------------------------------------------------------------------
 c     compute pseudo-chirikov parameter.
 c-----------------------------------------------------------------------
@@ -1669,13 +1694,50 @@ c-----------------------------------------------------------------------
      $           respsi-singtype(ising-1)%psifac)/2.0
          ENDIF
          chirikov(ising)=island_hwidth(ising)/hdist
-         IF(verbose) WRITE(*,'(1x,a6,es10.3,a6,f6.3,a25,es10.3)')
-     $        "psi = ",singtype(ising)%psifac,
-     $        ", q = ",singtype(ising)%q,
-     $        ", total resonant field = ",
-     $        ABS(singflx_mn(resnum(ising),ising))
-      ENDDO
+c-----------------------------------------------------------------------
+c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
+c-----------------------------------------------------------------------
+         IF(thresh_flag)THEN
+            resm = mfac(resnum(ising))
+            CALL spline_eval(sr,respsi,1)
+            CALL spline_eval(kin,respsi,0)
+            ! rho = 0.7188 at 8/2 surface in DIII-D 158115 benchmark. Callen paper estimates it as 0.73
+            ! gyro radius ~ 1e-3 meters in DIII-D_ideal_example
+            rho_gyro = sqrt(2*kin%f(3)/(mi*mp)) / (zi*e*bt0 / (mi*mp))
+            ! Callen estimates wpol~1.5e-2 meters in DIII-D 158115 Hmode pedestal top. Benchmark confirms
+            wpol = 0.5 * sq%f(4) * rho_gyro / sqrt(sr%f(1) / ro)
+            ! Delta'_RMP in Callen, but using the total 1/dB instead of the 1/dB_vac approximation
+            delta_rmp = ( abs(delta(ising)) / (twopi*ro*sq%f(4))) * bt0
+     $                / abs(singflx_mn(resnum(ising),ising))
+            ! Delta'_m/n in Callen... should the 2 be generalized to nn?
+            delta_callen = -2 * resm / sr%f(1)
+            ! Callen critical vac width
+            hw_crit(ising) = 0.5 * wpol ** (2./3) * sr%f(1) ** (1./3)
+     $         * ((27. / 4) * abs(sr%f(1) * delta_callen) ) ** (1./6)
+     $         / sqrt(sr%f(1) * delta_rmp)
+            ! convert from meters to psi_n for clear comparision to island_hwidth
+            hw_crit(ising) = hw_crit(ising) / sr%f1(1)
 
+            IF(verbose)THEN
+               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
+     $             "psi", "q", "singflx", "chirikov","w_island","w_crit"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3,es12.3)')
+     $            respsi, sq%f(4), ABS(singflx_mn(resnum(ising),ising)),
+     $            chirikov(ising), 2*island_hwidth(ising),
+     $            2*hw_crit(ising)
+            ENDIF
+         ELSE
+            hw_crit(ising) = 0.0
+            IF(verbose)THEN
+               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12)') "psi",
+     $             "q", "singflx", "chirikov"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3)')
+     $            respsi, sq%f(4), ABS(singflx_mn(resnum(ising),ising)),
+     $            chirikov(ising)
+            ENDIF
+         ENDIF
+      ENDDO
+      CALL spline_dealloc(sr)
       CALL cspline_dealloc(fsp_sol)
       CALL gpeq_dealloc
 c-----------------------------------------------------------------------
@@ -1693,21 +1755,22 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,13(1x,a16))')"q","psi",
+         WRITE(out_unit,'(1x,a6,14(1x,a16))')"q","psi",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
-     $        "islandhwidth","chirikov"
+     $        "islandhwidth","chirikov","crithwidth"
          DO ising=1,msing
-            WRITE(out_unit,'(1x,f6.3,13(es17.8e3))')
+            WRITE(out_unit,'(1x,f6.3,14(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
      $           REAL(singflx_mn(resnum(ising),ising)),
      $           AIMAG(singflx_mn(resnum(ising),ising)),
      $           REAL(singcur(ising)),AIMAG(singcur(ising)),
      $           REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(delta(ising)),AIMAG(delta(ising)),
-     $           island_hwidth(ising),chirikov(ising)
+     $           island_hwidth(ising),chirikov(ising),
+     $           hw_crit(ising)
          ENDDO
          WRITE(out_unit,*)
       ENDIF
@@ -1737,10 +1800,23 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, w_id, "long_name",
      $     "Full width of saturated island") )
+         CALL check( nf90_def_var(fncid, "w_isl_crit", nf90_double,
+     $      (/q_id/), wc_id) )
+         CALL check( nf90_put_att(fncid, wc_id, "units", "psi_n") )
+         CALL check( nf90_put_att(fncid, wc_id, "long_name",
+     $     "Critical width for island growth") )
          CALL check( nf90_def_var(fncid, "K_isl", nf90_double,
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
      $     "Chirikov parameter of fully saturated islands") )
+         astat = nf90_inq_varid(fncid, "area_rational", a_id) ! check if area already stored
+         IF(astat/=nf90_noerr)THEN
+            CALL check( nf90_def_var(fncid, "area_rational",
+     $         nf90_double, (/q_id/), a_id) )
+            CALL check( nf90_put_att(fncid, a_id, "units", "m^2") )
+            CALL check( nf90_put_att(fncid, a_id, "long_name",
+     $        "Surface area of rational surface") )
+         ENDIF
          CALL check( nf90_enddef(fncid) )
          singflx = (/(singflx_mn(resnum(ising),ising), ising=1,msing)/)
          CALL check( nf90_put_var(fncid, p_id,
@@ -1750,7 +1826,11 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
+         CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
+         IF(astat/=nf90_noerr)THEN
+            CALL check( nf90_put_var(fncid, a_id, area) )
+         ENDIF
          CALL check( nf90_close(fncid) )
       ENDIF
 
@@ -2011,24 +2091,25 @@ c-----------------------------------------------------------------------
       SUBROUTINE gpout_vsingfld()
 c-----------------------------------------------------------------------
       INTEGER :: ising,i
-      REAL(r8) :: hdist,shear,area
+      REAL(r8) :: respsi,hdist,shear,area
       INTEGER, DIMENSION(msing) :: resnum
-      REAL(r8), DIMENSION(msing) :: visland_hwidth,vchirikov
+      REAL(r8), DIMENSION(msing) :: visland_hwidth,vchirikov,areas
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
 
       COMPLEX(r8), DIMENSION(msing) :: vflxmn
       REAL(r8), DIMENSION(0:mthsurf) :: unitfun
 
-      INTEGER :: i_id,q_id,p_id,w_id,k_id
+      INTEGER :: i_id,q_id,p_id,w_id,k_id,a_id
 c-----------------------------------------------------------------------
 c     compute solutions and contravariant/additional components.
 c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
       IF(verbose) WRITE(*,*)"Computing resonant field from coils"
-      ALLOCATE(vcmn(cmpert))
+      ALLOCATE(vcmn(cmpert), vsingfld(msing))
       vcmn=0
       DO ising=1,msing
-         CALL field_bs_psi(singtype(ising)%psifac,vcmn,2)
+         respsi = singtype(ising)%psifac
+         CALL field_bs_psi(respsi,vcmn,2)  ! wegt=2 is flux with area normalization (inits Tesla)
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          DO i=1,cmpert
             IF (cmlow-mlow+i==resnum(ising)) THEN
@@ -2041,25 +2122,28 @@ c-----------------------------------------------------------------------
          shear=mfac(resnum(ising))*
      $        singtype(ising)%q1/singtype(ising)%q**2
          unitfun=1.0
-         area=issurfint(unitfun,mthsurf,singtype(ising)%psifac,0,0)
+         area=issurfint(unitfun,mthsurf,respsi,0,0)
+         vsingfld(ising) = vflxmn(ising)  ! Tesla
+         areas(ising) = area
          visland_hwidth(ising)=
      $        SQRT(ABS(4*vflxmn(ising)*area/
      $        (twopi*shear*singtype(ising)%q*chi1)))
          IF (ising==1) THEN 
-            hdist=(singtype(ising+1)%psifac-singtype(ising)%psifac)/2.0
+            hdist=(singtype(ising+1)%psifac-respsi)/2.0
          ELSE IF (ising==msing) THEN
-            hdist=(singtype(ising)%psifac-singtype(ising-1)%psifac)/2.0
+            hdist=(respsi-singtype(ising-1)%psifac)/2.0
          ELSE IF ((ising/=1).AND.(ising/=msing)) THEN
-            hdist=MIN(singtype(ising+1)%psifac-singtype(ising)%psifac,
-     $           singtype(ising)%psifac-singtype(ising-1)%psifac)/2.0
+            hdist=MIN(singtype(ising+1)%psifac-respsi,
+     $           respsi-singtype(ising-1)%psifac)/2.0
          ENDIF
          vchirikov(ising)=visland_hwidth(ising)/hdist
-         IF(verbose) WRITE(*,'(1x,a6,es10.3,a6,f6.3,a25,es10.3)')
-     $        "psi = ",singtype(ising)%psifac,
-     $        ", q = ",singtype(ising)%q,
-     $        ", vacuum resonant field = ",
-     $        ABS(vflxmn(ising))         
-         
+         IF(verbose)THEN
+            IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12)') "psi", "q",
+     $         "singflx", "chirikov"
+            WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3)')
+     $         respsi, sq%f(4), ABS(vflxmn(ising)),
+     $         vchirikov(ising)
+         ENDIF
       ENDDO
       DEALLOCATE(vcmn)
 c-----------------------------------------------------------------------
@@ -2096,9 +2180,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_redef(fncid))
          CALL check( nf90_def_var(fncid, "Phi_res_v", nf90_double,
      $      (/q_id,i_id/), p_id) )
-         CALL check( nf90_put_att(fncid, p_id, "units", "Wb") )
+         CALL check( nf90_put_att(fncid, p_id, "units", "T") )
          CALL check( nf90_put_att(fncid, p_id, "long_name",
-     $     "Pitch resonant vacuum flux") )
+     $    "Pitch resonant vacuum flux normalized by the surface area") )
          CALL check( nf90_def_var(fncid, "w_isl_v", nf90_double,
      $      (/q_id/), w_id) )
          CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
@@ -2108,11 +2192,17 @@ c-----------------------------------------------------------------------
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
      $     "Chirikov parameter of vacuum islands") )
+         CALL check( nf90_def_var(fncid, "area_rational", nf90_double,
+     $      (/q_id/), a_id) )
+         CALL check( nf90_put_att(fncid, a_id, "long_name",
+     $     "Surface area of rational surface") )
+         CALL check( nf90_put_att(fncid, a_id, "units", "m^2") )
          CALL check( nf90_enddef(fncid) )
          CALL check( nf90_put_var(fncid, p_id,
      $      RESHAPE((/REAL(vflxmn), AIMAG(vflxmn)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*visland_hwidth) )
          CALL check( nf90_put_var(fncid, k_id, vchirikov) )
+         CALL check( nf90_put_var(fncid, a_id, areas) )
          CALL check( nf90_close(fncid) )
       ENDIF
 c-----------------------------------------------------------------------
@@ -2207,8 +2297,8 @@ c     declaration.
 c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: coil_flag
 
-      INTEGER :: ipert,istep,i,j,iindex
-      REAL(r8) :: jarea,ileft
+      INTEGER :: ipert,istep,i,j
+      REAL(r8) :: jarea
       COMPLEX(r8) :: t1,t2
 
       INTEGER, DIMENSION(mpert) :: ipiv
@@ -2264,11 +2354,7 @@ c     construct dws response matrix (normalized by xi).
 c-----------------------------------------------------------------------
       WRITE(*,*)"Build general response matrix functions"
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a30)')
-     $        "volume = ",iindex,"% response matrix calculations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          temp1=CONJG(TRANSPOSE(soltype(istep)%u(:,:,1)))
          temp2=CONJG(TRANSPOSE(soltype(istep)%u(:,:,2)))
          CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
@@ -2457,8 +2543,8 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i,istep,ipert,itheta,iindex,cstep,tout
-      REAL(r8) :: ileft,jac,psi
+      INTEGER :: i,istep,ipert,itheta,cstep,tout
+      REAL(r8) :: jac,psi
 
       INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,b_id,bme_id,be_id,
      $   bml_id,bl_id,xm_id,x_id,km_id,k_id,rzstat
@@ -2510,11 +2596,7 @@ c-----------------------------------------------------------------------
       tout = tmag_out
 
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a32)')
-     $        "volume = ",iindex,"% |b| and del.x_prp computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
 c-----------------------------------------------------------------------
 c     compute functions on magnetic surfaces with regulation.
 c-----------------------------------------------------------------------
@@ -2936,11 +3018,11 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: p_id,t_id,i_id,m_id,r_id,z_id,bm_id,b_id,
-     $   wm_id,xm_id,x_id,rv_id,zv_id,rzstat
+      INTEGER :: p_id,t_id,i_id,m_id,mp_id,r_id,z_id,bm_id,b_id,
+     $   wm_id,pwm_id, xm_id,x_id,rv_id,zv_id,mpv_id,rzstat
 
-      INTEGER :: i,istep,ipert,iindex,itheta,tout
-      REAL(r8) :: ileft,ximax,rmax,area
+      INTEGER :: i,istep,ipert,itheta,tout
+      REAL(r8) :: ximax,rmax,area
 
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,jacs,dphi
       COMPLEX(r8), DIMENSION(0:mthsurf) :: xwp_fun,bwp_fun
@@ -3001,11 +3083,7 @@ c-----------------------------------------------------------------------
       ! The parallelization catch might be that we use these common fourier (iscdftb, iscdftf)
       ! and coordinate converting (gpeq_bcoordsout) subroutines? Will they confuse themselves in parallel?
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% xi and b computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
          CALL gpeq_contra(psifac(istep))
 
@@ -3297,10 +3375,22 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(fncid, "Jbgradpsi", nf90_double,
      $               (/p_id,m_id,i_id/),wm_id) )
          CALL check( nf90_put_att(fncid,wm_id,"long_name",
-     $      "Jaconbian weighted contravariant psi component of "//
+     $      "Jacobian weighted contravariant psi component of "//
      $      "the perturbed field") )
          CALL check( nf90_put_att(fncid,wm_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,wm_id,"jacobian",jac_out) )
+         IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
+            CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
+            CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
+     $         mpv_id) )
+            CALL check( nf90_def_var(fncid, "Jbgradpsi_pest",
+     $                  nf90_double, (/p_id,mp_id,i_id/),pwm_id) )
+            CALL check( nf90_put_att(fncid,pwm_id,"long_name",
+     $         "Jaconbian weighted contravariant psi component of "//
+     $         "the perturbed field") )
+            CALL check( nf90_put_att(fncid,pwm_id,"units","Tesla") )
+            CALL check( nf90_put_att(fncid,pwm_id,"jacobian","pest") )
+         ENDIF
          CALL check( nf90_def_var(fncid, "xi_n_fun", nf90_double,
      $               (/p_id,t_id,i_id/),x_id) )
          CALL check( nf90_put_att(fncid,x_id,"long_name",
@@ -3331,6 +3421,11 @@ c-----------------------------------------------------------------------
      $                AIMAG(bnomns)/),(/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,wm_id,RESHAPE((/REAL(bwpmns),
      $                AIMAG(bwpmns)/),(/mstep,lmpert,2/))) )
+         IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
+            CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
+            CALL check( nf90_put_var(fncid,pwm_id,RESHAPE((/
+     $          REAL(pwpmns),AIMAG(pwpmns)/),(/mstep,mpert_pest,2/))) )
+         ENDIF
          CALL check( nf90_put_var(fncid,x_id,RESHAPE((/REAL(xnofuns),
      $               -helicity*AIMAG(xnofuns)/),(/mstep,mthsurf+1,2/))))
          CALL check( nf90_put_var(fncid,b_id,RESHAPE((/REAL(bnofuns),
@@ -3401,13 +3496,12 @@ c     declaration.
 c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: rout,bpout,bout,rcout,tout
       
-      INTEGER :: ipsi,ipert,i,iindex
-      REAL(r8) :: ileft
+      INTEGER :: ipsi,ipert,i
       REAL(r8), DIMENSION(0:cmpsi) :: psi
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: vcmn
 
       INTEGER :: p_id,m_id,t_id,i_id,mp_id,
-     $    mpv_id,qs_id,vn_id,vw_id,pw_id
+     $    mpv_id,qs_id,vn_id,vw_id,pw_id,mpstat
 
       REAL(r8), DIMENSION(cmpsi) :: qs
       REAL(r8), DIMENSION(cmpsi,lmpert) :: xmns,ymns
@@ -3447,11 +3541,7 @@ c-----------------------------------------------------------------------
       vwpmns=0
 
       DO ipsi=1,cmpsi
-         iindex = FLOOR(REAL(ipsi,8)/FLOOR(cmpsi/10.0))*10
-         ileft = REAL(ipsi,8)/FLOOR(cmpsi/10.0)*10-iindex
-         IF ((ipsi-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a24)')
-     $        "volume = ",iindex,"% vacuum b computations"
+         IF(verbose) CALL progressbar(ipsi,1,cmpsi,op_percent=10)
          CALL spline_eval(sq,psi(ipsi),0)
          qs(ipsi)=sq%f(4)
          CALL field_bs_psi(psi(ipsi),vcmn,0)
@@ -3537,10 +3627,13 @@ c-----------------------------------------------------------------------
      $      "of the applied field") )
          CALL check( nf90_put_att(fncid,vw_id,"units","Tesla") )
          CALL check( nf90_put_att(fncid,vw_id,"jacobian",jac_out) )
-         IF(TRIM(jac_out)/="pest" .and. bwp_pest_flag)THEN
-            CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id) )
-            CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
+         IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
+            mpstat = nf90_inq_dimid(fncid, "m_pest", mp_id) ! check if already stored
+            IF(mpstat/=nf90_noerr)THEN
+              CALL check( nf90_def_dim(fncid,"m_pest",mpert_pest,mp_id))
+              CALL check( nf90_def_var(fncid, "m_pest", nf90_int, mp_id,
      $         mpv_id) )
+            ENDIF
             CALL check( nf90_def_var(fncid, "Jbgradpsi_x_pest",
      $         nf90_double, (/p_id, mp_id, i_id/), pw_id) )
             CALL check( nf90_put_att(fncid,pw_id,"long_name",
@@ -3554,8 +3647,10 @@ c-----------------------------------------------------------------------
      $      vnomns_mstep), AIMAG(vnomns_mstep)/), (/mstep,lmpert,2/))) )
          CALL check( nf90_put_var(fncid,vw_id,RESHAPE((/REAL(
      $      vwpmns_mstep), AIMAG(vwpmns_mstep)/), (/mstep,lmpert,2/))) )
-         IF(TRIM(jac_out)/="pest")THEN
-            CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
+         IF(TRIM(jac_out)/="pest" .AND. bwp_pest_flag)THEN
+            IF(mpstat/=nf90_noerr)THEN
+               CALL check( nf90_put_var(fncid,mpv_id,mfac_pest) )
+            ENDIF
             CALL check( nf90_put_var(fncid,pw_id,RESHAPE(
      $         (/REAL(pwpmns_mstep),AIMAG(pwpmns_mstep)/),
      $         (/mstep,mpert_pest,2/))) )
@@ -3656,8 +3751,7 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum,rout,bpout,bout,rcout,tout
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: istep,ipert,iindex,itheta
-      REAL(r8) :: ileft
+      INTEGER :: istep,ipert,itheta
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs,psis,
      $     rvecs,zvecs,vecs
@@ -3686,11 +3780,7 @@ c-----------------------------------------------------------------------
 
       CALL gpeq_alloc
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% xi and b computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
          CALL gpeq_contra(psifac(istep))
          CALL gpeq_cova(psifac(istep))
@@ -3852,13 +3942,13 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: bnimn,bnomn
 
-      INTEGER :: i,j,k,l,iindex,np
-      REAL(r8) :: mid,btlim,rlim,ileft,delr,delz,cha,chb,chc,chd,
+      INTEGER :: i,j,k,l,np
+      REAL(r8) :: mid,btlim,rlim,delr,delz,cha,chb,chc,chd,
      $   rij,zij,t11,t12,t21,t22,t33
       COMPLEX(r8) :: xwp,bwp,xwt,bwt,xvz,bvz
 
       INTEGER :: r_id,z_id,i_id,xr_id,xz_id,xp_id,br_id,bz_id,bp_id,
-     $   bre_id,bze_id,bpe_id,brp_id,bzp_id,bpp_id
+     $   bre_id,bze_id,bpe_id,brp_id,bzp_id,bpp_id,ar_id,az_id,ap_id
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
@@ -3867,7 +3957,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:nr,0:nz) :: vgdr,vgdz,ebr,ebz,ebp
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: xrr,xrz,xrp,brr,brz,brp,
      $     bpr,bpz,bpp,vbr,vbz,vbp,vpbr,vpbz,vpbp,vvbr,vvbz,vvbp,
-     $     btr,btz,btp,vcbr,vcbz,vcbp,xcr,xcz,xcp,bcr,bcz,bcp
+     $     btr,btz,btp,vcbr,vcbz,vcbp,xcr,xcz,xcp,bcr,bcz,bcp,
+     $     atr,atz,atp
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: chex,chey
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: chear,cheaz,
@@ -3898,6 +3989,9 @@ c-----------------------------------------------------------------------
       bpr = 0
       bpz = 0
       bpp = 0
+      atr = 0
+      atz = 0
+      atp = 0
       vbr = 0
       vbz = 0
       vbp = 0
@@ -3936,7 +4030,7 @@ c-----------------------------------------------------------------------
                CALL bicube_eval(psi_in,gdr(i,j),gdz(i,j),1)
                ebr(i,j) = -psi_in%fy(1)/gdr(i,j)*psio
                ebz(i,j) = psi_in%fx(1)/gdr(i,j)*psio
-               IF (gdl(i,j) == 1) THEN  
+               IF (gdl(i,j) >= 1) THEN  
                   CALL spline_eval(sq,gdpsi(i,j),0)
                   ebp(i,j) = abs(sq%f(1))/(twopi*gdr(i,j))
                ELSE
@@ -3960,11 +4054,7 @@ c-----------------------------------------------------------------------
 
       IF (brzphi_flag .OR. xrzphi_flag) THEN
          DO i=0,nr
-         iindex = FLOOR(REAL(i,8)/FLOOR((nr-1)/10.0))*10
-         ileft = REAL(i,8)/FLOOR((nr-1)/10.0)*10-iindex
-         IF ((i /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a10)')
-     $        "volume = ",iindex,"% mappings"
+         IF(verbose) CALL progressbar(i,0,nr,op_percent=10)
             DO j=0,nz
                IF (gdl(i,j)==1) THEN
                   CALL gpeq_sol(gdpsi(i,j))
@@ -4026,7 +4116,7 @@ c-----------------------------------------------------------------------
 
       IF (brzphi_flag .AND. vbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)
-     $      "Computing vacuum fields by surface currents"
+     $      "Computing external vacuum fields by surface currents"
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
@@ -4037,7 +4127,7 @@ c-----------------------------------------------------------------------
          ENDIF
          DO i=0,nr
             DO j=0,nz
-               IF (gdl(i,j)/=1) THEN
+               IF (gdl(i,j)<1) THEN
                   gdl(i,j)=vgdl(i,j)
                   brr(i,j)=vbr(i,j)
                   brz(i,j)=vbz(i,j)
@@ -4050,7 +4140,8 @@ c-----------------------------------------------------------------------
       ENDIF
       
       IF (brzphi_flag) THEN
-         IF(verbose) WRITE(*,*)"Computing total perturbed fields"
+         IF(verbose) WRITE(*,*)
+     $        "Constructing total perturbed fields"
          bnomn=bnomn-bnimn
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
@@ -4076,7 +4167,7 @@ c-----------------------------------------------------------------------
          
          DO i=0,nr
             DO j=0,nz                  
-               IF (gdl(i,j)/=1) THEN
+               IF (gdl(i,j)<1) THEN
                   gdl(i,j)=vgdl(i,j)
                   bpr(i,j)=vpbr(i,j)
                   bpz(i,j)=vpbz(i,j)
@@ -4084,7 +4175,7 @@ c-----------------------------------------------------------------------
                   btr(i,j)=vpbr(i,j)+vcbr(i,j)
                   btz(i,j)=vpbz(i,j)+vcbz(i,j)
                   btp(i,j)=vpbp(i,j)+vcbp(i,j)
-               ELSE
+               ELSE IF (gdl(i,j)==1) THEN
                   bpr(i,j)=brr(i,j)-vcbr(i,j)
                   bpz(i,j)=brz(i,j)-vcbz(i,j)
                   bpp(i,j)=brp(i,j)-vcbp(i,j)
@@ -4102,6 +4193,12 @@ c-----------------------------------------------------------------------
             CALL gpdiag_rzpdiv(nr,nz,gdl,gdr,gdz,btr,btz,btp,"b")
          ENDIF
       ENDIF
+
+      ! Vector potential in cylindrical coordinates
+      ! db = curl(dA) -> dA = -(iR^2/n) gradphi x dB
+      atr =-ifac*(gdr/nn)*btz
+      atz = ifac*(gdr/nn)*btr
+      atp = 0
 
       IF (chebyshev_flag) THEN
          IF(verbose) WRITE(*,*)"Computing chebyshev for xbrzphi"
@@ -4202,7 +4299,7 @@ c-----------------------------------------------------------------------
             CALL ascii_close(out_unit)
          ENDIF
 
-         IF(verbose) WRITE(*,*)"Recontructing xbrzphi by chebyshev"
+         IF(verbose) WRITE(*,*)"Reconstructing xbrzphi by chebyshev"
 
          DO i=0,nr
             DO j=0,nz
@@ -4248,7 +4345,8 @@ c-----------------------------------------------------------------------
       ENDIF
 
       IF (pbrzphi_flag) THEN
-         IF(verbose) WRITE(*,*)"Computing total perturbed fields"
+         IF(verbose) WRITE(*,*)
+     $        "Computing vacuum fields by plasma surface currents"
          bnomn=bnomn-bnimn
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
@@ -4262,7 +4360,7 @@ c-----------------------------------------------------------------------
 
       IF (vvbrzphi_flag) THEN
          IF(verbose) WRITE(*,*)
-     $      "Computing vacuum fields without plasma response"
+     $      "Computing vacuum fields by external surface currents"
          CALL gpvacuum_bnormal(psilim,bnimn,nr,nz)
          CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp)
@@ -4326,6 +4424,21 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(cncid,bp_id,"long_name",
      $               "Toroidal nonaxisymmetric field") )
          CALL check( nf90_put_att(cncid,bp_id,"units","Tesla") )
+         CALL check( nf90_def_var(cncid, "A_r", nf90_double,
+     $               (/r_id,z_id,i_id/),ar_id) )
+         CALL check( nf90_put_att(cncid,ar_id,"long_name",
+     $               "Radial nonaxisymmetric vector potential") )
+         CALL check( nf90_put_att(cncid,ar_id,"units","Vs/m") )
+         CALL check( nf90_def_var(cncid, "A_z", nf90_double,
+     $               (/r_id,z_id,i_id/),az_id) )
+         CALL check( nf90_put_att(cncid,az_id,"long_name",
+     $               "Vertical nonaxisymmetric vector potential") )
+         CALL check( nf90_put_att(cncid,az_id,"units","Vs/m") )
+         CALL check( nf90_def_var(cncid, "A_t", nf90_double,
+     $               (/r_id,z_id,i_id/),ap_id) )
+         CALL check( nf90_put_att(cncid,ap_id,"long_name",
+     $               "Toroidal nonaxisymmetric vector potential") )
+         CALL check( nf90_put_att(cncid,ap_id,"units","Vs/m") )
          CALL check( nf90_def_var(cncid, "xi_r", nf90_double,
      $               (/r_id,z_id,i_id/),xr_id) )
          CALL check( nf90_put_att(cncid,xr_id,"long_name",
@@ -4335,12 +4448,12 @@ c-----------------------------------------------------------------------
      $               (/r_id,z_id,i_id/),xz_id) )
          CALL check( nf90_put_att(cncid,xz_id,"long_name",
      $               "Vertical nonaxisymmetric displacement") )
-         CALL check( nf90_put_att(cncid,bz_id,"units","m") )
+         CALL check( nf90_put_att(cncid,xz_id,"units","m") )
          CALL check( nf90_def_var(cncid, "xi_t", nf90_double,
      $               (/r_id,z_id,i_id/),xp_id) )
          CALL check( nf90_put_att(cncid,xp_id,"long_name",
      $               "Toroidal nonaxisymmetric displacement") )
-         CALL check( nf90_put_att(cncid,bp_id,"units","m") )
+         CALL check( nf90_put_att(cncid,xp_id,"units","m") )
          CALL check( nf90_enddef(cncid) )
          CALL check( nf90_put_var(cncid,bre_id,ebr) )
          CALL check( nf90_put_var(cncid,bze_id,ebz) )
@@ -4357,6 +4470,12 @@ c-----------------------------------------------------------------------
      $                AIMAG(bpz)/),(/nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,bpp_id,RESHAPE((/REAL(bpp),
      $                AIMAG(bpp)/),(/nr+1,nz+1,2/))) )
+         CALL check( nf90_put_var(cncid,ar_id,RESHAPE((/REAL(atr),
+     $                AIMAG(atr)/),(/nr+1,nz+1,2/))) )
+         CALL check( nf90_put_var(cncid,az_id,RESHAPE((/REAL(atz),
+     $                AIMAG(atz)/),(/nr+1,nz+1,2/))) )
+         CALL check( nf90_put_var(cncid,ap_id,RESHAPE((/REAL(atp),
+     $                AIMAG(atp)/),(/nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,xr_id,RESHAPE((/REAL(xrr),
      $                AIMAG(xrr)/),(/nr+1,nz+1,2/))) )
          CALL check( nf90_put_var(cncid,xz_id,RESHAPE((/REAL(xrz),
@@ -4559,7 +4678,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"gpec_vpbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_VPBRZPHI: Vacuum field by "//
-     $        "surface currents"
+     $        "plasma surface currents"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -4584,7 +4703,7 @@ c-----------------------------------------------------------------------
          CALL ascii_open(out_unit,"gpec_vvbrzphi_n"//
      $        TRIM(sn)//".out","UNKNOWN")
          WRITE(out_unit,*)"GPEC_VVBRZPHI: Vacuum field by "//
-     $        "surface currents"
+     $        "external surface currents"
          WRITE(out_unit,*)version
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
@@ -4757,8 +4876,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id, p_id, t_id, xr_id,xz_id,xp_id, br_id,bz_id,bp_id
-      INTEGER :: istep,iindex,itheta
-      REAL(r8) :: ileft
+      INTEGER :: istep,itheta
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs
       REAL(r8), DIMENSION(0:mthsurf) :: jacs,dphi,t11,t12,t21,t22,t33
@@ -4783,11 +4901,7 @@ c-----------------------------------------------------------------------
 
       CALL gpeq_alloc
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a29)')
-     $        "volume = ",iindex,"% xi and b rzphi computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
          CALL gpeq_contra(psifac(istep))
          CALL gpeq_cova(psifac(istep))
@@ -4965,8 +5079,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i_id,p_id,t_id, er_id,ez_id,ep_id, ar_id,az_id,ap_id
 
-      INTEGER :: istep,iindex,itheta
-      REAL(r8) :: ileft
+      INTEGER :: istep,itheta
 
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: rs,zs
       REAL(r8), DIMENSION(0:mthsurf) :: dphi
@@ -4991,11 +5104,7 @@ c-----------------------------------------------------------------------
 
       CALL gpeq_alloc
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a37)')
-     $        "volume = ",iindex,"% vector potential rzphi computations"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          CALL gpeq_sol(psifac(istep))
 c-----------------------------------------------------------------------
 c     normal and two tangent components to flux surface.
@@ -5165,9 +5274,9 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: egnum
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i,istep,ipert,itheta,iindex,ids(3)
+      INTEGER :: i,istep,ipert,itheta,ids(3)
       INTEGER :: i_id,m_id,p_id,dp_id,xp_id,xa_id
-      REAL(r8) :: ileft, psi, rfac, eta, rs, zs
+      REAL(r8) ::  psi, rfac, eta, rs, zs
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmp1out,xspout,xmsout
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: xmp1funs,xspfuns,
@@ -5189,11 +5298,7 @@ c-----------------------------------------------------------------------
       CALL gpeq_alloc
 
       DO istep=1,mstep
-         iindex = FLOOR(REAL(istep,8)/FLOOR(mstep/10.0))*10
-         ileft = REAL(istep,8)/FLOOR(mstep/10.0)*10-iindex
-         IF ((istep-1 /= 0) .AND. (ileft == 0) .AND. verbose)
-     $        WRITE(*,'(1x,a9,i3,a23)')
-     $        "volume = ",iindex,"% Clebsch decomposition"
+         IF(verbose) CALL progressbar(istep,1,mstep,op_percent=10)
          ! compute contravarient displacement on surface with regulation
          psi = psifac(istep)
          CALL spline_eval(sq,psi,1)

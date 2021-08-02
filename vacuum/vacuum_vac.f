@@ -827,7 +827,7 @@ c-----------------------------------------------------------------------
          residu=0.0
          IF(j1 == j2)residu=two
 
-         IF(ishape < 10 .OR. ishape == 41)THEN
+         IF(ishape < 10 .OR. ishape == 41 .OR. ishape == 42)THEN
             resdg=(2-j1)*(2-j2)+(j1-1)*(j2-1)
             resk0=(2-j1)*(2-j2)+(j1-3)*(j2-1)
             residu=resdg+resk0

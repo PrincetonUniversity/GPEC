@@ -14,11 +14,11 @@ export FFLAGS # for sub-makes
 LIBDIR = ../lib
 
 LIBS = \
+	-lpentrc \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lharvest \
-	-lpentrc
+	-lharvest
 
 OBJS = \
 	debug.o \

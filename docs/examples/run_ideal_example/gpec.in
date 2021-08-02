@@ -51,7 +51,7 @@
    filter_flag=t            ! Outputs energy, reluctance, permeability, and (optionally) the singular-coupling eigenmodes on the control surface
    singcoup_flag=t          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
-   vsingfld_flag=t          ! Output of vacuum resonant surface quantities
+   vsingfld_flag=t          ! Output of vacuum resonant surface quantities 
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma

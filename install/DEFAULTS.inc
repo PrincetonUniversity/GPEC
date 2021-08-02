@@ -15,8 +15,10 @@
 # command in order to compile.
 #
 # On portal.pppl.gov
-#   Developers can always load the gpec/0.0 module (development branch module) to get the latest compiler settings
-#     $ load gpec/0.0
+#   Users can run GPEC on portal using the public module. Note, portal now "hides" such modules behind a mod_* gateway module
+#     $ module load mod_gpec gpec
+#   Developers may want to load the development branch module to get the latest compiler settings if they've changed since the last release
+#     $ module load mod_gpec gpec/0.0
 #   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
 #     $ module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Note that before the netcdf module was properly set up, we had to manually load supporting modules

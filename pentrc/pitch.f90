@@ -194,6 +194,7 @@ module pitch_integration
         rwork(:) = 0                  ! defaults
         rwork(1) = xout               ! only used if itask 4,5
         iwork(6) = maxstep            ! max number steps
+        iwork(7) = 2                  ! max number of warnings about small step sizes
         mf = 10                       ! not stiff with unknown J
     
         ! set module variables for access in integrand

@@ -167,9 +167,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE ode_output_step(unorm)
+      SUBROUTINE ode_output_step(unorm, op_force)
 
       REAL(r8), DIMENSION(:), INTENT(IN) :: unorm
+      LOGICAL, OPTIONAL :: op_force
+      LOGICAL :: force
+      ! set optional parameters
+      force = .FALSE.
+      IF(PRESENT(op_force)) force = op_force
 c-----------------------------------------------------------------------
 c     compute and print critical data for each time step.
 c-----------------------------------------------------------------------
@@ -178,7 +183,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write solutions.
 c-----------------------------------------------------------------------
-      IF(bin_euler .AND. mod(istep,euler_stride) == 0)THEN
+      IF(bin_euler .AND. (mod(istep,euler_stride) == 0 .OR. force))THEN
          CALL sing_der(neq,psifac,u,du)
          WRITE(euler_bin_unit)1
          WRITE(euler_bin_unit)psifac,q,msol
