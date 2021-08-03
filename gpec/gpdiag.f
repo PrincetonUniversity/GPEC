@@ -25,6 +25,7 @@ c     16. gpdiag_permeabev_orthogonality
 c     17. gpdiag_dw_matrix
 c     18. gpdiag_spline_roots
 c     19. gpdiag_jacfac
+c     20. gpdiag_delpsi
 c-----------------------------------------------------------------------
 c     subprogram 0. gpdiag_mod.
 c     module declarations.
@@ -2407,8 +2408,8 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_spline_roots
 c-----------------------------------------------------------------------
-c     subprogram 5. gpdiag_surfmode.
-c     response to fourier modes for the control surface.
+c     subprogram 19. gpdiag_jacfac.
+c     Pure jacobian weighting factors for benchmarks.
 c-----------------------------------------------------------------------
       SUBROUTINE gpdiag_jacfac()
 c-----------------------------------------------------------------------
@@ -2478,5 +2479,56 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_jacfac
+
+c-----------------------------------------------------------------------
+c     subprogram 20. gpdiag_delpsi.
+c     delpsi function throughout plasma for benchmarking.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpdiag_delpsi()
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: istep, itheta
+      INTEGER :: stepsize=10  ! speed this up
+      REAL(r8) :: psi
+      REAL(r8), DIMENSION(:, :), ALLOCATABLE :: delpsi
+
+      ALLOCATE(delpsi(mstep, 0:mthsurf))
+      delpsi(:, :) = 0
+
+      DO istep=1,mstep,stepsize
+         psi = psifac(istep)
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psi,theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(istep, itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+         ENDDO
+      ENDDO
+
+      CALL ascii_open(out_unit,"gpec_diagnostics_delpsi"
+     $     //"_fun.out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_DIAGNOSTICS_DELPSI_FUN: "//
+     $     "delpsi fro when it is needed for benchmarking"
+         WRITE(out_unit,'(3(1x,a16))')"psi","theta",
+     $     "delpsi"
+         DO istep=1,mstep,stepsize
+            DO itheta=0,mthsurf
+               WRITE(out_unit,'(1x,3(1x,es16.8))') psifac(istep),
+     $               theta(itheta),delpsi(istep,itheta)
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         DEALLOCATE(delpsi)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpdiag_delpsi
 
       END MODULE gpdiag_mod

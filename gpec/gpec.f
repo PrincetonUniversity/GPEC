@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag,singthresh_flag
+     $     filter_flag,gal_flag,singthresh_flag,delpsi_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -66,7 +66,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
      $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit,
-     $     malias
+     $     malias,delpsi_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -165,6 +165,7 @@ c-----------------------------------------------------------------------
       pmodbmn_flag=.FALSE.
       rzphibx_flag=.FALSE.
       jacfac_flag=.FALSE.
+      delpsi_flag=.FALSE.
       radvar_flag=.TRUE.
       eigen_flag=.FALSE.
       magpot_flag=.FALSE.
@@ -607,6 +608,9 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (jacfac_flag) THEN
          CALL gpdiag_jacfac()
+      ENDIF
+      IF (delpsi_flag) THEN
+         CALL gpdiag_delpsi()
       ENDIF
 c-----------------------------------------------------------------------
 c     diagnose without a given error field.
