@@ -377,7 +377,7 @@ c           These write statements are too verbose for scans
             WRITE(*,*) "Solution is NaN. it=", it
             WRITE(out_unit,*) "Solution is NaN. it=", it
             it=-1
-            z=COMPLEX( nan,nan ) !NaN
+            z=CMPLX( nan,nan ) !NaN
             EXIT
          ENDIF
          IF(err < tol) EXIT
@@ -385,7 +385,7 @@ c           These write statements are too verbose for scans
             it=-1
             WRITE(*,*) "Solution is not well converged."
             WRITE(out_unit,*) "Solution is not well converged."
-            z=COMPLEX( nan,nan ) !NaN
+            z=CMPLX( nan,nan ) !NaN
             EXIT
          ENDIF
          z_old=z
@@ -1961,7 +1961,7 @@ c-----------------------------------------------------------------------
       !Scan real space for eigenvalues
       num_vals=0
       DO istep=0,scan_nstep
-         eigval=COMPLEX( 10**(log_scan_x0+istep*step), AIMAG(initguess))
+         eigval=CMPLX( 10**(log_scan_x0+istep*step), AIMAG(initguess))
          eigval0=eigval
          CALL match_newton(match_delta,eigval,err,iter)
          detval=match_delta(eigval,mat)
