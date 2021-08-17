@@ -10,6 +10,45 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.5.0
+===========
+
+Adds
+------
+- GPEC - Outputs new J. Callen threshold (w_isl_crit) for edge island penetration, controlled by the singtresh_flag. This requires PENTRC kinetic file inputs.
+- GPEC - Outputs new coil to resonant field coupling matrix
+- GPEC - Outputs vector potential in cylindrical coordinates
+- GPEC - Outputs Delta and Jbgradpsi (bwp in ascii) to netcdf outputs, as well as PEST coordinate Jbgradpsi_pest
+- GPEC - Outputs jafac and delpsi profiles via an optional diagnostic routine
+- COIL - Adds leading DIII-D M-coil designs
+- RMATCH - Adds variable inps_eps=1e-4,1e-7,1e-8 for automatic determination of computational elements, removing xmax_method and replacing xfac with inps_xfac
+- RMATCH - Includes production code used to form initialization scans published by Froese & Brennan for General Fusion plasmas
+- RMATCH - Adds TRANSP interface module
+
+Changes
+--------
+- VACUUM - Implicit uses of integer variables made explicit along with initialization of variables at zero (towards static compilation)
+- GPEC - Improves terminal output with table-like formatting and a change from reported averages to vector magnitudes
+- COIL - Updates coil dat file reading to use arbitrary x,y,z numerical formatting for higher accuracy
+- COIL - Accepts unformatted header lines in coil dat files (still needs to be 3 integers and a float)
+- PENTRC - Reduces number of LSODE warnings in energy and pitch integrals
+- PYPEC - Makes necessary changes to switch to python3 and updates portal partitions
+
+Fixes
+------
+- EQUIL - Adds proper zmid displacement to z grid from g-files (previously, z of equilibria were off by this value - effectively moving the magnetic axis to z=0 in all cases)
+- DCON - Forces euler.bin outputs at critical steps on either side of singular surfaces, enabling safe use of euler_stride with GPEC
+- DCON - Scans initial guess for inboard and outboard separatrix positions for robustness to deep magnetic wells within g-file domains
+- STRIDE - Forces reforming of equil splines with user modified bounds
+- GPEC - Fixed units of the perturbed field and displacement in netcdf output (previously, the former's "m" units were overwritting the field units)
+- GPEC - Fixes units of the vacuum resonant flux in the netcdf output
+- GPEC - Initializes the coil_indmat values to zero to prevent erroneous values beyond cmlow-cmhigh
+- GPEC - Truncates rzphi extrapolations to the core when psilow or qlow sets the start far from the magnetic axis, preventing non-physical values from swamping the output
+- VACUUM - Eliminates warning due to searchx declaring incorrect x-array size
+- VACUUM - Adds ishape=42 to residual calculation in kernel
+- INSTALL - Makes run_examples bash script explicitly use installation's exes
+
+
 GPEC v1.4.4
 ===========
 
