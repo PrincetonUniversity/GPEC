@@ -104,8 +104,7 @@ There may be a few warnings/hints... take them or leave them.
 # This file tells python to treat the folder as a package
 
 # for "from package import *" to work use __all__ = ["file1","file2",...]
-__all__ = ['data','gpec','post']#,'namelist','modplot']
+__all__ = ['data', 'gpec', 'post']  # ,'namelist','modplot']
 
-import gpec,data,post,synthetics,modplot
+from . import gpec, data, post, synthetics, modplot
 import numpy as np
-

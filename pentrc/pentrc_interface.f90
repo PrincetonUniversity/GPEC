@@ -238,11 +238,6 @@ module pentrc_interface
             endif            
             call read_peq(peq_file,jac_in,jsurf_in,tmag_in,force_xialpha,indebug,&
                           op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))
-            !if(gpec_file=="")then
-            !   write(nstr,'(i3)')nn
-            !   gpec_file="gpec_order1_n"//trim(adjustl(nstr))//".bin" 
-            !endif
-            !call read_gpec_peq(gpec_file,indebug)
             if(trim(pmodb_file)/="" .and. trim(pmodb_file)/="none")&
                 call read_pmodb(pmodb_file,jac_in,jsurf_in,tmag_in,indebug,&
                                 op_powin=(/power_bin,power_bpin,power_rin,power_rcin/))

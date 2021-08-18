@@ -306,9 +306,7 @@ given in the documentation "Definition" line (watch out for inconsistent
 
 import os,copy,time
 
-from string import join,capitalize,count         # faster than '+' loop
-from StringIO import StringIO
-from types import MethodType
+from io import StringIO
 
 import numpy as np                               # math
 from scipy.interpolate import interp1d,interp2d,LinearNDInterpolator,RegularGridInterpolator,griddata
@@ -338,9 +336,9 @@ except ImportError:
     print('WARNING: seaborn not in python path')
     print(' -> We recomend loading anaconda/2.3.0 on portal')
 
-#in this package
-import modplot as plt
-import namelist
+# in this package
+from . import modplot as plt
+from . import namelist
 
 # better label recognition using genfromtxt
 for c in '^|<>/':
@@ -419,15 +417,15 @@ def open_dataset(filename_or_obj,complex_dim='i',**kwargs):
         ds = xarray.Dataset()
         for i,d in enumerate(dat):
             if i==0:
-                for k,v in d.params.iteritems():
+                for k,v in d.params.items():
                     ds.attrs[k]=v
             if not d.x:
                 raise ValueError("No regular grid for dataset")
-            for yk,yv in d.y.iteritems():
+            for yk,yv in d.y.items():
                 ds[yk] = xarray.DataArray(yv.reshape(d.shape),coords=d.x,dims=d.xnames,attrs=d.params)
 
     if complex_dim in ds.dims:
-        for k,v in ds.data_vars.iteritems():
+        for k,v in ds.data_vars.items():
             if len(v.dims) > len(set(v.dims)):
                 print("WARNING: Removing {:} to avoid error (below) reforming complex_dim. ".format(k))
                 print("ValueError: broadcasting cannot handle duplicate dimensions")
@@ -526,7 +524,7 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
                             # but include them as preamble (DCON one-liners)
                             vals = lines[top]
                             keys = lines[top-1]
-                            if not keys.translate(None,' \n\t'): #empty line
+                            if not keys.translate(str.maketrans(dict.fromkeys(' \n\t'))): #empty line
                                 keys = lines[top-2]
                             if '=' not in keys and len(keys.split())==len(vals.split()):
                                 for k,v in zip(keys.split(),vals.split()):
@@ -558,14 +556,14 @@ def read(fname,squeeze=False,forcex=[],forcedim=[],maxnumber=999,maxlength=1e6,
                 
                 # include headers
                 top-=1
-                if not lines[top].translate(None,' \n\t'): #empty line
+                if not lines[top].translate(str.maketrans(dict.fromkeys(' \n\t'))): #empty line
                     top-=1
                 skipfoot = length-bot
                 f.seek(0)
                 table = lines[top:bot]
                 if '\n' in table: #empty space
                     table.remove('\n')
-                data = np.genfromtxt(StringIO(join(table)),names=True,
+                data = np.genfromtxt(StringIO(''.join(table)),names=True,
                                      deletechars='?',dtype=np.float)
                 pcollection.append(preamble)
                 dcollection.append(data)
@@ -663,7 +661,7 @@ def write(dataobj,fname='',ynames=[],**kwargs):
     else:
         kwargs['header']=''
 
-    for k,v in dataobj.params.iteritems():
+    for k,v in dataobj.params.items():
         kwargs['header']+= k+" = "+str(v)+"\n"
 
     nums = []
@@ -710,7 +708,7 @@ def plotall(results,xfun,yfun,label='',axes=None,**kwargs):
 
     def newpoint(key,val):
         if type(val) == dict:
-            for k,v in val.iteritems():
+            for k,v in val.items():
                 newpoint(k,v)
         else:
             try:
@@ -718,12 +716,12 @@ def plotall(results,xfun,yfun,label='',axes=None,**kwargs):
                 y.append(yfun(key,val))
             except:
                 pass
-    for key,val in results.iteritems():
+    for key,val in results.items():
         newpoint(key,val)
 
-    z = zip(x,y)
+    z = list(zip(x,y))
     z.sort()
-    x,y = zip(*z)
+    x,y = list(zip(*z))
     ax.plot(x,y,label=label,**kwargs)
     ax.legend()
     f = ax.get_figure()
@@ -884,10 +882,10 @@ class DataBase(object):
             idx = preamble.index('=')
             param = preamble[idx+1]
             name = preamble[idx-1]
-            name.translate(None,'()[]{}\/*-+^%.,:!@#&')
+            name.translate(str.maketrans(dict.fromkeys('()[]{}\/*-+^%.,:!@#&')))
             if name in names and idx>1:
-                name = join(preamble[idx-2:idx],' ')
-                name.translate(None,'()[]{}\/*-+^%.,:!@#&')
+                name = ' '.join(preamble[idx-2:idx])
+                name.translate(str.maketrans(dict.fromkeys('()[]{}\/*-+^%.,:!@#&')))
             elif name in names:
                 for sfx in range(1,100):
                     if name+str(sfx) not in names:
@@ -902,7 +900,7 @@ class DataBase(object):
             preamble.remove(str(param))
             preamble.remove('=')
         self.params=dict(params)
-        self.__doc__ = join(preamble,'')    #whatever is left
+        self.__doc__ = ''.join(preamble)    #whatever is left
 
         #debug print("Set preamble in {} seconds".format(time.time()-start_time))
         #debug start_time = time.time()
@@ -965,7 +963,7 @@ class DataBase(object):
                 step = max(1,len(self.pts[:,0])/1e6)
                 for n in range(self.nd):
                     args.append(self.pts[::step,n])
-                return LinearNDInterpolator(zip(*args),self.y[name][::step])
+                return LinearNDInterpolator(list(zip(*args)),self.y[name][::step])
 
         # for each name check if interpolator is up to date and get values
         values={}
@@ -1074,7 +1072,7 @@ class DataBase(object):
                         x,rng2 = maskmaker(self.pts[:,indx-1],float(x2))
                         x = self.pts[:,indx][rng2]
                         y = self.y[name][rng2]
-                        x,y = np.array(zip(*sorted(zip(x,y))))
+                        x,y = np.array(list(zip(*sorted(zip(x,y)))))
                         x,rng1 = maskmaker(x,x1rng)
                         a.plot(x[rng1],y[rng1],label=lbl+', '+xlbl+'={0:.3}'.format(x2),**kwargs)
             elif self.nd==3:
@@ -1104,7 +1102,7 @@ class DataBase(object):
                             x3d,rng3 = maskmaker(self.pts[:,indx23[1]][rng2],float(x3))
                             x = xs[rng3]
                             y = ys[rng3]
-                            np.array(zip(*sorted(zip(x,y))))
+                            np.array(list(zip(*sorted(zip(x,y)))))
                             x,rng1 = maskmaker(x,x1rng)
                             a.plot(x[rng1],y[rng1],label=x2lbl+', '+xlbls[1]+'={0:.3}'.format(x3),**kwargs)
             a.set_xlabel(_mathtext(self.xnames[indx]))
@@ -1494,7 +1492,7 @@ class DataBase(object):
                         x,rng2 = maskmaker(self.pts[:,indx-1],float(x2))
                         x = self.pts[:,indx][rng2]
                         y = self.y[name][rng2]
-                        x,y = zip(*sorted(zip(x,y)))
+                        x,y = list(zip(*sorted(zip(x,y))))
                         a.plot(x,y,label=lbl+', '+xlbl+'={0:.3}'.format(x2),**kwargs)
             elif self.nd==3:
                 indx23 = range(3)
@@ -1522,7 +1520,7 @@ class DataBase(object):
                             x3d,rng3 = maskmaker(self.pts[:,indx23[1]][rng2],float(x3))
                             x = xs[rng3]
                             y = ys[rng3]
-                            x,y = zip(*sorted(zip(x,y)))
+                            x,y = list(zip(*sorted(zip(x,y))))
                             a.plot(x,y,label=x2lbl+', '+xlbls[1]+'={0:.3}'.format(x3),**kwargs)
         
     
@@ -1571,7 +1569,7 @@ def _data_op(self,other,fun,op,quiet=default_quiet):
             if key not in other.y and not quiet: print(key+op+'0')
         
     else: # apply operation to y values
-        for k,v in NewData.y.iteritems():
+        for k,v in NewData.y.items():
             #if not quiet: print(k+op+str(other))
             NewData.y[k] = fun(v,other)
             

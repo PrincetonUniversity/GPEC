@@ -15,8 +15,10 @@
 # command in order to compile.
 #
 # On portal.pppl.gov
-#   Developers can always load the gpec/0.0 module (development branch module) to get the latest compiler settings
-#     $ module use /p/gpec/modules; load gpec/0.0
+#   Users can run GPEC on portal using the public module. Note, portal now "hides" such modules behind a mod_* gateway module
+#     $ module load mod_gpec gpec
+#   Developers may want to load the development branch module to get the latest compiler settings if they've changed since the last release
+#     $ module load mod_gpec gpec/0.0
 #   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
 #     $ module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Note that before the netcdf module was properly set up, we had to manually load supporting modules
@@ -186,9 +188,9 @@
 #   ------------------------------------------------------------
 #
 # Some common modifications of the above settings might include,
-#     $ make FFLAGS="-qopenmp -qopt-report -g -O0 -check all"  # for debugging
-#     $ make FFLAGS="-qopenmp -O3"     # for optimized version
-#     $ make FFLAGS="-qopenmp  -xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
+#     $ make FFLAGS="-qopt-report -g -O0 -check all"  # for debugging
+#     $ make FFLAGS="-O3"     # for optimized version
+#     $ make FFLAGS="-xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
@@ -314,22 +316,20 @@ else
     FCINC = .
 endif
 
-# SuperLU options
-#------------------
-# determine if we need to unpack our own SuperLU tarball
-SLU_COMMAND = cd ../superlu; ./remakeSuperLU.sh
-# ... or if we just need to make our existing unpacked SuperLU
-ifneq ($(wildcard ../superlu/SuperLU_5.2.1/.),)
-	SLU_COMMAND = cd ../superlu/SuperLU_5.2.1; make
-endif
-# ... or if we already have a valid SuperLU and shouldn't bother
-#ifneq some_magic_test_if_necessary_libs_are_in_path
-#	SLU_COMMAND =
-#endif
-
 # XDRAW options
 #----------------
 ifdef X11_HOME
     X11_INC_DIR = -I$(X11_HOME)/include
     X11_LIB_DIR = -L$(X11_HOME)/lib
+endif
+
+#Common compiler flags for OpenMP
+ifeq ($(findstring ifort,$(FC)),ifort)
+	OMPFLAG ?= -qopenmp
+else ifeq ($(findstring gfortran,$(FC)),gfortran)
+	OMPFLAG ?= -fopenmp
+else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
+	OMPFLAG ?= -mp
+else
+	OMPFLAG ?= -openmp
 endif

@@ -30,12 +30,19 @@ OBJS = \
 	ode.o \
 	free.o \
 	resist.o \
+        lib_interface.o \
 	dcon.o
 
-all: rdcon
+all: lsode equil vacuum rdcon
+
+lsode:
+	cd ../lsode; make
 
 equil:
 	cd ../equil; make
+
+vacuum:
+	cd ../vacuum; make
 
 rdcon: $(OBJS)
 	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
@@ -68,7 +75,7 @@ rclean: clean
 dcon_mod.o: ../equil/spline_mod.mod ../equil/global_mod.mod \
 	../equil/equil_mod.mod ../equil/equil_out_mod.mod version.inc
 toolbox.o: dcon_mod.o
-jacobi.o: ../equil/local.o
+jacobi.o: ../equil/local_mod.mod
 mercier.o: dcon_mod.o
 bal.o: dcon_mod.o
 fourfit.o: ../equil/fspline_mod.mod dcon_mod.o toolbox.o
@@ -79,4 +86,5 @@ ode.o: ode_output.o
 free.o: ode.o
 resist.o: dcon_mod.o toolbox.o
 gal.o: jacobi.o sing.o free.o
-dcon.o: bal.o mercier.o ode.o resist.o gal.o
+lib_interface.o: ../equil/local.o ../equil/global.o ../equil/utils.o ../equil/inverse.o
+dcon.o: bal.o mercier.o ode.o resist.o gal.o lib_interface.o

@@ -248,7 +248,7 @@ module inputs
         ! manipulation of N and T profiles
         kin%fs(:,1:2) = nfac*kin%fs(:,1:2)
         kin%fs(:,3:4) = tfac*kin%fs(:,3:4)
-    
+
         ! manipulation of rotation variables
         welec(:) = wefac*kin%fs(:,5) ! direct manipulation of omegae
         if(wefac/=1.0 .and. verbose) print('(a55,es10.2e3)'),'  -> applying direct manipulation of omegaE by factor ',wefac
@@ -274,7 +274,7 @@ module inputs
             call spline_write1(kin,.true.,.false.,out_unit,0,.true.)
             close(out_unit)
         endif
-    
+
     end subroutine read_kin
 
 

@@ -10,9 +10,6 @@ F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 
 LIBDIR = ../lib
 
-SUPERLUDIR = ../superlu/SuperLU_5.2.1/SRC
-SUPERLUBLASDIR = ../superlu/
-
 LIBS = \
 	-L$(LIBDIR) \
 	-lzvode \
@@ -20,8 +17,6 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-L$(SUPERLUDIR) \
-	-lsuperlu \
 	-L$(MATHDIR) \
 	$(MATHLIBS)
 
@@ -41,7 +36,7 @@ OBJS = \
 
 # targets
 
-all: lsode zvode zlange superlu equil vacuum stride
+all: lsode zvode zlange equil vacuum stride
 
 lsode:
 	cd ../lsode; make
@@ -51,9 +46,6 @@ zvode:
 
 zlange:
 	cd ../zlange; make
-
-superlu:
-	$(SLU_COMMAND)
 
 equil:
 	cd ../equil; make
@@ -92,7 +84,7 @@ fourfit.o: ../equil/fspline_mod.mod dcon_mod.o
 sing.o: fourfit.o
 zvode1.o: ../zvode/zvode.o ../zlange/zlange.o
 riccati.o: sing.o
-ode.o: sing.o debug.o zvode1.o ../equil/sparse.o riccati.o
+ode.o: sing.o debug.o zvode1.o riccati.o
 stride_netcdf.o: dcon_mod.o
 free.o: ode.o stride_netcdf.o
 stride.o: bal.o free.o mercier.o

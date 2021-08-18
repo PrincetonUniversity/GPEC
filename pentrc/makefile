@@ -75,8 +75,8 @@ pentrc: $(OBJS)
 
 # dependencies
 
-lsode1.o:
-lsode2.o:
+lsode1.o: ../lsode/lsode.o
+lsode2.o: ../lsode/lsode.o
 params.o: version.inc
 grid.o: 
 utilities.o: params.o
@@ -85,7 +85,7 @@ dcon_interface.o: params.o utilities.o ../equil/spline_mod.mod ../equil/fspline_
 inputs.o:  params.o utilities.o special.o dcon_interface.o
 energy.o:  params.o utilities.o lsode2.o
 pitch.o:   params.o utilities.o lsode1.o energy.o special.o
-torque.o:  params.o utilities.o special.o dcon_interface.o inputs.o energy.o pitch.o
+torque.o:  params.o utilities.o lsode1.o special.o dcon_interface.o inputs.o energy.o pitch.o
 diagnostics.o: params.o special.o energy.o pitch.o
 pentrc_interface.o: params.o utilities.o special.o inputs.o energy.o pitch.o torque.o diagnostics.o
 pentrc.o:  params.o  pentrc_interface.o

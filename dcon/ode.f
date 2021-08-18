@@ -60,6 +60,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE ode_run
 
       CHARACTER(64) :: message
+      LOGICAL :: force_output, test, first
 c-----------------------------------------------------------------------
 c     initialize.
 c-----------------------------------------------------------------------
@@ -79,12 +80,19 @@ c-----------------------------------------------------------------------
 c     integrate.
 c-----------------------------------------------------------------------
       DO
+         first = .TRUE.
          DO
             IF(istep > 0)CALL ode_unorm(.FALSE.)
-            CALL ode_output_step(unorm)
+            ! always record the first and last point in an inter-rational region
+            ! these are important for resonant quantities
+            ! recording the last point is cirtical for matching the nominal edge
+            test = ode_test()
+            force_output = first .OR. test
+            CALL ode_output_step(unorm, op_force=force_output)
             CALL ode_record_edge
-            IF(ode_test())EXIT
+            IF(test)EXIT
             CALL ode_step
+            first = .FALSE.
          ENDDO
 c-----------------------------------------------------------------------
 c     re-initialize.
@@ -127,8 +135,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ipert
       REAL(r8), DIMENSION(mpert) :: key,m
-      INTEGER :: it,itmax=50
-      INTEGER, DIMENSION(1) :: jpsi
+      INTEGER :: jpsi,it,itmax=50
       REAL(r8) :: dpsi,q,q1,eps=1e-10
 c-----------------------------------------------------------------------
 c     preliminary computations.
@@ -141,9 +148,11 @@ c-----------------------------------------------------------------------
 c     use newton iteration to find starting psi if qlow it is above q0
 c-----------------------------------------------------------------------
       IF(qlow > sq%fs(0, 4))THEN
-         jpsi=MINLOC(ABS(sq%fs(:,4)-qlow))
-         IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
-         psifac=sq%xs(jpsi(1))
+         ! start check from the edge for robustness in reverse shear cores
+         DO jpsi = sq%mx-1, 1, -1 ! avoid starting iteration on endpoints
+            IF(sq%fs(jpsi - 1, 4) < qlow) EXIT
+         ENDDO
+         psifac=sq%xs(jpsi)
          it=0
          DO
             it=it+1

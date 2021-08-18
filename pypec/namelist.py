@@ -52,8 +52,6 @@ True
     @email nlogan@pppl.gov
 """
 
-from types import InstanceType,NoneType
-from string import strip
 from collections import OrderedDict
 
 class Objectify(object):
@@ -68,7 +66,7 @@ class Objectify(object):
         :param d: iterable. Dictionary that will be converted.
 
         """
-        for a, b in d.iteritems():
+        for a, b in d.items():
             if isinstance(b, (list, tuple)):
                setattr(self, a, [Objectify(x) if isinstance(x, dict) else x for x in b])
             else:
@@ -113,10 +111,10 @@ def _string_to_type(str):
                 pyobj=False
             #complex written as tuple
             elif str.startswith('(') and str.endswith(')'):
-                fpair = map(float,str.translate(None,'() ').split(','))
+                fpair = list(map(float,str.translate(str.maketrans(dict.fromkeys('() '))).split(',')))
                 pyobj=complex(*fpair)
             #lists written using spaces or repetition
-            elif ('*' in str or ' ' in str or ',' in str) and str.translate(None,',.* ').isalnum():
+            elif ('*' in str or ' ' in str or ',' in str) and str.translate(str.maketrans(dict.fromkeys(',.* '))).isalnum():
                 pyobj=[]
                 str = str.replace(',',' ')
                 for i in str.split():
@@ -174,9 +172,9 @@ def read(filename,out_type='dict',comment='!',old=False):
         print('Group with no name found in end: placing in blank group.')
         filestr = filestr[0:filestr.rfind(end)+1]+'\n'+grp+' \n'+filestr[filestr.rfind(end)+1:]+'\n'+end
     #remove tabs and split lines
-    nlist = filestr.translate(None,'\t').replace(grp,grp+'\n').split('\n')    
+    nlist = filestr.translate(str.maketrans(dict.fromkeys('\t'))).replace(grp,grp+'\n').split('\n')
     #prevent errors in searching for & or /, without condensing list values
-    nlist=map(strip,nlist)
+    nlist=[nlistkey.strip() for nlistkey in nlist]
 
     start=0
     stop=0
@@ -194,10 +192,10 @@ def read(filename,out_type='dict',comment='!',old=False):
                 iname,ival = item,None
                 nldict[name][item]=None
             elif '=' in item:                           # parameter
-                iname = strip(item.split('=')[0])
+                iname = str.strip(item.split('=')[0])
                 ival = item.split('=')[1] # note there could be another '=' in the comments
                 for c in comment:
-                    ival = strip(ival.split(c)[0]) # allow same line comments
+                    ival = str.strip(ival.split(c)[0]) # allow same line comments
                 try:
                     nldict[name][iname]=_string_to_type(ival)
                 except:
@@ -248,9 +246,9 @@ def write(nl,filename,old=False):
                 elif type(nl[key][subkey])==str:
                     f.write('   '+subkey+" = '"+str(nl[key][subkey])+"'")
                 elif type(nl[key][subkey])==list:
-                    spacedlist = str(nl[key][subkey]).translate(None,',[]')
+                    spacedlist = str(nl[key][subkey]).translate(str.maketrans(dict.fromkeys(',[]')))
                     f.write('   '+subkey+' = '+spacedlist+'')
-                elif type(nl[key][subkey])==NoneType: # comments
+                elif type(nl[key][subkey]) is None:  # comments
                     f.write('   '+subkey)
                 else:
                     f.write('   '+subkey+' = '+str(nl[key][subkey]))
@@ -293,7 +291,7 @@ def _write_rst(nl,name='',filename='namelist.rst'):
                 elif type(nl[key][subkey])==str:
                     f.write('**'+subkey+'**'+' = "'+str(nl[key][subkey])+'"\n')
                 elif type(nl[key][subkey])==list:
-                    spacedlist = str(nl[key][subkey]).translate(None,',[]')
+                    spacedlist = str(nl[key][subkey]).translate(str.maketrans(dict.fromkeys(',[]')))
                     f.write('**'+subkey+'**'+' = '+spacedlist+'\n')
                 else:
                     f.write('**'+subkey+'**'+' = '+str(nl[key][subkey])+'\n')

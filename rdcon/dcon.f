@@ -297,6 +297,7 @@ c-----------------------------------------------------------------------
       CALL equil_out_diagnose(.FALSE.,out_unit)
       CALL equil_out_write_2d
       IF(direct_flag)CALL bicube_dealloc(psi_in)
+
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
@@ -428,6 +429,7 @@ c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
       END SUBROUTINE dcon_run
+
       END MODULE dcon_run_mod
 c-----------------------------------------------------------------------
 c     subprogram 5. dcon_main.
@@ -438,6 +440,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       PROGRAM dcon_main
       USE dcon_run_mod
+      USE lib_interface_mod
       IMPLICIT NONE
 c-----------------------------------------------------------------------
 c     do it.
@@ -448,3 +451,17 @@ c     terminate.
 c-----------------------------------------------------------------------
       CALL program_stop("Normal termination.")
       END PROGRAM dcon_main
+
+      SUBROUTINE dcon_interface_run(eqin)
+         USE lib_interface_mod
+         USE dcon_run_mod
+         TYPE(transpeq) :: eqin
+         teq=eqin
+         CALL lib_interface_init
+         IF (run_lib_interface) THEN
+            CALL lib_interface_input
+            CALL lib_interface_set_equil
+         ENDIF
+         CALL dcon_run
+      END SUBROUTINE dcon_interface_run
+      

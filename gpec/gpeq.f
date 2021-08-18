@@ -1173,6 +1173,8 @@ c-----------------------------------------------------------------------
                   gdphi(i,j)=-rzphi%f(3)/twopi
                ENDIF
             ENDIF
+            ! mark inside the domain of calculations
+            IF (gdpsi(i,j)<psifac(1)) gdl(i,j)=2
          ENDDO
       ENDDO
       CALL spline_dealloc(rbeta)
