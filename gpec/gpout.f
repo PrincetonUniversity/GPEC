@@ -2141,7 +2141,7 @@ c-----------------------------------------------------------------------
             IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12)') "psi", "q",
      $         "singflx", "chirikov"
             WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3)')
-     $         respsi, sq%f(4), ABS(vflxmn(ising)),
+     $         respsi, singtype(ising)%q, ABS(vflxmn(ising)),
      $         vchirikov(ising)
          ENDIF
       ENDDO
