@@ -2425,9 +2425,12 @@ c-----------------------------------------------------------------------
 
       CHARACTER(2) :: si
 
-      boutmn(:) = 1
-
       DO i=-2,2
+         boutmns(:, :) = 0
+         boutfuns(:, :) = 0
+         boutmn(:) = 1
+         boutfun(:) = 1
+         CALL iscdftf(mfac,mpert,boutfun,mthsurf,boutmn)
          IF (i>=0) THEN
             WRITE(UNIT=si,FMT='(I1)')i
             si=ADJUSTL(si)
