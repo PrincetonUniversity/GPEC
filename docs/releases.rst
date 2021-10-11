@@ -10,6 +10,15 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.5.1
+===========
+
+Fixes
+------
+- GPEC - Fixes bug in jacfac diagnostic, now benchmarked with MEPHIT
+- GPEC - Fixes bug in terminal output of q during vsingfld
+
+
 GPEC v1.5.0
 ===========
 
