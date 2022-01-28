@@ -167,6 +167,38 @@
 #   Now compile using
 #     $ make FFLAGS='-openmp' 2>&1 | tee make.log
 #
+# On MIT's mferws01 linux machine
+#   Developers should use the gfortran compiler as well as the associated netcdf. Unfortunately, there are no modules here
+#   Set environment variables manually as:
+#     $ export FC=gfortran
+#     $ export LAPACKHOME=/usr/lib/x86_64-linux-gnu/
+#     $ export NETCDFHOME=/usr/lib/x86_64-linux-gnu/
+#     $ export NETCDFINC=/usr/include
+#     $ export OMPFLAG=''  # should be -fopenmp for gnu compiler, but it raises errors that intel does not
+#   Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = gfortran
+#      using math libraries -llapack -lblas
+#      from /usr/lib/x86_64-linux-gnu/
+#      including /usr/lib/x86_64-linux-gnu/
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /usr/lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/
+#      including /usr/lib/x86_64-linux-gnu/
+#      and compiler libraries
+#      from .
+#      including .
+#      and using OMPFLAG -fopenmp
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#     $ make OMPFLAG='' FFLAGS='' 2>&1 | tee make.log
+#   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
+#
 # On mac OSX
 #   If one has installed the free gfortran compiler and built netcdf and lapack,
 #   a typical set of paths looks like the following.
@@ -252,10 +284,12 @@ ifdef NETCDF_FORTRAN_HOME
     else
         NETCDFDIR = $(NETCDF_FORTRAN_HOME)
     endif
-    ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/include/.),)
-        NETCDFINC = $(NETCDF_FORTRAN_HOME)/include
-    else
-        NETCDFINC = $(NETCDF_FORTRAN_HOME)
+    ifndef NETCDFINC
+        ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/include/.),)
+            NETCDFINC = $(NETCDF_FORTRAN_HOME)/include
+        else
+            NETCDFINC = $(NETCDF_FORTRAN_HOME)
+        endif
     endif
 else
     ifndef NETCDFHOME
@@ -270,10 +304,12 @@ else
     else
         NETCDFDIR = $(NETCDFHOME)
     endif
-    ifneq ($(wildcard $(NETCDFHOME)/include/.),)
-        NETCDFINC = $(NETCDFHOME)/include
-    else
-        NETCDFINC = $(NETCDFHOME)
+    ifndef NETCDFINC
+        ifneq ($(wildcard $(NETCDFHOME)/include/.),)
+            NETCDFINC = $(NETCDFHOME)/include
+        else
+            NETCDFINC = $(NETCDFHOME)
+        endif
     endif
 endif
 # check if the netcdf and netcdf libraries are split up or not
