@@ -1299,7 +1299,7 @@ c-----------------------------------------------------------------------
 
       CALL spline_eval(sq,psifac,0)
       IF(size_edge > 0)THEN
-         IF(sq%f(4) >= q_edge(i_edge))THEN
+         IF(sq%f(4) >= q_edge(i_edge) .AND. psifac >= psiedge)THEN  ! second codition handles initialization plasmas with q0~qa
             CALL free_test(plasma1,vacuum1,total1,psifac)
             IF(debug) WRITE(*,'(2(i4),6(es12.3))') calc_number,
      $         i_edge,psifac,sq%f(4),q_edge(i_edge),
