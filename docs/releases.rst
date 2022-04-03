@@ -10,6 +10,16 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.5.2
+===========
+
+Fixes
+------
+- GPEC - Fixes bug in flux-field conversion of P_xe 
+- GPEC - Fixes orientation of L, Lambda, P, rho, W_e, W_xe, R_xe, P_xe matrices in netcdf outputs
+- GPEC - Fixes bug that had scrambled C_*_x_out netcdf output
+
+
 GPEC v1.5.1
 ===========
 
