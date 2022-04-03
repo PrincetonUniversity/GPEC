@@ -199,16 +199,16 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(mncid,r_id,"long_name",
      $       "Reluctance") )
          CALL check( nf90_enddef(mncid) )
-         matmm = surf_indmats
+         matmm = TRANSPOSE(surf_indmats)
          CALL check( nf90_put_var(mncid,l_id,RESHAPE((/REAL(matmm),
      $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
-         matmm = plas_indmats(resp_index,:,:)
+         matmm = TRANSPOSE(plas_indmats(resp_index,:,:))
          CALL check( nf90_put_var(mncid,la_id,RESHAPE((/REAL(matmm),
      $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
-         matmm = permeabmats(resp_index,:,:)
+         matmm = TRANSPOSE(permeabmats(resp_index,:,:))
          CALL check( nf90_put_var(mncid,p_id,RESHAPE((/REAL(matmm),
      $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
-         matmm = reluctmats(resp_index,:,:)
+         matmm = TRANSPOSE(reluctmats(resp_index,:,:))
          CALL check( nf90_put_var(mncid,r_id,RESHAPE((/REAL(matmm),
      $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
          CALL check( nf90_close(mncid) )
@@ -512,6 +512,7 @@ c-----------------------------------------------------------------------
       INTEGER :: idid, mdid, odid, cdid
       INTEGER, DIMENSION(nsingcoup) :: c_id, r_id, s_id,
      $     cl_id, rl_id, sl_id
+      COMPLEX(r8), DIMENSION(:, :), ALLOCATABLE :: matmo, matms
 
       TYPE(spline_type) :: spl
       TYPE(cspline_type) :: fsp_sol
@@ -757,7 +758,8 @@ c-----------------------------------------------------------------------
      $   temp1(tmpert,tmpert), flxtofld(tmpert,tmpert),
      $   singcoup_out_vals(nsingcoup,msing),
      $   singcoup_out_vecs(nsingcoup,tmpert,msing),
-     $   singcoup_out_bvecs(nsingcoup,tmpert,msing))
+     $   singcoup_out_bvecs(nsingcoup,tmpert,msing),
+     $   matms(tmpert, msing))
 
       ! get inverse of fldflxmat for converting to flux to power normalized field ((bA^1/2)_m / A^1/2)
       CALL iszhinv(fldflxmat,tmpert,flxtofld)
@@ -791,7 +793,8 @@ c-----------------------------------------------------------------------
      $      vt(osing,tmpert),work(lwork),rwork(5*osing),ipiv(tmpert),
      $      localcoup_out_vals(nsingcoup, osing),
      $      localcoup_out_vecs(nsingcoup,tmpert,osing),
-     $      localcoup_out_bvecs(nsingcoup,tmpert,osing))
+     $      localcoup_out_bvecs(nsingcoup,tmpert,osing),
+     $      matmo(tmpert, osing))
 
          DO i=1,nsingcoup
             work=0
@@ -1006,9 +1009,9 @@ c-----------------------------------------------------------------------
 
          ! write variables
          DO i=1,nsingcoup
+            matms = TRANSPOSE(singcoup_out(i,:,:))
             CALL check( nf90_put_var(mncid,c_id(i),RESHAPE(
-     $           (/REAL(singcoup_out(i,:,:)),
-     $             AIMAG(singcoup_out(i,:,:))/),(/tmpert,msing,2/))))
+     $           (/REAL(matms), AIMAG(matms)/),(/tmpert,msing,2/))))
             CALL check( nf90_put_var(mncid,r_id(i),RESHAPE(
      $           (/REAL(singcoup_out_bvecs(i,:,:)),
      $             AIMAG(singcoup_out_bvecs(i,:,:))/),
@@ -1016,9 +1019,9 @@ c-----------------------------------------------------------------------
             CALL check( nf90_put_var(mncid,s_id(i),
      $           singcoup_out_vals(i,:)) )
             IF(osing<msing)THEN
+               matmo = TRANSPOSE(localcoup_out(i,:,:))
                CALL check( nf90_put_var(mncid,cl_id(i),RESHAPE(
-     $              (/REAL(localcoup_out(i,:,:)),
-     $              AIMAG(localcoup_out(i,:,:))/),(/tmpert,osing,2/))))
+     $              (/REAL(matmo), AIMAG(matmo)/),(/tmpert,osing,2/))))
                CALL check( nf90_put_var(mncid,rl_id(i),RESHAPE(
      $              (/REAL(localcoup_out_bvecs(i,:,:)),
      $              AIMAG(localcoup_out_bvecs(i,:,:))/),
@@ -5629,8 +5632,8 @@ c-----------------------------------------------------------------------
       j = mpert-malias
       mat = 0
       mat(i:j,i:j) = permeabmats(resp_index,i:j,i:j)
-      ! convert to bsqrtA/|sqrtA|
-      pmat = MATMUL(MATMUL(ptof,mat),ptof)
+      ! convert to bsqrtA/|sqrtA| so Phi_e = P_e . Phi_xe
+      pmat = MATMUL(MATMUL(ftop,mat),ptof)
       mat = TRANSPOSE(pmat)
       worksvd=0
       rworksvd=0
@@ -6063,14 +6066,18 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(mncid,mp_id,indx) )
 
          ! energy normalized matrices
-         CALL check( nf90_put_var(mncid,wm_id,RESHAPE((/REAL(wmat),
-     $               AIMAG(wmat)/),(/mpert,mpert,2/))) )
-         CALL check( nf90_put_var(mncid,wt_id,RESHAPE((/REAL(wmatt),
-     $               AIMAG(wmatt)/),(/mpert,mpert,2/))) )
-         CALL check( nf90_put_var(mncid,rm_id,RESHAPE((/REAL(rmat),
-     $               AIMAG(rmat)/),(/mpert,mpert,2/))) )
-         CALL check( nf90_put_var(mncid,pm_id,RESHAPE((/REAL(pmat),
-     $               AIMAG(pmat)/),(/mpert,mpert,2/))) )
+         matmm = TRANSPOSE(wmat)
+         CALL check( nf90_put_var(mncid,wm_id,RESHAPE((/REAL(matmm),
+     $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
+         matmm = TRANSPOSE(wmatt)
+         CALL check( nf90_put_var(mncid,wt_id,RESHAPE((/REAL(matmm),
+     $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
+         matmm = TRANSPOSE(rmat)
+         CALL check( nf90_put_var(mncid,rm_id,RESHAPE((/REAL(matmm),
+     $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
+         matmm = TRANSPOSE(pmat)
+         CALL check( nf90_put_var(mncid,pm_id,RESHAPE((/REAL(matmm),
+     $               AIMAG(matmm)/),(/mpert,mpert,2/))) )
 
          ! Basis vectors and values
          CALL check( nf90_put_var(mncid,x_id,RESHAPE((/REAL(xvecs),
