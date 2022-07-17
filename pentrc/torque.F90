@@ -1860,7 +1860,7 @@ module torque
         else
             chrg = zi*e
             mass = mi*mp
-            s = 2
+            s = 1
         endif
 
         ! calculate the basic flux functions on the equilibrium grid
