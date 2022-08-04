@@ -252,10 +252,12 @@ ifdef NETCDF_FORTRAN_HOME
     else
         NETCDFDIR = $(NETCDF_FORTRAN_HOME)
     endif
-    ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/include/.),)
-        NETCDFINC = $(NETCDF_FORTRAN_HOME)/include
-    else
-        NETCDFINC = $(NETCDF_FORTRAN_HOME)
+    ifndef NETCDFINC
+        ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/include/.),)
+            NETCDFINC = $(NETCDF_FORTRAN_HOME)/include
+        else
+            NETCDFINC = $(NETCDF_FORTRAN_HOME)
+        endif
     endif
 else
     ifndef NETCDFHOME
@@ -270,10 +272,12 @@ else
     else
         NETCDFDIR = $(NETCDFHOME)
     endif
-    ifneq ($(wildcard $(NETCDFHOME)/include/.),)
-        NETCDFINC = $(NETCDFHOME)/include
-    else
-        NETCDFINC = $(NETCDFHOME)
+    ifndef NETCDFINC
+        ifneq ($(wildcard $(NETCDFHOME)/include/.),)
+            NETCDFINC = $(NETCDFHOME)/include
+        else
+            NETCDFINC = $(NETCDFHOME)
+        endif
     endif
 endif
 # check if the netcdf and netcdf libraries are split up or not
