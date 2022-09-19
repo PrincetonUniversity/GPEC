@@ -1101,6 +1101,9 @@ c-----------------------------------------------------------------------
 c     check data_type and read data.
 c-----------------------------------------------------------------------
       IF(timeit) CALL gpec_timer(-2)
+      i1=mmin
+      i2=mmax
+      i3=1
       scale=1.0
       cawmn=0
       tempmn=0
@@ -1110,15 +1113,13 @@ c-----------------------------------------------------------------------
          ALLOCATE(dcosmn(mmin:mmax,nmin:nmax),
      $        dsinmn(mmin:mmax,nmin:nmax),rawmn(mmin:mmax,nmin:nmax))
          IF (data_type=="surfmn") THEN
-            i1=mmax
-            i2=mmin
-            i3=-1
             scale=1e-4
-         ELSE
-            i1=mmin
-            i2=mmax
-            i3=1
-         ENDIF
+            IF (helicity<0) THEN
+               i1=mmax
+               i2=mmin
+               i3=-1
+            ENDIF
+ 1       ENDIF
          CALL ascii_open(in_unit,ifile,"old")
                         
          DO i=i1,i2,i3
