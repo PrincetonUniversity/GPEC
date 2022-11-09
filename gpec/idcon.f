@@ -533,7 +533,7 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: qs
 
       IF(verbose) WRITE(*,*)
-     $  "Recontructing flux functions and metric tensors"
+     $  "Reconstructing flux functions and metric tensors"
 c-----------------------------------------------------------------------
 c     set up fourier-spline type for metric tensors.
 c-----------------------------------------------------------------------

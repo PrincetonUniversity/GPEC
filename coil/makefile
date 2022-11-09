@@ -1,6 +1,8 @@
+# This is the makefile for COIL
 
-IFLAGS = -I../equil
+include ../install/DEFAULTS.inc
 
+IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(IFLAGS)
 
 .f.o:

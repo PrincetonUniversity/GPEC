@@ -7,6 +7,9 @@ c     code organization.
 c-----------------------------------------------------------------------
 c     0. coil_mod.
 c     1. coil_read.
+c     2. erchk.
+c     3. write_coil_geometry.
+c     4. coil_dealloc.
 c-----------------------------------------------------------------------
 c     subprogram 0. coil_mod.
 c     module declarations.
@@ -17,6 +20,7 @@ c-----------------------------------------------------------------------
       MODULE coil_mod
       USE bicube_mod
       USE fspline_mod
+      USE netcdf
 
       IMPLICIT NONE
 
@@ -31,7 +35,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: cro,czo,cpsio,cpsilow,cpsilim,cqlim,
      $     ipd,btd,helicity
 
-      LOGICAL :: gpec_interface
+      LOGICAL :: gpec_interface, tilt_meters=.FALSE., coil_out=.FALSE.
       CHARACTER(256) :: data_dir = 'default'
       CHARACTER(512) :: cfile
       INTEGER, DIMENSION(:), POINTER :: cmfac
@@ -40,7 +44,10 @@ c-----------------------------------------------------------------------
       CHARACTER(24) :: coil_name
       INTEGER :: ncoil,s,nsec
       REAL(r8) :: nw
-      REAL(r8), DIMENSION(:), POINTER :: cur 
+      REAL(r8), DIMENSION(:,:), POINTER  :: x0, y0, z0, r_nom
+      REAL(r8), DIMENSION(:,:), POINTER  :: tiltx, tilty, tiltz
+      REAL(r8), DIMENSION(:), POINTER :: shiftx, shifty, shiftz
+      REAL(r8), DIMENSION(:), POINTER :: cur
       REAL(r8), DIMENSION(:,:,:), POINTER :: x,y,z
       END TYPE coil_type      
 
@@ -69,13 +76,14 @@ c-----------------------------------------------------------------------
      $     coil_shiftx, coil_shifty, coil_shiftz,
      $     coil_tiltx, coil_tilty, coil_tiltz,
      $     coil_xnom, coil_ynom, coil_znom
-      NAMELIST/coil_output/gpec_interface
+      NAMELIST/coil_output/gpec_interface, coil_out
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4,nsec
       REAL(r8) :: cr1,cr2
-      REAL(r8) :: x0, y0, z0, x, y, z, r, angle, length
+      REAL(r8) :: x0, y0, z0, x, y, z, r, r_nom, length
+      REAL(r8) :: angle, tiltx, tilty, tiltz
       REAL(r8) :: dtor = pi/180
-      REAL(r8), DIMENSION(:),ALLOCATABLE :: dl, xm, ym, zm
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: dl, xm, ym, zm, rm
 c-----------------------------------------------------------------------
 c     initialize and read input data.
 c-----------------------------------------------------------------------
@@ -91,6 +99,9 @@ c-----------------------------------------------------------------------
       coil_tiltx=0
       coil_tilty=0
       coil_tiltz=0
+      coil_xnom=1e9  ! large number defaults it to the center of mass
+      coil_ynom=1e9
+      coil_znom=1e9
       CALL ascii_open(in_unit,"coil.in","OLD")
       READ(UNIT=in_unit,NML=coil_control)
       READ(UNIT=in_unit,NML=coil_output)
@@ -104,6 +115,13 @@ c-----------------------------------------------------------------------
       IF (present(icoil_num)) coil_num=icoil_num
       IF (present(icoil_name)) coil_name=icoil_name
       IF (present(icoil_cur)) coil_cur=icoil_cur
+
+      ! always output geometry if modifying it
+      IF (SUM(SUM(ABS(coil_shiftx) + ABS(coil_shifty) + ABS(coil_shiftz)
+     $    + ABS(coil_tiltx) + ABS(coil_tilty) + ABS(coil_tiltz), DIM=2))
+     $    > 0) THEN
+         coil_out = .TRUE.
+      ENDIF
 c-----------------------------------------------------------------------
 c     read coils for each machine.
 c-----------------------------------------------------------------------
@@ -116,25 +134,42 @@ c-----------------------------------------------------------------------
          coil(ci)%coil_name=TRIM(coil_name(ci))
          READ(coil_unit,  *)
      $        coil(ci)%ncoil, coil(ci)%s, nsec, coil(ci)%nw
-         nsec = nsec
+         coil(ci)%nsec = nsec
          ALLOCATE(coil(ci)%cur(coil(ci)%ncoil))
          ALLOCATE(coil(ci)%x(coil(ci)%ncoil, coil(ci)%s, nsec),
      $        coil(ci)%y(coil(ci)%ncoil, coil(ci)%s, nsec), 
      $        coil(ci)%z(coil(ci)%ncoil, coil(ci)%s, nsec))
-        ALLOCATE(dl(nsec), xm(nsec), ym(nsec), zm(nsec))
+         ALLOCATE(coil(ci)%x0(coil(ci)%ncoil, coil(ci)%s),
+     $            coil(ci)%y0(coil(ci)%ncoil, coil(ci)%s),
+     $            coil(ci)%z0(coil(ci)%ncoil, coil(ci)%s),
+     $            coil(ci)%r_nom(coil(ci)%ncoil, coil(ci)%s),
+     $            coil(ci)%tiltx(coil(ci)%ncoil, coil(ci)%s),
+     $            coil(ci)%tilty(coil(ci)%ncoil, coil(ci)%s),
+     $            coil(ci)%tiltz(coil(ci)%ncoil, coil(ci)%s),
+     $            coil(ci)%shiftx(coil(ci)%ncoil),
+     $            coil(ci)%shifty(coil(ci)%ncoil),
+     $            coil(ci)%shiftz(coil(ci)%ncoil) )
+         ALLOCATE(dl(nsec), xm(nsec), ym(nsec), zm(nsec), rm(nsec))
          DO cj=1, coil(ci)%ncoil
             coil(ci)%cur(cj)=coil_cur(ci, cj)
+
+            ! read original geometry
             DO ck=1, coil(ci)%s
                DO cl=1, nsec
                   READ(coil_unit, *) coil(ci)%x(cj, ck, cl),
      $                 coil(ci)%y(cj, ck, cl), coil(ci)%z(cj, ck, cl)
                ENDDO
             ENDDO
-            ! apply shifts
-            coil(ci)%x(cj,:,:) = coil(ci)%x(cj,:,:) + coil_shiftx(ci,cj)
-            coil(ci)%y(cj,:,:) = coil(ci)%y(cj,:,:) + coil_shifty(ci,cj)
-            coil(ci)%z(cj,:,:) = coil(ci)%z(cj,:,:) + coil_shiftz(ci,cj)
-            ! center of mass is default coil center
+
+            ! inform user of any coil modifications
+            IF(ABS(coil_shiftx(ci, cj)) + ABS(coil_shiftx(ci, cj))
+     $         +ABS(coil_shiftx(ci, cj)) > 0) WRITE(*,'(1x,a,i2)'),
+     $         " > Shifting "//TRIM(coil_name(ci))//" coil",cj
+            IF(ABS(coil_tiltx(ci, cj)) + ABS(coil_tilty(ci, cj))
+     $         +ABS(coil_tiltz(ci, cj)) > 0) WRITE(*,'(1x,a,i2)'),
+     $         " > Tilting "//TRIM(coil_name(ci))//" coil",cj
+
+            ! center of mass is default coil center if user enters super large numbers
             x0 = coil_xnom(ci, cj)
             y0 = coil_ynom(ci, cj)
             z0 = coil_znom(ci, cj)
@@ -153,33 +188,62 @@ c-----------------------------------------------------------------------
      $               + coil(ci)%y(cj, ck, 1:nsec-1))/2
                zm = (coil(ci)%z(cj, ck, 2:nsec)
      $               + coil(ci)%z(cj, ck, 1:nsec-1))/2
+               rm = SQRT(xm ** 2 + ym ** 2)
+               r_nom = sum(rm * dl) / length  ! nominal radius of coil (makes most sense for PF coils)
                IF(ABS(x0) > 1e3) x0 = sum(xm * dl) / length
                IF(ABS(y0) > 1e3) y0 = sum(ym * dl) / length
                IF(ABS(z0) > 1e3) z0 = sum(zm * dl) / length
-               ! apply tilts around coil center (user supplies this in degrees)
+               ! apply tilts around coil center (user supplies this in degrees or meters)
+               IF(tilt_meters)THEN
+                  tiltx = ASIN(coil_tiltx(ci, cj) / r_nom)
+                  tilty = ASIN(coil_tilty(ci, cj) / r_nom)
+                  tiltz = ASIN(coil_tiltz(ci, cj) / r_nom)
+               ELSE
+                  tiltx = coil_tiltx(ci, cj) * dtor
+                  tilty = coil_tilty(ci, cj) * dtor
+                  tiltz = coil_tiltz(ci, cj) * dtor
+               ENDIF
                DO cl=1, nsec
-                    x = coil(ci)%x(cj, ck, cl) - x0
-                    y = coil(ci)%y(cj, ck, cl) - y0
-                    z = coil(ci)%z(cj, ck, cl) - z0
-                    ! ztilt (clocking toroidally around the axis)
-                    r = sqrt( y ** 2 + x ** 2)
-                    angle = ATAN2(y, x) + coil_tiltz(ci, cj) * dtor
-                    coil(ci)%x(cj, ck, cl) = x0 + r * cos(angle)
-                    coil(ci)%y(cj, ck, cl) = y0 + r * sin(angle)
-                    ! ytilt (rotating around the y axis)
-                    r = sqrt( x ** 2 + z ** 2)
-                    angle = ATAN2(x, z) + coil_tiltz(ci, cj) * dtor
-                    coil(ci)%z(cj, ck, cl) = z0 + r * cos(angle)
-                    coil(ci)%x(cj, ck, cl) = x0 + r * sin(angle)
-                    ! xtilt (rotating around the x axis)
-                    r = sqrt( z ** 2 + y ** 2)
-                    angle = ATAN2(z, y) + coil_tiltx(ci, cj) * dtor
-                    coil(ci)%y(cj, ck, cl) = y0 + r * cos(angle)
-                    coil(ci)%z(cj, ck, cl) = z0 + r * sin(angle)
+                  x = coil(ci)%x(cj, ck, cl) - x0
+                  y = coil(ci)%y(cj, ck, cl) - y0
+                  z = coil(ci)%z(cj, ck, cl) - z0
+                  ! ztilt (clocking toroidally around the axis)
+                  r = sqrt( y ** 2 + x ** 2)
+                  angle = ATAN2(y, x) + tiltz
+                  coil(ci)%x(cj, ck, cl) = x0 + r * cos(angle)
+                  coil(ci)%y(cj, ck, cl) = y0 + r * sin(angle)
+                  ! ytilt (rotating around the y axis)
+                  r = sqrt( x ** 2 + z ** 2)
+                  angle = ATAN2(x, z) + tilty
+                  coil(ci)%z(cj, ck, cl) = z0 + r * cos(angle)
+                  coil(ci)%x(cj, ck, cl) = x0 + r * sin(angle)
+                  ! xtilt (rotating around the x axis)
+                  r = sqrt( z ** 2 + y ** 2)
+                  angle = ATAN2(z, y) + tiltx
+                  coil(ci)%y(cj, ck, cl) = y0 + r * cos(angle)
+                  coil(ci)%z(cj, ck, cl) = z0 + r * sin(angle)
                ENDDO
+               ! record the subsystem's nominal center and modifications
+               coil(ci)%x0(cj, ck) = x0
+               coil(ci)%y0(cj, ck) = y0
+               coil(ci)%z0(cj, ck) = z0
+               coil(ci)%tiltx(cj, ck) = tiltx
+               coil(ci)%tilty(cj, ck) = tilty
+               coil(ci)%tiltz(cj, ck) = tiltz
+               coil(ci)%r_nom(cj, ck) = r_nom
             ENDDO
+            ! apply shifts
+            coil(ci)%x(cj,:,:) = coil(ci)%x(cj,:,:) + coil_shiftx(ci,cj)
+            coil(ci)%y(cj,:,:) = coil(ci)%y(cj,:,:) + coil_shifty(ci,cj)
+            coil(ci)%z(cj,:,:) = coil(ci)%z(cj,:,:) + coil_shiftz(ci,cj)
+            ! save shift info
+            coil(ci)%shiftx(cj) = coil_shiftx(ci, cj)
+            coil(ci)%shifty(cj) = coil_shifty(ci, cj)
+            coil(ci)%shiftz(cj) = coil_shiftz(ci, cj)
+
          ENDDO
          CALL ascii_close(coil_unit)
+         DEALLOCATE(dl, xm, ym, zm, rm)
       ENDDO
 c-----------------------------------------------------------------------
 c     read equilibrium information.
@@ -215,12 +279,189 @@ c-----------------------------------------------------------------------
       helicity=ipd*btd
       gpec_interface=.TRUE.
 c-----------------------------------------------------------------------
+c     Write final coil geometry information.
+c-----------------------------------------------------------------------
+      IF(coil_out) CALL write_coil_geometry
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE coil_read
 c-----------------------------------------------------------------------
-c     subprogram 2. coil_dealloc.
+c     subprogram 2. check.
+c     Check status of netcdf file.
+c-----------------------------------------------------------------------
+      SUBROUTINE erchk(stat)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT (IN) :: stat
+c-----------------------------------------------------------------------
+c     stop if it is an error.
+c-----------------------------------------------------------------------
+      IF(stat /= nf90_noerr) THEN
+         PRINT *, TRIM(nf90_strerror(stat))
+         STOP "ERROR: failed to write/read netcdf file"
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE erchk
+c-----------------------------------------------------------------------
+c     subprogram 3. coil_output.
+c     Output the coil geometry information
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE write_coil_geometry
+
+      LOGICAL :: debug_flag=.FALSE.
+      INTEGER :: i, ci
+      INTEGER :: ncid
+      CHARACTER(512) :: cfile
+      CHARACTER(2) :: sn
+
+      INTEGER, DIMENSION(:), ALLOCATABLE :: c_dim,c_id,
+     $         s_dim,s_id,
+     $         p_dim,p_id, 
+     $         x_id,y_id,z_id, 
+     $         x0_id,y0_id,z0_id, 
+     $         r_id,cur_id,w_id,
+     $         xs_id,ys_id,zs_id, 
+     $         xt_id,yt_id,zt_id
+
+      ! label the toroidal mode number for consistent file naming convention
+      IF (cnn<10) THEN
+         WRITE(UNIT=sn,FMT='(I1)')cnn
+         sn=ADJUSTL(sn)
+      ELSE
+         WRITE(UNIT=sn,FMT='(I2)')cnn
+      ENDIF
+
+      ! open netcdf file
+      cfile = "gpec_coil_output_n"//TRIM(sn)//".nc"
+      CALL erchk( nf90_create(cfile,
+     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=ncid) )
+
+      ! define global file attributes
+      IF(debug_flag) PRINT *," - Defining modal netcdf globals"
+      CALL erchk( nf90_put_att(ncid,nf90_global,"title",
+     $     "GPEC coil geometries"))
+
+      ! define dimensions
+      ALLOCATE(c_dim(coil_num),c_id(coil_num),
+     $         s_dim(coil_num),s_id(coil_num),
+     $         p_dim(coil_num),p_id(coil_num), 
+     $         x_id(coil_num),y_id(coil_num),z_id(coil_num), 
+     $         x0_id(coil_num),y0_id(coil_num),z0_id(coil_num), 
+     $         r_id(coil_num),cur_id(coil_num),w_id(coil_num),
+     $         xs_id(coil_num),ys_id(coil_num),zs_id(coil_num), 
+     $         xt_id(coil_num),yt_id(coil_num),zt_id(coil_num)
+     $        )
+      IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
+      DO ci=1, coil_num
+         IF(debug_flag) PRINT *, ci, TRIM(coil_name(ci))
+         CALL erchk( nf90_def_dim(ncid, TRIM(coil_name(ci))//
+     $              "_coil", coil(ci)%ncoil, c_dim(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//
+     $              "_coil", nf90_int, c_dim(ci), c_id(ci)) )
+         CALL erchk( nf90_def_dim(ncid, TRIM(coil_name(ci))//
+     $              "_subsystem", coil(ci)%s, s_dim(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//
+     $              "_subsystem", nf90_int, s_dim(ci), s_id(ci)) )
+         CALL erchk( nf90_def_dim(ncid, TRIM(coil_name(ci))//
+     $              "_point", coil(ci)%nsec, p_dim(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//
+     $              "_point", nf90_int, p_dim(ci), p_id(ci)) )
+
+         ! define variables
+         IF(debug_flag) PRINT *," - Defining variables in netcdf"
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_x",
+     $      nf90_double, (/c_dim(ci), s_dim(ci), p_dim(ci)/), x_id(ci)))
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_y",
+     $      nf90_double, (/c_dim(ci), s_dim(ci), p_dim(ci)/), y_id(ci)))
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_z",
+     $      nf90_double, (/c_dim(ci), s_dim(ci), p_dim(ci)/), z_id(ci)))
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_x0",
+     $      nf90_double, (/c_dim(ci), s_dim(ci)/), x0_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_y0", 
+     $      nf90_double, (/c_dim(ci), s_dim(ci)/), y0_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_z0", 
+     $      nf90_double, (/c_dim(ci), s_dim(ci)/), z0_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_R_nom",
+     $      nf90_double, (/c_dim(ci), s_dim(ci)/), r_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tiltx",
+     $      nf90_double, (/c_dim(ci), s_dim(ci)/), xt_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tilty", 
+     $      nf90_double, (/c_dim(ci), s_dim(ci)/), yt_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tiltz", 
+     $      nf90_double, (/c_dim(ci), s_dim(ci)/), zt_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shiftx", 
+     $      nf90_double, c_dim(ci), xs_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shifty", 
+     $      nf90_double, c_dim(ci), ys_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shiftz", 
+     $      nf90_double, c_dim(ci), zs_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_current",
+     $      nf90_double, c_dim(ci), cur_id(ci)) )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_nw",
+     $      nf90_double, varid=w_id(ci)) )
+      ENDDO
+      ! end definitions
+      CALL erchk( nf90_enddef(ncid) )
+
+      ! set variables
+      DO ci=1, coil_num
+         IF(debug_flag) PRINT *," - Putting dimension variables"//
+     $      " in netcdf for "//TRIM(coil_name(ci))
+         CALL erchk( nf90_put_var(ncid,c_id(ci),
+     $      (/(i, i=1,coil(ci)%ncoil)/)) )
+         CALL erchk( nf90_put_var(ncid,s_id(ci),
+     $      (/(i, i=1,coil(ci)%s)/)) )
+         CALL erchk( nf90_put_var(ncid,p_id(ci),
+     $      (/(i, i=1,coil(ci)%nsec)/)) )
+
+         CALL erchk( nf90_put_var(ncid,x_id(ci), coil(ci)%x) )
+         CALL erchk( nf90_put_var(ncid,y_id(ci), coil(ci)%y) )
+         CALL erchk( nf90_put_var(ncid,z_id(ci), coil(ci)%z) )
+
+         CALL erchk( nf90_put_var(ncid,x0_id(ci), coil(ci)%x0) )
+         CALL erchk( nf90_put_var(ncid,y0_id(ci), coil(ci)%y0) )
+         CALL erchk( nf90_put_var(ncid,z0_id(ci), coil(ci)%z0) )
+
+         CALL erchk( nf90_put_var(ncid,xs_id(ci), coil(ci)%shiftx) )
+         CALL erchk( nf90_put_var(ncid,ys_id(ci), coil(ci)%shifty) )
+         CALL erchk( nf90_put_var(ncid,zs_id(ci), coil(ci)%shiftz) )
+
+         CALL erchk( nf90_put_var(ncid,xt_id(ci), coil(ci)%tiltx) )
+         CALL erchk( nf90_put_var(ncid,yt_id(ci), coil(ci)%tilty) )
+         CALL erchk( nf90_put_var(ncid,zt_id(ci), coil(ci)%tiltz) )
+
+         CALL erchk( nf90_put_var(ncid,r_id(ci), coil(ci)%r_nom) )
+
+         CALL erchk( nf90_put_var(ncid,cur_id(ci), coil(ci)%cur) )
+         CALL erchk( nf90_put_var(ncid,w_id(ci), coil(ci)%nw) )
+      ENDDO
+
+      ! close file
+      IF(debug_flag) PRINT *," - Closing netcdf file"
+      CALL erchk( nf90_close(ncid) )
+      DEALLOCATE( c_dim, c_id, s_dim,s_id, p_dim, p_id, 
+     $         x_id, y_id, z_id,
+     $         x0_id, y0_id, z0_id,  
+     $         r_id, cur_id, w_id, 
+     $         xs_id, ys_id, zs_id,  
+     $         xt_id, yt_id, zt_id )
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE write_coil_geometry
+c-----------------------------------------------------------------------
+c     subprogram 4. coil_dealloc.
 c     read coils.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -228,10 +469,14 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE coil_dealloc
 
-      INTEGER :: i
+      INTEGER :: ci
 
-      DO i=1,coil_num
-         DEALLOCATE(coil(i)%cur,coil(i)%x,coil(i)%y,coil(i)%z)
+      DO ci=1,coil_num
+         DEALLOCATE(coil(ci)%x,coil(ci)%y,coil(ci)%z,
+     $            coil(ci)%cur, coil(ci)%r_nom,
+     $            coil(ci)%x0, coil(ci)%y0, coil(ci)%z0,
+     $            coil(ci)%tiltx, coil(ci)%tilty, coil(ci)%tiltz,
+     $            coil(ci)%shiftx, coil(ci)%shifty, coil(ci)%shiftz )
       ENDDO
       DEALLOCATE(coil)
       DEALLOCATE(cmfac)
