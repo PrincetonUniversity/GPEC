@@ -293,6 +293,8 @@ c-----------------------------------------------------------------------
      $                   +coil_shifty(ci,cj) * sin(cnpert * phi)
                      coil(ci)%x(cj, ck, cl) = x0 + (r + dr) * cos(phi)
                      coil(ci)%y(cj, ck, cl) = y0 + (r + dr) * sin(phi)
+                     coil(ci)%z(cj, ck, cl) = coil(ci)%z(cj, ck, cl)
+     $                                       +coil_shiftz(ci,cj)
                   ENDDO
                ENDIF
                ! record the subsystem's nominal center and modifications
