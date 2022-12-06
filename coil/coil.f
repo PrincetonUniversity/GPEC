@@ -323,6 +323,8 @@ c-----------------------------------------------------------------------
       CHARACTER(512) :: cfile
       CHARACTER(2) :: sn
 
+      INTEGER :: i_dim, i_id, n_dim, n_id
+
       INTEGER, DIMENSION(:), ALLOCATABLE :: c_dim,c_id,
      $         s_dim,s_id,
      $         p_dim,p_id, 
@@ -354,13 +356,19 @@ c-----------------------------------------------------------------------
       ALLOCATE(c_dim(coil_num),c_id(coil_num),
      $         s_dim(coil_num),s_id(coil_num),
      $         p_dim(coil_num),p_id(coil_num), 
-     $         x_id(coil_num),y_id(coil_num),z_id(coil_num), 
+     $         x_id(coil_num),y_id(coil_num),z_id(coil_num),
      $         x0_id(coil_num),y0_id(coil_num),z0_id(coil_num), 
      $         r_id(coil_num),cur_id(coil_num),w_id(coil_num),
      $         xs_id(coil_num),ys_id(coil_num),zs_id(coil_num), 
      $         xt_id(coil_num),yt_id(coil_num),zt_id(coil_num)
      $        )
       IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
+      CALL erchk( nf90_def_dim(ncid,"coil_index",coil_num,i_dim))
+      CALL erchk( nf90_def_var(ncid, "coil_index", nf90_int,
+     $            (/i_dim/), i_id) )
+      CALL erchk( nf90_def_dim(ncid,"coil_strlen",24,n_dim))
+      CALL erchk( nf90_def_var(ncid, "coil_name", nf90_char,
+     $            (/n_dim, i_dim/), n_id) )
       DO ci=1, coil_num
          IF(debug_flag) PRINT *, ci, TRIM(coil_name(ci))
          CALL erchk( nf90_def_dim(ncid, TRIM(coil_name(ci))//
@@ -386,33 +394,68 @@ c-----------------------------------------------------------------------
      $      nf90_double, (/c_dim(ci), s_dim(ci), p_dim(ci)/), z_id(ci)))
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_x0",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), x0_id(ci)) )
-         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_y0", 
+         CALL erchk( nf90_put_att(ncid,x0_id(ci),"units","m") )
+         CALL erchk( nf90_put_att(ncid,x0_id(ci),"long_name",
+     $               "Nominal x-center of coil") )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_y0",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), y0_id(ci)) )
-         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_z0", 
+         CALL erchk( nf90_put_att(ncid,y0_id(ci),"units","m") )
+         CALL erchk( nf90_put_att(ncid,y0_id(ci),"long_name",
+     $               "Nominal y-center of coil") )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_z0",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), z0_id(ci)) )
+         CALL erchk( nf90_put_att(ncid,z0_id(ci),"units","m") )
+         CALL erchk( nf90_put_att(ncid,z0_id(ci),"long_name",
+     $               "Nominal z-center of coil") )
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_R_nom",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), r_id(ci)) )
+         CALL erchk( nf90_put_att(ncid,r_id(ci),"units","m") )
+         CALL erchk( nf90_put_att(ncid,r_id(ci),"long_name",
+     $               "Nominal radius of coil") )
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tiltx",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), xt_id(ci)) )
-         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tilty", 
+         CALL erchk( nf90_put_att(ncid,xt_id(ci),"units","degrees") )
+         CALL erchk( nf90_put_att(ncid,xt_id(ci),"long_name",
+     $               "Tilt about the x-axis") )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tilty",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), yt_id(ci)) )
-         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tiltz", 
+         CALL erchk( nf90_put_att(ncid,yt_id(ci),"units","degrees") )
+         CALL erchk( nf90_put_att(ncid,yt_id(ci),"long_name",
+     $               "Tilt about the y-axis") )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tiltz",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), zt_id(ci)) )
-         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shiftx", 
+         CALL erchk( nf90_put_att(ncid,zt_id(ci),"units","degrees") )
+         CALL erchk( nf90_put_att(ncid,zt_id(ci),"long_name",
+     $               "Tilt about the z-axis") )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shiftx",
      $      nf90_double, c_dim(ci), xs_id(ci)) )
-         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shifty", 
+         CALL erchk( nf90_put_att(ncid,xs_id(ci),"units","m") )
+         CALL erchk( nf90_put_att(ncid,xs_id(ci),"long_name",
+     $               "Shift along x-axis") )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shifty",
      $      nf90_double, c_dim(ci), ys_id(ci)) )
-         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shiftz", 
+         CALL erchk( nf90_put_att(ncid,ys_id(ci),"units","m") )
+         CALL erchk( nf90_put_att(ncid,ys_id(ci),"long_name",
+     $               "Shift along y-axis") )
+         CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shiftz",
      $      nf90_double, c_dim(ci), zs_id(ci)) )
+         CALL erchk( nf90_put_att(ncid,zs_id(ci),"units","m") )
+         CALL erchk( nf90_put_att(ncid,zs_id(ci),"long_name",
+     $               "Shift along z-axis") )
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_current",
      $      nf90_double, c_dim(ci), cur_id(ci)) )
+         CALL erchk( nf90_put_att(ncid,cur_id(ci),"units","A") )
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_nw",
      $      nf90_double, varid=w_id(ci)) )
+         CALL erchk( nf90_put_att(ncid,w_id(ci),"long_name",
+     $               "Number of windings") )
       ENDDO
       ! end definitions
       CALL erchk( nf90_enddef(ncid) )
 
       ! set variables
+      CALL erchk( nf90_put_var(ncid, i_id, (/(i,i=1, coil_num)/)) )
+      CALL erchk( nf90_put_var(ncid, n_id, coil_name(1:coil_num)) )
       DO ci=1, coil_num
          IF(debug_flag) PRINT *," - Putting dimension variables"//
      $      " in netcdf for "//TRIM(coil_name(ci))
