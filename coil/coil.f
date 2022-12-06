@@ -26,6 +26,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: coil_unit=31,cmlow,cmhigh
       INTEGER :: cnn,cmpsi,cmtheta,cmzeta,cmpert,coil_num
+      INTEGER :: cnpert=-1
       CHARACTER(24) :: machine,ceq_type,ip_direction,bt_direction
       CHARACTER(24), DIMENSION(50) :: coil_name
       REAL(r8), DIMENSION(50,48) :: coil_cur
@@ -75,13 +76,14 @@ c-----------------------------------------------------------------------
      $     coil_num,coil_name,coil_cur,
      $     coil_shiftx, coil_shifty, coil_shiftz,
      $     coil_tiltx, coil_tilty, coil_tiltz,
-     $     coil_xnom, coil_ynom, coil_znom
+     $     coil_xnom, coil_ynom, coil_znom, cnpert
       NAMELIST/coil_output/gpec_interface, coil_out
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4,nsec
       REAL(r8) :: cr1,cr2
       REAL(r8) :: x0, y0, z0, x, y, z, r, r_nom, length
-      REAL(r8) :: angle, tiltx, tilty, tiltz
+      REAL(r8) :: phi, angle, tiltx, tilty, tiltz
+      REAL(r8) :: dx, dy, dz, dr
       REAL(r8) :: dtor = pi/180
       REAL(r8), DIMENSION(:), ALLOCATABLE :: dl, xm, ym, zm, rm
 c-----------------------------------------------------------------------
@@ -123,6 +125,40 @@ c-----------------------------------------------------------------------
          coil_out = .TRUE.
       ENDIF
 c-----------------------------------------------------------------------
+c     read equilibrium information.
+c-----------------------------------------------------------------------
+      CALL bin_open(in_unit,cdconfile,"OLD","REWIND","none")
+      READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
+      READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim,cr2
+      READ(in_unit)
+      READ(in_unit)
+      READ(in_unit)
+
+      CALL spline_alloc(csq,ci3,4)
+      CALL bicube_alloc(crzphi,ci3,ci4,4)
+      crzphi%periodic(2)=.TRUE.
+      READ(in_unit)csq%xs,csq%fs,csq%fs1,csq%xpower
+      READ(in_unit)crzphi%xs,crzphi%ys,
+     $     crzphi%fs,crzphi%fsx,crzphi%fsy,crzphi%fsxy,
+     $     crzphi%x0,crzphi%y0,crzphi%xpower,crzphi%ypower
+      CALL bin_close(in_unit)
+c-----------------------------------------------------------------------
+c     initialize variables.
+c-----------------------------------------------------------------------
+      cmpsi=MAXVAL((/64,cmpsi/))
+      cmtheta=MAXVAL((/480,cmtheta/))
+      cmzeta=cnn*MAXVAL((/32,cmzeta/))
+      cmpert=cmhigh-cmlow+1
+      ALLOCATE(cmfac(cmpert))
+      cmfac=(/(cm,cm=cmlow,cmhigh)/)
+      ipd=1.0
+      btd=1.0
+      IF(ip_direction=="negative")ipd=-1.0
+      IF(bt_direction=="negative")btd=-1.0
+      helicity=ipd*btd
+      gpec_interface=.TRUE.
+      IF(cnpert < 0) cnpert = cnn ! default geometry manipulations correspond to n from DCON
+c-----------------------------------------------------------------------
 c     read coils for each machine.
 c-----------------------------------------------------------------------
       IF(coil_num>0)ALLOCATE(coil(coil_num))
@@ -137,7 +173,7 @@ c-----------------------------------------------------------------------
          coil(ci)%nsec = nsec
          ALLOCATE(coil(ci)%cur(coil(ci)%ncoil))
          ALLOCATE(coil(ci)%x(coil(ci)%ncoil, coil(ci)%s, nsec),
-     $        coil(ci)%y(coil(ci)%ncoil, coil(ci)%s, nsec), 
+     $        coil(ci)%y(coil(ci)%ncoil, coil(ci)%s, nsec),
      $        coil(ci)%z(coil(ci)%ncoil, coil(ci)%s, nsec))
          ALLOCATE(coil(ci)%x0(coil(ci)%ncoil, coil(ci)%s),
      $            coil(ci)%y0(coil(ci)%ncoil, coil(ci)%s),
@@ -166,8 +202,18 @@ c-----------------------------------------------------------------------
      $         +ABS(coil_shiftx(ci, cj)) > 0) WRITE(*,'(1x,a,i2)'),
      $         " > Shifting "//TRIM(coil_name(ci))//" coil",cj
             IF(ABS(coil_tiltx(ci, cj)) + ABS(coil_tilty(ci, cj))
-     $         +ABS(coil_tiltz(ci, cj)) > 0) WRITE(*,'(1x,a,i2)'),
+     $         +ABS(coil_tiltz(ci, cj)) > 0) THEN
+                 IF(cnpert /= 0)THEN
+                    WRITE(*,'(1x,a,i2)'),
      $         " > Tilting "//TRIM(coil_name(ci))//" coil",cj
+                 ELSE
+                    coil_tiltx = 0
+                    coil_tilty = 0
+                    coil_tiltz = 0
+                    WRITE(*,'(1x,a)'), " >>> Ignoring tilt requests, "//
+     $         "which have no n=0 component"
+                 ENDIF
+            ENDIF
 
             ! center of mass is default coil center if user enters super large numbers
             x0 = coil_xnom(ci, cj)
@@ -207,21 +253,43 @@ c-----------------------------------------------------------------------
                   x = coil(ci)%x(cj, ck, cl) - x0
                   y = coil(ci)%y(cj, ck, cl) - y0
                   z = coil(ci)%z(cj, ck, cl) - z0
+                  dx = x0
+                  dy = y0
+                  dz = z0
+                  phi = ATAN2(y, x)
                   ! ztilt (clocking toroidally around the axis)
-                  r = sqrt( y ** 2 + x ** 2)
-                  angle = ATAN2(y, x) + tiltz
-                  coil(ci)%x(cj, ck, cl) = x0 + r * cos(angle)
-                  coil(ci)%y(cj, ck, cl) = y0 + r * sin(angle)
+                  IF(tiltz /= 0)THEN
+                     r = sqrt( y ** 2 + x ** 2)
+                     angle = ATAN2(y, x) + tiltz * cos((cnpert-1) * phi)
+                     dx = dx + (r * cos(angle) - x)
+                     dy = dy + (r * sin(angle) - y)
+                  ENDIF
                   ! ytilt (rotating around the y axis)
-                  r = sqrt( x ** 2 + z ** 2)
-                  angle = ATAN2(x, z) + tilty
-                  coil(ci)%z(cj, ck, cl) = z0 + r * cos(angle)
-                  coil(ci)%x(cj, ck, cl) = x0 + r * sin(angle)
+                  IF(tilty /= 0)THEN
+                     r = sqrt( x ** 2 + z ** 2)
+                     angle = ATAN2(x, z) + tilty * cos((cnpert-1) * phi)
+                     dz = dz + (r * cos(angle) - z)
+                     dx = dx + (r * sin(angle) - x)
+                  ENDIF
                   ! xtilt (rotating around the x axis)
-                  r = sqrt( z ** 2 + y ** 2)
-                  angle = ATAN2(z, y) + tiltx
-                  coil(ci)%y(cj, ck, cl) = y0 + r * cos(angle)
-                  coil(ci)%z(cj, ck, cl) = z0 + r * sin(angle)
+                  IF(tiltx /= 0)THEN
+                     r = sqrt( z ** 2 + y ** 2)
+                     angle = ATAN2(z, y) + tiltx * cos((cnpert-1) * phi)
+                     dy = dy + (r * cos(angle) - y)
+                     dz = dz + (r * sin(angle) - z)
+                  ENDIF
+                  coil(ci)%x(cj, ck, cl) = x + dx
+                  coil(ci)%y(cj, ck, cl) = y + dy
+                  coil(ci)%z(cj, ck, cl) = z + dz
+
+                  ! apply shifts (elongations, etc.)
+                  x = coil(ci)%x(cj, ck, cl) - x0
+                  y = coil(ci)%y(cj, ck, cl) - y0
+                  r = sqrt( y ** 2 + x ** 2)
+                  dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
+     $                +coil_shifty(ci,cj) * sin(cnpert * phi)
+                  coil(ci)%x(cj, ck, cl) = x0 + (r + dr) * cos(phi)
+                  coil(ci)%y(cj, ck, cl) = y0 + (r + dr) * sin(phi)
                ENDDO
                ! record the subsystem's nominal center and modifications
                coil(ci)%x0(cj, ck) = x0
@@ -232,10 +300,6 @@ c-----------------------------------------------------------------------
                coil(ci)%tiltz(cj, ck) = tiltz
                coil(ci)%r_nom(cj, ck) = r_nom
             ENDDO
-            ! apply shifts
-            coil(ci)%x(cj,:,:) = coil(ci)%x(cj,:,:) + coil_shiftx(ci,cj)
-            coil(ci)%y(cj,:,:) = coil(ci)%y(cj,:,:) + coil_shifty(ci,cj)
-            coil(ci)%z(cj,:,:) = coil(ci)%z(cj,:,:) + coil_shiftz(ci,cj)
             ! save shift info
             coil(ci)%shiftx(cj) = coil_shiftx(ci, cj)
             coil(ci)%shifty(cj) = coil_shifty(ci, cj)
@@ -245,39 +309,6 @@ c-----------------------------------------------------------------------
          CALL ascii_close(coil_unit)
          DEALLOCATE(dl, xm, ym, zm, rm)
       ENDDO
-c-----------------------------------------------------------------------
-c     read equilibrium information.
-c-----------------------------------------------------------------------
-      CALL bin_open(in_unit,cdconfile,"OLD","REWIND","none")
-      READ(in_unit)ci1,ci2,cnn,ci3,ci4,cro,czo
-      READ(in_unit)ci1,cr1,ci2,cpsio,cpsilow,cpsilim,cqlim,cr2
-      READ(in_unit)
-      READ(in_unit)
-      READ(in_unit)
-
-      CALL spline_alloc(csq,ci3,4)
-      CALL bicube_alloc(crzphi,ci3,ci4,4)
-      crzphi%periodic(2)=.TRUE.
-      READ(in_unit)csq%xs,csq%fs,csq%fs1,csq%xpower
-      READ(in_unit)crzphi%xs,crzphi%ys,
-     $     crzphi%fs,crzphi%fsx,crzphi%fsy,crzphi%fsxy,
-     $     crzphi%x0,crzphi%y0,crzphi%xpower,crzphi%ypower
-      CALL bin_close(in_unit)
-c-----------------------------------------------------------------------
-c     initialize variables.
-c-----------------------------------------------------------------------
-      cmpsi=MAXVAL((/64,cmpsi/))
-      cmtheta=MAXVAL((/480,cmtheta/))
-      cmzeta=cnn*MAXVAL((/32,cmzeta/))
-      cmpert=cmhigh-cmlow+1
-      ALLOCATE(cmfac(cmpert))
-      cmfac=(/(cm,cm=cmlow,cmhigh)/)
-      ipd=1.0
-      btd=1.0
-      IF(ip_direction=="negative")ipd=-1.0
-      IF(bt_direction=="negative")btd=-1.0
-      helicity=ipd*btd
-      gpec_interface=.TRUE.
 c-----------------------------------------------------------------------
 c     Write final coil geometry information.
 c-----------------------------------------------------------------------
