@@ -249,48 +249,52 @@ c-----------------------------------------------------------------------
                   tilty = coil_tilty(ci, cj) * dtor
                   tiltz = coil_tiltz(ci, cj) * dtor
                ENDIF
-               DO cl=1, nsec
-                  x = coil(ci)%x(cj, ck, cl) - x0
-                  y = coil(ci)%y(cj, ck, cl) - y0
-                  z = coil(ci)%z(cj, ck, cl) - z0
-                  dx = x0
-                  dy = y0
-                  dz = z0
-                  phi = ATAN2(y, x)
-                  ! ztilt (clocking toroidally around the axis)
-                  IF(tiltz /= 0)THEN
-                     r = sqrt( y ** 2 + x ** 2)
-                     angle = ATAN2(y, x) + tiltz * cos((cnpert-1) * phi)
-                     dx = dx + (r * cos(angle) - x)
-                     dy = dy + (r * sin(angle) - y)
-                  ENDIF
-                  ! ytilt (rotating around the y axis)
-                  IF(tilty /= 0)THEN
-                     r = sqrt( x ** 2 + z ** 2)
-                     angle = ATAN2(x, z) + tilty * cos((cnpert-1) * phi)
-                     dz = dz + (r * cos(angle) - z)
-                     dx = dx + (r * sin(angle) - x)
-                  ENDIF
-                  ! xtilt (rotating around the x axis)
-                  IF(tiltx /= 0)THEN
-                     r = sqrt( z ** 2 + y ** 2)
-                     angle = ATAN2(z, y) + tiltx * cos((cnpert-1) * phi)
-                     dy = dy + (r * cos(angle) - y)
-                     dz = dz + (r * sin(angle) - z)
-                  ENDIF
-                  coil(ci)%x(cj, ck, cl) = x + dx
-                  coil(ci)%y(cj, ck, cl) = y + dy
-                  coil(ci)%z(cj, ck, cl) = z + dz
+               IF(ABS(tiltx) + ABS(tilty) + ABS(tiltz) + ABS(shiftx)
+                  + ABS(coil_shiftx(ci, cj)) + ABS(coil_shiftx(ci, cj))
+     $            + ABS(coil_shiftx(ci, cj)) > 0)THEN ! only change the data if really necessary
+                  DO cl=1, nsec
+                     x = coil(ci)%x(cj, ck, cl) - x0
+                     y = coil(ci)%y(cj, ck, cl) - y0
+                     z = coil(ci)%z(cj, ck, cl) - z0
+                     dx = x0
+                     dy = y0
+                     dz = z0
+                     phi = ATAN2(y, x)
+                     ! ztilt (clocking toroidally around the axis)
+                     IF(tiltz /= 0)THEN
+                        r = sqrt( y ** 2 + x ** 2)
+                        angle = ATAN2(y, x) + tiltz*cos((cnpert-1)*phi)
+                        dx = dx + (r * cos(angle) - x)
+                        dy = dy + (r * sin(angle) - y)
+                     ENDIF
+                     ! ytilt (rotating around the y axis)
+                     IF(tilty /= 0)THEN
+                        r = sqrt( x ** 2 + z ** 2)
+                        angle = ATAN2(x, z) + tilty*cos((cnpert-1)*phi)
+                        dz = dz + (r * cos(angle) - z)
+                        dx = dx + (r * sin(angle) - x)
+                     ENDIF
+                     ! xtilt (rotating around the x axis)
+                     IF(tiltx /= 0)THEN
+                        r = sqrt( z ** 2 + y ** 2)
+                        angle = ATAN2(z, y) + tiltx*cos((cnpert-1)*phi)
+                        dy = dy + (r * cos(angle) - y)
+                        dz = dz + (r * sin(angle) - z)
+                     ENDIF
+                     coil(ci)%x(cj, ck, cl) = x + dx
+                     coil(ci)%y(cj, ck, cl) = y + dy
+                     coil(ci)%z(cj, ck, cl) = z + dz
 
-                  ! apply shifts (elongations, etc.)
-                  x = coil(ci)%x(cj, ck, cl) - x0
-                  y = coil(ci)%y(cj, ck, cl) - y0
-                  r = sqrt( y ** 2 + x ** 2)
-                  dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
-     $                +coil_shifty(ci,cj) * sin(cnpert * phi)
-                  coil(ci)%x(cj, ck, cl) = x0 + (r + dr) * cos(phi)
-                  coil(ci)%y(cj, ck, cl) = y0 + (r + dr) * sin(phi)
-               ENDDO
+                     ! apply shifts (elongations, etc.)
+                     x = coil(ci)%x(cj, ck, cl) - x0
+                     y = coil(ci)%y(cj, ck, cl) - y0
+                     r = sqrt( y ** 2 + x ** 2)
+                     dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
+     $                   +coil_shifty(ci,cj) * sin(cnpert * phi)
+                     coil(ci)%x(cj, ck, cl) = x0 + (r + dr) * cos(phi)
+                     coil(ci)%y(cj, ck, cl) = y0 + (r + dr) * sin(phi)
+                  ENDDO
+               ENDIF
                ! record the subsystem's nominal center and modifications
                coil(ci)%x0(cj, ck) = x0
                coil(ci)%y0(cj, ck) = y0
