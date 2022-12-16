@@ -10,6 +10,14 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.5.4
+===========
+
+Fixes
+------
+- STRIDE - Fixes reformation of splines with psilow, psilim from truncation logic in STRIDE
+
+
 GPEC v1.5.3
 ===========
 
