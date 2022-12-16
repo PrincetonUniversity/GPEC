@@ -620,7 +620,7 @@ c-----------------------------------------------------------------------
          CALL gpdiag_magpot
       ENDIF
       IF (arbsurf_flag) THEN
-c         CALL gpdiag_arbsurf(majr,minr)
+         CALL gpdiag_arbsurf(majr,minr)
          CALL gpvacuum_ideal_mutuals
       ENDIF         
       IF (angles_flag) THEN

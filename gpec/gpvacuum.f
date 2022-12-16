@@ -550,20 +550,6 @@ c-----------------------------------------------------------------------
 c     calculate mutual inductance matrices.
 c-----------------------------------------------------------------------
       mmat=MATMUL(lmat2,ilmat1)
-      ! It's not a hermitian as expected.
-c      err1=MAXVAL(ABS(mmat-TRANSPOSE(CONJG(mmat))))/MAXVAL(ABS(mmat))
-c      WRITE(*,*)"diag_err=",err1
-c      mmat=0.5*(mmat+TRANSPOSE(CONJG(mmat)))
-c      lwork=2*vmpert-1
-c      ALLOCATE(d1(vmpert),rwork(3*vmpert-2),work(lwork))
-c      ALLOCATE(dmat(vmpert,vmpert))
-c      temp1=mmat
-c      CALL zheev('V','U',vmpert,temp1,vmpert,d1,work,lwork,rwork,info)
-c      dmat=0
-c      DO i=1,vmpert
-c         dmat(i,i)=SQRT(d1(i))
-c      ENDDO
-
       lwork=2*vmpert+1
       ALLOCATE(ipiv(vmpert))
       ALLOCATE(d2(vmpert),rwork(2*vmpert),work(lwork))
