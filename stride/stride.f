@@ -28,6 +28,7 @@ c-----------------------------------------------------------------------
      $           reform_eq_with_psilim=.FALSE.
       INTEGER :: mmin
       REAL(r8) :: plasma1,vacuum1,total1
+      REAL(r8) :: psilow_tmp, psilim_tmp
 
       CHARACTER(len=64) :: arg_str1, arg_str2
       INTEGER :: nArg
@@ -132,7 +133,7 @@ c     optionally reform the eq splines to concentrate at true truncation
 c-----------------------------------------------------------------------
       CALL sing_lim  ! determine if qhigh is truncating before psihigh
       CALL sing_min  ! dettermine if qlow excludes more of the core
-      ! Unlike DCON, we fore a resplining.
+      ! Unlike DCON, we force a resplining.
       ! The equil_out_qfind propogates to sing_find and then to the
       ! parallelized intervals in a complicated web. Thus, it is not
       ! sufficient to simply set the axisPsi to "start" the ODE somewhere new
@@ -142,7 +143,9 @@ c-----------------------------------------------------------------------
          PRINT *, " > Forcing reform_eq_with_psilim=t"
       ENDIF
       IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
-         CALL equil_read(out_unit, psilim)
+         psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
+         psilim_tmp = psilim
+         CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
          CALL equil_out_global
          CALL equil_out_qfind
       ENDIF
