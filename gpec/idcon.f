@@ -146,6 +146,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE(4)
             msing=msing+1
             READ(UNIT=in_unit)
@@ -224,6 +225,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
             READ(UNIT=in_unit)wt0
+            READ(UNIT=in_unit)wv_farwall_flag
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix
@@ -878,6 +880,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: farwal_flag=.TRUE.
       INTEGER :: mths
       REAL(r8) :: kernelsignin
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
@@ -896,7 +899,7 @@ c-----------------------------------------------------------------------
          READ(bin_unit)xzpts
          CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
-c     get grri and grre matrices by calling mscvac functions.
+c     get grri and grre matrices by calling mscvac. repeat free.f.
 c-----------------------------------------------------------------------
       ELSE
          nths=mthsurf+5
@@ -912,7 +915,10 @@ c-----------------------------------------------------------------------
          kernelsignin = 1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
      $               kernelsignin,wall_flag,farwal_flag,grre,xzpts)
-         
+         IF(wv_farwall_flag)THEN
+            temp=wv
+         ENDIF        
+
          farwal_flag=.FALSE.
          kernelsignin = -1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
@@ -920,6 +926,9 @@ c-----------------------------------------------------------------------
          kernelsignin = 1.0
          CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
      $               kernelsignin,wall_flag,farwal_flag,grrw,xzpts)
+         IF(wv_farwall_flag)THEN
+            wv=temp
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

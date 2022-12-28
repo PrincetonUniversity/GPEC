@@ -34,6 +34,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
       REAL(8), DIMENSION(:,:), POINTER :: grri,xzpts
+      LOGICAL :: wv_farwall_flag
 
       TYPE(cspline_type) :: wvmats
       CONTAINS
@@ -70,7 +71,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
-      LOGICAL :: farwal_flag,wv_farwall_flag
+      LOGICAL :: farwal_flag
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       COMPLEX(r8), DIMENSION(mpert) :: diff
@@ -117,9 +118,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
-      wv_farwall_flag=.TRUE.
       vac_unit=4
-      farwal_flag=.TRUE.
+      farwal_flag=.TRUE. ! self-inductance for plasma boundary.
       kernelsignin=-1.0
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
@@ -136,7 +136,7 @@ c-----------------------------------------------------------------------
          temp=wv
       ENDIF         
 
-      farwal_flag=.FALSE.
+      farwal_flag=.FALSE. ! self-inductance with the wall.
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
@@ -234,6 +234,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
          WRITE(euler_bin_unit)wt0
+         WRITE(euler_bin_unit)wv_farwall_flag
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.

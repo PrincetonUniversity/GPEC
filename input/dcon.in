@@ -43,6 +43,7 @@
     termbycross_flag = t ! Terminate ODE solver in the event of a zero crossing
 
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    wv_farwall_flag = f  ! Force nowall gpec calculations while calculating mutual inductance with the wall, when set true.
 /
 &DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H

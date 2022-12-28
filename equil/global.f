@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: power_flag=.TRUE.
       LOGICAL :: dump_flag=.FALSE.
       LOGICAL :: verbose=.TRUE.
-      LoGICAL :: use_galgrid=.TRUE.
+      LOGICAL :: use_galgrid=.TRUE.
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6
       REAL(r8) :: newq0=0
