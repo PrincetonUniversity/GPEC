@@ -60,4 +60,6 @@ c-----------------------------------------------------------------------
       INTEGER :: rzphi_ix, rzphi_iy
       REAL(r8), DIMENSION(:), ALLOCATABLE :: rzphi_f,rzphi_fx,rzphi_fy
 
+!$OMP THREADPRIVATE(rzphi_f,rzphi_fx,rzphi_fy)
+
       END MODULE global_mod
