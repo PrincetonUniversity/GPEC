@@ -288,7 +288,7 @@ c-----------------------------------------------------------------------
      $     lwork,rwork,info)
       surf_indevmats=temp1
 c-----------------------------------------------------------------------
-c     calculate inverse of surface inductance
+c     calculate inverse of surface inductance.
 c-----------------------------------------------------------------------
       work = 0
       rwork = 0
@@ -307,17 +307,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     diagnostic outputs.
 c-----------------------------------------------------------------------
-      b0=flxmats(:,1)/mu0
-      i0=MATMUL(surf_indinvmats,b0)
-      CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
-      CALL iscdftb(mfac,mpert,i0fun,mthsurf,i0)
-      CALL ascii_open(out_unit,"gpec_self_test.out","UNKNOWN")
-      DO i=0,mthsurf
-         WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,1),xzpts(i+1,2),
-     $        REAL(b0fun(i)),AIMAG(b0fun(i)),
-     $        REAL(i0fun(i)),AIMAG(i0fun(i))
-      ENDDO
-      CALL ascii_close(out_unit)
+      IF (mutual_test_flag) THEN
+         b0=flxmats(:,1)/mu0
+         i0=MATMUL(surf_indinvmats,b0)
+         CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
+         CALL iscdftb(mfac,mpert,i0fun,mthsurf,i0)
+         CALL ascii_open(out_unit,"gpec_self_test.out","UNKNOWN")
+         DO i=0,mthsurf
+            WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,1),xzpts(i+1,2),
+     $           REAL(b0fun(i)),AIMAG(b0fun(i)),
+     $           REAL(i0fun(i)),AIMAG(i0fun(i))
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -571,17 +573,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     diagnostic outputs.
 c-----------------------------------------------------------------------
-         b0=flxmats(:,1)/mu0
-         i1=MATMUL(mutual_indinvmats,b0)
-         CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
-         CALL iscdftb(mfac,mpert,i1fun,mthsurf,i1)
-         CALL ascii_open(out_unit,"gpec_mutual_test.out","UNKNOWN")
-         DO i=0,mthsurf
-            WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,3),xzpts(i+1,4),
-     $           REAL(b0fun(i)),AIMAG(b0fun(i)),
-     $           REAL(i1fun(i)),AIMAG(i1fun(i))
-         ENDDO
-         CALL ascii_close(out_unit)
+         IF (mutual_test_flag) THEN
+            b0=flxmats(:,1)/mu0
+            i1=MATMUL(mutual_indinvmats,b0)
+            CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
+            CALL iscdftb(mfac,mpert,i1fun,mthsurf,i1)
+            CALL ascii_open(out_unit,"gpec_mutual_test.out","UNKNOWN")
+            DO i=0,mthsurf
+               WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,3),xzpts(i+1,4),
+     $              REAL(b0fun(i)),AIMAG(b0fun(i)),
+     $              REAL(i1fun(i)),AIMAG(i1fun(i))
+            ENDDO
+            CALL ascii_close(out_unit)
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

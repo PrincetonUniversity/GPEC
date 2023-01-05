@@ -88,4 +88,5 @@
 &GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
    radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
+   mutual_test_flag=f 	    ! Test outputs for eigenvalues of mutual inductances and wall currents.
 /
