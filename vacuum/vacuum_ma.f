@@ -27,6 +27,7 @@ c-----------------------------------------------------------------------
      $     kernelsignin,wall_flag,farwal_flag,grrio,xzptso)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       real(8) :: kernelsignin
       integer mpert,mtheta,mthvac
@@ -62,7 +63,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     initialization.
 c-----------------------------------------------------------------------
-      call defglo
+      call defglo(mthvac)
       ldcon = 1
       lgpec = 0
       open (iotty,file='mscvac.out',status='unknown')
@@ -158,6 +159,7 @@ c-----------------------------------------------------------------------
      $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       integer mpert,mtheta,mthvac
       complex*16 wv(mpert,mpert)
@@ -195,7 +197,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     initialization.
 c-----------------------------------------------------------------------
-      call defglo
+      call defglo(mthvac)
       ldcon = 0
       lgpec = 1
       ieig = 0
@@ -284,9 +286,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine defglo
+      subroutine defglo(mthvac)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
+      integer, intent(in) :: mthvac
 c-----------------------------------------------------------------------
 c     define constants.
 c-----------------------------------------------------------------------
@@ -309,7 +313,6 @@ c-----------------------------------------------------------------------
       m       = 2
       mp     = 3
       minc   = 10
-      mthvac = 0
       mth    = mthvac
       mth1   = mth + 1
       mth2   = mth1 + 1
@@ -398,6 +401,7 @@ c-----------------------------------------------------------------------
       subroutine ent33
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -421,6 +425,7 @@ c-----------------------------------------------------------------------
       subroutine funint
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension zork1(nths), zork2(nths), dlenth(nths)
       dimension the(nths)
@@ -556,6 +561,7 @@ c-----------------------------------------------------------------------
       subroutine diaplt
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       !! check and eliminate obsolete variables.
       dimension z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
@@ -618,6 +624,7 @@ c-----------------------------------------------------------------------
       subroutine pickup(blr,bli,lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       !! xlp??
       DIMENSION xlp(nths),xloops(ndimlp),zloops(ndimlp),
@@ -885,7 +892,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine loops
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       REAL, DIMENSION(:,:), ALLOCATABLE :: xloopin, zloopin
       REAL, DIMENSION(:), ALLOCATABLE :: sourcemat
@@ -962,7 +970,8 @@ c-----------------------------------------------------------------------
       subroutine chi(xsce,zsce,xscp,zscp,isg,creal,cimag,ns,ip,
      $     chir,chii,nsew,blr,bli,rgdl)
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension iop(2), ww1(nths),ww2(nths),ww3(nths),tab(3)
       dimension blr(*),bli(*), xsce(*),zsce(*),xscp(*),zscp(*)

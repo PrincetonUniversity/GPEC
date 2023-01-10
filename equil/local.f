@@ -82,13 +82,14 @@ c-----------------------------------------------------------------------
          ELSE
             ! write the time to terminal and file
             IF(hrs>0)THEN
-               WRITE(*,'(a,i3,a,i2,a,i2,a)'),"Total cpu time = ",hrs,
-     $            " hours, ",mins," minutes, ",secs," seconds"
+               WRITE(*,'(1x,a,i3,a,i2,a,i2,a)'),"Total cpu time = ",
+     $            hrs," hours, ",mins," minutes, ",secs," seconds"
             ELSEIF(mins>0)THEN
-               WRITE(*,'(a,i2,a,i2,a)'),"Total cpu time = ",
+               WRITE(*,'(1x,a,i2,a,i2,a)'),"Total cpu time = ",
      $            mins," minutes, ",secs," seconds"
             ELSEIF(secs>0)THEN
-               WRITE(*,'(a,i2,a)'),"Total cpu time = ",secs," seconds"
+               WRITE(*,'(1x,a,i2,a)'),"Total cpu time = ",secs,
+     $            " seconds"
             ENDIF
             WRITE(unit,10)"Total cpu time = ",seconds," seconds"
          ENDIF
@@ -103,13 +104,14 @@ c-----------------------------------------------------------------------
             op_wallseconds = seconds
          ELSE
             IF(hrs>0)THEN
-               WRITE(*,'(a,i3,a,i2,a,i2,a)'),"Total wall time = ",hrs,
-     $            " hours, ",mins," minutes, ",secs," seconds"
+               WRITE(*,'(1x,a,i3,a,i2,a,i2,a)'),"Total wall time = ",
+     $            hrs," hours, ",mins," minutes, ",secs," seconds"
             ELSEIF(mins>0)THEN
-               WRITE(*,'(a,i2,a,i2,a)'),"Total wall time = ",
+               WRITE(*,'(1x,a,i2,a,i2,a)'),"Total wall time = ",
      $            mins," minutes, ",secs," seconds"
             ELSEIF(secs>0)THEN
-               WRITE(*,'(a,i2,a)'),"Total wall time = ",secs," seconds"
+               WRITE(*,'(1x,a,i2,a)'),"Total wall time = ",secs,
+     $            " seconds"
             ENDIF
             WRITE(unit,10)"Total wall time = ",seconds," seconds"
          ENDIF

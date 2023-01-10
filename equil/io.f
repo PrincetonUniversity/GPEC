@@ -38,7 +38,15 @@ c-----------------------------------------------------------------------
       INTEGER :: match_unit=41
       INTEGER :: vsol_out_unit=42
       INTEGER :: vsol_bin_unit=43
+      INTEGER :: jmat_unit=52
+      INTEGER :: coefs_unit=54
+      INTEGER :: split_unit=53
+      INTEGER :: deltac_out_unit=57
+      INTEGER :: deltac_bin_unit=58
+      INTEGER :: inpso_out_unit=59
+      INTEGER :: inpso_bin_unit=60
+      INTEGER :: array_unit=61
+      INTEGER :: grid_out_unit=62
 
       INTEGER :: debug_unit=99
-
       END MODULE io_mod

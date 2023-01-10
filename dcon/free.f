@@ -293,7 +293,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
-      IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,ep,ev,et)
+      IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
 c-----------------------------------------------------------------------
 c     deallocate
 c-----------------------------------------------------------------------
@@ -779,7 +779,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
-      npsi = CEILING((qlim - q_edge(1)) * nn * 4)  ! 4 pts per q window
+      npsi = MAX(4, CEILING((qlim - q_edge(1)) * nn * 4))  ! 4 pts per q window, 4 if q edge spans less than one full window
       psii = psiedge  ! should start exactly here
       CALL cspline_alloc(wvmats,npsi,mpert**2)
       DO i=0,npsi

@@ -30,6 +30,7 @@ OBJS = \
 	ode.o \
 	free.o \
 	resist.o \
+        lib_interface.o \
 	dcon.o
 
 all: lsode equil vacuum rdcon
@@ -85,4 +86,5 @@ ode.o: ode_output.o
 free.o: ode.o
 resist.o: dcon_mod.o toolbox.o
 gal.o: jacobi.o sing.o free.o
-dcon.o: bal.o mercier.o ode.o resist.o gal.o
+lib_interface.o: ../equil/local.o ../equil/global.o ../equil/utils.o ../equil/inverse.o
+dcon.o: bal.o mercier.o ode.o resist.o gal.o lib_interface.o

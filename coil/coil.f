@@ -100,7 +100,7 @@ c-----------------------------------------------------------------------
      $         TRIM(coil_name(ci))//".dat"
          CALL ascii_open(coil_unit,cfile,"old")
          coil(ci)%coil_name=TRIM(coil_name(ci))
-         READ(coil_unit,'(3(1x,I4),1x,f7.2)')
+         READ(coil_unit, *)
      $        coil(ci)%ncoil,coil(ci)%s,coil(ci)%nsec,coil(ci)%nw
          ALLOCATE(coil(ci)%cur(coil(ci)%ncoil))
          ALLOCATE(coil(ci)%x(coil(ci)%ncoil,coil(ci)%s,coil(ci)%nsec),
@@ -110,7 +110,7 @@ c-----------------------------------------------------------------------
             coil(ci)%cur(cj)=coil_cur(ci,cj)
             DO ck=1,coil(ci)%s
                DO cl=1,coil(ci)%nsec
-                  READ(coil_unit,'(3(1x,e12.4))')coil(ci)%x(cj,ck,cl),
+                  READ(coil_unit,*)coil(ci)%x(cj,ck,cl),
      $                 coil(ci)%y(cj,ck,cl),coil(ci)%z(cj,ck,cl)
                ENDDO
             ENDDO

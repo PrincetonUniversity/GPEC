@@ -49,15 +49,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE dcon_netcdf_out(wp,wv,wt,ep,ev,et)
+      SUBROUTINE dcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
 
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: ep,ev,et
-      COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
+      COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt,wt0
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, ep_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
-     $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
+     $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id, wt0_id,
      $    pd_dim, pd_id, df_id, ep_id, ew_id, eq_id
       REAL(4) :: cpusec, wallsec
       CHARACTER(2) :: sn
@@ -194,6 +194,10 @@ c-----------------------------------------------------------------------
      $    "Total Energy Eigenmodes") )
       CALL check( nf90_put_att(ncid,wtv_id,"long_name",
      $    "Total Energy Eigenvalues") )
+      CALL check( nf90_def_var(ncid, "W_t", nf90_double,
+     $    (/m_dim, mo_dim, i_dim/), wt0_id) )
+      CALL check( nf90_put_att(ncid,wt0_id,"long_name",
+     $    "Total Energy Matrix") )
       IF(size_edge > 0)THEN
          CALL check( nf90_def_var(ncid, "dW_edge", nf90_double,
      $       (/ep_dim, i_dim/), ew_id) )
@@ -249,6 +253,8 @@ c-----------------------------------------------------------------------
      $             AIMAG(wt)/),(/mpert,mpert,2/))) )
       CALL check( nf90_put_var(ncid,wtv_id,RESHAPE((/REAL(et),
      $             AIMAG(et)/),(/mpert,2/))) )
+      CALL check( nf90_put_var(ncid,wt0_id,RESHAPE((/REAL(wt0),
+     $             AIMAG(wt0)/),(/mpert,mpert,2/))) )
       IF(ALLOCATED(sing_detf))THEN
          CALL check( nf90_put_var(ncid,pd_id, REAL(sing_detf(1,:))) )
          CALL check( nf90_put_var(ncid,df_id,RESHAPE(

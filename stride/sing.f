@@ -18,6 +18,7 @@ c     9. sing_get_ua.
 c     10. sing_der.
 c     11. sing_derFM.
 c     12. sing_derL.
+c     13. sing_min.
 c-----------------------------------------------------------------------
 c     subprogram 0. sing_mod.
 c     module declarations.
@@ -111,6 +112,9 @@ c-----------------------------------------------------------------------
       locstab_s_ix = locstab%ix
       sq_s_ix = sq%ix
       fmats_s_ix = fmats%ix
+
+      WRITE(*, '(1x,a5,a12)'),'ising','di'
+      WRITE(*, '(1x,a17)'),'---------------'
 
       !Note: nThreads faster than nThreads-1, despite creating with
       !      vac_parallel more threads than processors.
@@ -221,6 +225,7 @@ c-----------------------------------------------------------------------
             q1sing(ising)=sq%f1(4)
             psising(ising)=psifac
             m=m+dm
+            IF(REAL(m,r8)/nn > qlim)EXIT
          ENDDO
       ENDDO
 c-----------------------------------------------------------------------
@@ -228,6 +233,7 @@ c     transfer to permanent storage.
 c-----------------------------------------------------------------------
       msing=ising
       ALLOCATE(sing(msing))
+      WRITE(*, '(1x,a5,a5,a13,a13)')'ising','m','psifac','q'
       DO ising=1,msing
          sing(ising)%m=m_sing(ising)
          sing(ising)%psifac=psising(ising)
@@ -237,12 +243,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     print singular surfaces details.
 c-----------------------------------------------------------------------
-         print '("Sing# = ",i12)',ising
-         print '("--------------------")'
-         print '("m = ",i12)',sing(ising)%m
-         print '("psifac = ",f15.9)',sing(ising)%psifac
-         print '("q = ",f15.9)',sing(ising)%q
-         print '("--------------------")'
+         WRITE(*, '(1x,i5,i5,es13.5,es13.5)')ising,sing(ising)%m,
+     $      sing(ising)%psifac,sing(ising)%q
       ENDDO
       DEALLOCATE(psiex,qex)
 c-----------------------------------------------------------------------
@@ -292,7 +294,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     use newton iteration to find psilim.
 c-----------------------------------------------------------------------
-      IF(qlim/=qmax)THEN
+      IF(qlim<qmax)THEN
          jpsi=MINLOC(ABS(sq%fs(:,4)-qlim))
          IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
          psilim=sq%xs(jpsi(1))
@@ -313,6 +315,10 @@ c-----------------------------------------------------------------------
          IF(it > itmax)THEN
             CALL program_stop("Can't find psilim.")
          ENDIF
+      ELSE
+         qlim = qmax
+         q1lim=sq%fs1(mpsi,4)
+         psilim=psihigh
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -380,7 +386,7 @@ c-----------------------------------------------------------------------
       CALL sing_mmat(ising,r1,r2,n1,n2)
       m0mat=TRANSPOSE(singp%mmatr(r1(1),r2,:,0))
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
-      WRITE (*,*) "di=",di,"ising=",ising
+      WRITE(*, '(1x,i5,1x,es11.3)') ising, di
       singp%di=di
       singp%alpha=SQRT(-CMPLX(singp%di))
 c-----------------------------------------------------------------------
@@ -1202,5 +1208,42 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE sing_derL
+c-----------------------------------------------------------------------
+c     subprogram 13. sing_min.
+c     evaluates the differential equations of DCON: U'=LU
+c     using FM of Sol'ns. Gives output L, (not L*x as in x'=Lx).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE sing_min
+         INTEGER :: jpsi,it,itmax=50
+         REAL(r8) :: axisPsi,dpsi,q,q1,eps=1e-10
+
+         ! use newton iteration to find starting psi if qlow it is above q0
+         IF(qlow > qmin)THEN
+            ! start check from the edge for robustness in reverse shear cores
+            DO jpsi = sq%mx-1, 1, -1
+               IF(sq%fs(jpsi - 1, 4) < qlow) EXIT
+            ENDDO
+            axisPsi=sq%xs(jpsi)
+            it=0
+            DO
+               it=it+1
+               CALL spline_eval(sq,axisPsi,1)
+               q=sq%f(4)
+               q1=sq%f1(4)
+               dpsi=(qlow-q)/q1
+               axisPsi=axisPsi+dpsi
+               IF(ABS(dpsi) < eps*ABS(axisPsi) .OR. it > itmax)EXIT
+            ENDDO
+            psilow = axisPsi
+         ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE sing_min
+
 
       END MODULE sing_mod

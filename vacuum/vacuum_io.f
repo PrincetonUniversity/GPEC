@@ -23,6 +23,7 @@ c-----------------------------------------------------------------------
       subroutine inglo
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
@@ -57,6 +58,9 @@ c-----------------------------------------------------------------------
       subroutine cardmo
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
+      
+      logical, save :: warned = .false.
 
       character(8) under
       data under / "--------" /
@@ -92,7 +96,6 @@ c-----------------------------------------------------------------------
       read ( inmode, 9100 )   (ntitle(i),i=1,20)
       write ( outmod, 9000 )   ntitle, ( under,i=1,2 )
       write ( outmod, 9001 )
-      rsave  = r
       write ( outmod,9002 )
       rewind inmode ! make robust to namelists with no title line
       read(inmode,modes)
@@ -106,9 +109,17 @@ c-----------------------------------------------------------------------
       write(outmod,shape)
       write(outmod,diagns)
 c-----------------------------------------------------------------------
+c     override namelist r in favor of r=0 for DCON
+c-----------------------------------------------------------------------
+      if(r/=0.0)then
+         if(.not. warned) write(*,'(1x,a,es9.2,a,i2)')
+     $        " > Vacuum code overriding r",r," from vac.in, to be",0
+         r=0.0
+         warned = .true.
+      endif 
+c-----------------------------------------------------------------------
 c     subsidiary computations.
 c-----------------------------------------------------------------------
-      r      = rsave
       write ( outpest, 9003 )lmax(1),lmin(1),m,mdiv,n
       mp     = m + 1
       nosurf = ( mp - 1 ) * mdiv + 1
@@ -161,6 +172,7 @@ c-----------------------------------------------------------------------
       subroutine dskmd1
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension vecin(ntsin), xigr_(ntsin), xigi_(ntsin)
       dimension zerov(nths), thgr(nths)
@@ -194,13 +206,14 @@ c-----------------------------------------------------------------------
      $     1x, "nfm, mtot = ", 2i5,/,
      $     1x, "r, upsiln, mthin, nosurf = ", 1p2e12.5, 2i5,/ )
 c-----------------------------------------------------------------------
-c     zero arrays.
+c     defaults.
 c-----------------------------------------------------------------------
       lcdf = 0
       do i = 1, mth2
          delta(i) = 0.0
          xjacob(i) = 0.0
       enddo
+      r = sqrt(r2)
 c-----------------------------------------------------------------------
 c     gato inputs.
 c-----------------------------------------------------------------------
@@ -456,6 +469,7 @@ c-----------------------------------------------------------------------
       use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
      $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character(128) ahgdir
       integer mthin,lmin,lmax,ndcon,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*)
@@ -516,6 +530,7 @@ c-----------------------------------------------------------------------
      $     delta, vecin,xigr,xigi, mth,mth1,mth2, ndfel, dx0,
      $     ireig, nout1, nout2 )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer mthin,ndum2,ngato,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*), xigr(*),xigi(*)
 c-----------------------------------------------------------------------
@@ -572,6 +587,7 @@ c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       INTEGER mthin, lmin, lmax, ntor, ith,jl, jmax1
       DIMENSION xinf(*),zinf(*),delta(*), vecin(*),bnlr(*), bnli(*)
 c-----------------------------------------------------------------------
@@ -638,6 +654,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine adjustm ( mth, mfel, mth1,mth2, ndfel, nout1,nout2 )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
