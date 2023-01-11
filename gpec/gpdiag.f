@@ -125,7 +125,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL gpvacuum_arbsurf(majr,minr)
+      CALL gpvacuum_arbsurf(majr=majr,minr=minr)
       vmpert=SIZE(vsurf_indev)
 
       WRITE(UNIT=smajr, FMT='(I4)')INT(100*majr)

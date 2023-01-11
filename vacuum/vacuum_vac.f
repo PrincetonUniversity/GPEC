@@ -1066,6 +1066,7 @@ c-----------------------------------------------------------------------
 
       INTEGER:: npots0,npots
       logical lfix, insect
+      REAL*8 :: csmin
       REAL*8, DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
      $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp,rioptmp
       dimension xwal1(*), zwal1(*)
@@ -1162,7 +1163,7 @@ c              height. The radius of the shell is a.
 c-----------------------------------------------------------------------
       if ( ishape==2 ) then
         zh = sqrt ( abs(zrad**2 - plrad**2) ) ! h metric
-        zah = a / zh                            
+        zah = a / zh
         zph = plrad / zh
         zmup = 0.5*dlog ((zrad+plrad)/(zrad-plrad)) ! mu-plas
         zmuw = dlog( zah + sqrt(zah**2 + 1) ) ! mu-wall
@@ -1171,7 +1172,7 @@ c-----------------------------------------------------------------------
         zbwal = zh * cosh ( zmuw ) ! Major radius of wall
         bw = zbwal / a          ! Elongation of wall
         do i = 1, mth2
-          the = (i-1) * dth 
+          the = (i-1) * dth
           xwal1(i) =   xmaj + a*cos( the )
           zwal1(i) = - bw * a*sin( the )
         enddo
@@ -1183,7 +1184,7 @@ c-----------------------------------------------------------------------
      $     "muw, expmuw = ", 1p2e13.5,/)') zmup, zxmup, zmuw, zxmuw
       endif
 c-----------------------------------------------------------------------
-c     ishape=3 
+c     ishape=3
 c-----------------------------------------------------------------------
       if ( ishape==3 ) then
         do i = 1, mth2
@@ -1242,7 +1243,7 @@ c-----------------------------------------------------------------------
       if ( ishape==4 ) then
         wcentr = cw
         do i = 1, mth2
-          the0 = (i-1) * dth 
+          the0 = (i-1) * dth
           the = the0
           sn2th = sin(2.0*the)
           xwal1(i) =   cw + a*cos( the + dw*sin(the) )
@@ -1271,10 +1272,16 @@ c              close fitting shell since the plasma and shell nodes are aligned.
 c-----------------------------------------------------------------------
       if ( ishape==6 ) then
         wcentr = xmaj
+        ! force a 10cm center stack or one tenth of the plasma R if it is a super small tokamak
+        csmin = min(0.1, 1e-1 * minval(xinf(2:mth1)))
         do i = 2, mth1
           alph = atan2 ( xinf(i+1)-xinf(i-1), zinf(i-1)-zinf(i+1) )
           xwal1(i) = xinf(i) + a*plrad * cos(alph)
           zwal1(i) = zinf(i) + a*plrad * sin(alph)
+          ! if the wall crosses the R=0 axis, force a thin center stack
+          if ( xwal1(i)<=csmin ) then
+            xwal1(i) = csmin
+          endif
         enddo
         xwal1(1) = xwal1(mth1)
         zwal1(1) = zwal1(mth1)
@@ -1283,7 +1290,7 @@ c-----------------------------------------------------------------------
       endif
 c-----------------------------------------------------------------------
 c     ishape=7 Enclosing bean-shaped wall. Consult paper.
-c              [Physics of Plasmas, 4, June 1997, 2161]. 
+c              [Physics of Plasmas, 4, June 1997, 2161].
 c-----------------------------------------------------------------------
       if ( ishape==7 ) then
         cwr = cw * pye / 180.0
@@ -1371,7 +1378,7 @@ c-----------------------------------------------------------------------
           the0 = (i-1) * dth
           if ( the0 .gt. 0.5*pye .and. the0 .lt. 1.5*pye ) then
             thbulg = blgrado
-          else 
+          else
             thbulg = blgradi
           endif
           cost2b = cos(2*thbulg)
@@ -1429,7 +1436,7 @@ c-----------------------------------------------------------------------
           the0 = (i-1) * dth
           if ( the0 .gt. 0.5*pye .and. the0 .lt. 1.5*pye ) then
             thbulg = blgrado
-          else 
+          else
             thbulg = blgradi
           endif
           cost2b = cos(2.0*thbulg)

@@ -37,6 +37,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
+      INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
 
       NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
@@ -66,7 +67,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
      $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit,
-     $     malias,delpsi_flag
+     $     malias,delpsi_flag,mutual_test_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -177,6 +178,7 @@ c-----------------------------------------------------------------------
       cas3d_flag=.FALSE.
       test_flag=.FALSE.
       eigm_flag=.FALSE.
+      mutual_test_flag=.FALSE.
 
       majr=10.0
       minr=1.0
@@ -476,6 +478,32 @@ c-----------------------------------------------------------------------
       CALL gpresp_sinduct
       CALL gpresp_permeab
       CALL gpresp_reluct
+      CALL gpresp_minduct
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      IF (mutual_test_flag) THEN
+         ALLOCATE(maxs(mpert),maxm(mpert),indexs(mpert),indexm(mpert))
+         DO i=1,mpert
+            maxs(i)=MAXLOC(ABS(surf_indevmats(:,i)),DIM=1)
+            surf_indevmats(maxs(i),:)=0
+            maxm(i)=MAXLOC(ABS(mutual_indevmats(:,i)),DIM=1)
+            mutual_indevmats(maxm(i),:)=0
+            indexs(i)=i
+            indexm(i)=i
+         ENDDO
+         CALL isbubble(REAL(maxs,r8),indexs,1,mpert)
+         CALL isbubble(REAL(maxm,r8),indexm,1,mpert)
+         CALL ascii_open(out_unit,"gpec_eigen_test.out","UNKNOWN")
+         DO i=1,mpert
+            WRITE(out_unit,'(I4,3(es17.8e3))')mfac(i),
+     $           surf_indev(indexs(mpert-i+1)),
+     $           REAL(mutual_indev(indexm(mpert-i+1))),
+     $           AIMAG(mutual_indev(indexm(mpert-i+1)))
+         ENDDO
+         CALL ascii_close(out_unit)
+         DEALLOCATE(maxs,maxm,indexs,indexm)
+      ENDIF
       IF(timeit) CALL gpec_timer(2)
 c-----------------------------------------------------------------------
 c     Set parameters for outputs.
@@ -626,7 +654,8 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (arbsurf_flag) THEN
          CALL gpdiag_arbsurf(majr,minr)
-      ENDIF         
+         CALL gpvacuum_ideal_mutuals
+      ENDIF
       IF (angles_flag) THEN
          CALL gpdiag_angles
       ENDIF

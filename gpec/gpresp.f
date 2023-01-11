@@ -12,6 +12,7 @@ c      3. gpresp_sinduct
 c      4. gpresp_permeab
 c      5. gpresp_reluct
 c      6. gpresp_indrel
+c      7. gpresp_minduct
 c-----------------------------------------------------------------------
 c     subprogram 0. gpresp_mod.
 c     module declarations.
@@ -45,6 +46,8 @@ c-----------------------------------------------------------------------
       ALLOCATE(surfet(4,mpert),surfep(4,mpert),
      $     surfee(mpert),surfei(mpert),chperr(2,mpert),chpsqr(4,mpert))
       ALLOCATE(chimats(mpert,mpert),chemats(mpert,mpert),
+     $     chymats(mpert,mpert),chxmats(mpert,mpert),
+     $     chwmats(mpert,mpert),kawmats(mpert,mpert),
      $     kaxmats(mpert,mpert),flxmats(mpert,mpert),
      $     chpmats(4,mpert,mpert),kapmats(4,mpert,mpert))
       IF(verbose) WRITE(*,*)"Building free boundary solutions"
@@ -56,7 +59,8 @@ c-----------------------------------------------------------------------
 c     compute the perturbed quantities and contruct hermitian matrices.
 c-----------------------------------------------------------------------
          ALLOCATE(chi_mn(mpert),che_mn(mpert),chp_mn(4,mpert),
-     $        kap_mn(4,mpert),kax_mn(mpert))
+     $        kap_mn(4,mpert),kax_mn(mpert),kaw_mn(mpert),
+     $        chy_mn(mpert),chx_mn(mpert),chw_mn(mpert))
          CALL gpeq_alloc
          surface_flag=.FALSE.
          CALL gpeq_sol(psilim)
@@ -73,6 +77,10 @@ c-----------------------------------------------------------------------
          kaxmats(:,i)=kax_mn
          chpmats(:,:,i)=chp_mn
          kapmats(:,:,i)=kap_mn
+         chymats(:,i)=chy_mn
+         chxmats(:,i)=chx_mn
+         chwmats(:,i)=chw_mn
+         kawmats(:,i)=kaw_mn
 c-----------------------------------------------------------------------
 c     estimate errors in magnetic scalar potentials.
 c-----------------------------------------------------------------------
@@ -109,11 +117,6 @@ c-----------------------------------------------------------------------
             ELSE
                emessage=""
             ENDIF
-            ! surface current needs dP_perp contributions
-c            IF(verbose)WRITE(*,'(1x,a12,i3,2(a7,es10.3),a10,es10.3)')
-c     $           "eigenmode = ",i,", dW = ",REAL(surfet(1,i)),
-c     $           ", T = ",-2*nn*AIMAG(surfet(1,i)),", error = ",
-c     $           ABS(1-surfet(2,i)/surfet(1,i))
             IF(verbose)
      $           WRITE(*,'(1x,a12,i3,2(a7,es10.3))')
      $           "eigenmode = ",i,", dW = ",REAL(et(i)),
@@ -138,8 +141,9 @@ c     $           ABS(1-surfet(2,i)/surfet(1,i))
 
          CALL gpeq_dealloc
          DEALLOCATE(chi_mn,che_mn,chp_mn,kap_mn,kax_mn)
+         DEALLOCATE(chy_mn,chx_mn,chw_mn,kaw_mn)
       ENDDO
-      DEALLOCATE(grri,grre)
+      DEALLOCATE(grri,grre,griw,grrw)
       IF(debug_flag) PRINT *, "->Leaving gpresp_eigen"
 c-----------------------------------------------------------------------
 c     terminate.
@@ -262,6 +266,11 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,work2
 c-----------------------------------------------------------------------
+c     temporary variables for diagnostics.
+c-----------------------------------------------------------------------
+      COMPLEX(r8), DIMENSION(mpert) :: b0,i0
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: b0fun,i0fun
+c-----------------------------------------------------------------------
 c     calculate surface inductance matrix by vacuum consideration.
 c-----------------------------------------------------------------------
       ALLOCATE(surf_indev(mpert),surf_indmats(mpert,mpert),
@@ -279,7 +288,7 @@ c-----------------------------------------------------------------------
      $     lwork,rwork,info)
       surf_indevmats=temp1
 c-----------------------------------------------------------------------
-c     calculate inverse of surface inductance
+c     calculate inverse of surface inductance.
 c-----------------------------------------------------------------------
       work = 0
       rwork = 0
@@ -295,6 +304,22 @@ c-----------------------------------------------------------------------
       CALL zheev('V','U',mpert,temp1,mpert,surf_indinvev,work,
      $     lwork,rwork,info)
       surf_indinvevmats=temp1
+c-----------------------------------------------------------------------
+c     diagnostic outputs.
+c-----------------------------------------------------------------------
+      IF (mutual_test_flag) THEN
+         b0=flxmats(:,1)/mu0
+         i0=MATMUL(surf_indinvmats,b0)
+         CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
+         CALL iscdftb(mfac,mpert,i0fun,mthsurf,i0)
+         CALL ascii_open(out_unit,"gpec_self_test.out","UNKNOWN")
+         DO i=0,mthsurf
+            WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,1),xzpts(i+1,2),
+     $           REAL(b0fun(i)),AIMAG(b0fun(i)),
+     $           REAL(i0fun(i)),AIMAG(i0fun(i))
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -477,5 +502,95 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpresp_indrel
+c-----------------------------------------------------------------------
+c     subprogram 7. gpresp_minduct.
+c     construct plasma-wall mutual inductance matrix.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpresp_minduct
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,j,k,lwork
+      COMPLEX(r8) :: t1,t2
+      INTEGER, DIMENSION(mpert):: ipiv
+      REAL(r8), DIMENSION(2*mpert) :: rwork
+      COMPLEX(r8), DIMENSION(2*mpert+1) :: work
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp1,temp2,vr,vl
+c-----------------------------------------------------------------------
+c     temporary variables for diagnostics.
+c-----------------------------------------------------------------------
+      COMPLEX(r8), DIMENSION(mpert) :: b0,i1
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: b0fun,i1fun
+c-----------------------------------------------------------------------
+c     calculate plasma inductance matrix by surface consideration.
+c-----------------------------------------------------------------------
+      IF(verbose) WRITE(*,*)"Calculating mutual inductance"
+      ALLOCATE(mutual_indmats(mpert,mpert),
+     $   mutual_indinvmats(mpert,mpert),
+     $   mutual_indev(mpert),mutual_indevmats(mpert,mpert),
+     $   mutual_indinvev(mpert),mutual_indinvevmats(mpert,mpert))
+      mutual_indmats = 0
+      mutual_indev = 0
+      mutual_indevmats = 0
+      mutual_indinvmats = 0
+      mutual_indinvev = 0
+      mutual_indinvevmats = 0
+
+      lwork=2*mpert+1
+
+      temp2=flxmats-MATMUL(surf_indmats,kawmats)
+      temp2=TRANSPOSE(temp2)
+      temp1=TRANSPOSE(chwmats)/mu0
+
+      ! If vac.in has inf wall, all mutual inductance outputs remain dummy zeros
+      IF (any(temp1 /= 0)) then
+         CALL zgetrf(mpert,mpert,temp1,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,mpert,temp1,mpert,ipiv,temp2,mpert,info)
+      
+         temp1=TRANSPOSE(temp2)
+         mutual_indmats=temp1
+         work=0
+         rwork=0
+         CALL zgeev('V','V',mpert,temp1,mpert,mutual_indev,
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         mutual_indevmats=vr
+c-----------------------------------------------------------------------
+c     calculate inverse of the plasma mutual inductance
+c-----------------------------------------------------------------------
+         mutual_indinvevmats = 0
+         DO i=1,mpert
+            temp1(i,i)=1
+         ENDDO
+         temp2=mutual_indmats
+         CALL zgetrf(mpert,mpert,temp2,mpert,ipiv,info)
+         CALL zgetrs('N',mpert,mpert,temp2,mpert,ipiv,temp1,mpert,info)
+         mutual_indinvmats=temp1
+         work=0
+         rwork=0
+         CALL zgeev('V','V',mpert,temp1,mpert,mutual_indinvev,
+     $        vl,mpert,vr,mpert,work,lwork,rwork,info)
+         mutual_indinvevmats=vr
+c-----------------------------------------------------------------------
+c     diagnostic outputs.
+c-----------------------------------------------------------------------
+         IF (mutual_test_flag) THEN
+            b0=flxmats(:,1)/mu0
+            i1=MATMUL(mutual_indinvmats,b0)
+            CALL iscdftb(mfac,mpert,b0fun,mthsurf,b0)
+            CALL iscdftb(mfac,mpert,i1fun,mthsurf,i1)
+            CALL ascii_open(out_unit,"gpec_mutual_test.out","UNKNOWN")
+            DO i=0,mthsurf
+               WRITE(out_unit,'(6(es17.8e3))')xzpts(i+1,3),xzpts(i+1,4),
+     $              REAL(b0fun(i)),AIMAG(b0fun(i)),
+     $              REAL(i1fun(i)),AIMAG(i1fun(i))
+            ENDDO
+            CALL ascii_close(out_unit)
+         ENDIF
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpresp_minduct
 
       END MODULE gpresp_mod

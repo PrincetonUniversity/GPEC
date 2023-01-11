@@ -31,7 +31,7 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: use_classic_splines_for_dcon=.FALSE., cyl_flag=.FALSE.,
-     $ reform_eq_with_psilim=.FALSE.
+     $ reform_eq_with_psilim=.FALSE.,wv_farwall_flag=.TRUE.
       INTEGER :: mmin,ipsi,m,peak_index
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
      $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
      $     use_classic_splines,reform_eq_with_psilim,
-     $     psiedge,nperq_edge
+     $     psiedge,nperq_edge,wv_farwall_flag
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -197,7 +197,7 @@ c-----------------------------------------------------------------------
      $        ", qlim = ",qlim,", psilim = ",psilim
          IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betap1 = ",betap1
-         IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
+         IF(verbose) WRITE(*,'(1x,5(a,i4))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
          CALL fourfit_make_metric
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"

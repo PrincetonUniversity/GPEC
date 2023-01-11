@@ -23,17 +23,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine mscvac(wv,mpert,mtheta,mthvac,nfmo,nthso,complex_flag,
-     $     kernelsignin)
+      subroutine mscvac(wv,mpert,mtheta,mthvac,complex_flag,
+     $     kernelsignin,wall_flag,farwal_flag,grrio,xzptso)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
 
-      integer nfmo,nthso
       real(8) :: kernelsignin
       integer mpert,mtheta,mthvac
       complex*16 wv(mpert,mpert)
-      logical, intent(in) :: complex_flag
+      logical, intent(in) :: complex_flag,wall_flag,farwal_flag
+      real(8) :: grrio(2*(mthvac+5),mpert*2),xzptso(mthvac+5,4)
 
       complex(8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
@@ -58,6 +58,8 @@ c-----------------------------------------------------------------------
       nfm=mpert
       mtot=mpert
       call global_alloc(nths0,nfm,mtot,ntsin0)
+      farwal=.false.
+      IF (farwal_flag) farwal=.true.
 c-----------------------------------------------------------------------
 c     initialization.
 c-----------------------------------------------------------------------
@@ -66,12 +68,14 @@ c-----------------------------------------------------------------------
       lgpec = 0
       open (iotty,file='mscvac.out',status='unknown')
       open (outpest,file='pestotv',status='unknown',form='formatted')
-      open (inmode,file='vac.in',status='old', form='formatted' )
+      IF (wall_flag) THEN
+         open (inmode,file='vac_wall.in',status='old', form='formatted')
+      ELSE
+         open (inmode,file='vac.in',status='old', form='formatted' )
+      ENDIF
       open (outmod,file='modovmc',status='unknown', form='formatted' )
       call msctimer ( outmod, "top of main" )
       call ent33
-      nfmo=nfm2
-      nthso=nths2
 
       If ( lspark .ne. 0 ) call testvec
       if ( ieig .eq. 0 ) goto 99
@@ -135,6 +139,11 @@ c-----------------------------------------------------------------------
       close(outpest)
       close(inmode)
       close(outmod)
+      grrio(:,:)=grri(:,:)
+      xzptso(:,1)=xinf(:)
+      xzptso(:,2)=zinf(:)
+      xzptso(:,3)=xwal(:)
+      xzptso(:,4)=zwal(:)
       call global_dealloc
       call cleanup
       return
@@ -146,13 +155,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine mscfld(wv,mpert,mtheta,mthvac,nfmo,nthso,complex_flag,
+      subroutine mscfld(wv,mpert,mtheta,mthvac,complex_flag,
      $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
 
-      integer nfmo,nthso
       integer mpert,mtheta,mthvac
       complex*16 wv(mpert,mpert)
       logical, intent(in) :: complex_flag
@@ -199,8 +207,6 @@ c-----------------------------------------------------------------------
       open (outmod,file='modovmc',status='unknown', form='formatted' )
       call msctimer ( outmod, "top of main" )
       call ent33
-      nfmo=nfm2
-      nthso=nths2
 
       If ( lspark .ne. 0 ) call testvec
       if ( ieig .eq. 0 ) goto 99
@@ -478,16 +484,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine grrget(nfmo,nthso,grrio)
+      subroutine grrget(nfm2o,nths2o,grrio)
       USE vglobal_mod
       implicit none
 
-      integer nfmo,nthso
-      real(8), dimension(nthso,nfmo) :: grrio
+      integer nfm2o,nths2o
+      real(8), dimension(nths2o,nfm2o) :: grrio
 
       grrio(:,:)=grri(:,:)
-
-      deallocate(grri)
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -504,6 +508,7 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       IMPLICIT REAL (a-h,o-z)
 
+      !! check and eliminate obsolete variables.
       DIMENSION chlagdy(nths,nfm)
       DIMENSION thmgr(nths), z1tmp(nths), z2tmp(nths)
 
@@ -515,7 +520,7 @@ c-----------------------------------------------------------------------
          xili(l) = -bnlr(l) / psilnq
       END DO
 
-      DO I = 1, mth1
+      DO i = 1, mth1
          zgr = 0.0
          zgi = 0.0
          DO l = 1, lrnge
@@ -558,6 +563,7 @@ c-----------------------------------------------------------------------
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
 
+      !! check and eliminate obsolete variables.
       dimension z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
      $     zorkpr(nths), zorkpi(nths), zork3(nths), chlagdy(nths,nfm),
      $     thph(nths), cppgr(nths),cppgi(nths),
@@ -620,6 +626,7 @@ c-----------------------------------------------------------------------
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
 
+      !! xlp??
       DIMENSION xlp(nths),xloops(ndimlp),zloops(ndimlp),
      $     chir(5,ndimlp),chii(5,ndimlp),
      $     zchipr(ndimlp),zchipi(ndimlp),chirr(ndimlp),
