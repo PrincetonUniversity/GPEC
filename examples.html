@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>GPEC DIII-D Ideal Example &#8212; GPEC 1.4.4 documentation</title>
-    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
-    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
-    <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>GPEC DIII-D Ideal Example &#8212; GPEC 1.5.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
 
   </head><body>
 
@@ -37,7 +37,7 @@
         <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.4</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -92,10 +92,6 @@
 <li><a class="reference internal" href="#">GPEC DIII-D Ideal Example</a></li>
 </ul>
 
-<div id="sourcelink">
-  <a href="_sources/examples.rst.txt"
-     rel="nofollow">Source</a>
-</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -105,19 +101,19 @@
 </form>
         </div>
       </div>
-    <div class="col-md-9 content">
+    <div class="body col-md-12 content" role="main">
       
-  <div class="section" id="gpec-diii-d-ideal-example">
+  <section id="gpec-diii-d-ideal-example">
 <span id="diiid-ideal-example"></span><h1>GPEC DIII-D Ideal Example<a class="headerlink" href="#gpec-diii-d-ideal-example" title="Permalink to this headline">¶</a></h1>
 <p>This example uses a baseline H-mode Error Field Correction (EFC) plasma from a n=1 EFC study done in 2013. The equilibrium used is a kinetic EFIT from DIII-D shot 147131 at 2300ms, and the profiles are self consistent with the equilibrium. Pre-GPEC results using a combination of GPEC and PENT for this calculation are published in <a class="reference external" href="http://scitation.aip.org/content/aip/journal/pop/21/7/10.1063/1.4886795">[C. Paz-Soldan, M. J. Lanctot, N. C. Logan, et al., Phys. Plasmas 21, 072503 (2014).]</a>.</p>
 <p>Note that the coil and pentrc input namelists use relative paths to the package’s data files. If you would like to run the example in a different location, you must change the input appropriately.</p>
 <p>Following a typical workflow we first cd to the example’s directory, then run DCON:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dcon</span>
 
- <span class="n">DCON</span> <span class="n">START</span> <span class="o">=&gt;</span> <span class="n">GPEC</span> <span class="n">version</span> <span class="mf">1.0</span><span class="o">.</span><span class="mi">0</span>
+ <span class="n">DCON</span> <span class="n">START</span> <span class="o">=&gt;</span> <span class="n">GPEC</span> <span class="n">version</span> <span class="mf">1.0.0</span>
  <span class="n">__________________________________________</span>
  <span class="n">psihigh</span> <span class="o">=</span> <span class="mf">9.930E-01</span>
- <span class="n">Equilibrium</span><span class="p">:</span> <span class="n">g147131</span><span class="o">.</span><span class="mi">02300</span><span class="n">_DIIID_KEFIT</span><span class="p">,</span> <span class="n">Type</span><span class="p">:</span> <span class="n">efit</span>
+ <span class="n">Equilibrium</span><span class="p">:</span> <span class="n">g147131</span><span class="mf">.02300</span><span class="n">_DIIID_KEFIT</span><span class="p">,</span> <span class="n">Type</span><span class="p">:</span> <span class="n">efit</span>
  <span class="n">Jac_type</span> <span class="o">=</span> <span class="n">hamada</span><span class="p">,</span> <span class="n">power_bp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">power_b</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">power_r</span> <span class="o">=</span> <span class="mi">0</span>
  <span class="n">Diagnosing</span> <span class="n">Grad</span><span class="o">-</span><span class="n">Shafranov</span> <span class="n">solution</span>
  <span class="n">Evaluating</span> <span class="n">Mercier</span> <span class="n">criterion</span>
@@ -147,7 +143,7 @@ always a good idea to check any solution, using xdraw or just skimming dcon.out.
 <p>Satisfied with the DCON result, we run GPEC:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gpec</span>
 
- <span class="n">GPEC</span> <span class="n">START</span> <span class="o">=&gt;</span> <span class="n">GPEC</span> <span class="n">version</span> <span class="mf">1.0</span><span class="o">.</span><span class="mi">0</span>
+ <span class="n">GPEC</span> <span class="n">START</span> <span class="o">=&gt;</span> <span class="n">GPEC</span> <span class="n">version</span> <span class="mf">1.0.0</span>
  <span class="n">__________________________________________</span>
  <span class="n">Reading</span> <span class="n">dcon</span> <span class="n">eigenfuctions</span>
  <span class="n">Counting</span> <span class="ow">and</span> <span class="n">reading</span> <span class="n">dcon</span> <span class="n">solutions</span>
@@ -327,7 +323,7 @@ PENTRC STOP =&gt; Normal termination.
 <p>The warnings about magnetic wells are ok in this case.</p>
 </div>
 <p>We see that the full and trapped-only calculations of the torque agree reasonably well, which is consistent with the understanding that particles on banana orbits dominate the nonambipolar transport. The RLAR result in this case is orders of magnitude off, but does have generaly the correct qualitative behavior.</p>
-</div>
+</section>
 
 
     </div>
@@ -349,7 +345,7 @@ PENTRC STOP =&gt; Normal termination.
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
     </p>
   </div>
 </footer>

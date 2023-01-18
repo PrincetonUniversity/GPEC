@@ -1,38 +1,28 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pypec.data &#8212; GPEC 1.3.0 documentation</title>
-    <link rel="stylesheet" href="../../_static/bootstrap-sphinx.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '1.3.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/javascript" src="../../_static/js/jquery-1.11.0.min.js"></script>
-    <script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
-    <script type="text/javascript" src="../../_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pypec.data &#8212; GPEC 1.5.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
 
-  </head>
-  <body>
+  </head><body>
 
   <div id="navbar" class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -46,7 +36,7 @@
         <a class="navbar-brand" href="../../index.html"><img height=40, src="../../_static/GPEC_logo.png">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.3</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -107,7 +97,7 @@
 </form>
         </div>
       </div>
-    <div class="col-md-12 content">
+    <div class="body col-md-12 content" role="main">
       
   <h1>Source code for pypec.data</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/local/env python</span>
@@ -418,13 +408,11 @@
 
 <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">copy</span><span class="o">,</span><span class="nn">time</span>
 
-<span class="kn">from</span> <span class="nn">string</span> <span class="k">import</span> <span class="n">join</span><span class="p">,</span><span class="n">capitalize</span><span class="p">,</span><span class="n">count</span>         <span class="c1"># faster than &#39;+&#39; loop</span>
-<span class="kn">from</span> <span class="nn">StringIO</span> <span class="k">import</span> <span class="n">StringIO</span>
-<span class="kn">from</span> <span class="nn">types</span> <span class="k">import</span> <span class="n">MethodType</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>                               <span class="c1"># math</span>
-<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">interp1d</span><span class="p">,</span><span class="n">interp2d</span><span class="p">,</span><span class="n">LinearNDInterpolator</span><span class="p">,</span><span class="n">RegularGridInterpolator</span><span class="p">,</span><span class="n">griddata</span>
-<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="k">import</span> <span class="n">ellipk</span><span class="p">,</span><span class="n">ellipe</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span><span class="p">,</span><span class="n">interp2d</span><span class="p">,</span><span class="n">LinearNDInterpolator</span><span class="p">,</span><span class="n">RegularGridInterpolator</span><span class="p">,</span><span class="n">griddata</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">ellipk</span><span class="p">,</span><span class="n">ellipe</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">mayavi.mlab</span> <span class="k">as</span> <span class="nn">mmlab</span>
@@ -450,9 +438,9 @@
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING: seaborn not in python path&#39;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; -&gt; We recomend loading anaconda/2.3.0 on portal&#39;</span><span class="p">)</span>
 
-<span class="c1">#in this package</span>
-<span class="kn">import</span> <span class="nn">modplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">namelist</span>
+<span class="c1"># in this package</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">modplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">namelist</span>
 
 <span class="c1"># better label recognition using genfromtxt</span>
 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="s1">&#39;^|&lt;&gt;/&#39;</span><span class="p">:</span>
@@ -531,15 +519,15 @@
         <span class="n">ds</span> <span class="o">=</span> <span class="n">xarray</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dat</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">=</span><span class="n">v</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="o">.</span><span class="n">x</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No regular grid for dataset&quot;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">yk</span><span class="p">,</span><span class="n">yv</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">yk</span><span class="p">,</span><span class="n">yv</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">ds</span><span class="p">[</span><span class="n">yk</span><span class="p">]</span> <span class="o">=</span> <span class="n">xarray</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">yv</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span><span class="n">coords</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">x</span><span class="p">,</span><span class="n">dims</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">xnames</span><span class="p">,</span><span class="n">attrs</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">complex_dim</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">dims</span><span class="p">)):</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: Removing </span><span class="si">{:}</span><span class="s2"> to avoid error (below) reforming complex_dim. &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ValueError: broadcasting cannot handle duplicate dimensions&quot;</span><span class="p">)</span>
@@ -638,7 +626,7 @@
                             <span class="c1"># but include them as preamble (DCON one-liners)</span>
                             <span class="n">vals</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">top</span><span class="p">]</span>
                             <span class="n">keys</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">top</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                            <span class="k">if</span> <span class="ow">not</span> <span class="n">keys</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39; </span><span class="se">\n\t</span><span class="s1">&#39;</span><span class="p">):</span> <span class="c1">#empty line</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">keys</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39; </span><span class="se">\n\t</span><span class="s1">&#39;</span><span class="p">))):</span> <span class="c1">#empty line</span>
                                 <span class="n">keys</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">top</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
                             <span class="k">if</span> <span class="s1">&#39;=&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="o">.</span><span class="n">split</span><span class="p">())</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
                                 <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span><span class="n">vals</span><span class="o">.</span><span class="n">split</span><span class="p">()):</span>
@@ -670,14 +658,14 @@
                 
                 <span class="c1"># include headers</span>
                 <span class="n">top</span><span class="o">-=</span><span class="mi">1</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span><span class="p">[</span><span class="n">top</span><span class="p">]</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39; </span><span class="se">\n\t</span><span class="s1">&#39;</span><span class="p">):</span> <span class="c1">#empty line</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span><span class="p">[</span><span class="n">top</span><span class="p">]</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39; </span><span class="se">\n\t</span><span class="s1">&#39;</span><span class="p">))):</span> <span class="c1">#empty line</span>
                     <span class="n">top</span><span class="o">-=</span><span class="mi">1</span>
                 <span class="n">skipfoot</span> <span class="o">=</span> <span class="n">length</span><span class="o">-</span><span class="n">bot</span>
                 <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
                 <span class="n">table</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">top</span><span class="p">:</span><span class="n">bot</span><span class="p">]</span>
                 <span class="k">if</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">table</span><span class="p">:</span> <span class="c1">#empty space</span>
                     <span class="n">table</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">)),</span><span class="n">names</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">StringIO</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">)),</span><span class="n">names</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                      <span class="n">deletechars</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
                 <span class="n">pcollection</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">preamble</span><span class="p">)</span>
                 <span class="n">dcollection</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -775,7 +763,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
 
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">dataobj</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">dataobj</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">]</span><span class="o">+=</span> <span class="n">k</span><span class="o">+</span><span class="s2">&quot; = &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
 
     <span class="n">nums</span> <span class="o">=</span> <span class="p">[]</span>
@@ -822,7 +810,7 @@
 
     <span class="k">def</span> <span class="nf">newpoint</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">val</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">newpoint</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -830,12 +818,12 @@
                 <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">yfun</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">val</span><span class="p">))</span>
             <span class="k">except</span><span class="p">:</span>
                 <span class="k">pass</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">newpoint</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">val</span><span class="p">)</span>
 
-    <span class="n">z</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span>
     <span class="n">z</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
-    <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">z</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">z</span><span class="p">))</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
     <span class="n">f</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
@@ -858,7 +846,7 @@
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fromtxt</span><span class="p">,</span><span class="n">preamble</span><span class="p">,</span><span class="n">forcex</span><span class="o">=</span><span class="p">[],</span><span class="n">forcedim</span><span class="o">=</span><span class="p">[],</span><span class="n">maxlength</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fromtxt</span><span class="p">,</span><span class="n">preamble</span><span class="p">,</span><span class="n">forcex</span><span class="o">=</span><span class="p">[],</span><span class="n">forcedim</span><span class="o">=</span><span class="p">[],</span><span class="n">maxlength</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>
                  <span class="n">auto_complex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">quiet</span><span class="o">=</span><span class="n">default_quiet</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Takes structured array from numpy.genfromtxt, and creates</span>
@@ -996,10 +984,10 @@
             <span class="n">idx</span> <span class="o">=</span> <span class="n">preamble</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
             <span class="n">param</span> <span class="o">=</span> <span class="n">preamble</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">name</span> <span class="o">=</span> <span class="n">preamble</span><span class="p">[</span><span class="n">idx</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">name</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;()[]</span><span class="si">{}</span><span class="s1">\/*-+^%.,:!@#&amp;&#39;</span><span class="p">)</span>
+            <span class="n">name</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39;()[]</span><span class="si">{}</span><span class="s1">\/*-+^%.,:!@#&amp;&#39;</span><span class="p">)))</span>
             <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span> <span class="ow">and</span> <span class="n">idx</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
-                <span class="n">name</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">preamble</span><span class="p">[</span><span class="n">idx</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="n">idx</span><span class="p">],</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
-                <span class="n">name</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="s1">&#39;()[]</span><span class="si">{}</span><span class="s1">\/*-+^%.,:!@#&amp;&#39;</span><span class="p">)</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">preamble</span><span class="p">[</span><span class="n">idx</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="n">idx</span><span class="p">])</span>
+                <span class="n">name</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="s1">&#39;()[]</span><span class="si">{}</span><span class="s1">\/*-+^%.,:!@#&amp;&#39;</span><span class="p">)))</span>
             <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">sfx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">name</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sfx</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
@@ -1014,21 +1002,21 @@
             <span class="n">preamble</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">param</span><span class="p">))</span>
             <span class="n">preamble</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">preamble</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>    <span class="c1">#whatever is left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">preamble</span><span class="p">)</span>    <span class="c1">#whatever is left</span>
 
         <span class="c1">#debug print(&quot;Set preamble in {} seconds&quot;.format(time.time()-start_time))</span>
         <span class="c1">#debug start_time = time.time()</span>
 
 
     <span class="c1"># Operations overrides</span>
-    <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">,</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">,</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">,</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">,</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">,</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">,</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">,</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="nb">pow</span><span class="p">,</span><span class="s1">&#39;^&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__sub__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="n">_data_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="nb">pow</span><span class="p">,</span><span class="s1">&#39;^&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__mul__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__sub__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__div__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
     
 
@@ -1077,7 +1065,7 @@
                 <span class="n">step</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">1e6</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nd</span><span class="p">):</span>
                     <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">[::</span><span class="n">step</span><span class="p">,</span><span class="n">n</span><span class="p">])</span>
-                <span class="k">return</span> <span class="n">LinearNDInterpolator</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">name</span><span class="p">][::</span><span class="n">step</span><span class="p">])</span>
+                <span class="k">return</span> <span class="n">LinearNDInterpolator</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)),</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">name</span><span class="p">][::</span><span class="n">step</span><span class="p">])</span>
 
         <span class="c1"># for each name check if interpolator is up to date and get values</span>
         <span class="n">values</span><span class="o">=</span><span class="p">{}</span>
@@ -1186,7 +1174,7 @@
                         <span class="n">x</span><span class="p">,</span><span class="n">rng2</span> <span class="o">=</span> <span class="n">maskmaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">[:,</span><span class="n">indx</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="nb">float</span><span class="p">(</span><span class="n">x2</span><span class="p">))</span>
                         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">[:,</span><span class="n">indx</span><span class="p">][</span><span class="n">rng2</span><span class="p">]</span>
                         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">rng2</span><span class="p">]</span>
-                        <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))))</span>
+                        <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)))))</span>
                         <span class="n">x</span><span class="p">,</span><span class="n">rng1</span> <span class="o">=</span> <span class="n">maskmaker</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">x1rng</span><span class="p">)</span>
                         <span class="n">a</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">rng1</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="n">rng1</span><span class="p">],</span><span class="n">label</span><span class="o">=</span><span class="n">lbl</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span><span class="n">xlbl</span><span class="o">+</span><span class="s1">&#39;=</span><span class="si">{0:.3}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x2</span><span class="p">),</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">nd</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
@@ -1216,7 +1204,7 @@
                             <span class="n">x3d</span><span class="p">,</span><span class="n">rng3</span> <span class="o">=</span> <span class="n">maskmaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">[:,</span><span class="n">indx23</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="n">rng2</span><span class="p">],</span><span class="nb">float</span><span class="p">(</span><span class="n">x3</span><span class="p">))</span>
                             <span class="n">x</span> <span class="o">=</span> <span class="n">xs</span><span class="p">[</span><span class="n">rng3</span><span class="p">]</span>
                             <span class="n">y</span> <span class="o">=</span> <span class="n">ys</span><span class="p">[</span><span class="n">rng3</span><span class="p">]</span>
-                            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))))</span>
+                            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)))))</span>
                             <span class="n">x</span><span class="p">,</span><span class="n">rng1</span> <span class="o">=</span> <span class="n">maskmaker</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">x1rng</span><span class="p">)</span>
                             <span class="n">a</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">rng1</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="n">rng1</span><span class="p">],</span><span class="n">label</span><span class="o">=</span><span class="n">x2lbl</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span><span class="n">xlbls</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;=</span><span class="si">{0:.3}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x3</span><span class="p">),</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">a</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">_mathtext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xnames</span><span class="p">[</span><span class="n">indx</span><span class="p">]))</span>
@@ -1606,7 +1594,7 @@
                         <span class="n">x</span><span class="p">,</span><span class="n">rng2</span> <span class="o">=</span> <span class="n">maskmaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">[:,</span><span class="n">indx</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="nb">float</span><span class="p">(</span><span class="n">x2</span><span class="p">))</span>
                         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">[:,</span><span class="n">indx</span><span class="p">][</span><span class="n">rng2</span><span class="p">]</span>
                         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">rng2</span><span class="p">]</span>
-                        <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)))</span>
+                        <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))))</span>
                         <span class="n">a</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="n">lbl</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span><span class="n">xlbl</span><span class="o">+</span><span class="s1">&#39;=</span><span class="si">{0:.3}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x2</span><span class="p">),</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">nd</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
                 <span class="n">indx23</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -1634,7 +1622,7 @@
                             <span class="n">x3d</span><span class="p">,</span><span class="n">rng3</span> <span class="o">=</span> <span class="n">maskmaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pts</span><span class="p">[:,</span><span class="n">indx23</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="n">rng2</span><span class="p">],</span><span class="nb">float</span><span class="p">(</span><span class="n">x3</span><span class="p">))</span>
                             <span class="n">x</span> <span class="o">=</span> <span class="n">xs</span><span class="p">[</span><span class="n">rng3</span><span class="p">]</span>
                             <span class="n">y</span> <span class="o">=</span> <span class="n">ys</span><span class="p">[</span><span class="n">rng3</span><span class="p">]</span>
-                            <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)))</span>
+                            <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))))</span>
                             <span class="n">a</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="n">x2lbl</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span><span class="n">xlbls</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;=</span><span class="si">{0:.3}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x3</span><span class="p">),</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
         
     
@@ -1683,7 +1671,7 @@
             <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">quiet</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">key</span><span class="o">+</span><span class="n">op</span><span class="o">+</span><span class="s1">&#39;0&#39;</span><span class="p">)</span>
         
     <span class="k">else</span><span class="p">:</span> <span class="c1"># apply operation to y values</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">NewData</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">NewData</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="c1">#if not quiet: print(k+op+str(other))</span>
             <span class="n">NewData</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">other</span><span class="p">)</span>
             
@@ -1878,7 +1866,7 @@
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
     </p>
   </div>
 </footer>

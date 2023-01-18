@@ -1,38 +1,28 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>pypec.gpec &#8212; GPEC 1.3.0 documentation</title>
-    <link rel="stylesheet" href="../../_static/bootstrap-sphinx.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../',
-        VERSION:     '1.3.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/javascript" src="../../_static/js/jquery-1.11.0.min.js"></script>
-    <script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
-    <script type="text/javascript" src="../../_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pypec.gpec &#8212; GPEC 1.5.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bootstrap-sphinx.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../../_static/bootstrap-sphinx.js"></script>
 
-  </head>
-  <body>
+  </head><body>
 
   <div id="navbar" class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -46,7 +36,7 @@
         <a class="navbar-brand" href="../../index.html"><img height=40, src="../../_static/GPEC_logo.png">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.3</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -107,7 +97,7 @@
 </form>
         </div>
       </div>
-    <div class="col-md-12 content">
+    <div class="body col-md-12 content" role="main">
       
   <h1>Source code for pypec.gpec</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/local/env python</span>
@@ -166,29 +156,28 @@
 <span class="sd">    @email nlogan@pppl.gov</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="c1">#basics</span>
+<span class="c1"># basics</span>
 <span class="kn">import</span> <span class="nn">os</span>                               <span class="c1"># operating system commands</span>
 <span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span><span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">time</span><span class="o">,</span><span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>                      <span class="c1"># math</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">optimize</span>
-<span class="kn">from</span> <span class="nn">string</span> <span class="k">import</span> <span class="n">join</span>                 <span class="c1"># string manipulation</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">optimize</span>
 
 <span class="c1">#in this package</span>
-<span class="kn">import</span> <span class="nn">data</span>                             <span class="c1"># read/write .out files</span>
-<span class="kn">import</span> <span class="nn">namelist</span>                         <span class="c1"># read/write fortran namelist .in files</span>
-<span class="kn">from</span> <span class="nn">_bashjob_</span> <span class="k">import</span> <span class="n">bashjob</span>            <span class="c1"># bash script skeleton</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">data</span>                             <span class="c1"># read/write .out files</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">namelist</span>                         <span class="c1"># read/write fortran namelist .in files</span>
+<span class="kn">from</span> <span class="nn">._bashjob_</span> <span class="kn">import</span> <span class="n">bashjob</span>            <span class="c1"># bash script skeleton</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">gui</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span> <span class="c1"># not supported at GA</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Failed to import gui - must have enthought.traits&#39;</span><span class="p">)</span>
     
 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;HOST&#39;</span><span class="p">,</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;sunfire&#39;</span><span class="p">):</span>
-    <span class="nb">print</span> <span class="s1">&#39;WARNING: USING PORTAL - &quot;use -w 24:00:00 -l mem=8gb&quot; recomended for heavy computation&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING: USING PORTAL - &quot;use -w 24:00:00 -l mem=8gb&quot; recomended for heavy computation&#39;</span><span class="p">)</span>
 
 <span class="c1"># make sure package is in path</span>
-<span class="n">packagedir</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span><span class="s1">&#39;/&#39;</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;/&#39;</span> <span class="c1"># one directory up</span>
+<span class="n">packagedir</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39;/&#39;</span> <span class="c1"># one directory up</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">packagedir</span><span class="o">+</span><span class="s1">&#39;pypec&#39;</span><span class="p">)</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">packagedir</span><span class="o">+</span><span class="s1">&#39;bin&#39;</span><span class="p">)</span>
 
@@ -209,7 +198,7 @@
 <span class="sd">        - infiles: dict. Tree like storage of namelist objects.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span><span class="n">indir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s1">&#39;input&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rundir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span><span class="n">indir</span><span class="o">=</span><span class="n">packagedir</span><span class="o">+</span><span class="s1">&#39;input&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the instance.</span>
 
@@ -245,7 +234,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dirs</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">dirs</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">],</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">tmp</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;mkdir &#39;</span><span class="o">+</span><span class="n">tmp</span><span class="p">)</span>
@@ -257,8 +246,8 @@
 
 
 <div class="viewcode-block" id="run"><a class="viewcode-back" href="../../source_documentation.html#pypec.gpec.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">rundir</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">rundir</span><span class="p">,</span> <span class="n">submit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_on_complete</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">rerun</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">rundcon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rungpec</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">runpentrc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">runrdcon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cleandcon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_inputs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.2&#39;</span><span class="p">,</span>
-        <span class="n">mailon</span><span class="o">=</span><span class="s1">&#39;NONE&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mf">3e3</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="mi">36</span><span class="p">,</span> <span class="n">partition</span><span class="o">=</span><span class="s1">&#39;sque&#39;</span><span class="p">,</span> <span class="n">runipec</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">qsub</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">rundcon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rungpec</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">runpentrc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">runrdcon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">runstride</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cleandcon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_inputs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;1.3&#39;</span><span class="p">,</span>
+        <span class="n">mailon</span><span class="o">=</span><span class="s1">&#39;NONE&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mf">3e3</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="mi">36</span><span class="p">,</span> <span class="n">partition</span><span class="o">=</span><span class="s1">&#39;general&#39;</span><span class="p">,</span> <span class="n">runipec</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">qsub</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Python wrapper for running gpec package.</span>
 <span class="sd">    </span>
@@ -271,7 +260,8 @@
 <span class="sd">    :param runipec: bool. Run ipec.</span>
 <span class="sd">    :param rungpec: bool. Run gpec.</span>
 <span class="sd">    :param runpentrc: bool. Run pentrc.</span>
-<span class="sd">    :param runpentrc: bool. Run rdcon and rmatch.</span>
+<span class="sd">    :param runrdcon: bool. Run rdcon and rmatch.</span>
+<span class="sd">    :param runstride: bool. Run stride.</span>
 <span class="sd">    :param cleandcon: bool. Remove euler.bin file after run is complete.</span>
 <span class="sd">    :param fill_inputs: bool. Use inputs from rundir (see kwargs).</span>
 <span class="sd">    :param version: str. Version of GPEC loaded (may set compilers if 1.2 or later)</span>
@@ -279,7 +269,7 @@
 <span class="sd">    :param email: str. Email address (default is submitting user).</span>
 <span class="sd">    :param mem: floatMemory request of q-submission in megabytes (converted to integer).</span>
 <span class="sd">    :param hours: int. Number of hours requested from job manager.</span>
-<span class="sd">    :param partition: str. Specify a specific computing queue (e.g. &#39;ellis&#39;). Default auto-chooses based on threads and memory.</span>
+<span class="sd">    :param partition: str. Specify a specific computing queue.</span>
 <span class="sd">    :param kwargs: dict. namelist instance(s) written to &lt;kwarg&gt;.in file(s).</span>
 
 <span class="sd">    .. note::</span>
@@ -356,15 +346,7 @@
             <span class="k">if</span> <span class="s1">&#39;parallel_threads&#39;</span> <span class="ow">in</span> <span class="n">dcon</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DCON_CONTROL&#39;</span><span class="p">,</span> <span class="p">{}):</span>
                 <span class="n">ntasks</span> <span class="o">=</span> <span class="n">dcon</span><span class="p">[</span><span class="s1">&#39;DCON_CONTROL&#39;</span><span class="p">][</span><span class="s1">&#39;parallel_threads&#39;</span><span class="p">]</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; &gt; Requesting </span><span class="si">{:}</span><span class="s1"> threads&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ntasks</span><span class="p">))</span>
-        <span class="c1"># set partition based on needs</span>
-        <span class="k">if</span> <span class="n">partition</span> <span class="o">==</span> <span class="s1">&#39;sque&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">mem</span> <span class="o">&gt;</span> <span class="mf">5.7e4</span><span class="p">:</span>  <span class="c1"># ellis nodes have 62G of memory</span>
-                <span class="n">partition</span> <span class="o">=</span> <span class="s1">&#39;mque&#39;</span>
-            <span class="k">elif</span> <span class="n">ntasks</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
-                <span class="n">partition</span> <span class="o">=</span> <span class="s1">&#39;dawson&#39;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">partition</span> <span class="o">=</span> <span class="s1">&#39;ellis&#39;</span>
-    
+
     <span class="c1"># actual run</span>
     <span class="k">if</span> <span class="n">submit</span><span class="p">:</span>
         <span class="c1"># name the job based on the directory it is run in</span>
@@ -382,6 +364,7 @@
         <span class="k">if</span> <span class="n">runipec</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s1">&#39;/ipec </span><span class="se">\n</span><span class="s1">&#39;</span>
         <span class="k">if</span> <span class="n">rungpec</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s1">&#39;/gpec </span><span class="se">\n</span><span class="s1">&#39;</span>
         <span class="k">if</span> <span class="n">runpentrc</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s1">&#39;/pentrc </span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="n">runstride</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="n">rundir</span><span class="o">+</span><span class="s1">&#39;/stride </span><span class="se">\n</span><span class="s1">&#39;</span>
         <span class="k">if</span> <span class="n">cleandcon</span><span class="p">:</span> <span class="n">exelist</span><span class="o">+=</span><span class="s1">&#39;rm euler.bin </span><span class="se">\n</span><span class="s1">&#39;</span>
 
         <span class="n">jobstr</span> <span class="o">=</span> <span class="n">bashjob</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">jobname</span><span class="p">,</span> <span class="n">ntasks</span><span class="o">=</span><span class="n">ntasks</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">mem</span><span class="p">)),</span> <span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">hours</span><span class="p">),</span>
@@ -869,7 +852,7 @@
         <span class="n">tscale</span> <span class="o">=</span> <span class="n">scalet</span><span class="o">*</span><span class="n">s</span><span class="o">**</span><span class="p">(</span><span class="n">scalen</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="ow">not</span> <span class="n">scalen</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="ow">not</span> <span class="n">scalet</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;nuscale = </span><span class="si">{:.3e}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> tscale = </span><span class="si">{:.3e}</span><span class="s1">, nscale = </span><span class="si">{:.3e}</span><span class="s1">, 1/tscale = </span><span class="si">{:.3e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">nscale</span><span class="p">,</span><span class="n">tscale</span><span class="p">,</span><span class="mf">1.0</span><span class="o">/</span><span class="n">tscale</span><span class="p">))</span>
         <span class="k">if</span><span class="p">(</span><span class="n">nscale</span> <span class="ow">and</span> <span class="n">tscale</span><span class="p">):</span> <span class="k">assert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">nscale</span><span class="p">,</span><span class="mf">1.0</span><span class="o">/</span><span class="n">tscale</span><span class="p">))</span> <span class="c1"># double check NT constant scaling</span>
-        <span class="n">newkfile</span> <span class="o">=</span> <span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">kfile</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="n">newkfile</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kfile</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
                 <span class="o">+</span><span class="s1">&#39;_nustar</span><span class="si">{:.2e}</span><span class="s1">.dat&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
         <span class="n">kcop</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kin</span><span class="p">)</span>
         <span class="n">kcop</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="n">ynames</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">*=</span><span class="n">nscale</span>
@@ -905,7 +888,7 @@
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.7.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
     </p>
   </div>
 </footer>

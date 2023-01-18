@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>DCON README &#8212; GPEC 1.4.4 documentation</title>
-    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
-    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
-    <script type="text/javascript" src="_static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>DCON README &#8212; GPEC 1.5.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
 
   </head><body>
 
@@ -37,7 +37,7 @@
         <a class="navbar-brand" href="index.html"><img height=40, src="_static/GPEC_logo.png">
           <!-- GPEC-->
         </a>
-        <!-- <span class="navbar-text navbar-version pull-left"><b>1.4</b></span> -->
+        <!-- <span class="navbar-text navbar-version pull-left"><b>1.5</b></span> -->
       </div>
 
         <div class="collapse navbar-collapse nav-collapse">
@@ -107,10 +107,6 @@
 </li>
 </ul>
 
-<div id="sourcelink">
-  <a href="_sources/dcon_readme.rst.txt"
-     rel="nofollow">Source</a>
-</div>
 <form action="search.html" method="get">
  <div class="form-group">
   <input type="text" name="q" class="form-control" placeholder="Search" />
@@ -120,12 +116,12 @@
 </form>
         </div>
       </div>
-    <div class="col-md-9 content">
+    <div class="body col-md-12 content" role="main">
       
-  <div class="section" id="dcon-readme">
+  <section id="dcon-readme">
 <span id="dcon"></span><h1>DCON README<a class="headerlink" href="#dcon-readme" title="Permalink to this headline">¶</a></h1>
 <p>Download a pdf copy of the <a class="reference download internal" download="" href="_downloads/c79dc3c78a23034f3db87c07c8671d70/dcon_readme.pdf"><code class="xref download docutils literal notranslate"><span class="pre">DCON</span> <span class="pre">readme</span></code></a>.</p>
-<div class="section" id="determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas">
+<section id="determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas">
 <h2>Determining the MHD Stability of Axisymmetric Toroidal Plasmas<a class="headerlink" href="#determining-the-mhd-stability-of-axisymmetric-toroidal-plasmas" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Version</dt>
@@ -144,7 +140,7 @@
 <dd class="field-odd"><p><a class="reference external" href="mailto:ahg&#37;&#52;&#48;lanl&#46;gov">ahg<span>&#64;</span>lanl<span>&#46;</span>gov</a></p>
 </dd>
 </dl>
-<div class="section" id="section-1-introduction">
+<section id="section-1-introduction">
 <h3>Section 1. Introduction<a class="headerlink" href="#section-1-introduction" title="Permalink to this headline">¶</a></h3>
 <p>DCON is a code for determining the MHD stability of static
 axisymmetric toroidal plasma.  It uses a very efficient algorithm,
@@ -203,8 +199,8 @@ code, which is distributed as part of the package and runs on any X
 Window system.</p>
 <p>This document is a guide to preparing input for DCON and ORBIT
 and interpreting their output.</p>
-</div>
-<div class="section" id="section-2-straight-fieldline-coordinates">
+</section>
+<section id="section-2-straight-fieldline-coordinates">
 <h3>Section 2. Straight-Fieldline Coordinates<a class="headerlink" href="#section-2-straight-fieldline-coordinates" title="Permalink to this headline">¶</a></h3>
 <p>A major new feature of dcon_3.50 is the use of generalized
 straight-fieldline (SFL) coordinates.  Previous versions have used only
@@ -285,8 +281,8 @@ reduced resolution in the neighborhood of an x-point.  The user is
 advised to use Hamada coordinates, the default.  When using others,
 proceed with caution, increase the number of Fourier components, and
 monitor the convergence.</p>
-</div>
-<div class="section" id="section-3-installation">
+</section>
+<section id="section-3-installation">
 <h3>Section 3. Installation<a class="headerlink" href="#section-3-installation" title="Permalink to this headline">¶</a></h3>
 <p>The easiest way to unpack dcon_3.50.tar.gz is:</p>
 <p>gzip -cd dcon_3.50.tar.gz | tar -xvf -</p>
@@ -365,8 +361,8 @@ the first word of the output when you type the command “uname -a”.  The
 makefile should contain definitions of your Fortran 90 compiler and
 links to existing LAPACK, BLAS, and X11 libraries.  Then type “make”
 while in ./dcon_3.50.</p>
-</div>
-<div class="section" id="section-4-equil-input">
+</section>
+<section id="section-4-equil-input">
 <h3>Section 4. EQUIL Input<a class="headerlink" href="#section-4-equil-input" title="Permalink to this headline">¶</a></h3>
 <p>Both DCON and ORBIT use EQUIL to process the equilibrium data.
 EQUIL is controlled primarily by equil.in.  It contains two Fortran 90
@@ -667,8 +663,8 @@ equilibrium.  Here are input parameters:</p>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="section-5-dcon-input">
+</section>
+<section id="section-5-dcon-input">
 <h3>Section 5. DCON Input<a class="headerlink" href="#section-5-dcon-input" title="Permalink to this headline">¶</a></h3>
 <p>The stability operations of DCON are controlled by the file
 dcon.in, containing two namelists, dcon_control and dcon_output.  The
@@ -826,8 +822,8 @@ increases linearly with mthsurf0</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="section-6-vacuum-input">
+</section>
+<section id="section-6-vacuum-input">
 <h3>Section 6. VACUUM Input<a class="headerlink" href="#section-6-vacuum-input" title="Permalink to this headline">¶</a></h3>
 <p>Computation of perturbed vacuum potential energy is performed
 with Morrell Chance’s VACUUM code.  This is controlled by the file
@@ -841,8 +837,8 @@ values of a; the results may be inaccurate because of limited
 resolution.  See M. S. Chance, Phys. Plasma 4, 6, 2161 (1997) for theory
 and code description.  Subdirectory ./tex/vacuum of this directory
 contains a complete description of the input.  Use LaTeX.</p>
-</div>
-<div class="section" id="section-7-dcon-output">
+</section>
+<section id="section-7-dcon-output">
 <h3>Section 7. DCON Output<a class="headerlink" href="#section-7-dcon-output" title="Permalink to this headline">¶</a></h3>
 <p>During the running of DCON, the code writes terse messages to
 the screen to inform the user of its progress.  Here is the output of a
@@ -928,8 +924,8 @@ to assess the accuracy of the Grad-Shafranov solution.  More detailed
 local graphs of log10 error can be seen by doing “xdraw gse”.  A contour
 plot can be seen with “xdraw gsec”.  The latter two require additional
 input files, obtainable by “cp ../../draw/drawgse*.in .”.</p>
-</div>
-<div class="section" id="section-8-orbit-input">
+</section>
+<section id="section-8-orbit-input">
 <h3>Section 8. ORBIT Input<a class="headerlink" href="#section-8-orbit-input" title="Permalink to this headline">¶</a></h3>
 <p>This section describes input for controlling the ORBIT code for
 following guiding-center or full-orbit trajectories of charged
@@ -1056,8 +1052,8 @@ the orbit.  Normally the values are set as shown.  Setting orbit_out=t
 a tabular description of the orbit in orbit.out, which is usually not
 very useful and is time-consuming.  Setting orbit_bin=f causes the
 graphical output to be suppressed.</p>
-</div>
-<div class="section" id="section-9-orbit-input">
+</section>
+<section id="section-9-orbit-input">
 <h3>Section 9. ORBIT Input<a class="headerlink" href="#section-9-orbit-input" title="Permalink to this headline">¶</a></h3>
 <p>This section describes output for the ORBIT code for following
 full-orbit trajectories of charged particles, both inside and outside
@@ -1082,8 +1078,8 @@ produces 9 graphs:</p>
 <li><p>Larmor Radius / Radius of Curvature, rl/R</p></li>
 </ol>
 <p>The color changes each time the particle crosses the separatrix.</p>
-</div>
-<div class="section" id="section-10-other-documentation">
+</section>
+<section id="section-10-other-documentation">
 <h3>Section 10. Other documentation<a class="headerlink" href="#section-10-other-documentation" title="Permalink to this headline">¶</a></h3>
 <p>There is a subdirectory ./tex containing miscellaneous
 documentation.  Here is a brief description.</p>
@@ -1103,9 +1099,9 @@ metric.tex      Expressions for the metric tensor</p>
 <p>orbit.tex       Raw Hamiltonian orbit equations in straight-fieldline coordinates</p>
 <p>tex/vacuum:</p>
 <p>vacinput.tex    Latex file on preparing input to VACUUM.</p>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
     </div>
@@ -1127,7 +1123,7 @@ metric.tex      Expressions for the metric tensor</p>
     </p>
     <p>
         &copy; Copyright 2015, PPPL.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.3.1.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br/>
     </p>
   </div>
 </footer>
