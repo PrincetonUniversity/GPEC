@@ -4133,7 +4133,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)
      $      "Computing external vacuum fields by surface currents"
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vbr,vbz,vbp)
          IF (helicity<0) THEN
             vbr=CONJG(vbr)
@@ -4159,8 +4159,9 @@ c-----------------------------------------------------------------------
      $        "Constructing total perturbed fields"
          bnomn=bnomn-bnimn
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
+         
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
             vpbz=CONJG(vpbz)
@@ -4364,7 +4365,7 @@ c-----------------------------------------------------------------------
      $        "Computing vacuum fields by plasma surface currents"
          bnomn=bnomn-bnimn
          CALL gpvacuum_bnormal(psilim,bnomn,nr,nz)
-         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vpbr,vpbz,vpbp)
          IF (helicity<0) THEN
             vpbr=CONJG(vpbr)
@@ -4377,7 +4378,7 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)
      $      "Computing vacuum fields by external surface currents"
          CALL gpvacuum_bnormal(psilim,bnimn,nr,nz)
-         CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,complex_flag,
+         CALL mscfld(wv,mpert,mthsurf,mthsurf,complex_flag,
      $        nr,nz,vgdl,vgdr,vgdz,vvbr,vvbz,vvbp)
          IF (helicity<0) THEN
             vvbr=CONJG(vvbr)
@@ -4798,7 +4799,7 @@ c-----------------------------------------------------------------------
      $           "fields from resonant surface current #",snum
             CALL gpvacuum_bnormal(singtype(snum)%psifac,
      $           singbno_mn(:,snum),nr,nz)
-            CALL mscfld(wv,mpert,mthsurf,mthsurf,nfm2,nths2,
+            CALL mscfld(wv,mpert,mthsurf,mthsurf,
      $           complex_flag,nr,nz,vgdl(iss,:,:),vgdr(iss,:,:),
      $           vgdz(iss,:,:),vbr(iss,:,:),vbz(iss,:,:),vbp(iss,:,:))
          ENDIF

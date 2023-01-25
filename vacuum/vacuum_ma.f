@@ -10,12 +10,11 @@ c     2. mscfld
 c     3. defglo
 c     4. ent33
 c     5. funint
-c     6. grrget
-c     7. make_bltobp
-c     8. diaplt
-c     9. pickup
-c    10. loop
-c    11. chi
+c     6. make_bltobp
+c     7. diaplt
+c     8. pickup
+c     9. loop
+c    10. chi
 c-----------------------------------------------------------------------
 c     subprogram 1. mscvac.
 c     calculate vacuum response matrix.
@@ -207,7 +206,6 @@ c-----------------------------------------------------------------------
       open (outmod,file='modovmc',status='unknown', form='formatted' )
       call msctimer ( outmod, "top of main" )
       call ent33
-
       If ( lspark .ne. 0 ) call testvec
       if ( ieig .eq. 0 ) goto 99
       jmax1 = lmax(1) - lmin(1) + 1
@@ -478,27 +476,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 6. grrget.
-c     obtain grri matrix from vacuum calculation.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      subroutine grrget(nfm2o,nths2o,grrio)
-      USE vglobal_mod
-      implicit none
-
-      integer nfm2o,nths2o
-      real(8), dimension(nths2o,nfm2o) :: grrio
-
-      grrio(:,:)=grri(:,:)
-c-----------------------------------------------------------------------
-c     termination.
-c-----------------------------------------------------------------------
-      return
-      end
-c-----------------------------------------------------------------------
-c     subprogram 7. make_bltobp
+c     subprogram 6. make_bltobp
 c     calculate normal field in real space.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -552,7 +530,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 8. diaplt
+c     subprogram 7. diaplt
 c     calculate tangential b field.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -564,7 +542,7 @@ c-----------------------------------------------------------------------
       implicit integer (i-n)
 
       !! check and eliminate obsolete variables.
-      dimension z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
+      DIMENSION z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
      $     zorkpr(nths), zorkpi(nths), zork3(nths), chlagdy(nths,nfm),
      $     thph(nths), cppgr(nths),cppgi(nths),
      $     cplgr(nths), cplgi(nths), cplgtr(nths), cplgti(nths),
@@ -615,7 +593,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 9. pickup
+c     subprogram 8. pickup
 c     calculate vacuum b field.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -626,6 +604,14 @@ c-----------------------------------------------------------------------
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
 
+      INTEGER, DIMENSION(0:lx,0:lz) :: vgdl
+      REAL(8), DIMENSION(0:lx,0:lz) :: vgdx,vgdz
+      COMPLEX(8), DIMENSION(0:lx,0:lz) :: vbx,vbz,vbp
+
+      DIMENSION blr(*), bli(*)
+      CHARACTER(130), DIMENSION(10) :: string
+      COMPLEX(8), PARAMETER :: ifac=(0,1)
+
       !! xlp??
       DIMENSION xlp(nths),xloops(ndimlp),zloops(ndimlp),
      $     chir(5,ndimlp),chii(5,ndimlp),
@@ -635,14 +621,6 @@ c-----------------------------------------------------------------------
      $     bxr(ndimlp),bxi(ndimlp),bzr(ndimlp),bzi(ndimlp),
      $     btr(ndimlp),bti(ndimlp), bpr(ndimlp),bpi(ndimlp),
      $     bphir(ndimlp),bphii(ndimlp)
-
-      INTEGER, DIMENSION(0:lx,0:lz) :: vgdl
-      REAL(8), DIMENSION(0:lx,0:lz) :: vgdx,vgdz
-      COMPLEX(8), DIMENSION(0:lx,0:lz) :: vbx,vbz,vbp
-
-      DIMENSION blr(*), bli(*)
-      CHARACTER(130), DIMENSION(10) :: string
-      COMPLEX(8), PARAMETER :: ifac=(0,1)
 
       ndlp = mth / ntloop
 
@@ -681,7 +659,7 @@ c-----------------------------------------------------------------------
         zmax = max(zmxp,zmxw)
       endif
 
-      CALL loops
+      CALL loops !! here is the problem.
 
       nobs = nloop + 3*nloopr
 
@@ -884,7 +862,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     subprogram 10. loops.
+c     subprogram 9. loops.
 c     grid loops.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -961,7 +939,7 @@ c-----------------------------------------------------------------------
       RETURN
       END
 c-----------------------------------------------------------------------
-c     subprogram 11. chi.
+c     subprogram 10. chi.
 c     magnetic scalar potential.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -973,11 +951,10 @@ c-----------------------------------------------------------------------
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
 
-      dimension iop(2), ww1(nths),ww2(nths),ww3(nths),tab(3)
-      dimension blr(*),bli(*), xsce(*),zsce(*),xscp(*),zscp(*)
-      dimension creal(nths,nfm), cimag(nths,nfm)
-      dimension chir(5,ndimlp), chii(5,ndimlp), rgdl(ndimlp)
-      real nq
+      DIMENSION blr(*),bli(*),xsce(*),zsce(*),xscp(*),zscp(*)
+      DIMENSION creal(nths,nfm), cimag(nths,nfm)
+      DIMENSION chir(5,ndimlp), chii(5,ndimlp), rgdl(ndimlp)
+      REAL nq
 
       factpi = twopi
       jmax1 = lmax(1) - lmin(1) + 1
@@ -1002,11 +979,9 @@ c-----------------------------------------------------------------------
             ztp = zscp(is)
 
             call green
-
             bval = bval / factpi
 
             do l1 = 1, jmax1
-
                zbr = blr(l1)
                zbi = bli(l1)
                chir(nsew,io) = chir(nsew,io) +

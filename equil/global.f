@@ -29,6 +29,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: dump_flag=.FALSE.
       LOGICAL :: verbose=.TRUE.
       LOGICAL :: use_galgrid=.TRUE.
+      LOGICAL :: wv_farwall_flag=.TRUE.
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6
       REAL(r8) :: newq0=0
