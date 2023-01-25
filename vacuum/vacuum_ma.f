@@ -486,7 +486,6 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       IMPLICIT REAL (a-h,o-z)
 
-      !! check and eliminate obsolete variables.
       DIMENSION chlagdy(nths,nfm)
       DIMENSION thmgr(nths), z1tmp(nths), z2tmp(nths)
 
@@ -541,7 +540,6 @@ c-----------------------------------------------------------------------
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
 
-      !! check and eliminate obsolete variables.
       DIMENSION z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
      $     zorkpr(nths), zorkpi(nths), zork3(nths), chlagdy(nths,nfm),
      $     thph(nths), cppgr(nths),cppgi(nths),
@@ -612,8 +610,7 @@ c-----------------------------------------------------------------------
       CHARACTER(130), DIMENSION(10) :: string
       COMPLEX(8), PARAMETER :: ifac=(0,1)
 
-      !! xlp??
-      DIMENSION xlp(nths),xloops(ndimlp),zloops(ndimlp),
+      DIMENSION xloops(ndimlp),zloops(ndimlp),
      $     chir(5,ndimlp),chii(5,ndimlp),
      $     zchipr(ndimlp),zchipi(ndimlp),chirr(ndimlp),
      $     cwrkr(5,ndimlp),cwrki(5,ndimlp),
@@ -659,7 +656,7 @@ c-----------------------------------------------------------------------
         zmax = max(zmxp,zmxw)
       endif
 
-      CALL loops !! here is the problem.
+      CALL loops
 
       nobs = nloop + 3*nloopr
 

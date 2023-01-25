@@ -147,8 +147,8 @@ module inputs
         CALL idcon_metric
         ! read vacuum data.
         !CALL idcon_vacuum
-        ! form action matrices (this will move !!)
-        call idcon_action_matrices!(egnum,xspmn)
+        ! form action matrices
+        call idcon_action_matrices
 
         ! set additional geometry spline
         call set_geom
