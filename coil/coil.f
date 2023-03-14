@@ -249,9 +249,9 @@ c-----------------------------------------------------------------------
                   tilty = coil_tilty(ci, cj) * dtor
                   tiltz = coil_tiltz(ci, cj) * dtor
                ENDIF
-               IF(ABS(tiltx) + ABS(tilty) + ABS(tiltz) + ABS(shiftx)
-                  + ABS(coil_shiftx(ci, cj)) + ABS(coil_shiftx(ci, cj))
-     $            + ABS(coil_shiftx(ci, cj)) > 0)THEN ! only change the data if really necessary
+               IF(ABS(tiltx) + ABS(tilty) + ABS(tiltz)
+     $            + ABS(coil_shiftx(ci, cj)) + ABS(coil_shifty(ci, cj))
+     $            + ABS(coil_shiftz(ci, cj)) > 0)THEN ! only change the data if really necessary
                   DO cl=1, nsec
                      x = coil(ci)%x(cj, ck, cl) - x0
                      y = coil(ci)%y(cj, ck, cl) - y0
