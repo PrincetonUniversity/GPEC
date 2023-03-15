@@ -198,9 +198,9 @@ c-----------------------------------------------------------------------
             ENDDO
 
             ! inform user of any coil modifications
-            IF(ABS(coil_shiftx(ci, cj)) + ABS(coil_shiftx(ci, cj))
-     $         +ABS(coil_shiftx(ci, cj)) > 0) WRITE(*,'(1x,a,i2)'),
-     $         " > Shifting "//TRIM(coil_name(ci))//" coil",cj
+            IF(ABS(coil_shiftx(ci, cj)) + ABS(coil_shifty(ci, cj))
+     $         +ABS(coil_shiftz(ci, cj)) > 0) WRITE(*,'(1x,a,i2)'),
+     $         " > Shifting "//TRIM(coil_name(ci))//" coil ",cj
             IF(ABS(coil_tiltx(ci, cj)) + ABS(coil_tilty(ci, cj))
      $         +ABS(coil_tiltz(ci, cj)) > 0) THEN
                  IF(cnpert /= 0)THEN
