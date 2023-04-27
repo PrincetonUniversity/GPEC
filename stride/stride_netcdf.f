@@ -186,7 +186,6 @@ c-----------------------------------------------------------------------
      $    (/m_dim, mo_dim, i_dim/), wt_id) )
       CALL check( nf90_def_var(ncid, "W_t_eigenvalue", nf90_double,
      $    (/mo_dim, i_dim/), wtv_id) )
-      ! end definitions
       IF(msing>0 .AND. ALLOCATED(dp))THEN
          CALL check( nf90_def_var(ncid, "Delta", nf90_double,
      $       (/l_dim, lp_dim, i_dim/), dp_id) )
@@ -199,6 +198,7 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid, "Delta_prime", nf90_double,
      $       (/r_dim, rp_dim, i_dim/), dpp_id) )
       ENDIF
+      ! end definitions
       CALL check( nf90_enddef(ncid) )
 c-----------------------------------------------------------------------
 c     set variables
