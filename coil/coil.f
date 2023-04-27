@@ -318,7 +318,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Write final coil geometry information.
 c-----------------------------------------------------------------------
-      IF(coil_out) CALL write_coil_geometry
+      IF(coil_out) CALL write_coil_geometry(cnpert)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -352,7 +352,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE write_coil_geometry
+      SUBROUTINE write_coil_geometry(cnpert)
+
+      INTEGER, INTENT(IN) :: cnpert
 
       LOGICAL :: debug_flag=.FALSE.
       INTEGER :: i, ci
@@ -487,6 +489,10 @@ c-----------------------------------------------------------------------
          CALL erchk( nf90_put_att(ncid,w_id(ci),"long_name",
      $               "Number of windings") )
       ENDDO
+
+      ! add attributes
+      CALL erchk( nf90_put_att(ncid,nf90_global,'cnpert', cnpert))
+
       ! end definitions
       CALL erchk( nf90_enddef(ncid) )
 
