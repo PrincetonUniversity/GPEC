@@ -229,6 +229,37 @@
 # library installation details.
 #
 #------------------------------------------------------------------
+# On SNU PLARE's Linux machine
+#   Developers can use intel compilers with the following modules
+#   module load git compiler-rt/latest mkl/latest 
+#   module load netcdf-fortran/intel/4.5.3/parallel openmpi/intel/4.1.1
+#   And Set environment variables manually as:
+#     $ export FC=/APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/bin/intel64/ifort
+#     $ export F90HOME=/APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux
+#     $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib #This is needed to include libnetcdf.so.7.
+#  Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#-----------------------------------------------------------------
+#  Defaults tailored for
+#  Compiling with FC = /APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/bin/intel64/ifort
+#     using math libraries -lmkl_rt
+#     from /APP/enhpc/compiler/intel/oneapi/mkl/2021.3.0/lib/intel64
+#     including /APP/enhpc/compiler/intel/oneapi/mkl/2021.3.0/include/intel64/lp64
+#     and netcdf libraries -lnetcdff -lnetcdf
+#     from /APP/netcdf-fortran/4.5.3/parallel/lib /APP/netcdf-fortran/4.5.3/parallel/lib
+#     including /APP/netcdf-fortran/4.5.3/parallel/include
+#     and compiler libraries -lirc -limf
+#     from /APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/compiler/lib/intel64
+#     including /APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/compiler/include/intel64
+#     and using OMPFLAG -qopenmp
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#-----------------------------------------------------------------
+#
+#   Now compile using
+#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#
+
 
 # general defaults
 #------------------
