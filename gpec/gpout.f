@@ -1565,11 +1565,11 @@ c-----------------------------------------------------------------------
 c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot, thresh_flag)
+      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot,th1_flag,th2_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      LOGICAL, INTENT(IN) :: thresh_flag
+      LOGICAL, INTENT(IN) :: th1_flag,th2_flag
       INTEGER, INTENT(IN) :: egnum,nspot
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
@@ -1625,11 +1625,10 @@ c-----------------------------------------------------------------------
       sr%xs = sq%xs
       sr%fs(:, 1) = rhotor(:)
       CALL spline_fit(sr,"extrap")
-
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c-----------------------------------------------------------------------
-!     j_c is j_c/(chi1*sq%f(4))
+      ! j_c is j_c/(chi1*sq%f(4))
       DO ising=1,msing
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          respsi=singtype(ising)%psifac
@@ -1710,12 +1709,20 @@ c-----------------------------------------------------------------------
          ENDIF
          chirikov(ising)=island_hwidth(ising)/hdist
 c-----------------------------------------------------------------------
-c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
+c     prepare layer analysis.
 c-----------------------------------------------------------------------
-         IF(thresh_flag)THEN
+         IF (th1_flag. OR. th2_flag) THEN
             resm = mfac(resnum(ising))
             CALL spline_eval(sr,respsi,1)
             CALL spline_eval(kin,respsi,0)
+         ELSE
+            hw_crit(ising) = 0.0
+            b_crit(ising) = 0.0
+         ENDIF
+c-----------------------------------------------------------------------
+c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
+c-----------------------------------------------------------------------         
+         IF (th1_flag) THEN
             ! rho = 0.7188 at 8/2 surface in DIII-D 158115 benchmark. Callen paper estimates it as 0.73
             ! gyro radius ~ 1e-3 meters in DIII-D_ideal_example
             rho_gyro = sqrt(2*kin%f(3)/(mi*mp)) / (zi*e*bt0 / (mi*mp))
@@ -1732,25 +1739,38 @@ c-----------------------------------------------------------------------
      $         / sqrt(sr%f(1) * delta_rmp)
             ! convert from meters to psi_n for clear comparision to island_hwidth
             hw_crit(ising) = hw_crit(ising) / sr%f1(1)
-
-            IF(verbose)THEN
-               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
-     $             "psi", "q", "singflx", "chirikov","w_island","w_crit"
-               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3,es12.3)')
-     $            respsi, sq%f(4), ABS(singflx_mn(resnum(ising),ising)),
-     $            chirikov(ising), 2*island_hwidth(ising),
-     $            2*hw_crit(ising)
-            ENDIF
-         ELSE
-            hw_crit(ising) = 0.0
-            IF(verbose)THEN
-               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12)') "psi",
-     $             "q", "singflx", "chirikov"
-               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3)')
-     $            respsi, sq%f(4), ABS(singflx_mn(resnum(ising),ising)),
-     $            chirikov(ising)
-            ENDIF
          ENDIF
+c-----------------------------------------------------------------------
+c     compute threshold by linear drift mhd with slayer module.
+c-----------------------------------------------------------------------
+         IF (th2_flag) THEN
+            CALL gpec_slayer(n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
+     $     qval,sval,bt,rs,R0,mms,nns,delta,psi0,jxb,omega_sol,br_th)
+            b_crit(ising)=br_th 
+         ENDIF
+            
+
+         ENDIF
+
+         IF (verbose) THEN
+
+            IF (th1_flag .OR. th2_flag) THEN
+               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
+     $              "psi","q","singflx","chirikov",
+     $              "w_island","w_crit"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3,es12.3)')
+     $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
+     $              chirikov(ising),2*island_hwidth(ising),
+     $              2*hw_crit(ising)    
+            ELSE
+       
+               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",
+     $              "q","singflx","chirikov","w_island"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3)')
+     $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
+     $              chirikov(ising),2*island_hwidth(ising)
+         ENDIF
+            
       ENDDO
       CALL spline_dealloc(sr)
       CALL cspline_dealloc(fsp_sol)
