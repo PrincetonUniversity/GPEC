@@ -455,17 +455,17 @@ c-----------------------------------------------------------------------
      $               "Nominal radius of coil") )
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tiltx",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), xt_id(ci)) )
-         CALL erchk( nf90_put_att(ncid,xt_id(ci),"units","degrees") )
+         CALL erchk( nf90_put_att(ncid,xt_id(ci),"units","radians") )
          CALL erchk( nf90_put_att(ncid,xt_id(ci),"long_name",
      $               "Tilt about the x-axis") )
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tilty",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), yt_id(ci)) )
-         CALL erchk( nf90_put_att(ncid,yt_id(ci),"units","degrees") )
+         CALL erchk( nf90_put_att(ncid,yt_id(ci),"units","radians") )
          CALL erchk( nf90_put_att(ncid,yt_id(ci),"long_name",
      $               "Tilt about the y-axis") )
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_tiltz",
      $      nf90_double, (/c_dim(ci), s_dim(ci)/), zt_id(ci)) )
-         CALL erchk( nf90_put_att(ncid,zt_id(ci),"units","degrees") )
+         CALL erchk( nf90_put_att(ncid,zt_id(ci),"units","radians") )
          CALL erchk( nf90_put_att(ncid,zt_id(ci),"long_name",
      $               "Tilt about the z-axis") )
          CALL erchk( nf90_def_var(ncid, TRIM(coil_name(ci))//"_shiftx",
