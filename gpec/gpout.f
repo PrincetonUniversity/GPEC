@@ -841,7 +841,7 @@ c-----------------------------------------------------------------------
          names(3) = "Square of island half-width in psi_n"
          names(4) = "Energy normalized penetrated flux"
          names(5) = "Delta"
-         tags = (/'f', 's', 'i', 'p', 'd'/)
+         tags = (/'f', 'i', 'w', 'p', 'd'/)
          units = (/'none', 'A/T ', '1/T ', 'none', '1/T '/)
 
 c-----------------------------------------------------------------------
