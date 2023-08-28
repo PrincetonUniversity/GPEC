@@ -1604,6 +1604,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
       TYPE(spline_type) :: sr
 
+      REAL(r8) :: omega_i,omega_e,
+     $     delta,psi0,jxb,omega_sol,omega_sol,br_th
+
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
@@ -1721,7 +1724,7 @@ c-----------------------------------------------------------------------
          ENDIF
 c-----------------------------------------------------------------------
 c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
-c-----------------------------------------------------------------------         
+c-----------------------------------------------------------------------
          IF (th1_flag) THEN
             ! rho = 0.7188 at 8/2 surface in DIII-D 158115 benchmark. Callen paper estimates it as 0.73
             ! gyro radius ~ 1e-3 meters in DIII-D_ideal_example
@@ -1744,12 +1747,14 @@ c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
 c-----------------------------------------------------------------------
          IF (th2_flag) THEN
-            CALL gpec_slayer(n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
-     $     qval,sval,bt,rs,R0,mms,nns,delta,psi0,jxb,omega_sol,br_th)
+            omega_i=-twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
+     $           -twopi*kin%f1(3)/(e*zi*chi1)
+            omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
+     $           twopi*kin%f1(4)/(e*chi1)           
+            CALL gpec_slayer(kin%f(2),kin%f(4),kin%f(1),kin%f(3),
+     $           kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),bt0,
+     $           sr%f1(1),ro,resm,nn,delta,psi0,jxb,omega_sol,br_th)
             b_crit(ising)=br_th 
-         ENDIF
-            
-
          ENDIF
 
          IF (verbose) THEN

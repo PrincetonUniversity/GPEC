@@ -16,6 +16,7 @@ LIBS = \
 	-lequil \
 	-lvac \
 	-lharvest \
+	-lslayer \
 	-lcoil
 
 OBJS = \
@@ -83,5 +84,6 @@ gpdiag.o: gpresp.o gpvacuum.o
 gpout.o: gpdiag.o gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o \
     ../equil/equil_mod.mod ../equil/equil_out_mod.mod \
     ../pentrc/pentrc_interface.mod ../pentrc/inputs.mod \
-	version.inc
+    ../slayer/gslayer.mod \
+	version.inc 
 gpec.o: gpdiag.o gpout.o rdcon.o

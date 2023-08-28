@@ -34,7 +34,8 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: edge_flag=.FALSE.,fft_flag=.FALSE.,
-     $     kin_flag=.FALSE.,con_flag=.FALSE.,verbose=.TRUE.
+     $     kin_flag=.FALSE.,con_flag=.FALSE.,verbose=.TRUE.,
+     $     wv_farwall_dummy=.FALSE.
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths2,lmpert,lmlow,lmhigh,
      $     power_b,power_r,power_bp,
@@ -201,6 +202,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE(4)
             msing=msing+1
             READ(UNIT=in_unit)
@@ -282,6 +284,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
             READ(UNIT=in_unit)wt0
+            READ(UNIT=in_unit)wv_farwall_dummy
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix

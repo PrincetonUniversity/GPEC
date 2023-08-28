@@ -17,6 +17,7 @@ OBJS = \
        sglobal.o \
        params.o \
        delta.o \
+       gslayer.o \
        slayer.o
 
 all: lsode slayer libslayer
@@ -39,6 +40,7 @@ libslayer: $(OBJS)
 
 params.o : sglobal.o
 delta.o : sglobal.o
+gslayer.o : sglobal.o delta.o
 slayer.o : sglobal.o params.o delta.o
 
 clean:
