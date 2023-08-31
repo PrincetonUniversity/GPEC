@@ -14,6 +14,10 @@ c-----------------------------------------------------------------------
       USE gpdiag_mod
       USE gpout_mod
       USE rdcon_mod
+      USE coil_mod, ONLY : cmhigh, ip_direction, bt_direction,
+     $    coil_read,
+     $    coil_name, coil_num, cmpert, cmlow, cmpsi,
+     $    ipd, btd, helicity, machine
 
       IMPLICIT NONE
 

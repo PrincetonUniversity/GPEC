@@ -36,7 +36,8 @@ c-----------------------------------------------------------------------
       MODULE gpdiag_mod
       USE gpresp_mod
       USE gpvacuum_mod
-      USE field_mod
+      USE field_mod, ONLY : field_bs_psi, coil_dealloc,
+     $    coil_num, cmpert, cmlow
 
       IMPLICIT NONE
 
