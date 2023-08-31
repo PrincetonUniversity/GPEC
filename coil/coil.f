@@ -493,9 +493,9 @@ c-----------------------------------------------------------------------
       ENDDO
 
       ! add attributes
-      CALL check( nf90_put_att(ncid,nf90_global,"version",version))
-      CALL check( nf90_put_att(ncid,nf90_global,"machine",machine))
-      CALL check( nf90_put_att(ncid,nf90_global,"n",cnn) )
+      CALL erchk( nf90_put_att(ncid,nf90_global,"version",version))
+      CALL erchk( nf90_put_att(ncid,nf90_global,"machine",machine))
+      CALL erchk( nf90_put_att(ncid,nf90_global,"n",cnn) )
       CALL erchk( nf90_put_att(ncid,nf90_global,'cnpert', cnpert))
 
       ! end definitions
