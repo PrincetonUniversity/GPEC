@@ -35,11 +35,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE gpout_mod
+      USE netcdf
       USE gpresp_mod
       USE gpvacuum_mod
       USE gpdiag_mod
-      USE field_mod
-      USE netcdf
+      USE field_mod, ONLY : field_bs_psi, field_bs_rzphi
       USE inputs, ONLY : kin
       USE utilities, ONLY : progressbar
       USE pentrc_interface, ONLY : zi, mi, initialize_pentrc
