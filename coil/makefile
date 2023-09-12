@@ -3,7 +3,7 @@
 include ../install/DEFAULTS.inc
 
 IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 
 .f.o:
 	$(F90) -c $*.f
