@@ -17,6 +17,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE field_mod
       USE coil_mod
+      USE omp_lib
 
       IMPLICIT NONE
 
@@ -53,8 +54,8 @@ c-----------------------------------------------------------------------
       INTEGER :: i,j,k,iseg,itheta,izeta,ipert,nseg,
      $    istart,istop
 
-      REAL(r8) :: rfac,eta,phi,jac,delpsi,rr,zz,rx,ry,rz,dl,
-     $     cosang,sinang,w11,w12,area
+      REAL(r8) :: rfac,eta,phi,jac,delpsi,rr,zz,rx,ry,rz,dl
+      REAL(r8) :: cosang,sinang,w11,w12,area
       REAL(r8), DIMENSION(0:cmtheta) :: ctheta
       REAL(r8), DIMENSION(0:cmzeta) :: czeta
       REAL(r8), DIMENSION(cmtheta,cmzeta) :: xobs,yobs,zobs,
@@ -97,6 +98,7 @@ c-----------------------------------------------------------------------
      $        dby(coil(i)%ncoil,coil(i)%s,nseg),
      $        dbz(coil(i)%ncoil,coil(i)%s,nseg))
          
+         !$OMP PARALLEL DO PRIVATE(j,k,iseg)
          DO j=1,coil(i)%ncoil
             DO k=1,coil(i)%s
                DO iseg=1,nseg
@@ -132,7 +134,10 @@ c-----------------------------------------------------------------------
             w11=w11/delpsi
             w12=w12/delpsi
 
+            !$OMP PARALLEL PRIVATE(j,k,iseg,phi,rx,ry,rz,dl)
+            !$OMP DO
             DO izeta=1,cmzeta
+               !print *,itheta,izeta," worked on by thread number ",omp_get_thread_num()
                phi=-helicity*(twopi*czeta(izeta)+crzphi%f(3))
                xobs(itheta,izeta)=rr*COS(phi)
                yobs(itheta,izeta)=rr*SIN(phi)
@@ -157,19 +162,26 @@ c-----------------------------------------------------------------------
                   ENDDO
                ENDDO
                
+               
                bx(itheta,izeta)=SUM(dbx)
                by(itheta,izeta)=SUM(dby)
                bz(itheta,izeta)=SUM(dbz)
-               cosang=xobs(itheta,izeta)/rr
-               sinang=yobs(itheta,izeta)/rr
-               br(itheta,izeta)=bx(itheta,izeta)*cosang+
-     $              by(itheta,izeta)*sinang
-               bp(itheta,izeta)=by(itheta,izeta)*cosang-
-     $              bx(itheta,izeta)*sinang
+   !             cosang=xobs(itheta,izeta)/rr
+   !             sinang=yobs(itheta,izeta)/rr
+   !             br(itheta,izeta)=bx(itheta,izeta)*cosang+
+   !   $              by(itheta,izeta)*sinang
+   !             bp(itheta,izeta)=by(itheta,izeta)*cosang-
+   !   $              bx(itheta,izeta)*sinang
+               br(itheta,izeta)=bx(itheta,izeta)*xobs(itheta,izeta)/rr+
+     $              by(itheta,izeta)*yobs(itheta,izeta)/rr
+               bp(itheta,izeta)=by(itheta,izeta)*xobs(itheta,izeta)/rr-
+     $              bx(itheta,izeta)*yobs(itheta,izeta)/rr
                bn(itheta,izeta)=aspl%fs(itheta,1)*
      $              (br(itheta,izeta)*(w11*COS(eta)-w12*SIN(eta))+
      $              bz(itheta,izeta)*(w11*SIN(eta)+w12*COS(eta)))
             ENDDO
+            !$OMP END DO
+            !$OMP END PARALLEL
 
          ENDDO
 
