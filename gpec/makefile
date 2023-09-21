@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../harvest -I../pentrc -I../coil -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../harvest -I../pentrc -I../coil -I../slayer -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
@@ -84,6 +84,6 @@ gpdiag.o: gpresp.o gpvacuum.o
 gpout.o: gpdiag.o gpresp.o gpvacuum.o ../coil/field.o ../coil/coil.o \
     ../equil/equil_mod.mod ../equil/equil_out_mod.mod \
     ../pentrc/pentrc_interface.mod ../pentrc/inputs.mod \
-    ../slayer/gslayer.mod \
+    ../slayer/gslayer_mod.mod \
 	version.inc 
 gpec.o: gpdiag.o gpout.o rdcon.o

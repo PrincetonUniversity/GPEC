@@ -43,6 +43,7 @@ c-----------------------------------------------------------------------
       USE inputs, ONLY : kin
       USE utilities, ONLY : progressbar
       USE pentrc_interface, ONLY : zi, mi, initialize_pentrc
+      USE gslayer_mod, ONLY : gpec_slayer
 
       IMPLICIT NONE
 
@@ -1604,8 +1605,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
       TYPE(spline_type) :: sr
 
-      REAL(r8) :: omega_i,omega_e,
-     $     delta,psi0,jxb,omega_sol,omega_sol,br_th
+      REAL(r8), DIMENSION(msing) :: b_crit
+      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th
+      COMPLEX(r8) :: delta_s,psi0
 
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
@@ -1750,10 +1752,10 @@ c-----------------------------------------------------------------------
             omega_i=-twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
      $           -twopi*kin%f1(3)/(e*zi*chi1)
             omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
-     $           twopi*kin%f1(4)/(e*chi1)           
+     $           +twopi*kin%f1(4)/(e*chi1)           
             CALL gpec_slayer(kin%f(2),kin%f(4),kin%f(1),kin%f(3),
      $           kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),bt0,
-     $           sr%f1(1),ro,resm,nn,delta,psi0,jxb,omega_sol,br_th)
+     $           sr%f1(1),ro,resm,nn,delta_s,psi0,jxb,omega_sol,br_th)
             b_crit(ising)=br_th 
          ENDIF
 
@@ -1774,8 +1776,8 @@ c-----------------------------------------------------------------------
                WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
      $              chirikov(ising),2*island_hwidth(ising)
+            ENDIF
          ENDIF
-            
       ENDDO
       CALL spline_dealloc(sr)
       CALL cspline_dealloc(fsp_sol)
