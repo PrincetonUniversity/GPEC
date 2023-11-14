@@ -83,7 +83,6 @@ c-----------------------------------------------------------------------
       CHARACTER(10) :: side="right"
       CHARACTER(256) :: deltabin_filename,galsol_filename
       CHARACTER(256) :: galsol_filename_cut
-      INTEGER :: xmax_method
       INTEGER :: msol=2
       INTEGER :: interp_np=10
       INTEGER :: basis_type=0
@@ -1861,7 +1860,7 @@ c-----------------------------------------------------------------------
      $     restore_us,restore_ul,interp_np,nx,nq,order_pow,order_exp,
      $     cutoff,deltac_tol,pfac,xmax,diagnose_res,outt,fulldomain,
      $     nx_ua,x0_ua,x1_ua,tid,dx1dx2_flag,dx1,dx2,gal_method,
-     $     side,xfac,rescale,xmax_method,diagnose_params,noexp,
+     $     side,xfac,rescale,diagnose_params,noexp,
      $     inps_type,kmax,inps_xfac,inps_eps,grid_diagnose
 c-----------------------------------------------------------------------
 c     read input.
