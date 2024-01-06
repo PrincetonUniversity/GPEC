@@ -34,6 +34,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
 
+      parflow_flag=.FALSE.
+      PeOhmOnly_flag=.TRUE.
+
       mrs = real(mms,4)
       nrs = real(nns,4)
 
@@ -89,7 +92,7 @@ c-----------------------------------------------------------------------
       intau=tau
       Q0=Q
       inpr=0.5 ! 0.5 for DIII-D example.
-      inpe=0.1 !I added this
+      inpe=0.0 !I added this
 c-----------------------------------------------------------------------
 c     calculate basic delta, torque, balance, error fields.
 c-----------------------------------------------------------------------
@@ -97,9 +100,9 @@ c-----------------------------------------------------------------------
       delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
       psi0=1.0/ABS(delta+delta_n_p) ! a.u.
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
-      WRITE(*,*)"delta=",delta
-      WRITE(*,*)"psi0=",psi0
-      WRITE(*,*)"jxb=",jxb
+!      WRITE(*,*)"delta=",delta
+!      WRITE(*,*)"psi0=",psi0
+!      WRITE(*,*)"jxb=",jxb
 c-----------------------------------------------------------------------
 c     find solutions based on simple torque balance.
 c-----------------------------------------------------------------------
@@ -144,9 +147,9 @@ c-----------------------------------------------------------------------
       index=MAXLOC(bal)
       Q_sol=inQs(index(1))
       omega_sol=inQs(index(1))/Qconv
-      br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))*1e4
-      WRITE(*,*)"Q_sol=",Q_sol
-      WRITE(*,*)"br_th=",br_th
+      br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
+!      WRITE(*,*)"Q_sol=",Q_sol
+!      WRITE(*,*)"br_th=",br_th
       DEALLOCATE(inQs,deltal,jxbl,bal)  
 
       RETURN

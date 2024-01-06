@@ -42,7 +42,7 @@ c-----------------------------------------------------------------------
       USE netcdf
       USE inputs, ONLY : kin
       USE utilities, ONLY : progressbar
-      USE pentrc_interface, ONLY : zi, mi, initialize_pentrc
+      USE pentrc_interface, ONLY : zi,mi,wefac,wpfac,initialize_pentrc
       USE gslayer_mod, ONLY : gpec_slayer
 
       IMPLICIT NONE
@@ -1719,7 +1719,7 @@ c-----------------------------------------------------------------------
          IF (th1_flag. OR. th2_flag) THEN
             resm = mfac(resnum(ising))
             CALL spline_eval(sr,respsi,1)
-            CALL spline_eval(kin,respsi,0)
+            CALL spline_eval(kin,respsi,1)
          ELSE
             hw_crit(ising) = 0.0
             b_crit(ising) = 0.0
@@ -1752,8 +1752,8 @@ c-----------------------------------------------------------------------
             omega_i=-twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
      $           -twopi*kin%f1(3)/(e*zi*chi1)
             omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
-     $           +twopi*kin%f1(4)/(e*chi1)           
-            CALL gpec_slayer(kin%f(2),kin%f(4),kin%f(1),kin%f(3),
+     $           +twopi*kin%f1(4)/(e*chi1)
+            CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
      $           kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),bt0,
      $           sr%f1(1),ro,resm,nn,delta_s,psi0,jxb,omega_sol,br_th)
             b_crit(ising)=br_th 
@@ -1762,13 +1762,13 @@ c-----------------------------------------------------------------------
          IF (verbose) THEN
 
             IF (th1_flag .OR. th2_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
+               IF(ising == 1) WRITE(*,'(1x,6a12)')
      $              "psi","q","singflx","chirikov",
-     $              "w_island","w_crit"
-               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3,es12.3)')
+     $              "w_island","w_crit","b_crit"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,3es12.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
      $              chirikov(ising),2*island_hwidth(ising),
-     $              2*hw_crit(ising)    
+     $              2*hw_crit(ising),b_crit(ising)    
             ELSE
        
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",

@@ -561,7 +561,7 @@ c-----------------------------------------------------------------------
             vsingfld_flag = .FALSE.
          ELSE
             IF (callen_flag .OR. slayer_flag) THEN
-               CALL initialize_pentrc(op_kin=.TRUE.,op_deq=.FALSE.,
+               CALL initialize_pentrc(op_kin=.TRUE.,op_deq=.TRUE.,
      $                op_peq=.FALSE.)
             ENDIF
             CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
