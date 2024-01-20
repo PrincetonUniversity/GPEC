@@ -69,7 +69,7 @@ sum:
 	cd ../sum;    make sum
 
 slayer:
-	cd ../slayer; make slayers
+	cd ../slayer; make slayer
 
 coil:
 	cd ../coil;   make libcoil

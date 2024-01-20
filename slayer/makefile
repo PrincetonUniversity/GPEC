@@ -22,7 +22,7 @@ OBJS = \
 
 all: lsode slayer libslayer
 
-slayers: slayer libslayer
+slayer: slayer libslayer
 
 lsode: 
 	cd ../lsode; make
