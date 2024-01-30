@@ -243,6 +243,10 @@ c-----------------------------------------------------------------------
 c     prepare code to split: [vac][all else]
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
+      ! Enable user to use default number of threads by entering a neg nThreads
+      IF nThreads <= 0 THEN
+         parallel_threads = OMP_GET_MAX_THREADS()
+      ENDIF
       !Note: nThreads+1 code is faster than nThreads.  It allows other
       !      modules to spawn nThreads, despite vac_parallel using 1!
       !      Even if nThread+1 > nProc, experiments suggest it's faster.

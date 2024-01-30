@@ -98,7 +98,7 @@ c-----------------------------------------------------------------------
       EQUIVALENCE (sas_flag,lim_flag)
       REAL(r8) :: psilim,qlim,q1lim,dmlim=.5_r8,qhigh=1e3,qlow=0
 
-      INTEGER :: nThreads=32
+      INTEGER :: nThreads=1
       LOGICAL :: vac_parallel
 
       CHARACTER(10) :: spline_str

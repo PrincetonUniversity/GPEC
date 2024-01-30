@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat
       COMPLEX(r8), DIMENSION(:), POINTER :: jmat
 
-      INTEGER :: parallel_threads
+      INTEGER :: parallel_threads = 1
 
       ! kientic ABCDEH mats for sing_mod
       TYPE(cspline_type) :: kwmats(6),ktmats(6)

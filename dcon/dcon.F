@@ -84,9 +84,14 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
+
 #ifdef _OPENMP
 c The code is compiled with the OpenMP option so the preprocessor
-c will pick include the following line
+c will include the following lines
+c If the user sets a negative number, use the environment OMP_NUM_THREADS variable
+      IF parallel_threads <= 0 THEN
+         parallel_threads = OMP_GET_MAX_THREADS()
+      ENDIF
       CALL OMP_SET_NUM_THREADS(parallel_threads)
 #else
 c No OpenMP so the following line will appear in source code
