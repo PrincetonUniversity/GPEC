@@ -152,7 +152,7 @@ c-----------------------------------------------------------------------
             rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
             rzphi%xtitle="psifac"
             rzphi%ytitle="theta "
-            rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/)
+            rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/) ! deta = eta - theta, dphi = phi - zeta
             eqfun%title=(/"  b0  ","      ","      " /)
             eqfun%xs=sq%xs
             eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
