@@ -1757,7 +1757,8 @@ c-----------------------------------------------------------------------
      $           +twopi*kin%f1(4)/(e*chi1)
             CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
      $           kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),bt0,
-     $           sr%f1(1),ro,resm,nn,delta_s,psi0,jxb,omega_sol,br_th)
+     $           sr%f1(1),ro,resm,nn,ascii_flag,
+     $           delta_s,psi0,jxb,omega_sol,br_th)
             b_crit(ising)=br_th  ! Tesla. Normal resonant field comparable to singflx
          ENDIF
 

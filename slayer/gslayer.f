@@ -15,12 +15,13 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE gpec_slayer(n_e,t_e,n_i,t_i,omega,omega_e,
-     $   omega_i,qval,sval,bt,rs,R0,mms,nns,
+     $   omega_i,qval,sval,bt,rs,R0,mms,nns,ascii_flag,
      $     delta,psi0,jxb,omega_sol,br_th)
 
       REAL(r8),INTENT(IN) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
      $     qval,sval,bt,rs,R0
       INTEGER, INTENT(IN) :: mms,nns
+      LOGICAL, INTENT(IN) :: ascii_flag
       COMPLEX(r8),INTENT(OUT) :: delta,psi0
       REAL(r8),INTENT(OUT) :: jxb,omega_sol,br_th
    
@@ -33,12 +34,30 @@ c-----------------------------------------------------------------------
       
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
+      CHARACTER(3) :: sn,sm
 
       parflow_flag=.FALSE.
       PeOhmOnly_flag=.TRUE.
 
       mrs = real(mms,4)
       nrs = real(nns,4)
+
+      ! String representations of the m and n mode numbers
+      IF (nns<10) THEN
+         WRITE(UNIT=sn,FMT='(I1)') nns
+         sn=ADJUSTL(sn)
+      ELSE
+         WRITE(UNIT=sn,FMT='(I2)') nns
+      ENDIF
+      IF (mms<10) THEN
+         WRITE(UNIT=sm,FMT='(I1)') mms
+         sm=ADJUSTL(sm)
+      ELSEIF (mms<100) THEN
+         WRITE(UNIT=sm,FMT='(I2)') mms
+         sm=ADJUSTL(sm)
+      ELSE
+         WRITE(UNIT=sm,FMT='(I3)') mms
+      ENDIF
 
       ! initial parameters
       inQ=20.0  ! Q=23.0 for DIII-D example.
@@ -134,23 +153,27 @@ c-----------------------------------------------------------------------
          jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
          bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
       ENDDO
-      OPEN(UNIT=out_unit,FILE="bal.out",STATUS="UNKNOWN")
-      WRITE(out_unit,'(1x,5(a17))'),"inQ","RE(delta)",
-     $     "IM(delta)","jxb","bal"    
-      
-      DO i=0,inum
-         WRITE(out_unit,'(1x,5(es17.8e3))')
-     $        inQs(i),REAL(deltal(i)),AIMAG(deltal(i)),jxbl(i),bal(i)
-      ENDDO
-      CLOSE(out_unit)
-      
+
+      ! Write torque balance curves to file for diagnostic purposes
+      IF(ascii_flag)THEN
+         OPEN(UNIT=out_unit,FILE="gpec_slayer_torque_balance_m"//
+     $        TRIM(sm)//"_n"//TRIM(sn)//".out",
+     $        STATUS="UNKNOWN")
+         WRITE(out_unit,'(1x,5(a17))'),"inQ","RE(delta)",
+     $        "IM(delta)","jxb","bal"
+         DO i=0,inum
+            WRITE(out_unit,'(1x,5(es17.8e3))')
+     $           inQs(i),REAL(deltal(i)),AIMAG(deltal(i)),jxbl(i),bal(i)
+         ENDDO
+         CLOSE(out_unit)
+      ENDIF
+
+      ! Identify the threshold from the maximum of the balance parameter
       index=MAXLOC(bal)
       Q_sol=inQs(index(1))
       omega_sol=inQs(index(1))/Qconv
       br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
-!      WRITE(*,*)"Q_sol=",Q_sol
-!      WRITE(*,*)"br_th=",br_th
-      DEALLOCATE(inQs,deltal,jxbl,bal)  
+      DEALLOCATE(inQs,deltal,jxbl,bal)
 
       RETURN
       END SUBROUTINE gpec_slayer
