@@ -9,11 +9,15 @@ c-----------------------------------------------------------------------
 c     calculate parameters.
 c-----------------------------------------------------------------------
       SUBROUTINE params(n_e,t_e,t_i,omega,
-     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff)
-      REAL(r8),INTENT(IN) :: n_e,t_e,t_i,omega,
+     $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+
+      REAL(r8), INTENT(IN) :: n_e,t_e,t_i,omega,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
 
-      REAL(r8) :: rho,b_l,v_a,Qconv,lbeta
+      LOGICAL, INTENT(IN) :: params_check
+
+      REAL(r8) :: rho,b_l,v_a,Qconv,
+     $            lbeta,tau_i,tau_h,tau_r,tau_v
 
       ! mu_i: ion mass ratio to proton
       tau= t_i/t_e ! ratio of ion to electron temperature 

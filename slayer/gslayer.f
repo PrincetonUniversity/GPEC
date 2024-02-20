@@ -3,10 +3,10 @@
       USE sglobal_mod, ONLY: out_unit, r8, mu0, m_p, chag, lnLamb,
      $   Q_e,Q_i,pr,pe,c_beta,ds,tau,
      $   eta,visc,rho_s,lu,omega_e,omega_i,
-     $   tau_i,tau_h,tau_r,tau_v,lbeta,delta_p,delta_n,
-     $   Q,
-     $   riccati_flag,parflow_flag,PeOhmOnly_flag
-      USE delta_mod, ONLY: riccati
+     $   delta_n,
+     $   Q
+      USE delta_mod, ONLY: riccati,riccati_out,
+     $   parflow_flag,PeOhmOnly_flag
 
       IMPLICIT NONE
       
@@ -34,7 +34,8 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(1) :: index
 
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
-      REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,lbeta,Q0,delta_n_p,mu_i,zeff
+      REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,mu_i,zeff,
+     $            lbeta,tau_i,tau_h,tau_r,tau_v
       REAL(r8) :: inQ_min,inQ_max,Q_sol
       
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal
@@ -43,7 +44,7 @@ c-----------------------------------------------------------------------
 
       parflow_flag=.FALSE.
       PeOhmOnly_flag=.TRUE.
-      riccati_flag=.FALSE.
+      riccati_out=.FALSE.
 
       mrs = real(mms,4)
       nrs = real(nns,4)

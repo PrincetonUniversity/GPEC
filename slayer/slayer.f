@@ -14,7 +14,8 @@ c-----------------------------------------------------------------------
 
       USE sglobal_mod
       USE params_mod
-      USE delta_mod
+      USE delta_mod, ONLY: riccati,riccati_out,
+     $                     parflow_flag,PeOhmOnly_flag
 
       IMPLICIT NONE
 
@@ -26,7 +27,8 @@ c-----------------------------------------------------------------------
      $     QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     bal_flag,stab_flag,riccatiscan_flag,input_flag
+     $     bal_flag,stab_flag,riccatiscan_flag,input_flag,
+     $     params_check
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
@@ -57,7 +59,7 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     layfac,Qratio,parflow_flag,peohmonly_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag
-      NAMELIST/slayer_diagnose/riccati_flag,riccatiscan_flag,
+      NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
      $     params_check,bal_flag,stab_flag
 c-----------------------------------------------------------------------
 c     set initial values.
@@ -118,7 +120,7 @@ c-----------------------------------------------------------------------
       ascii_flag=.TRUE.
       bin_flag=.TRUE.
       netcdf_flag=.FALSE.
-      riccati_flag=.FALSE.
+      riccati_out=.FALSE.
       riccatiscan_flag=.FALSE.
       params_check=.FALSE.
       bal_flag=.FALSE.
@@ -140,7 +142,7 @@ c     calculate parameters as needed.
 c-----------------------------------------------------------------------
       IF (params_flag) THEN
          CALL params(n_e,t_e,t_i,omega,
-     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff)
+     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
          inQ=Q
          inQ_e=Q_e
          inQ_i=Q_i
@@ -187,7 +189,7 @@ c-----------------------------------------------------------------------
             inpr=prs(k)
             CALL params(n_es(k),t_es(k),t_is(k),omegas(k),
      $           l_ns(k),l_ts(k),qvals(k),svals(k),bts(k),rss(k),R0s(k),
-     $           mu_is(k),zeffs(k))
+     $           mu_is(k),zeffs(k),params_check)
             inQ=Q
             inQ_e=Q_e
             inQ_i=Q_i
@@ -207,7 +209,7 @@ c-----------------------------------------------------------------------
                   inQ_min=1.5*MINVAL((/Q0,inQ_i/))
                ENDIF
             ENDIF
-            riccati_flag=.FALSE.
+            riccati_out=.FALSE.
          
             ALLOCATE(inQs(0:inum),deltal(0:inum),
      $           jxbl(0:inum),bal(0:inum)) 
@@ -258,7 +260,7 @@ c-----------------------------------------------------------------------
          inQ_max=10.0
          inQ_min=-10.0
          
-         riccati_flag=.FALSE.
+         riccati_out=.FALSE.
          
          ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum)) 
          
@@ -622,7 +624,7 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e*ks(j,k),t_e,t_i,omega*js(j,k),
-     $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff)
+     $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -708,7 +710,7 @@ c-----------------------------------------------------------------------
                
                CALL params(n_e,t_e*ks(j,k),t_i*ks(j,k),
      $              omega*js(j,k),l_n,l_t,qval,sval,bt,
-     $              rs,R0,mu_i,zeff)
+     $              rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -791,7 +793,7 @@ c-----------------------------------------------------------------------
                ks(j,k)=k_min+(k_max-k_min)*(REAL(k)/knum)
                
                CALL params(n_e*ks(j,k),t_e*js(j,k),t_i*js(j,k),omega,
-     $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff)
+     $              l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i
@@ -874,7 +876,8 @@ c-----------------------------------------------------------------------
 
              
                CALL params(n_e*ks(j,k),t_e,t_i,omega,
-     $              l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,zeff)
+     $              l_n,l_t,qval,sval,bt*js(j,k),rs,R0,mu_i,zeff,
+     $              params_check)
                inQ=Q
                inQ_e=Q_e
                inQ_i=Q_i

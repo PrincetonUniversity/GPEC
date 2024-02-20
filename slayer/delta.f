@@ -4,6 +4,8 @@
 
       IMPLICIT NONE
 
+      LOGICAL :: riccati_out,parflow_flag,PeOhmOnly_flag
+
       CONTAINS
 c-----------------------------------------------------------------------
 c     calculate delta based on riccati w_der formulation.
@@ -68,7 +70,7 @@ c-----------------------------------------------------------------------
 !      WRITE(*,*)y(1)
       
 
-      IF (riccati_flag) THEN
+      IF (riccati_out) THEN
          istep = 1
          itask = 2
          OPEN(UNIT=bin_unit,FILE='riccati_profile.bin',STATUS='UNKNOWN',
