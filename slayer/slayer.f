@@ -27,7 +27,7 @@ c-----------------------------------------------------------------------
      $     QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     bal_flag,stab_flag,riccatiscan_flag,input_flag,
+     $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
      $     params_check
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
@@ -58,9 +58,10 @@ c-----------------------------------------------------------------------
      $     QPescan_flag,QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     layfac,Qratio,parflow_flag,peohmonly_flag
-      NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag
+      NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
+     $     stability_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
-     $     params_check,bal_flag,stab_flag
+     $     params_check,bal_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -124,7 +125,7 @@ c-----------------------------------------------------------------------
       riccatiscan_flag=.FALSE.
       params_check=.FALSE.
       bal_flag=.FALSE.
-      stab_flag=.FALSE.
+      stability_flag=.FALSE.
 c-----------------------------------------------------------------------
 c     read slayer.in.
 c-----------------------------------------------------------------------
@@ -271,15 +272,19 @@ c-----------------------------------------------------------------------
             jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
             bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
          ENDDO
-         OPEN(UNIT=out_unit,FILE="bal.out",STATUS="UNKNOWN")
-         WRITE(out_unit,'(1x,5(a17))'),"inQ","RE(delta)",
-     $        "IM(delta)","jxb","bal"    
-         
-         DO i=0,inum
-            WRITE(out_unit,'(1x,5(es17.8e3))')
-     $           inQs(i),REAL(deltal(i)),AIMAG(deltal(i)),jxbl(i),bal(i)
-         ENDDO
-         CLOSE(out_unit)
+
+         ! write components of torque balance
+         IF(ascii_flag)THEN
+            OPEN(UNIT=out_unit,FILE="bal.out",STATUS="UNKNOWN")
+            WRITE(out_unit,'(1x,5(a17))'),"inQ","RE(delta)",
+     $           "IM(delta)","jxb","bal"
+
+            DO i=0,inum
+               WRITE(out_unit,'(1x,5(es17.8e3))') inQs(i),
+     $              REAL(deltal(i)),AIMAG(deltal(i)),jxbl(i),bal(i)
+            ENDDO
+            CLOSE(out_unit)
+         ENDIF
 
          index=MAXLOC(bal)
          Q_sol=inQs(index(1))
@@ -291,7 +296,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     examine delta dependencies on complex Q for stability.
 c-----------------------------------------------------------------------
-      IF (stab_flag) THEN
+      IF (stability_flag) THEN
          ALLOCATE(inQs(0:inum),iinQs(0:200))
          ALLOCATE(deltas(0:inum,0:200))
 
@@ -308,7 +313,8 @@ c-----------------------------------------------------------------------
          ENDDO
       
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="Q_complex.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_stability_n"//TRIM(sn)//".out",
+     $         STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,4(a17))'),"RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
             DO i=0,inum

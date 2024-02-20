@@ -1,0 +1,60 @@
+&SLAYER_INPUT
+    params_flag=f        ! Calculates normalized parameters from profile quantities
+    input_flag=f         ! Reads profile quantities (n_e, t_e, etc.) from an ascii table
+    infile='/file/path'  ! Path to ascii table of profile quantities read when using input_flag
+
+    mm=2                 ! poloidal mode number
+    nn=1                 ! toroidal mode number
+    n_e=10e19            ! Density [m^-3]
+    t_e=5e2              ! Electron temperature [eV]
+    t_i=5e2              ! Ion temperature [eV]
+    sval=2.0             ! ?
+    bt=5.0               ! Toroidal field [T]
+    rs=2.0               ! Minor radius of resonant surface [m]
+    R0=5.0               ! Major radius of resonant surface [m]
+    omega=1e5            ! ?? Toroidal rotation at resonant surface [km/s]??
+    l_n=0.2              ! ??
+    l_t=0.2              ! ??
+    qval=2.0             ! ??
+    mu_i=2.0             ! ??
+    zeff=2.0             ! Plasma charge composition n_e Z_eff = sum(n_i Z_i)
+
+    inQ=23.0             ! Input rotation normalized by ??. Use 23.0 for the DIII-D example.
+    inQ_e=2.0            ! ??. 2.0 for DIII-D example.
+    inQ_i=-2.0           ! ??. -2.6 for DIII-D example.
+    inpr=3.0             ! ??. 0.5 for DIII-D example.
+    inpe=0.1             ! ??
+    inc_beta=0.7         ! ??. 0.7 for DIII-D example.
+    inds=6.0             ! ??. 6.0 for DIII-D example.
+    intau=1.0! 1.0       ! ??. 1.0 for DIII-D example.
+    Q0=4.0               ! ??.
+    delta_n_p=0          ! ??. Default is (1e-2,1e-2).
+/
+&SLAYER_CONTROL
+    inum=400             ! resolution to find error field thresholds.
+    jnum=100             ! resolution for 2d scan along with Q,omega.
+    knum=100             ! resolution for 2d scan alont with the other.
+    QPscan_flag=f        ! scan (Q,P) space for delta and torque.
+    Qscan_flag=f         ! scan Q space
+    QPescan_flag=f       ! scan (Q,Pe) space for delta and torque.
+    Qbscan_flag=f        ! scan (Q,beta) space for delta and torque.
+    onscan_flag=f        ! scan (omega,n) space for error fields.
+    otscan_flag=f        ! scan (omega,t) space for error fields.
+    ntscan_flag=f        ! scan (n,te) space for error fields.
+    nbtscan_flag=f       ! scan (n,bt) space for error fields.
+    parflow_flag=f       ! set parallel flow on
+    PeOhmOnly_flag=t     ! only include Pe from Ohm's law
+    layfac=0.0           ! ??. Default is 0.02.
+/
+&SLAYER_OUTPUT
+    verbose=t            ! Prints progress to terminal
+    ascii_flag=t         ! Writes results to ascii files
+    bin_flag=t           ! Writes results to binary files
+    netcdf_flag=f        ! Writes results to netcdf files
+    stability_flag=f     ! Calculate delta dependence on complex Q
+    bal_flag=t           ! Calculate the resonant field penetration threshold from torque balance
+/
+&SLAYER_DIAGNOSE
+    riccati_out=f        ! Writes LSDOE Riccati integration to an ascii file
+    params_check=t       ! Prints the primary parameters to the terminal when they are calculated
+/
