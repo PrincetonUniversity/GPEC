@@ -1,7 +1,12 @@
       MODULE gslayer_mod
       
-      USE sglobal_mod
-      USE delta_mod
+      USE sglobal_mod, ONLY: out_unit, r8, mu0, m_p, chag, lnLamb,
+     $   Q_e,Q_i,pr,pe,c_beta,ds,tau,
+     $   eta,visc,rho_s,lu,omega_e,omega_i,
+     $   tau_i,tau_h,tau_r,tau_v,lbeta,delta_p,delta_n,
+     $   Q,
+     $   riccati_flag,parflow_flag,PeOhmOnly_flag
+      USE delta_mod, ONLY: riccati
 
       IMPLICIT NONE
       
@@ -38,6 +43,7 @@ c-----------------------------------------------------------------------
 
       parflow_flag=.FALSE.
       PeOhmOnly_flag=.TRUE.
+      riccati_flag=.FALSE.
 
       mrs = real(mms,4)
       nrs = real(nns,4)
@@ -139,9 +145,7 @@ c-----------------------------------------------------------------------
       ! just for diagnostics
       inQ_max=10.0
       inQ_min=-10.0
-      
-      riccati_flag=.FALSE.
-      
+
       inum=200
 
       ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum)) 

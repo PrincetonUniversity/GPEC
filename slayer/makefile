@@ -20,21 +20,17 @@ OBJS = \
        gslayer.o \
        slayer.o
 
-all: lsode slayer libslayer
-
-slayer: slayer libslayer
+all: lsode slayer
 
 lsode: 
 	cd ../lsode; make
 
 slayer: $(OBJS)
 	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
-	mkdir -p ../bin
-	cp -f slayer ../bin
-
-libslayer: $(OBJS)
 	mkdir -p ../lib/
 	ar -r ../lib/libslayer.a *.o
+	mkdir -p ../bin
+	cp -f slayer ../bin
 
 # dependencies
 
