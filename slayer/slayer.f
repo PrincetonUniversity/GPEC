@@ -138,6 +138,13 @@ c-----------------------------------------------------------------------
       READ(in_unit,NML=slayer_output)
       READ(in_unit,NML=slayer_diagnose)
       CLOSE(UNIT=in_unit)
+
+      IF (nn<10) THEN
+         WRITE(UNIT=sn,FMT='(I1)') nn
+         sn=ADJUSTL(sn)
+      ELSE
+         WRITE(UNIT=sn,FMT='(I2)') nn
+      ENDIF
 c-----------------------------------------------------------------------
 c     calculate parameters as needed.
 c-----------------------------------------------------------------------
@@ -231,7 +238,8 @@ c-----------------------------------------------------------------------
             WRITE(*,*)"br_th=",br_thl(k)
             DEALLOCATE(inQs,deltal,jxbl,bal)         
          ENDDO
-         OPEN(UNIT=out_unit,FILE="input_bal.out",STATUS="UNKNOWN")
+         OPEN(UNIT=out_unit,FILE="slayer_input_bal_n"//
+     $      TRIM(sn)//".out",STATUS="UNKNOWN")
          WRITE(out_unit,'(1x,(2a17))'),"Q_sol","br_th"   
          
          DO k=0,inn-1
@@ -275,7 +283,8 @@ c-----------------------------------------------------------------------
 
          ! write components of torque balance
          IF(ascii_flag)THEN
-            OPEN(UNIT=out_unit,FILE="bal.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_bal_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,5(a17))'),"inQ","RE(delta)",
      $           "IM(delta)","jxb","bal"
 
@@ -313,8 +322,8 @@ c-----------------------------------------------------------------------
          ENDDO
       
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="slayer_stability_n"//TRIM(sn)//".out",
-     $         STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
+     $         TRIM(sn)//".out", STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,4(a17))'),"RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
             DO i=0,inum
@@ -350,7 +359,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="riccatiscan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_riccatiscan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,5(a17))'),"x","yphs","yamp",
      $           "RE(delta)","IM(delta)"
             DO j=0,jnum
@@ -391,7 +401,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="QPescan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_QPescan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))'),"Q","Pe","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
@@ -405,8 +416,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF (bin_flag) THEN
-            OPEN(UNIT=bin_2d_unit,FILE='QPescan.bin',
-     $           STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')  
+            OPEN(UNIT=bin_2d_unit,FILE='slayer_QPescan_n'
+     $         //TRIM(sn)//'.bin',
+     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
             WRITE(bin_2d_unit)REAL(js,4),REAL(ks,4)
@@ -444,7 +456,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="QPscan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_QPscan"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))'),"Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
@@ -458,8 +471,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF (bin_flag) THEN
-            OPEN(UNIT=bin_2d_unit,FILE='QPscan.bin',
-     $           STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')  
+            OPEN(UNIT=bin_2d_unit,FILE="slayer_QPscan_"
+     $         //TRIM(sn)//".bin",
+     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
             WRITE(bin_2d_unit)REAL(js,4),REAL(ks,4)
@@ -491,7 +505,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="Qscan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_Qscan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))'),"Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
@@ -532,7 +547,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="QPscan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_QPscan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))'),"Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
@@ -546,8 +562,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF (bin_flag) THEN
-            OPEN(UNIT=bin_2d_unit,FILE='QPscan.bin',
-     $           STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')  
+            OPEN(UNIT=bin_2d_unit,FILE="slayer_QPscan_n"//
+     $         TRIM(sn)//".bin",
+     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
             WRITE(bin_2d_unit)REAL(js,4),REAL(ks,4)
@@ -598,8 +615,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF (bin_flag) THEN
-            OPEN(UNIT=bin_2d_unit,FILE='QDscan.bin',
-     $           STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')  
+            OPEN(UNIT=bin_2d_unit,FILE='slayer_QDscan_n'//
+     $         TRIM(sn)//'.bin',
+     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
             WRITE(bin_2d_unit)REAL(js,4),REAL(ks,4)
@@ -669,7 +687,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="onscan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_onscan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))'),"Omega","Density",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
@@ -685,8 +704,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF (bin_flag) THEN
-            OPEN(UNIT=bin_2d_unit,FILE='onscan.bin',
-     $           STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')  
+            OPEN(UNIT=bin_2d_unit,FILE='slayer_onscan_n'//
+     $         TRIM(sn)//'.bin',
+     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
             WRITE(bin_2d_unit)REAL(omega*js,4),REAL(n_e*ks,4)
@@ -753,7 +773,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="otscan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_otscan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))'),"Omega","Temperature",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
@@ -769,8 +790,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF (bin_flag) THEN
-            OPEN(UNIT=bin_2d_unit,FILE='otscan.bin',
-     $           STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')  
+            OPEN(UNIT=bin_2d_unit,FILE='slayer_otscan_n'//
+     $         TRIM(sn)//'.bin',
+     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
             WRITE(bin_2d_unit)REAL(omega*js,4),REAL(t_e*ks,4)
@@ -836,7 +858,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="ntscan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_ntscan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,6(a17))'),"Temperature","Density",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
@@ -851,8 +874,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF (bin_flag) THEN
-            OPEN(UNIT=bin_2d_unit,FILE='ntscan.bin',
-     $           STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')  
+            OPEN(UNIT=bin_2d_unit,FILE='slayer_ntscan_n'//
+     $         TRIM(sn)//'.bin',
+     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
             WRITE(bin_2d_unit)REAL(t_e*js,4),REAL(n_e*ks,4)
@@ -921,7 +945,8 @@ c-----------------------------------------------------------------------
          ENDDO
 
          IF (ascii_flag) THEN
-            OPEN(UNIT=out_unit,FILE="nbtscan.out",STATUS="UNKNOWN")
+            OPEN(UNIT=out_unit,FILE="slayer_nbtscan_n"//
+     $         TRIM(sn)//".out",STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,4(a17))'),"Bt","Density",
      $           "Omega_sol","Field_Threshold"
             DO j=0,jnum
@@ -936,8 +961,9 @@ c-----------------------------------------------------------------------
          ENDIF
 
          IF (bin_flag) THEN
-            OPEN(UNIT=bin_2d_unit,FILE='nbtscan.bin',
-     $           STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')  
+            OPEN(UNIT=bin_2d_unit,FILE='slayer_nbtscan_n'//
+     $         TRIM(sn)//'.bin',
+     $         STATUS='UNKNOWN',POSITION='REWIND',FORM='UNFORMATTED')
             WRITE(bin_2d_unit)1,0
             WRITE(bin_2d_unit)jnum,knum
             WRITE(bin_2d_unit)REAL(bt*js,4),REAL(n_e*ks,4)

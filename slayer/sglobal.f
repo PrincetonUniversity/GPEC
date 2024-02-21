@@ -19,5 +19,7 @@
       ! lnLamb will be updated.
 
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
+
+      CHARACTER(2) :: sn
       
       END MODULE sglobal_mod

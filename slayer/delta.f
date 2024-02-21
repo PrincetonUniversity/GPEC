@@ -73,11 +73,12 @@ c-----------------------------------------------------------------------
       IF (riccati_out) THEN
          istep = 1
          itask = 2
-         OPEN(UNIT=bin_unit,FILE='riccati_profile.bin',STATUS='UNKNOWN',
-     $        POSITION='REWIND',FORM='UNFORMATTED')   
+         OPEN(UNIT=bin_unit,FILE='slayer_riccati_profile_n'//
+     $      TRIM(sn)//'.bin',STATUS='UNKNOWN',
+     $      POSITION='REWIND',FORM='UNFORMATTED')
          
-         OPEN(UNIT=out2_unit,FILE='riccati_profile.out',
-     $        STATUS='UNKNOWN')
+         OPEN(UNIT=out2_unit,FILE='slayer_riccati_profile_n'//
+     $      TRIM(sn)//'.out',STATUS='UNKNOWN')
          WRITE(out2_unit,'(1x,3(a17))'),"x","RE(y)","IM(y)"      
          DO WHILE (x>xout)
             istep=istep+1

@@ -66,36 +66,29 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=sm,FMT='(I3)') mms
       ENDIF
 
-      ! initial parameters
-      inQ=20.0  ! Q=23.0 for DIII-D example.
-      inQ_e=2.0 ! Q_e=2.0 for DIII-D example.
-      inQ_i=-2.6 ! Q_i=-2.6 for DIII-D example.
-      inc_beta=0.7 ! c_beta=0.7 for DIII-D example.
-      inds=6.0 ! 6.0 for DIII-D example.
-      intau=1.0 ! 1.0 for DIII-D example.     
-
+      ! TODO: take these as input and let gpec get them from pentrc.in
       mu_i=2.0
       zeff=2.0
 
-      tau= t_i/t_e ! ratio of ion to electron temperature 
+      tau= t_i/t_e                     ! ratio of ion to electron temperature
       tau_i = 6.6e17*mu_i**0.5*(t_i/1e3)**1.5/(n_e*lnLamb) ! ion colls.
       eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
-      rho=(mu_i*m_p)*n_e ! mass density
+      rho=(mu_i*m_p)*n_e               ! mass density
 
-      b_l=(nrs/mrs)*nrs*sval*bt/R0 ! characteristic magnetic field
-      v_a=b_l/(mu0*rho)**0.5 ! alfven velocity
+      b_l=(nrs/mrs)*nrs*sval*bt/R0     ! characteristic magnetic field
+      v_a=b_l/(mu0*rho)**0.5           ! alfven velocity
       rho_s=1.02e-4*(mu_i*t_e)**0.5/bt ! ion Lamour by elec. Temp.
 
       tau_h=R0*(mu0*rho)**0.5/(nns*sval*bt) ! alfven time across surface
-      tau_r=mu0*rs**2.0/eta ! resistive time scale
-      tau_v=tau_r/pr !rho*rs**2.0/visc ! viscous time scale
+      tau_r=mu0*rs**2.0/eta            ! resistive time scale
+      tau_v=tau_r/pr                   ! rho*rs**2.0/visc ! viscous time scale
       
       ! this one must be anomalous. calculated back from pr.
       visc= rho*rs**2.0/tau_v 
       
-      lu=tau_r/tau_h ! Lundquist number 
+      lu=tau_r/tau_h                   ! Lundquist number
 
-      Qconv=lu**(1.0/3.0)*tau_h ! conversion to Qs based on Cole
+      Qconv=lu**(1.0/3.0)*tau_h        ! conversion to Qs based on Cole
       
       ! note Q depends on Qconv even if omega is fixed.     
       Q=Qconv*omega
@@ -103,12 +96,12 @@ c-----------------------------------------------------------------------
       Q_i=-Qconv*omega_i
 
       ! This is the most critical parameter
-      ds=lu**(1.0/3.0)*rho_s/rs ! conversion based on Cole.
+      ds=lu**(1.0/3.0)*rho_s/rs        ! conversion based on Cole.
 
       lbeta=(5.0/3.0)*mu0*n_e*chag*(t_e+t_i)/bt**2.0
       c_beta=(lbeta/(1.0+lbeta))**0.5
 
-      delta_n=lu**(1.0/3.0)/rs ! norm factor for delta primes
+      delta_n=lu**(1.0/3.0)/rs         ! norm factor for delta primes
 
       inQ=Q
       inQ_e=Q_e
@@ -117,18 +110,15 @@ c-----------------------------------------------------------------------
       inds=ds
       intau=tau
       Q0=Q
-      inpr=0.5 ! 0.5 for DIII-D example.
-      inpe=0.0 !I added this
+      inpr=0.5                         ! 0.5 for DIII-D example.
+      inpe=0.0                         ! Waybright added this
 c-----------------------------------------------------------------------
 c     calculate basic delta, torque, balance, error fields.
 c-----------------------------------------------------------------------
       delta_n_p=1e-2
       delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
-      psi0=1.0/ABS(delta+delta_n_p) ! a.u.
+      psi0=1.0/ABS(delta+delta_n_p)     ! a.u.
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
-!      WRITE(*,*)"delta=",delta
-!      WRITE(*,*)"psi0=",psi0
-!      WRITE(*,*)"jxb=",jxb
 c-----------------------------------------------------------------------
 c     find solutions based on simple torque balance.
 c-----------------------------------------------------------------------
@@ -143,14 +133,12 @@ c-----------------------------------------------------------------------
             inQ_min=1.5*MINVAL((/Q0,inQ_i/))
          ENDIF
       ENDIF
-      ! just for diagnostics
+
+      ! Scan of rotation
       inQ_max=10.0
       inQ_min=-10.0
-
       inum=200
-
       ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),bal(0:inum)) 
-      
       DO i=0,inum
          inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
          deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
