@@ -51,12 +51,12 @@
     layfac=0.02          ! layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)) is added to Q_e if ABS(Q-Q_e)<layfac). Default is 0.02.
 /
 &SLAYER_OUTPUT
-    verbose=f            ! prints progress to terminal
+    verbose=t            ! prints progress to terminal
     ascii_flag=t         ! writes results to ascii files
     bin_flag=t           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
-  !  bal_flag=f          ! calculate the resonant field penetration threshold from torque balance
+    bal_flag=t           ! calculate the resonant field penetration threshold from torque balance
 /
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
