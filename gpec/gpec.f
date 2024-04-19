@@ -36,7 +36,8 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag,singthresh_flag,delpsi_flag
+     $     filter_flag,gal_flag,delpsi_flag,
+     $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
@@ -64,7 +65,8 @@ c-----------------------------------------------------------------------
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
-     $     netcdf_flag,ascii_flag,singthresh_flag
+     $     netcdf_flag,ascii_flag,
+     $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
@@ -148,6 +150,8 @@ c-----------------------------------------------------------------------
       bin_2d_flag=.TRUE.
       netcdf_flag=.TRUE.
       ascii_flag=.TRUE.
+      singthresh_callen_flag=.False.
+      singthresh_slayer_flag=.False.
       singthresh_flag=.False.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
@@ -230,16 +234,22 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     forced ralational settings
 c-----------------------------------------------------------------------
-      IF(singthresh_flag)THEN
+      IF(singthresh_flag) THEN
+         PRINT *, "singthresh flag selected: setting callen flag and "//
+     $            "slayer flag to true"
+         singthresh_callen_flag = .true.
+         singthresh_slayer_flag = .true.
+      ENDIF
+      IF(singthresh_callen_flag)THEN
          IF(data_flag .OR. harmonic_flag)THEN
             PRINT *, "WARNING: "//
-     $               "singthresh_flag uses coil vacuum fields only"
+     $             "singthresh_callen_flag uses coil vacuum fields only"
          ENDIF
          IF(coil_flag)THEN
             singfld_flag = .TRUE.
          ELSE
             PRINT *, "WARNING: "//
-     $               "singthresh_flag requires coil vacuum fields"
+     $              "singthresh_callen_flag requires coil vacuum fields"
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------
@@ -563,18 +573,16 @@ c-----------------------------------------------------------------------
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE
-            IF (singthresh_flag) THEN
-               CALL initialize_pentrc(op_kin=.TRUE.,op_deq=.FALSE.,
+            IF (singthresh_callen_flag .OR. singthresh_slayer_flag) THEN
+               CALL initialize_pentrc(op_kin=.TRUE.,op_deq=.TRUE.,
      $                op_peq=.FALSE.)
             ENDIF
             CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $                         singthresh_flag)
+     $              singthresh_callen_flag,singthresh_slayer_flag)
          ENDIF
       ENDIF
-      ! here we see the subroutine is simply called in series with other
-      ! similar subroutines by the driving program here
-      ! this and gpec_pmodb, for example, are completely independent
-      ! (just different ways of breaking up the components of the fields/displacements)
+
+      ! note that many subroutines here are completely independent.
       IF(netcdf_flag.and.(xclebsch_flag.or.dw_flag.or.pmodb_flag
      $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag))THEN
          CALL gpout_qrv
@@ -684,7 +692,7 @@ c-----------------------------------------------------------------------
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $                      singthresh_flag)
+     $           singthresh_callen_flag,singthresh_slayer_flag)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -707,7 +715,7 @@ c-----------------------------------------------------------------------
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
          CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
-     $                      singthresh_flag)
+     $           singthresh_callen_flag,singthresh_slayer_flag)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
          CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)

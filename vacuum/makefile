@@ -7,7 +7,7 @@ F90 = $(FC) $(FFLAGS) -zero
 
 OBJS = \
 	bzio.o \
-    aleg_new.o \
+	aleg_new.o \
 	vacuum_global.o \
 	vacuum_io.o \
 	vacuum_ma.o \

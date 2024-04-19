@@ -152,6 +152,7 @@ module inputs
 
         ! set additional geometry spline
         call set_geom
+        WRITE(*,*)chi1
 
     end subroutine read_equil
     
@@ -256,11 +257,12 @@ module inputs
         wdiat =-twopi*kin%fs1(:,3)/(e*zi*chi1)
         wpefac= (wpfac*(welec+wdian+wdiat) - (wdian+wdiat))/welec
         welec = wpefac*welec   ! indirect manipulation of rotation
+        kin%fs(:,5)=welec
+
         if(wpfac/=1.0 .and. verbose) then
             print('(a40,es10.2e3)'),'  -> manipulating rotation by factor of ',wpfac
             print *,'     by indirect manipulation of omegae profile'
         endif
-        kin%fs(:,5) = welec(:)
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Reformed kin spline with rotation manipulations"
 

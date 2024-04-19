@@ -44,7 +44,8 @@ c-----------------------------------------------------------------------
      $    ipd, btd, helicity, machine
       USE inputs, ONLY : kin
       USE utilities, ONLY : progressbar
-      USE pentrc_interface, ONLY : zi, mi, initialize_pentrc
+      USE pentrc_interface, ONLY : zi,mi,wefac,wpfac,initialize_pentrc
+      USE gslayer_mod, ONLY : gpec_slayer
 
       IMPLICIT NONE
 
@@ -1567,17 +1568,19 @@ c-----------------------------------------------------------------------
 c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot, thresh_flag)
+      SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot,
+     $             callen_threshold_flag,slayer_threshold_flag)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
-      LOGICAL, INTENT(IN) :: thresh_flag
+      LOGICAL, INTENT(IN) :: callen_threshold_flag,
+     $            slayer_threshold_flag
       INTEGER, INTENT(IN) :: egnum,nspot
       REAL(r8), INTENT(IN) :: spot
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,
+     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1606,6 +1609,10 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
       TYPE(spline_type) :: sr
 
+      REAL(r8), DIMENSION(msing) :: b_crit
+      REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th
+      COMPLEX(r8) :: delta_s,psi0
+
 c-----------------------------------------------------------------------
 c     solve equation from the given poloidal perturbation.
 c-----------------------------------------------------------------------
@@ -1627,11 +1634,10 @@ c-----------------------------------------------------------------------
       sr%xs = sq%xs
       sr%fs(:, 1) = rhotor(:)
       CALL spline_fit(sr,"extrap")
-
 c-----------------------------------------------------------------------
 c     evaluate delta and singular currents.
 c-----------------------------------------------------------------------
-!     j_c is j_c/(chi1*sq%f(4))
+      ! j_c is j_c/(chi1*sq%f(4))
       DO ising=1,msing
          resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
          respsi=singtype(ising)%psifac
@@ -1712,12 +1718,20 @@ c-----------------------------------------------------------------------
          ENDIF
          chirikov(ising)=island_hwidth(ising)/hdist
 c-----------------------------------------------------------------------
-c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
+c     prepare layer analysis.
 c-----------------------------------------------------------------------
-         IF(thresh_flag)THEN
+         IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
             resm = mfac(resnum(ising))
             CALL spline_eval(sr,respsi,1)
-            CALL spline_eval(kin,respsi,0)
+            CALL spline_eval(kin,respsi,1)
+         ELSE
+            hw_crit(ising) = 0.0
+            b_crit(ising) = 0.0
+         ENDIF
+c-----------------------------------------------------------------------
+c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
+c-----------------------------------------------------------------------
+         IF (callen_threshold_flag) THEN
             ! rho = 0.7188 at 8/2 surface in DIII-D 158115 benchmark. Callen paper estimates it as 0.73
             ! gyro radius ~ 1e-3 meters in DIII-D_ideal_example
             rho_gyro = sqrt(2*kin%f(3)/(mi*mp)) / (zi*e*bt0 / (mi*mp))
@@ -1734,23 +1748,39 @@ c-----------------------------------------------------------------------
      $         / sqrt(sr%f(1) * delta_rmp)
             ! convert from meters to psi_n for clear comparision to island_hwidth
             hw_crit(ising) = hw_crit(ising) / sr%f1(1)
+         ENDIF
+c-----------------------------------------------------------------------
+c     compute threshold by linear drift mhd with slayer module.
+c-----------------------------------------------------------------------
+         IF (slayer_threshold_flag) THEN
+            omega_i=-twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
+     $           -twopi*kin%f1(3)/(e*zi*chi1)
+            omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
+     $           +twopi*kin%f1(4)/(e*chi1)
+            CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
+     $           kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),bt0,
+     $           sr%f1(1),ro,resm,nn,ascii_flag,
+     $           delta_s,psi0,jxb,omega_sol,br_th)
+            b_crit(ising)=br_th  ! Tesla. Normal resonant field comparable to singflx
+         ENDIF
 
-            IF(verbose)THEN
-               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12,a12)')
-     $             "psi", "q", "singflx", "chirikov","w_island","w_crit"
-               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3,es12.3)')
-     $            respsi, sq%f(4), ABS(singflx_mn(resnum(ising),ising)),
-     $            chirikov(ising), 2*island_hwidth(ising),
-     $            2*hw_crit(ising)
-            ENDIF
-         ELSE
-            hw_crit(ising) = 0.0
-            IF(verbose)THEN
-               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12)') "psi",
-     $             "q", "singflx", "chirikov"
-               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3)')
-     $            respsi, sq%f(4), ABS(singflx_mn(resnum(ising),ising)),
-     $            chirikov(ising)
+         IF (verbose) THEN
+
+            IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
+               IF(ising == 1) WRITE(*,'(1x,7a12)')
+     $              "psi","q","singflx","chirikov",
+     $              "w_island","w_crit","singflx_crit"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,3es12.3)')
+     $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
+     $              chirikov(ising),2*island_hwidth(ising),
+     $              2*hw_crit(ising),b_crit(ising)    
+            ELSE
+       
+               IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",
+     $              "q","singflx","chirikov","w_island"
+               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,es12.3)')
+     $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
+     $              chirikov(ising),2*island_hwidth(ising)
             ENDIF
          ENDIF
       ENDDO
@@ -1777,7 +1807,8 @@ c-----------------------------------------------------------------------
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
-     $        "islandhwidth","chirikov","crithwidth"
+     $        "half_w_isl","chirikov",
+     $        "half_w_isl_crit","singflx_crit"
          DO ising=1,msing
             WRITE(out_unit,'(1x,f6.3,14(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
@@ -1787,7 +1818,7 @@ c-----------------------------------------------------------------------
      $           REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(delta(ising)),AIMAG(delta(ising)),
      $           island_hwidth(ising),chirikov(ising),
-     $           hw_crit(ising)
+     $           hw_crit(ising),b_crit(ising)
          ENDDO
          WRITE(out_unit,*)
       ENDIF
@@ -1817,11 +1848,16 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, w_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, w_id, "long_name",
      $     "Full width of saturated island") )
-         CALL check( nf90_def_var(fncid, "w_isl_crit", nf90_double,
+         CALL check( nf90_def_var(fncid, "w_isl_v_crit", nf90_double,
      $      (/q_id/), wc_id) )
          CALL check( nf90_put_att(fncid, wc_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, wc_id, "long_name",
-     $     "Critical width for island growth") )
+     $     "Critical width for island growth from Callen model") )
+         CALL check( nf90_def_var(fncid, "Phi_res_crit", nf90_double,
+     $      (/q_id/), bc_id) )
+         CALL check( nf90_put_att(fncid, bc_id, "units", "T") )
+         CALL check( nf90_put_att(fncid, bc_id, "long_name",
+     $     "Critical resonant field for island growth from SLAYER") )
          CALL check( nf90_def_var(fncid, "K_isl", nf90_double,
      $      (/q_id/), k_id) )
          CALL check( nf90_put_att(fncid, k_id, "long_name",
@@ -1844,6 +1880,7 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
          CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
+         CALL check( nf90_put_var(fncid, bc_id, b_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          IF(astat/=nf90_noerr)THEN
             CALL check( nf90_put_var(fncid, a_id, area) )
@@ -2156,7 +2193,7 @@ c-----------------------------------------------------------------------
          vchirikov(ising)=visland_hwidth(ising)/hdist
          IF(verbose)THEN
             IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12)') "psi", "q",
-     $         "singflx", "chirikov"
+     $         "vsingflx", "vchirikov"
             WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3)')
      $         respsi, singtype(ising)%q, ABS(vflxmn(ising)),
      $         vchirikov(ising)
