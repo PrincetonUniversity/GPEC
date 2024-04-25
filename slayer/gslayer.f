@@ -19,12 +19,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpec_slayer(n_e,t_e,n_i,t_i,omega,omega_e,
-     $   omega_i,qval,sval,bt,rs,R0,mms,nns,ascii_flag,
+      SUBROUTINE gpec_slayer(n_e,t_e,n_i,t_i,zeff,omega,omega_e,
+     $   omega_i,qval,sval,bt,rs,R0,mu_i,inpr,mms,nns,ascii_flag,
      $     delta,psi0,jxb,omega_sol,br_th)
 
       REAL(r8),INTENT(IN) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
-     $     qval,sval,bt,rs,R0
+     $     qval,sval,bt,rs,R0,zeff,mu_i,inpr,
       INTEGER, INTENT(IN) :: mms,nns
       LOGICAL, INTENT(IN) :: ascii_flag
       COMPLEX(r8),INTENT(OUT) :: delta,psi0
@@ -33,8 +33,8 @@ c-----------------------------------------------------------------------
       INTEGER :: i,inum
       INTEGER, DIMENSION(1) :: index
 
-      REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
-      REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,mu_i,zeff,
+      REAL(r8) :: inQ,inQ_e,inQ_i,inpe,inc_beta,inds,intau,inlu
+      REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,zeff,
      $            lbeta,tau_i,tau_h,tau_r,tau_v
       REAL(r8) :: inQ_min,inQ_max,Q_sol
       
@@ -66,9 +66,7 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=sm,FMT='(I3)') mms
       ENDIF
 
-      ! TODO: take these as input and let gpec get them from pentrc.in
-      mu_i=2.0
-      zeff=2.0
+      inpe=0.0                         ! Waybright added this
 
       tau= t_i/t_e                     ! ratio of ion to electron temperature
       tau_i = 6.6e17*mu_i**0.5*(t_i/1e3)**1.5/(n_e*lnLamb) ! ion colls.
@@ -81,11 +79,11 @@ c-----------------------------------------------------------------------
 
       tau_h=R0*(mu0*rho)**0.5/(nns*sval*bt) ! alfven time across surface
       tau_r=mu0*rs**2.0/eta            ! resistive time scale
-      tau_v=tau_r/pr                   ! rho*rs**2.0/visc ! viscous time scale
-      
+      tau_v=tau_r/inpr                   ! rho*rs**2.0/visc ! viscous time scale
+
       ! this one must be anomalous. calculated back from pr.
-      visc= rho*rs**2.0/tau_v 
-      
+      visc= rho*rs**2.0/tau_v
+
       lu=tau_r/tau_h                   ! Lundquist number
 
       Qconv=lu**(1.0/3.0)*tau_h        ! conversion to Qs based on Cole
@@ -110,8 +108,6 @@ c-----------------------------------------------------------------------
       inds=ds
       intau=tau
       Q0=Q
-      inpr=0.5                         ! 0.5 for DIII-D example.
-      inpe=0.0                         ! Waybright added this
 c-----------------------------------------------------------------------
 c     calculate basic delta, torque, balance, error fields.
 c-----------------------------------------------------------------------

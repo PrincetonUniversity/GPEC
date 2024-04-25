@@ -1569,14 +1569,15 @@ c     subprogram 4. gpout_singfld.
 c     compute current and field on rational surfaces.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_singfld(egnum,xspmn,spot,nspot,
-     $             callen_threshold_flag,slayer_threshold_flag)
+     $             callen_threshold_flag,slayer_threshold_flag,
+     $             slayer_inpr)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: callen_threshold_flag,
      $            slayer_threshold_flag
       INTEGER, INTENT(IN) :: egnum,nspot
-      REAL(r8), INTENT(IN) :: spot
+      REAL(r8), INTENT(IN) :: spot, slayer_inpr
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
@@ -1758,8 +1759,8 @@ c-----------------------------------------------------------------------
             omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
      $           +twopi*kin%f1(4)/(e*chi1)
             CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
-     $           kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),bt0,
-     $           sr%f1(1),ro,resm,nn,ascii_flag,
+     $           kin%f(5),kin%f(9),omega_e,omega_i,sq%f(4),sq%f1(4),
+     $           bt0,sr%f1(1),ro,mi,slayer_inpr,resm,nn,ascii_flag,
      $           delta_s,psi0,jxb,omega_sol,br_th)
             b_crit(ising)=br_th  ! Tesla. Normal resonant field comparable to singflx
          ENDIF

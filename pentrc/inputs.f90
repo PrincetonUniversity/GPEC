@@ -220,9 +220,9 @@ module inputs
         if(write_log) print *,"Formed temporary spline"
         
         ! extrapolate to regular spline (helps smooth core??)
-        call spline_alloc(kin,nkin,8)
+        call spline_alloc(kin,nkin,9)
         kin%title(0:) = (/"psi_n ","n_i   ","n_e   ","t_i   ","t_e   ","omegae",&
-                    "loglam","nu_i  ","nu_e  " /)
+                    "loglam", "nu_i  ","nu_e  ", "zeff"/)
         do i=0,kin%mx
               psi = (1.0*i)/kin%mx
               call spline_eval(tmp,psi,0)
@@ -235,13 +235,14 @@ module inputs
 
         ! collisionalities **assumes si units for n,t**
         zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
-        zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)   
+        zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)
         kin%fs(:,6) = 17.3-0.5*log(kin%fs(:,2)/1.0e20) &
             +1.5*log(kin%fs(:,4)/1.602e-16)
         kin%fs(:,7) = (zpitch/3.5e17)*kin%fs(:,1)*kin%fs(:,6) &
             /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
         kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
             /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
+        kin%fs(:,9) = zeff
 
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
