@@ -66,8 +66,8 @@ c-----------------------------------------------------------------------
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
-     $     netcdf_flag,ascii_flag,
-     $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag,
+     $     netcdf_flag,ascii_flag,singthresh_flag,
+     $     singthresh_callen_flag,singthresh_slayer_flag,
      $     singthresh_slayer_inpr
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
      $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,

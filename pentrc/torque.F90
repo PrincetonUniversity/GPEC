@@ -1840,7 +1840,7 @@ module torque
         integer :: i,j,s,np
         real(r8) :: chrg,mass,psi,q
         real(r8), dimension(:), allocatable :: &
-            epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
+            epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,zeff,&
             welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat
 
         integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &

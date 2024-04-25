@@ -24,8 +24,8 @@ c-----------------------------------------------------------------------
      $     delta,psi0,jxb,omega_sol,br_th)
 
       REAL(r8),INTENT(IN) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
-     $     qval,sval,bt,rs,R0,zeff,mu_i,inpr,
-      INTEGER, INTENT(IN) :: mms,nns
+     $     qval,sval,bt,rs,R0,zeff,inpr
+      INTEGER, INTENT(IN) :: mms,nns,mu_i
       LOGICAL, INTENT(IN) :: ascii_flag
       COMPLEX(r8),INTENT(OUT) :: delta,psi0
       REAL(r8),INTENT(OUT) :: jxb,omega_sol,br_th
@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(1) :: index
 
       REAL(r8) :: inQ,inQ_e,inQ_i,inpe,inc_beta,inds,intau,inlu
-      REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,zeff,
+      REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,
      $            lbeta,tau_i,tau_h,tau_r,tau_v
       REAL(r8) :: inQ_min,inQ_max,Q_sol
       
