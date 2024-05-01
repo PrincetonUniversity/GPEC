@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS
 
@@ -11,7 +11,9 @@ export FFLAGS
 LIBDIR = ../lib
 
 LIBS = \
-	-llsode
+	-llsode \
+	-lpentrc \
+	-lequil
 
 OBJS = \
        sglobal.o \
@@ -20,10 +22,16 @@ OBJS = \
        gslayer.o \
        slayer.o
 
-all: lsode slayer
+all: lsode equil pentrc slayer
 
-lsode: 
+equil:
+	cd ../equil; make
+
+lsode:
 	cd ../lsode; make
+
+pentrc:
+	cd ../pentrc; make pentrc
 
 slayer: $(OBJS)
 	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
@@ -37,7 +45,8 @@ slayer: $(OBJS)
 params.o : sglobal.o
 delta.o : sglobal.o
 gslayer.o : sglobal.o delta.o
-slayer.o : sglobal.o params.o delta.o
+slayer.o : sglobal.o params.o delta.o ../pentrc/grid.mod ../equil/spline_mod.mod
 
 clean:
-	rm -f *.o *.mod *.out *.bin slayer
+	rm -f *.o *.mod *.out *.bin slayers
+

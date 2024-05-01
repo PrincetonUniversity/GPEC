@@ -17,6 +17,8 @@ c-----------------------------------------------------------------------
       USE delta_mod, ONLY: riccati,riccati_out,
      $                     parflow_flag,PeOhmOnly_flag
 
+      USE grid, ONLY : powspace,linspace
+
       IMPLICIT NONE
 
       CHARACTER(128) :: infile
@@ -43,9 +45,11 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal,
      $     prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
-     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl
+     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,
+     $        inQs_log
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: 
-     $     js,ks,psis,jxbs,Q_sols,br_ths
+     $     js,ks,psis,jxbs,Q_sols,br_ths,
+     $     inQs_left,inQs_right
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
@@ -307,20 +311,28 @@ c     examine delta dependencies on complex Q for stability.
 c-----------------------------------------------------------------------
       IF (stability_flag) THEN
          ALLOCATE(inQs(0:inum),iinQs(0:200))
-         ALLOCATE(deltas(0:inum,0:200))
+         ALLOCATE(inQs_left(0:2+inum/2,0:2+inum/2))
+         ALLOCATE(inQs_right(0:2+inum/2,0:2+inum/2))
+         ALLOCATE(inQs_log(0:3+inum))
+         ALLOCATE(deltas(0:3+inum,0:200))
 
-         inQ_max=10.0
-         inQ_min=-10.0
+         inQ_max=5.0
+         inQ_min=-5.0
 
-         DO i=0,inum
+         inQs_left = powspace(REAL(Q)-1.0,REAL(Q),1,2+inum/2,"upper")
+         inQs_right = powspace(REAL(Q),REAL(Q)+1.0,1,2+inum/2,"lower")
+         inQs_log = (/inQs_left(1,1:2+inum/2),inQs_right(1,2:1+inum/2)/)
+         !WRITE(*,*)"inQs_log=",inQs_log
+         DO i=0,inum+3
             DO j=0,200
                inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
+
                iinQs(j)=inQ_min+(REAL(j)/200)*(inQ_max-inQ_min)
-               deltas(i,j)=riccati(inQs(i),inQ_e,inQ_i,inpr,inc_beta,
-     $              inds,intau,inpe,iinQ=iinQs(j))
+               deltas(i,j)=riccati(inQs_log(i),inQ_e,inQ_i,inpr,
+     $              inc_beta,inds,intau,inpe,iinQ=iinQs(j))
             ENDDO
          ENDDO
-      
+
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
      $         TRIM(sn)//".out", STATUS="UNKNOWN")
@@ -329,13 +341,13 @@ c-----------------------------------------------------------------------
             DO i=0,inum
                DO j=0,200
                   WRITE(out_unit,'(1x,4(es17.8e3))')
-     $                 inQs(i),iinQs(j),
+     $                 inQs_log(i),iinQs(j),
      $                 REAL(deltas(i,j)),AIMAG(deltas(i,j))
                ENDDO
             ENDDO
             CLOSE(out_unit)
          ENDIF
-         DEALLOCATE(inQs,iinQs,deltas)
+         DEALLOCATE(inQs,iinQs,inQs_left,inQs_right,inQs_log,deltas)
       ENDIF
 c-----------------------------------------------------------------------
 c     riccati scan.
