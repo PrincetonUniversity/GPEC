@@ -8,6 +8,8 @@
       USE delta_mod, ONLY: riccati,riccati_out,
      $   parflow_flag,PeOhmOnly_flag
 
+      USE grid, ONLY : powspace,linspace
+
       IMPLICIT NONE
       
       CONTAINS
@@ -29,7 +31,7 @@ c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: ascii_flag
       COMPLEX(r8),INTENT(OUT) :: delta,psi0
       REAL(r8),INTENT(OUT) :: jxb,omega_sol,br_th
-   
+
       INTEGER :: i,inum
       INTEGER, DIMENSION(1) :: index
 
@@ -168,5 +170,146 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpec_slayer
 
       END MODULE gslayer_mod
+
+c-----------------------------------------------------------------------
+c     subprogram 2. slayer_growthrates.
+c     run slayer to provide gamma(ising).
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+      SUBROUTINE slayer_growthrates(infile,ascii_flag,
+     $   ReQ_num,ImQ_num)
+
+      INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
+      INTEGER :: ReQ_num,ImQ_num ! TEMPORARY HARDCODING
+
+      LOGICAL, INTENT(IN) :: ascii_flag
+
+      INTEGER :: i,inum
+      INTEGER, DIMENSION(1) :: index
+
+      REAL(r8) :: inQ,inQ_e,inQ_i,inpe,inc_beta,inds,intau,inlu
+      REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,
+     $            lbeta,tau_i,tau_h,tau_r,tau_v
+      REAL(r8) :: inQ_min,inQ_max,Q_sol
+
+      CHARACTER(3) :: sn,sm
+
+      CHARACTER(len=8) :: fmt ! format descriptor for stab file naming
+      CHARACTER(len=8) :: x1 ! string for stab file naming
+      INTEGER :: i1 ! integer for stab file naming
+
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal,
+     $     prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
+     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,
+     $        inQs_log
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
+     $     js,ks,psis,Q_sols,
+     $     inQs_left,inQs_right
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
+
+      OPEN(UNIT=input_unit,FILE=infile,STATUS="old")
+      READ(input_unit,*)inn
+      ALLOCATE(mms(inn),nns(inn),prs(inn),
+     $     n_es(inn),t_es(inn),t_is(inn),omegas(inn),
+     $     l_ns(inn),l_ts(inn),qvals(inn),svals(inn),
+     $     bts(inn),rss(inn),R0s(inn),mu_is(inn),zeffs(inn),
+     $     Q_soll(inn),br_thl(inn))
+      DO k=0,inn-1
+         READ(input_unit,'(2(1x,I2),14(1x,e12.4))')
+     $        mms(k),nns(k),prs(k),
+     $        n_es(k),t_es(k),t_is(k),omegas(k),
+     $        l_ns(k),l_ts(k),qvals(k),svals(k),
+     $        bts(k),rss(k),R0s(k),mu_is(k),zeffs(k)
+      ENDDO
+      CLOSE(input_unit)
+
+      DO k=0,inn-1
+         WRITE(*,*)k
+         mr=REAL(mms(k))
+         nr=REAL(nns(k))
+         inpr=prs(k)
+         CALL params(n_es(k),t_es(k),t_is(k),omegas(k),
+     $           l_ns(k),l_ts(k),qvals(k),svals(k),bts(k),rss(k),
+     $            R0s(k),mu_is(k),zeffs(k),params_check)
+         inQ=Q
+         inQ_e=Q_e
+         inQ_i=Q_i
+         inc_beta=c_beta
+         inds=ds
+         intau=tau
+         Q0=Q
+
+         IF (Q0>inQ_e) THEN
+            inQ_max=2.0*Q0
+            inQ_min=1.05*inQ_e
+         ELSE
+            inQ_max=0.95*inQ_e
+            IF (Q0>0) THEN
+               inQ_min=0.8*inQ_i
+            ELSE
+               inQ_min=1.5*MINVAL((/Q0,inQ_i/))
+            ENDIF
+         ENDIF
+      ENDDO
+
+      riccati_out=.FALSE.
+
+      ReQ_num = 400
+      ImQ_num = 200
+
+      ALLOCATE(inQs(0:ReQ_num),iinQs(0:ImQ_num))
+      ALLOCATE(inQs_left(0:2+ReQ_num/2,0:2+ReQ_num/2))
+      ALLOCATE(inQs_right(0:2+ReQ_num/2,0:2+ReQ_num/2))
+      ALLOCATE(inQs_log(0:3+ReQ_num))
+      ALLOCATE(deltas(0:3+ReQ_num,0:ImQ_num))
+
+      inQ_max=5.0
+      inQ_min=-5.0
+
+      inQs_left = powspace(REAL(Q)-1.0,REAL(Q),1,
+     $                        2+ReQ_num/2,"upper")
+      inQs_right = powspace(REAL(Q),REAL(Q)+1.0,1,
+     $                         2+ReQ_num/2,"lower")
+      inQs_log = (/inQs_left(1,1:2+ReQ_num/2),
+     $               inQs_right(1,2:1+ReQ_num/2)/)
+      !WRITE(*,*)"inQs_log=",inQs_log
+      DO i=0,ReQ_num+3
+         DO j=0,ImQ_num
+            inQs(i)=inQ_min+(REAL(i)/ReQ_num)*(inQ_max-inQ_min)
+
+            iinQs(j)=inQ_min+(REAL(j)/ImQ_num)*(inQ_max-inQ_min)
+            deltas(i,j)=riccati(inQs_log(i),inQ_e,inQ_i,inpr,
+     $           inc_beta,inds,intau,inpe,iinQ=iinQs(j))
+         ENDDO
+      ENDDO
+
+c-----------------------------------------------------------------------
+c     block to allow file sequential fil naming based on q
+      fmt = '(I5.5)' ! an integer of width 5 with zeros at the left
+      i1 = qvals(k)
+      write (x1,fmt) i1 ! integer to string using a 'internal file'
+c-----------------------------------------------------------------------
+
+      OPEN(UNIT=out_unit,FILE="slayer_stability_q"//
+     $   TRIM(x1)//".out", STATUS="UNKNOWN")
+      WRITE(out_unit,'(1x,4(a17))'),"RE(Q)",
+     $     "IM(Q)","RE(delta)","IM(delta)"
+      DO i=0,ReQ_num
+         DO j=0,ImQ_num
+            WRITE(out_unit,'(1x,4(es17.8e3))')
+     $           inQs_log(i),iinQs(j),
+     $           REAL(deltas(i,j)),AIMAG(deltas(i,j))
+         ENDDO
+      ENDDO
+      CLOSE(out_unit)
+
+      DEALLOCATE(inQs,iinQs,inQs_left,inQs_right,inQs_log,deltas)
+      DEALLOCATE(prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
+     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,mms,nns)
+
 
 

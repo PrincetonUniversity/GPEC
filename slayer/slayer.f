@@ -17,12 +17,10 @@ c-----------------------------------------------------------------------
       USE delta_mod, ONLY: riccati,riccati_out,
      $                     parflow_flag,PeOhmOnly_flag
 
-      USE grid, ONLY : powspace,linspace
-
       IMPLICIT NONE
 
       CHARACTER(128) :: infile
-      INTEGER :: i,j,k,inum,jnum,knum,inn
+      INTEGER :: i,j,k,inum,jnum,knum,inn,ReQ_num,ImQ_num
       INTEGER, DIMENSION(1) :: index
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
@@ -100,6 +98,8 @@ c-----------------------------------------------------------------------
       inum=400 ! resolution to find error field thresholds.
       jnum=500 ! resolution for 2d scan along with Q,omega.
       knum=100 ! resolution for 2d scan alont with the other.
+      ReQ_num=400 ! resolution for stab. scan along Re(Q) axis
+      ImQ_num=200 ! resolution for stab. scan along Im(Q) axis
       in_unit=1
       out_unit=2
       out2_unit=3
@@ -311,25 +311,17 @@ c     examine delta dependencies on complex Q for stability.
 c-----------------------------------------------------------------------
       IF (stability_flag) THEN
          ALLOCATE(inQs(0:inum),iinQs(0:200))
-         ALLOCATE(inQs_left(0:2+inum/2,0:2+inum/2))
-         ALLOCATE(inQs_right(0:2+inum/2,0:2+inum/2))
-         ALLOCATE(inQs_log(0:3+inum))
-         ALLOCATE(deltas(0:3+inum,0:200))
+         ALLOCATE(deltas(0:inum,0:200))
 
-         inQ_max=5.0
-         inQ_min=-5.0
+         inQ_max=10.0
+         inQ_min=-10.0
 
-         inQs_left = powspace(REAL(Q)-1.0,REAL(Q),1,2+inum/2,"upper")
-         inQs_right = powspace(REAL(Q),REAL(Q)+1.0,1,2+inum/2,"lower")
-         inQs_log = (/inQs_left(1,1:2+inum/2),inQs_right(1,2:1+inum/2)/)
-         !WRITE(*,*)"inQs_log=",inQs_log
-         DO i=0,inum+3
+         DO i=0,inum
             DO j=0,200
                inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
-
                iinQs(j)=inQ_min+(REAL(j)/200)*(inQ_max-inQ_min)
-               deltas(i,j)=riccati(inQs_log(i),inQ_e,inQ_i,inpr,
-     $              inc_beta,inds,intau,inpe,iinQ=iinQs(j))
+               deltas(i,j)=riccati(inQs(i),inQ_e,inQ_i,inpr,inc_beta,
+     $              inds,intau,inpe,iinQ=iinQs(j))
             ENDDO
          ENDDO
 
@@ -341,13 +333,13 @@ c-----------------------------------------------------------------------
             DO i=0,inum
                DO j=0,200
                   WRITE(out_unit,'(1x,4(es17.8e3))')
-     $                 inQs_log(i),iinQs(j),
+     $                 inQs(i),iinQs(j),
      $                 REAL(deltas(i,j)),AIMAG(deltas(i,j))
                ENDDO
             ENDDO
             CLOSE(out_unit)
          ENDIF
-         DEALLOCATE(inQs,iinQs,inQs_left,inQs_right,inQs_log,deltas)
+         DEALLOCATE(inQs,iinQs,deltas)
       ENDIF
 c-----------------------------------------------------------------------
 c     riccati scan.
