@@ -17,10 +17,13 @@ c-----------------------------------------------------------------------
       USE delta_mod, ONLY: riccati,riccati_out,
      $                     parflow_flag,PeOhmOnly_flag
 
+      ! FOR TESTING:
+      USE gslayer_mod
+
       IMPLICIT NONE
 
       CHARACTER(128) :: infile
-      INTEGER :: i,j,k,inum,jnum,knum,inn,ReQ_num,ImQ_num
+      INTEGER :: i,j,k,inum,jnum,knum,inn,ReQ_num,ImQ_num,n_k
       INTEGER, DIMENSION(1) :: index
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
@@ -28,7 +31,7 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check
+     $     params_check,gamma_match_flag !FOR TESTING
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
@@ -42,15 +45,18 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal,
-     $     prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
-     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,
+     $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
+     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes,
      $        inQs_log
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: 
      $     js,ks,psis,jxbs,Q_sols,br_ths,
      $     inQs_left,inQs_right
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
+
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: growthrates,
+     $                                        growthrate_err
 
       NAMELIST/slayer_input/params_flag,input_flag,infile,
      $     mm,nn,n_e,t_e,t_i,omega,l_n,l_t,
@@ -63,7 +69,7 @@ c-----------------------------------------------------------------------
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     stability_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
-     $     params_check,bal_flag
+     $     params_check,bal_flag,gamma_match_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -98,8 +104,8 @@ c-----------------------------------------------------------------------
       inum=400 ! resolution to find error field thresholds.
       jnum=500 ! resolution for 2d scan along with Q,omega.
       knum=100 ! resolution for 2d scan alont with the other.
-      ReQ_num=400 ! resolution for stab. scan along Re(Q) axis
-      ImQ_num=200 ! resolution for stab. scan along Im(Q) axis
+      ReQ_num=200 ! resolution for stab. scan along Re(Q) axis
+      ImQ_num=100 ! resolution for stab. scan along Im(Q) axis
       in_unit=1
       out_unit=2
       out2_unit=3
@@ -253,6 +259,46 @@ c-----------------------------------------------------------------------
          CLOSE(out_unit)
          DEALLOCATE(prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,mms,nns)
+      ENDIF
+c-----------------------------------------------------------------------
+c     TEST GAMMA_MATCH IN GSLAYER.F, FOR TESTING ONLY
+c-----------------------------------------------------------------------
+      IF (gamma_match_flag) THEN
+         n_k=2
+         ALLOCATE(mms(n_k),nns(n_k),prs(n_k),pes(n_k),
+     $        n_es(n_k),t_es(n_k),t_is(n_k),omegas(n_k),
+     $        l_ns(n_k),l_ts(n_k),qvals(n_k),svals(n_k),
+     $        bts(n_k),rss(n_k),R0s(n_k),mu_is(n_k),zeffs(n_k),
+     $        outer_deltas(n_k))
+         ! Approximate data for q=2 and q=3, for testing only
+         ! These are of the form needed to output from
+         ! upcoming build_inputs.f script, interfacing with equil.f
+         mms = (/2, 2 /)
+         nns = (/1, 1 /)
+         prs = (/0.1, 0.005 /)
+         pes = (/0.0, 0.0 /)
+         n_es = (/7.765e+17, 9.999e+16 /)
+         t_es = (/26.0, 2.0 /)
+         t_is = (/26.0, 2.0 /)
+         omegas = (/54530.0, 54530.0 /)
+         l_ns = (/0.2, 0.2 /)
+         l_ts = (/0.1, 0.1 /)
+         qvals = (/2.0, 3.0 /)
+         svals = (/729.5, 500.5 /)
+         bts = (/1.0, 1.0 /)
+         rss = (/0.16, 0.2 /)
+         R0s = (/2.0, 2.0 /)
+         mu_is = (/2.0, 2.0 /)
+         zeffs = (/2.0, 2.0 /)
+         outer_deltas = (/(27.15,0.1), (20.15,0.1) /)
+
+         CALL gamma_match(n_k,mms,nns,n_es,t_es,t_is,omegas,prs,pes,
+     $                       l_ns,l_ts,qvals,svals,bts,rss,R0s,mu_is,
+     $                       zeffs,outer_deltas,
+     $                       ReQ_num,ImQ_num,growthrates,growthrate_err)
+         WRITE(*,*)"growthrates=",growthrates
+         WRITE(*,*)"growthrate error=",growthrate_err
+
       ENDIF
 c-----------------------------------------------------------------------
 c     find solutions based on simple torque balance.
