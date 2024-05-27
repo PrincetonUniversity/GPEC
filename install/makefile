@@ -14,11 +14,11 @@ export OMPFLAG
 .IGNORE:
 
 all: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw coil gpec stride mkbin
+	multi sum xdraw slayer coil gpec stride mkbin
 
 # fortran only
 allf: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum coil gpec stride mkbin
+	multi sum slayer coil gpec stride mkbin
 
 
 # executables:
@@ -68,6 +68,9 @@ multi:
 sum:
 	cd ../sum;    make sum
 
+slayer:
+	cd ../slayer; make slayer
+
 coil:
 	cd ../coil;   make libcoil
 
@@ -90,6 +93,7 @@ mkbin:
 	cp -f ../xdraw/xdraw ../bin
 	cp -f ../multi/multi ../bin
 	cp -f ../sum/sum ../bin
+	cp -f ../slayer/slayer ../bin
 	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
 	cp -f ../stride/stride ../bin
@@ -132,6 +136,7 @@ clean:
 	cd ../rmatch; make clean
 	cd ../multi;  make clean
 	cd ../sum;    make clean
+	cd ../slayer; make clean
 	cd ../coil;   make clean
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean

@@ -328,7 +328,7 @@ def add_fun(control_output, keys=None, tmag=False, inplace=True):
     # calculate functions
     for k in keys:
         # inverse fourier transform
-        fun = (ds['xi_n'] * np.exp(1j * (ds['m'] * ds['theta'] * 2 * pi))).sum('m')
+        fun = (ds[k] * np.exp(1j * (ds['m'] * ds['theta'] * 2 * pi))).sum('m')
         # convert to machine toroidal angle
         if not tmag:
             fun *= np.exp(1j * ds.attrs['n'] * ds['delta_phi'])

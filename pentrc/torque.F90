@@ -1840,12 +1840,12 @@ module torque
         integer :: i,j,s,np
         real(r8) :: chrg,mass,psi,q
         real(r8), dimension(:), allocatable :: &
-            epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
+            epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,zeff,&
             welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat
 
         integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
             v_id,g_id,c_id,d_id,t_id, b_id,x_id, er_id,q_id,mp_id, &
-            ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ll_id,we_id, &
+            ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ze_id,ll_id,we_id, &
             wn_id,wt_id,ws_id,wg_id,wb_id,wd_id
         character(16) :: nstring,suffix
         character(128) :: ncfile
@@ -1865,7 +1865,7 @@ module torque
 
         ! calculate the basic flux functions on the equilibrium grid
         allocate(epsr(sq%mx+1),nuk(sq%mx+1),nueff(sq%mx+1),nui(sq%mx+1),nue(sq%mx+1),&
-            ni(sq%mx+1),ne(sq%mx+1),ti(sq%mx+1),te(sq%mx+1),llmda(sq%mx+1),&
+            zeff(sq%mx+1),ni(sq%mx+1),ne(sq%mx+1),ti(sq%mx+1),te(sq%mx+1),llmda(sq%mx+1),&
             welec(sq%mx+1),wdian(sq%mx+1),wdiat(sq%mx+1),wphi(sq%mx+1),&
             wtran(sq%mx+1),wgyro(sq%mx+1),wbhat(sq%mx+1),wdhat(sq%mx+1))
         do i=1,sq%mx + 1
@@ -1882,6 +1882,7 @@ module torque
             llmda(i) = kin%f(6)
             nui(i) = kin%f(7)
             nue(i) = kin%f(8)
+            zeff(i) = kin%f(9)
             wdian(i) =-twopi*kin%f(s+2)*kin%f1(s)/(chrg*chi1*kin%f(s)) ! density gradient drive
             wdiat(i) =-twopi*kin%f1(s+2)/(chrg*chi1)       ! temperature gradient drive
             wphi(i)  = welec(i)+wdian(i)+wdiat(i)                    ! toroidal rotation
@@ -1947,6 +1948,8 @@ module torque
         call check( nf90_def_var(ncid, "nu_e", nf90_double, p_did, ve_id) )
         call check( nf90_put_att(ncid, ve_id, "long_name", "Electron Collision Rate") )
         call check( nf90_put_att(ncid, ve_id, "units", "1/s") )
+        call check( nf90_def_var(ncid, "zeff", nf90_double, p_did, ze_id) )
+        call check( nf90_put_att(ncid, ze_id, "long_name", "Effective Charge") )
         call check( nf90_def_var(ncid, "omega_E", nf90_double, p_did, we_id) )
         call check( nf90_put_att(ncid, we_id, "long_name", "Electric Precession Frequency") )
         call check( nf90_put_att(ncid, we_id, "units", "rad/s") )
@@ -1986,6 +1989,7 @@ module torque
         call check( nf90_put_var(ncid, ll_id, llmda) )
         call check( nf90_put_var(ncid, vi_id, nui) )
         call check( nf90_put_var(ncid, ve_id, nue) )
+        call check( nf90_put_var(ncid, ze_id, zeff) )
         call check( nf90_put_var(ncid, wn_id, wdian) )
         call check( nf90_put_var(ncid, wt_id, wdiat) )
         call check( nf90_put_var(ncid, ws_id, wtran) )
