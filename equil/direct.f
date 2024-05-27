@@ -461,7 +461,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:,0:), INTENT(OUT) :: y_out
       TYPE(direct_bfield_type), INTENT(OUT) :: bf
 
-      CHARACTER(64) :: message
+      CHARACTER(64) :: message,message2
 
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
       INTEGER :: iopt,istate,itask,itol,jac,mf
@@ -473,14 +473,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,"ipsi = ",i3,", psifac =",es10.3)
  20   FORMAT(/2x,"is",5x,"eta",8x,"deta",8x,"s",9x,"rfac",8x,"r",10x,
      $     "z",9x,"psi",8x,"err"/)
  30   FORMAT(i4,1p,8e11.3)
  40   FORMAT(a,i4,a,es10.3,a,i3)
  51   FORMAT(1x,"psifac =",es10.3)
- 61   FORMAT(1x,"direct_int: steps taken = ",i3," of ",i3,".")
- 11   FORMAT(" eta reached ",es10.3," of [",es10.3,",",es10.3,"]")
+ 61   FORMAT(1x,"direct_int: steps taken =",i6," of ",i6,".")
+ 11   FORMAT(1x,"Incomplete: eta=",es10.2," of [",es10.2,",",es10.2,"]")
 c-----------------------------------------------------------------------
 c     find flux surface.
 c-----------------------------------------------------------------------
@@ -551,19 +550,13 @@ c     abort if istep > nstepd.
 c-----------------------------------------------------------------------
       IF(eta < eta2)THEN
          WRITE(message,61)istep,nstepd
-         WRITE(message,11)eta,eta1,eta2
-         !WRITE(out_2d_unit,10)eta
-         !WRITE(out_2d_unit,10)eta2
-         !write (*,'(A, F8.3)') 'psifac = ', psifac
-         !write (*,'(A, F8.3)') 'eta = ', eta
-         !write (*,'(A, F8.3)') 'eta2 = ', eta2
-         !print "(i6)", istep
-         !write (*,'(A, F8.1)') 'Stopped early', one
-         !CALL program_stop("what occurgin")
+         WRITE(message2,11)eta,eta1,eta2
+         PRINT "(A)", message
+         PRINT "(A)", "Increase nstepd or decrease etol."
+         CALL program_stop(message2)
       ELSE
          WRITE(message,61)istep,nstepd
-         !print "(i6)", istep
-         !write (*,'(A, F8.1)') 'Ran proper', zero
+         IF(verbose)PRINT "(A)", message
       ENDIF
       len_y_out = istep
 c-----------------------------------------------------------------------
