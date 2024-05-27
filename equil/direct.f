@@ -478,6 +478,9 @@ c-----------------------------------------------------------------------
      $     "z",9x,"psi",8x,"err"/)
  30   FORMAT(i4,1p,8e11.3)
  40   FORMAT(a,i4,a,es10.3,a,i3)
+ 51   FORMAT(1x,"psifac =",es10.3)
+ 61   FORMAT(1x,"direct_int: steps taken = ",i3," of ",i3,".")
+ 11   FORMAT(" eta reached ",es10.3," of [",es10.3,",",es10.3,"]")
 c-----------------------------------------------------------------------
 c     find flux surface.
 c-----------------------------------------------------------------------
@@ -510,7 +513,7 @@ c-----------------------------------------------------------------------
 c     write header.
 c-----------------------------------------------------------------------
       IF(out_fl)THEN
-         WRITE(out_2d_unit,10)ipsi,psifac
+         WRITE(out_2d_unit,51)psifac
          WRITE(out_2d_unit,20)
       ENDIF
 c-----------------------------------------------------------------------
@@ -530,7 +533,8 @@ c-----------------------------------------------------------------------
          IF(out_fl)WRITE(out_2d_unit,30)
      $        istep,eta,rwork(11),y(1:2),r,z,bf%psi,err
          IF(bin_fl)WRITE(bin_2d_unit)
-     $        REAL(eta,4),REAL(y(1:2),4),REAL(r,4),REAL(z,4),REAL(err,4)
+     $        REAL(eta,4),REAL(rwork(11),4),REAL(y(1:4),4),REAL(r,4),
+     $        REAL(z,4),REAL(psifac,4),REAL(err,4)
 c-----------------------------------------------------------------------
 c     advance differential equations.
 c-----------------------------------------------------------------------
@@ -546,6 +550,20 @@ c-----------------------------------------------------------------------
 c     abort if istep > nstepd.
 c-----------------------------------------------------------------------
       IF(eta < eta2)THEN
+         WRITE(message,61)istep,nstepd
+         WRITE(message,11)eta,eta1,eta2
+         !WRITE(out_2d_unit,10)eta
+         !WRITE(out_2d_unit,10)eta2
+         !write (*,'(A, F8.3)') 'psifac = ', psifac
+         !write (*,'(A, F8.3)') 'eta = ', eta
+         !write (*,'(A, F8.3)') 'eta2 = ', eta2
+         !print "(i6)", istep
+         !write (*,'(A, F8.1)') 'Stopped early', one
+         !CALL program_stop("what occurgin")
+      ELSE
+         WRITE(message,61)istep,nstepd
+         !print "(i6)", istep
+         !write (*,'(A, F8.1)') 'Ran proper', zero
       ENDIF
       len_y_out = istep
 c-----------------------------------------------------------------------
