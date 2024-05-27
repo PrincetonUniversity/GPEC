@@ -63,6 +63,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: use_analytic,run_xpt
 
+      REAL(r8) :: xm,dx,rholow,rhohigh
       TYPE(direct_bfield_type) :: bf
       TYPE(spline_type) :: ff
 
