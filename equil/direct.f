@@ -14,6 +14,7 @@ c     4.5 find_fl_surface.
 c     5. direct_fl_der.
 c     6. direct_refine.
 c     7. direct_output.
+c     12. direct_initialise_xpoints.
 c-----------------------------------------------------------------------
 c     subprogram 0. direct_mod.
 c     module declarations.
@@ -54,21 +55,28 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_run
 
-      INTEGER :: ir,iz,itheta,ipsi
-      !INTEGER, PARAMETER :: nstepd=2048
-      REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
+      INTEGER :: ir,iz,itheta,ipsi,len_y_out,len_y_last
+      INTEGER :: maxima_count,i
+      REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q,flast
       REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out, y_out_last
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
+      REAL(r8), DIMENSION(3,2) :: eta_brackets
+      REAL(r8), DIMENSION(3) :: eta_maxes
 
       LOGICAL :: use_analytic,run_xpt
 
-      REAL(r8) :: xm,dx,rholow,rhohigh
+      REAL(r8) :: xm,dx,rholow,rhohigh,rx,zx
       TYPE(direct_bfield_type) :: bf
       TYPE(spline_type) :: ff
 
       use_analytic=.FALSE.
       run_xpt=.FALSE.
+      xpt_etas=0.0
+      eta_maxes=0.0
+      eta_brackets=0.0 
+      num_xpts=0
+      maxima_count=0
 c-----------------------------------------------------------------------
 c     warning.
 c-----------------------------------------------------------------------
@@ -153,6 +161,8 @@ c-----------------------------------------------------------------------
 c     checks whether q-integral is diverging.  
 c-----------------------------------------------------------------------
             IF(sq%xs(ipsi)>0.999 .AND. run_xpt)THEN
+               CALL direct_initialise_xpoints(y_out,len_y_out,.TRUE.,
+     $                   bf%f*twopi,eta_maxes,eta_brackets,maxima_count)
             ENDIF
 c-----------------------------------------------------------------------
 c     fit data to cubic splines.
