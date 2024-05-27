@@ -28,9 +28,13 @@ c-----------------------------------------------------------------------
 
       INTEGER, PRIVATE :: istep
       REAL(r8) :: rmin,rmax,zmin,zmax,rs1,rs2
+      REAL(r8), DIMENSION(2) :: xpt_etas, rxs, zxs, xpt_b11s 
+      REAL(r8), DIMENSION(2) :: xpt_gammas, xpt_varthetas
+      REAL(r8), DIMENSION(2,2) :: xpt_brackets
       TYPE(bicube_type) :: psi_in
       LOGICAL :: direct_infinite_loop_flag
       INTEGER :: direct_infinite_loop_count = 2000
+      INTEGER :: num_xpts
 
       TYPE :: direct_bfield_type
       REAL(r8) :: psi,psir,psiz,psirz,psirr,psizz,f,f1,p,p1
