@@ -572,6 +572,54 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_fl_int
 c-----------------------------------------------------------------------
+c     subprogram 4.5. find_fl_surface.
+c     finds r,z given psi, eta.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE find_fl_surface(psifac,eta,r,z)
+
+      REAL(r8), INTENT(IN) :: psifac,eta
+      REAL(r8), INTENT(OUT) :: r,z
+
+      TYPE(direct_bfield_type) :: bf
+      REAL(r8), PARAMETER :: eps=1e-13
+      INTEGER :: ir
+      REAL(r8) :: cosfac,sinfac,radius,dradius,dfdradius,psi0
+c-----------------------------------------------------------------------
+c     find flux surface.
+c-----------------------------------------------------------------------
+      cosfac=COS(eta)
+      sinfac=SIN(eta)
+
+      psi0=psio*(1-psifac)
+      radius=SQRT(psifac)*(rs2-ro)
+      r=ro+cosfac*radius
+      z=zo+sinfac*radius
+      ir = 0
+      DO
+         CALL direct_get_bfield(r,z,bf,1)
+         dfdradius = -bf%psir*cosfac-bf%psiz*sinfac
+         dradius = -(psi0-bf%psi)/dfdradius
+
+         radius=radius+dradius
+         r=ro+cosfac*radius
+         z=zo+sinfac*radius
+         IF(ABS(dradius) <= eps*r)EXIT
+
+         ir = ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to find flux surf.")
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE find_fl_surface
+c-----------------------------------------------------------------------
 c     subprogram 5. direct_fl_der.
 c     contains differential equations for field line averages.
 c-----------------------------------------------------------------------
