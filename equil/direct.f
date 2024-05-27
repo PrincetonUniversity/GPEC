@@ -51,15 +51,19 @@ c-----------------------------------------------------------------------
       SUBROUTINE direct_run
 
       INTEGER :: ir,iz,itheta,ipsi
-      !INTEGER, PARAMETER :: nstepd=20048
+      !INTEGER, PARAMETER :: nstepd=2048
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
-      REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
+      REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out, y_out_last
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
 
-      REAL(r8) :: xm,dx,rholow,rhohigh
+      LOGICAL :: use_analytic,run_xpt
+
       TYPE(direct_bfield_type) :: bf
       TYPE(spline_type) :: ff
+
+      use_analytic=.FALSE.
+      run_xpt=.FALSE.
 c-----------------------------------------------------------------------
 c     warning.
 c-----------------------------------------------------------------------
@@ -127,55 +131,77 @@ c-----------------------------------------------------------------------
       IF(bin_fl)CALL bin_open(bin_2d_unit,"flint.bin","UNKNOWN",
      $     "REWIND","none")
 c-----------------------------------------------------------------------
-c     start loop over flux surfaces and integrate over field line.
+c     start loop over flux surfaces.
 c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,'(a,1p,es10.3)')" etol = ",etol
-      DO ipsi=mpsi,0,-1
-         CALL direct_fl_int(ipsi,y_out,bf)
+      IF(verbose) WRITE(*,'(a,1p,i6)')" nstepd = ",nstepd
+      DO ipsi=0,mpsi,+1
+c-----------------------------------------------------------------------
+c     logic whether to integrate around whole field line or use analytic
+c     integral formulas near separatrix.
+c-----------------------------------------------------------------------
+         IF(use_analytic .AND. run_xpt)THEN
+         ELSE
+            CALL direct_fl_int(sq%xs(ipsi),zero,twopi,y_out,bf,
+     $                                                        len_y_out)
+c-----------------------------------------------------------------------
+c     checks whether q-integral is diverging.  
+c-----------------------------------------------------------------------
+            IF(sq%xs(ipsi)>0.999 .AND. run_xpt)THEN
+            ENDIF
 c-----------------------------------------------------------------------
 c     fit data to cubic splines.
 c-----------------------------------------------------------------------
-         CALL spline_alloc(ff,istep,4)
-         ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-         ff%fs(0:istep,1)=y_out(0:istep,2)**2
-         ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
-         ff%fs(0:istep,3)=bf%f*
+            CALL spline_alloc(ff,istep,4)
+            ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
+            ff%fs(0:istep,1)=y_out(0:istep,2)**2
+            ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
+            ff%fs(0:istep,3)=bf%f*
      $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-         ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
-         CALL spline_fit(ff,"periodic")
+            ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
+            CALL spline_fit(ff,"periodic")
 c-----------------------------------------------------------------------
 c     allocate space for rzphi and define grids.
 c-----------------------------------------------------------------------
-         IF(ipsi == mpsi)THEN
-            IF(mtheta == 0)mtheta=istep
-            CALL bicube_alloc(rzphi,mpsi,mtheta,4)
-            CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
-            rzphi%xs=sq%xs
-            rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
-            rzphi%xtitle="psifac"
-            rzphi%ytitle="theta "
-            rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/) ! deta = eta - theta, dphi = phi - zeta
-            eqfun%title=(/"  b0  ","      ","      " /)
-            eqfun%xs=sq%xs
-            eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
-         ENDIF
+            IF(ipsi == 0)THEN
+               IF(mtheta == 0)mtheta=istep
+               CALL bicube_alloc(rzphi,mpsi,mtheta,4) !change mtheta
+               CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
+               rzphi%xs=sq%xs
+               rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
+               rzphi%xtitle="psifac"
+               rzphi%ytitle="theta "
+               rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/) ! deta = eta - theta, dphi = phi - zeta
+               eqfun%title=(/"  b0  ","      ","      " /)
+               eqfun%xs=sq%xs
+               eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
+            ENDIF
 c-----------------------------------------------------------------------
 c     interpolate to uniform grid.
 c-----------------------------------------------------------------------
-         DO itheta=0,mtheta
-            CALL spline_eval(ff,rzphi%ys(itheta),1)
-            rzphi%fs(ipsi,itheta,1:3)=ff%f(1:3)
-            rzphi%fs(ipsi,itheta,4)=(1+ff%f1(4))
+            DO itheta=0,mtheta
+               CALL spline_eval(ff,rzphi%ys(itheta),1)
+               rzphi%fs(ipsi,itheta,1:3)=ff%f(1:3)
+               rzphi%fs(ipsi,itheta,4)=(1+ff%f1(4))
      $           *y_out(istep,1)*twopi*psio
-         ENDDO
+            ENDDO
 c-----------------------------------------------------------------------
 c     store surface quantities.
 c-----------------------------------------------------------------------
-         sq%fs(ipsi,1)=bf%f*twopi
-         sq%fs(ipsi,2)=bf%p
-         sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
-         sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
-         CALL spline_dealloc(ff)
+            sq%fs(ipsi,1)=bf%f*twopi
+            sq%fs(ipsi,2)=bf%p
+            sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
+            sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
+            CALL spline_dealloc(ff)
+c-----------------------------------------------------------------------
+c     log maximum y_out, flast for x-point plotting.
+c-----------------------------------------------------------------------
+            IF (ipsi == mpsi) THEN
+                  y_out_last = y_out
+                  len_y_last=len_y_out
+                  flast = bf%f*twopi
+            ENDIF
+         ENDIF
       ENDDO
 c-----------------------------------------------------------------------
 c     close output files.
