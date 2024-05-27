@@ -791,4 +791,29 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_output
+c-----------------------------------------------------------------------
+c     subprogram 12. direct_initialise_xpoints.
+c     scans the field-line integral to find likely x-point locations,
+c     denoted by diverging regions in the q-integral
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_initialise_xpoints(y_out,len_y_out,wrap,
+     $                        f,eta_maxes,eta_brackets,maxima_count)
+
+      INTEGER, INTENT(IN) :: len_y_out
+      LOGICAL, INTENT(IN) :: wrap
+      REAL(r8), DIMENSION(0:,0:), INTENT(IN) :: y_out
+      REAL(r8), INTENT(IN) :: f
+
+      INTEGER, INTENT(OUT) :: maxima_count
+      REAL(r8), DIMENSION(1:), INTENT(OUT) :: eta_maxes
+      REAL(r8), DIMENSION(1:,1:), INTENT(OUT) :: eta_brackets
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_initialise_xpoints
+c-----------------------------------------------------------------------
       END MODULE direct_mod
