@@ -454,19 +454,20 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_fl_int(ipsi,y_out,bf)
+      SUBROUTINE direct_fl_int(psifac,eta1,eta2,y_out,bf,len_y_out)
 
-      INTEGER, INTENT(IN) :: ipsi
+      REAL(r8), INTENT(IN) :: psifac,eta1,eta2
+      INTEGER, INTENT(OUT) :: len_y_out
       REAL(r8), DIMENSION(0:,0:), INTENT(OUT) :: y_out
       TYPE(direct_bfield_type), INTENT(OUT) :: bf
 
       CHARACTER(64) :: message
 
       INTEGER, PARAMETER :: neq=4,liw=30,lrw=22+neq*16
-      INTEGER :: iopt,istate,itask,itol,jac,mf,ir
+      INTEGER :: iopt,istate,itask,itol,jac,mf
       INTEGER, DIMENSION(liw) :: iwork
       REAL(r8), PARAMETER :: eps=1e-12
-      REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,psifac,dr
+      REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0
       REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork
 c-----------------------------------------------------------------------
@@ -480,29 +481,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     find flux surface.
 c-----------------------------------------------------------------------
-      psifac=sq%xs(ipsi)
-      psi0=psio*(1-psifac)
-      r=ro+SQRT(psifac)*(rs2-ro)
-      z=zo
-      ir = 0
-      DO
-         CALL direct_get_bfield(r,z,bf,1)
-         dr=(psi0-bf%psi)/bf%psir
-         r=r+dr
-         IF(ABS(dr) <= eps*r)EXIT
-
-         ir = ir+1
-         IF (ir  > direct_infinite_loop_count) THEN
-            direct_infinite_loop_flag = .TRUE.
-            CALL program_stop("Took too many steps to find flux surf.")
-         ENDIF
-      ENDDO
+      CALL find_fl_surface(psifac,eta1,r,z)
+      CALL direct_get_bfield(r,z,bf,1)
       psi0=bf%psi
 c-----------------------------------------------------------------------
 c     initialize variables.
 c-----------------------------------------------------------------------
       istep=0
-      eta=0
+      eta=eta1
       deta=twopi/mtheta
       y=0
       y(2)=SQRT((r-ro)**2+(z-zo)**2)
@@ -518,7 +504,7 @@ c-----------------------------------------------------------------------
       atol=etol*y(2)
       iwork=0
       rwork=0
-      rwork(1)=twopi
+      rwork(1)=eta2
       rwork(11)=0
 c-----------------------------------------------------------------------
 c     write header.
@@ -548,22 +534,20 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     advance differential equations.
 c-----------------------------------------------------------------------
-         IF(eta >= twopi .OR. istep >= nstep  .OR.  istate < 0
+         IF(eta >= eta2 .OR. istep >= nstepd  .OR.  istate < 0
      $        .OR. ABS(err) >= 1)EXIT
          istep=istep+1
-         CALL lsode(direct_fl_der,neq,y,eta,twopi,itol,rtol,atol,
+         CALL lsode(direct_fl_der,neq,y,eta,eta2,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
       ENDDO
       IF(out_fl)WRITE(out_2d_unit,20)
       IF(bin_fl)WRITE(bin_2d_unit)
 c-----------------------------------------------------------------------
-c     abort if istep > nstep.
+c     abort if istep > nstepd.
 c-----------------------------------------------------------------------
-      IF(eta < twopi)THEN
-         WRITE(message,40)"direct_int: istep = nstep = ",nstep,
-     $        " at eta = ",eta,", ipsi = ",ipsi
-         CALL program_stop(message)
+      IF(eta < eta2)THEN
       ENDIF
+      len_y_out = istep
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
