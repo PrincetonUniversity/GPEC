@@ -810,6 +810,139 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(OUT) :: maxima_count
       REAL(r8), DIMENSION(1:), INTENT(OUT) :: eta_maxes
       REAL(r8), DIMENSION(1:,1:), INTENT(OUT) :: eta_brackets
+
+      REAL(r8), PARAMETER :: dq_eps=100
+      INTEGER :: i
+      LOGICAL :: prev_above_threshold,wrap_max,wrap_
+      REAL(r8), DIMENSION(1:len_y_out) :: dqdeta
+      REAL(r8), DIMENSION(100) :: max_dqdeta,max_locations
+
+      max_locations=0.0
+      eta_maxes=0.0
+      maxima_count=0
+      wrap_max=.FALSE.
+      wrap_=wrap
+      prev_above_threshold=.FALSE.
+c-----------------------------------------------------------------------
+c     sanity check that final eta is less than twopi. 
+c     only called when wrap = .TRUE. and we are analysing the whole
+c     [0,2pi] interval. lsode integrator makes sure final eta is twopi
+c-----------------------------------------------------------------------
+      IF (y_out(len_y_out,0) > twopi .AND. wrap) THEN
+         CALL program_stop("eta wrap error... debug direct.f")
+      ENDIF
+c-----------------------------------------------------------------------
+c     turn y_out into dqdeta.
+c-----------------------------------------------------------------------
+      DO i=0,(len_y_out-1),+1
+         dqdeta(i+1) = (f/twopi)*(y_out(i+1,3)-y_out(i,3))
+     $                 /(y_out(i+1,0)-y_out(i,0))!
+      ENDDO
+c-----------------------------------------------------------------------
+c     identifies all regions of eta above threshold. calculates the 
+c     maximum value of d_q_int/d_eta as well as eta for each region.
+c-----------------------------------------------------------------------
+      DO i=1,len_y_out-1,+1
+         IF((dqdeta(i)>dq_eps).AND.(.NOT.prev_above_threshold)) THEN
+            IF(i==1)THEN
+               wrap_max=.TRUE.
+            ENDIF
+            maxima_count=maxima_count+1
+
+            eta_brackets(maxima_count,1)=y_out(i-1,0)
+            eta_brackets(maxima_count,2)=y_out(i,0)
+
+            max_dqdeta(maxima_count)=dqdeta(i)
+            max_locations(maxima_count) = 0.5*(y_out(i,0)+
+     $                                         y_out(i-1,0))
+            prev_above_threshold=.TRUE.
+         ELSEIF ((dqdeta(i)>dq_eps) .AND. prev_above_threshold) THEN
+            eta_brackets(maxima_count,2)=y_out(i,0)
+            
+            IF (dqdeta(i)>max_dqdeta(maxima_count)) THEN
+               max_dqdeta(maxima_count)=dqdeta(i)
+               max_locations(maxima_count) = 0.5*(y_out(i,0)+
+     $                                            y_out(i-1,0))
+            ENDIF
+            prev_above_threshold=.TRUE.
+         ELSE
+            prev_above_threshold=.FALSE.
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     case where whole range is under threshold doesn't require wrapping
+c-----------------------------------------------------------------------
+      IF(MINVAL(dqdeta) > dq_eps)THEN
+            wrap_=.FALSE.
+      ENDIF
+c-----------------------------------------------------------------------
+c     final datapoint is a special case due to the possibility of the 
+c     region wrapping around to eta=0 region.
+c-----------------------------------------------------------------------
+      IF (dqdeta(len_y_out)>dq_eps .AND. wrap_) THEN
+            IF (prev_above_threshold) THEN 
+               IF (dqdeta(len_y_out)>max_dqdeta(maxima_count)) THEN
+                  max_dqdeta(maxima_count)=dqdeta(len_y_out)
+                  max_locations(maxima_count) = 
+     $                  0.5*(y_out(len_y_out-1,0)+y_out(len_y_out,0))
+               ENDIF
+               eta_brackets(maxima_count,2)=y_out(0,0)
+
+               IF (wrap_max) THEN
+                  eta_brackets(1,1)=eta_brackets(maxima_count,1)
+
+                  IF (max_dqdeta(maxima_count)>=max_dqdeta(1)) THEN
+                     max_dqdeta(1)=max_dqdeta(maxima_count)
+                     max_locations(1)=max_locations(maxima_count)
+                  ENDIF
+
+                  eta_brackets(maxima_count,1)=0.0
+                  eta_brackets(maxima_count,2)=0.0
+
+                  max_dqdeta(maxima_count)=0.0
+                  max_locations(maxima_count)=0.0
+                  maxima_count=maxima_count-1
+               ENDIF
+
+            ELSEIF (wrap_max) THEN !.AND. !prev_above_threshold)
+               eta_brackets(1,1)=y_out(len_y_out-1,0)
+
+               IF (dqdeta(len_y_out)>max_dqdeta(1)) THEN
+                  max_dqdeta(1)=dqdeta(len_y_out)
+                  max_locations(1)=0.5*(y_out(len_y_out-1,0)
+     $                                  +y_out(len_y_out,0))        
+               ENDIF
+            ELSE
+               maxima_count=maxima_count+1
+
+               eta_brackets(maxima_count,1)=y_out(len_y_out-1,0)
+               eta_brackets(maxima_count,2)=y_out(0,0)
+
+               max_dqdeta(maxima_count)=dqdeta(len_y_out)
+               max_locations(maxima_count) = 
+     $                  0.5*(y_out(len_y_out-1,0)+y_out(len_y_out,0))
+            ENDIF
+      ENDIF
+c-----------------------------------------------------------------------
+c     warning if theres more than 2 xpoints.
+c-----------------------------------------------------------------------
+      IF(maxima_count>2 .AND. wrap)THEN
+         CALL program_stop("More than 2 x-points detected.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     filling out xpt_etas output.
+c-----------------------------------------------------------------------
+      IF (maxima_count==0) THEN
+         xpt_etas(1)=0.0
+      ELSE
+         DO i=1,maxima_count,+1
+            eta_maxes(i)=max_locations(i)
+            IF(wrap)THEN
+               xpt_etas(i)=max_locations(i)
+               xpt_etas(i)=xpt_etas(i)-twopi*floor(xpt_etas(i)/twopi)
+            ENDIF
+         ENDDO
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
