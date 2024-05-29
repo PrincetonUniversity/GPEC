@@ -836,6 +836,78 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_local_xpoint
 c-----------------------------------------------------------------------
+c     subprogram 9. direct_saddle_angle.
+c     finds angle location of nearby saddle-node eigenvector using 
+c     a binary search type algorithm
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_saddle_angle(rx,zx,rho,nu1i,nu2i,nu)
+
+      REAL(r8), INTENT(IN) :: rx,zx,rho,nu1i,nu2i
+      REAL(r8), INTENT(OUT) :: nu
+
+      INTEGER, PARAMETER :: ird=4
+      REAL(r8), PARAMETER :: nu_eps=1e-13
+
+      REAL(r8), DIMENSION(ird) :: nus,nu_tmp
+      REAL(r8) :: bnorm,bnu,nustep,pos,nu1,nu2
+      INTEGER :: i,inuh
+
+      nu1=nu1i
+      nu2=nu2i
+      pos=1.0
+      inuh=0
+c-----------------------------------------------------------------------
+c     looping over narrower nu-intervals
+c-----------------------------------------------------------------------
+      CALL direct_Bnu(rx,zx,nu1i,rho,bnorm)
+      IF(bnorm<zero)pos=-1.0
+c-----------------------------------------------------------------------
+c     looping to narrow nu-intervals
+c-----------------------------------------------------------------------
+      DO 
+c-----------------------------------------------------------------------
+c     generating vector of nus to search along for Bnu sign change
+c-----------------------------------------------------------------------
+         nustep = nu2/(ird-1)
+         nu_tmp = (/(i-1,i=1,ird)/)
+         nu_tmp = nu_tmp*nustep
+         nus = nu_tmp+nu1
+c-----------------------------------------------------------------------
+c     loop along nus from nu1 to nu2, seaching for Bnu sign change
+c-----------------------------------------------------------------------
+         DO i=1,ird,+1
+            CALL direct_Bnu(rx,zx,nus(i),rho,bnu)
+
+            IF(bnu*pos<0.0)THEN
+c-----------------------------------------------------------------------
+c     tightening search bracket, cyling original do loop
+c-----------------------------------------------------------------------
+               nu1=nus(i-1)
+               nu2=nus(i)-nus(i-1)
+               nu=(nus(i)+nus(i-1))/2
+               CALL direct_Bnu(rx,zx,nu,rho,bnu)
+               EXIT
+            ENDIF
+            IF(i==ird) CALL program_stop("couldn't find x-pt angle")
+         ENDDO
+
+         IF(ABS(nu-nu1)<nu_eps)EXIT
+
+         inuh = inuh+1
+         IF (inuh  > 80)THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to find x-pt angle.")
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_saddle_angle
+c-----------------------------------------------------------------------
 c     subprogram 12. direct_initialise_xpoints.
 c     scans the field-line integral to find likely x-point locations,
 c     denoted by diverging regions in the q-integral
@@ -993,4 +1065,31 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_initialise_xpoints
 c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     subprogram . direct_Bnu.
+c     calculates local B-field displaced from some r,z point in polar
+c     coordinates 
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_Bnu(r,z,nu,rho,Bnu)
+
+      REAL(r8), INTENT(IN) :: r,z,nu,rho
+      REAL(r8), INTENT(OUT) :: Bnu
+      REAL(r8) :: cosfac,sinfac
+      TYPE(direct_bfield_type) :: bf
+c-----------------------------------------------------------------------
+c     finding angle of o-point from perspective of x-point.
+c-----------------------------------------------------------------------
+      cosfac=COS(nu)
+      sinfac=SIN(nu)
+      CALL direct_get_bfield(r+rho*cosfac,z+rho*sinfac,bf,1)
+      !Brho=cosfac*bf%br+sinfact*bf%bz
+      Bnu=-sinfac*bf%br+cosfac*bf%bz
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_Bnu
       END MODULE direct_mod
