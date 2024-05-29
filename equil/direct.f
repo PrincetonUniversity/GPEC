@@ -14,6 +14,7 @@ c     4.5 find_fl_surface.
 c     5. direct_fl_der.
 c     6. direct_refine.
 c     7. direct_output.
+c     8. direct_local_xpoint.
 c     12. direct_initialise_xpoints.
 c-----------------------------------------------------------------------
 c     subprogram 0. direct_mod.
@@ -493,7 +494,7 @@ c-----------------------------------------------------------------------
  30   FORMAT(i4,1p,8e11.3)
  40   FORMAT(a,i4,a,es10.3,a,i3)
  51   FORMAT(1x,"psifac =",es10.3)
- 61   FORMAT(1x,"direct_int: steps taken =",i6," of ",i6,".")
+ 61   FORMAT(1x,"direct_int:",i6," steps taken of max",i6,".")
  11   FORMAT(1x,"Incomplete: eta=",es10.2," of [",es10.2,",",es10.2,"]")
 c-----------------------------------------------------------------------
 c     find flux surface.
@@ -793,7 +794,8 @@ c-----------------------------------------------------------------------
       END SUBROUTINE direct_output
 c-----------------------------------------------------------------------
 c     subprogram 8. direct_local_xpoint.
-c     finds location of nearby x-point
+c     finds location of nearby x-point where |Bp|=0 using Newton method.
+c     can and will search outside separatrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
