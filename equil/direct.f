@@ -792,6 +792,48 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_output
 c-----------------------------------------------------------------------
+c     subprogram 8. direct_local_xpoint.
+c     finds location of nearby x-point
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_local_xpoint(r,z)
+
+      REAL(r8), INTENT(INOUT) :: r,z
+      REAL(r8) :: ajac(2,2),det,dr,dz
+      REAL(r8), PARAMETER :: eps=1e-13
+      TYPE(direct_bfield_type) :: bf
+      INTEGER :: ir
+c-----------------------------------------------------------------------
+c     use newton iteration to find x-point.
+c-----------------------------------------------------------------------
+      ir = 0
+      DO
+         CALL direct_get_bfield(r,z,bf,2)
+         ajac(1,1)=bf%brr
+         ajac(1,2)=bf%brz
+         ajac(2,1)=bf%bzr
+         ajac(2,2)=bf%bzz
+         det=ajac(1,1)*ajac(2,2)-ajac(1,2)*ajac(2,1)
+         dr=(ajac(1,2)*bf%bz-ajac(2,2)*bf%br)/det
+         dz=(ajac(2,1)*bf%br-ajac(1,1)*bf%bz)/det
+         r=r+dr
+         z=z+dz
+         IF(ABS(dr) <= eps*r .AND. ABS(dz) <= eps*r)EXIT
+
+         ir = ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to find x-point.")
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_local_xpoint
+c-----------------------------------------------------------------------
 c     subprogram 12. direct_initialise_xpoints.
 c     scans the field-line integral to find likely x-point locations,
 c     denoted by diverging regions in the q-integral
