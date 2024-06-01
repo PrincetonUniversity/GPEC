@@ -1012,12 +1012,13 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psix,psinuh,r,Rlocal,Zlocal,x,y,chi
       REAL(r8), DIMENSION(4) :: r_eps
       TYPE(direct_bfield_type) :: bf
-      LOGICAL :: debug=.TRUE.
+      LOGICAL :: debug=.FALSE.
 
       r_eps(1) = 1e-7
       r_eps(2) = 1e-8
       r_eps(3) = 1e-9
       r_eps(4) = 1e-10
+      ir=3
 c-----------------------------------------------------------------------
 c     finding correct initialisation point for nuh (read nu-half).
 c     gamma should be less than pi for a real x-point
@@ -1037,7 +1038,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     finding angle where Brho = 0.
 c-----------------------------------------------------------------------
-      CALL direct_saddle_angle(rx,zx,rx*r_eps(3),nu(2),nu(1)-nu(2)
+      CALL direct_saddle_angle(rx,zx,rx*r_eps(ir),nu(2),nu(1)-nu(2)
      $                                                 ,nuh,'r',.FALSE.)
 c-----------------------------------------------------------------------
 c     make sure nuh is in [0,2pi). works even if nuh is negative.
