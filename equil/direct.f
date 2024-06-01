@@ -17,6 +17,7 @@ c     7. direct_output.
 c     8. direct_local_xpoint.
 c     9. direct_saddle_angle.
 c     10. direct_psisaddle.
+c     11. direct_xpoint.
 c     12. direct_initialise_xpoints.
 c     17. direct_Blocal
 c-----------------------------------------------------------------------
@@ -1093,6 +1094,132 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_psisaddle
+c-----------------------------------------------------------------------
+c     subprogram 11. direct_xpoint.
+c     finds location and angles of nearby x-point, checks if it's inside
+C     separatrix.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_xpoint(rin,zin,x_i)
+
+      REAL(r8), INTENT(IN) :: rin,zin
+      INTEGER, INTENT(IN) :: x_i
+
+      INTEGER, PARAMETER :: ird=4
+      REAL(r8), PARAMETER :: psi_eps=1e-4, r_eps1=1e-9
+      REAL(r8) :: r,z
+      REAL(r8) :: b11,lincheck,gamma,vartheta
+      REAL(r8), DIMENSION(1:2) :: nu
+      REAL(r8) :: oangle,nu_var,Bnu,Bnua,Bnub,Bnuc
+      TYPE(direct_bfield_type) :: bf
+      LOGICAL :: test_direct_local_xpoint,test_direct_saddle_angle
+
+      r=rin
+      z=zin
+      nu=0.0
+      test_direct_local_xpoint=.FALSE.
+      test_direct_saddle_angle=.FALSE.
+c-----------------------------------------------------------------------
+c     testing direct_local_xpoint.
+c-----------------------------------------------------------------------
+      IF(test_direct_local_xpoint)THEN
+         CALL direct_get_bfield(ro,zo,bf,1)
+         PRINT "(A)", "psi at origin"
+         PRINT "(f16.10)", bf%psi
+         PRINT "(A)", "r,z b4 direct_local_xpoint"
+         PRINT "(f16.5)", r
+         PRINT "(f16.5)", z
+         CALL direct_get_bfield(r,z,bf,1)
+         PRINT "(A)", "|Bp| b4 direct_local_xpoint"
+         PRINT "(f16.10)", SQRT(bf%br**2+bf%bz**2)
+         PRINT "(A)", "psi b4 direct_local_xpoint"
+         PRINT "(f16.10)", bf%psi
+         CALL direct_local_xpoint(r,z)
+         PRINT "(A)", "r,z aftr direct_local_xpoint"
+         PRINT "(f16.5)", r
+         PRINT "(f16.5)", z
+         CALL direct_get_bfield(r,z,bf,1)
+         PRINT "(A)", "|Bp| after direct_local_xpoint"
+         PRINT "(f16.10)", SQRT(bf%br**2+bf%bz**2)
+         PRINT "(A)", "psi after direct_local_xpoint"
+         PRINT "(f16.10)", bf%psi
+      ENDIF
+c-----------------------------------------------------------------------
+c     finds x-point and fills out global module variables
+c-----------------------------------------------------------------------
+      CALL direct_local_xpoint(r,z)
+      CALL direct_get_bfield(r,z,bf,1)
+      rxs(x_i) = r
+      zxs(x_i) = z
+c-----------------------------------------------------------------------
+c     checks if outside separatrix. ended up not needing...
+c-----------------------------------------------------------------------
+      !IF (bf%psi < -psi_eps*psio) THEN
+      !   near_sep = .FALSE. 
+      !   RETURN
+      !ENDIF
+c-----------------------------------------------------------------------
+c     updating xpt_etas with a more exact value than that calculated by
+c     direct_initialise_xpoints.
+c-----------------------------------------------------------------------
+      xpt_etas(x_i)=ATAN2(zxs(x_i)-zo,rxs(x_i)-ro)
+      xpt_etas(x_i)=xpt_etas(x_i) - twopi*floor(xpt_etas(x_i)/twopi)
+c-----------------------------------------------------------------------
+c     finding angle of o-point from perspective of x-point (oangle).
+c-----------------------------------------------------------------------
+      oangle = xpt_etas(x_i)+pi
+      oangle = oangle - twopi*floor(oangle/twopi)
+      nu_var = pi/2
+c-----------------------------------------------------------------------
+c     calculating separatrix leg angles (nu). nu(1) is always more than 
+c     oangle, nu(2) is always less than oangle.
+c-----------------------------------------------------------------------
+      CALL direct_saddle_angle(rxs(x_i),zxs(x_i),r_eps1*rxs(x_i),oangle,
+     $                                     nu_var,nu(1),'n',.FALSE.)
+      CALL direct_saddle_angle(rxs(x_i),zxs(x_i),r_eps1*rxs(x_i),oangle,
+     $                                     -nu_var,nu(2),'n',.FALSE.)
+c-----------------------------------------------------------------------
+c     testing direct_saddle_angle AGAGAG
+c-----------------------------------------------------------------------
+      IF(test_direct_saddle_angle)THEN
+         CALL direct_Blocal(rxs(x_i),zxs(x_i),nu(1),r_eps1*rxs(x_i),
+     $                                                     'n',Bnua)
+         CALL direct_Blocal(rxs(x_i),zxs(x_i),oangle,r_eps1*rxs(x_i),
+     $                                                     'n',Bnub)
+         CALL direct_Blocal(rxs(x_i),zxs(x_i),nu(2),r_eps1*rxs(x_i),
+     $                                                     'n',Bnuc)
+         PRINT "(A)", "First x-point leg's angle nu:"
+         PRINT "(f16.3)", nu(1)/pi
+         PRINT "(A)", "First leg B_nu"
+         PRINT "(e16.3)", Bnua
+         PRINT "(A)", "nu angle pointing from x-pt to mag. axis:"
+         PRINT "(f16.3)", oangle/pi
+         PRINT "(A)", "B_nu at angle pointing from x-pt to mag. axis:"
+         PRINT "(e16.3)", Bnub
+         PRINT "(A)", "Second x-point leg's angle nu:"
+         PRINT "(f16.3)", nu(2)/pi
+         PRINT "(A)", "Second leg B_nu"
+         PRINT "(e16.3)", Bnuc
+         PRINT "(A)", "Angle between x-point legs (gamma)"
+         PRINT "(f16.3)", (nu(1)-nu(2))/pi
+      ENDIF
+c-----------------------------------------------------------------------
+c     calculating xpoint angles gamma, vartheta, and linear term b11.
+c-----------------------------------------------------------------------
+      CALL direct_psisaddle(r,z,oangle,nu,b11,gamma,vartheta,lincheck)
+c-----------------------------------------------------------------------
+c     filling out x-point module variables.
+c-----------------------------------------------------------------------
+      xpt_b11s(x_i) = b11
+      xpt_gammas(x_i) = gamma
+      xpt_varthetas(x_i) = vartheta
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_xpoint
 c-----------------------------------------------------------------------
 c     subprogram 12. direct_initialise_xpoints.
 c     scans the field-line integral to find likely x-point locations,
