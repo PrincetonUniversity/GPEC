@@ -840,63 +840,83 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     subprogram 9. direct_saddle_angle.
 c     finds angle location of nearby saddle-node eigenvector using 
-c     a binary search type algorithm
+c     a binary search type algorithm. can find point where Bnu = 0 or 
+c     Brho = 0.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_saddle_angle(rx,zx,rho,nu1i,nu2i,nu)
+      SUBROUTINE direct_saddle_angle(rx,zx,rho,nustart_in,nu_var_in,nu,
+     $                                                     Bcase,debug)
 
-      REAL(r8), INTENT(IN) :: rx,zx,rho,nu1i,nu2i
+      REAL(r8), INTENT(IN) :: rx,zx,rho,nustart_in,nu_var_in
+      CHARACTER, INTENT(IN) :: Bcase
+      LOGICAL, INTENT(IN) :: debug
       REAL(r8), INTENT(OUT) :: nu
 
       INTEGER, PARAMETER :: ird=4
       REAL(r8), PARAMETER :: nu_eps=1e-13
 
       REAL(r8), DIMENSION(ird) :: nus,nu_tmp
-      REAL(r8) :: bnorm,bnu,nustep,pos,nu1,nu2
+      REAL(r8) :: bnorm,Bout,nustep,pos,nustart,nu_var
       INTEGER :: i,inuh
 
-      nu1=nu1i
-      nu2=nu2i
+
+      nustart=nustart_in
+      nu_var=nu_var_in
       pos=1.0
       inuh=0
 c-----------------------------------------------------------------------
 c     looping over narrower nu-intervals
 c-----------------------------------------------------------------------
-      CALL direct_Bnu(rx,zx,nu1i,rho,bnorm)
+      CALL direct_Blocal(rx,zx,nustart_in,rho,Bcase,bnorm)
       IF(bnorm<zero)pos=-1.0
 c-----------------------------------------------------------------------
 c     looping to narrow nu-intervals
 c-----------------------------------------------------------------------
       DO 
 c-----------------------------------------------------------------------
-c     generating vector of nus to search along for Bnu sign change
+c     generating vector of nus to search along for Bout sign change
 c-----------------------------------------------------------------------
-         nustep = nu2/(ird-1)
+         nustep = nu_var/(ird-1)
          nu_tmp = (/(i-1,i=1,ird)/)
          nu_tmp = nu_tmp*nustep
-         nus = nu_tmp+nu1
+         nus = nu_tmp+nustart
+         IF(debug)PRINT "(A)", "inuh"
+         IF(debug)PRINT "(i6)", inuh
 c-----------------------------------------------------------------------
-c     loop along nus from nu1 to nu2, seaching for Bnu sign change
+c     loop along nus from nustart to nustart+nu_var, seaching for Bout 
+c     sign change
 c-----------------------------------------------------------------------
          DO i=1,ird,+1
-            CALL direct_Bnu(rx,zx,nus(i),rho,bnu)
+            CALL direct_Blocal(rx,zx,nus(i),rho,Bcase,Bout)
 
-            IF(bnu*pos<0.0)THEN
+c-----------------------------------------------------------------------
+c     debug print statement
+c-----------------------------------------------------------------------
+            IF(debug)THEN
+               PRINT "(A)", "i"
+               PRINT "(i6)", i
+               PRINT "(A)", "nu"
+               PRINT "(es16.10)", nus(i)
+               PRINT "(A)", "Bout"
+               PRINT "(f16.9)", Bout/bnorm
+            ENDIF
 c-----------------------------------------------------------------------
 c     tightening search bracket, cyling original do loop
 c-----------------------------------------------------------------------
-               nu1=nus(i-1)
-               nu2=nus(i)-nus(i-1)
+            IF(Bout*pos<0.0)THEN
+               nustart=nus(i-1)
+               nu_var=nus(i)-nus(i-1)
                nu=(nus(i)+nus(i-1))/2
-               CALL direct_Bnu(rx,zx,nu,rho,bnu)
+               CALL direct_Blocal(rx,zx,nu,rho,Bcase,Bout)
+               IF(debug)PRINT "(es16.10)", ABS(nu-nustart)
                EXIT
             ENDIF
             IF(i==ird) CALL program_stop("couldn't find x-pt angle")
          ENDDO
 
-         IF(ABS(nu-nu1)<nu_eps)EXIT
+         IF(ABS(nu-nustart)<nu_eps)EXIT
 
          inuh = inuh+1
          IF (inuh  > 80)THEN
