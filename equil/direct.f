@@ -16,6 +16,7 @@ c     6. direct_refine.
 c     7. direct_output.
 c     8. direct_local_xpoint.
 c     9. direct_saddle_angle.
+c     10. direct_psisaddle.
 c     12. direct_initialise_xpoints.
 c     17. direct_Blocal
 c-----------------------------------------------------------------------
@@ -910,7 +911,11 @@ c-----------------------------------------------------------------------
                nu_var=nus(i)-nus(i-1)
                nu=(nus(i)+nus(i-1))/2
                CALL direct_Blocal(rx,zx,nu,rho,Bcase,Bout)
-               IF(debug)PRINT "(es16.10)", ABS(nu-nustart)
+
+               IF(debug)THEN
+                  PRINT "(A)", "Delta nu"
+                  PRINT "(es16.10)", ABS(nu-nustart)
+               ENDIF
                EXIT
             ENDIF
             IF(i==ird) CALL program_stop("couldn't find x-pt angle")
