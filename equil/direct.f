@@ -1050,9 +1050,11 @@ c     between the two separatrix legs. we check if we are within
 c     nuh_eps2 of this case
 c-----------------------------------------------------------------------
       lincheck = abs(nuh-nuperf)
-      IF(lincheck > nuh_eps2 .OR. debug)THEN
+      IF(debug .OR. lincheck > nuh_eps2)THEN
          PRINT"(A)","nu value where Brho=0 deviates from linear case by"
          PRINT "(es16.10)", lincheck
+      ENDIF
+      IF(lincheck > nuh_eps2)THEN
          CALL program_stop("psi isn't well approximated at the x-point")
       ENDIF
 c-----------------------------------------------------------------------
