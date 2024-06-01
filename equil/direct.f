@@ -839,6 +839,63 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_local_xpoint
 c-----------------------------------------------------------------------
+c     subprogram 9. direct_saddle_angle_DEPRECATED.
+c     finds angle location of nearby saddle-node eigenvector using 
+c     Newton iteration. Ends up infinite looping... I suspect the 
+c     analytic form of the zero crosssing of Bout is unfriendly to 
+c     the Newton method (I double checked formulas etc)
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_saddle_angle_DEPRECATED(rx,zx,nu,Bnorm)
+
+      REAL(r8), INTENT(IN) :: rx,zx,Bnorm
+      REAL(r8), INTENT(INOUT) :: nu
+      REAL(r8), PARAMETER :: r_eps1=1e-9,r_eps2=1e-10,nu_eps=1e-13
+      INTEGER :: ir
+      REAL(r8) :: Bout,dBout_dnu,cosfac,sinfac,dnu
+      TYPE(direct_bfield_type) :: bf
+      
+c-----------------------------------------------------------------------
+c     use newton iteration to find point where Bout = 0.
+c-----------------------------------------------------------------------
+c     vtheta = -sin(theta)*Rhat+cos(theta)*Zhat
+c     B = bf%br*Rhat+bf%bz*Zhat
+c     CHJECK LINEARITY OF LEG?
+c     ONLY TWO X-pts, can check if need the good treatment for them both
+      ir=0
+      DO 
+         cosfac=COS(nu)
+         sinfac=SIN(nu)
+         CALL direct_get_bfield(rx+r_eps1*rx*cosfac,
+     $                          zx+r_eps1*rx*sinfac,bf,1)
+         Bout = (-sinfac*bf%br+cosfac*bf%bz)
+         dBout_dnu = ((-cosfac*bf%br-sinfac*bf%bz) +
+     $      (-sinfac*bf%brr+cosfac*bf%bzr)*(-r_eps1*rx*sinfac) +
+     $      (-sinfac*bf%brz+cosfac*bf%bzz)*(r_eps1*rx*cosfac))
+         dnu = -Bout/dBout_dnu
+         nu=nu+dnu
+         IF(ABS(dnu) <= nu_eps)EXIT
+
+         PRINT "(e16.3)", Bout/Bnorm
+
+         ir = ir+1
+         IF (ir  > 50) THEN !direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to find x-pt angle.")
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     make sure nu is in [0,2pi). works even if nu is negative
+c-----------------------------------------------------------------------
+      nu = nu - twopi*floor(nu/twopi)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_saddle_angle_DEPRECATED
+c-----------------------------------------------------------------------
 c     subprogram 9. direct_saddle_angle.
 c     finds angle location of nearby saddle-node eigenvector using 
 c     a binary search type algorithm. can find point where Bnu = 0 or 
