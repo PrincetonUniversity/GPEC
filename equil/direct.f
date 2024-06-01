@@ -15,7 +15,9 @@ c     5. direct_fl_der.
 c     6. direct_refine.
 c     7. direct_output.
 c     8. direct_local_xpoint.
+c     9. direct_saddle_angle.
 c     12. direct_initialise_xpoints.
+c     17. direct_Blocal
 c-----------------------------------------------------------------------
 c     subprogram 0. direct_mod.
 c     module declarations.
@@ -1066,30 +1068,37 @@ c-----------------------------------------------------------------------
       END SUBROUTINE direct_initialise_xpoints
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
-c     subprogram . direct_Bnu.
+c     subprogram 17. direct_Blocal.
 c     calculates local B-field displaced from some r,z point in polar
-c     coordinates 
+c     coordinates. either Bnu or Brho depending on Bcase
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_Bnu(r,z,nu,rho,Bnu)
+      SUBROUTINE direct_Blocal(r,z,nu,rho,Bcase,Bout)
 
       REAL(r8), INTENT(IN) :: r,z,nu,rho
-      REAL(r8), INTENT(OUT) :: Bnu
+      CHARACTER, INTENT(IN) :: Bcase
+      REAL(r8), INTENT(OUT) :: Bout
       REAL(r8) :: cosfac,sinfac
       TYPE(direct_bfield_type) :: bf
 c-----------------------------------------------------------------------
-c     finding angle of o-point from perspective of x-point.
+c     calculation of Bout.
 c-----------------------------------------------------------------------
       cosfac=COS(nu)
       sinfac=SIN(nu)
       CALL direct_get_bfield(r+rho*cosfac,z+rho*sinfac,bf,1)
-      !Brho=cosfac*bf%br+sinfact*bf%bz
-      Bnu=-sinfac*bf%br+cosfac*bf%bz
+      SELECT CASE (Bcase)
+         CASE ('n')
+         Bout=-sinfac*bf%br+cosfac*bf%bz
+         CASE ('r')
+         Bout=cosfac*bf%br+sinfac*bf%bz
+         CASE DEFAULT
+         CALL program_stop("Invalid Bcase in direct_Blocal")  
+      END SELECT
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE direct_Bnu
+      END SUBROUTINE direct_Blocal
       END MODULE direct_mod
