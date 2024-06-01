@@ -1007,11 +1007,12 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(OUT) :: b11,lincheck,gamma,vartheta
 
       REAL(r8), PARAMETER :: nuh_eps=1e-13, nuh_eps2=1e-6
-      INTEGER :: inuh, ir
-      REAL(r8) :: nuh,nuperf,Br,dBr_dnuh,cosfac,sinfac,cosfact,sinfact
-      REAL(r8) :: dnuh,psix,psinuh,r,Rlocal,Zlocal,x,y,chi
+      INTEGER :: ir
+      REAL(r8) :: nuh,nuperf,cosfac,sinfac,cosfact,sinfact
+      REAL(r8) :: psix,psinuh,r,Rlocal,Zlocal,x,y,chi
       REAL(r8), DIMENSION(4) :: r_eps
       TYPE(direct_bfield_type) :: bf
+      LOGICAL :: debug=.TRUE.
 
       r_eps(1) = 1e-7
       r_eps(2) = 1e-8
@@ -1036,27 +1037,23 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     finding angle where Brho = 0.
 c-----------------------------------------------------------------------
-         CALL direct_saddle_angle(rx,zx,rx*r_eps(ir),nu(2),nu(1)-nu(2)
+      CALL direct_saddle_angle(rx,zx,rx*r_eps(3),nu(2),nu(1)-nu(2)
      $                                                 ,nuh,'r',.FALSE.)
 c-----------------------------------------------------------------------
 c     make sure nuh is in [0,2pi). works even if nuh is negative.
 c-----------------------------------------------------------------------
-         nuh = nuh - twopi*floor(nuh/twopi)
+      nuh = nuh - twopi*floor(nuh/twopi)
 c-----------------------------------------------------------------------
-c     comparison of nuh to the its starting point. ending loop.
+c     in the linear approaximation of psi at the x-point, Brho=0 halfway
+c     between the two separatrix legs. we check if we are within 
+c     nuh_eps2 of this case
 c-----------------------------------------------------------------------
-         ir=ir+1
-         lincheck = abs(nuh-nuperf)
+      lincheck = abs(nuh-nuperf)
+      IF(lincheck > nuh_eps2 .OR. debug)THEN
+         PRINT"(A)","nu value where Brho=0 deviates from linear case by"
          PRINT "(es16.10)", lincheck
-         !1.0080298818E-08
-         !1.0609619849E-09
-         !1.2763864632E-08
-         !5.9485469883E-09
-         !4.4211843520E-08
-         !5.7568033007E-08
-         IF(lincheck < nuh_eps2 .OR. ir >4)EXIT
-      ENDDO
-      ir = ir-1
+         CALL program_stop("psi isn't well approximated at the x-point")
+      ENDIF
 c-----------------------------------------------------------------------
 c     defining rotated saddle-point coordinate frame to extract linear
 c     component.
