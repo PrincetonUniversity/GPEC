@@ -992,6 +992,108 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_saddle_angle
 c-----------------------------------------------------------------------
+c     subprogram 10. direct_psisaddle.
+c     calculates the linear term of psi_in at the saddle point, as well
+c     as gamma, and vartheta
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_psisaddle(rx,zx,oangle,
+     $                              nu,b11,gamma,vartheta,lincheck)
+
+      REAL(r8), INTENT(IN) :: rx,zx,oangle
+      REAL(r8), DIMENSION(2), INTENT(IN) :: nu
+      REAL(r8), INTENT(OUT) :: b11,lincheck,gamma,vartheta
+
+      REAL(r8), PARAMETER :: nuh_eps=1e-13, nuh_eps2=1e-6
+      INTEGER :: inuh, ir
+      REAL(r8) :: nuh,nuperf,Br,dBr_dnuh,cosfac,sinfac,cosfact,sinfact
+      REAL(r8) :: dnuh,psix,psinuh,r,Rlocal,Zlocal,x,y,chi
+      REAL(r8), DIMENSION(4) :: r_eps
+      TYPE(direct_bfield_type) :: bf
+
+      r_eps(1) = 1e-7
+      r_eps(2) = 1e-8
+      r_eps(3) = 1e-9
+      r_eps(4) = 1e-10
+c-----------------------------------------------------------------------
+c     finding correct initialisation point for nuh (read nu-half).
+c     gamma should be less than pi for a real x-point
+c-----------------------------------------------------------------------
+      nuperf = (nu(1)+nu(2))/2
+      gamma = nu(1)-nu(2)
+      nuh = nuperf
+
+      IF (gamma  > pi) THEN
+            CALL program_stop("Angle between separatrix legs > pi.")
+      ENDIF
+c-----------------------------------------------------------------------
+c     loop to make sure we reach linear region.
+c-----------------------------------------------------------------------
+      ir=1
+      DO
+c-----------------------------------------------------------------------
+c     finding angle where Brho = 0.
+c-----------------------------------------------------------------------
+         CALL direct_saddle_angle(rx,zx,rx*r_eps(ir),nu(2),nu(1)-nu(2)
+     $                                                 ,nuh,'r',.FALSE.)
+c-----------------------------------------------------------------------
+c     make sure nuh is in [0,2pi). works even if nuh is negative.
+c-----------------------------------------------------------------------
+         nuh = nuh - twopi*floor(nuh/twopi)
+c-----------------------------------------------------------------------
+c     comparison of nuh to the its starting point. ending loop.
+c-----------------------------------------------------------------------
+         ir=ir+1
+         lincheck = abs(nuh-nuperf)
+         PRINT "(es16.10)", lincheck
+         !1.0080298818E-08
+         !1.0609619849E-09
+         !1.2763864632E-08
+         !5.9485469883E-09
+         !4.4211843520E-08
+         !5.7568033007E-08
+         IF(lincheck < nuh_eps2 .OR. ir >4)EXIT
+      ENDDO
+      ir = ir-1
+c-----------------------------------------------------------------------
+c     defining rotated saddle-point coordinate frame to extract linear
+c     component.
+c-----------------------------------------------------------------------
+      IF (oangle>nu(2)) THEN
+         vartheta = nu(1)-pi/2.0  
+      ELSE 
+         vartheta = nu(2)-pi/2.0  
+      ENDIF
+      vartheta = vartheta - twopi*floor(vartheta/twopi)
+
+      r = r_eps(ir)*rx
+      cosfac=COS(nuh)
+      sinfac=SIN(nuh)
+      cosfact=COS(vartheta)
+      sinfact=SIN(vartheta)
+
+      Rlocal = r*cosfac
+      Zlocal = r*sinfac
+      x = cosfact*Rlocal + sinfact*Zlocal
+      y = -sinfact*Rlocal + cosfact*Zlocal
+      chi = -COS(gamma)*x+SIN(gamma)*y
+c-----------------------------------------------------------------------
+c     extracting linear component b11, where psi = psi(rx,zx)+b11*x*chi.
+c-----------------------------------------------------------------------
+      CALL direct_get_bfield(rx,zx,bf,1)
+      psix = bf%psi
+      CALL direct_get_bfield(rx+r*cosfac,zx+r*sinfac,bf,1)
+      psinuh = bf%psi
+
+      b11 = (psinuh-psix)/(x*chi)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_psisaddle
+c-----------------------------------------------------------------------
 c     subprogram 12. direct_initialise_xpoints.
 c     scans the field-line integral to find likely x-point locations,
 c     denoted by diverging regions in the q-integral
