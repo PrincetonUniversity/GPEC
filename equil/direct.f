@@ -1463,6 +1463,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out1,y_out2
       INTEGER :: len_y1_out,len_y2_out,maxima_count,tot_steps,ist1,ist2
       INTEGER :: i1,i2,i
+      LOGICAL :: dbg1xpt
 
       REAL(r8), DIMENSION(6,2) :: eta_brackets
       REAL(r8), DIMENSION(6) :: eta_maxes
@@ -1474,6 +1475,7 @@ c-----------------------------------------------------------------------
       yi2=0.0
       y_out1=0.0
       y_out2=0.0
+      dbg1xpt=.TRUE.
 c-----------------------------------------------------------------------
 c     adddressing case of only one x-point.
 c-----------------------------------------------------------------------
@@ -1499,7 +1501,22 @@ c-----------------------------------------------------------------------
 c     calling direct_initialise_xpoints to check for a second x-point.
 c-----------------------------------------------------------------------
          CALL direct_initialise_xpoints(y_out1,len_y1_out,.FALSE.,
-     $         .FALSE.,bf,10.03*one,eta_maxes,eta_brackets,maxima_count)
+     $         .FALSE.,bf,100*one,eta_maxes,eta_brackets,maxima_count)!10.03
+         IF(dbg1xpt)PRINT "(A)", "Maxima count for numerical integral"
+         IF(dbg1xpt)PRINT "(i6)", maxima_count
+         IF(dbg1xpt .AND. maxima_count>0)THEN
+            PRINT "(A)", "|||||||||||||||||||||||||||||||||||||||||||"
+            PRINT "(i6)", maxima_count
+            DO i=1,maxima_count
+               PRINT "(i6)", i
+               PRINT "(f16.5)", (eta_brackets(i,1)
+     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
+               PRINT "(f16.5)", (eta_maxes(i)
+     $            )!-twopi*floor(eta_maxes(i)/twopi))
+               PRINT "(f16.5)", (eta_brackets(i,2)
+     $            )!-twopi*floor(eta_brackets(i,2)/twopi))
+            ENDDO
+         ENDIF
 c-----------------------------------------------------------------------
 c     check first and last maxima to make sure they are unique.
 c-----------------------------------------------------------------------
@@ -1515,6 +1532,20 @@ c-----------------------------------------------------------------------
                   eta_maxes(i)=eta_maxes(i+1)
                ENDDO
             ENDIF
+            IF(dbg1xpt)PRINT "(A)", "Maxima count for numerical int."
+            IF(dbg1xpt)PRINT "(i6)", maxima_count
+            IF(dbg1xpt .AND. maxima_count>0)THEN
+               PRINT "(A)", "||||||||||||||||||||||||||||||||||||||||||"
+               DO i=1,maxima_count
+                  PRINT "(i6)", i
+                  PRINT "(f16.5)", (eta_brackets(i,1)
+     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
+                  PRINT "(f16.5)", (eta_maxes(i)
+     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
+                  PRINT "(f16.5)", (eta_brackets(i,2)
+     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
+               ENDDO
+            ENDIF
 c-----------------------------------------------------------------------
 c     if last maxima not unique, eliminate it
 c-----------------------------------------------------------------------  
@@ -1523,6 +1554,22 @@ c-----------------------------------------------------------------------
                eta_brackets(maxima_count,1:2)=0.0
                eta_maxes(maxima_count)=0.0
                maxima_count=maxima_count-1
+            ENDIF
+            IF(dbg1xpt .AND. maxima_count>0)THEN
+               PRINT "(A)", "||||||||||||||||||||||||||||||||||||||||||"
+               PRINT "(i6)", maxima_count
+               DO i=1,maxima_count
+                  PRINT "(i6)", i
+                  PRINT "(f16.5)", (eta_brackets(i,1)
+     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
+                  PRINT "(f16.5)", (eta_maxes(i)
+     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
+                  PRINT "(f16.5)", (eta_brackets(i,2)
+     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
+               ENDDO
+            ELSE
+               IF(dbg1xpt)PRINT "(A)", "|||||||||||||||||||||||||||||||"
+               IF(dbg1xpt)PRINT "(i6)", maxima_count
             ENDIF
          ENDIF
 c-----------------------------------------------------------------------
