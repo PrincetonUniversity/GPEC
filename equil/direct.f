@@ -1346,6 +1346,30 @@ c-----------------------------------------------------------------------
                max_locations(maxima_count) = 
      $                  0.5*(y_out(len_y_out-1,0)+y_out(len_y_out,0))
             ENDIF
+      ELSEIF (dqdeta(len_y_out)>dq_eps) THEN
+c-----------------------------------------------------------------------
+c     non wrap case treated same as i=1:len_y_out-1
+c-----------------------------------------------------------------------
+         IF(prev_above_threshold) THEN
+            eta_brackets(maxima_count,2)=y_out(len_y_out,0)
+            
+            IF (dqdeta(len_y_out)>max_dqdeta(maxima_count)) THEN
+               max_dqdeta(maxima_count)=dqdeta(len_y_out)
+               max_locations(maxima_count) = 0.5*(y_out(len_y_out,0)+
+     $                                            y_out(len_y_out-1,0))
+            ENDIF
+            prev_above_threshold=.TRUE.
+         ELSE
+            maxima_count=maxima_count+1
+
+            eta_brackets(maxima_count,1)=y_out(len_y_out-1,0)
+            eta_brackets(maxima_count,2)=y_out(len_y_out,0)
+
+            max_dqdeta(maxima_count)=dqdeta(len_y_out)
+            max_locations(maxima_count) = 0.5*(y_out(len_y_out,0)+
+     $                                         y_out(len_y_out-1,0))
+            prev_above_threshold=.TRUE.
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     warning if theres more than 2 xpoints.
