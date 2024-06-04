@@ -1599,7 +1599,68 @@ c-----------------------------------------------------------------------
             CALL direct_xpoint(r,z,num_xpts)
          ENDDO
 
+      ELSE 
+c-----------------------------------------------------------------------
+c     2 x-points: making sure all brackets are in [0,2pi)
+c-----------------------------------------------------------------------
+         xpt_brackets(1,1)=
+     $         xpt_brackets(1,1) - twopi*floor(xpt_brackets(1,1)/twopi)
+         xpt_brackets(1,2)=
+     $         xpt_brackets(1,2) - twopi*floor(xpt_brackets(1,2)/twopi)
+         xpt_brackets(2,1)=
+     $         xpt_brackets(2,1) - twopi*floor(xpt_brackets(2,1)/twopi)
+         xpt_brackets(2,2)=
+     $         xpt_brackets(2,2) - twopi*floor(xpt_brackets(2,2)/twopi)
+c-----------------------------------------------------------------------
+c     making sure there are no wrap-arounds within each set of brackets
+c-----------------------------------------------------------------------
+         IF(xpt_brackets(1,2)<xpt_brackets(1,1))THEN
+            xpt_brackets(1,2)=xpt_brackets(1,2)+twopi
+         ENDIF
+         IF(xpt_brackets(2,2)<xpt_brackets(2,1))THEN
+            xpt_brackets(2,2)=xpt_brackets(2,2)+twopi
+         ENDIF
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     ordering etas in the brackets to define two non-divergent 
+c     intervals: [eta1,eta2] and [eta3,eta4]. x points should lie in
+c     [eta2,eta3] and [eta4-twopi,eta1].
+c-----------------------------------------------------------------------
+         IF(xpt_brackets(2,1)>xpt_brackets(1,1))THEN
+            IF(xpt_brackets(2,1)<xpt_brackets(1,2))
+     $          CALL program_stop("x-pt bracket angle calc. req. debug")
+            eta1=xpt_brackets(1,2)
+            eta2=xpt_brackets(2,1)
+            eta3=xpt_brackets(2,2)
+            IF(xpt_brackets(1,1)<xpt_brackets(2,2))THEN
+               eta4=xpt_brackets(1,1)+twopi
+            ELSE
+               CALL program_stop("x-pt bracket angle calc. req. debug")
+            ENDIF
+         ELSE
+            yi_interim=yi1
+            yi1=yi2
+            yi2=yi_interim
+            IF(xpt_brackets(1,1)<xpt_brackets(2,2))
+     $          CALL program_stop("x-pt bracket angle calc. req. debug")
+            eta1=xpt_brackets(2,2)
+            eta2=xpt_brackets(1,1)
+            eta3=xpt_brackets(1,2)
+            IF(xpt_brackets(2,1)<xpt_brackets(1,2))THEN
+               eta4=xpt_brackets(2,1)+twopi
+            ELSE
+               CALL program_stop("x-pt bracket angle calc. req. debug")
+            ENDIF
+         ENDIF
+c-----------------------------------------------------------------------
+c     calling direct_fl_int over non-divergent intervals
+c-----------------------------------------------------------------------
+         CALL direct_fl_int(psifac,eta1,eta2,y_out1,bf,len_y1_out)!,nstepd)
+         ist1=istep
+         CALL direct_fl_int(psifac,eta3,eta4,y_out2,bf,len_y2_out)!,nstepd)
+         ist2=istep
       ENDIF
+
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
