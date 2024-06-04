@@ -1445,6 +1445,119 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_initialise_xpoints
 c-----------------------------------------------------------------------
+c     subprogram 15. direct_mixed_spline_builder.
+c     builds the ff spline using a combination of analytic integrals
+c     over divergent x-point regions, and numerically integrated 
+c     sections inbetween x-points.
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_mixed_spline_builder(psifac)
+
+      REAL(r8), INTENT(IN) :: psifac
+
+      REAL(r8) :: eta,eta1,eta2,R,Z
+      REAL(r8) :: eta3,eta4,r_loc1,r_loc2,y_out1_max,y_out3_max
+      REAL(r8), DIMENSION(1:nstep2,0:4) :: yi1, yi2, yi_interim
+      
+      REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out1,y_out2
+      INTEGER :: len_y1_out,len_y2_out,maxima_count,tot_steps,ist1,ist2
+      INTEGER :: i1,i2,i
+
+      REAL(r8), DIMENSION(6,2) :: eta_brackets
+      REAL(r8), DIMENSION(6) :: eta_maxes
+
+      TYPE(direct_bfield_type) :: bf
+      TYPE(spline_type) :: ff
+
+      yi1=0.0
+      yi2=0.0
+      y_out1=0.0
+      y_out2=0.0
+c-----------------------------------------------------------------------
+c     adddressing case of only one x-point.
+c-----------------------------------------------------------------------
+      IF(num_xpts==1)THEN
+c-----------------------------------------------------------------------
+c     ordering the two etas for numerical field line integration
+c-----------------------------------------------------------------------
+         eta1 = xpt_brackets(1,1) - twopi*floor(xpt_brackets(1,1)/twopi)
+         eta2 = xpt_brackets(1,2) - twopi*floor(xpt_brackets(1,2)/twopi)
+
+         IF(eta2<eta1)THEN
+            eta2=eta2+twopi
+         ENDIF
+         xpt_brackets(1,1)=eta1
+         xpt_brackets(1,2)=eta2
+
+         eta2=eta2-twopi
+c-----------------------------------------------------------------------
+c     calling numerical integration between field lines
+c-----------------------------------------------------------------------
+         CALL direct_fl_int(psifac,eta2,eta1,y_out1,bf,len_y1_out)
+c-----------------------------------------------------------------------
+c     calling direct_initialise_xpoints to check for a second x-point.
+c-----------------------------------------------------------------------
+         CALL direct_initialise_xpoints(y_out1,len_y1_out,.FALSE.,
+     $         .FALSE.,bf,10.03*one,eta_maxes,eta_brackets,maxima_count)
+c-----------------------------------------------------------------------
+c     check first and last maxima to make sure they are unique.
+c-----------------------------------------------------------------------
+         IF(maxima_count>0)THEN
+c-----------------------------------------------------------------------
+c     if first maxima not unique, eliminate it
+c-----------------------------------------------------------------------  
+            IF(ABS(eta_brackets(1,1)-eta2)<1e-6 .AND. 
+     $         ABS(eta_maxes(1)-eta2)<1e-3)THEN
+               maxima_count=maxima_count-1
+               DO i=1,maxima_count,+1
+                  eta_brackets(i,1:2)=eta_brackets(i+1,1:2)
+                  eta_maxes(i)=eta_maxes(i+1)
+               ENDDO
+            ENDIF
+c-----------------------------------------------------------------------
+c     if last maxima not unique, eliminate it
+c-----------------------------------------------------------------------  
+            IF(ABS(eta_brackets(maxima_count,2)-eta1)<1e-6 .AND. 
+     $         ABS(eta_maxes(maxima_count)-eta1)<1e-3)THEN
+               eta_brackets(maxima_count,1:2)=0.0
+               eta_maxes(maxima_count)=0.0
+               maxima_count=maxima_count-1
+            ENDIF
+         ENDIF
+c-----------------------------------------------------------------------
+c     loop over new unique local maxes that flag as x-points.
+c-----------------------------------------------------------------------
+         DO i=1,maxima_count,+1
+c-----------------------------------------------------------------------
+c     making sure all angles are in [0,2pi).
+c-----------------------------------------------------------------------
+            eta_maxes(i)=eta_maxes(i) - twopi*floor(eta_maxes(i)/twopi)
+            eta_brackets(i,1)=
+     $         eta_brackets(i,1) - twopi*floor(eta_brackets(i,1)/twopi)
+            eta_brackets(i,2)=
+     $         eta_brackets(i,2) - twopi*floor(eta_brackets(i,2)/twopi)
+c-----------------------------------------------------------------------
+c     updating module variables.
+c-----------------------------------------------------------------------
+            num_xpts=num_xpts+1
+            IF(num_xpts>2)
+     $         CALL program_stop("More than 2 x-points detected")
+
+            xpt_etas(num_xpts)=eta_maxes(i)
+            xpt_brackets(num_xpts,1)=eta_brackets(i,1)
+            xpt_brackets(num_xpts,2)=eta_brackets(i,2)
+
+            CALL find_fl_surface(one,xpt_etas(num_xpts),r,z)
+            CALL direct_xpoint(r,z,num_xpts)
+         ENDDO
+
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_mixed_spline_builder
 c-----------------------------------------------------------------------
 c     subprogram 17. direct_Blocal.
 c     calculates local B-field displaced from some r,z point in polar
