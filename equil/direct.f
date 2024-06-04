@@ -34,8 +34,8 @@ c-----------------------------------------------------------------------
 
       INTEGER, PRIVATE :: istep
       REAL(r8) :: rmin,rmax,zmin,zmax,rs1,rs2
-      REAL(r8), DIMENSION(2) :: xpt_etas, rxs, zxs, xpt_b11s 
-      REAL(r8), DIMENSION(2) :: xpt_gammas, xpt_varthetas
+      REAL(r8), DIMENSION(1:2) :: xpt_etas, rxs, zxs, xpt_b11s 
+      REAL(r8), DIMENSION(1:2) :: xpt_gammas, xpt_varthetas
       REAL(r8), DIMENSION(2,2) :: xpt_brackets
       TYPE(bicube_type) :: psi_in
       LOGICAL :: direct_infinite_loop_flag
@@ -76,7 +76,7 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: ff
 
       use_analytic=.FALSE.
-      run_xpt=.FALSE.
+      run_xpt=.TRUE.
       xpt_etas=0.0
       eta_maxes=0.0
       eta_brackets=0.0 
@@ -159,6 +159,7 @@ c     logic whether to integrate around whole field line or use analytic
 c     integral formulas near separatrix.
 c-----------------------------------------------------------------------
          IF(use_analytic .AND. run_xpt)THEN
+            CALL direct_mixed_spline_builder(sq%xs(ipsi))
          ELSE
             CALL direct_fl_int(sq%xs(ipsi),zero,twopi,y_out,bf,
      $                                                        len_y_out)
@@ -167,7 +168,22 @@ c     checks whether q-integral is diverging.
 c-----------------------------------------------------------------------
             IF(sq%xs(ipsi)>0.999 .AND. run_xpt)THEN
                CALL direct_initialise_xpoints(y_out,len_y_out,.TRUE.,
-     $                   bf%f*twopi,eta_maxes,eta_brackets,maxima_count)
+     $             .TRUE.,bf,10*one,eta_maxes,eta_brackets,maxima_count)
+
+               IF(maxima_count > 0 .AND. run_xpt)THEN
+                  use_analytic = .TRUE.
+                  num_xpts=maxima_count
+
+                  DO i=1,maxima_count,+1
+                     xpt_etas(i)=eta_maxes(i) !updated by direct_xpoint
+                     xpt_brackets(i,1)=eta_brackets(i,1)
+                     xpt_brackets(i,2)=eta_brackets(i,2)
+
+                     CALL find_fl_surface(one,xpt_etas(i),rx,zx)
+                     CALL direct_xpoint(rx,zx,i)
+                  ENDDO
+                  CYCLE
+               ENDIF
             ENDIF
 c-----------------------------------------------------------------------
 c     fit data to cubic splines.
@@ -1107,7 +1123,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: r,z
       REAL(r8) :: b11,lincheck,gamma,vartheta
       REAL(r8), DIMENSION(1:2) :: nu
-      REAL(r8) :: oangle,nu_var,Bnu,Bnua,Bnub,Bnuc
+      REAL(r8) :: oangle,nu_var,Bnua,Bnub,Bnuc
       TYPE(direct_bfield_type) :: bf
       LOGICAL :: test_direct_local_xpoint,test_direct_saddle_angle
 
@@ -1402,11 +1418,11 @@ c-----------------------------------------------------------------------
             PRINT "(A)", "Point "
             PRINT "(i6)", i
             PRINT "(f16.5)", (eta_brackets(i,1)
-     $            -twopi*floor(eta_brackets(i,1)/twopi))
+     $            )!-twopi*floor(eta_brackets(i,1)/twopi))
             PRINT "(f16.5)", (eta_maxes(i)
-     $            -twopi*floor(eta_maxes(i)/twopi))
+     $            )!-twopi*floor(eta_maxes(i)/twopi))
             PRINT "(f16.5)", (eta_brackets(i,2)
-     $            -twopi*floor(eta_brackets(i,2)/twopi))
+     $            )!-twopi*floor(eta_brackets(i,2)/twopi))
          ENDDO
       ENDIF
       IF (debug)THEN
