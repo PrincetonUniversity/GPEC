@@ -1032,11 +1032,6 @@ c-----------------------------------------------------------------------
             CALL program_stop("Angle between separatrix legs > pi.")
       ENDIF
 c-----------------------------------------------------------------------
-c     loop to make sure we reach linear region.
-c-----------------------------------------------------------------------
-      ir=1
-      DO
-c-----------------------------------------------------------------------
 c     finding angle where Brho = 0.
 c-----------------------------------------------------------------------
       CALL direct_saddle_angle(rx,zx,rx*r_eps(ir),nu(2),nu(1)-nu(2)
@@ -1228,19 +1223,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_initialise_xpoints(y_out,len_y_out,wrap,
-     $                        f,eta_maxes,eta_brackets,maxima_count)
+      SUBROUTINE direct_initialise_xpoints(y_out,len_y_out,wrap,debug,
+     $                    bf,dq_eps,eta_maxes,eta_brackets,maxima_count)
 
       INTEGER, INTENT(IN) :: len_y_out
-      LOGICAL, INTENT(IN) :: wrap
+      LOGICAL, INTENT(IN) :: wrap,debug
       REAL(r8), DIMENSION(0:,0:), INTENT(IN) :: y_out
-      REAL(r8), INTENT(IN) :: f
+      REAL(r8), INTENT(IN) :: dq_eps
+      TYPE(direct_bfield_type), INTENT(IN) :: bf
 
       INTEGER, INTENT(OUT) :: maxima_count
       REAL(r8), DIMENSION(1:), INTENT(OUT) :: eta_maxes
       REAL(r8), DIMENSION(1:,1:), INTENT(OUT) :: eta_brackets
 
-      REAL(r8), PARAMETER :: dq_eps=100
       INTEGER :: i
       LOGICAL :: prev_above_threshold,wrap_max,wrap_
       REAL(r8), DIMENSION(1:len_y_out) :: dqdeta
@@ -1257,14 +1252,14 @@ c     sanity check that final eta is less than twopi.
 c     only called when wrap = .TRUE. and we are analysing the whole
 c     [0,2pi] interval. lsode integrator makes sure final eta is twopi
 c-----------------------------------------------------------------------
-      IF (y_out(len_y_out,0) > twopi .AND. wrap) THEN
+      IF ((y_out(len_y_out,0)-y_out(0,0)) > twopi .AND. wrap) THEN
          CALL program_stop("eta wrap error... debug direct.f")
       ENDIF
 c-----------------------------------------------------------------------
 c     turn y_out into dqdeta.
 c-----------------------------------------------------------------------
       DO i=0,(len_y_out-1),+1
-         dqdeta(i+1) = (f/twopi)*(y_out(i+1,3)-y_out(i,3))
+         dqdeta(i+1) = (bf%f)*(y_out(i+1,3)-y_out(i,3))
      $                 /(y_out(i+1,0)-y_out(i,0))!
       ENDDO
 c-----------------------------------------------------------------------
@@ -1372,6 +1367,38 @@ c-----------------------------------------------------------------------
             ENDIF
          ENDDO
       ENDIF
+c-----------------------------------------------------------------------
+c     debug print statements.
+c-----------------------------------------------------------------------
+
+      IF(debug)PRINT "(A)", "Num points::::::::::::::::::::::::::::::::"
+      IF(debug)PRINT "(i6)", maxima_count
+      IF(maxima_count>0 .AND. debug)THEN
+         DO i=1,maxima_count
+            PRINT "(A)", "Point "
+            PRINT "(i6)", i
+            PRINT "(f16.5)", (eta_brackets(i,1)
+     $            -twopi*floor(eta_brackets(i,1)/twopi))
+            PRINT "(f16.5)", (eta_maxes(i)
+     $            -twopi*floor(eta_maxes(i)/twopi))
+            PRINT "(f16.5)", (eta_brackets(i,2)
+     $            -twopi*floor(eta_brackets(i,2)/twopi))
+         ENDDO
+      ENDIF
+      IF (debug)THEN
+         PRINT "(A)", "Total theta values over interval "
+         PRINT "(f16.5)", y_out(0,0)
+         PRINT "(f16.5)", y_out(len_y_out,0)
+         PRINT "(A)", "Total q values over interval "
+         PRINT "(es16.5)", y_out(0,3)
+         PRINT "(es16.5)", y_out(len_y_out,3)
+         PRINT "(es16.5)", (y_out(len_y_out,3)/(y_out(len_y_out,0)-
+     $                                          y_out(0,0)))
+         PRINT "(A)", "max and min dqdeta"
+         PRINT "(es16.5)", MAXVAL(dqdeta)
+         PRINT "(es16.5)", MINVAL(dqdeta)
+      ENDIF
+      IF(debug)PRINT "(A)", "::::::::::::::::::::::::::::::::::::::::::"
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
