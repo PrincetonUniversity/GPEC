@@ -36,6 +36,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: rmin,rmax,zmin,zmax,rs1,rs2
       REAL(r8), DIMENSION(1:2) :: xpt_etas, rxs, zxs, xpt_b11s 
       REAL(r8), DIMENSION(1:2) :: xpt_gammas, xpt_varthetas
+      REAL(r8), DIMENSION(1:2) :: xpt_varthetas2
       REAL(r8), DIMENSION(2,2) :: xpt_brackets
       TYPE(bicube_type) :: psi_in
       LOGICAL :: direct_infinite_loop_flag
@@ -1227,6 +1228,18 @@ c-----------------------------------------------------------------------
       xpt_gammas(x_i) = gamma
       xpt_varthetas(x_i) = vartheta
 c-----------------------------------------------------------------------
+c     second vartheta to make sure x1 in direct_analytic_ints correctly
+c     approaches 0 as psifac goes to 1.
+c-----------------------------------------------------------------------
+      CALL find_fl_surface(one,xpt_brackets(x_i,1),r,z)
+      xpt_varthetas2(x_i) = ATAN2(z-zxs(x_i),r-rxs(x_i))-pi/2
+      xpt_varthetas2(x_i) = xpt_varthetas2(x_i) 
+     $                        - twopi*floor(xpt_varthetas2(x_i)/twopi)
+      IF(ABS(xpt_varthetas(x_i)-xpt_varthetas2(x_i))>twopi/100)THEN
+         PRINT "(A)", "Straight x-point leg assumption bad,"
+         CALL program_stop("increase dq_eps.")
+      ENDIF
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -1599,7 +1612,7 @@ c-----------------------------------------------------------------------
             CALL direct_xpoint(r,z,num_xpts)
          ENDDO
 
-      ELSE 
+      ELSE
 c-----------------------------------------------------------------------
 c     2 x-points: making sure all brackets are in [0,2pi)
 c-----------------------------------------------------------------------
