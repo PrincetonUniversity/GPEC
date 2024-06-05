@@ -79,6 +79,7 @@ c-----------------------------------------------------------------------
       use_analytic=.FALSE.
       run_xpt=.TRUE.
       xpt_etas=0.0
+      xpt_brackets=0.0
       eta_maxes=0.0
       eta_brackets=0.0 
       num_xpts=0
@@ -940,13 +941,13 @@ c-----------------------------------------------------------------------
 
       nustart=nustart_in
       nu_var=nu_var_in
-      pos=1.0
+      pos=one
       inuh=0
 c-----------------------------------------------------------------------
 c     looping over narrower nu-intervals
 c-----------------------------------------------------------------------
       CALL direct_Blocal(rx,zx,nustart_in,rho,Bcase,bnorm)
-      IF(bnorm<zero)pos=-1.0
+      IF(bnorm<zero)pos=-one
 c-----------------------------------------------------------------------
 c     looping to narrow nu-intervals
 c-----------------------------------------------------------------------
