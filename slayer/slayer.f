@@ -45,9 +45,13 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal,
-     $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
+     $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes,
      $        inQs_log
+      REAL(r8), DIMENSION(:), ALLOCATABLE:: qvals,inQ_e_arr,
+     $                       inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,
+     $                       inQ0_arr,inpr_arr,inpe_arr,omegas_arr
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: inQ_arr,outer_delta_arr
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: 
      $     js,ks,psis,jxbs,Q_sols,br_ths,
      $     inQs_left,inQs_right
@@ -104,8 +108,8 @@ c-----------------------------------------------------------------------
       inum=400 ! resolution to find error field thresholds.
       jnum=500 ! resolution for 2d scan along with Q,omega.
       knum=100 ! resolution for 2d scan alont with the other.
-      ReQ_num=200 ! resolution for stab. scan along Re(Q) axis
-      ImQ_num=100 ! resolution for stab. scan along Im(Q) axis
+      ReQ_num=100 ! resolution for stab. scan along Re(Q) axis
+      ImQ_num=200 ! resolution for stab. scan along Im(Q) axis
       in_unit=1
       out_unit=2
       out2_unit=3
@@ -273,29 +277,43 @@ c-----------------------------------------------------------------------
          ! Approximate data for q=2 and q=3, for testing only
          ! These are of the form needed to output from
          ! upcoming build_inputs.f script, interfacing with equil.f
-         mms = (/2, 2 /)
-         nns = (/1, 1 /)
-         prs = (/0.1, 0.005 /)
-         pes = (/0.0, 0.0 /)
-         n_es = (/7.765e+17, 9.999e+16 /)
-         t_es = (/26.0, 2.0 /)
-         t_is = (/26.0, 2.0 /)
-         omegas = (/54530.0, 54530.0 /)
-         l_ns = (/0.2, 0.2 /)
-         l_ts = (/0.1, 0.1 /)
+         ! Kinetic inputs (old)
+         !mms = (/2, 2 /)
+         !nns = (/1, 1 /)
+         !prs = (/0.1, 0.005 /)
+         !pes = (/0.0, 0.0 /)
+         !n_es = (/7.765e+17, 9.999e+16 /)
+         !t_es = (/26.0, 2.0 /)
+         !t_is = (/26.0, 2.0 /)
+         !l_ns = (/0.2, 0.2 /)
+         !l_ts = (/0.1, 0.1 /)
+         !svals = (/729.5, 500.5 /)
+         !bts = (/1.0, 1.0 /)
+         !rss = (/0.16, 0.2 /)
+         !R0s = (/2.0, 2.0 /)
+         !mu_is = (/2.0, 2.0 /)
+         !zeffs = (/2.0, 2.0 /)
          qvals = (/2.0, 3.0 /)
-         svals = (/729.5, 500.5 /)
-         bts = (/1.0, 1.0 /)
-         rss = (/0.16, 0.2 /)
-         R0s = (/2.0, 2.0 /)
-         mu_is = (/2.0, 2.0 /)
-         zeffs = (/2.0, 2.0 /)
-         outer_deltas = (/(27.15,0.1), (20.15,0.1) /)
+         inQ_arr = (/ (2.6744E-003,0.0), (5.5874E-004,0.0) /)
+         inQ_e_arr =  (/ 1.9127E-005, 4.6109E-007 /)
+         inQ_i_arr = (/ -1.9127E-005, -4.6109E-007 /)
+         inc_beta_arr= (/ 3.6809E-003, 3.6635E-004 /)
+         inds_arr = (/ 1.4394, 0.1276 /)
+         intau_arr = (/ 1.0, 1.0 /)
+         inQ0_arr = (/ (2.6744E-003,0.0), (5.5874E-004,0.0) /)
+         !eta_s =  (/ 6.6907E-006, 3.1361E-004 /)
+         !S_s =   (/ 30696266.0, 1956419.0 /)
+         inpr_arr = (/0.1, 0.005 /)
+         inpe_arr = (/0.0, 0.0 /)
+         omegas_arr = (/54530.0, 54530.0 /)
+         outer_delta_arr = (/(27.15,0.1), (20.15,0.1) /)
 
-         CALL gamma_match(n_k,mms,nns,n_es,t_es,t_is,omegas,prs,pes,
-     $                       l_ns,l_ts,qvals,svals,bts,rss,R0s,mu_is,
-     $                       zeffs,outer_deltas,
-     $                       ReQ_num,ImQ_num,growthrates,growthrate_err)
+         CALL gamma_match(qvals,inQ_arr,inQ_e_arr,inQ_i_arr,
+     $                    inc_beta_arr,inds_arr,intau_arr,
+     $                    inQ0_arr,inpr_arr,inpe_arr,
+     $                    outer_delta_arr,omegas_arr,
+     $                    ReQ_num,ImQ_num,growthrates,growthrate_err)
+
          WRITE(*,*)"growthrates=",growthrates
          WRITE(*,*)"growthrate error=",growthrate_err
 

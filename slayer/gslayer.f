@@ -250,8 +250,10 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(OUT) :: ImQ_gamma ! Matched gamma(delta = deltaprime), giving growth rate
       ! Local variables
       INTEGER :: n, i_lower, i_upper, i, j, i_mid
-      REAL(r8) :: deltap_lower, deltap_upper, slope
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: temp_slice, temp_iinQs ! Temporary arrays
+      REAL(r8) :: deltap_lower, deltap_upper, slope,
+     $            lower_val, upper_val,n_poles,dx
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: temp_slice, temp_iinQs, ! Temporary arrays
+     $                   grad_slice, pospole_gamma, negpole_gamma
 
       ! Array size check
       n = SIZE(slice)
@@ -263,67 +265,93 @@ c-----------------------------------------------------------------------
 
       ! Allocate temporary arrays
       ALLOCATE(temp_slice(n), temp_iinQs(n))
+      ALLOCATE(grad_slice(n-1)) ! gradient
+
       ImQ_gamma = 0.0
 
       ! Copy input arrays to temporary arrays
       temp_slice = slice
       temp_iinQs = iinQs
 
-      ! Sort temporary arrays in ascending order if not already sorted
-      IF (ANY(temp_slice(2:) < temp_slice(:n-1))) THEN
-        ! Simple bubble sort
-        DO i = 1, n - 1
-          DO j = 1, n - i
-            IF (temp_slice(j) > temp_slice(j + 1)) THEN
-              ! Swap elements in temp_slice
-              temp_slice([j, j+1]) = temp_slice([j+1, j])
-              ! Swap corresponding elements in temp_iinQs
-              temp_iinQs([j, j+1]) = temp_iinQs([j+1, j])
+      ! GRADIENT THRESHOLD IS 50???
+      n_poles = 1.0
+      ALLOCATE(pospole_gamma(2),negpole_gamma(2))
+      pospole_gamma = 1e+20
+      negpole_gamma = 1e+20
+
+      ! Calculate the gradient
+      DO i = 1, n - 1
+        dx = iinQs(i + 1) - iinQs(i)  ! Change in x
+        grad_slice(i) = (slice(i + 1) - slice(i)) / dx  ! Slope (gradient)
+      END DO
+
+      ! Find first match
+      DO i = 1, n-1
+        ! is this a pole point?
+        IF (((SIGN(1.0,slice(i)) /= SIGN(1.0,slice(i+1))) .AND.
+     $     ABS(grad_slice(i) > 50))) THEN!.AND.
+      !$         (SIGN(1.0,grad_slice(i)) /=
+      !$          SIGN(1.0,grad_slice(i+1)))) THEN
+          ! it is a pole
+            IF (slice(i) > 0) THEN
+                WRITE(*,*)"FOUND A POS POLE ",0.0
+                pospole_gamma(n_poles) = iinQs(i)
+                negpole_gamma(n_poles) = iinQs(i+1)
+                n_poles = n_poles + 1
+            ELSE
+                WRITE(*,*)"FOUND A NEG POLE ",i
+                negpole_gamma(n_poles) = iinQs(i)
+                pospole_gamma(n_poles) = iinQs(i+1)
+                n_poles = n_poles+1
             END IF
-          END DO
-        END DO
+
+            WRITE(*,*)"n_poles=",n_poles
+
+            IF ((SIGN(1.0,slice(i))<0.0 .AND. deltap<slice(i))
+     $             .OR.
+     $         (SIGN(1.0,slice(i))>0.0 .AND. deltap>slice(i))) THEN
+                ImQ_gamma = iinQs(i)  ! stride value is huge and not captured by our grid, but will be close to the pole
+            END IF
+        ELSE
+          ! Determine which element of the slice is lower and which is upper
+            IF (slice(i) <= slice(i + 1)) THEN
+                lower_val = slice(i)
+                upper_val = slice(i + 1)
+            ELSE
+                lower_val = slice(i + 1)
+                upper_val = slice(i)
+            END IF
+
+          ! Check if deltap is within the interval
+            IF ((lower_val <= deltap) .AND.
+     $          (deltap <= upper_val)) THEN
+                !ImQ_gamma = (iinQs(i) + iinQs(i+1)) / 2  ! do a better linear interpolation here
+
+                ! Linear interpolation (revised for robustness)
+                IF (upper_val - lower_val < 1.0E-10_r8) THEN  ! Handle nearly equal values
+                    ImQ_gamma = (iinQs(i) +
+     $                 iinQs(i+1)) / 2
+                ELSE
+                  slope = (iinQs(i+1) -
+     $                  iinQs(i)) / (upper_val - lower_val)
+                  ImQ_gamma = iinQs(i) +
+     $                  slope * (deltap - lower_val)
+                END IF
+            END IF
+        END IF
+      END DO
+
+      IF (n_poles > 2) THEN
+        WRITE(*,*)"Alert: more than two poles detected"
       END IF
 
-      ! Handle cases where deltap is outside the temp_slice range
-      IF (deltap < temp_slice(1)) THEN
-        i_lower = 1
-        i_upper = 2
-      ELSE IF (deltap > temp_slice(n)) THEN
-        i_lower = n - 1
-        i_upper = n
-      ELSE
-      ! Find the bracketing indices for deltap (binary search)
-        i_lower = 1
-        i_upper = n
-        DO WHILE (i_upper - i_lower > 1)
-          i_mid = (i_lower + i_upper) / 2
-          IF (temp_slice(i_mid) < deltap) THEN
-            i_lower = i_mid
-          ELSE
-            i_upper = i_mid
-          END IF
-        END DO
-      END IF
-
-      deltap_lower = temp_slice(i_lower)
-      deltap_upper = temp_slice(i_upper)
-
-      !WRITE(*,*)"my ImQ_gamma=",(temp_iinQs(i_lower) + FOR TESTING
-      !$      temp_iinQs(i_upper)) / 2
-
-      ! Linear interpolation (revised for robustness)
-      IF (deltap_upper - deltap_lower < 1.0E-10_r8) THEN  ! Handle nearly equal values
-        ImQ_gamma = (temp_iinQs(i_lower) +
-     $     temp_iinQs(i_upper)) / 2
-      ELSE
-        slope = (temp_iinQs(i_upper) -
-     $      temp_iinQs(i_lower)) / (deltap_upper - deltap_lower)
-        ImQ_gamma = temp_iinQs(i_lower) +
-     $      slope * (deltap - deltap_lower)
-      END IF
 
       !WRITE(*,*)"temp_iinQs(i_lower)=",temp_iinQs(i_lower)
       !WRITE(*,*)"temp_iinQs(i_upper)=",temp_iinQs(i_upper)
+      !WRITE(*,*)"NEWImQ_gamma=",ImQ_gamma
+      !WRITE(*,*)"pospole_gamma=",pospole_gamma
+      !WRITE(*,*)"negpole_gamma=",negpole_gamma
+
       !WRITE(*,*)"slice=",slice
 
       ! Deallocate temporary arrays
@@ -335,15 +363,16 @@ c-----------------------------------------------------------------------
 c     Subprogram 4. gamma_stability_scan
 c     Run grid packed slayer stab. scan around omega_ExB and gamma axes
 c-----------------------------------------------------------------------
-      SUBROUTINE gamma_stability_scan(n_e,t_e,t_i,omega,inpr,inpe,
-     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,
-     $        ReQ_num,ImQ_num,deltas,inQs_log,iinQs,inQ)
+      SUBROUTINE gamma_stability_scan(qval,inQ,inQ_e,inQ_i,inc_beta,
+     $            inds,intau,inQ0,inpr,inpe,ReQ_num,ImQ_num,deltas,
+     $            inQs_log,iinQs)
 c-----------------------------------------------------------------------
 c     Declarations
 c-----------------------------------------------------------------------
       ! Inputs
-      REAL(r8),INTENT(IN) :: n_e,t_e,t_i,omega,inpr,inpe,l_n,l_t,
-     $     qval,sval,bt,rs,R0,mu_i,zeff
+      REAL(r8),INTENT(IN) :: qval,inQ_e,inQ_i,inc_beta,inds,
+     $     intau,inQ0,inpr,inpe
+      COMPLEX(r8), INTENT(IN) :: inQ
       INTEGER, INTENT(IN) :: ReQ_num,ImQ_num
 
       ! Outputs
@@ -351,61 +380,16 @@ c-----------------------------------------------------------------------
      $             INTENT(OUT) :: deltas
       REAL(r8), DIMENSION(:), ALLOCATABLE,
      $                        INTENT(OUT) :: inQs_log,iinQs
-      REAL(r8), INTENT(OUT) :: inQ
 
       ! Local variables
       INTEGER :: i,j,k
-      REAL(r8) :: inQ_e,inQ_i,inc_beta,inds,intau,Q0
-      !REAL(r8) :: mrs,nrs,rho,b_l,v_a,Qconv,Q0,delta_n_p,
-      !$            lbeta,tau_i,tau_h,tau_r,tau_v
       REAL(r8) :: inQ_min,inQ_max
-      LOGICAL :: params_check
       CHARACTER(3) :: q_str
       CHARACTER(len=8) :: fmt ! format descriptor for stab file naming
       CHARACTER(len=8) :: x1 ! string for stab file naming
       INTEGER :: i1 ! integer for stab file naming
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: inQs_left,inQs_right
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs
-c-----------------------------------------------------------------------
-c     Set initial values
-c-----------------------------------------------------------------------
-      inQ=0.0  ! Q=23.0 for DIII-D example.
-      inQ_e=0.0 ! Q_e=2.0 for DIII-D example.
-      inQ_i=0.0 ! Q_i=-2.6 for DIII-D example.
-      inc_beta=0.0 ! c_beta=0.7 for DIII-D example.
-      inds=0.0 ! 6.0 for DIII-D example.
-      intau=0.0 ! 1.0 for DIII-D example.
-      !inlu=1e8
-      Q0=0.0
-c-----------------------------------------------------------------------
-c     Calculate parameters as needed
-c-----------------------------------------------------------------------
-      params_check=.TRUE.
-      CALL params(n_e,t_e,t_i,omega,
-     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
-         inQ=REAL(Q)
-         inQ_e=Q_e
-         inQ_i=Q_i
-         inc_beta=c_beta
-         inds=ds
-         intau=tau
-         Q0=Q
-
-      ! JKP used this for multiple surface loop but not for single surface?
-      !   IF (Q0>inQ_e) THEN
-      !      inQ_max=2.0*Q0
-      !      inQ_min=1.05*inQ_e
-      !   ELSE
-      !      inQ_max=0.95*inQ_e
-      !      IF (Q0>0) THEN
-      !         inQ_min=0.8*inQ_i
-      !      ELSE
-      !         inQ_min=1.5*MINVAL((/Q0,inQ_i/))
-      !      ENDIF
-      !   ENDIF
-      !ENDDO
-
-      !riccati_out=.FALSE. ?
 c-----------------------------------------------------------------------
 c     Build exponential grid packing for stability scan, then run
 c-----------------------------------------------------------------------
@@ -420,9 +404,9 @@ c-----------------------------------------------------------------------
       inQ_min=-3.0 ! min growth rate in scan, OPEN TO USER?
 
       ! Grid packing - right now going to Q +/- 0.2 -- OPEN TO USER?
-      inQs_left = powspace(inQ-0.2,inQ,1, ! omega-0.2
+      inQs_left = powspace(REAL(inQ)-0.2,REAL(inQ),1, ! omega-0.2
      $                        2+ReQ_num/2,"upper")
-      inQs_right = powspace(inQ,inQ+0.2,1, ! omega+0.2
+      inQs_right = powspace(REAL(inQ),REAL(inQ)+0.2,1, ! omega+0.2
      $                         2+ReQ_num/2,"lower")
       inQs_log = (/inQs_left(1,1:2+ReQ_num/2),
      $               inQs_right(1,2:1+ReQ_num/2)/)
@@ -466,25 +450,24 @@ c-----------------------------------------------------------------------
 c     Subprogram 5. gamma_match
 c     Loop stability scans and gamma matches across k rational surfaces
 c-----------------------------------------------------------------------
-      SUBROUTINE gamma_match(n_k,mms,nns,n_es,t_es,t_is,omegas,prs,pes,
-     $                       l_ns,l_ts,qvals,svals,bts,rss,R0s,mu_is,
-     $                       zeffs,outer_deltas,ReQ_num,ImQ_num,
-     $                       growthrates,growthrate_err)
+      SUBROUTINE gamma_match(qvals,inQ_arr,inQ_e_arr,inQ_i_arr,
+     $                    inc_beta_arr,inds_arr,intau_arr,inQ0_arr,
+     $                    inpr_arr,inpe_arr,outer_delta_arr,omegas_arr,
+     $                    ReQ_num,ImQ_num,growthrates,growthrate_err)
 c-----------------------------------------------------------------------
 c     Declarations
 c-----------------------------------------------------------------------
       ! Inputs
-      INTEGER, INTENT(IN) :: n_k ! Number of rational surfaces
-      INTEGER, DIMENSION(:), INTENT(IN) :: mms,nns
-      REAL(r8), DIMENSION(:), INTENT(IN) :: n_es,t_es,
-     $                       t_is,omegas,prs,pes,l_ns,l_ts,qvals,
-     $                       svals,bts,rss,R0s,mu_is,zeffs
-      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: outer_deltas
+      REAL(r8), DIMENSION(:), INTENT(IN) :: qvals,inQ_e_arr,
+     $                       inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,
+     $                       inQ0_arr,inpr_arr,inpe_arr,omegas_arr
+      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: inQ_arr,outer_delta_arr
       INTEGER, INTENT(IN) :: ReQ_num,ImQ_num
       ! Outputs
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
      $                                   growthrates, growthrate_err
       ! Local variables
+      INTEGER :: n_k ! Number of rational surfaces
       INTEGER :: k,w
       ! Local variables received from internal subroutines
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs_log,iinQs
@@ -492,8 +475,9 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: slice
       REAL(r8), DIMENSION(3) :: Q_range ! (-Q_err, Q, +Q_err )
       REAL(r8), DIMENSION(3) :: growthrate_range ! (-gamma, +gamma )
-      REAL(r8) :: layer_Q, inQ, ImQ_gamma
+      REAL(r8) :: layer_Q, ImQ_gamma
 
+      n_k = SIZE(qvals)
       ! Allocate growthrates arrays
       ALLOCATE(growthrates(n_k))
       ALLOCATE(growthrate_err(n_k))
@@ -504,37 +488,38 @@ c-----------------------------------------------------------------------
       ! for analysis, then slice out 1D array of growth rates at
       ! given omega_ExB (Q), then find growth rate corresponding
       ! to delta-deltaprime match
-      DO k=1,n_k
+      DO k=1,n_k-1
          WRITE(*,*)"layer #: ",k
          ! Run stability scan
-         CALL gamma_stability_scan(n_es(k),t_es(k),t_is(k),omegas(k),
-     $           prs(k),pes(k),l_ns(k),l_ts(k),qvals(k),svals(k),
-     $           bts(k),rss(k),R0s(k),mu_is(k),zeffs(k),
-     $           ReQ_num,ImQ_num,deltas,inQs_log,iinQs,inQ)
+         CALL gamma_stability_scan(qvals(k),inQ_arr(k),inQ_e_arr(k),
+     $            inQ_i_arr(k),inc_beta_arr(k),inds_arr(k),
+     $            intau_arr(k),inQ0_arr(k),inpr_arr(k),inpe_arr(k),
+     $            ReQ_num,ImQ_num,deltas,inQs_log,iinQs)
 
-         layer_Q = inQ
+         layer_Q = REAL(inQ_arr(k))
 
          ! Hardcoding rudimentary +/- 10% omega_ExB errorbars
          Q_range = (/0.9*layer_Q, 1.1*layer_Q, layer_Q/)
 
          ! Calculate growth rate +/- omega_ExB = Q errorbars
          DO w=1,3
-
-            ! Slice out growth rates at layer_Q (Re(Q))
-            CALL interpolate_slice_at_Q(REAL(deltas),
-     $                  Q_range(w), inQs_log, slice)
-
-            ! Match delta to delta prime to obtain growth rate
-            CALL gamma_from_delta_match(slice, iinQs,
-     $                         REAL(outer_deltas(k)),
-     $                         ImQ_gamma)
-
             IF (w==3) THEN
+
+                ! Slice out growth rates at layer_Q (Re(Q))
+                CALL interpolate_slice_at_Q(REAL(deltas),
+     $                      Q_range(w), inQs_log, slice)
+                ! Match delta to delta prime to obtain growth rate
+                CALL gamma_from_delta_match(slice, iinQs,
+     $                             REAL(outer_delta_arr(k)),
+     $                             ImQ_gamma)
+                CALL gamma_from_delta_match(slice, iinQs,
+     $                             REAL(outer_delta_arr(k)),
+     $                             ImQ_gamma)
              ! Qconv = Q / omega_ExB
              ! gamma = Im(Q) / Qconv
-               growthrates(k) = ImQ_gamma / (layer_Q / omegas(k))
-            ELSE
-               growthrate_range(w) = ImQ_gamma / (layer_Q / omegas(k))
+                growthrates(k) = ImQ_gamma / (layer_Q / omegas_arr(k))
+            !ELSE
+            !   growthrate_range(w) = ImQ_gamma / (layer_Q / omegas(k))
             ENDIF
 
          ENDDO
