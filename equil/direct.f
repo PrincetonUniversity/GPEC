@@ -19,7 +19,8 @@ c     9. direct_saddle_angle.
 c     10. direct_psisaddle.
 c     11. direct_xpoint.
 c     12. direct_initialise_xpoints.
-c     17. direct_Blocal
+c     13. direct_saddle_coords.
+c     14. direct_saddle_coords_inv.
 c-----------------------------------------------------------------------
 c     subprogram 0. direct_mod.
 c     module declarations.
@@ -1459,7 +1460,102 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_initialise_xpoints
 c-----------------------------------------------------------------------
-c     subprogram 15. direct_mixed_spline_builder.
+c     subprogram 13. direct_saddle_coords. 
+c     transforms us into a local coordinate frame aligned with one leg 
+c     of the x-point. takes x-point data from module variables.
+c     r1 is radius from the magnetic axis, not major radius 
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_saddle_coords(x_i,r1,eta1,x,y,chi)
+
+      INTEGER, INTENT(IN) :: x_i
+
+      REAL(r8), INTENT(IN) :: r1,eta1
+      REAL(r8), INTENT(OUT) :: x,y,chi
+      !LOGICAL :: usevth2
+
+      REAL(r8) :: cosfac,sinfac,cosfact,sinfact
+      REAL(r8) :: Rshft,Zshft,Rlocal,Zlocal
+
+      !usevth2=.TRUE.
+c-----------------------------------------------------------------------
+c     precalculating trig components.
+c-----------------------------------------------------------------------
+      cosfac=COS(eta1)
+      sinfac=SIN(eta1)
+c-----------------------------------------------------------------------
+c     local R,Z coordinates centered on x-point.
+c-----------------------------------------------------------------------
+      Rshft = ro + r1*cosfac
+      Zshft = zo + r1*sinfac
+
+      Rlocal = Rshft-rxs(x_i)
+      Zlocal = Zshft-zxs(x_i)
+c-----------------------------------------------------------------------
+c     rotating local R,Z coordinates to align with x-point leg that
+c     approaches the x-point by travelling anticlockwise around the 
+c     separatrix. this is captured in the vartheta variable
+c-----------------------------------------------------------------------
+      x = cosfact*Rlocal + sinfact*Zlocal
+      y = -sinfact*Rlocal + cosfact*Zlocal
+      Zlocal = Zshft-zxs(x_i)
+c-----------------------------------------------------------------------
+c     calculating chi angle variable, defined such that nabla chi is 
+c     orthogonal to the x-point leg that leaves the
+c     x-point when travelling anticlockwise around the separatrix.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_saddle_coords
+c-----------------------------------------------------------------------
+c     subprogram 14. direct_saddle_coords_inv. 
+c     inverse of direct_saddle_coords. takes x,y, returns R,Z,rho,eta.
+c     rho is minor radius
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_saddle_coords_inv(x_i,x,y,R,Z,rho,eta)
+
+      INTEGER, INTENT(IN) :: x_i
+      REAL(r8), INTENT(IN) :: x,y
+      REAL(r8), INTENT(OUT) :: R,Z,rho,eta
+
+      REAL(r8) :: cosfact,sinfact
+      REAL(r8) :: Rlocal,Zlocal
+
+c-----------------------------------------------------------------------
+c     precalculating trig components.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     inverse coordinate transform. commented out lines are the forwards
+c     transform from direct_saddle_coords.
+c-----------------------------------------------------------------------
+      !Rshft = ro + r1*cosfac
+      !Zshft = zo + r1*sinfac
+      !Rlocal = Rshft-rxs(x_i)
+      !Zlocal = Zshft-zxs(x_i)
+      !x = cosfact*Rlocal + sinfact*Zlocal
+      !y = -sinfact*Rlocal + cosfact*Zlocal
+
+      Rlocal = cosfact*x - sinfact*y
+      Zlocal = sinfact*x + cosfact*y
+
+      R = Rlocal + rxs(x_i)
+      Z = Zlocal + zxs(x_i)
+
+      rho = SQRT((R-ro)**2+(Z-zo)**2)
+      eta = ATAN2(Z-zo,R-ro)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_saddle_coords_inv
+c-----------------------------------------------------------------------
 c     builds the ff spline using a combination of analytic integrals
 c     over divergent x-point regions, and numerically integrated 
 c     sections inbetween x-points.
