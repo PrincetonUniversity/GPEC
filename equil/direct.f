@@ -1592,6 +1592,114 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_saddle_coords_inv
 c-----------------------------------------------------------------------
+c     subprogram 15. direct_analytic_ints.
+c     takes the linear term b11, angle and position data, and calculates
+c     integrals y(1), y(2), y(3), y(4) replacing direct_fl_int. assumes
+c     logarithmic trajectories near the saddle point.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_analytic_ints(x_i,r1,eta1,eta2,yi1,yi2,yi3,yi4,
+     $       outmat,debug)
+
+      REAL(r8), INTENT(IN) :: r1,eta1,eta2
+      INTEGER, INTENT(IN) :: x_i
+      LOGICAL, INTENT(IN) :: debug
+
+      REAL(r8), INTENT(OUT) :: yi1,yi2,yi3,yi4
+      REAL(r8), DIMENSION(1:3,1:2,0:1),INTENT(OUT) :: outmat
+
+      REAL(r8) :: x1,y1,x2,y2,chi,I1,I2,I3,bt,b,root,xo,yo,chio
+      REAL(r8) :: cosvt,sinvt,cotgam,singam,cscgam,etax,vartheta,gamma
+      TYPE(direct_bfield_type) :: bf
+
+      outmat=0.0
+c-----------------------------------------------------------------------
+c     getting local coordinates.
+c-----------------------------------------------------------------------
+      CALL direct_saddle_coords(x_i,r1,eta1,x1,y1,chi)
+      CALL direct_saddle_coords(x_i,zero,zero,xo,yo,chio)
+c-----------------------------------------------------------------------
+c     pre-calculationg useful terms 
+c-----------------------------------------------------------------------
+      IF(usevth2)THEN
+         vartheta=xpt_varthetas2(x_i)
+         gamma=xpt_gammas2(x_i)
+      ELSE
+         vartheta=xpt_varthetas(x_i)
+         gamma=xpt_gammas(x_i)
+      ENDIF
+
+      cosvt = COS(vartheta)
+      sinvt = SIN(vartheta)
+
+      cotgam = one/TAN(gamma)
+      singam = SIN(gamma)
+
+      cscgam = one/singam
+      etax = xpt_etas(x_i)
+      bt=abs(bf%f/rxs(x_i))
+c-----------------------------------------------------------------------
+c     calculating x2 by assuming logarithmic Bp trajectory near x-point.
+c-----------------------------------------------------------------------
+      root = -sqrt((xo*TAN(eta2-vartheta)-yo)**2
+     $-4*one*(cotgam-TAN(eta2-vartheta))*(x1*y1-x1*x1*cotgam))
+      x2 = (one/2)*(yo-xo*TAN(eta2-vartheta)+root)/
+     $      (cotgam-TAN(eta2-vartheta))
+      y2 = (x2-xo)*TAN(eta2-vartheta)+yo
+c-----------------------------------------------------------------------
+c     coordinate information for debugging. 1 and 2 refer to initial and
+c     final point respectively. rho is minor radius, eta poloidal angle.
+c     outmat(2,1,0) = R1, outmat(2,2,0) = Z1
+c     outmat(3,1,0) = rho1, outmat(3,2,0) = eta1
+c     outmat(2,1,1) = R2, outmat(2,2,1) = Z2
+c     outmat(3,1,1) = rho2, outmat(3,2,1) = eta2
+c-----------------------------------------------------------------------
+      IF(debug)THEN
+         y2 = (x2-xo)*TAN(eta2-vartheta)+yo
+         outmat(1,1,0)=x1
+         outmat(1,1,1)=x2
+         outmat(1,2,0)=y1
+         outmat(1,2,1)=y2
+
+         CALL direct_saddle_coords_inv(x_i,x1,y1,outmat(2,1,0),
+     $      outmat(2,2,0),outmat(3,1,0),outmat(3,2,0))
+         CALL direct_saddle_coords_inv(x_i,x2,y2,outmat(2,1,1),
+     $      outmat(2,2,1),outmat(3,1,1),outmat(3,2,1))
+      ENDIF
+c-----------------------------------------------------------------------
+c     evaluating integrals 
+c-----------------------------------------------------------------------
+      yi1 = -(cscgam/xpt_b11s(x_i))*(rxs(x_i)*LOG(x2/x1)
+     $         +(cosvt-cotgam*sinvt)*(x2-x1)+sinvt*(y1-x1)*(x1/x2-one))
+      yi2 = -(cscgam/xpt_b11s(x_i))*abs(-SIN(etax+gamma
+     s         -vartheta)*(x2-x1)
+     $         +singam*SIN(etax-vartheta)*(y1-x1)*(one-x1/x2))
+      yi3 = -(cscgam/(xpt_b11s(x_i)*rxs(x_i)))*(LOG(x2/x1)
+     $         -(cosvt-cotgam*sinvt)*(x2-x1)/rxs(x_i)
+     $         +sinvt*(y1-x1)*(one-x1/x2)/rxs(x_i))
+c-----------------------------------------------------------------------
+c     y4 special case.
+c-----------------------------------------------------------------------
+      IF(abs(power_bp)>1e-13)THEN
+         CALL program_stop("Analytic sep. incompat. w power_bp =/= 0")
+      ELSE
+         I1 = LOG(x2/x1)
+         I2 = x2-x1
+         I3 = -(one/x2)+one/x1
+      ENDIF
+      yi4 = -cscgam*(b**power_b)*(xpt_b11s(x_i)**(power_bp-one))*(
+     $   I1*rxs(x_i)**(one-power_r)+
+     $   I2*(one-power_r)*(cosvt-cotgam*sinvt)/(rxs(x_i)**power_r)
+     $   -I3*(one-power_r)*sinvt*(x1*y1-x1*x1)/(rxs(x_i)**power_r))
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_analytic_ints
+c-----------------------------------------------------------------------
+c     subprogram 16. direct_mixed_spline_builder.
 c     builds the ff spline using a combination of analytic integrals
 c     over divergent x-point regions, and numerically integrated 
 c     sections inbetween x-points.
