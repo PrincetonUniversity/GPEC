@@ -1076,11 +1076,7 @@ c-----------------------------------------------------------------------
 c     defining rotated saddle-point coordinate frame to extract linear
 c     component.
 c-----------------------------------------------------------------------
-      IF (oangle>nu(2)) THEN
-         vartheta = nu(1)-pi/2.0  
-      ELSE 
-         vartheta = nu(2)-pi/2.0  
-      ENDIF
+      vartheta = nu(1)-pi/2.0  
       vartheta = vartheta - twopi*floor(vartheta/twopi)
 
       r = r_eps(ir)*rx
