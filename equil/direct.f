@@ -37,10 +37,10 @@ c-----------------------------------------------------------------------
       REAL(r8) :: rmin,rmax,zmin,zmax,rs1,rs2
       REAL(r8), DIMENSION(1:2) :: xpt_etas, rxs, zxs, xpt_b11s 
       REAL(r8), DIMENSION(1:2) :: xpt_gammas, xpt_varthetas
-      REAL(r8), DIMENSION(1:2) :: xpt_varthetas2
+      REAL(r8), DIMENSION(1:2) :: xpt_gammas2, xpt_varthetas2
       REAL(r8), DIMENSION(2,2) :: xpt_brackets
       TYPE(bicube_type) :: psi_in
-      LOGICAL :: direct_infinite_loop_flag
+      LOGICAL :: direct_infinite_loop_flag, usevth2=.TRUE.
       INTEGER :: direct_infinite_loop_count = 2000
       INTEGER :: num_xpts
 
@@ -1234,10 +1234,29 @@ c     second vartheta to make sure x1 in direct_analytic_ints correctly
 c     approaches 0 as psifac goes to 1.
 c-----------------------------------------------------------------------
       CALL find_fl_surface(one,xpt_brackets(x_i,1),r,z)
-      xpt_varthetas2(x_i) = ATAN2(z-zxs(x_i),r-rxs(x_i))-pi/2
+      nu(1)=ATAN2(z-zxs(x_i),r-rxs(x_i))
+      CALL find_fl_surface(one,xpt_brackets(x_i,2),r,z)
+      nu(2)=ATAN2(z-zxs(x_i),r-rxs(x_i))
+c-----------------------------------------------------------------------
+c     defining xpt_varthetas2, xpt_gammas2. these angles are
+c     calculated out at the eta-location where we switch from numerical
+c     to analytic integrals (xpt_brackets), instead of asymptotically
+c     close to the x-point as is the case for xpt_varthetas, xpt_gammas.
+c-----------------------------------------------------------------------
+      xpt_varthetas2(x_i) = nu(1)-pi/2
+      xpt_gammas2(x_i) = nu(1)-nu(2)
+
       xpt_varthetas2(x_i) = xpt_varthetas2(x_i) 
      $                        - twopi*floor(xpt_varthetas2(x_i)/twopi)
-      IF(ABS(xpt_varthetas(x_i)-xpt_varthetas2(x_i))>twopi/100)THEN
+      xpt_gammas2(x_i) = xpt_gammas2(x_i) 
+     $                        - twopi*floor(xpt_gammas2(x_i)/twopi)
+c-----------------------------------------------------------------------
+c     making sure there isn't much difference between the varthetas and
+c     gamma angles asymptotically close to the x-point vs at the 
+c     switch-over location 
+c-----------------------------------------------------------------------
+      IF(ABS(xpt_varthetas(x_i)-xpt_varthetas2(x_i))>twopi/100 .OR.
+     $ ABS(xpt_gammas2(x_i)-xpt_gammas(x_i))>twopi/100)THEN
          PRINT "(A)", "Straight x-point leg assumption bad,"
          CALL program_stop("increase dq_eps.")
       ENDIF
@@ -1474,17 +1493,22 @@ c-----------------------------------------------------------------------
 
       REAL(r8), INTENT(IN) :: r1,eta1
       REAL(r8), INTENT(OUT) :: x,y,chi
-      !LOGICAL :: usevth2
 
       REAL(r8) :: cosfac,sinfac,cosfact,sinfact
       REAL(r8) :: Rshft,Zshft,Rlocal,Zlocal
 
-      !usevth2=.TRUE.
 c-----------------------------------------------------------------------
 c     precalculating trig components.
 c-----------------------------------------------------------------------
       cosfac=COS(eta1)
       sinfac=SIN(eta1)
+      IF(usevth2)THEN
+         cosfact=COS(xpt_varthetas2(x_i))
+         sinfact=SIN(xpt_varthetas2(x_i))
+      ELSE
+         cosfact=COS(xpt_varthetas(x_i))
+         sinfact=SIN(xpt_varthetas(x_i))
+      ENDIF
 c-----------------------------------------------------------------------
 c     local R,Z coordinates centered on x-point.
 c-----------------------------------------------------------------------
@@ -1506,6 +1530,11 @@ c     calculating chi angle variable, defined such that nabla chi is
 c     orthogonal to the x-point leg that leaves the
 c     x-point when travelling anticlockwise around the separatrix.
 c-----------------------------------------------------------------------
+      IF(usevth2)THEN
+         chi = -COS(xpt_gammas2(x_i))*x+SIN(xpt_gammas2(x_i))*y
+      ELSE
+         chi = -COS(xpt_gammas(x_i))*x+SIN(xpt_gammas(x_i))*y
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1531,6 +1560,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     precalculating trig components.
 c-----------------------------------------------------------------------
+      IF(usevth2)THEN
+         cosfact=COS(xpt_varthetas2(x_i))
+         sinfact=SIN(xpt_varthetas2(x_i))
+      ELSE
+         cosfact=COS(xpt_varthetas(x_i))
+         sinfact=SIN(xpt_varthetas(x_i))
+      ENDIF
 c-----------------------------------------------------------------------
 c     inverse coordinate transform. commented out lines are the forwards
 c     transform from direct_saddle_coords.
