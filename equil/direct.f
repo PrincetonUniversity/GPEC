@@ -1649,15 +1649,15 @@ c-----------------------------------------------------------------------
      $      (cotgam-TAN(eta2-vartheta))
       y2 = (x2-xo)*TAN(eta2-vartheta)+yo
 c-----------------------------------------------------------------------
-c     coordinate information for debugging. 1 and 2 refer to initial and
-c     final point respectively. rho is minor radius, eta poloidal angle.
+c     outputting coordinate information.
 c     outmat(2,1,0) = R1, outmat(2,2,0) = Z1
 c     outmat(3,1,0) = rho1, outmat(3,2,0) = eta1
 c     outmat(2,1,1) = R2, outmat(2,2,1) = Z2
 c     outmat(3,1,1) = rho2, outmat(3,2,1) = eta2
+c     1 and 2 refer to initial and final point respectively. rho is 
+c     minor radius, eta poloidal angle. an output yi2=rho2=outmat(3,1,1)
 c-----------------------------------------------------------------------
       IF(debug)THEN
-         y2 = (x2-xo)*TAN(eta2-vartheta)+yo
          outmat(1,1,0)=x1
          outmat(1,1,1)=x2
          outmat(1,2,0)=y1
@@ -1665,17 +1665,18 @@ c-----------------------------------------------------------------------
 
          CALL direct_saddle_coords_inv(x_i,x1,y1,outmat(2,1,0),
      $      outmat(2,2,0),outmat(3,1,0),outmat(3,2,0))
-         CALL direct_saddle_coords_inv(x_i,x2,y2,outmat(2,1,1),
-     $      outmat(2,2,1),outmat(3,1,1),outmat(3,2,1))
       ENDIF
+      CALL direct_saddle_coords_inv(x_i,x2,y2,outmat(2,1,1),
+     $      outmat(2,2,1),outmat(3,1,1),outmat(3,2,1))
 c-----------------------------------------------------------------------
 c     evaluating integrals 
 c-----------------------------------------------------------------------
       yi1 = -(cscgam/xpt_b11s(x_i))*(rxs(x_i)*LOG(x2/x1)
      $         +(cosvt-cotgam*sinvt)*(x2-x1)+sinvt*(y1-x1)*(x1/x2-one))
-      yi2 = -(cscgam/xpt_b11s(x_i))*abs(-SIN(etax+gamma
-     s         -vartheta)*(x2-x1)
-     $         +singam*SIN(etax-vartheta)*(y1-x1)*(one-x1/x2))
+      yi2=outmat(3,1,1)
+      !yi2 = -(cscgam/xpt_b11s(x_i))*abs(-SIN(etax+gamma
+      !$         -vartheta)*(x2-x1)
+      !$         +singam*SIN(etax-vartheta)*(y1-x1)*(one-x1/x2))
       yi3 = -(cscgam/(xpt_b11s(x_i)*rxs(x_i)))*(LOG(x2/x1)
      $         -(cosvt-cotgam*sinvt)*(x2-x1)/rxs(x_i)
      $         +sinvt*(y1-x1)*(one-x1/x2)/rxs(x_i))
