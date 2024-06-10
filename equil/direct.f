@@ -21,6 +21,7 @@ c     11. direct_xpoint.
 c     12. direct_initialise_xpoints.
 c     13. direct_saddle_coords.
 c     14. direct_saddle_coords_inv.
+c     15. direct_analytic_ints.
 c-----------------------------------------------------------------------
 c     subprogram 0. direct_mod.
 c     module declarations.
@@ -1604,13 +1605,28 @@ c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: debug
 
       REAL(r8), INTENT(OUT) :: yi1,yi2,yi3,yi4
-      REAL(r8), DIMENSION(1:3,1:2,0:1),INTENT(OUT) :: outmat
+      REAL(r8), DIMENSION(1:4,1:2,0:1),INTENT(OUT) :: outmat
 
       REAL(r8) :: x1,y1,x2,y2,chi,I1,I2,I3,bt,b,root,xo,yo,chio
+      REAL(r8) :: y3d,y3r1,y3r2,singmt,a,c,yi2b,yi3b
       REAL(r8) :: cosvt,sinvt,cotgam,singam,cscgam,etax,vartheta,gamma
       TYPE(direct_bfield_type) :: bf
 
       outmat=0.0
+c-----------------------------------------------------------------------
+c     Asymptotic assumptions that are necessary for the formulas used
+c     in this function
+c-----------------------------------------------------------------------
+c     chi/a<<1 must be a small number, x/a<<1 must be a small number
+c           ^Important for the definition of Bp as a linear term
+c           ^a here is minor radius. chi and x calculated by 
+c           direct_saddle_coords
+c     |Bp|/|Bt|<<1 must be a small number 
+c           ^important for ignoring |Bp| when calculating |B|.
+c     I don't think x1/x2 necessarily has to be small, however I'll 
+c     still double check.
+c     Initial observation shows that y(2) - aka minor radius has its 
+c     error grow the fastest as the above assumptions are relaxed
 c-----------------------------------------------------------------------
 c     getting local coordinates.
 c-----------------------------------------------------------------------
@@ -1632,10 +1648,13 @@ c-----------------------------------------------------------------------
 
       cotgam = one/TAN(gamma)
       singam = SIN(gamma)
+      singmt = SIN(gamma-vartheta)
 
       cscgam = one/singam
       etax = xpt_etas(x_i)
+      CALL direct_get_bfield(rxs(x_i),zxs(x_i),bf,1)
       bt=abs(bf%f/rxs(x_i))
+      b=bt
 c-----------------------------------------------------------------------
 c     calculating x2 by assuming logarithmic Bp trajectory near x-point.
 c-----------------------------------------------------------------------
@@ -1646,12 +1665,14 @@ c-----------------------------------------------------------------------
       y2 = (x2-xo)*TAN(eta2-vartheta)+yo
 c-----------------------------------------------------------------------
 c     outputting coordinate information.
+c     outmat(1,1,0) = x1, outmat(1,2,0) = y1
 c     outmat(2,1,0) = R1, outmat(2,2,0) = Z1
 c     outmat(3,1,0) = rho1, outmat(3,2,0) = eta1
+c     outmat(1,1,1) = x2, outmat(1,2,1) = y2
 c     outmat(2,1,1) = R2, outmat(2,2,1) = Z2
 c     outmat(3,1,1) = rho2, outmat(3,2,1) = eta2
 c     1 and 2 refer to initial and final point respectively. rho is 
-c     minor radius, eta poloidal angle. an output yi2=rho2=outmat(3,1,1)
+c     minor radius, eta poloidal angle. output yi2=rho2=outmat(3,1,1)
 c-----------------------------------------------------------------------
       IF(debug)THEN
          outmat(1,1,0)=x1
@@ -1665,17 +1686,42 @@ c-----------------------------------------------------------------------
       CALL direct_saddle_coords_inv(x_i,x2,y2,outmat(2,1,1),
      $      outmat(2,2,1),outmat(3,1,1),outmat(3,2,1))
 c-----------------------------------------------------------------------
-c     evaluating integrals 
+c     evaluating y1
 c-----------------------------------------------------------------------
       yi1 = -(cscgam/xpt_b11s(x_i))*(rxs(x_i)*LOG(x2/x1)
      $         +(cosvt-cotgam*sinvt)*(x2-x1)+sinvt*(y1-x1)*(x1/x2-one))
+c-----------------------------------------------------------------------
+c     evaluating y2
+c-----------------------------------------------------------------------
       yi2=outmat(3,1,1)
-      !yi2 = -(cscgam/xpt_b11s(x_i))*abs(-SIN(etax+gamma
-      !$         -vartheta)*(x2-x1)
-      !$         +singam*SIN(etax-vartheta)*(y1-x1)*(one-x1/x2))
-      yi3 = -(cscgam/(xpt_b11s(x_i)*rxs(x_i)))*(LOG(x2/x1)
+      
+      !The following formula is wrong...
+      IF(debug)yi2b = -(cscgam/xpt_b11s(x_i))*abs(-SIN(etax+gamma
+     $         -vartheta)*(x2-x1)
+     $         +singam*SIN(etax-vartheta)*(y1-x1)*(one-x1/x2))
+c-----------------------------------------------------------------------
+c     evaluating y3
+c-----------------------------------------------------------------------
+      a=cscgam*singmt
+      c=x1*(x1-y1)*sinvt
+
+      y3d=rxs(x_i)**2-4*a*c
+
+      y3r1=(one/(2*a))*(-rxs(x_i)+SQRT(y3d))
+      y3r2=(one/(2*a))*(-rxs(x_i)-SQRT(y3d))
+
+      yi3 = -(cscgam/xpt_b11s(x_i))*(one/SQRT(y3d))*
+     $       LOG((x2-y3r1)*(x1-y3r2)/((x2-y3r2)*(x1-y3r1)))
+      IF(debug)yi3b = -(cscgam/(xpt_b11s(x_i)*rxs(x_i)))*(LOG(x2/x1)
      $         -(cosvt-cotgam*sinvt)*(x2-x1)/rxs(x_i)
      $         +sinvt*(y1-x1)*(one-x1/x2)/rxs(x_i))
+
+      IF(debug)THEN
+         outmat(4,1,0)=yi2
+         outmat(4,1,1)=yi2b
+         outmat(4,2,0)=yi3
+         outmat(4,2,1)=yi3b
+      ENDIF
 c-----------------------------------------------------------------------
 c     y4 special case.
 c-----------------------------------------------------------------------
