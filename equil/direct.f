@@ -1778,6 +1778,28 @@ c     adddressing case of only one x-point.
 c-----------------------------------------------------------------------
       IF(num_xpts==1)THEN
 c-----------------------------------------------------------------------
+c     calling direct_analytic_ints on the initial x-point over full eta 
+c     span. Note we don't need to call find_fl_surface, direct_xpoint
+c     since these were already called for this x-point in direct_run's 
+c     psi loop
+c-----------------------------------------------------------------------
+
+         CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
+         r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
+         CALL direct_get_bfield(r,z,bf,1)
+
+         DO i=1,nstep2,+1
+            eta=xpt_brackets(1,1)+(xpt_brackets(1,2)-
+     $      xpt_brackets(1,1))*(one*i/nstep2)
+            yi1(i,0)=eta
+                  
+            CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1)
+     $          ,eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.FALSE.)
+            verbose=.FALSE.
+            IF(debug)CALL direct_fl_int(psifac,xpt_brackets(1,1),eta,
+     $                                          y_out1,bf,len_y1_out)
+         ENDDO
+c-----------------------------------------------------------------------
 c     ordering the two etas for numerical field line integration
 c-----------------------------------------------------------------------
          eta1 = xpt_brackets(1,1) - twopi*floor(xpt_brackets(1,1)/twopi)
@@ -1895,7 +1917,47 @@ c-----------------------------------------------------------------------
             CALL find_fl_surface(one,xpt_etas(num_xpts),r,z)
             CALL direct_xpoint(r,z,num_xpts)
          ENDDO
+c-----------------------------------------------------------------------
+c     adding consecutive integral sections 
+c-----------------------------------------------------------------------
+         yi1(:,1)=yi1(:,1)+y_out1(len_y1_out,1)
+         yi1(:,3)=yi1(:,3)+y_out1(len_y1_out,3)
+         yi1(:,4)=yi1(:,4)+y_out1(len_y1_out,4)
+c-----------------------------------------------------------------------
+c     constructing ff
+c-----------------------------------------------------------------------
+         tot_steps=istep+nstep2
+         CALL spline_alloc(ff,tot_steps,4)
+         ff%xs(0:istep)=y_out1(0:istep,4)/yi1(nstep2,4)
+         ff%fs(0:istep,1)=y_out1(0:istep,2)**2
+         !ff%fs(0:istep,2)=y_out1(0:istep,0)/twopi-ff%xs(0:istep)
+         ff%fs(0:istep,2)=(y_out1(0:istep,0)/twopi+one)-ff%xs(0:istep)
+         ff%fs(0:istep,3)=bf%f*
+     $      (y_out1(0:istep,3)-ff%xs(0:istep)*yi1(nstep2,3))
+         ff%fs(0:istep,4)=y_out1(0:istep,1)/yi1(nstep2,1)-ff%xs
 
+         i1=istep+1
+         i2=tot_steps
+         ff%xs(i1:i2)=yi1(1:nstep2,4)/yi1(nstep2,4)
+         ff%fs(i1:i2,1)=yi1(1:nstep2,2)**2
+         !ff%fs(i1:i2,2)=(yi1(1:nstep2,0)/twopi-ff%xs(i1:i2)
+         ff%fs(i1:i2,2)=(yi1(1:nstep2,0)/twopi+one)-ff%xs(i1:i2)
+         ff%fs(i1:i2,3)=bf%f*
+     $        (yi1(1:nstep2,3)-ff%xs(i1:i2)*yi1(nstep2,3))
+         ff%fs(i1:i2,4)=yi1(1:nstep2,1)/yi1(nstep2,1)-ff%xs(i1:i2)
+
+         PRINT "(A)", "O ELLO THERE"
+         PRINT "(es20.10)", ff%fs(0,1)
+         !PRINT "(es20.10)", yi1(nstep2,3)
+         !PRINT "(es20.10)", ff%fs(i2,3)
+         !PRINT "(i6)", i2
+
+         y_out1_max=yi1(nstep2,1)
+         y_out3_max=yi1(nstep2,3)
+
+
+
+         CALL spline_fit(ff,"periodic")
       ELSE
 c-----------------------------------------------------------------------
 c     2 x-points: making sure all brackets are in [0,2pi)
