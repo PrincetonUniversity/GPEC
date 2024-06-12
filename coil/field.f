@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(cmpert) :: bmn
 
       INTEGER :: i,j,k,iseg,itheta,izeta,ipert,nseg,
-     $    istart,istop
+     $    istart,istop,spline_itheta,spline_ipsi
 
       REAL(r8) :: rfac,eta,phi,jac,delpsi,rr,zz,rx,ry,rz,dl,dbx,dby,dbz
       REAL(r8) :: cosang,sinang,w11,w12,area
@@ -62,6 +62,10 @@ c-----------------------------------------------------------------------
      $     bx,by,bz,br,bp,bn,tbx,tby,tbz,tbr,tbp,tbn
       REAL(r8), DIMENSION(:,:,:), POINTER :: xa,ya,za,
      $     dx,dy,dz
+
+      REAL(r8), DIMENSION(4) :: crzphi_f, crzphi_fx, crzphi_fy
+
+      REAL(r8), DIMENSION(cmtheta) :: aspl_f_arr
 
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
@@ -98,7 +102,9 @@ c-----------------------------------------------------------------------
      $        dx(coil(i)%ncoil,coil(i)%s,nseg),
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
-         
+
+
+!$OMP PARALLEL DO PRIVATE(j,k,iseg),COLLAPSE(3)
          DO j=1,coil(i)%ncoil
             DO k=1,coil(i)%s
                DO iseg=1,nseg
@@ -115,29 +121,42 @@ c-----------------------------------------------------------------------
                ENDDO
             ENDDO
          ENDDO
+!$OMP END PARALLEL DO
+
 
 
          ! Loop over every theta, zeta point on the flux surface
          DO itheta=1,cmtheta
-            CALL bicube_eval(crzphi,psi,ctheta(itheta),1)
-            rfac=SQRT(crzphi%f(1))
-            eta=twopi*(ctheta(itheta)+crzphi%f(2))
+            CALL bicube_eval_external(crzphi,psi,ctheta(itheta),1,
+     $                                spline_ipsi,spline_itheta,
+     $                                crzphi_f,crzphi_fx,crzphi_fy)
+
+            rfac=SQRT(crzphi_f(1))
+            eta=twopi*(ctheta(itheta)+crzphi_f(2))
             rr=cro+rfac*COS(eta)
             zz=czo+rfac*SIN(eta)
-            jac=crzphi%f(4)
-            w11=(1+crzphi%fy(2))*twopi**2*rfac*rr/jac
-            w12=-crzphi%fy(1)*pi*rr/(rfac*jac)
+            jac=crzphi_f(4)
+            w11=(1+crzphi_fy(2))*twopi**2*rfac*rr/jac
+            w12=-crzphi_fy(1)*pi*rr/(rfac*jac)
             delpsi=SQRT(w11**2+w12**2)
             IF(wegt/=0)THEN
-               aspl%fs(itheta,1)=jac*delpsi
+               ! aspl%fs(itheta,1)=jac*delpsi
+               aspl_f_arr(itheta)=jac*delpsi
             ELSE
-               aspl%fs(itheta,1)=1.0
+               ! aspl%fs(itheta,1)=1.0
+               aspl_f_arr(itheta)=1.0
             ENDIF
             w11=w11/delpsi
             w12=w12/delpsi
 
+            ! OMP call
+
+!$OMP PARALLEL DO PRIVATE(izeta,phi,dbx,dby,dbz,j,k,iseg,rx,ry,rz,dl)
+!$OMP& PRIVATE(cosang,sinang)
+
+
             DO izeta=1,cmzeta
-               phi=-helicity*(twopi*czeta(izeta)+crzphi%f(3))
+               phi=-helicity*(twopi*czeta(izeta)+crzphi_f(3))
                xobs(itheta,izeta)=rr*COS(phi)
                yobs(itheta,izeta)=rr*SIN(phi)
                zobs(itheta,izeta)=zz
@@ -145,8 +164,6 @@ c-----------------------------------------------------------------------
                dby=0
                dbz=0
                
-!$OMP PARALLEL PRIVATE(j,k,iseg,rx,ry,rz,dl) SHARED(i,itheta,izeta)
-!$OMP DO REDUCTION(+:dbx,dby,dbz) COLLAPSE(3)
                DO j=1,coil(i)%ncoil
                   DO k=1,coil(i)%s
                      DO iseg=1,nseg
@@ -165,8 +182,6 @@ c-----------------------------------------------------------------------
                      ENDDO
                   ENDDO
                ENDDO
-!$OMP END DO
-!$OMP END PARALLEL
                
                bx(itheta,izeta)=dbx
                by(itheta,izeta)=dby
@@ -177,12 +192,19 @@ c-----------------------------------------------------------------------
      $              by(itheta,izeta)*sinang
                bp(itheta,izeta)=by(itheta,izeta)*cosang-
      $              bx(itheta,izeta)*sinang
-               bn(itheta,izeta)=aspl%fs(itheta,1)*
+               ! bn(itheta,izeta)=aspl%fs(itheta,1)*
+               bn(itheta,izeta)=aspl_f_arr(itheta)*
      $              (br(itheta,izeta)*(w11*COS(eta)-w12*SIN(eta))+
      $              bz(itheta,izeta)*(w11*SIN(eta)+w12*COS(eta)))
             ENDDO
 
+
+         ! OMP call
+
+!$OMP END PARALLEL DO
+
          ENDDO
+
 
          DEALLOCATE(xa,ya,za,dx,dy,dz)
 
@@ -193,6 +215,8 @@ c-----------------------------------------------------------------------
          tbp=tbp+bp
          tbn=tbn+bn
       ENDDO
+
+      aspl%fs(:,1)=aspl_f_arr
          
       CALL cspline_alloc(bnzspl,cmzeta,1)
       bnzspl%xs=czeta
