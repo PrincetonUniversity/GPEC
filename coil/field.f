@@ -70,6 +70,12 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
 
+      ! type(bicube_type), DIMENSION(cmtheta) :: crzphi_arr
+
+      ! DO i=1,cmtheta
+      !    CALL bicube_copy(crzphi,crzphi_arr(i))
+      ! ENDDO
+
       istart = 1
       istop = coil_num
       IF(PRESENT(op_start)) istart = op_start
@@ -123,10 +129,17 @@ c-----------------------------------------------------------------------
          ENDDO
 !$OMP END PARALLEL DO
 
+!$OMP PARALLEL PRIVATE(izeta,phi,dbx,dby,dbz,j,k,iseg,rx,ry,rz,dl)
+!$OMP& PRIVATE(cosang,sinang)
+!$OMP& FIRSTPRIVATE(w11,w12)
+!$OMP& FIRSTPRIVATE(crzphi_f,crzphi_fx,crzphi_fy)
+!$OMP& FIRSTPRIVATE(spline_itheta,spline_ipsi)
+!$OMP& PRIVATE(itheta,rfac,eta,rr,zz,jac,delpsi)
 
-
+!$OMP DO
          ! Loop over every theta, zeta point on the flux surface
          DO itheta=1,cmtheta
+
             CALL bicube_eval_external(crzphi,psi,ctheta(itheta),1,
      $                                spline_ipsi,spline_itheta,
      $                                crzphi_f,crzphi_fx,crzphi_fy)
@@ -148,12 +161,6 @@ c-----------------------------------------------------------------------
             ENDIF
             w11=w11/delpsi
             w12=w12/delpsi
-
-            ! OMP call
-
-!$OMP PARALLEL DO PRIVATE(izeta,phi,dbx,dby,dbz,j,k,iseg,rx,ry,rz,dl)
-!$OMP& PRIVATE(cosang,sinang)
-
 
             DO izeta=1,cmzeta
                phi=-helicity*(twopi*czeta(izeta)+crzphi_f(3))
@@ -201,10 +208,11 @@ c-----------------------------------------------------------------------
 
          ! OMP call
 
-!$OMP END PARALLEL DO
 
          ENDDO
 
+!$OMP END DO
+!$OMP END PARALLEL
 
          DEALLOCATE(xa,ya,za,dx,dy,dz)
 
