@@ -11,6 +11,7 @@ c     2. direct_get_bfield.
 c     3. direct_position.
 c     4. direct_fl_int.
 c     4.5 find_fl_surface.
+c     4.6 find_fl_surface2.
 c     5. direct_fl_der.
 c     6. direct_refine.
 c     7. direct_output.
@@ -644,8 +645,9 @@ c-----------------------------------------------------------------------
 
          ir = ir+1
          IF (ir  > direct_infinite_loop_count) THEN
-            direct_infinite_loop_flag = .TRUE.
-            CALL program_stop("Took too many steps to find flux surf.")
+            PRINT"(A)","find_fl_surface failed, using find_fl_surface2"
+            CALL find_fl_surface2(psifac,eta,radius,r,z)
+            EXIT
          ENDIF
       ENDDO
 c-----------------------------------------------------------------------
@@ -653,6 +655,144 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE find_fl_surface
+c-----------------------------------------------------------------------
+c     subprogram 4.6. find_fl_surface2.
+c     finds r,z given psi, eta. Uses a bisection method instead of the
+c     Newton method used in find_fl_surface, motivated by special cases.
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE find_fl_surface2(psifac,eta,radius1,r,z)
+
+      REAL(r8), INTENT(IN) :: psifac,eta,radius1
+      REAL(r8), INTENT(OUT) :: r,z
+
+      TYPE(direct_bfield_type) :: bf
+      REAL(r8), PARAMETER :: eps=1e-13
+      INTEGER :: ir
+      REAL(r8) :: cosfac,sinfac,dradius1,dfdradius,psi0,pos
+      REAL(r8) :: rbrack_l,rbrack_h,dradius2,dradius3
+
+      REAL(r8), DIMENSION(1:3) :: radii
+
+      pos=one
+      rbrack_l=1e-1
+      rbrack_h=1e-5
+c-----------------------------------------------------------------------
+c     find flux surface.
+c-----------------------------------------------------------------------
+      cosfac=COS(eta)
+      sinfac=SIN(eta)
+
+      psi0=psio*(1-psifac)
+c-----------------------------------------------------------------------
+c     finding lower bound within chosen surface.
+c     dradius1 should always be greater than 0.
+c-----------------------------------------------------------------------
+      ir=0
+      DO 
+         r=ro+cosfac*radius1*(one-rbrack_l)
+         z=zo+sinfac*radius1*(one-rbrack_l)
+         CALL direct_get_bfield(r,z,bf,1)
+         dfdradius = -bf%psir*cosfac-bf%psiz*sinfac
+         dradius1 = -(psi0-bf%psi)/dfdradius
+         IF(dradius1<0.0)THEN
+            rbrack_l=rbrack_l*10
+            IF(rbrack_l>radius1)THEN
+               CALL program_stop("find_fl_surface2 failed.")
+            ENDIF
+         ELSE
+            EXIT
+         ENDIF
+
+         ir=ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to get rbrack_l.")
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     finding upper bound outside chosen surface
+c     dradius3 should always be less than 0.
+c-----------------------------------------------------------------------
+      ir=0
+      DO 
+         r=ro+cosfac*radius1*(one+rbrack_h)
+         z=zo+sinfac*radius1*(one+rbrack_h)
+         CALL direct_get_bfield(r,z,bf,1)
+         dfdradius = -bf%psir*cosfac-bf%psiz*sinfac
+         dradius3 = -(psi0-bf%psi)/dfdradius
+         IF(dradius3>0.0)THEN
+            rbrack_h=rbrack_h*10
+            IF(rbrack_h>radius1)THEN
+               CALL program_stop("find_fl_surface2 failed.")
+            ENDIF
+         ELSE
+            EXIT
+         ENDIF
+
+         ir=ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("Took too many steps to get rbrack_h.")
+         ENDIF
+      ENDDO
+c-----------------------------------------------------------------------
+c     looping to narrow radii-intervals
+c-----------------------------------------------------------------------
+      radii(1)=radius1-rbrack_l
+      radii(3)=radius1+rbrack_h
+
+      ir=0
+      DO 
+         radii(2) = 0.5*(radii(3)+radii(1))
+         IF(0.5*(radii(3)-radii(1)) < eps*ro)EXIT
+
+         r=ro+cosfac*radii(1)
+         z=zo+sinfac*radii(1)
+         CALL direct_get_bfield(r,z,bf,1)
+         dfdradius = -bf%psir*cosfac-bf%psiz*sinfac
+         dradius1 = -(psi0-bf%psi)/dfdradius
+
+         r=ro+cosfac*radii(2)
+         z=zo+sinfac*radii(2)
+         CALL direct_get_bfield(r,z,bf,1)
+         dfdradius = -bf%psir*cosfac-bf%psiz*sinfac
+         dradius2 = -(psi0-bf%psi)/dfdradius
+
+         r=ro+cosfac*radii(3)
+         z=zo+sinfac*radii(3)
+         CALL direct_get_bfield(r,z,bf,1)
+         dfdradius = -bf%psir*cosfac-bf%psiz*sinfac
+         dradius3 = -(psi0-bf%psi)/dfdradius
+
+         IF(dradius3>0.0 .OR. dradius1<0.0)
+     $    CALL program_stop("find_fl_surface2 error, needs debug.")
+
+         IF(dradius2<0.0)THEN
+            radii(3)=radii(2)
+         ELSE
+            radii(1)=radii(2)
+         ENDIF
+
+         ir=ir+1
+         IF (ir  > direct_infinite_loop_count) THEN
+            direct_infinite_loop_flag = .TRUE.
+            CALL program_stop("find_fl_surface2 failed.")
+         ENDIF
+         !PRINT "(es25.14)",radii(2)
+      ENDDO
+c-----------------------------------------------------------------------
+c     calculating r, z.
+c-----------------------------------------------------------------------
+      r=ro+cosfac*radii(2)
+      z=zo+sinfac*radii(2)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE find_fl_surface2
 c-----------------------------------------------------------------------
 c     subprogram 5. direct_fl_der.
 c     contains differential equations for field line averages.
