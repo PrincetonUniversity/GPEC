@@ -24,6 +24,9 @@ c-----------------------------------------------------------------------
       INTEGER :: lar_out_unit=13
       INTEGER :: lar_bin_unit=14
 
+      INTEGER :: out_xpt_unit=15
+      INTEGER :: bin_xpt_unit=16
+
       INTEGER :: out1_unit=21
       INTEGER :: out2_unit=22
       INTEGER :: out3_unit=23
