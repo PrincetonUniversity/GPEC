@@ -39,9 +39,10 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(1:2) :: xpt_etas, rxs, zxs, xpt_b11s 
       REAL(r8), DIMENSION(1:2) :: xpt_gammas, xpt_varthetas
       REAL(r8), DIMENSION(1:2) :: xpt_gammas2, xpt_varthetas2
+      LOGICAL, DIMENSION(1:2) :: outside_sep,usevth2
       REAL(r8), DIMENSION(2,2) :: xpt_brackets
       TYPE(bicube_type) :: psi_in
-      LOGICAL :: direct_infinite_loop_flag, usevth2=.TRUE.
+      LOGICAL :: direct_infinite_loop_flag
       INTEGER :: direct_infinite_loop_count = 2000
       INTEGER :: num_xpts
 
@@ -1165,12 +1166,15 @@ c-----------------------------------------------------------------------
       rxs(x_i) = r
       zxs(x_i) = z
 c-----------------------------------------------------------------------
-c     checks if outside separatrix. ended up not needing...
+c     checks if outside separatrix. 
 c-----------------------------------------------------------------------
-      !IF (bf%psi < -psi_eps*psio) THEN
-      !   near_sep = .FALSE. 
-      !   RETURN
-      !ENDIF
+      IF (bf%psi < -psi_eps*psio) THEN
+         outside_sep(x_i)=.TRUE.
+         usevth2(x_i)=.FALSE.
+      ELSE
+         outside_sep(x_i)=.FALSE.
+         usevth2(x_i)=.TRUE.
+      ENDIF
 c-----------------------------------------------------------------------
 c     updating xpt_etas with a more exact value than that calculated by
 c     direct_initialise_xpoints.
@@ -1250,11 +1254,17 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     making sure there isn't much difference between the varthetas and
 c     gamma angles asymptotically close to the x-point vs at the 
-c     switch-over location 
+c     switch-over location. Note if the x-point is slightly outside the
+c     separatrix such that outside_sep(x_i)=.TRUE., xpt_varthetas2
+c     amd xpt_gammas2 will have big error and should not be used.
 c-----------------------------------------------------------------------
-      IF(ABS(xpt_varthetas(x_i)-xpt_varthetas2(x_i))>twopi/100 .OR.
-     $ ABS(xpt_gammas2(x_i)-xpt_gammas(x_i))>twopi/100)THEN
-         PRINT "(A)", "Straight x-point leg assumption bad,"
+      IF((ABS(xpt_varthetas(x_i)-xpt_varthetas2(x_i))>twopi/100 .OR.
+     $ ABS(xpt_gammas2(x_i)-xpt_gammas(x_i))>twopi/100) .AND. 
+     $ (.NOT.outside_sep(x_i)))THEN
+         PRINT "(A)", "Straight x-point leg assumption bad for Xpt"
+         !PRINT "(i6)", x_i
+         !PRINT "(es16.10)", xpt_gammas(x_i)/pi
+         !PRINT "(es16.10)", xpt_gammas2(x_i)/pi
          CALL program_stop("increase dq_eps.")
       ENDIF
 c-----------------------------------------------------------------------
@@ -1499,7 +1509,7 @@ c     precalculating trig components.
 c-----------------------------------------------------------------------
       cosfac=COS(eta1)
       sinfac=SIN(eta1)
-      IF(usevth2)THEN
+      IF(usevth2(x_i))THEN
          cosfact=COS(xpt_varthetas2(x_i))
          sinfact=SIN(xpt_varthetas2(x_i))
       ELSE
@@ -1527,7 +1537,7 @@ c     calculating chi angle variable, defined such that nabla chi is
 c     orthogonal to the x-point leg that leaves the
 c     x-point when travelling anticlockwise around the separatrix.
 c-----------------------------------------------------------------------
-      IF(usevth2)THEN
+      IF(usevth2(x_i))THEN
          chi = -COS(xpt_gammas2(x_i))*x+SIN(xpt_gammas2(x_i))*y
       ELSE
          chi = -COS(xpt_gammas(x_i))*x+SIN(xpt_gammas(x_i))*y
@@ -1557,7 +1567,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     precalculating trig components.
 c-----------------------------------------------------------------------
-      IF(usevth2)THEN
+      IF(usevth2(x_i))THEN
          cosfact=COS(xpt_varthetas2(x_i))
          sinfact=SIN(xpt_varthetas2(x_i))
       ELSE
@@ -1635,7 +1645,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     pre-calculationg useful terms 
 c-----------------------------------------------------------------------
-      IF(usevth2)THEN
+      IF(usevth2(x_i))THEN
          vartheta=xpt_varthetas2(x_i)
          gamma=xpt_gammas2(x_i)
       ELSE
