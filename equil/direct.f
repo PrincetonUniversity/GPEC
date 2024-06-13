@@ -23,6 +23,7 @@ c     12. direct_initialise_xpoints.
 c     13. direct_saddle_coords.
 c     14. direct_saddle_coords_inv.
 c     15. direct_analytic_ints.
+c     16. direct_mixed_spline_builder.
 c-----------------------------------------------------------------------
 c     subprogram 0. direct_mod.
 c     module declarations.
@@ -52,8 +53,10 @@ c-----------------------------------------------------------------------
       REAL(r8) :: br,bz,brr,brz,bzr,bzz
       END TYPE direct_bfield_type
 
-      REAL(r8) :: etol=1e-8
+      REAL(r8) :: etol=1e-8, dqdeps_tol=300, BpBt_tol=0.001
       INTEGER :: nstepd=2048
+      INTEGER :: nstep2=2048
+      REAL(r8) :: xcheck=0.99
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -68,13 +71,14 @@ c-----------------------------------------------------------------------
       INTEGER :: ir,iz,itheta,ipsi,len_y_out,len_y_last
       INTEGER :: maxima_count,i
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q,flast
-      REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out, y_out_last
+      REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out_last
+      REAL(r8), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4) :: y_out,y_outa
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
       REAL(r8), DIMENSION(3,2) :: eta_brackets
       REAL(r8), DIMENSION(3) :: eta_maxes
 
-      LOGICAL :: use_analytic,run_xpt
+      LOGICAL :: use_analytic,run_xpt,debug,xmsg
 
       REAL(r8) :: xm,dx,rholow,rhohigh,rx,zx
       TYPE(direct_bfield_type) :: bf
@@ -82,12 +86,15 @@ c-----------------------------------------------------------------------
 
       use_analytic=.FALSE.
       run_xpt=.TRUE.
+      debug=.FALSE.
+      xmsg=.TRUE.
       xpt_etas=0.0
       xpt_brackets=0.0
       eta_maxes=0.0
       eta_brackets=0.0 
       num_xpts=0
       maxima_count=0
+      y_outa=0
 c-----------------------------------------------------------------------
 c     warning.
 c-----------------------------------------------------------------------
@@ -165,16 +172,18 @@ c     logic whether to integrate around whole field line or use analytic
 c     integral formulas near separatrix.
 c-----------------------------------------------------------------------
          IF(use_analytic .AND. run_xpt)THEN
-            CALL direct_mixed_spline_builder(sq%xs(ipsi))
+            CALL direct_mixed_spline_builder(sq%xs(ipsi),ff,y_out,debug)
+            istep=SIZE(ff%xs,1)-1
          ELSE
             CALL direct_fl_int(sq%xs(ipsi),zero,twopi,y_out,bf,
      $                                                        len_y_out)
 c-----------------------------------------------------------------------
 c     checks whether q-integral is diverging.  
 c-----------------------------------------------------------------------
-            IF(sq%xs(ipsi)>0.999 .AND. run_xpt)THEN
+            IF(sq%xs(ipsi)>xcheck .AND. run_xpt)THEN
                CALL direct_initialise_xpoints(y_out,len_y_out,.TRUE.,
-     $             .TRUE.,bf,10*one,eta_maxes,eta_brackets,maxima_count)
+     $                  .FALSE.,bf,dqdeps_tol,BpBt_tol,eta_maxes,
+     $                  eta_brackets,maxima_count)
 
                IF(maxima_count > 0 .AND. run_xpt)THEN
                   use_analytic = .TRUE.
@@ -188,61 +197,74 @@ c-----------------------------------------------------------------------
                      CALL find_fl_surface(one,xpt_etas(i),rx,zx)
                      CALL direct_xpoint(rx,zx,i)
                   ENDDO
-                  CYCLE
-               ENDIF
-            ENDIF
 c-----------------------------------------------------------------------
-c     fit data to cubic splines.
+c     no x-points found, fit numerically integrated 
+c     data to cubic splines
 c-----------------------------------------------------------------------
-            CALL spline_alloc(ff,istep,4)
-            ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-            ff%fs(0:istep,1)=y_out(0:istep,2)**2
-            ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
-            ff%fs(0:istep,3)=bf%f*
+               ELSE
+                  CALL spline_alloc(ff,istep,4)
+                  ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
+                  ff%fs(0:istep,1)=y_out(0:istep,2)**2
+                  ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
+                  ff%fs(0:istep,3)=bf%f*
      $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-            ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
-            CALL spline_fit(ff,"periodic")
+                  ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
+                  CALL spline_fit(ff,"periodic")
+               ENDIF
+            ELSE
+c-----------------------------------------------------------------------
+c     if not diverging, fit numerically integrated data to cubic splines  
+c-----------------------------------------------------------------------
+               CALL spline_alloc(ff,istep,4)
+               ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
+               ff%fs(0:istep,1)=y_out(0:istep,2)**2
+               ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
+               ff%fs(0:istep,3)=bf%f*
+     $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
+               ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
+               CALL spline_fit(ff,"periodic")
+            ENDIF
+         ENDIF
 c-----------------------------------------------------------------------
 c     allocate space for rzphi and define grids.
 c-----------------------------------------------------------------------
-            IF(ipsi == 0)THEN
-               IF(mtheta == 0)mtheta=istep
-               CALL bicube_alloc(rzphi,mpsi,mtheta,4) !change mtheta
-               CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
-               rzphi%xs=sq%xs
-               rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
-               rzphi%xtitle="psifac"
-               rzphi%ytitle="theta "
-               rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/) ! deta = eta - theta, dphi = phi - zeta
-               eqfun%title=(/"  b0  ","      ","      " /)
-               eqfun%xs=sq%xs
-               eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
-            ENDIF
+         IF(ipsi == 0)THEN
+            IF(mtheta == 0)mtheta=istep
+            CALL bicube_alloc(rzphi,mpsi,mtheta,4) !change mtheta
+            CALL bicube_alloc(eqfun,mpsi,mtheta,3) ! new eq information
+            rzphi%xs=sq%xs
+            rzphi%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
+            rzphi%xtitle="psifac"
+            rzphi%ytitle="theta "
+            rzphi%title=(/"  r2  "," deta "," dphi ","  jac "/) ! deta = eta - theta, dphi = phi - zeta
+            eqfun%title=(/"  b0  ","      ","      " /)
+            eqfun%xs=sq%xs
+            eqfun%ys=(/(itheta,itheta=0,mtheta)/)/REAL(mtheta,r8)
+         ENDIF
 c-----------------------------------------------------------------------
 c     interpolate to uniform grid.
 c-----------------------------------------------------------------------
-            DO itheta=0,mtheta
-               CALL spline_eval(ff,rzphi%ys(itheta),1)
-               rzphi%fs(ipsi,itheta,1:3)=ff%f(1:3)
-               rzphi%fs(ipsi,itheta,4)=(1+ff%f1(4))
+         DO itheta=0,mtheta
+            CALL spline_eval(ff,rzphi%ys(itheta),1)
+            rzphi%fs(ipsi,itheta,1:3)=ff%f(1:3)
+            rzphi%fs(ipsi,itheta,4)=(1+ff%f1(4))
      $           *y_out(istep,1)*twopi*psio
-            ENDDO
+         ENDDO
 c-----------------------------------------------------------------------
 c     store surface quantities.
 c-----------------------------------------------------------------------
-            sq%fs(ipsi,1)=bf%f*twopi
-            sq%fs(ipsi,2)=bf%p
-            sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
-            sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
-            CALL spline_dealloc(ff)
+         sq%fs(ipsi,1)=bf%f*twopi
+         sq%fs(ipsi,2)=bf%p
+         sq%fs(ipsi,3)=y_out(istep,1)*twopi*psio
+         sq%fs(ipsi,4)=y_out(istep,3)*bf%f/twopi
+         CALL spline_dealloc(ff)
 c-----------------------------------------------------------------------
 c     log maximum y_out, flast for x-point plotting.
 c-----------------------------------------------------------------------
-            IF (ipsi == mpsi) THEN
-                  y_out_last = y_out
-                  len_y_last=len_y_out
-                  flast = bf%f*twopi
-            ENDIF
+         IF (ipsi == mpsi) THEN
+               y_out_last = y_out
+               len_y_last=len_y_out
+               flast = bf%f*twopi
          ENDIF
       ENDDO
 c-----------------------------------------------------------------------
