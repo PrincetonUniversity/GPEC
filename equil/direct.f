@@ -2004,30 +2004,49 @@ c     sections inbetween x-points.
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_mixed_spline_builder(psifac)
+      SUBROUTINE direct_mixed_spline_builder(psifac,ff,y_out,debug_in)
 
-      REAL(r8), INTENT(IN) :: psifac
+      REAL(r8), INTENT(INOUT) :: psifac
+      LOGICAL, INTENT(IN) :: debug_in
 
-      REAL(r8) :: eta,eta1,eta2,R,Z
-      REAL(r8) :: eta3,eta4,r_loc1,r_loc2,y_out1_max,y_out3_max
-      REAL(r8), DIMENSION(1:nstep2,0:4) :: yi1, yi2, yi_interim
+      REAL(r8) :: eta,eta1,eta2,R,Z,etat,y01,y02,y03,y04
+      REAL(r8) :: bt1,bp1,bt2,bp2
+      REAL(r8) :: eta3,eta4,r_loc1,r_loc2
+      REAL(r8), DIMENSION(1:nstep2,0:4) :: yi1, yi2, yi_i
       
       REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out1,y_out2
+      REAL(r8), DIMENSION(0:(nstepd+1),0:4) :: y_out2i
+      REAL(r8), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4) :: y_out
+      REAL(r8), DIMENSION(1:4,1:2,0:1) :: outmat
       INTEGER :: len_y1_out,len_y2_out,maxima_count,tot_steps,ist1,ist2
-      INTEGER :: i1,i2,i
-      LOGICAL :: dbg1xpt
+      INTEGER :: i1,i2,i,j,k,eta0i
+      LOGICAL :: dbg1xpt,debug,out
 
       REAL(r8), DIMENSION(6,2) :: eta_brackets
       REAL(r8), DIMENSION(6) :: eta_maxes
 
       TYPE(direct_bfield_type) :: bf
-      TYPE(spline_type) :: ff
+      TYPE(spline_type) :: yi,ffi
+      TYPE(spline_type), INTENT(OUT) :: ff
 
       yi1=0.0
       yi2=0.0
       y_out1=0.0
       y_out2=0.0
-      dbg1xpt=.TRUE.
+      dbg1xpt=.FALSE.
+      debug=.FALSE.
+      out=.FALSE.
+c-----------------------------------------------------------------------
+c     preparing print statements.
+c-----------------------------------------------------------------------
+400   FORMAT(/,"R_X",10x,"Z_X",11x,"r_x",10x,"eta_x"/)
+401   FORMAT(/,"psi_fac=",f15.13/)
+410   FORMAT(f12.10,",",f13.10,",",f12.10,",",f12.10)
+411   FORMAT(f13.10,",",f13.10,",",f12.10,",",f13.10,",",f13.10
+     $ ,",",f13.10,",",f12.10)
+412   FORMAT(f16.12,",",f16.12,",",f16.12,",",f16.12,",",f16.12)
+413   FORMAT(f13.10,",",f13.10,",",f13.10,",",f13.10,",",f12.10
+     $ ,",",f13.10,",",f12.10,",",f13.10,",",f13.10,",",f12.10)
 c-----------------------------------------------------------------------
 c     adddressing case of only one x-point.
 c-----------------------------------------------------------------------
@@ -2043,17 +2062,317 @@ c-----------------------------------------------------------------------
          r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
          CALL direct_get_bfield(r,z,bf,1)
 
+         IF(out)CALL ascii_open(out_xpt_unit,"yi1.csv","UNKNOWN")
+
          DO i=1,nstep2,+1
             eta=xpt_brackets(1,1)+(xpt_brackets(1,2)-
      $      xpt_brackets(1,1))*(one*i/nstep2)
             yi1(i,0)=eta
-                  
+            
             CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1)
-     $          ,eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.FALSE.)
-            verbose=.FALSE.
+     $          ,eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.TRUE.)
+
             IF(debug)CALL direct_fl_int(psifac,xpt_brackets(1,1),eta,
      $                                          y_out1,bf,len_y1_out)
+
+            IF(i==nstep2)THEN
+               CALL direct_get_bfield(outmat(2,1,0),outmat(2,2,0),bf,1)
+               bp1=SQRT(bf%br**2+bf%bz**2)
+               bt1=bf%f/outmat(2,1,0)
+               CALL direct_get_bfield(outmat(2,1,1),outmat(2,2,1),bf,1)
+               bp2=SQRT(bf%br**2+bf%bz**2)
+               bt2=bf%f/outmat(2,1,1)
+               PRINT "(A,es10.3)","   max Bp/Bt (x-point)=",
+     $                     MAX(bp1/bt1,bp2/bt2)
+            ENDIF
+
+            IF(out)WRITE(out_xpt_unit,412)
+     $                eta,
+     $                yi1(i,1),
+     $                yi1(i,2),
+     $                yi1(i,3),
+     $                yi1(i,4)
          ENDDO
+
+         IF(out)CALL ascii_close(out_xpt_unit)
+c-----------------------------------------------------------------------
+c     path prints. COMMENTED OUT
+c-----------------------------------------------------------------------
+      IF(.FALSE.)THEN
+         nstep2=100
+         PRINT "(A)", "STARTING THE PATH SHOW:::::::::::::::::::::::::"
+
+         !xpt_brackets(1,1)=4.32562
+         !xpt_brackets(1,2)=4.33276
+
+
+
+         CALL ascii_open(out_xpt_unit,"xpt.out","UNKNOWN")
+         k=1
+         DO j=1,9,+3
+            psifac=one-(10*one)**(-1-j)
+            DO k=1,4,+1
+               CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
+               r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
+               CALL direct_get_bfield(r,z,bf,1)
+            IF (k==1 .AND. j==1)THEN
+               PRINT "(A)", "Ro, Zo"
+               !WRITE(out_2d_unit) "(A)", "Ro, Zo"
+               PRINT "(f12.10,A,f12.10)",ro,",",zo
+               PRINT "(A)", "RX, ZX, rx, etax"
+               WRITE(out_xpt_unit,400)
+               PRINT 410,rxs(1),zxs(1),SQRT((ro-rxs(1))**2+
+     $               (zo-zxs(1))**2),xpt_etas(1)
+               WRITE(out_xpt_unit,410)rxs(1),zxs(1),
+     $    SQRT((ro-rxs(1))**2+(zo-zxs(1))**2),xpt_etas(1)
+               PRINT "(A)", "Rsep, Zsep"
+            ELSE
+               IF(K==2 .AND. j==1)PRINT "(A)", "psifac:"
+               IF(K==2 .AND. j==1)THEN
+                  PRINT "(f15.13)", psifac
+                  WRITE(out_xpt_unit,401)psifac
+               ENDIF
+               IF(K==1 .AND. j>1)PRINT "(A)", "psifac:"
+               IF(K==1 .AND. j>1)THEN
+                  PRINT "(f15.13)", psifac
+                  WRITE(out_xpt_unit,401)psifac
+               ENDIF
+            IF (k==2)THEN
+               PRINT "(A)", "R_Numerical, Z_Numerical,r_num,eta_num"
+               etat=ATAN2(z-zo,r-ro)
+               etat=etat-twopi*floor(etat/twopi)
+               PRINT 410,r,z,SQRT((ro-r)**2+(zo-z)**2),etat
+               WRITE(out_xpt_unit,410)r,z,
+     $    SQRT((ro-r)**2+(zo-z)**2),etat
+            ENDIF
+            IF (k==3)THEN
+               PRINT "(A)", "R_A, Z_A,r_a,eta_a, origvarthetas"
+               usevth2(1)=.FALSE.
+            ENDIF
+            IF (k==4)THEN
+               PRINT "(A)", "R_A, Z_A,r_a,eta_a, new varthetas"
+               usevth2(1)=.TRUE.
+            ENDIF
+            
+            ENDIF
+               DO i=1,nstep2,+1
+                  eta=xpt_brackets(1,1)+(xpt_brackets(1,2)-
+     $      xpt_brackets(1,1))*(one*i/nstep2)
+                  yi1(i,0)=eta
+                  
+                  !PRINT "(es16.9)", one*i/nstep2
+                  CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1)
+     $           ,eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.TRUE.)
+                  verbose=.FALSE.
+                  CALL direct_fl_int(psifac,xpt_brackets(1,1),eta,
+     $                                          y_out1,bf,len_y1_out)
+     
+                  IF (k==1 .AND. j==1)THEN !Sep values
+                     CALL find_fl_surface(one,eta,r,z)
+                     etat=ATAN2(z-zo,r-ro)
+                     etat=etat-twopi*floor(etat/twopi)
+                     PRINT 410,r,z,SQRT((ro-r)**2+(zo-z)**2),etat
+                     WRITE(out_xpt_unit,410)r,z,
+     $ SQRT((ro-r)**2+(zo-z)**2),etat
+                  ELSEIF(k==2)THEN !Numerical int values
+                     r=ro+y_out1(istep,2)*COS(y_out1(istep,0))
+                     z=zo+y_out1(istep,2)*SIN(y_out1(istep,0))
+                     etat=y_out1(istep,0)
+                     etat=etat-twopi*floor(etat/twopi)
+                     PRINT 410,r,z,y_out1(istep,2),etat
+                     WRITE(out_xpt_unit,410)r,z,y_out1(istep,2),etat
+                  ELSEIF(k==3 .OR. k==4)THEN  !Analytic int values
+                     etat=outmat(3,2,0)
+                     etat=etat-twopi*floor(etat/twopi)
+                     IF(i==1)THEN
+                        PRINT 410,outmat(2,1,0),outmat(2,2,0),
+     $                                  outmat(3,1,0),etat
+                        WRITE(out_xpt_unit,410)outmat(2,1,0),
+     $                  outmat(2,2,0),outmat(3,1,0),etat
+                     ENDIF
+                     etat=outmat(3,2,1)
+                     etat=etat-twopi*floor(etat/twopi)
+                     PRINT 410,outmat(2,1,1),outmat(2,2,1),outmat(3,1,1)
+     $                                                   ,etat
+                     WRITE(out_xpt_unit,410)outmat(2,1,1),outmat(2,2,1)
+     $                  ,outmat(3,1,1),etat
+                  ENDIF
+
+                  IF (.FALSE.)THEN
+                     PRINT "(A)", "y(1)"
+                     PRINT "(f16.9)", y_out1(istep,1)-y_out1(0,1)
+                     PRINT "(f16.9)", yi1(1,1)
+                     PRINT "(A)", "y(2)"
+                     PRINT "(f16.9)", y_out1(istep,2)-y_out1(0,2)
+                     PRINT "(f16.9)", yi1(1,2)
+                     PRINT "(A)", "y(3)"
+                     PRINT "(f16.9)", y_out1(istep,3)-y_out1(0,3)
+                     PRINT "(f16.9)", yi1(1,3)
+                     PRINT "(A)", "y(4)"
+                     PRINT "(f16.9)", y_out1(istep,4)-y_out1(0,4)
+                     PRINT "(f16.9)", yi1(1,4)
+                  ENDIF
+               ENDDO
+            ENDDO
+         ENDDO
+
+         CALL ascii_close(out_xpt_unit)
+         CALL program_stop("thickems")
+     $
+      ENDIF
+c-----------------------------------------------------------------------
+c     int prints. COMMENTED OUT
+c-----------------------------------------------------------------------
+      IF(.FALSE.)THEN
+         !nstep2=100
+
+         PRINT "(A)", "STARTING THE INT SHOW:::::::::::::::::::::::::"
+         !two cases we care about:
+         !k==2 (num ints)
+         !k==4 (new varthetas)
+         k=1
+         usevth2(1)=.TRUE.
+
+         !PRINT "(A)", "power_bp:"
+         !PRINT "(i6)", power_bp
+         !PRINT "(A)", "power_b:"
+         !PRINT "(i6)", power_b
+         !PRINT "(A)", "power_t:"
+         !PRINT "(i6)", power_r
+         !CALL program_stop("a$$")
+
+         DO j=1,1,+3!,+3
+            !psifac=one-(10*one)**(-1-j)
+
+            DO k=2,4,+2
+                  IF(k==2)PRINT "(A)", "psifac:"
+                  IF(k==2)PRINT "(f15.13)", psifac
+
+                  IF(k==2)PRINT "(A)", ""
+                  IF(k==2)PRINT "(f15.13)", psifac
+
+                  IF(k==2)PRINT "(A)", "Num ints:"
+                  IF(k==4)PRINT "(A)", "Analytic ints:"
+               CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
+               r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
+               CALL direct_get_bfield(r,z,bf,1)
+      
+               IF(k==2)CALL ascii_open(out_xpt_unit,"y_n.out","UNKNOWN")
+               IF(k==4)CALL ascii_open(out_xpt_unit,"y_a.out","UNKNOWN")
+
+               DO i=1,nstep2,+1
+                  eta=xpt_brackets(1,1)+(xpt_brackets(1,2)-
+     $      xpt_brackets(1,1))*(one*i/nstep2)
+                  yi1(i,0)=eta
+                  
+                  !PRINT "(es16.9)", one*i/nstep2
+                  CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1)
+     $           ,eta,yi1(i,1),yi1(i,2),yi1(i,3),yi1(i,4),outmat,.TRUE.)
+                  verbose=.FALSE.
+                  CALL direct_fl_int(psifac,xpt_brackets(1,1),eta,
+     $                                          y_out1,bf,len_y1_out)
+
+                  IF(k==2)THEN !Numerical int values
+                     r=ro+y_out1(istep,2)*COS(y_out1(istep,0))
+                     z=zo+y_out1(istep,2)*SIN(y_out1(istep,0))
+                     etat=y_out1(istep,0)
+                     etat=etat-twopi*floor(etat/twopi)
+                     WRITE(out_xpt_unit,412)
+     $                y_out1(istep,0),
+     $                (y_out1(istep,1)-y_out1(0,1)),
+     $                (y_out1(istep,2)),!-y_out1(0,2)),
+     $                (y_out1(istep,3)-y_out1(0,3)),
+     $                (y_out1(istep,4)-y_out1(0,4))
+
+                  ELSEIF(k==4)THEN  !Analytic int values
+                     etat=outmat(3,2,0)
+                     etat=etat-twopi*floor(etat/twopi)
+                     IF(i==1)THEN
+                     ENDIF
+                     WRITE(out_xpt_unit,412)
+     $                eta,
+     $                yi1(i,1),
+     $                yi1(i,2),!-y_out1(0,2)),     $                outmat(4,1,1),     $                outmat(4,2,1),
+     $                yi1(i,3),
+     $                yi1(i,4)
+                  ENDIF
+
+                  IF (.FALSE.)THEN
+                     PRINT "(A)", "y(1)"
+                     PRINT "(f16.9)", y_out1(istep,1)-y_out1(0,1)
+                     PRINT "(f16.9)", yi1(1,1)
+                     PRINT "(A)", "y(2)"
+                     PRINT "(f16.9)", y_out1(istep,2)-y_out1(0,2)
+                     PRINT "(f16.9)", yi1(1,2)
+                     PRINT "(A)", "y(3)"
+                     PRINT "(f16.9)", y_out1(istep,3)-y_out1(0,3)
+                     PRINT "(f16.9)", yi1(1,3)
+                     PRINT "(A)", "y(4)"
+                     PRINT "(f16.9)", y_out1(istep,4)-y_out1(0,4)
+                     PRINT "(f16.9)", yi1(1,4)
+                  ENDIF
+               ENDDO
+               CALL ascii_close(out_xpt_unit)
+            ENDDO
+         ENDDO
+
+         !CALL ascii_close(out_xpt_unit)
+         CALL program_stop("thickems_NOW")
+     $
+      ENDIF
+c-----------------------------------------------------------------------
+c     field line int comparison COMMENTED OUT
+c-----------------------------------------------------------------------
+      IF(.FALSE.)THEN
+         !PRINT "(A)", "rx:"
+         !PRINT "(f16.9)",rxs(1)
+         !PRINT "(A)", "zx:"
+         !PRINT "(f16.9)",zxs(1)
+         !PRINT "(A)", "vartheta:"
+         !PRINT "(f16.9)",xpt_varthetas(1)
+         DO i=1,10,+1
+         psifac=one-(10*one)**(-1-i)
+         PRINT "(A)", "psifac:"
+         PRINT "(f16.9)",psifac
+
+         !CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
+         !PRINT "(A)", "r:"
+         !PRINT "(f16.9)",r
+         !PRINT "(A)", "z:"
+         !PRINT "(f16.9)",z
+
+
+         !r=rxs(1)
+         !z=zxs(1)
+         !r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
+         !CALL direct_saddle_coords(1,r_loc1,xpt_etas(1),x1,y1,chi)
+
+         !PRINT "(A)", "x1:"
+         !PRINT "(f16.9)", x1
+
+         CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
+         r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
+         CALL direct_get_bfield(r,z,bf,1)
+         CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1),
+     $   xpt_brackets(1,2),yi1(1,1),yi1(1,2),yi1(1,3),yi1(1,4),
+     $   outmat,.FALSE.)
+         yi1(1,0)=xpt_brackets(1,2)
+         !verbose=.FALSE.
+         CALL direct_fl_int(psifac,xpt_brackets(1,1),xpt_brackets(1,2),
+     $                                          y_out1,bf,len_y1_out)
+         
+         !PRINT "(f16.5)", yi1(0,0)
+         !PRINT "(f16.9)", y_out1(istep,0)
+         !PRINT "(f16.9)", yi1(nstep2,0)
+
+         ENDDO
+      
+         !want x1 to be going to 0. but its not. This is a problem
+         !with direct_saddle_coords, and maybe the definition of 
+         !xpt_varthetas
+         CALL program_stop("thickems_dep")
+     $ 
+      ENDIF
 c-----------------------------------------------------------------------
 c     ordering the two etas for numerical field line integration
 c-----------------------------------------------------------------------
@@ -2071,11 +2390,25 @@ c-----------------------------------------------------------------------
 c     calling numerical integration between field lines
 c-----------------------------------------------------------------------
          CALL direct_fl_int(psifac,eta2,eta1,y_out1,bf,len_y1_out)
+
+         IF(out)THEN
+            CALL ascii_open(out_xpt_unit,"y_out1.out","UNKNOWN")
+            DO i=0,len_y1_out,+1
+               WRITE(out_xpt_unit,412)
+     $                y_out1(i,0),
+     $                y_out1(i,1),
+     $                y_out1(i,2),
+     $                y_out1(i,3),
+     $                y_out1(i,4)
+            ENDDO
+            CALL ascii_close(out_xpt_unit)
+         ENDIF
 c-----------------------------------------------------------------------
 c     calling direct_initialise_xpoints to check for a second x-point.
 c-----------------------------------------------------------------------
          CALL direct_initialise_xpoints(y_out1,len_y1_out,.FALSE.,
-     $         .FALSE.,bf,100*one,eta_maxes,eta_brackets,maxima_count)!10.03
+     $                              .FALSE.,bf,dqdeps_tol,BpBt_tol,
+     $                              eta_maxes,eta_brackets,maxima_count)
          IF(dbg1xpt)PRINT "(A)", "Maxima count for numerical integral"
          IF(dbg1xpt)PRINT "(i6)", maxima_count
          IF(dbg1xpt .AND. maxima_count>0)THEN
@@ -2141,9 +2474,6 @@ c-----------------------------------------------------------------------
                   PRINT "(f16.5)", (eta_brackets(i,2)
      $            )!-twopi*floor(eta_brackets(i,1)/twopi))
                ENDDO
-            ELSE
-               IF(dbg1xpt)PRINT "(A)", "|||||||||||||||||||||||||||||||"
-               IF(dbg1xpt)PRINT "(i6)", maxima_count
             ENDIF
          ENDIF
 c-----------------------------------------------------------------------
@@ -2172,47 +2502,198 @@ c-----------------------------------------------------------------------
             CALL find_fl_surface(one,xpt_etas(num_xpts),r,z)
             CALL direct_xpoint(r,z,num_xpts)
          ENDDO
-c-----------------------------------------------------------------------
-c     adding consecutive integral sections 
-c-----------------------------------------------------------------------
-         yi1(:,1)=yi1(:,1)+y_out1(len_y1_out,1)
-         yi1(:,3)=yi1(:,3)+y_out1(len_y1_out,3)
-         yi1(:,4)=yi1(:,4)+y_out1(len_y1_out,4)
-c-----------------------------------------------------------------------
-c     constructing ff
-c-----------------------------------------------------------------------
-         tot_steps=istep+nstep2
-         CALL spline_alloc(ff,tot_steps,4)
-         ff%xs(0:istep)=y_out1(0:istep,4)/yi1(nstep2,4)
-         ff%fs(0:istep,1)=y_out1(0:istep,2)**2
-         !ff%fs(0:istep,2)=y_out1(0:istep,0)/twopi-ff%xs(0:istep)
-         ff%fs(0:istep,2)=(y_out1(0:istep,0)/twopi+one)-ff%xs(0:istep)
-         ff%fs(0:istep,3)=bf%f*
-     $      (y_out1(0:istep,3)-ff%xs(0:istep)*yi1(nstep2,3))
-         ff%fs(0:istep,4)=y_out1(0:istep,1)/yi1(nstep2,1)-ff%xs
 
+c-----------------------------------------------------------------------
+c     interpolating the numerical integral around an eta=0.0 point.
+c     I assume eta=0.0 won't be within the xpt_brackets since most 
+c     tokamaks wont have an xpoint in line with the magnetic axis
+c-----------------------------------------------------------------------
+         DO i=0,len_y1_out,+1
+            IF(y_out1(i,0)>zero)THEN
+               eta0i=i
+               EXIT
+            ENDIF
+         ENDDO
+
+         i=MAX(eta0i-5,0)
+         j=MIN(eta0i+5,len_y1_out)
+
+         CALL spline_alloc(yi,j-i,4)
+
+         DO k=i,j,+1
+            yi%xs(k-i)=y_out1(k,0)
+            yi%fs(k-i,1)=y_out1(k,1)
+            yi%fs(k-i,2)=y_out1(k,2)
+            yi%fs(k-i,3)=y_out1(k,3)
+            yi%fs(k-i,4)=y_out1(k,4)
+
+         ENDDO
+
+         CALL spline_fit(yi,"extrap")
+         CALL spline_eval(yi,zero,0)
+         y01=yi%f(1)
+         y02=yi%f(2)
+         y03=yi%f(3)
+         y04=yi%f(4)
+         CALL spline_dealloc(yi)
+c-----------------------------------------------------------------------
+c     adding consecutive integral sections. spline length of tot_steps
+c     +1 is used to make space for the interpolated point at eta=0.0
+c-----------------------------------------------------------------------
+         IF(istep /= len_y1_out)CALL program_stop("minor err. direct.f")
+         istep=len_y1_out
+
+         tot_steps=istep+nstep2
          i1=istep+1
          i2=tot_steps
-         ff%xs(i1:i2)=yi1(1:nstep2,4)/yi1(nstep2,4)
-         ff%fs(i1:i2,1)=yi1(1:nstep2,2)**2
-         !ff%fs(i1:i2,2)=(yi1(1:nstep2,0)/twopi-ff%xs(i1:i2)
-         ff%fs(i1:i2,2)=(yi1(1:nstep2,0)/twopi+one)-ff%xs(i1:i2)
-         ff%fs(i1:i2,3)=bf%f*
-     $        (yi1(1:nstep2,3)-ff%xs(i1:i2)*yi1(nstep2,3))
-         ff%fs(i1:i2,4)=yi1(1:nstep2,1)/yi1(nstep2,1)-ff%xs(i1:i2)
 
-         PRINT "(A)", "O ELLO THERE"
-         PRINT "(es20.10)", ff%fs(0,1)
+         CALL spline_alloc(yi,tot_steps+1,4)
+c-----------------------------------------------------------------------
+c     filling out points up to eta = 0.0
+c-----------------------------------------------------------------------
+         yi%xs(0:(eta0i-1))=y_out1(0:(eta0i-1),0)
+         yi%fs(0:(eta0i-1),1)=y_out1(0:(eta0i-1),1)
+         yi%fs(0:(eta0i-1),2)=y_out1(0:(eta0i-1),2)
+         yi%fs(0:(eta0i-1),3)=y_out1(0:(eta0i-1),3)
+         yi%fs(0:(eta0i-1),4)=y_out1(0:(eta0i-1),4)
+c-----------------------------------------------------------------------
+c     putting in interpolated point at eta = 0.0
+c-----------------------------------------------------------------------
+         yi%xs(eta0i)=zero
+         yi%fs(eta0i,1)=y01
+         yi%fs(eta0i,2)=y02
+         yi%fs(eta0i,3)=y03
+         yi%fs(eta0i,4)=y04 
+c-----------------------------------------------------------------------
+c     putting in the rest of the numerically integrated points
+c-----------------------------------------------------------------------
+         yi%xs((eta0i+1):istep+1)=y_out1(eta0i:istep,0)
+         yi%fs((eta0i+1):istep+1,1)=y_out1(eta0i:istep,1)
+         yi%fs((eta0i+1):istep+1,2)=y_out1(eta0i:istep,2)
+         yi%fs((eta0i+1):istep+1,3)=y_out1(eta0i:istep,3)
+         yi%fs((eta0i+1):istep+1,4)=y_out1(eta0i:istep,4)
+c-----------------------------------------------------------------------
+c     adding analytic integral sections 
+c-----------------------------------------------------------------------
+         yi%xs((i1+1):(i2+1))=yi1(1:nstep2,0)
+         yi%fs((i1+1):(i2+1),1)=yi1(1:nstep2,1)+yi%fs(i1,1)
+         yi%fs((i1+1):(i2+1),2)=yi1(1:nstep2,2)
+         yi%fs((i1+1):(i2+1),3)=yi1(1:nstep2,3)+yi%fs(i1,3)
+         yi%fs((i1+1):(i2+1),4)=yi1(1:nstep2,4)+yi%fs(i1,4)
+c-----------------------------------------------------------------------
+c     wrapping around to start yi at eta = 0.0
+c-----------------------------------------------------------------------
+         istep=tot_steps+1
+
+         DO i=0,istep,+1
+            j=eta0i+i
+
+            IF(j>istep)THEN
+               j=j-istep-1
+               y_out(i,1)=yi%fs(j,1)+yi%fs(istep,1)
+               y_out(i,3)=yi%fs(j,3)+yi%fs(istep,3)
+               y_out(i,4)=yi%fs(j,4)+yi%fs(istep,4)
+            ELSE
+               y_out(i,1)=yi%fs(j,1)
+               y_out(i,3)=yi%fs(j,3)
+               y_out(i,4)=yi%fs(j,4)
+            ENDIF
+            y_out(i,2)=yi%fs(j,2)
+
+            IF(yi%xs(j)<0.0)THEN
+               y_out(i,0)=yi%xs(j)+twopi
+            ELSE
+               y_out(i,0)=yi%xs(j)
+            ENDIF
+         ENDDO
+
+         y_out(:,1)=y_out(:,1)-yi%fs(eta0i,1)
+         y_out(:,3)=y_out(:,3)-yi%fs(eta0i,3)
+         y_out(:,4)=y_out(:,4)-yi%fs(eta0i,4)
+c-----------------------------------------------------------------------
+c     building ff
+c-----------------------------------------------------------------------
+         CALL spline_alloc(ff,istep,4)
+         ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
+         ff%fs(0:istep,1)=y_out(0:istep,2)**2
+         ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
+         ff%fs(0:istep,3)=bf%f*
+     $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
+         ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)
+     $                                                            -ff%xs
+c-----------------------------------------------------------------------
+c     optional output to compare analytical and numerical integrals over
+c     the divergent regions
+c-----------------------------------------------------------------------
+         IF(out)THEN
+            CALL ascii_open(out_xpt_unit,"yi.csv","UNKNOWN")
+            DO i=0,istep,+1
+            WRITE(out_xpt_unit,412)
+     $                yi%xs(i),
+     $                yi%fs(i,1),
+     $                yi%fs(i,2),
+     $                yi%fs(i,3),
+     $                yi%fs(i,4)
+            ENDDO
+            CALL ascii_close(out_xpt_unit)
+            CALL ascii_open(out_xpt_unit,"y_outtest.csv","UNKNOWN")
+
+            DO i=0,istep,+1
+               WRITE(out_xpt_unit,412)
+     $                y_out(i,0),
+     $                y_out(i,1),
+     $                y_out(i,2),
+     $                y_out(i,3),
+     $                y_out(i,4)
+            ENDDO
+            CALL ascii_close(out_xpt_unit)
+         ENDIF
+
+         CALL spline_dealloc(yi)
+
+         IF(debug_in)PRINT "(A)", "ff x-pt start point:"
+         IF(debug_in)PRINT "(i6)", (istep+1-eta0i)
+c-----------------------------------------------------------------------
+c     adding analytic integral sections 
+c-----------------------------------------------------------------------
+         !yi_i(:,1)=yi1(:,1)+y_out1(len_y1_out,1)
+         !yi_i(:,3)=yi1(:,3)+y_out1(len_y1_out,3)
+         !yi_i(:,4)=yi1(:,4)+y_out1(len_y1_out,4)
+c-----------------------------------------------------------------------
+c     constructing ff first by making
+c-----------------------------------------------------------------------
+         !tot_steps=istep+nstep2
+         !CALL spline_alloc(ff,tot_steps,4)
+         !ff%xs(0:istep)=y_out1(0:istep,4)/yi_i(nstep2,4)
+         !ff%fs(0:istep,1)=y_out1(0:istep,2)**2
+         !ff%fs(0:istep,2)=y_out1(0:istep,0)/twopi-ff%xs(0:istep)
+         !ff%fs(0:istep,2)=(y_out1(0:istep,0)/twopi+one)-ff%xs(0:istep)
+         !ff%fs(0:istep,3)=bf%f*
+      !$      (y_out1(0:istep,3)-ff%xs(0:istep)*yi_i(nstep2,3))
+         !ff%fs(0:istep,4)=y_out1(0:istep,1)/yi_i(nstep2,1)-ff%xs
+
+         !i1=istep+1
+         !i2=tot_steps
+         !ff%xs(i1:i2)=yi_i(1:nstep2,4)/yi_i(nstep2,4)
+         !ff%fs(i1:i2,1)=yi_i(1:nstep2,2)**2
+         !ff%fs(i1:i2,2)=(yi_i(1:nstep2,0)/twopi-ff%xs(i1:i2)
+         !ff%fs(i1:i2,2)=(yi_i(1:nstep2,0)/twopi+one)-ff%xs(i1:i2)
+         !ff%fs(i1:i2,3)=bf%f*(
+      !$      yi_i(1:nstep2,3)-
+      !$      yi_i(1:nstep2,4)*
+      !$      yi_i(nstep2,3)/yi_i(nstep2,4))
+         !ff%fs(i1:i2,3)=ff%fs(i1:i2,3)+ff%fs(istep,3)
+         !ff%fs(i1:i2,4)=yi_i(1:nstep2,1)/yi_i(nstep2,1)-ff%xs(i1:i2)
+
+         !PRINT "(A)", "O ELLO THERE"
+         !PRINT "(es20.10)", ff%fs(0,1)
          !PRINT "(es20.10)", yi1(nstep2,3)
          !PRINT "(es20.10)", ff%fs(i2,3)
          !PRINT "(i6)", i2
 
-         y_out1_max=yi1(nstep2,1)
-         y_out3_max=yi1(nstep2,3)
-
-
-
-         CALL spline_fit(ff,"periodic")
+         !y_out1_max=yi_i(nstep2,1)
+         !y_out3_max=yi_i(nstep2,3)
+         !CALL spline_fit(ff,"periodic")
       ELSE
 c-----------------------------------------------------------------------
 c     2 x-points: making sure all brackets are in [0,2pi)
