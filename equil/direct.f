@@ -1161,10 +1161,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_psisaddle(rx,zx,oangle,
+      SUBROUTINE direct_psisaddle(rx,zx,
      $                              nu,b11,gamma,vartheta,lincheck)
 
-      REAL(r8), INTENT(IN) :: rx,zx,oangle
+      REAL(r8), INTENT(IN) :: rx,zx
       REAL(r8), DIMENSION(2), INTENT(IN) :: nu
       REAL(r8), INTENT(OUT) :: b11,lincheck,gamma,vartheta
 
@@ -1180,7 +1180,7 @@ c-----------------------------------------------------------------------
       r_eps(2) = 1e-8
       r_eps(3) = 1e-9
       r_eps(4) = 1e-10
-      ir=3
+      ir=1
 c-----------------------------------------------------------------------
 c     finding correct initialisation point for nuh (read nu-half).
 c     gamma should be less than pi for a real x-point
