@@ -1341,6 +1341,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: oangle,nu_var,Bnua,Bnub,Bnuc
       TYPE(direct_bfield_type) :: bf
       LOGICAL :: test_direct_local_xpoint,test_direct_saddle_angle
+      CHARACTER(64) :: message
 
       r=rin
       z=zin
@@ -1513,6 +1514,30 @@ c-----------------------------------------------------------------------
          CALL program_stop("increase dq_eps.")
       ENDIF
 c-----------------------------------------------------------------------
+c     regular print statements. eta bracket describes the region where
+c     the analytic formulas will take over from the numerical 
+c     integrator.
+c-----------------------------------------------------------------------
+c501   FORMAT(1x,i1," x-point(s) detected:")
+c502   FORMAT(1x,"over eta bracket (",f10.8,",",f10.8,")")
+600   FORMAT(1x,"x-point detected at eta = ",f7.5,". analytic")
+601   FORMAT(1x,"2nd x-point detected at eta = ",f7.5,". analytic")
+603   FORMAT(1x,"integrals applied for eta = (",
+     $  f7.5,",",f7.5,").")
+      IF(verbose)THEN
+         PRINT "(A)", "________________________________________________"
+         IF(x_i==1)THEN
+            WRITE(message,600)xpt_etas(x_i)
+            PRINT "(A)",message
+         ELSEIF(x_i==2)THEN
+            WRITE(message,601)xpt_etas(x_i)
+            PRINT "(A)",message
+         ENDIF
+         WRITE(message,603)xpt_brackets(x_i,1),xpt_brackets(x_i,2)
+         PRINT "(A)",message
+         PRINT "(A)", "------------------------------------------------"
+      ENDIF
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
@@ -1526,17 +1551,18 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_initialise_xpoints(y_out,len_y_out,wrap,debug,
-     $                    bf,dq_eps,eta_maxes,eta_brackets,maxima_count)
+     $  bf,dq_eps,BpBt,eta_maxes,eta_brackets,maxima_count)
 
       INTEGER, INTENT(IN) :: len_y_out
       LOGICAL, INTENT(IN) :: wrap,debug
       REAL(r8), DIMENSION(0:,0:), INTENT(IN) :: y_out
-      REAL(r8), INTENT(IN) :: dq_eps
+      REAL(r8), INTENT(IN) :: dq_eps, BpBt
       TYPE(direct_bfield_type), INTENT(IN) :: bf
 
       INTEGER, INTENT(OUT) :: maxima_count
       REAL(r8), DIMENSION(1:), INTENT(OUT) :: eta_maxes
       REAL(r8), DIMENSION(1:,1:), INTENT(OUT) :: eta_brackets
+      CHARACTER(64) :: message
 
       INTEGER :: i
       LOGICAL :: prev_above_threshold,wrap_max,wrap_
@@ -1694,10 +1720,9 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------
-c     debug print statements.
+c     debug print statements. lots of information.
 c-----------------------------------------------------------------------
-
-      IF(debug)PRINT "(A)", "Num points::::::::::::::::::::::::::::::::"
+      IF(debug)PRINT "(A)", "Num X-points::::::::::::::::::::::::::::::"
       IF(debug)PRINT "(i6)", maxima_count
       IF(maxima_count>0 .AND. debug)THEN
          DO i=1,maxima_count
@@ -1725,6 +1750,40 @@ c-----------------------------------------------------------------------
          PRINT "(es16.5)", MINVAL(dqdeta)
       ENDIF
       IF(debug)PRINT "(A)", "::::::::::::::::::::::::::::::::::::::::::"
+c-----------------------------------------------------------------------
+c     regular print statements. eta bracket describes the region where
+c     the analytic formulas will take over from the numerical 
+c     integrator.
+c-----------------------------------------------------------------------
+501   FORMAT(1x,i1," x-point(s) detected:")
+c502   FORMAT(1x,"over eta bracket (",f10.8,",",f10.8,")")
+503   FORMAT(4x,"1st x-point eta bracket = (",f7.5,",",f7.5,")")
+504   FORMAT(4x,"2nd x-point eta bracket = (",f7.5,",",f7.5,")")
+505   FORMAT(3x,"max q-gradient",e10.3," <",e10.3)
+506   FORMAT(3x,"max q-gradient",e10.3," >",e10.3)
+      IF(verbose .AND. wrap)THEN
+         IF(MAXVAL(dqdeta)<dq_eps)THEN
+            WRITE(message,505)MAXVAL(dqdeta),dq_eps
+         ELSE
+            WRITE(message,506)MAXVAL(dqdeta),dq_eps
+         ENDIF
+         PRINT "(A)",message
+      ENDIF
+      IF(maxima_count>0 .AND. wrap .AND. .FALSE.)THEN
+         PRINT "(A)", "________________________________________________"
+         WRITE(message,501)maxima_count
+         PRINT "(A)",message
+         DO i=1,maxima_count,+1
+            IF(i==1)THEN
+               WRITE(message,503)eta_brackets(i,1),eta_brackets(i,2)
+               PRINT "(A)",message
+            ELSEIF(i==2)THEN
+               WRITE(message,504)eta_brackets(i,1),eta_brackets(i,2)
+               PRINT "(A)",message
+            ENDIF
+         ENDDO
+         PRINT "(A)", "------------------------------------------------"
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -2562,77 +2621,12 @@ c-----------------------------------------------------------------------
          ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)
      $                                                            -ff%xs
 c-----------------------------------------------------------------------
-c     optional output, DEPRECATED => debug in direct_run does the same 
+c     deallocating spline, printing important information for 
+c     direct_spline_comparison
 c-----------------------------------------------------------------------
-         IF(out)THEN
-            CALL ascii_open(out_xpt_unit,"yi.csv","UNKNOWN")
-            DO i=0,istep,+1
-            WRITE(out_xpt_unit,412)
-     $                yi%xs(i),
-     $                yi%fs(i,1),
-     $                yi%fs(i,2),
-     $                yi%fs(i,3),
-     $                yi%fs(i,4)
-            ENDDO
-            CALL ascii_close(out_xpt_unit)
-            CALL ascii_open(out_xpt_unit,"y_outtest.csv","UNKNOWN")
-
-            DO i=0,istep,+1
-               WRITE(out_xpt_unit,412)
-     $                y_out(i,0),
-     $                y_out(i,1),
-     $                y_out(i,2),
-     $                y_out(i,3),
-     $                y_out(i,4)
-            ENDDO
-            CALL ascii_close(out_xpt_unit)
-         ENDIF
-
          CALL spline_dealloc(yi)
-
          IF(debug_in)PRINT "(A)", "ff x-pt start point:"
          IF(debug_in)PRINT "(i6)", (istep+1-eta0i)
-c-----------------------------------------------------------------------
-c     adding analytic integral sections 
-c-----------------------------------------------------------------------
-         !yi_i(:,1)=yi1(:,1)+y_out1(len_y1_out,1)
-         !yi_i(:,3)=yi1(:,3)+y_out1(len_y1_out,3)
-         !yi_i(:,4)=yi1(:,4)+y_out1(len_y1_out,4)
-c-----------------------------------------------------------------------
-c     constructing ff first by making
-c-----------------------------------------------------------------------
-         !tot_steps=istep+nstep2
-         !CALL spline_alloc(ff,tot_steps,4)
-         !ff%xs(0:istep)=y_out1(0:istep,4)/yi_i(nstep2,4)
-         !ff%fs(0:istep,1)=y_out1(0:istep,2)**2
-         !ff%fs(0:istep,2)=y_out1(0:istep,0)/twopi-ff%xs(0:istep)
-         !ff%fs(0:istep,2)=(y_out1(0:istep,0)/twopi+one)-ff%xs(0:istep)
-         !ff%fs(0:istep,3)=bf%f*
-      !$      (y_out1(0:istep,3)-ff%xs(0:istep)*yi_i(nstep2,3))
-         !ff%fs(0:istep,4)=y_out1(0:istep,1)/yi_i(nstep2,1)-ff%xs
-
-         !i1=istep+1
-         !i2=tot_steps
-         !ff%xs(i1:i2)=yi_i(1:nstep2,4)/yi_i(nstep2,4)
-         !ff%fs(i1:i2,1)=yi_i(1:nstep2,2)**2
-         !ff%fs(i1:i2,2)=(yi_i(1:nstep2,0)/twopi-ff%xs(i1:i2)
-         !ff%fs(i1:i2,2)=(yi_i(1:nstep2,0)/twopi+one)-ff%xs(i1:i2)
-         !ff%fs(i1:i2,3)=bf%f*(
-      !$      yi_i(1:nstep2,3)-
-      !$      yi_i(1:nstep2,4)*
-      !$      yi_i(nstep2,3)/yi_i(nstep2,4))
-         !ff%fs(i1:i2,3)=ff%fs(i1:i2,3)+ff%fs(istep,3)
-         !ff%fs(i1:i2,4)=yi_i(1:nstep2,1)/yi_i(nstep2,1)-ff%xs(i1:i2)
-
-         !PRINT "(A)", "O ELLO THERE"
-         !PRINT "(es20.10)", ff%fs(0,1)
-         !PRINT "(es20.10)", yi1(nstep2,3)
-         !PRINT "(es20.10)", ff%fs(i2,3)
-         !PRINT "(i6)", i2
-
-         !y_out1_max=yi_i(nstep2,1)
-         !y_out3_max=yi_i(nstep2,3)
-         !CALL spline_fit(ff,"periodic")
       ELSE
 c-----------------------------------------------------------------------
 c     2 x-points: making sure all brackets are in [0,2pi)
