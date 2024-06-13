@@ -2096,16 +2096,14 @@ c-----------------------------------------------------------------------
 
          IF(out)CALL ascii_close(out_xpt_unit)
 c-----------------------------------------------------------------------
-c     path prints. COMMENTED OUT
+c     printing field line paths comparison between numerical and
+c     analytic methods. COMMENTED OUT
 c-----------------------------------------------------------------------
       IF(.FALSE.)THEN
-         nstep2=100
          PRINT "(A)", "STARTING THE PATH SHOW:::::::::::::::::::::::::"
 
          !xpt_brackets(1,1)=4.32562
          !xpt_brackets(1,2)=4.33276
-
-
 
          CALL ascii_open(out_xpt_unit,"xpt.out","UNKNOWN")
          k=1
@@ -2217,29 +2215,26 @@ c-----------------------------------------------------------------------
          ENDDO
 
          CALL ascii_close(out_xpt_unit)
-         CALL program_stop("thickems")
+         CALL program_stop("numerical vs analytic integral paths print")
      $
       ENDIF
 c-----------------------------------------------------------------------
-c     int prints. COMMENTED OUT
+c     printing divergent integrals, comparison between numerical and
+c     analytic methods. COMMENTED OUT
 c-----------------------------------------------------------------------
       IF(.FALSE.)THEN
          !nstep2=100
 
          PRINT "(A)", "STARTING THE INT SHOW:::::::::::::::::::::::::"
-         !two cases we care about:
-         !k==2 (num ints)
-         !k==4 (new varthetas)
          k=1
          usevth2(1)=.TRUE.
 
-         !PRINT "(A)", "power_bp:"
-         !PRINT "(i6)", power_bp
-         !PRINT "(A)", "power_b:"
-         !PRINT "(i6)", power_b
-         !PRINT "(A)", "power_t:"
-         !PRINT "(i6)", power_r
-         !CALL program_stop("a$$")
+         PRINT "(A)", "power_bp:"
+         PRINT "(i6)", power_bp
+         PRINT "(A)", "power_b:"
+         PRINT "(i6)", power_b
+         PRINT "(A)", "power_t:"
+         PRINT "(i6)", power_r
 
          DO j=1,1,+3!,+3
             !psifac=one-(10*one)**(-1-j)
@@ -2316,62 +2311,7 @@ c-----------------------------------------------------------------------
             ENDDO
          ENDDO
 
-         !CALL ascii_close(out_xpt_unit)
-         CALL program_stop("thickems_NOW")
-     $
-      ENDIF
-c-----------------------------------------------------------------------
-c     field line int comparison COMMENTED OUT
-c-----------------------------------------------------------------------
-      IF(.FALSE.)THEN
-         !PRINT "(A)", "rx:"
-         !PRINT "(f16.9)",rxs(1)
-         !PRINT "(A)", "zx:"
-         !PRINT "(f16.9)",zxs(1)
-         !PRINT "(A)", "vartheta:"
-         !PRINT "(f16.9)",xpt_varthetas(1)
-         DO i=1,10,+1
-         psifac=one-(10*one)**(-1-i)
-         PRINT "(A)", "psifac:"
-         PRINT "(f16.9)",psifac
-
-         !CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
-         !PRINT "(A)", "r:"
-         !PRINT "(f16.9)",r
-         !PRINT "(A)", "z:"
-         !PRINT "(f16.9)",z
-
-
-         !r=rxs(1)
-         !z=zxs(1)
-         !r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
-         !CALL direct_saddle_coords(1,r_loc1,xpt_etas(1),x1,y1,chi)
-
-         !PRINT "(A)", "x1:"
-         !PRINT "(f16.9)", x1
-
-         CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
-         r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
-         CALL direct_get_bfield(r,z,bf,1)
-         CALL direct_analytic_ints(1,r_loc1,xpt_brackets(1,1),
-     $   xpt_brackets(1,2),yi1(1,1),yi1(1,2),yi1(1,3),yi1(1,4),
-     $   outmat,.FALSE.)
-         yi1(1,0)=xpt_brackets(1,2)
-         !verbose=.FALSE.
-         CALL direct_fl_int(psifac,xpt_brackets(1,1),xpt_brackets(1,2),
-     $                                          y_out1,bf,len_y1_out)
-         
-         !PRINT "(f16.5)", yi1(0,0)
-         !PRINT "(f16.9)", y_out1(istep,0)
-         !PRINT "(f16.9)", yi1(nstep2,0)
-
-         ENDDO
-      
-         !want x1 to be going to 0. but its not. This is a problem
-         !with direct_saddle_coords, and maybe the definition of 
-         !xpt_varthetas
-         CALL program_stop("thickems_dep")
-     $ 
+         CALL program_stop("divergent integral numerical comparison ")
       ENDIF
 c-----------------------------------------------------------------------
 c     ordering the two etas for numerical field line integration
@@ -2622,8 +2562,7 @@ c-----------------------------------------------------------------------
          ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)
      $                                                            -ff%xs
 c-----------------------------------------------------------------------
-c     optional output to compare analytical and numerical integrals over
-c     the divergent regions
+c     optional output, DEPRECATED => debug in direct_run does the same 
 c-----------------------------------------------------------------------
          IF(out)THEN
             CALL ascii_open(out_xpt_unit,"yi.csv","UNKNOWN")
