@@ -82,7 +82,9 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: xm,dx,rholow,rhohigh,rx,zx
       TYPE(direct_bfield_type) :: bf
-      TYPE(spline_type) :: ff
+      TYPE(spline_type) :: ff,ffa
+
+      CHARACTER(64) :: message
 
       use_analytic=.FALSE.
       run_xpt=.TRUE.
@@ -95,11 +97,14 @@ c-----------------------------------------------------------------------
       num_xpts=0
       maxima_count=0
       y_outa=0
+412   FORMAT(f16.12,",",f16.12,",",f16.12,",",f16.12,",",f16.12)
+413   FORMAT(1x,"ipsi =",i4,"/",i4)
+414   FORMAT(1x,"psifac =",f13.10)
 c-----------------------------------------------------------------------
 c     warning.
 c-----------------------------------------------------------------------
       direct_flag=.TRUE.
-      IF(psihigh >= 1-1e-6)WRITE(*,'(1x,a,es10.3,a)')
+      IF(psihigh >= 1-1e-6)WRITE(*,'(1x,a,e17.10,a)')
      $        "Warning: direct equilibrium with psihigh =",psihigh,
      $        " could hang on separatrix."
       direct_infinite_loop_flag = .FALSE.
@@ -167,6 +172,16 @@ c-----------------------------------------------------------------------
       IF(verbose) WRITE(*,'(a,1p,es10.3)')" etol = ",etol
       IF(verbose) WRITE(*,'(a,1p,i6)')" nstepd = ",nstepd
       DO ipsi=0,mpsi,+1
+         IF(verbose.AND.xmsg.AND.sq%xs(ipsi)>xcheck.AND.run_xpt)THEN
+         PRINT "(A)", "________________________________________________"
+            PRINT"(A)"," checking for x-points... =>"
+            xmsg=.FALSE.
+         ENDIF
+
+         IF(verbose)WRITE(message,413)ipsi,mpsi
+         IF(verbose)PRINT "(A)", message
+         IF(verbose)WRITE(message,414)sq%xs(ipsi)
+         IF(verbose)PRINT "(A)", message
 c-----------------------------------------------------------------------
 c     logic whether to integrate around whole field line or use analytic
 c     integral formulas near separatrix.
@@ -185,6 +200,28 @@ c-----------------------------------------------------------------------
      $                  .FALSE.,bf,dqdeps_tol,BpBt_tol,eta_maxes,
      $                  eta_brackets,maxima_count)
 
+               IF(debug)THEN
+                  CALL ascii_open(out_xpt_unit,"y_out.csv","UNKNOWN")
+                  DO i=0,len_y_out,+1
+                     WRITE(out_xpt_unit,412)
+     $                y_out(i,0),
+     $                y_out(i,1),
+     $                y_out(i,2),
+     $                y_out(i,3),
+     $                y_out(i,4)
+                  ENDDO
+                  CALL ascii_close(out_xpt_unit)
+
+
+                  CALL spline_alloc(ff,istep,4)
+                  ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
+                  ff%fs(0:istep,1)=y_out(0:istep,2)**2
+                  ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
+                  ff%fs(0:istep,3)=bf%f*
+     $               (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
+                  ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
+               ENDIF
+
                IF(maxima_count > 0 .AND. run_xpt)THEN
                   use_analytic = .TRUE.
                   num_xpts=maxima_count
@@ -197,6 +234,17 @@ c-----------------------------------------------------------------------
                      CALL find_fl_surface(one,xpt_etas(i),rx,zx)
                      CALL direct_xpoint(rx,zx,i)
                   ENDDO
+
+                  IF(debug)THEN
+                     CALL direct_mixed_spline_builder(sq%xs(ipsi),
+     $ ffa,y_outa,debug)
+                     CALL direct_spline_comparison(ff,ffa,y_out,y_outa)
+                     CALL program_stop("Running xpt debug, stopping")
+                  ELSE
+                     CALL direct_mixed_spline_builder(sq%xs(ipsi),
+     $ ff,y_out,debug)
+                     istep=SIZE(ff%xs,1)-1
+                  ENDIF
 c-----------------------------------------------------------------------
 c     no x-points found, fit numerically integrated 
 c     data to cubic splines
