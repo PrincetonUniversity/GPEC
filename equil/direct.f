@@ -24,6 +24,8 @@ c     13. direct_saddle_coords.
 c     14. direct_saddle_coords_inv.
 c     15. direct_analytic_ints.
 c     16. direct_mixed_spline_builder.
+c     17. direct_spline_comparison.
+c     18. direct_Blocal
 c-----------------------------------------------------------------------
 c     subprogram 0. direct_mod.
 c     module declarations.
@@ -2940,7 +2942,90 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_mixed_spline_builder
 c-----------------------------------------------------------------------
-c     subprogram 17. direct_Blocal.
+c     subprogram 17. direct_spline_comparison.
+c     print data from mixed analytic/numerical method, and solely
+c     numerically integrated method
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_spline_comparison(ff,ffa,y_out,y_outa)
+         
+      TYPE(spline_type), INTENT(IN) :: ff,ffa
+      REAL(r8), INTENT(IN), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4):: 
+     $ y_out,y_outa
+      REAL(r8) :: r,z
+      INTEGER :: i,len_ff,len_ffa
+c-----------------------------------------------------------------------
+c     checking lengths.
+c-----------------------------------------------------------------------
+      len_ff=SIZE(ff%xs,1)
+      len_ffa=SIZE(ffa%xs,1)
+
+      !IF(len_ff/=SIZE(y_out,1))CALL program_stop("blerg1")
+      !IF(len_ffa/=SIZE(y_outa,1))CALL program_stop("blerg2")
+
+      PRINT "(A)", "Length ff:"
+      PRINT "(i6)", len_ff
+      PRINT "(A)", "Length ffa:"
+      PRINT "(i6)", len_ffa
+c-----------------------------------------------------------------------
+c     printing the splines
+c-----------------------------------------------------------------------
+412   FORMAT(f16.12,",",f16.12,",",f16.12,",",f16.12,",",f16.12)
+
+      CALL ascii_open(out_xpt_unit,"ff_test_new.csv","UNKNOWN")
+      !PRINT "(A)", "ff"
+      DO i=0,(len_ff-1),+1
+         IF(.TRUE.)WRITE(out_xpt_unit,412)ff%xs(i),
+     $                ff%fs(i,1),
+     $                ff%fs(i,2),
+     $                ff%fs(i,3),
+     $                ff%fs(i,4)
+      ENDDO
+      CALL ascii_close(out_xpt_unit)
+
+      CALL ascii_open(out_xpt_unit,"ffa_test_new.csv","UNKNOWN")
+      !PRINT "(A)", "ffa"
+      DO i=0,(len_ffa-1),+1
+         IF(.TRUE.)WRITE(out_xpt_unit,412)ffa%xs(i),
+     $                ffa%fs(i,1),
+     $                ffa%fs(i,2),
+     $                ffa%fs(i,3),
+     $                ffa%fs(i,4)
+      ENDDO
+      CALL ascii_close(out_xpt_unit)
+
+      CALL ascii_open(out_xpt_unit,"y_out.csv","UNKNOWN")
+      !PRINT "(A)", "y_out"
+      DO i=0,(len_ff-1),+1
+         IF(.TRUE.)WRITE(out_xpt_unit,412)
+     $                y_out(i,0),
+     $                y_out(i,1),
+     $                y_out(i,2),
+     $                y_out(i,3),
+     $                y_out(i,4)
+      ENDDO
+      CALL ascii_close(out_xpt_unit)
+
+      CALL ascii_open(out_xpt_unit,"y_outa.csv","UNKNOWN")
+      !PRINT "(A)", "y_outa"
+      DO i=0,(len_ffa-1),+1
+         IF(.TRUE.)WRITE(out_xpt_unit,412)
+     $                y_outa(i,0),
+     $                y_outa(i,1),
+     $                y_outa(i,2),
+     $                y_outa(i,3),
+     $                y_outa(i,4)
+      ENDDO
+      CALL ascii_close(out_xpt_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE direct_spline_comparison
+c-----------------------------------------------------------------------
+c     subprogram 18. direct_Blocal.
 c     calculates local B-field displaced from some r,z point in polar
 c     coordinates. either Bnu or Brho depending on Bcase
 c-----------------------------------------------------------------------
