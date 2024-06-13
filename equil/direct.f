@@ -1279,26 +1279,32 @@ c-----------------------------------------------------------------------
 c     testing direct_local_xpoint.
 c-----------------------------------------------------------------------
       IF(test_direct_local_xpoint)THEN
+         PRINT "(A)", "__________________________________________"
+         PRINT "(A)", "direct_local_xpoint output =>"
+         PRINT "(A)", "X-point number:"
+         PRINT "(i6)", x_i
          CALL direct_get_bfield(ro,zo,bf,1)
-         PRINT "(A)", "psi at origin"
-         PRINT "(f16.10)", bf%psi
-         PRINT "(A)", "r,z b4 direct_local_xpoint"
-         PRINT "(f16.5)", r
-         PRINT "(f16.5)", z
+         PRINT "(A)", "psi at origin:"
+         PRINT "(f20.14)", bf%psi
+         PRINT "(A)", "r,z before direct_local_xpoint:"
+         PRINT "(f16.10)", r
+         PRINT "(f16.10)", z
          CALL direct_get_bfield(r,z,bf,1)
-         PRINT "(A)", "|Bp| b4 direct_local_xpoint"
-         PRINT "(f16.10)", SQRT(bf%br**2+bf%bz**2)
-         PRINT "(A)", "psi b4 direct_local_xpoint"
-         PRINT "(f16.10)", bf%psi
+         PRINT "(A)", "|Bp| before direct_local_xpoint:"
+         PRINT "(f20.14)", SQRT(bf%br**2+bf%bz**2)
+         PRINT "(A)", "psi before direct_local_xpoint:"
+         PRINT "(f20.14)", bf%psi
          CALL direct_local_xpoint(r,z)
-         PRINT "(A)", "r,z aftr direct_local_xpoint"
-         PRINT "(f16.5)", r
-         PRINT "(f16.5)", z
+         PRINT "(A)", "r,z after direct_local_xpoint:"
+         PRINT "(f16.10)", r
+         PRINT "(f16.10)", z
          CALL direct_get_bfield(r,z,bf,1)
-         PRINT "(A)", "|Bp| after direct_local_xpoint"
-         PRINT "(f16.10)", SQRT(bf%br**2+bf%bz**2)
-         PRINT "(A)", "psi after direct_local_xpoint"
-         PRINT "(f16.10)", bf%psi
+         PRINT "(A)", "|Bp| after direct_local_xpoint:"
+         PRINT "(f20.14)", SQRT(bf%br**2+bf%bz**2)
+         PRINT "(A)", "psi after direct_local_xpoint:"
+         PRINT "(f20.14)", bf%psi
+         !PRINT "(A)", "direct_local_xpoint output <="
+         PRINT "(A)", "------------------------------------------"
       ENDIF
 c-----------------------------------------------------------------------
 c     finds x-point and fills out global module variables
@@ -1347,25 +1353,28 @@ c-----------------------------------------------------------------------
      $                                                     'n',Bnub)
          CALL direct_Blocal(rxs(x_i),zxs(x_i),nu(2),r_eps1*rxs(x_i),
      $                                                     'n',Bnuc)
-         PRINT "(A)", "First x-point leg's angle nu:"
-         PRINT "(f16.3)", nu(1)/pi
-         PRINT "(A)", "First leg B_nu"
-         PRINT "(e16.3)", Bnua
+         PRINT "(A)", "__________________________________________"
+         PRINT "(A)", "direct_saddle_angle output =>"
+         PRINT "(A)", "first x-point leg's angle nu:"
+         PRINT "(f17.14)", nu(1)/pi
+         PRINT "(A)", "first leg B_nu:"
+         PRINT "(es16.3)", Bnua
          PRINT "(A)", "nu angle pointing from x-pt to mag. axis:"
-         PRINT "(f16.3)", oangle/pi
+         PRINT "(f17.14)", oangle/pi
          PRINT "(A)", "B_nu at angle pointing from x-pt to mag. axis:"
-         PRINT "(e16.3)", Bnub
-         PRINT "(A)", "Second x-point leg's angle nu:"
-         PRINT "(f16.3)", nu(2)/pi
-         PRINT "(A)", "Second leg B_nu"
-         PRINT "(e16.3)", Bnuc
-         PRINT "(A)", "Angle between x-point legs (gamma)"
-         PRINT "(f16.3)", (nu(1)-nu(2))/pi
+         PRINT "(es16.3)", Bnub
+         PRINT "(A)", "second x-point leg's angle nu:"
+         PRINT "(f17.14)", nu(2)/pi
+         PRINT "(A)", "second leg B_nu:"
+         PRINT "(es16.3)", Bnuc
+         PRINT "(A)", "angle between x-point legs (gamma):"
+         PRINT "(f17.14)", (nu(1)-nu(2))/pi
+         PRINT "(A)", "------------------------------------------"
       ENDIF
 c-----------------------------------------------------------------------
 c     calculating xpoint angles gamma, vartheta, and linear term b11.
 c-----------------------------------------------------------------------
-      CALL direct_psisaddle(r,z,oangle,nu,b11,gamma,vartheta,lincheck)
+      CALL direct_psisaddle(r,z,nu,b11,gamma,vartheta,lincheck)
 c-----------------------------------------------------------------------
 c     filling out x-point module variables.
 c-----------------------------------------------------------------------
@@ -1380,6 +1389,28 @@ c-----------------------------------------------------------------------
       nu(1)=ATAN2(z-zxs(x_i),r-rxs(x_i))
       CALL find_fl_surface(one,xpt_brackets(x_i,2),r,z)
       nu(2)=ATAN2(z-zxs(x_i),r-rxs(x_i))
+c-----------------------------------------------------------------------
+c     some useful debugging statements.
+c-----------------------------------------------------------------------
+      !IF(x_i==2)THEN
+      !   xpt_brackets(x_i,1)=xpt_etas(x_i)-1e-3
+      !   xpt_brackets(x_i,2)=xpt_etas(x_i)+1e-3
+      !ENDIF
+
+      !CALL direct_get_bfield(rxs(x_i),zxs(x_i),bf,1)
+
+      !IF(x_i==2)THEN
+      !      CALL direct_get_bfield(rxs(x_i),zxs(x_i),bf,1)
+      !      CALL find_fl_surface(one,xpt_brackets(x_i,1),r,z)
+      !      nu(1)=ATAN2(z-zxs(x_i),r-rxs(x_i))
+      !      PRINT "(A)", "First x-point leg's angle nu (mthd 2):"
+      !      PRINT "(f17.14)", nu(1)/pi
+      !      CALL find_fl_surface(bf%f,xpt_brackets(x_i,2),r,z)
+      !      nu(2)=ATAN2(z-zxs(x_i),r-rxs(x_i))
+      !      PRINT "(A)", "Second x-point leg's angle nu (mthd 2):"
+      !      PRINT "(f17.14)", nu(2)/pi
+      !ELSE
+      !ENDIF
 c-----------------------------------------------------------------------
 c     defining xpt_varthetas2, xpt_gammas2. these angles are
 c     calculated out at the eta-location where we switch from numerical
