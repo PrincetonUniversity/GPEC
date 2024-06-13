@@ -1768,10 +1768,10 @@ c-----------------------------------------------------------------------
          IF (verbose) THEN
 
             IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,7a12)')
+               IF(ising == 1) WRITE(*,'(1x,7a13)')
      $              "psi","q","singflx","chirikov",
      $              "w_island","w_crit","singflx_crit"
-               WRITE(*,'(1x,es12.3,f12.3,es12.3,f12.3,3es12.3)')
+               WRITE(*,'(1x,es13.3,f13.3,es13.3,f13.3,3es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
      $              chirikov(ising),2*island_hwidth(ising),
      $              2*hw_crit(ising),b_crit(ising)    
