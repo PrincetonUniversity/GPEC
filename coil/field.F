@@ -54,8 +54,10 @@ c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN), OPTIONAL :: op_verbose
       COMPLEX(r8), DIMENSION(cmpert) :: bmn
 
+      LOGICAL :: debug_OMP = .FALSE.
       LOGICAL :: verbose = .FALSE.
       INTEGER :: num_threads = 1
+
 
       INTEGER :: i,j,k,iseg,itheta,izeta,ipert,nseg,
      $    istart,istop,spline_itheta,spline_ipsi
@@ -83,16 +85,6 @@ c-----------------------------------------------------------------------
       ELSE
         verbose = .FALSE.
       ENDIF
-
-#ifdef _OPENMP
-c The code is compiled with the OpenMP option so the preprocessor
-c will pick include the following line
-      IF(verbose) THEN
-        num_threads = OMP_GET_NUM_THREADS()
-        WRITE(*,'(1x,a,i4,a)')," > Running with ",
-     $           num_threads," OMP threads"
-      ENDIF
-#endif
 
       istart = 1
       istop = coil_num
@@ -127,9 +119,11 @@ c-----------------------------------------------------------------------
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
 
-      IF(verbose) WRITE(*,'(1x,a,a,i6,a,i4,a,i3,a)'),"  >> Mapping ",
-     $      TRIM(coil(i)%coil_name),coil(i)%ncoil*coil(i)%s*nseg,
-     $      " filaments to ",cmtheta,"x",cmzeta," plasma grid"
+      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a,i3,a)'),"  > Mapping "//
+     $      TRIM(coil(i)%coil_name)//" coil's ",
+     $      coil(i)%ncoil*coil(i)%s*nseg,
+     $      " filaments to a ",cmtheta,"x",cmzeta," plasma grid "//
+     $      "using ",coil_threads," parallel threads"
 
 
 !$OMP PARALLEL DO PRIVATE(j,k,iseg),COLLAPSE(3)
@@ -146,6 +140,14 @@ c-----------------------------------------------------------------------
                   dx(j,k,iseg)=coil(i)%x(j,k,iseg+1)-coil(i)%x(j,k,iseg)
                   dy(j,k,iseg)=coil(i)%y(j,k,iseg+1)-coil(i)%y(j,k,iseg)
                   dz(j,k,iseg)=coil(i)%z(j,k,iseg+1)-coil(i)%z(j,k,iseg)
+
+#ifdef _OPENMP
+                  IF(debug_OMP .AND. j==1 .AND. k==1 .AND. iseg==1)THEN
+                    num_threads = OMP_GET_NUM_THREADS()
+                    WRITE(*,'(1x,a,i4,a)'),"  >> Running with ",
+     $                       num_threads," OMP threads"
+                  ENDIF
+#endif
                ENDDO
             ENDDO
          ENDDO

@@ -29,6 +29,7 @@ c-----------------------------------------------------------------------
       INTEGER :: coil_unit=31,cmlow,cmhigh
       INTEGER :: cnn,cmpsi,cmtheta,cmzeta,cmpert,coil_num
       INTEGER :: cnpert=-1
+      INTEGER :: coil_threads = 1
       CHARACTER(24) :: machine,ceq_type,ip_direction,bt_direction
       CHARACTER(24), DIMENSION(50) :: coil_name
       REAL(r8), DIMENSION(50,48) :: coil_cur
@@ -78,7 +79,8 @@ c-----------------------------------------------------------------------
      $     coil_num,coil_name,coil_cur,
      $     coil_shiftx, coil_shifty, coil_shiftz,
      $     coil_tiltx, coil_tilty, coil_tiltz,
-     $     coil_xnom, coil_ynom, coil_znom, cnpert
+     $     coil_xnom, coil_ynom, coil_znom, cnpert,
+     $     coil_threads
       NAMELIST/coil_output/gpec_interface, coil_out
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4,nsec
@@ -160,6 +162,16 @@ c-----------------------------------------------------------------------
       helicity=ipd*btd
       gpec_interface=.TRUE.
       IF(cnpert < 0) cnpert = cnn ! default geometry manipulations correspond to n from DCON
+
+      ! set the number of threads for OPENMP
+#ifdef _OPENMP
+      CALL OMP_SET_NUM_THREADS(coil_threads)
+#else
+      IF(coil_threads /= 1) PRINT *,
+     $  "WARNING: Not compiled with OPENMP. Forcing coil_threads = 1."
+      coil_threads = 1
+#endif
+
 c-----------------------------------------------------------------------
 c     read coils for each machine.
 c-----------------------------------------------------------------------
