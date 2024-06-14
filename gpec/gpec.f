@@ -387,7 +387,8 @@ c-----------------------------------------------------------------------
          coil_indmat=0
          DO j=1,coil_num
             coilmn=0
-            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
+            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j,
+     $                        op_verbose=.TRUE.)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
                   coil_indmat(cmlow-mlow+i,j)=coilmn(i)

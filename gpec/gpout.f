@@ -4184,6 +4184,7 @@ c-----------------------------------------------------------------------
          ENDIF
          
          DO i=0,nr
+            IF(verbose) CALL progressbar(i,0,nr,op_percent=10)
             DO j=0,nz                  
                IF (gdl(i,j)<1) THEN
                   gdl(i,j)=vgdl(i,j)

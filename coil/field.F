@@ -40,16 +40,22 @@ c         op_start : integer (optional)
 c            Field from coils op_start to op_stop is calculated. Default is 1 to coil_num.
 c         op_stop : integer (optional)
 c            Field from coils op_start to op_stop is calculated. Default is 1 to coil_num.
+c         op_verbose : logical (optional)
+c            Print information about parallelization threads.
 c
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE field_bs_psi(psi,bmn,wegt,op_start,op_stop)
+      SUBROUTINE field_bs_psi(psi,bmn,wegt,op_start,op_stop, op_verbose)
 
       REAL(r8), INTENT(IN) :: psi
       INTEGER, INTENT(IN) :: wegt
       INTEGER, INTENT(IN), OPTIONAL :: op_start,op_stop
+      LOGICAL, INTENT(IN), OPTIONAL :: op_verbose
       COMPLEX(r8), DIMENSION(cmpert) :: bmn
+
+      LOGICAL :: verbose = .FALSE.
+      INTEGER :: num_threads = 1
 
       INTEGER :: i,j,k,iseg,itheta,izeta,ipert,nseg,
      $    istart,istop,spline_itheta,spline_ipsi
@@ -75,6 +81,22 @@ c-----------------------------------------------------------------------
       ! DO i=1,cmtheta
       !    CALL bicube_copy(crzphi,crzphi_arr(i))
       ! ENDDO
+
+      IF(PRESENT(op_verbose)) THEN
+        verbose = op_verbose
+      ELSE
+        verbose = .FALSE.
+      ENDIF
+
+#ifdef _OPENMP
+c The code is compiled with the OpenMP option so the preprocessor
+c will pick include the following line
+      IF(verbose) THEN
+        num_threads = OMP_GET_NUM_THREADS()
+        WRITE(*,'(1x,a,i4,a)')," > Running with ",
+     $           num_threads," OMP threads"
+      ENDIF
+#endif
 
       istart = 1
       istop = coil_num
@@ -108,6 +130,10 @@ c-----------------------------------------------------------------------
      $        dx(coil(i)%ncoil,coil(i)%s,nseg),
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
+
+      IF(verbose) WRITE(*,'(1x,a,a,i6,a,i4,a,i3,a)'),"  >> Mapping ",
+     $      TRIM(coil(i)%coil_name),coil(i)%ncoil*coil(i)%s*nseg,
+     $      " filaments to ",cmtheta,"x",cmzeta," plasma grid"
 
 
 !$OMP PARALLEL DO PRIVATE(j,k,iseg),COLLAPSE(3)

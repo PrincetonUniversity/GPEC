@@ -8,6 +8,9 @@ F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 .f.o:
 	$(F90) -c $*.f
 
+.F.o:
+	$(F90) -c $*.F
+
 OBJS = \
 	coil.o \
 	field.o 
@@ -46,6 +49,3 @@ clean:
 
 coil.o: version.inc
 field.o: coil.o
-
-clean:
-	rm -f *.o *.mod
