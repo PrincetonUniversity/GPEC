@@ -70,12 +70,6 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
 
-      ! type(bicube_type), DIMENSION(cmtheta) :: crzphi_arr
-
-      ! DO i=1,cmtheta
-      !    CALL bicube_copy(crzphi,crzphi_arr(i))
-      ! ENDDO
-
       istart = 1
       istop = coil_num
       IF(PRESENT(op_start)) istart = op_start
