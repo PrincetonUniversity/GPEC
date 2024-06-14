@@ -14,6 +14,7 @@
     mtheta=256           ! Number of equally spaced poloidal grid intervals for all splines
     newq0=0              ! Grad-Shafranov solution invariant adjustment of the q profile to give the specified value of q at the axis. Default 0 uses input file value.
     etol = 1e-7          ! Tolerance for direct equilibrium reconstruction of flux surfaces/coordinates
+    nstepd=2048          ! Total number of lsode steps during equilibrium field line integration. Must increase if etol is made smaller
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
 
     input_only=f         ! Generate information about the input and then quit with no further calculation
