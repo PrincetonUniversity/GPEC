@@ -76,12 +76,8 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
 
-      ! type(bicube_type), DIMENSION(cmtheta) :: crzphi_arr
 
-      ! DO i=1,cmtheta
-      !    CALL bicube_copy(crzphi,crzphi_arr(i))
-      ! ENDDO
-
+      ! Optional verbosity tells user how many threads we are using
       IF(PRESENT(op_verbose)) THEN
         verbose = op_verbose
       ELSE
