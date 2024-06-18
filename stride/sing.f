@@ -74,7 +74,7 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"sing_parallel_alloc: #Threads=",allocThreads
       ENDIF
-      CALL OMP_SET_NUM_THREADS(allocThreads)
+      IF(allocThreads>0) CALL OMP_SET_NUM_THREADS(allocThreads)
 !$OMP PARALLEL DEFAULT(NONE) SHARED(locstab,fmats,sq)
 !$OMP& COPYIN(sq_s_f,fmats_s_f,
 !$OMP& locstab_s_f,sq_s_f1,sq_s_f2,sq_s_f3,
@@ -121,7 +121,7 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"sing_asymp: #Threads=",nThreads
       ENDIF
-      CALL OMP_SET_NUM_THREADS(nThreads)
+      IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
 !$OMP PARALLEL DEFAULT(NONE)
 !$OMP& SHARED(msing,sing,sing_order,mlow,mhigh,locstab,
 !$OMP& nn,fmats,gmats,kmats,sTime,cr,mpert,mband,

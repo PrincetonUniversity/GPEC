@@ -4222,6 +4222,7 @@ c-----------------------------------------------------------------------
          ENDIF
          
          DO i=0,nr
+            IF(verbose) CALL progressbar(i,0,nr,op_percent=10)
             DO j=0,nz                  
                IF (gdl(i,j)<1) THEN
                   gdl(i,j)=vgdl(i,j)
@@ -6544,11 +6545,11 @@ c-----------------------------------------------------------------------
      $        frdid,frvid))
          CALL check(nf90_def_var(fncid,"q_rational", nf90_double, frdid,
      $        fqvid))
-         CALL check( nf90_put_att(mncid, fqvid ,"long_name",
+         CALL check( nf90_put_att(fncid, fqvid ,"long_name",
      $    "Safety factor at each rational surface") )
          CALL check(nf90_def_var(fncid,"dqdpsi_n_rational",nf90_double,
      $        frdid,fq1vid))
-         CALL check( nf90_put_att(mncid, fq1vid ,"long_name",
+         CALL check( nf90_put_att(fncid, fq1vid ,"long_name",
      $    "Safety factor gradient at each rational surface") )
       ENDIF
       CALL check( nf90_put_att(fncid,nf90_global,"helicity",helicity))
@@ -6566,7 +6567,7 @@ c-----------------------------------------------------------------------
       CALL check( nf90_put_att(cncid,czvid,"units","m") )
       CALL check( nf90_def_var(cncid,"l",nf90_double,
      $                         (/crdid,czdid/),clvid) )
-      CALL check( nf90_put_att(mncid, clvid ,"long_name",
+      CALL check( nf90_put_att(cncid, clvid ,"long_name",
      $ "Interior flag (1 is interior, 0 is exterior, -1 is boundary)") )
 
       ! Add common global attributes

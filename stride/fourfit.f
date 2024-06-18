@@ -65,7 +65,9 @@ c-----------------------------------------------------------------------
       rz_ix = rzphi%ix
       rz_iy = rzphi%iy
       IF (fourfit_metric_parallel) THEN
-         CALL OMP_SET_NUM_THREADS(nThreads)
+         IF(nThreads > 0)THEN
+           CALL OMP_SET_NUM_THREADS(nThreads)
+         ENDIF
       ELSE
          CALL OMP_SET_NUM_THREADS(1)
       ENDIF
@@ -189,7 +191,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     define flux surface quantities.
 c-----------------------------------------------------------------------
-      CALL OMP_SET_NUM_THREADS(nThreads)
+      IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
 !$OMP PARALLEL DO DEFAULT(NONE)
 !$OMP& PRIVATE(ipsi,psifac,p1,q,q1,chi1,nq,jtheta,m1,ipert,singfac1,dm,
 !$OMP& m2,singfac2,jpert,g11,g22,g33,g23,g31,g12,jmat1,ipiva,work,info,
