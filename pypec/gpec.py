@@ -241,8 +241,8 @@ def run(loc='.', rundir=default.rundir, submit=True, return_on_complete=False, r
         ntasks = 1
         if rundcon and os.path.isfile('dcon.in'):
             dcon = namelist.read('dcon.in')
-            if 'parallel_threads' in dcon.get('DCON_CONTROL', {}):
-                ntasks = dcon['DCON_CONTROL']['parallel_threads']
+            if 'dcon_kin_threads' in dcon.get('DCON_CONTROL', {}):
+                ntasks = dcon['DCON_CONTROL']['dcon_kin_threads']
                 print(' > Requesting {:} threads'.format(ntasks))
 
     # actual run

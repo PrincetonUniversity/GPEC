@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
       INTEGER :: coil_unit=31,cmlow,cmhigh
       INTEGER :: cnn,cmpsi,cmtheta,cmzeta,cmpert,coil_num
       INTEGER :: cnpert=-1
-      INTEGER :: coil_threads = 1
+      INTEGER :: coil_threads = 0
       CHARACTER(24) :: machine,ceq_type,ip_direction,bt_direction
       CHARACTER(24), DIMENSION(50) :: coil_name
       REAL(r8), DIMENSION(50,48) :: coil_cur
@@ -165,7 +165,9 @@ c-----------------------------------------------------------------------
 
       ! set the number of threads for OPENMP
 #ifdef _OPENMP
-      CALL OMP_SET_NUM_THREADS(coil_threads)
+      IF(coil_threads > 0) THEN
+        CALL OMP_SET_NUM_THREADS(coil_threads)
+      ENDIF
 #else
       IF(coil_threads /= 1) PRINT *,
      $  "WARNING: Not compiled with OPENMP. Forcing coil_threads = 1."

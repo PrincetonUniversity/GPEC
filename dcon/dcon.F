@@ -56,9 +56,10 @@ c-----------------------------------------------------------------------
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
-     $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
+     $     ion_flag,electron_flag,ktc,ktw,qlow,
      $     use_classic_splines,reform_eq_with_psilim,
-     $     psiedge,nperq_edge,wv_farwall_flag
+     $     psiedge,nperq_edge,wv_farwall_flag,
+     $     dcon_kin_threads,parallel_threads
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -84,13 +85,22 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
+c-----------------------------------------------------------------------
+c     set variables
+c-----------------------------------------------------------------------
+      IF(parallel_threads > 0)THEN
+        WRITE(*,*) "WARNING: parallel_threads has been deprecated. "//
+     $    "Use dcon_kin_threads"
+      ENDIF
 #ifdef _OPENMP
 c The code is compiled with the OpenMP option so the preprocessor
 c will pick include the following line
-      CALL OMP_SET_NUM_THREADS(parallel_threads)
+      IF(dcon_kin_threads > 0)THEN
+        CALL OMP_SET_NUM_THREADS(dcon_kin_threads)
+      ENDIF
 #else
 c No OpenMP so the following line will appear in source code
-      parallel_threads = 1
+      dcon_kin_threads = 1
 #endif
       delta_mhigh=delta_mhigh*2
       use_classic_splines_for_dcon = use_classic_splines

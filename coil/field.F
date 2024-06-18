@@ -54,7 +54,6 @@ c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN), OPTIONAL :: op_verbose
       COMPLEX(r8), DIMENSION(cmpert) :: bmn
 
-      LOGICAL :: debug_OMP = .FALSE.
       LOGICAL :: verbose = .FALSE.
       INTEGER :: num_threads = 1
 
@@ -119,12 +118,10 @@ c-----------------------------------------------------------------------
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
 
-      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a,i3,a)'),"  > Mapping "//
+      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)'),"  > Mapping "//
      $      TRIM(coil(i)%coil_name)//" coil's ",
      $      coil(i)%ncoil*coil(i)%s*nseg,
-     $      " filaments to a ",cmtheta,"x",cmzeta," plasma grid "//
-     $      "using ",coil_threads," parallel threads"
-
+     $      " filaments to a ",cmtheta,"x",cmzeta," plasma grid"
 
 !$OMP PARALLEL DO PRIVATE(j,k,iseg),COLLAPSE(3)
          DO j=1,coil(i)%ncoil
@@ -142,7 +139,7 @@ c-----------------------------------------------------------------------
                   dz(j,k,iseg)=coil(i)%z(j,k,iseg+1)-coil(i)%z(j,k,iseg)
 
 #ifdef _OPENMP
-                  IF(debug_OMP .AND. j==1 .AND. k==1 .AND. iseg==1)THEN
+                  IF(j==1 .AND. k==1 .AND. iseg==1)THEN
                     num_threads = OMP_GET_NUM_THREADS()
                     WRITE(*,'(1x,a,i4,a)'),"  >> Running with ",
      $                       num_threads," OMP threads"

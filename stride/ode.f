@@ -205,7 +205,7 @@ c-----------------------------------------------------------------------
             IF (verbose_performance_output) THEN
                print *,"ode_run: #Threads=",nThreads
             ENDIF
-            CALL OMP_SET_NUM_THREADS(nThreads)
+            IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
          ENDIF
 !$OMP PARALLEL DEFAULT(NONE)
 !.......................................................................
