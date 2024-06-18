@@ -31,11 +31,11 @@ c-----------------------------------------------------------------------
       INTEGER :: cnpert=-1
       INTEGER :: coil_threads = 0
       CHARACTER(24) :: machine,ceq_type,ip_direction,bt_direction
-      CHARACTER(24), DIMENSION(50) :: coil_name
-      REAL(r8), DIMENSION(50,48) :: coil_cur
-      REAL(r8), DIMENSION(50,48) :: coil_shiftx,coil_shifty,coil_shiftz
-      REAL(r8), DIMENSION(50,48) :: coil_tiltx,coil_tilty,coil_tiltz
-      REAL(r8), DIMENSION(50,48) :: coil_xnom,coil_ynom,coil_znom
+      CHARACTER(24), DIMENSION(500) :: coil_name
+      REAL(r8), DIMENSION(500,48) :: coil_cur
+      REAL(r8), DIMENSION(500,48) :: coil_shiftx,coil_shifty,coil_shiftz
+      REAL(r8), DIMENSION(500,48) :: coil_tiltx,coil_tilty,coil_tiltz
+      REAL(r8), DIMENSION(500,48) :: coil_xnom,coil_ynom,coil_znom
       REAL(r8) :: cro,czo,cpsio,cpsilow,cpsilim,cqlim,
      $     ipd,btd,helicity
 
@@ -71,8 +71,8 @@ c-----------------------------------------------------------------------
       
       CHARACTER(128), INTENT(IN) :: cdconfile
       INTEGER, OPTIONAL :: icoil_num
-      REAL(r8), DIMENSION(50,48), OPTIONAL :: icoil_cur
-      CHARACTER(24), DIMENSION(50), OPTIONAL :: icoil_name
+      REAL(r8), DIMENSION(500,48), OPTIONAL :: icoil_cur
+      CHARACTER(24), DIMENSION(500), OPTIONAL :: icoil_name
 
       NAMELIST/coil_control/ceq_type,cmpsi,cmtheta,cmzeta,cmlow,cmhigh,
      $     data_dir,machine,ip_direction,bt_direction,

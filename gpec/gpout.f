@@ -688,7 +688,7 @@ c-----------------------------------------------------------------------
             ! jacobian for coordinate angle at dcon angle
             spl%fs(itheta,2)=delpsi(itheta)*r(itheta)**rout*rfac**rcout/
      $           (bpfac**bpout*bfac**bout)  
-            IF (tout .EQ. 0) THEN
+            IF (tout == 0) THEN
                dphi(itheta)=rzphi%f(3)
             ENDIF
          ENDDO      
@@ -725,7 +725,7 @@ c-----------------------------------------------------------------------
      $              lftnmn(i)*EXP(ifac*twopi*lmfac(i)*thetas(itheta))  
             ENDDO
             ! multiply toroidal factor for dcon angle
-            IF (tout .EQ. 0) THEN
+            IF (tout == 0) THEN
                ftnfun(:)=ftnfun(:)*EXP(-ifac*nn*dphi(:))
             ELSE
                ftnfun(:)=ftnfun(:)*
@@ -1135,7 +1135,7 @@ c-----------------------------------------------------------------------
                i2=mmin
                i3=-1
             ENDIF
- 1       ENDIF
+         ENDIF
          CALL ascii_open(in_unit,ifile,"old")
                         
          DO i=i1,i2,i3

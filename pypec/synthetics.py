@@ -642,8 +642,8 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
     # set normalization of currents using max absolute current
     if not curlim:
         curs = []
-        for i in range(50):
-            for j in range(50):
+        for i in range(500):
+            for j in range(500):
                 if 'coil_cur({:},{:})'.format(i+1,j+1) in coil['COIL_CONTROL']:
                     curs.append(coil['COIL_CONTROL']['coil_cur({:},{:})'.format(i+1,j+1)])
         curlim = np.max(np.abs(curs)) #-np.min(curs)
