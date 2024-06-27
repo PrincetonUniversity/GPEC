@@ -1,11 +1,16 @@
       MODULE layerinputs_mod
 
-      USE inputs, ONLY : kin
-      USE pentrc_interface, ONLY : zi,mi,wefac,wpfac,initialize_pentrc
-      USE read_eq_mode, ONLY : read_eq_efit
-      USE direct_mod, ONLY : direct_run
-      !resm = mfac(resnum(ising))
-      !CALL spline_eval(kin,respsi,1)
+      USE inputs, ONLY : read_kin,kin,chi1
+      !USE params
+      !USE dcon_interface_mod, ONLY : respsi
+      !USE direct_mod, ONLY : direct_run
+      USE spline_mod, ONLY : spline_alloc,spline_eval,spline_type,
+     $                       spline_dealloc
+      USE sglobal_mod, ONLY: m_p, chag, lnLamb,
+     $   Q_e,Q_i,pr,pe,c_beta,ds,tau,mu0,r8, ! NOT out_unit
+     $   eta,visc,rho_s,lu,omega_e,omega_i,delta_n,Q
+      USE netcdf
+
 
       ! STILL NEED ro AND bt0, GLOBAL GPEC VARIABLES
 
@@ -13,115 +18,244 @@
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. build_inputs.
-c     compute
+c     subprogram 1. check.
+c     Check status of netcdf file.
 c-----------------------------------------------------------------------
-      SUBROUTINE build_inputs(egnum,xspmn,spot,nspot,
-     $             growthrate_flag,
-     $             slayer_inpr)
+      SUBROUTINE check(stat)
 c-----------------------------------------------------------------------
-c     declarations.
+c     declaration.
 c-----------------------------------------------------------------------
-      LOGICAL, INTENT(IN) :: growthrate_flag
-      INTEGER, INTENT(IN) :: egnum,nspot
-      REAL(r8), INTENT(IN) :: spot, slayer_inpr
-
-      !INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
-      !$           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
-      !$           astat
-
-      REAL(r8) :: respsi,lpsi,rpsi,shear,hdist,sbnosurf
-
-      INTEGER, DIMENSION(msing) :: resnum
-
-      TYPE(spline_type) :: spl
-
-      INTEGER :: resm
-      TYPE(spline_type) :: sr
-
-      REAL(r8), DIMENSION(msing) :: inQ_arr,inQ_e_arr,inQ_i_arr,
-     $                       inc_beta_arr,inds_arr,intau_arr,Q0_arr,
-     $                       outer_delta_arr
-
+      INTEGER, INTENT (IN) :: stat
 c-----------------------------------------------------------------------
-c     Find # of rational surfaces msing.
+c     stop if it is an error.
 c-----------------------------------------------------------------------
-      CHARACTER(*) :: vmat_filename
-      INTEGER :: ising
-
-      OPEN(UNIT=debug_unit,FILE=TRIM(vmat_filename),STATUS="OLD",
-     $     FORM="UNFORMATTED")
-      READ(debug_unit)mpert,msing
-
+      IF(stat /= nf90_noerr) THEN
+         PRINT *, TRIM(nf90_strerror(stat))
+         !STOP "ERROR: failed to write/read netcdf file"
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE check
 c-----------------------------------------------------------------------
 c     Read and build equilibrium inputs
 c-----------------------------------------------------------------------
-      CALL fourfit_action_matrix
-            ! call the automatic reading and distributing of inputs
-      CALL initialize_pentrc(op_kin=.FALSE.,op_deq=.FALSE.,
-     $          op_peq=.FALSE.)
-            ! manually set the pentrc equilibrium description
-      CALL set_eq(eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,
-     $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
-            ! manually set the kinetic profiles
+        SUBROUTINE read_stride_netcdf_diagonal(ncfile, r_dim,
+     $   dp_diagonal, q_rational, psi_n_rational, shear,
+     $   r0, bt0)
+
+        !USE netcdf   ! NetCDF module for Fortran
+        !USE stride_netcdf_mod ! For the 'check' subroutine (error handling)
+
+        ! Input/Output Arguments
+        CHARACTER(128), INTENT(IN) :: ncfile
+        REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: dp_diagonal
+        REAL(r8), DIMENSION(:), INTENT(OUT) :: q_rational,
+     $  psi_n_rational, shear
+        REAL(r8), INTENT(OUT) :: r0, bt0
+
+        ! Internal Variables
+        INTEGER(kind=nf90_int) :: ncid, stat, r_dim_id, r_dim,
+     $  dp_id, qr_id, pr_id, shear_id, r0_id, bt0_id  ! Explicit kind for NetCDF variables
+        INTEGER(kind=nf90_int), DIMENSION(1) :: start, count ! Explicit kind for NetCDF variables
+        REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: delta_prime
+        INTEGER :: i
+
+        ! Open the NetCDF file
+        stat = nf90_open(path=ncfile,mode=NF90_WRITE,ncid=ncid)
+        WRITE(*,*)"ncfile=",ncfile
+        CALL check(stat)  ! Error handling
+
+        ! Get Dimension Information
+        stat = nf90_inq_varid(ncid, "r", r_dim_id)
+        CALL check(stat)
+        stat = nf90_get_var(ncid, r_dim_id, r_dim)  ! Use len= for dimension
+        CALL check(stat)
+
+        ! Allocate Arrays (based on dimension)
+        ALLOCATE(dp_diagonal(r_dim))
+        !ALLOCATE(delta_prime(r_dim, r_dim))
+
+        ! Get Variable IDs
+        stat = nf90_inq_varid(ncid, "Delta_prime", dp_id)
+        CALL check(stat)
+        stat = nf90_inq_varid(ncid, "q_rational", qr_id)
+        CALL check(stat)
+        stat = nf90_inq_varid(ncid, "psi_n_rational", pr_id)
+        CALL check(stat)
+        stat = nf90_inq_varid(ncid, "shear", shear_id)
+        CALL check(stat)
+        stat = nf90_inq_varid(ncid, "bt0", bt0_id)
+        CALL check(stat)
+        stat = nf90_inq_varid(ncid, "r0", r0_id)
+        CALL check(stat)
+
+        ! Read Data from NetCDF File
+        ! Set up start and count for reading only the diagonal
+        start(1) = 1
+        count(1) = 1
+
+        ! Read the diagonal of delta_prime. The results will be put on a 1D temporary array.
+        stat = nf90_get_var(ncid, dp_id, delta_prime)
+        CALL check(stat)
+        ! Read 1D variables
+        stat = nf90_get_var(ncid, qr_id, q_rational)
+        CALL check(stat)
+        stat = nf90_get_var(ncid, pr_id, psi_n_rational)
+        CALL check(stat)
+        stat = nf90_get_var(ncid, shear_id, shear)
+        CALL check(stat)
+        stat = nf90_get_var(ncid, bt0_id, bt0)
+        CALL check(stat)
+        stat = nf90_get_var(ncid, r0_id, r0)
+        CALL check(stat)
+
+        ! Extract Diagonal, with 3rd index signifying REAL part
+        DO i = 1, r_dim
+            dp_diagonal(i) = REAL(delta_prime(i, i, 1))
+        END DO
+
+        ! Clean Up
+        DEALLOCATE(delta_prime)
+        stat = nf90_close(ncid)
+        CALL check(stat)
+
+        END SUBROUTINE read_stride_netcdf_diagonal
+c-----------------------------------------------------------------------
+c     subprogram 1. build_inputs.
+c     compute
+c-----------------------------------------------------------------------
+      SUBROUTINE build_inputs(ncfile,slayer_inpr,growthrate_flag,
+     $               qval_arr,inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
+     $               inds_arr,intau_arr,Q0_arr,inpr_arr,inpe_arr,
+     $               omegas_arr,outer_delta_arr)
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      CHARACTER(128), INTENT(IN) :: ncfile
+      LOGICAL, INTENT(IN) :: growthrate_flag
+      REAL(r8), INTENT(IN) ::slayer_inpr
+
+      REAL(r8) :: respsi,lpsi,rpsi,hdist,sbnosurf,
+     $ ising
+
+      INTEGER :: zi, zimp, mi, mimp, msing
+      REAL(r8) :: nfac,tfac,wefac,wpfac,e,twopi
+
+      TYPE(spline_type) :: spl
+
+      TYPE(spline_type) :: sr
+
+      INTEGER :: mms,nns,mrs,nrs
+
+      REAL(r8) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
+     $     qval,sval,bt,rs,zeff,inpe,r0,bt0
+      REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_r,tau_h,
+     $            rho,tau_v,inpr,Qconv,lbeta
+
+      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: qval_arr,
+     $          inQ_arr,inQ_e_arr,
+     $          inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,Q0_arr,
+     $          inpr_arr,inpe_arr,omegas_arr,outer_delta_arr
+
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: dp_diagonal, q_rational,
+     $                                  psi_n_rational, shear
+      INTEGER :: r_dim
+
+c-----------------------------------------------------------------------
+c     Read in STRIDE netcdf
+c-----------------------------------------------------------------------
+      character(512) ::
+     $  kinetic_file = '/fusion/projects/codes/gpec/GPEC-1.5/
+     $                   docs/examples/a10_ideal_example/a10_prof1.txt'
+      !REAL(r8), DIMENSION(:), ALLOCATABLE :: q_rational, q_rational_coords
+      !REAL(r8), DIMENSION(:), ALLOCATABLE :: Delta_prime, Delta_prime_coords
+      WRITE(*,*)"ncfile=",ncfile
+      CALL read_stride_netcdf_diagonal(ncfile,
+     $              r_dim, dp_diagonal, q_rational, psi_n_rational,
+     $              shear, r0, bt0)
+
+      !CALL READ_Q_RATIONAL_AND_DELTA_PRIME_FROM_NETCDF(
+      !&      filename, q_rational, q_rational_coords,
+      !&      Delta_prime, Delta_prime_coords)
+
+      msing = r_dim
+
+      ALLOCATE(qval_arr(msing),inQ_arr(msing),inQ_e_arr(msing),
+     $         inQ_i_arr(msing),
+     $         inc_beta_arr(msing),inds_arr(msing),intau_arr(msing),
+     $         Q0_arr(msing),outer_delta_arr(msing))
+      !DEALLOCATE(q_rational, q_rational_coords, Delta_prime, Delta_prime_coords)
+c-----------------------------------------------------------------------
+c     Read and build equilibrium inputs
+c-----------------------------------------------------------------------
+
+    !=======================================================================
+    !subroutine read_kin(file,zi,zimp,mi,mimp,nfac,tfac,wefac,wpfac,write_log)
+    !-----------------------------------------------------------------------
+    !*DESCRIPTION:
+    !   Read ascii file containing table of kinetic profiles ni, ne, ti,
+    !   te, and omegaE, then form kin spline containing some additional
+    !   information (krook nui,nue).
+    !
+    !   Assumes table consists of 6 columns: psi_n, n_i(m^-3), n_e(m^-3),
+    !   T_i(eV), T_e(eV), omega_E(rad/s). File can (nearly) arbitrary
+    !   header and/or footer, with the exception that no lines start with
+    !   a number.
+    !
+    !*ARGUMENTS:
+    !    file : character(256) (in)
+    !       File path.
+    !   zi : integer
+    !       Ion charge in fundamental units
+    !   zimp : integer
+    !       Impurity ion charge in fundamental units
+    !   mi : integer
+    !       Ion mass in fundamental units (mass proton)
+    !   mimp : integer
+    !       Impurity ion mass in fundamental units
+    !   wefac : real
+    !       Direct multiplier for omegaE profiles
+    !   wpfac : real
+    !       Scaling of rotation profile, done via manipulation of omegaE
+    !   write_log : bool
+    !       Writes kinetic spline to log file
+    !
+    !-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     set up kin
+c-----------------------------------------------------------------------
+        ! manually set the kinetic profiles
+      zi = 1
+      zimp = 1
+      mi = 1
+      mimp = 1
+      nfac = 1.0
+      tfac = 1.0
+      wefac = 1.0
+      wpfac = 1.0
+      e=1.6021917e-19
+      twopi = 6.28318530718
+
       CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
-     $          tfac,wefac,wpfac,indebug)
-        ! manually set the perturbed equilibrium displacements
-        ! use false flat xi and xi' for equal weighting
-      ALLOCATE(psitmp(sq%mx+1),mtmp(mpert),xtmp(sq%mx+1,mpert))
-      psitmp(:) = sq%xs(0:)
-      mtmp = (/(m,m=mlow,mhigh)/)
-      xtmp = 1e-4
-      CALL set_peq(psitmp,mtmp,xtmp,xtmp,xtmp,.false.,tdebug)
-      DEALLOCATE(xtmp,mtmp,psitmp)
-      IF(verbose) WRITE(*,*)"Computing Kinetic Matrices"
-      CALL fourfit_kinetic_matrix(kingridtype,out_fund)
+     $          tfac,wefac,wpfac,.false.)
+            ! manually set the perturbed equilibrium displacements
+            ! use false flat xi and xi' for equal weighting
 
-      CALL sing_scan
-      DO ising=1,msing
-         CALL resist_eval(sing(ising))
-      ENDDO
-
-      CALL ksing_find
-
-
-      CALL gpeq_alloc
-      CALL idcon_build(egnum,xspmn)
-
-      CALL gpeq_interp_singsurf(fsp_sol,spot,nspot)
-
-      IF (vsbrzphi_flag) ALLOCATE(singbno_mn(mpert,msing))
-
-      ! minor radius defined using toroidal flux. Used for threshold
-      CALL spline_int(sq)
-      qintb = sq%fsi(mpsi, 4)
-      psitor(:) = sq%fsi(:, 4) / qintb  ! normalized toroidal flux
-      rhotor(:) = SQRT(sq%fsi(:, 4)*twopi*psio / (pi * bt0))  ! effective minor radius in Callen
-      CALL spline_alloc(sr,mpsi,1)
-      sr%xs = sq%xs
-      sr%fs(:, 1) = rhotor(:)
-      CALL spline_fit(sr,"extrap")
-
-c-----------------------------------------------------------------------
-c     HERE I NEED TO READ IN STRIDE NETCDF ??
-c-----------------------------------------------------------------------
-      IF growthrate_flag THEN
-        outer_delta_arr = 0.0
-       ! TBD
-      END IF
 c-----------------------------------------------------------------------
 c     loop across singular surfaces, evaluate spline quantities.
 c-----------------------------------------------------------------------
       ! j_c is j_c/(chi1*sq%f(4))
       DO ising=1,msing
-         resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
-         respsi=singtype(ising)%psifac
-         CALL spline_eval(sq,respsi,1)
-
+         !resnum(ising)=NINT(singtype(ising)%q*nn)-mlow+1
+         !respsi=singtype(ising)%psifac
+         !CALL spline_eval(sq,respsi,1)
+         respsi = psi_n_rational(ising)
 c-----------------------------------------------------------------------
 c     prepare layer analysis.
 c-----------------------------------------------------------------------
-         resm = mfac(resnum(ising))
+         !resm = mfac(resnum(ising))
          CALL spline_eval(sr,respsi,1)
          CALL spline_eval(kin,respsi,1)
 c-----------------------------------------------------------------------
@@ -144,18 +278,17 @@ c-----------------------------------------------------------------------
          t_i = kin%f(3)/e
          zeff = kin%f(5)
          omega = kin%f(9)
-         qval = sq%f(4)
-         sval = sq%f1(4)
+         qval = q_rational(ising)!sq%f(4)
+         sval = shear(ising)
          bt = bt0
          rs = sr%f1(1)
-         R0 = ro
+         R0 = r0
          mu_i = mi
          inpr = slayer_inpr
-         mms = resm
-         nns = nn
-
-         mrs = real(mms,4)
-         nrs = real(nns,4)
+         !mms = resm
+         !nns = nn
+         mrs = 2.0 ! FROM NAMELIST ???? real(mms,4)
+         nrs = 1.0 ! FROM NAMELIST ???? real(nns,4)
 
           ! String representations of the m and n mode numbers
           !IF (nns<10) THEN
@@ -209,7 +342,7 @@ c-----------------------------------------------------------------------
 
          delta_n=lu**(1.0/3.0)/rs         ! norm factor for delta primes
 
-         qvals(ising) = qval
+         qval_arr(ising) = qval
          inQ_arr(ising)=Q
          inQ_e_arr(ising)=Q_e
          inQ_i_arr(ising)=Q_i
@@ -220,16 +353,16 @@ c-----------------------------------------------------------------------
          inpr_arr(ising) = inpr
          inpe_arr(ising) = 0.0 !!! TEMPORARY?
          omegas_arr(ising) = omega
-         outer_delta_arr(ising) = outer_layer_delta
+         outer_delta_arr(ising) = dp_diagonal(ising)
 
       ENDDO
       CALL spline_dealloc(sr)
-      CALL cspline_dealloc(fsp_sol)
-      CALL gpeq_dealloc
+      !CALL cspline_dealloc(fsp_sol)
+      !CALL gpeq_dealloc
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      IF(timeit) CALL gpec_timer(2)
+
       RETURN
       END SUBROUTINE build_inputs
 

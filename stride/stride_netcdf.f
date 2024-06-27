@@ -59,7 +59,8 @@ c-----------------------------------------------------------------------
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
      $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
-     $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id
+     $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id,
+     $    bt0_id, r0_id, shear_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
@@ -162,8 +163,14 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid,"r_prime",nf90_int,rp_dim,rp_id))
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                            r_dim,pr_id) )
+         CALL check( nf90_def_var(ncid,"bt0",nf90_double,
+     $                            r_dim/r_dim,bt0_id) )
+         CALL check( nf90_def_var(ncid,"r0",nf90_double,
+     $                            r_dim/r_dim,r0_id) )
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                            r_dim,qr_id) )
+         CALL check( nf90_def_var(ncid, "shear", nf90_double, r_dim,
+     $                            shear_id) )
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
@@ -217,8 +224,12 @@ c-----------------------------------------------------------------------
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,pr_id, (/(sing(i)%psifac,
      $                                           i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid,bt0_id, (/ bt0 /)) )
+         CALL check( nf90_put_var(ncid,r0_id, (/ ro /)) )
          CALL check( nf90_put_var(ncid,qr_id, (/(sing(i)%q,
      $                                           i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid,shear_id, (/(sing(i)%q1,
+     $                                           i=1,msing)/)) ) ! GPEC HAS DIFFERENT SHEAR CALC?
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"

@@ -19,10 +19,11 @@ c-----------------------------------------------------------------------
 
       ! FOR TESTING:
       USE gslayer_mod
+      USE layerinputs_mod
 
       IMPLICIT NONE
 
-      CHARACTER(128) :: infile
+      CHARACTER(128) :: infile,ncfile
       INTEGER :: i,j,k,inum,jnum,knum,inn,ReQ_num,ImQ_num,n_k
       INTEGER, DIMENSION(1) :: index
 
@@ -31,7 +32,7 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check,gamma_match_flag !FOR TESTING
+     $     params_check,growthrates_flag !FOR TESTING
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
@@ -39,22 +40,27 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th
       COMPLEX(r8) :: delta,delta_n_p
 
-      REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,kpower,
+      REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,
+     $     kpower,
      $     Qratio
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal,
-     $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,
+     $        bal,
+     $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,qvals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes,
      $        inQs_log
-      REAL(r8), DIMENSION(:), ALLOCATABLE:: qvals,inQ_e_arr,
-     $                       inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,
-     $                       inQ0_arr,inpr_arr,inpe_arr,omegas_arr
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: inQ_arr,outer_delta_arr
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: qval_arr,inQ_e_arr,
+     $                       inQ_i_arr,inc_beta_arr,inds_arr,
+     $                       intau_arr,inQ0_arr,inpr_arr,
+     $                       inpe_arr,omegas_arr,inQ_arr
+      REAL(r8), DIMENSION(:), ALLOCATABLE ::
+     $                       outer_delta_arr
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: 
      $     js,ks,psis,jxbs,Q_sols,br_ths,
      $     inQs_left,inQs_right
+      REAL(r8) :: spot, slayer_inpr
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
@@ -63,7 +69,7 @@ c-----------------------------------------------------------------------
      $                                        growthrate_err
 
       NAMELIST/slayer_input/params_flag,input_flag,infile,
-     $     mm,nn,n_e,t_e,t_i,omega,l_n,l_t,
+     $     ncfile,mm,nn,n_e,t_e,t_i,omega,l_n,l_t,
      $     qval,sval,bt,rs,R0,zeff,mu_i,inQ,inQ_e,
      $     inQ_i,inpr,inpe,inc_beta,inds,intau,inlu,Q0,delta_n_p
       NAMELIST/slayer_control/inum,jnum,knum,QPscan_flag,QPscan2_flag,
@@ -71,9 +77,9 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     layfac,Qratio,parflow_flag,peohmonly_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     stability_flag
+     $     stability_flag,growthrates_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
-     $     params_check,bal_flag,gamma_match_flag
+     $     params_check,bal_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -131,6 +137,8 @@ c-----------------------------------------------------------------------
       params_flag=.TRUE.
       input_flag=.FALSE.
       infile="input_params.dat"
+      ncfile="/fusion/projects/codes/gpec/users/burgessd/GPEC/bin/
+     $stride_output_n1.nc"
       verbose=.TRUE.
       ascii_flag=.TRUE.
       bin_flag=.TRUE.
@@ -140,6 +148,7 @@ c-----------------------------------------------------------------------
       params_check=.FALSE.
       bal_flag=.FALSE.
       stability_flag=.FALSE.
+      growthrates_flag=.FALSE.
 c-----------------------------------------------------------------------
 c     read slayer.in.
 c-----------------------------------------------------------------------
@@ -267,13 +276,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     TEST GAMMA_MATCH IN GSLAYER.F, FOR TESTING ONLY
 c-----------------------------------------------------------------------
-      IF (gamma_match_flag) THEN
-         n_k=2
-         ALLOCATE(mms(n_k),nns(n_k),prs(n_k),pes(n_k),
-     $        n_es(n_k),t_es(n_k),t_is(n_k),omegas(n_k),
-     $        l_ns(n_k),l_ts(n_k),qvals(n_k),svals(n_k),
-     $        bts(n_k),rss(n_k),R0s(n_k),mu_is(n_k),zeffs(n_k),
-     $        outer_deltas(n_k))
+      IF (growthrates_flag) THEN
+         !n_k=2
+      !   ALLOCATE(mms(n_k),nns(n_k),prs(n_k),pes(n_k),
+      !$        n_es(n_k),t_es(n_k),t_is(n_k),omegas(n_k),
+      !$        l_ns(n_k),l_ts(n_k),qvals(n_k),svals(n_k),
+      !$        bts(n_k),rss(n_k),R0s(n_k),mu_is(n_k),zeffs(n_k),
+      !$        outer_deltas(n_k))
          ! Approximate data for q=2 and q=3, for testing only
          ! These are of the form needed to output from
          ! upcoming build_inputs.f script, interfacing with equil.f
@@ -293,25 +302,46 @@ c-----------------------------------------------------------------------
          !R0s = (/2.0, 2.0 /)
          !mu_is = (/2.0, 2.0 /)
          !zeffs = (/2.0, 2.0 /)
-         qvals = (/2.0, 3.0 /)
-         inQ_arr = (/ (2.6744E-003,0.0), (5.5874E-004,0.0) /)
-         inQ_e_arr =  (/ 1.9127E-005, 4.6109E-007 /)
-         inQ_i_arr = (/ -1.9127E-005, -4.6109E-007 /)
-         inc_beta_arr= (/ 3.6809E-003, 3.6635E-004 /)
-         inds_arr = (/ 1.4394, 0.1276 /)
-         intau_arr = (/ 1.0, 1.0 /)
-         inQ0_arr = (/ (2.6744E-003,0.0), (5.5874E-004,0.0) /)
+
+
+         !q_arr = (/2.0, 3.0 /)
+         !inQ_arr = (/ (2.6744E-003,0.0), (5.5874E-004,0.0) /)
+         !inQ_e_arr =  (/ 1.9127E-005, 4.6109E-007 /)
+         !inQ_i_arr = (/ -1.9127E-005, -4.6109E-007 /)
+         !inc_beta_arr= (/ 3.6809E-003, 3.6635E-004 /)
+         !inds_arr = (/ 1.4394, 0.1276 /)
+         !intau_arr = (/ 1.0, 1.0 /)
+         !inQ0_arr = (/ (2.6744E-003,0.0), (5.5874E-004,0.0) /)
          !eta_s =  (/ 6.6907E-006, 3.1361E-004 /)
          !S_s =   (/ 30696266.0, 1956419.0 /)
-         inpr_arr = (/0.1, 0.005 /)
-         inpe_arr = (/0.0, 0.0 /)
-         omegas_arr = (/54530.0, 54530.0 /)
-         outer_delta_arr = (/(27.15,0.1), (20.15,0.1) /)
+         !inpr_arr = (/0.1, 0.005 /)
+         !inpe_arr = (/0.0, 0.0 /)
+         !omegas_arr = (/54530.0, 54530.0 /)
+         !outer_delta_arr = (/(27.15,0.1), (20.15,0.1) /)
 
-         CALL gamma_match(qvals,inQ_arr,inQ_e_arr,inQ_i_arr,
+         !CHARACTER(len=256) :: filename = "stride_output_n1.nc"
+         !REAL(r8), DIMENSION(:), ALLOCATABLE :: q_rational, q_rational_coords
+         !REAL(r8), DIMENSION(:), ALLOCATABLE :: Delta_prime, Delta_prime_coords
+
+
+
+        ! WRITE(*,*)"growthrates=",q_rational
+
+         !CALL read_stride_netcdf(filename, q_rational, q_rational_coords,
+         !$                              Delta_prime, Delta_prime_coords)
+         CALL build_inputs(ncfile,inpr,
+     $               growthrates_flag,qval_arr,
+     $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
+     $               inds_arr,intau_arr,inQ0_arr,inpr_arr,inpe_arr,
+     $               omegas_arr,outer_delta_arr)
+
+         WRITE(*,*)"outer_delta_arr=",outer_delta_arr
+         WRITE(*,*)"omegas_arr=",omegas_arr
+
+         CALL gamma_match(qval_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $                    inc_beta_arr,inds_arr,intau_arr,
      $                    inQ0_arr,inpr_arr,inpe_arr,
-     $                    outer_delta_arr,omegas_arr,
+     $                    omegas_arr,outer_delta_arr,
      $                    ReQ_num,ImQ_num,growthrates,growthrate_err)
 
          WRITE(*,*)"growthrates=",growthrates

@@ -372,7 +372,7 @@ c-----------------------------------------------------------------------
       ! Inputs
       REAL(r8),INTENT(IN) :: qval,inQ_e,inQ_i,inc_beta,inds,
      $     intau,inQ0,inpr,inpe
-      COMPLEX(r8), INTENT(IN) :: inQ
+      REAL(r8), INTENT(IN) :: inQ ! REAL???
       INTEGER, INTENT(IN) :: ReQ_num,ImQ_num
 
       ! Outputs
@@ -404,9 +404,9 @@ c-----------------------------------------------------------------------
       inQ_min=-3.0 ! min growth rate in scan, OPEN TO USER?
 
       ! Grid packing - right now going to Q +/- 0.2 -- OPEN TO USER?
-      inQs_left = powspace(REAL(inQ)-0.2,REAL(inQ),1, ! omega-0.2
+      inQs_left = powspace(inQ-0.2,inQ,1, ! omega-0.2
      $                        2+ReQ_num/2,"upper")
-      inQs_right = powspace(REAL(inQ),REAL(inQ)+0.2,1, ! omega+0.2
+      inQs_right = powspace(inQ,inQ+0.2,1, ! omega+0.2
      $                         2+ReQ_num/2,"lower")
       inQs_log = (/inQs_left(1,1:2+ReQ_num/2),
      $               inQs_right(1,2:1+ReQ_num/2)/)
@@ -450,18 +450,19 @@ c-----------------------------------------------------------------------
 c     Subprogram 5. gamma_match
 c     Loop stability scans and gamma matches across k rational surfaces
 c-----------------------------------------------------------------------
-      SUBROUTINE gamma_match(qvals,inQ_arr,inQ_e_arr,inQ_i_arr,
+      SUBROUTINE gamma_match(qval_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $                    inc_beta_arr,inds_arr,intau_arr,inQ0_arr,
-     $                    inpr_arr,inpe_arr,outer_delta_arr,omegas_arr,
+     $                    inpr_arr,inpe_arr,omegas_arr,outer_delta_arr,
      $                    ReQ_num,ImQ_num,growthrates,growthrate_err)
 c-----------------------------------------------------------------------
 c     Declarations
 c-----------------------------------------------------------------------
       ! Inputs
-      REAL(r8), DIMENSION(:), INTENT(IN) :: qvals,inQ_e_arr,
+      REAL(r8), DIMENSION(:), INTENT(IN) :: qval_arr,inQ_e_arr,
      $                       inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,
-     $                       inQ0_arr,inpr_arr,inpe_arr,omegas_arr
-      COMPLEX(r8), DIMENSION(:), INTENT(IN) :: inQ_arr,outer_delta_arr
+     $                       inQ0_arr,inpr_arr,inpe_arr,omegas_arr,
+     $                       inQ_arr
+      REAL(r8), DIMENSION(:), INTENT(IN) :: outer_delta_arr
       INTEGER, INTENT(IN) :: ReQ_num,ImQ_num
       ! Outputs
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
@@ -477,7 +478,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(3) :: growthrate_range ! (-gamma, +gamma )
       REAL(r8) :: layer_Q, ImQ_gamma
 
-      n_k = SIZE(qvals)
+      n_k = SIZE(qval_arr)
       ! Allocate growthrates arrays
       ALLOCATE(growthrates(n_k))
       ALLOCATE(growthrate_err(n_k))
@@ -491,12 +492,12 @@ c-----------------------------------------------------------------------
       DO k=1,n_k-1
          WRITE(*,*)"layer #: ",k
          ! Run stability scan
-         CALL gamma_stability_scan(qvals(k),inQ_arr(k),inQ_e_arr(k),
+         CALL gamma_stability_scan(qval_arr(k),inQ_arr(k),inQ_e_arr(k),
      $            inQ_i_arr(k),inc_beta_arr(k),inds_arr(k),
      $            intau_arr(k),inQ0_arr(k),inpr_arr(k),inpe_arr(k),
      $            ReQ_num,ImQ_num,deltas,inQs_log,iinQs)
 
-         layer_Q = REAL(inQ_arr(k))
+         layer_Q = inQ_arr(k) ! REAL???
 
          ! Hardcoding rudimentary +/- 10% omega_ExB errorbars
          Q_range = (/0.9*layer_Q, 1.1*layer_Q, layer_Q/)
@@ -510,10 +511,10 @@ c-----------------------------------------------------------------------
      $                      Q_range(w), inQs_log, slice)
                 ! Match delta to delta prime to obtain growth rate
                 CALL gamma_from_delta_match(slice, iinQs,
-     $                             REAL(outer_delta_arr(k)),
+     $                             outer_delta_arr(k),
      $                             ImQ_gamma)
                 CALL gamma_from_delta_match(slice, iinQs,
-     $                             REAL(outer_delta_arr(k)),
+     $                             outer_delta_arr(k),
      $                             ImQ_gamma)
              ! Qconv = Q / omega_ExB
              ! gamma = Im(Q) / Qconv

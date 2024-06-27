@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../harvest -I../pentrc -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS
 
@@ -13,7 +13,8 @@ LIBDIR = ../lib
 LIBS = \
 	-llsode \
 	-lpentrc \
-	-lequil
+	-lequil \
+	-lharvest
 
 OBJS = \
        sglobal.o \
@@ -23,7 +24,13 @@ OBJS = \
        gslayer.o \
        slayer.o
 
-all: lsode equil pentrc slayer
+all: equil harvest lsode pentrc slayer
+
+harvest:
+	cd ../; git submodule init; git submodule update
+	cd ../harvest; make FC=$(FC) CC=$(CC) GACODE_ROOT= -f Makefile libharvest.a
+	mkdir -p ../lib
+	cp -f ../harvest/libharvest.a ../lib/
 
 equil:
 	cd ../equil; make
