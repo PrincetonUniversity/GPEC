@@ -54,9 +54,8 @@
    filter_flag=t            ! Outputs energy, reluctance, pereability, and (optionally) the singular-coupling eigenmodes on the control surface
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
-   vsingfld_flag=f          ! Output of vacuum resonant surface quantities
-   callen_flag=t            ! Calculate Callen resonant field penetration threshold (requires kinetic profiles from pentrc.in)
-   slayer_flag=t            ! Calculate threshold based on two-fluid slayer scheme
+   vsingfld_flag=t          ! Output of vacuum resonant surface quantities
+   singthresh_flag=t   
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
@@ -67,9 +66,9 @@
    eqbrzphi_flag=f          ! Outputs equilibrium field on regular (r,z) grid
    brzphi_flag=t            ! Outputs perturbed field on regular (r,z) grid
    xrzphi_flag=f            ! Outputs displacement on regular (r,z) grid
-   vbrzphi_flag=f           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
-   vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to exeternal perturbation surface current (not a real field)
-   vsbrzphi_flag=f          ! Outputs the field on regular (r,z) grid due to singular surface currents
+   vbrzphi_flag=t           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
+   vvbrzphi_flag=t          ! Outputs field on regular (r,z) grid due to exeternal perturbation surface current (not a real field)
+   vsbrzphi_flag=t          ! Outputs the field on regular (r,z) grid due to singular surface currents
    ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
    xbrzphifun_flag=f        ! Outputs r,z, and perturbation vectors on psi,theta grid
    arzphifun_flag=f         ! Outputs r,z, and vector potential on psi,theta grid
@@ -84,6 +83,6 @@
    verbose=t                ! Print run log to terminal
 /
 &GPEC_DIAGNOSE
-   timeit=t                 ! Print timer splits for major subroutines
+   timeit=f                 ! Print timer splits for major subroutines
    radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
 /
