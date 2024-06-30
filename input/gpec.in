@@ -55,7 +55,7 @@
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=f           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
-   singthresh_flag=f       ! Calculate Callen resonant field penetration threshold (requires kinetic profiles from pentrc.in)
+   singthresh_flag=f        ! Calculate SLAYRE and CALLEN's resonant field penetration threshold (requires kinetic profiles from pentrc.in)
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
@@ -89,5 +89,5 @@
 &GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
    radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
-   mutual_test_flag=f 	    ! Test outputs for eigenvalues of mutual inductances and wall currents.
+   mutual_test_flag=f 	    ! Test outputs for eigenvalues of mutual inductances and wall currents
 /

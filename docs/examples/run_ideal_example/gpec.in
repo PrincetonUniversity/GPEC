@@ -4,7 +4,7 @@
    ieqfile    = "psi_in.bin"         ! Flux surfaces output by DCON run
    ivacuumfile= "vacuum.bin"         ! Vacuum info output by DCON run
    rdconfile  = "gal_solution.bin"   ! Galerkin eigenfunctions output by resistive DCON run
-
+   gal_flag = f             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions
    jac_in=""                ! Coordinate system of external perturbation (affects data_flag and harmonic_flag). Options include: pest,boozer,hamada
    jsurf_in=0               ! True(1) if external perturbation is area weighted (i.e. flux)
    tmag_in =1               ! True(1) if external perturbation has toroidal angle defined by jac_in. False(0) if machine angle.
@@ -35,6 +35,7 @@
 &GPEC_CONTROL
    resp_index=0             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
    sing_spot=1e-3           ! Minimum distance to singular surface in (m-nq) space
+   sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=t               ! Regularize the solution near resonant surfaces
    reg_spot=5e-2            ! Regularize by (m-nq)^2/((m-nq)^2+reg_spot^2)
    chebyshev_flag=f         ! Fit Chebyshev polynomials to the displacement.
@@ -52,6 +53,7 @@
    singcoup_flag=t          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=t          ! Output of vacuum resonant surface quantities 
+   singthresh_flag=f        ! Calculate Callen resonant field penetration threshold (requires kinetic profiles from pentrc.in)
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
    xbnormal_flag=t          ! Outputs normal displacement and field in plasma
@@ -62,7 +64,7 @@
    eqbrzphi_flag=t          ! Outputs equilibrium field on regular (r,z) grid
    brzphi_flag=t            ! Outputs perturbed field on regular (r,z) grid
    xrzphi_flag=f            ! Outputs displacement on regular (r,z) grid
-   vbrzphi_flag=f           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
+   vbrzphi_flag=t           ! Outputs field on regular (r,z) grid due to total boundary surface current (not a real field)
    vvbrzphi_flag=f          ! Outputs field on regular (r,z) grid due to external perturbation surface current (not a real field)
    vsbrzphi_flag=f          ! Outputs the field on regular (r,z) grid due to singular surface currents
    ss_flag(3)=f             ! Outputs the field on regular (r,z) grid due to the 3rd singular surface current, etc.
@@ -85,4 +87,5 @@
 &GPEC_DIAGNOSE
    timeit=f                 ! Print timer splits for major subroutines
    radvar_flag=f            ! Map various radial variables (rho,psi_tor) on psi_n grid
+   mutual_test_flag=f 	    ! Test outputs for eigenvalues of mutual inductances and wall currents
 /
