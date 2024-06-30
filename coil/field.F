@@ -141,8 +141,8 @@ c-----------------------------------------------------------------------
 #ifdef _OPENMP
                   IF(j==1 .AND. k==1 .AND. iseg==1)THEN
                     num_threads = OMP_GET_NUM_THREADS()
-                    WRITE(*,'(1x,a,i4,a)'),"  >> Running with ",
-     $                       num_threads," OMP threads"
+                    IF(verbose) WRITE(*,'(1x,a,i4,a)'),"  >> "//
+     $                "Running with ",num_threads," OMP threads"
                   ENDIF
 #endif
                ENDDO
