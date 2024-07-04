@@ -10,6 +10,10 @@
 
       USE params_mod
 
+      USE layerinputs_mod
+
+      USE slayer_netcdf_mod
+
       USE grid, ONLY : powspace,linspace
 
       IMPLICIT NONE
@@ -186,6 +190,7 @@ c-----------------------------------------------------------------------
       INTEGER :: NROWS, NCOLS, i_lower, i_upper, j
       REAL(r8) :: Q_lower,Q_upper,lower_slice,upper_slice
 
+      slice = 0.0
       ! Extract array dimensions
       NROWS = SIZE(deltas, 1)
       NCOLS = SIZE(deltas, 2)
@@ -404,15 +409,15 @@ c-----------------------------------------------------------------------
       inQ_min=-3.0 ! min growth rate in scan, OPEN TO USER?
 
       ! Grid packing - right now going to Q +/- 0.2 -- OPEN TO USER?
-      inQs_left = powspace(inQ-0.2,inQ,1, ! omega-0.2
+      inQs_left = powspace(inQ-0.5,inQ,1, ! omega-0.5
      $                        2+ReQ_num/2,"upper")
-      inQs_right = powspace(inQ,inQ+0.2,1, ! omega+0.2
+      inQs_right = powspace(inQ,inQ+0.5,1, ! omega+0.5
      $                         2+ReQ_num/2,"lower")
       inQs_log = (/inQs_left(1,1:2+ReQ_num/2),
      $               inQs_right(1,2:1+ReQ_num/2)/)
       !WRITE(*,*)"inQs_log=",inQs_log
 
-      DO i=0,ReQ_num+3
+      DO i=0,ReQ_num+1
          DO j=0,ImQ_num
             ! Getting rid of "inQs" weirdly broke things??
             inQs(i)=inQ_min+(REAL(i)/ReQ_num)*(inQ_max-inQ_min)
@@ -433,7 +438,7 @@ c-----------------------------------------------------------------------
      $   TRIM(x1)//".out", STATUS="UNKNOWN")
       WRITE(out_unit,'(1x,4(a17))'),"RE(Q)",
      $     "IM(Q)","RE(delta)","IM(delta)"
-      DO i=0,ReQ_num
+      DO i=0,ReQ_num+1
          DO j=0,ImQ_num
             WRITE(out_unit,'(1x,4(es17.8e3))')
      $           inQs_log(i),iinQs(j),
@@ -450,7 +455,8 @@ c-----------------------------------------------------------------------
 c     Subprogram 5. gamma_match
 c     Loop stability scans and gamma matches across k rational surfaces
 c-----------------------------------------------------------------------
-      SUBROUTINE gamma_match(qval_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
+      SUBROUTINE gamma_match(qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
+     $ inQ_i_arr,
      $                    inc_beta_arr,inds_arr,intau_arr,inQ0_arr,
      $                    inpr_arr,inpe_arr,omegas_arr,outer_delta_arr,
      $                    ReQ_num,ImQ_num,growthrates,growthrate_err)
@@ -461,7 +467,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), INTENT(IN) :: qval_arr,inQ_e_arr,
      $                       inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,
      $                       inQ0_arr,inpr_arr,inpe_arr,omegas_arr,
-     $                       inQ_arr
+     $                       inQ_arr,psi_n_rational
       REAL(r8), DIMENSION(:), INTENT(IN) :: outer_delta_arr
       INTEGER, INTENT(IN) :: ReQ_num,ImQ_num
       ! Outputs
@@ -473,6 +479,8 @@ c-----------------------------------------------------------------------
       ! Local variables received from internal subroutines
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs_log,iinQs
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: all_RE_deltas
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: all_slices
       REAL(r8), DIMENSION(:), ALLOCATABLE :: slice
       REAL(r8), DIMENSION(3) :: Q_range ! (-Q_err, Q, +Q_err )
       REAL(r8), DIMENSION(3) :: growthrate_range ! (-gamma, +gamma )
@@ -482,6 +490,7 @@ c-----------------------------------------------------------------------
       ! Allocate growthrates arrays
       ALLOCATE(growthrates(n_k))
       ALLOCATE(growthrate_err(n_k))
+
 c-----------------------------------------------------------------------
 c     Loop across rational surfaces
 c-----------------------------------------------------------------------
@@ -489,7 +498,7 @@ c-----------------------------------------------------------------------
       ! for analysis, then slice out 1D array of growth rates at
       ! given omega_ExB (Q), then find growth rate corresponding
       ! to delta-deltaprime match
-      DO k=1,n_k-1
+      DO k=1,n_k
          WRITE(*,*)"layer #: ",k
          ! Run stability scan
          CALL gamma_stability_scan(qval_arr(k),inQ_arr(k),inQ_e_arr(k),
@@ -527,11 +536,24 @@ c-----------------------------------------------------------------------
          growthrate_err(k) = ABS(growthrate_range(2) -
      $                            growthrate_range(1))
 
+         ALLOCATE(all_RE_deltas(SIZE(inQs_log),SIZE(iinQs),n_k))
+         ALLOCATE(all_slices(SIZE(iinQs),n_k))
+
+         all_RE_deltas(:,:,k) = REAL(deltas)
+         all_slices(:,k) = slice
+
          DEALLOCATE(slice) ! Free memory after use for each layer
 
       ENDDO
 
-      DEALLOCATE(deltas,inQs_log,iinQs)
+      CALL slayer_netcdf_out(n_k,SIZE(inQs_log),SIZE(iinQs),qval_arr,
+     $ inQs_log,iinQs,growthrates,omegas_arr,inQ_arr,psi_n_rational,
+     $ all_Re_deltas,all_slices)
+
+      DEALLOCATE(deltas)
+
+      WRITE(*,*)"inQs_log len ",SIZE(inQs_log)
+      WRITE(*,*)"iinQs len ",SIZE(iinQs)
 
       RETURN
       END SUBROUTINE gamma_match

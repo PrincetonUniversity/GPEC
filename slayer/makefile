@@ -20,6 +20,7 @@ OBJS = \
        sglobal.o \
        params.o \
        layerinputs.o \
+       slayer_netcdf.o \
        delta.o \
        gslayer.o \
        slayer.o
@@ -52,7 +53,7 @@ slayer: $(OBJS)
 
 params.o : sglobal.o
 delta.o : sglobal.o
-gslayer.o : sglobal.o layerinputs.o delta.o
+gslayer.o : sglobal.o delta.o
 slayer.o : sglobal.o params.o delta.o ../pentrc/grid.mod ../equil/spline_mod.mod
 
 clean:

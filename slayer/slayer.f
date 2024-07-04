@@ -54,7 +54,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: qval_arr,inQ_e_arr,
      $                       inQ_i_arr,inc_beta_arr,inds_arr,
      $                       intau_arr,inQ0_arr,inpr_arr,
-     $                       inpe_arr,omegas_arr,inQ_arr
+     $                       inpe_arr,omegas_arr,inQ_arr,
+     $                  psi_n_rational
       REAL(r8), DIMENSION(:), ALLOCATABLE ::
      $                       outer_delta_arr
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: 
@@ -138,7 +139,9 @@ c-----------------------------------------------------------------------
       input_flag=.FALSE.
       infile="input_params.dat"
       ncfile="/fusion/projects/codes/gpec/users/burgessd/GPEC/bin/
-     $stride_output_n1.nc"
+     $stride_output_a1.nc"
+      !ncfile="/fusion/projects/codes/gpec/users/burgessd/GPEC/bin/
+      !$stride_output_147131.nc"
       verbose=.TRUE.
       ascii_flag=.TRUE.
       bin_flag=.TRUE.
@@ -330,15 +333,29 @@ c-----------------------------------------------------------------------
          !CALL read_stride_netcdf(filename, q_rational, q_rational_coords,
          !$                              Delta_prime, Delta_prime_coords)
          CALL build_inputs(ncfile,inpr,
-     $               growthrates_flag,qval_arr,
+     $               growthrates_flag,qval_arr,psi_n_rational,
      $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
      $               inds_arr,intau_arr,inQ0_arr,inpr_arr,inpe_arr,
      $               omegas_arr,outer_delta_arr)
 
-         WRITE(*,*)"outer_delta_arr=",outer_delta_arr
+         WRITE(*,*)"qval_arr=",qval_arr
+         WRITE(*,*)"inQ_arr=",inQ_arr
+         WRITE(*,*)"inQ_e_arr=",inQ_e_arr
+         WRITE(*,*)"inQ_i_arr=",inQ_i_arr
+         WRITE(*,*)"inc_beta_arr=",inc_beta_arr
+         WRITE(*,*)"inds_arr=",inds_arr
+         WRITE(*,*)"intau_arr=",intau_arr
+         WRITE(*,*)"inQ0_arr=",inQ0_arr
+         WRITE(*,*)"inpr_arr=",inpr_arr
+         WRITE(*,*)"inpe_arr=",inpe_arr
          WRITE(*,*)"omegas_arr=",omegas_arr
+         WRITE(*,*)"outer_delta_arr=",outer_delta_arr
+         WRITE(*,*)"made it to gammamatch=",qval_arr
 
-         CALL gamma_match(qval_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
+         !stop
+
+         CALL gamma_match(qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
+     $                    inQ_i_arr,
      $                    inc_beta_arr,inds_arr,intau_arr,
      $                    inQ0_arr,inpr_arr,inpe_arr,
      $                    omegas_arr,outer_delta_arr,
