@@ -53,6 +53,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(mpert), INTENT(IN) :: epi,evi,eti
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: wp,wv,wt
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: dp
+      INTEGER, DIMENSION(mpert) :: mvec
 
       INTEGER :: i, ncid,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
@@ -60,12 +61,15 @@ c-----------------------------------------------------------------------
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
      $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
      $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id,
-     $    shear_id
+     $    shear_id,resm_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
-      INTEGER :: ising,jsing
+      REAL(r8) :: resnum,shear,respsi,resm_sing
+      INTEGER, DIMENSION(msing) :: resm
+
+      INTEGER :: ising,jsing,m
       COMPLEX(r8), DIMENSION(msing,msing) :: ap,bp,gammap,deltap
 
       LOGICAL, PARAMETER :: debug_flag = .FALSE.
@@ -153,6 +157,13 @@ c-----------------------------------------------------------------------
       CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
       CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
       IF(msing>0)THEN
+         mvec=(/(m,m=mlow,mhigh)/)
+         DO i=1,msing
+            respsi=sing(i)%psifac
+            resnum=NINT(sing(i)%q*nn)-mlow+1
+            resm_sing=mvec(resnum)
+            resm(i)=resm_sing
+         ENDDO
          CALL check( nf90_def_dim(ncid,"lr_index",2*msing,l_dim) )
          CALL check( nf90_def_var(ncid,"lr_index",nf90_int,l_dim,l_id))
          CALL check( nf90_def_dim(ncid,"lr_prime",2*msing,lp_dim) )
@@ -168,6 +179,8 @@ c-----------------------------------------------------------------------
      $                            r_dim,qr_id) )
          CALL check( nf90_def_var(ncid, "shear", nf90_double, r_dim,
      $                            shear_id) )
+         CALL check( nf90_def_var(ncid, "resm", nf90_int, r_dim,
+     $                            resm_id) )
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
@@ -223,8 +236,20 @@ c-----------------------------------------------------------------------
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,qr_id, (/(sing(i)%q,
      $                                           i=1,msing)/)) )
+
+         !mvec=(/(m,m=mlow,mhigh)/)
+         !DO i=1,msing
+         !   respsi=sing(i)%psifac
+         !   CALL spline_eval(sq,respsi,1)
+         !   resnum=NINT(sing(i)%q*2.0)-mlow+1
+         !   shear=mvec(resnum)*sq%f1(4)/sq%f(4)**2
+         !   WRITE(*,*)"SHEAR=",shear
+         !ENDDO
+
          CALL check( nf90_put_var(ncid,shear_id, (/(sing(i)%q1,
      $                                           i=1,msing)/)) ) ! GPEC HAS DIFFERENT SHEAR CALC?
+         CALL check( nf90_put_var(ncid,resm_id, resm) )
+      !   CALL check( nf90_put_var(ncid,shear_id,shear) ) ! GPEC HAS DIFFERENT SHEAR CALC?
       ENDIF
 
       IF(debug_flag) PRINT *," - Putting profile variables in netcdf"

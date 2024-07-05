@@ -23,7 +23,7 @@ c-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
-      CHARACTER(128) :: infile,ncfile
+      CHARACTER(512) :: infile,ncfile
       INTEGER :: i,j,k,inum,jnum,knum,inn,ReQ_num,ImQ_num,n_k
       INTEGER, DIMENSION(1) :: index
 
@@ -78,9 +78,9 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     layfac,Qratio,parflow_flag,peohmonly_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     stability_flag,growthrates_flag
+     $     stability_flag,growthrates_flag,bal_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
-     $     params_check,bal_flag
+     $     params_check
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -137,9 +137,8 @@ c-----------------------------------------------------------------------
       PeOhmOnly_flag=.TRUE.
       params_flag=.TRUE.
       input_flag=.FALSE.
-      infile="input_params.dat"
-      ncfile="/fusion/projects/codes/gpec/users/burgessd/GPEC/bin/
-     $stride_output_a1.nc"
+      infile=""
+      ncfile=""
       !ncfile="/fusion/projects/codes/gpec/users/burgessd/GPEC/bin/
       !$stride_output_147131.nc"
       verbose=.TRUE.
@@ -332,7 +331,10 @@ c-----------------------------------------------------------------------
 
          !CALL read_stride_netcdf(filename, q_rational, q_rational_coords,
          !$                              Delta_prime, Delta_prime_coords)
-         CALL build_inputs(ncfile,inpr,
+         WRITE(*,*)"infile=",infile
+         WRITE(*,*)"ncfile=",ncfile
+
+         CALL build_inputs(infile,ncfile,inpr,
      $               growthrates_flag,qval_arr,psi_n_rational,
      $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
      $               inds_arr,intau_arr,inQ0_arr,inpr_arr,inpe_arr,

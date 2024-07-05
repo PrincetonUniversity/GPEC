@@ -43,122 +43,133 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     Read and build equilibrium inputs
 c-----------------------------------------------------------------------
-        SUBROUTINE read_stride_netcdf_diagonal(ncfile, msing,
+      SUBROUTINE read_stride_netcdf_diagonal(ncfile, msing,
      $   dp_diagonal, q_rational, psi_n_rational, shear,
-     $   ro,bt0,psio,mpsi)
+     $   ro,bt0,psio,mpsi,nn,resm)
 
         !USE netcdf   ! NetCDF module for Fortran
         !USE stride_netcdf_mod ! For the 'check' subroutine (error handling)
 
         ! Input/Output Arguments
-        CHARACTER(128), INTENT(IN) :: ncfile
-        REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: dp_diagonal
-        REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: q_rational,
+      CHARACTER(512), INTENT(IN) :: ncfile
+      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: dp_diagonal
+      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: q_rational,
      $  psi_n_rational, shear
-        REAL(r8), DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: ro,bt0,psio,
+      REAL(r8), DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: ro,bt0,psio,
      $            mpsi
-        INTEGER, INTENT(OUT) :: msing
+      INTEGER, DIMENSION(:), ALLOCATABLE,INTENT(OUT) :: nn,resm
+      INTEGER, INTENT(OUT) :: msing
 
-        REAL(r8), DIMENSION(:), ALLOCATABLE :: msing_arr
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: msing_arr
 
         ! Internal Variables
-        INTEGER(kind=nf90_int) :: ncid, stat, r_dim_id, r_dim,
+      INTEGER(kind=nf90_int) :: ncid, stat, r_dim_id, r_dim,
      $  dp_id, qr_id,pr_id,shear_id,ro_id,bt0_id,psio_id,mpsi_id,
-     $  msing_id  ! Explicit kind for NetCDF variables
-        INTEGER(kind=nf90_int), DIMENSION(1) :: start, count ! Explicit kind for NetCDF variables
-        REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: delta_prime
-        INTEGER :: i
-        INTEGER :: bt0_len,ro_len,psio_len,mpsi_len,msing_len ! Attribute lengths
+     $  msing_id,nn_id,resm_id  ! Explicit kind for NetCDF variables
+      INTEGER(kind=nf90_int), DIMENSION(1) :: start, count ! Explicit kind for NetCDF variables
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: delta_prime
+      INTEGER :: i
+      INTEGER :: bt0_len,ro_len,psio_len,mpsi_len,
+     $             msing_len,nn_len    ! Attribute lengths
 
 
         ! Open the NetCDF file
-        stat = nf90_open(path=ncfile,mode=NF90_WRITE,ncid=ncid)
-        WRITE(*,*)"ncfile=",ncfile
-        CALL check(stat)  ! Error handling
+      stat = nf90_open(path=ncfile,mode=NF90_WRITE,ncid=ncid)
+      WRITE(*,*)"ncfile=",ncfile
+      CALL check(stat)  ! Error handling
 
-        stat = nf90_inquire_attribute(ncid, msing_id, "msing",
+      stat = nf90_inquire_attribute(ncid,msing_id,"msing",
      $        len = msing_len)
-        ALLOCATE(msing_arr(msing_len))
+      CALL check(stat)
+      ALLOCATE(msing_arr(msing_len))
+      stat = nf90_get_att(ncid,msing_id,"msing",msing_arr)
+      CALL check(stat)
 
-        CALL check(stat)
-        stat = nf90_get_att(ncid, msing_id, "msing", msing_arr)
-        CALL check(stat)
-
-        msing=INT(msing_arr(1))
+      msing=INT(msing_arr(1))
 
         ! Allocate Arrays (based on dimension)
-        ALLOCATE(dp_diagonal(msing),q_rational(msing),
-     $           psi_n_rational(msing),shear(msing))
-        ALLOCATE(delta_prime(msing, msing,2))
+      ALLOCATE(dp_diagonal(msing),q_rational(msing),
+     $           psi_n_rational(msing),shear(msing),
+     $           resm(msing))
+      ALLOCATE(delta_prime(msing, msing,2))
+
+      stat = nf90_inquire_attribute(ncid,ro_id,"ro",len = ro_len)
+      CALL check(stat)
+      stat = nf90_inquire_attribute(ncid,bt0_id,"bt0",len=bt0_len)
+      CALL check(stat)
+
+      bt0_id=0 !!!!! THIS COULD BE A PROBLEM
+
+      stat = nf90_inquire_attribute(ncid,psio_id,"psio",len = psio_len)
+      CALL check(stat)
+
+      stat = nf90_inquire_attribute(ncid,mpsi_id,"mpsi",len = mpsi_len)
+      CALL check(stat)
+      stat = nf90_inquire_attribute(ncid,nn_id,"n",len = nn_len)
+      CALL check(stat)
+
+      ALLOCATE(bt0(INT(bt0_len)),ro(INT(ro_len)),psio(INT(psio_len)),
+     $mpsi(INT(mpsi_len)),nn(INT(nn_len)))
 
         ! Get Variable IDs
-        stat = nf90_inq_varid(ncid, "Delta_prime", dp_id)
-        CALL check(stat)
-        WRITE(*,*)"stat=",stat
-        stat = nf90_inq_varid(ncid, "q_rational", qr_id)
-        CALL check(stat)
-        WRITE(*,*)"stat=",stat
-        stat = nf90_inq_varid(ncid, "psi_n_rational", pr_id)
-        CALL check(stat)
-        WRITE(*,*)"stat=",stat
-
-        stat = nf90_inq_varid(ncid, "shear", shear_id)
-        CALL check(stat)
-        stat = nf90_inquire_attribute(ncid, bt0_id, "bt0",
-     $        len = bt0_len)
-        CALL check(stat)
-        stat = nf90_inquire_attribute(ncid, ro_id, "ro",
-     $        len = ro_len)
-        CALL check(stat)
-        stat = nf90_inquire_attribute(ncid, psio_id, "psio",
-     $        len = psio_len)
-        CALL check(stat)
-        stat = nf90_inquire_attribute(ncid, mpsi_id, "mpsi",
-     $        len = mpsi_len)
-        CALL check(stat)
-        ALLOCATE(bt0(bt0_len),ro(ro_len),psio(psio_len),
-     $   mpsi(mpsi_len))
+      stat = nf90_inq_varid(ncid, "Delta_prime", dp_id)
+      CALL check(stat)
+      stat = nf90_inq_varid(ncid, "q_rational", qr_id)
+      CALL check(stat)
+      stat = nf90_inq_varid(ncid, "psi_n_rational", pr_id)
+      CALL check(stat)
+      stat = nf90_inq_varid(ncid, "shear", shear_id)
+      CALL check(stat)
+      stat = nf90_inq_varid(ncid, "resm", resm_id)
+      CALL check(stat)
 
         ! Read Data from NetCDF File
         ! Set up start and count for reading only the diagonal
         !start(1) = 1
         !count(1) = 1
 
+      ! Get attributes
+      stat = nf90_get_att(ncid, ro_id, "ro", ro)
+      CALL check(stat)
+
+      stat = nf90_get_att(ncid, bt0_id, "bt0", bt0)
+      CALL check(stat)
+      stat = nf90_get_att(ncid, psio_id, "psio", psio)
+      CALL check(stat)
+      stat = nf90_get_att(ncid, mpsi_id, "mpsi", mpsi)
+      CALL check(stat)
+      stat = nf90_get_att(ncid, nn_id, "n", nn)
+      CALL check(stat)
+
         ! Read the diagonal of delta_prime. The results will be put on a 1D temporary array.
-        stat = nf90_get_var(ncid, dp_id, delta_prime,start=(/ 1,1,1 /))
-        CALL check(stat)
-        ! Read 1D variables
-        stat = nf90_get_var(ncid, qr_id, q_rational)
-        CALL check(stat)
-        stat = nf90_get_var(ncid, pr_id, psi_n_rational)
-        CALL check(stat)
-        stat = nf90_get_var(ncid, shear_id, shear)
-        CALL check(stat)
-        stat = nf90_get_att(ncid, bt0_id, "bt0", bt0)
-        CALL check(stat)
-        stat = nf90_get_att(ncid, ro_id, "ro", ro)
-        CALL check(stat)
-        stat = nf90_get_att(ncid, psio_id, "psio", psio)
-        CALL check(stat)
-        stat = nf90_get_att(ncid, mpsi_id, "mpsi", mpsi)
-        CALL check(stat)
+      stat = nf90_get_var(ncid, dp_id, delta_prime,start=(/ 1,1,1 /))
+      CALL check(stat)
+      ! Read 1D variables
+      stat = nf90_get_var(ncid, qr_id, q_rational)
+      CALL check(stat)
+      stat = nf90_get_var(ncid, pr_id, psi_n_rational)
+      CALL check(stat)
+      stat = nf90_get_var(ncid, shear_id, shear)
+      CALL check(stat)
+      stat = nf90_get_var(ncid, resm_id, resm)
+      CALL check(stat)
 
-        ! Extract Diagonal, with 3rd index signifying REAL part
-        DO i = 1, msing
-            dp_diagonal(i) = REAL(delta_prime(i, i, 1))
-        END DO
-
+      ! Extract Diagonal, with 3rd index signifying REAL part
+      DO i = 1, msing
+        dp_diagonal(i) = REAL(delta_prime(i, i, 1))
+      END DO
         ! Clean Up
-        DEALLOCATE(delta_prime)
-        stat = nf90_close(ncid)
-        CALL check(stat)
+      DEALLOCATE(delta_prime)
+      stat = nf90_close(ncid)
+      CALL check(stat)
 
-        END SUBROUTINE read_stride_netcdf_diagonal
+      END SUBROUTINE read_stride_netcdf_diagonal
 c-----------------------------------------------------------------------
 c     subprogram 1. build_inputs.
 c     compute
 c-----------------------------------------------------------------------
-      SUBROUTINE build_inputs(ncfile,slayer_inpr,growthrate_flag,
+      SUBROUTINE build_inputs(infile,ncfile,slayer_inpr,
+     $               growthrate_flag,
      $               qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
      $               inQ_i_arr,inc_beta_arr,
      $               inds_arr,intau_arr,Q0_arr,inpr_arr,inpe_arr,
@@ -166,7 +177,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      CHARACTER(128), INTENT(IN) :: ncfile
       LOGICAL, INTENT(IN) :: growthrate_flag
       REAL(r8), INTENT(IN) ::slayer_inpr
 
@@ -195,15 +205,15 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: dp_diagonal, q_rational,
      $                      shear,ro,bt0,psio,mpsi_arr
+      INTEGER,DIMENSION(:),ALLOCATABLE :: nn,resm
       INTEGER :: msing,i
 
 
 c-----------------------------------------------------------------------
 c     Read in STRIDE netcdf
 c-----------------------------------------------------------------------
-      character(512) ::
-     $ kinetic_file = '/fusion/projects/codes/gpec/GPEC-1.5/
-     $docs/examples/a10_ideal_example/a10_prof1.txt'
+      CHARACTER(512), INTENT(IN) :: infile,ncfile
+
       !character(512) ::
       !$ kinetic_file = '/fusion/projects/codes/gpec/users/burgessd/GPEC/
       !$bin/g147131.02300.txt'
@@ -212,7 +222,7 @@ c-----------------------------------------------------------------------
 
       CALL read_stride_netcdf_diagonal(ncfile,
      $              msing, dp_diagonal, q_rational, psi_n_rational,
-     $              shear, ro, bt0, psio, mpsi_arr)
+     $              shear, ro, bt0, psio, mpsi_arr,nn,resm)
       WRITE(*,*)"msing_out=",msing
       WRITE(*,*)"dp_diagonal=",dp_diagonal
       WRITE(*,*)"q_rational=",q_rational
@@ -221,6 +231,8 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"ro=",ro
       WRITE(*,*)"bt0=",bt0
       WRITE(*,*)"psio=",psio
+      WRITE(*,*)"nn=",nn
+      WRITE(*,*)"resm=",resm
 
       mpsi = INT(mpsi_arr(1))
       WRITE(*,*)"mpsi=",mpsi
@@ -288,14 +300,14 @@ c-----------------------------------------------------------------------
       twopi = 2*pi
       chi1 = twopi*psio(1)
 
-      CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
+      CALL read_kin(infile,zi,zimp,mi,mimp,nfac,
      $          tfac,wefac,wpfac,.false.)
             ! manually set the perturbed equilibrium displacements
             ! use false flat xi and xi' for equal weighting
 
       !CALL spline_int(sq)
       !WRITE(*,*)"sq=",sq
-      WRITE(*,*)"mpsi=",mpsi
+      !WRITE(*,*)"mpsi=",mpsi
       !CALL spline_alloc(sq,mpsi,4)
 
       !CALL spline_int(sq)
@@ -382,6 +394,10 @@ c-----------------------------------------------------------------------
       !$           bt0,sr%f1(1),ro,mi,slayer_inpr,resm,nn,ascii_flag,
       !$           delta_s,psi0,jxb,omega_sol,br_th)
 
+         !singtype(ising)%q = q(ising)?
+         !resnum=NINT(singtype(ising)%q*nn)-mlow+1
+         !shear(ising)=mfac(resnum)*sq%f1(4)/sq%f(4)**2
+
          n_e = kin%f(2)
          t_e = kin%f(4)/e
          n_i = kin%f(1)
@@ -389,7 +405,7 @@ c-----------------------------------------------------------------------
          zeff = kin%f(9)
          omega = kin%f(5)
          qval = q_rational(ising)!sq%f(4)
-         sval = shear(ising)
+         sval = shear(ising) ! SHEAR SO MUCH SMALLER THAN BEFORE???? 500 puts it on the root
          bt = bt0(1)
          rs = 0.167
          R0 = ro(1)
@@ -401,10 +417,13 @@ c-----------------------------------------------------------------------
          !nn=1
          !mr = real(mm,4)
          !nr = real(nn,4)
-         mms = 2.0
-         nns = 1.0
+         mms = resm(ising)
+         nns = nn(1)
          mrs = real(mms,4)
          nrs = real(nns,4)
+
+         WRITE(*,*)"nns=",nns
+         WRITE(*,*)"mms=",mms
 
          WRITE(*,*)"n_e=",n_e
          WRITE(*,*)"t_e=",t_e
@@ -486,57 +505,19 @@ c-----------------------------------------------------------------------
          delta_n=lu**(1.0/3.0)/rs         ! norm factor for delta primes
          WRITE(*,*)"delta_n=",delta_n
 
-         WRITE(*,*)"qval_arr(ising)=",qval_arr(ising)
-         WRITE(*,*)"qval=",qval
-
          qval_arr(ising) = qval
-         WRITE(*,*)"qval_arr(ising)=",qval_arr(ising)
          inQ_arr(ising)=Q
-               WRITE(*,*)"inQ_arr(ising)=",inQ_arr(ising)
-
          inQ_e_arr(ising)=Q_e
-                  WRITE(*,*)"inQ_e_arr(ising)=",inQ_e_arr(ising)
-
          inQ_i_arr(ising)=Q_i
-                  WRITE(*,*)"inQ_i_arr(ising)=",inQ_i_arr(ising)
-
          inc_beta_arr(ising)=c_beta
-                  WRITE(*,*)"inds_arr(ising)=",inc_beta_arr(ising)
-
          inds_arr(ising)=ds
-                  WRITE(*,*)"inds_arr(ising)=",inds_arr(ising)
-
          intau_arr(ising)=tau
-                  WRITE(*,*)"intau_arr(ising)=",intau_arr(ising)
-
          Q0_arr(ising)=Q
-                  WRITE(*,*)"Q0_arr(ising)=",Q0_arr(ising)
-
          inpr_arr(ising) = inpr
-                  WRITE(*,*)"inpr_arr(ising)=",inpr_arr(ising)
-
          inpe_arr(ising) = 0.0 !!! TEMPORARY?
-                  WRITE(*,*)"inpe_arr(ising)=",inpe_arr(ising)
-
          omegas_arr(ising) = omega
-                  WRITE(*,*)"omegas_arr(ising)=",omegas_arr(ising)
-
          outer_delta_arr(ising) = dp_diagonal(ising)
-                  WRITE(*,*)"outer_delta_arr(ising)=",
-     $outer_delta_arr(ising)
 
-          WRITE(*,*)"qval_arr=",qval_arr
-          WRITE(*,*)"inQ_arr=",inQ_arr
-          WRITE(*,*)"inQ_e_arr=",inQ_e_arr
-          WRITE(*,*)"inQ_i_arr=",inQ_i_arr
-          WRITE(*,*)"inc_beta_arr=",inc_beta_arr
-          WRITE(*,*)"inds_arr=",inds_arr
-          WRITE(*,*)"intau_arr=",intau_arr
-          WRITE(*,*)"Q0_arr=",Q0_arr
-          WRITE(*,*)"inpr_arr=",inpr_arr
-          WRITE(*,*)"inpe_arr=",inpe_arr
-          WRITE(*,*)"omegas_arr=",omegas_arr
-          WRITE(*,*)"outer_delta_arr=",outer_delta_arr
       ENDDO
 
       !WRITE(*,*)"qval_arr=",qval_arr
