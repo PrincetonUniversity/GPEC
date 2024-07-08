@@ -1759,7 +1759,7 @@ c-----------------------------------------------------------------------
             omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
      $           +twopi*kin%f1(4)/(e*chi1)
             CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
-     $           kin%f(5),kin%f(9),omega_e,omega_i,sq%f(4),sq%f1(4),
+     $           kin%f(9),kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),
      $           bt0,sr%f1(1),ro,mi,slayer_inpr,resm,nn,ascii_flag,
      $           delta_s,psi0,jxb,omega_sol,br_th)
             b_crit(ising)=br_th  ! Tesla. Normal resonant field comparable to singflx
