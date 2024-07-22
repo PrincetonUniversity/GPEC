@@ -4211,7 +4211,8 @@ c-----------------------------------------------------------------------
          IF (coil_flag) THEN
             IF(verbose) WRITE(*,*)"Computing vacuum fields by coils"
             np=nn*48 ! make it consistent with cmzeta later.
-            CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp)
+            CALL field_bs_rzphi(nr,nz,np,gdr,gdz,vcbr,vcbz,vcbp,
+     $                                              op_verbose=.TRUE.)
             IF (divzero_flag) THEN
                CALL gpeq_rzpdiv(nr,nz,gdr,gdz,vcbr,vcbz,vcbp)
             ENDIF
