@@ -50,7 +50,6 @@ slayer: $(OBJS)
 	cp -f slayer ../bin
 
 # dependencies
-
 params.o : sglobal.o
 delta.o : sglobal.o
 gslayer.o : sglobal.o delta.o

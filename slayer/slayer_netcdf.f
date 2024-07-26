@@ -52,24 +52,23 @@ c -----------------------------------------------------------------------
 c      declarations.
 c -----------------------------------------------------------------------
       SUBROUTINE slayer_netcdf_out(msing,ReQ_n,ImQ_n,qval_arr,
-     $ inQs_log,iinQs,growthrates,omegas_arr,inQ_arr,psi_n_rational,
-     $ all_Re_deltas,all_slices)
+     $ inQs,iinQs,growthrates,omegas_arr,inQ_arr,inQ_e_arr,
+     $ inQ_i_arr,psi_n_rational,
+     $ all_Re_deltas,all_inQs)
       INTEGER, INTENT(IN) :: msing,ReQ_n,ImQ_n
-      REAL(r8), DIMENSION(:), INTENT(IN) :: qval_arr,
-     $ inQs_log,iinQs,growthrates,omegas_arr,inQ_arr,
-     $ psi_n_rational!,shear
-      REAL(r8), DIMENSION(:,:), INTENT(IN) :: all_slices
+      REAL(r8), DIMENSION(:), INTENT(IN) ::
+     $ inQs,iinQs,growthrates,omegas_arr,inQ_arr,
+     $ inQ_e_arr,inQ_i_arr,psi_n_rational!,shear
+      INTEGER, DIMENSION(:), INTENT(IN) :: qval_arr
+      REAL(r8), DIMENSION(:,:), INTENT(IN) :: all_inQs
       REAL(r8), DIMENSION(:,:,:), INTENT(IN) :: all_Re_deltas
       INTEGER :: i, ncid,r_id,ReQ_dim,ImQ_dim,qsing_dim,qsing_id,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
-     $    ReQ_id,ImQ_id,gamma_id,omegas_id,Q_id,
-     $    r_dim,pr_id, qr_id, dp_id,shear_id,slice_id
-      !COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
-      !CHARACTER(2) :: sn
+     $    ReQ_id,ImQ_id,gamma_id,omegas_id,Q_id,Q_e_id,Q_i_id,
+     $    r_dim,pr_id, qr_id, dp_id,shear_id,slice_id,inQs_id
       CHARACTER(64) :: ncfile
- !     INTEGER :: ising,jsing
-      !COMPLEX(r8), DIMENSION(msing,msing) :: ap,bp,gammap,deltap
       LOGICAL, PARAMETER :: debug_flag = .FALSE.
+      CHARACTER(len=*), PARAMETER :: version ='v1.0.0-99-gc873bd6'
 c -----------------------------------------------------------------------
 c      set variables
 c -----------------------------------------------------------------------
@@ -94,24 +93,13 @@ c -----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Defining netcdf globals"
       CALL check( nf90_put_att(ncid,nf90_global,"title",
      $     "SLAYER outputs"))
-      ! define global attributes
-      !CALL check( nf90_put_att(ncid,nf90_global,'ro', ro))
-      !CALL check( nf90_put_att(ncid,nf90_global,'psio', psio))
-      !CALL check( nf90_put_att(ncid,nf90_global,'bt0', bt0))
       !CALL check( nf90_put_att(ncid,nf90_global,"shot", INT(shotnum)) )
       !CALL check( nf90_put_att(ncid,nf90_global,"time",INT(shottime)) )
       !CALL check( nf90_put_att(ncid,nf90_global,"n", nn))
-      !CALL check( nf90_put_att(ncid,nf90_global,"version", version))
+      CALL check( nf90_put_att(ncid,nf90_global,"version", version))
+      ! define global attributes
       ! define dimensions
       IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
-      !CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
-      !CALL check( nf90_def_var(ncid, "i", nf90_int, i_dim, i_id) )
-      !CALL check( nf90_def_dim(ncid, "m", mpert,  m_dim) )
-      !CALL check( nf90_def_var(ncid, "m", nf90_int, m_dim, m_id) )
-      !CALL check( nf90_def_dim(ncid, "mode", mpert, mo_dim) )
-      !CALL check( nf90_def_var(ncid, "mode", nf90_int, mo_dim, mo_id))
-      !CALL check( nf90_def_dim(ncid, "psi_n", sq%mx+1, p_dim) )
-      !CALL check( nf90_def_var(ncid, "psi_n", nf90_double, p_dim, p_id))
       IF(msing>0)THEN
          CALL check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational
          CALL check( nf90_def_var(ncid,"qsing",nf90_int,qsing_dim,
@@ -129,6 +117,10 @@ c -----------------------------------------------------------------------
      $    qsing_dim,omegas_id))
          CALL check( nf90_def_var(ncid,"Q",nf90_double,
      $    qsing_dim,Q_id))
+         CALL check( nf90_def_var(ncid,"Q_e",nf90_double,
+     $    qsing_dim,Q_e_id))
+         CALL check( nf90_def_var(ncid,"Q_i",nf90_double,
+     $    qsing_dim,Q_i_id))
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                            qsing_dim,pr_id) )
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
@@ -138,22 +130,12 @@ c -----------------------------------------------------------------------
       ENDIF
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
-      !CALL check( nf90_def_var(ncid, "f", nf90_double, p_dim, f_id) )
-      !CALL check( nf90_def_var(ncid, "mu0p", nf90_double, p_dim, mu_id))
-      !CALL check( nf90_def_var(ncid, "dvdpsi", nf90_double,p_dim,dv_id))
-      !CALL check( nf90_def_var(ncid, "q", nf90_double, p_dim, q_id) )
-      !CALL check( nf90_def_var(ncid, "di", nf90_double, p_dim, di_id) )
-      !CALL check( nf90_def_var(ncid, "dr", nf90_double, p_dim, dr_id) )
-      !CALL check( nf90_def_var(ncid, "ca1", nf90_double, p_dim, ca_id))
-      !CALL check( nf90_def_var(ncid, "W_p_eigenvector", nf90_double,
-      !$    (/m_dim, mo_dim, i_dim/), wp_id) )
-      !CALL check( nf90_def_var(ncid, "W_p_eigenvalue", nf90_double,
-      !$     (/mo_dim, i_dim/), wpv_id) )
+
       IF(msing>0)THEN
          CALL check( nf90_def_var(ncid, "Re_Delta", nf90_double,
      $       (/ReQ_dim, ImQ_dim, qsing_dim/), dp_id) )
-         CALL check( nf90_def_var(ncid, "slices", nf90_double,
-     $       (/ImQ_dim, qsing_dim/), slice_id) )
+         CALL check( nf90_def_var(ncid, "inQs", nf90_double,
+     $       (/ReQ_dim, qsing_dim/), inQs_id) )
       ENDIF
       ! end definitions
       CALL check( nf90_enddef(ncid) )
@@ -162,19 +144,18 @@ c      set variables
 c -----------------------------------------------------------------------
  !     IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
       CALL check( nf90_put_var(ncid,qsing_id, qval_arr))
-      CALL check( nf90_put_var(ncid,ReQ_id, inQs_log))
+      CALL check( nf90_put_var(ncid,ReQ_id, inQs))
       CALL check( nf90_put_var(ncid,ImQ_id, iinQs))
       CALL check( nf90_put_var(ncid,gamma_id, growthrates))
       CALL check( nf90_put_var(ncid,omegas_id, omegas_arr))
       CALL check( nf90_put_var(ncid,Q_id, inQ_arr))
+      CALL check( nf90_put_var(ncid,Q_e_id, inQ_e_arr))
+      CALL check( nf90_put_var(ncid,Q_i_id, inQ_i_arr))
       CALL check( nf90_put_var(ncid,pr_id, psi_n_rational))
       CALL check( nf90_put_var(ncid,qr_id, qval_arr))
-      !CALL check( nf90_put_var(ncid,shear_id, shear))
  !     IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
-      CALL check( nf90_put_var(ncid,dp_id,all_Re_deltas))!,
-      !$(/ReQ_n,ImQ_n,msing/)))
-      CALL check( nf90_put_var(ncid,slice_id,all_slices))!,
-      !$(/ImQ_n,msing/)))
+      CALL check( nf90_put_var(ncid,dp_id,all_Re_deltas))
+      CALL check( nf90_put_var(ncid,inQs_id,all_inQs))
 c -----------------------------------------------------------------------
 c      close file
 c -----------------------------------------------------------------------
@@ -185,4 +166,197 @@ c      terminate.
 c -----------------------------------------------------------------------
       RETURN
       END SUBROUTINE slayer_netcdf_out
+c -----------------------------------------------------------------------
+c      declarations.
+c -----------------------------------------------------------------------
+      SUBROUTINE slayer_netcdf_inputs(msing,ne_arr,te_arr,ni_arr,ti_arr,
+     $  zeff_arr,shear,bt_arr,rs_arr,R0_arr,mu_i_arr,resm,nns_arr,
+     $  qval_arr,inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,inds_arr,
+     $  intau_arr,inpr_arr,inpe_arr,omegas_arr,
+     $  outer_delta_arr)
+
+      INTEGER, INTENT(IN) :: msing
+      REAL(r8), DIMENSION(:), INTENT(IN) ::
+     $   ne_arr,te_arr,ni_arr,ti_arr,zeff_arr,shear,bt_arr,rs_arr,
+     $   R0_arr,mu_i_arr,inQ_arr,
+     $   inQ_e_arr,inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,inpr_arr,
+     $   inpe_arr,omegas_arr,outer_delta_arr
+      INTEGER, DIMENSION(:), INTENT(IN) :: qval_arr,resm,nns_arr
+
+      INTEGER :: i, ncid,r_id,qsing_dim,qsing_id,msing_id,
+     $    i_dim,ne_id,te_id,ni_id,ti_id,zeff_id,shear_id,bt_id,rs_id,
+     $    R0_id,mu_i_id,resm_id,nns_id,inQ_id,inQ_e_id,inc_beta_id,
+     $    inds_id,qval_id,inQ_i_id,qr_id,
+     $    intau_id,inpr_id,inpe_id,omegas_id,outer_delta_id,
+     $    omegas_e_id,omegas_i_id
+
+      CHARACTER(64) :: ncfile
+
+      LOGICAL, PARAMETER :: debug_flag = .FALSE.
+      CHARACTER(len=*), PARAMETER :: version ='v1.0.0-99-gc873bd6'
+c -----------------------------------------------------------------------
+c      set variables
+c -----------------------------------------------------------------------
+      ne_id=0
+      te_id=0
+      ni_id=0
+      ti_id=0
+      zeff_id=0
+      shear_id=0
+      bt_id=0
+      rs_id=0
+      R0_id=0
+      mu_i_id=0
+      resm_id=0
+      nns_id=0
+      inQ_id=0
+      inQ_e_id=0
+      inc_beta_id=0
+      inds_id=0
+      qval_id=0
+      inQ_i_id=0
+      qr_id=0
+      intau_id=0
+      inpr_id=0
+      inpe_id=0
+      omegas_id=0
+      outer_delta_id=0
+      omegas_e_id=0
+      omegas_i_id=0
+
+      IF(debug_flag) PRINT *,"Called slayer_netcdf_inputs"
+      IF (nn<10) THEN
+         WRITE(UNIT=sn,FMT='(I1)')nn
+         sn=ADJUSTL(sn)
+      ELSE
+         WRITE(UNIT=sn,FMT='(I2)')nn
+      ENDIF
+      ncfile = "slayer_inputs_n"//TRIM(sn)//".nc"
+      IF(debug_flag) PRINT *, ncfile
+c -----------------------------------------------------------------------
+c      open files
+c -----------------------------------------------------------------------
+      IF(debug_flag) PRINT *," - Creating netcdf files"
+      CALL check( nf90_create(ncfile,
+     $     cmode=or(NF90_CLOBBER,NF90_64BIT_OFFSET), ncid=ncid) )
+c -----------------------------------------------------------------------
+c      define global file attributes
+c -----------------------------------------------------------------------
+      IF(debug_flag) PRINT *," - Defining netcdf globals"
+      CALL check( nf90_put_att(ncid,nf90_global,"title",
+     $     "SLAYER outputs"))
+      ! define global attributes
+      !CALL check( nf90_put_att(ncid,nf90_global,'ro', ro))
+      !CALL check( nf90_put_att(ncid,nf90_global,'psio', psio))
+      !CALL check( nf90_put_att(ncid,nf90_global,'bt0', bt0))
+      !CALL check( nf90_put_att(ncid,nf90_global,"shot", INT(shotnum)) )
+      !CALL check( nf90_put_att(ncid,nf90_global,"time",INT(shottime)) )
+      !CALL check( nf90_put_att(ncid,nf90_global,"n", nn))
+      CALL check( nf90_put_att(ncid,nf90_global,"version", version))
+      ! define dimensions
+      IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
+
+      IF(msing>0)THEN
+         CALL check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational
+         CALL check( nf90_def_var(ncid,"qsing",nf90_int,qsing_dim,
+     $    qsing_id))
+
+         CALL check( nf90_def_var(ncid,"ne",nf90_double,
+     $    qsing_dim,ne_id))
+         CALL check( nf90_def_var(ncid,"te",nf90_double,
+     $    qsing_dim,te_id))
+         CALL check( nf90_def_var(ncid,"ni",nf90_double,
+     $    qsing_dim,ni_id))
+         CALL check( nf90_def_var(ncid,"ti",nf90_double,
+     $    qsing_dim,ti_id))
+         CALL check( nf90_def_var(ncid,"zeff",nf90_double,
+     $    qsing_dim,zeff_id))
+         CALL check( nf90_def_var(ncid,"shear",nf90_double,
+     $    qsing_dim,shear_id))
+         CALL check( nf90_def_var(ncid,"bt",nf90_double,
+     $    qsing_dim,bt_id))
+         CALL check( nf90_def_var(ncid,"rs",nf90_double,
+     $    qsing_dim,rs_id))
+         CALL check( nf90_def_var(ncid,"R0",nf90_double,
+     $    qsing_dim,R0_id))
+         CALL check( nf90_def_var(ncid,"mu_i",nf90_double,
+     $    qsing_dim,mu_i_id))
+         CALL check( nf90_def_var(ncid,"resm",nf90_int,
+     $    qsing_dim,resm_id))
+         CALL check( nf90_def_var(ncid,"nns_arr",nf90_int,
+     $    qsing_dim,nns_id))
+         CALL check( nf90_def_var(ncid,"qval",nf90_int,
+     $    qsing_dim,qval_id))
+         CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
+     $                            qsing_dim,qr_id) )
+         CALL check( nf90_def_var(ncid,"Q",nf90_double,
+     $    qsing_dim,inQ_id))
+         CALL check( nf90_def_var(ncid,"Q_e",nf90_double,
+     $    qsing_dim,inQ_e_id))
+         CALL check( nf90_def_var(ncid,"Q_i",nf90_double,
+     $    qsing_dim,inQ_i_id))
+         CALL check( nf90_def_var(ncid,"c_beta",nf90_double,
+     $    qsing_dim,inc_beta_id))
+         CALL check( nf90_def_var(ncid,"ds",nf90_double,
+     $    qsing_dim,inds_id))
+         CALL check( nf90_def_var(ncid,"tau",nf90_double,
+     $    qsing_dim,intau_id))
+         CALL check( nf90_def_var(ncid,"pr",nf90_double,
+     $    qsing_dim,inpr_id))
+         CALL check( nf90_def_var(ncid,"pe",nf90_double,
+     $    qsing_dim,inpe_id))
+         CALL check( nf90_def_var(ncid,"omegas",nf90_double,
+     $    qsing_dim,omegas_id))
+      !   CALL check( nf90_def_var(ncid,"omegas_e",nf90_double,
+      !$    qsing_dim,omegas_e_id))
+      !   CALL check( nf90_def_var(ncid,"omegas_i",nf90_double,
+      !$    qsing_dim,omegas_i_id))
+         CALL check( nf90_def_var(ncid,"outer_delta",nf90_double,
+     $    qsing_dim,outer_delta_id))
+      ENDIF
+      ! define variables
+      IF(debug_flag) PRINT *," - Defining variables in netcdf"
+      ! end definitions
+      CALL check( nf90_enddef(ncid) )
+c -----------------------------------------------------------------------
+c      set variables
+c -----------------------------------------------------------------------
+ !     IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
+      CALL check( nf90_put_var(ncid,qsing_id, qval_arr))
+      CALL check( nf90_put_var(ncid,ne_id, ne_arr))
+      CALL check( nf90_put_var(ncid,ni_id, ni_id))
+      CALL check( nf90_put_var(ncid,te_id, te_id))
+      CALL check( nf90_put_var(ncid,ti_id, ti_id))
+      CALL check( nf90_put_var(ncid,zeff_id, zeff_arr))
+      CALL check( nf90_put_var(ncid,shear_id, shear))
+      CALL check( nf90_put_var(ncid,bt_id, bt_arr))
+      CALL check( nf90_put_var(ncid,rs_id, rs_arr))
+      CALL check( nf90_put_var(ncid,R0_id, R0_arr))
+      CALL check( nf90_put_var(ncid,mu_i_id, mu_i_arr))
+      CALL check( nf90_put_var(ncid,resm_id, resm))
+      CALL check( nf90_put_var(ncid,nns_id, nns_arr))
+      !CALL check( nf90_put_var(ncid,qval_id, qval_arr))
+      CALL check( nf90_put_var(ncid,inQ_id, inQ_arr))
+      CALL check( nf90_put_var(ncid,inQ_e_id, inQ_e_arr))
+      CALL check( nf90_put_var(ncid,inQ_i_id, inQ_i_arr))
+      CALL check( nf90_put_var(ncid,inc_beta_id, inc_beta_arr))
+      CALL check( nf90_put_var(ncid,inds_id, inds_arr))
+      CALL check( nf90_put_var(ncid,intau_id, intau_arr))
+      CALL check( nf90_put_var(ncid,inpr_id, inpr_arr))
+      CALL check( nf90_put_var(ncid,inpe_id, inpe_arr))
+      CALL check( nf90_put_var(ncid,omegas_id, omegas_arr))
+      !CALL check( nf90_put_var(ncid,omegas_e_id, omegas_e_arr))
+      !CALL check( nf90_put_var(ncid,omegas_i_id, omegas_i_arr))
+      CALL check( nf90_put_var(ncid,outer_delta_id,outer_delta_arr))
+
+c -----------------------------------------------------------------------
+c      close file
+c -----------------------------------------------------------------------
+      IF(debug_flag) PRINT *," - Closing netcdf file"
+      CALL check( nf90_close(ncid) )
+c -----------------------------------------------------------------------
+c      terminate.
+c -----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE slayer_netcdf_inputs
       END MODULE slayer_netcdf_mod

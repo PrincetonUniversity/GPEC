@@ -21,7 +21,7 @@
     qval=2.0             ! q of resonant surface
     mu_i=2.0             ! ion mass ratio to proton ??
     zeff=2.0             ! plasma Z_effective
-    inpr=0.1             ! Prantdl number
+    inpr=1.0             ! Prantdl number
     inpe=0.0             ! Electron viscosity
 
     !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE
@@ -38,6 +38,9 @@
     inum=400             ! resolution to find error field thresholds.
     jnum=100             ! resolution for 2d scan along with Q,omega.
     knum=100             ! resolution for 2d scan alont with the other.
+    ReQ_num=350          ! resolution for stability scan along Re(Q) axis
+    ImQ_num=350          ! resolution for stability scan along Im(Q) axis
+    scan_radius=3        ! stability scan width in Q
     QPscan_flag=f        ! scan (Q,P) space for delta and torque.
     Qscan_flag=f         ! scan Q space
     QPescan_flag=f       ! scan (Q,Pe) space for delta and torque.
