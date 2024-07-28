@@ -295,7 +295,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"Electron viscosities=",inpe_arr
          WRITE(*,*)"Omega ExB values=",omegas_arr
          WRITE(*,*)"outer region deltaprimes=",outer_delta_arr
-
+      !stop
          CALL gamma_match(qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
      $                    inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,
      $                    inQ0_arr,inpr_arr,inpe_arr,omegas_arr,

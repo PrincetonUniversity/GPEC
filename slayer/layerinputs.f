@@ -41,13 +41,13 @@ c     Read STRIDE netcdf file for SLAYER inputs only.
 c-----------------------------------------------------------------------
       SUBROUTINE read_stride_netcdf_diagonal(ncfile, msing,
      $   dp_diagonal, q_rational, psi_n_rational, shear,
-     $   r_o,my_bt0,my_psio,mpsi,nn,resm)
+     $   r_o,my_bt0,my_psio,mpsi,nn,resm,prandtl)
 
         ! Input/Output Arguments
       CHARACTER(512), INTENT(IN) :: ncfile
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: dp_diagonal
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: q_rational,
-     $  psi_n_rational, shear
+     $  psi_n_rational, shear, prandtl
       REAL(r8), DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: r_o,my_bt0,
      $ my_psio,mpsi
       INTEGER, DIMENSION(:), ALLOCATABLE,INTENT(OUT) :: nn,resm
@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
         ! Internal Variables
       INTEGER(kind=nf90_int) :: ncid, stat, r_dim_id, r_dim,
      $  dp_id, qr_id,pr_id,shear_id,ro_id,bt0_id,psio_id,mpsi_id,
-     $  msing_id,nn_id,resm_id  ! Explicit kind for NetCDF variables
+     $  msing_id,nn_id,resm_id,prandtl_id  ! Explicit kind for NetCDF variables
       INTEGER(kind=nf90_int), DIMENSION(1) :: start, count ! Explicit kind for NetCDF variables
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: delta_prime
       INTEGER :: i
@@ -67,7 +67,6 @@ c-----------------------------------------------------------------------
 
         ! Open the NetCDF file
       stat = nf90_open(path=ncfile,mode=NF90_WRITE,ncid=ncid)
-      WRITE(*,*)"ncfile=",ncfile
       CALL check(stat)  ! Error handling
 
       stat = nf90_inquire_attribute(ncid,msing_id,"msing",
@@ -82,7 +81,7 @@ c-----------------------------------------------------------------------
         ! Allocate Arrays (based on dimension)
       ALLOCATE(dp_diagonal(msing),q_rational(msing),
      $           psi_n_rational(msing),shear(msing),
-     $           resm(msing))
+     $           resm(msing),prandtl(msing))
       ALLOCATE(delta_prime(msing, msing,2))
 
       stat = nf90_inquire_attribute(ncid,ro_id,"ro",len = ro_len)
@@ -90,7 +89,6 @@ c-----------------------------------------------------------------------
       stat = nf90_inquire_attribute(ncid,bt0_id,"bt0",len=bt0_len)
       CALL check(stat)
 
-      bt0_id=0 !!!!! THIS COULD BE A PROBLEM
 
       stat = nf90_inquire_attribute(ncid,psio_id,"psio",len=psio_len)
       CALL check(stat)
@@ -99,6 +97,12 @@ c-----------------------------------------------------------------------
       CALL check(stat)
       stat = nf90_inquire_attribute(ncid,nn_id,"n",len = nn_len)
       CALL check(stat)
+
+      bt0_id=0 !!!!! THIS COULD BE A PROBLEM
+      nn_id=0
+      mpsi_id=0
+      psio_id=0
+      ro_id=0
 
       ALLOCATE(my_bt0(INT(bt0_len)),r_o(INT(ro_len)),
      $ my_psio(INT(psio_len)),
@@ -113,9 +117,10 @@ c-----------------------------------------------------------------------
       CALL check(stat)
       stat = nf90_inq_varid(ncid, "shear", shear_id)
       CALL check(stat)
+      stat = nf90_inq_varid(ncid, "prandtl", prandtl_id)
+      CALL check(stat)
       stat = nf90_inq_varid(ncid, "resm", resm_id)
       CALL check(stat)
-
       ! Get attributes
       stat = nf90_get_att(ncid, ro_id, "ro", r_o)
       CALL check(stat)
@@ -138,6 +143,8 @@ c-----------------------------------------------------------------------
       stat = nf90_get_var(ncid, pr_id, psi_n_rational)
       CALL check(stat)
       stat = nf90_get_var(ncid, shear_id, shear)
+      CALL check(stat)
+      stat = nf90_get_var(ncid, prandtl_id, prandtl)
       CALL check(stat)
       stat = nf90_get_var(ncid, resm_id, resm)
       CALL check(stat)
@@ -281,7 +288,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: dp_diagonal, q_rational,
      $                      shear,r_o,my_bt0,my_psio,mpsi_arr,
-     $                      omegas_e_arr,omegas_i_arr
+     $                      omegas_e_arr,omegas_i_arr,prandtl
       REAL(r8), DIMENSION(:), ALLOCATABLE :: ne_arr,te_arr,ni_arr,
      $    ti_arr,zeff_arr,bt_arr,rs_arr,
      $    R0_arr,mu_i_arr
@@ -299,18 +306,19 @@ c-----------------------------------------------------------------------
 c     Read in STRIDE netcdf
 c-----------------------------------------------------------------------
       CALL read_stride_netcdf_diagonal(ncfile,
-     $              msing,dp_diagonal,q_rational,psi_n_rational,
-     $              shear,r_o,my_bt0,my_psio,mpsi_arr,nn,resm)
-      !WRITE(*,*)"msing_out=",msing
-      !WRITE(*,*)"dp_diagonal=",dp_diagonal
-      !!!WRITE(*,*)"q_rational=",q_rational
-      !WRITE(*,*)"psi_n_rational=",psi_n_rational
-      !WRITE(*,*)"shear=",shear
-      !WRITE(*,*)"r_o=",r_o
-      !WRITE(*,*)"my_bt0=",my_bt0
-      !WRITE(*,*)"my_psio=",my_psio
-      !WRITE(*,*)"nn=",nn
-      !WRITE(*,*)"resm=",resm
+     $           msing,dp_diagonal,q_rational,psi_n_rational,
+     $           shear,r_o,my_bt0,my_psio,mpsi_arr,nn,resm,prandtl)
+      WRITE(*,*)"msing_out=",msing
+      WRITE(*,*)"dp_diagonal=",dp_diagonal
+      WRITE(*,*)"q_rational=",q_rational
+      WRITE(*,*)"psi_n_rational=",psi_n_rational
+      WRITE(*,*)"shear=",shear
+      WRITE(*,*)"r_o=",r_o
+      WRITE(*,*)"my_bt0=",my_bt0
+      WRITE(*,*)"my_psio=",my_psio
+      WRITE(*,*)"nn=",nn
+      WRITE(*,*)"resm=",resm
+      WRITE(*,*)"resm=",prandtl
 
       mpsi = INT(mpsi_arr(1))
       mthsurf = 512
@@ -354,8 +362,6 @@ c-----------------------------------------------------------------------
       DO ising=1,msing
 
          respsi = psi_n_rational(ising)
-         WRITE(*,*)"respsi=",respsi
-         WRITE(*,*)"ising=",ising
 
          firstsurf = .TRUE.
          unitfun = 1
@@ -373,7 +379,6 @@ c-----------------------------------------------------------------------
      $           -twopi*kin%f1(3)/(e*zi*chi1)
          omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
      $           +twopi*kin%f1(4)/(e*chi1)
-         WRITE(*,*)"omega_e=",omega_e
 
          n_e = kin%f(2)
          t_e = kin%f(4)/e
@@ -390,7 +395,9 @@ c-----------------------------------------------------------------------
 
          eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
 
-         inpr = slayer_inpr
+         inpr = prandtl(ising)
+
+         inpe=0.0!0.0165*inpr                        ! Waybright added this
 
          ne_arr(ising) = n_e
          te_arr(ising) = t_e
@@ -408,8 +415,6 @@ c-----------------------------------------------------------------------
          nrs = real(nns,4)
 
          nns_arr = nn(1)
-
-         inpe=0.0!0.0165*inpr                        ! Waybright added this
 
          tau= t_i/t_e                     ! ratio of ion to electron temperature
          tau_i = 6.6e17*mu_i**0.5*(t_i/1e3)**1.5/(n_e*lnLamb) ! ion colls.
@@ -461,7 +466,7 @@ c-----------------------------------------------------------------------
 
       ENDDO
 
-      WRITE(*,*)"zeff_arr=",zeff_arr
+      !WRITE(*,*)"zeff_arr=",zeff_arr
 
       CALL slayer_netcdf_inputs(msing,ne_arr,te_arr,ni_arr,ti_arr,
      $  zeff_arr,shear,bt_arr,rs_arr,R0_arr,mu_i_arr,resm,nns_arr,

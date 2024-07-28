@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
      $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
      $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id,
-     $    shear_id,resm_id
+     $    shear_id,resm_id,prandtl_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
@@ -179,6 +179,8 @@ c-----------------------------------------------------------------------
      $                            r_dim,qr_id) )
          CALL check( nf90_def_var(ncid, "shear", nf90_double, r_dim,
      $                            shear_id) )
+         CALL check( nf90_def_var(ncid, "prandtl", nf90_double, r_dim,
+     $                            prandtl_id) )
          CALL check( nf90_def_var(ncid, "resm", nf90_int, r_dim,
      $                            resm_id) )
       ENDIF
@@ -247,6 +249,8 @@ c-----------------------------------------------------------------------
          !ENDDO
 
          CALL check( nf90_put_var(ncid,shear_id, (/(sing(i)%q1,
+     $                                           i=1,msing)/)) ) ! GPEC HAS DIFFERENT SHEAR CALC?
+         CALL check( nf90_put_var(ncid,prandtl_id, (/(0.0,
      $                                           i=1,msing)/)) ) ! GPEC HAS DIFFERENT SHEAR CALC?
          CALL check( nf90_put_var(ncid,resm_id, resm) )
       !   CALL check( nf90_put_var(ncid,shear_id,shear) ) ! GPEC HAS DIFFERENT SHEAR CALC?
