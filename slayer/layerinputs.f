@@ -41,13 +41,13 @@ c     Read STRIDE netcdf file for SLAYER inputs only.
 c-----------------------------------------------------------------------
       SUBROUTINE read_stride_netcdf_diagonal(ncfile, msing,
      $   dp_diagonal, q_rational, psi_n_rational, shear,
-     $   r_o,my_bt0,my_psio,mpsi,nn,resm,prandtl)
+     $   r_o,my_bt0,my_psio,mpsi,nn,resm)
 
         ! Input/Output Arguments
       CHARACTER(512), INTENT(IN) :: ncfile
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: dp_diagonal
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: q_rational,
-     $  psi_n_rational, shear, prandtl
+     $  psi_n_rational, shear
       REAL(r8), DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: r_o,my_bt0,
      $ my_psio,mpsi
       INTEGER, DIMENSION(:), ALLOCATABLE,INTENT(OUT) :: nn,resm
@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
         ! Internal Variables
       INTEGER(kind=nf90_int) :: ncid, stat, r_dim_id, r_dim,
      $  dp_id, qr_id,pr_id,shear_id,ro_id,bt0_id,psio_id,mpsi_id,
-     $  msing_id,nn_id,resm_id,prandtl_id  ! Explicit kind for NetCDF variables
+     $  msing_id,nn_id,resm_id  ! Explicit kind for NetCDF variables
       INTEGER(kind=nf90_int), DIMENSION(1) :: start, count ! Explicit kind for NetCDF variables
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: delta_prime
       INTEGER :: i
@@ -81,7 +81,7 @@ c-----------------------------------------------------------------------
         ! Allocate Arrays (based on dimension)
       ALLOCATE(dp_diagonal(msing),q_rational(msing),
      $           psi_n_rational(msing),shear(msing),
-     $           resm(msing),prandtl(msing))
+     $           resm(msing))
       ALLOCATE(delta_prime(msing, msing,2))
 
       stat = nf90_inquire_attribute(ncid,ro_id,"ro",len = ro_len)
@@ -117,8 +117,6 @@ c-----------------------------------------------------------------------
       CALL check(stat)
       stat = nf90_inq_varid(ncid, "shear", shear_id)
       CALL check(stat)
-      stat = nf90_inq_varid(ncid, "prandtl", prandtl_id)
-      CALL check(stat)
       stat = nf90_inq_varid(ncid, "resm", resm_id)
       CALL check(stat)
       ! Get attributes
@@ -143,8 +141,6 @@ c-----------------------------------------------------------------------
       stat = nf90_get_var(ncid, pr_id, psi_n_rational)
       CALL check(stat)
       stat = nf90_get_var(ncid, shear_id, shear)
-      CALL check(stat)
-      stat = nf90_get_var(ncid, prandtl_id, prandtl)
       CALL check(stat)
       stat = nf90_get_var(ncid, resm_id, resm)
       CALL check(stat)
@@ -250,7 +246,7 @@ c-----------------------------------------------------------------------
 c     subprogram 3. build_inputs.
 c     build input arrays for SLAYER
 c-----------------------------------------------------------------------
-      SUBROUTINE build_inputs(infile,ncfile,slayer_inpr,
+      SUBROUTINE build_inputs(infile,ncfile,inpr_prof,
      $               growthrate_flag,
      $               qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
      $               inQ_i_arr,inc_beta_arr,
@@ -260,7 +256,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: growthrate_flag
-      REAL(r8), INTENT(IN) ::slayer_inpr
+      REAL(r8), DIMENSION(8), INTENT(IN) :: inpr_prof
       LOGICAL :: firstsurf
       REAL(r8) :: respsi,lpsi,rpsi,hdist,sbnosurf,
      $ ising
@@ -276,7 +272,6 @@ c-----------------------------------------------------------------------
      $     my_qval,my_sval,my_bt,my_rs,zeff,inpe,R_0
       REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_r,tau_h,
      $            rho,tau_v,inpr,Qconv,lbeta,qintb
-
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
      $          inQ_arr,inQ_e_arr,psi_n_rational,
      $          inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,Q0_arr,
@@ -288,7 +283,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: dp_diagonal, q_rational,
      $                      shear,r_o,my_bt0,my_psio,mpsi_arr,
-     $                      omegas_e_arr,omegas_i_arr,prandtl
+     $                      omegas_e_arr,omegas_i_arr
       REAL(r8), DIMENSION(:), ALLOCATABLE :: ne_arr,te_arr,ni_arr,
      $    ti_arr,zeff_arr,bt_arr,rs_arr,
      $    R0_arr,mu_i_arr
@@ -307,7 +302,7 @@ c     Read in STRIDE netcdf
 c-----------------------------------------------------------------------
       CALL read_stride_netcdf_diagonal(ncfile,
      $           msing,dp_diagonal,q_rational,psi_n_rational,
-     $           shear,r_o,my_bt0,my_psio,mpsi_arr,nn,resm,prandtl)
+     $           shear,r_o,my_bt0,my_psio,mpsi_arr,nn,resm)
       WRITE(*,*)"msing_out=",msing
       WRITE(*,*)"dp_diagonal=",dp_diagonal
       WRITE(*,*)"q_rational=",q_rational
@@ -318,7 +313,6 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"my_psio=",my_psio
       WRITE(*,*)"nn=",nn
       WRITE(*,*)"resm=",resm
-      WRITE(*,*)"resm=",prandtl
 
       mpsi = INT(mpsi_arr(1))
       mthsurf = 512
@@ -395,7 +389,7 @@ c-----------------------------------------------------------------------
 
          eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
 
-         inpr = prandtl(ising)
+         inpr = inpr_prof(ising)
 
          inpe=0.0!0.0165*inpr                        ! Waybright added this
 

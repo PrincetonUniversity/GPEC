@@ -22,6 +22,7 @@
     mu_i=2.0             ! ion mass ratio to proton ??
     zeff=2.0             ! plasma Z_effective
     inpr=1.0             ! Prantdl number
+    inpr_prof=1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0 ! Prandtl number profile
     inpe=0.0             ! Electron viscosity
 
     !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE
@@ -55,14 +56,15 @@
 /
 &SLAYER_OUTPUT
     verbose=t            ! prints progress to terminal
-    ascii_flag=t         ! writes results to ascii files
-    bin_flag=t           ! writes results to binary files
+    ascii_flag=f         ! writes results to ascii files
+    bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
     growthrates_flag=t   ! Calculate growthrates on each rational surface
+    layer_stabilityscan_flag=t   ! Generate Re(Q),Im(Q) scans for each rational surface
     !bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
-    params_check=t       ! prints the primary parameters to the terminal when they are calculated
+    params_check=f       ! prints the primary parameters to the terminal when they are calculated
 /

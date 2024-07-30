@@ -174,6 +174,233 @@ c-----------------------------------------------------------------------
 
       RETURN
       END SUBROUTINE gpec_slayer
+
+      FUNCTION log_prob(params,inQ,inQ_e,inQ_i,inc_beta,inds,
+     $       intau,inQ0,inpr,inpe,deltaprime,sigma) RESULT(lp)
+          real(r8), dimension(2), intent(in) :: params
+          real(r8), intent(in) :: deltaprime, sigma
+          real(r8) :: lp, distance
+          REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inc_beta,inds,
+     $                      intau,inQ0,inpr,inpe
+          ! Calculate distance from the target value
+          distance = abs((riccati(params(1),
+     $                               inQ_e,
+     $                               inQ_i,
+     $                               inpr,
+     $                               inc_beta,
+     $                               inds,
+     $                               intau,
+     $                               inpe,
+     $                               iinQ=params(2)) -
+     $              deltaprime))
+
+          ! Calculate the log probability (negative log-likelihood of a Gaussian)
+          lp = -0.5 * (distance / sigma)**2
+          RETURN
+      END FUNCTION log_prob
+c-----------------------------------------------------------------------
+c     Subprogram 2. gamma_stability_scan
+c     Run grid packed slayer stab. scan around omega_ExB and gamma axes
+c-----------------------------------------------------------------------
+      SUBROUTINE growthrate_search(qval,inQ,inQ_e,inQ_i,inc_beta,
+     $           inds,intau,inQ0,inpr,inpe,deltaprime,scan_radius,
+     $           deltas,inQs,iinQs,roots,growthrate,growthrate_loc)
+c-----------------------------------------------------------------------
+c     Declarations
+c-----------------------------------------------------------------------
+      ! Inputs
+      REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inc_beta,inds,
+     $     intau,inQ0,inpr,inpe,deltaprime
+      INTEGER, INTENT(IN) :: qval,scan_radius
+c-----------------------------------------------------------------------
+c
+c-----------------------------------------------------------------------
+      real(r8), intent(out), dimension(:,:), ALLOCATABLE :: roots ! Array to store (x, y) pairs of zeros
+      integer :: num_zeros             ! Number of zeros found
+      real(r8), dimension(:), ALLOCATABLE, INTENT(OUT) :: inQs,iinQs
+      integer :: n_fine
+      real(r8), dimension(:), ALLOCATABLE :: x_s,y_s
+      real(r8) :: x, y, dx, dy, ric_val, grad_x, grad_y
+      real(r8), dimension(2) :: start, end, step
+      real(r8) :: zero_tol, grad_tol, wr, delta
+      integer :: i, j, k, w, n_steps
+      logical :: found_zero
+      real(r8), intent(out) :: growthrate_loc, growthrate    ! Output (x, y) pair
+
+      integer :: n_points, idx_1, idx_2
+      real(r8) :: x_1, y_1, x_2, y_2, dist, min_dist1, min_dist2
+
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE,
+     $             INTENT(OUT) :: deltas
+      wr = inQ+inQ_e
+      ! Parameters
+      zero_tol = abs(0.1*deltaprime)    ! Tolerance for zero value
+      grad_tol = 1.0!abs(0.1*deltaprime)     ! Tolerance for steep gradient
+      n_steps = 100       ! Initial number of steps
+      n_fine = 10
+      if (abs(deltaprime)>50) then
+        n_fine = n_fine * 2
+      end if
+      ALLOCATE(x_s(n_fine),y_s(n_fine))
+      ALLOCATE(inQs(n_steps))
+      ALLOCATE(roots(10,2))
+      ALLOCATE(deltas(n_steps,n_steps))
+
+      ! Initial coarse grid search
+
+      dx = 2 * dble(scan_radius) / dble(n_steps)
+      dy = 2 * dble(scan_radius) / dble(n_steps)
+      num_zeros = 0
+
+      inQs = linspace((-scan_radius+wr),(scan_radius+wr),n_steps)
+      ALLOCATE(iinQs(n_steps))
+
+      do i = 1, n_steps
+          x = inQs(i)!wr - scan_radius + (i - 0.5) * dx
+          do j = 1, n_steps
+              !y = -scan_radius + (j - 0.5) * dy
+              y=-scan_radius+(REAL(j)/n_steps)*(scan_radius+
+     $                 scan_radius)
+              iinQs(j) = y
+              delta = REAL(riccati(x,inQ_e,inQ_i,inpr,inc_beta,inds,
+     $                            intau,inpe,iinQ=y))
+              ric_val = abs(delta - deltaprime)
+              deltas(i,j) = delta
+              grad_x = 10!(REAL(riccati(x + dx,inQ_e,inQ_i,inpr,inc_beta,
+      !$                           inds,intau,inpe,iinQ=y)) -
+      !$                  REAL(riccati(x - dx,inQ_e,inQ_i,inpr,inc_beta,
+      !$                            inds,intau,inpe,iinQ=y))) / (2 * dx)
+              grad_y = 10!(REAL(riccati(x,inQ_e,inQ_i,inpr,inc_beta,inds,
+      !$                            intau,inpe,iinQ=y + dy)) -
+      !$                  REAL(riccati(x,inQ_e,inQ_i,inpr,inc_beta,inds,
+      !$                            intau,inpe,iinQ=y - dy))) / (2 * dy)
+
+              !WRITE(*,*) "Point", [x,y]
+              !WRITE(*,*) "ric_val", ric_val
+              !WRITE(*,*) "grad_x", grad_x
+              !WRITE(*,*) "grad_y", grad_y
+              !WRITE(*,*) "[dx,dy]", [dx,dy]
+
+
+              if ((abs(ric_val) < zero_tol) .and. ((abs(grad_x) >
+     $                grad_tol) .or. (abs(grad_y) > grad_tol))) then
+                  ! Potential zero found, refine with a finer grid
+                  !start = [x - 0.1, y - 0.1]
+                  !end = [x + 0.1, y + 0.1]
+                  !step = (end - start) / 20
+                  !WRITE(*,*) "Potential zero found", [x,y]
+                 ! WRITE(*,*) "dx", dx
+                 ! WRITE(*,*) "dy", dy
+                 ! WRITE(*,*) "step", step
+                 ! WRITE(*,*) "scan_radius", scan_radius
+
+                  x_s = linspace((x-0.1),(x+0.1),n_fine)
+                  y_s = linspace((y-0.1),(y+0.1),n_fine)
+                  found_zero = .false.
+                  do k=1,n_fine
+                    do w=1,n_fine
+                          !x_s = start(1) + (k - 0.5) * step(1)
+                          !y_s = start(2) + (k - 0.5) * step(2)
+
+                          !WRITE(*,*) "fine point", [x_s(k),y_s(w)]
+                          !WRITE(*,*) "y_s", y_s
+                          !stop
+                          !WRITE(*,*) "fine scan", k
+
+                          ric_val = REAL(riccati(x_s(k),inQ_e,inQ_i,
+     $                     inpr,inc_beta,inds,intau,inpe,
+     $                     iinQ=y_s(w))) - deltaprime
+                          !WRITE(*,*) "ric_val", ric_val
+
+                          if (abs(ric_val) < abs(0.01*deltaprime)) then
+                              ! Found a zero within tolerance, store it
+                              num_zeros = num_zeros + 1
+                              roots(num_zeros, 1) = x
+                              roots(num_zeros, 2) = y
+                              WRITE(*,*) "FOUND ROOT #", num_zeros
+                              found_zero=.true.
+                              !exit ! Exit the inner loop since zero is found
+                          end if
+                          if (found_zero==.true.) then
+                            exit
+                          endif
+                    end do
+                    if (found_zero==.true.) then
+                        exit
+                    endif
+                  end do
+              end if
+          end do
+      end do
+
+      ! 1. Find the index of the (x, y) pair with x closest to wr
+      n_points = size(roots, 1)
+      min_dist1 = abs(roots(1, 1) - wr)
+      idx_1 = 1
+
+      do i = 2, n_points
+          dist = abs(roots(i, 1) - wr)
+          if (dist < min_dist1) then
+              min_dist1 = dist
+              idx_1 = i
+          end if
+      end do
+
+      x_1 = roots(idx_1, 1)
+      y_1 = roots(idx_1, 2)
+
+      ! 2. Find the index of the next closest (x, y) pair with y more than 0.5 away from y_1
+      min_dist2 = huge(min_dist2) ! Initialize to a very large value
+      idx_2 = 0  ! Initialize to an invalid index
+
+      do i = 1, n_points
+          if (i /= idx_1 .and. abs(roots(i, 2) - y_1) > 0.5) then  ! Check if it's a different point and far enough in y
+              dist = abs(roots(i, 1) - wr)
+              if (dist < min_dist2) then
+                  min_dist2 = dist
+                  idx_2 = i
+              end if
+          end if
+      end do
+
+      if (idx_2 > 0) then  ! Check if a valid second point was found
+          x_2 = roots(idx_2, 1)
+          y_2 = roots(idx_2, 2)
+      end if
+
+      ! 3. Apply your specific conditions to select the final (x, y) pair
+      if (idx_2 > 0 .and. abs(x_1 - x_2) < 0.1) then
+          if (y_1 < 0 .or. y_2 < 0) then  ! Choose the pair with negative y
+              if (y_1 < 0) then
+                  growthrate_loc = x_1
+                  growthrate = y_1
+              else
+                  growthrate_loc = x_2
+                  growthrate = y_2
+              end if
+          end if
+      else  ! If the x values are far apart, choose the first pair
+          growthrate_loc = x_1
+          growthrate = y_1
+      end if
+c-----------------------------------------------------------------------
+c
+c-----------------------------------------------------------------------
+      ! Allocate grid packing arrays and 2D complex deltas array
+      !ALLOCATE(deltas(0:3+ReQ_num,0:ImQ_num))
+
+      !DO i=0,ReQ_num+1
+      !   DO j=0,ImQ_num
+      !      iinQs(j)=Im_inQ_min+(REAL(j)/ImQ_num)*(Im_inQ_max-
+      !$       Im_inQ_min)
+      !      ! Run riccati() at each Q index to give delta
+      !      deltas(i,j)=riccati(inQs(i),inQ_e,inQ_i,inpr,
+      !$           inc_beta,inds,intau,inpe,iinQ=iinQs(j)) ! NOT USING GRID PACKING
+      !   ENDDO
+      !ENDDO
+
+      RETURN
+      END SUBROUTINE growthrate_search
 c-----------------------------------------------------------------------
 c     Subprogram 2. gamma_stability_scan
 c     Run grid packed slayer stab. scan around omega_ExB and gamma axes
@@ -269,7 +496,8 @@ c-----------------------------------------------------------------------
      $                    inQ_i_arr,
      $                    inc_beta_arr,inds_arr,intau_arr,inQ0_arr,
      $                    inpr_arr,inpe_arr,omegas_arr,outer_delta_arr,
-     $                    ReQ_num,ImQ_num,scan_radius)
+     $                    ReQ_num,ImQ_num,scan_radius,inQs,iinQs,
+     $                    all_Re_deltas,all_inQs)
 c-----------------------------------------------------------------------
 c     Declarations
 c-----------------------------------------------------------------------
@@ -287,7 +515,7 @@ c-----------------------------------------------------------------------
       INTEGER :: n_k ! Number of rational surfaces
       INTEGER :: k,w
       ! Local variables received from internal subroutines
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs
+      REAL(r8), DIMENSION(:), ALLOCATABLE,INTENT(OUT) :: inQs,iinQs
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: all_RE_deltas
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: all_slices,all_inQs
@@ -324,11 +552,6 @@ c-----------------------------------------------------------------------
          all_RE_deltas(:,:,k) = REAL(deltas)
          all_inQs(:,k) = inQs
       ENDDO
-
-      CALL slayer_netcdf_out(n_k,SIZE(inQs),SIZE(iinQs),qval_arr,
-     $ inQs,iinQs,growthrates,omegas_arr,inQ_arr,
-     $ inQ_e_arr,inQ_i_arr,psi_n_rational,
-     $ all_Re_deltas,all_inQs)
 
       DEALLOCATE(deltas)
 

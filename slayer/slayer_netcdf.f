@@ -51,21 +51,28 @@ c-----------------------------------------------------------------------
 c -----------------------------------------------------------------------
 c      declarations.
 c -----------------------------------------------------------------------
-      SUBROUTINE slayer_netcdf_out(msing,ReQ_n,ImQ_n,qval_arr,
-     $ inQs,iinQs,growthrates,omegas_arr,inQ_arr,inQ_e_arr,
+      SUBROUTINE slayer_netcdf_out(msing,ReQ_n,
+     $ ImQ_n,qval_arr,
+     $ inQs,iinQs,all_roots,all_growthrates,all_growthrate_locs,
+     $ omegas_arr,inQ_arr,inQ_e_arr,
      $ inQ_i_arr,psi_n_rational,
      $ all_Re_deltas,all_inQs)
+      LOGICAL, PARAMETER :: layer_stabilityscan_flag = .true.
       INTEGER, INTENT(IN) :: msing,ReQ_n,ImQ_n
       REAL(r8), DIMENSION(:), INTENT(IN) ::
-     $ inQs,iinQs,growthrates,omegas_arr,inQ_arr,
-     $ inQ_e_arr,inQ_i_arr,psi_n_rational!,shear
+     $ inQs,iinQs,omegas_arr,inQ_arr,
+     $ inQ_e_arr,inQ_i_arr,psi_n_rational,
+     $ all_growthrates,all_growthrate_locs
       INTEGER, DIMENSION(:), INTENT(IN) :: qval_arr
       REAL(r8), DIMENSION(:,:), INTENT(IN) :: all_inQs
       REAL(r8), DIMENSION(:,:,:), INTENT(IN) :: all_Re_deltas
+      REAL(r8),DIMENSION(:,:,:),ALLOCATABLE,INTENT(IN) ::
+     $                                             all_roots
       INTEGER :: i, ncid,r_id,ReQ_dim,ImQ_dim,qsing_dim,qsing_id,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    ReQ_id,ImQ_id,gamma_id,omegas_id,Q_id,Q_e_id,Q_i_id,
-     $    r_dim,pr_id, qr_id, dp_id,shear_id,slice_id,inQs_id
+     $    r_dim,pr_id, qr_id, dp_id,shear_id,slice_id,inQs_id,
+     $    gamma_err_id,gamma_loc_id,roots_dim
       CHARACTER(64) :: ncfile
       LOGICAL, PARAMETER :: debug_flag = .FALSE.
       CHARACTER(len=*), PARAMETER :: version ='v1.0.0-99-gc873bd6'
@@ -109,10 +116,15 @@ c -----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid,"ReQ_arr",nf90_double,ReQ_dim,
      $    ReQ_id))
          CALL check( nf90_def_dim(ncid,"ImQ_arr",ImQ_n,ImQ_dim) ) !r_dim = q_rational
+         CALL check( nf90_def_dim(ncid,"nroots",100,roots_dim) ) !r_dim = q_rational
          CALL check( nf90_def_var(ncid,"ImQ_arr",nf90_double,ImQ_dim,
      $    ImQ_id))
          CALL check( nf90_def_var(ncid,"growthrates",nf90_double,
      $    qsing_dim,gamma_id))
+         CALL check( nf90_def_var(ncid,"growthrate_locs",nf90_double,
+     $    qsing_dim,gamma_loc_id))
+      !   CALL check( nf90_def_var(ncid,"growthrates_inQ",nf90_double,
+      !$    (/roots_dim, qsing_dim/),gamma_loc_id))
          CALL check( nf90_def_var(ncid,"omegas",nf90_double,
      $    qsing_dim,omegas_id))
          CALL check( nf90_def_var(ncid,"Q",nf90_double,
@@ -131,7 +143,7 @@ c -----------------------------------------------------------------------
       ! define variables
       IF(debug_flag) PRINT *," - Defining variables in netcdf"
 
-      IF(msing>0)THEN
+      IF (layer_stabilityscan_flag) THEN
          CALL check( nf90_def_var(ncid, "Re_Delta", nf90_double,
      $       (/ReQ_dim, ImQ_dim, qsing_dim/), dp_id) )
          CALL check( nf90_def_var(ncid, "inQs", nf90_double,
@@ -146,7 +158,6 @@ c -----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,qsing_id, qval_arr))
       CALL check( nf90_put_var(ncid,ReQ_id, inQs))
       CALL check( nf90_put_var(ncid,ImQ_id, iinQs))
-      CALL check( nf90_put_var(ncid,gamma_id, growthrates))
       CALL check( nf90_put_var(ncid,omegas_id, omegas_arr))
       CALL check( nf90_put_var(ncid,Q_id, inQ_arr))
       CALL check( nf90_put_var(ncid,Q_e_id, inQ_e_arr))
@@ -154,8 +165,14 @@ c -----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,pr_id, psi_n_rational))
       CALL check( nf90_put_var(ncid,qr_id, qval_arr))
  !     IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
-      CALL check( nf90_put_var(ncid,dp_id,all_Re_deltas))
-      CALL check( nf90_put_var(ncid,inQs_id,all_inQs))
+      IF (layer_stabilityscan_flag) THEN
+          CALL check( nf90_put_var(ncid,dp_id,all_Re_deltas))
+          CALL check( nf90_put_var(ncid,inQs_id,all_inQs))
+      ENDIF
+      CALL check( nf90_put_var(ncid,gamma_id,all_growthrates))
+      !CALL check( nf90_put_var(ncid,gamma_err_id,
+      !$              (/(all_growthrates(:,3,i),i=1,msing)/)))
+      CALL check( nf90_put_var(ncid,gamma_loc_id,all_growthrate_locs))
 c -----------------------------------------------------------------------
 c      close file
 c -----------------------------------------------------------------------
