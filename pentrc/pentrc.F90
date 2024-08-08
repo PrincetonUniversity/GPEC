@@ -70,7 +70,7 @@ program pentrc
       CALL OMP_SET_NUM_THREADS(pentrc_threads)
     ENDIF
 #else
-    if(pentrc_threads /= 1) print *,"WARNING: Not compiled with OPENMP. Forcing pentrc_threads = 1."
+    if(pentrc_threads > 1) print *,"WARNING: Not compiled with OPENMP. Forcing pentrc_threads = 1."
     pentrc_threads = 1
 #endif
 
