@@ -302,13 +302,20 @@ c-----------------------------------------------------------------------
                      coil(ci)%z(cj, ck, cl) = z + dz
 
                      ! apply shifts (elongations, etc.)
-                     x = coil(ci)%x(cj, ck, cl) - x0
-                     y = coil(ci)%y(cj, ck, cl) - y0
-                     r = sqrt( y ** 2 + x ** 2)
-                     dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
-     $                   +coil_shifty(ci,cj) * sin(cnpert * phi)
-                     coil(ci)%x(cj, ck, cl) = x0 + (r + dr) * cos(phi)
-                     coil(ci)%y(cj, ck, cl) = y0 + (r + dr) * sin(phi)
+                     IF(cnpert==0)THEN ! only shift, keep coil same
+                        coil(ci)%x(cj, ck, cl) = coil(ci)%x(cj, ck, cl)
+     $                                           +coil_shiftx(ci,cj)
+                        coil(ci)%y(cj, ck, cl) = coil(ci)%y(cj, ck, cl)
+     $                                           +coil_shifty(ci,cj)
+                     ELSE                        
+                        x = coil(ci)%x(cj, ck, cl) - x0
+                        y = coil(ci)%y(cj, ck, cl) - y0
+                        r = sqrt( y ** 2 + x ** 2)
+                        dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
+     $                      +coil_shifty(ci,cj) * sin(cnpert * phi)
+                        coil(ci)%x(cj, ck, cl) = x0 + (r + dr) *cos(phi)
+                        coil(ci)%y(cj, ck, cl) = y0 + (r + dr) *sin(phi)
+                     ENDIF
                      coil(ci)%z(cj, ck, cl) = coil(ci)%z(cj, ck, cl)
      $                                       +coil_shiftz(ci,cj)
                   ENDDO
