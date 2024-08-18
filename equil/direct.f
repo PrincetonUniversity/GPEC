@@ -46,7 +46,7 @@ c-----------------------------------------------------------------------
       LOGICAL, DIMENSION(1:2) :: outside_sep,usevth2
       REAL(r8), DIMENSION(2,2) :: xpt_brackets
       TYPE(bicube_type) :: psi_in
-      LOGICAL :: direct_infinite_loop_flag
+      LOGICAL :: direct_infinite_loop_flag,plot_convergence1
       INTEGER :: direct_infinite_loop_count = 2000
       INTEGER :: num_xpts
 
@@ -55,10 +55,10 @@ c-----------------------------------------------------------------------
       REAL(r8) :: br,bz,brr,brz,bzr,bzz
       END TYPE direct_bfield_type
 
-      REAL(r8) :: etol=1e-8, dqdeps_tol=500, BpBt_tol=0.001
+      REAL(r8) :: etol=1e-8, dqdeps_tol=80, BpBt_tol=0.00001
       INTEGER :: nstepd=2048
       INTEGER :: nstep2=2048
-      REAL(r8) :: xcheck=0.99
+      REAL(r8) :: xcheck=0.99, dqdeps_tmp
 
       CONTAINS
 c-----------------------------------------------------------------------
@@ -71,26 +71,31 @@ c-----------------------------------------------------------------------
       SUBROUTINE direct_run
 
       INTEGER :: ir,iz,itheta,ipsi,len_y_out,len_y_last
-      INTEGER :: maxima_count,i
+      INTEGER :: maxima_count,i,ipri,pl
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q,flast
       REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out_last
-      REAL(r8), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4) :: y_out,y_outa
+      REAL(r8), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4) :: y_out,y_outnum
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
       REAL(r8), DIMENSION(3,2) :: eta_brackets
       REAL(r8), DIMENSION(3) :: eta_maxes
+      INTEGER, DIMENSION(2) :: xpt_starts
 
-      LOGICAL :: use_analytic,run_xpt,debug,xmsg
+      LOGICAL :: use_analytic,run_xpt,debug,xmsg,plot_convergence
+      LOGICAL :: new_xpt
 
-      REAL(r8) :: xm,dx,rholow,rhohigh,rx,zx
+      REAL(r8) :: xm,dx,rholow,rhohigh,rx,zx,maxBpBt
       TYPE(direct_bfield_type) :: bf
-      TYPE(spline_type) :: ff,ffa
+      TYPE(spline_type) :: ff,ffnum
 
       CHARACTER(64) :: message
 
-      use_analytic=.FALSE.
-      run_xpt=.TRUE.
-      debug=.FALSE.
+      pl=25
+      plot_convergence=.FALSE. !
+      plot_convergence1=plot_convergence
+      use_analytic=.FALSE. !must be initialised to false
+      run_xpt=.TRUE. !set to false to avoid all x-point scripts
+      debug=.FALSE.  !dumps all spline info to csv 
       xmsg=.TRUE.
       xpt_etas=0.0
       xpt_brackets=0.0
@@ -98,7 +103,8 @@ c-----------------------------------------------------------------------
       eta_brackets=0.0 
       num_xpts=0
       maxima_count=0
-      y_outa=0
+      y_outnum=0
+      dqdeps_tmp=dqdeps_tol
 412   FORMAT(f16.12,",",f16.12,",",f16.12,",",f16.12,",",f16.12)
 413   FORMAT(1x,"ipsi =",i4,"/",i4)
 414   FORMAT(1x,"psifac =",f13.10)
@@ -189,8 +195,30 @@ c     logic whether to integrate around whole field line or use analytic
 c     integral formulas near separatrix.
 c-----------------------------------------------------------------------
          IF(use_analytic .AND. run_xpt)THEN
-            CALL direct_mixed_spline_builder(sq%xs(ipsi),ff,y_out,debug)
-            istep=SIZE(ff%xs,1)-1
+            IF(debug)THEN
+               CALL direct_fl_int(sq%xs(ipsi),zero,twopi,y_outnum,bf,
+     $                                                        len_y_out)
+               CALL spline_alloc(ffnum,istep,4)
+               ffnum%xs(0:istep)=y_outnum(0:istep,4)/y_outnum(istep,4)
+               ffnum%fs(0:istep,1)=y_outnum(0:istep,2)**2
+               ffnum%fs(0:istep,2)=y_outnum(0:istep,0)/twopi
+     $ -ffnum%xs(0:istep)
+               ffnum%fs(0:istep,3)=bf%f*
+     $ (y_outnum(0:istep,3)-ffnum%xs(0:istep)*y_outnum(istep,3))
+               ffnum%fs(0:istep,4)=y_outnum(0:istep,1)/y_outnum(istep,1)
+     $ -ffnum%xs
+
+               CALL direct_mixed_spline_builder(sq%xs(ipsi),ff,y_out,
+     $         debug,maxBpBt,xpt_starts)
+               istep=SIZE(ff%xs,1)-1
+
+               CALL direct_spline_comparison(ffnum,ff,y_outnum,len_y_out
+     $ ,bf,y_out,ipsi,0,sq%xs(ipsi),maxBpBt,xpt_starts,dqdeps_tol)
+            ELSE
+               CALL direct_mixed_spline_builder(sq%xs(ipsi),ff,y_out,
+     $         debug,maxBpBt,xpt_starts)
+               istep=SIZE(ff%xs,1)-1
+            ENDIF
          ELSE
             CALL direct_fl_int(sq%xs(ipsi),zero,twopi,y_out,bf,
      $                                                        len_y_out)
@@ -198,69 +226,101 @@ c-----------------------------------------------------------------------
 c     checks whether q-integral is diverging.  
 c-----------------------------------------------------------------------
             IF(sq%xs(ipsi)>xcheck .AND. run_xpt)THEN
-               CALL direct_initialise_xpoints(y_out,len_y_out,.TRUE.,
+               IF(.NOT.plot_convergence)THEN
+                  pl=-1
+               ENDIF
+               DO ipri=0,pl,+1
+                  IF(plot_convergence)THEN
+                     IF(ipri>0)THEN
+                        dqdeps_tol=dqdeps_tol*sqrt(sqrt(sqrt(10.0)))
+                        IF(ipri<pl)THEN                     
+                           CALL spline_dealloc(ff)
+                           IF(num_xpts>0)THEN
+                              CALL spline_dealloc(ffnum)
+                           ENDIF
+                        ENDIF
+                     ELSE
+                        dqdeps_tol=dqdeps_tmp
+                     ENDIF
+                     xpt_etas=0.0
+                     xpt_brackets=0.0
+                     eta_maxes=0.0
+                     eta_brackets=0.0 
+                     num_xpts=0
+                     maxima_count=0
+                     y_outnum=0
+                  ENDIF
+                  CALL direct_initialise_xpoints(y_out,len_y_out,.TRUE.,
      $                  .FALSE.,bf,dqdeps_tol,BpBt_tol,eta_maxes,
      $                  eta_brackets,maxima_count)
 
-               IF(debug)THEN
-                  CALL ascii_open(out_xpt_unit,"y_out.csv","UNKNOWN")
-                  DO i=0,len_y_out,+1
-                     WRITE(out_xpt_unit,412)
-     $                y_out(i,0),
-     $                y_out(i,1),
-     $                y_out(i,2),
-     $                y_out(i,3),
-     $                y_out(i,4)
-                  ENDDO
-                  CALL ascii_close(out_xpt_unit)
+                  IF(maxima_count > 0 .AND. run_xpt)THEN
+                     IF(.NOT.plot_convergence)THEN
+                        use_analytic=.TRUE.
+                     ENDIF
+                     num_xpts=maxima_count
 
+                     DO i=1,maxima_count,+1
+                        xpt_etas(i)=eta_maxes(i)!updated by direct_xpoint
+                        xpt_brackets(i,1)=eta_brackets(i,1)
+                        xpt_brackets(i,2)=eta_brackets(i,2)
 
-                  CALL spline_alloc(ff,istep,4)
-                  ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-                  ff%fs(0:istep,1)=y_out(0:istep,2)**2
-                  ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
-                  ff%fs(0:istep,3)=bf%f*
-     $               (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-                  ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
-               ENDIF
+                        CALL find_fl_surface(one,xpt_etas(i),rx,zx)
+                        CALL direct_xpoint(rx,zx,i,new_xpt)
+                     ENDDO
 
-               IF(maxima_count > 0 .AND. run_xpt)THEN
-                  use_analytic = .TRUE.
-                  num_xpts=maxima_count
+                     IF(debug)THEN
+41234                FORMAT(I9.9,",",I9.9,",",I9.9,",",f17.14,",",
+     $   f17.14,",",f17.14,",",f17.14,",",f17.14)
+                        message=""
+                        WRITE (message, "(A18)") "xpt_tests/data.csv" 
+                        CALL ascii_open(out_xpt_unit,trim(message)
+     $ ,"UNKNOWN")
+                        WRITE(out_xpt_unit,41234)ipsi,mpsi,mtheta,
+     $ sq%xs(ipsi),ro,zo,rxs(1),zxs(1)
+                        CALL ascii_close(out_xpt_unit)
 
-                  DO i=1,maxima_count,+1
-                     xpt_etas(i)=eta_maxes(i) !updated by direct_xpoint
-                     xpt_brackets(i,1)=eta_brackets(i,1)
-                     xpt_brackets(i,2)=eta_brackets(i,2)
-
-                     CALL find_fl_surface(one,xpt_etas(i),rx,zx)
-                     CALL direct_xpoint(rx,zx,i)
-                  ENDDO
-
-                  IF(debug)THEN
-                     CALL direct_mixed_spline_builder(sq%xs(ipsi),
-     $ ffa,y_outa,debug)
-                     CALL direct_spline_comparison(ff,ffa,y_out,y_outa)
-                     CALL program_stop("Running xpt debug, stopping")
-                  ELSE
-                     CALL direct_mixed_spline_builder(sq%xs(ipsi),
-     $ ff,y_out,debug)
-                     istep=SIZE(ff%xs,1)-1
-                  ENDIF
+                        CALL spline_alloc(ffnum,istep,4)
+                        ffnum%xs(0:istep)=y_out(0:istep,4)/
+     $ y_out(istep,4)
+                        ffnum%fs(0:istep,1)=y_out(0:istep,2)**2
+                        ffnum%fs(0:istep,2)=y_out(0:istep,0)/twopi
+     $ -ffnum%xs(0:istep)
+                        ffnum%fs(0:istep,3)=bf%f*
+     $ (y_out(0:istep,3)-ffnum%xs(0:istep)*y_out(istep,3))
+                        ffnum%fs(0:istep,4)=y_out(0:istep,1)/
+     $ y_out(istep,1) -ffnum%xs
+                        y_outnum=y_out
+                        PRINT "(A)","Fakeout NORan"
+                        CALL direct_mixed_spline_builder(sq%xs(ipsi),
+     $ ff,y_out,debug,maxBpBt,xpt_starts)
+                        PRINT "(A)","Fakeout Ran"
+                        CALL direct_spline_comparison(ffnum,ff,y_outnum,
+     $ len_y_out,bf,y_out,ipsi,ipri,sq%xs(ipsi),maxBpBt,
+     $ xpt_starts,dqdeps_tol)
+                     ELSE
+                        CALL direct_mixed_spline_builder(sq%xs(ipsi),
+     $ ff,y_out,debug,maxBpBt,xpt_starts)
+                        istep=SIZE(ff%xs,1)-1
+                     ENDIF
 c-----------------------------------------------------------------------
 c     no x-points found, fit numerically integrated 
 c     data to cubic splines
 c-----------------------------------------------------------------------
-               ELSE
-                  CALL spline_alloc(ff,istep,4)
-                  ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
-                  ff%fs(0:istep,1)=y_out(0:istep,2)**2
-                  ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
-                  ff%fs(0:istep,3)=bf%f*
+                  ELSE
+                     CALL spline_alloc(ff,istep,4)
+                     ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
+                     ff%fs(0:istep,1)=y_out(0:istep,2)**2
+                     ff%fs(0:istep,2)=y_out(0:istep,0)/twopi
+     $        -ff%xs(0:istep)
+                     ff%fs(0:istep,3)=bf%f*
      $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
-                  ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)-ff%xs
-                  CALL spline_fit(ff,"periodic")
-               ENDIF
+                     ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)
+     $        -ff%xs
+                     CALL spline_fit(ff,"periodic")
+                  ENDIF
+                  IF(.NOT.plot_convergence)EXIT
+               ENDDO
             ELSE
 c-----------------------------------------------------------------------
 c     if not diverging, fit numerically integrated data to cubic splines  
@@ -384,6 +444,9 @@ c-----------------------------------------------------------------------
          ENDDO
       ENDDO
       CALL bicube_fit(eqfun,"extrap","periodic")
+      IF(plot_convergence)THEN
+         CALL program_stop("plotting convergence done")
+      ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -650,10 +713,13 @@ c-----------------------------------------------------------------------
      $        REAL(eta,4),REAL(rwork(11),4),REAL(y(1:4),4),REAL(r,4),
      $        REAL(z,4),REAL(psifac,4),REAL(err,4)
 c-----------------------------------------------------------------------
-c     advance differential equations.
+c     stopping conditions.
 c-----------------------------------------------------------------------
          IF(eta >= eta2 .OR. istep >= nstepd  .OR.  istate < 0
      $        .OR. ABS(err) >= 1)EXIT
+c-----------------------------------------------------------------------
+c     advance differential equations.
+c-----------------------------------------------------------------------
          istep=istep+1
          CALL lsode(direct_fl_der,neq,y,eta,eta2,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
@@ -1330,12 +1396,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_xpoint(rin,zin,x_i)
+      SUBROUTINE direct_xpoint(rin,zin,x_i,new_xpt)
 
       REAL(r8), INTENT(IN) :: rin,zin
       INTEGER, INTENT(IN) :: x_i
+      LOGICAL, INTENT(OUT) :: new_xpt
 
       INTEGER, PARAMETER :: ird=4
+      INTEGER :: i
       REAL(r8), PARAMETER :: psi_eps=1e-4, r_eps1=1e-9
       REAL(r8) :: r,z
       REAL(r8) :: b11,lincheck,gamma,vartheta
@@ -1350,6 +1418,7 @@ c-----------------------------------------------------------------------
       nu=0.0
       test_direct_local_xpoint=.FALSE.
       test_direct_saddle_angle=.FALSE.
+      new_xpt=.FALSE.
 c-----------------------------------------------------------------------
 c     testing direct_local_xpoint.
 c-----------------------------------------------------------------------
@@ -1382,10 +1451,24 @@ c-----------------------------------------------------------------------
          PRINT "(A)", "------------------------------------------"
       ENDIF
 c-----------------------------------------------------------------------
-c     finds x-point and fills out global module variables
+c     finds x-point
 c-----------------------------------------------------------------------
       CALL direct_local_xpoint(r,z)
       CALL direct_get_bfield(r,z,bf,1)
+c-----------------------------------------------------------------------
+c     checks if this xpoint has already been identified 
+c-----------------------------------------------------------------------
+      IF(x_i>0)THEN
+         DO i=1,(x_i-1),+1
+            IF(ABS(r-rxs(i))<(0.001*ro) .AND. 
+     $         ABS(z-zxs(i))<(0.001*ro))THEN 
+               RETURN
+            ENDIF
+         ENDDO
+      ENDIF
+c-----------------------------------------------------------------------
+c     fills out global module variables
+c-----------------------------------------------------------------------   
       rxs(x_i) = r
       zxs(x_i) = z
 c-----------------------------------------------------------------------
@@ -1419,7 +1502,7 @@ c-----------------------------------------------------------------------
       CALL direct_saddle_angle(rxs(x_i),zxs(x_i),r_eps1*rxs(x_i),oangle,
      $                                     -nu_var,nu(2),'n',.FALSE.)
 c-----------------------------------------------------------------------
-c     testing direct_saddle_angle AGAGAG
+c     testing direct_saddle_angle 
 c-----------------------------------------------------------------------
       IF(test_direct_saddle_angle)THEN
          CALL direct_Blocal(rxs(x_i),zxs(x_i),nu(1),r_eps1*rxs(x_i),
@@ -1500,6 +1583,10 @@ c-----------------------------------------------------------------------
       xpt_gammas2(x_i) = xpt_gammas2(x_i) 
      $                        - twopi*floor(xpt_gammas2(x_i)/twopi)
 c-----------------------------------------------------------------------
+c     acknowledges new xpoint after all module variables filled
+c-----------------------------------------------------------------------
+      new_xpt=.TRUE.
+c-----------------------------------------------------------------------
 c     making sure there isn't much difference between the varthetas and
 c     gamma angles asymptotically close to the x-point vs at the 
 c     switch-over location. Note if the x-point is slightly outside the
@@ -1513,7 +1600,9 @@ c-----------------------------------------------------------------------
          !PRINT "(i6)", x_i
          !PRINT "(es16.10)", xpt_gammas(x_i)/pi
          !PRINT "(es16.10)", xpt_gammas2(x_i)/pi
-         CALL program_stop("increase dq_eps.")
+         IF(.NOT.plot_convergence1)THEN
+            CALL program_stop("increase dq_eps.")
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     regular print statements. eta bracket describes the region where
@@ -2065,9 +2154,12 @@ c     integrated sections inbetween x-points.
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_mixed_spline_builder(psifac,ff,y_out,debug_in)
+      SUBROUTINE direct_mixed_spline_builder(psifac,ff,y_out,debug_in,
+     $ maxBpBt,xpt_starts)
 
       REAL(r8), INTENT(INOUT) :: psifac
+      REAL(r8), INTENT(OUT) :: maxBpBt
+      INTEGER, DIMENSION(2), INTENT(OUT) :: xpt_starts
       LOGICAL, INTENT(IN) :: debug_in
 
       REAL(r8) :: eta,eta1,eta2,R,Z,etat,y01,y02,y03,y04
@@ -2077,11 +2169,12 @@ c-----------------------------------------------------------------------
       
       REAL(r8), DIMENSION(0:nstepd,0:4) :: y_out1,y_out2
       REAL(r8), DIMENSION(0:(nstepd+1),0:4) :: y_out2i
-      REAL(r8), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4) :: y_out
+      REAL(r8), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4),
+     $                                         INTENT(INOUT) :: y_out
       REAL(r8), DIMENSION(1:4,1:2,0:1) :: outmat
       INTEGER :: len_y1_out,len_y2_out,maxima_count,tot_steps,ist1,ist2
       INTEGER :: i1,i2,i,j,k,eta0i
-      LOGICAL :: dbg1xpt,debug,out
+      LOGICAL :: dbg1xpt,debug,out,fakeout,new_xpt
 
       REAL(r8), DIMENSION(6,2) :: eta_brackets
       REAL(r8), DIMENSION(6) :: eta_maxes
@@ -2094,9 +2187,13 @@ c-----------------------------------------------------------------------
       yi2=0.0
       y_out1=0.0
       y_out2=0.0
+      y_out=0.0
+      maxBpBt=0.0
+      xpt_starts=-1
       dbg1xpt=.FALSE.
       debug=.FALSE.
       out=.FALSE.
+      fakeout=.TRUE.
 c-----------------------------------------------------------------------
 c     preparing print statements.
 c-----------------------------------------------------------------------
@@ -2111,7 +2208,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     adddressing case of only one x-point.
 c-----------------------------------------------------------------------
-      IF(num_xpts==1)THEN
+      IF(num_xpts==1 .AND. (.NOT.fakeout))THEN
 c-----------------------------------------------------------------------
 c     calling direct_analytic_ints on the initial x-point over full eta 
 c     span. Note we don't need to call find_fl_surface, direct_xpoint
@@ -2144,6 +2241,7 @@ c-----------------------------------------------------------------------
                bt2=bf%f/outmat(2,1,1)
                PRINT "(A,es10.3)","   max Bp/Bt (x-point)=",
      $                     MAX(bp1/bt1,bp2/bt2)
+               maxBpBt=MAX(bp1/bt1,bp2/bt2)
             ENDIF
 
             IF(out)WRITE(out_xpt_unit,412)
@@ -2500,7 +2598,7 @@ c-----------------------------------------------------------------------
             xpt_brackets(num_xpts,2)=eta_brackets(i,2)
 
             CALL find_fl_surface(one,xpt_etas(num_xpts),r,z)
-            CALL direct_xpoint(r,z,num_xpts)
+            CALL direct_xpoint(r,z,num_xpts,new_xpt)
          ENDDO
 
 c-----------------------------------------------------------------------
@@ -2626,8 +2724,159 @@ c     deallocating spline, printing important information for
 c     direct_spline_comparison
 c-----------------------------------------------------------------------
          CALL spline_dealloc(yi)
-         IF(debug_in)PRINT "(A)", "ff x-pt start point:"
-         IF(debug_in)PRINT "(i6)", (istep+1-eta0i)
+         !IF(debug_in)PRINT "(A)", "ff x-pt start point:"
+         !IF(debug_in)PRINT "(i6)", (istep+1-eta0i)
+         xpt_starts(1)=(istep+1-eta0i)
+c-----------------------------------------------------------------------
+c     fakeout option is used for testing integrator error/debugging.
+c     won't be used in normal operation
+c-----------------------------------------------------------------------
+      ELSEIF(num_xpts==1 .AND. fakeout)THEN
+c-----------------------------------------------------------------------
+c     testing script to identify mysterious error source 0_0 :3
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     calling direct_analytic_ints on the initial x-point over full eta 
+c     span. Note we don't need to call find_fl_surface, direct_xpoint
+c     since these were already called for this x-point in direct_run's 
+c     psi loop
+c-----------------------------------------------------------------------
+         CALL find_fl_surface(psifac,xpt_brackets(1,1),r,z)
+         r_loc1 = SQRT((r-ro)**2+(z-zo)**2)
+         CALL direct_get_bfield(r,z,bf,1)
+c-----------------------------------------------------------------------
+c     ordering the two etas for numerical field line integration
+c-----------------------------------------------------------------------
+         eta1 = xpt_brackets(1,1) - twopi*floor(xpt_brackets(1,1)/twopi)
+         eta2 = xpt_brackets(1,2) - twopi*floor(xpt_brackets(1,2)/twopi)
+
+         IF(eta2<eta1)THEN
+            eta2=eta2+twopi
+         ENDIF
+         xpt_brackets(1,1)=eta1
+         xpt_brackets(1,2)=eta2
+
+         eta2=eta2-twopi
+c-----------------------------------------------------------------------
+c     calling numerical integration between field lines
+c-----------------------------------------------------------------------
+         CALL direct_fl_int(psifac,eta2,eta2+twopi,y_out1,bf,len_y1_out)
+c-----------------------------------------------------------------------
+c     interpolating the numerical integral around an eta=0.0 point.
+c     I assume eta=0.0 won't be within the xpt_brackets since most 
+c     tokamaks wont have an xpoint in line with the magnetic axis
+c-----------------------------------------------------------------------
+         DO i=0,len_y1_out,+1
+            IF(y_out1(i,0)>zero)THEN
+               eta0i=i
+               EXIT
+            ENDIF
+         ENDDO
+
+         i=MAX(eta0i-5,0)
+         j=MIN(eta0i+5,len_y1_out)
+
+         CALL spline_alloc(yi,j-i,4)
+
+         DO k=i,j,+1
+            yi%xs(k-i)=y_out1(k,0)
+            yi%fs(k-i,1)=y_out1(k,1)
+            yi%fs(k-i,2)=y_out1(k,2)
+            yi%fs(k-i,3)=y_out1(k,3)
+            yi%fs(k-i,4)=y_out1(k,4)
+
+         ENDDO
+
+         CALL spline_fit(yi,"extrap")
+         CALL spline_eval(yi,zero,0)
+         y01=yi%f(1)
+         y02=yi%f(2)
+         y03=yi%f(3)
+         y04=yi%f(4)
+         CALL spline_dealloc(yi)
+c-----------------------------------------------------------------------
+c     adding consecutive integral sections. spline length of tot_steps
+c     +1 is used to make space for the interpolated point at eta=0.0
+c-----------------------------------------------------------------------
+         IF(istep /= len_y1_out)CALL program_stop("minor err. direct.f")
+         istep=len_y1_out
+
+         tot_steps=istep
+
+         CALL spline_alloc(yi,tot_steps+1,4)
+c-----------------------------------------------------------------------
+c     filling out points up to eta = 0.0
+c-----------------------------------------------------------------------
+         yi%xs(0:(eta0i-1))=y_out1(0:(eta0i-1),0)
+         yi%fs(0:(eta0i-1),1)=y_out1(0:(eta0i-1),1)
+         yi%fs(0:(eta0i-1),2)=y_out1(0:(eta0i-1),2)
+         yi%fs(0:(eta0i-1),3)=y_out1(0:(eta0i-1),3)
+         yi%fs(0:(eta0i-1),4)=y_out1(0:(eta0i-1),4)
+c-----------------------------------------------------------------------
+c     putting in interpolated point at eta = 0.0
+c-----------------------------------------------------------------------
+         yi%xs(eta0i)=zero
+         yi%fs(eta0i,1)=y01
+         yi%fs(eta0i,2)=y02
+         yi%fs(eta0i,3)=y03
+         yi%fs(eta0i,4)=y04 
+c-----------------------------------------------------------------------
+c     putting in the rest of the numerically integrated points
+c-----------------------------------------------------------------------
+         yi%xs((eta0i+1):istep+1)=y_out1(eta0i:istep,0)
+         yi%fs((eta0i+1):istep+1,1)=y_out1(eta0i:istep,1)
+         yi%fs((eta0i+1):istep+1,2)=y_out1(eta0i:istep,2)
+         yi%fs((eta0i+1):istep+1,3)=y_out1(eta0i:istep,3)
+         yi%fs((eta0i+1):istep+1,4)=y_out1(eta0i:istep,4)
+c-----------------------------------------------------------------------
+c     wrapping around to start yi at eta = 0.0
+c-----------------------------------------------------------------------
+         istep=tot_steps+1
+
+         DO i=0,istep,+1
+            j=eta0i+i
+
+            IF(j>istep)THEN
+               j=j-istep-1
+               y_out(i,1)=yi%fs(j,1)+yi%fs(istep,1)
+               y_out(i,3)=yi%fs(j,3)+yi%fs(istep,3)
+               y_out(i,4)=yi%fs(j,4)+yi%fs(istep,4)
+            ELSE
+               y_out(i,1)=yi%fs(j,1)
+               y_out(i,3)=yi%fs(j,3)
+               y_out(i,4)=yi%fs(j,4)
+            ENDIF
+            y_out(i,2)=yi%fs(j,2)
+
+            IF(yi%xs(j)<0.0)THEN
+               y_out(i,0)=yi%xs(j)+twopi
+            ELSE
+               y_out(i,0)=yi%xs(j)
+            ENDIF
+         ENDDO
+
+         y_out(:,1)=y_out(:,1)-yi%fs(eta0i,1)
+         y_out(:,3)=y_out(:,3)-yi%fs(eta0i,3)
+         y_out(:,4)=y_out(:,4)-yi%fs(eta0i,4)
+c-----------------------------------------------------------------------
+c     building ff
+c-----------------------------------------------------------------------
+         CALL spline_alloc(ff,istep,4)
+         ff%xs(0:istep)=y_out(0:istep,4)/y_out(istep,4)
+         ff%fs(0:istep,1)=y_out(0:istep,2)**2
+         ff%fs(0:istep,2)=y_out(0:istep,0)/twopi-ff%xs(0:istep)
+         ff%fs(0:istep,3)=bf%f*
+     $        (y_out(0:istep,3)-ff%xs(0:istep)*y_out(istep,3))
+         ff%fs(0:istep,4)=y_out(0:istep,1)/y_out(istep,1)
+     $                                                            -ff%xs
+c-----------------------------------------------------------------------
+c     deallocating spline, printing important information for 
+c     direct_spline_comparison
+c-----------------------------------------------------------------------
+         CALL spline_dealloc(yi)
+         !IF(debug_in)PRINT "(A)", "ff x-pt start point:"
+         !IF(debug_in)PRINT "(i6)", (istep+1-eta0i)
+         xpt_starts(1)=(istep+1-eta0i)
       ELSE
 c-----------------------------------------------------------------------
 c     2 x-points: making sure all brackets are in [0,2pi)
@@ -2681,6 +2930,7 @@ c-----------------------------------------------------------------------
                bt2=bf%f/outmat(2,1,1)
                PRINT "(A,es10.3)","   max Bp/Bt (1st x-point) =",
      $                                  MAX(bp1/bt1,bp2/bt2)
+               maxBpBt=MAX(bp1/bt1,bp2/bt2)
             ENDIF
 c-----------------------------------------------------------------------
 c     second x-point divergent analytic integrals:
@@ -2702,6 +2952,9 @@ c-----------------------------------------------------------------------
                bt2=bf%f/outmat(2,1,1)
                PRINT "(A,es10.3)","   max Bp/Bt (2nd x-point) =",
      $                                  MAX(bp1/bt1,bp2/bt2)
+               IF(MAX(bp1/bt1,bp2/bt2)>maxBpBt)THEN
+                  maxBpBt=MAX(bp1/bt1,bp2/bt2)
+               ENDIF
             ENDIF
          ENDDO
 c-----------------------------------------------------------------------
@@ -2928,10 +3181,12 @@ c-----------------------------------------------------------------------
 
          y_out(0,0)=zero
 
-         IF(debug_in)PRINT "(A)", "ff 1st x-pt start point:"
-         IF(debug_in)PRINT "(i6)", (tot_steps+1-eta0i)
-         IF(debug_in)PRINT "(A)", "ff 2nd x-pt start point:"
-         IF(debug_in)PRINT "(i6)", (tot_steps+1-eta0i+nstep2+ist1+1)
+         !IF(debug_in)PRINT "(A)", "ff 1st x-pt start point:"
+         !IF(debug_in)PRINT "(i6)", (tot_steps+1-eta0i)
+         !IF(debug_in)PRINT "(A)", "ff 2nd x-pt start point:"
+         !IF(debug_in)PRINT "(i6)", (tot_steps+1-eta0i+nstep2+ist1+1)
+         xpt_starts(1)=(tot_steps+1-eta0i)
+         xpt_starts(2)=(tot_steps+1-eta0i+nstep2+ist1+1)
 
          CALL spline_dealloc(ffi)
          CALL spline_dealloc(yi)
@@ -2949,44 +3204,78 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE direct_spline_comparison(ff,ffa,y_out,y_outa)
+      SUBROUTINE direct_spline_comparison(ffnum,ffa,y_outnum,len_y_out,
+     $    bf,y_outa,ipsi,ipri,psifac,maxBpBt,xpt_starts,dq_deps_in)
          
-      TYPE(spline_type), INTENT(IN) :: ff,ffa
+      TYPE(spline_type), INTENT(IN) :: ffnum,ffa
       REAL(r8), INTENT(IN), DIMENSION(0:(2*nstepd+2*nstep2+1),0:4):: 
-     $ y_out,y_outa
-      REAL(r8) :: r,z
+     $ y_outnum,y_outa
+      REAL(r8), INTENT(IN) :: psifac,dq_deps_in,maxBpBt
+      INTEGER, INTENT(IN) :: ipsi,ipri,len_y_out
+      TYPE(direct_bfield_type), INTENT(IN) :: bf
+      INTEGER, DIMENSION(2), INTENT(IN) :: xpt_starts
+
+      CHARACTER(1024) :: filename
+      REAL(r8), DIMENSION(1:len_y_out) :: dqdeta
+      REAL(r8) :: maxdqdeps
       INTEGER :: i,len_ff,len_ffa
 c-----------------------------------------------------------------------
 c     checking lengths.
 c-----------------------------------------------------------------------
-      len_ff=SIZE(ff%xs,1)
+      len_ff=SIZE(ffnum%xs,1)
       len_ffa=SIZE(ffa%xs,1)
 
-      !IF(len_ff/=SIZE(y_out,1))CALL program_stop("blerg1")
+      !IF(len_ff/=SIZE(y_outnum,1))CALL program_stop("blerg1")
       !IF(len_ffa/=SIZE(y_outa,1))CALL program_stop("blerg2")
 
-      PRINT "(A)", "Length ff:"
-      PRINT "(i6)", len_ff
-      PRINT "(A)", "Length ffa:"
-      PRINT "(i6)", len_ffa
+      !PRINT "(A)", "Length ffnum:"
+      !PRINT "(i6)", len_ff
+      !PRINT "(A)", "Length ffa:"
+      !PRINT "(i6)", len_ffa
+c-----------------------------------------------------------------------
+c     generate maxdqdeta from numerical y_outnum.
+c-----------------------------------------------------------------------
+      DO i=0,(len_y_out-1),+1
+         dqdeta(i+1) = (bf%f)*(y_outnum(i+1,3)-y_outnum(i,3))
+     $                 /(y_outnum(i+1,0)-y_outnum(i,0))!
+      ENDDO
+      maxdqdeps=MAXVAL(dqdeta)
+c-----------------------------------------------------------------------
+c     printing data
+c-----------------------------------------------------------------------
+415   FORMAT(f16.12,",",f16.12,",",f40.12,",",I9.9,",",I9.9,",",I9.9,
+     $  ",",f40.12)
+      filename=""
+      WRITE (filename, "(A17,I5.5,A1,I5.5,A4)") "xpt_tests/spldata",
+     $ ipsi,"_",ipri,".csv" 
+      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
+      WRITE(out_xpt_unit,415)psifac,maxBpBt,maxdqdeps,nstep2,
+     $ xpt_starts(1),xpt_starts(2),dq_deps_in
+      CALL ascii_close(out_xpt_unit)
 c-----------------------------------------------------------------------
 c     printing the splines
 c-----------------------------------------------------------------------
 412   FORMAT(f16.12,",",f16.12,",",f16.12,",",f16.12,",",f16.12)
 
-      CALL ascii_open(out_xpt_unit,"ff_test_new.csv","UNKNOWN")
-      !PRINT "(A)", "ff"
+      filename=""
+      WRITE (filename, "(A16,I5.5,A1,I5.5,A4)") "xpt_tests/ff_num",
+     $ ipsi,"_",ipri,".csv" 
+      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
+
       DO i=0,(len_ff-1),+1
-         IF(.TRUE.)WRITE(out_xpt_unit,412)ff%xs(i),
-     $                ff%fs(i,1),
-     $                ff%fs(i,2),
-     $                ff%fs(i,3),
-     $                ff%fs(i,4)
+         IF(.TRUE.)WRITE(out_xpt_unit,412)ffnum%xs(i),
+     $                ffnum%fs(i,1),
+     $                ffnum%fs(i,2),
+     $                ffnum%fs(i,3),
+     $                ffnum%fs(i,4)
       ENDDO
       CALL ascii_close(out_xpt_unit)
 
-      CALL ascii_open(out_xpt_unit,"ffa_test_new.csv","UNKNOWN")
-      !PRINT "(A)", "ffa"
+      filename=""
+      WRITE (filename, "(A14,I5.5,A1,I5.5,A4)") "xpt_tests/ff_a",
+     $ ipsi,"_",ipri,".csv" 
+      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
+
       DO i=0,(len_ffa-1),+1
          IF(.TRUE.)WRITE(out_xpt_unit,412)ffa%xs(i),
      $                ffa%fs(i,1),
@@ -2996,20 +3285,26 @@ c-----------------------------------------------------------------------
       ENDDO
       CALL ascii_close(out_xpt_unit)
 
-      CALL ascii_open(out_xpt_unit,"y_out.csv","UNKNOWN")
-      !PRINT "(A)", "y_out"
+      filename=""
+      WRITE (filename, "(A18,I5.5,A1,I5.5,A4)") "xpt_tests/y_outnum",
+     $ ipsi,"_",ipri,".csv" 
+      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
+
       DO i=0,(len_ff-1),+1
          IF(.TRUE.)WRITE(out_xpt_unit,412)
-     $                y_out(i,0),
-     $                y_out(i,1),
-     $                y_out(i,2),
-     $                y_out(i,3),
-     $                y_out(i,4)
+     $                y_outnum(i,0),
+     $                y_outnum(i,1),
+     $                y_outnum(i,2),
+     $                y_outnum(i,3),
+     $                y_outnum(i,4)
       ENDDO
       CALL ascii_close(out_xpt_unit)
 
-      CALL ascii_open(out_xpt_unit,"y_outa.csv","UNKNOWN")
-      !PRINT "(A)", "y_outa"
+      filename=""
+      WRITE (filename, "(A16,I5.5,A1,I5.5,A4)") "xpt_tests/y_outa",
+     $ ipsi,"_",ipri,".csv" 
+      CALL ascii_open(out_xpt_unit,TRIM(filename),"UNKNOWN")
+
       DO i=0,(len_ffa-1),+1
          IF(.TRUE.)WRITE(out_xpt_unit,412)
      $                y_outa(i,0),
