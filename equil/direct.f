@@ -226,9 +226,6 @@ c-----------------------------------------------------------------------
 c     checks whether q-integral is diverging.  
 c-----------------------------------------------------------------------
             IF(sq%xs(ipsi)>xcheck .AND. run_xpt)THEN
-               IF(.NOT.plot_convergence)THEN
-                  pl=-1
-               ENDIF
                DO ipri=0,pl,+1
                   IF(plot_convergence)THEN
                      IF(ipri>0)THEN
