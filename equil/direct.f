@@ -632,8 +632,11 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE direct_fl_int(psifac,eta1,eta2,y_out,bf,len_y_out)
+      !$    min_BpOnBt,max_dy1,eval_BpOnBt,eval_dy1,probe_xpt)
 
-      REAL(r8), INTENT(IN) :: psifac,eta1,eta2
+      REAL(r8), INTENT(IN) :: psifac,eta1,eta2!,min_BpOnBt,max_dy1
+      !REAL(r8), INTENT(OUT) :: eval_BpOnBt,eval_dy1
+      !LOGICAL, INTENT(IN) :: probe_xpt
       INTEGER, INTENT(OUT) :: len_y_out
       REAL(r8), DIMENSION(0:,0:), INTENT(OUT) :: y_out
       TYPE(direct_bfield_type), INTENT(OUT) :: bf
@@ -644,9 +647,10 @@ c-----------------------------------------------------------------------
       INTEGER :: iopt,istate,itask,itol,jac,mf
       INTEGER, DIMENSION(liw) :: iwork
       REAL(r8), PARAMETER :: eps=1e-12
-      REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0
+      REAL(r8) :: atol,rtol,rfac,deta,r,z,eta,err,psi0,bp,bt,rx,zx,dy1
       REAL(r8), DIMENSION(neq) :: y
       REAL(r8), DIMENSION(lrw) :: rwork
+      LOGICAL :: new_xpt
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -705,6 +709,13 @@ c-----------------------------------------------------------------------
          y_out(istep,:)=(/eta,y/)
          err=(bf%psi-psi0)/bf%psi
 c-----------------------------------------------------------------------
+c     compute ratio of Bp to Bt, as well as divergent integrand related
+c     to q (dy1)
+c-----------------------------------------------------------------------
+         !bp=SQRT(bf%br**2+bf%bz**2)
+         !bt=bf%f/r
+         !dy1=rfac/(bf%bz*COS(eta)-bf%br*SIN(eta))
+c-----------------------------------------------------------------------
 c     compute and print output for each step.
 c-----------------------------------------------------------------------
          IF(out_fl)WRITE(out_2d_unit,30)
@@ -717,6 +728,7 @@ c     stopping conditions.
 c-----------------------------------------------------------------------
          IF(eta >= eta2 .OR. istep >= nstepd  .OR.  istate < 0
      $        .OR. ABS(err) >= 1)EXIT
+      !$      .OR. ((bp/bt)<min_BpOnBt .AND. ABS(dy1)>max_dy1))EXIT
 c-----------------------------------------------------------------------
 c     advance differential equations.
 c-----------------------------------------------------------------------
@@ -729,7 +741,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     abort if istep > nstepd.
 c-----------------------------------------------------------------------
-      IF(eta < eta2)THEN
+      IF(.FALSE.)THEN!(bp/bt)<=min_BpOnBt .AND. ABS(dy1)>max_dy1)THEN
+         !IF(probe_xpt)THEN
+         !   rx=r
+         !   zx=z
+         !   CALL direct_xpoint(rx,zx,num_xpts+1,new_xpt)
+         !   IF(new_xpt)THEN
+         !      num_xpts=num_xpts+1
+         !   ENDIF
+         !ENDIF
+         !eval_dy1=ABS(dy1)
+         !eval_BpOnBt=(bp/bt)
+      ELSEIF(eta < eta2)THEN
          WRITE(message,61)istep,nstepd
          WRITE(message2,11)eta,eta1,eta2
          PRINT "(A)", message
@@ -743,6 +766,8 @@ c-----------------------------------------------------------------------
          IF(verbose)PRINT "(A)", message
       ENDIF
       len_y_out = istep
+      !eval_dy1=-1.0
+      !eval_BpOnBt=-1.0
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
