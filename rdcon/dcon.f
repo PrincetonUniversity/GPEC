@@ -1,6 +1,8 @@
 c-----------------------------------------------------------------------
 c     file dcon.f.
 c     performs ideal MHD stability analysis.
+c     TEMP: Need to write a solution based off changes made following
+c     commit d8d2518. Issue: Segfault in RDCON, different euler.bin.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
