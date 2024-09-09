@@ -10,6 +10,7 @@
     deflate=f
     nroot=5
     itermax=5000
+    relax_fac=0.5
     msing=20
     initguess = ( 0,10)
     eta=8e-8                    ! Resistivity at each rational surface, starting from the core
@@ -19,14 +20,12 @@
 
     scan_nstep = 50
 
-
     model="deltac"
     qscan_ising=2
     deltar_flag=t
     deltac_flag=t
     deltaj_flag=t
     qscan_out=f
-
 
     match_sol%flag=t
     match_sol%uniform=t
@@ -87,7 +86,7 @@
 /
 &MSING_LIST
     msing_diagnose=f
-    vmat_filename="../dcon/vmat.bin"
+    vmat_filename="vmat.bin"
     sing_frac=0.2
     sing_nout=100
     us_flag=t
