@@ -240,7 +240,7 @@ c-----------------------------------------------------------------------
          ENDDO
          OPEN(UNIT=out_unit,FILE="slayer_input_bal_n"//
      $      TRIM(sn)//".out",STATUS="UNKNOWN")
-         WRITE(out_unit,'(1x,(2a17))'),"Q_sol","br_th"   
+         WRITE(out_unit,'(1x,(2a17))') "Q_sol","br_th"
          
          DO k=0,inn-1
             WRITE(out_unit,'(1x,2(es17.8e3))')
@@ -285,7 +285,7 @@ c-----------------------------------------------------------------------
          IF(ascii_flag)THEN
             OPEN(UNIT=out_unit,FILE="slayer_bal_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,5(a17))'),"inQ","RE(delta)",
+            WRITE(out_unit,'(1x,5(a17))') "inQ","RE(delta)",
      $           "IM(delta)","jxb","bal"
 
             DO i=0,inum
@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_stability_n"//
      $         TRIM(sn)//".out", STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,4(a17))'),"RE(Q)",
+            WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
             DO i=0,inum
                DO j=0,200
@@ -361,7 +361,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_riccatiscan_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,5(a17))'),"x","yphs","yamp",
+            WRITE(out_unit,'(1x,5(a17))') "x","yphs","yamp",
      $           "RE(delta)","IM(delta)"
             DO j=0,jnum
                DO k=0,knum
@@ -403,7 +403,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_QPescan_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,6(a17))'),"Q","Pe","RE(delta)",
+            WRITE(out_unit,'(1x,6(a17))') "Q","Pe","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
                DO k=0,knum
@@ -458,7 +458,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_QPscan"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,6(a17))'),"Q","Pr","RE(delta)",
+            WRITE(out_unit,'(1x,6(a17))') "Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
                DO k=0,knum
@@ -507,7 +507,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_Qscan_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,6(a17))'),"Q","Pr","RE(delta)",
+            WRITE(out_unit,'(1x,6(a17))') "Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
                WRITE(out_unit,'(1x,6(es17.8e3))')
@@ -549,7 +549,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_QPscan_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,6(a17))'),"Q","Pr","RE(delta)",
+            WRITE(out_unit,'(1x,6(a17))') "Q","Pr","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
                DO k=0,knum
@@ -602,7 +602,7 @@ c-----------------------------------------------------------------------
 
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="QDscan.out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,6(a17))'),"Q","D","RE(delta)",
+            WRITE(out_unit,'(1x,6(a17))') "Q","D","RE(delta)",
      $           "IM(delta)","psi","jxb"
             DO j=0,jnum
                DO k=0,knum
@@ -689,7 +689,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_onscan_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,6(a17))'),"Omega","Density",
+            WRITE(out_unit,'(1x,6(a17))') "Omega","Density",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
                DO k=0,knum
@@ -775,7 +775,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_otscan_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,6(a17))'),"Omega","Temperature",
+            WRITE(out_unit,'(1x,6(a17))') "Omega","Temperature",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
                DO k=0,knum
@@ -860,7 +860,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_ntscan_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,6(a17))'),"Temperature","Density",
+            WRITE(out_unit,'(1x,6(a17))') "Temperature","Density",
      $           "Omega_i","Omega_e","Omega_sol","Field_Threshold"
             DO j=0,jnum
                DO k=0,knum
@@ -947,7 +947,7 @@ c-----------------------------------------------------------------------
          IF (ascii_flag) THEN
             OPEN(UNIT=out_unit,FILE="slayer_nbtscan_n"//
      $         TRIM(sn)//".out",STATUS="UNKNOWN")
-            WRITE(out_unit,'(1x,4(a17))'),"Bt","Density",
+            WRITE(out_unit,'(1x,4(a17))') "Bt","Density",
      $           "Omega_sol","Field_Threshold"
             DO j=0,jnum
                DO k=0,knum

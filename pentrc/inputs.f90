@@ -222,7 +222,7 @@ module inputs
         ! extrapolate to regular spline (helps smooth core??)
         call spline_alloc(kin,nkin,9)
         kin%title(0:) = (/"psi_n ","n_i   ","n_e   ","t_i   ","t_e   ","omegae",&
-                    "loglam", "nu_i  ","nu_e  ", "zeff"/)
+                    "loglam", "nu_i  ","nu_e  ", "zeff  "/)
         do i=0,kin%mx
               psi = (1.0*i)/kin%mx
               call spline_eval(tmp,psi,0)

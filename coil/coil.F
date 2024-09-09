@@ -215,18 +215,18 @@ c-----------------------------------------------------------------------
 
             ! inform user of any coil modifications
             IF(ABS(coil_shiftx(ci, cj)) + ABS(coil_shifty(ci, cj))
-     $         +ABS(coil_shiftz(ci, cj)) > 0) WRITE(*,'(1x,a,i2)'),
+     $         +ABS(coil_shiftz(ci, cj)) > 0) WRITE(*,'(1x,a,i2)')
      $         " > Shifting "//TRIM(coil_name(ci))//" coil ",cj
             IF(ABS(coil_tiltx(ci, cj)) + ABS(coil_tilty(ci, cj))
      $         +ABS(coil_tiltz(ci, cj)) > 0) THEN
                  IF(cnpert /= 0)THEN
-                    WRITE(*,'(1x,a,i2)'),
+                    WRITE(*,'(1x,a,i2)')
      $         " > Tilting "//TRIM(coil_name(ci))//" coil",cj
                  ELSE
                     coil_tiltx = 0
                     coil_tilty = 0
                     coil_tiltz = 0
-                    WRITE(*,'(1x,a)'), " >>> Ignoring tilt requests, "//
+                    WRITE(*,'(1x,a)') " >>> Ignoring tilt requests, "//
      $         "which have no n=0 component"
                  ENDIF
             ENDIF

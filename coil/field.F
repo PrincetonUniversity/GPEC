@@ -118,7 +118,7 @@ c-----------------------------------------------------------------------
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
 
-      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)'),"  > Mapping "//
+      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)') "  > Mapping "//
      $      TRIM(coil(i)%coil_name)//" coil's ",
      $      coil(i)%ncoil*coil(i)%s*nseg,
      $      " filaments to a ",cmtheta,"x",cmzeta," plasma grid"
@@ -141,7 +141,7 @@ c-----------------------------------------------------------------------
 #ifdef _OPENMP
                   IF(j==1 .AND. k==1 .AND. iseg==1)THEN
                     num_threads = OMP_GET_NUM_THREADS()
-                    IF(verbose) WRITE(*,'(1x,a,i4,a)'),"  >> "//
+                    IF(verbose) WRITE(*,'(1x,a,i4,a)') "  >> "//
      $                "Running with ",num_threads," OMP threads"
                   ENDIF
 #endif

@@ -1829,6 +1829,8 @@ c-----------------------------------------------------------------------
          CALL check( nf90_inq_dimid(fncid,"i",i_id) )
          CALL check( nf90_inq_dimid(fncid,"psi_n_rational",q_id) )
          CALL check( nf90_redef(fncid))
+         CALL check( nf90_put_att(fncfile, nf90_global,
+     $     "Pr", slayer_inpr) )
          CALL check( nf90_def_var(fncid, "Phi_res", nf90_double,
      $      (/q_id,i_id/), p_id) )
          CALL check( nf90_put_att(fncid, p_id, "units", "T") )

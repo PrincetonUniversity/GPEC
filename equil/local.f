@@ -82,16 +82,16 @@ c-----------------------------------------------------------------------
          ELSE
             ! write the time to terminal and file
             IF(hrs>0)THEN
-               WRITE(*,'(1x,a,i3,a,i2,a,i2,a)'),"Total cpu time = ",
+               WRITE(*,'(1x,a,i3,a,i2,a,i2,a)') "Total cpu time = ",
      $            hrs," hours, ",mins," minutes, ",secs," seconds"
             ELSEIF(mins>0)THEN
-               WRITE(*,'(1x,a,i2,a,i2,a)'),"Total cpu time = ",
+               WRITE(*,'(1x,a,i2,a,i2,a)') "Total cpu time = ",
      $            mins," minutes, ",secs," seconds"
             ELSEIF(secs>0)THEN
-               WRITE(*,'(1x,a,i2,a)'),"Total cpu time = ",secs,
+               WRITE(*,'(1x,a,i2,a)') "Total cpu time = ",secs,
      $            " seconds"
             ENDIF
-            WRITE(unit,10)"Total cpu time = ",seconds," seconds"
+            WRITE(unit,10) "Total cpu time = ",seconds," seconds"
          ENDIF
          ! report wall time
          CALL SYSTEM_CLOCK(wall_seconds, count_rate, count_max)
@@ -104,16 +104,16 @@ c-----------------------------------------------------------------------
             op_wallseconds = seconds
          ELSE
             IF(hrs>0)THEN
-               WRITE(*,'(1x,a,i3,a,i2,a,i2,a)'),"Total wall time = ",
+               WRITE(*,'(1x,a,i3,a,i2,a,i2,a)') "Total wall time = ",
      $            hrs," hours, ",mins," minutes, ",secs," seconds"
             ELSEIF(mins>0)THEN
-               WRITE(*,'(1x,a,i2,a,i2,a)'),"Total wall time = ",
+               WRITE(*,'(1x,a,i2,a,i2,a)') "Total wall time = ",
      $            mins," minutes, ",secs," seconds"
             ELSEIF(secs>0)THEN
-               WRITE(*,'(1x,a,i2,a)'),"Total wall time = ",secs,
+               WRITE(*,'(1x,a,i2,a)') "Total wall time = ",secs,
      $            " seconds"
             ENDIF
-            WRITE(unit,10)"Total wall time = ",seconds," seconds"
+            WRITE(unit,10) "Total wall time = ",seconds," seconds"
          ENDIF
       ENDIF
 c-----------------------------------------------------------------------

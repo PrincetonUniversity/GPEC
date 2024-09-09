@@ -1414,7 +1414,7 @@ module torque
 #ifdef _OPENMP
             IF(first .and. omp_get_thread_num() == 0)then
                lthreads = omp_get_num_threads()
-               WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",lthreads," OMP threads"
+               WRITE(*,'(1x,a,i3,a)') "Running in parallel with ",lthreads," OMP threads"
             ENDIF
 #endif
 

@@ -199,6 +199,36 @@
 #     $ make OMPFLAG='' FFLAGS='' 2>&1 | tee make.log
 #   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
 #
+# On NERSC Permutter
+#   GPEC is installed at /global/common/software/m3739/perlmutter/
+#   Load the linux modules
+#     $ module use /global/common/software/m3739/perlmutter/modules
+#     $ module load gpec
+#   Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = gfortran
+#      using math libraries -llapack -lblas
+#      from /usr/lib64
+#      including /usr/lib64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /opt/cray/pe/netcdf/4.9.0.9/gnu/12.3/lib /opt/cray/pe/netcdf/4.9.0.9/gnu/12.3/lib
+#      including /opt/cray/pe/netcdf/4.9.0.9/gnu/12.3/include
+#      and compiler libraries
+#      from .
+#      including .
+#      and using OMPFLAG -fopenmp
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
+#
+#
 # On mac OSX
 #   If one has installed the free gfortran compiler and built netcdf and lapack,
 #   a typical set of paths looks like the following.

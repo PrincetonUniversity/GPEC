@@ -1052,7 +1052,7 @@ c!!!!!!...from dcon_interface.f90
 #ifdef _OPENMP
                IF(ipsi==0 .AND. l==-nl)THEN
                   num_threads = OMP_GET_NUM_THREADS()
-                  WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
+                  WRITE(*,'(1x,a,i3,a)') "Running in parallel with ",
      $                 num_threads," OMP threads"
                ENDIF
 #endif
