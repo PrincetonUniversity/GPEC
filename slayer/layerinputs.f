@@ -9,43 +9,23 @@
       USE netcdf
       USE equil_mod, ONLY: equil_read,rzphi,twopi,ro,zo,sq
       USE bicube_mod, ONLY: bicube_eval_external,bicube_type
-      USE slayer_netcdf_mod, ONLY: slayer_netcdf_inputs
+      USE slayer_netcdf_mod!, ONLY: slayer_netcdf_inputs
 
       IMPLICIT NONE
 
       CONTAINS
 c-----------------------------------------------------------------------
-c     subprogram 1. check.
-c     Check status of netcdf file.
-c-----------------------------------------------------------------------
-      SUBROUTINE check(stat)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT (IN) :: stat
-c-----------------------------------------------------------------------
-c     stop if it is an error.
-c-----------------------------------------------------------------------
-      IF(stat /= nf90_noerr) THEN
-         PRINT *, TRIM(nf90_strerror(stat))
-         !STOP "ERROR: failed to write/read netcdf file"
-      ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE check
-c-----------------------------------------------------------------------
-c     subprogram 2. read_stride_netcdf_diagonal.
+c     subprogram 1. read_stride_netcdf_diagonal.
 c     Read STRIDE netcdf file for SLAYER inputs only.
 c-----------------------------------------------------------------------
-      SUBROUTINE read_stride_netcdf_diagonal(ncfile, msing,
-     $   dp_diagonal, q_rational, psi_n_rational, shear,
+      SUBROUTINE read_stride_netcdf_diagonal(ncfile,msing,
+     $   Re_dp_diagonal,Im_dp_diagonal,q_rational,psi_n_rational,shear,
      $   r_o,my_bt0,my_psio,mpsi,nn,resm)
 
         ! Input/Output Arguments
       CHARACTER(512), INTENT(IN) :: ncfile
-      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: dp_diagonal
+      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
+     $                      Re_dp_diagonal,Im_dp_diagonal
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: q_rational,
      $  psi_n_rational, shear
       REAL(r8), DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: r_o,my_bt0,
@@ -78,18 +58,16 @@ c-----------------------------------------------------------------------
 
       msing=INT(msing_arr(1))
 
-        ! Allocate Arrays (based on dimension)
-      ALLOCATE(dp_diagonal(msing),q_rational(msing),
+      ! Allocate Arrays (based on dimension)
+      ALLOCATE(Re_dp_diagonal(msing),q_rational(msing),
      $           psi_n_rational(msing),shear(msing),
-     $           resm(msing))
+     $           resm(msing),Im_dp_diagonal(msing))
       ALLOCATE(delta_prime(msing, msing,2))
 
       stat = nf90_inquire_attribute(ncid,ro_id,"ro",len = ro_len)
       CALL check(stat)
       stat = nf90_inquire_attribute(ncid,bt0_id,"bt0",len=bt0_len)
       CALL check(stat)
-
-
       stat = nf90_inquire_attribute(ncid,psio_id,"psio",len=psio_len)
       CALL check(stat)
 
@@ -108,7 +86,7 @@ c-----------------------------------------------------------------------
      $ my_psio(INT(psio_len)),
      $mpsi(INT(mpsi_len)),nn(INT(nn_len)))
 
-        ! Get Variable IDs
+      ! Get Variable IDs
       stat = nf90_inq_varid(ncid, "Delta_prime", dp_id)
       CALL check(stat)
       stat = nf90_inq_varid(ncid, "q_rational", qr_id)
@@ -122,7 +100,6 @@ c-----------------------------------------------------------------------
       ! Get attributes
       stat = nf90_get_att(ncid, ro_id, "ro", r_o)
       CALL check(stat)
-
       stat = nf90_get_att(ncid, bt0_id, "bt0", my_bt0)
       CALL check(stat)
       stat = nf90_get_att(ncid, psio_id, "psio", my_psio)
@@ -132,7 +109,7 @@ c-----------------------------------------------------------------------
       stat = nf90_get_att(ncid, nn_id, "n", nn)
       CALL check(stat)
 
-        ! Read the diagonal of delta_prime. The results will be put on a 1D temporary array.
+      ! Read the diagonal of delta_prime. The results will be put on a 1D temporary array.
       stat = nf90_get_var(ncid, dp_id, delta_prime,start=(/ 1,1,1 /))
       CALL check(stat)
       ! Read 1D variables
@@ -147,9 +124,10 @@ c-----------------------------------------------------------------------
 
       ! Extract Diagonal, with 3rd index signifying REAL part
       DO i = 1, msing
-        dp_diagonal(i) = REAL(delta_prime(i, i, 1))
+        Re_dp_diagonal(i) = delta_prime(i, i, 1)
+        Im_dp_diagonal(i) = delta_prime(i, i, 2)
       END DO
-        ! Clean Up
+      ! Clean Up
       DEALLOCATE(delta_prime)
       stat = nf90_close(ncid)
       CALL check(stat)
@@ -157,7 +135,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE read_stride_netcdf_diagonal
 c-----------------------------------------------------------------------
 c     subprogram 2. issurfint.
-c     surface integration by simple method.
+c     surface integration by simple method. copied from EQUIL
 c-----------------------------------------------------------------------
       FUNCTION issurfint(func,fs,inpsi,wegt,ave,
      $     fsave,psave,jacs,delpsi,inr,ina,first)
@@ -246,22 +224,23 @@ c-----------------------------------------------------------------------
 c     subprogram 3. build_inputs.
 c     build input arrays for SLAYER
 c-----------------------------------------------------------------------
-      SUBROUTINE build_inputs(infile,ncfile,inpr_prof,
-     $               growthrate_flag,
-     $               qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
-     $               inQ_i_arr,inc_beta_arr,
-     $               inds_arr,intau_arr,Q0_arr,inpr_arr,inpe_arr,
-     $               omegas_arr,outer_delta_arr)
+      SUBROUTINE build_inputs(infile,ncfile,inpr_prof,growthrate_flag,
+     $               pe_flag,qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
+     $               inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,Q0_arr,
+     $               inpr_arr,inpe_arr,omegas_arr,Re_deltaprime_arr,
+     $               Im_deltaprime_arr)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      LOGICAL, INTENT(IN) :: growthrate_flag
+      ! Inputs
+      LOGICAL, INTENT(IN) :: growthrate_flag,pe_flag
+      CHARACTER(512), INTENT(IN) :: infile,ncfile
+      ! Internals
       REAL(r8), DIMENSION(8), INTENT(IN) :: inpr_prof
       LOGICAL :: firstsurf
-      REAL(r8) :: respsi,lpsi,rpsi,hdist,sbnosurf,
-     $ ising
+      REAL(r8) :: respsi,lpsi,rpsi,hdist,sbnosurf,ising
       INTEGER :: zi, zimp, mi, mimp
-      REAL(r8) :: nfac,tfac,wefac,wpfac,e!,pi,twopi
+      REAL(r8) :: nfac,tfac,wefac,wpfac,e
 
       TYPE(spline_type) :: spl
       TYPE(spline_type) :: sr
@@ -272,21 +251,20 @@ c-----------------------------------------------------------------------
      $     my_qval,my_sval,my_bt,my_rs,zeff,inpe,R_0
       REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_r,tau_h,
      $            rho,tau_v,inpr,Qconv,lbeta,qintb
-      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
-     $          inQ_arr,inQ_e_arr,psi_n_rational,
+      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: inQ_arr,
+     $          inQ_e_arr,psi_n_rational,
      $          inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,Q0_arr,
      $          inpr_arr,inpe_arr,omegas_arr,
-     $          outer_delta_arr
+     $          Re_deltaprime_arr,Im_deltaprime_arr
       INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: qval_arr
       REAL(r8), DIMENSION(0:128) :: psitor, rhotor
       REAL(r8), DIMENSION(:), ALLOCATABLE :: my_rhotor,my_psitor
 
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: dp_diagonal, q_rational,
-     $                      shear,r_o,my_bt0,my_psio,mpsi_arr,
-     $                      omegas_e_arr,omegas_i_arr
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_dp_diagonal,
+     $              q_rational,shear,r_o,my_bt0,my_psio,mpsi_arr,
+     $              omegas_e_arr,omegas_i_arr,Im_dp_diagonal
       REAL(r8), DIMENSION(:), ALLOCATABLE :: ne_arr,te_arr,ni_arr,
-     $    ti_arr,zeff_arr,bt_arr,rs_arr,
-     $    R0_arr,mu_i_arr
+     $    ti_arr,zeff_arr,bt_arr,rs_arr,R0_arr,mu_i_arr
       INTEGER,DIMENSION(:),ALLOCATABLE :: nn,resm,nns_arr
       INTEGER :: msing,i,mthsurf
       REAL(r8), DIMENSION(0:512) :: unitfun
@@ -294,17 +272,15 @@ c-----------------------------------------------------------------------
       REAL(r8) :: psave
       REAL(r8), DIMENSION(:), ALLOCATABLE :: jacs,delpsi,rsurf,asurf
       REAL(r8) :: rfac,jac,a_surf
-
-      CHARACTER(512), INTENT(IN) :: infile,ncfile
-
 c-----------------------------------------------------------------------
 c     Read in STRIDE netcdf
 c-----------------------------------------------------------------------
-      CALL read_stride_netcdf_diagonal(ncfile,
-     $           msing,dp_diagonal,q_rational,psi_n_rational,
+      CALL read_stride_netcdf_diagonal(ncfile,msing,Re_dp_diagonal,
+     $                     Im_dp_diagonal,q_rational,psi_n_rational,
      $           shear,r_o,my_bt0,my_psio,mpsi_arr,nn,resm)
       WRITE(*,*)"msing_out=",msing
-      WRITE(*,*)"dp_diagonal=",dp_diagonal
+      WRITE(*,*)"Re_dp_diagonal=",Re_dp_diagonal
+      WRITE(*,*)"Im_dp_diagonal=",Im_dp_diagonal
       WRITE(*,*)"q_rational=",q_rational
       WRITE(*,*)"psi_n_rational=",psi_n_rational
       WRITE(*,*)"shear=",shear
@@ -315,14 +291,14 @@ c-----------------------------------------------------------------------
       WRITE(*,*)"resm=",resm
 
       mpsi = INT(mpsi_arr(1))
-      mthsurf = 512
+      mthsurf = 512 ! Hardcoded, but this is a default value
 
       ALLOCATE(qval_arr(msing),inQ_arr(msing),inQ_e_arr(msing),
-     $     inQ_i_arr(msing),
-     $     inc_beta_arr(msing),inds_arr(msing),intau_arr(msing),
-     $     Q0_arr(msing),inpr_arr(msing),inpe_arr(msing),
-     $     omegas_arr(msing),omegas_e_arr(msing),omegas_i_arr(msing),
-     $     outer_delta_arr(msing))
+     $    inQ_i_arr(msing),
+     $    inc_beta_arr(msing),inds_arr(msing),intau_arr(msing),
+     $    Q0_arr(msing),inpr_arr(msing),inpe_arr(msing),
+     $    omegas_arr(msing),omegas_e_arr(msing),omegas_i_arr(msing),
+     $    Re_deltaprime_arr(msing),Im_deltaprime_arr(msing))
       ALLOCATE(ne_arr(msing),te_arr(msing),ni_arr(msing),
      $    ti_arr(msing),zeff_arr(msing),bt_arr(msing),rs_arr(msing),
      $    R0_arr(msing),mu_i_arr(msing),nns_arr(msing))
@@ -352,7 +328,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     loop across singular surfaces, evaluate spline quantities.
 c-----------------------------------------------------------------------
-
       DO ising=1,msing
 
          respsi = psi_n_rational(ising)
@@ -391,7 +366,12 @@ c-----------------------------------------------------------------------
 
          inpr = inpr_prof(ising)
 
-         inpe=0.0!0.0165*inpr                        ! Waybright added this
+         ! Check whether to include electron viscosity
+         IF (pe_flag) THEN
+            inpe=0.0165*inpr
+         ELSE
+            inpe=0.0
+         ENDIF
 
          ne_arr(ising) = n_e
          te_arr(ising) = t_e
@@ -444,7 +424,7 @@ c-----------------------------------------------------------------------
          delta_n=lu**(1.0/3.0)/my_rs         ! norm factor for delta primes
 
          qval_arr(ising) = INT(my_qval)
-         inQ_arr(ising)=Q
+         inQ_arr(ising)=REAL(Q)
          inQ_e_arr(ising)=Q_e
          inQ_i_arr(ising)=Q_i
          inc_beta_arr(ising)=c_beta
@@ -452,28 +432,48 @@ c-----------------------------------------------------------------------
          intau_arr(ising)=tau
          Q0_arr(ising)=Q
          inpr_arr(ising) = inpr
-         inpe_arr(ising) = inpe!0.0!0.0165*inpr !!! TEMPORARY?
+         inpe_arr(ising) = inpe
          omegas_arr(ising) = omega
          omegas_e_arr(ising) = omega_e
          omegas_i_arr(ising) = omega_i
-         outer_delta_arr(ising) = dp_diagonal(ising)
-
+         Re_deltaprime_arr(ising) = Re_dp_diagonal(ising)
+         Im_deltaprime_arr(ising) = Im_dp_diagonal(ising)
       ENDDO
 
+      !WRITE(*,*)"msing=",msing
+      !WRITE(*,*)"qval_arr=",qval_arr
+      !WRITE(*,*)"ne_arr=",ne_arr
+      !WRITE(*,*)"te_arr=",te_arr
+      !WRITE(*,*)"ni_arr=",ni_arr
+      !WRITE(*,*)"ti_arr=",ti_arr
       !WRITE(*,*)"zeff_arr=",zeff_arr
-
-      CALL slayer_netcdf_inputs(msing,ne_arr,te_arr,ni_arr,ti_arr,
-     $  zeff_arr,shear,bt_arr,rs_arr,R0_arr,mu_i_arr,resm,nns_arr,
-     $  qval_arr,inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,inds_arr,
-     $  intau_arr,inpr_arr,inpe_arr,omegas_arr,
-     $  outer_delta_arr)
-
+      !WRITE(*,*)"shear=",shear
+      !WRITE(*,*)"bt_arr=",bt_arr
+      !WRITE(*,*)"rs_arr=",rs_arr
+      !WRITE(*,*)"R0_arr=",R0_arr
+      !WRITE(*,*)"resm=",resm
+      !WRITE(*,*)"nns_arr=",nns_arr
+      !WRITE(*,*)"inc_beta_arr=",inc_beta_arr
+      !WRITE(*,*)"inds_arr=",inds_arr
+      !WRITE(*,*)"intau_arr=",intau_arr
+      !WRITE(*,*)"inpr_arr=",inpr_arr
+      !WRITE(*,*)"inpe_arr=",inpe_arr
+      !WRITE(*,*)"omegas_arr=",omegas_arr
+      !WRITE(*,*)"omegas_e_arr=",omegas_e_arr
+      !WRITE(*,*)"omegas_i_arr=",omegas_i_arr
+      !WRITE(*,*)"Re_deltaprime_arr=",Re_deltaprime_arr
+      !WRITE(*,*)"Im_deltaprime_arr=",Im_deltaprime_arr
+      !stop
+      CALL slayer_netcdf_inputs(msing,qval_arr,ne_arr,te_arr,ni_arr,
+     $           ti_arr,zeff_arr,shear,bt_arr,rs_arr,R0_arr,
+     $           resm,nns_arr,inc_beta_arr,inds_arr,
+     $           intau_arr,inpr_arr,inpe_arr,inQ_arr,omegas_arr,
+     $           omegas_e_arr,omegas_i_arr,
+     $           Re_deltaprime_arr,Im_deltaprime_arr)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-
       RETURN
-
 
       END SUBROUTINE build_inputs
 

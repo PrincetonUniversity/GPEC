@@ -16,6 +16,12 @@
      $     m_e=9.1094e-31,m_p=1.6726e-27,chag=1.6022e-19,
      $     kval=1.3807e-23,lnLamb=17.0
 
+      TYPE result_type
+          REAL(r8), ALLOCATABLE :: inQs(:), iinQs(:),
+     $     Re_deltas(:), Im_deltas(:)
+          INTEGER :: count
+      END TYPE result_type
+
       ! lnLamb will be updated.
 
       COMPLEX(r8), PARAMETER :: ifac=(0,1)

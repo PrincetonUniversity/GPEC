@@ -33,7 +33,8 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check,growthrates_flag,layer_stabilityscan_flag !FOR TESTING
+     $     params_check,growthrates_flag,analytic_growthrates_flag,
+     $     pe_flag,br_th_flag !FOR TESTING
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
@@ -57,22 +58,24 @@ c-----------------------------------------------------------------------
      $                       inpe_arr,omegas_arr,inQ_arr,
      $                       psi_n_rational
       REAL(r8), DIMENSION(8) :: inpr_prof
-      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: all_RE_deltas,
-     $                                     all_roots
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: all_Re_deltas,
+     $                           all_Im_deltas,all_roots
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: all_inQs
-      REAL(r8),dimension(:, :),ALLOCATABLE :: roots
+      REAL(r8), DIMENSION(:,:),ALLOCATABLE :: Re_deltas,Im_deltas
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: qval_arr
       REAL(r8), DIMENSION(:), ALLOCATABLE ::
-     $                       outer_delta_arr,
+     $                       Re_deltaprime_arr,Im_deltaprime_arr,
      $                       all_growthrates,all_growthrate_locs
       REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
      $     js,ks,psis,jxbs,Q_sols,br_ths,
      $     inQs_left,inQs_right,coarse_deltas
-      REAL(r8) :: spot, slayer_inpr, growthrate, growthrate_loc
+      REAL(r8) :: spot, slayer_inpr
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
+
+      TYPE(result_type) :: results(8) ! Assuming max 8 rational surfaces
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: growthrates,
      $                                        growthrate_err
@@ -88,7 +91,8 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     layfac,Qratio,parflow_flag,peohmonly_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     stability_flag,growthrates_flag,bal_flag
+     $     stability_flag,growthrates_flag,analytic_growthrates_flag,
+     $     pe_flag,br_th_flag,bal_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
      $     params_check
 c-----------------------------------------------------------------------
@@ -161,7 +165,9 @@ c-----------------------------------------------------------------------
       bal_flag=.FALSE.
       stability_flag=.FALSE.
       growthrates_flag=.FALSE.
-      layer_stabilityscan_flag=.FALSE.
+      analytic_growthrates_flag=.FALSE.
+      pe_flag=.FALSE.
+      br_th_flag=.FALSE.
 c-----------------------------------------------------------------------
 c     read slayer.in.
 c-----------------------------------------------------------------------
@@ -293,77 +299,221 @@ c-----------------------------------------------------------------------
          !WRITE(*,*)"infile=",infile
          !WRITE(*,*)"ncfile=",ncfile
          CALL build_inputs(infile,ncfile,inpr_prof,
-     $               growthrates_flag,qval_arr,psi_n_rational,
+     $               growthrates_flag,pe_flag,qval_arr,psi_n_rational,
      $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
      $               inds_arr,intau_arr,inQ0_arr,inpr_arr,inpe_arr,
-     $               omegas_arr,outer_delta_arr)
+     $               omegas_arr,Re_deltaprime_arr,Im_deltaprime_arr)
 
          WRITE(*,*)"Safety factor values=",qval_arr
          WRITE(*,*)"inQ values=",inQ_arr
          WRITE(*,*)"Prantdl numbers=",inpr_arr
          WRITE(*,*)"Electron viscosities=",inpe_arr
          WRITE(*,*)"Omega ExB values=",omegas_arr
-         WRITE(*,*)"outer region deltaprimes=",outer_delta_arr
-
+         WRITE(*,*)"outer region real deltaprimes=",Re_deltaprime_arr
+         WRITE(*,*)"outer region imag deltaprimes=",Im_deltaprime_arr
+         WRITE(*,*)"inQ_e_arr=",inQ_e_arr
+         WRITE(*,*)"inds_arr=",inds_arr
+         WRITE(*,*)"intau_arr=",intau_arr
          n_k = SIZE(qval_arr)
-         !ALLOCATE(all_growthrates(100,3,n_k))
 
-         all_RE_deltas(:,:,k) = REAL(deltas)
-         all_inQs(:,k) = inQs
          DO k=1,n_k
             WRITE(*,*) "Finding roots on q=", qval_arr(k),
      $       " rational surface"
-            ! Run MCMC
 
-            CALL growthrate_search(qval_arr(k),inQ_arr(k),inQ_e_arr(k),
+            CALL growthrate_scan(qval_arr(k),inQ_arr(k),inQ_e_arr(k),
      $             inQ_i_arr(k),inc_beta_arr(k),inds_arr(k),
      $             intau_arr(k),inQ0_arr(k),inpr_arr(k),inpe_arr(k),
-     $             outer_delta_arr(k),scan_radius,
-     $             coarse_deltas,inQs,iinQs,roots,
-     $             growthrate,growthrate_loc)
-      !stop
+     $             scan_radius,reQ_num,Re_deltaprime_arr(k),
+     $             results(n_k))
 
-            IF (k==1) THEN
-               ALLOCATE(all_RE_deltas(SIZE(inQs),SIZE(iinQs),n_k))
-               ALLOCATE(all_inQs(SIZE(inQs),n_k))
+          !  IF (k==1) THEN
+          !     ALLOCATE(all_RE_deltas(SIZE(inQs),SIZE(iinQs),n_k))
+          !     ALLOCATE(all_Im_deltas(SIZE(inQs),SIZE(iinQs),n_k))
+          !     ALLOCATE(all_inQs(SIZE(inQs),n_k))
                ALLOCATE(all_growthrates(n_k))
                ALLOCATE(all_growthrate_locs(n_k))
-            ENDIF
-            all_RE_deltas(:,:,k) = coarse_deltas
-            all_inQs(:,k) = inQs
-            all_roots(:,:,k) = roots
-            all_growthrates(k) = growthrate
-            all_growthrate_locs(k) = growthrate_loc
+          !  ENDIF
+          !  all_Re_deltas(:,:,k) = Re_deltas
+          !  all_Im_deltas(:,:,k) = Im_deltas
+          !  all_inQs(:,k) = inQs
+
+         !   DEALLOCATE(Re_deltas,Im_deltas)
+            all_growthrates(k) = 0.0
+            all_growthrate_locs(k) = 0.0
+         ENDDO
+      WRITE(*,*) "all_growthrates", all_growthrates
+
+        CALL slayer_netcdf_out(growthrates_flag,n_k,qval_arr,
+     $                 all_growthrates,all_growthrate_locs,
+     $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
+     $                 psi_n_rational,inpr_arr,
+     $                 Re_deltaprime_arr,Im_deltaprime_arr,
+     $                 results)
+        stop
+      ENDIF
+c-----------------------------------------------------------------------
+c     TEST ANALYTIC SCAN IN GSLAYER.F, FOR TESTING ONLY
+c-----------------------------------------------------------------------
+      IF (analytic_growthrates_flag) THEN
+         WRITE(*,*)"intau=",intau
+         WRITE(*,*)"inQ=",inQ
+         WRITE(*,*)"Prantdl numbers=",inpr
+         WRITE(*,*)"Electron viscosities=",inpe
+         WRITE(*,*)"inQ_e=",inQ_e
+         WRITE(*,*)"inds=",inds
+         WRITE(*,*)"inc_beta=",inc_beta
+
+         WRITE(*,*)"running analytic scan"
+
+         qval_arr = (/ 2 /)
+         omegas_arr = (/ 0.0 /)
+         inQ_arr = (/ inQ /)
+         inQ_e_arr = (/ inQ_e /)
+         inQ_i_arr = (/ inQ_i /)
+         psi_n_rational = (/ 0.0 /)
+         Re_deltaprime_arr = (/ 5.0 /)
+         Im_deltaprime_arr = (/ 0.00001 /)
+         inpr_arr = (/ inpr /)
+
+         CALL growthrate_scan(2,inQ,inQ_e,
+     $             inQ_i,inc_beta,inds,
+     $             intau,inQ,inpr,inpe,
+     $             scan_radius,reQ_num,Re_deltaprime_arr(k),
+     $             results(1))
+
+      !     WRITE(*,*)"SIZE(inQs)",SIZE(inQs)
+      !     WRITE(*,*)"SIZE(iinQs)",SIZE(iinQs)
+
+        !IF (k==1) THEN
+        ! ALLOCATE(all_RE_deltas(SIZE(inQs),SIZE(iinQs),1))
+        ! ALLOCATE(all_Im_deltas(SIZE(inQs),SIZE(iinQs),1))
+        ! ALLOCATE(all_inQs(SIZE(inQs),1))
+         ALLOCATE(all_growthrates(1))
+         ALLOCATE(all_growthrate_locs(1))
+         !ENDIF
+      !   all_Re_deltas(:,:,1) = Re_deltas
+      !   all_Im_deltas(:,:,1) = Im_deltas
+      !   all_inQs(:,1) = inQs
+         !all_roots(:,:,k) = roots
+
+         all_growthrates(1) = 0.0
+         all_growthrate_locs(1) = 0.0
+
+         WRITE(*,*)"allocations successful"
+
+         CALL slayer_netcdf_out(growthrates_flag,1,qval_arr,
+     $                 all_growthrates,all_growthrate_locs,
+     $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
+     $                 psi_n_rational,inpr_arr,
+     $                 Re_deltaprime_arr,Im_deltaprime_arr,
+     $                 results)
+         stop
+      ENDIF
+c-----------------------------------------------------------------------
+c     TEST ANALYTIC SCAN IN GSLAYER.F, FOR TESTING ONLY
+c-----------------------------------------------------------------------
+      IF (br_th_flag) THEN
+
+         WRITE(*,*)"running br_th scan"
+
+         CALL params(n_e,t_e,t_i,omega,
+     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+         inQ=Q
+         inQ_e=Q_e
+         inQ_i=Q_i
+         inc_beta=c_beta
+         inds=ds
+         intau=tau
+         Q0=Q
+c-----------------------------------------------------------------------
+c     calculate basic delta, torque, balance, error fields.
+c-----------------------------------------------------------------------
+         WRITE(*,*)"basic delta successful"
+         delta_n_p=1e-2
+         delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
+     $                   inpe)
+         psi0=1.0/ABS(delta+delta_n_p)     ! a.u.
+         jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
+c-----------------------------------------------------------------------
+c     find solutions based on simple torque balance.
+c-----------------------------------------------------------------------
+         IF (Q0>inQ_e) THEN
+             inQ_max=2.0*Q0
+             inQ_min=1.05*inQ_e
+         ELSE
+             inQ_max=0.95*inQ_e
+             IF (Q0>0) THEN
+                 inQ_min=0.8*inQ_i
+             ELSE
+                 inQ_min=1.5*MINVAL((/Q0,inQ_i/))
+             ENDIF
+         ENDIF
+         WRITE(*,*)"rotation scan"
+         ! Scan of rotation
+         inQ_max=10.0
+         inQ_min=-10.0
+         inum=200
+         ALLOCATE(inQs(0:inum),deltal(0:inum),jxbl(0:inum),
+     $                bal(0:inum))
+         DO i=0,inum
+            inQs(i)=inQ_min+(REAL(i)/inum)*(inQ_max-inQ_min)
+            deltal(i)=riccati(inQs(i),inQ_e,inQ_i,
+     $                   inpr,inc_beta,inds,intau,inpe)
+            jxbl(i)=-AIMAG(1.0/(deltal(i)+delta_n_p))
+            bal(i)=2.0*inpr*(Q0-inQs(i))/jxbl(i)
          ENDDO
 
+         ! Identify the threshold from the maximum of the balance parameter
+         index=MAXLOC(bal)
+         Q_sol=inQs(index(1))
+         !omega_sol=inQs(index(1))/Qconv
+         br_th=sqrt(MAXVAL(bal)/lu*(sval**2.0/2.0))
+         DEALLOCATE(inQs,deltal,jxbl,bal)
 
-         !IF (layer_stabilityscan_flag) THEN
-          !  CALL gamma_match(qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
-       !$                    inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,
-       !$                    inQ0_arr,inpr_arr,inpe_arr,omegas_arr,
-       !$                    outer_delta_arr,ReQ_num,ImQ_num,scan_radius,
-       !$                    inQs,iinQs,all_Re_deltas,all_inQs)
-        !ELSE
-        !    ALLOCATE(inQs(0:ReQ_num+1),iinQs(0:ImQ_num))
-        !    ALLOCATE(all_RE_deltas(SIZE(inQs),SIZE(iinQs),n_k))
-        !    ALLOCATE(all_inQs(SIZE(inQs),n_k))
+         WRITE(*,*)"allocating"
+         qval_arr = (/ 3 /)
+         inQs = (/ 1.0 /)
+         inQs = (/ 1.0 /)
 
-        !    all_RE_deltas = 0.0
-        !    all_inQs = 0.0
-        !    inQs = 0.0
-        !    iinQs = 0.0
-        !ENDIF
+         n_k = SIZE(qval_arr)
+         k=1
+         IF (k==1) THEN
+            ALLOCATE(all_RE_deltas(1,1,n_k))
+            ALLOCATE(all_Im_deltas(1,1,n_k))
+            ALLOCATE(all_inQs(1,n_k))
+            ALLOCATE(all_growthrates(n_k))
+            ALLOCATE(all_growthrate_locs(n_k))
+         ENDIF
+         all_Re_deltas(:,:,k) = 0.0
+         all_Im_deltas(:,:,k) = 0.0
+         all_inQs(:,k) = 0.0
 
-        CALL slayer_netcdf_out(n_k,
-     $                 SIZE(inQs),SIZE(iinQs),qval_arr,
-     $                 inQs,iinQs,all_roots,all_growthrates,
-     $                 all_growthrate_locs,omegas_arr,inQ_arr,
-     $                 inQ_e_arr,inQ_i_arr,psi_n_rational,
-     $                 all_Re_deltas,all_inQs)
+         all_growthrates(k) = br_th !!!!!!!!!!!!!!!!!!!!!!!!!
+         all_growthrate_locs(k) = 0.0
 
-        !WRITE(*,*)"xroots=",roots(:,1)
-        !WRITE(*,*)"yroots=",roots(:,2)
-        !stop
+
+         qval_arr = (/ 3 /)
+         inQs = (/ 1.0 /)
+         inQs = (/ 1.0 /)
+
+         omegas_arr = (/ 0.0 /)
+         inQ_arr = (/ inQ /)
+         inQ_e_arr = (/ inQ_e /)
+         inQ_i_arr = (/ inQ_i /)
+         psi_n_rational = (/ 0.0 /)
+         Re_deltaprime_arr = (/ 0.0 /)
+         Im_deltaprime_arr = (/ 0.0 /)
+         inpr_arr = (/ inpr /)
+
+         WRITE(*,*)"allocations successful"
+
+         CALL slayer_netcdf_out(growthrates_flag,1,qval_arr,
+     $                 all_growthrates,all_growthrate_locs,
+     $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
+     $                 psi_n_rational,inpr_arr,
+     $                 Re_deltaprime_arr,Im_deltaprime_arr,
+     $                 results)
+         stop
       ENDIF
 c-----------------------------------------------------------------------
 c     find solutions based on simple torque balance.
