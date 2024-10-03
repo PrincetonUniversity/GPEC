@@ -316,6 +316,8 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"intau_arr=",intau_arr
          n_k = SIZE(qval_arr)
 
+         ALLOCATE(all_growthrates(n_k))
+         ALLOCATE(all_growthrate_locs(n_k))
          DO k=1,n_k
             WRITE(*,*) "Finding roots on q=", qval_arr(k),
      $       " rational surface"
@@ -324,14 +326,13 @@ c-----------------------------------------------------------------------
      $             inQ_i_arr(k),inc_beta_arr(k),inds_arr(k),
      $             intau_arr(k),inQ0_arr(k),inpr_arr(k),inpe_arr(k),
      $             scan_radius,reQ_num,Re_deltaprime_arr(k),
-     $             results(n_k))
+     $             results(k))
 
           !  IF (k==1) THEN
           !     ALLOCATE(all_RE_deltas(SIZE(inQs),SIZE(iinQs),n_k))
           !     ALLOCATE(all_Im_deltas(SIZE(inQs),SIZE(iinQs),n_k))
           !     ALLOCATE(all_inQs(SIZE(inQs),n_k))
-               ALLOCATE(all_growthrates(n_k))
-               ALLOCATE(all_growthrate_locs(n_k))
+
           !  ENDIF
           !  all_Re_deltas(:,:,k) = Re_deltas
           !  all_Im_deltas(:,:,k) = Im_deltas
@@ -366,19 +367,19 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"running analytic scan"
 
          qval_arr = (/ 2 /)
-         omegas_arr = (/ 0.0 /)
+         omegas_arr = (/ 1000.0 /)
          inQ_arr = (/ inQ /)
          inQ_e_arr = (/ inQ_e /)
          inQ_i_arr = (/ inQ_i /)
          psi_n_rational = (/ 0.0 /)
-         Re_deltaprime_arr = (/ 5.0 /)
+         Re_deltaprime_arr = (/ 10.0 /)
          Im_deltaprime_arr = (/ 0.00001 /)
          inpr_arr = (/ inpr /)
 
          CALL growthrate_scan(2,inQ,inQ_e,
      $             inQ_i,inc_beta,inds,
      $             intau,inQ,inpr,inpe,
-     $             scan_radius,reQ_num,Re_deltaprime_arr(k),
+     $             scan_radius,reQ_num,Re_deltaprime_arr(1),
      $             results(1))
 
       !     WRITE(*,*)"SIZE(inQs)",SIZE(inQs)

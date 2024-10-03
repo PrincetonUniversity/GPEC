@@ -275,36 +275,36 @@ c-----------------------------------------------------------------------
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inc_beta,inds,
      $     intau,inQ0,inpr,inpe
       INTEGER, INTENT(IN) :: qval,scan_radius,coarse_grid_size
+      INTEGER :: new_scan_radius,new_coarse_grid_size
       !REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: inQs,iinQs
       COMPLEX(r8) :: delta
       REAL(r8), INTENT(IN) :: deltaprime
-      INTEGER, PARAMETER :: fine_grid_size = 5
+      INTEGER :: fine_grid_size, new_fine_grid_size
       REAL(r8), PARAMETER :: tolerance = 1.0E-6
       REAL(r8) :: delta_real, delta_imag, threshold
-      INTEGER :: i, j, k, l, count
+      INTEGER :: i, j, k, l, m, count, match_count
+      LOGICAL :: repeat
       REAL(r8) :: inQ_step, iinQ_step, inQ_fine, iinQ_fine,
-     $            inQ_coarse, iinQ_coarse
+     $            inQ_coarse, iinQ_coarse, inQ_coarse_shifted
+      REAL(r8), DIMENSION(2) :: both_coarse_inQs
       TYPE(result_type), INTENT(INOUT) :: results
+      INTEGER :: max_points, new_max_points
 
-      ! Arrays to store results
-      !REAL(r8), ALLOCATABLE :: inQ_array(:), iinQ_array(:),
-      !$                   delta_real_array(:), delta_imag_array(:)
-      INTEGER :: max_points
+      !!!!!!!!!!!!!!!!
+      repeat = .FALSE.
 
-       ! Calculate maximum possible number of points
+      fine_grid_size = 6
       max_points = coarse_grid_size**2 * (1 + (fine_grid_size-1)**2)
-
-      ! Allocate arrays
-      !ALLOCATE(inQ_array(max_points), iinQ_array(max_points))
-      !ALLOCATE(delta_real_array(max_points),
-      !$ delta_imag_array(max_points))
 
       ! Allocate arrays with maximum possible size
       ALLOCATE(results%inQs(max_points), results%iinQs(max_points))
       ALLOCATE(results%Re_deltas(max_points),
      $ results%Im_deltas(max_points))
 
-
+      results%inQs=0.0
+      results%iinQs=0.0
+      results%Re_deltas=0.0
+      results%Im_deltas=0.0
       ! Initialize counter
       count = 0
 
@@ -312,10 +312,14 @@ c-----------------------------------------------------------------------
       inQ_step = (2.0 * scan_radius) / (coarse_grid_size - 1)
       iinQ_step = (2.0 * scan_radius) / (coarse_grid_size - 1)
 
+      match_count = 0
       ! Coarse grid loop
       DO i = 1, coarse_grid_size
           DO j = 1, coarse_grid_size
               inQ_coarse = -scan_radius + (i - 1) * inQ_step
+              inQ_coarse_shifted = -scan_radius + (i - 2) * inQ_step
+              both_coarse_inQs(1) = inQ_coarse
+              both_coarse_inQs(2) = inQ_coarse_shifted
               iinQ_coarse = -scan_radius + (j - 1) * iinQ_step
 
               ! Evaluate riccati function
@@ -338,50 +342,175 @@ c-----------------------------------------------------------------------
               END IF
 
               ! Check if refinement is needed
-              IF (ABS(delta_real) > threshold) THEN
+              IF ((ABS(delta_real) > threshold)) THEN
+      !        IF ((ABS(delta_real) > threshold) .AND. (SIGN(1.0,
+      !$                   delta_real) == SIGN(1.0, deltaprime))) THEN
+
                   ! Fine grid loop
-                  DO k = 2, fine_grid_size
+                  DO m = 1, 2
+                    DO k = 2, fine_grid_size
                       DO l = 2, fine_grid_size
-                          inQ_fine = inQ_coarse + (k-1) * inQ_step /
-     $                     (fine_grid_size - 1)
-                          iinQ_fine = iinQ_coarse + (l-1) * iinQ_step /
-     $                     (fine_grid_size - 1)
+                        inQ_fine = both_coarse_inQs(m)+(k-1)*inQ_step/
+     $                   (fine_grid_size - 1)
+                        iinQ_fine = iinQ_coarse + (l-1) * iinQ_step /
+     $                   (fine_grid_size - 1)
 
-                          IF ((ABS(inQ_coarse - inQ_fine) <
-     $                     tolerance) .AND. (ABS(iinQ_coarse -
-     $                     iinQ_fine) < tolerance)) CYCLE
+                       IF ((ABS(both_coarse_inQs(m) - inQ_fine) <
+     $                   tolerance) .AND. (ABS(iinQ_coarse -
+     $                   iinQ_fine) < tolerance)) CYCLE
 
-                          ! Evaluate riccati function
-                          delta = riccati(inQ_fine,inQ_e,inQ_i,inpr,
-     $                       inc_beta,inds,intau,inpe,iinQ=iinQ_fine)
-                          delta_real = REAL(delta)
-                          delta_imag = AIMAG(delta)
+                        ! Evaluate riccati function
+                        delta = riccati(inQ_fine,inQ_e,inQ_i,inpr,
+     $                     inc_beta,inds,intau,inpe,iinQ=iinQ_fine)
+                        delta_real = REAL(delta)
+                        delta_imag = AIMAG(delta)
 
-                          ! Store fine grid point
-                          count = count + 1
-                          results%inQs(count) = inQ_fine
-                          results%iinQs(count) = iinQ_fine
-                          results%Re_deltas(count) = delta_real
-                          results%Im_deltas(count) = delta_imag
+                        IF (ABS(delta_real) > ABS(deltaprime)) THEN
+                          match_count = match_count + 1
+                        END IF
+
+                        ! Store fine grid point
+                        count = count + 1
+                        results%inQs(count) = inQ_fine
+                        results%iinQs(count) = iinQ_fine
+                        results%Re_deltas(count) = delta_real
+                        results%Im_deltas(count) = delta_imag
                       END DO
+                    END DO
                   END DO
               END IF
           END DO
       END DO
 
+      !!!!!
+
+      IF (match_count == 0) THEN
+        WRITE(*,*)"No match found, increasing scan radius"
+        repeat = .TRUE.
+        new_scan_radius = scan_radius + 2
+        new_coarse_grid_size = coarse_grid_size + 100
+        new_fine_grid_size = 8
+      ELSE IF (match_count > 0 .AND. match_count < 3) THEN
+        WRITE(*,*)"Match not definitive, increasing scan resolution"
+        repeat = .TRUE.
+        new_scan_radius = scan_radius
+        new_coarse_grid_size = coarse_grid_size
+        new_fine_grid_size = 10
+      ELSE
+        repeat = .FALSE.
+        WRITE(*,*)"Match found"
+
+      END IF
+
+      IF (repeat) THEN
+        WRITE(*,*)"Rerunning growth rate scan"
+
+        !DEALLOCATE(results%inQs(max_points), results%iinQs(max_points))
+        !DEALLOCATE(results%Re_deltas(max_points),
+      !$  results%Im_deltas(max_points))
+
+        new_max_points = new_coarse_grid_size**2 * (1 +
+     $       (new_fine_grid_size-1)**2)
+
+        ! Resize arrays to new max number of points
+        CALL grow_array(results%inQs, max_points, new_max_points)
+        CALL grow_array(results%iinQs, max_points, new_max_points)
+        CALL grow_array(results%Re_deltas, max_points, new_max_points)
+        CALL grow_array(results%Im_deltas, max_points, new_max_points)
+
+        results%inQs=0.0
+        results%iinQs=0.0
+        results%Re_deltas=0.0
+        results%Im_deltas=0.0
+        ! Initialize counter
+        count = 0
+
+        ! Calculate step sizes
+        inQ_step = (2.0 * new_scan_radius)/(new_coarse_grid_size - 1)
+        iinQ_step = (2.0 * new_scan_radius)/(new_coarse_grid_size - 1)
+
+        match_count = 0
+        ! Coarse grid loop
+        DO i = 1, new_coarse_grid_size
+            DO j = 1, new_coarse_grid_size
+                inQ_coarse = -new_scan_radius + (i - 1) * inQ_step
+                inQ_coarse_shifted = -scan_radius + (i - 2) * inQ_step
+                both_coarse_inQs(1) = inQ_coarse
+                both_coarse_inQs(2) = inQ_coarse_shifted
+                iinQ_coarse = -new_scan_radius + (j - 1) * iinQ_step
+
+              ! Evaluate riccati function
+                delta = riccati(inQ_coarse,inQ_e,inQ_i,inpr,inc_beta,
+     $                          inds,intau,inpe,iinQ=iinQ_coarse)
+                delta_real = REAL(delta)
+                delta_imag = AIMAG(delta)
+
+                ! Store coarse grid point
+                count = count + 1
+                results%inQs(count) = inQ_coarse
+                results%iinQs(count) = iinQ_coarse
+                results%Re_deltas(count) = delta_real
+                results%Im_deltas(count) = delta_imag
+
+                IF (ABS(deltaprime) > 8) THEN
+                  threshold = ABS(deltaprime)**(1./3.)
+                ELSE
+                  threshold = 0.25 * ABS(deltaprime)
+                END IF
+
+                ! Check if refinement is needed
+                IF ((ABS(delta_real) > threshold)) THEN
+                    ! Fine grid loop
+                    DO m = 1,2
+                      DO k = 2, new_fine_grid_size
+                        DO l = 2, new_fine_grid_size
+                          inQ_fine=both_coarse_inQs(m)+(k-1)*inQ_step/
+     $                     (new_fine_grid_size - 1)
+                          iinQ_fine = iinQ_coarse + (l-1) * iinQ_step/
+     $                     (new_fine_grid_size - 1)
+
+                          IF ((ABS(both_coarse_inQs(m) - inQ_fine) <
+     $                      tolerance) .AND. (ABS(iinQ_coarse -
+     $                      iinQ_fine) < tolerance)) CYCLE
+
+                            ! Evaluate riccati function
+                          delta = riccati(inQ_fine,inQ_e,inQ_i,inpr,
+     $                       inc_beta,inds,intau,inpe,iinQ=iinQ_fine)
+                          delta_real = REAL(delta)
+                          delta_imag = AIMAG(delta)
+
+                          IF (ABS(delta_real)>ABS(deltaprime)) THEN
+                              match_count = match_count + 1
+                          END IF
+
+                            ! Store fine grid point
+                          count = count + 1
+                          results%inQs(count) = inQ_fine
+                          results%iinQs(count) = iinQ_fine
+                          results%Re_deltas(count) = delta_real
+                          results%Im_deltas(count) = delta_imag
+                        END DO
+                      END DO
+                    END DO
+                END IF
+            END DO
+        END DO
+
+      END IF
+
       ! Set the actual count of points
       results%count = count
 
       ! Resize arrays to actual number of points
-      CALL resize_array(results%inQs, count)
-      CALL resize_array(results%iinQs, count)
-      CALL resize_array(results%Re_deltas, count)
-      CALL resize_array(results%Im_deltas, count)
+      CALL shrink_array(results%inQs, count)
+      CALL shrink_array(results%iinQs, count)
+      CALL shrink_array(results%Re_deltas, count)
+      CALL shrink_array(results%Im_deltas, count)
 
       RETURN
       END SUBROUTINE growthrate_scan
 
-      SUBROUTINE resize_array(arr, new_size)
+      SUBROUTINE shrink_array(arr, new_size)
           REAL(r8), ALLOCATABLE, INTENT(INOUT) :: arr(:)
           INTEGER, INTENT(IN) :: new_size
           REAL(r8), ALLOCATABLE :: temp(:)
@@ -389,6 +518,15 @@ c-----------------------------------------------------------------------
           ALLOCATE(temp(new_size))
           temp(1:new_size) = arr(1:new_size)
           CALL move_alloc(temp, arr)
-      END SUBROUTINE resize_array
+      END SUBROUTINE shrink_array
 
+      SUBROUTINE grow_array(arr, old_size, new_size)
+          REAL(r8), ALLOCATABLE, INTENT(INOUT) :: arr(:)
+          INTEGER, INTENT(IN) :: old_size,new_size
+          REAL(r8), ALLOCATABLE :: temp(:)
+
+          ALLOCATE(temp(new_size))
+          temp(1:old_size) = arr(1:old_size)
+          CALL move_alloc(temp, arr)
+      END SUBROUTINE grow_array
       END MODULE gslayer_mod
