@@ -249,10 +249,16 @@
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
 #   --------------------------------------------------------------
 #
+#   Now compile using
+#     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#
+#
 # Some common modifications of the above settings might include,
 #     $ make FFLAGS="-qopt-report -g -O0 -check all"  # for debugging
 #     $ make FFLAGS="-O3"     # for optimized version
 #     $ make FFLAGS="-xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
+# When using modern gfortran, some additional flags needed may include
+#     $ make FFLAGS="-fallow-argument-mismatch"  # to pass over old, inconsistent portions of code
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
