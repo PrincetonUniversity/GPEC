@@ -51,19 +51,18 @@ c-----------------------------------------------------------------------
 c -----------------------------------------------------------------------
 c      declarations.
 c -----------------------------------------------------------------------
-      SUBROUTINE slayer_netcdf_out(
-     $ growthrates_flag,msing,qval_arr,
-     $ all_growthrates,all_growthrate_locs,
-     $ omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
-     $ inpr_arr,Re_deltaprime_arr,Im_deltaprime_arr,
-     $ results)
-      LOGICAL, INTENT(IN) :: growthrates_flag
+      SUBROUTINE slayer_netcdf_out(growthrates_flag,
+     $ analytic_growthrates_flag,br_th_flag,msing,qval_arr,
+     $ br_th,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
+     $ inpr_arr,Re_deltaprime_arr,Im_deltaprime_arr,results)
+      LOGICAL, INTENT(IN) :: growthrates_flag,analytic_growthrates_flag,
+     $   br_th_flag
       INTEGER, INTENT(IN) :: msing
       REAL(r8), DIMENSION(:), INTENT(IN) ::
      $ omegas_arr,inQ_arr,
      $ inQ_e_arr,inQ_i_arr,psi_n_rational,inpr_arr,
-     $ all_growthrates,all_growthrate_locs,Re_deltaprime_arr,
-     $ Im_deltaprime_arr
+     $ Re_deltaprime_arr,Im_deltaprime_arr
+      REAL(r8), INTENT(IN) :: br_th
       INTEGER, DIMENSION(:), INTENT(IN) :: qval_arr
       TYPE(result_type), INTENT(IN) :: results(8)
       INTEGER :: i, ncid,r_id,ReQ_dim,ImQ_dim,qsing_dim,qsing_id,
@@ -71,7 +70,7 @@ c -----------------------------------------------------------------------
      $    ReQ_id,ImQ_id,gamma_id,omegas_id,Q_id,Q_e_id,Q_i_id,
      $    r_dim,pr_id, qr_id,shear_id,slice_id,inQs_id,
      $    gamma_err_id,gamma_loc_id,roots_dim,Re_dp_id,Im_dp_id,
-     $    rdpp_id,idpp_id,inpr_id
+     $    rdpp_id,idpp_id,inpr_id,br_th_id
       INTEGER :: run, run_dimid, point_dimid, varids(4),
      $     max_points
 
@@ -116,19 +115,6 @@ c -----------------------------------------------------------------------
          CALL check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational
          CALL check( nf90_def_var(ncid,"qsing",nf90_int,qsing_dim,
      $    qsing_id))
-      !   CALL check( nf90_def_dim(ncid,"ReQ_arr",ReQ_n,
-      !$    ReQ_dim) ) !r_dim = q_rational
-      !   CALL check( nf90_def_var(ncid,"ReQ_arr",nf90_double,ReQ_dim,
-      !$    ReQ_id))
-      !   CALL check( nf90_def_dim(ncid,"ImQ_arr",ImQ_n,ImQ_dim) ) !r_dim = q_rational
-      !   CALL check( nf90_def_var(ncid,"ImQ_arr",nf90_double,ImQ_dim,
-      !$    ImQ_id))
-         CALL check( nf90_def_var(ncid,"growthrates",nf90_double,
-     $    qsing_dim,gamma_id))
-         CALL check( nf90_def_var(ncid,"growthrate_locs",nf90_double,
-     $    qsing_dim,gamma_loc_id))
-      !   CALL check( nf90_def_var(ncid,"growthrates_inQ",nf90_double,
-      !$    (/roots_dim, qsing_dim/),gamma_loc_id))
          CALL check( nf90_def_var(ncid,"omegas",nf90_double,
      $    qsing_dim,omegas_id))
          CALL check( nf90_def_var(ncid,"Q",nf90_double,
@@ -143,49 +129,42 @@ c -----------------------------------------------------------------------
      $                            qsing_dim,inpr_id) )
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                            qsing_dim,qr_id) )
-
-         !!! For results
-         ! Define dimensions
-      !   CALL check( nf90_def_dim(ncid, "msing", msing, dimids(1)) )
-      !   CALL check( nf90_def_dim(ncid, "max_points",
-      !$               maxval(results%count), dimids(2)) )
-         !CALL check( nf90_def_dim(ncid, "run", msing, run_dimid) )
          CALL check( nf90_def_dim(ncid, "points", max_points,
      $    point_dimid) )
 
-         ! Define variables
-         CALL check( nf90_def_var(ncid, "Re_Qs", nf90_double,
-     $    [point_dimid, qsing_dim], varids(1)) )
-         CALL check( nf90_def_var(ncid, "Im_Qs", nf90_double,
-     $    [point_dimid, qsing_dim], varids(2)) )
-         CALL check( nf90_def_var(ncid, "Re_deltas", nf90_double,
-     $    [point_dimid, qsing_dim], varids(3)) )
-         CALL check( nf90_def_var(ncid, "Im_deltas", nf90_double,
-     $    [point_dimid, qsing_dim], varids(4)) )
+         IF ((growthrates_flag) .OR. (analytic_growthrates_flag)) THEN
+            CALL check( nf90_def_var(ncid,"growthrates",nf90_double,
+     $      qsing_dim,gamma_id))
+            CALL check(nf90_def_var(ncid,"growthrate_locs",nf90_double,
+     $      qsing_dim,gamma_loc_id))
+            CALL check( nf90_def_var(ncid, "Re_Qs", nf90_double,
+     $      [point_dimid, qsing_dim], varids(1)) )
+            CALL check( nf90_def_var(ncid, "Im_Qs", nf90_double,
+     $       [point_dimid, qsing_dim], varids(2)) )
+            CALL check( nf90_def_var(ncid, "Re_deltas", nf90_double,
+     $      [point_dimid, qsing_dim], varids(3)) )
+            CALL check( nf90_def_var(ncid, "Im_deltas", nf90_double,
+     $      [point_dimid, qsing_dim], varids(4)) )
+         END IF
 
-      ENDIF
+         IF (br_th_flag) THEN
+            CALL check( nf90_def_var(ncid,"br_th",nf90_double,
+     $                            qsing_dim,br_th_id) )
+         END IF
+      END IF
 
-      !IF (growthrates_flag) .OR. (analytic_) THEN
-      !CALL check( nf90_def_var(ncid, "Re_Deltas", nf90_double,
-      !$       (/ReQ_dim, ImQ_dim, qsing_dim/), Re_dp_id) )
-      !CALL check( nf90_def_var(ncid, "Im_Deltas", nf90_double,
-      !$       (/ReQ_dim, ImQ_dim, qsing_dim/), Im_dp_id) )
-      CALL check( nf90_def_var(ncid,"Re_deltaprime",nf90_double,
-     $    qsing_dim,rdpp_id) )
-      CALL check( nf90_def_var(ncid,"Im_deltaprime",nf90_double,
-     $    qsing_dim,idpp_id) )
-      !   CALL check( nf90_def_var(ncid, "inQs", nf90_double,
-      !$       (/ReQ_dim, qsing_dim/), inQs_id) )
-      !ENDIF
+      IF ((growthrates_flag) .OR. (analytic_growthrates_flag)) THEN
+        CALL check( nf90_def_var(ncid,"Re_deltaprime",nf90_double,
+     $      qsing_dim,rdpp_id) )
+        CALL check( nf90_def_var(ncid,"Im_deltaprime",nf90_double,
+     $      qsing_dim,idpp_id) )
+      END IF
       ! end definitions
       CALL check( nf90_enddef(ncid) )
 c -----------------------------------------------------------------------
 c      set variables
 c -----------------------------------------------------------------------
- !     IF(debug_flag) PRINT *," - Putting profile variables in netcdf"
       CALL check( nf90_put_var(ncid,qsing_id, qval_arr))
-      !CALL check( nf90_put_var(ncid,ReQ_id, inQs))
-      !CALL check( nf90_put_var(ncid,ImQ_id, iinQs))
       CALL check( nf90_put_var(ncid,omegas_id, omegas_arr))
       CALL check( nf90_put_var(ncid,Q_id, inQ_arr))
       CALL check( nf90_put_var(ncid,Q_e_id, inQ_e_arr))
@@ -194,31 +173,25 @@ c -----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,inpr_id, inpr_arr))
       CALL check( nf90_put_var(ncid,qr_id, qval_arr))
 
- !     IF(debug_flag) PRINT *," - Putting matrix variables in netcdf"
-      !IF (growthrates_flag) THEN
-      CALL check( nf90_put_var(ncid,rdpp_id, Re_deltaprime_arr))
-      CALL check( nf90_put_var(ncid,idpp_id, Im_deltaprime_arr))
-      !CALL check( nf90_put_var(ncid,Re_dp_id,all_Re_deltas))
-      !CALL check( nf90_put_var(ncid,Im_dp_id,all_Im_deltas))
-          !CALL check( nf90_put_var(ncid,inQs_id,all_inQs))
-      !ENDIF
-      !CALL check( nf90_put_var(ncid,gamma_id,all_growthrates))
-      !CALL check( nf90_put_var(ncid,gamma_loc_id,all_growthrate_locs))
-    ! Write data
-      DO run = 1, msing
-          CALL check( nf90_put_var(ncid, varids(1), results(run)%inQs,
-     $     start=[1, run], count=[results(run)%count, 1]) )
-          CALL check( nf90_put_var(ncid, varids(2), results(run)%iinQs,
-     $     start=[1, run], count=[results(run)%count, 1]) )
-          CALL check( nf90_put_var(ncid, varids(3),
-     $     results(run)%Re_deltas, start=[1, run],
-     $     count=[results(run)%count, 1]) )
-          CALL check( nf90_put_var(ncid, varids(4),
-     $     results(run)%Im_deltas, start=[1, run],
-     $     count=[results(run)%count, 1]) )
-      END DO
-      !CALL check(nf90_put_var(ncid,varids(5),[results(run)%count,run=1,msing]) )
-
+      IF ((growthrates_flag) .OR. (analytic_growthrates_flag)) THEN
+        CALL check( nf90_put_var(ncid,rdpp_id, Re_deltaprime_arr))
+        CALL check( nf90_put_var(ncid,idpp_id, Im_deltaprime_arr))
+        DO run = 1, msing
+            CALL check( nf90_put_var(ncid,varids(1),results(run)%inQs,
+     $       start=[1, run], count=[results(run)%count, 1]) )
+            CALL check( nf90_put_var(ncid,varids(2),results(run)%iinQs,
+     $       start=[1, run], count=[results(run)%count, 1]) )
+            CALL check( nf90_put_var(ncid, varids(3),
+     $       results(run)%Re_deltas, start=[1, run],
+     $       count=[results(run)%count, 1]) )
+            CALL check( nf90_put_var(ncid, varids(4),
+     $       results(run)%Im_deltas, start=[1, run],
+     $       count=[results(run)%count, 1]) )
+        END DO
+      END IF
+      IF (br_th_flag) THEN
+        CALL check( nf90_put_var(ncid,br_th_id, (/ br_th /)))
+      END IF
 c -----------------------------------------------------------------------
 c      close file
 c -----------------------------------------------------------------------

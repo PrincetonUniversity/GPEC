@@ -61,8 +61,10 @@
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
     growthrates_flag=t   ! Calculate growthrates on each rational surface
-    layer_stabilityscan_flag=t   ! Generate Re(Q),Im(Q) scans for each rational surface
-    !bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
+    analytic_growthrates_flag=f   ! Generate Re(Q),Im(Q) scans for each rational surface
+    br_th_flag=t         ! Calculate br_th
+    compress_deltas=f    ! Only output essential growth rate grid points
+    bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
