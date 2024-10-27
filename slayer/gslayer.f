@@ -300,7 +300,7 @@ c-----------------------------------------------------------------------
       dy = 1.0
       nfine = 6
       overlap_factor = 0.5
-      max_points = ncoarse**2 * (1 + (nfine-1)**2)
+      max_points = ncoarse**2 * ((nfine)**2 - 1)
 
       ! Allocate arrays with maximum possible size
       ALLOCATE(results%inQs(max_points), results%iinQs(max_points))
@@ -333,7 +333,7 @@ c-----------------------------------------------------------------------
           delta_real = REAL(delta)
           delta_imag = AIMAG(delta)
 
-          IF (.NOT. compress_deltas) THEN
+          IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 2)) THEN
             ! Store coarse grid point
             count = count + 1
             results%inQs(count) = inQ_coarse
@@ -349,7 +349,8 @@ c-----------------------------------------------------------------------
           END IF
 
           ! Check if refinement is needed
-          IF ((ABS(delta_real) > threshold)) THEN
+          IF ((ABS(delta_real) > threshold) .AND.
+     $     (ABS(deltaprime) > 2)) THEN
        !   IF ((ABS(delta_real) > threshold) .AND. (SIGN(1.0,
       !$              delta_real) == SIGN(1.0, deltaprime))) THEN
 
@@ -452,7 +453,7 @@ c-----------------------------------------------------------------------
           delta_real = REAL(delta)
           delta_imag = AIMAG(delta)
 
-          IF (.NOT. compress_deltas) THEN
+          IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 2)) THEN
             ! Store coarse grid point
             count = count + 1
             results%inQs(count) = inQ_coarse
@@ -468,7 +469,8 @@ c-----------------------------------------------------------------------
           END IF
 
           ! Check if refinement is needed
-          IF ((ABS(delta_real) > threshold)) THEN
+          IF ((ABS(delta_real) > threshold) .AND.
+     $     (ABS(deltaprime) > 2)) THEN
       !   IF ((ABS(delta_real) > threshold) .AND. (SIGN(1.0,
       !$              delta_real) == SIGN(1.0, deltaprime))) THEN
 
@@ -515,15 +517,24 @@ c-----------------------------------------------------------------------
       END DO
 
       END IF
-
+      WRITE(*,*)"Passed IF return"
+      WRITE(*,*)"count: ",count
+      WRITE(*,*)"max_points: ",max_points
       ! Set the actual count of points
       results%count = count
 
-      ! Resize arrays to actual number of points
-      CALL shrink_array(results%inQs, count)
-      CALL shrink_array(results%iinQs, count)
-      CALL shrink_array(results%Re_deltas, count)
-      CALL shrink_array(results%Im_deltas, count)
+
+      WRITE(*,*)"Passed Set the actual count of points"
+      IF (count < max_points) THEN
+        ! Resize arrays to actual number of points
+        CALL shrink_array(results%inQs, count)
+        CALL shrink_array(results%iinQs, count)
+        CALL shrink_array(results%Re_deltas, count)
+        CALL shrink_array(results%Im_deltas, count)
+      END IF
+
+      WRITE(*,*)"Arrays successfully shrunk"
+
 
       RETURN
       END SUBROUTINE growthrate_scan
