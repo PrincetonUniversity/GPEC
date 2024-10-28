@@ -224,8 +224,8 @@ c-----------------------------------------------------------------------
 c     subprogram 3. build_inputs.
 c     build input arrays for SLAYER
 c-----------------------------------------------------------------------
-      SUBROUTINE build_inputs(infile,ncfile,inpr_prof,growthrate_flag,
-     $               pe_flag,qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
+      SUBROUTINE build_inputs(infile,ncfile,inpr_prof,inpe,
+     $               qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
      $               inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,Q0_arr,
      $               inpr_arr,inpe_arr,omegas_arr,Re_deltaprime_arr,
      $               Im_deltaprime_arr)
@@ -233,10 +233,10 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       ! Inputs
-      LOGICAL, INTENT(IN) :: growthrate_flag,pe_flag
       CHARACTER(512), INTENT(IN) :: infile,ncfile
       ! Internals
       REAL(r8), DIMENSION(8), INTENT(IN) :: inpr_prof
+      REAL(r8), INTENT(IN) :: inpe
       LOGICAL :: firstsurf
       REAL(r8) :: respsi,lpsi,rpsi,hdist,sbnosurf,ising
       INTEGER :: zi, zimp, mi, mimp
@@ -248,7 +248,7 @@ c-----------------------------------------------------------------------
       INTEGER :: mms,nns,mrs,nrs,mpsi
 
       REAL(r8) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
-     $     my_qval,my_sval,my_bt,my_rs,zeff,inpe,R_0
+     $     my_qval,my_sval,my_bt,my_rs,my_inpe,zeff,R_0
       REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_r,tau_h,
      $            rho,tau_v,inpr,Qconv,lbeta,qintb
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: inQ_arr,
@@ -367,10 +367,10 @@ c-----------------------------------------------------------------------
          inpr = inpr_prof(ising)
 
          ! Check whether to include electron viscosity
-         IF (pe_flag) THEN
-            inpe=0.0165*inpr
+         IF (inpe < 0) THEN
+            my_inpe=0.0
          ELSE
-            inpe=0.0
+            my_inpe=0.0165*inpr
          ENDIF
 
          ne_arr(ising) = n_e
@@ -432,7 +432,7 @@ c-----------------------------------------------------------------------
          intau_arr(ising)=tau
          Q0_arr(ising)=Q
          inpr_arr(ising) = inpr
-         inpe_arr(ising) = inpe
+         inpe_arr(ising) = my_inpe
          omegas_arr(ising) = omega
          omegas_e_arr(ising) = omega_e
          omegas_i_arr(ising) = omega_i

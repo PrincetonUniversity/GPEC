@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
       REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,atol,rwork
-      
+
       Q=inQ
       IF(present(iinQ)) Q=inQ+ifac*iinQ
       Q_e=inQ_e
@@ -36,7 +36,7 @@ c-----------------------------------------------------------------------
       c_beta=inc_beta
       ds=inds
       tau=intau
-   
+
       IF ((layfac>0).AND.(ABS(Q-Q_e)<layfac)) THEN
          Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
       ENDIF
@@ -50,11 +50,11 @@ c-----------------------------------------------------------------------
       istate = 1
       iopt = 0
       mf = 10
-      liw = 20    
+      liw = 20
       lrw = 22+16*neq
       ALLOCATE(iwork(liw),rwork(lrw))
-      
-!     MXSTEP? 
+
+!     MXSTEP?
       iopt = 1
       iwork=0
       iwork(6)=10000 !5000 ! maximum step size, e.g. 50000
@@ -68,7 +68,7 @@ c-----------------------------------------------------------------------
       IF(present(iny)) y(1)=iny
 !      y(1)=0.5-ifac*10.0
 !      WRITE(*,*)y(1)
-      
+
 
       IF (riccati_out) THEN
          istep = 1
@@ -76,17 +76,17 @@ c-----------------------------------------------------------------------
          OPEN(UNIT=bin_unit,FILE='slayer_riccati_profile_n'//
      $      TRIM(sn)//'.bin',STATUS='UNKNOWN',
      $      POSITION='REWIND',FORM='UNFORMATTED')
-         
+
          OPEN(UNIT=out2_unit,FILE='slayer_riccati_profile_n'//
      $      TRIM(sn)//'.out',STATUS='UNKNOWN')
-         WRITE(out2_unit,'(1x,3(a17))'),"x","RE(y)","IM(y)"      
+         WRITE(out2_unit,'(1x,3(a17))'),"x","RE(y)","IM(y)"
          DO WHILE (x>xout)
             istep=istep+1
             CALL lsode(w_der,neq,y,x,xout,itol,rtol,atol,
      $           itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
-            WRITE(bin_unit)REAL(x,4),REAL(REAL(y),4),REAL(AIMAG(y),4) 
+            WRITE(bin_unit)REAL(x,4),REAL(REAL(y),4),REAL(AIMAG(y),4)
             WRITE(out2_unit,'(1x,3(es17.8e3))')x,REAL(y),AIMAG(y)
-         ENDDO        
+         ENDDO
          CLOSE(bin_unit)
          CLOSE(out2_unit)
       ELSE
@@ -98,10 +98,10 @@ c-----------------------------------------------------------------------
       ENDIF
 
       ! w=0 when Q=Q_e. Why?
-      
+
       CALL w_der(neq,x,y,dy)
       riccati=pi/dy(1)
-      DEALLOCATE(atol,y,dy,iwork,rwork)      
+      DEALLOCATE(atol,y,dy,iwork,rwork)
 
       END FUNCTION riccati
 c-----------------------------------------------------------------------
@@ -127,37 +127,37 @@ c-----------------------------------------------------------------------
       IF (parflow_flag) THEN
          C1=((1 + tau)*x**2*pe*
      $       (-(((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $              (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                   ifac*(Q - Q_e) + 
+     $              (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                   ifac*(Q - Q_e) +
      $                   x**2*
      $                    (c_beta**2 + ifac*ds**2*(Q - Q_i)))/
      $                 (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))*
-     $              (4*ds**2*pr*(1 + tau)*x**3 + 
+     $              (4*ds**2*pr*(1 + tau)*x**3 +
      $                2*x*(c_beta**2 + ifac*ds**2*(Q - Q_i))))
-     $             /(ds**2*pr*(1 + tau)*x**4 + 
-     $               ifac*(Q - Q_e) + 
+     $             /(ds**2*pr*(1 + tau)*x**4 +
+     $               ifac*(Q - Q_e) +
      $               x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $           **2) + ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $            (-((4*ds**2*pr*(1 + tau)*x**3 + 
-     $                   2*x*(c_beta**2 + 
+     $            (-((4*ds**2*pr*(1 + tau)*x**3 +
+     $                   2*x*(c_beta**2 +
      $                      ifac*ds**2*(Q - Q_i)))/
-     $              (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)) + 
+     $              (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)) +
      $              ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $                 (ds**2*pr*(1 + tau)*x**4 + 
-     $                   ifac*(Q - Q_e) + 
+     $                 (ds**2*pr*(1 + tau)*x**4 +
+     $                   ifac*(Q - Q_e) +
      $                   x**2*
      $                    (c_beta**2 + ifac*ds**2*(Q - Q_i))))
      $            /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**2))/
-     $          (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) + 
-     $            x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) + 
+     $          (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) +
+     $            x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) +
      $         ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $            (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                 ifac*(Q - Q_e) + 
+     $            (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                 ifac*(Q - Q_e) +
      $                 x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))
      $               )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)))/
-     $          (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) + 
+     $          (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) +
      $            x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))))/
-     $     (ifac*Q + pr*x**2 + x**2*pe - 
+     $     (ifac*Q + pr*x**2 + x**2*pe -
      $       (ds**2*(1 + tau)*x**6*pe**2)/
      $        (c_beta**2*
      $          (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -165,106 +165,106 @@ c-----------------------------------------------------------------------
      $        + (ifac*(1 + tau)*x**2*pe*Q_e)/
      $        (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $           c_beta**2 + ifac*(Q - Q_e)))
-	    
+
          C1p=((1 + tau)*x**2*pe*
      $        ((2*(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))*
-     $             (4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (4*ds**2*pr*(1 + tau)*x**3 +
      $                2*x*(c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $               **2)/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $              ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $              ifac*(Q - Q_e) +
      $              x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))**
      $            3 - ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))*
-     $             (12*ds**2*pr*(1 + tau)*x**2 + 
+     $             (12*ds**2*pr*(1 + tau)*x**2 +
      $               2*(c_beta**2 + ifac*ds**2*(Q - Q_i))))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $              ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $              ifac*(Q - Q_e) +
      $              x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))**
      $          2 - (2*(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (-((4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (-((4*ds**2*pr*(1 + tau)*x**3 +
      $                    2*x*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
-     $               /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))+ 
+     $               /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))+
      $               ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $                  (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $                  (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $            )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**2)*
-     $             (4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (4*ds**2*pr*(1 + tau)*x**3 +
      $               2*x*(c_beta**2 + ifac*ds**2*(Q - Q_i))))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $              ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $              ifac*(Q - Q_e) +
      $              x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))**
      $            2 - (2*(2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))*
-     $             (4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (4*ds**2*pr*(1 + tau)*x**3 +
      $               2*x*(c_beta**2 + ifac*ds**2*(Q - Q_i))))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $              ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $              ifac*(Q - Q_e) +
      $              x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))**
      $            2 + ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (-((12*ds**2*pr*(1 + tau)*x**2 + 
+     $             (-((12*ds**2*pr*(1 + tau)*x**2 +
      $                    2*(c_beta**2 + ifac*ds**2*(Q - Q_i))
      $                 )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))
      $                + (2*(2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $                  (4*ds**2*pr*(1 + tau)*x**3 + 
+     $                  (4*ds**2*pr*(1 + tau)*x**3 +
      $                    2*x*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $               )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**2
      $                - (2*(2*c_beta**2*x + 4*ds**2*pr*tau*x**3)**2*
-     $                  (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $                  (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $             )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**3
      $                + ((2*c_beta**2 + 12*ds**2*pr*tau*x**2)*
-     $                  (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $                  (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $           )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**2))
-     $            /(ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
-     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) + 
+     $            /(ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
+     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) +
      $          (2*(2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $             (-((4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (-((4*ds**2*pr*(1 + tau)*x**3 +
      $                    2*x*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
-     $               /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))+ 
+     $               /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))+
      $               ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $                  (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $                  (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $            )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**2))
-     $            /(ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
-     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) + 
+     $            /(ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
+     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) +
      $          ((2*c_beta**2 + 12*ds**2*pr*tau*x**2)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
      $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))))/
-     $      (ifac*Q + pr*x**2 + x**2*pe - 
+     $      (ifac*Q + pr*x**2 + x**2*pe -
      $        (ds**2*(1 + tau)*x**6*pe**2)/
      $         (c_beta**2*
      $           (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -273,14 +273,14 @@ c-----------------------------------------------------------------------
      $         (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $            c_beta**2 + ifac*(Q - Q_e)))
      $      - ((1 + tau)*x**2*pe*
-     $        (2*pr*x + 2*x*pe + 
+     $        (2*pr*x + 2*x*pe +
      $          (ds**2*(1 + tau)*x**6*pe**2*
      $             (2*x + (4*ds**2*(1 + tau)*x**3*pe)/
      $                c_beta**2))/
      $           (c_beta**2*
      $             (x**2 + (ds**2*(1 + tau)*x**4*pe)/
-     $                 c_beta**2 + 
-     $                ifac*(Q - Q_e))**2) - 
+     $                 c_beta**2 +
+     $                ifac*(Q - Q_e))**2) -
      $          (6*ds**2*(1 + tau)*x**5*pe**2)/
      $           (c_beta**2*
      $             (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -295,41 +295,41 @@ c-----------------------------------------------------------------------
      $           (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $              c_beta**2 + ifac*(Q - Q_e)))
      $         *(-(((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $               (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $               (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $              /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))*
-     $               (4*ds**2*pr*(1 + tau)*x**3 + 
+     $               (4*ds**2*pr*(1 + tau)*x**3 +
      $                 2*x*(c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $               )/
-     $             (ds**2*pr*(1 + tau)*x**4 + 
-     $                ifac*(Q - Q_e) + 
+     $             (ds**2*pr*(1 + tau)*x**4 +
+     $                ifac*(Q - Q_e) +
      $                x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $          **2) + ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (-((4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (-((4*ds**2*pr*(1 + tau)*x**3 +
      $                    2*x*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
-     $              /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)) + 
+     $              /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)) +
      $               ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $                  (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $                  (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $           )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**2))
-     $            /(ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
-     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) + 
+     $            /(ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
+     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) +
      $          ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
      $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))))/
-     $      (ifac*Q + pr*x**2 + x**2*pe - 
+     $      (ifac*Q + pr*x**2 + x**2*pe -
      $         (ds**2*(1 + tau)*x**6*pe**2)/
      $          (c_beta**2*
      $            (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -340,41 +340,41 @@ c-----------------------------------------------------------------------
      $             c_beta**2 + ifac*(Q - Q_e)))
      $        **2 + (2*(1 + tau)*x*pe*
      $        (-(((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $               (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $               (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $                /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))*
-     $               (4*ds**2*pr*(1 + tau)*x**3 + 
+     $               (4*ds**2*pr*(1 + tau)*x**3 +
      $                 2*x*(c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $               )/
-     $             (ds**2*pr*(1 + tau)*x**4 + 
-     $                ifac*(Q - Q_e) + 
+     $             (ds**2*pr*(1 + tau)*x**4 +
+     $                ifac*(Q - Q_e) +
      $                x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $         **2) + ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (-((4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (-((4*ds**2*pr*(1 + tau)*x**3 +
      $                    2*x*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
-     $                /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))+ 
+     $                /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))+
      $               ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $                  (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $                  (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $            )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**2))
-     $            /(ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
-     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) + 
+     $            /(ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
+     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) +
      $          ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
      $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))))/
-     $      (ifac*Q + pr*x**2 + x**2*pe - 
+     $      (ifac*Q + pr*x**2 + x**2*pe -
      $        (ds**2*(1 + tau)*x**6*pe**2)/
      $         (c_beta**2*
      $           (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -382,7 +382,7 @@ c-----------------------------------------------------------------------
      $          + (ifac*(1 + tau)*x**2*pe*Q_e)/
      $         (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $            c_beta**2 + ifac*(Q - Q_e)))
-	    
+
          C2=((1 + tau)*x**2*pe*
      $       ((ds**2*x**4*pe)/
      $          (c_beta**2*
@@ -392,13 +392,13 @@ c-----------------------------------------------------------------------
      $          (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $             c_beta**2 + ifac*(Q - Q_e))
      $          + ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $            (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                 ifac*(Q - Q_e) + 
+     $            (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                 ifac*(Q - Q_e) +
      $                 x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))
      $               )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)))/
-     $          (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) + 
+     $          (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) +
      $            x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))))/
-     $     (ifac*Q + pr*x**2 + x**2*pe - 
+     $     (ifac*Q + pr*x**2 + x**2*pe -
      $       (ds**2*(1 + tau)*x**6*pe**2)/
      $        (c_beta**2*
      $          (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -406,15 +406,15 @@ c-----------------------------------------------------------------------
      $        + (ifac*(1 + tau)*x**2*pe*Q_e)/
      $        (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $           c_beta**2 + ifac*(Q - Q_e)))
-	    
+
          C2p=((1 + tau)*x**2*pe*
      $        (-((ds**2*x**4*pe*
      $               (2*x + (4*ds**2*(1 + tau)*x**3*pe)/
      $                  c_beta**2))/
      $             (c_beta**2*
      $               (x**2 + (ds**2*(1 + tau)*x**4*pe)/
-     $                   c_beta**2 + 
-     $                  ifac*(Q - Q_e))**2)) + 
+     $                   c_beta**2 +
+     $                  ifac*(Q - Q_e))**2)) +
      $          (4*ds**2*x**3*pe)/
      $           (c_beta**2*
      $             (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -425,40 +425,40 @@ c-----------------------------------------------------------------------
      $           (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $               c_beta**2 + ifac*(Q - Q_e))
      $           **2 - ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4))*
-     $             (4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (4*ds**2*pr*(1 + tau)*x**3 +
      $               2*x*(c_beta**2 + ifac*ds**2*(Q - Q_i))))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $              ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $              ifac*(Q - Q_e) +
      $              x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))**
      $            2 + ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (-((4*ds**2*pr*(1 + tau)*x**3 + 
+     $             (-((4*ds**2*pr*(1 + tau)*x**3 +
      $                    2*x*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
-     $              /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)) + 
+     $              /(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)) +
      $               ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $                  (ds**2*pr*(1 + tau)*x**4 + 
-     $                    ifac*(Q - Q_e) + 
+     $                  (ds**2*pr*(1 + tau)*x**4 +
+     $                    ifac*(Q - Q_e) +
      $                    x**2*
      $                     (c_beta**2 + ifac*ds**2*(Q - Q_i)))
      $            )/(ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)**2))
-     $            /(ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
-     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) + 
+     $            /(ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
+     $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))) +
      $          ((2*c_beta**2*x + 4*ds**2*pr*tau*x**3)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
      $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))))/
-     $      (ifac*Q + pr*x**2 + x**2*pe - 
+     $      (ifac*Q + pr*x**2 + x**2*pe -
      $        (ds**2*(1 + tau)*x**6*pe**2)/
      $         (c_beta**2*
      $           (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -467,14 +467,14 @@ c-----------------------------------------------------------------------
      $         (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $            c_beta**2 + ifac*(Q - Q_e)))
      $      - ((1 + tau)*x**2*pe*
-     $        (2*pr*x + 2*x*pe + 
+     $        (2*pr*x + 2*x*pe +
      $          (ds**2*(1 + tau)*x**6*pe**2*
      $             (2*x + (4*ds**2*(1 + tau)*x**3*pe)/
      $                c_beta**2))/
      $           (c_beta**2*
      $             (x**2 + (ds**2*(1 + tau)*x**4*pe)/
-     $                 c_beta**2 + 
-     $                ifac*(Q - Q_e))**2) - 
+     $                 c_beta**2 +
+     $                ifac*(Q - Q_e))**2) -
      $          (6*ds**2*(1 + tau)*x**5*pe**2)/
      $           (c_beta**2*
      $             (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -496,15 +496,15 @@ c-----------------------------------------------------------------------
      $           (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $              c_beta**2 + ifac*(Q - Q_e))
      $           + ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
      $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))))/
-     $      (ifac*Q + pr*x**2 + x**2*pe - 
+     $      (ifac*Q + pr*x**2 + x**2*pe -
      $         (ds**2*(1 + tau)*x**6*pe**2)/
      $          (c_beta**2*
      $            (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -522,15 +522,15 @@ c-----------------------------------------------------------------------
      $           (x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $              c_beta**2 + ifac*(Q - Q_e))
      $           + ((ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)*
-     $             (1 - (ds**2*pr*(1 + tau)*x**4 + 
-     $                  ifac*(Q - Q_e) + 
-     $                  x**2*(c_beta**2 + 
+     $             (1 - (ds**2*pr*(1 + tau)*x**4 +
+     $                  ifac*(Q - Q_e) +
+     $                  x**2*(c_beta**2 +
      $                     ifac*ds**2*(Q - Q_i)))/
      $                (ifac*Q + c_beta**2*x**2 + ds**2*pr*tau*x**4)))/
-     $           (ds**2*pr*(1 + tau)*x**4 + 
-     $             ifac*(Q - Q_e) + 
+     $           (ds**2*pr*(1 + tau)*x**4 +
+     $             ifac*(Q - Q_e) +
      $             x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i)))))/
-     $      (ifac*Q + pr*x**2 + x**2*pe - 
+     $      (ifac*Q + pr*x**2 + x**2*pe -
      $        (ds**2*(1 + tau)*x**6*pe**2)/
      $         (c_beta**2*
      $           (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -543,24 +543,24 @@ c-----------------------------------------------------------------------
          C1p=0
          C2=0
          C2p=0
-      ENDIF		 
-	
+      ENDIF
+
       IF (PeOhmOnly_flag) THEN
-         G=((c_beta**2*pr*x**4 - Q*(Q - Q_i) + 
+         G=((c_beta**2*pr*x**4 - Q*(Q - Q_i) +
      $        ifac*(c_beta**2 + pr)*x**2*(Q - Q_i))/
-     $      (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) + 
+     $      (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) +
      $        x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))))*(x**2.0)
       ELSE
-         G=(x**2*pe + 
-     $     (c_beta**2*pr*x**4 - Q*(Q - Q_i) + 
+         G=(x**2*pe +
+     $     (c_beta**2*pr*x**4 - Q*(Q - Q_i) +
      $        ifac*(c_beta**2 + pr)*x**2*(Q - Q_i))/
-     $      (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) + 
+     $      (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) +
      $        x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))))*(x**2.0)
       ENDIF
-	 
+
       C3=x**2/(x**2 + (ds**2*(1 + tau)*x**4*pe)/
      $     c_beta**2 + ifac*(Q - Q_e))
-	 
+
       C3p=-((x**2*(2*x + (4*ds**2*(1 + tau)*x**3*pe)/
      $          c_beta**2))/
      $     (x**2 + (ds**2*(1 + tau)*x**4*pe)/
@@ -570,11 +570,11 @@ c-----------------------------------------------------------------------
      $      c_beta**2 + (0,1)*(Q - Q_e))
 
       A1=(C1 + (C3p/C3)*(C2 + 1) + C2p)/(C2 + 1)
-	  
+
       A2=(C1p + C1*(C3p/C3) - G/C3)/(C2 + 1)
-	  
+
       dy(1)=(-A1 + 1/x)*y(1) - y(1)*y(1)/x - A2*x
-	  
+
       RETURN
       END SUBROUTINE w_der
 c-----------------------------------------------------------------------
@@ -619,7 +619,7 @@ c-----------------------------------------------------------------------
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
       REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,atol,rwork
-      
+
       Q=inQ
       Q_e=inQ_e
       Q_i=inQ_i
@@ -638,10 +638,10 @@ c-----------------------------------------------------------------------
       istate = 1
       iopt = 0
       mf = 10
-      liw = 20    
+      liw = 20
       lrw = 22+16*neq
       ALLOCATE(iwork(liw),rwork(lrw))
-      
+
       xintv = 0.1
       x=0.1
       istep=1
@@ -668,12 +668,12 @@ c-----------------------------------------------------------------------
 c     direct integration (obsolete).
 c-----------------------------------------------------------------------
       SUBROUTINE phi_der(neq,x,y,dy)
-      
+
       INTEGER, INTENT(IN) :: neq
       REAL(r8), INTENT(IN) :: x
       COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neq), INTENT(OUT) :: dy
-      COMPLEX(r8), PARAMETER :: ifac=(0,1)      
+      COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       dy(1)=(1+ifac*(Q-Q_e)*x**2.0)/x**2.0*y(2)
       dy(2)=(-Q*(Q-Q_i)*x**4.0+ifac*(Q-Q_i)*(pr+c_beta**2.0)*x**2.0
@@ -681,6 +681,6 @@ c-----------------------------------------------------------------------
      $     +(c_beta**2.0+ifac*(Q-Q_i)*ds**2.0)*x**6.0
      $     +(1+tau)*pr*ds**2.0*x**4.0)*y(1)
       RETURN
-      END SUBROUTINE phi_der  
-      
+      END SUBROUTINE phi_der
+
       END MODULE delta_mod

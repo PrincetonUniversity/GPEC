@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
      $     verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
      $     params_check,growthrates_flag,analytic_growthrates_flag,
-     $     pe_flag,br_th_flag !FOR TESTING
+     $     br_th_flag,compress_deltas
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
@@ -92,7 +92,7 @@ c-----------------------------------------------------------------------
      $     layfac,Qratio,parflow_flag,peohmonly_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     stability_flag,growthrates_flag,analytic_growthrates_flag,
-     $     pe_flag,br_th_flag,bal_flag
+     $     br_th_flag,compress_deltas,bal_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
      $     params_check
 c-----------------------------------------------------------------------
@@ -166,8 +166,8 @@ c-----------------------------------------------------------------------
       stability_flag=.FALSE.
       growthrates_flag=.FALSE.
       analytic_growthrates_flag=.FALSE.
-      pe_flag=.FALSE.
       br_th_flag=.FALSE.
+      compress_deltas=.FALSE.
 c-----------------------------------------------------------------------
 c     read slayer.in.
 c-----------------------------------------------------------------------
@@ -299,7 +299,7 @@ c-----------------------------------------------------------------------
          !WRITE(*,*)"infile=",infile
          !WRITE(*,*)"ncfile=",ncfile
          CALL build_inputs(infile,ncfile,inpr_prof,
-     $               growthrates_flag,pe_flag,qval_arr,psi_n_rational,
+     $               inpe,qval_arr,psi_n_rational,
      $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
      $               inds_arr,intau_arr,inQ0_arr,inpr_arr,inpe_arr,
      $               omegas_arr,Re_deltaprime_arr,Im_deltaprime_arr)
@@ -316,8 +316,6 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"intau_arr=",intau_arr
          n_k = SIZE(qval_arr)
 
-         ALLOCATE(all_growthrates(n_k))
-         ALLOCATE(all_growthrate_locs(n_k))
          DO k=1,n_k
             WRITE(*,*) "Finding roots on q=", qval_arr(k),
      $       " rational surface"
@@ -325,27 +323,17 @@ c-----------------------------------------------------------------------
             CALL growthrate_scan(qval_arr(k),inQ_arr(k),inQ_e_arr(k),
      $             inQ_i_arr(k),inc_beta_arr(k),inds_arr(k),
      $             intau_arr(k),inQ0_arr(k),inpr_arr(k),inpe_arr(k),
-     $             scan_radius,reQ_num,Re_deltaprime_arr(k),
-     $             results(k))
+     $             scan_radius,reQ_num,compress_deltas,
+     $             Re_deltaprime_arr(k),results(k))
+            WRITE(*,*)"Exited growthrate_scan"
 
-          !  IF (k==1) THEN
-          !     ALLOCATE(all_RE_deltas(SIZE(inQs),SIZE(iinQs),n_k))
-          !     ALLOCATE(all_Im_deltas(SIZE(inQs),SIZE(iinQs),n_k))
-          !     ALLOCATE(all_inQs(SIZE(inQs),n_k))
-
-          !  ENDIF
-          !  all_Re_deltas(:,:,k) = Re_deltas
-          !  all_Im_deltas(:,:,k) = Im_deltas
-          !  all_inQs(:,k) = inQs
-
-         !   DEALLOCATE(Re_deltas,Im_deltas)
-            all_growthrates(k) = 0.0
-            all_growthrate_locs(k) = 0.0
          ENDDO
-      WRITE(*,*) "all_growthrates", all_growthrates
+         WRITE(*,*)"Calling slayer_netcdf_out"
 
-        CALL slayer_netcdf_out(growthrates_flag,n_k,qval_arr,
-     $                 all_growthrates,all_growthrate_locs,
+         br_th = 0.0
+         CALL slayer_netcdf_out(growthrates_flag,
+     $                 analytic_growthrates_flag,
+     $                 br_th_flag,n_k,qval_arr,br_th,
      $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $                 psi_n_rational,inpr_arr,
      $                 Re_deltaprime_arr,Im_deltaprime_arr,
@@ -379,31 +367,14 @@ c-----------------------------------------------------------------------
          CALL growthrate_scan(2,inQ,inQ_e,
      $             inQ_i,inc_beta,inds,
      $             intau,inQ,inpr,inpe,
-     $             scan_radius,reQ_num,Re_deltaprime_arr(1),
-     $             results(1))
-
-      !     WRITE(*,*)"SIZE(inQs)",SIZE(inQs)
-      !     WRITE(*,*)"SIZE(iinQs)",SIZE(iinQs)
-
-        !IF (k==1) THEN
-        ! ALLOCATE(all_RE_deltas(SIZE(inQs),SIZE(iinQs),1))
-        ! ALLOCATE(all_Im_deltas(SIZE(inQs),SIZE(iinQs),1))
-        ! ALLOCATE(all_inQs(SIZE(inQs),1))
-         ALLOCATE(all_growthrates(1))
-         ALLOCATE(all_growthrate_locs(1))
-         !ENDIF
-      !   all_Re_deltas(:,:,1) = Re_deltas
-      !   all_Im_deltas(:,:,1) = Im_deltas
-      !   all_inQs(:,1) = inQs
-         !all_roots(:,:,k) = roots
-
-         all_growthrates(1) = 0.0
-         all_growthrate_locs(1) = 0.0
+     $             scan_radius,reQ_num,compress_deltas,
+     $             Re_deltaprime_arr(1),results(1))
 
          WRITE(*,*)"allocations successful"
 
-         CALL slayer_netcdf_out(growthrates_flag,1,qval_arr,
-     $                 all_growthrates,all_growthrate_locs,
+         br_th = 0.0
+         CALL slayer_netcdf_out(growthrates_flag,
+     $    analytic_growthrates_flag,br_th_flag,1,qval_arr,br_th,
      $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $                 psi_n_rational,inpr_arr,
      $                 Re_deltaprime_arr,Im_deltaprime_arr,
@@ -489,10 +460,6 @@ c-----------------------------------------------------------------------
          all_Im_deltas(:,:,k) = 0.0
          all_inQs(:,k) = 0.0
 
-         all_growthrates(k) = br_th !!!!!!!!!!!!!!!!!!!!!!!!!
-         all_growthrate_locs(k) = 0.0
-
-
          qval_arr = (/ 3 /)
          inQs = (/ 1.0 /)
          inQs = (/ 1.0 /)
@@ -508,8 +475,9 @@ c-----------------------------------------------------------------------
 
          WRITE(*,*)"allocations successful"
 
-         CALL slayer_netcdf_out(growthrates_flag,1,qval_arr,
-     $                 all_growthrates,all_growthrate_locs,
+         CALL slayer_netcdf_out(growthrates_flag,
+     $                 analytic_growthrates_flag,
+     $                 br_th_flag,1,qval_arr,br_th,
      $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $                 psi_n_rational,inpr_arr,
      $                 Re_deltaprime_arr,Im_deltaprime_arr,
