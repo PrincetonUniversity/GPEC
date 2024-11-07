@@ -1415,7 +1415,6 @@ module torque
         !$omp& reduction(+:elems) &
         !$omp& copyin(dbob_m,divx_m,kin,xs_m,fnml, &
         !$omp& geom, sq, eqfun, rzphi)
-        
 #ifdef _OPENMP
             IF(first .and. omp_get_thread_num() == 0)then
                lthreads = omp_get_num_threads()
@@ -2312,7 +2311,3 @@ module torque
 
 
 end module torque
-
-
-
-
