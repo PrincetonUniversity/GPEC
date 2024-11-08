@@ -333,7 +333,7 @@ c-----------------------------------------------------------------------
           delta_real = REAL(delta)
           delta_imag = AIMAG(delta)
 
-          IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 2)) THEN
+          IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 4)) THEN
             ! Store coarse grid point
             count = count + 1
             results%inQs(count) = inQ_coarse
@@ -350,7 +350,7 @@ c-----------------------------------------------------------------------
 
           ! Check if refinement is needed
           IF ((ABS(delta_real) > threshold) .AND.
-     $     (ABS(deltaprime) > 2)) THEN
+     $     (ABS(deltaprime) > 4)) THEN
        !   IF ((ABS(delta_real) > threshold) .AND. (SIGN(1.0,
       !$              delta_real) == SIGN(1.0, deltaprime))) THEN
 
@@ -453,7 +453,7 @@ c-----------------------------------------------------------------------
           delta_real = REAL(delta)
           delta_imag = AIMAG(delta)
 
-          IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 2)) THEN
+          IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 4)) THEN
             ! Store coarse grid point
             count = count + 1
             results%inQs(count) = inQ_coarse
@@ -470,7 +470,7 @@ c-----------------------------------------------------------------------
 
           ! Check if refinement is needed
           IF ((ABS(delta_real) > threshold) .AND.
-     $     (ABS(deltaprime) > 2)) THEN
+     $     (ABS(deltaprime) > 4)) THEN
       !   IF ((ABS(delta_real) > threshold) .AND. (SIGN(1.0,
       !$              delta_real) == SIGN(1.0, deltaprime))) THEN
 
