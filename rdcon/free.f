@@ -62,6 +62,10 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       CHARACTER(24), DIMENSION(mpert) :: message
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      ! RDCON mutual inductance calculations not implemented
+      LOGICAL :: wv_farwall_flag=.FALSE., farwal_flag=.FALSE.
+      LOGICAL :: wall_flag=.FALSE.
+
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
@@ -101,10 +105,37 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
-      kernelsignin=1.0
+      vac_unit=4
+      farwal_flag=.TRUE. ! self-inductance for plasma boundary.
+      kernelsignin=-1.0
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     .FALSE.,.FALSE.,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts)
+      CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
+      WRITE(vac_unit)grri
+
+      kernelsignin=1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
+      WRITE(vac_unit)grri
+
+      IF(wv_farwall_flag)THEN
+         temp=wv
+      ENDIF         
+
+      farwal_flag=.FALSE. ! self-inductance with the wall.
+      kernelsignin=-1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
+      WRITE(vac_unit)grri
+
+      kernelsignin=1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
+      WRITE(vac_unit)grri
+      WRITE(vac_unit)xzpts
+
+      CALL bin_close(vac_unit)
       DEALLOCATE(grri,xzpts)
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
@@ -176,6 +207,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)etc
          WRITE(euler_bin_unit)wt
          WRITE(euler_bin_unit)wt0
+         WRITE(euler_bin_unit)wv_farwall_flag
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
@@ -554,6 +586,8 @@ c-----------------------------------------------------------------------
       REAL(r8) :: kernelsignin
       REAL(r8), DIMENSION(mpert) :: singfac
       REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
+      LOGICAL :: wall_flag=.FALSE., farwal_flag=.FALSE.
+
 c-----------------------------------------------------------------------
 c     allocate vacuum matrix.
 c-----------------------------------------------------------------------      
@@ -569,7 +603,7 @@ c-----------------------------------------------------------------------
       kernelsignin=1.0
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wvac,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     .FALSE.,.FALSE.,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts)
       DEALLOCATE(grri,xzpts)
 
       CALL system("rm -f ahg2msc.out")
