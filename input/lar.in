@@ -9,6 +9,6 @@
 	beta0=1e-3     ! Beta (pressure ratio) on axis
 	q0=1.5         ! q (safety factor) on axis
 
-	p_pres=2       ! p0*(1-(r/a))**p_pres
-	p_sig=1        ! sigma=J.B/B^2 is given by sigma0*(1-(r/a))**p_sig
+	p_pres=2       ! p0*(1-(r/a)**2)**p_pres
+	p_sig=1        ! sigma=J.B/B^2 is given by sigma0/(1+(r/a))**(2*p_sig))**(1+1/p_sig)
 /
