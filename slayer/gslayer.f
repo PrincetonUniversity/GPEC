@@ -178,92 +178,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE gpec_slayer
 c-----------------------------------------------------------------------
 c     Subprogram 2. growthrate_scan
-c     Run stability scan on real and imaginary rotation axes
-c-----------------------------------------------------------------------
-      SUBROUTINE old_growthrate_scan(qval,inQ,inQ_e,inQ_i,inc_beta,
-     $           inds,intau,inQ0,inpr,inpe,scan_radius,reQ_num,
-     $           Re_deltas,Im_deltas,inQs,iinQs)
-c-----------------------------------------------------------------------
-c     Declarations
-c-----------------------------------------------------------------------
-      ! Inputs
-      REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inc_beta,inds,
-     $     intau,inQ0,inpr,inpe
-      INTEGER, INTENT(IN) :: qval,scan_radius,reQ_num
-      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: inQs,iinQs
-      INTEGER :: n_fine
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: x_s,y_s
-      REAL(r8) :: x, y, dx, dy, ric_val,start_time,end_time
-      REAL(r8), DIMENSION(2) :: start, end, step
-      REAL(r8) :: coarse_threshold,fine_threshold,grad_tol,wr
-      COMPLEX(r8) :: delta
-      INTEGER :: k, w, n_steps, i2, i,j
-      logical :: found_zero
-
-      INTEGER :: n_points, idx_1, idx_2
-      REAL(r8) :: x_1, y_1, x_2, y_2, dist, min_dist1, min_dist2
-
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE,
-     $             INTENT(OUT) :: Re_deltas,Im_deltas
-      wr=0.0
-      ! Parameters
-      grad_tol = 1.0!abs(0.1*deltaprime)     ! Tolerance for steep gradient
-      n_steps = reQ_num       ! Initial number of steps
-!     n_fine = 10
-!     if (abs(deltaprime)>100) then
-!       coarse_threshold = abs(0.95*deltaprime)    ! Tolerance for zero value
-!       fine_threshold = abs(0.1*deltaprime)
-!       n_fine = n_fine * 2
-!     else if (abs(deltaprime)>50) then
-!       coarse_threshold = abs(0.8*deltaprime)    ! Tolerance for zero value
-!       fine_threshold = abs(0.1*deltaprime)
-!       n_fine = n_fine * 2
-!     else if (abs(deltaprime)>20) then
-!       coarse_threshold = abs(0.66*deltaprime)    ! Tolerance for zero value
-!       fine_threshold = abs(0.05*deltaprime)
-!       n_fine = n_fine * 2
-!     else if (abs(deltaprime)>10) then
-!       coarse_threshold = abs(0.3*deltaprime)    ! Tolerance for zero value
-!       fine_threshold = abs(0.03*deltaprime)
-!     else
-!       coarse_threshold = abs(0.1*deltaprime)    ! Tolerance for zero value
-!       fine_threshold = abs(0.01*deltaprime)
-!     end if
-      ALLOCATE(inQs(n_steps))
-      ALLOCATE(iinQs(n_steps))
-      ALLOCATE(Re_deltas(n_steps,n_steps))
-      ALLOCATE(Im_deltas(n_steps,n_steps))
-      inQs = linspace((-scan_radius+wr),(scan_radius+wr),n_steps)
-      iinQs = linspace((-scan_radius+wr),(scan_radius+wr),n_steps)
-      i=1
-      j=1
-      !CALL OMP_SET_NUM_THREADS(4)
-      !PRINT *, "Max threads: ",OMP_GET_MAX_THREADS()
-      !CALL cpu_time(start_time)
-      !!$OMP PARALLEL DO PRIVATE(j,y,delta) !BIG REWRITE NEEDED
-      DO i = 1, n_steps
-          DO j = 1, n_steps
-              !PRINT *, "Hello from process: ", OMP_GET_THREAD_NUM()
-              y=iinQs(j)
-              delta = riccati(inQs(i),inQ_e,inQ_i,inpr,inc_beta,
-     $                        inds,intau,inpe,iinQ=y)
-              Re_deltas(i,j) = REAL(delta)
-              Im_deltas(i,j) = AIMAG(delta)
-              !PRINT *,'inQs(i):',inQs(i)
-              !PRINT *,'y:',y
-              !PRINT *,'delta:',delta
-          END DO
-          !stop
-      END DO
-      !!$OMP END PARALLEL DO
-      !CALL cpu_time(end_time)
-      !PRINT *,'Layer scan time:',end_time-start_time,'seconds'
-      !test comment
-      RETURN
-      END SUBROUTINE old_growthrate_scan
-c-----------------------------------------------------------------------
-c     Subprogram 2. growthrate_scan
-c     Run stability scan on real and imaginary rotation axes
+c     Set up and iterate stability scans if no match is found
 c-----------------------------------------------------------------------
       SUBROUTINE growthrate_scan(qval,inQ,inQ_e,inQ_i,inc_beta,
      $         inds,intau,inQ0,inpr,inpe,scan_radius,ncoarse,
@@ -321,12 +236,112 @@ c-----------------------------------------------------------------------
       dy = iinQ_step
 
       match_count = 0
-      ! Coarse grid loop
+      ! Run scan
+      CALL scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
+     $     scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
+     $     results,count,match_count,dx,dy)
+
+      IF (match_count == 0) THEN
+        WRITE(*,*)"No match found, rescanning"
+        repeat = .TRUE.
+        !new_scan_radius = scan_radius + 2
+        new_ncoarse = ncoarse + 100
+        new_nfine = nfine
+      ELSE IF (match_count > 0 .AND. match_count < 3) THEN
+        WRITE(*,*)"Match not definitive, rescanning"
+        repeat = .TRUE.
+        new_scan_radius = scan_radius
+        new_ncoarse = ncoarse
+        new_nfine = 8
+      ELSE
+        repeat = .FALSE.
+        WRITE(*,*)"Match found"
+
+      END IF
+
+      IF (repeat) THEN
+      WRITE(*,*)"Rerunning growth rate scan"
+
+      new_max_points = new_ncoarse**2 * (1 +
+     $       (new_nfine-1)**2)
+
+      ! Resize arrays to new max number of points
+      CALL grow_array(results%inQs, max_points, new_max_points)
+      CALL grow_array(results%iinQs, max_points, new_max_points)
+      CALL grow_array(results%Re_deltas, max_points, new_max_points)
+      CALL grow_array(results%Im_deltas, max_points, new_max_points)
+
+      results%inQs=0.0
+      results%iinQs=0.0
+      results%Re_deltas=0.0
+      results%Im_deltas=0.0
+      ! Initialize counter
+      count = 0
+
+      ! Calculate step sizes
+      inQ_step = (2.0 * new_scan_radius)/(new_ncoarse - 1)
+      iinQ_step = (2.0 * new_scan_radius)/(new_ncoarse - 1)
+
+      match_count = 0
+
+      ! COARSE AND FINE LOOPS
+      CALL scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
+     $     scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
+     $     results,count,match_count,dx,dy)
+
+      END IF ! End repeat "if"
+
+      ! Set the actual count of points
+      results%count = count
+
+      IF (count < max_points) THEN
+        ! Resize arrays to actual number of points
+        CALL shrink_array(results%inQs, count)
+        CALL shrink_array(results%iinQs, count)
+        CALL shrink_array(results%Re_deltas, count)
+        CALL shrink_array(results%Im_deltas, count)
+      END IF
+
+      RETURN
+      END SUBROUTINE growthrate_scan
+c-----------------------------------------------------------------------
+c     Subprogram 3. scan_grid
+c     Run stability scan on real and imaginary rotation axes
+c-----------------------------------------------------------------------
+      SUBROUTINE scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe, 
+     $     scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
+     $     results,count,match_count,dx,dy)
+      
+      ! Declarations (include necessary type declarations from original code)
+      REAL(r8), INTENT(IN) :: inQ_e, inQ_i, inpr, inc_beta, inds,
+     $     intau, inpe, deltaprime
+      INTEGER, INTENT(IN) :: scan_radius, ncoarse, nfine
+      LOGICAL, INTENT(IN) :: compress_deltas
+      TYPE(result_type), INTENT(INOUT) :: results
+      INTEGER, INTENT(INOUT) :: count, match_count
+      REAL(r8), INTENT(INOUT) :: dx, dy
+      
+      ! Local variables
+      REAL(r8) :: inQ_step, iinQ_step, inQ_fine, iinQ_fine,
+     $     inQ_coarse, iinQ_coarse
+      REAL(r8) :: delta_real, delta_imag, threshold
+      COMPLEX(r8) :: delta
+      REAL(r8) :: fine_dx, fine_dy, overlap_x, overlap_y
+      REAL(r8) :: x_start, x_end, y_start, y_end
+      INTEGER :: i, j, fi, fj
+      REAL(r8), PARAMETER :: tolerance = 1.0E-6
+      REAL(r8) :: overlap_factor = 0.5
+
+      ! Calculate step sizes
+      inQ_step = (2.0 * scan_radius) / (ncoarse - 1)
+      iinQ_step = (2.0 * scan_radius) / (ncoarse - 1)
+      dx = inQ_step
+      dy = iinQ_step
+
       DO i = 1, ncoarse
         DO j = 1, ncoarse
           inQ_coarse = -scan_radius + (i - 1) * inQ_step
           iinQ_coarse = -scan_radius + (j - 1) * iinQ_step
-
           ! Evaluate riccati function
           delta = riccati(inQ_coarse,inQ_e,inQ_i,inpr,inc_beta,
      $                        inds,intau,inpe,iinQ=iinQ_coarse)
@@ -395,150 +410,11 @@ c-----------------------------------------------------------------------
           END IF
         END DO
       END DO
-
-      !!!!!
-
-      IF (match_count == 0) THEN
-        WRITE(*,*)"No match found, increasing scan radius"
-        repeat = .TRUE.
-        new_scan_radius = scan_radius + 2
-        new_ncoarse = ncoarse + 100
-        new_nfine = nfine
-      ELSE IF (match_count > 0 .AND. match_count < 3) THEN
-        WRITE(*,*)"Match not definitive, increasing scan resolution"
-        repeat = .TRUE.
-        new_scan_radius = scan_radius
-        new_ncoarse = ncoarse
-        new_nfine = 8
-      ELSE
-        repeat = .FALSE.
-        WRITE(*,*)"Match found"
-
-      END IF
-
-      IF (repeat) THEN
-      WRITE(*,*)"Rerunning growth rate scan"
-
-      new_max_points = new_ncoarse**2 * (1 +
-     $       (new_nfine-1)**2)
-
-      ! Resize arrays to new max number of points
-      CALL grow_array(results%inQs, max_points, new_max_points)
-      CALL grow_array(results%iinQs, max_points, new_max_points)
-      CALL grow_array(results%Re_deltas, max_points, new_max_points)
-      CALL grow_array(results%Im_deltas, max_points, new_max_points)
-
-      results%inQs=0.0
-      results%iinQs=0.0
-      results%Re_deltas=0.0
-      results%Im_deltas=0.0
-      ! Initialize counter
-      count = 0
-
-      ! Calculate step sizes
-      inQ_step = (2.0 * new_scan_radius)/(new_ncoarse - 1)
-      iinQ_step = (2.0 * new_scan_radius)/(new_ncoarse - 1)
-
-      match_count = 0
-
-      ! Coarse grid loop
-      DO i = 1, new_ncoarse
-        DO j = 1, new_ncoarse
-          inQ_coarse = -new_scan_radius + (i - 1) * inQ_step
-          iinQ_coarse = -new_scan_radius + (j - 1) * iinQ_step
-
-          ! Evaluate riccati function
-          delta = riccati(inQ_coarse,inQ_e,inQ_i,inpr,inc_beta,
-     $                        inds,intau,inpe,iinQ=iinQ_coarse)
-          delta_real = REAL(delta)
-          delta_imag = AIMAG(delta)
-
-          IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 4)) THEN
-            ! Store coarse grid point
-            count = count + 1
-            results%inQs(count) = inQ_coarse
-            results%iinQs(count) = iinQ_coarse
-            results%Re_deltas(count) = delta_real
-            results%Im_deltas(count) = delta_imag
-          END IF
-
-          IF (ABS(deltaprime) > 8) THEN
-            threshold = ABS(deltaprime)**(1./3.)
-          ELSE
-            threshold = 0.25 * ABS(deltaprime)
-          END IF
-
-          ! Check if refinement is needed
-          IF ((ABS(delta_real) > threshold) .AND.
-     $     (ABS(deltaprime) > 4)) THEN
-      !   IF ((ABS(delta_real) > threshold) .AND. (SIGN(1.0,
-      !$              delta_real) == SIGN(1.0, deltaprime))) THEN
-
-            ! Fine grid loop
-            fine_dx = dx / new_nfine
-            fine_dy = dy / new_nfine
-
-            overlap_x = overlap_factor * fine_dx
-            overlap_y = overlap_factor * fine_dy
-
-            x_start = inQ_coarse - dx/2 - overlap_x
-            x_end = inQ_coarse + dx/2 + overlap_x
-            y_start = iinQ_coarse - dy/2 - overlap_y
-            y_end = iinQ_coarse + dy/2 + overlap_y
-
-            DO fj = 0, nfine-1
-              iinQ_fine = y_start+fj * (y_end-y_start) / (new_nfine-1)
-              DO fi = 0, nfine-1
-                inQ_fine = x_start+fi * (x_end-x_start) /(new_nfine-1)
-                IF ((ABS(inQ_coarse - inQ_fine) <
-     $              tolerance) .AND. (ABS(iinQ_coarse -
-     $              iinQ_fine) < tolerance)) CYCLE
-
-                ! Evaluate riccati function
-                delta = riccati(inQ_fine,inQ_e,inQ_i,inpr,
-     $                     inc_beta,inds,intau,inpe,iinQ=iinQ_fine)
-                delta_real = REAL(delta)
-                delta_imag = AIMAG(delta)
-
-                IF (ABS(delta_real)>ABS(deltaprime)) THEN
-                  match_count = match_count + 1
-                END IF
-
-                ! Store fine grid point
-                count = count + 1
-                results%inQs(count) = inQ_fine
-                results%iinQs(count) = iinQ_fine
-                results%Re_deltas(count) = delta_real
-                results%Im_deltas(count) = delta_imag
-              END DO
-            END DO
-          END IF
-        END DO
-      END DO
-
-      END IF
-      WRITE(*,*)"Passed IF return"
-      WRITE(*,*)"count: ",count
-      WRITE(*,*)"max_points: ",max_points
-      ! Set the actual count of points
-      results%count = count
-
-
-      WRITE(*,*)"Passed Set the actual count of points"
-      IF (count < max_points) THEN
-        ! Resize arrays to actual number of points
-        CALL shrink_array(results%inQs, count)
-        CALL shrink_array(results%iinQs, count)
-        CALL shrink_array(results%Re_deltas, count)
-        CALL shrink_array(results%Im_deltas, count)
-      END IF
-
-      WRITE(*,*)"Arrays successfully shrunk"
-
-
-      RETURN
-      END SUBROUTINE growthrate_scan
-
+      END SUBROUTINE scan_grid
+c-----------------------------------------------------------------------
+c     Subprogram 4. shrink_array
+c     Remove excess scan array size from memory
+c-----------------------------------------------------------------------
       SUBROUTINE shrink_array(arr, new_size)
           REAL(r8), ALLOCATABLE, INTENT(INOUT) :: arr(:)
           INTEGER, INTENT(IN) :: new_size
@@ -548,7 +424,10 @@ c-----------------------------------------------------------------------
           temp(1:new_size) = arr(1:new_size)
           CALL move_alloc(temp, arr)
       END SUBROUTINE shrink_array
-
+c-----------------------------------------------------------------------
+c     Subprogram 5. grow_array
+c     Increase scan array size if necessary
+c-----------------------------------------------------------------------
       SUBROUTINE grow_array(arr, old_size, new_size)
           REAL(r8), ALLOCATABLE, INTENT(INOUT) :: arr(:)
           INTEGER, INTENT(IN) :: old_size,new_size
