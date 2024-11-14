@@ -224,7 +224,7 @@ c-----------------------------------------------------------------------
 c     subprogram 3. build_inputs.
 c     build input arrays for SLAYER
 c-----------------------------------------------------------------------
-      SUBROUTINE build_inputs(infile,ncfile,inpr_prof,inpe,
+      SUBROUTINE build_inputs(infile,ncfile,inpr_prof,inpe,Pe_flag,
      $               qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
      $               inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,Q0_arr,
      $               inpr_arr,inpe_arr,omegas_arr,Re_deltaprime_arr,
@@ -237,6 +237,7 @@ c-----------------------------------------------------------------------
       ! Internals
       REAL(r8), DIMENSION(8), INTENT(IN) :: inpr_prof
       REAL(r8), INTENT(IN) :: inpe
+      LOGICAL, INTENT(IN) :: Pe_flag
       LOGICAL :: firstsurf
       REAL(r8) :: respsi,lpsi,rpsi,hdist,sbnosurf,ising
       INTEGER :: zi, zimp, mi, mimp
@@ -366,11 +367,11 @@ c-----------------------------------------------------------------------
 
          inpr = inpr_prof(ising)
 
-         ! Check whether to include electron viscosity
-         IF (inpe < 0) THEN
-            my_inpe=0.0
-         ELSE
+         ! Check whether to include classical electron viscosity
+         IF (Pe_flag) THEN
             my_inpe=0.0165*inpr
+         ELSE
+            my_inpe=inpe
          ENDIF
 
          ne_arr(ising) = n_e
