@@ -4258,6 +4258,9 @@ c-----------------------------------------------------------------------
       atr =-ifac*(gdr/nn)*btz
       atz = ifac*(gdr/nn)*btr
       atp = 0
+      IF (arzphicyl_flag) THEN
+      CALL gpdiag_arzphicyl(nr,nz,gdl,gdr,gdz,atr,atz,atp,"b")
+      ENDIF
 
       IF (chebyshev_flag) THEN
          IF(verbose) WRITE(*,*)"Computing chebyshev for xbrzphi"
