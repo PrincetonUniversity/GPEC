@@ -16,7 +16,8 @@ c-----------------------------------------------------------------------
      $     fun_flag,flux_flag,vsbrzphi_flag,displacement_flag,
      $     chebyshev_flag,coil_flag,eigm_flag,bwp_pest_flag,verbose,
      $     debug_flag,timeit,kin_flag,con_flag,resp_induct_flag,
-     $     netcdf_flag,ascii_flag,wv_farwall_flag,mutual_test_flag
+     $     netcdf_flag,ascii_flag,wv_farwall_flag,mutual_test_flag,
+     $     arzphicyl_flag
 
       INTEGER :: mr,mz,mpsi,mstep,mpert,mband,mtheta,mthvac,mthsurf,
      $     mfix,mhigh,mlow,msing,nfm2,nths,nths2,lmpert,lmlow,lmhigh,

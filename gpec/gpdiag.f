@@ -26,6 +26,7 @@ c     17. gpdiag_dw_matrix
 c     18. gpdiag_spline_roots
 c     19. gpdiag_jacfac
 c     20. gpdiag_delpsi
+c     21. gpdiag_arzphi_cyl
 c-----------------------------------------------------------------------
 c     subprogram 0. gpdiag_mod.
 c     module declarations.
@@ -2534,5 +2535,114 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_delpsi
+c-----------------------------------------------------------------------
+c     subprogram 21. gpdiag_arzphicyl
+c     print arzphi in cylinder and compare with Bphi
+c-----------------------------------------------------------------------
+      SUBROUTINE gpdiag_arzphicyl(nr,nz,lval,rval,zval,fr,fz,fp,label)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT(IN) :: nr,nz
+      INTEGER, DIMENSION(0:nr,0:nz), INTENT(IN) :: lval
+      REAL(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: rval,zval
+      COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: fr,fz,fp
+      CHARACTER(*), INTENT(IN) :: label
+
+      INTEGER :: i,j
+      REAL(r8) :: fabs
+      COMPLEX(r8), DIMENSION(0:nr,0:nz) :: dbr,dbz,dbp,div
+
+      TYPE(bicube_type) :: rfr,ifr,rfz,ifz
+
+      WRITE(*,*)"Vector potential in cylinder to cover all regien"
+      WRITE(*,*)"Bphi is calculated but not printed"
+
+      CALL bicube_alloc(rfr,nr,nz,1)
+      CALL bicube_alloc(ifr,nr,nz,1)
+      CALL bicube_alloc(rfz,nr,nz,1)
+      CALL bicube_alloc(ifz,nr,nz,1)
+
+      rfr%xs=rval(:,0)
+      ifr%xs=rval(:,0)
+      rfz%xs=rval(:,0)
+      ifz%xs=rval(:,0)
+
+      rfr%ys=zval(0,:)
+      ifr%ys=zval(0,:)
+      rfz%ys=zval(0,:)
+      ifz%ys=zval(0,:)
+
+      rfr%fs(:,:,1)=REAL(fr)
+      ifr%fs(:,:,1)=AIMAG(fr)
+      rfz%fs(:,:,1)=REAL(fz)
+      ifz%fs(:,:,1)=AIMAG(fz)
+
+      CALL bicube_fit(rfr,"extrap","extrap")
+      CALL bicube_fit(ifr,"extrap","extrap")
+      CALL bicube_fit(rfz,"extrap","extrap")
+      CALL bicube_fit(ifz,"extrap","extrap")
+
+      DO i=0,nr
+         DO j=0,nz
+            CALL bicube_eval(rfr,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(ifr,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(rfz,rval(i,j),zval(i,j),1)
+            CALL bicube_eval(ifz,rval(i,j),zval(i,j),1)
+
+            fabs=sqrt(abs(fr(i,j))**2.0+abs(fz(i,j))**2.0+
+     $           abs(fp(i,j))**2.0)
+            div(i,j)=rfr%fx(1)/rval(i,j)+rfz%fy(1)+
+     $           nn*AIMAG(fp(i,j))/rval(i,j)+ifac*
+     $           (ifr%fx(1)/rval(i,j)+ifz%fy(1)-
+     $           nn*REAL(fp(i,j))/rval(i,j))
+            div(i,j)=div(i,j)/fabs
+
+            dbr(i,j)=rfr%fy(1)+
+     $          ifac*(ifr%fy(1))
+            dbz(i,j)=rfz%fx(1)+
+     $          ifac*(ifz%fx(1))
+            dbp(i,j)=ifac*(AIMAG(dbr(i,j))-AIMAG(dbz(i,j)))
+     $          +(real(dbr(i,j))-real(dbz(i,j)))
+
+         ENDDO
+      ENDDO
+
+      CALL bicube_dealloc(rfr)
+      CALL bicube_dealloc(ifr)
+      CALL bicube_dealloc(rfz)
+      CALL bicube_dealloc(ifz)
+
+         CALL ascii_open(out_unit,"gpec_diagnostics_abrzphicyl_n"//
+     $        TRIM(sn)//".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_ABRZPHI_cyl: Total perturbed field"
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
+         WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
+         WRITE(out_unit,*)
+         WRITE(out_unit,'(1x,a2,14(1x,a16))')"l","r","z",
+     $        "real(A_r)","imag(A_r)","real(A_z)","imag(A_z)",
+     $        "real(A_phi)","imag(A_phi)",
+     $        "real(dAr/dz)","imag(dAr/dz)",
+     $        "real(dA_z/dR)","imag(dA_z/dR)",
+     $        "real(B_phi)","imag(B_phi)"
+         DO i=0,nr
+            DO j=0,nz
+               WRITE(out_unit,'(1x,I2,14(es17.8e3))')
+     $              lval(i,j),rval(i,j),zval(i,j),
+     $              REAL(fr(i,j)),AIMAG(fr(i,j)),
+     $              REAL(fz(i,j)),AIMAG(fz(i,j)),
+     $              REAL(fp(i,j)),AIMAG(fp(i,j)),
+     $              REAL(dbr(i,j)),AIMAG(dbr(i,j)),
+     $              REAL(dbz(i,j)),AIMAG(dbz(i,j)),
+     $              REAL(dbp(i,j)),AIMAG(dbp(i,j))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpdiag_arzphicyl
 
       END MODULE gpdiag_mod

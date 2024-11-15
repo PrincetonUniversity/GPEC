@@ -75,7 +75,7 @@ c-----------------------------------------------------------------------
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
      $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit,
-     $     malias,delpsi_flag,mutual_test_flag
+     $     malias,delpsi_flag,mutual_test_flag,arzphicyl_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -190,6 +190,7 @@ c-----------------------------------------------------------------------
       test_flag=.FALSE.
       eigm_flag=.FALSE.
       mutual_test_flag=.FALSE.
+      arzphicyl_flag=.FALSE.
 
       majr=10.0
       minr=1.0
