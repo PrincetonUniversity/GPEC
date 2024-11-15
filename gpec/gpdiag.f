@@ -2556,7 +2556,7 @@ c-----------------------------------------------------------------------
       TYPE(bicube_type) :: rfr,ifr,rfz,ifz
 
       WRITE(*,*)"Vector potential in cylinder to cover all regien"
-      WRITE(*,*)"Bphi is calculated but not printed"
+      WRITE(*,*)"Bphi is calculated again using Vector pontential"
 
       CALL bicube_alloc(rfr,nr,nz,1)
       CALL bicube_alloc(ifr,nr,nz,1)
