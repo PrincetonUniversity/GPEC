@@ -2613,9 +2613,9 @@ c-----------------------------------------------------------------------
       CALL bicube_dealloc(rfz)
       CALL bicube_dealloc(ifz)
 
-         CALL ascii_open(out_unit,"gpec_diagnostics_abrzphicyl_n"//
+         CALL ascii_open(out_unit,"gpec_diagnostics_arzphicyl_n"//
      $        TRIM(sn)//".out","UNKNOWN")
-         WRITE(out_unit,*)"GPEC_ABRZPHI_cyl: Total perturbed field"
+         WRITE(out_unit,*)"GPEC_ARZPHI_cyl: Vector pot. and gradient"
          WRITE(out_unit,*)
          WRITE(out_unit,'(1x,1(a6,I6))')"n  =",nn
          WRITE(out_unit,'(1x,2(a6,I6))')"nr =",nr+1,"nz =",nz+1
