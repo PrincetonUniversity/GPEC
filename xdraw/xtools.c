@@ -112,7 +112,7 @@ int opendisplay(char *title_in)
 
   if(ps_only) {
     mydisplay = NULL;
-    printf("Printing into .ps files. \n"); 
+    printf("Printing into .ps files. \n");
     goto NO_XTERM;
   }
 
@@ -149,7 +149,7 @@ int opendisplay(char *title_in)
 
   /*------- default pixel values */
 
-  mybackground = !background ? BlackPixel(mydisplay, myscreen): 
+  mybackground = !background ? BlackPixel(mydisplay, myscreen):
     WhitePixel(mydisplay, myscreen);
   myforeground = !background? WhitePixel(mydisplay, myscreen) :
     BlackPixel(mydisplay, myscreen);
@@ -221,7 +221,7 @@ Window makewindow(char *title, int has_menu)
   Widget shell, area;
   Widget area1;
   char text[8];
-  extern void redraw_m(Widget widget, 
+  extern void redraw_m(Widget widget,
 		       XtPointer client_data, XtPointer call_data);
 #endif
   extern GC dialog_gc;
@@ -267,7 +267,7 @@ Window makewindow(char *title, int has_menu)
 
       win = v->window = XtWindowOfObject(area1);
       v->work_area =XtWindowOfObject(area);
-      
+
       /*
       printf(" MAKEWINDOW\n");
       printf(" Window (view)= %d, mainwindow =%x, work_area = %x\n",
@@ -276,7 +276,7 @@ Window makewindow(char *title, int has_menu)
       test_window ("Work_area", v->work_area, area);
       printf(" End of test MAKEWINDOW \n");
       */
-      /* 
+      /*
      v->work_area--;
      */
       win = v->window =v->work_area;
@@ -372,19 +372,3 @@ int textwidth(char *string, int n)
   if (font_struct==0) return strlen(string);
   return (XTextWidth(font_struct, string, n));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

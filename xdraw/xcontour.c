@@ -69,6 +69,7 @@ typedef struct
 #include "xtools.h"
 #include "setcolor.h"
 #include "ps.h"
+#include "spline1.h"
 
 #define FZ (float)0
 
@@ -141,9 +142,9 @@ static BLOCK_XY *current_block_xy;
 static int current_iblock;
 
 static double  twopi, dtheta;
-static double  pi = 3.1415926535897931;  
+static double  pi = 3.1415926535897931;
 static float arrow_length = 10.0;
-static double ar_angle= 0.31415926535897931; /* 18 degrees */ 
+static double ar_angle= 0.31415926535897931; /* 18 degrees */
 static LOOP *rlp;
 int flags;
 
@@ -222,7 +223,7 @@ static void get_dpsi(CURVE_SET *cp, float *zmin, float *zmax)
   int i, icrit;
   float dist, distmin, psi;
   char text[80];
-  
+
   min = cp->iz.min;
   max = cp->iz.max;
   delta = max - min;
@@ -238,7 +239,7 @@ static void get_dpsi(CURVE_SET *cp, float *zmin, float *zmax)
   if (!forced)
     {
       df = (ncurve & 1) ? delta / (float)(ncurve+1) : delta / (float)ncurve;
-     
+
       min += df / 2.;
       max -= df / 2.;
       delta = max - min;
@@ -251,13 +252,13 @@ static void get_dpsi(CURVE_SET *cp, float *zmin, float *zmax)
   df = cp->forcemax * delta;
   if (max > force && max-df >= force) max -= df;
 
-  /*printf("get_dpsi, forcemin/max %g, %g\nmin/max %g, %g\n", 
+  /*printf("get_dpsi, forcemin/max %g, %g\nmin/max %g, %g\n",
     cp->forcemin, cp->forcemax, min, max);*/
-  
+
   f = cp->force;			/* ....Forced! */
   if (f < min) f = min;
   if (f > max) f = max;
-  
+
   dpsi = delta / (float)(ncurve-1);		/* trial dpsi */
   icrit=-1; distmin=delta;			/* find which i is closest...*/
   /*printf("get_dpsi, forced value = %g, initial dpsi=%g\n", f, dpsi);*/
@@ -266,7 +267,7 @@ static void get_dpsi(CURVE_SET *cp, float *zmin, float *zmax)
     {
       psi = min + i * dpsi;
       dist = fabs(psi-f);
-      if (i==0 || dist < distmin) { 
+      if (i==0 || dist < distmin) {
 	/*printf(" %d. psi=%g, dist=%g\n", i, psi, dist);*/
 	distmin=dist; icrit=i;
       }
@@ -365,7 +366,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 
   ncurve_dbg = -1;		// uncommented=no debugging
   //ncurve_dbg = 1;		// # contours (via h or d) for debug section
-  icurve1_dbg = 0; 
+  icurve1_dbg = 0;
   icurve2_dbg = 0;
 
   if (debug2) printf("Write to GRID.DAT\n");
@@ -392,16 +393,16 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 
   x_min = xmin; x_max = xmax;
   y_min = ymax; y_max = ymin;
-  
+
   pi = 3.1415926535897931;   /* Some  values in case polar */
   twopi = 2. * pi;
-  
+
   current_cp = cp;
   off0 = cp->iz.off0;
   xstep = cp->iz.dfaml;
   ystep = cp->iz.dstep;
-  if (debug_M2_detail) 
-    printf("redraw1, block %d, off0=%ld, xstep=%d, ystep=%d\n", 
+  if (debug_M2_detail)
+    printf("redraw1, block %d, off0=%ld, xstep=%d, ystep=%d\n",
 	   current_iblock, off0, xstep, ystep);
 
   xp = &cp->ix;
@@ -427,7 +428,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
     }
 
   else if (ftype ==6)		/* mr,mz depends on if drawing 1 block or all */
-    { 
+    {
 	mr = loop[2].count;
         mz = (cp->i_block>= nnode_r)?1:loop[1].count;
     }
@@ -459,7 +460,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
   else
   {
     if (!(nrz-i)) return;
-    fr = fz = (float)(nrz-i);    
+    fr = fz = (float)(nrz-i);
   }
 
   /*------ Obtain dr, dz etc */
@@ -472,11 +473,11 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
   roffset = xp->min * xscale + xoffset;
   zoffset = yp->min * yscale + yoffset;
   //printf("rdelt, zdelt=%g,%g, xscale,yscale=%lg,%lg\n", rdelt, zdelt, xscale, yscale);
-  
+
   gtype = cp->gtype;
   polar = cp->flags & POLAR;
   conlabels = cp->flags & LABELF;
-  
+
   ncurve = cp->ncurve;
   //printf("ncurve=%d\n", ncurve);
   if (ncurve==0) ncurve = cp->ncurve = default_ncurve;
@@ -513,7 +514,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
   /*--------- Get dpsi (contour values) */
 
   get_dpsi(cp, &min, &max);
-						     
+
   /*--------- Allocate list[], bin[] */
 
   if (!inited)				/* Allocate list[] and bin[] */
@@ -537,7 +538,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 
   /*--------- Load bin[], one entry for each ir, iz: level, rsign, asign */
 
-  /*if (debug4) 
+  /*if (debug4)
     xprintf("Ready to load bin[]: ncurve=%d, isep=%d\n", ncurve, isep);*//*isep=-1 normally*/
 
   if (!inited || ncurve!=last_ncurve ||		/* Load bin[] for points */
@@ -561,7 +562,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 	pa = p+ystep;		/* for value at pt above current pt */
 
 	/*---- rsign: 1=value of pt to right is gt than current pt, 0=same, -1=less  */
-	  
+
 	if (ir == mr-1) slope = FZ;
 	else {
 	  slope = *pr - *p;
@@ -672,7 +673,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 	    y = buf[yp->off0 + i];
 	    r1 = (x*xscale + xoffset);
 	    z2 = (y*yscale + yoffset);
-	    if (r1 != r1 || z1 != z1) 
+	    if (r1 != r1 || z1 != z1)
 	      printf("nan encountered at Draw Dot\n");
 	    rect_type = 3;
 	  }
@@ -712,9 +713,9 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
       for (i = i0; i < nc; i++) {			/* For each contour.... */
 	  psi = psi0 + i * dpsi;
 	  if ((psi >= cp->exclmin) && (psi <= cp->exclmax ) ) continue;
-	  if (i == ncurve) { 
-	    psi = extra_psi_value; 
-	    //if (tell_grad) printf("USING psi=%f\n", psi); 
+	  if (i == ncurve) {
+	    psi = extra_psi_value;
+	    //if (tell_grad) printf("USING psi=%f\n", psi);
 	  }
 	  ii = (int) ((psi - min) / dpsi);
 
@@ -722,11 +723,11 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 	      if ( (i !=cp->i_single) && (i != cp->j_single))
 	      continue;
 	  }
- 
+
 	  setcolor(i, ncurve, isep);			/* color for contour */
-	  if (debug_index == ii) { 
+	  if (debug_index == ii) {
 	    debug1 = 1;
-	    xprintf("See debug.dat: savelevel() for psi=%f i=%d, ii=%d\n", psi, i, ii); 
+	    xprintf("See debug.dat: savelevel() for psi=%f i=%d, ii=%d\n", psi, i, ii);
 	  }
 
 	  /*---- Draw contour for isep not equal -1 */
@@ -771,7 +772,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 
 	      drawcontour(psi, ii);
 
-	      fprintf(dbg_file, "limits x=%d to %d, y=%d to %d\n", 
+	      fprintf(dbg_file, "limits x=%d to %d, y=%d to %d\n",
 		      dbgx1, dbgx2, dbgy1, dbgy2);
 	      fclose(dbg_file);
 	      dbg_file = NULL;
@@ -785,7 +786,7 @@ void redraw1(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 	    if (finding_contour_value) need_distmin_inited = 1;
 	    //printf("DrawContour for psi=%.10g, block %d\n", psi, current_iblock);
 	    drawcontour(psi, ii);
-	    if (finding_contour_value && !need_distmin_inited) 
+	    if (finding_contour_value && !need_distmin_inited)
 	      transfer_distmin();
 	  }
 	  //debug1 = 0;
@@ -848,7 +849,7 @@ void test_this_segment(float psi, ptFlt x2, ptFlt y2, ptFlt x1, ptFlt y1,
   if (need_xywin) {
     calculate_xywin(xworld, yworld, &xwin, &ywin);
     need_xywin = 0;
-    //printf("test_this_segment %g, %g = %d, %d\n", 
+    //printf("test_this_segment %g, %g = %d, %d\n",
     //xworld, yworld, xwin, ywin);
   }
 
@@ -898,7 +899,7 @@ void test_this_segment(float psi, ptFlt x2, ptFlt y2, ptFlt x1, ptFlt y1,
 
     if (gfile != NULL) fprintf(gfile, "entered\n");
 
-    //printf("test_this_segment, psi=%g: (%g,%g) to (%g,%g), dist=%lg: (%d,%d,%d) (%d,%d,%d)\n", 
+    //printf("test_this_segment, psi=%g: (%g,%g) to (%g,%g), dist=%lg: (%d,%d,%d) (%d,%d,%d)\n",
     //psi, x1, y1, x2, y2, distmin, irmin1, izmin1, where_min1, irmin2, izmin2, where_min2);
 
     if (x1==x2 && y1==y2) {
@@ -914,7 +915,7 @@ void test_this_segment(float psi, ptFlt x2, ptFlt y2, ptFlt x1, ptFlt y1,
     need_distmin_inited = 0;
     //if (distmin == 0.0) finding_contour_value = -1;
 
-    //printf("test_this_segment, psi=%g: (%d,%d) to (%d,%d), dist=%lg\n", 
+    //printf("test_this_segment, psi=%g: (%d,%d) to (%d,%d), dist=%lg\n",
     //psi, x1, y1, x2, y2, distmin);
   }
 }
@@ -927,7 +928,7 @@ void transfer_distmin()
   int iseg, i;
   double dist_max;
   if (gfile != NULL)
-    fprintf(gfile, "transfer_distmin, psi=%g, distmin=%lg, block=%d\n", 
+    fprintf(gfile, "transfer_distmin, psi=%g, distmin=%lg, block=%d\n",
 	    psi_on_seg, distmin, current_iblock);
 
   /*------ If not yet 5 items in seg[], iseg = next */
@@ -954,7 +955,7 @@ void transfer_distmin()
     }
   }
 
-  //printf("transfer_distmin, psi=%g, dist=%lg at %d, block %d\n", 
+  //printf("transfer_distmin, psi=%g, dist=%lg at %d, block %d\n",
   //psi_on_seg, distmin, iseg, current_iblock);
 
   seg[iseg].psi		= psi_on_seg;
@@ -1049,7 +1050,7 @@ void get_world_coordinates(int i, int which,  double *x, double *y, char *captio
   *y = -(y1 - wy0) / ysc    + y_max;
 
   if (strlen(caption) && tell_grad)
-    printf("%s = %d, psi = %g at %lg, %lg, dist %lg\n", 
+    printf("%s = %d, psi = %g at %lg, %lg, dist %lg\n",
 	 caption, i, seg[i].psi, *x, *y, seg[i].distmin);
 }
 
@@ -1057,7 +1058,7 @@ void get_world_coordinates(int i, int which,  double *x, double *y, char *captio
 |	tell_contour_value
 -----------------------------------------------------------------------------*/
 void tell_contour_value(float *px, float *py, float *pz, int mr,
-			float *psixy, float *psi_seg,  
+			float *psixy, float *psi_seg,
 			float *gradx, float *grady)
 {
   float x1, y1, x2, y2, x3, y3;
@@ -1100,7 +1101,7 @@ void tell_contour_value(float *px, float *py, float *pz, int mr,
   dx = x2 - x1;
   dy = y2 - y1;
   dr = sqrt(dx*dx + dy*dy);
-  
+
   x3 = (xNearest - wx0) / xscale + x_min;
   y3 = y_max - (yNearest - wy0) / ysc;
 
@@ -1110,15 +1111,15 @@ void tell_contour_value(float *px, float *py, float *pz, int mr,
 
   r_on_seg = fr1 + (fr2 - fr1) * f;
   z_on_seg = fz1 + (fz2 - fz1) * f;
-  
+
   x_on_seg = x3;
   y_on_seg = y3;
 
-  printf("x,y of point on segment= %lg,%lg, r,z=%g,%g\n", x3, y3, 
+  printf("x,y of point on segment= %lg,%lg, r,z=%g,%g\n", x3, y3,
 	 r_on_seg, z_on_seg);
 
   printf("Psi of nearest segment %g: (%d,%d) and (%d,%d), block offset %lx\n",
-	 psi_on_seg, irmin1, izmin1, irmin2, izmin2, 
+	 psi_on_seg, irmin1, izmin1, irmin2, izmin2,
 	 block_xy_of_distmin->offset);
 }
 
@@ -1160,7 +1161,7 @@ void drawcontour(float psi, int ii)
 
   /*printf("krn, kzn = %d,%d\n", krn, kzn);*/
   dc_tell = 0;
-  if (dc_tell) 
+  if (dc_tell)
     printf("Psi=%g, limits %g,%g to %g,%g\n", psi, x_min, y_min, x_max, y_max);
 
   /*------ Load array list[] with all ir, iz which might contain psi */
@@ -1218,7 +1219,7 @@ void drawcontour(float psi, int ii)
   ivec = -1;
   labeli = rand_label(nvec);
   count = 0;
-  
+
   if (debug1) {
     if (ii<=9) sprintf(text, "0%d", ii);
     else sprintf(text, "%d", ii);
@@ -1377,7 +1378,7 @@ START:					/* Get 1st point on a contour */
 	  XDrawLine(mydisplay, redraw_win, redraw_gc,
 		    (int)pnow->x, (int)pnow->y, (int)q->x, (int)q->y);
 	  if (dbg_file != NULL) {
-	     fprintf(dbg_file, "%4d. %4d %4d to %4d %4d; %4d %4d to %4d %4d\n", 
+	     fprintf(dbg_file, "%4d. %4d %4d to %4d %4d; %4d %4d to %4d %4d\n",
 		     ++count, (int)pnow->ix, (int)pnow->iy, (int)q->ix, (int)q->iy,
 		     pnow->x, pnow->y, q->x, q->y);
 	     if ((int)pnow->x < dbgx1) dbgx1 = (int)pnow->x;
@@ -1436,7 +1437,7 @@ START:					/* Get 1st point on a contour */
 |	nextpoint
 |	* return q of possible next point with minimum angle
 |	* k=-1 or 0 ==> initialize ("first" true or false)
-|	* k=1,2,3 ==> e.g. closing contour (qln,qlf,qlft)  
+|	* k=1,2,3 ==> e.g. closing contour (qln,qlf,qlft)
 -----------------------------------------------------------------------------*/
 POINTS_ *nextpoint(int k, POINTS_ * q, POINTS_ * qln)
 {
@@ -1447,7 +1448,7 @@ POINTS_ *nextpoint(int k, POINTS_ * q, POINTS_ * qln)
   static POINTS_ *pfrom;
   static int first;
   int i;
- 
+
 #define xangle(f,p) atan2((double)(f->y - p->y),(double)(f->x - p->x))
 #define tangle(f,p) fabs(f->y - p->y)<0.0000001 &&fabs(f->x - p->x )<0.00000001
   /*
@@ -1477,7 +1478,7 @@ POINTS_ *nextpoint(int k, POINTS_ * q, POINTS_ * qln)
 	    tprint(pnow,pfrom,"pnow","pfrom");
 	  if (tangle(qln, pnow))
 	    tprint(qln, pnow, "qln","pnow");*/
-  
+
           if (tangle(pnow, pfrom))
 	      angle1[i] = 0;
            else
@@ -1678,12 +1679,12 @@ POINTS_ *has_psi(float psi, int ir, int iz, float x, float y, POINTS_ * q)
   *ctype = '\0';
 
   strcpy(fmt1, "%s: ir=%d iz=%d\n"
-	  " x(ir,iz)= %g y(ir,iz)=%g\n" 
+	  " x(ir,iz)= %g y(ir,iz)=%g\n"
 	  " x(ir+1,iz)= %g y(ir+1,iz)=%g\n"
 	  " x(ir+delt,iz) =%g y(ir+delt,iz)=%g");
 
-  strcpy(fmt2, "%s: ir=%d iz=%d\n" 
-	  " x(ir,iz)= %g y(ir,iz)=%g \n" 
+  strcpy(fmt2, "%s: ir=%d iz=%d\n"
+	  " x(ir,iz)= %g y(ir,iz)=%g \n"
 	  " x(ir,iz+1)= %g y(ir,iz+1)=%g \n"
 	  " x(ir,iz+delt) =%g y(ir,iz+delt)=%g");
 
@@ -1716,7 +1717,7 @@ POINTS_ *has_psi(float psi, int ir, int iz, float x, float y, POINTS_ * q)
 	  }
           q->x = (ptFlt) xcalc;
 	  q->y = (ptFlt) ycalc;
-      } 
+      }
 
       q++;
       if (tell_debug3) fprintf(file3, "Eq\n");
@@ -1747,7 +1748,7 @@ POINTS_ *has_psi(float psi, int ir, int iz, float x, float y, POINTS_ * q)
 	  else if (iz == 0 || iz == mz - 2);
 	  else if ((b - mr)->asign <= 0 || (b + mr)->asign >= 0);
 	  else
-	    { q = save_extremum(iz, mz, mr, psi, 1, &ky, qi=q); 
+	    { q = save_extremum(iz, mz, mr, psi, 1, &ky, qi=q);
 	      if (q!=qi) strcat(ctype,"B>"); }
 	}
     }
@@ -1776,10 +1777,10 @@ POINTS_ *has_psi(float psi, int ir, int iz, float x, float y, POINTS_ * q)
 	  else if (iz == 0 || iz == mz - 2);
 	  else if ((b - mr)->asign >= 0 || (b + mr)->asign <= 0);
 	  else
-	    { 
+	    {
 	      //if (ir==27) tell_save_extremum = 1;
 	      q = save_extremum(ir, mr, mr, psi, -1, &ky, qi=q);
-	      if (q!=qi) strcat(ctype,"D>"); 
+	      if (q!=qi) strcat(ctype,"D>");
 	      if (q!=qi) printf("Quad D (r=%d, z=%d) of (%d, %d), psi=%.10f: p00=%.10f, p10= %.10f, p01= %.10f, asign %d, %d\n",
 				ir, iz, mr, mz, psi, *p00, *p10, *p01, (b-mr)->asign, (b+mr)->asign);
 	      tell_save_extremum = 0;
@@ -1835,7 +1836,7 @@ POINTS_ *has_psi(float psi, int ir, int iz, float x, float y, POINTS_ * q)
 	ya = (float)iz;
 
 	/*------ Not Polar, yes Multiblock */
-          
+
 	if ( (ftype==5) || (ftype == 6) ) {
 	  if (p->where == PS_RIGHT) {			      /* -- worked */
 	    px_neighbor = buf + xoff + iz*ystep + (ir+1)*xstep ;
@@ -1866,7 +1867,7 @@ POINTS_ *has_psi(float psi, int ir, int iz, float x, float y, POINTS_ * q)
 
 	/*------ Not Polar, not Multiblock */
 
-	else { 
+	else {
 	  if (p->where == PS_RIGHT)   xa += delt;
 	  else if (p->where != PS_AT) ya += delt;
 	}
@@ -1891,9 +1892,9 @@ POINTS_ *has_psi(float psi, int ir, int iz, float x, float y, POINTS_ * q)
 
 #ifdef DEAD_CODE
 	  if (tell_debug3) {
-	    fprintf(file3, "x calc = %g = %d using %lg, %g, %d\n", 
+	    fprintf(file3, "x calc = %g = %d using %lg, %g, %d\n",
 		    x1, (int)p->x, x_min, xscale, wx0 );
-	    fprintf(file3, "y calc = %g = %d using %g, %lg, %d\n", 
+	    fprintf(file3, "y calc = %g = %d using %g, %lg, %d\n",
 		    y1, (int)p->y, y_max, ysc, wy0 );
 	  }
 #endif
@@ -1911,7 +1912,7 @@ POINTS_ *has_psi(float psi, int ir, int iz, float x, float y, POINTS_ * q)
 	  { psame->where = PS_AT; p--; }
       }
 
-      /*------ Yes Polar */	
+      /*------ Yes Polar */
 
       else {
 	ta = (float)ir;
@@ -1943,7 +1944,7 @@ POINTS_ *same_as(POINTS_ *p)
   iy = p->iy;
   for(q=p-1; q>=list && q->iy>=iy-1; q--)
     {
-      if (q->ix >= ix-1 && q->ix <= ix+1 && 
+      if (q->ix >= ix-1 && q->ix <= ix+1 &&
 	  ((int)q->x==(int)p->x && (int)q->y==(int)p->y))
 	return q;
     }
@@ -1958,7 +1959,7 @@ int getp00(int ir,int iz)
   int irz;
   long sign;
   irz = mr * iz + ir;
-  
+
   p00 = buf + off0 + ir * xstep + iz * ystep;
   pm0 = p00 - xstep;
   p10 = p00 + xstep;
@@ -1976,7 +1977,7 @@ int getp00(int ir,int iz)
   if (ir==0) pm0 = p00 + xstep * (mr -1);
   if (ir==mr-1) p10 = p00 - xstep * (mr-1);
   p20 = (ir!=mr-2) ? p10 + xstep : p00 - xstep * (mr-2);
-  
+
   return(irz);
 }
 
@@ -2059,7 +2060,7 @@ POINTS_ *save_extremum(int ir, int mr, int n, float psi,
       q++;
 
       if (tell_save_extremum) {
-	printf("save_extremum for *p00=%.10g, mr=%d, n=%d\na = %.10g\nb = %.10g\nc = %.10g\ng = %.10g\n", 
+	printf("save_extremum for *p00=%.10g, mr=%d, n=%d\na = %.10g\nb = %.10g\nc = %.10g\ng = %.10g\n",
 	       *p00, mr,n, k->a, k->b, k->c, k->g);
 	for (x=0; x<=1.1; x+=0.1) {
 	  psix = k->a * x * x + k->b * x + k->c;
@@ -2078,7 +2079,7 @@ void getquadcoeff(int n, int ir, int mr, QCOEFF * k)
   float a1, a2, b1, b2, c1;
   static int cubic = 0;
   float af0,af1,af2,af3;
-  
+
   af1 = *p00;
   if (n==1)
     {
@@ -2099,7 +2100,7 @@ void getquadcoeff(int n, int ir, int mr, QCOEFF * k)
   k->b = (3 * af2 - 6 * af1 + 3 * af0) / 6.;
   k->c = (-af3 + 6 * af2 - 3 * af1 - 2 * af0) / 6.;
   return;
-           
+
   //------ This calc is done by averaging two functions f = axx + bx + c,
   //       one centered on *p01 and one centered on *p02 ??
   //       I don't really follow this, but it was really clear when I first developed it
@@ -2180,8 +2181,8 @@ float quadratic(QCOEFF * k, float psi, float x0)
 	if (tellMe) {
 	  printf("quadratic alternate, psi=%.10g, x0=%.10g, a=%.10g %.10g %.10g\n",
 			 psi, x0, k->a, k->b, k->c);
-	  printf("x1=%.10g, x2=%.10g, Press any key..", x1, x2); 
-	  c=getchar(); 
+	  printf("x1=%.10g, x2=%.10g, Press any key..", x1, x2);
+	  c=getchar();
 	}
 	goto QUAD_DONE;
       }
@@ -2210,7 +2211,7 @@ void get_cont_minmax(int how, int i, float *xn, float *xx,
   float rfac, zfac;
   struct CONT *p;
   p = cdata + i;
-  
+
   if (how == 1 && !polar)
     {
       *xn = *yx = (float) 0;
@@ -2277,7 +2278,7 @@ int new_nvect(CURVE_SET *cp, char how)
   else  if ( how == 'J') cp->lstep >>=1;
   else  if ( how == 'j') cp->lstep <<=1;
   if (cp->fskip < 1) cp->fskip = 1;
-  if (cp->lstep < 1) cp->lstep = 1;  
+  if (cp->lstep < 1) cp->lstep = 1;
   redrawflag = 1;
   return (1);
 }
@@ -2507,8 +2508,8 @@ void  get_splr(float *x,float *y,
    {
      *(xvec+i)=*(xbuf+i);
      *(yvec+i)=*(ybuf+i);
-   }  
-  
+   }
+
       splfit(rspl,xvec,xspl,mr-1);
       ht=(Float) (ir+delta)*hr;
       spleval(rspl,xvec,xspl,&t,&t,&t,&t,ht,mr-1,mr-1,1,0);
@@ -2519,9 +2520,9 @@ void  get_splr(float *x,float *y,
       *y=(float) t;
 
    free( xvec); free(yvec); free(xspl); free(yspl);
-      
-  }      
-         
+
+  }
+
 
 /* Spline fitted value for x,y  - for z    */
 
@@ -2549,8 +2550,8 @@ void  get_splz(float *x,float *y,
    {
      *(xvec+i)=*(xbuf+i*mr);
      *(yvec+i)=*(ybuf+i*mr);
-   }  
-  
+   }
+
       splfit(zspl,xvec,xspl,mz-1);
       ht=(Float) (iz+delta)*hz;
       spleval(zspl,xvec,xspl,&t,&t,&t,&t,ht,mz-1,mz-1,1,0);
@@ -2561,8 +2562,8 @@ void  get_splz(float *x,float *y,
       *y=t;
 
    free( xvec); free(yvec); free(xspl); free(yspl);
-      
-    }      
+
+    }
 
 /*-----------------------------------------------------------------------------
 |	redraw_mb.  draw contours for multiblock
@@ -2653,7 +2654,7 @@ void redraw_mb(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
       }
     }
   ftmp = flist + itime *(nnode+1)*nqty + iqty*(nnode+1);
-  
+
   xy = xylist + 1 + first_bl;
 
   fmin = zp->min = ftmp->fmin;
@@ -2680,7 +2681,7 @@ void redraw_mb(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
       num_points = 0;
       if(cp->ncurve == 0)cp->ncurve=default_ncurve;
 
-      for (iblock = first_bl; iblock < last_bl; 
+      for (iblock = first_bl; iblock < last_bl;
 	   iblock++, xy+=1, fl+=fstep,fl2+=fstep)
 	{
 	  if (x_min > xy->xmax ) continue;
@@ -2696,11 +2697,11 @@ void redraw_mb(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 	  if ( cp->lstep >= imz) cp->lstep = 1;
 	  k = cp->fskip;
 	  zpp = cp->lstep;
-	 
+
           draw_v( imr, imz, xy->offset, xy->offset + imr*imz,
                   fl->offset, fl2->offset,
 		  &lmax_bl, &k, &zpp, l_scale, 0, cp->vDensity );
-	  
+
           num_points+=k;
           lmax = (lmax_bl > lmax )? lmax_bl:lmax;
 	  if (show_values)
@@ -2713,11 +2714,11 @@ void redraw_mb(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 	      xprintf (text);
 	    }
 	}
-    
+
       fl = flist + itime *(nnode+1)*nqty + iqty*(nnode+1)+1 + first_bl;
       fl2 = flist + itime *(nnode+1)*nqty + iqty2*(nnode+1)+1 + first_bl;
       ftmp = flist + itime *(nnode+1)*nqty + iqty*(nnode+1);
-  
+
       xy = xylist+1+first_bl;
       zp->min = ftmp->fmin;
       zp->max = ftmp->fmax;
@@ -2745,7 +2746,7 @@ void redraw_mb(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
   for (iblock = first_bl; iblock < last_bl; iblock++, xy+=1, fl+=fstep,
 	 fl2+=fstep)
     {
-      if (show_values) 
+      if (show_values)
 	printf("**Block %d of %d: %g vs %g, %g vs %g\n", iblock, last_bl,
 	       xmin, xy->xmax, ymax, xy->ymax);
 
@@ -2753,13 +2754,13 @@ void redraw_mb(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 
       if (xmin > xy->xmax ) continue;
       if (ymax > xy->ymax)  continue;
-      
+
       imr = xy->mr;
       imz = (iblock < nnode_r)?xy->mz :1;
       //if (debug4) xprintf("iblock %d, imr=%d, imz=%d\n", iblock, imr, imz);
       if (debug_mb) fprintf(fd, "iblock %d, imr=%d, imz=%d\n", iblock, imr, imz);
 
-      //printf("redraw_mb, block %d: %g,%g to %g,%g\n", 
+      //printf("redraw_mb, block %d: %g,%g to %g,%g\n",
       //iblock, xp->min, yp->min, xp->max, yp->max);
       current_block_xy = xy;
       current_iblock = iblock;
@@ -2841,8 +2842,8 @@ void redraw_mb(CURVE_SET *cp, float xmin, float xmax, float ymin, float ymax)
 	      /* test if points is in properly area */
 	      /* zmin, zmax now are free            */
 
-	      zmin = *(buf + xy->offset+ix);		/* x coordinate */ 
-	      zmax = *(buf + xy->offset+ix+imr*imz);	/* y coordinate */ 
+	      zmin = *(buf + xy->offset+ix);		/* x coordinate */
+	      zmax = *(buf + xy->offset+ix+imr*imz);	/* y coordinate */
 
 	      if ((zmin>=x_min )&&(zmin <= x_max)
 		  && (zmax >= y_min) && ( zmax <=y_max))
@@ -2923,11 +2924,11 @@ void drawgrid(float xmin, float xmax, float ymin, float ymax)
 	{
 	  xbuf = xbuf0 + ir;
 	  ybuf = ybuf0 + ir;
-	   
+
 	  if ( *xbuf < x_min || *xbuf > x_max ||
 	       *ybuf < y_min || *ybuf > y_max )
 	    continue;
-	   
+
 	  b = b0 + ir;
 
 	  if (!ps_modeon || ftype==6) {
@@ -2982,8 +2983,8 @@ void drawgrid_t(float xmin, float xmax, float ymin, float ymax,int iblock,
       iy3 = (int)((y_max - *(ybuf+iv3))*ysc+wy0);
       if (!ps_modeon)
 	{
-      
-	  /* Draw grid lines if you want 
+
+	  /* Draw grid lines if you want
 	     XDrawLine(mydisplay, redraw_win, redraw_gc,
 	     ix1,iy1,ix2,iy2
 	     );
@@ -2994,8 +2995,8 @@ void drawgrid_t(float xmin, float xmax, float ymin, float ymax,int iblock,
 	     ix3,iy3,ix1,iy1
 	     );
 	  */
-		    
-    
+
+
 	  XDrawPoint(mydisplay, redraw_win, redraw_gc,
 		     ix1,iy1
 		     );
@@ -3005,7 +3006,7 @@ void drawgrid_t(float xmin, float xmax, float ymin, float ymax,int iblock,
 	  XDrawPoint(mydisplay, redraw_win, redraw_gc,
 		     ix3,iy3
 		     );
-	} 
+	}
     }
 }
 
@@ -3045,7 +3046,7 @@ void drawcontour_t(float psi, int ii,int xy_off,int f_off,
 		    *(xbuf+iv2),*(ybuf+iv2),*(fbuf+iv2),
 		    psi,
 		    &cx1,&cy1);
-	
+
       u2=FindPoint(*(xbuf+iv1),*(ybuf+iv1),*(fbuf+iv1),
 		   *(xbuf+iv3),*(ybuf+iv3),*(fbuf+iv3),
 		   psi,
@@ -3055,7 +3056,7 @@ void drawcontour_t(float psi, int ii,int xy_off,int f_off,
 		   *(xbuf+iv2),*(ybuf+iv2),*(fbuf+iv2),
 		   psi,
 		   &cx3,&cy3);
-      
+
 	if ( u1 && u2 )
 	  {
 	    ix1 = (int)((cx1-x_min)*xscale+wx0);
@@ -3063,7 +3064,7 @@ void drawcontour_t(float psi, int ii,int xy_off,int f_off,
 	    ix2 = (int)((cx2-x_min)*xscale+wx0);
 	    iy2 = (int)((y_max - cy2)*ysc+wy0);
 
-	    if ( !ps_modeon)     
+	    if ( !ps_modeon)
 	      XDrawLine(mydisplay, redraw_win, redraw_gc,
 			ix1,iy1,ix2,iy2
 			);
@@ -3077,9 +3078,9 @@ void drawcontour_t(float psi, int ii,int xy_off,int f_off,
 	    iy1 = (int)((y_max - cy1)*ysc+wy0);
 	    ix2 = (int)((cx3-x_min)*xscale+wx0);
 	    iy2 = (int)((y_max - cy3)*ysc+wy0);
-	   
 
-	    if ( !ps_modeon)     
+
+	    if ( !ps_modeon)
 	      XDrawLine(mydisplay, redraw_win, redraw_gc,
 			ix1,iy1,ix2,iy2
 			);
@@ -3094,14 +3095,14 @@ void drawcontour_t(float psi, int ii,int xy_off,int f_off,
 	  };
 
 	if ( u2 && u3 )
-	  { 
+	  {
 	    ix1 = (int)((cx2-x_min)*xscale+wx0);
 	    iy1 = (int)((y_max - cy2)*ysc+wy0);
 	    ix2 = (int)((cx3-x_min)*xscale+wx0);
 	    iy2 = (int)((y_max - cy3)*ysc+wy0);
 
 
-	    if ( !ps_modeon)     
+	    if ( !ps_modeon)
 	      XDrawLine(mydisplay, redraw_win, redraw_gc,
 			ix1,iy1,ix2,iy2
 			);
@@ -3124,7 +3125,7 @@ void drawcontour_t(float psi, int ii,int xy_off,int f_off,
 /*           =0 - no z between                                        */
 /*           =1 - z is between z1,z2                                  */
 /*           =2 - z is at z1=z2                                       */
-/*--------------------------------------------------------------------*/       
+/*--------------------------------------------------------------------*/
 int FindPoint( float x1, float y1, float z1,
 	       float x2, float y2, float z2,
 	       float z,
@@ -3234,7 +3235,7 @@ void draw_v(int mr, int mz, int x_off, int y_off, int q1_off, int q2_off,
 
   else
     {
-      nij = mr*(*mpoints); 
+      nij = mr*(*mpoints);
       for (iz=zcount=0; iz<mz; iz+=(*mpoints),v10+= nij,v20+=nij,xbuf0+=nij,
 	     ybuf0+=nij, zcount++)
 	{
@@ -3244,10 +3245,10 @@ void draw_v(int mr, int mz, int x_off, int y_off, int q1_off, int q2_off,
 	      ybuf = ybuf0 + ir;
 	      v1    = v10  +ir;
 	      v2    = v20  +ir;
-	   
+
 	      if ( *xbuf < x_min || *xbuf > x_max ||
 		   *ybuf < y_min || *ybuf > y_max ) continue;
-	   
+
 	      vx = *v1;
 	      vy = *v2;
 	      l = vx*vx + vy*vy;
@@ -3276,7 +3277,7 @@ void draw_v(int mr, int mz, int x_off, int y_off, int q1_off, int q2_off,
 /*-------------------------------------------------------------------------*/
 /* vector
 /*-------------------------------------------------------------------------*/
-void vector(    int ix1, int iy1, float vx, float vy, 
+void vector(    int ix1, int iy1, float vx, float vy,
 	   	float lmax, float l_scale, int mod
 	    )
 {
@@ -3291,14 +3292,14 @@ void vector(    int ix1, int iy1, float vx, float vy,
   float ar_length;
   /*printf("Vector plot \n");*/
 
-    alpha = 3.1415926535897931/ang_coef;  
+    alpha = 3.1415926535897931/ang_coef;
     sn = sin( alpha);
     cs = cos( alpha);
     ar_length = 4;
     /* if equal length then l =0.5 lmax */
     l = (mod <= 1)?(vx*vx +vy*vy):(0.5*lmax);
     temp = sqrt(l/(lmax))*l_scale;
-     
+
     if(vx !=0 && vy !=0)
       {
 	gam=atan((vy*vx>0)?(vy/vx):-(vy/vx));
@@ -3339,7 +3340,7 @@ void vector(    int ix1, int iy1, float vx, float vy,
 
      /* Draw an arrow */
      /* Find (x3,y3),(x4,y4) */
-     if ( ix2!=ix1)     
+     if ( ix2!=ix1)
        {
 	 ix3 = (int)(ix2 -(ix2-ix1)/ar_length);
 	 iy3 = (int)((ix3 -ix1)*(iy2 - iy1)/(ix2-ix1))+iy1;
@@ -3349,7 +3350,7 @@ void vector(    int ix1, int iy1, float vx, float vy,
 	 ix3 = ix1;
        iy3 = (int)(iy2 -(iy2-iy1)/ar_length);
        }
-     
+
      ix1 = (int)(cs*(ix3-ix2)-sn*(iy3-iy2) + ix2);
      iy1 = (int)(sn*(ix3-ix2)+cs*(iy3-iy2) + iy2);
 
@@ -3359,17 +3360,17 @@ void vector(    int ix1, int iy1, float vx, float vy,
 	       ix1,iy1);
      else
        ps_line(ix1,iy1,ix2,iy2);
-     
+
      ix1 = (int)(cs*(ix3-ix2)+sn*(iy3-iy2) + ix2);
      iy1 = (int)(sn*(ix2-ix3)+cs*(iy3-iy2) + iy2);
-     
-     if ( !ps_modeon)     
+
+     if ( !ps_modeon)
        XDrawLine(mydisplay, redraw_win, redraw_gc,
 		 ix2,iy2,
 		 ix1,iy1);
      else
        ps_line(ix1,iy1,ix2,iy2);
-     
-     
+
+
 
 }/* vect plot */

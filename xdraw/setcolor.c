@@ -8,6 +8,7 @@
 **  Copyright (c) CounterPoint Graphics 1993.  All rights reserved.
 ******************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -20,6 +21,7 @@
 
 #include "setcolor.h"
 #include "ps.h"
+#include "xtools.h"
 
 #define XPRINTF
 #include "gendefs.h"
@@ -69,7 +71,7 @@ void set_color_table(int k, int ncurve)
   static int length = 0;
   int i;
   unsigned long col;
- 
+
 
   if (pix_color == NULL )
     {
@@ -86,7 +88,7 @@ void set_color_table(int k, int ncurve)
       XSetForeground(mydisplay, redraw_gc, col);
       return ;
     };
-      
+
   i=-1;
   hue = C1;
   if (ncurve == 1)
@@ -97,7 +99,7 @@ void set_color_table(int k, int ncurve)
     dhue = fancycolor(k, ncurve, -1);
 
   hue += dhue;
-  if (!ps_modeon) 
+  if (!ps_modeon)
     {
       *(pix_color + k)=hlsrgb(hue, (float) .5, (float) 1.);
 
@@ -113,7 +115,7 @@ void set_color_table(int k, int ncurve)
 void setcolor(int k, int ncurve, int isep)
 {
   float hue, dhue;
-  
+
   if(ps_modeon) hue=C3;
   else
     hue = C1;
@@ -372,7 +374,7 @@ int xinput(char *s, int *value)
 
    /*------ if s is a prompt string, so enable */
    /*       could test for value == NULL */
-   
+
    if (*(s+1))
    {
       xprintf1(s);
@@ -382,7 +384,7 @@ int xinput(char *s, int *value)
 
    /*------ s is a single char (from KeyPress event), */
    /*       'value' is return value of integer */
-   
+
    c = *s;
    if (c == 27 || c == '\n' || c == '\r')
    {
@@ -556,7 +558,7 @@ int SetShades(double hue, double chroma,long *pixels, int n)
   double deltav;
 
   ccc = XcmsCCCOfColormap(mydisplay,cmap);
-  
+
   if (XcmsTekHVCQueryMinV(ccc,hue,chroma,&col) == XcmsFailure)
     return (-1);
   else

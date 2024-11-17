@@ -1,6 +1,8 @@
 /*-----------------------------------------------------------------------------
 |	xtools.h
 -----------------------------------------------------------------------------*/
+typedef int byte;
+
 extern void give_command_args(int, char**);
 extern int opendisplay(char *title);
 extern void closedisplay(void);
@@ -80,11 +82,3 @@ VIEW;
 #define VISIBILITY 0x4
 
 #define WIN_MNGR MAXWINDOW+1
-
-
-
-
-
-
-
-

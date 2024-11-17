@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 
 #include "pspack.h"
+#include "ps.h"
 
 #define FZ (float)0
 
@@ -99,7 +100,7 @@ int main(int argc, char **argv)
   else if (ncols == 0 && nrows > 0) ncols = n;
   if (nrows > 0 && ncols > 0) ps_layout(n, nrows, ncols);
   lbord = (int)(xborder * (float)72);
-  
+
   file = fopen(outfile, "wt");
   fprintf(file, "%c! Postscript packed file, %d subfiles\n\n", '%', n);
   for (i = 0; i < n; i++)
@@ -119,8 +120,8 @@ int main(int argc, char **argv)
       readsize();
 	/* get wdx, wdy, wbord */
       if (!i)
-       fprintf(file, "%sBoundingBox:%d %d %d %d \n",    
- 	      "%%", 0,0,wdx+2*wbord,wdy); 
+       fprintf(file, "%sBoundingBox:%d %d %d %d \n",
+ 	      "%%", 0,0,wdx+2*wbord,wdy);
 
       writetrf(frd, file, i, n, wdx, wdy, wbord, lbord);
       for (; fgets(text, 100, frd);)
@@ -179,11 +180,3 @@ void input(char *prompt, char *p)
 void redraw() {}
 void xprintf() {}
 /*void xPrintf() {}*/
-
-
-
-
-
-
-
-

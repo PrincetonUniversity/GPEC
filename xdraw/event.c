@@ -8,7 +8,7 @@
 **  Copyright (c) CounterPoint Graphics 1993.  All rights reserved.
 ******************************************************************************/
 /*
-Last  correction of bugs: 30.11.2000 : aspect+zoom, zoom 
+Last  correction of bugs: 30.11.2000 : aspect+zoom, zoom
 */
 
 #include <stdio.h>
@@ -69,6 +69,7 @@ extern float *buf;
 #include "xinit.h"
 #include "xedit.h"
 #include "setcolor.h"
+#include "binread.h"
 
 extern void postscript(char *);	/* near heap problem, try elim .h's*/
 extern float get_world(int, int, XRectangle, float, float, float, float,
@@ -156,7 +157,7 @@ void special_zoom(int option);
 #endif			/* ...of USE_MENU */
 
 #define MOTIONMASK (PointerMotionMask | PointerMotionHintMask)
-#define EVENTMASK3 (PRESSMASK | WHEREMASK | ExposureMask) 
+#define EVENTMASK3 (PRESSMASK | WHEREMASK | ExposureMask)
 /*#define EVENTMASK3 (PRESSMASK | WHEREMASK | ExposureMask|StructureNotifyMask)*/
 #define EVENTMASK4 (EVENTMASK3 | MOTIONMASK)
 
@@ -241,7 +242,7 @@ void test_window(char *s, Window win, Widget wid)
       XGetGeometry(mydisplay, children[i], &root, &x0, &y0, &dx, &dy, &b, &d);
       printf ("%s: Children[%d] %lx has root %lx \n x,y = %d %d,\n size %d %d\n border %d\n",
 	  s, i,children[i],root, x0, y0, dx, dy,b);
-      
+
     }
 
   XFree(children);
@@ -285,9 +286,9 @@ void get_expose_info(Display **d, Window *w, GC *gc, int *fonthp)
 }
 
 /*-----------------------------------------------------------------------------
-|	
+|
 -----------------------------------------------------------------------------*/
-void set_winmask(Window win)  
+void set_winmask(Window win)
 {
 #ifndef MOTIF
   XSelectInput(mydisplay, win, EVENTMASK3);
@@ -452,7 +453,7 @@ void event()
   printf(" Number of events = %d\n", dummy=XQLength(mydisplay));
   */
   fflush(stdout);
-  
+
   XNextEvent(mydisplay, &myevent);	/* read the next event */
   oldw = event_win;
   event_win = myevent.xany.window;
@@ -500,7 +501,7 @@ void event()
 	  }
 	}
       break;
-            
+
     case ConfigureNotify:
       while (XCheckTypedWindowEvent(mydisplay,event_win,ConfigureNotify,&myevent));
       XClearArea(mydisplay, event_win, 0, 0, 0, 0, False);
@@ -508,7 +509,7 @@ void event()
       if (event_win == dialog_win) redraw_dialog();
       else redraw();
       break;
-                 
+
     case MappingNotify:			/* process keyboard mapping changes */
       XRefreshKeyboardMapping(&myevent.xmapping);
       break;
@@ -547,7 +548,7 @@ void event()
       cp = curveset + n;
       iwin = getview(event_win);
       redrawflag = 0;
-      
+
       abort_zoom();		/* key in another win: disable */
 
       /*------ Call xinput for new char (if \n, manage input) */
@@ -562,9 +563,9 @@ void event()
 	  //printf("Input Type %d\n", old_input_type);
 
 	  if (old_input_type == 99) {	/* !: debug stuff */
-	    if (ic == 1) { 
-	      tell_event = 1 - tell_event; 
-	      printf("tell_event toggled to %d\n", tell_event); 
+	    if (ic == 1) {
+	      tell_event = 1 - tell_event;
+	      printf("tell_event toggled to %d\n", tell_event);
 	    }
 	    if (ic == 2) special_debug = 1 - special_debug;
 	    if (ic == 3) report_zoom = 1 - report_zoom;
@@ -580,12 +581,12 @@ void event()
 	  }
 
 	  //else if (ftype == 6)			/* #: time stride for type M */
-	  //time_stride= ( ic > ntime )? 1: ic; 
+	  //time_stride= ( ic > ntime )? 1: ic;
 
 	  else if (old_input_type == 2) {
 	    qf = loop + cp->lfaml;		/* ^: time stride */
 	    if (ic == 0) ic=1;
-	    if (abs(ic) >= qf->count) 
+	    if (abs(ic) >= qf->count)
 	      xprintf("Invalid entry.  Value must be in plus-or-minus %d\n", qf->count-1);
 	    else fam_stride = ic;
 	  }
@@ -714,7 +715,7 @@ void event() {  exitflag = 1; }
 #else			/* ...USE_MENU is defined */
 
 /*-----------------------------------------------------------------------------
-|	
+|
 -----------------------------------------------------------------------------*/
 int get_eventmask()
 {
@@ -907,7 +908,7 @@ void zoom(Window nextwin, int enable)
       ycurs = yw;
       if (special_zoom_flag) special_zoom(2);
 
-      if (report_zoom) printf("zoom: xz[n] = %d; yz[n] = %d; n++;\n", 
+      if (report_zoom) printf("zoom: xz[n] = %d; yz[n] = %d; n++;\n",
 			      xcurs, ycurs);	/* for values for special_zoom */
 
       if (zoom_count++ == 0)
@@ -1047,11 +1048,11 @@ void tell_key(XEvent *p)
 }
 
 /*-----------------------------------------------------------------------------
-|   newclip - called by zoom() to get current clip  & toggle_aspect 
+|   newclip - called by zoom() to get current clip  & toggle_aspect
 |   * input xcurs,ycurs is relative to window, i.e. 0..width
 |   * iflag: 0=1st point, 1=2nd point, -1=original
 |   * gx, gy = fraction (0.0 ... 1.0) within inner box
-|   * see DEAD_CODE in bak/src0704 for original method	
+|   * see DEAD_CODE in bak/src0704 for original method
 |   * v->f[i] is fractional position in box of cursor *from previous zoom*
 -----------------------------------------------------------------------------*/
 int newclip(int iflag, int xcurs, int ycurs)
@@ -1088,7 +1089,7 @@ int newclip(int iflag, int xcurs, int ycurs)
 
   if (debug_scale) {
     if (iflag==0) printf("\n");
-    if (v->clipped && iflag==0) 
+    if (v->clipped && iflag==0)
       printf("DS previous fraction %g,%g and %g,%g\n",
 	     v->f[0],v->f[3],v->f[2],v->f[1]);
     printf("DS Cursor fractionally at %g, %g in box", gx,gy);
@@ -1421,7 +1422,7 @@ void addzoom(Window w, int inc)
   }
 
   else {
-    if (debug_scale) printf("\nDS Addzoom, X avg %.10g, diff %.10g, delta %.10g\n", 
+    if (debug_scale) printf("\nDS Addzoom, X avg %.10g, diff %.10g, delta %.10g\n",
 			    (float)avgx, (float)diffx, (float)(df * diffx));
     fx1_new = avgx - df * diffx;
     fx2_new = avgx + df * diffx;
@@ -1440,7 +1441,7 @@ void addzoom(Window w, int inc)
     fy1_new = fy1; fy2_new = fy2;
   }
   else {
-    if (debug_scale) printf("\nDS Addzoom, Y avg %.10g, diff %.10g, delta %.10g\n", 
+    if (debug_scale) printf("\nDS Addzoom, Y avg %.10g, diff %.10g, delta %.10g\n",
 			    (float)avgy, (float)diffy, (float)(df * diffy));
     fy1_new = avgy + df * diffy;
     fy2_new = avgy - df * diffy;
@@ -1501,9 +1502,9 @@ void show_coord(int xcurs, int ycurs, int count, CURVE_SET *cp)
   char text[500], vtext[200], gtext[200], *pt;
   int i, j, n, iError, iview;
   XColor xcolor;
-  
+
   /*------ Calculate actual coordinate x,y from xcurs,ycurs */
-  
+
   iview = getview(zoomwin);
   get_box_info(zoomwin, iview, &bigbox, &clipbox, &xmin, &ymin, &xmax, &ymax);
   get_world(xcurs, ycurs, clipbox, xmin, ymin, xmax, ymax, &x, &y);
@@ -1542,7 +1543,7 @@ void show_coord(int xcurs, int ycurs, int count, CURVE_SET *cp)
     crosshair(xcurs, ycurs);			/* turn crosshair off */
     pt = text + strlen(text);			/* append value to text */
 
-    iError = 
+    iError =
       nearest_M_value(x, y, cp, vtext, &psi0);		/* find nearest contour value */
 
     if (coord_on == 4) {
@@ -1550,7 +1551,7 @@ void show_coord(int xcurs, int ycurs, int count, CURVE_SET *cp)
       x1 = (1.0 + delta) * x;
       y1 = (1.0 + delta) * y;
 
-      iError = 
+      iError =
 	nearest_M_value(x1, y, cp, gtext, &psix);		/* find nearest contour value */
       iError =
 	nearest_M_value(x, y1, cp, gtext, &psiy);		/* find nearest contour value */

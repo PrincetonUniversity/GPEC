@@ -3,7 +3,7 @@
 **	AUTHOR		Sheryl M. Glasser
 **
 **	DESCRIPTION
-**		
+**
 **
 **	Copyright (c) Toptools SCF 1990.  All rights reserved.
 ******************************************************************************/
@@ -11,6 +11,7 @@ extern void get_limits(CURVE_SET *cp);
 extern int parse_title(CURVE_SET *cp, char *title, char *text);
 extern int parse_subtitle(CURVE_SET *, char *);
 extern char *to_greek(char *str,int *res);
+void settextcolor(int i);
 
 extern int m_lang_str(char *str,XTextItem *pnt_lang,int *n_items);
 #define AXIS_WIDTH 1
@@ -35,9 +36,3 @@ extern int v_is_header(int);
 extern char *skip_to_arg(char *, int, char);
 extern void ztest(int *, int *);
 #endif
-
-
-
-
-
-

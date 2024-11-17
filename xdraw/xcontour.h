@@ -8,6 +8,8 @@ extern void redraw_mb(CURVE_SET *cp,
 extern	int new_ncurve(CURVE_SET *cp, char how);
 extern  void contour_values(CURVE_SET *cp);
 extern	void get_contlim(float *xlim, float *ylim);
+int new_nvect(CURVE_SET *cp, char how);
+void get_world_coordinates(int i, int which,  double *x, double *y, char *caption);
 
 #ifdef XCONTOUR
 extern  void drawcontour(float psi,int ii);
@@ -29,7 +31,7 @@ extern  void savegrid(int ir,int iz);
 extern void drawgrid(float xmin, float xmax, float ymin, float ymax);
 extern void drawgrid_t(float xmin, float xmax, float ymin, float ymax,
                        int iblock,int mvert,int mcells,int xy_off);
- 
+
 extern void psicount(float *buf, long bufsize,
 		     float psi0,float dpsi,int ncurve,float *count);
 extern void  get_splr(float *x,float *y,
@@ -42,11 +44,10 @@ extern int FindPoint( float x1, float y1, float z1,
 	       float *xp, float *yp   );
 extern void drawcontour_t(float psi, int ii,int xy_off,int f_off,
 		   int mvert,int mcells);
-int new_nvect(CURVE_SET *cp, char how);
 void draw_v(int mr,int mz,int x_off,int y_off,int q1_off,int q2_off,
 	    float *lmax, int *npoints, int *zpoints,
 	    float l_scale, int mod, int density);
-void vector(int ix1, int iy1, float vx, float vy, 
+void vector(int ix1, int iy1, float vx, float vy,
 	    float lmax, float l_scale, int mod);
 
 #define ptFlt float
@@ -55,7 +56,7 @@ void test_this_segment(float psi, ptFlt x2, ptFlt y2, ptFlt x1, ptFlt y1,
 		       int ir1, int iz1, byte where1);
 void transfer_distmin();
 void tell_contour_value(float *px, float *py, float *pz, int mr,
-			float *psixy, float *psi_seg,  
+			float *psixy, float *psi_seg,
 			float *gradx, float *grady);
 
 #endif
@@ -72,14 +73,3 @@ typedef struct
   double xNearest, yNearest;
   BLOCK_XY *block_xy;
 } NEAR_SEG;
-
-
-
-
-
-
-
-
-
-
-
