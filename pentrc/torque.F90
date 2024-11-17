@@ -845,12 +845,6 @@ module torque
                     imx = 0.0
                     wtwnorm = -1.0
                 endif
-                print *, "BEFORE"
-                print *, wdian,wdiat,welec,nuk,bo/bmax,&
-                    epsr,q,l,n,rex,imx,psi,method,erecord
-                print *, fbnce%xs(0)
-                print *, turns%nqty
-                !stop
                 lxint = lambdaintgrl_lsode(wdian,wdiat,welec,nuk,bo/bmax,&
                     epsr,q,fbnce,l,n,rex,imx,psi,turns,method,op_record=erecord)
 
