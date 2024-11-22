@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
      $     verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
      $     params_check,growthrates_flag,analytic_growthrates_flag,
-     $     Pe_flag,br_th_flag,compress_deltas
+     $     br_th_flag,compress_deltas
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
@@ -89,7 +89,7 @@ c-----------------------------------------------------------------------
      $     scan_radius,QPscan_flag,QPscan2_flag,
      $     QPescan_flag,QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
-     $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag
+     $     layfac,Qratio,parflow_flag,peohmonly_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     stability_flag,growthrates_flag,analytic_growthrates_flag,
      $     br_th_flag,compress_deltas,bal_flag
@@ -151,7 +151,6 @@ c-----------------------------------------------------------------------
       Qratio=0.5
       parflow_flag=.FALSE.
       PeOhmOnly_flag=.TRUE.
-      Pe_flag=.FALSE.
       params_flag=.TRUE.
       input_flag=.FALSE.
       infile=""
@@ -299,14 +298,8 @@ c-----------------------------------------------------------------------
       IF (growthrates_flag) THEN
          !WRITE(*,*)"infile=",infile
          !WRITE(*,*)"ncfile=",ncfile
-
-         ! propagate inpr value to inpr_prof if inpr_prof is turned off
-         IF (inpr_prof(1) < 0) THEN 
-            inpr_prof = inpr
-         END IF
-
          CALL build_inputs(infile,ncfile,inpr_prof,
-     $               inpe,Pe_flag,qval_arr,psi_n_rational,
+     $               inpe,qval_arr,psi_n_rational,
      $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
      $               inds_arr,intau_arr,inQ0_arr,inpr_arr,inpe_arr,
      $               omegas_arr,Re_deltaprime_arr,Im_deltaprime_arr)
@@ -361,17 +354,17 @@ c-----------------------------------------------------------------------
 
          WRITE(*,*)"running analytic scan"
 
-         qval_arr = (/ qval /)
-         omegas_arr = (/ omega /)
+         qval_arr = (/ 2 /)
+         omegas_arr = (/ 1000.0 /)
          inQ_arr = (/ inQ /)
          inQ_e_arr = (/ inQ_e /)
          inQ_i_arr = (/ inQ_i /)
          psi_n_rational = (/ 0.0 /)
-         Re_deltaprime_arr = (/ REAL(delta_n_p) /)
-         Im_deltaprime_arr = (/ AIMAG(delta_n_p) /)
+         Re_deltaprime_arr = (/ 10.0 /)
+         Im_deltaprime_arr = (/ 0.00001 /)
          inpr_arr = (/ inpr /)
 
-         CALL growthrate_scan(qval_arr(1),inQ,inQ_e,
+         CALL growthrate_scan(2,inQ,inQ_e,
      $             inQ_i,inc_beta,inds,
      $             intau,inQ,inpr,inpe,
      $             scan_radius,reQ_num,compress_deltas,

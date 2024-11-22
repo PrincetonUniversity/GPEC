@@ -15,14 +15,14 @@
     bt=1.0               ! toroidal field [T]
     rs=0.17              ! minor radius of resonant surface [m]
     R0=2.0               ! major radius of magnetic axis [m]
-    omega=5.45E+04       ! ExB frequency [rad/s]
+    omega=5.45E+04       ! ExB frequency [1/s]
     l_t=0.11             ! temperature gradient scale length
     l_n=0.25             ! density gradient scale length
     qval=2.0             ! q of resonant surface
     mu_i=2.0             ! ion mass ratio to proton ??
     zeff=2.0             ! plasma Z_effective
     inpr=1.0             ! Prantdl number
-    inpr_prof=1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0 ! Prandtl number profile, set < 0 to only use inpr instead
+    inpr_prof=1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0 ! Prandtl number profile
     inpe=0.0             ! Electron viscosity
 
     !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE
@@ -52,7 +52,6 @@
     nbtscan_flag=f       ! scan (n,bt) space for error fields.
     parflow_flag=f       ! set parallel flow on
     PeOhmOnly_flag=t     ! only include Pe from Ohm's law
-    Pe_flag=f            ! if true, calculate classical inpe value from inpr and include in SLAYER run
     layfac=0.02          ! layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)) is added to Q_e if ABS(Q-Q_e)<layfac). Default is 0.02.
 /
 &SLAYER_OUTPUT
