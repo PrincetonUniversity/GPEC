@@ -1,17 +1,18 @@
 &SLAYER_INPUT
 
-    !!! FOR READING IN ASCII TABLE, SET INPUT_FLAG
+    !!! FOR READING IN ASCII TABLE, SET INPUT_FLAG = TRUE
     input_flag=f         ! reads profile quantities (n_e, t_e, etc.) from an ascii table
-    infile='/fusion/projects/codes/gpec/GPEC-1.5/docs/examples/a10_ideal_example/a10_prof1.txt'  ! Path to ascii table of profile quantities read when using input_flag
+    infile=''  ! Path to ascii table of profile quantities read when using input_flag
+    ncfile=''  ! Path to netCDF file of STRIDE outputs
 
-    !!! FOR MANUALLY ENTERING KINETIC QUANTITIES @ RATIONAL SURFACE, SET PARAMS_FLAG
-    params_flag=t        ! calculates normalized parameters from profile quantities
+    !!! FOR MANUALLY ENTERING KINETIC QUANTITIES @ RATIONAL SURFACE, SET PARAMS_FLAG = TRUE
+    params_flag=f        ! calculates normalized parameters from profile quantities
     mm=2                 ! poloidal mode number
     nn=1                 ! toroidal mode number
     n_e=7.77E+17         ! electron density [m^-3]
     t_e=25.8             ! electron temperature [eV]
     t_i=25.8             ! ion temperature [eV]
-    sval=729.0           ! magnetic shear at the layer
+    sval=2.0             ! magnetic shear at the layer
     bt=1.0               ! toroidal field [T]
     rs=0.17              ! minor radius of resonant surface [m]
     R0=2.0               ! major radius of magnetic axis [m]
@@ -21,10 +22,11 @@
     qval=2.0             ! q of resonant surface
     mu_i=2.0             ! ion mass ratio to proton ??
     zeff=2.0             ! plasma Z_effective
-    inpr=0.0001          ! Prantdl number
-    inpe=0.0             ! Electron viscosity
+    inpr=10.0            ! Prantdl number
+    inpr_prof=10.0,10.0,10.0,10.0,10.0,10.0,10.0,10.0 ! Prandtl number profile
+    inpe=0.0             ! Electron viscosity (if > 0.0, Pe_flag=t will be overridden and this value used instead)
 
-    !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE
+    !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE HERE
     inQ=23.0             ! normalized ExB frequency
     inQ_e=2.0            ! normalized electron diamagnetic frequency
     inQ_i=-2.0           ! normalized ion diamagnetic frequency
@@ -48,15 +50,16 @@
     nbtscan_flag=f       ! scan (n,bt) space for error fields.
     parflow_flag=f       ! set parallel flow on
     PeOhmOnly_flag=t     ! only include Pe from Ohm's law
+    Pe_flag=f            ! Not operational yet. If true, it will calculate classical inpe value from inpr and include in SLAYER run
     layfac=0.02          ! layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)) is added to Q_e if ABS(Q-Q_e)<layfac). Default is 0.02.
 /
 &SLAYER_OUTPUT
     verbose=t            ! prints progress to terminal
     ascii_flag=t         ! writes results to ascii files
-    bin_flag=t           ! writes results to binary files
+    bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
-    bal_flag=t           ! calculate the resonant field penetration threshold from torque balance
+    bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
