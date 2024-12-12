@@ -38,12 +38,13 @@ module inputs
     use bicube_mod, only : bicube_type,bicube_alloc,bicube_fit,bicube_eval
     
     use dcon_interface, only : idcon_read,idcon_transform,idcon_metric,&
-        idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
-        geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,&
+        idcon_matrix,idcon_action_matrices,idcon_build,set_geom,idcon_harvest,&
+        geom,eqfun,sq,rzphi,smats,tmats,xmats,ymats,zmats,amat,bmat,cmat,&
         chi1,ro,zo,bo,nn,idconfile,jac_type,&
         shotnum,shottime,machine,&
         mfac,psifac,mpert,mstep,mthsurf,theta,&
-        idcon_coords
+        idcon_coords,&
+        verbose
     
     implicit none
     
@@ -63,7 +64,6 @@ module inputs
         verbose
     
     ! global variables with defaults
-    logical :: verbose=.TRUE.
     type(spline_type) :: kin
     type(cspline_type) :: dbob_m, divx_m, xs_m(3)
     type(bicube_type):: fnml
@@ -147,11 +147,12 @@ module inputs
         CALL idcon_metric
         ! read vacuum data.
         !CALL idcon_vacuum
-        ! form action matrices (this will move !!)
-        call idcon_action_matrices!(egnum,xspmn)
+        ! form action matrices
+        call idcon_action_matrices
 
         ! set additional geometry spline
         call set_geom
+        WRITE(*,*)chi1
 
     end subroutine read_equil
     
@@ -219,9 +220,9 @@ module inputs
         if(write_log) print *,"Formed temporary spline"
         
         ! extrapolate to regular spline (helps smooth core??)
-        call spline_alloc(kin,nkin,8)
+        call spline_alloc(kin,nkin,9)
         kin%title(0:) = (/"psi_n ","n_i   ","n_e   ","t_i   ","t_e   ","omegae",&
-                    "loglam","nu_i  ","nu_e  " /)
+                    "loglam", "nu_i  ","nu_e  ", "zeff  "/)
         do i=0,kin%mx
               psi = (1.0*i)/kin%mx
               call spline_eval(tmp,psi,0)
@@ -234,13 +235,14 @@ module inputs
 
         ! collisionalities **assumes si units for n,t**
         zeff = zimp-(kin%fs(:,1)/kin%fs(:,2))*zi*(zimp-zi)
-        zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)   
+        zpitch = 1.0+(1.0+mimp)/(2.0*mimp)*zimp*(zeff-1.0)/(zimp-zeff)
         kin%fs(:,6) = 17.3-0.5*log(kin%fs(:,2)/1.0e20) &
             +1.5*log(kin%fs(:,4)/1.602e-16)
         kin%fs(:,7) = (zpitch/3.5e17)*kin%fs(:,1)*kin%fs(:,6) &
             /(sqrt(1.0*mi)*(kin%fs(:,3)/1.602e-16)**1.5)
         kin%fs(:,8) = (zpitch/3.5e17)*kin%fs(:,2)*kin%fs(:,6) &
             /(sqrt(me/mp)*(kin%fs(:,4)/1.602e-16)**1.5)
+        kin%fs(:,9) = zeff
 
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Formed kin spline"
@@ -248,7 +250,7 @@ module inputs
         ! manipulation of N and T profiles
         kin%fs(:,1:2) = nfac*kin%fs(:,1:2)
         kin%fs(:,3:4) = tfac*kin%fs(:,3:4)
-    
+
         ! manipulation of rotation variables
         welec(:) = wefac*kin%fs(:,5) ! direct manipulation of omegae
         if(wefac/=1.0 .and. verbose) print('(a55,es10.2e3)'),'  -> applying direct manipulation of omegaE by factor ',wefac
@@ -256,11 +258,12 @@ module inputs
         wdiat =-twopi*kin%fs1(:,3)/(e*zi*chi1)
         wpefac= (wpfac*(welec+wdian+wdiat) - (wdian+wdiat))/welec
         welec = wpefac*welec   ! indirect manipulation of rotation
+        kin%fs(:,5)=welec
+
         if(wpfac/=1.0 .and. verbose) then
             print('(a40,es10.2e3)'),'  -> manipulating rotation by factor of ',wpfac
             print *,'     by indirect manipulation of omegae profile'
         endif
-        kin%fs(:,5) = welec(:)
         call spline_fit(kin,"extrap")
         if(write_log) print *,"Reformed kin spline with rotation manipulations"
 
@@ -274,7 +277,7 @@ module inputs
             call spline_write1(kin,.true.,.false.,out_unit,0,.true.)
             close(out_unit)
         endif
-    
+
     end subroutine read_kin
 
 
@@ -345,8 +348,8 @@ module inputs
         ! read file
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
-        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeates
-        nm = nunique(table(:,2),op_sorted=.True.)
+        !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeats
+        nm = nunique(table(:,2))
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
             stop "ERROR - inputs - size of table not equal to product of unique psi & m"
@@ -502,7 +505,8 @@ module inputs
 
 
     !=======================================================================
-    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,debug,op_powin)
+    subroutine read_peq(file,jac_in,jsurf_in,tmag_in,force_xialpha,debug, &
+            op_powin)
     !-----------------------------------------------------------------------
     !*DESCRIPTION:
     !   Read psi,m matrix of displacements.
@@ -516,6 +520,8 @@ module inputs
     !       Surface weigted inputs should be 1
     !   tmag_in : int.
     !       Input toroidal angle specification: 1 = magnetic, 0 = cylindrical
+    !   force_xialpha : logical
+    !       Recalculate xi^alpha from xi^psi and xi^psi' using toroidal force balance
     !   debug : logical
     !       Print intermidient messages to terminal.
     !
@@ -529,20 +535,26 @@ module inputs
         implicit none
 
         ! declare arguments
-        logical, intent(in) :: debug
+        logical, intent(in) :: debug,force_xialpha
         integer, intent(in) :: jsurf_in,tmag_in
         integer, dimension(4), intent(in), optional :: op_powin
         character(32), intent(inout) :: jac_in
         character(512), intent(in) :: file
         ! declare local variables
         logical :: ncheck
-        integer :: i,j,npsi,nm,ndigit,firstnm, powin(4)
+        integer :: i, j, npsi, nm, ndigit, firstnm, powin(4), ipsilow, ipsihigh
         integer, dimension(:), allocatable :: ms
         real(r8), dimension(:), allocatable :: psi
         real(r8), dimension(:,:), allocatable :: table
         complex(r8), dimension(:,:), allocatable :: xmp1mns,xspmns,xmsmns,xmp1mni,xspmni,xmsmni
         character(3) :: nstr
         character(32), dimension(:), allocatable :: titles
+
+        ! variables for inverting complex mpert-by-mpert matrix
+        INTEGER :: info
+        INTEGER, DIMENSION(mpert) :: ipiv
+        COMPLEX(r8), DIMENSION(mpert,mpert) :: ainv
+        COMPLEX(r8), DIMENSION(mpert) :: uwork
 
         ! file consistency check (requires naming convention)
         write(nstr,'(i3)') nn
@@ -567,7 +579,7 @@ module inputs
         call readtable(file,table,titles,verbose,debug)
         ! should be npsi*nm by 8 (psi,m,realxi_1,imagxi_1,...)
         !npsi = nunique(table(:,1)) !! computationally expensive + gpec n=3's can have repeats
-        nm = nunique(table(:,2),op_sorted=.True.)
+        nm = nunique(table(:,2))
         npsi = size(table,1)/nm
         if(npsi*nm/=size(table,1))then
             stop "ERROR - inputs - size of table not equal to product of unique psi & m"
@@ -676,9 +688,42 @@ module inputs
                 xmsmns(i,:) = newm(nm,ms,xmsmni(i,:),mpert,mfac)
             enddo
         endif
-        
+
+        ! idcon_matrix can have issues outside dcon limits
+        ipsilow = 1
+        ipsihigh = npsi
+        do i=1,npsi
+           if(psi(i) >= sq%xs(0))then
+              ipsilow = i
+              exit
+           endif
+        enddo
+        do i=npsi,1,-1
+           if(psi(i) <= sq%xs(sq%mx))then
+              ipsihigh = i
+              exit
+           endif
+        enddo
+
+        ! optionally replace tangential displacement using radial displacement and toroidal force balance
+        if(force_xialpha)then
+            if(verbose) print *,'  Forcing tangential displacement to satisfy toroidal force balance'
+            do i=ipsilow,ipsihigh
+                ! calculate A,B,C matrices on each surface
+                call idcon_matrix(psi(i))
+                ! calculate inverse of A - should be well behaved
+                ainv(:, :) = amat(:, :)
+                call zgetrf(mpert,mpert,ainv,mpert,ipiv,info)
+                call zgetri(mpert,ainv,mpert,ipiv,uwork,mpert,info)
+                ! calculate new xialpha based on Eq. (21) of [Park, Logan, PoP 2017]
+                xmsmns(i,:) = (1.0/chi1) * matmul(ainv, &
+                    -1*(matmul(bmat, xmp1mns(i,:)) + matmul(cmat, xspmns(i,:))) )
+            end do
+        end if
+
         ! set global variables (perturbed quantity csplines)
-        call set_peq(psi,mfac,xmp1mns,xspmns,xmsmns,.true.,debug)
+        call set_peq(psi(ipsilow:ipsihigh),mfac,xmp1mns(ipsilow:ipsihigh,:),xspmns(ipsilow:ipsihigh,:),&
+                     xmsmns(ipsilow:ipsihigh,:),.true.,debug)
         
         deallocate(ms,psi,xmp1mns,xspmns,xmsmns)
         

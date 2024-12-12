@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-c     file equil_.f.
+c     file equil.f.
 c     reads ascii input for equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -29,11 +29,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE equil_read(unit, op_psihigh)
-
+      SUBROUTINE equil_read(unit, op_psihigh, op_psilow)
+      USE inverse_mod
       LOGICAL :: file_stat
       INTEGER, INTENT(IN) :: unit
       REAL(r8), OPTIONAL, INTENT(IN) :: op_psihigh
+      REAL(r8), OPTIONAL, INTENT(IN) :: op_psilow
 
       NAMELIST/equil_control/eq_filename,eq_type,grid_type,mpsi,mtheta,
      $     newq0,psihigh,psilow,input_only,jac_type,power_bp,power_r,
@@ -58,7 +59,12 @@ c-----------------------------------------------------------------------
          psihigh = op_psihigh
          IF(verbose) WRITE(*,*) "Reforming equilibrium with new psihigh"
       ENDIF
+      IF(PRESENT(op_psilow))THEN
+         psilow = op_psilow
+         IF(verbose) WRITE(*,*) "Reforming equilibrium with new psilow"
+      ENDIF
       IF(verbose) WRITE(*,'(1x,a,es10.3)')"psihigh =",psihigh
+      IF(verbose) WRITE(*,'(1x,a,es10.3)')"psilow =",psilow
       psihigh=MIN(psihigh,1._r8)
 c-----------------------------------------------------------------------
 c     define Jacobian.
@@ -174,6 +180,8 @@ c-----------------------------------------------------------------------
          CALL read_eq_hansen_inverse
       CASE("pfrc")
          CALL read_eq_pfrc
+      CASE("transp_interface")
+         CALL inverse_run
       CASE DEFAULT
          CALL program_stop("Cannot recognize eq_type "//TRIM(eq_type))
       END SELECT

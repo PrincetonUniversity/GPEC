@@ -24,9 +24,11 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       LOGICAL :: cyl_flag=.FALSE., use_notaknot_splines=.TRUE.,
-     $           use_classic_splines_for_stride
+     $           use_classic_splines_for_stride,
+     $           reform_eq_with_psilim=.FALSE.
       INTEGER :: mmin
       REAL(r8) :: plasma1,vacuum1,total1
+      REAL(r8) :: psilow_tmp, psilim_tmp
 
       CHARACTER(len=64) :: arg_str1, arg_str2
       INTEGER :: nArg
@@ -39,7 +41,8 @@ c-----------------------------------------------------------------------
      $     delta_mlow,delta_mhigh,delta_mband,thmax0,nstep,ksing,
      $     tol_nr,tol_r,crossover,ucrit,singfac_min,singfac_max,
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,
-     $     use_classic_splines,use_notaknot_splines,qlow,qhigh
+     $     use_classic_splines,use_notaknot_splines,qlow,qhigh,
+     $     reform_eq_with_psilim
       NAMELIST/stride_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -48,7 +51,7 @@ c-----------------------------------------------------------------------
      $     ahb_flag,mthsurf0,msol_ahb,netcdf_out
       NAMELIST/stride_params/grid_packing,asymp_at_sing,
      $     integrate_riccati,calc_delta_prime,calc_dp_with_vac,
-     $     solve_delta_prime_with_sparse_mat,axis_mid_pt_skew,
+     $     axis_mid_pt_skew,
      $     big_soln_err_tol, kill_big_soln_for_ideal_dW,
      $     ric_dt,ric_tol,riccati_bounce,verbose_riccati_output,
      $     riccati_match_hamiltonian_evals,verbose_performance_output,
@@ -68,6 +71,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read input data.
 c-----------------------------------------------------------------------
+      PRINT *, ""
+      PRINT *, "STRIDE START => "//TRIM(version)
+      PRINT *, "__________________________________________"
       CALL timer(0,out_unit)
       CALL ascii_open(in_unit,"stride.in","OLD")
       READ(UNIT=in_unit,NML=stride_control)
@@ -125,6 +131,30 @@ c-----------------------------------------------------------------------
       IF(dump_flag .AND. eq_type /= "dump")CALL equil_out_dump
       CALL equil_out_global
       CALL equil_out_qfind
+c-----------------------------------------------------------------------
+c     optionally reform the eq splines to concentrate at true truncation
+c-----------------------------------------------------------------------
+      CALL sing_lim  ! determine if qhigh is truncating before psihigh
+      CALL sing_min  ! dettermine if qlow excludes more of the core
+      ! Unlike DCON, we force a resplining.
+      ! The equil_out_qfind propogates to sing_find and then to the
+      ! parallelized intervals in a complicated web. Thus, it is not
+      ! sufficient to simply set the axisPsi to "start" the ODE somewhere new
+      IF(.NOT. reform_eq_with_psilim)THEN
+         PRINT *, "** STRIDE requires reformation of equil splines "//
+     $            "on q-based sub-interval."
+         PRINT *, " > Forcing reform_eq_with_psilim=t"
+      ENDIF
+      IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
+         psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read
+         psilim_tmp = psilim
+         CALL equil_read(out_unit, psilim_tmp, psilow_tmp)
+         CALL equil_out_global
+         CALL equil_out_qfind
+      ENDIF
+c-----------------------------------------------------------------------
+c     record the equilibrium properties
+c-----------------------------------------------------------------------
       CALL equil_out_diagnose(.FALSE.,out_unit)
       CALL equil_out_write_2d
       IF(direct_flag)CALL bicube_dealloc(psi_in)
@@ -132,7 +162,7 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"*** equil-input time=",REAL(fTime-sTime,8)/REAL(cr,8)
       ENDIF
-      use_classic_splines = use_classic_splines_for_stride
+      use_classic_splines = use_classic_splines_for_stride  ! optionaly different from equil
 c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
@@ -160,7 +190,6 @@ c     define poloidal mode numbers.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
       CALL sing_find
-      CALL sing_lim
       delta_mhigh=delta_mhigh*2  ! added for consistency with dcon
       IF(cyl_flag)THEN
          mlow=delta_mlow
@@ -248,6 +277,8 @@ c     integrate main ODE's.
 c-----------------------------------------------------------------------
             IF(ode_flag)THEN
                WRITE(*,*)"Starting ODE integration..."
+               WRITE(*, '(1x,a5,2(a11))') "ising",'left','right'
+               WRITE(*, '(1x,a27)')'---------------------------'
                CALL ode_run
                IF (integrate_riccati) THEN
                   CALL free_calc_wp

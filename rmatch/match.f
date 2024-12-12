@@ -13,22 +13,21 @@ c     3. match_newton.
 c     4. match_delta.
 c     5. match_solution.
 c     6. match_eta_scan.
-c     7. match_branch_scan
-c     8. match_eigenvalue_scan.
-c     9. match_qscan.
-c     10. match_init_scan.
-c     11. match_delta_jardin.
-c     12. match_nyquist.
-c     13. match_branch.
-c     14. match_solve.
-c     15. match_matrix_diagnose.
-c     16. match_rpec.
-c     17. match_alloc_sol.
-c     18. match_dealloc_sol.
-c     19. match_output_solution.
-c     20. match_auto_connect.
-c     21. real_order
-c     22. match_main.
+c     7. match_qscan.
+c     8. match_delta_jardin.
+c     9. match_nyquist.
+c     10. match_branch.
+c     11. match_solve.
+c     12. match_matrix_diagnose.
+c     13. match_rpec.
+c     14. match_alloc_sol.
+c     15. match_dealloc_sol.
+c     16. match_output_solution.
+c     17. match_auto_connect.
+c     18. match_eqscan.
+c     19. match_init_scan
+c     20. real_order
+c     21. match_main.
 c-----------------------------------------------------------------------
 c     subprogram 0. match_mod.
 c     module declarations.
@@ -43,6 +42,7 @@ c-----------------------------------------------------------------------
       USE innerc_module
       USE deltac_mod
       USE msing_mod
+      
       IMPLICIT NONE
       
       TYPE :: branch_type
@@ -86,16 +86,18 @@ c-----------------------------------------------------------------------
       END TYPE insol_type
       
       LOGICAL :: scan_flag=.FALSE.,sol_flag=.FALSE.,qscan_flag=.FALSE.,
-     $     matrix_diagnose=.FALSE.,init_scan_flag=.FALSE.
+     $     matrix_diagnose=.FALSE.,eqscan_flag=.FALSE.
+      LOGICAL :: init_scan_flag=.FALSE.
       LOGICAL :: qscan_out=.TRUE.,deltar_flag=.FALSE.,deflate=.FALSE.,
      $           deltac_flag=.FALSE.,deltaj_flag=.FALSE.,
      $           match_flag=.FALSE.
       LOGICAL :: bin_rpecsol=.FALSE.,out_rpecsol=.FALSE.
       CHARACTER(10) :: model="deltac"
-      INTEGER :: msing,totmsing,nstep=32,scan_nstep,qscan_ising=1
+      INTEGER :: msing,totmsing,nstep=32,qscan_ising=1
+      INTEGER :: scan_nstep, scan_estep
       INTEGER :: nroot=1,iroot,totnsol,ising_output=1,itermax=500
-      REAL(r8) :: eta(20),dlim=1000,massden(20)
-      REAL(r8) :: scan_x0,scan_x1,relax_fac=0.1
+      REAL(r8) :: eta(20),dlim=1000,massden(20),rotation(20)=0,ntor=1
+      REAL(r8) :: scan_x0,scan_x1,relax_fac,scan_e0,scan_e1
       REAL(r8), DIMENSION(:), ALLOCATABLE :: taur_save
       REAL(r8), DIMENSION(:), ALLOCATABLE :: zo_out,zi_in
       COMPLEX(r8) :: initguess
@@ -126,7 +128,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: eigval
       
       NAMELIST/rmatch_input/ deltabin_filename,galsol_filename,
-     $                         galsol_filename_cut,
+     $                         galsol_filename_cut,rotation,ntor,
      $                         initguess,msing,eta,sol_flag,massden,
      $                         nstep,rtol,atol,fmin,fmax,lam,
      $                         scan_flag,scan_x0,scan_x1,scan_nstep,
@@ -134,7 +136,8 @@ c-----------------------------------------------------------------------
      $                         deltar_flag,deltac_flag,deltaj_flag,
      $                         deflate,nroot,match_flag,ising_output,
      $                         match_sol,matrix_diagnose,fulldomain,
-     $                         coil,itermax,relax_fac,init_scan_flag
+     $                         coil,itermax,relax_fac,init_scan_flag,
+     $                         scan_e0,scan_e1,eqscan_flag,scan_estep
       NAMELIST/rmatch_output/ bin_rpecsol,out_rpecsol
       NAMELIST/nyquist_input/nyquist
 10    FORMAT(1x,"Eigenvalue=",1p,2e11.3)
@@ -238,7 +241,8 @@ c-----------------------------------------------------------------------
          coil%m2=totnsol
          CALL match_rpec
          CALL program_stop("RPEC termination.")
-      ENDIF   
+      ENDIF
+      IF(eqscan_flag) CALL match_eqscan
 c-----------------------------------------------------------------------
 c     scan eigen value (Q) for different inner models.
 c-----------------------------------------------------------------------
@@ -248,11 +252,11 @@ c     nyquist plot.
 c-----------------------------------------------------------------------
       IF(nyquist%flag)CALL match_nyquist
 c-----------------------------------------------------------------------
-c     simple scan over resistivity.
+c     scan over resistivity.
 c-----------------------------------------------------------------------
       IF (scan_flag) CALL match_eta_scan
 c-----------------------------------------------------------------------
-c     scan over resistivity by tracking solution branches
+c     Test multiple initialization values and sort by growth rate
 c-----------------------------------------------------------------------
       IF (init_scan_flag) CALL match_init_scan
 c-----------------------------------------------------------------------
@@ -271,11 +275,11 @@ c-----------------------------------------------------------------------
          DO ising=1,msing
             WRITE(*,30) ising,zi_in(ising),zi_in(ising)*SQRT(10.0)
             WRITE(out_unit,30)ising,zi_in(ising),zi_in(ising)*SQRT(10.0)
-         ENDDO
+         ENDDO         
          CALL match_solution(eigval)
          DO ising=1,msing
             WRITE(*,40) ising,zo_out(ising),zo_out(ising)/10
-            WRITE(out_unit,40) ising,zo_out(ising),zo_out(ising)/10
+c            WRITE(out_unit,40) ising,zo_out(ising),zo_out(ising)/10
          ENDDO
          CALL ascii_close(match_unit)
          CALL program_stop("Normal termination for solution match.")
@@ -311,7 +315,6 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       END SUBROUTINE match_init
-
 c-----------------------------------------------------------------------
 c     subprogram 3. match_newton.
 c     uses Newton's method to find root of scalar complex f(z).
@@ -374,7 +377,7 @@ c           These write statements are too verbose for scans
             WRITE(*,*) "Solution is NaN. it=", it
             WRITE(out_unit,*) "Solution is NaN. it=", it
             it=-1
-            z=COMPLEX( nan,nan ) !NaN
+            z=CMPLX( nan,nan ) !NaN
             EXIT
          ENDIF
          IF(err < tol) EXIT
@@ -382,7 +385,7 @@ c           These write statements are too verbose for scans
             it=-1
             WRITE(*,*) "Solution is not well converged."
             WRITE(out_unit,*) "Solution is not well converged."
-            z=COMPLEX( nan,nan ) !NaN
+            z=CMPLX( nan,nan ) !NaN
             EXIT
          ENDIF
          z_old=z
@@ -692,8 +695,8 @@ c-----------------------------------------------------------------------
       FUNCTION match_delta(guess,mat) RESULT(det)
 
       COMPLEX(r8), INTENT(IN) :: guess
-      COMPLEX(r8), DIMENSION(4*msing,4*msing),INTENT(OUT) :: mat
-      COMPLEX(r8):: det
+      COMPLEX(r8), DIMENSION(4*msing,4*msing),INTENT(INOUT) :: mat
+      COMPLEX(r8):: det, guess_modify
 
       INTEGER :: m,info,i,d,ising,idx1,idx2,idx3,idx4
       COMPLEX(r8) :: delta1,delta2,drl,drr,dll,dlr
@@ -718,19 +721,22 @@ c-----------------------------------------------------------------------
          idx2=ising*2
          idx3=idx1+2*msing
          idx4=idx2+2*msing
+         guess_modify=guess+ifac*ntor*rotation(ising)
 c-----------------------------------------------------------------------
 c     compute inner region matching data.
 c-----------------------------------------------------------------------
          SELECT CASE(model)
          CASE ("deltaj")
-            CALL match_delta_jardin(restype(ising),guess,
+            CALL match_delta_jardin(restype(ising),guess_modify,
      $           deltar(ising,:),sol)     
          CASE ("deltar")
-            CALL deltar_run(restype(ising),guess,deltar(ising,:),sol)
+            CALL deltar_run(restype(ising),guess_modify,deltar(ising,:),
+     $           sol)
          CASE ("deltac")
-            CALL deltac_run(restype(ising),guess,deltar(ising,:),
+            CALL deltac_run(restype(ising),guess_modify,deltar(ising,:),
      $                      deltaf(ising,:,:))
-            zi_in(ising)=zi_deltac
+c            zi_in(ising)=zi_deltac
+            zi_in(ising)=0
             q_in(ising)=q_deltac
             sol=0
          END SELECT
@@ -1456,101 +1462,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE match_qscan
       
 c-----------------------------------------------------------------------
-c     subprogram 10. match_init_scan.
-c     scan initguess and sort results by real component of eigenvalue
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------            
-      SUBROUTINE match_init_scan
-      INTEGER :: istep,ising,iter,num_vals
-      REAL(r8) :: step,eta_scan,log_scan_x0,err
-      COMPLEX(r8) :: eigval0,eigval,detval
-      COMPLEX(r8), dimension(scan_nstep+1) :: eigvals, detvals
-      INTEGER, dimension(scan_nstep+1) :: order
-      COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
-c-----------------------------------------------------------------------
-c     format output.
-c-----------------------------------------------------------------------                  
-10    FORMAT(/9x,"#re_gr",10x,"im_gr",2x,"iter",3x,"ising",
-     $       13x,"zi",13x,"zo",4x,"zi*SQRT(10)",10x,"zo/10",
-     $       7x,"re(q_in)",7x,"im(q_in)"/)
-20    FORMAT(1p,2e15.5,i6,i8,8e15.5)
-c-----------------------------------------------------------------------
-c     scan constant eta parameter.
-c-----------------------------------------------------------------------                  
-      log_scan_x0=log10(scan_x0)
-      step=(log10(scan_x1)-log_scan_x0)/scan_nstep
-      CALL bin_open(bin_unit,"scanres.bin","UNKNOWN","REWIND","none")
-      CALL ascii_open(debug_unit,"scanres.out","UNKNOWN")
-      WRITE (debug_unit,10)
-      !Scan real space for eigenvalues
-      num_vals=0
-      DO istep=0,scan_nstep
-         eigval=COMPLEX( 10**(log_scan_x0+istep*step), AIMAG(initguess))
-         eigval0=eigval
-         CALL match_newton(match_delta,eigval,err,iter)
-         detval=match_delta(eigval,mat)
-         IF( .not. ISNAN(REAL(eigval)) ) THEN
-            num_vals=num_vals+1
-            eigvals(num_vals)=eigval
-            detvals(num_vals)=detval
-         ENDIF
-         WRITE(out_unit,61) eigval0, eigval, detval
-         WRITE(*,61) eigval0, eigval, detval
- 61      FORMAT(" init=(",1P,e11.3,e11.3," ) eigval=(",e11.3,e11.3,
-     $        " ) detval=(",e11.3,e11.3," )")
-      ENDDO
-
-      order = real_order(num_vals,eigvals)
-
-      !Print results
-      eigval0 = 0.0
-      iter=0
-      DO istep=1,num_vals
-
-         eigval=eigvals(order(istep))
-         detval=detvals(order(istep))
-         IF( abs(eigval-eigval0)/abs(eigval)>1e-3 ) THEN
-            iter = iter+1
-
-            ising=ising_output
-            WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
-     $         REAL(eigval,4),REAL(AIMAG(eigval),4),
-     $         floored_log(eigval),
-     $         REAL(zi_in(ising),4),REAL(zo_out(ising),4),
-     $         REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,4),
-     $         REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
-     $         floored_log(q_in(ising)),REAL(iter,4)
-            WRITE(debug_unit,20)
-     $         REAL(eigval),IMAG(eigval),iter,ising,zi_in(ising),
-     $         zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,
-     $         REAL(q_in(ising)),IMAG(q_in(ising))
-            
-            WRITE(out_unit,62) iter, REAL(eigval), AIMAG(eigval), 
-     $           REAL(detval), AIMAG(detval)
-            WRITE(*,62) iter, REAL(eigval), AIMAG(eigval),
-     $           REAL(detval), AIMAG(detval)
- 62         FORMAT("Branch ",i2," eigval=(",1P,e14.6,1x,e14.6,
-     $           " ) detval=("e14.6,1x,e14.6," )")
-
-            eigval0=eigval
-
-         ENDIF
-      
-      ENDDO
-
-      WRITE(bin_unit)
-      CALL ascii_close(debug_unit)
-      CALL bin_close(bin_unit)
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      CALL program_stop("Normal termination for init scan.")
-      END SUBROUTINE match_init_scan
-
-c-----------------------------------------------------------------------
-c     subprogram 11. match_delta_jardin.
+c     subprogram 8. match_delta_jardin.
 c     finite differential method of GGJ.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1599,7 +1511,7 @@ c     terminate.
 c-----------------------------------------------------------------------      
       END SUBROUTINE match_delta_jardin
 c-----------------------------------------------------------------------
-c     subprogram 12. match_nyquist.
+c     subprogram 9. match_nyquist.
 c     draws nyquist plot.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1713,7 +1625,7 @@ c-----------------------------------------------------------------------
       CALL program_stop("Normal termination for nyquist plot.")
       END SUBROUTINE match_nyquist
 c-----------------------------------------------------------------------
-c     subprogram 13. match_branch.
+c     subprogram 10. match_branch.
 c     draws one branch of nyquist plot.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1776,7 +1688,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_branch      
 c-----------------------------------------------------------------------
-c     subprogram 14. match_solve.
+c     subprogram 11. match_solve.
 c     solves for one root.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1815,7 +1727,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_solve     
 c-----------------------------------------------------------------------
-c     subprogram 15. match_matrix_diagnose
+c     subprogram 12. match_matrix_diagnose
 c     solves for one root.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1860,7 +1772,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_matrix_diagnose
 c-----------------------------------------------------------------------
-c     subprogram 16. match_rpec.
+c     subprogram 13. match_rpec.
 c     construct resistive perturbed equilibrium.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1980,7 +1892,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_rpec
 c-----------------------------------------------------------------------
-c     subprogram 17. match_alloc_sol.
+c     subprogram 14. match_alloc_sol.
 c     allocate and read inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2039,7 +1951,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_alloc_sol
 c-----------------------------------------------------------------------
-c     subprogram 18. match_dealloc_sol.
+c     subprogram 15. match_dealloc_sol.
 c     deallocate inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2068,7 +1980,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE match_dealloc_sol
 c-----------------------------------------------------------------------
-c     subprogram 19. match_output_solution.
+c     subprogram 16. match_output_solution.
 c     output inner and outer region solutions.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2310,7 +2222,7 @@ c-----------------------------------------------------------------------
       RETURN      
       END SUBROUTINE match_output_solution
 c-----------------------------------------------------------------------
-c     subprogram 20. match_auto_connect.
+c     subprogram 17. match_auto_connect.
 c     auto connect the outer and inner region.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2446,6 +2358,168 @@ c-----------------------------------------------------------------------
       END SUBROUTINE match_auto_connect
 
 c-----------------------------------------------------------------------
+c     subprogram 18. match_eqscan.
+c     scan e and q
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------            
+      SUBROUTINE match_eqscan
+      INTEGER :: istep,kstep
+      REAL(r8) :: log_scan_x0,qstep,qlog,estep,e_scan
+      COMPLEX(r8) :: q_scan
+      COMPLEX(r8), DIMENSION(2) :: deltac,deltar
+      COMPLEX(r8), DIMENSION(2,2) :: df
+      COMPLEX(r8), DIMENSION(4,2) :: sol
+      TYPE(resist_type):: rt
+c-----------------------------------------------------------------------
+c     open output files.
+c-----------------------------------------------------------------------
+      OPEN(UNIT=bin2_unit,FILE="scaneq.bin",STATUS="REPLACE",
+     $     FORM="UNFORMATTED")
+      rt%e=0
+      rt%f=0
+      rt%g=0
+      rt%h=0
+      rt%k=0
+      rt%m=1.0
+      rt%v1=1.0
+      rt%taua=1.0
+      rt%taur=1.0
+      rt%ising=1    
+c-----------------------------------------------------------------------
+c     start loops over E and Q.
+c-----------------------------------------------------------------------
+      log_scan_x0=log10(scan_x0)
+      qstep=(log10(scan_x1)-log_scan_x0)/scan_nstep
+      estep=(scan_e1-scan_e0)/scan_estep
+      DO kstep=0,scan_estep
+         e_scan=scan_e0 + estep*kstep
+         rt%e=e_scan
+         DO istep=0,scan_nstep
+            qlog=log_scan_x0+istep*qstep
+            q_scan=10**(qlog)
+c-----------------------------------------------------------------------
+c     run deltac code and record output.
+c-----------------------------------------------------------------------
+            CALL deltac_run(rt,q_scan,deltac,df)
+            CALL deltar_run(rt,q_scan,deltar,sol)
+c            WRITE(out2_unit,10)REAL(qlog),
+c     $            mylog(deltac(1)),REAL(deltac(2))
+c            WRITE(bin2_unit)REAL(qlog,4),
+c     $            mylog(deltac(1)),REAL(deltac(2),4)
+            WRITE(bin2_unit)REAL(qlog,4),
+     $            REAL(deltac(1),4),REAL(IMAG(deltac(1)),4),
+     $            REAL(deltac(2),4),REAL(IMAG(deltac(2)),4),
+     $            REAL(deltar(1),4),REAL(IMAG(deltar(1)),4),
+     $            REAL(deltar(2),4),REAL(IMAG(deltar(2)),4)
+
+         ENDDO
+         WRITE(bin2_unit)
+      ENDDO
+c-----------------------------------------------------------------------
+c     close output files.
+c-----------------------------------------------------------------------
+         CLOSE(UNIT=bin2_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      CALL program_stop("Normal termination for q scan.")
+      END SUBROUTINE match_eqscan
+c-----------------------------------------------------------------------
+c     subprogram 19. match_init_scan.
+c     scan initguess and sort results by real component of eigenvalue
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------            
+      SUBROUTINE match_init_scan
+      INTEGER :: istep,ising,iter,num_vals
+      REAL(r8) :: step,eta_scan,log_scan_x0,err
+      COMPLEX(r8) :: eigval0,eigval,detval
+      COMPLEX(r8), dimension(scan_nstep+1) :: eigvals, detvals
+      INTEGER, dimension(scan_nstep+1) :: order
+      COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
+c-----------------------------------------------------------------------
+c     format output.
+c-----------------------------------------------------------------------                  
+10    FORMAT(/9x,"#re_gr",10x,"im_gr",2x,"iter",3x,"ising",
+     $       13x,"zi",13x,"zo",4x,"zi*SQRT(10)",10x,"zo/10",
+     $       7x,"re(q_in)",7x,"im(q_in)"/)
+20    FORMAT(1p,2e15.5,i6,i8,8e15.5)
+c-----------------------------------------------------------------------
+c     scan constant eta parameter.
+c-----------------------------------------------------------------------                  
+      log_scan_x0=log10(scan_x0)
+      step=(log10(scan_x1)-log_scan_x0)/scan_nstep
+      CALL bin_open(bin_unit,"scanres.bin","UNKNOWN","REWIND","none")
+      CALL ascii_open(debug_unit,"scanres.out","UNKNOWN")
+      WRITE (debug_unit,10)
+      !Scan real space for eigenvalues
+      num_vals=0
+      DO istep=0,scan_nstep
+         eigval=CMPLX( 10**(log_scan_x0+istep*step), AIMAG(initguess))
+         eigval0=eigval
+         CALL match_newton(match_delta,eigval,err,iter)
+         detval=match_delta(eigval,mat)
+         IF( .not. ISNAN(REAL(eigval)) ) THEN
+            num_vals=num_vals+1
+            eigvals(num_vals)=eigval
+            detvals(num_vals)=detval
+         ENDIF
+         WRITE(out_unit,61) eigval0, eigval, detval
+         WRITE(*,61) eigval0, eigval, detval
+ 61      FORMAT(" init=(",1P,e11.3,e11.3," ) eigval=(",e11.3,e11.3,
+     $        " ) detval=(",e11.3,e11.3," )")
+      ENDDO
+
+      order = real_order(num_vals,eigvals)
+
+      !Print results
+      eigval0 = 0.0
+      iter=0
+      DO istep=1,num_vals
+
+         eigval=eigvals(order(istep))
+         detval=detvals(order(istep))
+         IF( abs(eigval-eigval0)/abs(eigval)>1e-3 ) THEN
+            iter = iter+1
+
+            ising=ising_output
+            WRITE(bin_unit)REAL(eta_scan,4),REAL(log10(eta_scan),4),
+     $         REAL(eigval,4),REAL(AIMAG(eigval),4),
+     $         floored_log(eigval),
+     $         REAL(zi_in(ising),4),REAL(zo_out(ising),4),
+     $         REAL(zi_in(ising)*SQRT(10.0),4),REAL(zo_out(ising)/10,4),
+     $         REAL(q_in(ising),4),REAL(AIMAG(q_in(ising)),4),
+     $         floored_log(q_in(ising)),REAL(iter,4)
+            WRITE(debug_unit,20)
+     $         REAL(eigval),IMAG(eigval),iter,ising,zi_in(ising),
+     $         zo_out(ising),zi_in(ising)*SQRT(10.0),zo_out(ising)/10,
+     $         REAL(q_in(ising)),IMAG(q_in(ising))
+            
+            WRITE(out_unit,62) iter, REAL(eigval), AIMAG(eigval), 
+     $           REAL(detval), AIMAG(detval)
+            WRITE(*,62) iter, REAL(eigval), AIMAG(eigval),
+     $           REAL(detval), AIMAG(detval)
+ 62         FORMAT("Branch ",i2," eigval=(",1P,e14.6,1x,e14.6,
+     $           " ) detval=("e14.6,1x,e14.6," )")
+
+            eigval0=eigval
+
+         ENDIF
+      
+      ENDDO
+
+      WRITE(bin_unit)
+      CALL ascii_close(debug_unit)
+      CALL bin_close(bin_unit)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      CALL program_stop("Normal termination for init scan.")
+      END SUBROUTINE match_init_scan
+c-----------------------------------------------------------------------
 c     function 20. real_order
 c     return an array of 'n' indices for complex array 'y' sorted
 c     in descending order by the real components of the elements.
@@ -2485,7 +2559,7 @@ c-----------------------------------------------------------------------
 
       END MODULE match_mod
 c-----------------------------------------------------------------------
-c     subprogram 22. match_main.
+c     subprogram 21. match_main.
 c     trivial main program.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2502,4 +2576,3 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------               
       END PROGRAM match_main
-

@@ -223,13 +223,13 @@ pent = {
 
 alltips = {}
 
-for k,v in equil.iteritems():
+for k,v in equil.items():
 	alltips[k] = v
-for k,v in dcon.iteritems():
+for k,v in dcon.items():
 	alltips[k] = v
-for k,v in gpec.iteritems():
+for k,v in gpec.items():
 	alltips[k] = v
-for k,v in coil.iteritems():
+for k,v in coil.items():
 	alltips[k] = v
-for k,v in pent.iteritems():
+for k,v in pent.items():
 	alltips[k] = v

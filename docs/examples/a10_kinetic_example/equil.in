@@ -7,7 +7,7 @@
     power_b=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
     power_r=0            ! del.B ~ B_p**power_bp * B**power_b / R**power_r
 
-    grid_type="ldp"      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp or original. ldp packs points near the core and edge.
+    grid_type="ldp"      ! Radial grid packing of equilibrium quantities. Accepts rho, ldp, pow1, pow2, or original. ldp packs points near the core and edge. pow* packs near the edge.
     psilow=1e-3          ! Minimum value of psi, normalized from 0 to 1
     psihigh=0.99         ! Maximum value of psi, normalized from 0 to 1
     mpsi=64              ! Number of radial grid intervals for equilibrium quantities

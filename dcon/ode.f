@@ -17,6 +17,7 @@ c     8. ode_unorm.
 c     9. ode_fixup.
 c     10. ode_test.
 c     11. ode_test_fixup.
+c     12. ode_record_edge
 c-----------------------------------------------------------------------
 c     subprogram 0. ode_mod.
 c     module declarations.
@@ -59,6 +60,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE ode_run
 
       CHARACTER(64) :: message
+      LOGICAL :: force_output, test, first
 c-----------------------------------------------------------------------
 c     initialize.
 c-----------------------------------------------------------------------
@@ -78,11 +80,19 @@ c-----------------------------------------------------------------------
 c     integrate.
 c-----------------------------------------------------------------------
       DO
+         first = .TRUE.
          DO
             IF(istep > 0)CALL ode_unorm(.FALSE.)
-            CALL ode_output_step(unorm)
-            IF(ode_test())EXIT
+            ! always record the first and last point in an inter-rational region
+            ! these are important for resonant quantities
+            ! recording the last point is cirtical for matching the nominal edge
+            test = ode_test()
+            force_output = first .OR. test
+            CALL ode_output_step(unorm, op_force=force_output)
+            CALL ode_record_edge
+            IF(test)EXIT
             CALL ode_step
+            first = .FALSE.
          ENDDO
 c-----------------------------------------------------------------------
 c     re-initialize.
@@ -125,8 +135,7 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ipert
       REAL(r8), DIMENSION(mpert) :: key,m
-      INTEGER :: it,itmax=50
-      INTEGER, DIMENSION(1) :: jpsi
+      INTEGER :: jpsi,it,itmax=50
       REAL(r8) :: dpsi,q,q1,eps=1e-10
 c-----------------------------------------------------------------------
 c     preliminary computations.
@@ -139,9 +148,11 @@ c-----------------------------------------------------------------------
 c     use newton iteration to find starting psi if qlow it is above q0
 c-----------------------------------------------------------------------
       IF(qlow > sq%fs(0, 4))THEN
-         jpsi=MINLOC(ABS(sq%fs(:,4)-qlow))
-         IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
-         psifac=sq%xs(jpsi(1))
+         ! start check from the edge for robustness in reverse shear cores
+         DO jpsi = sq%mx-1, 1, -1 ! avoid starting iteration on endpoints
+            IF(sq%fs(jpsi - 1, 4) < qlow) EXIT
+         ENDDO
+         psifac=sq%xs(jpsi)
          it=0
          DO
             it=it+1
@@ -862,7 +873,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_resist_cross
 c-----------------------------------------------------------------------
-c     subprogram 6. ode_step.
+c     subprogram 7. ode_step.
 c     takes a step of the integrator.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -958,7 +969,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_step
 c-----------------------------------------------------------------------
-c     subprogram 7. ode_unorm.
+c     subprogram 8. ode_unorm.
 c     computes unorm, tests solution matrix for Gaussian reduction.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1003,7 +1014,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_unorm
 c-----------------------------------------------------------------------
-c     subprogram 8. ode_fixup.
+c     subprogram 9. ode_fixup.
 c     performs Gaussian reduction of solution matrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1142,7 +1153,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_fixup
 c-----------------------------------------------------------------------
-c     subprogram 9. ode_test.
+c     subprogram 10. ode_test.
 c     tests for optimum approach to singular surface.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1152,33 +1163,16 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: flag
 
-      LOGICAL, PARAMETER :: debug=.FALSE.
       INTEGER :: isol
-      INTEGER, SAVE :: peak_calc_number = 0
       REAL(r8), SAVE :: singfac_old,powmax
       REAL(r8) :: dsingfac,norm,dnorm,powmax_old
       REAL(r8), DIMENSION(msol) :: power
       COMPLEX(r8), DIMENSION(mpert,msol,2) :: dca
       COMPLEX(r8), DIMENSION(mpert,mpert,2) :: ufree
-      REAL(r8) :: total1, vacuum1, plasma1
-      REAL(r8), SAVE :: total0=-huge(0.0_r8)
 c-----------------------------------------------------------------------
-c     truncation test: lsode limit or max dW outside last singularity
+c     truncation test: lsode limit
 c-----------------------------------------------------------------------
       flag = psifac == psimax .OR. istep == nstep .OR. istate < 0
-      IF(next=="finish" .AND. peak_flag)THEN ! we've past the last singularity
-         CALL free_test(plasma1,vacuum1,total1,psifac)
-         IF(debug) WRITE(*,'(i4,5(es12.3))')peak_calc_number,psifac,
-     $           sq%f(4),total1,vacuum1,plasma1
-         peak_calc_number = peak_calc_number + 1
-         IF(total1 < total0)THEN
-            flag = .TRUE.
-            psilim = psifac
-            CALL spline_eval(sq,psifac,0)
-            qlim = sq%f(4)
-         ENDIF
-         total0 = total1
-      ENDIF
 c-----------------------------------------------------------------------
 c     simple return.
 c-----------------------------------------------------------------------
@@ -1220,7 +1214,7 @@ c-----------------------------------------------------------------------
       RETURN
       END FUNCTION ode_test
 c-----------------------------------------------------------------------
-c     subprogram 10. ode_test_fixup.
+c     subprogram 11. ode_test_fixup.
 c     tests fixup routine.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1291,4 +1285,36 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE ode_test_fixup
+c-----------------------------------------------------------------------
+c     subprogram 12. ode_record_edge.
+c     record the energy in the edge
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+c     declarations.
+c-----------------------------------------------------------------------
+      SUBROUTINE ode_record_edge
+      LOGICAL, PARAMETER :: debug=.FALSE.
+      INTEGER, SAVE :: calc_number = 0
+      COMPLEX(r8) :: total1, vacuum1, plasma1
+
+      CALL spline_eval(sq,psifac,0)
+      IF(size_edge > 0)THEN
+         IF(sq%f(4) >= q_edge(i_edge) .AND. psifac >= psiedge)THEN  ! second codition handles initialization plasmas with q0~qa
+            CALL free_test(plasma1,vacuum1,total1,psifac)
+            IF(debug) WRITE(*,'(2(i4),6(es12.3))') calc_number,
+     $         i_edge,psifac,sq%f(4),q_edge(i_edge),
+     $         REAL(total1),REAL(vacuum1),REAL(plasma1)
+            calc_number = calc_number + 1
+            dw_edge(i_edge) = total1
+            q_edge(i_edge) = sq%f(4)
+            psi_edge(i_edge) = psifac
+            i_edge = MIN(i_edge + 1, size_edge)  ! just to be extra safe
+         ENDIF
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE ode_record_edge
+
       END MODULE ode_mod

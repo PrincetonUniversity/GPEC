@@ -22,11 +22,10 @@
     restore_us=t         ! Include the small solution in Galerkin solution
     restore_ul=t         ! Include the larger solution in Galerkin solution
     bin_delmatch=t       ! Output solution for rmatch
-    out_galsol=f         ! Output Galerkin solution in ascii files
-    bin_galsol=f         ! Output Galerkin solution in binary files
+    out_galsol=t         ! Output Galerkin solution in ascii files
+    bin_galsol=t         ! Output Galerkin solution in binary files
     b_flag=f             ! Output the perturbation of radial b field
     coil%rpec_flag=f     ! Resistive perturbed equilibrium computation
-    bin_coilsol=f        ! Output binary files for every unit-m driven solution
 /
 &RDCON_CONTROL
     bal_flag=f           ! Ideal MHD ballooning criterion for short wavelengths
@@ -40,17 +39,17 @@
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
-    delta_mlow=12        ! Expands lower bound of Fourier harmonics
-    delta_mhigh=16       ! Expands upper bound of  Fourier harmonics
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
     delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
-    tol_nr=1e-10         ! Relative tolerance of dynamic integration steps away from rationals
-    tol_r=1e-11          ! Relative tolerance of dynamic integration steps near rationals
+    tol_nr=1e-5          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-6           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
-    singfac_min=1e-5     ! Fractional distance from rational q at which ideal jump condition is enforced
-    ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
+    singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
+    ucrit=1e4            ! Maximum fraction of solutions allowed before re-normalized
 
     cyl_flag=f           ! Make delta_mlow and delta_mhigh set the actual m truncation bounds. Default is to expand (n*qmin-4, n*qmax).
 
@@ -68,7 +67,7 @@
     msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
     mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
 
-    bin_euler=f          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
     euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions

@@ -24,6 +24,8 @@ c     15. gpdiag_radvar
 c     16. gpdiag_permeabev_orthogonality
 c     17. gpdiag_dw_matrix
 c     18. gpdiag_spline_roots
+c     19. gpdiag_jacfac
+c     20. gpdiag_delpsi
 c-----------------------------------------------------------------------
 c     subprogram 0. gpdiag_mod.
 c     module declarations.
@@ -34,7 +36,8 @@ c-----------------------------------------------------------------------
       MODULE gpdiag_mod
       USE gpresp_mod
       USE gpvacuum_mod
-      USE field_mod
+      USE field_mod, ONLY : field_bs_psi, coil_dealloc,
+     $    coil_num, cmpert, cmlow
 
       IMPLICIT NONE
 
@@ -123,7 +126,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     construct 2d eigenvector sets in fourier space.
 c-----------------------------------------------------------------------
-      CALL gpvacuum_arbsurf(majr,minr)
+      CALL gpvacuum_arbsurf(majr=majr,minr=minr)
       vmpert=SIZE(vsurf_indev)
 
       WRITE(UNIT=smajr, FMT='(I4)')INT(100*majr)
@@ -1642,7 +1645,7 @@ c-----------------------------------------------------------------------
 c     subprogram 14. gpdiag_rzpdiv.
 c     check divergence of rzphi functions.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp)
+      SUBROUTINE gpdiag_rzpdiv(nr,nz,lval,rval,zval,fr,fz,fp,label)
 c-----------------------------------------------------------------------
 c     declaration.
 c-----------------------------------------------------------------------
@@ -1650,8 +1653,10 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(0:nr,0:nz), INTENT(IN) :: lval
       REAL(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: rval,zval
       COMPLEX(r8), DIMENSION(0:nr,0:nz), INTENT(IN) :: fr,fz,fp
+      CHARACTER(*), INTENT(IN) :: label
 
       INTEGER :: i,j
+      REAL(r8) :: fabs
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: div
 
       TYPE(bicube_type) :: rfr,ifr,rfz,ifz
@@ -1690,10 +1695,13 @@ c-----------------------------------------------------------------------
             CALL bicube_eval(rfz,rval(i,j),zval(i,j),1)
             CALL bicube_eval(ifz,rval(i,j),zval(i,j),1)
 
+            fabs=sqrt(abs(fr(i,j))**2.0+abs(fz(i,j))**2.0+
+     $           abs(fp(i,j))**2.0)
             div(i,j)=rfr%fx(1)/rval(i,j)+rfz%fy(1)+
      $           nn*AIMAG(fp(i,j))/rval(i,j)+ifac*
      $           (ifr%fx(1)/rval(i,j)+ifz%fy(1)-
      $           nn*REAL(fp(i,j))/rval(i,j))
+            div(i,j)=div(i,j)/fabs
 
          ENDDO
       ENDDO
@@ -1703,10 +1711,11 @@ c-----------------------------------------------------------------------
       CALL bicube_dealloc(rfz)
       CALL bicube_dealloc(ifz)
 
-      CALL ascii_open(out_unit,"gpec_diagnostics_rzpdiv_n"//
+      CALL ascii_open(out_unit,"gpec_diagnostics_rzpdiv_"//label//"_n"//
      $     TRIM(sn)//".out","UNKNOWN")
 
-      WRITE(out_unit,*)"GPEC_RZPDIV: Divergence in rzphi grid"
+      WRITE(out_unit,*)"GPEC_DIAGNOSTICS_RZPDIV: "//
+     $     "Divergence in rzphi grid"
       WRITE(out_unit,'(1x,a2,5(a16))')"l","r","z",
      $     "re(div)","im(div)","abs(div)"
 
@@ -2399,5 +2408,131 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpdiag_spline_roots
+c-----------------------------------------------------------------------
+c     subprogram 19. gpdiag_jacfac.
+c     Pure jacobian weighting factors for benchmarks.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpdiag_jacfac()
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: i,j,istep,itheta
+      INTEGER :: stepsize=10  ! speed this up
+
+      COMPLEX(r8), DIMENSION(mpert) :: boutmn
+      COMPLEX(r8), DIMENSION(mstep, mpert) :: boutmns
+      COMPLEX(r8), DIMENSION(0:mthsurf) :: boutfun
+      COMPLEX(r8), DIMENSION(mstep, 0:mthsurf) :: boutfuns
+
+      CHARACTER(2) :: si
+
+      DO i=-2,2
+         boutmns(:, :) = 0
+         boutfuns(:, :) = 0
+         boutmn(:) = 1
+         boutfun(:) = 1
+         CALL iscdftf(mfac,mpert,boutfun,mthsurf,boutmn)
+         IF (i>=0) THEN
+            WRITE(UNIT=si,FMT='(I1)')i
+            si=ADJUSTL(si)
+         ELSE
+            WRITE(UNIT=si,FMT='(I2)')i
+         ENDIF
+         print *, "Running diagnostic for jacfac="//TRIM(si)
+         DO istep=1,mstep,stepsize
+            CALL gpeq_bcoordsout(boutmns(istep,:),boutmn,
+     $                           psifac(istep),ji=i)
+            CALL iscdftb(mfac,mpert,boutfuns(istep,:),mthsurf,
+     $                   boutmns(istep,:))
+         ENDDO
+c-----------------------------------------------------------------------
+c     write results.
+c-----------------------------------------------------------------------
+         CALL ascii_open(out_unit,"gpec_diagnostics_jacfac_"//TRIM(si)
+     $     //".out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_DIAGNOSTICS_JACFAC: "//
+     $     "Jacobian weightings for tmag_out and jac_out"
+         WRITE(out_unit,'(1x,a16,1x,a4,2(1x,a16))')"psi","m",
+     $     "real(jacfac)","imag(jacfac)"
+         DO istep=1,mstep,stepsize
+            DO j=1,mpert
+               WRITE(out_unit,'(1x,es16.8,1x,I4,2(1x,es16.8))')
+     $               psifac(istep),mfac(j),REAL(boutmns(istep,j)),
+     $               AIMAG(boutmns(istep,j))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         CALL ascii_open(out_unit,"gpec_diagnostics_jacfac_"//TRIM(si)
+     $     //"_fun.out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_DIAGNOSTICS_JACFAC_FUN: "//
+     $     "Jacobian weightings for tmag_out and jac_out"
+         WRITE(out_unit,'(4(1x,a16))')"psi","theta",
+     $     "real(jacfac)","imag(jacfac)"
+         DO istep=1,mstep,stepsize
+            DO itheta=0,mthsurf
+               WRITE(out_unit,'(1x,4(1x,es16.8))') psifac(istep),
+     $               theta(itheta),REAL(boutfuns(istep,itheta)),
+     $               AIMAG(boutfuns(istep,itheta))
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+      ENDDO
+
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpdiag_jacfac
+
+c-----------------------------------------------------------------------
+c     subprogram 20. gpdiag_delpsi.
+c     delpsi function throughout plasma for benchmarking.
+c-----------------------------------------------------------------------
+      SUBROUTINE gpdiag_delpsi()
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER :: istep, itheta
+      INTEGER :: stepsize=10  ! speed this up
+      REAL(r8) :: psi
+      REAL(r8), DIMENSION(:, :), ALLOCATABLE :: delpsi
+
+      ALLOCATE(delpsi(mstep, 0:mthsurf))
+      delpsi(:, :) = 0
+
+      DO istep=1,mstep,stepsize
+         psi = psifac(istep)
+         DO itheta=0,mthsurf
+            CALL bicube_eval(rzphi,psi,theta(itheta),1)
+            rfac=SQRT(rzphi%f(1))
+            eta=twopi*(theta(itheta)+rzphi%f(2))
+            r(itheta)=ro+rfac*COS(eta)
+            z(itheta)=zo+rfac*SIN(eta)
+            jac=rzphi%f(4)
+            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+            delpsi(istep, itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+         ENDDO
+      ENDDO
+
+      CALL ascii_open(out_unit,"gpec_diagnostics_delpsi"
+     $     //"_fun.out","UNKNOWN")
+         WRITE(out_unit,*)"GPEC_DIAGNOSTICS_DELPSI_FUN: "//
+     $     "delpsi fro when it is needed for benchmarking"
+         WRITE(out_unit,'(3(1x,a16))')"psi","theta",
+     $     "delpsi"
+         DO istep=1,mstep,stepsize
+            DO itheta=0,mthsurf
+               WRITE(out_unit,'(1x,3(1x,es16.8))') psifac(istep),
+     $               theta(itheta),delpsi(istep,itheta)
+            ENDDO
+         ENDDO
+         CALL ascii_close(out_unit)
+         DEALLOCATE(delpsi)
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE gpdiag_delpsi
 
       END MODULE gpdiag_mod

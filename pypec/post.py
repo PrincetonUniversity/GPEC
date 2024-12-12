@@ -75,9 +75,9 @@ import numpy as np  # math
 from collections import OrderedDict
 
 # in this package
-import modplot as plt
-import data
-from data import xarray, mmlab
+from . import modplot as plt
+from . import data
+from .data import xarray, mmlab
 
 ######################################################## Global Variables
 
@@ -165,7 +165,7 @@ def update_name_conventions(dataset, version=None, inplace=False):
         translator['b_t_plas'] = 'b_t_plasma'
 
     # do this in an explicit loop because some names already exist and need to get replaced in order
-    for okey, nkey in translator.iteritems():
+    for okey, nkey in translator.items():
         if okey in newset:
             newset = newset.rename({okey: nkey}, inplace=True)
 
@@ -323,12 +323,12 @@ def add_fun(control_output, keys=None, tmag=False, inplace=True):
 
     # default to all spectral variables
     if keys is None:
-        keys = [k for k, v in ds.data_vars.iteritems() if v.dims == ('m',)]
+        keys = [k for k, v in ds.data_vars.items() if v.dims == ('m',)]
 
     # calculate functions
     for k in keys:
         # inverse fourier transform
-        fun = (ds['xi_n'] * np.exp(1j * (ds['m'] * ds['theta'] * 2 * pi))).sum('m')
+        fun = (ds[k] * np.exp(1j * (ds['m'] * ds['theta'] * 2 * pi))).sum('m')
         # convert to machine toroidal angle
         if not tmag:
             fun *= np.exp(1j * ds.attrs['n'] * ds['delta_phi'])

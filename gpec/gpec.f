@@ -14,6 +14,10 @@ c-----------------------------------------------------------------------
       USE gpdiag_mod
       USE gpout_mod
       USE rdcon_mod
+      USE coil_mod, ONLY : cmhigh, ip_direction, bt_direction,
+     $    coil_read,
+     $    coil_name, coil_num, cmpert, cmlow, cmpsi,
+     $    ipd, btd, helicity, machine
 
       IMPLICIT NONE
 
@@ -22,21 +26,24 @@ c-----------------------------------------------------------------------
      $     sing_npsi
       INTEGER :: pmode,p1mode,rmode,dmode,d1mode,fmode,smode,tmp_outs(5)
       INTEGER, DIMENSION(:), POINTER :: ipiv
-      REAL(r8) :: sing_spot,majr,minr,smallwidth,fp,normpsi
+      REAL(r8) :: sing_spot,majr,minr,smallwidth,fp,normpsi,
+     $     singthresh_slayer_inpr
       CHARACTER(8) :: filter_types
       CHARACTER(128) :: infile
       LOGICAL :: singcoup_flag,singfld_flag,vsingfld_flag,pmodb_flag,
      $     xbcontra_flag,xbnormal_flag,vbnormal_flag,xbnobo_flag,
-     $     d3_flag,xbst_flag,rzphibx_flag,dw_flag,
+     $     d3_flag,xbst_flag,rzphibx_flag,jacfac_flag,dw_flag,
      $     radvar_flag,eigen_flag,magpot_flag,xbtangent_flag,
      $     arbsurf_flag,angles_flag,surfmode_flag,rzpgrid_flag,
      $     singcurs_flag,m3d_flag,cas3d_flag,test_flag,nrzeq_flag,
      $     arzphifun_flag,xbrzphifun_flag,pmodbmn_flag,xclebsch_flag,
-     $     filter_flag,gal_flag
+     $     filter_flag,gal_flag,delpsi_flag,
+     $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
      $     fxmn,fxfun,coilmn
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
+      INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
 
       NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
@@ -59,14 +66,16 @@ c-----------------------------------------------------------------------
      $     vsbrzphi_flag,ss_flag,arzphifun_flag,xbrzphifun_flag,
      $     vsingfld_flag,vbnormal_flag,eigm_flag,xbtangent_flag,
      $     xclebsch_flag,pbrzphi_flag,verbose,max_linesout,filter_flag,
-     $     netcdf_flag,ascii_flag
+     $     netcdf_flag,ascii_flag,singthresh_flag,
+     $     singthresh_callen_flag,singthresh_slayer_flag,
+     $     singthresh_slayer_inpr
       NAMELIST/gpec_diagnose/singcurs_flag,xbcontra_flag,
-     $     xbnobo_flag,d3_flag,div_flag,xbst_flag,
+     $     xbnobo_flag,d3_flag,div_flag,xbst_flag,jacfac_flag,
      $     pmodbmn_flag,rzphibx_flag,radvar_flag,eigen_flag,magpot_flag,
      $     arbsurf_flag,majr,minr,angles_flag,surfmode_flag,
      $     lowmode,highmode,rzpgrid_flag,m3d_flag,m3mode,
      $     cas3d_flag,test_flag,resol,smallwidth,debug_flag,timeit,
-     $     malias
+     $     malias,delpsi_flag,mutual_test_flag
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
@@ -143,6 +152,10 @@ c-----------------------------------------------------------------------
       bin_2d_flag=.TRUE.
       netcdf_flag=.TRUE.
       ascii_flag=.TRUE.
+      singthresh_callen_flag=.False.
+      singthresh_slayer_flag=.False.
+      singthresh_slayer_inpr=5.0
+      singthresh_flag=.False.
       fun_flag=.FALSE.
       flux_flag=.FALSE.
       max_linesout=0
@@ -163,6 +176,8 @@ c-----------------------------------------------------------------------
       xbst_flag=.FALSE.
       pmodbmn_flag=.FALSE.
       rzphibx_flag=.FALSE.
+      jacfac_flag=.FALSE.
+      delpsi_flag=.FALSE.
       radvar_flag=.TRUE.
       eigen_flag=.FALSE.
       magpot_flag=.FALSE.
@@ -174,6 +189,7 @@ c-----------------------------------------------------------------------
       cas3d_flag=.FALSE.
       test_flag=.FALSE.
       eigm_flag=.FALSE.
+      mutual_test_flag=.FALSE.
 
       majr=10.0
       minr=1.0
@@ -207,7 +223,7 @@ c-----------------------------------------------------------------------
       galsol%gal_flag=gal_flag
       IF(timeit) CALL gpec_timer(0)
 c-----------------------------------------------------------------------
-c     Deprecated variable errors
+c     deprecated variable errors
 c-----------------------------------------------------------------------
       IF((pmode/=0).or.(p1mode/=0).or.(dmode/=0).or.(d1mode/=0).or.
      $   (fmode/=0).or.(rmode/=0).or.(smode/=0))THEN
@@ -217,6 +233,27 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(malias/=0) THEN
        PRINT *,"WARNING: malias may not be supported in future versions"
+      ENDIF
+c-----------------------------------------------------------------------
+c     forced ralational settings
+c-----------------------------------------------------------------------
+      IF(singthresh_flag) THEN
+         PRINT *, "singthresh flag selected: setting callen flag and "//
+     $            "slayer flag to true"
+         singthresh_callen_flag = .true.
+         singthresh_slayer_flag = .true.
+      ENDIF
+      IF(singthresh_callen_flag)THEN
+         IF(data_flag .OR. harmonic_flag)THEN
+            PRINT *, "WARNING: "//
+     $             "singthresh_callen_flag uses coil vacuum fields only"
+         ENDIF
+         IF(coil_flag)THEN
+            singfld_flag = .TRUE.
+         ELSE
+            PRINT *, "WARNING: "//
+     $              "singthresh_callen_flag requires coil vacuum fields"
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     define relative file paths.
@@ -360,9 +397,11 @@ c-----------------------------------------------------------------------
          CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert))
          ALLOCATE(coil_indmat(mpert,coil_num))
+         coil_indmat=0
          DO j=1,coil_num
             coilmn=0
-            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
+            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j,
+     $                        op_verbose=.TRUE.)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
                   coil_indmat(cmlow-mlow+i,j)=coilmn(i)
@@ -457,6 +496,32 @@ c-----------------------------------------------------------------------
       CALL gpresp_sinduct
       CALL gpresp_permeab
       CALL gpresp_reluct
+      CALL gpresp_minduct
+c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      IF (mutual_test_flag) THEN
+         ALLOCATE(maxs(mpert),maxm(mpert),indexs(mpert),indexm(mpert))
+         DO i=1,mpert
+            maxs(i)=MAXLOC(ABS(surf_indevmats(:,i)),DIM=1)
+            surf_indevmats(maxs(i),:)=0
+            maxm(i)=MAXLOC(ABS(mutual_indevmats(:,i)),DIM=1)
+            mutual_indevmats(maxm(i),:)=0
+            indexs(i)=i
+            indexm(i)=i
+         ENDDO
+         CALL isbubble(REAL(maxs,r8),indexs,1,mpert)
+         CALL isbubble(REAL(maxm,r8),indexm,1,mpert)
+         CALL ascii_open(out_unit,"gpec_eigen_test.out","UNKNOWN")
+         DO i=1,mpert
+            WRITE(out_unit,'(I4,3(es17.8e3))')mfac(i),
+     $           surf_indev(indexs(mpert-i+1)),
+     $           REAL(mutual_indev(indexm(mpert-i+1))),
+     $           AIMAG(mutual_indev(indexm(mpert-i+1)))
+         ENDDO
+         CALL ascii_close(out_unit)
+         DEALLOCATE(maxs,maxm,indexs,indexm)
+      ENDIF
       IF(timeit) CALL gpec_timer(2)
 c-----------------------------------------------------------------------
 c     Set parameters for outputs.
@@ -491,14 +556,17 @@ c     perturbed equilibria with a given equilibrium and external field.
 c-----------------------------------------------------------------------
       IF (data_flag.OR.harmonic_flag.OR.coil_flag)THEN
          edge_flag=.TRUE.
-         CALL gpout_control(infile,finmn,foutmn,xspmn,power_rin,
-     $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
-     $        power_rout,power_bpout,power_bout,power_rcout,tmag_out,
-     $        jsurf_out,filter_types,filter_modes,filter_flag)
       ELSE IF (mode_flag) THEN
          edge_flag=.FALSE.
       ENDIF
+      CALL gpout_control(mode,infile,finmn,foutmn,xspmn,power_rin,
+     $     power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
+     $     power_rout,power_bpout,power_bout,power_rcout,tmag_out,
+     $     jsurf_out,filter_types,filter_modes,filter_flag)
 
+      IF (coil_flag .AND. vsingfld_flag) THEN
+         CALL gpout_vsingfld()
+      ENDIF
       IF (singfld_flag) THEN
          IF (con_flag) THEN
             PRINT *,"WARNING: singfld_flag not supported with con_flag"
@@ -509,16 +577,17 @@ c-----------------------------------------------------------------------
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE
-            CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
+            IF (singthresh_callen_flag .OR. singthresh_slayer_flag) THEN
+               CALL initialize_pentrc(op_kin=.TRUE.,op_deq=.TRUE.,
+     $                op_peq=.FALSE.)
+            ENDIF
+            CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
+     $              singthresh_callen_flag,singthresh_slayer_flag,
+     $              singthresh_slayer_inpr)
          ENDIF
       ENDIF
-      IF (coil_flag .AND. vsingfld_flag) THEN
-         CALL gpout_vsingfld()
-      ENDIF
-      ! here we see the subroutine is simply called in series with other
-      ! similar subroutines by the driving program here
-      ! this and gpec_pmodb, for example, are completely independent
-      ! (just different ways of breaking up the components of the fields/displacements)
+
+      ! note that many subroutines here are completely independent.
       IF(netcdf_flag.and.(xclebsch_flag.or.dw_flag.or.pmodb_flag
      $   .or.xbnormal_flag.or.xbtangent_flag.or.vbnormal_flag))THEN
          CALL gpout_qrv
@@ -582,6 +651,12 @@ c-----------------------------------------------------------------------
       IF (rzphibx_flag) THEN
          CALL gpdiag_rzphibx(mode,xspmn)
       ENDIF
+      IF (jacfac_flag) THEN
+         CALL gpdiag_jacfac()
+      ENDIF
+      IF (delpsi_flag) THEN
+         CALL gpdiag_delpsi()
+      ENDIF
 c-----------------------------------------------------------------------
 c     diagnose without a given error field.
 c-----------------------------------------------------------------------
@@ -596,7 +671,8 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (arbsurf_flag) THEN
          CALL gpdiag_arbsurf(majr,minr)
-      ENDIF         
+         CALL gpvacuum_ideal_mutuals
+      ENDIF
       IF (angles_flag) THEN
          CALL gpdiag_angles
       ENDIF
@@ -617,10 +693,12 @@ c-----------------------------------------------------------------------
          CALL gpeq_fcoords(psilim,fxmn,mfac,mpert,0,1,0,1,0,0)
          fxmn=-twopi*ifac*chi1*(mfac-nn*qlim)*fxmn
          CALL gpeq_weight(psilim,fxmn,mfac,mpert,0)
-         CALL gpout_control(infile,fxmn,foutmn,xspmn,
+         CALL gpout_control(mode,infile,fxmn,foutmn,xspmn,
      $        0,0,0,0,1,0,0,0,0,0,1,0,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
+         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
+     $           singthresh_callen_flag,singthresh_slayer_flag,
+     $           singthresh_slayer_inpr)
       ENDIF
 
       IF (cas3d_flag) THEN
@@ -637,12 +715,14 @@ c-----------------------------------------------------------------------
          power_rcout = 0
          tmag_out = 1
          CALL gpeq_fcoords(psilim,fxmn,mfac,mpert,0,0,2,0,1,0)
-         CALL gpout_control(infile,finmn,foutmn,xspmn,power_rin,
+         CALL gpout_control(mode,infile,finmn,foutmn,xspmn,power_rin,
      $        power_bpin,power_bin,power_rcin,tmag_in,jsurf_in,
      $        power_rout,power_bpout,power_bout,power_rcout,
      $        tmag_out,jsurf_out,'   ',0,.FALSE.)
          edge_flag=.TRUE.
-         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi)
+         CALL gpout_singfld(mode,xspmn,sing_spot,sing_npsi,
+     $           singthresh_callen_flag,singthresh_slayer_flag,
+     $           singthresh_slayer_inpr)
          CALL gpdiag_xbcontra(mode,xspmn,0,0,2,0,1)
          CALL gpout_xbnormal(mode,xspmn,sing_spot,sing_npsi)
          CALL gpdiag_xbnobo(mode,xspmn,d3_flag)

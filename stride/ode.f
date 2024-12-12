@@ -30,7 +30,6 @@ c-----------------------------------------------------------------------
       USE debug_mod
       USE sing_mod
       USE zvode1_mod
-      USE sparse_mod
       USE riccati_mod
       IMPLICIT NONE
 
@@ -58,7 +57,6 @@ c-----------------------------------------------------------------------
       LOGICAL :: asymp_at_sing
       LOGICAL :: integrate_riccati
       LOGICAL :: calc_delta_prime
-      LOGICAL :: solve_delta_prime_with_sparse_mat
       LOGICAL :: kill_big_soln_for_ideal_dW
       LOGICAL :: calc_dp_with_vac
 
@@ -107,11 +105,6 @@ c-----------------------------------------------------------------------
          REAL(r8), DIMENSION(3*mpert-2) :: erwork
          INTEGER :: elwork, einfo, ej
 
-         ! variables used in initial qlow finder
-         INTEGER :: it,itmax=50
-         INTEGER, DIMENSION(1) :: jpsi
-         REAL(r8) :: dpsi,q,q1,eps=1e-10
-
          !Variables related to asymptotic expansions at sing surfs
          INTEGER :: ipert0
          COMPLEX(r8), DIMENSION(mpert,2*mpert,2) :: ua
@@ -153,29 +146,13 @@ c-----------------------------------------------------------------------
 c     set global integration interval parameters.
 c-----------------------------------------------------------------------
          axisPsi = sq%xs(0)
-         ! use newton iteration to find starting psi if qlow it is above q0
-         IF(qlow > sq%fs(0, 4))THEN
-            jpsi=MINLOC(ABS(sq%fs(:,4)-qlow))
-            IF (jpsi(1)>= mpsi) jpsi(1)=mpsi-1
-            axisPsi=sq%xs(jpsi(1))
-            it=0
-            DO
-               it=it+1
-               CALL spline_eval(sq,axisPsi,1)
-               q=sq%f(4)
-               q1=sq%f1(4)
-               dpsi=(qlow-q)/q1
-               axisPsi=axisPsi+dpsi
-               IF(ABS(dpsi) < eps*ABS(axisPsi) .OR. it > itmax)EXIT
-            ENDDO
-         ENDIF
          outerPsi = psilim*(1-eps)
          DO iS = 1,msing
             scalc(iS)%singEdgesLR(1) = sing(iS)%psifac - singfac_min/
      $           ABS(nn*sing(iS)%q1)
             scalc(iS)%singEdgesLR(2) = sing(iS)%psifac + singfac_min/
      $           ABS(nn*sing(iS)%q1)
-            print *,iS,": ",scalc(iS)%singEdgesLR(1)," ",
+            WRITE(*,'(1x,i5,2(es11.3))') iS,scalc(iS)%singEdgesLR(1),
      $           scalc(iS)%singEdgesLR(2)
 
             !This finds the index of the singular column
@@ -228,7 +205,7 @@ c-----------------------------------------------------------------------
             IF (verbose_performance_output) THEN
                print *,"ode_run: #Threads=",nThreads
             ENDIF
-            CALL OMP_SET_NUM_THREADS(nThreads)
+            IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
          ENDIF
 !$OMP PARALLEL DEFAULT(NONE)
 !.......................................................................
@@ -491,11 +468,23 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE ode_set_intervals
-         INTEGER :: i, j, jsing, iS
-         INTEGER :: newItvls, cumulItvls, innerItvls
+         INTEGER :: i, j, jsing, iS, nIntervalsMin
+         INTEGER :: newItvls, cumulItvls, innerItvls, nbad
          REAL(r8) :: s1, s2, sLast, alpha
          REAL(r8), DIMENSION(:), ALLOCATABLE :: aT
          LOGICAL, DIMENSION(:), ALLOCATABLE :: aMask
+         CHARACTER(140) :: message
+c-----------------------------------------------------------------------
+c     basic requirement to avoid silly faults
+c-----------------------------------------------------------------------
+        ! Require at least splitting each inter-singularity
+        ! edge, msing inner layers, split msing-1 inter-regions, edge
+        nIntervalsMin = 1 + msing + 2 * (msing -1) + 1
+         IF(nIntervalsMin > nIntervalsTot)THEN
+             nIntervalsTot = nIntervalsMin
+             WRITE(*, '(1x,a25,i4, a27)') "Forcing nIntervalsTot to ",
+     $          nIntervalsTot," to cover all singularities"
+         ENDIF
 c-----------------------------------------------------------------------
 c     initialize arrays.
 c-----------------------------------------------------------------------
@@ -596,12 +585,6 @@ c-----------------------------------------------------------------------
                cumulItvls = cumulItvls + newItvls
             ENDDO
             nIntervals = nIntervalsTot
-            !DO i = 1,nIntervalsTot
-            !   WRITE(*,'(3i2)')(psiInters(i,j),j=1,3)
-            !ENDDO
-            !DO i = 1,nIntervalsTot
-            !   WRITE(*,'(2f9.6)')(psiPoints(i,j),j=1,2)
-            !ENDDO
 c-----------------------------------------------------------------------
 c     use axis and singular surfaces to divy up intervals.
 c-----------------------------------------------------------------------
@@ -630,7 +613,20 @@ c-----------------------------------------------------------------------
 c     subdivide max-compute-time interval until nIntervals=nIntervalsTot
 c-----------------------------------------------------------------------
             DO WHILE (nIntervals < nIntervalsTot)
-               j = MAXLOC(aT(1:nIntervals), DIM=1, MASK=aMask)
+               ! first, make sure each inner region is split at least once
+               j=-1
+               DO i=1,nIntervalsTot
+                  IF (psiInters(i,1)==1 .AND. psiInters(i,2)==1) THEN
+                     IF(aMask(i))THEN
+                        j=i
+                        EXIT
+                     ENDIF
+                  ENDIF
+               ENDDO
+               ! then, start breaking up the longest intervals
+               IF(j<0)THEN
+                  j = MAXLOC(aT(1:nIntervals), DIM=1, MASK=aMask)
+               ENDIF
                psiPoints(j+2:nIntervals+1,:)=psiPoints(j+1:nIntervals,:)
                psiInters(j+2:nIntervals+1,:)=psiInters(j+1:nIntervals,:)
                aT(j+2:nIntervals+1)=aT(j+1:nIntervals)
@@ -697,13 +693,19 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     error-check for sufficient # of intervals.
 c-----------------------------------------------------------------------
+         nbad = 0
          DO i=1,nIntervals
             IF (psiInters(i,1) == 1 .AND. psiInters(i,2) == 1) THEN
-               CALL program_stop("Not enough intervals were "//
-     $              "requested to have each interval abut only one "//
-     $              "singular surface. Increase nIntervals argument.")
+               nbad = nbad + 1
             ENDIF
          ENDDO
+         IF(nbad > 0)THEN
+            WRITE(message,'(a,i3)')
+     $         "Not enough intervals were requested to have each "//
+     $         "interval abut only one singular surface. Increase "//
+     $         "nIntervalsTot argument by at least ", nbad
+            CALL program_stop(message)
+         ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -1037,7 +1039,7 @@ c-----------------------------------------------------------------------
          REAL(r8), DIMENSION(:,:), ALLOCATABLE :: atol
 
          INTEGER :: nMat, nSp, i, j, k, jsing, ksing, s2, m2
-         INTEGER :: iChg, sparse_mode, info, ipert0, dRow
+         INTEGER :: iChg, info, ipert0, dRow
          REAL(r8) :: rcond, mnorm, ZLANGE
          INTEGER, DIMENSION(:), ALLOCATABLE :: isp, jsp
          COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: asp, b, x
@@ -1046,7 +1048,6 @@ c-----------------------------------------------------------------------
          COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: uwork, cwork,
      $        cworkTemp
          REAL(r8), DIMENSION(:), ALLOCATABLE :: rwork, rworkTemp
-         TYPE(sparse_array) :: A
          TYPE(sing_calculator), POINTER :: s
 
          CHARACTER(LEN=3),DIMENSION(:,:), ALLOCATABLE :: imag_unit
@@ -1185,85 +1186,49 @@ c-----------------------------------------------------------------------
          CALL ZGECON('O',nMat,MInv,nMat,mnorm,rcond,cwork,rwork,info)
          print *,"Delta' sparse matrix condition number = ",rcond
 c-----------------------------------------------------------------------
-c     solve BVP matrix with sparse matrix.
-c-----------------------------------------------------------------------
-         IF (solve_delta_prime_with_sparse_mat) THEN
-            CALL sparse_form_array(nSp, nMat, asp, isp, jsp, A)
-            !Loop over big solution driving terms.
-            sparse_mode = 1
-            DO jsing = 1,msing
-               DO i = 1,2
-                  k = -mpert !Thus easy to add m2 each time (past uAxis)
-                  b = 0.0
-                  IF (i == 1) THEN
-                     !Left side driving term
-                     b(nMat-s2+2*jsing-1) = 1.0
-                     dRow = 2*jsing-1
-                  ELSE
-                     !Right side driving term
-                     b(nMat-s2+2*jsing) = 1.0
-                     dRow = 2*jsing
-                  ENDIF
-                  CALL sparse_solve_A_x_equals_b(A, b, x, sparse_mode)
-                  sparse_mode = 2
-                  DO ksing = 1,msing
-                     s => scalc(ksing)
-                     ipert0 = s%sing_col
-
-                     !Find the small solution coeffs (p mode, so +mpert)
-                     k = k+m2
-                     delta_prime_mat(dRow,2*ksing-1) = x(k+ipert0+mpert)
-                     k = k+m2
-                     delta_prime_mat(dRow,2*ksing) = x(k+ipert0+mpert)
-                  ENDDO
-               ENDDO
-            ENDDO
-         ELSE
-c-----------------------------------------------------------------------
 c     solve BVP matrix without sparse matrix.
 c-----------------------------------------------------------------------
-            !Loop over big solution driving terms.
-            DO jsing = 1,msing
-               DO i = 1,2
-                  b = 0.0
-                  IF (i == 1) THEN
-                     !Left side driving term
-                     b(nMat-s2+2*jsing-1) = 1.0
-                     dRow = 2*jsing-1
-                  ELSE
-                     !Right side driving term
-                     b(nMat-s2+2*jsing) = 1.0
-                     dRow = 2*jsing
-                  ENDIF
-                  x = b
-                  CALL ZGETRS('N',nMat,1,MInv,nMat,ipiv,x,nMat,info)
-                  IF (info /= 0) THEN
-                     print *,"info was not zero! info=",info
-                  ENDIF
+         !Loop over big solution driving terms.
+         DO jsing = 1,msing
+            DO i = 1,2
+               b = 0.0
+               IF (i == 1) THEN
+                  !Left side driving term
+                  b(nMat-s2+2*jsing-1) = 1.0
+                  dRow = 2*jsing-1
+               ELSE
+                  !Right side driving term
+                  b(nMat-s2+2*jsing) = 1.0
+                  dRow = 2*jsing
+               ENDIF
+               x = b
+               CALL ZGETRS('N',nMat,1,MInv,nMat,ipiv,x,nMat,info)
+               IF (info /= 0) THEN
+                  print *,"info was not zero! info=",info
+               ENDIF
 
-                  k = -mpert
-                  DO ksing = 1,msing
-                     s => scalc(ksing)
-                     ipert0 = s%sing_col
+               k = -mpert
+               DO ksing = 1,msing
+                  s => scalc(ksing)
+                  ipert0 = s%sing_col
 
-                     !Find the small solution coeffs (p mode, so +mpert)
-                     k = k+m2
-                     delta_prime_mat(dRow,2*ksing-1) = x(k+ipert0+mpert)
-                     k = k+m2
-                     delta_prime_mat(dRow,2*ksing) = x(k+ipert0+mpert)
-                  ENDDO
+                  !Find the small solution coeffs (p mode, so +mpert)
+                  k = k+m2
+                  delta_prime_mat(dRow,2*ksing-1) = x(k+ipert0+mpert)
+                  k = k+m2
+                  delta_prime_mat(dRow,2*ksing) = x(k+ipert0+mpert)
+               ENDDO
 c-----------------------------------------------------------------------
 c     error-check non-sparse matrix solution.
 c-----------------------------------------------------------------------
-                  !Error-check big solution elements by backward solve.
-                  b = ABS(MATMUL(M,x))
-                  IF (ABS(1-SUM(ABS(b))) > big_soln_err_tol) THEN
-                     print *,"Big sol'n error, surface #",jsing,"side",i
-                     print *,"=",ABS(1-SUM(ABS(b)))
-                  ENDIF
-               ENDDO
+               !Error-check big solution elements by backward solve.
+               b = ABS(MATMUL(M,x))
+               IF (ABS(1-SUM(ABS(b))) > big_soln_err_tol) THEN
+                  print *,"Big sol'n error, surface #",jsing,"side",i
+                  print *,"=",ABS(1-SUM(ABS(b)))
+               ENDIF
             ENDDO
-         ENDIF
+         ENDDO
 
          CALL ascii_open(delta_prime_out_unit,"delta_prime.out",
      $        "UNKNOWN")

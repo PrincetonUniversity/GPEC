@@ -26,7 +26,7 @@ c-----------------------------------------------------------------------
       USE bicube_mod
       IMPLICIT NONE
 
-      LOGICAL :: ripple_flag=.FALSE.
+      LOGICAL :: ripple_flag=.FALSE.,wv_farwall_flag
       INTEGER :: mpsi,mtheta,mripple
       REAL(r8) :: ro,zo
       TYPE(spline_type) :: sq
@@ -93,6 +93,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
          CASE(3)
+            READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
@@ -170,6 +171,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
             READ(UNIT=in_unit)wt0
+            READ(UNIT=in_unit)wv_farwall_flag
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix

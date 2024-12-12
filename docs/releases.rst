@@ -10,6 +10,143 @@ Note, backwards compatibility is defined as the ability to return to a previous 
 
 The `github release notes <https://github.com/PrincetonUniversity/GPEC/releases>`_ are reproduced below.
 
+GPEC v1.5.4
+===========
+
+Fixes
+------
+- STRIDE - Fixes reformation of splines with psilow, psilim from truncation logic in STRIDE
+
+
+GPEC v1.5.3
+===========
+
+Fixes
+------
+- INSTALL - Respects user's env when choosing NETCDFINC
+
+
+GPEC v1.5.2
+===========
+
+Fixes
+------
+- GPEC - Fixes bug in flux-field conversion of P_xe
+- GPEC - Fixes orientation of L, Lambda, P, rho, W_e, W_xe, R_xe, P_xe matrices in netcdf outputs
+- GPEC - Fixes bug that had scrambled C_*_x_out netcdf output
+
+
+GPEC v1.5.1
+===========
+
+Fixes
+------
+- GPEC - Fixes bug in jacfac diagnostic, now benchmarked with MEPHIT
+- GPEC - Fixes bug in terminal output of q during vsingfld
+
+
+GPEC v1.5.0
+===========
+
+Adds
+------
+- GPEC - Outputs new J. Callen threshold (w_isl_crit) for edge island penetration, controlled by the singtresh_flag. This requires PENTRC kinetic file inputs.
+- GPEC - Outputs new coil to resonant field coupling matrix
+- GPEC - Outputs vector potential in cylindrical coordinates
+- GPEC - Outputs Delta and Jbgradpsi (bwp in ascii) to netcdf outputs, as well as PEST coordinate Jbgradpsi_pest
+- GPEC - Outputs jafac and delpsi profiles via an optional diagnostic routine
+- COIL - Adds leading DIII-D M-coil designs
+- RMATCH - Adds variable inps_eps=1e-4,1e-7,1e-8 for automatic determination of computational elements, removing xmax_method and replacing xfac with inps_xfac
+- RMATCH - Includes production code used to form initialization scans published by Froese & Brennan for General Fusion plasmas
+- RMATCH - Adds TRANSP interface module
+
+Changes
+--------
+- VACUUM - Implicit uses of integer variables made explicit along with initialization of variables at zero (towards static compilation)
+- GPEC - Improves terminal output with table-like formatting and a change from reported averages to vector magnitudes
+- COIL - Updates coil dat file reading to use arbitrary x,y,z numerical formatting for higher accuracy
+- COIL - Accepts unformatted header lines in coil dat files (still needs to be 3 integers and a float)
+- PENTRC - Reduces number of LSODE warnings in energy and pitch integrals
+- PYPEC - Makes necessary changes to switch to python3 and updates portal partitions
+
+Fixes
+------
+- EQUIL - Adds proper zmid displacement to z grid from g-files (previously, z of equilibria were off by this value - effectively moving the magnetic axis to z=0 in all cases)
+- DCON - Forces euler.bin outputs at critical steps on either side of singular surfaces, enabling safe use of euler_stride with GPEC
+- DCON - Scans initial guess for inboard and outboard separatrix positions for robustness to deep magnetic wells within g-file domains
+- STRIDE - Forces reforming of equil splines with user modified bounds
+- GPEC - Fixed units of the perturbed field and displacement in netcdf output (previously, the former's "m" units were overwritting the field units)
+- GPEC - Fixes units of the vacuum resonant flux in the netcdf output
+- GPEC - Initializes the coil_indmat values to zero to prevent erroneous values beyond cmlow-cmhigh
+- GPEC - Truncates rzphi extrapolations to the core when psilow or qlow sets the start far from the magnetic axis, preventing non-physical values from swamping the output
+- VACUUM - Eliminates warning due to searchx declaring incorrect x-array size
+- VACUUM - Adds ishape=42 to residual calculation in kernel
+- INSTALL - Makes run_examples bash script explicitly use installation's exes
+
+
+GPEC v1.4.4
+===========
+
+Fixes
+------
+- DCON - Fixes output of plasma energy eigenvectors in netcdf
+
+
+GPEC v1.4.3
+===========
+
+Fixes
+------
+- VACUUM - Respects the namelist a and lspark when determining whether to write a wall geometry file output
+- DCON - Properly spaces the vacuum matrices used when finding the peak dW with psiedge < psilim
+
+Changes
+------
+- DCON - dW_edge in the netcdf output now includes the imaginary component of the least stable eigenvalue
+
+
+GPEC v1.4.2
+===========
+
+Fixes
+------
+- PENTRC - Respects the namelist verbose setting throughout the program
+
+Changes
+------
+- COIL - Updates ASDEX Upgrade coil geometry to have more accurate, rounded cornering
+
+
+GPEC v1.4.1
+===========
+
+Fixes
+------
+- GPEC - Corrects helicity for brzphi calculations in machine angle
+- PENTRC - Fixes reading of xclebsch displacements from other codes that use psi as the outer loop
+
+
+GPEC v1.4.0
+===========
+
+Fixes
+------
+- INSTALL - Support added for compiling on MacOS as well as with gfortran on linux
+- VACUUM - Makes ishape 41 use on manual wall robust to a>10 infinite wall tests
+- DCON - Corrects for wall time wrap-around when run spans multiple days
+- GPEC - Removes (incorrect) units from normalized minor radius netcdf output
+
+Changes
+--------
+- DCON - Improves parallel assembly of kinetic matrices using collapsed psi and ell loops and dynamic scheduling. This enables efficient use of large parallel_threads.
+
+Adds
+------
+- EQUIL - Adds new pow1 and pow2 grid_type options. These grids are linear in core psi_n and approach zero spacing at psihigh linearly/quadratically (packed in the edge).
+- DCON - Adds new psiedge variable to dcon_control. When this is below psihigh, DCON records dW(psi) between psiedge and psihigh and re-runs the integration with truncation adjusted to max(dW).
+- PENTRC - Adds new option (force_xialpha) that triggers a calculation of tangential from radial displacement (useful for radial displacement inputs from nonlinear codes like JOREK and M3DC1).
+
+
 GPEC v1.3.8
 ===========
 

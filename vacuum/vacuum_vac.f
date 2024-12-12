@@ -37,7 +37,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine vaccal
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       real nq
       integer tmth
@@ -115,8 +116,6 @@ c-----------------------------------------------------------------------
       tmth = 2*mth
       mthsq = tmth * tmth
       lmth = tmth * 2*jmax1
-      farwal = .false.
-      if ( (a .ge. 10.0) .or. (lspark .ne. 0) ) farwal = .true.
       j1v = nfm
       j2v = nfm
       if ( check1 )
@@ -660,6 +659,7 @@ c-----------------------------------------------------------------------
       ww3(1)=0
       ak0i=0
       jres=1
+      isph = 0
       mthm=mth-1
       gren(1:mth1,1:mth1)=0
       the(1:mth1)=(/(i,i=0,mth)/)*dth
@@ -693,7 +693,6 @@ c-----------------------------------------------------------------------
       IF(ischk == 0)THEN
          jbot=mth/2+1
          jtop=mth/2+1
-         isph=0
          CALL wwall(mth1,ww1,ww2)
          DO i=1,mth1
             IF(i == mth1)CYCLE
@@ -829,7 +828,7 @@ c-----------------------------------------------------------------------
          residu=0.0
          IF(j1 == j2)residu=two
 
-         IF(ishape < 10 .OR. ishape == 41)THEN
+         IF(ishape < 10 .OR. ishape == 41 .OR. ishape == 42)THEN
             resdg=(2-j1)*(2-j2)+(j1-1)*(j2-1)
             resk0=(2-j1)*(2-j2)+(j1-3)*(j2-1)
             residu=resdg+resk0
@@ -873,7 +872,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine mateig ( zvec, work, work1 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension zvec(nfm,nfm), work(*), work1(*)
 c-----------------------------------------------------------------------
@@ -918,7 +918,8 @@ c-----------------------------------------------------------------------
       subroutine mateig2 ( zvec, nd,msiz, zwk,work0,work,work1, l1,l2,
      $     ff1,lcone, jobid1, nout1 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       character(*) jobid1
       dimension zvec(nd,nd), zwk(nd,nd), work(*), work1(*), work0(*)
@@ -974,7 +975,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine arrays
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       real nq
       dimension the(nths)
@@ -1059,10 +1061,12 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine wwall(nqnqnq,xwal1,zwal1)
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       INTEGER:: npots0,npots
       logical lfix, insect
+      REAL*8 :: csmin
       REAL*8, DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
      $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp,rioptmp
       dimension xwal1(*), zwal1(*)
@@ -1159,7 +1163,7 @@ c              height. The radius of the shell is a.
 c-----------------------------------------------------------------------
       if ( ishape==2 ) then
         zh = sqrt ( abs(zrad**2 - plrad**2) ) ! h metric
-        zah = a / zh                            
+        zah = a / zh
         zph = plrad / zh
         zmup = 0.5*dlog ((zrad+plrad)/(zrad-plrad)) ! mu-plas
         zmuw = dlog( zah + sqrt(zah**2 + 1) ) ! mu-wall
@@ -1168,7 +1172,7 @@ c-----------------------------------------------------------------------
         zbwal = zh * cosh ( zmuw ) ! Major radius of wall
         bw = zbwal / a          ! Elongation of wall
         do i = 1, mth2
-          the = (i-1) * dth 
+          the = (i-1) * dth
           xwal1(i) =   xmaj + a*cos( the )
           zwal1(i) = - bw * a*sin( the )
         enddo
@@ -1180,7 +1184,7 @@ c-----------------------------------------------------------------------
      $     "muw, expmuw = ", 1p2e13.5,/)') zmup, zxmup, zmuw, zxmuw
       endif
 c-----------------------------------------------------------------------
-c     ishape=3 
+c     ishape=3
 c-----------------------------------------------------------------------
       if ( ishape==3 ) then
         do i = 1, mth2
@@ -1239,7 +1243,7 @@ c-----------------------------------------------------------------------
       if ( ishape==4 ) then
         wcentr = cw
         do i = 1, mth2
-          the0 = (i-1) * dth 
+          the0 = (i-1) * dth
           the = the0
           sn2th = sin(2.0*the)
           xwal1(i) =   cw + a*cos( the + dw*sin(the) )
@@ -1268,10 +1272,16 @@ c              close fitting shell since the plasma and shell nodes are aligned.
 c-----------------------------------------------------------------------
       if ( ishape==6 ) then
         wcentr = xmaj
+        ! force a 10cm center stack or one tenth of the plasma R if it is a super small tokamak
+        csmin = min(0.1, 1e-1 * minval(xinf(2:mth1)))
         do i = 2, mth1
           alph = atan2 ( xinf(i+1)-xinf(i-1), zinf(i-1)-zinf(i+1) )
           xwal1(i) = xinf(i) + a*plrad * cos(alph)
           zwal1(i) = zinf(i) + a*plrad * sin(alph)
+          ! if the wall crosses the R=0 axis, force a thin center stack
+          if ( xwal1(i)<=csmin ) then
+            xwal1(i) = csmin
+          endif
         enddo
         xwal1(1) = xwal1(mth1)
         zwal1(1) = zwal1(mth1)
@@ -1280,7 +1290,7 @@ c-----------------------------------------------------------------------
       endif
 c-----------------------------------------------------------------------
 c     ishape=7 Enclosing bean-shaped wall. Consult paper.
-c              [Physics of Plasmas, 4, June 1997, 2161]. 
+c              [Physics of Plasmas, 4, June 1997, 2161].
 c-----------------------------------------------------------------------
       if ( ishape==7 ) then
         cwr = cw * pye / 180.0
@@ -1368,7 +1378,7 @@ c-----------------------------------------------------------------------
           the0 = (i-1) * dth
           if ( the0 .gt. 0.5*pye .and. the0 .lt. 1.5*pye ) then
             thbulg = blgrado
-          else 
+          else
             thbulg = blgradi
           endif
           cost2b = cos(2*thbulg)
@@ -1426,7 +1436,7 @@ c-----------------------------------------------------------------------
           the0 = (i-1) * dth
           if ( the0 .gt. 0.5*pye .and. the0 .lt. 1.5*pye ) then
             thbulg = blgrado
-          else 
+          else
             thbulg = blgradi
           endif
           cost2b = cos(2.0*thbulg)
@@ -1631,7 +1641,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine d3dwall ( xwall, ywall, mthh, iomod, iotty1 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       integer, parameter :: ncdf=26
       dimension xwall(*), ywall(*), rwi(ncdf), zwi(ncdf)
@@ -1687,7 +1698,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine d3dvesl(r0,z0,a0,e0,ar,az,nval,zst,r,z,npts,ier)
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension ar(nval),az(nval)
       dimension r (npts),z (npts)
@@ -1768,7 +1780,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine eqarcw ( xin, zin, xout, zout, ell, thgr, thlag, mw1 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension xin(*), xout(*), zin(*), zout(*),
      $     ell(*), thgr(*), thlag(*)
@@ -1816,7 +1829,8 @@ c-----------------------------------------------------------------------
       subroutine gatonorm ( vacin, gatovac_, nd, rgato_,mfel_,mth_,
      $     qa1_,twopi_ )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension  vacin(nd,nd), gatovac_(nd,nd)
 c-----------------------------------------------------------------------
@@ -1848,7 +1862,8 @@ c-----------------------------------------------------------------------
       subroutine adjustb(betin,betout,a_,bw_,cw_,dw_,xmaj_,plrad_,
      $   ishape_)
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
@@ -1876,7 +1891,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine fouran ( gij, gil, cs, m00,l00 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       REAL(8), DIMENSION(nths,nths) :: gij
       REAL(8), DIMENSION(nths2,nfm2) :: gil
@@ -1913,7 +1929,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine foranv ( gil, gll, cs, m00,l00 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension gil(nths2,nfm2), gll(nfm,nfm), cs(nths,nfm)
 c-----------------------------------------------------------------------
@@ -1947,7 +1964,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine foura2 ( gij,m01,m02, gil, m00 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       real nq
       dimension gij(nths2,nths2), gil(nths,nths)
@@ -1992,7 +2010,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine fanal ( fth, nt, flc,fls, l1,l2, pi,ddt )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension fth(*), flc(*), fls(*)
 c-----------------------------------------------------------------------
@@ -2028,7 +2047,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine fanal1 ( gi,ndi1,ndi2,mi1, gor,goi,ndo1,ndo2 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       real nq
       dimension gi(ndi1,ndi2), gor(ndo1,ndo2), goi(ndo1,ndo2)
@@ -2074,7 +2094,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine felang ( gij, gil, cs, m00,l00 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       data izcal / 0 /
       real nq
@@ -2142,7 +2163,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine felanv ( gil, gll, cs, m00,l00 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       data izcal / 0 /
       real nq
@@ -2214,7 +2236,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine fotofi ( vin,vout, scnlth, wrk1, wrk2, iopsc )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension vin(nfm,nfm), vout(nfm,nfm), scnlth(nths,nfm),
      $     wrk1(nfm,nfm), wrk2(nfm,nfm)
@@ -2240,7 +2263,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine orchek ( wrkr, wrki, wrkrt, wrkit, wrko1,wrko2 )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension  wrkr(nfm,nfm), wrki(nfm,nfm),
      $     wrkrt(nfm,nfm), wrkit(nfm,nfm),
@@ -2295,7 +2319,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine tmat ( sil, tll, iop )
       USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension sil(nths,nfm), tll(nfm,nfm)
 c-----------------------------------------------------------------------
@@ -2370,7 +2395,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine wtopest ( vacpstr, vacpsti, xwal_, zwal_ )
             USE vglobal_mod
-      IMPLICIT REAL*8 (a-h,o-z)
+      implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       dimension vacpstr(*), vacpsti(*), xwal_(*), zwal_(*)
 c-----------------------------------------------------------------------
@@ -2438,10 +2464,8 @@ c-----------------------------------------------------------------------
 
       open(unit=41,file="wall_geo.out",status='unknown',
      $             form='FORMATTED')
-      write(41,'(i6,A,A)') mth2,' = number of points below ',
-     $     '(theta must span 0 to 2*pi at a minimum)'
-      write(41,'(g14.6,A,A)') wcentr,' = R_0(m), a-parameter ',
-     $     'scaling uses this as origin'
+      write(41,'(1x,a7,i6)') 'mth2 = ', mth2
+      write(41,'(1x,a7,g14.6)') 'ro = ',wcentr
       write(41,'(A)') '  theta(rad)    R(m)          Z(m)'
 
 c     find first point above angle zero (slightly clockwise from R-direction)

@@ -5,59 +5,38 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     code organization.
 c-----------------------------------------------------------------------
-c     0. delmatch_mod.
+c     0. deltac_mod.
 c     1. deltac_run.
-c     2. deltac_init_asymp.
-c     3. deltac_get_ua.
-c     4. deltac_get_dua.
-c     5. deltac_solve.
-c     6. deltac_alloc.
-c     7. deltac_dealloc.
-c     8. deltac_make_grid.
-c     9. deltac_pack.
-c     10. deltac_hermite.
-c     11. deltac_make_map_hermite.
-c     12. deltac_make_arrays.
-c     13. deltac_gauss_quad.
-c     14. deltac_get_uv.
-c     15. deltac_assemble_mat.
-c     16. deltac_assemble_rhs.
-c     17. deltac_set_boundary.
-c     18. deltac_extension.
-c     19. deltac_lsode_int.
-c     20. deltac_lsode_der.
-c     21. deltac_get_d2ua.
-c     22. deltac_ua_diagnose.
-c     23. deltac_get_solution.
-c     24. deltac_output_solution.
-c     25. deltac_read_parameters.
-c     26. deltac_estimate_zi.
+c     2. deltac_solve.
+c     3. deltac_alloc.
+c     4. deltac_dealloc.
+c     5. deltac_make_grid.
+c     6. deltac_pack.
+c     7. deltac_hermite.
+c     8. deltac_make_map_hermite.
+c     9. deltac_make_arrays.
+c     10. deltac_gauss_quad.
+c     11. deltac_assemble_mat.
+c     12. deltac_assemble_rhs.
+c     13. deltac_set_boundary.
+c     14. deltac_extension.
+c     15. deltac_lsode_int.
+c     16. deltac_lsode_der.
+c     17. deltac_get_solution.
+c     18. deltac_output_solution.
+c     19. deltac_read_parameters.
 c-----------------------------------------------------------------------
-c     subprogram 0. delmatch_mod.
+c     subprogram 0. deltac_mod.
 c     module declarations.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE deltac_mod
-      USE gamma_mod
       USE jacobi_mod
-      USE deltar_mod, ONLY : resist_type
+      USE inps_mod
+      USE inpso_mod
       IMPLICIT NONE
-
-      TYPE :: inner_type
-      INTEGER :: ising
-      REAL(r8) :: e,f,g,h,k,m,taua,taur,v1
-      REAL(r8) :: di,dr,p1,sfac
-      COMPLEX(r8) :: eig,q,x0
-      COMPLEX(r8),DIMENSION(2) :: deltar
-      END TYPE inner_type
-
-      TYPE :: asymp_type
-      REAL(r8), DIMENSION(2) :: p
-      COMPLEX(r8), DIMENSION(2):: s
-      COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: v
-      END TYPE asymp_type
 
       TYPE :: hermite_type
       REAL(r8), DIMENSION(0:3) :: pb,qb
@@ -69,7 +48,7 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: emap
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: map
       REAL(r8) :: x_lsode
-      REAL(r8), DIMENSION(2) :: x
+      REAL(r8), DIMENSION(2) :: x 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: rhs
       COMPLEX(r8), DIMENSION(:,:,:,:), ALLOCATABLE :: mat
       END TYPE cell_type
@@ -78,12 +57,12 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: x,dx
       TYPE(cell_type), DIMENSION(:), POINTER :: cell
       END TYPE interval_type
-
+      
       TYPE :: solution_type
       REAL(r8),DIMENSION(:), ALLOCATABLE :: xvar
       COMPLEX(r8), DIMENSION(:,:,:),ALLOCATABLE :: sol
       END TYPE solution_type
-
+      
       TYPE :: gal_type
       INTEGER :: nx,nq,ndim,kl,ku,ldab,msol
       INTEGER, DIMENSION(:), ALLOCATABLE :: ipiv
@@ -97,35 +76,29 @@ c-----------------------------------------------------------------------
 
       LOGICAL, PRIVATE :: diagnose_res=.FALSE., method=.true.
       lOGICAL :: deltac_bin_sol=.false.,deltac_out_sol=.false.
-      LOGICAL :: dx1dx2_flag=.false.,rescale=.true.
       LOGICAL :: restore_uh=.false.,output_sol=.false.
       LOGICAL :: restore_us=.false.,restore_ul=.false.
-      LOGICAL :: noexp=.false.
+      LOGICAL :: noexp=.true.
       LOGICAL :: diagnose_params=.FALSE.
-      CHARACTER(10) :: gal_method="normal",side="right"
+      CHARACTER(10) :: side="right"
       CHARACTER(256) :: deltabin_filename,galsol_filename
       CHARACTER(256) :: galsol_filename_cut
-      INTEGER :: interp_np=10,xmax_method
+      INTEGER :: msol=2
+      INTEGER :: interp_np=10
       INTEGER :: basis_type=0
-      INTEGER, PRIVATE :: np=3,mpert=3,msol=2
-      INTEGER :: order_pow=10,order_exp=3
-      INTEGER :: nx=128,nq=4,fulldomain=0
-      INTEGER :: cutoff=5,outt=3,nx_ua=100
+      INTEGER, PRIVATE :: np=3
+      INTEGER :: nx=128,nq=4
+      INTEGER :: cutoff=5
       INTEGER, DIMENSION(4), PRIVATE:: tid=(/3,5,6,4/)
-      INTEGER :: deltac_bin_unit=120
-      INTEGER :: deltac_out_unit=121
-      REAL(r8) :: dx1=1e-2,dx2=1e-2
       REAL(r8) :: xmin=0,deltac_tol=1e-5,pfac=1
-      REAL(r8) :: xmax=1,xfac=1
-      REAL(r8) :: x0_ua=0.01,x1_ua=1
-      REAL(r8) :: zi_deltac
       COMPLEX(r8) :: q_deltac
-      TYPE(inner_type), PRIVATE :: in
-      TYPE(asymp_type), PRIVATE :: asp
-      TYPE(cell_type), POINTER :: cell
+      TYPE(cell_type), POINTER :: cell  
       TYPE(solution_type), POINTER :: sol
+      TYPE(gal_type) :: gal
 
-      CONTAINS
+c     following flag need to be removed after the test
+
+      CONTAINS    
 c-----------------------------------------------------------------------
 c     subprogram 1. deltac_run.
 c     sets up and solve inner layer.
@@ -140,7 +113,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(2), INTENT(OUT) :: delta
       COMPLEX(r8), DIMENSION(2,2), INTENT(OUT) :: fulldelta
       CHARACTER(80) :: message
-      REAL(r8) :: x0, q0,tmp1,tmp2,tmp3,tmp4
+      REAL(r8) :: x0, q0
       COMPLEX(r8) :: tmp
 c-----------------------------------------------------------------------
 c     format statements.
@@ -148,16 +121,7 @@ c-----------------------------------------------------------------------
  10   FORMAT(6x,"E",10x,"F",10x,"H",10x,"G",10x,"K",10x,"M"//1p,6e11.3/)
  20   FORMAT(6x,"DI",9x,"DR",9x,"p1",8x,"taua",7x,"taur",7x,"sfac"//
      $     1p,6e11.3/)
- 30   FORMAT(6x,"X0",9x,"Q0",9X,"V1"//1p,3e11.3)
-c-----------------------------------------------------------------------
-c     set the domain to be solved
-c-----------------------------------------------------------------------
-      SELECT CASE (fulldomain)
-      CASE(0)
-         xmin=0
-      CASE(1,2)
-         xmin=-xmax
-      END SELECT
+ 30   FORMAT(6x,"X0",9x,"Q0",9X,"V1",9X,"XM"//1p,4e11.3)
 c-----------------------------------------------------------------------
 c     copy input values.
 c-----------------------------------------------------------------------
@@ -172,7 +136,7 @@ c-----------------------------------------------------------------------
       in%v1=restype%v1
       in%ising=restype%ising
       in%eig=eig
-
+      
       in%dr=in%e+in%f+in%h*in%h
       in%di=in%e+in%f+in%h-0.25
       in%p1=SQRT(-in%di)
@@ -185,6 +149,11 @@ c-----------------------------------------------------------------------
       in%q=in%eig/q0
       in%x0=x0
 c-----------------------------------------------------------------------
+c     setup asymptotic solutions at large x.
+c-----------------------------------------------------------------------
+      CALL inpso_init
+      CALL inpso_xmax(xmax)
+c-----------------------------------------------------------------------
 c     write output file with inner region parameters.
 c-----------------------------------------------------------------------
       IF(diagnose_params)THEN
@@ -193,38 +162,9 @@ c-----------------------------------------------------------------------
      $        " deltabin_filename = ",TRIM(deltabin_filename)
          WRITE(debug_unit,10)in%e,in%f,in%h,in%g,in%k,in%m
          WRITE(debug_unit,20)in%di,in%dr,in%p1,in%taua,in%taur,in%sfac
-         WRITE(debug_unit,30)x0,q0,in%v1
+         WRITE(debug_unit,30)x0,q0,in%v1,xmax
          CLOSE(UNIT=debug_unit)
       endif
-c-----------------------------------------------------------------------
-c     setup asymptotic solutions at large x.
-c-----------------------------------------------------------------------
-      CALL deltac_init_asymp
-      SELECT CASE(xmax_method)
-      CASE(1)
-         tmp1=SQRT(ABS(in%q)**.5*(ABS(asp%s(1))+1))*xfac
-         tmp2=SQRT(ABS(in%q)**.5*(ABS(asp%s(2))+1))*xfac
-         IF (tmp2 > tmp1) tmp1=tmp2
-         xmax=tmp2
-      CASE(2)
-         tmp1=MAXVAL(ABS(asp%v(:,5,1)))
-         tmp2=MAXVAL(ABS(asp%v(:,5,2)))
-         tmp3=tmp1/tmp2
-         tmp1=MAXVAL(ABS(asp%v(:,6,1)))
-         tmp2=MAXVAL(ABS(asp%v(:,6,2)))
-         tmp4=tmp1/tmp2
-         IF (tmp4 > tmp3) tmp3=tmp4
-         xmax=tmp3*xfac
-      CASE(3)
-         xmax=ABS(in%q)**.25*xfac
-      CASE(4)
-         xmax=xfac*ABS(in%q)**.25
-     $        *MAXVAL(1+SQRT(ABS(asp%s(:))))
-      CASE DEFAULT
-         WRITE(message,'(a,i2)')
-     $        "deltac_run: invalid value xmax_method = ",xmax_method
-         CALL program_stop(message)
-      END SELECT
 c-----------------------------------------------------------------------
 c     set the domain to be solved
 c-----------------------------------------------------------------------
@@ -234,14 +174,13 @@ c-----------------------------------------------------------------------
       CASE(1,2)
          xmin=-xmax
       CASE DEFAULT
-         WRITE(message,'(a,i2)')
+         WRITE(message,'(a,i2)') 
      $        "deltac_run: invalide value fulldomain = ",fulldomain
       END SELECT
-      IF(diagnose_res)CALL deltac_ua_diagnose
+      IF(diagnose_res)CALL inpso_ua_diagnose
 c-----------------------------------------------------------------------
 c     estimate zi.
 c-----------------------------------------------------------------------
-      CALL deltac_estimate_zi(zi_deltac)
       q_deltac=in%q
 c-----------------------------------------------------------------------
 c     run galerkin method to solve the inner layer.
@@ -258,307 +197,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_run
 c-----------------------------------------------------------------------
-c     subprogram 2. deltac_init_asymp.
-c     initialize the asymptotic solutions at large x.
-c     coefficients of two power series and two small exponential
-c     solutions are solved.
-c     GJT Appendix A.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE deltac_init_asymp
-
-      INTEGER :: i,j,l,t,order
-      INTEGER :: info
-      INTEGER, DIMENSION(3) :: ipiv
-
-      REAL(r8) :: e,f,k,g,h
-      COMPLEX(r8),DIMENSION(2) :: p,s
-      COMPLEX(r8) :: sq,tmp,q
-
-      COMPLEX(r8), DIMENSION(4) :: term
-      COMPLEX(r8), DIMENSION(3) :: matb
-      COMPLEX(r8), DIMENSION(3,3) :: mata,mat
-c-----------------------------------------------------------------------
-c     initialize the parameters (f,h,k,g,h,q) and the coefficients v
-c-----------------------------------------------------------------------
-      order=order_pow
-      IF (order < order_exp) order=order_exp
-      ALLOCATE(asp%v(3,6,order+1))
-      e=in%e
-      f=in%f
-      k=in%k
-      g=in%g
-      h=in%h
-      q=in%q
-      asp%v=0.0
-c-----------------------------------------------------------------------
-c     p power of large and small solutions (T_3,4).
-c-----------------------------------------------------------------------
-      p(1)=-0.5+in%p1
-      p(2)=-0.5-in%p1
-      asp%p=p
-c-----------------------------------------------------------------------
-c     solve large and small power-like solutions.
-c-----------------------------------------------------------------------
-      DO i=1,2
-         t=2+i
-c-----------------------------------------------------------------------
-c     zeroth order term.
-c-----------------------------------------------------------------------
-         j=0
-         l=j+1
-         asp%v(:,t,l)=1
-c-----------------------------------------------------------------------
-c     solve high order term.
-c-----------------------------------------------------------------------
-         mata(1,1)=q
-         mata(1,2)=-q
-         mata(1,3)=0.0
-         mata(2,2)=0.0
-         mata(3,1)=1
-         mata(3,2)=0.0
-         mata(3,3)=-1
-         DO j=1,order_pow
-            l=j+1
-            mata(2,1)=(p(i)-2*j+h)*(p(i)-2*j+1)
-            mata(2,3)=-(h*(p(i)-2*j)-e-f)
-
-            matb(1)=(p(i)-2*j+2)*(p(i)-2*j+3)*asp%v(1,t,l-1)
-     $           -h*(p(i)-2*j+2)*asp%v(3,t,l-1)
-            matb(2)=-q*q*(p(i)-2*j+2)*(p(i)-2*j+1)*asp%v(2,t,l-1)
-            matb(3)=h*k*q*q*(p(i)-2*j+3)*asp%v(1,t,l-1)
-     $           -(g-e*k)*q*q*asp%v(2,t,l-1)
-     $           +(g+f*k)*q*q*asp%v(3,t,l-1)
-            IF (j > 1) matb(3)=matb(3)
-     $           -q*(p(i)-2*j+4)*(p(i)-2*j+3)*asp%v(3,t,l-2)
-            mat=mata
-            asp%v(:,t,l)=matb
-            CALL zgesv(3,1,mat,3,ipiv,asp%v(:,t,l),3,info)
-         ENDDO
-      ENDDO
-c-----------------------------------------------------------------------
-c     s power of T_5,6, exponential power series.
-c-----------------------------------------------------------------------
-      sq=sqrt(q)
-      term(1)=-sq*q*(1+g+k*(f+h*h))*0.25
-      term(2)=(g+k*f-1)**2.0
-      tmp=k*h*h
-      term(3)=tmp*(tmp+(g+k*f+1)*2.0)
-      term(4)=((g-k*e-1.0)*in%dr+h*h)*4.0
-      tmp=sqrt(q**3.0*(term(2)+term(3))+term(4))*0.25
-      s(1)=term(1)+tmp-0.5
-      s(2)=term(1)-tmp-0.5
-      asp%s=s
-c-----------------------------------------------------------------------
-c     solve coefficients of small exponential solutions T5 and T6.
-c-----------------------------------------------------------------------
-      DO i=1,2
-         mata(1,1)=1.0/q
-         mata(1,2)=q
-         mata(1,3)=h/sq
-         mata(2,1)=q-h/sq
-         mata(2,2)=-q*sq*(2*s(i)+1)
-         mata(2,3)=e+f
-         mata(3,1)=q*sq*k*h+1
-         mata(3,2)=q*q*(g-k*e)
-         mata(3,3)=-q*q*(g+k*f)-sq*(2.0*s(i)+1.0)
-c-----------------------------------------------------------------------
-c     solve zeroth order term.
-c-----------------------------------------------------------------------
-         t=4+i
-         j=0
-         l=j+1
-
-         asp%v(1,t,l)=1
-
-         matb(1)=-1.0/q
-         matb(2)=-(q-h/sq)
-
-         asp%v(2:3,t,l)=matb(1:2)
-         mat=mata
-         CALL zgesv(2,1,mat(1:2,2:3),2,ipiv(1:2),
-     $        asp%v(2:3,t,l),2,info)
-c-----------------------------------------------------------------------
-c     solve high order.
-c-----------------------------------------------------------------------
-         DO j=1,order_exp
-            l=j+1
-
-            mata(2,2)=-q*sq*(2*s(i)-4*j+1)
-            mata(3,3)=-q*q*(g+k*f)-sq*(2.0*s(i)-4*j+1.0)
-
-            matb(1)=((2.0*s(i)-4.0*j+3)/sq+q)*asp%v(1,t,l-1)
-            matb(1)=matb(1)+h*(s(i)-2*j+2)*asp%v(3,t,l-1)
-            IF (j > 1) matb(1)=-(s(i)+3-2*j)*(s(i)+2-2*j)
-     $           *asp%v(1,t,l-2)
-            matb(2)=-h*(s(i)+1.0-2.0*j)*asp%v(1,t,l-1)
-            matb(2)=matb(2)-q*q*(s(i)-2*j+2)*(s(i)-2*j+1)
-     $           *asp%v(2,t,l-1)
-            matb(3)=q*q*k*h*(s(i)+1.0-2.0*j)
-     $           *asp%v(1,t,l-1)
-     $           -q*(s(i)-2*j+2)*(s(i)-2*j+1)
-     $           *asp%v(3,t,l-1)
-            mat=mata
-            asp%v(:,t,l)=matb
-            CALL zgesv(3,1,mat,3,ipiv,asp%v(:,t,l),3,info)
-         ENDDO
-      ENDDO
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE deltac_init_asymp
-c-----------------------------------------------------------------------
-c     subprogram 3. deltac_get_ua.
-c     get the value of the asymptotic solutions at large x.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE deltac_get_ua(xin,ua)
-
-      REAL(r8),INTENT(IN) :: xin
-      COMPLEX(r8),DIMENSION(3,6),INTENT(OUT) :: ua
-
-      INTEGER :: i,j,t,l
-      REAL(r8) :: x,x2
-      COMPLEX(r8) :: xp,xs,xj
-c-----------------------------------------------------------------------
-c     change sign of x.
-c-----------------------------------------------------------------------
-      IF (xin<0) THEN
-         x=-xin
-      ELSE
-         x=xin
-      ENDIF
-c-----------------------------------------------------------------------
-c     computations.
-c-----------------------------------------------------------------------
-      ua=0.0
-      x2=x*x
-      DO i=1,2
-         xp=x**asp%p(i)
-         IF (rescale) THEN
-            xs=EXP((-x2+xmax*xmax)/(SQRT(in%q)*2.0) )
-     $           *((x/xmax)**asp%s(i))
-         ELSE
-            xs=EXP(-x2/(SQRT(in%q)*2.0) )*(x**asp%s(i))
-         ENDIF
-         DO j=0, order_pow
-            l=j+1
-            xj=x**(-2.0*j)
-            t=2+i
-            ua(:,t)=ua(:,t)+asp%v(:,t,l)*xj
-         ENDDO
-
-         DO j=0, order_exp
-            l=j+1
-            xj=x**(-2.0*j)
-            t=4+i
-            ua(:,t)=ua(:,t)+asp%v(:,t,l)*xj
-         ENDDO
-
-         t=2+i
-         ua(:,t)=xp*ua(:,t)
-         ua(1,t)=x*ua(1,t)
-         t=4+i
-         ua(:,t)=xs*ua(:,t)
-         ua(1,t)=ua(1,t)/x
-      ENDDO
-c-----------------------------------------------------------------------
-c     extend to negtive x with even parity.
-c-----------------------------------------------------------------------
-      IF (xin<0 .AND. fulldomain .EQ. 1) THEN
-         ua(1,:)=-ua(1,:)
-c         ua(2,:)=-ua(2,:)
-c         ua(3,:)=-ua(3,:)
-      ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE deltac_get_ua
-c-----------------------------------------------------------------------
-c     subprogram 4. deltac_get_dua.
-c     get the derivative value of the asymptotic solutions at large x.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE deltac_get_dua(xin,dua)
-
-      REAL(r8),INTENT(IN) :: xin
-      REAL(r8) :: x
-      COMPLEX(r8),DIMENSION(3,6),INTENT(OUT) :: dua
-
-      INTEGER i,j,t,l
-      REAL(r8),DIMENSION(2) :: p
-      REAL(r8) :: x2
-      COMPLEX(r8) :: xp,xs,xj,q
-      COMPLEX(r8),DIMENSION(2) :: s
-c-----------------------------------------------------------------------
-c     change sign of x.
-c-----------------------------------------------------------------------
-      IF (xin<0) THEN
-         x=-xin
-      ELSE
-         x=xin
-      ENDIF
-c-----------------------------------------------------------------------
-c     computations.
-c-----------------------------------------------------------------------
-      q=in%q
-      dua=0.0
-      p=asp%p
-      s=asp%s
-      x2=x*x
-      DO i=1,2
-         xp=x**p(i)
-         IF (rescale) THEN
-            xs=EXP((-x2+xmax*xmax)/(SQRT(in%q)*2.0) )
-     $           *((x/xmax)**asp%s(i))
-         ELSE
-            xs=EXP(-x2/(SQRT(in%q)*2.0) )*(x**asp%s(i))
-         ENDIF
-         DO j=0, order_pow
-            l=j+1
-            t=2+i
-            xj=x**(-1.0-2.0*j)
-            dua(1,t)=dua(1,t)+asp%v(1,t,l)*(p(i)+1-2*j)*xj
-            dua(2:3,t)=dua(2:3,t)+asp%v(2:3,t,l)*(p(i)-2*j)*xj
-         ENDDO
-         DO j=0, order_exp
-            l=j+1
-            t=4+i
-            xj=x**(-2.0*j)
-            dua(1,t)=dua(1,t)
-     $           +asp%v(1,t,l)*((s(i)-1-2*j)/x2-1.0/SQRT(q))*xj
-            dua(2:3,t)=dua(2:3,t)
-     $           +asp%v(2:3,t,l)*((s(i)-2*j)/x-1.0/SQRT(q)*x)*xj
-         ENDDO
-         t=2+i
-         dua(:,t)=xp*dua(:,t)
-         dua(1,t)=x*dua(1,t)
-         t=4+i
-         dua(:,t)=xs*dua(:,t)
-      ENDDO
-c-----------------------------------------------------------------------
-c     extend to negtive x with even parity.
-c-----------------------------------------------------------------------
-      IF (xin<0 .AND. fulldomain .EQ. 1) THEN
-c         dua(1,:)=-dua(1,:)
-         dua(2,:)=-dua(2,:)
-         dua(3,:)=-dua(3,:)
-      ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE deltac_get_dua
-c-----------------------------------------------------------------------
-c     subprogram 5. deltac_solve.
+c     subprogram 2. deltac_solve.
 c     solves the inner layer model with galerkin method.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -566,12 +205,19 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltac_solve(delta,fulldelta)
 
+      LOGICAL, PARAMETER :: diagnose=.FALSE.
       COMPLEX(r8), DIMENSION(2), INTENT(OUT) :: delta
       COMPLEX(r8), DIMENSION(2,2), INTENT(OUT) :: fulldelta
-      INTEGER :: info,isol,imap,ix
-      TYPE(gal_type) :: gal
-10    FORMAT("D11=",1p,2e11.3,"D12=",1p,2e11.3,
-     $       "D21=",1p,2e11.3,"D22=",1p,2e11.3/)
+      INTEGER :: infof,infos,isol,imap,ix,i,j
+c-----------------------------------------------------------------------
+c     format statements.
+c-----------------------------------------------------------------------
+ 10   FORMAT("D11=",1p,2e11.3,"D12=",1p,2e11.3,
+     $     "D21=",1p,2e11.3,"D22=",1p,2e11.3/)
+ 20   FORMAT(/5x,"i",5x,"rhs1",7x,"rhs2"/)
+ 30   FORMAT(i6,2es11.3)
+ 40   FORMAT(/5x,"i",5x,"j",5x,"mat1",7x,"mat2"/)
+ 50   FORMAT(2i6,2es11.3)
 c-----------------------------------------------------------------------
 c     allocate and compute arrays.
 c-----------------------------------------------------------------------
@@ -581,14 +227,38 @@ c-----------------------------------------------------------------------
       CALL deltac_alloc(gal,nx,nq,dx1,dx2,pfac)
       CALL deltac_make_arrays(gal)
 c-----------------------------------------------------------------------
+c     diagnose arrays.
+c-----------------------------------------------------------------------
+      IF(diagnose)THEN
+         OPEN(UNIT=array_unit,FILE="array.out",STATUS="REPLACE")
+         WRITE(array_unit,'(2a,5(a,g0))')
+     $        " inps_type = ",TRIM(inps_type),", ndim = ",gal%ndim,
+     $        ", ldab = ",gal%ldab,", msol = ",msol,", kl = ",gal%kl,
+     $        ", ku = ",gal%ku
+         WRITE(array_unit,20)
+         DO i=1,gal%ndim
+            WRITE(array_unit,30)i,REAL(gal%rhs(i,:))
+         ENDDO
+         WRITE(array_unit,20)
+         DO i=1,gal%ndim
+            WRITE(array_unit,40)
+            DO j=1,gal%ldab
+               WRITE(array_unit,50)i,j,REAL(gal%mat(j,i,:))
+            ENDDO
+         ENDDO
+         WRITE(array_unit,40)
+         CLOSE(UNIT=array_unit)
+         CALL program_stop("deltac_solver: abort after diagnose.")
+      ENDIF
+c-----------------------------------------------------------------------
 c     solve the galerkin matrix.
-c-----------672------------------------------------------------------------
+c-----------------------------------------------------------------------
       DO isol=1,msol
          gal%sol(:,isol)=gal%rhs(:,isol)
          CALL zgbtrf(gal%ndim,gal%ndim,gal%kl,gal%ku,gal%mat(:,:,isol),
-     $        gal%ldab,gal%ipiv,info)
+     $        gal%ldab,gal%ipiv,infof)
          CALL zgbtrs("N",gal%ndim,gal%kl,gal%ku,1,gal%mat(:,:,isol),
-     $        gal%ldab,gal%ipiv,gal%sol(:,isol),gal%ndim,info)
+     $        gal%ldab,gal%ipiv,gal%sol(:,isol),gal%ndim,infos)
       ENDDO
 c-----------------------------------------------------------------------
 c     compute and write delta.
@@ -601,8 +271,8 @@ c-----------------------------------------------------------------------
                imap=gal%intvl%cell(nx)%map(1,4)
                delta(isol)=gal%sol(imap,isol)
             ENDDO
-c            WRITE(*,*)"delta1=",delta(1),"delta2=",delta(2)
-c            CALL program_stop("delta+- stop")
+c     WRITE(*,*)"delta1=",delta(1),"delta2=",delta(2)
+c     CALL program_stop("delta+- stop")
          CASE (1,2)
             DO isol=1,gal%msol
                imap=gal%intvl%cell(-nx)%map(1,-1)
@@ -610,9 +280,9 @@ c            CALL program_stop("delta+- stop")
                imap=gal%intvl%cell(nx)%map(1,4)
                fulldelta(isol,2)=gal%sol(imap,isol)
             ENDDO
-c            WRITE (*,10) fulldelta(1,1),fulldelta(1,2),
+c     WRITE (*,10) fulldelta(1,1),fulldelta(1,2),
 c     $                   fulldelta(2,1),fulldelta(2,2)
-c            CALL program_stop
+c     CALL program_stop
 c     $        ("Finish full domain comptation with normal method.")
          END SELECT
       CASE ("resonant")
@@ -626,7 +296,7 @@ c     $        ("Finish full domain comptation with normal method.")
             ENDDO
          ENDDO
       END SELECT
-
+      
       IF(output_sol)CALL deltac_output_solution(gal)
 c-----------------------------------------------------------------------
 c     deallocate arrays and finish.
@@ -638,14 +308,14 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_solve
 c-----------------------------------------------------------------------
-c     subprogram 6. deltac_alloc.
+c     subprogram 3. deltac_alloc.
 c     allocates arrays.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltac_alloc(gal,nx,nq,dx1,dx2,pfac)
-
+      
       TYPE(gal_type), INTENT(OUT) :: gal
       INTEGER, INTENT(IN) :: nx,nq
       REAL(r8), INTENT(IN) :: dx1,dx2,pfac
@@ -656,7 +326,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     set integers.
 c-----------------------------------------------------------------------
-	SELECT CASE (fulldomain)
+      SELECT CASE (fulldomain)
       CASE(0)
          gal%nx=nx
       CASE(1,2)
@@ -679,11 +349,10 @@ c-----------------------------------------------------------------------
          ALLOCATE(intvl%x(-nx:nx),intvl%dx(-nx:nx),intvl%cell(-nx:nx))
          ixmin=-nx
       CASE DEFAULT
-         WRITE(*,'(a,i2)')
+         WRITE(*,'(a,i2)') 
      $        "deltac_run: invalide value fulldomain = ",fulldomain
          STOP
       END SELECT
-
       CALL deltac_make_grid(nx,dx1,dx2,pfac,intvl)
 c-----------------------------------------------------------------------
 c     allocate map and local matrix for each element.
@@ -748,15 +417,15 @@ c-----------------------------------------------------------------------
                   ALLOCATE(cell%rhs(mpert,0:np+1))
                   cell%np=np
                   ENDIF
-               ELSE
+               ELSE 
                   ALLOCATE(cell%map(mpert,0:np),cell%emap(3))
                   ALLOCATE(cell%mat(mpert,mpert,0:np,0:np))
                   ALLOCATE(cell%rhs(mpert,0:np))
 
-                  cell%np=np-1
+                  cell%np=np-1               
                ENDIF
                cell%emap=0.0
-               cell%rhs=0.0
+               cell%rhs=0.0               
                cell%x_lsode=0.0
 c-----------------------------------------------------------------------
 c     allocate extension element only has driving term.
@@ -781,17 +450,17 @@ c-----------------------------------------------------------------------
                      ALLOCATE(cell%map(mpert,0:np))
                      ALLOCATE(cell%mat(mpert,mpert,0:np,0:np))
                      ALLOCATE(cell%rhs(mpert,0:np))
-                  ENDIF
+                  ENDIF               
                END SELECT
                cell%np=np
                cell%rhs=0.0
                cell%x_lsode=0.0
             END SELECT
          ELSE
-
+         
          ENDIF
          cell%map=0.0
-         cell%mat=0.0
+         cell%mat=0.0         
       ENDDO
 
 c      IF(diagnose_grid)CALL deltac_diagnose_grid(gal)
@@ -801,7 +470,7 @@ c-----------------------------------------------------------------------
       IF (basis_type==0) THEN
          CALL deltac_make_map_hermite(gal)
       ELSE
-
+      
       ENDIF
 c-----------------------------------------------------------------------
 c     allocate global arrays for LU solver.
@@ -818,7 +487,7 @@ c-----------------------------------------------------------------------
          ENDIF
       END SELECT
       gal%ku=gal%kl
-      gal%ldab=2*gal%kl+gal%ku+1
+      gal%ldab=2*gal%kl+gal%ku+1    
       gal%msol=msol
       ALLOCATE(gal%rhs(gal%ndim,gal%msol),gal%sol(gal%ndim,gal%msol))
       ALLOCATE(gal%mat(gal%ldab,gal%ndim,2),gal%ipiv(gal%ndim))
@@ -826,16 +495,16 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_alloc
+      END SUBROUTINE deltac_alloc      
 c-----------------------------------------------------------------------
-c     subprogram 7. deltac_dealloc.
+c     subprogram 4. deltac_dealloc.
 c     deallocates arrays.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE deltac_dealloc(gal)
-
+      
       TYPE(gal_type), INTENT(INOUT) :: gal
 
       INTEGER :: ix,ixmin
@@ -844,7 +513,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deallocate arrays.
 c-----------------------------------------------------------------------
-      DEALLOCATE(asp%v)
+      CALL inpso_dealloc
       intvl => gal%intvl
       ixmin=1
       IF (fulldomain>0) ixmin=-gal%nx
@@ -854,7 +523,7 @@ c-----------------------------------------------------------------------
          DEALLOCATE(cell%map,cell%mat)
          IF(cell%etype /= "none") DEALLOCATE(cell%rhs)
          IF(cell%etype == "res"  .OR.  cell%etype == "ext")
-     $      DEALLOCATE(cell%emap)
+     $      DEALLOCATE(cell%emap)            
       ENDDO
       DEALLOCATE(intvl%x,intvl%dx,intvl%cell)
       DEALLOCATE(gal%rhs,gal%sol,gal%mat,gal%ipiv,gal%intvl)
@@ -863,9 +532,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_dealloc
+      END SUBROUTINE deltac_dealloc      
 c-----------------------------------------------------------------------
-c     subprogram 8. deltac_make_grid.
+c     subprogram 5. deltac_make_grid.
 c     sets up grid in the interval.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -879,6 +548,11 @@ c-----------------------------------------------------------------------
 
       INTEGER :: ixmin,ixmax,ix,mx
       REAL(r8) :: x0,x1,xm,dx
+c-----------------------------------------------------------------------
+c     format statements.
+c-----------------------------------------------------------------------
+ 10   FORMAT(/4x,"ix",6x,"x",10x,"dx",5x,"etype"/)
+ 20   FORMAT(i6,2es11.3,3x,a6)
 c-----------------------------------------------------------------------
 c     set default extra.
 c-----------------------------------------------------------------------
@@ -902,7 +576,7 @@ c-----------------------------------------------------------------------
       ELSE
          ixmax=nx
       ENDIF
-
+      
       SELECT CASE (gal_method)
       CASE("normal")
          intvl%cell(nx)%etype="ext1"
@@ -911,7 +585,7 @@ c-----------------------------------------------------------------------
          ENDDO
       CASE("resonant")
          intvl%cell(nx-1)%etype="ext"
-         intvl%cell(nx)%etype="res"
+         intvl%cell(nx)%etype="res"      
          DO ix=nx-2,nx-cutoff,-1
             intvl%cell(ix)%etype="ext1"
          ENDDO
@@ -928,7 +602,7 @@ c-----------------------------------------------------------------------
       xm=(intvl%x(ixmax)+intvl%x(ixmin))/2
       dx=(intvl%x(ixmax)-intvl%x(ixmin))/2
       mx=(ixmax-ixmin)/2
-c     check pack output
+c     check pack output      
       IF(pfac < 1) side="left"
       intvl%x(ixmin:ixmax)=xm+dx*deltac_pack(mx,pfac,side)
       intvl%x(ixmin)=x0
@@ -948,12 +622,30 @@ c     check pack output
          ENDDO
       ENDIF
 c-----------------------------------------------------------------------
+c     diagnose.
+c-----------------------------------------------------------------------
+      IF(.FALSE.)THEN
+         OPEN(UNIT=grid_out_unit,FILE="grid.out",STATUS="REPLACE")
+         WRITE(grid_out_unit,'(2a)')" inps_type = ",TRIM(inps_type)
+         WRITE(grid_out_unit,'(a,g0,2(a,es10.3)/3(a,es10.3))')
+     $        " nx = ",nx,", dx1 = ",dx1,", dx2 = ",dx2,
+     $        " xfac = ",xfac,", pfac = ",pfac,", xmax = ",xmax
+         WRITE(grid_out_unit,10)
+         DO ix=1,nx
+            WRITE(grid_out_unit,20)ix,intvl%x(ix),intvl%dx(ix),
+     $           intvl%cell(ix)%etype
+         ENDDO
+         WRITE(grid_out_unit,10)
+         CLOSE(UNIT=grid_out_unit)
+         CALL program_stop("deltac_make_grid: abort after diagnose.")
+      ENDIF
+c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_make_grid
+      END SUBROUTINE deltac_make_grid      
 c-----------------------------------------------------------------------
-c     subprogram 9. deltac_pack.
+c     subprogram 6. deltac_pack.
 c     computes packed grid on (0,1).
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1015,9 +707,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END FUNCTION deltac_pack
+      END FUNCTION deltac_pack      
 c-----------------------------------------------------------------------
-c     subprogram 10. deltac_hermite.
+c     subprogram 7. deltac_hermite.
 c     computes hermite cubic basis functions and their derivatives.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1026,8 +718,8 @@ c-----------------------------------------------------------------------
       SUBROUTINE deltac_hermite(x,x0,x1,hermite)
 
       REAL(r8),INTENT(IN) :: x,x0,x1
-      TYPE(hermite_type),INTENT(INOUT) :: hermite
-
+      TYPE(hermite_type),INTENT(INOUT) :: hermite 
+      
       REAL(r8) :: dx,t0,t1,t02,t12
 c-----------------------------------------------------------------------
 c     compute variables.
@@ -1055,9 +747,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_hermite
+      END SUBROUTINE deltac_hermite      
 c-----------------------------------------------------------------------
-c     subprogram 11. deltac_make_map_hermite.
+c     subprogram 8. deltac_make_map_hermite.
 c     creates local-to-global mapping.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1094,7 +786,7 @@ c-----------------------------------------------------------------------
                DO ipert=1,mpert
                   cell%map(ipert,ip)=imap
                   imap=imap+1
-               ENDDO
+               ENDDO   
             ENDDO
             ixmin=-nx+1
          ENDIF
@@ -1151,9 +843,9 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_make_map_hermite
-
+            
 c-----------------------------------------------------------------------
-c     subprogram 12. deltac_make_arrays.
+c     subprogram 9. deltac_make_arrays.
 c     computes matrix and rhs.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1167,12 +859,12 @@ c-----------------------------------------------------------------------
       REAL(r8) :: x1
       COMPLEX(r8), DIMENSION(3,4) :: u_res
       COMPLEX(r8), DIMENSION(mpert,0:1,1:4) :: u_h1
-      COMPLEX(r8), DIMENSION(mpert,1:3,0:1) :: u_h2
+      COMPLEX(r8), DIMENSION(mpert,1:3,0:1) :: u_h2  
       COMPLEX(r8), DIMENSION(1,1) :: term
       COMPLEX(r8), DIMENSION(1,3) :: ua1
       COMPLEX(r8), DIMENSION(3,3) :: imat,umat,vmat
       COMPLEX(r8), DIMENSION(3,1) :: dua1
-      COMPLEX(r8), DIMENSION(3,6) :: ua,dua
+      COMPLEX(r8), DIMENSION(3,6) :: ua,dua      
       TYPE(interval_type), POINTER :: intvl
 c-----------------------------------------------------------------------
 c     start loops over grid cells.
@@ -1212,7 +904,7 @@ c-----------------------------------------------------------------------
      $                    +u_h2(:,ip,jp)
                   ENDDO
                ENDDO
-
+               
                cell%mat(:,:,ep,ep)=cell%mat(:,:,ep,ep)+u_res(:,1:3)
                cell%rhs(:,0:1)=cell%rhs(:,0:1)-u_h1(:,:,4)
                cell%rhs(:,ep)=cell%rhs(:,ep)-u_res(:,4)
@@ -1232,22 +924,22 @@ c-----------------------------------------------------------------------
       CASE ("normal")
          x1=cell%x(2)
          ep=cell%np+1
-         CALL deltac_get_ua(x1,ua)
-         CALL deltac_get_dua(x1,dua)
+         CALL inpso_get_ua(x1,ua)
+         CALL inpso_get_dua(x1,dua)
          cell%mat(:,:,2,:)=0
          cell%mat(1,1,2,2)=1
          cell%mat(2,2,2,2)=1
          cell%mat(3,3,2,2)=1
-         cell%mat(:,1,2,ep)=-ua(:,tid(1))
-         cell%mat(:,2,2,ep)=-ua(:,tid(2))
-         cell%mat(:,3,2,ep)=-ua(:,tid(3))
-
+         cell%mat(:,1,2,ep)=-ua(:,tid(1))         
+         cell%mat(:,2,2,ep)=-ua(:,tid(2))         
+         cell%mat(:,3,2,ep)=-ua(:,tid(3))         
+         
          cell%mat(1,1,ep,3)=1
          cell%mat(2,2,ep,3)=1
          cell%mat(3,3,ep,3)=1
-         cell%mat(:,1,ep,ep)=-dua(:,tid(1))
-         cell%mat(:,2,ep,ep)=-dua(:,tid(2))
-         cell%mat(:,3,ep,ep)=-dua(:,tid(3))
+         cell%mat(:,1,ep,ep)=-dua(:,tid(1))         
+         cell%mat(:,2,ep,ep)=-dua(:,tid(2))         
+         cell%mat(:,3,ep,ep)=-dua(:,tid(3))         
 
          cell%rhs(:,2)=0
          cell%rhs(:,ep)=0
@@ -1257,22 +949,22 @@ c-----------------------------------------------------------------------
             x1=cell%x(1)
 C           CHECK EP
             ep=-1
-            CALL deltac_get_ua(x1,ua)
-            CALL deltac_get_dua(x1,dua)
+            CALL inpso_get_ua(x1,ua)
+            CALL inpso_get_dua(x1,dua)
             cell%mat(:,:,0,:)=0
             cell%mat(1,1,0,0)=1
             cell%mat(2,2,0,0)=1
             cell%mat(3,3,0,0)=1
-            cell%mat(:,1,0,ep)=-ua(:,tid(1))
-            cell%mat(:,2,0,ep)=-ua(:,tid(2))
-            cell%mat(:,3,0,ep)=-ua(:,tid(3))
-
+            cell%mat(:,1,0,ep)=-ua(:,tid(1))         
+            cell%mat(:,2,0,ep)=-ua(:,tid(2))         
+            cell%mat(:,3,0,ep)=-ua(:,tid(3))         
+         
             cell%mat(1,1,ep,1)=1
             cell%mat(2,2,ep,1)=1
             cell%mat(3,3,ep,1)=1
-            cell%mat(:,1,ep,ep)=-dua(:,tid(1))
-            cell%mat(:,2,ep,ep)=-dua(:,tid(2))
-            cell%mat(:,3,ep,ep)=-dua(:,tid(3))
+            cell%mat(:,1,ep,ep)=-dua(:,tid(1))         
+            cell%mat(:,2,ep,ep)=-dua(:,tid(2))         
+            cell%mat(:,3,ep,ep)=-dua(:,tid(3))         
 
             cell%rhs(:,0)=0
             cell%rhs(:,ep)=0
@@ -1284,9 +976,9 @@ c-----------------------------------------------------------------------
       CASE ("resonant")
          x1=cell%x_lsode
          ep=cell%np+1
-         CALL deltac_get_ua(x1,ua)
-         CALL deltac_get_dua(x1,dua)
-         CALL deltac_get_uv(x1,imat,umat,vmat)
+         CALL inpso_get_ua(x1,ua)
+         CALL inpso_get_dua(x1,dua)
+         CALL inpso_get_uv(x1,imat,umat,vmat)
          DO ip=1,3
             ua1(1,:)=ua(:,tid(ip))
             DO jp=1,3
@@ -1297,7 +989,7 @@ c-----------------------------------------------------------------------
             dua1(:,1)=dua(:,tid(4))
             term=MATMUL(ua1,MATMUL(imat,dua1))
             cell%rhs(ip,ep)=cell%rhs(ip,ep)+term(1,1)
-         ENDDO
+         ENDDO      
       END SELECT
 c-----------------------------------------------------------------------
 c     assemble matrix and rhs.
@@ -1316,7 +1008,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_make_arrays
 c-----------------------------------------------------------------------
-c     subprogram 13. deltac_gauss_quad.
+c     subprogram 10. deltac_gauss_quad.
 c     Gauss quadrature evaluation of nonresonant matrix elements.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1340,13 +1032,13 @@ c-----------------------------------------------------------------------
          dx=(cell%x(2)-cell%x(1))/2
          x=x0+dx*quad%node(iq)
          w=dx*quad%weight(iq)
-         CALL deltac_get_uv(x,imat,umat,vmat)
+         CALL inpso_get_uv(x,imat,umat,vmat)
          IF (basis_type == 0) THEN
             CALL deltac_hermite(x,cell%x(1),cell%x(2),hermite)
             pb=hermite%pb
             qb=hermite%qb
          ELSE
-
+         
          ENDIF
 c-----------------------------------------------------------------------
 c     compute gaussian quadratures.
@@ -1357,7 +1049,7 @@ c-----------------------------------------------------------------------
      $              =cell%mat(:,:,ip,jp)
      $              +w*(imat*qb(ip)*qb(jp)
      $              +vmat*pb(ip)*qb(jp)
-     $              +umat*pb(ip)*pb(jp))
+     $              +umat*pb(ip)*pb(jp))     
             ENDDO
          ENDDO
 c-----------------------------------------------------------------------
@@ -1368,50 +1060,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_gauss_quad
+      END SUBROUTINE deltac_gauss_quad   
 c-----------------------------------------------------------------------
-c     subprogram 14. deltac_get_uv.
-c     computes U, V matrices.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE deltac_get_uv(x,imat,umat,vmat)
-
-      REAL(r8), INTENT(IN) :: x
-      COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(OUT) :: imat,umat,vmat
-
-      COMPLEX(r8) :: zero=0
-c-----------------------------------------------------------------------
-c     compute each coffeicent matrix.
-c-----------------------------------------------------------------------
-      imat=0.0
-      imat(1,1)=1.0
-      imat(2,2)=in%q*in%q
-      imat(3,3)=in%q
-
-      umat=RESHAPE((/ in%q,   -x/in%q,             -x/in%q,
-     $   -in%q*x, x*x/in%q,   -(in%g-in%k*in%e)*in%q,
-     $   zero,-(in%e+in%f)/(in%q*in%q), x*x/in%q+(in%g+in%k*in%f)*in%q/)
-     $  ,SHAPE(umat))
-
-
-      vmat=RESHAPE((/  zero,   -in%h/(in%q*in%q),  in%h*in%k*in%q,
-     $     zero,            zero,   zero,
-     $     dcmplx(in%h),    zero,   zero/)
-     $  ,SHAPE(vmat))
-
-      umat(2,:)=umat(2,:)*in%q*in%q
-      umat(3,:)=umat(3,:)*in%q
-      vmat(2,:)=vmat(2,:)*in%q*in%q
-      vmat(3,:)=vmat(3,:)*in%q
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE deltac_get_uv
-c-----------------------------------------------------------------------
-c     subprogram 15. deltac_assemble_mat.
+c     subprogram 11. deltac_assemble_mat.
 c     assembles global matrix.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1441,7 +1092,7 @@ c-----------------------------------------------------------------------
          SELECT CASE (gal_method)
          CASE("resonant")
             IF (cell%etype == "ext"  .OR.  cell%etype == "res") THEN
-               npp=cell%np+1
+               npp=cell%np+1 
             ENDIF
          CASE("normal")
             IF (cell%etype == "ext1") THEN
@@ -1472,7 +1123,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_assemble_mat
 c-----------------------------------------------------------------------
-c     subprogram 16. deltac_assemble_rhs.
+c     subprogram 12. deltac_assemble_rhs.
 c     assembles global rhs.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1543,7 +1194,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_assemble_rhs
 c-----------------------------------------------------------------------
-c     subprogram 17. deltac_set_boundary.
+c     subprogram 13. deltac_set_boundary.
 c     sets boundary conditions at x=0.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1561,7 +1212,7 @@ c     restore surface term at x=0.
 c-----------------------------------------------------------------------
       cell => gal%intvl%cell(1)
       IF (basis_type == 0) THEN
-         CALL deltac_get_uv(cell%x(1),imat,umat,vmat)
+         CALL inpso_get_uv(cell%x(1),imat,umat,vmat)
          cell%mat(:,:,0,1)=cell%mat(:,:,0,1)+imat
       ELSE
       ENDIF
@@ -1578,7 +1229,7 @@ c-----------------------------------------------------------------------
                mat(:,:,0,:)=0.0
                mat(1,1,0,1)=1.0
                mat(2,2,0,0)=1.0
-               mat(3,3,0,0)=1.0
+               mat(3,3,0,0)=1.0               
             ELSE
 c-----------------------------------------------------------------------
 c     set boundary condition for even modes.
@@ -1605,14 +1256,14 @@ c-----------------------------------------------------------------------
                ENDDO
             ENDDO
          ENDIF
-      ENDDO
+      ENDDO      
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE deltac_set_boundary
+      RETURN        
+      END SUBROUTINE deltac_set_boundary    
 c-----------------------------------------------------------------------
-c     subprogram 18. deltac_extension.
+c     subprogram 14. deltac_extension.
 c     computes extension terms of matrix and rhs.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1631,7 +1282,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(1,mpert) :: term2,ua2,dua2
       COMPLEX(r8), DIMENSION(3,6) :: ua,dua,uax,duax
       COMPLEX(r8), DIMENSION(mpert,mpert) :: umat,vmat,imat
-
+      
       TYPE(hermite_type) :: hermite
 c-----------------------------------------------------------------------
 c     computation.
@@ -1641,8 +1292,8 @@ c-----------------------------------------------------------------------
 c     get asymptotic solutions and derivatives at cell boundary.
 c-----------------------------------------------------------------------
          x=cell%x(2)
-         CALL deltac_get_ua(x,ua)
-         CALL deltac_get_dua(x,dua)
+         CALL inpso_get_ua(x,ua)
+         CALL inpso_get_dua(x,dua)      
 c-----------------------------------------------------------------------
 c     set extension element.
 c-----------------------------------------------------------------------
@@ -1652,9 +1303,9 @@ c-----------------------------------------------------------------------
             dx=(cell%x(2)-cell%x(1))/2
             x=x0+dx*quad%node(iq)
             w=dx*quad%weight(iq)
-            CALL deltac_get_ua(x,uax)
-            CALL deltac_get_dua(x,duax)
-            CALL deltac_get_uv(x,imat,umat,vmat)
+            CALL inpso_get_ua(x,uax)
+            CALL inpso_get_dua(x,duax)               
+            CALL inpso_get_uv(x,imat,umat,vmat)
             CALL deltac_hermite(x,cell%x(1),cell%x(2),hermite)
             pb=hermite%pb
             qb=hermite%qb
@@ -1698,7 +1349,7 @@ c     $                     +CONJG(dua(:,tid(ip)))*qb(3)
                   dua2(1,:)=ua(:,tid(ip))*qb(2)+dua(:,tid(ip))*qb(3)
                   ua1(:,1)=ua(:,tid(jp))*pb(2)+dua(:,tid(jp))*pb(3)
                   dua1(:,1)=ua(:,tid(jp))*qb(2)+dua(:,tid(jp))*qb(3)
-
+                  
                   term=MATMUL(dua2,MATMUL(imat,dua1))
      $                +MATMUL(ua2,MATMUL(vmat,dua1))
      $                +MATMUL(ua2,MATMUL(umat,ua1))
@@ -1710,8 +1361,8 @@ c-----------------------------------------------------------------------
 c     fill rhs for ext
 c-----------------------------------------------------------------------
             ua1(:,1)=uax(:,tid(4))
-            dua1(:,1)=duax(:,tid(4))
-            DO ip=0,cell%np
+            dua1(:,1)=duax(:,tid(4)) 
+            DO ip=0,cell%np   
                term1=qb(ip)*MATMUL(imat,dua1)+pb(ip)*MATMUL(vmat,dua1)
      $              +pb(ip)*MATMUL(umat,ua1)
                cell%rhs(:,ip)=cell%rhs(:,ip)-term1(:,1)*w
@@ -1726,10 +1377,10 @@ c     $                  +CONJG(dua(:,tid(ip)))*qb(3)
 
                term=MATMUL(dua2,MATMUL(imat,dua1))
      $             +MATMUL(ua2,MATMUL(vmat,dua1))
-     $             +MATMUL(ua2,MATMUL(umat,ua1))
+     $             +MATMUL(ua2,MATMUL(umat,ua1))   
                cell%rhs(ip,ep)=cell%rhs(ip,ep)-term(1,1)*w
             ENDDO
-         ENDDO
+         ENDDO                 
 c-----------------------------------------------------------------------
 c     surface term.
 c-----------------------------------------------------------------------
@@ -1744,30 +1395,30 @@ c-----------------------------------------------------------------------
             dx=(cell%x(2)-cell%x(1))/2
             x=x0+dx*quad%node(iq)
             w=dx*quad%weight(iq)
-            CALL deltac_get_uv(x,imat,umat,vmat)
+            CALL inpso_get_uv(x,imat,umat,vmat)
             CALL deltac_hermite(x,cell%x(1),cell%x(2),hermite)
             pb=hermite%pb
             qb=hermite%qb
             SELECT CASE (cell%etype)
             CASE ("ext1")
-               CALL deltac_get_ua(x,ua)
-               CALL deltac_get_dua(x,dua)
+               CALL inpso_get_ua(x,ua)
+               CALL inpso_get_dua(x,dua)    
                ua1(:,1)=ua(:,tid(4))
                dua1(:,1)=dua(:,tid(4))
             CASE ("ext2")
                IF (x>=0) THEN
-                  CALL deltac_get_ua(cell%x(2),ua)
-                  CALL deltac_get_dua(cell%x(2),dua)
+                  CALL inpso_get_ua(cell%x(2),ua)
+                  CALL inpso_get_dua(cell%x(2),dua)  
                   ua1(:,1)=ua(:,tid(4))*pb(2)+dua(:,tid(4))*pb(3)
                   dua1(:,1)=ua(:,tid(4))*qb(2)+dua(:,tid(4))*qb(3)
                ELSE
-                  CALL deltac_get_ua(cell%x(1),ua)
-                  CALL deltac_get_dua(cell%x(1),dua)
+                  CALL inpso_get_ua(cell%x(1),ua)
+                  CALL inpso_get_dua(cell%x(1),dua)  
                   ua1(:,1)=ua(:,tid(4))*pb(0)+dua(:,tid(4))*pb(1)
                   dua1(:,1)=ua(:,tid(4))*qb(0)+dua(:,tid(4))*qb(1)
                ENDIF
             END SELECT
-            DO ip=0,cell%np
+            DO ip=0,cell%np   
                term1=qb(ip)*MATMUL(imat,dua1)+pb(ip)*MATMUL(vmat,dua1)
      $              +pb(ip)*MATMUL(umat,ua1)
                cell%rhs(:,ip)=cell%rhs(:,ip)-term1(:,1)*w
@@ -1780,9 +1431,9 @@ c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_extension
+      END SUBROUTINE deltac_extension    
 c-----------------------------------------------------------------------
-c     subprogram 19. deltac_lsode_int.
+c     subprogram 15. deltac_lsode_int.
 c     computes resonant quadratures with lsode.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1792,7 +1443,7 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(3,4), INTENT(INOUT) :: u_res
       COMPLEX(r8), DIMENSION(mpert,0:1,1:4),INTENT(INOUT) :: u_h1
-      COMPLEX(r8), DIMENSION(mpert,1:3,0:1),INTENT(INOUT) :: u_h2
+      COMPLEX(r8), DIMENSION(mpert,1:3,0:1),INTENT(INOUT) :: u_h2  
       INTEGER :: ip
       INTEGER :: nstep
       INTEGER :: neq,itol,itask,istate,iopt,lrw,liw,jac,mf,istep
@@ -1812,7 +1463,7 @@ c-----------------------------------------------------------------------
       itol=2
       mf=10
       liw=20
-      lrw=20+16*neq
+      lrw=20+16*neq     
       istate=1
       itask=5
       iopt=1
@@ -1878,7 +1529,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_lsode_int
 c-----------------------------------------------------------------------
-c     subprogram 20. deltac_lsode_der.
+c     subprogram 16. deltac_lsode_der.
 c     derivatives for resonant quadratures with lsode.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -1899,17 +1550,16 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(3,6) :: ua,dua
       COMPLEX(r8), DIMENSION(mpert,0:1,1:4) :: du_h1
       COMPLEX(r8), DIMENSION(mpert,1:3,0:1) :: du_h2
-
+      
       COMPLEX(r8), DIMENSION(3,3) :: umat,vmat,imat
-      TYPE(hermite_type) :: hermite
+      TYPE(hermite_type) :: hermite      
 c-----------------------------------------------------------------------
 c     compute basis functions
 c-----------------------------------------------------------------------
-      CALL deltac_get_ua(x,ua)
-      CALL deltac_get_dua(x,dua)
-      CALL deltac_get_uv(x,imat,umat,vmat)
+      CALL inpso_get_ua(x,ua)
+      CALL inpso_get_dua(x,dua)
+      CALL inpso_get_uv(x,imat,umat,vmat)
       CALL deltac_hermite(x,cell%x(1),cell%x(2),hermite)
-
 c-----------------------------------------------------------------------
 c     nonresonant terms.
 c-----------------------------------------------------------------------
@@ -1979,154 +1629,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_lsode_der
 c-----------------------------------------------------------------------
-c     subprogram 21. deltac_get_d2ua.
-c     get 2nd derivative value of the asymptotic solutions at large x.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE deltac_get_d2ua(x,d2ua)
-
-      REAL(r8),INTENT(IN) :: x
-      COMPLEX(r8),DIMENSION(3,6),INTENT(OUT) :: d2ua
-
-      INTEGER i,j,t,l
-      REAL(r8),DIMENSION(2) :: p
-      REAL(r8) :: x2,x3
-      COMPLEX(r8) :: xp,xs,xj,q
-      COMPLEX(r8),DIMENSION(2) :: s
-
-      q=in%q
-      d2ua=0.0
-      p=asp%p
-      s=asp%s
-      x2=x*x
-      x3=x2*x
-      DO i=1,2
-         xp=x**p(i)
-         IF (rescale) THEN
-            xs=EXP((-x2+xmax*xmax)/(SQRT(in%q)*2.0) )
-     $           *((x/xmax)**asp%s(i))
-         ELSE
-            xs=EXP(-x2/(SQRT(in%q)*2.0) )*(x**asp%s(i))
-         ENDIF
-         DO j=0, order_pow
-            l=j+1
-            xj=x**(-2.0-2.0*j)
-            t=2+i
-            d2ua(1,t)=d2ua(1,t)+asp%v(1,t,l)*(p(i)+1-2*j)*(p(i)-2*j)*xj
-            d2ua(2:3,t)=d2ua(2:3,t)
-     $           +asp%v(2:3,t,l)*(p(i)-2*j)*(p(i)-2*j-1)*xj
-         ENDDO
-         DO j=0, order_exp
-            l=j+1
-            t=4+i
-            xj=x**(-2.0*j)
-            d2ua(1,t)=d2ua(1,t)
-     $           +asp%v(1,t,l)*(
-     $           (s(i)-1-2*j)*(s(i)-2-2*j)/x3
-     $           -1.0/SQRT(q)*(s(i)-2*j)/x
-     $           -1.0/SQRT(q)*(s(i)-1-2*j)/x
-     $           +1.0/q*x
-     $           )*xj
-            d2ua(2:3,t)=d2ua(2:3,t)
-     $           +asp%v(2:3,t,l)*(
-     $           (s(i)-2*j)*(s(i)-1-2*j)/x2
-     $           -1.0/SQRT(q)*(s(i)-2*j+1)
-     $           -1.0/SQRT(q)*(-2*j+s(i))
-     $           +1.0/q*x*x
-     $           )*xj
-         ENDDO
-         t=2+i
-         d2ua(:,t)=xp*d2ua(:,t)
-         d2ua(1,t)=x*d2ua(1,t)
-         t=4+i
-         d2ua(:,t)=xs*d2ua(:,t)
-      ENDDO
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE deltac_get_d2ua
-c-----------------------------------------------------------------------
-c     subprogram 22. deltac_ua_diagnose.
-c     diagnoses asymptotic solutions.
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE deltac_ua_diagnose
-
-      USE local_mod
-
-      INTEGER :: ix,t
-      REAL(r8) ::dx,x,logx,logx0,logx1
-      COMPLEX(r8), DIMENSION(mpert,6) :: ua,dua,d2ua
-      COMPLEX(r8), DIMENSION(mpert,mpert) :: imat,vmat,umat
-      COMPLEX(r8), DIMENSION(3,6) :: res
-c-----------------------------------------------------------------------
-c     open output files and set pointer.
-c-----------------------------------------------------------------------
-      OPEN(UNIT=deltac_out_unit,FILE="ua.out",STATUS="REPLACE")
-      OPEN(UNIT=deltac_bin_unit,FILE="ua.bin",STATUS="REPLACE",
-     $     FORM="UNFORMATTED")
-c-----------------------------------------------------------------------
-c     initialize.
-c-----------------------------------------------------------------------
-      logx0=log10(x0_ua)
-      logx1=log10(x1_ua)
-      dx=(logx1-logx0)/nx_ua
-c-----------------------------------------------------------------------
-c     start loops over isol, iqty, and iz.
-c-----------------------------------------------------------------------
-      DO ix=0,nx_ua
-c-----------------------------------------------------------------------
-c     compute positions.
-c-----------------------------------------------------------------------
-         x=10**(logx0+dx*ix)
-c-----------------------------------------------------------------------
-c     compute power series solutions.
-c-----------------------------------------------------------------------
-         CALL deltac_get_ua(x,ua)
-         CALL deltac_get_dua(x,dua)
-         CALL deltac_get_d2ua(x,d2ua)
-         CALL deltac_get_uv(x,imat,umat,vmat)
-c         d2ua(2,:)=d2ua(2,:)*in%q*in%q
-c         d2ua(3,:)=d2ua(3,:)*in%q
-c-----------------------------------------------------------------------
-c     compute u''-vu'-v
-c-----------------------------------------------------------------------
-         DO t=3,6
-            res(:,t)=MATMUL(imat,d2ua(:,t))
-     $           -MATMUL(vmat,dua(:,t))-MATMUL(umat,ua(:,t))
-         ENDDO
-c-----------------------------------------------------------------------
-c     write graphical output.
-c-----------------------------------------------------------------------
-         logx=log10(x)
-         WRITE(deltac_bin_unit)REAL(x,4),REAL(logx,4),
-     $        floored_log(res(1,outt)),
-     $        floored_log(res(2,outt)),
-     $        floored_log(res(3,outt))
-         WRITE(deltac_out_unit,'(5(e30.10))')x,logx,
-     $        floored_log(res(1,outt)),
-     $        floored_log(res(2,outt)),
-     $        floored_log(res(3,outt))
-      ENDDO
-      WRITE(deltac_bin_unit)
-c-----------------------------------------------------------------------
-c     close files and restore msol.
-c-----------------------------------------------------------------------
-      CLOSE(deltac_out_unit)
-      CLOSE(deltac_bin_unit)
-      CALL program_stop("ua diagnostic.")
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE deltac_ua_diagnose
-c-----------------------------------------------------------------------
-c     subprogram 23. deltac_get_solution.
+c     subprogram 17. deltac_get_solution.
 c     get the solutions of inner layer.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2139,13 +1642,13 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: x
       TYPE(gal_type), INTENT(IN) :: gal
       COMPLEX(r8), DIMENSION(mpert), INTENT(INOUT) :: sol
-
+      
       INTEGER :: i,ndelta
       REAL(r8) :: xext
       COMPLEX(r8), DIMENSION(mpert) :: delta
       REAL(r8), DIMENSION(2) :: epb
       REAL(r8), DIMENSION(0:np) :: pb
-      COMPLEX(r8),DIMENSION(mpert,0:np) :: u
+      COMPLEX(r8),DIMENSION(mpert,0:np) :: u 
       COMPLEX(r8), DIMENSION(mpert,6) :: ua,uaext,duaext
       TYPE(cell_type), POINTER :: cell
       TYPE(hermite_type) :: hermite
@@ -2189,16 +1692,16 @@ c-----------------------------------------------------------------------
 
       IF (cell%etype == "res" .OR. cell%etype == "ext"
      $     .OR. cell%etype == "ext1")
-     $     CALL deltac_get_ua(x,ua)
+     $     CALL inpso_get_ua(x,ua)
       IF (cell%etype == "ext" .OR. cell%etype == "ext2") THEN
-         CALL deltac_get_ua(xext,uaext)
-         CALL deltac_get_dua(xext,duaext)
+         CALL inpso_get_ua(xext,uaext)
+         CALL inpso_get_dua(xext,duaext)
       ENDIF
       IF (restore_us .AND.
      $     (cell%etype == "ext" .OR. cell%etype == "res"))THEN
          IF (gal_method=="resonant".AND.noexp) THEN
             delta(1)=gal%sol(cell%emap(1),isol)
-            ndelta=1
+            ndelta=1            
          ELSE
             delta=gal%sol(cell%emap,isol)
             ndelta=3
@@ -2213,10 +1716,10 @@ c-----------------------------------------------------------------------
                sol=sol+delta(i)*
      $             (epb(1)*uaext(:,tid(i))
      $            +epb(2)*duaext(:,tid(i)))
-            ENDDO
+            ENDDO 
          END SELECT
       ENDIF
-      IF (restore_ul) THEN
+      IF (restore_ul) THEN   
          i=4
          SELECT CASE(cell%etype)
       CASE ("res","ext","ext1")
@@ -2233,7 +1736,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE deltac_get_solution
 c-----------------------------------------------------------------------
-c     subprogram 24. deltac_output_solution.
+c     subprogram 18. deltac_output_solution.
 c     output the solution.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2242,7 +1745,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE deltac_output_solution (gal)
 
       TYPE(gal_type), INTENT(IN) :: gal
-
+      
       INTEGER :: icell, ip,tot_grids,isol,ipert,m
       CHARACTER(100) :: comp_tittle,tmp
       CHARACTER(100),DIMENSION(3) :: filename
@@ -2327,22 +1830,22 @@ c-----------------------------------------------------------------------
      $           //TRIM(filename(2))//'_sol_'//TRIM(filename(3))//'.bin'
             OPEN(UNIT=deltac_bin_unit,FILE=TRIM(filename(1)),
      $           STATUS="REPLACE",FORM="UNFORMATTED")
-            DO ip=0,tot_grids
+            DO ip=0,tot_grids                
                WRITE (deltac_bin_unit) REAL(sol%xvar(ip),4),
      $              REAL(sol%sol(:,ip,isol),4)
             ENDDO
             WRITE(deltac_bin_unit)
             CLOSE(deltac_bin_unit)
          ENDDO
-
+         
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE deltac_output_solution
+      END SUBROUTINE deltac_output_solution  
 c-----------------------------------------------------------------------
-c     subprogram 25. deltac_read_parameters.
+c     subprogram 19. deltac_read_parameters.
 c     read the parameters for deltac run.
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
@@ -2357,7 +1860,8 @@ c-----------------------------------------------------------------------
      $     restore_us,restore_ul,interp_np,nx,nq,order_pow,order_exp,
      $     cutoff,deltac_tol,pfac,xmax,diagnose_res,outt,fulldomain,
      $     nx_ua,x0_ua,x1_ua,tid,dx1dx2_flag,dx1,dx2,gal_method,
-     $     side,xfac,rescale,xmax_method,diagnose_params,noexp
+     $     side,xfac,rescale,diagnose_params,noexp,
+     $     inps_type,kmax,inps_xfac,inps_eps,grid_diagnose
 c-----------------------------------------------------------------------
 c     read input.
 c-----------------------------------------------------------------------
@@ -2367,30 +1871,5 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
-      END SUBROUTINE deltac_read_parameters
-c-----------------------------------------------------------------------
-c     subprogram 26. deltac_estimate_zi.
-c     estimate zi value for zeroth order term dominant
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-c     declarations.
-c-----------------------------------------------------------------------
-      SUBROUTINE deltac_estimate_zi(zi)
-      REAL(r8), INTENT (OUT) :: zi
-      REAL(r8) :: tmp1,tmp2,tmp3,tmp4
-c-----------------------------------------------------------------------
-c     computation.
-c-----------------------------------------------------------------------
-      tmp1=ABS(asp%v(2,3,1))
-      tmp2=ABS(asp%v(2,3,2))
-      tmp3=tmp2/tmp1
-      tmp1=ABS(asp%v(2,4,1))
-      tmp2=ABS(asp%v(2,4,2))
-      tmp4=tmp2/tmp1
-      IF (tmp4 > tmp3) tmp3=tmp4
-      zi=SQRT(tmp3)*in%x0/in%v1
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      END SUBROUTINE deltac_estimate_zi
+      END SUBROUTINE deltac_read_parameters  
       END MODULE deltac_mod

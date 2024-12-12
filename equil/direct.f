@@ -52,6 +52,7 @@ c-----------------------------------------------------------------------
       INTEGER, PARAMETER :: nstep=2048
       REAL(r8) :: f0fac,f0,ffac,rfac,eta,r,jacfac,w11,w12,delpsi,q
       REAL(r8), DIMENSION(0:nstep,0:4) :: y_out
+      REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8), DIMENSION(3,3) :: v
 
       REAL(r8) :: xm,dx,rholow,rhohigh
@@ -96,6 +97,12 @@ c-----------------------------------------------------------------------
       CASE("ldp")
          sq%xs=(/(ipsi,ipsi=0,mpsi)/)/REAL(mpsi,r8)
          sq%xs=psilow+(psihigh-psilow)*SIN(sq%xs*pi/2)**2
+      CASE("pow1")
+         xdx = powspace(psilow, psihigh, 1, mpsi+1, "upper")
+         sq%xs=xdx(1,:)
+      CASE("pow2")
+         xdx = powspace(psilow, psihigh, 2, mpsi+1, "upper")
+         sq%xs=xdx(1,:)
       CASE("rho")
          sq%xs=psihigh*(/(ipsi**2,ipsi=1,mpsi+1)/)/(mpsi+1)**2
       CASE("original","orig")
@@ -298,7 +305,7 @@ c-----------------------------------------------------------------------
       REAL(r8), PARAMETER :: eps=1e-12
       REAL(r8) :: ajac(2,2),det,dr,dz,fac,r,z
       TYPE(direct_bfield_type) :: bf
-      INTEGER :: ir
+      INTEGER :: ir,ird
 c-----------------------------------------------------------------------
 c     scan to find zero crossing of bz on midplane.
 c-----------------------------------------------------------------------
@@ -360,27 +367,34 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     use newton iteration to find inboard separatrix position.
 c-----------------------------------------------------------------------
-      r=(3*rmin+ro)/4
+      ird=0
+      r=((3-0.5*ird)*rmin+ro)/(1+3-0.5*ird)
       z=zo
-      ir = 0
+      ir=0
       DO
          CALL direct_get_bfield(r,z,bf,1)
          dr=-bf%psi/bf%psir
          r=r+dr
-         IF(ABS(dr) <= eps*r)EXIT
+         IF(ABS(dr) <= eps*r) EXIT
 
          ir = ir+1
          IF (ir  > direct_infinite_loop_count) THEN
-            direct_infinite_loop_flag = .TRUE.
-            CALL program_stop("Took too many steps to find inb spx.")
+            ird=ird+1
+            r=((3-0.5*ird)*rmin+ro)/(1+3-0.5*ird)
+            ir=0
+            IF (ird==6) THEN 
+               direct_infinite_loop_flag = .TRUE.
+               CALL program_stop("Took too many steps to find inb spx.")
+            ENDIF
          ENDIF
       ENDDO
       rs1=r
 c-----------------------------------------------------------------------
 c     use newton iteration to find outboard separatrix position.
 c-----------------------------------------------------------------------
-      r=(ro+3*rmax)/4
-      ir = 0
+      ird=0
+      r=(ro+(3-0.5*ird)*rmax)/(1+3-0.5*ird)
+      ir=0
       DO
          CALL direct_get_bfield(r,z,bf,1)
          dr=-bf%psi/bf%psir
@@ -389,8 +403,14 @@ c-----------------------------------------------------------------------
 
          ir = ir+1
          IF (ir  > direct_infinite_loop_count) THEN
-            direct_infinite_loop_flag = .TRUE.
-            CALL program_stop("Took too many steps to find outb spx.")
+            ird=ird+1
+            r=(ro+(3-0.5*ird)*rmax)/(1+3-0.5*ird)
+            ir=0
+            IF (ird==6) THEN 
+               direct_infinite_loop_flag = .TRUE.
+               CALL program_stop
+     $              ("Took too many steps to find outb spx.")
+            ENDIF
          ENDIF
       ENDDO
       rs2=r

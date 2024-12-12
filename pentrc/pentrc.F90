@@ -66,10 +66,12 @@ program pentrc
 
     ! set the number of threads for OPENMP
 #ifdef _OPENMP
-    CALL OMP_SET_NUM_THREADS(openmp_threads)
+    IF(pentrc_threads > 0)THEN
+      CALL OMP_SET_NUM_THREADS(pentrc_threads)
+    ENDIF
 #else
-    if(openmp_threads /= 1) print *,"WARNING: Not compiled with OPENMP. Forcing openmp_threads = 1."
-    openmp_threads = 1
+    if(pentrc_threads > 1) print *,"WARNING: Not compiled with OPENMP. Forcing pentrc_threads = 1."
+    pentrc_threads = 1
 #endif
 
     ! run models
@@ -150,34 +152,46 @@ program pentrc
                 if(dynamic_grid)then
                     if(verbose) print *,method//" - "//"Calculating using dynamic integration"
                     tphi = tintgrl_lsode(psilims,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
+                    if(verbose) then
+                        print "(a24,es11.3E3)", "Total torque = ", real(tphi)
+                        print "(a24,es11.3E3)", "Total Kinetic Energy = ", aimag(tphi)/(2*nn)
+                        print "(a24,es11.3E3)", "alpha/s  = ", real(tphi)/(-1*aimag(tphi))
+                    endif
+                    ierr=set_harvest_payload_dbl(hlog,'torque_'//method//nul,real(tphi))
+                    ierr=set_harvest_payload_dbl(hlog,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
                 end if
-                if(verbose) then
-                    print "(a24,es11.3E3)", "Total torque = ", real(tphi)
-                    print "(a24,es11.3E3)", "Total Kinetic Energy = ", aimag(tphi)/(2*nn)
-                    print "(a24,es11.3E3)", "alpha/s  = ", real(tphi)/(-1*aimag(tphi))
-                endif
-                ierr=set_harvest_payload_dbl(hlog,'torque_'//method//nul,real(tphi))
-                ierr=set_harvest_payload_dbl(hlog,'deltaW_'//method//nul,aimag(tphi)/(2*nn))
                 if(equil_grid)then
                     if(verbose) print *,method//" - "//"Calculating on equilibrium grid"
                     teq = tintgrl_grid('equil',psilims,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
                     if(verbose)then
-                        print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
-                            ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                        print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),&
-                            ", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                        print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                        if(dynamic_grid)then
+                            print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
+                                ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
+                            print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),&
+                                ", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
+                            print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                        else
+                            print "(a24,es11.3E3)", "Total torque = ", REAL(teq)
+                            print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn)
+                            print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                        end if
                     endif
                 endif
                 if(input_grid)then
                     if(verbose) print *,method//" - "//"Calculating on input displacements' grid"
                     teq = tintgrl_grid('input',psilims,nn,nl,zi,mi,wdfac,divxfac,electron,methods(m))
                     if(verbose)then
-                        print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
-                            ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
-                        print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),&
-                            ", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
-                        print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                        if(dynamic_grid)then
+                            print "(a24,es11.3E3,a12,es11.3E3)", "Total torque = ", REAL(teq),&
+                                ", % error = ",ABS(REAL(teq)-REAL(tphi))/REAL(tphi)
+                            print "(a24,es11.3E3,a12,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn),&
+                                ", % error = ",ABS(AIMAG(teq)-AIMAG(tphi))/AIMAG(tphi)
+                            print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                        else
+                            print "(a24,es11.3E3)", "Total torque = ", REAL(teq)
+                            print "(a24,es11.3E3)", "Total Kinetic Energy = ", AIMAG(teq)/(2*nn)
+                            print "(a24,es11.3E3)", "alpha/s  = ", REAL(teq)/(-1*AIMAG(teq))
+                        end if
                     endif
                 endif
                 ! run select surfaces with detailed output
@@ -223,6 +237,10 @@ program pentrc
     ierr=harvest_send(hlog)
     
     ! display timer and stop
-    call timer(mode=1)
-    stop "PENTRC STOP=> normal termination."
+    if(verbose)then
+        call timer(mode=1)
+        stop " PENTRC STOP => normal termination."
+    else
+        stop
+    end if
 end program pentrc

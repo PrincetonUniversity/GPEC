@@ -17,6 +17,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE field_mod
       USE coil_mod
+      USE omp_lib
 
       IMPLICIT NONE
 
@@ -39,31 +40,50 @@ c         op_start : integer (optional)
 c            Field from coils op_start to op_stop is calculated. Default is 1 to coil_num.
 c         op_stop : integer (optional)
 c            Field from coils op_start to op_stop is calculated. Default is 1 to coil_num.
+c         op_verbose : logical (optional)
+c            Print information about parallelization threads.
 c
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE field_bs_psi(psi,bmn,wegt,op_start,op_stop)
+      SUBROUTINE field_bs_psi(psi,bmn,wegt,op_start,op_stop, op_verbose)
 
       REAL(r8), INTENT(IN) :: psi
       INTEGER, INTENT(IN) :: wegt
       INTEGER, INTENT(IN), OPTIONAL :: op_start,op_stop
+      LOGICAL, INTENT(IN), OPTIONAL :: op_verbose
       COMPLEX(r8), DIMENSION(cmpert) :: bmn
 
-      INTEGER :: i,j,k,iseg,itheta,izeta,ipert,nseg,
-     $    istart,istop
+      LOGICAL :: verbose = .FALSE.
+      INTEGER :: num_threads = 1
 
-      REAL(r8) :: rfac,eta,phi,jac,delpsi,rr,zz,rx,ry,rz,dl,
-     $     cosang,sinang,w11,w12,area
+
+      INTEGER :: i,j,k,iseg,itheta,izeta,ipert,nseg,
+     $    istart,istop,spline_itheta,spline_ipsi
+
+      REAL(r8) :: rfac,eta,phi,jac,delpsi,rr,zz,rx,ry,rz,dl,dbx,dby,dbz
+      REAL(r8) :: cosang,sinang,w11,w12,area
       REAL(r8), DIMENSION(0:cmtheta) :: ctheta
       REAL(r8), DIMENSION(0:cmzeta) :: czeta
       REAL(r8), DIMENSION(cmtheta,cmzeta) :: xobs,yobs,zobs,
      $     bx,by,bz,br,bp,bn,tbx,tby,tbz,tbr,tbp,tbn
       REAL(r8), DIMENSION(:,:,:), POINTER :: xa,ya,za,
-     $     dx,dy,dz,dbx,dby,dbz
+     $     dx,dy,dz
+
+      REAL(r8), DIMENSION(4) :: crzphi_f, crzphi_fx, crzphi_fy
+
+      REAL(r8), DIMENSION(cmtheta) :: aspl_f_arr
 
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
+
+
+      ! Optional verbosity tells user how many threads we are using
+      IF(PRESENT(op_verbose)) THEN
+        verbose = op_verbose
+      ELSE
+        verbose = .FALSE.
+      ENDIF
 
       istart = 1
       istop = coil_num
@@ -84,6 +104,10 @@ c-----------------------------------------------------------------------
       aspl%xs=ctheta
       area=1.0
       
+c-----------------------------------------------------------------------
+c     for each coil:
+c-----------------------------------------------------------------------
+
       DO i=istart,istop
          nseg=coil(i)%nsec-1
 
@@ -92,11 +116,14 @@ c-----------------------------------------------------------------------
      $        za(coil(i)%ncoil,coil(i)%s,nseg),
      $        dx(coil(i)%ncoil,coil(i)%s,nseg),
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
-     $        dz(coil(i)%ncoil,coil(i)%s,nseg),
-     $        dbx(coil(i)%ncoil,coil(i)%s,nseg),
-     $        dby(coil(i)%ncoil,coil(i)%s,nseg),
-     $        dbz(coil(i)%ncoil,coil(i)%s,nseg))
-         
+     $        dz(coil(i)%ncoil,coil(i)%s,nseg))
+
+      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)') "  > Mapping "//
+     $      TRIM(coil(i)%coil_name)//" coil's ",
+     $      coil(i)%ncoil*coil(i)%s*nseg,
+     $      " filaments to a ",cmtheta,"x",cmzeta," plasma grid"
+
+!$OMP PARALLEL DO PRIVATE(j,k,iseg),COLLAPSE(3)
          DO j=1,coil(i)%ncoil
             DO k=1,coil(i)%s
                DO iseg=1,nseg
@@ -110,34 +137,61 @@ c-----------------------------------------------------------------------
                   dx(j,k,iseg)=coil(i)%x(j,k,iseg+1)-coil(i)%x(j,k,iseg)
                   dy(j,k,iseg)=coil(i)%y(j,k,iseg+1)-coil(i)%y(j,k,iseg)
                   dz(j,k,iseg)=coil(i)%z(j,k,iseg+1)-coil(i)%z(j,k,iseg)
+
+#ifdef _OPENMP
+                  IF(j==1 .AND. k==1 .AND. iseg==1)THEN
+                    num_threads = OMP_GET_NUM_THREADS()
+                    IF(verbose) WRITE(*,'(1x,a,i4,a)') "  >> "//
+     $                "Running with ",num_threads," OMP threads"
+                  ENDIF
+#endif
                ENDDO
             ENDDO
          ENDDO
+!$OMP END PARALLEL DO
 
+!$OMP PARALLEL PRIVATE(izeta,phi,dbx,dby,dbz,j,k,iseg,rx,ry,rz,dl)
+!$OMP& PRIVATE(cosang,sinang)
+!$OMP& FIRSTPRIVATE(w11,w12)
+!$OMP& FIRSTPRIVATE(crzphi_f,crzphi_fx,crzphi_fy)
+!$OMP& FIRSTPRIVATE(spline_itheta,spline_ipsi)
+!$OMP& PRIVATE(itheta,rfac,eta,rr,zz,jac,delpsi)
+
+!$OMP DO
+         ! Loop over every theta, zeta point on the flux surface
          DO itheta=1,cmtheta
-            CALL bicube_eval(crzphi,psi,ctheta(itheta),1)
-            rfac=SQRT(crzphi%f(1))
-            eta=twopi*(ctheta(itheta)+crzphi%f(2))
+
+            CALL bicube_eval_external(crzphi,psi,ctheta(itheta),1,
+     $                                spline_ipsi,spline_itheta,
+     $                                crzphi_f,crzphi_fx,crzphi_fy)
+
+            rfac=SQRT(crzphi_f(1))
+            eta=twopi*(ctheta(itheta)+crzphi_f(2))
             rr=cro+rfac*COS(eta)
             zz=czo+rfac*SIN(eta)
-            jac=crzphi%f(4)
-            w11=(1+crzphi%fy(2))*twopi**2*rfac*rr/jac
-            w12=-crzphi%fy(1)*pi*rr/(rfac*jac)
+            jac=crzphi_f(4)
+            w11=(1+crzphi_fy(2))*twopi**2*rfac*rr/jac
+            w12=-crzphi_fy(1)*pi*rr/(rfac*jac)
             delpsi=SQRT(w11**2+w12**2)
             IF(wegt/=0)THEN
-               aspl%fs(itheta,1)=jac*delpsi
+               ! aspl%fs(itheta,1)=jac*delpsi
+               aspl_f_arr(itheta)=jac*delpsi
             ELSE
-               aspl%fs(itheta,1)=1.0
+               ! aspl%fs(itheta,1)=1.0
+               aspl_f_arr(itheta)=1.0
             ENDIF
             w11=w11/delpsi
             w12=w12/delpsi
 
             DO izeta=1,cmzeta
-               phi=-helicity*(twopi*czeta(izeta)+crzphi%f(3))
+               phi=-helicity*(twopi*czeta(izeta)+crzphi_f(3))
                xobs(itheta,izeta)=rr*COS(phi)
                yobs(itheta,izeta)=rr*SIN(phi)
                zobs(itheta,izeta)=zz
-             
+               dbx=0
+               dby=0
+               dbz=0
+               
                DO j=1,coil(i)%ncoil
                   DO k=1,coil(i)%s
                      DO iseg=1,nseg
@@ -146,34 +200,42 @@ c-----------------------------------------------------------------------
                         rz=zobs(itheta,izeta)-za(j,k,iseg)
                         
                         dl=SQRT(rx**2+ry**2+rz**2)
-                        dbx(j,k,iseg)=coil(i)%cur(j)*coil(i)%nw*1e-7/
+                        dbx=dbx+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                       dl**3*(dy(j,k,iseg)*rz-dz(j,k,iseg)*ry)
-                        dby(j,k,iseg)=coil(i)%cur(j)*coil(i)%nw*1e-7/
+                        dby=dby+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                       dl**3*(dz(j,k,iseg)*rx-dx(j,k,iseg)*rz)
-                        dbz(j,k,iseg)=coil(i)%cur(j)*coil(i)%nw*1e-7/
+                        dbz=dbz+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                       dl**3*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)               
                         
                      ENDDO
                   ENDDO
                ENDDO
                
-               bx(itheta,izeta)=SUM(dbx)
-               by(itheta,izeta)=SUM(dby)
-               bz(itheta,izeta)=SUM(dbz)
+               bx(itheta,izeta)=dbx
+               by(itheta,izeta)=dby
+               bz(itheta,izeta)=dbz
                cosang=xobs(itheta,izeta)/rr
                sinang=yobs(itheta,izeta)/rr
                br(itheta,izeta)=bx(itheta,izeta)*cosang+
      $              by(itheta,izeta)*sinang
                bp(itheta,izeta)=by(itheta,izeta)*cosang-
      $              bx(itheta,izeta)*sinang
-               bn(itheta,izeta)=aspl%fs(itheta,1)*
+               ! bn(itheta,izeta)=aspl%fs(itheta,1)*
+               bn(itheta,izeta)=aspl_f_arr(itheta)*
      $              (br(itheta,izeta)*(w11*COS(eta)-w12*SIN(eta))+
      $              bz(itheta,izeta)*(w11*SIN(eta)+w12*COS(eta)))
             ENDDO
 
+
+         ! OMP call
+
+
          ENDDO
 
-         DEALLOCATE(xa,ya,za,dx,dy,dz,dbx,dby,dbz)
+!$OMP END DO
+!$OMP END PARALLEL
+
+         DEALLOCATE(xa,ya,za,dx,dy,dz)
 
          tbx=tbx+bx
          tby=tby+by
@@ -182,6 +244,8 @@ c-----------------------------------------------------------------------
          tbp=tbp+bp
          tbn=tbn+bn
       ENDDO
+
+      aspl%fs(:,1)=aspl_f_arr
          
       CALL cspline_alloc(bnzspl,cmzeta,1)
       bnzspl%xs=czeta
@@ -237,12 +301,12 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i,j,k,iseg,ir,iz,ip,nseg
 
-      REAL(r8) :: phi,rx,ry,rz,dl,cosang,sinang,dlmin
+      REAL(r8) :: phi,rx,ry,rz,dl,cosang,sinang,dlmin,dbx,dby,dbz
       REAL(r8), DIMENSION(0:nr,0:nz,0:np) :: xobs,yobs,zobs,
      $     bx,by,bz,br,bp
       COMPLEX(r8), DIMENSION(0:nr,0:nz) :: tbr,tbz,tbp
       REAL(r8), DIMENSION(:,:,:), POINTER :: xa,ya,za,
-     $     dx,dy,dz,dbx,dby,dbz
+     $     dx,dy,dz
 
       TYPE(cspline_type) :: bspl
 
@@ -256,10 +320,7 @@ c-----------------------------------------------------------------------
      $        za(coil(i)%ncoil,coil(i)%s,nseg),
      $        dx(coil(i)%ncoil,coil(i)%s,nseg),
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
-     $        dz(coil(i)%ncoil,coil(i)%s,nseg),
-     $        dbx(coil(i)%ncoil,coil(i)%s,nseg),
-     $        dby(coil(i)%ncoil,coil(i)%s,nseg),
-     $        dbz(coil(i)%ncoil,coil(i)%s,nseg))
+     $        dz(coil(i)%ncoil,coil(i)%s,nseg))
          
          DO j=1,coil(i)%ncoil
             DO k=1,coil(i)%s
@@ -288,7 +349,13 @@ c-----------------------------------------------------------------------
                   xobs(ir,iz,ip)=gdr(ir,iz)*COS(twopi*phi)
                   yobs(ir,iz,ip)=gdr(ir,iz)*SIN(twopi*phi)
                   zobs(ir,iz,ip)=gdz(ir,iz)
+                  
+                  dbx=0
+                  dby=0
+                  dbz=0
 
+!$OMP PARALLEL PRIVATE(j,k,iseg,rx,ry,rz,dl) SHARED(i,ir,iz,ip)
+!$OMP DO REDUCTION(+:dbx,dby,dbz) COLLAPSE(3)
                   DO j=1,coil(i)%ncoil
                      DO k=1,coil(i)%s
                         DO iseg=1,nseg
@@ -298,20 +365,22 @@ c-----------------------------------------------------------------------
                            
                            dl=MAXVAL((/SQRT(rx**2+ry**2+rz**2),dlmin/))
                            
-                           dbx(j,k,iseg)=coil(i)%cur(j)*coil(i)%nw*1e-7/
+                           dbx=dbx+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                          dl**3*(dy(j,k,iseg)*rz-dz(j,k,iseg)*ry)
-                           dby(j,k,iseg)=coil(i)%cur(j)*coil(i)%nw*1e-7/
+                           dby=dby+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                          dl**3*(dz(j,k,iseg)*rx-dx(j,k,iseg)*rz)
-                           dbz(j,k,iseg)=coil(i)%cur(j)*coil(i)%nw*1e-7/
+                           dbz=dbz+coil(i)%cur(j)*coil(i)%nw*1e-7/
      $                          dl**3*(dx(j,k,iseg)*ry-dy(j,k,iseg)*rx)            
                            
                         ENDDO
                      ENDDO
                   ENDDO
+!$OMP END DO
+!$OMP END PARALLEL
                
-                  bx(ir,iz,ip)=SUM(dbx)
-                  by(ir,iz,ip)=SUM(dby)
-                  bz(ir,iz,ip)=SUM(dbz)
+                  bx(ir,iz,ip)=dbx
+                  by(ir,iz,ip)=dby
+                  bz(ir,iz,ip)=dbz
                   cosang=xobs(ir,iz,ip)/gdr(ir,iz)
                   sinang=yobs(ir,iz,ip)/gdr(ir,iz)
                   br(ir,iz,ip)=bx(ir,iz,ip)*cosang+by(ir,iz,ip)*sinang
@@ -334,7 +403,7 @@ c-----------------------------------------------------------------------
 
          CALL cspline_dealloc(bspl)
 
-         DEALLOCATE(xa,ya,za,dx,dy,dz,dbx,dby,dbz)
+         DEALLOCATE(xa,ya,za,dx,dy,dz)
 
          cbr=cbr+tbr
          cbz=cbz+tbz

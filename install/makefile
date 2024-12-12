@@ -4,18 +4,7 @@ include DEFAULTS.inc
 # extend these variables to sub-makes (?= sets a default if user doesn't specify options)
 FFLAGS ?= -g
 CFLAGS ?= -g
-#Common compiler flags for OpenMP
-ifeq ($(findstring ifort,$(FC)),ifort)
-	OMPFLAG ?= -qopenmp
-else ifeq ($(findstring gfortran,$(FC)),gfortran)
-	OMPFLAG ?= -fopenmp
-else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
-	OMPFLAG ?= -mp
-else
-	OMPFLAG ?= -openmp
-endif
 
-OMPFLAG=
 export FFLAGS
 export CFLAGS
 export OMPFLAG
@@ -24,12 +13,12 @@ export OMPFLAG
 
 .IGNORE:
 
-all: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum xdraw coil gpec stride mkbin
+all: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum xdraw slayer coil gpec stride mkbin
 
 # fortran only
-allf: v harvest lsode superlu zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
-	multi sum coil gpec stride mkbin
+allf: v harvest lsode zlange zvode equil orbit vacuum pentrc dcon match rdcon rmatch \
+	multi sum slayer coil gpec stride mkbin
 
 
 # executables:
@@ -45,9 +34,6 @@ xdraw:
 
 lsode:
 	cd ../lsode;  make liblsode
-
-superlu:
-	$(SLU_COMMAND)  # gets set in DEFAULTS.inc based on tarball status
 
 zlange:
 	cd ../zlange;  make libzlange
@@ -82,6 +68,9 @@ multi:
 sum:
 	cd ../sum;    make sum
 
+slayer:
+	cd ../slayer; make slayer
+
 coil:
 	cd ../coil;   make libcoil
 
@@ -104,6 +93,7 @@ mkbin:
 	cp -f ../xdraw/xdraw ../bin
 	cp -f ../multi/multi ../bin
 	cp -f ../sum/sum ../bin
+	cp -f ../slayer/slayer ../bin
 	cp -f ../gpec/gpec ../bin
 	cp -f ../pentrc/pentrc ../bin
 	cp -f ../stride/stride ../bin
@@ -123,6 +113,7 @@ v:
 	@echo "   and compiler libraries $(FCLIBS)"
 	@echo "   from $(FCDIR)"
 	@echo "   including $(FCINC)"
+	@echo "   and using OMPFLAG $(OMPFLAG)"
 	@echo
 	@echo "Set environment FC,LAPACKHOME,NETCDFHOME to change these"
 ifeq ("$(PLATFORM)","portal")
@@ -145,11 +136,11 @@ clean:
 	cd ../rmatch; make clean
 	cd ../multi;  make clean
 	cd ../sum;    make clean
+	cd ../slayer; make clean
 	cd ../coil;   make clean
 	cd ../gpec;   make clean
 	cd ../pentrc; make clean
 	cd ../stride; make clean
-	cd ../superlu/SuperLU_5.2.1; make clean
 
 clear:
 	cd ../docs/examples/run_ideal_example; rm -f *.out *.bin *.nc
@@ -164,3 +155,5 @@ clear:
 realclean: clean
 	clear
 	rm -rf ../lib ../bin
+
+print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true

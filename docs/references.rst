@@ -35,8 +35,8 @@ Kinetic
 
 `Park, J.-K. & Logan, N.C., 2017. Self-consistent perturbed equilibrium with neoclassical toroidal torque in tokamaks. Physics of Plasmas, 24(3), p.032505 <http://aip.scitation.org/doi/10.1063/1.4977898>`_.
 
-`Logan, N.C. et al., 2013. Neoclassical toroidal viscosity in perturbed equilibria with general tokamak geometry. Physics of Plasmas, 20(12), p.122507 <http://scitation.aip.org/content/aip/journal/pop/20/12/10.1063/1.4849395>`_.
+`Logan, N.C. et al., 2013. Neoclassical toroidal viscosity in perturbed equilibria with general tokamak geometry. Physics of Plasmas, 20(12), p.122507 <http://aip.scitation.org/doi/10.1063/1.4849395>`_.
 
-`Park, J.-K., 2011. Kinetic energy principle and neoclassical toroidal torque in tokamaks. Physics of Plasmas, 18(11), p.110702 <http://link.aip.org/link/PHPAEN/v18/i11/p110702/s1&Agg=doi>`_.
+`Park, J.-K., 2011. Kinetic energy principle and neoclassical toroidal torque in tokamaks. Physics of Plasmas, 18(11), p.110702 <https://aip.scitation.org/doi/10.1063/1.3662039>`_.
 
 `Park, J.-K., Boozer, A.H. & Menard, J.E., 2009. Nonambipolar Transport by Trapped Particles in Tokamaks. Physical Review Letters, 102(6), pp.1–4 <http://link.aps.org/doi/10.1103/PhysRevLett.102.065002>`_.

@@ -1,13 +1,13 @@
 # This is the makefile for VACUUM.
 
-F90 = $(FC) $(FFLAGS)
+F90 = $(FC) $(FFLAGS) -zero
 
 .f.o:
 	$(F90) -c $*.f
 
 OBJS = \
 	bzio.o \
-    aleg_new.o \
+	aleg_new.o \
 	vacuum_global.o \
 	vacuum_io.o \
 	vacuum_ma.o \

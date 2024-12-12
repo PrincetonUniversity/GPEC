@@ -44,7 +44,6 @@ import matplotlib.gridspec as gridspec
 import sys,copy,os
 import numpy as np                      # math
 from scipy.interpolate import interp1d  # math
-from types import MethodType            # to modify instances
 
 # Want separate ID pyplot module for my hacks
 # so this module does not change global matplotlib,pyplot,pylab,etc.
@@ -84,12 +83,14 @@ pop_size = np.array([3.346,3.346]) #single column. Do *2 for double
 
 ########################################### default colormaps
 
-import colormaps as cmaps
+# this got the new matplotlib colormaps before their were made standard
+from . import colormaps as cmaps
+
 if not hasattr(matplotlib.cm, 'viridis'):
-    for k in ['magma','inferno','plasma','viridis']:
+    for k in ['magma', 'inferno', 'plasma', 'viridis']:
         pyplot.register_cmap(name=k, cmap=cmaps.cmaps[k])
-        pyplot.register_cmap(name=k+'_r', cmap=cmaps.cmaps[k+'_r'])
-    f,ax = pyplot.subplots()
+        pyplot.register_cmap(name=k + '_r', cmap=cmaps.cmaps[k + '_r'])
+    f, ax = pyplot.subplots()
     pyplot.set_cmap(cmaps.cmaps['viridis'])
     pyplot.close(f)
 
@@ -127,10 +128,10 @@ def set_style(style=None,rc={}):
             fac = 2./3
             pyplot.rcParams['font.weight'] = str(max((100,int(pyplot.rcParams['font.weight'])-200)))
         
-        for k,v in pyplot.rcParams.iteritems():
+        for k,v in pyplot.rcParams.items():
             if 'weight' in k: pyplot.rcParams[k] = pyplot.rcParams['font.weight']
         
-        for k,v in dict(rc).iteritems():
+        for k,v in dict(rc).items():
             pyplot.rcParams[k] = v
         
         for k in ['axes.linewidth','lines.linewidth','xtick.major.width',
@@ -208,10 +209,6 @@ def _modfigure(f):
 
     """
     f.canvas.mpl_connect('key_press_event',onkey) #custom hotkeys
-    #pppl Figure base doesn't have show from nomachine for some reason
-    #f._orig_show = MethodType(copy.deepcopy(f.show),f)
-    #f.show = MethodType(_figure_show,f)
-    
     return f
 
 # customize axes when added    
@@ -288,32 +285,32 @@ def printlines(self,filename,labeled_only=False,squeeze=False):
             if samettle:
                 f.write(ttle+'\n\n')
             if sameylbl:
-                f.write('  ylabel = '+ylbl.encode().translate(None,' \${}')+'\n\n')
+                f.write('  ylabel = '+ylbl.encode().translate(str.maketrans(dict.fromkeys(' \${}')))+'\n\n')
 
         for a in self.get_axes():
             if not a.lines: continue
             if not squeeze: 
                 data = []
                 f.write('\n'+a.get_title()+'\n\n')
-                f.write('  ylabel = '+a.get_ylabel().encode().translate(None,' \${}')+'\n\n')
+                f.write('  ylabel = '+a.get_ylabel().encode().translate(str.maketrans(dict.fromkeys(' \${}')))+'\n\n')
             # use x-axis from line with greatest number of pts
             xs = []
             for line in a.lines:
-                label = line.get_label().encode().translate(None,' \${}') 
+                label = line.get_label().encode().translate(str.maketrans(dict.fromkeys(' \${}')))
                 if labeled_only and (label.startswith('_') or not label):
                     continue
                 xs.append(line.get_xdata())
             longest = np.array([len(x) for x in xs]).argmax()
             if not data: 
                 data.append(xs[longest])
-                f.write('{0:>25s}'.format(a.get_xlabel().encode().translate(None,' \${}')))
+                f.write('{0:>25s}'.format(a.get_xlabel().encode().translate(str.maketrans(dict.fromkeys(' \${}')))))
             # label and extrapolate each line
             for line in a.lines:
-                label = line.get_label().encode().translate(None,' \${}') 
+                label = line.get_label().encode().translate(str.maketrans(dict.fromkeys(' \${}')))
                 if labeled_only and (label.startswith('_') or not label):
                     continue
                 if squeeze and not sameylbl: 
-                    label = a.get_ylabel().encode().translate(None,' \${}')+label
+                    label = a.get_ylabel().encode().translate(str.maketrans(dict.fromkeys(' \${}')))+label
                 f.write('{0:>25s}'.format(label))
                 # standard axis
                 x,y = line.get_xdata(),line.get_ydata()
@@ -694,7 +691,7 @@ def plot_axes(ax, fig=None, geometry=(1, 1, 1)):
     a2 = copy.copy(ax)
     a2.set_figure(fig)
     a2 = fig.add_axes(a2)
-#    for k,v in vars(ax).iteritems():
+#    for k,v in vars(ax).items():
 #        if '_' not in k:
 #            try:
 #                setattr(ax2,k,v)

@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
 
       LOGICAL :: use_classic_splines_for_dcon=.FALSE., cyl_flag=.FALSE.,
      $ reform_eq_with_psilim=.FALSE.
-      INTEGER :: mmin,ipsi,m
+      INTEGER :: mmin,ipsi,m,peak_index
       COMPLEX(r8) :: plasma1,vacuum1,total1
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mtmp
@@ -56,8 +56,10 @@ c-----------------------------------------------------------------------
      $     cyl_flag,dmlim,lim_flag,sas_flag,sing_order,sort_type,
      $     termbycross_flag,qhigh,kin_flag,con_flag,kinfac1,kinfac2,
      $     kingridtype,ktanh_flag,passing_flag,trapped_flag,
-     $     ion_flag,electron_flag,ktc,ktw,parallel_threads,qlow,
-     $     use_classic_splines,peak_flag,reform_eq_with_psilim
+     $     ion_flag,electron_flag,ktc,ktw,qlow,
+     $     use_classic_splines,reform_eq_with_psilim,
+     $     psiedge,nperq_edge,wv_farwall_flag,
+     $     dcon_kin_threads,parallel_threads
       NAMELIST/dcon_output/interp,crit_break,out_bal1,
      $     bin_bal1,out_bal2,bin_bal2,out_metric,bin_metric,out_fmat,
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
@@ -83,13 +85,22 @@ c-----------------------------------------------------------------------
       READ(UNIT=in_unit,NML=dcon_control)
       READ(UNIT=in_unit,NML=dcon_output)
       CALL ascii_close(in_unit)
+c-----------------------------------------------------------------------
+c     set variables
+c-----------------------------------------------------------------------
+      IF(parallel_threads > 0)THEN
+        WRITE(*,*) "WARNING: parallel_threads has been deprecated. "//
+     $    "Use dcon_kin_threads"
+      ENDIF
 #ifdef _OPENMP
 c The code is compiled with the OpenMP option so the preprocessor
 c will pick include the following line
-      CALL OMP_SET_NUM_THREADS(parallel_threads)
+      IF(dcon_kin_threads > 0)THEN
+        CALL OMP_SET_NUM_THREADS(dcon_kin_threads)
+      ENDIF
 #else
 c No OpenMP so the following line will appear in source code
-      parallel_threads = 1
+      dcon_kin_threads = 1
 #endif
       delta_mhigh=delta_mhigh*2
       use_classic_splines_for_dcon = use_classic_splines
@@ -196,7 +207,7 @@ c-----------------------------------------------------------------------
      $        ", qlim = ",qlim,", psilim = ",psilim
          IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betap1 = ",betap1
-         IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
+         IF(verbose) WRITE(*,'(1x,5(a,i4))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
          CALL fourfit_make_metric
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
@@ -214,7 +225,7 @@ c-----------------------------------------------------------------------
      $           twopi*psio,ro,nn,jac_type,mlow,mhigh,mpert,mthvac)
             ! manually set the kinetic profiles
             CALL read_kin(kinetic_file,zi,zimp,mi,mimp,nfac,
-     $          tfac,wefac,wpfac,tdebug)
+     $          tfac,wefac,wpfac,indebug)
             ! manually set the perturbed equilibrium displacements
             ! use false flat xi and xi' for equal weighting
             ALLOCATE(psitmp(sq%mx+1),mtmp(mpert),xtmp(sq%mx+1,mpert))
@@ -241,6 +252,20 @@ c-----------------------------------------------------------------------
       IF(ode_flag)THEN
          IF(verbose) WRITE(*,*)"Starting integration of ODE's"
          CALL ode_run
+         IF(size_edge > 0)THEN
+            peak_index = MAXLOC(REAL(dw_edge(pre_edge:i_edge)),dim=1) +
+     $         (pre_edge - 1)
+            qhigh = q_edge(peak_index)
+            sas_flag = .FALSE.
+            psiedge = psihigh
+            CALL sing_lim
+            WRITE(*,'(1x,a34,f10.6,a10,f10.6)') "Re-Integrating to "//
+     $            "peak dW @ qlim =",qlim,", psilim =",psilim
+            ! full re-run because outputs were written to disk each step
+            ! making it hard to backtrack
+            IF(bin_euler)CALL bin_close(euler_bin_unit)
+            CALL ode_run
+         ENDIF
       ENDIF
       DEALLOCATE(ud)
 c-----------------------------------------------------------------------

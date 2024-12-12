@@ -81,7 +81,7 @@ c-----------------------------------------------------------------------
      $     cslth,cwali,cwalli,cwallr,cwalr,cwpti,cwptr,cwwti,cwwtr,
      $     sinlt,snlth,wrktr1,wrktr2,gatovac
 
-      LOGICAL :: farwal
+      LOGICAL :: farwal = .false.
       INTEGER :: mw,jtop,jbot
       REAL(8), DIMENSION(:), POINTER :: xpass,zpass,xpla,zpla
       REAL(8), DIMENSION(:,:), POINTER :: grwp,grri,chiwc,chiws
@@ -115,7 +115,7 @@ c-----------------------------------------------------------------------
       ntsin=ntsin0+5
       nsf=nsf0+1
       nfe=1+nsf/2
-      nths=nths0+5
+      nths=nths0+5 !!
       nths2=2*nths
       nfm2=2*nfm
       nwrkl=nths2**2+3*nths2
@@ -259,7 +259,7 @@ c     deallocate arrays.
 c-----------------------------------------------------------------------
       DEALLOCATE(xirc,xirs,xiic,xiis,fv)
       DEALLOCATE(grpssq,xsq,gpsdth,xsqdth,xjacob,delta,xjdtxj,xsdtxs,
-     $     gpdtgp,slngth,xinf,zinf,xplap,zplap)
+     $     gpdtgp,slngth,xplap,zplap,xinf,zinf)
       DEALLOCATE(vacmat,vacmatu,vacmtiu)
       DEALLOCATE(val0,vals)
       DEALLOCATE(xwal,zwal,xwalp,zwalp,cnqd,snqd)
@@ -269,12 +269,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     modification.
 c-----------------------------------------------------------------------
-      DEALLOCATE(grwp)
+      DEALLOCATE(grwp,grri)
 c-----------------------------------------------------------------------
       DEALLOCATE(gatovac)
       DEALLOCATE(bxpwr,bxpwi,bzpwr,bzpwi,bnpwr,bnpwi)
       DEALLOCATE(bxpwtr,bxpwti,bzpwtr,bzpwti,bnpwtr,bnpwti)
-      DEALLOCATE(bnlr,bnli)
+      DEALLOCATE(xilr,xili,xigr,xigi,bnkr,bnki,bthpr,bthpi,
+     $     gpsjp,bnpptr,bnppti,chipr,chipi)     
+      DEALLOCATE(lfm,bnlr,bnli)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

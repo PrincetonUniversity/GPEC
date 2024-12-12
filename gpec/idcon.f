@@ -146,6 +146,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
             READ(UNIT=in_unit)
+            READ(UNIT=in_unit)
          CASE(4)
             msing=msing+1
             READ(UNIT=in_unit)
@@ -224,6 +225,7 @@ c-----------------------------------------------------------------------
             READ(UNIT=in_unit)et
             READ(UNIT=in_unit)wt
             READ(UNIT=in_unit)wt0
+            READ(UNIT=in_unit)wv_farwall_flag
          CASE(4)
             ising=ising+1
             singtype(ising)%jfix=ifix
@@ -266,7 +268,7 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (psifac(mstep)<psilim-(1e-4)) THEN
          ! this could be due to termination at a zero crossing (bad)
-         ! but it could also be due to peak_flag termination (good)
+         ! but it could also be due to psiedge termination (good)
          IF(verbose)THEN
             WRITE(*,*)"WARNING: psilim does not match eigenmode psifac"
             WRITE(*,*)"        > Forcing psilim to last psifac"
@@ -533,7 +535,7 @@ c-----------------------------------------------------------------------
       TYPE(spline_type) :: qs
 
       IF(verbose) WRITE(*,*)
-     $  "Recontructing flux functions and metric tensors"
+     $  "Reconstructing flux functions and metric tensors"
 c-----------------------------------------------------------------------
 c     set up fourier-spline type for metric tensors.
 c-----------------------------------------------------------------------
@@ -874,37 +876,59 @@ c     read vacuum.bin from vacuum code.
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_vacuum
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
+      LOGICAL :: farwal_flag=.TRUE.
+      INTEGER :: mths
       REAL(r8) :: kernelsignin
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: temp
 c-----------------------------------------------------------------------
 c     read vacuum data.
 c-----------------------------------------------------------------------
       IF(mthsurf==mthvac)THEN
+         nths=mthvac+5
+         nths2=nths*2
+         nfm2=mpert*2
+         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
+     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))
          IF(verbose) WRITE(*,*)"Reading vacuum energy matrices"
          CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
-         READ(bin_unit)nths2,nfm2
-         ALLOCATE(grri(nths2,nfm2))
          READ(bin_unit)grri
-         READ(bin_unit)nths2,nfm2
-         ALLOCATE(grre(nths2,nfm2))
          READ(bin_unit)grre
+         READ(bin_unit)griw
+         READ(bin_unit)grrw
+         READ(bin_unit)xzpts
          CALL bin_close(bin_unit)
 c-----------------------------------------------------------------------
-c     get grri and grre matrices by calling mscvac functions.
+c     get grri and grre matrices by calling mscvac. repeat free.f.
 c-----------------------------------------------------------------------
       ELSE
+         nths=mthsurf+5
+         nths2=nths*2
+         nfm2=mpert*2
+         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
+     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
          IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
+         farwal_flag=.TRUE.
          kernelsignin = -1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $               kernelsignin)
-         IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2 ! nths2 is inout
-         ALLOCATE(grri(nths2,nfm2))
-         CALL grrget(nfm2,nths2,grri)
+         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,grri,xzpts)
          kernelsignin = 1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,nfm2,nths2,complex_flag,
-     $               kernelsignin)
-         ALLOCATE(grre(nths2,nfm2))
-         CALL grrget(nfm2,nths2,grre) ! grre is nths2 by nfm2 by definition
+         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,grre,xzpts)
+         IF(wv_farwall_flag)THEN
+            temp=wv
+         ENDIF        
+
+         farwal_flag=.FALSE.
+         kernelsignin = -1.0
+         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,griw,xzpts)
+         kernelsignin = 1.0
+         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,grrw,xzpts)
+         IF(wv_farwall_flag)THEN
+            wv=temp
+         ENDIF
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.

@@ -15,8 +15,10 @@
 # command in order to compile.
 #
 # On portal.pppl.gov
-#   Developers can always load the gpec/0.0 module (development branch module) to get the latest compiler settings
-#     $ module use /p/gpec/modules; load gpec/0.0
+#   Users can run GPEC on portal using the public module. Note, portal now "hides" such modules behind a mod_* gateway module
+#     $ module load mod_gpec gpec
+#   Developers may want to load the development branch module to get the latest compiler settings if they've changed since the last release
+#     $ module load mod_gpec gpec/0.0
 #   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
 #     $ module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Note that before the netcdf module was properly set up, we had to manually load supporting modules
@@ -165,6 +167,68 @@
 #   Now compile using
 #     $ make FFLAGS='-openmp' 2>&1 | tee make.log
 #
+# On MIT's mferws01 linux machine
+#   Developers should use the gfortran compiler as well as the associated netcdf. Unfortunately, there are no modules here
+#   Set environment variables manually as:
+#     $ export FC=gfortran
+#     $ export LAPACKHOME=/usr/lib/x86_64-linux-gnu/
+#     $ export NETCDFHOME=/usr/lib/x86_64-linux-gnu/
+#     $ export NETCDFINC=/usr/include
+#     $ export OMPFLAG=''  # should be -fopenmp for gnu compiler, but it raises errors that intel does not
+#   Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = gfortran
+#      using math libraries -llapack -lblas
+#      from /usr/lib/x86_64-linux-gnu/
+#      including /usr/lib/x86_64-linux-gnu/
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /usr/lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/
+#      including /usr/lib/x86_64-linux-gnu/
+#      and compiler libraries
+#      from .
+#      including .
+#      and using OMPFLAG -fopenmp
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#     $ make OMPFLAG='' FFLAGS='' 2>&1 | tee make.log
+#   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
+#
+# On NERSC Permutter
+#   GPEC is installed at /global/common/software/m3739/perlmutter/
+#   Load the linux modules
+#     $ module use /global/common/software/m3739/perlmutter/modules
+#     $ module load gpec
+#   Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#   ------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = gfortran
+#      using math libraries -llapack -lblas
+#      from /usr/lib64
+#      including /usr/lib64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /opt/cray/pe/netcdf/4.9.0.9/gnu/12.3/lib /opt/cray/pe/netcdf/4.9.0.9/gnu/12.3/lib
+#      including /opt/cray/pe/netcdf/4.9.0.9/gnu/12.3/include
+#      and compiler libraries
+#      from .
+#      including .
+#      and using OMPFLAG -fopenmp
+#
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#
+#   Now compile using
+#     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
+#
+#
 # On mac OSX
 #   If one has installed the free gfortran compiler and built netcdf and lapack,
 #   a typical set of paths looks like the following.
@@ -183,29 +247,55 @@
 #      including .
 #
 #   Set environment FC,LAPACKHOME,NETCDFHOME to change these
-#   ------------------------------------------------------------
+#   --------------------------------------------------------------
+#
+#   Now compile using
+#     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#
 #
 # Some common modifications of the above settings might include,
-#     $ make FFLAGS="-qopenmp -qopt-report -g -O0 -check all"  # for debugging
-#     $ make FFLAGS="-qopenmp -O3"     # for optimized version
-#     $ make FFLAGS="-qopenmp  -xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
+#     $ make FFLAGS="-qopt-report -g -O0 -check all"  # for debugging
+#     $ make FFLAGS="-O3"     # for optimized version
+#     $ make FFLAGS="-xHost -O3 -qopt-zmm-usage=high -ipo"  # for old STRIDE options
+# When using modern gfortran, some additional flags needed may include
+#     $ make FFLAGS="-fallow-argument-mismatch"  # to pass over old, inconsistent portions of code
 #
 # If your platform is not properly included in this make file
 # contact nlogan@pppl.gov with your operating system, compiler, and
 # library installation details.
 #
-#------------------------------------------------------------------
-
-#CentOS 5.4
-LAPACKHOME=/usr/local/lib
-NETCDFHOME=/usr/local/netcdf
-
-#Kubuntu 18.04
-#LAPACKHOME=/usr/lib/x86_64-linux-gnu
-#NETCDFHOME=/usr/include
-
+#   ---------------------------------------------------------------
+# On SNU PLARE's Linux machine
+#   Developers can use intel compilers with the following modules
+#   module load git compiler-rt/latest mkl/latest 
+#   module load netcdf-fortran/intel/4.5.2 openmpi/intel/4.1.1
+#   And Set environment variables manually as:
+#     $ export /APP/enhpc/compiler/intel/oneapi/intelpython/python3.7/lib:/APP/netcdf-fortran-4.5.2_gnu/lib64:/usr/local/lib:/APP/MATLAB/R2020a/bin/glnxa64:$LD_LIBRARY_PATH
+#  Executing,
+#     $ make v
+#   in this install directory should produce the following verbose message.
+#   --------------------------------------------------------------
+#   Defaults tailored for
+#   Compiling with FC = /APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/bin/intel64/ifort
+#      using math libraries -lmkl_rt
+#      from /APP/enhpc/compiler/intel/oneapi/mkl/2021.3.0/lib/intel64
+#      including /APP/enhpc/compiler/intel/oneapi/mkl/2021.3.0/include/intel64/lp64
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /APP/netcdf-fortran-4.5.2_icc/lib /APP/netcdf-fortran-4.5.2_icc/lib
+#      including /APP/netcdf-fortran-4.5.2_icc/include
+#      and compiler libraries -lirc -limf
+#      from /APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/compiler/lib/intel64
+#      including /APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/compiler/include/intel64
+#      and using OMPFLAG -qopenmp
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#-----------------------------------------------------------------
+#
+#   Now compile using
+#    $ make
+#
+#-----------------------------------------------------------------
 # general defaults
-#------------------
+#-----------------------------------------------------------------
 
 # The new modules on portal at PPPL now use LAPACK_HOME instead of LAPACKHOME
 ifndef LAPACKHOME
@@ -218,9 +308,15 @@ endif
 # The ACML library is not being maintained anymore but we can leave it there for now
 
 # use acml or lapack based on what is loaded
-ifndef ACML_HOME
+ifdef MKLROOT
+    MATHHOME = $(MKLROOT)
+  	MATHLIBS = -lmkl_rt
+else ifdef LAPACKHOME
     MATHHOME = $(LAPACKHOME)
     MATHLIBS = -llapack -lblas
+else ifdef ACML_HOME
+    MATHHOME = $(ACML_HOME)
+    MATHLIBS = -lacml
 else
     $(info "Math libraries require MKLROOT, LAPACKHOME, or ACML_HOME")
 endif
@@ -229,12 +325,16 @@ endif
 #---------------------------------------
 
 # tack on lib and include directories to math home if necessary
-ifneq ($(wildcard $(MATHHOME)/lib/.),)
+ifneq ($(wildcard $(MATHHOME)/lib/intel64/.),)
+    MATHDIR = $(MATHHOME)/lib/intel64
+else ifneq ($(wildcard $(MATHHOME)/lib/.),)
     MATHDIR = $(MATHHOME)/lib
 else
     MATHDIR = $(MATHHOME)
 endif
-ifneq ($(wildcard $(MATHHOME)/include/.),)
+ifneq ($(wildcard $(MATHHOME)/include/intel64/lp64/.),)
+    MATHINC = $(MATHHOME)/include/intel64/lp64
+else ifneq ($(wildcard $(MATHHOME)/include/.),)
     MATHINC = $(MATHHOME)/include
 else
     MATHINC = $(MATHHOME)
@@ -248,10 +348,12 @@ ifdef NETCDF_FORTRAN_HOME
     else
         NETCDFDIR = $(NETCDF_FORTRAN_HOME)
     endif
-    ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/include/.),)
-        NETCDFINC = $(NETCDF_FORTRAN_HOME)/include
-    else
-        NETCDFINC = $(NETCDF_FORTRAN_HOME)
+    ifndef NETCDFINC
+        ifneq ($(wildcard $(NETCDF_FORTRAN_HOME)/include/.),)
+            NETCDFINC = $(NETCDF_FORTRAN_HOME)/include
+        else
+            NETCDFINC = $(NETCDF_FORTRAN_HOME)
+        endif
     endif
 else
     ifndef NETCDFHOME
@@ -266,10 +368,12 @@ else
     else
         NETCDFDIR = $(NETCDFHOME)
     endif
-    ifneq ($(wildcard $(NETCDFHOME)/include/.),)
-        NETCDFINC = $(NETCDFHOME)/include
-    else
-        NETCDFINC = $(NETCDFHOME)
+    ifndef NETCDFINC
+        ifneq ($(wildcard $(NETCDFHOME)/include/.),)
+            NETCDFINC = $(NETCDFHOME)/include
+        else
+            NETCDFINC = $(NETCDFHOME)
+        endif
     endif
 endif
 # check if the netcdf and netcdf libraries are split up or not
@@ -300,21 +404,32 @@ ifneq ($(wildcard $(F90HOME)/lib/intel64/.),)
 #    FCLIBS = -lirc -limf # irc.a needed for static compile
     FCLIBS = -lintlc -limf # intel changed irc to intlc ~2013?
     FCINC = $(F90HOME)/include/intel64
+    NETCDF_EXTRA_LIBS += -L$(FCDIR) $(FCLIBS)
+else ifneq ($(wildcard $(F90HOME)/compiler/lib/intel64/.),)
+    FCDIR = $(F90HOME)/compiler/lib/intel64
+    FCLIBS = -lirc -limf # irc.a needed for static compile
+    FCINC = $(F90HOME)/compiler/include/intel64
+    NETCDF_EXTRA_LIBS += -L$(FCDIR) $(FCLIBS)
 else
-    FCDIR = /usr/lib64
-    FCLIBS = -lgfortran
-    FCINC = /usr/include
+    FCDIR = .
+    FCLIBS =
+    FCINC = .
 endif
 
-# SuperLU options
-#------------------
-# determine if we need to unpack our own SuperLU tarball
-SLU_COMMAND = cd ../superlu; ./remakeSuperLU.sh
-# ... or if we just need to make our existing unpacked SuperLU
-ifneq ($(wildcard ../superlu/SuperLU_5.2.1/.),)
-	SLU_COMMAND = cd ../superlu/SuperLU_5.2.1; make
+# XDRAW options
+#----------------
+ifdef X11_HOME
+    X11_INC_DIR = -I$(X11_HOME)/include
+    X11_LIB_DIR = -L$(X11_HOME)/lib
 endif
-# ... or if we already have a valid SuperLU and shouldn't bother
-#ifneq some_magic_test_if_necessary_libs_are_in_path
-#	SLU_COMMAND =
-#endif
+
+#Common compiler flags for OpenMP
+ifeq ($(findstring ifort,$(FC)),ifort)
+	OMPFLAG ?= -qopenmp
+else ifeq ($(findstring gfortran,$(FC)),gfortran)
+	OMPFLAG ?= -fopenmp
+else ifeq ($(findstring pgfortran,$(FC)),pgfortran)
+	OMPFLAG ?= -mp
+else
+	OMPFLAG ?= -openmp
+endif

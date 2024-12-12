@@ -48,7 +48,7 @@
 /
 
 &stride_params
-    nThreads=32                         ! Number of threads used to calculate intervals in parallel
+    nThreads=0                          ! Number of threads used to calculate intervals in parallel. Setting to <= 0 uses OMP_NUM_THREADS env variable
     fourfit_metric_parallel=f           ! Compute equilibrium metric tensor components in parallel
     vac_parallel=t                      ! Doubles the number of main level threads, creating more threads than processors
 
@@ -60,7 +60,6 @@
 
     calc_delta_prime=t                  ! When false, sing_order=2 is better for speed, (with less accuracy).
     calc_dp_with_vac=t                  ! When vac_flag=t, this will use vacuum edge conditions to calculate delta prime.
-    solve_delta_prime_with_sparse_mat=f ! Opts to use the SuperLU sparse matrix solver, (which can be much slower).
     big_soln_err_tol=1e-7               ! Threshold error for correct solution to the delta prime bvp.
 
     integrate_riccati=f                 ! Use Riccati integration for dW. Cannot calculate delta_prime.

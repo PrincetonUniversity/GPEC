@@ -28,8 +28,6 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: theta,dphi,r,z
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
-      INTEGER :: nfm2,nths2
-      REAL(8), DIMENSION(:,:), POINTER :: grri
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: wvac
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: galwt
@@ -66,6 +64,7 @@ c-----------------------------------------------------------------------
       LOGICAL, PARAMETER :: complex_flag=.TRUE.
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
+      REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -102,27 +101,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
-      vac_unit=4
-      kernelsignin=-1.0
-      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin)
-      ALLOCATE(grri(nths2,nfm2))
-      CALL grrget(nfm2,nths2,grri)
-      CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
-      WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)
-      WRITE(vac_unit)grri
-      DEALLOCATE(grri)
-
       kernelsignin=1.0
-      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin)
-      ALLOCATE(grri(nths2,nfm2))
-      CALL grrget(nfm2,nths2,grri)
-      WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)
-      WRITE(vac_unit)grri
-      DEALLOCATE(grri)
-      CALL bin_close(vac_unit)
-
+      ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     .FALSE.,.FALSE.,grri,xzpts)
+      DEALLOCATE(grri,xzpts)
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -567,9 +550,10 @@ c     declarations.
 c-----------------------------------------------------------------------      
       SUBROUTINE free_get_wvac()
       LOGICAL, PARAMETER :: complex_flag=.FALSE.
-      INTEGER :: ipert, nfm2, nths2
+      INTEGER :: ipert
       REAL(r8) :: kernelsignin
       REAL(r8), DIMENSION(mpert) :: singfac
+      REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
 c-----------------------------------------------------------------------
 c     allocate vacuum matrix.
 c-----------------------------------------------------------------------      
@@ -582,9 +566,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
-      kernelsignin = 1.0
-      CALL mscvac(wvac,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin)
+      kernelsignin=1.0
+      ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+      CALL mscvac(wvac,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     .FALSE.,.FALSE.,grri,xzpts)
+      DEALLOCATE(grri,xzpts)
+
       CALL system("rm -f ahg2msc.out")
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert

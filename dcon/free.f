@@ -10,6 +10,8 @@ c     1. free_run.
 c     2. free_write_msc.
 c     3. free_ahb_prep.
 c     4. free_ahb_write.
+c     5. free_test.
+c     6. free_wvmats
 c-----------------------------------------------------------------------
 c     subprogram 0. free_mod.
 c     module declarations.
@@ -18,6 +20,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE free_mod
+      USE global_mod, ONLY: wv_farwall_flag
       USE sing_mod, ONLY: sing_der, msol
       USE fourfit_mod, ONLY: asmat, bsmat, csmat, jmat, ipiva,
      $                       cspline_type
@@ -31,8 +34,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), POINTER, PRIVATE :: theta,dphi,r,z
       REAL(r8), DIMENSION(:,:), POINTER, PRIVATE :: thetas
       REAL(r8), DIMENSION(:,:,:), POINTER, PRIVATE :: project
-      INTEGER :: nfm2,nths2
-      REAL(8), DIMENSION(:,:), POINTER :: grri
+      REAL(8), DIMENSION(:,:), POINTER :: grri,xzpts
 
       TYPE(cspline_type) :: wvmats
       CONTAINS
@@ -68,7 +70,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
       COMPLEX(r8), DIMENSION(mpert,mpert) :: vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
+      LOGICAL :: farwal_flag
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       COMPLEX(r8), DIMENSION(mpert) :: diff
@@ -116,26 +119,47 @@ c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
       vac_unit=4
+      farwal_flag=.TRUE. ! self-inductance for plasma boundary.
       kernelsignin=-1.0
-      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin)
-      ALLOCATE(grri(nths2,nfm2))
-      CALL grrget(nfm2,nths2,grri)
+      ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
       CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
-      WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)
       WRITE(vac_unit)grri
-      DEALLOCATE(grri)
 
       kernelsignin=1.0
-      CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,complex_flag,
-     $     kernelsignin)
-      ALLOCATE(grri(nths2,nfm2))
-      CALL grrget(nfm2,nths2,grri)
-      WRITE(vac_unit)SIZE(grri,1),SIZE(grri,2)
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
       WRITE(vac_unit)grri
-      DEALLOCATE(grri)
-      CALL bin_close(vac_unit)
 
+      IF(wv_farwall_flag)THEN
+         temp=wv
+      ENDIF         
+
+      farwal_flag=.FALSE. ! self-inductance with the wall.
+      kernelsignin=-1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
+      WRITE(vac_unit)grri
+
+      kernelsignin=1.0
+      CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $     wall_flag,farwal_flag,grri,xzpts)
+      WRITE(vac_unit)grri
+      WRITE(vac_unit)xzpts
+
+! xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
+!      DO ipert=1,mthvac+5
+!         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),xzpts(ipert,2),
+!     $        xzpts(ipert,3),xzpts(ipert,4)
+!      ENDDO
+      CALL bin_close(vac_unit)
+      DEALLOCATE(grri,xzpts)
+
+      IF(wv_farwall_flag)THEN
+         wv=temp
+      ENDIF
+       
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -211,6 +235,7 @@ c-----------------------------------------------------------------------
          WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
          WRITE(euler_bin_unit)wt0
+         WRITE(euler_bin_unit)wv_farwall_flag
       ENDIF
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
@@ -262,13 +287,14 @@ c-----------------------------------------------------------------------
       CALL bubble(REAL(ep),eindex,1,mpert)
       tt=ep
       DO ipert=1,mpert
+         wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
          ep(ipert)=tt(eindex(mpert+1-ipert))
       ENDDO
       CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
 c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
-      IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,ep,ev,et)
+      IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
 c-----------------------------------------------------------------------
 c     deallocate
 c-----------------------------------------------------------------------
@@ -346,9 +372,9 @@ c-----------------------------------------------------------------------
      $        //"Toroidal harmonic"
          WRITE(bin_unit,'(f13.10,a)')qa,tab//"qa"//tab//"qa1"//tab
      $        //"Safety factor at plasma edge"
-c-----   ------------------------------------------------------------------
+c-----------------------------------------------------------------------
 c        write arrays.
-c-----   ------------------------------------------------------------------
+c-----------------------------------------------------------------------
          WRITE(bin_unit,'(/a/)')"Poloidal Coordinate Theta:"
          WRITE(bin_unit,'(1p,4e18.10)')(1-theta(itheta),
      $        itheta=mtheta,0,-1)
@@ -615,7 +641,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       SUBROUTINE free_test(plasma1,vacuum1,total1,psifac)
 
-      REAL(r8), INTENT(OUT) :: plasma1,vacuum1,total1
+      COMPLEX(r8), INTENT(OUT) :: plasma1,vacuum1,total1
       REAL(r8), INTENT(IN) :: psifac
 
       LOGICAL, PARAMETER :: normalize=.TRUE., debug=.FALSE.
@@ -654,7 +680,8 @@ c-----------------------------------------------------------------------
       wv = 0
       ! calc a rough spline of wv so we don't call mscvac (slow) every time
       IF(first_call)THEN
-         CALL free_wvmats(psifac, psilim)
+         CALL free_wvmats
+         CALL spline_eval(sq,psifac,0)
          first_call = .FALSE.
       ENDIF
       CALL cspline_eval(wvmats, psifac,0)
@@ -689,7 +716,7 @@ c-----------------------------------------------------------------------
          norm=norm/v1
          et(isol)=et(isol)/norm
       ENDIF
-      total1=REAL(et(1))
+      total1=et(1)
 c-----------------------------------------------------------------------
 c     compute plasma and vacuum eigenvalues
 c     DIFFERS FROM free_run, which calcs energies of the total eigenmode
@@ -707,7 +734,7 @@ c-----------------------------------------------------------------------
             wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
             et(ipert)=tt(eindex(mpert+1-ipert))
          ENDDO
-         plasma1=REAL(et(1))
+         plasma1=et(1)
 
          wt=wv
          wt0=wt
@@ -721,7 +748,7 @@ c-----------------------------------------------------------------------
             wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
             et(ipert)=tt(eindex(mpert+1-ipert))
          ENDDO
-         vacuum1=REAL(et(1))
+         vacuum1=et(1)
       ELSE
          plasma1 = 0.0
          vacuum1 = 0.0
@@ -740,35 +767,49 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_wvmats(psi1, psi2)
+      SUBROUTINE free_wvmats
 
-      REAL(r8), INTENT(IN) :: psi1, psi2
-
-      INTEGER, PARAMETER :: npsi=8
-      INTEGER :: i,ipert
-      REAL(r8) :: dpsi
+      INTEGER :: npsi,i,ipert,it,itmax=50
+      REAL(r8) :: qi, psii, dpsi, eps=1e-9
       REAL(r8), DIMENSION(mpert) :: singfac
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
+      LOGICAL :: farwal_flag=.FALSE.
       REAL(r8) :: kernelsignin
+      INTEGER :: vac_unit
 c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
-      dpsi = (psi2 - psi1) / npsi
+      npsi = MAX(4, CEILING((qlim - q_edge(1)) * nn * 4))  ! 4 pts per q window, 4 if q edge spans less than one full window
+      psii = psiedge  ! should start exactly here
       CALL cspline_alloc(wvmats,npsi,mpert**2)
       DO i=0,npsi
-         wvmats%xs(i) = psi1 + dpsi * i
+         ! space point evenly in q
+         qi = q_edge(1) + (qlim - q_edge(1)) * i * 1.0/npsi
+         ! use newton iteration to find psilim.
+         it=0
+         DO
+            it=it+1
+            CALL spline_eval(sq, psii, 1)
+            dpsi=(qi-sq%f(4)) / sq%f1(4)
+            psii = psii + dpsi
+            IF(ABS(dpsi) < eps*ABS(psii) .OR. it > itmax)EXIT
+         ENDDO
+         ! call mscvac and save matrices to spline
+         wvmats%xs(i) = psii
          CALL spline_eval(sq, wvmats%xs(i), 0)
          CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.)
          kernelsignin=1.0
-         CALL mscvac(wv,mpert,mtheta,mthvac,nfm2,nths2,
-     $        complex_flag,kernelsignin)
+         ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+         CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
+     $        wall_flag,farwal_flag,grri,xzpts)
          singfac=mlow-nn*sq%f(4)+(/(ipert,ipert=0,mpert-1)/)
          DO ipert=1,mpert
             wv(ipert,:)=wv(ipert,:)*singfac
             wv(:,ipert)=wv(:,ipert)*singfac
          ENDDO
          wvmats%fs(i,:)=RESHAPE(wv,(/mpert**2/))
+         DEALLOCATE(grri,xzpts)         
       ENDDO
       CALL unset_dcon_params
       CALL cspline_fit(wvmats,"extrap")

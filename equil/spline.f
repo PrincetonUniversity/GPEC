@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(2) :: x0
       CHARACTER(6), DIMENSION(:), ALLOCATABLE :: title
       CHARACTER(6) :: name
-      LOGICAL :: periodic, allocated
+      LOGICAL :: periodic=.FALSE., allocated=.FALSE.
       END TYPE spline_type
 
       CONTAINS
@@ -67,6 +67,7 @@ c-----------------------------------------------------------------------
 
       INTEGER, INTENT(IN) :: mx,nqty
       TYPE(spline_type), INTENT(INOUT) :: spl
+      IF(spl%allocated) CALL spline_dealloc(spl)
 c-----------------------------------------------------------------------
 c     set scalars.
 c-----------------------------------------------------------------------

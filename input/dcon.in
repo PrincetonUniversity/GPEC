@@ -4,22 +4,23 @@
     ode_flag=t           ! Integrate ODE's for determining stability of internal long-wavelength mode (must be true for GPEC)
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
     mer_flag=t           ! Evaluate the Mercier criterian
-    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+
+    sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
     dmlim=0.2            ! See sas_flag
-	peak_flag=f          ! Stops integration at first local maximum beyond the last rational (may go beyond dmlim)
-    qlow=0.0            ! Integration initiated at q determined by minimum of qlow and q0 from equil
+    psiedge=0.988        ! If less then psilim, calculates dW(psi) between psiedge and psilim, then runs with truncation at max(dW)
+    qlow=1.02            ! Integration initiated at q determined by minimum of qlow and q0 from equil
     qhigh=20.2           ! Integration terminated at q limit determined by minimum of qhigh and qa from equil
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
     reform_eq_with_psilim=f ! Reforms equilibrium splines between psilow and psilim determined by psihigh/sas_flag/qhigh/peak_flag
 
     nn=1                 ! Toroidal mode number
-    delta_mlow=12        ! Expands lower bound of Fourier harmonics
-    delta_mhigh=16       ! Expands upper bound of  Fourier harmonics
+    delta_mlow=8         ! Expands lower bound of Fourier harmonics
+    delta_mhigh=8        ! Expands upper bound of  Fourier harmonics
     delta_mband=0        ! Integration keeps only this wide a band of solutions along the diagonal in m,m'
     mthvac=512           ! Number of points used in splines over poloidal angle at plasma-vacuum interface. Overrides vac.in mth.
     thmax0=1             ! Linear multiplier on the automatic choice of theta integration bounds for high-n ideal ballooning stability computation (strictly, -inf to -inf)
 
-    kin_flag = f         ! Kinetic EL equation (default: false)
+    kin_flag = t         ! Kinetic EL equation (default: false)
     con_flag = t         ! Continue integration through layers (default: false)
     kinfac1 = 1.0        ! Scale factor for energy contribution (default : 1.0)
     kinfac2 = 1.0        ! Scale factor for torque contribution (default : 1.0)
@@ -31,17 +32,18 @@
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
     electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
-    parallel_threads=16  ! Parallel calculations of the kinetic matrix components (2*nl+1 is recommended, where nl is defined in pentrc.in)
+    dcon_kin_threads=0   ! Parallel calculations of the kinetic matrix components (parallel execution of mpsi*(2*nl+1) calculations where mpsi is set in equil.in and nl in pentrc.in). Setting to <= 0 uses OMP_NUM_THREADS env variable.
 
-    tol_nr=1e-10         ! Relative tolerance of dynamic integration steps away from rationals
-    tol_r=1e-11          ! Relative tolerance of dynamic integration steps near rationals
+    tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
+    tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
     crossover=1e-2       ! Fractional distance from rational q at which tolerance is switched to tol_r
-    singfac_min=1e-5     ! Fractional distance from rational q at which ideal jump condition is enforced
+    singfac_min=1e-4     ! Fractional distance from rational q at which ideal jump condition is enforced
     ucrit=1e3            ! Maximum fraction of solutions allowed before re-normalized
 
-    termbycross_flag = f ! Terminate ODE solver in the event of a zero crossing
+    termbycross_flag = t ! Terminate ODE solver in the event of a zero crossing (default: false)
 
     use_classic_splines = f ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    wv_farwall_flag = f  ! Force nowall gpec calculations while calculating mutual inductance with the wall, when set true.
 /
 &DCON_OUTPUT
     out_fund=f           ! Output fundamental matrices A,B,C,D,E,H
@@ -52,7 +54,7 @@
     msol_ahb=1           ! Number of eigenfunctions output by ahb_flag=t ?
     mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
 
-    bin_euler=f          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
     euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions

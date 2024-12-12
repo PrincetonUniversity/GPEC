@@ -22,11 +22,10 @@ Casting table 1 into Data object.
 import os
 import numpy as np
 from scipy.interpolate import interp1d,interpn
-from string import join                 # string manipulation
 from mpl_toolkits.axes_grid1 import make_axes_locatable    #for splitting axes
 
 #in this package
-import data
+from . import data
 #import _syntheticdata_
 
 
@@ -35,7 +34,7 @@ import data
 plt = data.plt
 _mathtext = data._mathtext
 MaxNLocator = data.plt.matplotlib.ticker.MaxNLocator
-packagedir = join(os.path.abspath(__file__).split('/')[:-2],'/')+'/' # one directory up
+packagedir = '/'.join(os.path.abspath(__file__).split('/')[:-2])+'/' # one directory up
 
 dtor = np.pi/180
 
@@ -72,7 +71,7 @@ class LinearBase:
                 keys.remove(k)
         if not quiet: print("Interpolating {:} to {:}".format(keys,self.xnames[:2]))
 
-        pts = zip(*[self.pts[name] for name in self.xnames[:2]])
+        pts = list(zip(*[self.pts[name] for name in self.xnames[:2]]))
         self.data = data.interp(pts,quiet=quiet,**kwargs).y
         
         # mode number
@@ -186,7 +185,7 @@ class RZCrossSection(LinearBase):
         self.name = name
 
         t = (np.arctan2(z-z0,r-r0)-t0)%(2*np.pi)
-        t,r,z = np.array( zip( *sorted(zip(t,r,z)) ) ) #sorts by theta
+        t,r,z = np.array(list(zip(*sorted(zip(t,r,z))))) #sorts by theta
 
         if close:
             t = np.hstack((t,t[0]+2*np.pi))
@@ -206,7 +205,7 @@ class RZCrossSection(LinearBase):
 
         # closer was causing plot issues... resort by theta
         t,r,z = self.pts['theta'],self.pts['r'],self.pts['z']
-        t,r,z = np.array( zip( *sorted(zip(t,r,z)) ) ) #sorts by theta
+        t,r,z = np.array(list(zip( *sorted(zip(t,r,z)))) ) #sorts by theta
         if close:
             t = np.hstack((t,t[0]+2*np.pi))
             r = np.hstack((r,r[0]))
@@ -288,7 +287,7 @@ class SurfaceBase:
 
         **kwargs - dict. Passed to Data.interp
         """
-        pts = zip([self.pts[name] for name in self.xnames])
+        pts = list(zip([self.pts[name] for name in self.xnames]))
         self.data = data.interp(pts,quiet=quiet,**kwargs).y
 
         # some quick default manipulation
@@ -583,9 +582,9 @@ _d3d_nodes = {'DIII-D Vessel Wall': [np.array([95.748,112.210,168.285,216.931,24
 
 d3d_crosssections = {}
 d3d_surfaces = {}
-for k,v in _d3d_nodes.iteritems():
+for k, v in _d3d_nodes.items():
     close = 'Vessel' in k
-    d3d_crosssections[k] = RZCrossSection(v[0],v[1],r0=1.69,z0=0,name=k,close=close)    
+    d3d_crosssections[k] = RZCrossSection(v[0], v[1], r0=1.69, z0=0, name=k, close=close)
     d3d_surfaces[k] = AxisymSurface(d3d_crosssections[k])
 
 
@@ -638,13 +637,13 @@ def coils(coil,dim=3,cmap='RdBu_r',curlim=None,exclude=[],**kwargs):
     colormap = data.plt.pyplot.get_cmap(cmap)
     to_rgb =  data.plt.matplotlib.colors.ColorConverter().to_rgb
     r0 = {'d3d': 1.69, 'nstx': 1.00, 'iter': 6.42, 'kstar': 1.84, 'JTEXTtest': 1.00, 'rfxmod': 0.46,
-          'mast': 0.83, 'jet': 3.05, 'compass': 0.56, 'east': 1.85}
+          'mast': 0.83, 'jet': 3.05, 'compass': 0.56, 'east': 1.85, 'st40':0.54, 'kdemo':7.0}
     
     # set normalization of currents using max absolute current
     if not curlim:
         curs = []
-        for i in range(50):
-            for j in range(50):
+        for i in range(500):
+            for j in range(500):
                 if 'coil_cur({:},{:})'.format(i+1,j+1) in coil['COIL_CONTROL']:
                     curs.append(coil['COIL_CONTROL']['coil_cur({:},{:})'.format(i+1,j+1)])
         curlim = np.max(np.abs(curs)) #-np.min(curs)
@@ -773,12 +772,12 @@ class _magnetics(object):
         }
         
         # extend points along length
-        for k,v in self.toroidal_arrays.iteritems():
+        for k,v in self.toroidal_arrays.items():
             r,z = v['rz']
             l,a = v['length'],v['angle']
             rs = np.linspace(r-np.cos(a)*l/2,r+np.cos(a)*l/2,30)
             zs = np.linspace(z-np.sin(a)*l/2,z+np.sin(a)*l/2,30)
-            v['rzs'] = np.array(zip(rs,zs))
+            v['rzs'] = np.array(list(zip(rs,zs)))
     
     def get_signal(self,key,ds,op='mean'):
         """

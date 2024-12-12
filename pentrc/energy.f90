@@ -192,6 +192,7 @@ module energy_integration
             xout = ximag            ! upper bound of integration
             iwork(:) = 0            ! default
             iwork(6) = maxstep - i   ! max number of steps
+            iwork(7) = 2            ! max number of warnings about small step sizes
             rwork(:) = 0            ! default
             rwork(1) = ximag        ! only relevant if using crit task (itask 4,5)
             istate = 1              ! (re)start initial step
@@ -223,7 +224,8 @@ module energy_integration
         x = 1e-15               ! lower bound of integration
         xout = xmax             ! upper bound of integration
         iwork(:) = 0            ! default
-        iwork(6) = maxstep - i   ! max number of steps
+        iwork(6) = maxstep - i  ! max number of steps
+        iwork(7) = 2            ! max number of warnings about small step sizes
         rwork(:) = 0            ! default
         rwork(1) = xmax         ! only relevant if using crit task (itask 4,5)
         istate = 1              ! (re)start initial step
@@ -247,9 +249,10 @@ module energy_integration
             print *, "WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in x integration"
         endif
         if(istate==-1) then
+            print *, "psi =", psi, ", lambda =",lambda, ", leff =",energy_leff
             xout_unit = get_free_file_unit(-1)
             open(unit=xout_unit,file="pentrc_xintrgl_lsode.err",status="unknown")
-            write(xout_unit,*) "psi = ",psi," lambda = ",lambda
+            write(xout_unit,*) "psi = ",psi," lambda = ",lambda, " leff = ",energy_leff
             write(xout_unit,'(5(1x,a16))') "x","T_phi","2ndeltaW","int(T_phi)","int(2ndeltaW)"
             itask = 2
             y(1:2) = (/ 0,0 /)

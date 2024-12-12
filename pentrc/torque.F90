@@ -1039,8 +1039,8 @@ module torque
         endif
 
         ! enforce integration bounds
-        psilim(1) = max(psilim(1),xs(0))
-        psilim(2) = min(psilim(2),xs(mx))
+        psilim(1) = max(psilim(1), sq%xs(0), xs_m(1)%xs(0))
+        psilim(2) = min(psilim(2), sq%xs(sq%mx), xs_m(1)%xs(xs_m(1)%mx))
         istrt = -1
         istop = -1
         do i=0,mx
@@ -1084,7 +1084,7 @@ module torque
             endif
 
             ! log progress
-            if(mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==xs(0) .and. verbose)then
+            if((mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==xs(0)) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> dT/dpsi= ",sum(dky(1:neq:2),dim=1),sum(dky(2:neq:2),dim=1),'j'
             endif
@@ -1200,7 +1200,7 @@ module torque
         ! declare variables
         integer, parameter :: maxsteps = 10000
         integer :: j,l,s
-        real(r8) :: xlast,wdcom,dxcom,chrg,drive
+        real(r8) :: x0, xlast,wdcom,dxcom,chrg,drive
         real(r8), dimension(nfluxfuns) :: fcom
         real(r8), dimension(:), allocatable :: gam,chi
         real(r8), dimension(:,:), allocatable :: profiles,ellprofiles
@@ -1231,8 +1231,9 @@ module torque
         allocate(gam(neq),chi(neq))
         neqarray(:) = (/neq,n,nl,zi,mi,btoi(electron)/)
         y(:) = 0
-        x = sq%xs(0)
-        xout = min(xs_m(1)%xs(xs_m(1)%mx),sq%xs(sq%mx)) ! psilim, psihigh
+        x    = max(psilim(1), sq%xs(0), xs_m(1)%xs(0)) ! xi grid and EQUIL grid might not match (DCON using qlow, etc.)
+        x0 = x
+        xout = min(psilim(2), sq%xs(sq%mx), xs_m(1)%xs(xs_m(1)%mx)) ! xi and equil grid might not match (psilim vs psihigh)
         itol = 2                  ! rtol and atol are arrays
         rtol(:) = rtol_psi              !1.d-7!9              ! 14
         atol(:) = atol_psi              !1.d-7!9              ! 15
@@ -1243,10 +1244,6 @@ module torque
         rwork(1) = xout           ! only used if itask 4,5
         iwork(6) = maxsteps       ! max number steps
         mf = 10                   ! not stiff with unknown J
-        ! enforce integration bounds
-        x = max(psilim(1),x)
-        xout = min(psilim(2),xout)
-        rwork(1) = xout
         if(tdebug) print *,"psilim = ",psilim
         if(tdebug) print *,"sq lim = ",sq%xs(0),sq%xs(sq%mx)
         if(tdebug) print *,"xs lim = ",xs_m(1)%xs(0),xs_m(1)%xs(xs_m(1)%mx)
@@ -1306,7 +1303,7 @@ module torque
             endif
 
             ! print progress
-            if(mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==sq%xs(0) .and. verbose)then
+            if((mod(x,.1_r8)<mod(xlast,.1_r8) .or. xlast==x0) .and. verbose)then
                 print('(a7,f4.1,a13,2(es10.2e2),a1)'), " psi =",x,&
                     " -> T_phi = ",sum(y(1:neq:2),dim=1),sum(y(2:neq:2),dim=1),'j'
             endif
@@ -1412,12 +1409,12 @@ module torque
         !$omp& private(l,wtw_l,trq) &
         !$omp& reduction(+:elems) &
         !$omp& copyin(dbob_m,divx_m,kin,xs_m,fnml, &
-        !$omp& geom, sq, eqfun, rzphi, kin, &
+        !$omp& geom, sq, eqfun, rzphi, &
         !$omp& smats, tmats, xmats, ymats, zmats)
 #ifdef _OPENMP
             IF(first .and. omp_get_thread_num() == 0)then
                lthreads = omp_get_num_threads()
-               WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",lthreads," OMP threads"
+               WRITE(*,'(1x,a,i3,a)') "Running in parallel with ",lthreads," OMP threads"
             ENDIF
 #endif
 
@@ -1843,17 +1840,17 @@ module torque
         integer :: i,j,s,np
         real(r8) :: chrg,mass,psi,q
         real(r8), dimension(:), allocatable :: &
-            epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,&
+            epsr,nuk,nueff,nui,nue,ni,ne,ti,te,llmda,zeff,&
             welec,wdian,wdiat,wphi,wtran,wgyro,wbhat,wdhat
 
         integer :: status, ncid,i_did,i_id,p_did,p_id,l_did,l_id, &
             v_id,g_id,c_id,d_id,t_id, b_id,x_id, er_id,q_id,mp_id, &
-            ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ll_id,we_id, &
+            ni_id,ne_id,ti_id,te_id,vi_id,ve_id,ze_id,ll_id,we_id, &
             wn_id,wt_id,ws_id,wg_id,wb_id,wd_id
         character(16) :: nstring,suffix
         character(128) :: ncfile
 
-        print *,"Writing output to netcdf"
+        if(verbose) print *,"Writing output to netcdf"
 
         ! set species
         if(electron)then
@@ -1863,12 +1860,12 @@ module torque
         else
             chrg = zi*e
             mass = mi*mp
-            s = 2
+            s = 1
         endif
 
         ! calculate the basic flux functions on the equilibrium grid
         allocate(epsr(sq%mx+1),nuk(sq%mx+1),nueff(sq%mx+1),nui(sq%mx+1),nue(sq%mx+1),&
-            ni(sq%mx+1),ne(sq%mx+1),ti(sq%mx+1),te(sq%mx+1),llmda(sq%mx+1),&
+            zeff(sq%mx+1),ni(sq%mx+1),ne(sq%mx+1),ti(sq%mx+1),te(sq%mx+1),llmda(sq%mx+1),&
             welec(sq%mx+1),wdian(sq%mx+1),wdiat(sq%mx+1),wphi(sq%mx+1),&
             wtran(sq%mx+1),wgyro(sq%mx+1),wbhat(sq%mx+1),wdhat(sq%mx+1))
         do i=1,sq%mx + 1
@@ -1885,6 +1882,7 @@ module torque
             llmda(i) = kin%f(6)
             nui(i) = kin%f(7)
             nue(i) = kin%f(8)
+            zeff(i) = kin%f(9)
             wdian(i) =-twopi*kin%f(s+2)*kin%f1(s)/(chrg*chi1*kin%f(s)) ! density gradient drive
             wdiat(i) =-twopi*kin%f1(s+2)/(chrg*chi1)       ! temperature gradient drive
             wphi(i)  = welec(i)+wdian(i)+wdiat(i)                    ! toroidal rotation
@@ -1950,6 +1948,8 @@ module torque
         call check( nf90_def_var(ncid, "nu_e", nf90_double, p_did, ve_id) )
         call check( nf90_put_att(ncid, ve_id, "long_name", "Electron Collision Rate") )
         call check( nf90_put_att(ncid, ve_id, "units", "1/s") )
+        call check( nf90_def_var(ncid, "zeff", nf90_double, p_did, ze_id) )
+        call check( nf90_put_att(ncid, ze_id, "long_name", "Effective Charge") )
         call check( nf90_def_var(ncid, "omega_E", nf90_double, p_did, we_id) )
         call check( nf90_put_att(ncid, we_id, "long_name", "Electric Precession Frequency") )
         call check( nf90_put_att(ncid, we_id, "units", "rad/s") )
@@ -1989,6 +1989,7 @@ module torque
         call check( nf90_put_var(ncid, ll_id, llmda) )
         call check( nf90_put_var(ncid, vi_id, nui) )
         call check( nf90_put_var(ncid, ve_id, nue) )
+        call check( nf90_put_var(ncid, ze_id, zeff) )
         call check( nf90_put_var(ncid, wn_id, wdian) )
         call check( nf90_put_var(ncid, wt_id, wdiat) )
         call check( nf90_put_var(ncid, ws_id, wtran) )
@@ -2118,7 +2119,7 @@ module torque
 
         logical :: debug = .false.
 
-        print *,"Writing orbit record output to netcdf"
+        if(verbose) print *,"Writing orbit record output to netcdf"
 
         ! optional labeling
         label = ''

@@ -54,6 +54,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine errmes ( nout,mesage )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer, parameter :: iotty=86
       character*(*) mesage
 c-----------------------------------------------------------------------
@@ -79,6 +80,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine wrtout ( nsrf, vec, wvec, m1,m2 )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension vec(*)
 c-----------------------------------------------------------------------
 c     format statements.
@@ -104,6 +106,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine vecwrt ( mm, vec, wvec, m1,m2, nout1,nout2 )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension vec(*)
 c-----------------------------------------------------------------------
 c     format statements.
@@ -135,6 +138,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine writg1 ( string, seps, iseps, nout ) 
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension nout(*)
       character*(*) string
       character*(*) seps
@@ -168,6 +172,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine errnc ( mesage, nrcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) mesage
       integer nout(*)
 c-----------------------------------------------------------------------
@@ -196,6 +201,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine nwopn ( cdfid, file, nrw, rcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, nout(*)
       character*(*) file, nrw
 c-----------------------------------------------------------------------
@@ -227,6 +233,7 @@ c-----------------------------------------------------------------------
       subroutine nwinq ( cdfid, ndims, nvars, ngatts, recid, rcode,
      $     nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, recid, nout(*)
 c-----------------------------------------------------------------------
 c     format statements.
@@ -260,6 +267,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine nwdid ( cdfid, dimnam, ndid, rcode, nout ) 
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, nout(*)
       character*(*) dimnam
 c-----------------------------------------------------------------------
@@ -291,6 +299,7 @@ c-----------------------------------------------------------------------
       subroutine nwdinq ( cdfid, dimid, dimnam, dimsiz, rcode,
      $     nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, dimid, dimsiz, nout(*)
       character*(*) dimnam
 c-----------------------------------------------------------------------
@@ -321,6 +330,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine nwvid ( cdfid, varnam, vid, rcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, nout(*)
       character*(*) varnam
 c-----------------------------------------------------------------------
@@ -352,6 +362,7 @@ c-----------------------------------------------------------------------
       subroutine nwvinq ( cdfid, vid, varnam, vartyp, nvdims,
      $     vdims, nvatts, rcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, vartyp, vdims(*), nout(*)
       character*(*) varnam
       character*8 fmt
@@ -396,6 +407,7 @@ c-----------------------------------------------------------------------
       subroutine nwvg1i ( cdfid, vid, vindx,nd, val1, rcode,
      $     nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, vindx(*), val1, nout(*)
       character*8 fmt
       character*72 fmt1
@@ -435,6 +447,7 @@ c-----------------------------------------------------------------------
       subroutine nwvgt1 ( cdfid, vid, vindx,nd, val1, rcode,
      $     nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, vindx(*), nout(*)
       character*8 fmt
       character*72 fmt1
@@ -474,6 +487,7 @@ c-----------------------------------------------------------------------
       subroutine nwvg1c ( cdfid, vid, vindx,nd, chval, rcode,
      $     nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, vindx(*), nout(*)
       character chval
       character*8 fmt
@@ -513,6 +527,7 @@ c-----------------------------------------------------------------------
       subroutine nwvgti ( cdfid, vid, start, count,nd, val0, vals,
      $     rcode, nd1,nd2, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, start(*), count(*),
      $     val0(*), vals(nd1,nd2), nout(*)
 c-----------------------------------------------------------------------
@@ -553,6 +568,7 @@ c-----------------------------------------------------------------------
       subroutine nwvgt ( cdfid, vid, start,count,nd, val0, vals,
      $     nd1,nd2, rcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, start(*), count(*), nout(*)
       character*8 fmt
       character*72 fmt1
@@ -598,6 +614,7 @@ c-----------------------------------------------------------------------
       subroutine nwvgtc ( cdfid, vid, start,count,nd, string, lenstr,
      $     rcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, start(*), count(*), nout(*)
       character*(*) string
       character*8 fmt
@@ -639,6 +656,7 @@ c-----------------------------------------------------------------------
       subroutine nwainq ( cdfid, vid, attnam, attype, attlen, rcode,
      $     nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode, vid, attype, attlen, nout(*)
       character*(*) attnam
 c-----------------------------------------------------------------------
@@ -672,6 +690,7 @@ c-----------------------------------------------------------------------
       subroutine nwagtc ( cdfid, vid, attnam, astrng, attlen, maxa1,
      $     rcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode,vid, attlen, nout(*)
       character*(*) attnam, astrng
       character*8 fmt
@@ -725,6 +744,7 @@ c-----------------------------------------------------------------------
       subroutine nwagt ( cdfid, vid, attnam, attval, attlen,
      $     rcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode,vid, attlen, nout(*)
       character*(*) attnam
       character*8 fmt
@@ -771,6 +791,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine nwanam ( cdfid, vid, n, attnam, rcode, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       integer cdfid, rcode,vid, nout(*)
       character*(*) attnam
 c-----------------------------------------------------------------------
@@ -803,6 +824,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine writn1 ( mesage, n, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) mesage
       integer nout(*)
 c-----------------------------------------------------------------------
@@ -831,6 +853,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine writnn ( mesage, n, nd, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) mesage
       dimension n(*), nout(*)
 c-----------------------------------------------------------------------
@@ -859,6 +882,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine writa1 ( mesage, string1, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) mesage
       character*(*) string1
       integer nout(*)
@@ -888,6 +912,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine writv1 ( mesage, a, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) mesage
       integer nout(*)
 c-----------------------------------------------------------------------
@@ -916,6 +941,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine writis ( mesage, a, nd1, nd2, nw, nd, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) mesage
       integer a(nd1,nd2), nout(*), nw(*)
 c-----------------------------------------------------------------------
@@ -948,6 +974,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine writvs ( mesage, a, nd1, nd2, nw, nd, nout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) mesage
       dimension a(nd1,nd2), nw(*)
       integer nout(*)
@@ -994,6 +1021,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine vfrmt1 ( n, field1, fmt )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) fmt, field1
       character*8 nn
 c-----------------------------------------------------------------------
@@ -1022,6 +1050,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine vfrmt2 ( n, field1, fmt )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) fmt, field1
       character*8 nn
 c-----------------------------------------------------------------------
@@ -1050,6 +1079,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine vfrmt3 ( n, field1, fmt )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) fmt, field1
       character*8 nn
 c-----------------------------------------------------------------------
@@ -1078,6 +1108,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine bounds ( x1,z1, n1,n2, xmin,xmax, zmin,zmax )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension x1(*), z1(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -1107,6 +1138,7 @@ c-----------------------------------------------------------------------
       subroutine boundsi ( x1,z1, n1,n2, xmin,xmax, zmin,zmax,
      $     ixn,ixx,izn,izx )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension x1(*), z1(*)
 c-----------------------------------------------------------------------
 c     computations.
@@ -1147,6 +1179,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine macopy ( ain,ndin, aout,ndout )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension ain(ndin,ndin), aout(ndout,ndout)
 c-----------------------------------------------------------------------
 c     computations.
@@ -1170,6 +1203,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine matwrt ( a, maxj1, maxj2, jmax1, jmax2, label )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) label
       integer out
       dimension a ( maxj1, maxj2 )
@@ -1200,6 +1234,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine vacasym ( vacin, nd,nnj,label, nout1,nout2 )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) label
       dimension vacin(nd,nd)
 c-----------------------------------------------------------------------
@@ -1246,6 +1281,7 @@ c-----------------------------------------------------------------------
       subroutine masym0 ( vacin, nd,nnj,n1,n2,n10,n20,
      $     label, nout1,nout2 )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) label
       dimension vacin(nd,nd)
 c-----------------------------------------------------------------------
@@ -1299,6 +1335,7 @@ c-----------------------------------------------------------------------
       subroutine vacasymi ( vacin, nd,nnj,label, nout1,nout2 )
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
 
       character*(*) label
       dimension vacin(nd,nd), wrkrd(nfm),wrkrso(nfm),wrkrsd(nfm),
@@ -1376,6 +1413,7 @@ c     computes elapsed cpu time; dummy routine.
 c-----------------------------------------------------------------------
       subroutine msctimer ( nout,mesage )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       character*(*) mesage
       return
       end
@@ -1388,6 +1426,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       subroutine shftpi ( xin,fin, xout,fout, n )
       implicit real*8 (a-h,o-z)
+      implicit integer (i-n)
       dimension xin(*), fin(*), xout(*), fout(*)
 c-----------------------------------------------------------------------
 c     computations.

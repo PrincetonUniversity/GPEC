@@ -15,10 +15,9 @@ GUI for gpec package.
 from enthought.traits.api import HasTraits,Button, Instance, Bool,Str,List,Int,Float,Complex,File,Directory,List,Enum
 from enthought.traits.ui.api import Item, View,NoButtons,Group,InstanceEditor,Handler,UItem
 
-from string import join                 # string manipulation
 import os
 
-import data,gpec,_defaults_,_tooltips_
+from . import data, gpec, _defaults_, _tooltips_
 from collections import OrderedDict
 
 ################################ Handlers
@@ -39,7 +38,7 @@ class InputPanel(HasTraits):
 		"""
 		self.items = []
 		self.layout = 'normal'
-		for key,val in inputs.iteritems():
+		for key,val in inputs.items():
 			self.add_item(key,val)
 	
 	def trait_view(self,name=None, view_elements=None):
@@ -65,7 +64,7 @@ class InputPanel(HasTraits):
 				initializer = Types[types.index(type(val))]
 		#setattr(self,key,initializer(val))
 		#trait names cannot be any old dict keyword... same as class attrs
-		traitname = key.translate(None,' .,()[]{}/:;*%$!@#%^&-+')
+		traitname = key.translate(str.maketrans(dict.fromkeys(' .,()[]{}/:;*%$!@#%^&-+')))
 		#self.add_trait(key+'_show',Bool(True))
 		test = [item.label==key for item in self.items]
 		if any(test):
@@ -180,7 +179,7 @@ class ControlPanel(HasTraits):
 		ordered_ins = OrderedDict()
 		for key in _defaults_.inputs:
 			ordered_ins[key]=ins[key]
-		for key,val in ins.iteritems():
+		for key,val in ins.items():
 			if key not in _defaults_.inputs:
 				ordered_ins[key]=val
 		print('forming new inputs')

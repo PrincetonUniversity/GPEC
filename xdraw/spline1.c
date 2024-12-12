@@ -18,11 +18,13 @@
 **	intermediate points, if so call spleval for those points.
 ***********************************************************************/
 #include <stdio.h>
+#if !defined(__MACH__)
 #include <malloc.h>
+#endif
 
 
 #define Float double
-#define ind(i,j) nd*(j-1)+(i+1) 
+#define ind(i,j) nd*(j-1)+(i+1)
 
 /* #define ind(i,j) n*(i+1)+(j-1)*/
 
