@@ -377,7 +377,7 @@ c           These write statements are too verbose for scans
             WRITE(*,*) "Solution is NaN. it=", it
             WRITE(out_unit,*) "Solution is NaN. it=", it
             it=-1
-            z=CMPLX( nan,nan ) !NaN
+            z=DCMPLX( nan,nan ) !NaN
             EXIT
          ENDIF
          IF(err < tol) EXIT
@@ -385,7 +385,7 @@ c           These write statements are too verbose for scans
             it=-1
             WRITE(*,*) "Solution is not well converged."
             WRITE(out_unit,*) "Solution is not well converged."
-            z=CMPLX( nan,nan ) !NaN
+            z=DCMPLX( nan,nan ) !NaN
             EXIT
          ENDIF
          z_old=z
@@ -2434,12 +2434,15 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------            
       SUBROUTINE match_init_scan
-      INTEGER :: istep,ising,iter,num_vals
-      REAL(r8) :: step,eta_scan,log_scan_x0,err
+      INTEGER :: istep,jstep,ising,iter,num_vals,nimag
+      REAL(r8) :: rstep,cstep,eta_scan,log_scan_x0,err,realpart,imagpart
       COMPLEX(r8) :: eigval0,eigval,detval
-      COMPLEX(r8), dimension(scan_nstep+1) :: eigvals, detvals
-      INTEGER, dimension(scan_nstep+1) :: order
+      COMPLEX(r8),DIMENSION(:),ALLOCATABLE :: eigvals,detvals,tmp_cmplx
+      INTEGER,DIMENSION(:),ALLOCATABLE :: order,tmpint
       COMPLEX(r8), DIMENSION(4*msing,4*msing) :: mat
+      INTEGER, PARAMETER :: nc = 2
+      REAL(r8), DIMENSION(nc) :: coeff
+      REAL(r8), DIMENSION(1:nc*msing+scan_estep) :: imaglist
 c-----------------------------------------------------------------------
 c     format output.
 c-----------------------------------------------------------------------                  
@@ -2448,31 +2451,83 @@ c-----------------------------------------------------------------------
      $       7x,"re(q_in)",7x,"im(q_in)"/)
 20    FORMAT(1p,2e15.5,i6,i8,8e15.5)
 c-----------------------------------------------------------------------
-c     scan constant eta parameter.
+c     determine range of initial values to scan
 c-----------------------------------------------------------------------                  
-      log_scan_x0=log10(scan_x0)
-      step=(log10(scan_x1)-log_scan_x0)/scan_nstep
+      log_scan_x0=log10(scan_x0) !real series minimum 
+      rstep=(log10(scan_x1)-log_scan_x0)/scan_nstep !real series step
+
+      if (scan_estep>1) then
+        cstep=(scan_e1-scan_e0)/(scan_estep-1) !imag series step
+      else
+        cstep=0.0
+      endif
+
+      !Setup list of imaginary test values
+      if ( MAXVAL(rotation)==0.0 .and. MINVAL(rotation)==0.0 ) then
+!       If there is no rotation, just use initguess complex component
+        nimag = 1
+        imaglist(1) = AIMAG(initguess)
+      else
+        nimag = nc*msing+scan_estep
+        !Setup imaginary values
+        coeff = [-0.95,-1.05]
+        !Set 5% above and below each rotation rate
+        DO istep=1,msing
+          DO jstep=1,nc
+            imaglist((istep-1)*nc+jstep) = rotation(istep)*coeff(jstep)
+          ENDDO
+        ENDDO
+        !Add user-specified arithmetic series
+        DO istep = 1,scan_estep
+          imaglist(nc*msing+istep) = scan_e0+(istep-1)*cstep
+        ENDDO
+        
+      endif
+
+      print *, "Initguess imaginary values=", imaglist(1:nimag)
+c-----------------------------------------------------------------------
+c     Perform scan and append each solution to eigvals and detvals arrays
+c-----------------------------------------------------------------------        
       CALL bin_open(bin_unit,"scanres.bin","UNKNOWN","REWIND","none")
       CALL ascii_open(debug_unit,"scanres.out","UNKNOWN")
       WRITE (debug_unit,10)
-      !Scan real space for eigenvalues
-      num_vals=0
-      DO istep=0,scan_nstep
-         eigval=CMPLX( 10**(log_scan_x0+istep*step), AIMAG(initguess))
-         eigval0=eigval
-         CALL match_newton(match_delta,eigval,err,iter)
-         detval=match_delta(eigval,mat)
-         IF( .not. ISNAN(REAL(eigval)) ) THEN
+      num_vals=0 !Counter for number of eigenvalue solutions found
+      !Scan space for eigenvalues
+      DO istep=0,scan_nstep !Cycle over real space
+        realpart = 10**(log_scan_x0+istep*rstep) !geometric series
+        DO jstep=1,nimag !Cycle over imaginary space
+          imagpart = imaglist(jstep)
+          eigval=DCMPLX( realpart, imagpart )
+          eigval0=eigval
+          CALL match_newton(match_delta,eigval,err,iter)
+          detval=match_delta(eigval,mat)
+          IF( .not. ISNAN(REAL(eigval)) ) THEN
             num_vals=num_vals+1
+
+            !Add eigval to eigvals array
+            ALLOCATE(tmp_cmplx(num_vals))
+            tmp_cmplx(1:num_vals-1) = eigvals(1:num_vals-1)
+            call MOVE_ALLOC(tmp_cmplx,eigvals)
             eigvals(num_vals)=eigval
+
+            !Add detval to detvals array
+            ALLOCATE(tmp_cmplx(num_vals))
+            tmp_cmplx(1:num_vals-1) = detvals(1:num_vals-1)
+            call MOVE_ALLOC(tmp_cmplx,detvals)
             detvals(num_vals)=detval
-         ENDIF
-         WRITE(out_unit,61) eigval0, eigval, detval
-         WRITE(*,61) eigval0, eigval, detval
- 61      FORMAT(" init=(",1P,e11.3,e11.3," ) eigval=(",e11.3,e11.3,
-     $        " ) detval=(",e11.3,e11.3," )")
+          ENDIF
+          WRITE(out_unit,61) eigval0, eigval, detval
+          WRITE(*,61) eigval0, eigval, detval
+ 61       FORMAT(" init=(",1P,e11.3,e11.3," ) eigval=(",e11.3,e11.3,
+     $         " ) detval=(",e11.3,e11.3," )")
+        ENDDO
       ENDDO
 
+
+c-----------------------------------------------------------------------
+c     Sort array by real component of eigvals and print results
+c-----------------------------------------------------------------------   
+      ALLOCATE(order(num_vals))
       order = real_order(num_vals,eigvals)
 
       !Print results
