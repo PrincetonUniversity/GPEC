@@ -1582,6 +1582,8 @@ c-----------------------------------------------------------------------
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
      $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
+     $           ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
+     $           rh_id, r1_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1610,7 +1612,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(0:mthsurf) :: r_tmp
       TYPE(spline_type) :: sr
 
-      REAL(r8), DIMENSION(msing) :: b_crit
+      REAL(r8), DIMENSION(msing) :: b_crit, ti_r, te_r, ni_r, ne_r,
+     $    q1_r, we_r, wi_r, rh_r, r1_r
       REAL(r8) :: omega_i,omega_e,jxb,omega_sol,br_th
       COMPLEX(r8) :: delta_s,psi0
 
@@ -1721,13 +1724,33 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     prepare layer analysis.
 c-----------------------------------------------------------------------
+         CALL spline_eval(sr,respsi,1)
+         rh_r(ising) = sr%f(1)
+         r1_r(ising) = sr%f1(1)
          IF (callen_threshold_flag. OR. slayer_threshold_flag) THEN
             resm = mfac(resnum(ising))
-            CALL spline_eval(sr,respsi,1)
             CALL spline_eval(kin,respsi,1)
+            omega_i=-twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
+     $           -twopi*kin%f1(3)/(e*zi*chi1)
+            omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
+     $           +twopi*kin%f1(4)/(e*chi1)
+            ti_r(ising) = kin%f(3)/e
+            te_r(ising) = kin%f(4)/e
+            ni_r(ising) = kin%f(1)
+            ne_r(ising) = kin%f(2)
+            q1_r(ising) = sq%f1(4)
+            we_r(ising) = omega_e
+            wi_r(ising) = omega_i
          ELSE
             hw_crit(ising) = 0.0
             b_crit(ising) = 0.0
+            ti_r(ising) = 0.0
+            te_r(ising) = 0.0
+            ni_r(ising) = 0.0
+            ne_r(ising) = 0.0
+            q1_r(ising) = 0.0
+            we_r(ising) = 0.0
+            wi_r(ising) = 0.0
          ENDIF
 c-----------------------------------------------------------------------
 c     compute Callen critical island width parameter [UW-CPTC 16-4, 2016].
@@ -1754,10 +1777,6 @@ c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
 c-----------------------------------------------------------------------
          IF (slayer_threshold_flag) THEN
-            omega_i=-twopi*kin%f(3)*kin%f1(1)/(e*zi*chi1*kin%f(1))
-     $           -twopi*kin%f1(3)/(e*zi*chi1)
-            omega_e=twopi*kin%f(4)*kin%f1(2)/(e*chi1*kin%f(2))
-     $           +twopi*kin%f1(4)/(e*chi1)
             CALL gpec_slayer(kin%f(2),kin%f(4)/e,kin%f(1),kin%f(3)/e,
      $           kin%f(9),kin%f(5),omega_e,omega_i,sq%f(4),sq%f1(4),
      $           bt0,sr%f1(1),ro,mi,slayer_inpr,resm,nn,ascii_flag,
@@ -1866,6 +1885,50 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, k_id, "long_name",
      $     "Chirikov parameter of fully saturated islands") )
          astat = nf90_inq_varid(fncid, "area_rational", a_id) ! check if area already stored
+         CALL check( nf90_def_var(fncid, "T_i_rational", nf90_double,
+     $      (/q_id/), ti_id) )
+         CALL check( nf90_put_att(fncid, ti_id, "units", "eV") )
+         CALL check( nf90_put_att(fncid, ti_id, "long_name",
+     $     "Ion temperature at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "T_e_rational", nf90_double,
+     $      (/q_id/), te_id) )
+         CALL check( nf90_put_att(fncid, te_id, "units", "eV") )
+         CALL check( nf90_put_att(fncid, te_id, "long_name",
+     $     "Electron temperature at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "n_i_rational", nf90_double,
+     $      (/q_id/), ni_id) )
+         CALL check( nf90_put_att(fncid, ni_id, "units", "m^-3") )
+         CALL check( nf90_put_att(fncid, ni_id, "long_name",
+     $     "Ion density at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "n_e_rational", nf90_double,
+     $      (/q_id/), ne_id) )
+         CALL check( nf90_put_att(fncid, ne_id, "units", "m^-3") )
+         CALL check( nf90_put_att(fncid, ne_id, "long_name",
+     $     "Electron density at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "omega_E_rational",nf90_double,
+     $      (/q_id/), we_id) )
+         CALL check( nf90_put_att(fncid, we_id, "units", "rad/s") )
+         CALL check( nf90_put_att(fncid, we_id, "long_name",
+     $     "ExB rotation frequency rational surfaces") )
+         CALL check( nf90_def_var(fncid, "omega_i_rational",nf90_double,
+     $      (/q_id/), wi_id) )
+         CALL check( nf90_put_att(fncid, wi_id, "units", "rad/s") )
+         CALL check( nf90_put_att(fncid, wi_id, "long_name",
+     $     "Ion diamagnetic rotation frequency at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "q1_rational", nf90_double,
+     $      (/q_id/), q1_id) )
+         CALL check( nf90_put_att(fncid, q1_id, "long_name",
+     $     "Safety factor derivative at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "rho_rational", nf90_double,
+     $      (/q_id/), rh_id) )
+         CALL check( nf90_put_att(fncid, rh_id, "units", "m") )
+         CALL check( nf90_put_att(fncid, rh_id, "long_name",
+     $     "Minor radius at rational surfaces") )
+         CALL check( nf90_def_var(fncid, "rho1_rational", nf90_double,
+     $      (/q_id/), r1_id) )
+         CALL check( nf90_put_att(fncid, r1_id, "units", "m") )
+         CALL check( nf90_put_att(fncid, r1_id, "long_name",
+     $     "Minor radius psi_n derivative at rational surfaces") )
          IF(astat/=nf90_noerr)THEN
             CALL check( nf90_def_var(fncid, "area_rational",
      $         nf90_double, (/q_id/), a_id) )
@@ -1885,6 +1948,15 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
          CALL check( nf90_put_var(fncid, bc_id, b_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
+         CALL check( nf90_put_var(fncid, ti_id, ti_r) )
+         CALL check( nf90_put_var(fncid, te_id, te_r) )
+         CALL check( nf90_put_var(fncid, ni_id, ni_r) )
+         CALL check( nf90_put_var(fncid, ne_id, ne_r) )
+         CALL check( nf90_put_var(fncid, q1_id, q1_r) )
+         CALL check( nf90_put_var(fncid, we_id, we_r) )
+         CALL check( nf90_put_var(fncid, wi_id, wi_r) )
+         CALL check( nf90_put_var(fncid, rh_id, rh_r) )
+         CALL check( nf90_put_var(fncid, r1_id, r1_r) )
          IF(astat/=nf90_noerr)THEN
             CALL check( nf90_put_var(fncid, a_id, area) )
          ENDIF
