@@ -14,27 +14,29 @@ c-----------------------------------------------------------------------
 
       USE sglobal_mod
       USE params_mod
-      USE delta_mod, ONLY: riccati,riccati_out,
+      USE delta_mod, ONLY: riccati,riccati4,riccati_out,
      $                     parflow_flag,PeOhmOnly_flag
 
       IMPLICIT NONE
 
       CHARACTER(128) :: infile
       INTEGER :: i,j,k,inum,jnum,knum,inn
-      INTEGER, DIMENSION(1) :: index
+      INTEGER :: i1,i2,i3,i4,i5
+      INTEGER, DIMENSION(1) :: index,index4
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
      $     QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check
+     $     params_check,fourfield_flag
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
       REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th
-      COMPLEX(r8) :: delta,delta_n_p
+      REAL(r8) :: psi04,jxb4,Q04,Q_sol4,br_th4
+      COMPLEX(r8) :: delta,delta4,delta_n_p
 
       REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,kpower,
      $     Qratio
@@ -45,12 +47,15 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,bal,
      $     prs,n_es,t_es,t_is,omegas,l_ns,l_ts,qvals,svals,
-     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl
+     $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,
+     $     jxb4l,bal4,Q_sol4l,br_th4l
       REAL(r8), DIMENSION(:,:), ALLOCATABLE :: 
-     $     js,ks,psis,jxbs,Q_sols,br_ths
-      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal
-      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
+     $     js,ks,psis,jxbs,Q_sols,br_ths,
+     $     jxb4s,Q_sol4s,br_th4s
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss,
+     $     Qsol4ss,br_th4ss
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,delta4l
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas,delta4s
 
       NAMELIST/slayer_input/params_flag,input_flag,infile,
      $     mm,nn,n_e,t_e,t_i,omega,l_n,l_t,
@@ -59,7 +64,8 @@ c-----------------------------------------------------------------------
       NAMELIST/slayer_control/inum,jnum,knum,QPscan_flag,QPscan2_flag,
      $     QPescan_flag,QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
-     $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag
+     $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag,
+     $     fourfield_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     stability_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
@@ -118,6 +124,7 @@ c-----------------------------------------------------------------------
       parflow_flag=.FALSE.
       PeOhmOnly_flag=.TRUE.
       Pe_flag=.FALSE.
+      fourfield_flag=.FALSE. ! parallel flow flag to consider dVz/dX
       params_flag=.TRUE.
       input_flag=.FALSE.
       infile="input_params.dat"
@@ -171,9 +178,24 @@ c-----------------------------------------------------------------------
       delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
       psi0=1.0/ABS(delta+delta_n_p) ! a.u.
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
-      WRITE(*,*)"delta=",delta
-      WRITE(*,*)"psi0=",psi0
-      WRITE(*,*)"jxb=",jxb
+
+      IF (fourfield_flag) THEN
+         IF(verbose) WRITE(*,*)"Four-field model used for delta"
+         delta4=riccati4(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
+         psi04=1.0/ABS(delta4+delta_n_p) ! a.u.
+         jxb4=-AIMAG(1.0/(delta4+delta_n_p)) ! a.u.
+         WRITE(*,*)"delta=",delta
+         WRITE(*,*)"delta4=",delta4
+         WRITE(*,*)"psi0=",psi0
+         WRITE(*,*)"psi04=",psi04
+         WRITE(*,*)"jxb=",jxb
+         WRITE(*,*)"jxb4=",jxb4
+      ELSE
+         WRITE(*,*)"delta=",delta
+         WRITE(*,*)"psi0=",psi0
+         WRITE(*,*)"jxb=",jxb
+      ENDIF
+      
 c-----------------------------------------------------------------------
 c     calculate parameters as needed.
 c-----------------------------------------------------------------------
