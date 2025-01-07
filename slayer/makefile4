@@ -2,7 +2,7 @@
 ### Commenting "call lsode" out from delta.f is needed.
 ### This is only to test successful implementation.
 
-F90 = ifort -g
+F90 = ifort -g -mkl
 # which ifort
 # /APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/bin/intel64/ifort
 
@@ -18,7 +18,6 @@ OBJS = \
        sglobal.o \
        params.o \
        zvode.o \
-       inverse.o \
        InvAxb.o \
        delta.o \
        gslayer.o \
@@ -30,7 +29,7 @@ slayer: $(OBJS)
 # dependencies
 zvode.o : zvode.o
 params.o : sglobal.o
-delta.o : sglobal.o zvode.o inverse.o InvAxb.o
+delta.o : sglobal.o zvode.o InvAxb.o
 gslayer.o : sglobal.o delta.o
 slayer.o : sglobal.o params.o delta.o
 
