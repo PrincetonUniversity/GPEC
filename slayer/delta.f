@@ -1105,10 +1105,11 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: x
       COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
       COMPLEX(r8), INTENT(OUT) :: Delta_new
-      INTEGER :: i,j
+      INTEGER :: i,j,info
       COMPLEX(r8), DIMENSION(5,5) :: R, B21, B22, B21B22R
       COMPLEX(r8), DIMENSION(5) :: beta, y1
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
+      INTEGER, DIMENSION(5):: ipiv
 
       DO i=1,5
         beta(i)=0.0
@@ -1127,7 +1128,9 @@ c-----------------------------------------------------------------------
       B21(5,5)=1.0
 
       B21B22R=B21+matmul(B22,R)
-      CALL InvAxb(B21B22R,y1,beta,5)
+      CALL zgetrf(5,5,B21B22R,5,ipiv,info)
+      CALL zgetrs('N',5,1,B21B22R,5,ipiv,beta,5,info)
+      y1=beta
       Delta_new=2.0/(y1(1)-x)
       RETURN
       END SUBROUTINE
