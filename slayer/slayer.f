@@ -67,9 +67,9 @@ c-----------------------------------------------------------------------
      $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag,
      $     fourfield_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     stability_flag
+     $     stability_flag,bal_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
-     $     params_check,bal_flag
+     $     params_check
 c-----------------------------------------------------------------------
 c     set initial values.
 c-----------------------------------------------------------------------
