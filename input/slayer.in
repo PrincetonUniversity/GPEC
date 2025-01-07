@@ -50,6 +50,7 @@
     nbtscan_flag=f       ! scan (n,bt) space for error fields.
     parflow_flag=f       ! set parallel flow on
     PeOhmOnly_flag=t     ! only include Pe from Ohm's law
+    fourfield_flag=t     ! set parallel flow on (dVz/dX). need distincion from parflow_flag.
     Pe_flag=f            ! Not operational yet. If true, it will calculate classical inpe value from inpr and include in SLAYER run
     layfac=0.02          ! layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)) is added to Q_e if ABS(Q-Q_e)<layfac). Default is 0.02.
 /
