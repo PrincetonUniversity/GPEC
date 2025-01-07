@@ -1030,10 +1030,11 @@ c-----------------------------------------------------------------------
       INTEGER, INTENT(IN) :: neq
       REAL(r8), INTENT(IN) :: x
       COMPLEX(r8), DIMENSION(neq), INTENT(INOUT) :: y
-      INTEGER :: i,j
+      INTEGER :: i,j,info
       COMPLEX(r8), DIMENSION(5,5) :: R, T22RT12, RT11T21, invT22RT12
       COMPLEX(r8), DIMENSION(10,10) :: Tx
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
+      INTEGER, DIMENSION(5):: ipiv
 
       Tx=0.0
       Tx(1,1)=1.0
@@ -1075,7 +1076,11 @@ c-----------------------------------------------------------------------
 
       T22RT12=Tx(6:10,6:10)-matmul(R,Tx(1:5,6:10))
       RT11T21=matmul(R,Tx(1:5,1:5))-Tx(6:10,1:5)
-      CALL inverse(T22RT12,invT22RT12,5)
+      DO i=1,5
+        invT22RT12(i,i)=1
+      ENDDO
+      CALL zgetrf(5,5,T22RT12,5,ipiv,info)
+      CALL zgetrs('N',5,5,T22RT12,5,ipiv,invT22RT12,5,info)
       
       R=matmul(invT22RT12,RT11T21)
 
