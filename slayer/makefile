@@ -11,7 +11,8 @@ export FFLAGS
 LIBDIR = ../lib
 
 LIBS = \
-	-llsode
+	-llsode \
+	-lzvode \
 
 OBJS = \
        sglobal.o \
@@ -20,10 +21,13 @@ OBJS = \
        gslayer.o \
        slayer.o
 
-all: lsode slayer
+all: lsode zvode slayer
 
 lsode: 
 	cd ../lsode; make
+
+zvode: 
+	cd ../zvode; make
 
 slayer: $(OBJS)
 	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
