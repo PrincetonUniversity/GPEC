@@ -1,0 +1,38 @@
+### A compiler to test four field model.
+### Commenting "call lsode" out from delta.f is needed.
+### This is only to test successful implementation.
+
+F90 = ifort -g
+# which ifort
+# /APP/enhpc/compiler/intel/oneapi/compiler/2021.3.0/linux/bin/intel64/ifort
+
+.SUFFIXES: .f .f90 .o
+
+.f.o:
+	$(F90) -c $<
+
+.f90.o:
+	$(F90) -c $<
+
+OBJS = \
+       sglobal.o \
+       params.o \
+       zvode.o \
+       inverse.o \
+       InvAxb.o \
+       delta.o \
+       gslayer.o \
+       slayer.o
+
+slayer: $(OBJS)
+	$(F90) $(OBJS) -o slayer
+
+# dependencies
+zvode.o : zvode.o
+params.o : sglobal.o
+delta.o : sglobal.o zvode.o inverse.o InvAxb.o
+gslayer.o : sglobal.o delta.o
+slayer.o : sglobal.o params.o delta.o
+
+clean:
+	rm -f *.o *.mod *.out *.bin slayer
