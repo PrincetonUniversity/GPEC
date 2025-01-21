@@ -2451,11 +2451,33 @@ c-----------------------------------------------------------------------
      $       7x,"re(q_in)",7x,"im(q_in)"/)
 20    FORMAT(1p,2e15.5,i6,i8,8e15.5)
 c-----------------------------------------------------------------------
-c     determine range of initial values to scan
-c-----------------------------------------------------------------------                  
-      log_scan_x0=log10(scan_x0) !real series minimum 
-      rstep=(log10(scan_x1)-log_scan_x0)/scan_nstep !real series step
+c     determine real range for initial values to scan
+c-----------------------------------------------------------------------   
+      !Negative values for scan_x0 and scan_x1 are interpreted
+      !as growth times as a factor of Alfven time.  Should be >~ -10.
+      IF( scan_x0 < 0.0 ) then
+        scan_x0 = 1.0 / ( -scan_x0 * maxval(restype(:)%taua) )
+        WRITE(*,*) "Setting scan_x0 to ", scan_x0
+      ENDIF
+      
+      IF( scan_x1 < 0.0 ) then
+        scan_x1 = 1.0 / ( -scan_x1 * maxval(restype(:)%taua) )
+        WRITE(*,*) "Setting scan_x1 to ", scan_x1
+      ENDIF
 
+      IF( scan_x0 > scan_x1 ) THEN
+        WRITE(*,*) "scan_x0 is larger than scan_x1, swapping"
+        err = scan_x0
+        scan_x0 = scan_x1
+        scan_x1 = err
+      ENDIF
+                     
+      log_scan_x0=log10(scan_x0) !real series minimum
+      rstep=(log10(scan_x1)-log_scan_x0)/scan_nstep !real series step
+      
+c-----------------------------------------------------------------------
+c     determine imaginary range for initial values to scan
+c-----------------------------------------------------------------------   
       if (scan_estep>1) then
         cstep=(scan_e1-scan_e0)/(scan_estep-1) !imag series step
       else
