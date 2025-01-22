@@ -4079,7 +4079,7 @@ c-----------------------------------------------------------------------
       INTEGER :: r_id,z_id,i_id,xr_id,xz_id,xp_id,br_id,bz_id,bp_id,
      $   bre_id,bze_id,bpe_id,brp_id,bzp_id,bpp_id,ar_id,az_id,ap_id
 
-      INTEGER :: cbr_id, cbz_id, cbp_id, vcbr_id, vcbz_id, vcbp_id
+      INTEGER :: vcbr_id, vcbz_id, vcbp_id
 
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
       LOGICAL, PARAMETER :: complex_flag=.TRUE.      
@@ -4096,16 +4096,6 @@ c-----------------------------------------------------------------------
      $     chxar,chxaz
 
 
-      !INTEGER :: nr_dimid, nz_dimid
-      !INTEGER :: gdl_varid, gdr_varid, gdz_varid
-
-      !INTEGER :: complex_vcbr_varid
-    
-      !INTEGER :: vcbr_varid
-
-      !INTEGER :: real_vcbr_varid, imag_vcbr_varid
-      !INTEGER :: real_vcbz_varid, imag_vcbz_varid
-      !INTEGER :: real_vcbp_varid, imag_vcbp_varid
 
 c-----------------------------------------------------------------------
 c     build solutions.
@@ -4749,30 +4739,24 @@ c-----------------------------------------------------------------------
             CALL check( nf90_inq_dimid(cncid,"R",r_id) )
             CALL check( nf90_inq_dimid(cncid,"z",z_id) )
             CALL check( nf90_redef(cncid))
-
-
             CALL check( nf90_def_var(cncid, "vcbr", nf90_double,     
      $               (/r_id, z_id, i_id/), vcbr_id) )
             CALL check( nf90_put_att(cncid, vcbr_id, "long_name",
      $               "Radial vacuum field") )
             CALL check( nf90_put_att(cncid, vcbr_id, "units",
      $               "Tesla") )
-
             CALL check( nf90_def_var(cncid, "vcbz", nf90_double,     
      $               (/r_id, z_id, i_id/), vcbz_id) )
             CALL check( nf90_put_att(cncid, vcbz_id, "long_name",
      $               "Vertical vacuum field") )
             CALL check( nf90_put_att(cncid, vcbz_id, "units",
      $               "Tesla") )
-
             CALL check( nf90_def_var(cncid, "vcbp", nf90_double,     
      $               (/r_id, z_id, i_id/), vcbp_id) )
             CALL check( nf90_put_att(cncid, vcbp_id, "long_name",
      $               "Toroidal vacuum field") )
             CALL check( nf90_put_att(cncid, vcbp_id, "units",
      $               "Tesla") )
-
-
             CALL check( nf90_enddef(cncid) )
 
             CALL check( nf90_put_var(cncid, vcbr_id,
