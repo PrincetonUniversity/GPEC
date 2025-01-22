@@ -4,20 +4,20 @@
 
       IMPLICIT NONE
 
-      LOGICAL :: riccati_out,parflow_flag,PeOhmOnly_flag
+      LOGICAL :: riccati_out,parflow_flag,PeOhmOnly_flag,width_flag
 
       CONTAINS
 c-----------------------------------------------------------------------
 c     calculate delta based on riccati w_der formulation.
 c-----------------------------------------------------------------------
       FUNCTION riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
-     $     iinQ,inx,iny)
+     $     iinQ,inx,iny,riccati,dels_db)
 
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
 	  REAL(r8),INTENT(IN) :: intau
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
-      COMPLEX(r8) :: riccati
+      COMPLEX(r8), INTENT(OUT) :: riccati,dels_db
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
 
@@ -101,6 +101,7 @@ c-----------------------------------------------------------------------
       
       CALL w_der(neq,x,y,dy)
       riccati=pi/dy(1)
+      dels_db=( -pi/(1+1/intau)**0.5 )*(1/inds)*dy(1)
       DEALLOCATE(atol,y,dy,iwork,rwork)      
 
       END FUNCTION riccati
