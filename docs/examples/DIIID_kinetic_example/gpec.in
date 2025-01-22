@@ -55,11 +55,10 @@
    singcoup_flag=f          ! Calculate coupling of each m to resonant surfaces
    singfld_flag=t           ! Output of resonant surface quantities (flux,current,etc.)
    vsingfld_flag=f          ! Output of vacuum resonant surface quantities
-   callen_flag=t            ! Calculate Callen resonant field penetration threshold (requires kinetic profiles from pentrc.in)
-   slayer_flag=t            ! Calculate threshold based on two-fluid slayer scheme
+   singthresh_flag=f        ! Calculate SLAYRE and CALLEN's resonant field penetration threshold (requires kinetic profiles from pentrc.in)
 
    pmodb_flag=f             ! Outputs delta-B_Lagrangian
-   xbnormal_flag=t          ! Outputs normal displacement and field in plasma
+   xbnormal_flag=t          ! Outputs normal displacement and field in plasma1
    vbnormal_flag=f          ! Outputs vacuum normal displacement and field in plasma
    xclebsch_flag=t          ! Outputs clebsch coordinate displacement for PENT
    dw_flag=t                ! Outputs self-consistent energy and torque profiles (when kin_flag=t from DCON)
