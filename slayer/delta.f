@@ -11,13 +11,14 @@ c-----------------------------------------------------------------------
 c     calculate delta based on riccati w_der formulation.
 c-----------------------------------------------------------------------
       FUNCTION riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
-     $     iinQ,inx,iny,riccati,dels_db)
+     $     iinQ,inx,iny)
 
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
 	  REAL(r8),INTENT(IN) :: intau
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
-      COMPLEX(r8), INTENT(OUT) :: riccati,dels_db
+      COMPLEX(r8) :: delta,dels_db
+      COMPLEX(r8), DIMENSION(2) :: riccati
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
 
@@ -100,8 +101,9 @@ c-----------------------------------------------------------------------
       ! w=0 when Q=Q_e. Why?
       
       CALL w_der(neq,x,y,dy)
-      riccati=pi/dy(1)
+      delta=pi/dy(1)
       dels_db=( -pi/(1+1/intau)**0.5 )*(1/inds)*dy(1)
+      riccati=(/delta,dels_db/)
       DEALLOCATE(atol,y,dy,iwork,rwork)      
 
       END FUNCTION riccati
