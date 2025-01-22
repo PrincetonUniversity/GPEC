@@ -1379,14 +1379,14 @@ c-----------------------------------------------------------------------
             CALL cspline_copy(kelmm(i),ktmats(i))
             IF (ktanh_flag) THEN
                DO ipsi=0,kwmats(1)%mx
-                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+                  ktmats(i)%fs(ipsi,:) = kinfac2*ktmats(i)%fs(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
-                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+                  ktmats(i)%fs1(ipsi,:) = kinfac2*ktmats(i)%fs1(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
                ENDDO
             ELSE
-               ktmats(i)%fs = kinfac1*ktmats(i)%fs
-               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+               ktmats(i)%fs = kinfac2*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
             ENDIF
          ENDDO
 c-----------------------------------------------------------------------
@@ -1422,14 +1422,14 @@ c-----------------------------------------------------------------------
             CALL cspline_copy(kelmm(i),ktmats(i))
             IF (ktanh_flag) THEN
                DO ipsi=0,kwmats(1)%mx
-                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+                  ktmats(i)%fs(ipsi,:) = kinfac2*ktmats(i)%fs(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
-                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+                  ktmats(i)%fs1(ipsi,:) = kinfac2*ktmats(i)%fs1(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
                ENDDO
             ELSE
-               ktmats(i)%fs = kinfac1*ktmats(i)%fs
-               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+               ktmats(i)%fs = kinfac2*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
             ENDIF
          ENDDO
 c-----------------------------------------------------------------------
@@ -1465,14 +1465,14 @@ c-----------------------------------------------------------------------
             CALL cspline_copy(kelmm(i),ktmats(i))
             IF (ktanh_flag) THEN
                DO ipsi=0,kwmats(1)%mx
-                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+                  ktmats(i)%fs(ipsi,:) = kinfac2*ktmats(i)%fs(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
-                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+                  ktmats(i)%fs1(ipsi,:) = kinfac2*ktmats(i)%fs1(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
                ENDDO
             ELSE
-               ktmats(i)%fs = kinfac1*ktmats(i)%fs
-               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+               ktmats(i)%fs = kinfac2*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
             ENDIF
          ENDDO
       ELSE
