@@ -32,6 +32,8 @@ c-----------------------------------------------------------------------
       LOGICAL :: wv_farwall_flag=.TRUE.
       REAL(r8) :: psilow=1e-4
       REAL(r8) :: psihigh=1-1e-6
+      REAL(r8) :: qlow=0
+      REAL(r8) :: qhigh=1e3
       REAL(r8) :: newq0=0
       REAL(r8) :: sp_pfac=1
       REAL(r8) :: sp_dx1=1e-3,sp_dx2=1e-3

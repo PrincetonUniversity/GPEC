@@ -39,7 +39,7 @@ c-----------------------------------------------------------------------
       INTEGER :: ipsi,itheta,mx,my
       INTEGER, PARAMETER :: me=3
       REAL(r8) :: psifac,theta,f0,f0fac,ffac,r,rfac,jacfac,w11,w12,bp,
-     $     bt,b,xm,dx,rholow,rhohigh,eta,delpsi,q
+     $     bt,b,xm,dx,rholow,rhohigh,eta,delpsi,q,cutfrac,cut_psi
       REAL(r8), DIMENSION(3,3) :: v
       REAL(r8), DIMENSION(2, mpsi+1) :: xdx
       REAL(r8),DIMENSION(:,:),ALLOCATABLE :: x,y,r2,deta
@@ -127,6 +127,52 @@ c-----------------------------------------------------------------------
       CALL spline_alloc(sq,mpsi,4)
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
+c-----------------------------------------------------------------------
+c     reset psilow and psihigh cutoffs based on [qlow,qhigh]
+c-----------------------------------------------------------------------
+      !sq_in%xs=(psi-psi(0))/psi(mx)-psi(0)
+      !sq_in%fs(:,1)=f
+      !sq_in%fs(:,2)=p*mu0
+      !sq_in%fs(:,3)=q
+      write(*,'(A,f6.4,A,f6.4)')
+     $     " Input psilow = ",psilow,", psihigh = ",psihigh
+      do ipsi=1,mx
+        if( sq_in%fs(ipsi,3) > qhigh ) then
+          !cutfrac = (q(ipsi)-qhigh)/(q(ipsi)-q(ipsi-1))
+          cutfrac= ( sq_in%fs(ipsi,3) - qhigh ) /
+     $         ( sq_in%fs(ipsi,3) - sq_in%fs(ipsi-1,3) )
+          !cut_psi = psi(ipsi-1)*cutfrac + psi(ipsi)*(1-cutfrac)
+          cut_psi= sq_in%xs(ipsi-1)*cutfrac + sq_in%xs(ipsi)*(1-cutfrac)
+          !cutq= sq_in%fs(ipsi-1,3)*cutfrac+sq_in%fs(ipsi,3)*(1-cutfrac)
+          
+          if( cut_psi < psihigh ) then
+            psihigh = cut_psi
+            write(*,'(A,f7.4,A,f6.4)')
+     $           " qhigh = ",qhigh," resets psihigh to ",psihigh
+          endif
+          exit
+        endif
+      enddo
+      do ipsi=ipsi-1,0,-1 !start at outer cutoff
+        if( sq_in%fs(ipsi,3) < qlow ) then
+          !cutfrac = (q(ipsi)-qhigh)/(q(ipsi)-q(ipsi+1))
+          cutfrac= ( sq_in%fs(ipsi,3) - qlow ) /
+     $         ( sq_in%fs(ipsi,3) - sq_in%fs(ipsi+1,3) )
+          !cut_psi = psi(ipsi-1)*cutfrac + psi(ipsi)*(1-cutfrac)
+          cut_psi= sq_in%xs(ipsi+1)*cutfrac + sq_in%xs(ipsi)*(1-cutfrac)
+
+          if( cut_psi > psilow ) then
+            psilow = cut_psi
+            write(*,'(A,f7.4,A,f6.4)')
+     $           " qlow = ",qlow," resets psilow to ",psilow
+          endif
+          exit
+        endif
+      enddo
+      if( psihigh<psilow ) then
+        write(*,*) "ERROR: psihigh is less than psilow."
+        stop
+      endif
 c-----------------------------------------------------------------------
 c     set up radial grid
 c-----------------------------------------------------------------------
