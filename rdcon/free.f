@@ -20,6 +20,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE free_mod
       USE ode_mod
+      USE dcon_netcdf_mod
       IMPLICIT NONE
 
       INTEGER :: msol_ahb=-1
@@ -48,23 +49,26 @@ c-----------------------------------------------------------------------
       LOGICAL, PARAMETER :: normalize=.TRUE.
       CHARACTER(1), DIMENSION(mpert,msol) :: star
       INTEGER :: ipert,jpert,isol,info,lwork
-      INTEGER, DIMENSION(mpert) :: ipiv,m
+      INTEGER, DIMENSION(mpert) :: ipiv,m,eindex
       INTEGER, DIMENSION(1,msol) :: imax
       REAL(r8) :: v1
-      REAL(r8), DIMENSION(mpert) :: ep,ev,et,singfac
+      REAL(r8), DIMENSION(mpert) :: singfac
       ! eigenvalues are complex for gpec
-      COMPLEX(r8), DIMENSION(mpert) :: epc,evc,etc
+      COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et,tt
 
       REAL(r8), DIMENSION(3*mpert-1) :: rwork
+      REAL(r8), DIMENSION(2*mpert) :: rwork2
       COMPLEX(r8) :: phase,norm
       COMPLEX(r8), DIMENSION(2*mpert-1) :: work
+      COMPLEX(r8), DIMENSION(2*mpert+1) :: work2
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wp,wv,wt,wt0,temp,wpt,wvt
       COMPLEX(r8), DIMENSION(mpert,mpert) :: nmat,smat
+      COMPLEX(r8), DIMENSION(mpert,mpert) :: vl,vr
       CHARACTER(24), DIMENSION(mpert) :: message
-      LOGICAL, PARAMETER :: complex_flag=.TRUE.
+      LOGICAL, PARAMETER :: complex_flag=.TRUE.,wall_flag=.FALSE.
       ! RDCON mutual inductance calculations not implemented
-      LOGICAL :: wv_farwall_flag=.FALSE., farwal_flag=.FALSE.
-      LOGICAL :: wall_flag=.FALSE.
+      LOGICAL :: wv_farwall_flag=.FALSE.
+      LOGICAL :: farwal_flag=.FALSE.
 
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
@@ -73,11 +77,13 @@ c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
  10   FORMAT(1x,"Energies: plasma = ",es10.3,", vacuum = ",es10.3,
-     $     ", total = ",es10.3)
- 20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",5x,"total"/)
- 30   FORMAT(i6,1p,3e11.3,a)
- 40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",5x,"vacuum",5x,"total"/)
- 50   FORMAT(2i6,1p,3e11.3,a)
+     $     ", real = ",es10.3,", imaginary = ",es10.3)
+ 20   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum",2x,"re total",2x,
+     $     "im total"/)
+ 30   FORMAT(i6,1p,4e11.3,a)
+ 40   FORMAT(/3x,"isol",2x,"imax",3x,"plasma",5x,"vacuum",2x,"re total",
+     $     2x,"im total"/)
+ 50   FORMAT(2i6,1p,4e11.3,a)
  60   FORMAT(/2x,"ipert",4x,"m",4x,"re wt",6x,"im wt",6x,"abs wt"/)
  70   FORMAT(2i6,1p,3e11.3,2x,a)
  80   FORMAT(/3x,"isol",3x,"plasma",5x,"vacuum"/)
@@ -143,12 +149,20 @@ c-----------------------------------------------------------------------
          wv(:,ipert)=wv(:,ipert)*singfac
       ENDDO
 c-----------------------------------------------------------------------
-c     compute energy eigenvalues.
+c     compute complex energy eigenvalues.
 c-----------------------------------------------------------------------
       wt=wp+wv
       wt0=wt
-      lwork=2*mpert-1
-      CALL zheev('V','U',mpert,wt,mpert,et,work,lwork,rwork,info)
+      lwork=2*mpert+1
+      CALL zgeev('V','V',mpert,wt,mpert,et,
+     $        vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+      eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+      CALL bubble(REAL(et),eindex,1,mpert)
+      tt=et
+      DO ipert=1,mpert
+         wt(:,ipert)=vr(:,eindex(mpert+1-ipert))
+         et(ipert)=tt(eindex(mpert+1-ipert))
+      ENDDO
 c-----------------------------------------------------------------------
 c     normalize eigenfunction and energy.
 c-----------------------------------------------------------------------
@@ -185,6 +199,9 @@ c-----------------------------------------------------------------------
          ep(ipert)=wpt(ipert,ipert)
          ev(ipert)=wvt(ipert,ipert)
       ENDDO
+      plasma1=REAL(ep(1))
+      vacuum1=REAL(ev(1))
+      total1=REAL(et(1))
 c-----------------------------------------------------------------------
 c     write data for ahb and deallocate.
 c-----------------------------------------------------------------------
@@ -195,16 +212,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------
-      ! gpec assumes complex eigenvalues
-      DO ipert=1,mpert
-        epc(ipert) = DCMPLX(ep(ipert),0)
-        evc(ipert) = DCMPLX(ev(ipert),0)
-        etc(ipert) = DCMPLX(et(ipert),0)
-      ENDDO
       IF(bin_euler)THEN
          WRITE(euler_bin_unit)3
-         WRITE(euler_bin_unit)epc
-         WRITE(euler_bin_unit)etc
+         WRITE(euler_bin_unit)ep
+         WRITE(euler_bin_unit)et
          WRITE(euler_bin_unit)wt
          WRITE(euler_bin_unit)wt0
          WRITE(euler_bin_unit)wv_farwall_flag
@@ -212,17 +223,16 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write to screen and copy to output.
 c-----------------------------------------------------------------------
-      WRITE(*,10)ep(1),ev(1),et(1)
-      plasma1=ep(1)
-      vacuum1=ev(1)
-      total1=et(1)
+      IF(verbose) WRITE(*,10) REAL(ep(1)),REAL(ev(1)),
+     $     REAL(et(1)),AIMAG(et(1))
 c-----------------------------------------------------------------------
 c     write eigenvalues to file.
 c-----------------------------------------------------------------------
       message=""
       WRITE(out_unit,'(/1x,a)')"Total Energy Eigenvalues:"
       WRITE(out_unit,20)
-      WRITE(out_unit,30)(isol,ep(isol),ev(isol),et(isol),
+      WRITE(out_unit,30)(isol,REAL(ep(isol)),REAL(ev(isol)),
+     $     REAL(et(isol)),AIMAG(et(isol)),
      $     TRIM(message(isol)),isol=1,mpert)
       WRITE(out_unit,20)
 c-----------------------------------------------------------------------
@@ -232,8 +242,9 @@ c-----------------------------------------------------------------------
       m=mlow+(/(isol,isol=0,mpert-1)/)
       DO isol=1,mpert
          WRITE(out_unit,40)
-         WRITE(out_unit,50)isol,imax(1,isol),ep(isol),ev(isol),et(isol),
-     $        TRIM(message(isol))
+         WRITE(out_unit,50)isol,imax(1,isol),REAL(ep(isol)),
+     $         REAL(ev(isol)),REAL(et(isol)),
+     $         AIMAG(et(isol)),TRIM(message(isol))
          WRITE(out_unit,60)
          WRITE(out_unit,70)(ipert,m(ipert),wt(ipert,isol),
      $        ABS(wt(ipert,isol)),star(ipert,isol),ipert=1,mpert)
@@ -251,17 +262,45 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
       ENDDO
 c-----------------------------------------------------------------------
-c     compute and print separate plasma and vacuum eigenvalues.
+c     compute separate plasma and vacuum eigenvalues.
 c-----------------------------------------------------------------------
-      CALL zheev('V','U',mpert,wp,mpert,ep,work,lwork,rwork,info)
-      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
-      WRITE(out_unit,*)"Separate Energy Eigenvalues:"
-      WRITE(out_unit,80)
-      WRITE(out_unit,90)(isol,ep(isol),ev(isol),isol=1,mpert)
-      WRITE(out_unit,80)
+      ! CALL zheev('V','U',mpert,wp,mpert,ep,work,lwork,rwork,info)
+      ! CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info)
+      ! WRITE(out_unit,*)"Separate Energy Eigenvalues:"
+      ! WRITE(out_unit,80)
+      ! WRITE(out_unit,90)(isol,ep(isol),ev(isol),isol=1,mpert)
+      ! WRITE(out_unit,80)
 
-      IF (.NOT.ALLOCATED(galwt)) ALLOCATE(galwt(mpert,mpert))
-      galwt=wt*psio*twopi*1e-3
+      ! IF (.NOT.ALLOCATED(galwt)) ALLOCATE(galwt(mpert,mpert))
+      ! galwt=wt*psio*twopi*1e-3
+      
+
+
+
+
+
+
+
+      lwork=2*mpert+1      
+      CALL zgeev('V','V',mpert,wp,mpert,ep,
+     $     vl,mpert,vr,mpert,work2,lwork,rwork2,info)
+      eindex(1:mpert)=(/(ipert,ipert=1,mpert)/)
+      CALL bubble(REAL(ep),eindex,1,mpert)
+      tt=ep
+      DO ipert=1,mpert
+         wp(:,ipert)=vr(:,eindex(mpert+1-ipert))
+         ep(ipert)=tt(eindex(mpert+1-ipert))
+      ENDDO
+      CALL zheev('V','U',mpert,wv,mpert,ev,work,lwork,rwork,info) 
+
+c-----------------------------------------------------------------------
+c     optionally write netcdf file.
+c-----------------------------------------------------------------------
+      IF(netcdf_out) CALL dcon_netcdf_out(wp,wv,wt,wt0,ep,ev,et)
+c-----------------------------------------------------------------------
+c     deallocate.
+c-----------------------------------------------------------------------
+      ! CALL dcon_dealloc(0)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------
@@ -449,7 +488,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE free_ahb_write(nmat,smat,wt,et)
 
       COMPLEX(r8), DIMENSION(mpert,mpert), INTENT(IN) :: nmat,smat,wt
-      REAL(r8), DIMENSION(mpert), INTENT(IN) :: et
+      COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: et
 
       INTEGER :: itheta,ipert,isol,m
       INTEGER, DIMENSION(mpert) :: mvec

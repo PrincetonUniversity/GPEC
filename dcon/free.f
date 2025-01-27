@@ -278,7 +278,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
       ENDDO
 c-----------------------------------------------------------------------
-c     compute and print separate plasma and vacuum eigenvalues.
+c     compute separate plasma and vacuum eigenvalues.
 c-----------------------------------------------------------------------
       lwork=2*mpert+1
       CALL zgeev('V','V',mpert,wp,mpert,ep,
