@@ -21,6 +21,7 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE free_mod
       USE ode_mod
+      USE sym_mod
       USE stride_netcdf_mod
       IMPLICIT NONE
 
@@ -292,6 +293,7 @@ c-----------------------------------------------------------------------
 c     optionally write netcdf file.
 c-----------------------------------------------------------------------
       IF(present(op_netcdf_out))THEN
+         IF(op_netcdf_out) CALL symmetrize(delta_prime_mat)
          IF(op_netcdf_out) CALL stride_netcdf_out(wp,wv,wt,ep,ev,et,
      $          delta_prime_mat)
       ENDIF

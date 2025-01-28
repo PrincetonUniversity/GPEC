@@ -29,6 +29,7 @@ OBJS = \
 	sing.o \
 	zvode1.o \
 	ode.o \
+	sym.o \
 	stride_netcdf.o \
 	free.o \
 	riccati.o \
@@ -85,6 +86,7 @@ sing.o: fourfit.o
 zvode1.o: ../zvode/zvode.o ../zlange/zlange.o
 riccati.o: sing.o
 ode.o: sing.o debug.o zvode1.o riccati.o
+sym.o: dcon_mod.o
 stride_netcdf.o: dcon_mod.o
-free.o: ode.o stride_netcdf.o
+free.o: ode.o stride_netcdf.o sym.o
 stride.o: bal.o free.o mercier.o
