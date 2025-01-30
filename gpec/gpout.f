@@ -4739,19 +4739,19 @@ c-----------------------------------------------------------------------
             CALL check( nf90_inq_dimid(cncid,"R",r_id) )
             CALL check( nf90_inq_dimid(cncid,"z",z_id) )
             CALL check( nf90_redef(cncid))
-            CALL check( nf90_def_var(cncid, "vcbr", nf90_double,     
+            CALL check( nf90_def_var(cncid, "b_r_vacuum", nf90_double,     
      $               (/r_id, z_id, i_id/), vcbr_id) )
             CALL check( nf90_put_att(cncid, vcbr_id, "long_name",
      $               "Radial vacuum field") )
             CALL check( nf90_put_att(cncid, vcbr_id, "units",
      $               "Tesla") )
-            CALL check( nf90_def_var(cncid, "vcbz", nf90_double,     
+            CALL check( nf90_def_var(cncid, "b_z_vacuum", nf90_double,     
      $               (/r_id, z_id, i_id/), vcbz_id) )
             CALL check( nf90_put_att(cncid, vcbz_id, "long_name",
      $               "Vertical vacuum field") )
             CALL check( nf90_put_att(cncid, vcbz_id, "units",
      $               "Tesla") )
-            CALL check( nf90_def_var(cncid, "vcbp", nf90_double,     
+            CALL check( nf90_def_var(cncid, "b_p_vacuum", nf90_double,     
      $               (/r_id, z_id, i_id/), vcbp_id) )
             CALL check( nf90_put_att(cncid, vcbp_id, "long_name",
      $               "Toroidal vacuum field") )
