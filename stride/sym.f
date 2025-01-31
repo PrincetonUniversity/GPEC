@@ -29,14 +29,14 @@ c-----------------------------------------------------------------------
 
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: dp
 
-      INTEGER :: m,ising,jsing,itheta,mthsurf,npsi,ipsi      
+      INTEGER :: m,ising,jsing,itheta,mthsurf,ipsi,jpsi,npsi,idx
       INTEGER, DIMENSION(mpert) :: mvec
-      REAL(r8) :: resnum,resm_sing, I
+      REAL(r8) :: resnum,resm_sing,min_diff,dtheta
       INTEGER, DIMENSION(msing) :: resm      
       LOGICAL :: is_hermitian
-      REAL(r8) :: tolerance
+      REAL(r8) :: tolerance, dx
       REAL(r8), DIMENSION(0:mtheta) :: r,z,theta
-
+      REAL(r8), DIMENSION(sq%mx+1) :: I_psin
       REAL(r8),DIMENSION(msing) :: L,f_L,f_S,nu_L,nu_S,DI,J,rho,shear
 
       COMPLEX(r8), DIMENSION(msing,msing) :: A_prime,B_prime,
@@ -51,9 +51,14 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(2,2) :: w
       TYPE(spline_type) :: spl
 
-      npsi = sq%mx+1
+      npsi = sq%mx
 
       psi_a=0.1 !!!!!!!!!!!!!!
+
+      WRITE(*,*)"sq%mx=",sq%mx
+      WRITE(*,*)"npsi=",npsi
+      !WRITE(*,*)"sq%xs=",sq%xs
+
 
       ! construct PEST3 matching data (keep synced with RDCON!)
       A_prime=0.0
@@ -89,36 +94,86 @@ c-----------------------------------------------------------------------
          resm(ising)=resm_sing
       ENDDO
 
+      !WRITE(*,*)"respsi=",respsi
+      WRITE(*,*)"resnum=",resnum
+      WRITE(*,*)"resm=",resm
+
       ! STILL NEED psi_a
-      I = 0
-      DO ipsi=1,npsi
-         !CALL spline_eval(sq,psi(ipsi),0)
-         I = I + 2.0*(sq%f(4) / (sq%fs(ipsi,1)/twopi)) !DB  this is F!
-      ENDDO
+      !I = 0
+      !DO ipsi=1,npsi
+      !   !CALL spline_eval(sq,psi(ipsi),0)
+      !   I = I + 2.0*(sq%f(4) / (sq%fs(ipsi,1)/twopi)) !DB  this is F!
+      !ENDDO
+
+      I_psin(1) = 0.0  ! integral at x=0 is 0
+      
+      !WRITE(*,*)"sq%fs(:,4)=",sq%fs(:,4)
+      !WRITE(*,*)"SIZE(sq%fs(:,4))=",SIZE(sq%fs(:,4))
+
+      !WRITE(*,*)"sq%fs(npsi,4)=",sq%fs(npsi,4)
+
+      !WRITE(*,*)"sq%fs(5,4)=",sq%fs(5,4)
+
+      DO ipsi = 2, npsi
+         I_psin(ipsi) = 0.0
+         DO jpsi = 1, ipsi-1
+            dx = sq%xs(jpsi+1) - sq%xs(jpsi)
+            I_psin(ipsi) = I_psin(ipsi) + 
+     $       (2.0*sq%fs(jpsi,4)/(sq%fs(jpsi,1)/twopi))*dx ! check q
+         END DO
+      END DO
+
+      !WRITE(*,*)"I_psin=",I_psin
 
       DO ising=1,msing
          !resnum=NINT(sing(ising)%q*nn)-mlow+1
          respsi=sing(ising)%psifac
-         CALL spline_eval(sq,respsi,1)
+         WRITE(*,*)"respsi=",respsi
 
-         DO itheta=0,mthsurf
-            CALL bicube_eval(rzphi,respsi,theta(itheta),1)
-            jac=rzphi%f(4)
-            w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
-            w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
-            delpsi=SQRT(w(1,1)**2+w(1,2)**2)
+         !!! FIND CORRECT I_PSIN INDEX
+         min_diff = abs(sq%xs(1) - respsi)
+         idx = 1
+    
+         do ipsi = 2, npsi
+            if (abs(sq%xs(ipsi) - respsi) < min_diff) then
+               min_diff = abs(sq%xs(ipsi) - respsi)
+               idx = ipsi
+            end if
+         end do
 
-            J(ising)=J(ising)+(1.0/delpsi**2)*jac!*(1.0/twopi) !DB !!!
-         ENDDO
+         WRITE(*,*)"idx=",idx 
 
-         rho(ising) = (J(ising) * (sq%fs(respsi,1)/twopi))/sq%f(4) !DB
+         !CALL spline_eval(sq,respsi,1)
+         dtheta = twopi / real(mthsurf)
+
+         !DO itheta=0,mthsurf
+         !   CALL bicube_eval(rzphi,respsi,theta(itheta),1)
+         !   jac=rzphi%f(4)
+         !   w(1,1)=(1+rzphi%fy(2))*twopi**2*rfac*r(itheta)/jac
+         !   w(1,2)=-rzphi%fy(1)*pi*r(itheta)/(rfac*jac)
+         !   delpsi=SQRT(w(1,1)**2+w(1,2)**2)
+         !   WRITE(*,*)"delpsi=",delpsi
+
+         !   J(ising)=J(ising)+(1.0/delpsi**2)*0.5*dtheta!jac!*(1.0/twopi) !DB !!!
+         !ENDDO
+         
+         WRITE(*,*)"J=",J
+
+         rho(ising) = (J(ising) * (sq%fs(idx,1)/twopi))/sq%f(4) !DB
          shear(ising)=sing(ising)%q1
+         WRITE(*,*)"rho=",rho
+         WRITE(*,*)"sq%f(4)=",sq%f(4)
 
-         L(ising)=I*(J(ising)*((resm(ising)*(sq%fs(respsi,1)/twopi) 
-     $    )/sq%f(4))**2+(nn * psi_a)**2 ) !DB
+         L(ising)=I_psin(idx)*(J(ising)*((resm(ising)*
+     $    (sq%fs(idx,1)/twopi))/sq%f(4))**2+(nn * psi_a)**2 ) !DB
+
+         WRITE(*,*)"L=",L
+         WRITE(*,*)"sq%fs(respsi,1)=",sq%fs(respsi,1)
+         WRITE(*,*)"sq%fs(idx,1)=",sq%fs(idx,1)
 
          ! CALL mercier_mod
-         DI(ising) = locstab%fs(respsi,1)/sq%xs(respsi) !DB
+         DI(ising) = locstab%fs(idx,1)/sq%xs(idx) !DB
+         WRITE(*,*)"DI=",DI
 
          nu_L(ising) = 0.5 - SQRT(-DI(ising)) !DB
          nu_S(ising) = 0.5 + SQRT(-DI(ising)) !DB
