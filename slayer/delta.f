@@ -105,6 +105,103 @@ c-----------------------------------------------------------------------
 
       END FUNCTION riccati
 c-----------------------------------------------------------------------
+c     calculate delta based on riccati w_der formulation.
+c-----------------------------------------------------------------------
+      FUNCTION riccati_del_s(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
+     $     inpe,iinQ,inx,iny)
+
+      REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
+	  REAL(r8),INTENT(IN) :: intau
+      REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
+      COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
+      COMPLEX(r8) :: riccati_del_s
+
+      INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
+
+      REAL(r8) :: xintv,x,xout,rtol,jac,xmin
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: y,dy
+
+      INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,atol,rwork
+
+      Q=inQ
+      IF(present(iinQ)) Q=inQ+ifac*iinQ
+      Q_e=inQ_e
+      Q_i=inQ_i
+      pr=inpr
+      pe=inpe
+      c_beta=inc_beta
+      ds=inds
+      tau=intau
+
+      IF ((layfac>0).AND.(ABS(Q-Q_e)<layfac)) THEN
+         Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
+      ENDIF
+
+      neq = 2
+      itol = 2
+      rtol = 1e-7            !1e-7*pr**0.4 ! !1e-7 at front 1e-6 !e-4
+      ALLOCATE(atol(neq),y(1),dy(1))
+      atol(:) = 1e-7*pr**0.4 ! 1e-8 !e-4
+      itask = 2
+      istate = 1
+      iopt = 0
+      mf = 10
+      liw = 20
+      lrw = 22+16*neq
+      ALLOCATE(iwork(liw),rwork(lrw))
+
+!     MXSTEP?
+      iopt = 1
+      iwork=0
+      iwork(6)=10000 !5000 ! maximum step size, e.g. 50000
+      rwork=0
+!      x=10.0*(1.0+log10(Q/pr))
+      x=20.0
+      xmin=1e-3
+      IF(present(inx)) x=inx
+      xout=xmin
+      y(1)=-c_beta/sqrt((1+tau))/ds*x**2.0 ! it was (1+tau*ds). To be updated.
+      IF(present(iny)) y(1)=iny
+!      y(1)=0.5-ifac*10.0
+!      WRITE(*,*)y(1)
+
+
+      IF (riccati_out) THEN
+         istep = 1
+         itask = 2
+         OPEN(UNIT=bin_unit,FILE='slayer_riccati_profile_n'//
+     $      TRIM(sn)//'.bin',STATUS='UNKNOWN',
+     $      POSITION='REWIND',FORM='UNFORMATTED')
+
+         OPEN(UNIT=out2_unit,FILE='slayer_riccati_profile_n'//
+     $      TRIM(sn)//'.out',STATUS='UNKNOWN')
+         WRITE(out2_unit,'(1x,3(a17))'),"x","RE(y)","IM(y)"
+         DO WHILE (x>xout)
+            istep=istep+1
+            CALL lsode(w_der,neq,y,x,xout,itol,rtol,atol,
+     $           itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+            WRITE(bin_unit)REAL(x,4),REAL(REAL(y),4),REAL(AIMAG(y),4)
+            WRITE(out2_unit,'(1x,3(es17.8e3))')x,REAL(y),AIMAG(y)
+         ENDDO
+         CLOSE(bin_unit)
+         CLOSE(out2_unit)
+      ELSE
+         istep = 1
+         itask = 1
+         CALL lsode(w_der,neq,y,x,xout,itol,rtol,atol,
+     $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
+
+      ENDIF
+
+      ! w=0 when Q=Q_e. Why?
+
+      CALL w_der(neq,x,y,dy)
+      riccati_del_s=pi/dy(1)
+      DEALLOCATE(atol,y,dy,iwork,rwork)
+
+      END FUNCTION riccati_del_s
+c-----------------------------------------------------------------------
 c     riccati integration.
 c-----------------------------------------------------------------------
       SUBROUTINE w_der(neq,x,y,dy)
