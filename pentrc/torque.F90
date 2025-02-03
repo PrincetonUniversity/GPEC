@@ -180,7 +180,7 @@ module torque
         integer :: ix, iy
         real(r8), dimension(3) :: geom_f, eqfun_f, eqfun_fx, eqfun_fy
         real(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy, sq_s_f
-        real(r8), dimension(8) :: kin_f, kin_f1
+        real(r8), dimension(9) :: kin_f, kin_f1
         complex(r8), dimension(mpert) :: xs_m1_f, xs_m2_f, xs_m3_f
         complex(r8), dimension(mpert) :: dbob_m_f, divx_m_f
         complex(r8), dimension(mpert**2) :: flatmat
