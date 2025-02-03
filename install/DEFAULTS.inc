@@ -229,7 +229,7 @@
 #   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
 #
 #
-# On mac OSX
+# On intel mac OSX
 #   If one has installed the free gfortran compiler and built netcdf and lapack,
 #   a typical set of paths looks like the following.
 #     $ make v
@@ -252,6 +252,39 @@
 #   Now compile using
 #     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
 #
+#
+#   On ARM mac OSX using Apple's optimized accelerate library
+#   The accelerate framework contains the necessary math libraries from
+#   BLAS and LAPACK, so you should compile netcdf-c and netcdf-fortran
+#   locally (or install them via a package manager like conda or brew). 
+#   If you install netcdf-c & -fortran using a package manager, you  
+#   can do `echo $HOMEBREW_PREFIX` or `echo CONDA_PREFIX` to get the
+#   appropriate NETCDFHOME variable. Example with:
+#   CC = /opt/homebrew/bin/gcc-14
+#   FC = /opt/homebrew/bin/gfortran-14
+#   NETCDFHOME = /opt/homebrew
+#   LAPACKHOME = /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/
+#   
+#   $ make v
+#   ------------------------------------------------------------
+#   Defaults tailored for 
+#   Compiling with FC = /opt/homebrew/bin/gfortran-14
+#      using math libraries -llapack -lblas
+#      from /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/
+#      including /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/
+#      and netcdf libraries -lnetcdff -lnetcdf
+#      from /opt/homebrew/lib /opt/homebrew/lib
+#      including /opt/homebrew/include
+#      and compiler libraries 
+#      from .
+#      including .
+#      and using OMPFLAG -fopenmp
+#   
+#   Set environment FC,LAPACKHOME,NETCDFHOME to change these
+#   ------------------------------------------------------------
+#   
+#   Now compile using
+#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
 #
 # Some common modifications of the above settings might include,
 #     $ make FFLAGS="-qopt-report -g -O0 -check all"  # for debugging
