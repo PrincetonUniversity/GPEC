@@ -1038,14 +1038,16 @@ c-----------------------------------------------------------------------
 !$OMP& tphi,kwmat_l,ktmat_l,kwmat,ktmat)
 !$OMP& SHARED(
 !$OMP& rzphi,ion_flag,electron_flag,debug_omp,verbose,cr,idone,
-!$OMP& nn,nl,ft,zi,mi,wdfac,divxfac,mpsi,kwmatls,ktmatls)
+!$OMP& nn,nl,ft,zi,mi,wdfac,divxfac,mpsi,kwmatls,ktmatls,
+!$OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
+!$OMP& dcon_int_zmats)
+
 !$OMP& COPYIN(
 c!!!!!!...from inputs.f90...
 !$OMP& dbob_m,divx_m,kin,xs_m,fnml,
 c!!!!!!...from dcon_interface.f90
-!$OMP& geom, dcon_int_sq,dcon_int_eqfun,dcon_int_rzphi,
-!$OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
-!$OMP& dcon_int_zmats)
+!$OMP& geom, dcon_int_sq,dcon_int_eqfun,dcon_int_rzphi)
+
          DO ipsi=0,mpsi
             DO l=-nl,nl
                CALL SYSTEM_CLOCK(COUNT=t_start)

@@ -1409,8 +1409,8 @@ module torque
         !$omp& private(l,wtw_l,trq) &
         !$omp& reduction(+:elems) &
         !$omp& copyin(dbob_m,divx_m,kin,xs_m,fnml, &
-        !$omp& geom, sq, eqfun, rzphi, &
-        !$omp& smats, tmats, xmats, ymats, zmats)
+        !$omp& geom, sq, eqfun, rzphi)
+        
 #ifdef _OPENMP
             IF(first .and. omp_get_thread_num() == 0)then
                lthreads = omp_get_num_threads()
