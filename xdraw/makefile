@@ -11,6 +11,7 @@ CC += $(CFLAGS)
 LIBDIR= \
 	-L/usr/X11R6/lib64 \
 	-L/opt/local/include \
+	-L/opt/homebrew/include \
 	$(X11_LIB_DIR)
 
 LIBS = \
