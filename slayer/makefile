@@ -40,4 +40,4 @@ gslayer.o : sglobal.o delta.o
 slayer.o : sglobal.o params.o delta.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin slayer
+	rm -f *.o *.mod *.out *.bin slayer *.original

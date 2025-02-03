@@ -91,4 +91,4 @@ pentrc_interface.o: params.o utilities.o special.o inputs.o energy.o pitch.o tor
 pentrc.o:  params.o  pentrc_interface.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin pentrc
+	rm -f *.o *.mod *.out *.bin pentrc *.original

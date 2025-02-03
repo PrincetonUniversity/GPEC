@@ -53,4 +53,4 @@ resist.o: matrix.o
 match.o: ideal.o resist.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin match
+	rm -f *.o *.mod *.out *.bin match *.original

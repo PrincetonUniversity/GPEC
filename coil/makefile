@@ -42,7 +42,7 @@ libcoil: $(OBJS)
 	ar -r ../lib/libcoil.a *.o
 
 clean:
-	rm -f *.o *.mod ../lib/libcoil.a
+	rm -f *.o *.mod ../lib/libcoil.a *.original
 
 
 # dependencies

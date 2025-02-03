@@ -49,4 +49,4 @@ outer_gc.o: field.o restart.o
 orbit.o: inner.o outer.o inner_gc.o outer_gc.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin orbit
+	rm -f *.o *.mod *.out *.bin orbit *.original

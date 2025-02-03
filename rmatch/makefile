@@ -46,4 +46,4 @@ inner.o: deltac.o
 match.o: deltar.o deltac.o inner.o msing.o
 
 clean:
-	rm -f *.o *.mod *.out  *~ match
+	rm -f *.o *.mod *.out  *~ match *.original

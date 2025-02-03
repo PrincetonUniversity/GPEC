@@ -65,7 +65,7 @@ endif
 force:
 
 clean:
-	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff rdcon
+	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff rdcon *.original
 
 rclean: clean
 	cd ../equil; make clean

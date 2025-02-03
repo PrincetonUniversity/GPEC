@@ -24,4 +24,4 @@ utils.o: local.o
 sum.o: utils.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin sum *~
+	rm -f *.o *.mod *.out *.bin sum *~ *.original

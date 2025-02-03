@@ -20,4 +20,4 @@ local.o: io.o
 multi.o: local.o
 
 clean:
-	rm -f *.o *.mod *.out *.bin multi *~
+	rm -f *.o *.mod *.out *.bin multi *~ *.original

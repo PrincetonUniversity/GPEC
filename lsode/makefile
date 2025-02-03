@@ -37,4 +37,4 @@ liblsode: $(OBJS)
 	ar -r ../lib/liblsode.a *.o
 
 clean:
-	rm -f *.o *.a
+	rm -f *.o *.a *.original

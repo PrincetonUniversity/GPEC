@@ -39,4 +39,4 @@ vacuum_ut.o: vacuum_global.o
 vacuum_vac.o: vacuum_global.o
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod *.original

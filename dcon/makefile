@@ -63,7 +63,7 @@ dcon: pentrc $(OBJS)
 	cp -f dcon ../bin
 
 clean:
-	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff dcon
+	rm -f *.o *.mod *.out *.bin sum.dat *~ *.diff dcon *.original
 
 # dependencies
 

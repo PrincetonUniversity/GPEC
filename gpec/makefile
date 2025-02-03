@@ -69,7 +69,7 @@ gpec: $(OBJS)
 	cp -f gpec ../bin
 
 clean:
-	rm -f *.o *.mod *.out *.bin gpec
+	rm -f *.o *.mod *.out *.bin gpec *.original
 
 # dependencies
 

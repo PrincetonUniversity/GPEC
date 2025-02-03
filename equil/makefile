@@ -32,7 +32,7 @@ libequil: $(OBJS)
 	ar -r ../lib/libequil.a *.o
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod *.original
 
 # dependencies
 
