@@ -28,6 +28,8 @@ c     declarations.
 c-----------------------------------------------------------------------
       MODULE sing_mod
       USE fourfit_mod
+      use omp_lib
+
       IMPLICIT NONE
 
       INTEGER :: sing_order=2
@@ -74,7 +76,10 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"sing_parallel_alloc: #Threads=",allocThreads
       ENDIF
+
+#ifdef _OPENMP
       IF(allocThreads>0) CALL OMP_SET_NUM_THREADS(allocThreads)
+#endif
 !$OMP PARALLEL DEFAULT(NONE) SHARED(locstab,fmats,sq)
 !$OMP& COPYIN(sq_s_f,fmats_s_f,
 !$OMP& locstab_s_f,sq_s_f1,sq_s_f2,sq_s_f3,
@@ -121,7 +126,9 @@ c-----------------------------------------------------------------------
       IF (verbose_performance_output) THEN
          print *,"sing_asymp: #Threads=",nThreads
       ENDIF
+#ifdef _OPENMP
       IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
+#endif
 !$OMP PARALLEL DEFAULT(NONE)
 !$OMP& SHARED(msing,sing,sing_order,mlow,mhigh,locstab,
 !$OMP& nn,fmats,gmats,kmats,sTime,cr,mpert,mband,

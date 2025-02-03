@@ -31,6 +31,7 @@ c-----------------------------------------------------------------------
       USE sing_mod
       USE zvode1_mod
       USE riccati_mod
+      USE omp_lib
       IMPLICIT NONE
 
       REAL(r8), PARAMETER, PRIVATE :: eps=1e-10
@@ -193,6 +194,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     proceed to integration.
 c-----------------------------------------------------------------------
+#ifdef _OPENMP
          IF (integrate_riccati) THEN
             print *,"Using Riccati for non-parallel integration..."
             CALL OMP_SET_NUM_THREADS(1) !Riccati must not be run in ||.
@@ -207,6 +209,8 @@ c-----------------------------------------------------------------------
             ENDIF
             IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
          ENDIF
+#endif
+
 !$OMP PARALLEL DEFAULT(NONE)
 !.......................................................................
 !$OMP& SHARED(nIntervals,psiPoints,psiInters,psiDirs,sing,axisPsi,

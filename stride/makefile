@@ -8,6 +8,9 @@ F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 .f.o:
 	$(F90) -c $*.f
 
+.F.o:
+	$(F90) -c $*.F
+
 LIBDIR = ../lib
 
 LIBS = \

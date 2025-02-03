@@ -1,6 +1,15 @@
 # This is the makefile for VACUUM.
 
-F90 = $(FC) $(FFLAGS) -zero
+# If using gfortran, the proper syntax is -finit-local-zero.
+# If using ifort, the proper syntax is -zero.
+
+ifneq (,$(findstring ifort,$(FC)))
+    ZEROFLAG=-zero
+else
+    ZEROFLAG=-finit-local-zero
+endif
+
+F90 = $(FC) $(FFLAGS) $(ZEROFLAG)
 
 .f.o:
 	$(F90) -c $*.f

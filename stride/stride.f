@@ -21,6 +21,7 @@ c-----------------------------------------------------------------------
       USE mercier_mod
       USE ode_mod
       USE free_mod
+      USE omp_lib
       IMPLICIT NONE
 
       LOGICAL :: cyl_flag=.FALSE., use_notaknot_splines=.TRUE.,
@@ -243,10 +244,20 @@ c-----------------------------------------------------------------------
 c     prepare code to split: [vac][all else]
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
+
+#ifdef _OPENMP
+
+#else
+      nThreads = 0
+      mainlevelThreads = 1
+#endif
+
       !Note: nThreads+1 code is faster than nThreads.  It allows other
       !      modules to spawn nThreads, despite vac_parallel using 1!
       !      Even if nThread+1 > nProc, experiments suggest it's faster.
       CALL sing_parallel_alloc(nThreads+1)
+
+#ifdef _OPENMP
       CALL OMP_SET_NESTED(.TRUE.)
       IF (vac_parallel .AND. nThreads > 1) THEN
          mainlevelThreads = 2
@@ -254,6 +265,8 @@ c-----------------------------------------------------------------------
          mainlevelThreads = 1
       ENDIF
       CALL OMP_SET_NUM_THREADS(mainlevelThreads)
+#endif
+
       CALL SYSTEM_CLOCK(COUNT=fTime)
       IF (verbose_performance_output) THEN
          print *,"*** thread-alloc time=",REAL(fTime-sTime,8)/REAL(cr,8)
