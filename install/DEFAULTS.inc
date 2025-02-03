@@ -7,7 +7,7 @@
 # required only default user path libraries.
 #
 # With the release of 1.2, the options restricted to more modern compilers
-# compatible wth openmpi.
+# compatible wth openmp.
 # Machine specific instructions are below.
 #
 # Note that GPEC uses git to fetch/update the harvest repository as well as
@@ -20,9 +20,9 @@
 #   Developers may want to load the development branch module to get the latest compiler settings if they've changed since the last release
 #     $ module load mod_gpec gpec/0.0
 #   Alternatively, we can manually load the 2018 intel compiler with supporting libraries,
-#     $ module load intel/2018.u1 openmpi netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#     $ module load intel/2018.u1 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Note that before the netcdf module was properly set up, we had to manually load supporting modules
-#     $ module load intel/2018.u1 openmpi szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
+#     $ module load intel/2018.u1 szip hdf hdf5-parallel/1.10.2 curl netcdf-c/4.6.0 netcdf-fortran/4.4.4 acml/5.3.1/ifort64 git
 #   Any of these should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message,
@@ -49,7 +49,7 @@
 #   Should set all the right flags and run through.
 #
 #   Developers can also load the default intel/11.0.081 and associated libraries,
-#     $ module load intel openmpi netcdf acml/5.3.1/ifort64 git
+#     $ module load intel netcdf acml/5.3.1/ifort64 git
 #   This should properly set up your LD_LIBRARY_PATH and PATH. Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message.
@@ -99,7 +99,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#    $ make FFLAGS="-qopenmp" 2>&1 | tee make.log
+#    $ make OMPFLAG="-qopenmp" 2>&1 | tee make.log
 #
 # On iris.gat.com
 #   Developers should use the ifort compiler and associated netcdf module
@@ -174,7 +174,6 @@
 #     $ export LAPACKHOME=/usr/lib/x86_64-linux-gnu/
 #     $ export NETCDFHOME=/usr/lib/x86_64-linux-gnu/
 #     $ export NETCDFINC=/usr/include
-#     $ export OMPFLAG=''  # should be -fopenmp for gnu compiler, but it raises errors that intel does not
 #   Executing,
 #     $ make v
 #   in this install directory should produce the following verbose message.
@@ -196,8 +195,7 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#     $ make OMPFLAG='' FFLAGS='' 2>&1 | tee make.log
-#   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
+#     $ make FFLAGS='' 2>&1 | tee make.log
 #
 # On NERSC Permutter
 #   GPEC is installed at /global/common/software/m3739/perlmutter/
@@ -225,9 +223,8 @@
 #   ------------------------------------------------------------
 #
 #   Now compile using
-#     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
-#   Note, due to the gfortran -fopenmp incompatibility, STRIDE will fail to compile
-#
+#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#   
 #
 # On intel mac OSX
 #   If one has installed the free gfortran compiler and built netcdf and lapack,
@@ -250,16 +247,16 @@
 #   --------------------------------------------------------------
 #
 #   Now compile using
-#     $ make OMPFLAG='' FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
+#     $ make FFLAGS='-fallow-argument-mismatch' 2>&1 | tee make.log
 #
 #
 #   On ARM mac OSX using Apple's optimized accelerate library
 #   The accelerate framework contains the necessary math libraries from
 #   BLAS and LAPACK, so you should compile netcdf-c and netcdf-fortran
-#   locally (or install them via a package manager like conda or brew). 
-#   If you install netcdf-c & -fortran using a package manager, you  
-#   can do `echo $HOMEBREW_PREFIX` or `echo CONDA_PREFIX` to get the
-#   appropriate NETCDFHOME variable. Example with:
+#   locally (or install them via homebrew). 
+#   If you install netcdf-c & -fortran using homebrew, you  
+#   can do `echo $HOMEBREW_PREFIX` to get the appropriate NETCDFHOME
+#   variable, as it has changed recently. Example with:
 #   CC = /opt/homebrew/bin/gcc-14
 #   FC = /opt/homebrew/bin/gfortran-14
 #   NETCDFHOME = /opt/homebrew
@@ -301,7 +298,7 @@
 # On SNU PLARE's Linux machine
 #   Developers can use intel compilers with the following modules
 #   module load git compiler-rt/latest mkl/latest 
-#   module load netcdf-fortran/intel/4.5.2 openmpi/intel/4.1.1
+#   module load netcdf-fortran/intel/4.5.2
 #   And Set environment variables manually as:
 #     $ export /APP/enhpc/compiler/intel/oneapi/intelpython/python3.7/lib:/APP/netcdf-fortran-4.5.2_gnu/lib64:/usr/local/lib:/APP/MATLAB/R2020a/bin/glnxa64:$LD_LIBRARY_PATH
 #  Executing,
