@@ -1594,7 +1594,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
-      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,hw_crit,hw_sat,hw_min
+      REAL(r8), DIMENSION(msing) :: island_hwidth,visland_hwidth,chirikov,hw_crit,hw_sat,hw_min
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
      $     singflx,singbwp
@@ -1771,20 +1771,16 @@ c-----------------------------------------------------------------------
             hw_crit(ising) = 0.5 * wpol ** (2./3) * sr%f(1) ** (1./3)
      $         * ((27. / 4) * abs(sr%f(1) * delta_callen) ) ** (1./6)
      $         / sqrt(sr%f(1) * delta_rmp)
-            ! computing Callen w_sat and w_min. visland_hwidth is duplicated here
-            shear=mfac(resnum(ising))*
-     $        singtype(ising)%q1/singtype(ising)%q**2
-            unitfun=1.0
-            area=issurfint(unitfun,mthsurf,respsi,0,0)
+            ! computing Callen w_sat and w_min. These are already in units of psi_n
+            ! computing vacuum island width (should be the same as in the vsingfld subroutine)
             visland_hwidth(ising)=
-     $        sqrt(abs(4*vsingfld(ising)*area/
-     $        (twopi*shear*singtype(ising)%q*chi1)))
+     $        SQRT(ABS(4*vsingfld(ising)*area(ising)/
+     $        (twopi*shear*sq%f(4)*chi1)))
             hw_sat(ising) = visland_hwidth(ising) * (delta_rmp/abs(delta_callen)) ** (1./2)
-            hw_min(ising) = 0.5 * (wpol/2*visland_hwidth(ising)) ** 3 * (2*visland_hwidth(ising)/(sr%f(1)*delta_rmp))
+            hw_min(ising) = 0.5 * ((wpol/sr%f1(1))/2*visland_hwidth(ising)) ** 3 * (2*visland_hwidth(ising)/(sr%f(1)*delta_rmp))
             ! convert from meters to psi_n for clear comparision to island_hwidth
             hw_crit(ising) = hw_crit(ising) / sr%f1(1)
-            hw_sat(ising) = hw_sat(ising) / sr%f1(1)
-            hw_min(ising) = hw_min(ising) / sr%f1(1)
+
          ENDIF
 c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
