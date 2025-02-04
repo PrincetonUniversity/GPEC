@@ -1581,7 +1581,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
+     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,wmin_id,wsat_id,bc_id,
      $           ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
      $           rh_id, r1_id,
      $           astat
@@ -1594,8 +1594,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
-
-      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,hw_crit
+      REAL(r8), DIMENSION(msing) :: island_hwidth,chirikov,hw_crit,hw_sat,hw_min
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
      $     singflx,singbwp
@@ -1743,6 +1742,8 @@ c-----------------------------------------------------------------------
             wi_r(ising) = omega_i
          ELSE
             hw_crit(ising) = 0.0
+            hw_sat(ising) = 0.0
+            hw_min(ising) = 0.0
             b_crit(ising) = 0.0
             ti_r(ising) = 0.0
             te_r(ising) = 0.0
@@ -1770,8 +1771,20 @@ c-----------------------------------------------------------------------
             hw_crit(ising) = 0.5 * wpol ** (2./3) * sr%f(1) ** (1./3)
      $         * ((27. / 4) * abs(sr%f(1) * delta_callen) ) ** (1./6)
      $         / sqrt(sr%f(1) * delta_rmp)
+            ! computing Callen w_sat and w_min. visland_hwidth is duplicated here
+            shear=mfac(resnum(ising))*
+     $        singtype(ising)%q1/singtype(ising)%q**2
+            unitfun=1.0
+            area=issurfint(unitfun,mthsurf,respsi,0,0)
+            visland_hwidth(ising)=
+     $        sqrt(abs(4*vsingfld(ising)*area/
+     $        (twopi*shear*singtype(ising)%q*chi1)))
+            hw_sat(ising) = visland_hwidth(ising) * (delta_rmp/abs(delta_callen)) ** (1./2)
+            hw_min(ising) = 0.5 * (wpol/2*visland_hwidth(ising)) ** 3 * (2*visland_hwidth(ising)/(sr%f(1)*delta_rmp))
             ! convert from meters to psi_n for clear comparision to island_hwidth
             hw_crit(ising) = hw_crit(ising) / sr%f1(1)
+            hw_sat(ising) = hw_sat(ising) / sr%f1(1)
+            hw_min(ising) = hw_min(ising) / sr%f1(1)
          ENDIF
 c-----------------------------------------------------------------------
 c     compute threshold by linear drift mhd with slayer module.
@@ -1875,6 +1888,16 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, wc_id, "units", "psi_n") )
          CALL check( nf90_put_att(fncid, wc_id, "long_name",
      $     "Critical width for island growth from Callen model") )
+         CALL check( nf90_def_var(fncid, "w_isl_v_min", nf90_double,
+     $      (/q_id/), wmin_id) )
+         CALL check( nf90_put_att(fncid, wmin_id, "units", "psi_n") )
+         CALL check( nf90_put_att(fncid, wmin_id, "long_name",
+     $     "Minimum island width for growth from Callen model") )
+         CALL check( nf90_def_var(fncid, "w_isl_v_sat", nf90_double,
+     $      (/q_id/), wsat_id) )
+         CALL check( nf90_put_att(fncid, wsat_id, "units", "psi_n") )
+         CALL check( nf90_put_att(fncid, wsat_id, "long_name",
+     $     "Saturated island width from Callen model") )
          CALL check( nf90_def_var(fncid, "Phi_res_crit", nf90_double,
      $      (/q_id/), bc_id) )
          CALL check( nf90_put_att(fncid, bc_id, "units", "T") )
@@ -1946,6 +1969,8 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
          CALL check( nf90_put_var(fncid, wc_id, 2*hw_crit) )
+         CALL check( nf90_put_var(fncid, wmin_id, 2*hw_min) )
+         CALL check( nf90_put_var(fncid, wsat_id, 2*hw_sat) )
          CALL check( nf90_put_var(fncid, bc_id, b_crit) )
          CALL check( nf90_put_var(fncid, k_id, chirikov) )
          CALL check( nf90_put_var(fncid, ti_id, ti_r) )
