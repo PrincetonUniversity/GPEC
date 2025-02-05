@@ -5,6 +5,7 @@ c-----------------------------------------------------------------------
       MODULE gpglobal_mod
       USE bicube_mod
       USE fspline_mod
+      USE omp_lib
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -192,8 +193,16 @@ c-----------------------------------------------------------------------
       SUBROUTINE gpec_stop(message)
 
       CHARACTER(*), INTENT(IN) :: message
-      INTEGER :: hrs,mins,secs
+      INTEGER :: hrs,mins,secs,cpuhrs,cpumins,cpusecs
+      REAL(4) :: cpu_time
 
+      cpu_time = 0
+      CALL gpec_timer(-2,cpu_time)
+      cpusecs = INT(cpu_time)
+      cpuhrs = cpusecs/(60*60)
+      cpumins = (cpusecs-cpuhrs*60*60)/60
+      cpusecs = cpusecs-cpuhrs*60*60-cpumins*60
+      
       CALL DATE_AND_TIME(date,time,zone,values)
       seconds=(values(5)*60+values(6))*60+values(7)+values(8)*1e-3
      $     -seconds
@@ -202,14 +211,30 @@ c-----------------------------------------------------------------------
       mins = (secs-hrs*60*60)/60
       secs = secs-hrs*60*60-mins*60
       IF (verbose) THEN
+         ! write total time since start
+
+#ifdef _OPENMP
+         IF (OMP_GET_MAX_THREADS() > 1) THEN
+            IF(cpuhrs>0)THEN
+               PRINT *,"Total CPU time for GPEC = ",cpuhrs," hours, ",
+     $           cpumins," minutes, ",cpusecs," seconds"
+            ELSEIF(cpumins>0)then
+               PRINT *,"Total CPU time for GPEC = ",
+     $           cpumins," minutes, ",cpusecs," seconds"
+            ELSE
+               PRINT *,"Total CPU time for GPEC = ",cpusecs," seconds"
+            ENDIF
+         ENDIF
+#endif
+         
          IF(hrs>0)THEN
-             PRINT *,"Total cpu time for GPEC = ",hrs," hours, ",
+             PRINT *,"Total wall time for GPEC = ",hrs," hours, ",
      $           mins," minutes, ",secs," seconds"
          ELSEIF(mins>0)then
-             PRINT *,"Total cpu time for GPEC = ",
+             PRINT *,"Total wall time for GPEC = ",
      $           mins," minutes, ",secs," seconds"
          ELSE
-             PRINT *,"Total cpu time for GPEC = ",secs," seconds"
+             PRINT *,"Total wall time for GPEC = ",secs," seconds"
          ENDIF
          WRITE(*,'(1x,2a)')'GPEC STOP => ',TRIM(message)
       ENDIF
@@ -239,9 +264,10 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE gpec_timer(mode,opunit)
+      SUBROUTINE gpec_timer(mode,timeout,opunit)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: mode
+      REAL(4), INTENT(OUT), OPTIONAL :: timeout
       INTEGER, INTENT(IN), OPTIONAL :: opunit
 
       REAL(4) :: time
@@ -256,6 +282,9 @@ c-----------------------------------------------------------------------
          split=0
       ELSEIF(mode==-2)THEN ! Reset split
          split=time-start
+         IF(PRESENT(timeout))THEN
+            timeout=split
+         ENDIF
       ELSEIF(mode>0)THEN ! outputs
          IF(mode==2)THEN ! write split (time since last call)
             split=time-start-split
@@ -287,7 +316,7 @@ c-----------------------------------------------------------------------
          hrs = secs/(60*60)
          mins = (secs-hrs*60*60)/60
          secs = secs-hrs*60*60-mins*60
-         msec = int((split-secs)*1e3)
+         msec = int((split-real(secs,4))*1e3)
          IF(PRESENT(opunit))THEN
             write(opunit,"(1x,a,1p,es10.3,a)")"  total cpu time = ",
      $         split," seconds"

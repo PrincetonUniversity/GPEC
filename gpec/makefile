@@ -8,6 +8,9 @@ export FFLAGS # for sub-makes
 .f.o:
 	$(F90) -c $*.f
 
+.F.o:
+	$(F90) -c $*.F
+
 LIBDIR = ../lib
 
 LIBS = \
