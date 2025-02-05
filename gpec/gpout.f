@@ -1581,8 +1581,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
       INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,wmin_id,wsat_id,bc_id,
-     $           ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
+     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,wmin_id,wsat_id,
+     $           bc_id,ti_id, te_id, ni_id, ne_id, we_id, wi_id, q1_id,
      $           rh_id, r1_id,
      $           astat
 
@@ -1594,7 +1594,8 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(msing) :: area,j_c,aq,asingflx
       REAL(r8), DIMENSION(0:mthsurf) :: delpsi,sqreqb,jcfun
       COMPLEX(r8), DIMENSION(mpert) :: fkaxmn
-      REAL(r8), DIMENSION(msing) :: island_hwidth,visland_hwidth,chirikov,hw_crit,hw_sat,hw_min
+      REAL(r8), DIMENSION(msing) :: island_hwidth,visland_hwidth,
+     $     chirikov,hw_crit,hw_sat,hw_min
       REAL(r8), DIMENSION(nsingcoup,msing) :: op
       COMPLEX(r8), DIMENSION(msing) :: delta,delcur,singcur,
      $     singflx,singbwp
@@ -1776,8 +1777,11 @@ c-----------------------------------------------------------------------
             visland_hwidth(ising)=
      $        SQRT(ABS(4*vsingfld(ising)*area(ising)/
      $        (twopi*shear*sq%f(4)*chi1)))
-            hw_sat(ising) = visland_hwidth(ising) * (delta_rmp/abs(delta_callen)) ** (1./2)
-            hw_min(ising) = 0.5 * ((wpol/sr%f1(1))/2*visland_hwidth(ising)) ** 3 * (2*visland_hwidth(ising)/(sr%f(1)*delta_rmp))
+            hw_sat(ising) = visland_hwidth(ising) 
+     $         * (delta_rmp/abs(delta_callen)) ** (1./2)
+            hw_min(ising) = 0.5 * ((wpol/sr%f1(1))
+     $         /2*visland_hwidth(ising)) ** 3 
+     $         * (2*visland_hwidth(ising)/(sr%f(1)*delta_rmp))
             ! convert from meters to psi_n for clear comparision to island_hwidth
             hw_crit(ising) = hw_crit(ising) / sr%f1(1)
 
@@ -1796,13 +1800,16 @@ c-----------------------------------------------------------------------
          IF (verbose) THEN
 
             IF (callen_threshold_flag .OR. slayer_threshold_flag) THEN
-               IF(ising == 1) WRITE(*,'(1x,7a13)')
+               IF(ising == 1) WRITE(*,'(1x,10a13)')
      $              "psi","q","singflx","chirikov",
-     $              "w_island","w_crit","singflx_crit"
-               WRITE(*,'(1x,es13.3,f13.3,es13.3,f13.3,3es13.3)')
+     $              "w_island","w_crit","singflx_crit",
+     $              "w_sat","w_min","w_vac"
+               WRITE(*,'(1x,es13.3,f13.3,es13.3,f13.3,6es13.3)')
      $              respsi,sq%f(4),ABS(singflx_mn(resnum(ising),ising)),
      $              chirikov(ising),2*island_hwidth(ising),
-     $              2*hw_crit(ising),b_crit(ising)    
+     $              2*hw_crit(ising),b_crit(ising),
+     $              2*hw_sat(ising),2*hw_min(ising),
+                    2*visland_hwidth(ising) ! also printing vacuum island width here for diagnostic purposes    
             ELSE
        
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",
@@ -1831,13 +1838,14 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(1x,a12,es17.8e3)')"sweet-spot =",spot
          WRITE(out_unit,'(1x,a12,1x,I4)')"msing =",msing
          WRITE(out_unit,*)
-         WRITE(out_unit,'(1x,a6,14(1x,a16))')"q","psi",
+         WRITE(out_unit,'(1x,a6,16(1x,a16))')"q","psi",
      $        "real(singflx)","imag(singflx)",
      $        "real(singcur)","imag(singcur)",
      $        "real(singbwp)","imag(singbwp)",
      $        "real(Delta)","imag(Delta)",
      $        "half_w_isl","chirikov",
-     $        "half_w_isl_crit","singflx_crit"
+     $        "half_w_isl_crit","singflx_crit",
+     $        "half_w_sat","half_w_min"
          DO ising=1,msing
             WRITE(out_unit,'(1x,f6.3,14(es17.8e3))')
      $           singtype(ising)%q,singtype(ising)%psifac,
@@ -1847,7 +1855,8 @@ c-----------------------------------------------------------------------
      $           REAL(singbwp(ising)),AIMAG(singbwp(ising)),
      $           REAL(delta(ising)),AIMAG(delta(ising)),
      $           island_hwidth(ising),chirikov(ising),
-     $           hw_crit(ising),b_crit(ising)
+     $           hw_crit(ising),b_crit(ising),
+     $           hw_sat(ising),hw_min(ising)
          ENDDO
          WRITE(out_unit,*)
       ENDIF
