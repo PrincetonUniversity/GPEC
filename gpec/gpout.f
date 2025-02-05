@@ -1809,7 +1809,7 @@ c-----------------------------------------------------------------------
      $              chirikov(ising),2*island_hwidth(ising),
      $              2*hw_crit(ising),b_crit(ising),
      $              2*hw_sat(ising),2*hw_min(ising),
-                    2*visland_hwidth(ising) ! also printing vacuum island width here for diagnostic purposes    
+     $              2*visland_hwidth(ising) ! also printing vacuum island width here for diagnostic purposes    
             ELSE
        
                IF(ising == 1) WRITE(*,'(1x,a12,a12,a12,a12,a12)') "psi",
