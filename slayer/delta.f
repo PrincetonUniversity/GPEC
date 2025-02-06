@@ -108,28 +108,28 @@ c-----------------------------------------------------------------------
 c     calculate delta based on riccati w_der formulation.
 c-----------------------------------------------------------------------
       FUNCTION riccati_del_s(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
-     $     inpe,iinQ,inx,iny)
+     $     inx,iny)
 
-      REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
+      REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inc_beta,inds
 	  REAL(r8),INTENT(IN) :: intau
-      REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
+      REAL(r8),INTENT(IN),OPTIONAL :: inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
       COMPLEX(r8) :: riccati_del_s
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
 
-      REAL(r8) :: xintv,x,xout,rtol,jac,xmin
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: y,dy
+      REAL(r8) :: xintv,x,xout,rtol,jac,xmin,pd,P_hat,alpha
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: W,dW_dq,y,dy
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
       REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,atol,rwork
 
       Q=inQ
-      IF(present(iinQ)) Q=inQ+ifac*iinQ
+      !IF(present(iinQ)) Q=inQ+ifac*iinQ
       Q_e=inQ_e
       Q_i=inQ_i
       pr=inpr
-      pe=inpe
+      !pe=inpe
       c_beta=inc_beta
       ds=inds
       tau=intau
@@ -141,7 +141,7 @@ c-----------------------------------------------------------------------
       neq = 2
       itol = 2
       rtol = 1e-7            !1e-7*pr**0.4 ! !1e-7 at front 1e-6 !e-4
-      ALLOCATE(atol(neq),y(1),dy(1))
+      ALLOCATE(atol(neq),W(1),dW_dq(1))
       atol(:) = 1e-7*pr**0.4 ! 1e-8 !e-4
       itask = 2
       istate = 1
@@ -157,12 +157,22 @@ c-----------------------------------------------------------------------
       iwork(6)=10000 !5000 ! maximum step size, e.g. 50000
       rwork=0
 !      x=10.0*(1.0+log10(Q/pr))
-      x=20.0
-      xmin=1e-3
+
+      !!!!!!!!
+      pd=20.0 ! "starting backwards integration at large q"
+      !!!!!!!!
+
+      xmin=1e-5
       IF(present(inx)) x=inx
       xout=xmin
-      y(1)=-c_beta/sqrt((1+tau))/ds*x**2.0 ! it was (1+tau*ds). To be updated.
-      IF(present(iny)) y(1)=iny
+
+      !y(1)=-c_beta/sqrt((1+tau))/ds*x**2.0 ! it was (1+tau*ds). To be updated.
+
+      P_hat = inpr / ds**6
+      alpha = (P_hat/(1+1/tau))**0.5
+      W(1) = 0.0!-alpha*pd**2 - 0.5
+
+      IF(present(iny)) W(1)=iny
 !      y(1)=0.5-ifac*10.0
 !      WRITE(*,*)y(1)
 
@@ -177,33 +187,88 @@ c-----------------------------------------------------------------------
          OPEN(UNIT=out2_unit,FILE='slayer_riccati_profile_n'//
      $      TRIM(sn)//'.out',STATUS='UNKNOWN')
          WRITE(out2_unit,'(1x,3(a17))'),"x","RE(y)","IM(y)"
-         DO WHILE (x>xout)
+         DO WHILE (pd>xout)
             istep=istep+1
-            CALL lsode(w_der,neq,y,x,xout,itol,rtol,atol,
+            CALL lsode(w_der_del_s,neq,W,pd,xout,itol,rtol,atol,
      $           itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
-            WRITE(bin_unit)REAL(x,4),REAL(REAL(y),4),REAL(AIMAG(y),4)
-            WRITE(out2_unit,'(1x,3(es17.8e3))')x,REAL(y),AIMAG(y)
+            WRITE(bin_unit)REAL(pd,4),REAL(REAL(W),4),REAL(AIMAG(W),4)
+            WRITE(out2_unit,'(1x,3(es17.8e3))')pd,REAL(W),AIMAG(W)
          ENDDO
          CLOSE(bin_unit)
          CLOSE(out2_unit)
       ELSE
          istep = 1
          itask = 1
-         CALL lsode(w_der,neq,y,x,xout,itol,rtol,atol,
+         CALL lsode(w_der_del_s,neq,W,pd,xout,itol,rtol,atol,
      $        itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
 
       ENDIF
 
       ! w=0 when Q=Q_e. Why?
 
-      CALL w_der(neq,x,y,dy)
-      riccati_del_s=pi/dy(1)
-      DEALLOCATE(atol,y,dy,iwork,rwork)
+      CALL w_der_del_s(neq,pd,W,dW_dq)
+
+      riccati_del_s=-( pi/((1+1/tau)**0.5) )*dW_dq(1)
+      DEALLOCATE(atol,W,dW_dq,iwork,rwork)
 
       END FUNCTION riccati_del_s
 c-----------------------------------------------------------------------
 c     riccati integration.
 c-----------------------------------------------------------------------
+      SUBROUTINE w_der_del_s(neq,pd,W,dW_dq)
+
+      INTEGER, INTENT(IN) :: neq
+      REAL(r8), INTENT(IN) :: pd
+      COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: W
+      COMPLEX(r8), DIMENSION(neq), INTENT(OUT) :: dW_dq
+      REAL(r8) :: Q_hat, P_hat
+      COMPLEX(r8) :: E,F
+
+      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+
+      !IF (PeOhmOnly_flag) THEN
+      !   G=((c_beta**2*pr*x**4 - Q*(Q - Q_i) +
+      !$        ifac*(c_beta**2 + pr)*x**2*(Q - Q_i))/
+      !$      (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) +
+      !$        x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))))*(x**2.0)
+       !ELSE
+       !  G=(x**2*pe +
+      !$     (c_beta**2*pr*x**4 - Q*(Q - Q_i) +
+      !$        ifac*(c_beta**2 + pr)*x**2*(Q - Q_i))/
+      !$      (ds**2*pr*(1 + tau)*x**4 + ifac*(Q - Q_e) +
+      !$        x**2*(c_beta**2 + ifac*ds**2*(Q - Q_i))))*(x**2.0)
+      !ENDIF
+
+      !C3=x**2/(x**2 + (ds**2*(1 + tau)*x**4*pe)/
+      !$     c_beta**2 + ifac*(Q - Q_e))
+
+      !C3p=-((x**2*(2*x + (4*ds**2*(1 + tau)*x**3*pe)/
+      !$          c_beta**2))/
+      !$     (x**2 + (ds**2*(1 + tau)*x**4*pe)/
+      !$         c_beta**2 + (0,1)*(Q - Q_e))**2
+      !$     ) + (2*x)/
+      !$   (x**2 + (ds**2*(1 + tau)*x**4*pe)/
+      !$      c_beta**2 + (0,1)*(Q - Q_e))
+
+      !A1=(C1 + (C3p/C3)*(C2 + 1) + C2p)/(C2 + 1)
+
+      !A2=(C1p + C1*(C3p/C3) - G/C3)/(C2 + 1)
+
+      Q_hat = Q / ds**4
+      P_hat = pr / ds**6
+
+      E = (-Q_hat**2/(1+1/tau)) - 2*ifac*Q_hat*P_hat*pd**2 + 
+     $  2*P_hat*pd**4 ! P_tor = P_perp
+      F = P_hat - ifac*Q_hat + (1+1/tau)*P_hat*pd**2
+
+      !dy(1)=(-A1 + 1/x)*y(1) - y(1)*y(1)/x - A2*x
+      dW_dq(1)=W(1)/pd - W(1)*W(1)/pd - (pd*E)/F !pD = q
+
+      RETURN
+      END SUBROUTINE w_der_del_s
+c
+c
+c
       SUBROUTINE w_der(neq,x,y,dy)
 
       INTEGER, INTENT(IN) :: neq

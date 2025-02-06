@@ -61,8 +61,9 @@
     bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
-    growthrates_flag=t   ! Calculate growthrates on each rational surface
-    analytic_growthrates_flag=f   ! Generate Re(Q),Im(Q) scans for each rational surface
+    del_gamma_flag=t     ! Calculate growthrates on each rational surface using Delta' method
+    analytic_del_gamma_flag=f   ! Generate Re(Q),Im(Q) scans for each rational surface
+    lar_gamma_flag=t     ! Calculate growthrates on each rational surface using cylindrical method
     br_th_flag=t         ! Calculate br_th
     compress_deltas=f    ! Only output essential growth rate grid points
     bal_flag=f           ! calculate the resonant field penetration threshold from torque balance

@@ -14,7 +14,7 @@ c-----------------------------------------------------------------------
 
       USE sglobal_mod
       !USE params_mod
-      USE delta_mod, ONLY: riccati,riccati_out,
+      USE delta_mod, ONLY: riccati,riccati_del_s,riccati_out,
      $                     parflow_flag,PeOhmOnly_flag
 
       ! FOR TESTING:
@@ -33,14 +33,14 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check,growthrates_flag,analytic_growthrates_flag,
-     $     Pe_flag,br_th_flag,compress_deltas
+     $     params_check,del_gamma_flag,analytic_del_gamma_flag,
+     $     lar_gamma_flag,Pe_flag,br_th_flag,compress_deltas
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
       REAL(r8) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds,intau,inlu
-      REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th
-      COMPLEX(r8) :: delta,delta_n_p
+      REAL(r8) :: psi0,jxb,Q0,Q_sol,br_th,d_i,d_b,E_ss,tau_r
+      COMPLEX(r8) :: delta,delta_n_p,dels_db,del_s,gamma
 
       REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,
      $     kpower,
@@ -91,8 +91,8 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     stability_flag,growthrates_flag,analytic_growthrates_flag,
-     $     br_th_flag,compress_deltas,bal_flag
+     $     stability_flag,del_gamma_flag,analytic_del_gamma_flag,
+     $     lar_gamma_flag,br_th_flag,compress_deltas,bal_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
      $     params_check
 c-----------------------------------------------------------------------
@@ -165,8 +165,9 @@ c-----------------------------------------------------------------------
       params_check=.FALSE.
       bal_flag=.FALSE.
       stability_flag=.FALSE.
-      growthrates_flag=.FALSE.
-      analytic_growthrates_flag=.FALSE.
+      del_gamma_flag=.FALSE.
+      analytic_del_gamma_flag=.FALSE.
+      lar_gamma_flag=.FALSE.
       br_th_flag=.FALSE.
       compress_deltas=.FALSE.
 c-----------------------------------------------------------------------
@@ -294,9 +295,79 @@ c-----------------------------------------------------------------------
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,mms,nns)
       ENDIF
 c-----------------------------------------------------------------------
+c     LAR (cylindrical) growthrates via restive layer thickness
+c-----------------------------------------------------------------------
+      IF (lar_gamma_flag) THEN
+         WRITE(*,*)"intau=",intau
+         WRITE(*,*)"inQ=",inQ
+         WRITE(*,*)"Prantdl numbers=",inpr
+         WRITE(*,*)"Electron viscosities=",inpe
+         WRITE(*,*)"inQ_e=",inQ_e
+         WRITE(*,*)"inds=",inds
+         WRITE(*,*)"inc_beta=",inc_beta
+
+         WRITE(*,*)"running analytic scan"
+
+         qval_arr = (/ qval /)
+         omegas_arr = (/ omega /)
+         inQ_arr = (/ inQ /)
+         inQ_e_arr = (/ inQ_e /)
+         inQ_i_arr = (/ inQ_i /)
+         psi_n_rational = (/ 0.0 /)
+         Re_deltaprime_arr = (/ REAL(delta_n_p) /)
+         Im_deltaprime_arr = (/ AIMAG(delta_n_p) /)
+         inpr_arr = (/ inpr /)
+
+         WRITE(*,*)"Calculating LAR growth rate"
+
+         CALL params(n_e,t_e,t_i,omega,
+     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+     
+         inQ=Q
+         inQ_e=Q_e
+         inQ_i=Q_i
+         inc_beta=c_beta
+         inds=ds
+         intau=tau
+         Q0=Q
+
+         WRITE(*,*)"params() call successful"
+
+         dels_db=riccati_del_s(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,
+     $    intau)
+
+         WRITE(*,*)"dels_db() call successful"
+
+         eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
+         tau_r=mu0*rs**2.0/eta ! resistive time scale
+
+         d_i = ( (mu_i*m_p)/(n_e * (chag**2) * mu0) )**0.5 ! collisionless ion skin depth
+         d_b = c_beta*d_i
+         del_s = dels_db * d_b
+         E_ss = 5.0
+         gamma=(REAL(E_ss)/tau_r) * (rs/del_s)
+
+         WRITE(*,*)"inds=",inds
+         WRITE(*,*)"Q_hat=",inQ/(inds**4)
+         WRITE(*,*)"P_hat=",inpr/(inds**6)
+         WRITE(*,*)"thickness/db=",dels_db
+         WRITE(*,*)"db=",d_b
+         WRITE(*,*)"thickness=",del_s
+         WRITE(*,*)"gamma=",gamma
+
+         !br_th = 0.0
+      !   CALL slayer_netcdf_out(growthrates_flag,
+      !$    analytic_growthrates_flag,br_th_flag,1,qval_arr,br_th,
+      !$                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
+      !$                 psi_n_rational,inpr_arr,
+      !$                 Re_deltaprime_arr,Im_deltaprime_arr,
+      !$                 results)
+         stop
+      ENDIF
+c-----------------------------------------------------------------------
 c     TEST GAMMA_MATCH IN GSLAYER.F, FOR TESTING ONLY
 c-----------------------------------------------------------------------
-      IF (growthrates_flag) THEN
+      IF (del_gamma_flag) THEN
          !WRITE(*,*)"infile=",infile
          !WRITE(*,*)"ncfile=",ncfile
 
@@ -338,8 +409,8 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"Calling slayer_netcdf_out"
 
          br_th = 0.0
-         CALL slayer_netcdf_out(growthrates_flag,
-     $                 analytic_growthrates_flag,
+         CALL slayer_netcdf_out(del_gamma_flag,
+     $                 analytic_del_gamma_flag,
      $                 br_th_flag,n_k,qval_arr,br_th,
      $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $                 psi_n_rational,inpr_arr,
@@ -350,7 +421,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     TEST ANALYTIC SCAN IN GSLAYER.F, FOR TESTING ONLY
 c-----------------------------------------------------------------------
-      IF (analytic_growthrates_flag) THEN
+      IF (analytic_del_gamma_flag) THEN
          WRITE(*,*)"intau=",intau
          WRITE(*,*)"inQ=",inQ
          WRITE(*,*)"Prantdl numbers=",inpr
@@ -380,8 +451,8 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"allocations successful"
 
          br_th = 0.0
-         CALL slayer_netcdf_out(growthrates_flag,
-     $    analytic_growthrates_flag,br_th_flag,1,qval_arr,br_th,
+         CALL slayer_netcdf_out(del_gamma_flag,
+     $    analytic_del_gamma_flag,br_th_flag,1,qval_arr,br_th,
      $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $                 psi_n_rational,inpr_arr,
      $                 Re_deltaprime_arr,Im_deltaprime_arr,
@@ -482,8 +553,8 @@ c-----------------------------------------------------------------------
 
          WRITE(*,*)"allocations successful"
 
-         CALL slayer_netcdf_out(growthrates_flag,
-     $                 analytic_growthrates_flag,
+         CALL slayer_netcdf_out(del_gamma_flag,
+     $                 analytic_del_gamma_flag,
      $                 br_th_flag,1,qval_arr,br_th,
      $                 omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $                 psi_n_rational,inpr_arr,
