@@ -100,8 +100,7 @@ c-----------------------------------------------------------------------
       ctheta=(/(itheta,itheta=0,cmtheta)/)/REAL(cmtheta,r8)
       czeta=(/(izeta,izeta=0,cmzeta)/)/REAL(cmzeta,r8)
 
-      CALL spline_alloc(aspl,cmtheta,1)
-      aspl%xs=ctheta
+
       area=1.0
       
 c-----------------------------------------------------------------------
@@ -124,10 +123,11 @@ c-----------------------------------------------------------------------
      $        dy(coil(i)%ncoil,coil(i)%s,nseg),
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
 
-      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)'),"  >> Mapping "//
-     $      TRIM(coil(i)%coil_name)//" coil's ",
+      IF(verbose) WRITE(*,'(1x,a,i6,a,i3,a,i3,a)'),"  >> Mapping ",
      $      coil(i)%ncoil*coil(i)%s*nseg,
-     $      " filaments to a ",cmtheta,"x",cmzeta," plasma grid"
+     $      " filaments from the coil "//
+     $      TRIM(coil(i)%coil_name)//
+     $     " to a ",cmtheta,"x",cmzeta," control surface mesh"
 
 !$OMP PARALLEL PRIVATE(j,k,iseg)
 !$OMP DO COLLAPSE(3)
@@ -176,10 +176,8 @@ c-----------------------------------------------------------------------
             w12=-crzphi_fy(1)*pi*rr/(rfac*jac)
             delpsi=SQRT(w11**2+w12**2)
             IF(wegt/=0)THEN
-               ! aspl%fs(itheta,1)=jac*delpsi
                aspl_f_arr(itheta)=jac*delpsi
             ELSE
-               ! aspl%fs(itheta,1)=1.0
                aspl_f_arr(itheta)=1.0
             ENDIF
             w11=w11/delpsi
@@ -247,18 +245,22 @@ c-----------------------------------------------------------------------
          tbn=tbn+bn
       ENDDO
 
-      aspl%fs(:,1)=aspl_f_arr
          
       CALL cspline_alloc(bnzspl,cmzeta,1)
       bnzspl%xs=czeta
       CALL cspline_alloc(bntspl,cmtheta,1)
       bntspl%xs=ctheta
-      aspl%fs(0,1)=aspl%fs(cmtheta,1)
 
       IF(wegt==2)THEN
+         CALL spline_alloc(aspl,cmtheta,1)
+         aspl%xs=ctheta
+         aspl%fs(:,1)=aspl_f_arr
+         ! Making the spline periodic
+         aspl%fs(0,1)=aspl%fs(cmtheta,1)
          CALL spline_fit(aspl,"periodic")
          CALL spline_int(aspl)
          area=aspl%fsi(cmtheta,1)
+         CALL spline_dealloc(aspl)
       ENDIF
             
       DO ipert=1,cmpert
@@ -280,7 +282,6 @@ c-----------------------------------------------------------------------
 
       ENDDO
 
-      CALL spline_dealloc(aspl)
       CALL cspline_dealloc(bnzspl)
       CALL cspline_dealloc(bntspl)
 c-----------------------------------------------------------------------
@@ -342,9 +343,10 @@ c-----------------------------------------------------------------------
      $        dz(coil(i)%ncoil,coil(i)%s,nseg))
          
          IF(verbose) WRITE(*,'(1x,a,i6,a,i4,a,i4,a,i4,a)'),"  >"//
-     $      "Mapping "//TRIM(coil(i)%coil_name)//" coil's ",
-     $      coil(i)%ncoil*coil(i)%s*nseg,
-     $      " filaments to a ",nr,"x",nz,"x",np," space grid"
+     $      "Mapping ", coil(i)%ncoil*coil(i)%s*nseg,
+     $      "filaments from the coil "
+     $      //TRIM(coil(i)%coil_name)//
+     $      " to a ",nr,"x",nz,"x",np," rzphi mesh."
 
 !$OMP PARALLEL PRIVATE(j,k,iseg)
 !$OMP DO COLLAPSE(3)

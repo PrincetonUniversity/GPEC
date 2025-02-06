@@ -75,7 +75,7 @@ c-----------------------------------------------------------------------
      $     plas_indev,plas_indinvev,reluctev,indrelev,permeabsv,
      $     surf_indmats,surf_indevmats,vsurf_indmats,fsurf_indmats,
      $     surf_indinvmats,surf_indinvevmats,surfet,surfep,
-     $     amat,bmat,cmat,fmats,gmats,kmats,coil_indmat,
+     $     amat,bmat,cmat,fmats,gmats,kmats,coil_indmat,coilmn,
      $     wft,wtraw,chymats,chxmats,chwmats,kawmats,
      $     mutual_indmats,mutual_indevmats,
      $     mutual_indinvmats,mutual_indinvevmats
