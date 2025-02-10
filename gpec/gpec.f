@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
      $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
-     $     fxmn,fxfun!,coilmn <- MCP: now declared in gpglobal_mod
+     $     fxmn,fxfun
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
       INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
 

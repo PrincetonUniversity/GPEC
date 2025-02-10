@@ -254,7 +254,7 @@ c-----------------------------------------------------------------------
       IF(wegt==2)THEN
          CALL spline_alloc(aspl,cmtheta,1)
          aspl%xs=ctheta
-         aspl%fs(:,1)=aspl_f_arr
+         aspl%fs(1:,1)=aspl_f_arr
          ! Making the spline periodic
          aspl%fs(0,1)=aspl%fs(cmtheta,1)
          CALL spline_fit(aspl,"periodic")

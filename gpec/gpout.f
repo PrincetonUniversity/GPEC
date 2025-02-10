@@ -2362,7 +2362,6 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: bsurfmat,dwks,dwk,
      $     gind,gindp,gres,gresp
 
-    !   COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: coilmn
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: tmat,mmat,mdagger
       COMPLEX(r8), DIMENSION(:,:,:), ALLOCATABLE :: gcoil
 
@@ -2507,13 +2506,7 @@ c----------------------------------------------------------------------
       IF (coil_flag) THEN
          ! form mutual inductance between coils and plasma surface
          ALLOCATE(mmat(mpert,coil_num),mdagger(coil_num,mpert))
-        !  ALLOCATE(coilmn(cmpert)) <- allocated in gpec.f
-        !  Is now allocated coilmn(1:coil_num,1:cmpert)
          DO j=1,coil_num
-            ! Do we really need to call field_bs_psi here again?
-            ! It was called in gpec.f on line 403. We could just leave
-            ! coilmn allocated and make it an array(1:cmpert,1:coil_num)
-            ! CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
                   mmat(cmlow-mlow+i,j)=coilmn(i,j)
