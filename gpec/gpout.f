@@ -2057,12 +2057,12 @@ c-----------------------------------------------------------------------
      $         (/m_id, i_id/), d_id) )
             CALL check( nf90_put_att(mncid, d_id, "units", "untiless") )
             CALL check( nf90_put_att(mncid, d_id, "long_name",
-     $        "Extrenal Delta prime overlap") )
+     $        "External Delta prime overlap") )
             CALL check( nf90_def_var(mncid, "Delta_overlap_norm",
      $         nf90_double,(/m_id/), dp_id) )
             CALL check( nf90_put_att(mncid, dp_id, "units", "untiless"))
             CALL check( nf90_put_att(mncid, dp_id, "long_name",
-     $        "Extrenal Delta prime overlap percentage") )
+     $        "External Delta prime overlap percentage") )
             CALL check( nf90_enddef(mncid) )
             CALL check( nf90_put_var(mncid, p_id, RESHAPE((/
      $         REAL(olap(1,:)),AIMAG(olap(1,:))/), (/msing,2/))) )
