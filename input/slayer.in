@@ -1,46 +1,43 @@
 &SLAYER_INPUT
-
-    !!! FOR READING IN ASCII TABLE, SET INPUT_FLAG
+    ! Default values taken from R. Fitzpatrick 'High Field' case in "Tearing Mode Dynamics in Tokamak Plasmas", 2023
     input_flag=f         ! reads profile quantities (n_e, t_e, etc.) from an ascii table
     infile=''  ! Path to ascii table of profile quantities read when using input_flag
     ncfile=''  ! Path to netCDF file of STRIDE outputs
-    !!! FOR MANUALLY ENTERING KINETIC QUANTITIES @ RATIONAL SURFACE, SET PARAMS_FLAG
     params_flag=f        ! calculates normalized parameters from profile quantities
     mm=2                 ! poloidal mode number
     nn=1                 ! toroidal mode number
-    n_e=7.77E+17         ! electron density [m^-3]
-    t_e=25.8             ! electron temperature [eV]
-    t_i=25.8             ! ion temperature [eV]
-    sval=2.0             ! magnetic shear at the layer
-    bt=1.0               ! toroidal field [T]
-    rs=0.17              ! minor radius of resonant surface [m]
-    R0=2.0               ! major radius of magnetic axis [m]
-    omega=5.45E+04       ! ExB frequency [rad/s]
+    n_e=5.10E+020        ! electron density [m^-3]
+    t_e=7000.0           ! electron temperature [eV]
+    t_i=7000.0           ! ion temperature [eV]
+    sval=1.34            ! magnetic shear at the layer
+    bt=12.0              ! toroidal field [T]
+    rs=0.53              ! minor radius of resonant surface [m]
+    R0=3.2               ! major radius of magnetic axis [m]
+    omega=5.45E+03       ! ExB frequency [rad/s]
     l_t=0.11             ! temperature gradient scale length
     l_n=0.25             ! density gradient scale length
     qval=2.0             ! q of resonant surface
     mu_i=2.0             ! ion mass ratio to proton ??
     zeff=2.0             ! plasma Z_effective
-    inpr=1.0             ! Prantdl number
+    inpr=500.0           ! Prantdl number
     inpr_prof=1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0 ! Prandtl number profile, set < 0 to only use inpr instead
     inpe=0.0             ! Electron viscosity
-
-    !!! IF INPUT_FLAG & PARAMS_FLAG ARE FALSE, MANUALLY ENTER DIMENSIONLESS QUANTITIES @ RATIONAL SURFACE
-    inQ=23.0             ! normalized ExB frequency
+    inQ=1.5              ! normalized ExB frequency
     inQ_e=2.0            ! normalized electron diamagnetic frequency
     inQ_i=-2.0           ! normalized ion diamagnetic frequency
-    inc_beta=0.7         ! dimensionless measure of the plasma pressure
-    inds=6.0             ! normalized ion sound radius
+    inc_beta=0.128       ! dimensionless measure of the plasma pressure
+    inds=2.26            ! normalized ion sound radius
     intau=1.0            ! ion temperature divided by electron temperature
-    Q0=4.0               ! unnecessary placeholder variable for inQ?
-    delta_n_p=0          ! delta offset used for jxb calculations. Default is (1e-2,1e-2).
+    Q0=1.5               ! unnecessary placeholder variable for inQ?
+    delta_n_p=(5.0,0.01)      ! input Delta', OR delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
 /
+
 &SLAYER_CONTROL
     inum=400             ! resolution to find error field thresholds.
     jnum=100             ! resolution for 2d scan along with Q,omega.
     knum=100             ! resolution for 2d scan alont with the other.
-    ReQ_num=350          ! resolution for stability scan along Re(Q) axis
-    ImQ_num=350          ! resolution for stability scan along Im(Q) axis
+    ReQ_num=300          ! resolution for stability scan along Re(Q) axis
+    ImQ_num=300          ! resolution for stability scan along Im(Q) axis
     scan_radius=3        ! stability scan width in Q
     QPscan_flag=f        ! scan (Q,P) space for delta and torque.
     Qscan_flag=f         ! scan Q space
@@ -55,20 +52,24 @@
     Pe_flag=f            ! if true, calculate classical inpe value from inpr and include in SLAYER run
     layfac=0.02          ! layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)) is added to Q_e if ABS(Q-Q_e)<layfac). Default is 0.02.
 /
+
 &SLAYER_OUTPUT
     verbose=t            ! prints progress to terminal
     ascii_flag=f         ! writes results to ascii files
     bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
     stability_flag=f     ! calculate delta dependence on complex Q
-    del_gamma_flag=t     ! Calculate growthrates on each rational surface using Delta' method
-    analytic_del_gamma_flag=f   ! Generate Re(Q),Im(Q) scans for each rational surface
-    lar_gamma_flag=t     ! Calculate growthrates on each rational surface using cylindrical method
-    br_th_flag=t         ! Calculate br_th
+    lar_gamma_eq_flag=f  ! Calculate cylindrical growthrates for each rational surface of input equilibrium
+    lar_gamma_flag=f     ! Calculate cylindrical growthrate for namelist parameters
+    stabscan_eq_flag=f   ! Generate Re(Q),Im(Q) scans for each rational surface of input equilibrium
+    stabscan_flag=f      ! Generate Re(Q),Im(Q) scan for namelist parameters
+    br_th_flag=f         ! Calculate br_th
     compress_deltas=f    ! Only output essential growth rate grid points
     bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
+
 &SLAYER_DIAGNOSE
     riccati_out=f        ! writes LSDOE Riccati integration to an ascii file
+    riccatiscan_flag=f
     params_check=f       ! prints the primary parameters to the terminal when they are calculated
 /

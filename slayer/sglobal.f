@@ -7,7 +7,8 @@
       INTEGER, PARAMETER :: r8=SELECTED_REAL_KIND(13,307)
 
       REAL(r8) :: mr,nr
-      REAL(r8) :: Q_e,Q_i,pr,pe,c_beta,ds,tau
+      REAL(r8) :: Q_e,Q_i,pr,pe,c_beta,ds,tau,d_i,
+     $            d_beta,D_beta_norm
       REAL(r8) :: eta,visc,rho_s,lu,omega_e,omega_i,
      $            delta_n,layfac,Qconv
       COMPLEX(r8) :: Q

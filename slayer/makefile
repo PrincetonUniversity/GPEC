@@ -54,6 +54,7 @@ params.o : sglobal.o
 delta.o : sglobal.o
 gslayer.o : sglobal.o delta.o
 slayer.o : sglobal.o params.o delta.o ../pentrc/grid.mod ../equil/spline_mod.mod
+slayer_netcdf.o : sglobal.o
 
 clean:
 	rm -f *.o *.mod *.out *.bin slayers

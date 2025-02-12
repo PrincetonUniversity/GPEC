@@ -15,10 +15,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE slayer_netcdf_mod
-      !USE dcon_mod
       USE sglobal_mod
-      !USE layerinputs_mod
-      !USE gslayer_mod
       USE netcdf
       IMPLICIT NONE
       CONTAINS
@@ -51,26 +48,42 @@ c-----------------------------------------------------------------------
 c -----------------------------------------------------------------------
 c      declarations.
 c -----------------------------------------------------------------------
-      SUBROUTINE slayer_netcdf_out(growthrates_flag,
-     $ analytic_growthrates_flag,br_th_flag,msing,qval_arr,
-     $ br_th,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
-     $ inpr_arr,Re_deltaprime_arr,Im_deltaprime_arr,results)
-      LOGICAL, INTENT(IN) :: growthrates_flag,analytic_growthrates_flag,
-     $   br_th_flag
+      SUBROUTINE slayer_netcdf_out(msing,lar_gamma_eq_flag,
+     $  lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
+     $  qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
+     $  inpr_arr,br_th,Re_deltaprime_arr,Im_deltaprime_arr,dels_db,
+     $  d_beta,D_beta_norm,lar_gamma,inQs,iinQs,results)
+
+        ! ds = D_beta_norm for lar growth rate routines
+
+c        OPTIONAL
+c        br_th,Re_deltaprime_arr,Im_deltaprime_arr,dels_db,d_b,ds,lar_gamma,
+c        inQs,iinQs,results,
+
       INTEGER, INTENT(IN) :: msing
-      REAL(r8), DIMENSION(:), INTENT(IN) ::
-     $ omegas_arr,inQ_arr,
-     $ inQ_e_arr,inQ_i_arr,psi_n_rational,inpr_arr,
-     $ Re_deltaprime_arr,Im_deltaprime_arr
-      REAL(r8), INTENT(IN) :: br_th
-      INTEGER, DIMENSION(:), INTENT(IN) :: qval_arr
+      LOGICAL, INTENT(IN) :: lar_gamma_eq_flag,lar_gamma_flag,
+     $   stabscan_eq_flag,stabscan_flag,br_th_flag
+
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: qval_arr
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: omegas_arr,
+     $ inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,inpr_arr
+
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_deltaprime_arr,
+     $         Im_deltaprime_arr,inQs,iinQs
+
+      REAL(r8) :: br_th, d_beta, D_beta_norm
+      COMPLEX(r8) :: dels_db, lar_gamma
+
       TYPE(result_type), INTENT(IN) :: results(8)
-      INTEGER :: i, ncid,r_id,ReQ_dim,ImQ_dim,qsing_dim,qsing_id,
+
+      INTEGER :: i,ncid,r_id,ReQ_dim,ImQ_dim,qsing_dim,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    ReQ_id,ImQ_id,gamma_id,omegas_id,Q_id,Q_e_id,Q_i_id,
-     $    r_dim,pr_id, qr_id,shear_id,slice_id,inQs_id,
+     $    r_dim,pr_id, qr_id,shear_id,slice_id,inQs_id,S_id,
      $    gamma_err_id,gamma_loc_id,roots_dim,Re_dp_id,Im_dp_id,
-     $    rdpp_id,idpp_id,inpr_id,br_th_id
+     $    rdpp_id,idpp_id,inpr_id,br_th_id,dels_db_id,d_b_id,
+     $    inds_id,lar_gamma_id,qsing_id
+
       INTEGER :: run, run_dimid, point_dimid, varids(4),
      $     max_points
 
@@ -80,6 +93,13 @@ c -----------------------------------------------------------------------
 c -----------------------------------------------------------------------
 c      set variables
 c -----------------------------------------------------------------------
+c      i=0; ncid=0;r_id=0;ReQ_dim=0;ImQ_dim=0;qsing_dim=0;qsing_id=0;
+c     $    i_dim=0;m_dim=0;mo_dim=0;p_dim=0;i_id=0;m_id=0;mo_id=0;p_id=0;
+c     $    ReQ_id=0;ImQ_id=0;gamma_id=0;omegas_id=0;Q_id=0;Q_e_id=0;
+c     $    Q_i_id=0;r_dim=0;pr_id=0;qr_id=0;shear_id=0;slice_id=0;
+c     $    inQs_id=0;S_id=0;gamma_err_id=0;gamma_loc_id=0;roots_dim=0;
+c     $    Re_dp_id=0;Im_dp_id=0;rdpp_id=0;idpp_id=0;inpr_id=0;
+c     $    br_th_id=0;dels_db_id=0;d_b_id=0;inds_id=0;lar_gamma_id=0
       IF(debug_flag) PRINT *,"Called slayer_netcdf_out"
       IF (nn<10) THEN
          WRITE(UNIT=sn,FMT='(I1)')nn
@@ -111,8 +131,13 @@ c -----------------------------------------------------------------------
       ! define dimensions
       IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
 
+      WRITE(*,*)"netcdf msing=",msing
+      !WRITE(*,*)"netcdf qval=",qval
+      WRITE(*,*)"netcdf qval_arr=",qval_arr
+
       IF(msing>0)THEN
          CALL check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational
+         CALL check( nf90_def_dim(ncid, "i", 2, i_dim) )
          CALL check( nf90_def_var(ncid,"qsing",nf90_int,qsing_dim,
      $    qsing_id))
          CALL check( nf90_def_var(ncid,"omegas",nf90_double,
@@ -123,6 +148,8 @@ c -----------------------------------------------------------------------
      $    qsing_dim,Q_e_id))
          CALL check( nf90_def_var(ncid,"Q_i",nf90_double,
      $    qsing_dim,Q_i_id))
+         CALL check( nf90_def_var(ncid,"S",nf90_double,
+     $    qsing_dim,S_id))
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                            qsing_dim,pr_id) )
          CALL check( nf90_def_var(ncid,"P",nf90_double,
@@ -132,7 +159,7 @@ c -----------------------------------------------------------------------
          CALL check( nf90_def_dim(ncid, "points", max_points,
      $    point_dimid) )
 
-         IF ((growthrates_flag) .OR. (analytic_growthrates_flag)) THEN
+         IF ((stabscan_eq_flag) .OR. (stabscan_flag)) THEN
             CALL check( nf90_def_var(ncid,"growthrates",nf90_double,
      $      qsing_dim,gamma_id))
             CALL check(nf90_def_var(ncid,"growthrate_locs",nf90_double,
@@ -153,11 +180,21 @@ c -----------------------------------------------------------------------
          END IF
       END IF
 
-      IF ((growthrates_flag) .OR. (analytic_growthrates_flag)) THEN
+      IF ((stabscan_eq_flag) .OR. (stabscan_flag)) THEN
         CALL check( nf90_def_var(ncid,"Re_deltaprime",nf90_double,
      $      qsing_dim,rdpp_id) )
         CALL check( nf90_def_var(ncid,"Im_deltaprime",nf90_double,
      $      qsing_dim,idpp_id) )
+      END IF
+      IF ((lar_gamma_flag) .OR. (lar_gamma_eq_flag)) THEN
+        CALL check( nf90_def_var(ncid,"delta_s_d_b",nf90_double,
+     $      (/qsing_dim,i_dim/),dels_db_id) )
+        CALL check( nf90_def_var(ncid,"d_beta",nf90_double,
+     $      qsing_dim,d_b_id) )
+        CALL check( nf90_def_var(ncid,"D_beta_norm",nf90_double,
+     $      qsing_dim,inds_id) )
+        CALL check( nf90_def_var(ncid,"growthrate",nf90_double,
+     $      (/qsing_dim,i_dim/),lar_gamma_id) )
       END IF
       ! end definitions
       CALL check( nf90_enddef(ncid) )
@@ -169,11 +206,12 @@ c -----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,Q_id, inQ_arr))
       CALL check( nf90_put_var(ncid,Q_e_id, inQ_e_arr))
       CALL check( nf90_put_var(ncid,Q_i_id, inQ_i_arr))
+      CALL check( nf90_put_var(ncid,S_id, (/lu/)))
       CALL check( nf90_put_var(ncid,pr_id, psi_n_rational))
       CALL check( nf90_put_var(ncid,inpr_id, inpr_arr))
-      CALL check( nf90_put_var(ncid,qr_id, qval_arr))
+      !CALL check( nf90_put_var(ncid,qr_id, qval_arr))
 
-      IF ((growthrates_flag) .OR. (analytic_growthrates_flag)) THEN
+      IF ((stabscan_eq_flag) .OR. (stabscan_flag)) THEN
         CALL check( nf90_put_var(ncid,rdpp_id, Re_deltaprime_arr))
         CALL check( nf90_put_var(ncid,idpp_id, Im_deltaprime_arr))
         DO run = 1, msing
@@ -189,9 +227,20 @@ c -----------------------------------------------------------------------
      $       count=[results(run)%count, 1]) )
         END DO
       END IF
+
       IF (br_th_flag) THEN
         CALL check( nf90_put_var(ncid,br_th_id, (/ br_th /)))
       END IF
+
+      IF ((lar_gamma_flag) .OR. (lar_gamma_eq_flag)) THEN
+        CALL check( nf90_put_var(ncid,dels_db_id, 
+     $  RESHAPE((/REAL(dels_db),AIMAG(dels_db)/),(/qsing_dim,2/))))
+        CALL check( nf90_put_var(ncid,d_b_id, (/ d_beta /)))
+        CALL check( nf90_put_var(ncid,inds_id, (/ D_beta_norm /)))
+        CALL check( nf90_put_var(ncid,lar_gamma_id, 
+     $  RESHAPE((/REAL(lar_gamma),AIMAG(lar_gamma)/),(/qsing_dim,2/))))
+      END IF
+
 c -----------------------------------------------------------------------
 c      close file
 c -----------------------------------------------------------------------
@@ -285,7 +334,7 @@ c -----------------------------------------------------------------------
       IF(debug_flag) PRINT *," - Defining dimensions in netcdf"
 
       IF(msing>0)THEN
-         CALL check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational
+         !CALL check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational
          CALL check( nf90_def_var(ncid,"qsing",nf90_int,qsing_dim,
      $    qsing_id))
 

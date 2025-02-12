@@ -28,6 +28,7 @@ c-----------------------------------------------------------------------
       b_l=(nr/mr)*rs*sval*bt/R0 ! characteristic magnetic field
       v_a=b_l/(mu0*rho)**0.5 ! alfven velocity
       rho_s=1.02e-4*(mu_i*t_e)**0.5/bt ! ion Lamour by elec. Temp.
+      d_i = ( (mu_i*m_p)/(n_e * (chag**2) * mu0) )**0.5 ! collisionless ion skin depth
 
       tau_h=R0*(mu0*rho)**0.5/(nn*sval*bt) ! alfven time across surface
       tau_r=mu0*rs**2.0/eta ! resistive time scale
@@ -56,6 +57,10 @@ c-----------------------------------------------------------------------
 
       lbeta=(5.0/3.0)*mu0*n_e*chag*(t_e+t_i)/bt**2.0
       c_beta=(lbeta/(1.0+lbeta))**0.5
+
+      ! this is using Fitzpatrick's tau', we need tau eventually
+      d_beta = c_beta*d_i  
+      D_beta_norm = (d_beta/rs)*(lu**(1.0/3.0))*(tau/(1+tau))**(0.5)
 
       delta_n=lu**(1.0/3.0)/rs ! norm factor for delta primes
 
