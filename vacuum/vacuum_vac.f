@@ -705,8 +705,8 @@ c-----------------------------------------------------------------------
 
       iop(1)=4
       iop(2)=4
-      CALL spl1d1(mth1,the,xsce,xpp,iop,1,ww1,ww2,ww3)
-      CALL spl1d1(mth1,the,zsce,zpp,iop,1,ww1,ww2,ww3)
+      CALL spl1d1(mth1,the,xsce,xpp,real(iop,8),1,ww1,ww2,ww3)
+      CALL spl1d1(mth1,the,zsce,zpp,real(iop,8),1,ww1,ww2,ww3)
 
       DO i=1,mth1
          theta=(i-1)*dth
@@ -2414,9 +2414,9 @@ c-----------------------------------------------------------------------
       lmx = lmax(1)
       lgivup = 1
       nadres = 1
-      call zwr(iovac,lmn,1,nadres,lgivup,999)
+      call zwr(iovac,real(lmn,8),1,nadres,lgivup,999)
       nadres = nadres + 1
-      call zwr(iovac,lmx,1,nadres,lgivup,999)
+      call zwr(iovac,real(lmn,8),1,nadres,lgivup,999)
       nadres = nadres + 1
       call trans ( xwal_,mth, xjdtxj,mthin )
       call zwr(iovac,xjdtxj(1),mthin2,nadres,lgivup,999)

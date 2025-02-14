@@ -46,7 +46,14 @@ c-----------------------------------------------------------------------
       b(2)=(x(3)-x(1))/tz
       w(ij+1)=(f(2*ij+1)-f(ij+1))/(x(3)-x(2))-(f(ij+1)-f(1))
      1     /(x(2)-x(1))
-      if (n-3)3,4,3
+      SELECT CASE (n - 3)
+      CASE (: -1)  ! Less than 0
+          GOTO 3
+      CASE (0)     ! Equal to 0
+          GOTO 4
+      CASE (1 :)   ! Greater than 0
+          GOTO 3
+      END SELECT
     3 do 10 i=3,k
       m=(i-1)*ij+1
       j1=m+ij
@@ -57,13 +64,21 @@ c-----------------------------------------------------------------------
       e=(f(j1)-f(m))/(x(i+1)-x(i))-(f(m)-f(j2))/
      1     (x(i)-x(i-1))
       w(m)=e-(don*w(j2))/b(i-1)
-   10 a(i)=-(don*a(i-1))/b(i-1)
+      a(i)=-(don*a(i-1))/b(i-1)
+   10 continue
     4 k1=(n-2)*ij+1
       c(n-1)=-((x(n)-x(n-1))/sz)/b(n-1)
       w(k1)=w(k1)/b(n-1)
       a(n-1)=a(n-1)/b(n-1)
       k2=k-1
-      if (n-3)7,8,7
+      SELECT CASE (n - 3)
+      CASE (: -1)  ! Less than 0
+          GOTO 7
+      CASE (0)     ! Equal to 0
+          GOTO 8
+      CASE (1 :)   ! Greater than 0
+          GOTO 7
+      END SELECT
     7 do 20 i=2,k2
       j=n-i
       con=(x(j+1)-x(j))/sz
@@ -71,14 +86,36 @@ c-----------------------------------------------------------------------
       c(j)=-(con*c(j+1))/b(j)
       k3=(j-1)*ij+1
       m=k3+ij
-   20 w(k3)=(w(k3)-con*w(m))/b(j)
+      w(k3)=(w(k3)-con*w(m))/b(j)
+   20 continue
     8 k4=(n-1)*ij+1
-      if (iop(1)-5) 201,200,201
+      SELECT CASE (iop(1)-5)
+      CASE (: -1)  ! Less than 0
+         GOTO 201
+      CASE (0)     ! Equal to 0
+         GOTO 200
+      CASE (1 :)   ! Greater than 0
+         GOTO 201
+      END SELECT
   201 c1=w(1)
-      if (iop(2)-5) 203,202,203
+      SELECT CASE (iop(2)-5)
+      CASE (: -1)  ! Less than 0
+         GOTO 203
+      CASE (0)     ! Equal to 0
+         GOTO 202
+      CASE (1 :)   ! Greater than 0
+         GOTO 203
+      END SELECT
   203 c2=w(k4)
       go to 205
-  200 if (n-4)300,302,302
+  200 SELECT CASE (n - 4)
+      CASE (: -1)  ! Less than 0
+         GOTO 300
+      CASE (0)     ! Equal to 0
+         GOTO 302
+      CASE (1 :)   ! Greater than 0
+         GOTO 302
+      END SELECT
   302 a1=x(1)-x(2)
       a2=x(1)-x(3)
       a3=x(1)-x(4)
@@ -88,7 +125,14 @@ c-----------------------------------------------------------------------
       w(1)=f(1)*(oz/a1+oz/a2+oz/a3)-a2*a3*f(ij+1)/(a1*a4*a5)+
      1     a1*a3*f(2*ij+1)/(a2*a4*a6 )-a1*a2*f(3*ij+1)/(a3*a5*a6)
       go to 201
-  202 if (n-4)300,303,303
+  202 SELECT CASE (n-4)
+      CASE (: -1)  ! Less than 0
+         GOTO 300
+      CASE (0)     ! Equal to 0
+         GOTO 303
+      CASE (1 :)   ! Greater than 0
+         GOTO 303
+      END SELECT
   303 b1=x(n)-x(n-3)
       b2=x(n)-x(n-2)
       b3=x(n)-x(n-1)
@@ -105,7 +149,14 @@ c-----------------------------------------------------------------------
  2051 continue
       m=(i-1)*ij+1
       go to 60
-   70 if (i-1)80,50,80
+   70 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 80
+      CASE (0)     ! Equal to 0
+         GOTO 50
+      CASE (1 :)   ! Greater than 0
+         GOTO 80
+      END SELECT
    80 w(1)=w(1)-bob*w(m)
       w(k4)=w(k4)-bill*w(m)
       a(1)=a(1)-bob*a(i)
@@ -118,33 +169,75 @@ c-----------------------------------------------------------------------
       go to 100
    60 mk=iop(1)
       go to (62,64,66,68,66),mk
-   62 if (i-1)71,63,71
+   62 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 71
+      CASE (0)     ! Equal to 0
+         GOTO 63
+      CASE (1 :)   ! Greater than 0
+         GOTO 71
+      END SELECT
    63 a(1)=-oz
       c(1)=zz
       go to 500
    71 bob=zz
       go to 500
-   64 if (i-1)73,76,73
+   64 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 73
+      CASE (0)     ! Equal to 0
+         GOTO 76
+      CASE (1 :)   ! Greater than 0
+         GOTO 73
+      END SELECT
    76 a(1)=-oz
       c(1)=zz
       w(1)=zz
       go to 500
-   73 if (i-2)81,81,82
+   73 SELECT CASE (i-2)
+      CASE (: -1)  ! Less than 0
+         GOTO 81
+      CASE (0)     ! Equal to 0
+         GOTO 81
+      CASE (1 :)   ! Greater than 0
+         GOTO 82
+      END SELECT
    81 bob=-c1
       go to 500
    82 bob=zz
       go to 500
-   66 if (i-1)83,84,83
+   66 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 83
+      CASE (0)     ! Equal to 0
+         GOTO 84
+      CASE (1 :)   ! Greater than 0
+         GOTO 83
+      END SELECT
    84 a(1)=-(x(2)-x(1))/tz
       c(1)=zz
       w(1)=-c1+(f(ij+1)-f(1))/(x(2)-x(1))
       go to 500
-   83 if (i-2)85,85,86
+   83 SELECT CASE (i-2)
+      CASE (: -1)  ! Less than 0
+         GOTO 85
+      CASE (0)     ! Equal to 0
+         GOTO 85
+      CASE (1 :)   ! Greater than 0
+         GOTO 86
+      END SELECT
    85 bob=(x(2)-x(1))/sz
       go to 500
    86 bob=zz
       go to 500
-   68 if (i-1)87,88,87
+   68 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 87
+      CASE (0)     ! Equal to 0
+         GOTO 88
+      CASE (1 :)   ! Greater than 0
+         GOTO 87
+      END SELECT
    88 a(1)=-oz
       c(1)=oz
       w(1)=zz
@@ -152,41 +245,97 @@ c-----------------------------------------------------------------------
    87 bob=zz
   500 ml=iop(2)
       go to (120,130,140,150,140),ml
-  120 if (i-1)121,122,121
+  120 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 121
+      CASE (0)     ! Equal to 0
+         GOTO 122
+      CASE (1 :)   ! Greater than 0
+         GOTO 121
+      END SELECT
   122 a(n)=zz
       c(n)=-oz
       go to 70
   121 bill=zz
       go to 70
-  130 if (i-1)131,132,131
+  130 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 131
+      CASE (0)     ! Equal to 0
+         GOTO 132
+      CASE (1 :)   ! Greater than 0
+         GOTO 131
+      END SELECT
   132 a(n)=zz
       c(n)=-oz
       w(k4)=zz
       go to 70
-  131 if (i-k)134,133,134
+  131 SELECT CASE (i-k)
+      CASE (: -1)  ! Less than 0
+         GOTO 134
+      CASE (0)     ! Equal to 0
+         GOTO 133
+      CASE (1 :)   ! Greater than 0
+         GOTO 134
+      END SELECT
   133 bill=-c2
       go to 70
   134 bill=zz
       go to 70
-  140 if (i-1)141,142,141
+  140 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 141
+      CASE (0)     ! Equal to 0
+         GOTO 142
+      CASE (1 :)   ! Greater than 0
+         GOTO 141
+      END SELECT
   142 a(n)=zz
       c(n)=(x(n-1)-x(n))/tz
       w(k4)=c2-(f(k4)-f(k1))/(x(n)-x(n-1))
       go to 70
-  141 if (i-k)143,144,143
+  141 SELECT CASE (i-k)
+      CASE (: -1)  ! Less than 0
+         GOTO 143
+      CASE (0)     ! Equal to 0
+         GOTO 144
+      CASE (1 :)   ! Greater than 0
+         GOTO 143
+      END SELECT
   144 bill=(x(n)-x(n-1))/sz
       go to 70
   143 bill=zz
       go to 70
-  150 if (i-1)151,152,151
+  150 SELECT CASE (i-1)
+      CASE (: -1)  ! Less than 0
+         GOTO 151
+      CASE (0)     ! Equal to 0
+         GOTO 152
+      CASE (1 :)   ! Greater than 0
+         GOTO 151
+      END SELECT
   152 a(n)=zz
       c(n)=(x(n-1)+x(1)-x(n)-x(2))/tz
       w(k4)=(f(ij+1)-f(1))/(x(2)-x(1))-(f(k4)-f(k1))/(x(n)-x(n-1))
       go to 70
-  151 if (i-2)153,154,153
+  151 SELECT CASE (i-2)
+      CASE (: -1)  ! Less than 0
+         GOTO 153
+      CASE (0)     ! Equal to 0
+         GOTO 154
+      CASE (1 :)   ! Greater than 0
+         GOTO 153
+      END SELECT
   154 bill=(x(2)-x(1))/sz
       go to 70
-  153 if (i-k)155,156,155
+  153 SELECT CASE (i-k)
+      CASE (: -1)  ! Less than 0
+         GOTO 155
+      CASE (0)     ! Equal to 0
+         GOTO 156
+      CASE (1 :)   ! Greater than 0
+         GOTO 155
+      END SELECT
   156 bill=(x(n)-x(n-1))/sz
       go to 70
   155 bill=zz
@@ -198,7 +347,8 @@ c-----------------------------------------------------------------------
       w(k4)=(a(1)*d2-d1*a(n))/con
       do 110 i=2,k
       m=(i-1)*ij+1
-  110 w(m)=w(m)+a(i)*w(1)+c(i)*w(k4)
+      w(m)=w(m)+a(i)*w(1)+c(i)*w(k4)
+  110 continue
       go to 305
   300 write(3,*) ' spl1d1: Results incorrect because n<4.'
 c-----------------------------------------------------------------------
@@ -223,10 +373,22 @@ c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
       mflag = 0
-      if(y-x(1))10,10,20
+      IF (y-x(1)<0) THEN
+         GOTO 10
+      ELSE IF (y-x(1)==0) THEN
+         GOTO 10
+      ELSE
+         GOTO 20
+      END IF
    10 i=1
       go to 30
-   20 if(y-x(n))15,40,40
+   20 IF (y-x(n)<0) THEN
+         GOTO 15
+      ELSE IF (y-x(n)==0) THEN
+         GOTO 40
+      ELSE
+         GOTO 40
+      END IF
    40 i=n-1
       go to 30
    15 call search(y,x,n,i,mflag)
@@ -272,15 +434,28 @@ c-----------------------------------------------------------------------
       do 5 k=1,n
       j=i+i
       if(j.ge.n) go to 6
-  5   i=j
+      i=j
+  5   continue
  6    k=i
       mflag = 1
       do 115  l=2,n
       a=x(l-1)
       b=x(l)
-      if(sign(1.0d0,a)-sign(1.0d0,b)) 7,113,8
- 113   if(a-b)7,115,8
- 115    continue
+      IF (sign(1.0d0,a)-sign(1.0d0,b)<0) THEN
+         GOTO 7
+      ELSE IF (sign(1.0d0,a)-sign(1.0d0,b)==0) THEN
+         GOTO 113
+      ELSE
+         GOTO 8
+      END IF
+113   IF (a-b<0) THEN
+         GOTO 7
+      ELSE IF (a-b==0) THEN
+         GOTO 115
+      ELSE
+         GOTO 8
+      END IF
+115    continue
   7    j=1
       if(ixbar.lt.ix1.or.(ixbar.eq.ix1.and.xbar.lt.x(1)).or.ixbar
      1.gt.ixn.or.(ixbar.eq.ixn.and.xbar.gt.x(n))) go to 16
@@ -291,10 +466,28 @@ c-----------------------------------------------------------------------
    10 k=k/2
        a=x(i)
       go to (11,20),j
-  11   if(ixbar-sign(1.0d0,a)) 111,1111,2111
- 1111 if(xbar-a)111,14,2111
+  11   IF (ixbar-sign(1.0d0,a)<0) THEN
+          GOTO 111
+       ELSE IF (ixbar-sign(1.0d0,a)==0) THEN
+          GOTO 1111
+       ELSE
+          GOTO 2111
+       END IF
+ 1111 IF (xbar-a<0) THEN
+         GOTO 111
+      ELSE IF (xbar-a==0) THEN
+         GOTO 14
+      ELSE
+         GOTO 2111
+      END IF
  2111 b=x(i+1)
-      if(ixbar-sign(1.0d0,b)) 2112,2113,12
+      IF (ixbar-sign(1.0d0,b)<0) THEN
+         GOTO 2112
+      ELSE IF (ixbar-sign(1.0d0,b)==0) THEN
+         GOTO 2113
+      ELSE
+         GOTO 12
+      END IF
  2113   if(xbar.ge.b) go to 12
  2112   return
  111  i = i-k
@@ -308,11 +501,35 @@ c-----------------------------------------------------------------------
    16 write(3,*) ' search: xbar is outside range of table.'
       mflag=2
       return
-  20   if(ixbar-sign(1.0d0,a) ) 2120,2121,111
- 2121  if(xbar-a) 2120,14,111
+  20   IF (ixbar-sign(1.0d0,a)<0) THEN
+          GOTO 2120
+       ELSE IF (ixbar-sign(1.0d0,a)==0) THEN
+          GOTO 2121
+       ELSE
+          GOTO 111
+       END IF
+ 2121  IF (xbar-a<0) THEN
+          GOTO 2120
+       ELSE IF (xbar-a==0) THEN
+          GOTO 14
+       ELSE
+          GOTO 111
+       END IF
  2120 b=x(i+1)
-       if(ixbar-sign(1.0d0,b)) 12,2122,2112
- 2122  if(xbar-b) 12,12,2112
+       IF (ixbar-sign(1.0d0,b)<0) THEN
+          GOTO 12
+       ELSE IF (ixbar-sign(1.0d0,b)==0) THEN
+          GOTO 2122
+       ELSE
+          GOTO 2112
+       END IF
+ 2122  IF (xbar-b<0) THEN
+          GOTO 12
+       ELSE IF (xbar-b==0) THEN
+          GOTO 12
+       ELSE
+          GOTO 2112
+       END IF
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -344,14 +561,29 @@ c-----------------------------------------------------------------------
       do 5 k=1,n
       j=i+i
       if(j.ge.n) go to 6
-  5   i=j
+      i=j
+  5   continue
  6    k=i
       mflag = 1
       do 115  l=2,n
       ia=x(l-1)
       ib=x(l)
-      if(isign(1,ia)-isign(1,ib)) 7,113,8
- 113   if(ia-ib)7,115,8
+      SELECT CASE (isign(1,ia)-isign(1,ib))
+      CASE (: -1)  ! Less than 0
+         GOTO 7
+      CASE (0)     ! Equal to 0
+         GOTO 113
+      CASE (1 :)   ! Greater than 0
+         GOTO 8
+      END SELECT
+ 113   SELECT CASE (ia-ib)
+       CASE (: -1)  ! Less than 0
+          GOTO 7
+       CASE (0)     ! Equal to 0
+          GOTO 115
+       CASE (1 :)   ! Greater than 0
+          GOTO 8
+       END SELECT
  115    continue
   7    j=1
       if(ixbar.lt.ix1.or.(ixbar.eq.ix1.and.xbar.lt.x(1)).or.ixbar
@@ -363,10 +595,31 @@ c-----------------------------------------------------------------------
    10 k=k/2
        ia=x(i)
       go to (11,20),j
-  11   if(ixbar-isign(1,ia)) 111,1111,2111
- 1111 if(xbar-ia)111,14,2111
+  11   SELECT CASE (ixbar-isign(1,ia))
+       CASE (: -1)  ! Less than 0
+          GOTO 111
+       CASE (0)     ! Equal to 0
+          GOTO 1111
+       CASE (1 :)   ! Greater than 0
+          GOTO 2111
+       END SELECT
+ 1111 SELECT CASE (xbar-ia)
+      CASE (: -1)  ! Less than 0
+         GOTO 111
+      CASE (0)     ! Equal to 0
+         GOTO 14
+      CASE (1 :)   ! Greater than 0
+         GOTO 2111
+      END SELECT
  2111 ib=x(i+1)
-      if(ixbar-isign(1,ib)) 2112,2113,12
+      SELECT CASE (ixbar-isign(1,ib))
+      CASE (: -1)  ! Less than 0
+         GOTO 2112
+      CASE (0)     ! Equal to 0
+         GOTO 2113
+      CASE (1 :)   ! Greater than 0
+         GOTO 12
+      END SELECT
  2113   if(xbar.ge.ib) go to 12
  2112   return
  111  i = i-k
@@ -380,11 +633,39 @@ c-----------------------------------------------------------------------
    16 write(3,*) ' searchx: xbar is outside range of table.'
       mflag=2
       return
-  20   if(ixbar-isign(1,ia) ) 2120,2121,111
- 2121  if(xbar-ia) 2120,14,111
+  20   SELECT CASE (ixbar-isign(1,ia))
+       CASE (: -1)  ! Less than 0
+          GOTO 2120
+       CASE (0)     ! Equal to 0
+          GOTO 2121
+       CASE (1 :)   ! Greater than 0
+          GOTO 111
+       END SELECT
+ 2121  SELECT CASE (xbar-ia)
+       CASE (: -1)  ! Less than 0
+          GOTO 2120
+       CASE (0)     ! Equal to 0
+          GOTO 14
+       CASE (1 :)   ! Greater than 0
+          GOTO 111
+       END SELECT
  2120 ib=x(i+1)
-       if(ixbar-isign(1,ib)) 12,2122,2112
- 2122  if(xbar-ib) 12,12,2112
+       SELECT CASE (ixbar-isign(1,ib))
+       CASE (: -1)  ! Less than 0
+          GOTO 12
+       CASE (0)     ! Equal to 0
+          GOTO 2122
+       CASE (1 :)   ! Greater than 0
+          GOTO 2112
+       END SELECT
+ 2122  SELECT CASE (xbar-ib)
+       CASE (: -1)  ! Less than 0
+          GOTO 12
+       CASE (0)     ! Equal to 0
+          GOTO 12
+       CASE (1 :)   ! Greater than 0
+          GOTO 2112
+       END SELECT
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
@@ -963,24 +1244,31 @@ c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
     5 range=1.0e-12
-      if(mv-1) 10,25,10
+      if(mv-1 == 0) goto 25
    10 iq=-n
-      do 20 j=1,n
+      do 21 j=1,n
       iq=iq+n
       do 20 i=1,n
       ij=iq+i
       r(ij)=0.0
-      if(i-j) 20,15,20
+      if(i-j .ne. 0) goto 20
    15 r(ij)=1.0
    20 continue
+   21 continue
    25 anorm=0.0
-      do 35 i=1,n
+      do 36 i=1,n
       do 35 j=i,n
-      if(i-j) 30,35,30
-   30 ia=i+(j*j-j)/2
+      if(i-j .NE. 0) then
+         ia=i+(j*j-j)/2
+      endif
       anorm=anorm+a(ia)*a(ia)
    35 continue
-      if(anorm) 165,165,40
+   36 continue
+      if(anorm .LE. 0) then
+         goto 165
+      else 
+         goto 40
+      endif
    40 anorm=1.414*sqrt(anorm)
       anrmx=anorm*range/float(n)
       ind=0
@@ -991,13 +1279,17 @@ c-----------------------------------------------------------------------
    60 mq=(m*m-m)/2
       lq=(l*l-l)/2
       lm=l+mq
-   62 if( abs(a(lm))-thr) 130,65,65
+   62 if( abs(a(lm))-thr .GE. 0) then
+         goto 65
+      else
+         goto 130
+      endif
    65 ind=1
       ll=l+lq
       mm=m+mq
       x=0.5*(a(ll)-a(mm))
    68 y=-a(lm)/ sqrt(a(lm)*a(lm)+x*x)
-      if(x) 70,75,75
+      if(x .ge. 0) go to 75
    70 y=-y
    75 continue
       yp = 1.0 - y*y
@@ -1011,19 +1303,26 @@ c-----------------------------------------------------------------------
       imq=n*(m-1)
       do 125 i=1,n
       iq=(i*i-i)/2
-      if(i-l) 80,115,80
-   80 if(i-m) 85,115,90
+      if(i-l == 0) goto 115
+   80 SELECT CASE (i-m)
+      CASE (: -1)  ! Less than 0
+         GOTO 85
+      CASE (0)     ! Equal to 0
+         GOTO 115
+      CASE (1 :)   ! Greater than 0
+         GOTO 90
+      END SELECT
    85 im=i+mq
       go to 95
    90 im=m+iq
-   95 if(i-l) 100,105,105
+   95 if(i-l .ge. 0) goto 105
   100 il=i+lq
       go to 110
   105 il=l+iq
   110 x=a(il)*cosx-a(im)*sinx
       a(im)=a(il)*sinx+a(im)*cosx
       a(il)=x
-  115 if(mv-1) 120,125,120
+  115 if(mv-1 == 0) goto 125
   120 ilr=ilq+i
       imr=imq+i
       x=r(ilr)*cosx-r(imr)*sinx
@@ -1036,36 +1335,38 @@ c-----------------------------------------------------------------------
       a(lm)=(a(ll)-a(mm))*sincs+a(lm)*(cosx2-sinx2)
       a(ll)=y
       a(mm)=x
-  130 if(m-n) 135,140,135
+  130 if(m-n == 0) goto 140
   135 m=m+1
       go to 60
-  140 if(l-(n-1)) 145,150,145
+  140 if(l-(n-1) == 0) goto 150
   145 l=l+1
       go to 55
-  150 if(ind-1) 160,155,160
+  150 if(ind-1 .ne. 0) goto 160 
   155 ind=0
       go to 50
-  160 if(thr-anrmx) 165,165,45
+  160 if(thr-anrmx .gt. 0) go to 45
   165 iq=-n
-      do 185 i=1,n
+      do 186 i=1,n
       iq=iq+n
       ll=i+(i*i-i)/2
       jq=n*(i-2)
       do 185 j=i,n
       jq=jq+n
       mm=j+(j*j-j)/2
-      if(a(ll)-a(mm)) 170,185,185
+      if(a(ll)-a(mm) .ge. 0) go to 185
   170 x=a(ll)
       a(ll)=a(mm)
       a(mm)=x
-      if(mv-1) 175,185,175
+      if(mv-1 == 0) goto 185
   175 do 180 k=1,n
       ilr=iq+k
       imr=jq+k
       x=r(ilr)
       r(ilr)=r(imr)
-  180 r(imr)=x
+      r(imr)=x
+  180 continue
   185 continue
+  186 continue
 c-----------------------------------------------------------------------
 c     termination.
 c-----------------------------------------------------------------------
