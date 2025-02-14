@@ -64,10 +64,12 @@ C
       IF (K .EQ. 0) GO TO 15
       JJ1 = L - K
       DO 10 JJ = JJ1,NQ
- 10     IC = IC*JJ
+        IC = IC*JJ
+ 10     CONTINUE
  15   C = IC
       DO 20 I = 1,N
- 20     DKY(I) = C*YH(I,L)
+        DKY(I) = C*YH(I,L)
+ 20     CONTINUE
       IF (K .EQ. NQ) GO TO 55
       JB2 = NQ - K
       DO 50 JB = 1,JB2
@@ -77,23 +79,26 @@ C
         IF (K .EQ. 0) GO TO 35
         JJ1 = JP1 - K
         DO 30 JJ = JJ1,J
- 30       IC = IC*JJ
+          IC = IC*JJ
+ 30       CONTINUE
  35     C = IC
         DO 40 I = 1,N
- 40       DKY(I) = C*YH(I,JP1) + S*DKY(I)
+          DKY(I) = C*YH(I,JP1) + S*DKY(I)
+ 40       CONTINUE
  50     CONTINUE
       IF (K .EQ. 0) RETURN
  55   R = H**(-K)
       DO 60 I = 1,N
- 60     DKY(I) = R*DKY(I)
+        DKY(I) = R*DKY(I)
+ 60     CONTINUE
       RETURN
 C
  80   MSG = 'DINTDY-  K (=I1) illegal      '
-      CALL XERRWD (MSG, 30, 51, 0, 1, K, 0, 0, 0.0, 0.0)
+      CALL XERRWD (MSG, 30, 51, 0, 1, K, 0, 0, 0.0d0, 0.0d0)
       IFLAG = -1
       RETURN
  90   MSG = 'DINTDY-  T (=R1) illegal      '
-      CALL XERRWD (MSG, 30, 52, 0, 0, 0, 0, 1, T, 0.0)
+      CALL XERRWD (MSG, 30, 52, 0, 0, 0, 0, 1, T, 0.0d0)
       MSG='      T not in interval TCUR - HU (= R1) to TCUR (=R2)      '
       CALL XERRWD (MSG, 60, 52, 0, 0, 0, 0, 2, TP, TN)
       IFLAG = -2

@@ -30,19 +30,23 @@ C***FIRST EXECUTABLE STATEMENT  DEWSET
       GO TO (10, 20, 30, 40), ITOL
  10   CONTINUE
       DO 15 I = 1,N
- 15     EWT(I) = RTOL(1)*ABS(YCUR(I)) + ATOL(1)
+        EWT(I) = RTOL(1)*ABS(YCUR(I)) + ATOL(1)
+ 15     CONTINUE
       RETURN
  20   CONTINUE
       DO 25 I = 1,N
- 25     EWT(I) = RTOL(1)*ABS(YCUR(I)) + ATOL(I)
+        EWT(I) = RTOL(1)*ABS(YCUR(I)) + ATOL(I)
+ 25     CONTINUE
       RETURN
  30   CONTINUE
       DO 35 I = 1,N
- 35     EWT(I) = RTOL(I)*ABS(YCUR(I)) + ATOL(1)
+        EWT(I) = RTOL(I)*ABS(YCUR(I)) + ATOL(1)
+ 35     CONTINUE
       RETURN
  40   CONTINUE
       DO 45 I = 1,N
- 45     EWT(I) = RTOL(I)*ABS(YCUR(I)) + ATOL(I)
+        EWT(I) = RTOL(I)*ABS(YCUR(I)) + ATOL(I)
+ 45     CONTINUE
       RETURN
 C----------------------- END OF SUBROUTINE DEWSET ----------------------
       END

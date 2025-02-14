@@ -28,7 +28,8 @@ C
 C***FIRST EXECUTABLE STATEMENT  DVNORM
       SUM = 0.0
       DO 10 I = 1,N
- 10     SUM = SUM + (V(I)*W(I))**2
+        SUM = SUM + (V(I)*W(I))**2
+ 10     CONTINUE
       DVNORM = SQRT(SUM/N)
       RETURN
 C----------------------- END OF FUNCTION DVNORM ------------------------

@@ -171,7 +171,8 @@ C-----------------------------------------------------------------------
  120  NQ = MAXORD
       L = LMAX
       DO 125 I = 1,L
- 125    EL(I) = ELCO(I,NQ)
+        EL(I) = ELCO(I,NQ)
+ 125    CONTINUE
       NQNYH = NQ*NYH
       RC = RC*EL(1)/EL0
       EL0 = EL(1)
@@ -192,7 +193,8 @@ C whenever the order NQ is changed, or at the start of the problem.
 C-----------------------------------------------------------------------
  140  CALL DCFODE (METH, ELCO, TESCO)
  150  DO 155 I = 1,L
- 155    EL(I) = ELCO(I,NQ)
+        EL(I) = ELCO(I,NQ)
+ 155    CONTINUE
       NQNYH = NQ*NYH
       RC = RC*EL(1)/EL0
       EL0 = EL(1)
@@ -213,10 +215,12 @@ C-----------------------------------------------------------------------
  175  RH = MIN(RH,RMAX)
       RH = RH/MAX(1.0d0,ABS(H)*HMXI*RH)
       R = 1.0
-      DO 180 J = 2,L
+      DO 190 J = 2,L
         R = R*RH
         DO 180 I = 1,N
- 180      YH(I,J) = YH(I,J)*R
+          YH(I,J) = YH(I,J)*R
+ 180      CONTINUE
+ 190    CONTINUE
       H = H*RH
       RC = RC*RH
       IALTH = L
@@ -236,7 +240,8 @@ C-----------------------------------------------------------------------
       DO 215 JB = 1,NQ
         I1 = I1 - NYH
         DO 210 I = I1,NQNYH
- 210      YH1(I) = YH1(I) + YH1(I+NYH)
+          YH1(I) = YH1(I) + YH1(I+NYH)
+ 210      CONTINUE
  215    CONTINUE
 C-----------------------------------------------------------------------
 C Up to MAXCOR corrector iterations are taken.  A convergence test is
@@ -246,7 +251,8 @@ C vector ACOR(i).  The YH array is not altered in the corrector loop.
 C-----------------------------------------------------------------------
  220  M = 0
       DO 230 I = 1,N
- 230    Y(I) = YH(I,1)
+        Y(I) = YH(I,1)
+ 230    CONTINUE
       CALL F (NEQ, TN, Y, SAVF)
       NFE = NFE + 1
       IF (IPUP .LE. 0) GO TO 250
@@ -262,7 +268,8 @@ C-----------------------------------------------------------------------
       CRATE = 0.7
       IF (IERPJ .NE. 0) GO TO 430
  250  DO 260 I = 1,N
- 260    ACOR(I) = 0.0
+        ACOR(I) = 0.0
+ 260    CONTINUE
  270  IF (MITER .NE. 0) GO TO 350
 C-----------------------------------------------------------------------
 C In the case of functional iteration, update Y directly from
@@ -270,11 +277,13 @@ C the result of the last function evaluation.
 C-----------------------------------------------------------------------
       DO 290 I = 1,N
         SAVF(I) = H*SAVF(I) - YH(I,2)
- 290    Y(I) = SAVF(I) - ACOR(I)
+        Y(I) = SAVF(I) - ACOR(I)
+ 290    CONTINUE
       DEL = DVNORM (N, Y, EWT)
       DO 300 I = 1,N
         Y(I) = YH(I,1) + EL(1)*SAVF(I)
- 300    ACOR(I) = SAVF(I)
+        ACOR(I) = SAVF(I)
+ 300    CONTINUE
       GO TO 400
 C-----------------------------------------------------------------------
 C In the case of the chord method, compute the corrector error,
@@ -282,14 +291,16 @@ C and solve the linear system with that as right-hand side and
 C P as coefficient matrix.
 C-----------------------------------------------------------------------
  350  DO 360 I = 1,N
- 360    Y(I) = H*SAVF(I) - (YH(I,2) + ACOR(I))
+        Y(I) = H*SAVF(I) - (YH(I,2) + ACOR(I))
+ 360    CONTINUE
       CALL SLVS (WM, IWM, Y, SAVF)
       IF (IERSL .LT. 0) GO TO 430
       IF (IERSL .GT. 0) GO TO 410
       DEL = DVNORM (N, Y, EWT)
       DO 380 I = 1,N
         ACOR(I) = ACOR(I) + Y(I)
- 380    Y(I) = YH(I,1) + EL(1)*ACOR(I)
+        Y(I) = YH(I,1) + EL(1)*ACOR(I)
+ 380    CONTINUE
 C-----------------------------------------------------------------------
 C Test for convergence.  If M.gt.0, an estimate of the convergence
 C rate constant is stored in CRATE, and this is used in the test.
@@ -323,7 +334,8 @@ C-----------------------------------------------------------------------
       DO 445 JB = 1,NQ
         I1 = I1 - NYH
         DO 440 I = I1,NQNYH
- 440      YH1(I) = YH1(I) - YH1(I+NYH)
+          YH1(I) = YH1(I) - YH1(I+NYH)
+ 440      CONTINUE
  445    CONTINUE
       IF (IERPJ .LT. 0 .OR. IERSL .LT. 0) GO TO 680
       IF (ABS(H) .LE. HMIN*1.00001) GO TO 670
@@ -357,15 +369,18 @@ C-----------------------------------------------------------------------
       NST = NST + 1
       HU = H
       NQU = NQ
-      DO 470 J = 1,L
+      DO 480 J = 1,L
         DO 470 I = 1,N
- 470      YH(I,J) = YH(I,J) + EL(J)*ACOR(I)
+          YH(I,J) = YH(I,J) + EL(J)*ACOR(I)
+ 470      CONTINUE
+ 480    CONTINUE
       IALTH = IALTH - 1
       IF (IALTH .EQ. 0) GO TO 520
       IF (IALTH .GT. 1) GO TO 700
       IF (L .EQ. LMAX) GO TO 700
       DO 490 I = 1,N
- 490    YH(I,LMAX) = ACOR(I)
+        YH(I,LMAX) = ACOR(I)
+ 490    CONTINUE
       GO TO 700
 C-----------------------------------------------------------------------
 C The error test failed.  KFLAG keeps track of multiple failures.
@@ -380,7 +395,8 @@ C-----------------------------------------------------------------------
       DO 515 JB = 1,NQ
         I1 = I1 - NYH
         DO 510 I = I1,NQNYH
- 510      YH1(I) = YH1(I) - YH1(I+NYH)
+          YH1(I) = YH1(I) - YH1(I+NYH)
+ 510      CONTINUE
  515    CONTINUE
       RMAX = 2.0
       IF (ABS(H) .LE. HMIN*1.00001) GO TO 660
@@ -400,7 +416,8 @@ C-----------------------------------------------------------------------
  520  RHUP = 0.0
       IF (L .EQ. LMAX) GO TO 540
       DO 530 I = 1,N
- 530    SAVF(I) = ACOR(I) - YH(I,LMAX)
+        SAVF(I) = ACOR(I) - YH(I,LMAX)
+ 530    CONTINUE
       DUP = DVNORM (N, SAVF, EWT)/TESCO(3,NQ)
       EXUP = 1.0/(L+1)
       RHUP = 1.0/(1.4*DUP**EXUP + 0.0000014)
@@ -427,7 +444,8 @@ C-----------------------------------------------------------------------
       IF (RH .LT. 1.1) GO TO 610
       R = EL(L)/L
       DO 600 I = 1,N
- 600    YH(I,NEWQ+1) = ACOR(I)*R
+        YH(I,NEWQ+1) = ACOR(I)*R
+ 600    CONTINUE
       GO TO 630
  610  IALTH = 3
       GO TO 700
@@ -457,11 +475,13 @@ C-----------------------------------------------------------------------
       RH = MAX(HMIN/ABS(H),RH)
       H = H*RH
       DO 645 I = 1,N
- 645    Y(I) = YH(I,1)
+        Y(I) = YH(I,1)
+ 645    CONTINUE
       CALL F (NEQ, TN, Y, SAVF)
       NFE = NFE + 1
       DO 650 I = 1,N
- 650    YH(I,2) = H*SAVF(I)
+        YH(I,2) = H*SAVF(I)
+ 650    CONTINUE
       IPUP = MITER
       IALTH = 5
       IF (NQ .EQ. 1) GO TO 200
@@ -482,7 +502,8 @@ C-----------------------------------------------------------------------
  690  RMAX = 10.0
  700  R = 1.0/TESCO(2,NQU)
       DO 710 I = 1,N
- 710    ACOR(I) = ACOR(I)*R
+        ACOR(I) = ACOR(I)*R
+ 710    CONTINUE
  720  HOLD = H
       JSTART = 1
       RETURN

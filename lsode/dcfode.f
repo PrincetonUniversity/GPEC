@@ -75,7 +75,8 @@ C Form coefficients of p(x)*(x+nq-1). ----------------------------------
         PC(NQ) = 0.0
         DO 110 IB = 1,NQM1
           I = NQP1 - IB
- 110      PC(I) = PC(I-1) + FNQM1*PC(I)
+          PC(I) = PC(I-1) + FNQM1*PC(I)
+ 110      CONTINUE
         PC(1) = FNQM1*PC(1)
 C Compute integral, -1 to 0, of p(x) and x*p(x). -----------------------
         PINT = PC(1)
@@ -84,12 +85,14 @@ C Compute integral, -1 to 0, of p(x) and x*p(x). -----------------------
         DO 120 I = 2,NQ
           TSIGN = -TSIGN
           PINT = PINT + TSIGN*PC(I)/I
- 120      XPIN = XPIN + TSIGN*PC(I)/(I+1)
+          XPIN = XPIN + TSIGN*PC(I)/(I+1)
+ 120      CONTINUE
 C Store coefficients in ELCO and TESCO. --------------------------------
         ELCO(1,NQ) = PINT*RQ1FAC
         ELCO(2,NQ) = 1.0
         DO 130 I = 2,NQ
- 130      ELCO(I+1,NQ) = RQ1FAC*PC(I)/I
+          ELCO(I+1,NQ) = RQ1FAC*PC(I)/I
+ 130      CONTINUE
         AGAMQ = RQFAC*XPIN
         RAGQ = 1.0/AGAMQ
         TESCO(2,NQ) = RAGQ
@@ -112,11 +115,13 @@ C form coefficients of p(x)*(x+nq). ------------------------------------
         PC(NQP1) = 0.0
         DO 210 IB = 1,NQ
           I = NQ + 2 - IB
- 210      PC(I) = PC(I-1) + FNQ*PC(I)
+          PC(I) = PC(I-1) + FNQ*PC(I)
+ 210      CONTINUE
         PC(1) = FNQ*PC(1)
 C Store coefficients in ELCO and TESCO. --------------------------------
         DO 220 I = 1,NQP1
- 220      ELCO(I,NQ) = PC(I)/PC(2)
+          ELCO(I,NQ) = PC(I)/PC(2)
+ 220      CONTINUE
         ELCO(2,NQ) = 1.0
         TESCO(1,NQ) = RQ1FAC
         TESCO(2,NQ) = NQP1/ELCO(1,NQ)

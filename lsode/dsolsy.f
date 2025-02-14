@@ -70,9 +70,11 @@ C
       DO 320 I = 1,N
         DI = 1.0 - R*(1.0 - 1.0/WM(I+2))
         IF (ABS(DI) .EQ. 0.0) GO TO 390
- 320    WM(I+2) = 1.0/DI
+        WM(I+2) = 1.0/DI
+ 320    CONTINUE
  330  DO 340 I = 1,N
- 340    X(I) = WM(I+2)*X(I)
+        X(I) = WM(I+2)*X(I)
+ 340    CONTINUE
       RETURN
  390  IERSL = 1
       RETURN

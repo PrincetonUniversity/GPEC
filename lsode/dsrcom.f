@@ -42,16 +42,20 @@ C***FIRST EXECUTABLE STATEMENT  DSRCOM
       IF (JOB .EQ. 2) GO TO 100
 C
       DO 10 I = 1,LENRLS
- 10     RSAV(I) = RLS(I)
+        RSAV(I) = RLS(I)
+ 10     CONTINUE
       DO 20 I = 1,LENILS
- 20     ISAV(I) = ILS(I)
+        ISAV(I) = ILS(I)
+ 20     CONTINUE
       RETURN
 C
  100  CONTINUE
       DO 110 I = 1,LENRLS
- 110     RLS(I) = RSAV(I)
+         RLS(I) = RSAV(I)
+ 110     CONTINUE
       DO 120 I = 1,LENILS
- 120     ILS(I) = ISAV(I)
+         ILS(I) = ISAV(I)
+ 120     CONTINUE
       RETURN
 C----------------------- END OF SUBROUTINE DSRCOM ----------------------
       END
