@@ -141,9 +141,9 @@ c-----------------------------------------------------------------------
 
       neq = 2
       itol = 2
-      rtol = 1e-08    !changed to 1e-08       !1e-7*pr**0.4 ! !1e-7 at front 1e-6 !e-4
+      rtol = 1e-10    !changed to 1e-08       !1e-7*pr**0.4 ! !1e-7 at front 1e-6 !e-4
       ALLOCATE(atol(neq),W(1),dW_dq(1))
-      atol(:) = 1e-08!*pr**0.4 ! changed to 1e-08 1e-8 !e-4
+      atol(:) = 1e-10!*pr**0.4 ! changed to 1e-08 1e-8 !e-4
       itask = 2
       istate = 1
       iopt = 0
