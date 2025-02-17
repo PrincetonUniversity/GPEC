@@ -207,6 +207,13 @@ c-----------------------------------------------------------------------
      $    RESHAPE([Delta_prime_tmp], [1,msing])) !DB
       ENDDO
 
+      WRITE(*,*)"Original Delta diff=",(Delta_prime - 
+     $      transpose(conjg(Delta_prime)))
+      WRITE(*,*)"Original A diff=",(A_prime - 
+     $      transpose(conjg(A_prime)))
+      WRITE(*,*)"Original B_Gamma diff=",(B_prime - 
+     $      transpose(conjg(Gamma_prime)))
+
       WRITE(*,*)"Delta_prime=",Delta_prime
       WRITE(*,*)"Delta_prime_sym=",Delta_prime_sym
       WRITE(*,*)"Delta_diff=",abs(Delta_prime_sym - 
