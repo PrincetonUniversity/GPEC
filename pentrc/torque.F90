@@ -149,7 +149,7 @@ module torque
             vpar,kappaint,kappa,kk,djdj,jbb,&
             rex,imx,tnorm,he_t,hd_t,wb_t,wd_t
         real(r8), dimension(nthetafuns,ntheta) :: orbitfs
-        real(r8), dimension(nlmda*3) :: bpts
+        real(r8), dimension(1:mthsurf*3) :: bpts
         real(r8), dimension(mthsurf*3) :: extrema
         real(r8), dimension(2,nlmda) :: ldl
         real(r8), dimension(2,2+nlmda) :: ldl_inc
