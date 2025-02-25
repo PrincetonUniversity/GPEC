@@ -72,7 +72,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), DIMENSION(4) :: crzphi_f, crzphi_fx, crzphi_fy
 
-      REAL(r8), DIMENSION(cmtheta) :: aspl_f_arr
+      REAL(r8), DIMENSION(0:cmtheta) :: aspl_f_arr
 
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
