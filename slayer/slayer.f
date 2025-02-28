@@ -54,10 +54,10 @@ c-----------------------------------------------------------------------
      $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,qvals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQ_e_arr,
-     $                       inQ_i_arr,inc_beta_arr,inds_arr,
-     $                       intau_arr,inQ0_arr,inpr_arr,
-     $                       inpe_arr,omegas_arr,inQ_arr,
-     $                       psi_n_rational
+     $                   inQ_i_arr,inc_beta_arr,inds_arr,
+     $                   intau_arr,inQ0_arr,inpr_arr,
+     $                   inpe_arr,omegas_arr,inQ_arr,
+     $                   psi_n_rational,ind_beta_arr,D_beta_norm_arr
       REAL(r8), DIMENSION(8) :: inpr_prof
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: all_Re_deltas,
      $                           all_Im_deltas,all_roots
@@ -73,12 +73,13 @@ c-----------------------------------------------------------------------
      $     inQs_left,inQs_right,coarse_deltas
       REAL(r8) :: spot, slayer_inpr
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
-      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas,
+     $                                     dels_db_arr,lar_gamma_arr
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: deltas
 
       TYPE(result_type) :: results(8) ! Assuming max 8 rational surfaces
 
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: growthrates,
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: gammafac_arr,growthrates,
      $                                        growthrate_err
 
       NAMELIST/slayer_input/input_flag,infile,
@@ -300,6 +301,69 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     LAR (cylindrical) growthrates via restive layer thickness
 c-----------------------------------------------------------------------
+      IF (lar_gamma_eq_flag) THEN
+
+         ! propagate inpr value to inpr_prof if inpr_prof is turned off
+         IF (inpr_prof(1) < 0) THEN 
+            inpr_prof = inpr
+         END IF
+
+         CALL build_inputs(infile,ncfile,inpr_prof,
+     $               inpe,Pe_flag,qval_arr,psi_n_rational,
+     $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
+     $               inds_arr,ind_beta_arr,D_beta_norm_arr,
+     $               intau_arr,inQ0_arr,inpr_arr,inpe_arr,
+     $               omegas_arr,gammafac_arr,
+     $               Re_deltaprime_arr,Im_deltaprime_arr)
+
+         WRITE(*,*)"Safety factor values=",qval_arr
+         WRITE(*,*)"inQ values=",inQ_arr
+         WRITE(*,*)"Prantdl numbers=",inpr_arr
+         WRITE(*,*)"Electron viscosities=",inpe_arr
+         WRITE(*,*)"Omega ExB values=",omegas_arr
+         WRITE(*,*)"outer region real deltaprimes=",Re_deltaprime_arr
+         WRITE(*,*)"outer region imag deltaprimes=",Im_deltaprime_arr
+         WRITE(*,*)"inQ_e_arr=",inQ_e_arr
+         WRITE(*,*)"ind_beta_arr=",ind_beta_arr
+         WRITE(*,*)"D_beta_norm_arr=",D_beta_norm_arr
+         WRITE(*,*)"intau_arr=",intau_arr
+         WRITE(*,*)"gammafac_arr=",gammafac_arr
+
+         n_k = SIZE(qval_arr)
+
+         ALLOCATE(lar_gamma_arr(n_k),dels_db_arr(n_k))
+
+         DO k=1,n_k
+            WRITE(*,*) "Calculating growth rate on q=", qval_arr(k),
+     $       " rational surface"
+
+            dels_db=riccati_del_s(inQ_arr(k),inQ_e_arr(k),
+     $                   inQ_i_arr(k),inpr_arr(k),inc_beta_arr(k),
+     $                   D_beta_norm_arr(k),intau_arr(k))
+
+            del_s = dels_db * ind_beta_arr(k)
+            lar_gamma = gammafac_arr(k)/del_s
+
+            lar_gamma_arr(k) = lar_gamma
+            dels_db_arr(k) = dels_db
+
+         ENDDO
+         WRITE(*,*)"Calling slayer_netcdf_out"
+
+         br_th = 0.0
+
+         CALL output_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
+     $         stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
+     $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
+     $         D_beta_norm_arr,inpr_arr,psi_n_rational,
+     $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
+     $         lar_gamma_arr)
+
+         stop
+      ENDIF
+c-----------------------------------------------------------------------
+c     LAR (cylindrical) growthrates via restive layer thickness
+c-----------------------------------------------------------------------
       IF (lar_gamma_flag) THEN
          WRITE(*,*)"intau=",intau
          WRITE(*,*)"inQ=",inQ
@@ -350,16 +414,23 @@ c-----------------------------------------------------------------------
          del_s = dels_db * d_beta
          lar_gamma = (REAL(delta_n_p)/tau_r) * (rs/del_s)
 
+         ind_beta_arr = (/ d_beta /)
+         dels_db_arr = (/ dels_db /)
+         lar_gamma_arr = (/ lar_gamma /)
+
          WRITE(*,*)"dels_db=",dels_db
          WRITE(*,*)"lar_gamma=",lar_gamma
 
          WRITE(*,*)"slayer.f lar_gamma=",lar_gamma
 
-         CALL get_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
+         br_th = 0.0
+
+         CALL output_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
      $         stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
-     $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,inpr_arr,
-     $         dels_db,d_beta,lar_gamma)
+     $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
+     $         D_beta_norm_arr,inpr_arr,psi_n_rational,
+     $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
+     $         lar_gamma_arr)
 
          stop
       ENDIF
@@ -378,8 +449,10 @@ c-----------------------------------------------------------------------
          CALL build_inputs(infile,ncfile,inpr_prof,
      $               inpe,Pe_flag,qval_arr,psi_n_rational,
      $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
-     $               inds_arr,intau_arr,inQ0_arr,inpr_arr,inpe_arr,
-     $               omegas_arr,Re_deltaprime_arr,Im_deltaprime_arr)
+     $               inds_arr,ind_beta_arr,D_beta_norm_arr,
+     $               intau_arr,inQ0_arr,inpr_arr,inpe_arr,
+     $               omegas_arr,gammafac_arr,
+     $               Re_deltaprime_arr,Im_deltaprime_arr)
 
          WRITE(*,*)"Safety factor values=",qval_arr
          WRITE(*,*)"inQ values=",inQ_arr

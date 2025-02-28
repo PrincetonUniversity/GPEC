@@ -51,8 +51,8 @@ c -----------------------------------------------------------------------
       SUBROUTINE slayer_netcdf_out(msing,lar_gamma_eq_flag,
      $  lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
      $  qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
-     $  inpr_arr,br_th,Re_deltaprime_arr,Im_deltaprime_arr,dels_db,
-     $  d_beta,D_beta_norm,lar_gamma,inQs,iinQs,results)
+     $  inpr_arr,br_th,Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
+     $  ind_beta_arr,D_beta_norm_arr,lar_gamma_arr,inQs,iinQs,results)
 
         ! ds = D_beta_norm for lar growth rate routines
 
@@ -66,13 +66,15 @@ c        inQs,iinQs,results,
 
       INTEGER, ALLOCATABLE, DIMENSION(:) :: qval_arr
       REAL(r8), DIMENSION(:), ALLOCATABLE :: omegas_arr,
-     $ inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,inpr_arr
+     $ inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,inpr_arr,ind_beta_arr,
+     $ D_beta_norm_arr
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_deltaprime_arr,
      $         Im_deltaprime_arr,inQs,iinQs
 
-      REAL(r8) :: br_th, d_beta, D_beta_norm
-      COMPLEX(r8) :: dels_db, lar_gamma
+      REAL(r8) :: br_th
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: dels_db_arr, 
+     $                                          lar_gamma_arr
 
       TYPE(result_type), INTENT(IN) :: results(8)
 
@@ -82,7 +84,7 @@ c        inQs,iinQs,results,
      $    r_dim,pr_id, qr_id,shear_id,slice_id,inQs_id,S_id,
      $    gamma_err_id,gamma_loc_id,roots_dim,Re_dp_id,Im_dp_id,
      $    rdpp_id,idpp_id,inpr_id,br_th_id,dels_db_id,d_b_id,
-     $    inds_id,lar_gamma_id,qsing_id
+     $    inds_id,lar_gamma_id,qsing_id,indnorm_id
 
       INTEGER :: run, run_dimid, point_dimid, varids(4),
      $     max_points
@@ -192,7 +194,7 @@ c -----------------------------------------------------------------------
         CALL check( nf90_def_var(ncid,"d_beta",nf90_double,
      $      qsing_dim,d_b_id) )
         CALL check( nf90_def_var(ncid,"D_beta_norm",nf90_double,
-     $      qsing_dim,inds_id) )
+     $      qsing_dim,indnorm_id) )
         CALL check( nf90_def_var(ncid,"growthrate",nf90_double,
      $      (/qsing_dim,i_dim/),lar_gamma_id) )
       END IF
@@ -234,11 +236,14 @@ c -----------------------------------------------------------------------
 
       IF ((lar_gamma_flag) .OR. (lar_gamma_eq_flag)) THEN
         CALL check( nf90_put_var(ncid,dels_db_id, 
-     $  RESHAPE((/REAL(dels_db),AIMAG(dels_db)/),(/qsing_dim,2/))))
-        CALL check( nf90_put_var(ncid,d_b_id, (/ d_beta /)))
-        CALL check( nf90_put_var(ncid,inds_id, (/ D_beta_norm /)))
+     $      RESHAPE((/REAL(dels_db_arr),AIMAG(dels_db_arr)/),
+     $      (/msing,2/))))
+        CALL check( nf90_put_var(ncid,d_b_id,ind_beta_arr))
+        CALL check( nf90_put_var(ncid,indnorm_id, D_beta_norm_arr))
         CALL check( nf90_put_var(ncid,lar_gamma_id, 
-     $  RESHAPE((/REAL(lar_gamma),AIMAG(lar_gamma)/),(/qsing_dim,2/))))
+     $      RESHAPE((/REAL(lar_gamma_arr),AIMAG(lar_gamma_arr)/),
+     $      (/msing,2/))))
+
       END IF
 
 c -----------------------------------------------------------------------
@@ -271,9 +276,9 @@ c -----------------------------------------------------------------------
       INTEGER :: i, ncid,r_id,qsing_dim,qsing_id,msing_id,
      $    i_dim,ne_id,te_id,ni_id,ti_id,zeff_id,shear_id,bt_id,rs_id,
      $    R0_id,resm_id,nns_id,inQ_id,inQ_e_id,inc_beta_id,
-     $    inds_id,qval_id,inQ_i_id,qr_id,
+     $    inds_id,qval_id,inQ_i_id,qr_id,indnorm_id
      $    intau_id,inpr_id,inpe_id,omegas_id,Re_delta_id,Im_delta_id,
-     $    omegas_e_id,omegas_i_id
+     $    omegas_e_id,omegas_i_id,intau_id
 
       CHARACTER(64) :: ncfile
       LOGICAL, PARAMETER :: debug_flag = .FALSE.

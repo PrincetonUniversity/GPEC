@@ -181,42 +181,43 @@ c-----------------------------------------------------------------------
 c     Subprogram 3. scan_grid
 c     Run stability scan on real and imaginary rotation axes
 c-----------------------------------------------------------------------
-      SUBROUTINE get_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
-     $         stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
-     $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
-     $         Re_deltaprime_arr,Im_deltaprime_arr,inpr_arr,
-     $         dels_db,d_beta,lar_gamma)
+      SUBROUTINE output_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
+     $       stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
+     $       omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
+     $       D_beta_norm_arr,inpr_arr,psi_n_rational,Re_deltaprime_arr,
+     $       Im_deltaprime_arr,dels_db_arr,lar_gamma_arr)
 
       ! Declarations (include necessary type declarations from original code)
-      REAL(r8), INTENT(IN) :: d_beta
-      COMPLEX(r8), INTENT(IN) :: dels_db,lar_gamma
-
       LOGICAL, INTENT(IN) :: lar_gamma_eq_flag,lar_gamma_flag,
      $         stabscan_eq_flag,stabscan_flag,br_th_flag
 
       INTEGER, INTENT(IN), DIMENSION(:), ALLOCATABLE :: qval_arr
       REAL(r8), INTENT(IN), DIMENSION(:), ALLOCATABLE :: omegas_arr,
      $      inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
-     $      Re_deltaprime_arr,Im_deltaprime_arr,inpr_arr
-      
+     $      Re_deltaprime_arr,Im_deltaprime_arr,inpr_arr,ind_beta_arr,
+     $      D_beta_norm_arr
+  
+      COMPLEX(r8), INTENT(IN), DIMENSION(:), ALLOCATABLE :: dels_db_arr,
+     $                                         lar_gamma_arr
+
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs
       TYPE(result_type) :: results(8)
 
       REAL(r8) :: br_th = 0
 
-      WRITE(*,*)"Successfully entered get_lar_gamma()"
+      WRITE(*,*)"Successfully entered output_lar_gamma()"
 
       inQs = (/0.0/)
       iinQs = (/0.0/)
 
-      CALL slayer_netcdf_out(1,lar_gamma_eq_flag,lar_gamma_flag,
-     $            stabscan_eq_flag,stabscan_flag,br_th_flag,
+      CALL slayer_netcdf_out(SIZE(qval_arr),lar_gamma_eq_flag,
+     $    lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
      $            qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $            psi_n_rational,inpr_arr,br_th,Re_deltaprime_arr,
-     $            Im_deltaprime_arr,dels_db,d_beta,D_beta_norm,
-     $            lar_gamma,inQs,iinQs,results)
+     $            Im_deltaprime_arr,dels_db_arr,ind_beta_arr,
+     $            D_beta_norm_arr,lar_gamma_arr,inQs,iinQs,results)
    
-      END SUBROUTINE get_lar_gamma
+      END SUBROUTINE output_lar_gamma
 c-----------------------------------------------------------------------
 c     Subprogram 2. growthrate_scan
 c     Set up and iterate stability scans if no match is found

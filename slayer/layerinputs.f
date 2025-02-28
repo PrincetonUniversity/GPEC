@@ -4,7 +4,7 @@
       USE spline_mod, ONLY : spline_alloc,spline_eval,spline_type,
      $                       spline_dealloc,spline_int,spline_fit
       USE sglobal_mod, ONLY: m_p, chag, lnLamb,
-     $   Q_e,Q_i,pr,pe,c_beta,ds,tau,r8,mu0,pi,out_unit, ! NOT out_unit
+     $   Q_e,Q_i,pr,pe,c_beta,ds,d_beta,d_i,tau,r8,mu0,pi,out_unit, ! NOT out_unit
      $   eta,visc,rho_s,lu,omega_e,omega_i,delta_n,Q
       USE netcdf
       USE equil_mod, ONLY: equil_read,rzphi,twopi,ro,zo,sq
@@ -225,10 +225,11 @@ c     subprogram 3. build_inputs.
 c     build input arrays for SLAYER
 c-----------------------------------------------------------------------
       SUBROUTINE build_inputs(infile,ncfile,inpr_prof,inpe,Pe_flag,
-     $               qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
-     $               inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,Q0_arr,
-     $               inpr_arr,inpe_arr,omegas_arr,Re_deltaprime_arr,
-     $               Im_deltaprime_arr)
+     $              qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
+     $              inQ_i_arr,inc_beta_arr,inds_arr,ind_beta_arr,
+     $              D_beta_norm_arr,intau_arr,Q0_arr,inpr_arr,
+     $              inpe_arr,omegas_arr,gammafac_arr,
+     $              Re_deltaprime_arr,Im_deltaprime_arr)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
@@ -251,12 +252,12 @@ c-----------------------------------------------------------------------
       REAL(r8) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
      $     my_qval,my_sval,my_bt,my_rs,my_inpe,zeff,R_0
       REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_r,tau_h,
-     $            rho,tau_v,inpr,Qconv,lbeta,qintb
+     $            rho,tau_v,inpr,Qconv,lbeta,qintb,gammafac
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: inQ_arr,
-     $          inQ_e_arr,psi_n_rational,
-     $          inQ_i_arr,inc_beta_arr,inds_arr,intau_arr,Q0_arr,
-     $          inpr_arr,inpe_arr,omegas_arr,
-     $          Re_deltaprime_arr,Im_deltaprime_arr
+     $          inQ_e_arr,psi_n_rational,D_beta_norm_arr,
+     $          inQ_i_arr,inc_beta_arr,inds_arr,ind_beta_arr,
+     $          intau_arr,Q0_arr,inpr_arr,inpe_arr,omegas_arr,
+     $          gammafac_arr,Re_deltaprime_arr,Im_deltaprime_arr
       INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: qval_arr
       REAL(r8), DIMENSION(0:128) :: psitor, rhotor
       REAL(r8), DIMENSION(:), ALLOCATABLE :: my_rhotor,my_psitor
@@ -296,10 +297,12 @@ c-----------------------------------------------------------------------
 
       ALLOCATE(qval_arr(msing),inQ_arr(msing),inQ_e_arr(msing),
      $    inQ_i_arr(msing),
-     $    inc_beta_arr(msing),inds_arr(msing),intau_arr(msing),
-     $    Q0_arr(msing),inpr_arr(msing),inpe_arr(msing),
-     $    omegas_arr(msing),omegas_e_arr(msing),omegas_i_arr(msing),
-     $    Re_deltaprime_arr(msing),Im_deltaprime_arr(msing))
+     $    inc_beta_arr(msing),inds_arr(msing),ind_beta_arr(msing),
+     $    intau_arr(msing),Q0_arr(msing),inpr_arr(msing),
+     $    inpe_arr(msing),omegas_arr(msing),omegas_e_arr(msing),
+     $    omegas_i_arr(msing),gammafac_arr(msing),
+     $    Re_deltaprime_arr(msing),Im_deltaprime_arr(msing),
+     $    D_beta_norm_arr(msing))
       ALLOCATE(ne_arr(msing),te_arr(msing),ni_arr(msing),
      $    ti_arr(msing),zeff_arr(msing),bt_arr(msing),rs_arr(msing),
      $    R0_arr(msing),mu_i_arr(msing),nns_arr(msing))
@@ -399,6 +402,7 @@ c-----------------------------------------------------------------------
 
          v_a=b_l/(mu0*rho)**0.5           ! alfven velocity, B_L IS BROKEN
          rho_s=1.02e-4*(mu_i*t_e)**0.5/my_bt ! ion Lamour by elec. Temp.
+         d_i = ( (mu_i*m_p)/(n_e * (chag**2) * mu0) )**0.5 ! collisionless ion skin depth
 
          tau_h=R_0*(mu0*rho)**0.5/(nns*my_sval*my_bt) ! alfven time across surface
          tau_r=mu0*my_rs**2.0/eta            ! resistive time scale
@@ -422,7 +426,14 @@ c-----------------------------------------------------------------------
          lbeta=(5.0/3.0)*mu0*n_e*chag*(t_e+t_i)/my_bt**2.0
          c_beta=(lbeta/(1.0+lbeta))**0.5
 
+         ! this is using Fitzpatrick's tau', we need tau eventually
+         d_beta = c_beta*d_i  
+         D_beta_norm = (d_beta/my_rs)*(lu**(1.0/3.0))*(tau/(1+
+     $                 tau))**(0.5)
+
          delta_n=lu**(1.0/3.0)/my_rs         ! norm factor for delta primes
+
+         gammafac = (my_rs*Re_dp_diagonal(ising))/tau_r ! scalar to convert thickness into growth rate
 
          qval_arr(ising) = INT(my_qval)
          inQ_arr(ising)=REAL(Q)
@@ -430,6 +441,8 @@ c-----------------------------------------------------------------------
          inQ_i_arr(ising)=Q_i
          inc_beta_arr(ising)=c_beta
          inds_arr(ising)=ds
+         ind_beta_arr(ising)=d_beta
+         D_beta_norm_arr(ising)=D_beta_norm
          intau_arr(ising)=tau
          Q0_arr(ising)=Q
          inpr_arr(ising) = inpr
@@ -437,6 +450,7 @@ c-----------------------------------------------------------------------
          omegas_arr(ising) = omega
          omegas_e_arr(ising) = omega_e
          omegas_i_arr(ising) = omega_i
+         gammafac_arr(ising) = gammafac
          Re_deltaprime_arr(ising) = Re_dp_diagonal(ising)
          Im_deltaprime_arr(ising) = Im_dp_diagonal(ising)
       ENDDO
