@@ -163,6 +163,7 @@ c-----------------------------------------------------------------------
       iwork=0
       iwork(1)=1
       iwork(2)=1
+      iwork(5)=1e-9 !Initial H0.
       iwork(6)=100000 !5000 ! maximum step size, e.g. 50000
       iwork(17) = 8*neq + 2*neq**2
       iwork(18) = 29
