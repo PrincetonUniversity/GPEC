@@ -249,6 +249,8 @@ c     set pointer to singular surface.
 c-----------------------------------------------------------------------
       IF(ising < 1 .OR. ising > msing)RETURN
       singp => sing(ising)
+      q=singp%q
+
 c-----------------------------------------------------------------------
 c     zero di if out of range.
 c-----------------------------------------------------------------------
@@ -261,7 +263,6 @@ c-----------------------------------------------------------------------
 c     allocate and compute ranges.
 c-----------------------------------------------------------------------
       ALLOCATE(sing(ising)%n1(mpert-1),sing(ising)%n2(2*mpert-2))
-      q=singp%q
       singp%r1=(/ipert0/)
       singp%r2=(/ipert0,ipert0+mpert/)
       singp%n1=(/(ipert,ipert=1,ipert0-1),(ipert,ipert=ipert0+1,mpert)/)

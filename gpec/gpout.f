@@ -24,9 +24,8 @@ c     15. gpout_arzphifun
 c     16. gpout_clebsch
 c     17. gpout_control_filter
 c     18. gpout_qrv
-c     19. check
-c     20. gpout_init_netcdf
-c     21. gpout_close_netcdf
+c     19. gpout_init_netcdf
+c     20. gpout_close_netcdf
 c-----------------------------------------------------------------------
 c     subprogram 0. gpout_mod.
 c     module declarations.
@@ -46,6 +45,7 @@ c-----------------------------------------------------------------------
       USE utilities, ONLY : progressbar
       USE pentrc_interface, ONLY : zi,mi,wefac,wpfac,initialize_pentrc
       USE gslayer_mod, ONLY : gpec_slayer
+      USE idcon_mod, ONLY : check
 
       IMPLICIT NONE
 
@@ -1580,8 +1580,8 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: spot, slayer_inpr
       COMPLEX(r8), DIMENSION(mpert), INTENT(IN) :: xspmn
 
-      INTEGER :: i_id,q_id,m_id,p_id,c_id,w_id,k_id,n_id,d_id,a_id,
-     $           pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
+      INTEGER :: i_id,q_id,m_id,p_id,bp_id,c_id,w_id,k_id,n_id,d_id,
+     $           a_id,pp_id,cp_id,wp_id,np_id,dp_id,wc_id,bc_id,
      $           astat
 
       INTEGER :: itheta,ising,icoup
@@ -1839,6 +1839,11 @@ c-----------------------------------------------------------------------
          CALL check( nf90_put_att(fncid, d_id, "long_name",
      $     "Unitless Resonance Parameter $\partial_\psi \frac{"//
      $     "\delta B \cdot \nabla \psi}{B \cdot \nabla \theta}$") )
+         CALL check( nf90_def_var(fncid, "B_pen", nf90_double,
+     $      (/q_id,i_id/), bp_id) )
+         CALL check( nf90_put_att(fncid, bp_id, "units", "T") )
+         CALL check( nf90_put_att(fncid, bp_id, "long_name",
+     $       "Penetrated resonant field"))
          CALL check( nf90_def_var(fncid, "I_res", nf90_double,
      $      (/q_id,i_id/), c_id) )
          CALL check( nf90_put_att(fncid, c_id, "units", "A") )
@@ -1877,6 +1882,8 @@ c-----------------------------------------------------------------------
      $      RESHAPE((/REAL(singflx), AIMAG(singflx)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, d_id,
      $      RESHAPE((/REAL(delta), AIMAG(delta)/), (/msing,2/))) )
+         CALL check( nf90_put_var(fncid, bp_id,
+     $      RESHAPE((/REAL(singbwp), AIMAG(singbwp)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, c_id,
      $      RESHAPE((/REAL(singcur), AIMAG(singcur)/), (/msing,2/))) )
          CALL check( nf90_put_var(fncid, w_id, 2*island_hwidth) )
@@ -6389,29 +6396,9 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_qrv
+
 c-----------------------------------------------------------------------
-c     subprogram 19. check.
-c     Check status of netcdf file.
-c-----------------------------------------------------------------------
-      SUBROUTINE check(stat)
-c-----------------------------------------------------------------------
-c     declaration.
-c-----------------------------------------------------------------------
-      INTEGER, INTENT (IN) :: stat
-c-----------------------------------------------------------------------
-c     stop if it is an error.
-c-----------------------------------------------------------------------
-      IF(stat /= nf90_noerr) THEN
-         PRINT *, TRIM(nf90_strerror(stat))
-         STOP "ERROR: failed to write/read netcdf file"
-      ENDIF
-c-----------------------------------------------------------------------
-c     terminate.
-c-----------------------------------------------------------------------
-      RETURN
-      END SUBROUTINE check
-c-----------------------------------------------------------------------
-c     subprogram 20. gpout_init_netcdf.
+c     subprogram 19. gpout_init_netcdf.
 c     Initialize the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_init_netcdf
@@ -6635,7 +6622,7 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpout_init_netcdf
 c-----------------------------------------------------------------------
-c     subprogram 21. gpout_close_netcdf.
+c     subprogram 20. gpout_close_netcdf.
 c     Close the netcdf files used for module outputs.
 c-----------------------------------------------------------------------
       SUBROUTINE gpout_close_netcdf

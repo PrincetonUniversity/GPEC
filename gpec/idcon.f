@@ -13,6 +13,7 @@ c     4. idcon_metric
 c     5. idcon_matrix
 c     6. idcon_vacuum
 c     7. idcon_action_matrices
+c     8. check
 c-----------------------------------------------------------------------
 c     subprogram 0. idcon_mod.
 c     module declarations.
@@ -23,6 +24,7 @@ c-----------------------------------------------------------------------
       MODULE idcon_mod
       USE gpglobal_mod
       USE ismath_mod
+      USE netcdf
       IMPLICIT NONE
 
       CONTAINS
@@ -1099,5 +1101,29 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_action_matrices
+
+c-----------------------------------------------------------------------
+c     subprogram 8. check.
+c     Check status of netcdf file.
+c-----------------------------------------------------------------------
+
+      SUBROUTINE check(stat)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT (IN) :: stat
+c-----------------------------------------------------------------------
+c     stop if it is an error.
+c-----------------------------------------------------------------------
+      IF(stat /= nf90_noerr) THEN
+         PRINT *, TRIM(nf90_strerror(stat))
+         STOP "ERROR: failed to write/read netcdf file"
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE check
+
 
       END MODULE idcon_mod

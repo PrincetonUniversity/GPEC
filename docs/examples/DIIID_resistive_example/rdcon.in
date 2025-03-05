@@ -29,8 +29,8 @@
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
     gal_flag=t           ! Compute outer regime using resonant Galerkin method
 
-    sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
-    dmlim=0.2            ! See sas_flag
+    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    dmlim=0.15            ! See sas_flag
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
