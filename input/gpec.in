@@ -2,7 +2,6 @@
    dcon_dir   = ""                   ! Path to DCON outputs. Individual file paths are appended to this
    idconfile  = "euler.bin"          ! Eigenfunctions output by DCON run
    ieqfile    = "psi_in.bin"         ! Flux surfaces output by DCON run
-   ivacuumfile= "vacuum.bin"         ! Vacuum info output by DCON run
    rdconfile  = "globalsol.bin"      ! Galerkin eigenfunctions output by resistive DCON run
 
    gal_flag = f             ! Use the Galerkin eigenfunctions from resistive DCON instead of the ideal DCON shooting method solutions

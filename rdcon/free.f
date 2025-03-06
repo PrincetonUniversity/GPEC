@@ -71,7 +71,6 @@ c-----------------------------------------------------------------------
       LOGICAL :: farwal_flag=.FALSE.
 
       REAL(r8) :: kernelsignin
-      INTEGER :: vac_unit
       REAL(r8), DIMENSION(:,:), POINTER :: grri,xzpts
 c-----------------------------------------------------------------------
 c     write formats.
@@ -111,19 +110,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
-      vac_unit=4
       farwal_flag=.TRUE. ! self-inductance for plasma boundary.
       kernelsignin=-1.0
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
-      WRITE(vac_unit)grri
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
 
       IF(wv_farwall_flag)THEN
          temp=wv
@@ -133,15 +128,11 @@ c-----------------------------------------------------------------------
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
-      WRITE(vac_unit)xzpts
 
-      CALL bin_close(vac_unit)
       DEALLOCATE(grri,xzpts)
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert

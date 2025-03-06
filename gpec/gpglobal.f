@@ -37,7 +37,7 @@ c-----------------------------------------------------------------------
       CHARACTER(2) :: sn,ss
       CHARACTER(10) :: date,time,zone
       CHARACTER(16) :: jac_type,jac_in,jac_out,data_type
-      CHARACTER(128) :: ieqfile,idconfile,ivacuumfile,rdconfile,dcon_dir
+      CHARACTER(128) :: ieqfile,idconfile,rdconfile,dcon_dir
 
       INTEGER, PARAMETER :: hmnum=128
       REAL(r8), PARAMETER :: gauss=0.0001

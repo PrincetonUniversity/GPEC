@@ -45,7 +45,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
       INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
 
-      NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
+      NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
      $     jac_in,power_bin,power_rin,power_bpin,power_rcin,tmag_in,
@@ -87,7 +87,6 @@ c-----------------------------------------------------------------------
       dcon_dir=""
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
-      ivacuumfile="vacuum.bin"
       rdconfile="globalsol.bin"
       power_flag=.TRUE.
       fft_flag=.FALSE.
@@ -262,7 +261,6 @@ c-----------------------------------------------------------------------
          CALL setahgdir(dcon_dir)
          idconfile = TRIM(dcon_dir)//"/"//TRIM(idconfile)
          ieqfile = TRIM(dcon_dir)//"/"//TRIM(ieqfile)
-         ivacuumfile = TRIM(dcon_dir)//"/"//TRIM(ivacuumfile)
          rdconfile = TRIM(dcon_dir)//"/"//TRIM(rdconfile)
       ENDIF
 c-----------------------------------------------------------------------
