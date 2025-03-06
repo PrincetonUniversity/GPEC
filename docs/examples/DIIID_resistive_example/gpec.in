@@ -34,7 +34,7 @@
    filter_modes = 0         ! Number of modes isolated, negative values isolate backwards from the last mode
 /
 &GPEC_CONTROL
-   resp_index=1             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended.
+   resp_index=1             ! Integer 0-4, determining method of inductance matrix formation. 0 uses energy identity, and is recommended for ideal MHD. Use 1 when using resistive DCON.
    sing_spot=5e-4           ! Minimum distance to singular surface in (m-nq) space
    sing_npsi=100            ! Number of points between rational surfaces used for b-normal splines across sin_spot
    reg_flag=f               ! Regularize the solution near resonant surfaces
