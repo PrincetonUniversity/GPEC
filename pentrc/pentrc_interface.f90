@@ -149,7 +149,7 @@ module pentrc_interface
 
     namelist/pent_control/nfac, tfac, wefac, wdfac, wpfac, nufac, divxfac, &
             atol_xlmda, rtol_xlmda, atol_psi, rtol_psi, nlmda, ntheta, ximag, xmax, psilims, &
-            use_classic_splines,pentrc_threads, force_xialpha
+            use_classic_splines,pentrc_threads,openmp_threads,force_xialpha
 
     namelist/pent_output/moment, output_ascii, output_netcdf, &
             eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, dynamic_grid, &

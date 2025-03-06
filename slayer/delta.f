@@ -79,13 +79,13 @@ c-----------------------------------------------------------------------
          
          OPEN(UNIT=out2_unit,FILE='slayer_riccati_profile_n'//
      $      TRIM(sn)//'.out',STATUS='UNKNOWN')
-         WRITE(out2_unit,'(1x,3(a17))'),"x","RE(y)","IM(y)"      
+         WRITE(out2_unit,'(1x,3(a17))') "x","RE(y)","IM(y)"
          DO WHILE (x>xout)
             istep=istep+1
             CALL lsode(w_der,neq,y,x,xout,itol,rtol,atol,
      $           itask,istate,iopt,rwork,lrw,iwork,liw,jac,mf)
             WRITE(bin_unit)REAL(x,4),REAL(REAL(y),4),REAL(AIMAG(y),4) 
-            WRITE(out2_unit,'(1x,3(es17.8e3))')x,REAL(y),AIMAG(y)
+            WRITE(out2_unit,'(1x,3(es17.8e3))') x,REAL(y),AIMAG(y)
          ENDDO        
          CLOSE(bin_unit)
          CLOSE(out2_unit)

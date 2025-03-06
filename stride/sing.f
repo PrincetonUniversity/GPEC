@@ -113,8 +113,8 @@ c-----------------------------------------------------------------------
       sq_s_ix = sq%ix
       fmats_s_ix = fmats%ix
 
-      WRITE(*, '(1x,a5,a12)'),'ising','di'
-      WRITE(*, '(1x,a17)'),'---------------'
+      WRITE(*, '(1x,a5,a12)') 'ising','di'
+      WRITE(*, '(1x,a17)') '---------------'
 
       !Note: nThreads faster than nThreads-1, despite creating with
       !      vac_parallel more threads than processors.

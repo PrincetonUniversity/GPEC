@@ -148,7 +148,7 @@ c-----------------------------------------------------------------------
          OPEN(UNIT=out_unit,FILE="gpec_slayer_torque_balance_m"//
      $        TRIM(sm)//"_n"//TRIM(sn)//".out",
      $        STATUS="UNKNOWN")
-         WRITE(out_unit,'(1x,5(a17))'),"inQ","RE(delta)",
+         WRITE(out_unit,'(1x,5(a17))') "inQ","RE(delta)",
      $        "IM(delta)","jxb","bal"
          DO i=0,inum
             WRITE(out_unit,'(1x,5(es17.8e3))')

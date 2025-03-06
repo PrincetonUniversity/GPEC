@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
      $     singthresh_callen_flag,singthresh_slayer_flag,singthresh_flag
       LOGICAL, DIMENSION(100) :: ss_flag
       COMPLEX(r8), DIMENSION(:), POINTER :: finmn,foutmn,xspmn,
-     $     fxmn,fxfun,coilmn
+     $     fxmn,fxfun
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
       INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
 
@@ -393,21 +393,20 @@ c-----------------------------------------------------------------------
          IF(verbose) WRITE(*,*)
      $     "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
-         ALLOCATE(coilmn(cmpert))
+         ALLOCATE(coilmn(cmpert,coil_num))
          ALLOCATE(coil_indmat(mpert,coil_num))
+         coilmn=0
          coil_indmat=0
          DO j=1,coil_num
-            coilmn=0
-            CALL field_bs_psi(psilim,coilmn,1,op_start=j,op_stop=j,
+            CALL field_bs_psi(psilim,coilmn(:,j),1,op_start=j,op_stop=j,
      $                        op_verbose=.TRUE.)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
-                  coil_indmat(cmlow-mlow+i,j)=coilmn(i)
-                  finmn(cmlow-mlow+i)=finmn(cmlow-mlow+i)+coilmn(i)
+                  coil_indmat(cmlow-mlow+i,j)=coilmn(i,j)
+                  finmn(cmlow-mlow+i)=finmn(cmlow-mlow+i)+coilmn(i,j)
                ENDIF
             ENDDO
          ENDDO
-         DEALLOCATE(coilmn)
          IF(timeit) CALL gpec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------

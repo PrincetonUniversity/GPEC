@@ -36,6 +36,7 @@
     ximag = 0.0                         ! Step off real energy axis (use to avoid zero collisionality singularities)
     psilims = 0 1                       ! Range in psi_n
     use_classic_splines = f             ! Use a classical cubic spline instead of tri-diagonal solution for splines with extrapolation boundary conditions
+    pentrc_threads = 0                  ! Sets the number of parallel openMP threads for PENTRC. Setting <=0 defaults to OMP_NUM_THREADS env variable
 /
 &PENT_OUTPUT
     moment = "pressure"                 ! Use 'pressure' for torque and particle transport, 'heat' for heat transport

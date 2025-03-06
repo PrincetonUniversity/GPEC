@@ -482,7 +482,7 @@ c-----------------------------------------------------------------------
         nIntervalsMin = 1 + msing + 2 * (msing -1) + 1
          IF(nIntervalsMin > nIntervalsTot)THEN
              nIntervalsTot = nIntervalsMin
-             WRITE(*, '(1x,a25,i4, a27)'),"Forcing nIntervalsTot to ",
+             WRITE(*, '(1x,a25,i4, a27)') "Forcing nIntervalsTot to ",
      $          nIntervalsTot," to cover all singularities"
          ENDIF
 c-----------------------------------------------------------------------
