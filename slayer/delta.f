@@ -1073,13 +1073,14 @@ c-----------------------------------------------------------------------
       DO i=1,5
         DO j=1,5
           R(i,j)=y(i+5*(j-1))
+          invT22RT12(i,j)=0.0
         END DO
       END DO
 
       T22RT12=Tx(6:10,6:10)-matmul(R,Tx(1:5,6:10))
       RT11T21=matmul(R,Tx(1:5,1:5))-Tx(6:10,1:5)
       DO i=1,5
-        invT22RT12(i,i)=1
+        invT22RT12(i,i)=1.0
       ENDDO
       CALL zgetrf(5,5,T22RT12,5,ipiv,info)
       CALL zgetrs('N',5,5,T22RT12,5,ipiv,invT22RT12,5,info)
