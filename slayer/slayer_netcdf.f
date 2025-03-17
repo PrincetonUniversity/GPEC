@@ -52,7 +52,8 @@ c -----------------------------------------------------------------------
      $  lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
      $  qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
      $  inpr_arr,br_th,Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
-     $  ind_beta_arr,D_beta_norm_arr,lar_gamma_arr,inQs,iinQs,results)
+     $  lu_arr,ind_beta_arr,D_beta_norm_arr,lar_gamma_arr,
+     $  inQs,iinQs,results)
 
         ! ds = D_beta_norm for lar growth rate routines
 
@@ -67,7 +68,7 @@ c        inQs,iinQs,results,
       INTEGER, ALLOCATABLE, DIMENSION(:) :: qval_arr
       REAL(r8), DIMENSION(:), ALLOCATABLE :: omegas_arr,
      $ inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,inpr_arr,ind_beta_arr,
-     $ D_beta_norm_arr
+     $ D_beta_norm_arr,lu_arr
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_deltaprime_arr,
      $         Im_deltaprime_arr,inQs,iinQs
@@ -208,7 +209,7 @@ c -----------------------------------------------------------------------
       CALL check( nf90_put_var(ncid,Q_id, inQ_arr))
       CALL check( nf90_put_var(ncid,Q_e_id, inQ_e_arr))
       CALL check( nf90_put_var(ncid,Q_i_id, inQ_i_arr))
-      CALL check( nf90_put_var(ncid,S_id, (/lu/)))
+      CALL check( nf90_put_var(ncid,S_id, lu_arr))
       CALL check( nf90_put_var(ncid,pr_id, psi_n_rational))
       CALL check( nf90_put_var(ncid,inpr_id, inpr_arr))
       !CALL check( nf90_put_var(ncid,qr_id, qval_arr))

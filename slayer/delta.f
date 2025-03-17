@@ -160,8 +160,11 @@ c-----------------------------------------------------------------------
 !      x=10.0*(1.0+log10(Q/pr))
 
       !!!!!!!!
-      my_q=10.0 ! "starting backwards integration at large q"
+      my_q=inx ! "starting backwards integration at large q"
       !!!!!!!!
+      WRITE(*,*)"myq starting point = ",my_q
+      WRITE(*,*)"myq starting point = ",my_q
+      WRITE(*,*)"myq starting point = ",my_q
 
       xmin=1e-5
       IF(present(inx)) x=inx
