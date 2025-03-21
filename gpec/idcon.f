@@ -890,6 +890,8 @@ c-----------------------------------------------------------------------
       nths=mthsurf+5
       nths2=nths*2
       nfm2=mpert*2
+      IF(verbose) WRITE(*,*)"Calculating vacuum energy matrices"
+
       ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
      $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
       IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
