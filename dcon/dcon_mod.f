@@ -51,7 +51,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: feval_flag=.FALSE.
       LOGICAL :: fft_flag=.FALSE.
       LOGICAL :: bin_euler=.FALSE.
-      LOGICAL :: bin_vac=.TRUE.
+      LOGICAL :: bin_vac=.FALSE.
       LOGICAL :: out_evals=.FALSE.
       LOGICAL :: bin_evals=.FALSE.
       LOGICAL :: out_sol=.FALSE.

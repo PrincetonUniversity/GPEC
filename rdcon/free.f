@@ -144,13 +144,13 @@ c-----------------------------------------------------------------------
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      
       IF(bin_vac)THEN
          WRITE(vac_unit)grri
          WRITE(vac_unit)xzpts
 
          CALL bin_close(vac_unit)
       ENDIF
+
       DEALLOCATE(grri,xzpts)
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
