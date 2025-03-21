@@ -249,12 +249,11 @@ c     set pointer to singular surface.
 c-----------------------------------------------------------------------
       IF(ising < 1 .OR. ising > msing)RETURN
       singp => sing(ising)
-      q=singp%q
-
 c-----------------------------------------------------------------------
 c     zero di if out of range.
 c-----------------------------------------------------------------------
       ipert0=NINT(nn*singp%q)-mlow+1
+      q=singp%q
       IF(ipert0 <= 0 .OR. mlow > nn*q .OR. mhigh < nn*q)THEN
          singp%di=0
          RETURN
