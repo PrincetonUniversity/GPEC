@@ -236,6 +236,7 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(ivacuumfile/="DEPRECATED")THEN
        PRINT *,"WARNING: ivacuumfile is deprecated and will be ignored."
+      ENDIF
 c-----------------------------------------------------------------------
 c     forced ralational settings
 c-----------------------------------------------------------------------

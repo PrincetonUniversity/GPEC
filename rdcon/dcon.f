@@ -228,7 +228,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose
+     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------

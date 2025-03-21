@@ -124,14 +124,20 @@ c-----------------------------------------------------------------------
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
-      WRITE(vac_unit)grri
+      IF(bin_vac)THEN
+         WRITE(*,*) "WARNING: vacuum.bin is not used by GPEC and is"//
+     $     " being deprecated. If you do not need this file, set "//
+     $     " bin_vac = f in dcon.in."
+         CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
+         WRITE(vac_unit)grri
+      ENDIF
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-
-      WRITE(vac_unit)grri
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+      ENDIF
       IF(wv_farwall_flag)THEN
          temp=wv
       ENDIF         
@@ -140,20 +146,29 @@ c-----------------------------------------------------------------------
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+      ENDIF
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
-      WRITE(vac_unit)xzpts
+
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+         WRITE(vac_unit)xzpts
+      ENDIF
 
 ! xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
 !      DO ipert=1,mthvac+5
 !         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),xzpts(ipert,2),
 !     $        xzpts(ipert,3),xzpts(ipert,4)
 !      ENDDO
-      CALL bin_close(vac_unit)
+
+      IF(bin_vac)THEN
+         CALL bin_close(vac_unit)
+      ENDIF
+
       DEALLOCATE(grri,xzpts)
 
       IF(wv_farwall_flag)THEN
