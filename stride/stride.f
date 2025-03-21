@@ -143,7 +143,7 @@ c-----------------------------------------------------------------------
       IF(.NOT. reform_eq_with_psilim)THEN
          PRINT *, "** STRIDE requires reformation of equil splines "//
      $            "on q-based sub-interval."
-         PRINT *, " > Forcing reform_eq_with_psilim=t"
+         PRINT *, "  > Forcing reform_eq_with_psilim=t"
       ENDIF
       IF(psilim /= psihigh .OR. psilow /= sq%xs(0))THEN
          psilow_tmp = psilow  ! if we feed psilow directly, it get's overwritten by namelist read

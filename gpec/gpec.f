@@ -45,6 +45,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
       INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
 
+      LOGICAL :: warnings_needed
+
       NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
@@ -225,18 +227,33 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deprecated variable errors
 c-----------------------------------------------------------------------
+      warnings_needed=.false.
       IF((pmode/=0).or.(p1mode/=0).or.(dmode/=0).or.(d1mode/=0).or.
      $   (fmode/=0).or.(rmode/=0).or.(smode/=0))THEN
-         PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
-         PRINT *,"  Use filter_types to filter external spectrum."
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+         PRINT *,"!! WARNING: p/d/f/r/smode syntax is a deprecated."
+         PRINT *,"  >> Use filter_types to filter external spectrum."
          CALL gpec_stop("Deprecated input.")
       ENDIF
       IF(malias/=0) THEN
-       PRINT *,"WARNING: malias may not be supported in future versions"
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+       PRINT *,"!! WARNING: malias will be deprecated in the future"
       ENDIF
       IF(ivacuumfile/="DEPRECATED")THEN
-       PRINT *,"WARNING: ivacuumfile is deprecated and will be ignored."
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+       PRINT *,"!! WARNING: ivacuumfile is deprecated and will be"//
+     $         " ignored."
       ENDIF
+      IF(warnings_needed) PRINT *, "..."
 c-----------------------------------------------------------------------
 c     forced ralational settings
 c-----------------------------------------------------------------------
@@ -248,13 +265,13 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(singthresh_callen_flag)THEN
          IF(data_flag .OR. harmonic_flag)THEN
-            PRINT *, "WARNING: "//
+            PRINT *, "!! WARNING: "//
      $             "singthresh_callen_flag uses coil vacuum fields only"
          ENDIF
          IF(coil_flag)THEN
             singfld_flag = .TRUE.
          ELSE
-            PRINT *, "WARNING: "//
+            PRINT *, "!! WARNING: "//
      $              "singthresh_callen_flag requires coil vacuum fields"
          ENDIF
       ENDIF
@@ -546,7 +563,7 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (singcoup_flag) THEN
          IF (msing==0) THEN
-            PRINT *,"WARNING: no rationals for singcoup_flag"
+            PRINT *,"!! WARNING: no rationals for singcoup_flag"
             singcoup_flag = .FALSE.
          ELSE         
             CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
@@ -571,11 +588,12 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (singfld_flag) THEN
          IF (con_flag) THEN
-            PRINT *,"WARNING: singfld_flag not supported with con_flag"
+            PRINT *,"!! WARNING: singfld_flag not supported with"//
+     $              "  con_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSEIF (msing==0) THEN
-            PRINT *,"WARNING: no rationals for singfld_flag"
+            PRINT *,"!! WARNING: no rationals for singfld_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE

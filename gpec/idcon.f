@@ -272,8 +272,8 @@ c-----------------------------------------------------------------------
          ! this could be due to termination at a zero crossing (bad)
          ! but it could also be due to psiedge termination (good)
          IF(verbose)THEN
-            WRITE(*,*)"WARNING: psilim does not match eigenmode psifac"
-            WRITE(*,*)"        > Forcing psilim to last psifac"
+            PRINT *,"!! WARNING: psilim does not match eigenmode psifac"
+            PRINT *,"        >> Forcing psilim to last psifac"
          ENDIF
          psilim = psifac(mstep)
          CALL spline_eval(sq,psilim,0)
@@ -346,7 +346,8 @@ c-----------------------------------------------------------------------
          CALL bin_close(in_unit)
          DEALLOCATE(rgarr,zgarr,psigarr)
          CALL bicube_fit(psi_in,"extrap","extrap")
-         IF(verbose) WRITE(*,*)"mr = ",mr,", mz = ",mz
+         IF(verbose) WRITE(*,'(1x,2(a2,a8,I6))') "  ","mr =    ",mr,
+     $      ", ","mz =    ",mz
       ELSE
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psilim,theta(itheta),0)

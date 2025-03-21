@@ -1602,14 +1602,14 @@ c-----------------------------------------------------------------------
 
       IF(verbose)THEN
          IF(kmsing>0)THEN
-            WRITE(*,*) " > Found kinetic singular surfaces:"
+            WRITE(*,*) "  > Found kinetic singular surfaces:"
             WRITE(*,'(3x,a16, a16)')"psi","q"
             DO ising=1,kmsing
                WRITE(*,'(3x,2(es16.8))') kinsing(ising)%psifac,
      $            kinsing(ising)%q
             ENDDO
          ELSE
-            WRITE(*,*) " > Found no kinetic singular surfaces"
+            WRITE(*,*) "  > Found no kinetic singular surfaces"
          ENDIF
       ENDIF
 

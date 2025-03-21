@@ -213,12 +213,12 @@ module pentrc_interface
         if(all(psi_out==-1)) psi_out = (/(i,i=1,30)/)/30.6 ! even spread if user doesn't pick any
 
         ! warnings if using deprecated inputs
-        if(openmp_threads>0) print *,"WARNING: openmp_threads has been deprecated. Use pentrc_threads or OMP_NUM_THREADS env variable."
-        if(eq_out) print *, "WARNING: eq_out has been deprecated. Behavior is always true."
-        if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
-        if(term_flag) print *, "WARNING: term_flag has been deprecated. Use verbose."
-        !if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out." !! officially removed
-        !if(any(psilim/=0)) print *, "WARNING: psilim has been deprecated. Use psilims."
+        if(openmp_threads>0) print *,"!! WARNING: openmp_threads has been deprecated. Use pentrc_threads or OMP_NUM_THREADS env variable."
+        if(eq_out) print *, "!! WARNING: eq_out has been deprecated. Behavior is always true."
+        if(eqpsi_out) print *, "!! WARNING: eqpsi_out has been deprecated. Use equil_grid."
+        if(term_flag) print *, "!! WARNING: term_flag has been deprecated. Use verbose."
+        !if(any(psiout/=0)) print *, "!! WARNING: psiout has been deprecated. Use psi_out." !! officially removed
+        !if(any(psilim/=0)) print *, "!! WARNING: psilim has been deprecated. Use psilims."
 
         ! distribute some simplified inputs to module circles
         xatol = atol_xlmda

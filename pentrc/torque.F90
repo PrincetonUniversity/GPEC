@@ -464,8 +464,8 @@ module torque
                     call spline_fit(vspl,"extrap")
                     call spline_roots(vspl,1,nbpts,bpts)
                     if(nbpts<1)then
-                        print *, "WARNING: Found passing particle in bounce particle integrals"
-                        print *, "  > Consider refining equilibrium or changing equil spline sizes"
+                        print *, "!! WARNING: Found passing particle in bounce particle integrals"
+                        print *, "  >> Consider refining equilibrium or changing equil spline sizes"
                         t1 = 0.0
                         t2 = 1.0
                     else if(nbpts<2)then
@@ -574,7 +574,11 @@ module torque
                     ldl_inc = powspace(lmdamin,lmdatpb,1,2+nlmda,"both") ! passing space including boundary
                     ldl = ldl_inc(:,2:1+nlmda) ! exclude boundary
                 else
-                    if(lmdatpb==lmdamax) print *,'WARNING: bmax = bmin @ psi',psi
+                    if(lmdatpb==lmdamax) then
+                        print *, ""
+                        print *,'!! WARNING: bmax = bmin @ psi',psi
+                        print *, ""
+                    end if
                     ldl_p = powspace(lmdamin,lmdatpb,2,2+nlmda/2,"upper") ! passing space including boundary
                     ldl_t = powspace(lmdatpb,lmdamax,2,2+nlmda-nlmda/2,"lower") ! trapped space including boundary
                     ldl(1,:) = (/ldl_p(1,2:1+nlmda/2),ldl_t(1,2:1+nlmda-nlmda/2)/) ! full space with no point on boundary or max
@@ -598,10 +602,12 @@ module torque
                     if(sigma==0)then ! find trapped particle bounce pts
                         call spline_roots(vspl, 1, nbpts, bpts)
                         if(nbpts < 1)then
-                            print *, "WARNING: Found passing particle in bounce particle integrals"
+                            print *, "!!"
+                            print *, "!! WARNING: Found passing particle in bounce particle integrals"
                             print *, "  > psi =",psi,", lambda=",lmda
                             print *, "  > lambda min, boundary, max =",lmdamin, lmdatpb, lmdamax
                             print *, "  > Consider refining equilibrium or changing equil spline sizes"
+                            print *, "!!"
                             t1 = tspl%xs(ibmax)
                             t2 = tspl%xs(ibmax) + 1
                         else if(nbpts<2)then  ! marginally trapped
@@ -673,8 +679,8 @@ module torque
                         if(vpar<=0)then ! local zero between nodes
                             if(lmda>lmdatpe .or. lmda<(2*lmdatpb-lmdatpe))then ! expected near t/p bounry
                                 if(ABS(psi_warned-psi)>0.1)then !avoid flood of warnings
-                                    print '(2x,a35,es10.3E2,a3,es10.3E2,a2,es10.3E2,a2,es10.3E2)', &
-                                    "WARNING: vpar zero crossing at psi=",psi,",t=",t1,"<=",tdt(1,i),"<=",t2
+                                    print '(1x,a35,es10.3E2,a3,es10.3E2,a2,es10.3E2,a2,es10.3E2)', &
+                                    "!! WARNING: vpar zero crossing at psi=",psi,",t=",t1,"<=",tdt(1,i),"<=",t2
                                     psi_warned = psi
                                 endif
                             endif

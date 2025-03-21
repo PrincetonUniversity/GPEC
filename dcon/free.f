@@ -125,9 +125,8 @@ c-----------------------------------------------------------------------
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
       IF(bin_vac)THEN
-         WRITE(*,*) "WARNING: vacuum.bin is not used by GPEC and is"//
-     $     " being deprecated. If you do not need this file, set "//
-     $     " bin_vac = f in dcon.in."
+         WRITE(*,*) "!! WARNING: Use of vacuum.bin is deprecated in"//
+     $     " GPEC. Set bin_vac = f in dcon.in to reduce file IO."
          CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
          WRITE(vac_unit)grri
       ENDIF

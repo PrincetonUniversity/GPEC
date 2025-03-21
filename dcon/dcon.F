@@ -89,8 +89,8 @@ c-----------------------------------------------------------------------
 c     set variables
 c-----------------------------------------------------------------------
       IF(parallel_threads > 0)THEN
-        WRITE(*,*) "WARNING: parallel_threads has been deprecated. "//
-     $    "Use dcon_kin_threads"
+        WRITE(*,*) "!! WARNING: parallel_threads has been deprecated. "
+     $    //"Use dcon_kin_threads"
       ENDIF
 #ifdef _OPENMP
 c The code is compiled with the OpenMP option so the preprocessor

@@ -815,7 +815,7 @@ module inputs
                 xs_m(2)%fs(0:,i) = xspmns(1:,ims)
                 xs_m(3)%fs(0:,i) = xmsmns(1:,ims)
             else
-                print *,"WARNING: Not input for DCON m ",mfac(i)
+                print *,"!! WARNING: Not input for DCON m ",mfac(i)
                 xs_m(1)%fs(0:,i) = 0
                 xs_m(2)%fs(0:,i) = 0
                 xs_m(3)%fs(0:,i) = 0
