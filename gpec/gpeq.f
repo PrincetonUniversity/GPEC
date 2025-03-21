@@ -79,11 +79,8 @@ c-----------------------------------------------------------------------
       ELSE
          IF (galsol%gal_flag) THEN
             CALL cspline_eval(u1,psi,1)
-            CALL cspline_eval(u2,psi,0)
             xsp1_mn=u1%f1
          ELSE
-            CALL cspline_eval(u1,psi,0)
-            CALL cspline_eval(u1,psi,1)
             CALL cspline_eval(u2,psi,0)
             xspfac=u2%f/singfac
             CALL zgbmv('N',mpert,mpert,mband,mband,-ione,kmats,
