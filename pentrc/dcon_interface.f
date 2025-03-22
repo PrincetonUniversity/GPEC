@@ -10,6 +10,7 @@ c     modules.
 c     Major changes are:
 c     - psixy=1 IF statement that optionally read psi_in.bin removed (no ieqfile)
 c     - No vacuum data read (no ivacuumfile)
+c      -- Note: ivacuumfile was removed from GPEC in 2025.
 c     - Major culling of global variables
 c      -- Explicit imports
 c      -- Local variables moved to their respective subroutines

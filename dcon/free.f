@@ -122,16 +122,22 @@ c-----------------------------------------------------------------------
       farwal_flag=.TRUE. ! self-inductance for plasma boundary.
       kernelsignin=-1.0
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
+      ! xzpts has a dimension of [mthvac+2] with 2 exrta repeating pts
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
-      WRITE(vac_unit)grri
+      IF(bin_vac)THEN
+         WRITE(*,*) "!! WARNING: Use of vacuum.bin is deprecated in"//
+     $     " GPEC. Set bin_vac = f in dcon.in to reduce file IO."
+         CALL bin_open(vac_unit,"vacuum.bin","UNKNOWN","REWIND","none")
+         WRITE(vac_unit)grri
+      ENDIF
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
-
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+      ENDIF
       IF(wv_farwall_flag)THEN
          temp=wv
       ENDIF         
@@ -140,20 +146,20 @@ c-----------------------------------------------------------------------
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+      ENDIF
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts)
-      WRITE(vac_unit)grri
-      WRITE(vac_unit)xzpts
+      IF(bin_vac)THEN
+         WRITE(vac_unit)grri
+         WRITE(vac_unit)xzpts
 
-! xzpts has a dimensioni of [mthvac+2] with 2 repeating pts.
-!      DO ipert=1,mthvac+5
-!         WRITE(*,'(1p,4e16.8)')xzpts(ipert,1),xzpts(ipert,2),
-!     $        xzpts(ipert,3),xzpts(ipert,4)
-!      ENDDO
-      CALL bin_close(vac_unit)
+         CALL bin_close(vac_unit)
+      ENDIF
+
       DEALLOCATE(grri,xzpts)
 
       IF(wv_farwall_flag)THEN
@@ -278,7 +284,7 @@ c-----------------------------------------------------------------------
          WRITE(out_unit,'(/2x,"i",5x,"re wp",8x,"im wp",8x,"abs wp"/)')
       ENDDO
 c-----------------------------------------------------------------------
-c     compute and print separate plasma and vacuum eigenvalues.
+c     compute separate plasma and vacuum eigenvalues.
 c-----------------------------------------------------------------------
       lwork=2*mpert+1
       CALL zgeev('V','V',mpert,wp,mpert,ep,

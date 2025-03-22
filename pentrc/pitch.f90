@@ -254,7 +254,7 @@ module pitch_integration
 
         ! write error file and stop program if integration fials
         if(iwork(11)>iwork(6)/2 .and. istate/=-1) then
-            print *, "WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in lambda integration"
+            print *, "!! WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in lambda integration"
         endif
         if(istate==-1) then
             out_unit = get_free_file_unit(-1)

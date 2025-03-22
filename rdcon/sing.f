@@ -253,6 +253,7 @@ c-----------------------------------------------------------------------
 c     zero di if out of range.
 c-----------------------------------------------------------------------
       ipert0=NINT(nn*singp%q)-mlow+1
+      q=singp%q
       IF(ipert0 <= 0 .OR. mlow > nn*q .OR. mhigh < nn*q)THEN
          singp%di=0
          RETURN
@@ -261,7 +262,6 @@ c-----------------------------------------------------------------------
 c     allocate and compute ranges.
 c-----------------------------------------------------------------------
       ALLOCATE(sing(ising)%n1(mpert-1),sing(ising)%n2(2*mpert-2))
-      q=singp%q
       singp%r1=(/ipert0/)
       singp%r2=(/ipert0,ipert0+mpert/)
       singp%n1=(/(ipert,ipert=1,ipert0-1),(ipert,ipert=ipert0+1,mpert)/)
@@ -285,7 +285,7 @@ c-----------------------------------------------------------------------
       CALL sing_mmat(ising)
       m0mat=TRANSPOSE(singp%mmatr(r1(1),r2,:,0))
       di=m0mat(1,1)*m0mat(2,2)-m0mat(2,1)*m0mat(1,2)
-      WRITE(*,'(1x,a4,es10.3E2,a9,I4)') "di =",di,
+      WRITE(*,'(3x,a4,es10.3E2,a9,I4)') "di =",di,
      $     ", ising =",ising
       singp%di=di
       singp%alpha=SQRT(-CMPLX(singp%di))

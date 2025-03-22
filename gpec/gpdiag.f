@@ -1933,9 +1933,9 @@ c-----------------------------------------------------------------------
       print *, 1," roots expected: ", 0.0_r8
       print *, nroots," roots found at: ",roots(1:nroots)
       if(abs(roots(1)) < 1e-9 .and. nroots==1) THEN
-         print *," > Spline root finder passes the test!"
+         print *,"  > Spline root finder passes the test!"
       else
-         print *, " > *** Spline root finder FAILED ***"
+         print *, "  > *** Spline root finder FAILED ***"
       endif
       open(unit=out_unit,file="spline_roots_linear.out",
      $     status="unknown")
@@ -1957,9 +1957,9 @@ c-----------------------------------------------------------------------
       print *, nroots," roots found at: ",roots(1:nroots)
       if(abs(roots(1)+1)<1e-9 .and. abs(roots(2))<1e-9 .and. nroots==2)
      $  then
-         print *," > Spline root finder passes the test!"
+         print *,"  > Spline root finder passes the test!"
       else
-         print *, " > *** Spline root finder FAILED ***"
+         print *, "  > *** Spline root finder FAILED ***"
       endif
       open(unit=out_unit,file="spline_roots_cubic.out",
      $     status="unknown")
