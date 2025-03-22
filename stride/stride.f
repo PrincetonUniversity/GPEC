@@ -217,13 +217,13 @@ c     fit equilibrium quantities to Fourier-spline functions.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
       IF(mat_flag .OR. ode_flag)THEN
-         WRITE(*,'(1x,a)')"Fourier analysis of metric tensor components"
-         WRITE(*,'(1x,1p,4(a,e10.3))')"q0 = ",q0,", qmin = ",qmin,
+         WRITE(*,'(3x,1p,4(a,e10.3))')"q0 = ",q0,", qmin = ",qmin,
      $        ", qmax = ",qmax,", qa = ",qa
-         WRITE(*,'(1x,1p,3(a,e10.3))')"betat = ",betat,
+         WRITE(*,'(3x,1p,3(a,e10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betaj = ",betaj
-         WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
+         WRITE(*,'(3x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
+         WRITE(*,'(1x,a)')"Fourier analysis of metric tensor components"
          CALL fourfit_make_metric
          WRITE(*,*)"Computing F, G, and K Matrices"
          CALL SYSTEM_CLOCK(COUNT=fTime)

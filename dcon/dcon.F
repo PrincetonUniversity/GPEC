@@ -198,17 +198,17 @@ c-----------------------------------------------------------------------
 c     fit equilibrium quantities to Fourier-spline functions.
 c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag)THEN
-         IF(verbose) WRITE(*,'(1x,a)')
-     $        "Fourier analysis of metric tensor components"
-         IF(verbose) WRITE(*,'(1x,1p,4(a,es10.3))')"q0 = ",q0,
+         IF(verbose) WRITE(*,'(3x,1p,4(a,es10.3))')"q0 = ",q0,
      $        ", qmin = ",qmin,", qmax = ",qmax,", q95 = ",q95
-         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,es10.3))')
+         IF(verbose) WRITE(*,'(3x,a,l1,1p,3(a,es10.3))')
      $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
      $        ", qlim = ",qlim,", psilim = ",psilim
-         IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
+         IF(verbose) WRITE(*,'(3x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betap1 = ",betap1
-         IF(verbose) WRITE(*,'(1x,5(a,i4))')"nn = ",nn,", mlow = ",mlow,
+         IF(verbose) WRITE(*,'(3x,5(a,i4))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
+         IF(verbose) WRITE(*,'(1x,a)')
+     $        "Fourier analysis of metric tensor components"
          CALL fourfit_make_metric
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
          CALL fourfit_make_matrix(out_fund)
