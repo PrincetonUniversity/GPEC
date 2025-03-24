@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check,fourfield_flag
+     $     params_check,IonScreening_flag
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
@@ -65,7 +65,7 @@ c-----------------------------------------------------------------------
      $     QPescan_flag,QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag,
-     $     fourfield_flag
+     $     IonScreening_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     stability_flag,bal_flag
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
@@ -124,7 +124,7 @@ c-----------------------------------------------------------------------
       parflow_flag=.FALSE.
       PeOhmOnly_flag=.TRUE.
       Pe_flag=.FALSE.
-      fourfield_flag=.FALSE. ! parallel flow flag to consider dVz/dX
+      IonScreening_flag=.FALSE. ! parallel flow flag to consider dVz/dX
       params_flag=.TRUE.
       input_flag=.FALSE.
       infile="input_params.dat"
@@ -179,7 +179,7 @@ c-----------------------------------------------------------------------
       psi0=1.0/ABS(delta+delta_n_p) ! a.u.
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
 
-      IF (fourfield_flag) THEN
+      IF (IonScreening_flag) THEN
          IF(verbose) WRITE(*,*)"Four-field model used for delta"
          delta4=riccati4(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
          psi04=1.0/ABS(delta4+delta_n_p) ! a.u.
