@@ -15,6 +15,7 @@ c-----------------------------------------------------------------------
       USE sglobal_mod
       USE params_mod
       USE delta_mod, ONLY: riccati,riccati4,riccati_out,
+     $                     riccati_full,
      $                     parflow_flag,PeOhmOnly_flag
 
       IMPLICIT NONE
@@ -181,7 +182,13 @@ c-----------------------------------------------------------------------
 
       IF (IonScreening_flag) THEN
          IF(verbose) WRITE(*,*)"Four-field model used for delta"
-         delta4=riccati4(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
+         IF (Pe_flag) THEN
+            delta4=riccati_full(inQ,inQ_e,inQ_i,inpr,
+     $                     inc_beta,inds,intau,inpe)
+         ELSE
+            delta4=riccati4(inQ,inQ_e,inQ_i,inpr,
+     $                     inc_beta,inds,intau,inpe)
+         ENDIF
          psi04=1.0/ABS(delta4+delta_n_p) ! a.u.
          jxb4=-AIMAG(1.0/(delta4+delta_n_p)) ! a.u.
          WRITE(*,*)"delta=",delta
