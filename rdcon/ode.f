@@ -346,7 +346,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
- 10   FORMAT(1x,a,1p,e10.3,0p,a,f6.3)
+ 10   FORMAT(1x,2x,a,1p,e10.3,0p,a,f6.3)
  20   FORMAT(/3x,"ising",3x,"psi",9x,"q",10x,"di",6x,"re alpha",
      $     3x,"im alpha"//i6,1p,5e11.3/)
  30   FORMAT(/3x,"is",4x,"psifac",6x,"dpsi",8x,"q",7x,"singfac",5x,
@@ -449,8 +449,7 @@ c         IF(ising > msing .OR. psilim < sing(ising)%psifac)EXIT
 c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
-C      IF(ising > msing .OR. psilim < sing(ising)%psifac)THEN
-      IF(ising > msing)THEN
+      IF(ising > msing .OR. psilim < sing(ising)%psifac)THEN
          psimax=psilim*(1-eps)
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          next="finish"

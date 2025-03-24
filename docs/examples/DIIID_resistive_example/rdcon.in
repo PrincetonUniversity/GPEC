@@ -29,8 +29,8 @@
     vac_flag=t           ! Compute plasma, vacuum, and total energies for free-boundary modes
     gal_flag=t           ! Compute outer regime using resonant Galerkin method
 
-    sas_flag=f           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
-    dmlim=0.2            ! See sas_flag
+    sas_flag=t           ! Safety factor (q) limit determined as q_ir+dmlim where q_ir is the equil outermost rational
+    dmlim=0.15            ! See sas_flag
     sing_start=0         ! Start integration at the sing_start'th rational from the axis (psilow)
 
     nn=1                 ! Toroidal mode number
@@ -63,6 +63,7 @@
     mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
 
     bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    bin_vac=f            ! Output deprecated binary vacuum.bin containing vacuum energy matrices
     euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions

@@ -143,7 +143,7 @@ module grid
                     - 14*x**9 + (126*x**11)/11 - (84*x**13)/13 & 
                     + (12*x**15)/5 - (9*x**17)/17 + x**19/19
            case default
-              print *, "WARNING: power not in analytic database, &
+              print *, "!! WARNING: power not in analytic database, &
                     &attempting numeric integration"
               call spline_alloc(spl,num-1,1)
               spl%xs = x

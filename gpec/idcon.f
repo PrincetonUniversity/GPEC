@@ -13,6 +13,7 @@ c     4. idcon_metric
 c     5. idcon_matrix
 c     6. idcon_vacuum
 c     7. idcon_action_matrices
+c     8. check
 c-----------------------------------------------------------------------
 c     subprogram 0. idcon_mod.
 c     module declarations.
@@ -23,6 +24,7 @@ c-----------------------------------------------------------------------
       MODULE idcon_mod
       USE gpglobal_mod
       USE ismath_mod
+      USE netcdf
       IMPLICIT NONE
 
       CONTAINS
@@ -270,8 +272,8 @@ c-----------------------------------------------------------------------
          ! this could be due to termination at a zero crossing (bad)
          ! but it could also be due to psiedge termination (good)
          IF(verbose)THEN
-            WRITE(*,*)"WARNING: psilim does not match eigenmode psifac"
-            WRITE(*,*)"        > Forcing psilim to last psifac"
+            PRINT *,"!! WARNING: psilim does not match eigenmode psifac"
+            PRINT *,"        >> Forcing psilim to last psifac"
          ENDIF
          psilim = psifac(mstep)
          CALL spline_eval(sq,psilim,0)
@@ -344,7 +346,8 @@ c-----------------------------------------------------------------------
          CALL bin_close(in_unit)
          DEALLOCATE(rgarr,zgarr,psigarr)
          CALL bicube_fit(psi_in,"extrap","extrap")
-         IF(verbose) WRITE(*,*)"mr = ",mr,", mz = ",mz
+         IF(verbose) WRITE(*,'(1x,2(a2,a8,I6))') "  ","mr =    ",mr,
+     $      ", ","mz =    ",mz
       ELSE
          DO itheta=0,mthsurf
             CALL bicube_eval(rzphi,psilim,theta(itheta),0)
@@ -872,7 +875,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE idcon_matrix
 c-----------------------------------------------------------------------
 c     subprogram 6. idcon_vacuum.
-c     read vacuum.bin from vacuum code.
+c     recompute vacuum response matricies in mthsurf
 c-----------------------------------------------------------------------
       SUBROUTINE idcon_vacuum
       COMPLEX(r8), DIMENSION(mpert,mpert) :: wv
@@ -881,54 +884,38 @@ c-----------------------------------------------------------------------
       INTEGER :: mths
       REAL(r8) :: kernelsignin
       COMPLEX(r8), DIMENSION(mpert,mpert) :: temp
-c-----------------------------------------------------------------------
-c     read vacuum data.
-c-----------------------------------------------------------------------
-      IF(mthsurf==mthvac)THEN
-         nths=mthvac+5
-         nths2=nths*2
-         nfm2=mpert*2
-         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
-     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))
-         IF(verbose) WRITE(*,*)"Reading vacuum energy matrices"
-         CALL bin_open(bin_unit,ivacuumfile,"OLD","REWIND","none")
-         READ(bin_unit)grri
-         READ(bin_unit)grre
-         READ(bin_unit)griw
-         READ(bin_unit)grrw
-         READ(bin_unit)xzpts
-         CALL bin_close(bin_unit)
+
 c-----------------------------------------------------------------------
 c     get grri and grre matrices by calling mscvac. repeat free.f.
 c-----------------------------------------------------------------------
-      ELSE
-         nths=mthsurf+5
-         nths2=nths*2
-         nfm2=mpert*2
-         ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
-     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
-         IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
-         farwal_flag=.TRUE.
-         kernelsignin = -1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
-     $               kernelsignin,wall_flag,farwal_flag,grri,xzpts)
-         kernelsignin = 1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
-     $               kernelsignin,wall_flag,farwal_flag,grre,xzpts)
-         IF(wv_farwall_flag)THEN
-            temp=wv
-         ENDIF        
+      nths=mthsurf+5
+      nths2=nths*2
+      nfm2=mpert*2
+      IF(verbose) WRITE(*,*)"Calculating vacuum energy matrices"
 
-         farwal_flag=.FALSE.
-         kernelsignin = -1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+      ALLOCATE(grri(nths2,nfm2),grre(nths2,nfm2),
+     $        griw(nths2,nfm2),grrw(nths2,nfm2),xzpts(nths,4))     
+      IF(debug_flag) PRINT *,'mscvac - ',mthvac,mtheta,mthsurf,nths2
+      farwal_flag=.TRUE.
+      kernelsignin = -1.0
+      CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,grri,xzpts)
+      kernelsignin = 1.0
+      CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+     $               kernelsignin,wall_flag,farwal_flag,grre,xzpts)
+      IF(wv_farwall_flag)THEN
+         temp=wv
+      ENDIF        
+
+      farwal_flag=.FALSE.
+      kernelsignin = -1.0
+      CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
      $               kernelsignin,wall_flag,farwal_flag,griw,xzpts)
-         kernelsignin = 1.0
-         CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
+      kernelsignin = 1.0
+      CALL mscvac(wv,mpert,mtheta,mthsurf,complex_flag,
      $               kernelsignin,wall_flag,farwal_flag,grrw,xzpts)
-         IF(wv_farwall_flag)THEN
-            wv=temp
-         ENDIF
+      IF(wv_farwall_flag)THEN
+         wv=temp
       ENDIF
 c-----------------------------------------------------------------------
 c     terminate.
@@ -1099,5 +1086,29 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE idcon_action_matrices
+
+c-----------------------------------------------------------------------
+c     subprogram 8. check.
+c     Check status of netcdf file.
+c-----------------------------------------------------------------------
+
+      SUBROUTINE check(stat)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      INTEGER, INTENT (IN) :: stat
+c-----------------------------------------------------------------------
+c     stop if it is an error.
+c-----------------------------------------------------------------------
+      IF(stat /= nf90_noerr) THEN
+         PRINT *, TRIM(nf90_strerror(stat))
+         STOP "ERROR: failed to write/read netcdf file"
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END SUBROUTINE check
+
 
       END MODULE idcon_mod
