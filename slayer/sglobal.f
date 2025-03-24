@@ -1,5 +1,7 @@
       MODULE sglobal_mod
       USE local_mod, ONLY: r8
+      USE cspline_mod, only : cspline_type, cspline_alloc,
+     $     cspline_fit, cspline_eval
 
       IMPLICIT NONE
       INTEGER :: mm,nn
@@ -22,4 +24,8 @@
 
       CHARACTER(2) :: sn
       
+      ! spline class of Riccati matrix
+      TYPE(cspline_type) :: splR
+      ! Public declaration for external access
+      PUBLIC :: splR
       END MODULE sglobal_mod
