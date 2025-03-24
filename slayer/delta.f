@@ -261,6 +261,177 @@ c-----------------------------------------------------------------------
       riccati4=Delta_new
       END FUNCTION riccati4
 
+      FUNCTION riccati_full(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
+     $     inpe,iinQ,inx,iny)
+      USE global_mod
+
+      REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
+      REAL(r8),INTENT(IN) :: intau
+      REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
+      COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
+      COMPLEX(r8) :: riccati_full, Delta_old, Delta_new
+
+      INTEGER :: istep,neq,itol,itask,istate,liw,lrw,lzw,iopt,mf
+      INTEGER :: ml,mu,nrpd,ipar,ind,nR
+      INTEGER :: nerr, jsv, meth, miter
+
+      REAL(r8) :: xintv,x,xout,x_match,jac,xmin
+      COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: y,dy,zwork,y1,dy1
+      COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE :: pd, Rmatrix, dRmatrix
+
+      INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,rwork,rtol,atol,RT
+      
+      Q=inQ
+      IF(present(iinQ)) Q=inQ+ifac*iinQ
+      Q_e=inQ_e
+      Q_i=inQ_i
+      pr=inpr
+      pe=inpe
+      c_beta=inc_beta
+      ds=inds
+      tau=intau
+   
+      IF ((layfac>0).AND.(ABS(Q-Q_e)<layfac)) THEN
+         Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
+      ENDIF
+
+      write(*,*) Q
+      !write(*,*) Q, Q_e, Q_i, pr, pe, c_beta, ds, tau
+
+      neq = 49
+      itol = 4
+      ALLOCATE(y(neq),dy(neq),pd(neq,neq),rtol(neq),atol(neq)
+     $        ,y1(7),dy1(7))
+      rtol = 1e-10
+      atol = 1e-10
+      itask = 2
+      istate = 1
+      mf = 21
+      liw = 100 !length of array IWORK
+      lrw = 100 !length of RWORK
+      lzw = 6000 !length of ZWORK
+      ALLOCATE(iwork(liw),rwork(lrw),zwork(lzw))
+      
+      iopt=0
+      iwork=0
+      iwork(1)=1
+      iwork(2)=1
+      iwork(5)=1e-9 !H0 initial step size
+      iwork(6)=100000 !5000 ! maximum step size, e.g. 50000
+      iwork(17) = 8*neq + 2*neq**2
+      iwork(18) = 29
+      iwork(19) = 30+neq 
+
+      rwork=0
+      x=0.0
+      xout=1e-4
+      rwork(1)=1e-5
+
+      y = 0.0
+      dy = 0.0
+
+      Delta_old=0.0
+      Delta_new=1.0
+
+      DO WHILE (abs(Delta_new-Delta_old)/abs(Delta_new)>0.01)
+        IF (riccati_out) THEN
+           xout=xout+1.0
+        ELSE
+           xout=xout+10.0
+        ENDIF
+        Delta_old=Delta_new
+        DO WHILE (x<xout)
+           istep=istep+1
+           CALL ZVODE(w_der_full,neq,y,x,xout,itol,rtol,atol,itask,
+     $        istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dy_der_y_full,
+     $        mf,ipar)
+        ENDDO        
+        CALL Update_Delta_full(Delta_new,y,x,neq)
+        IF (verbose) WRITE(*,*) xout, Delta_new
+      END DO
+      write(*,*) 'complete forward'
+
+      ! Fix Riccati matrix size
+      x_match=xout
+      nR = int(x_match)*1000
+      ALLOCATE(RT(nR),Rmatrix(nR,neq))
+      ind=1
+      Rt=0
+      Rmatrix=0
+      RT(ind) = x
+      Rmatrix(ind,:) = y(:)
+
+      istate=1
+      x=0.0
+      xout=0.0
+      y=0.0
+      dy=0.0
+      DO WHILE (xout<15.0) 
+        xout=xout+1e-3
+        DO WHILE (x<xout)
+           istep=istep+1
+           CALL ZVODE(w_der_full,neq,y,x,xout,itol,rtol,atol,itask,
+     $        istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dy_der_y_full,
+     $        mf,ipar)
+        ENDDO        
+        !CALL w_der4_v2(neq,x,y,dy,ipar)
+        IF (RT(ind) .lt. x) then
+          ind=ind+1
+          RT(ind) = x
+          Rmatrix(ind,:) = y(:)
+        !  dRmatrix(ind,:) = dy(:)
+        endif
+      ENDDO
+      CALL Update_Delta_full(Delta_new,y,x,neq)
+      WRITE(*,*) xout, Delta_new, ind
+      riccati_full=Delta_new
+      END FUNCTION riccati_full
+
+!      CALL cspline_alloc(splR,nR,49)
+!      CALL cspline_alloc(spldR,nR,49)
+!      splR%xs=RT
+!      spldR%xs=RT
+!      splR%fs=Rmatrix
+!      spldR%fs=dRmatrix
+!      CALL cspline_fit(splR,"extrap")
+!      write(*,*) 'complete fit'
+
+!      DEALLOCATE(y,dy,pd,rtol,atol,iwork,rwork,zwork)
+!         xout=0.0
+!         !write(*,*) istate
+!         !xout=xout+1e-3
+!         DO WHILE (xout<15.0) 
+!           xout=xout+1e-3
+!           DO WHILE (x<xout)
+!              istep=istep+1
+!              CALL ZVODE(w_der4_v2,neq,y,x,xout,itol,rtol,atol,itask,
+!     $        istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,dy_der_y4_v2,mf,
+!     $        ipar)
+!           ENDDO        
+!           CALL w_der4_v2(neq,x,y,dy,ipar)
+!           IF (RT(ind) .lt. x) then
+!             ind=ind+1
+!             RT(ind) = x
+!             Rmatrix(ind,:) = y(:)
+!             dRmatrix(ind,:) = dy(:)
+!           endif
+!         ENDDO
+!         CALL Update_Delta_v2(Delta_new,y,x,neq)
+!         WRITE(*,*) xout, Delta_new, ind
+!      ENDIF
+!
+!!      CALL Set_cubic_coeff (40000, Rmatrix, dRmatrix, 
+!!     $                     ReR, ImR, RedR, ImdR, RT, c)
+!      CALL cspline_alloc(splR,nR,49)
+!      CALL cspline_alloc(spldR,nR,49)
+!      splR%xs=RT
+!      spldR%xs=RT
+!      splR%fs=Rmatrix
+!      spldR%fs=dRmatrix
+
+
+
 c-----------------------------------------------------------------------
 c     riccati integration.
 c-----------------------------------------------------------------------
@@ -871,6 +1042,90 @@ c-----------------------------------------------------------------------
       END SUBROUTINE w_derr
 
 c-----------------------------------------------------------------------
+c     Subroutine for riccati integration based on the full model.
+c     x (input)   : stretched variable
+c     y (input)   : riccati matrix
+c     dy (output) : Riccati differential matrix
+c     Documentation is not prepared.
+c-----------------------------------------------------------------------
+      SUBROUTINE w_der_full(neq,x,y,dy,ipar)
+      INTEGER, INTENT(IN) :: neq,ipar
+      REAL(r8), INTENT(IN) :: x
+      INTEGER :: i,j
+      COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
+      COMPLEX(r8), DIMENSION(neq), INTENT(OUT) :: dy
+      COMPLEX(r8), DIMENSION(7,7) :: ytemp
+      COMPLEX(r8), DIMENSION(7,7) :: dytemp
+      COMPLEX(r8), DIMENSION(14,14) :: A
+      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+
+      parflow_flag=.TRUE.
+      IF (parflow_flag) THEN
+        A=0.0
+        A(1,8)  = 1.0
+        A(2,9)  = c_beta**2/ds**2/Pe
+        A(3,12) = tau/(1.0+tau)
+        A(3,13) = 1.0/(1.0+tau)
+        A(4,12) = -1.0/(1.0+tau)
+        A(4,13) = 1.0/(1.0+tau)
+        A(5,2)  = -ifac*x
+        !A(5,7)  = -ifac*x*c_beta**2/ds**2
+        A(5,10) = -ifac*Q_e/ds**2
+        A(5,11) = ifac*Q/ds**2
+        !A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
+        !A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
+        !A(6,7)  = ifac*c_beta**2/ds**2*x
+        A(6,10) = ifac*Q_e/ds**2
+        A(6,11) = -ifac*Q/ds**2
+!        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+!     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+     $          - 1.0/(1.0+tau)*c_beta**2/ds**2
+!        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+!     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+     $          + 1.0/(1.0+tau)*c_beta**2/ds**2
+        A(7,14) = 1.0/Pr
+        A(8,2)  = 1.0
+        A(9,1)  = -ifac/(1.0+tau)*((Q-Q_e)+(Q-Q_i)*Pe/Pr)
+        A(9,2)  = (1.0+Pe/Pr)/(1.0+tau)
+        A(9,7)  = -ifac*Q*Pe/Pr
+        A(9,10) = ifac*(1.0+Pe/Pr)/(1.0+tau)*x
+        A(9,11) = ifac*(tau*Pe/Pr-1.0)/(1.0+tau)*x
+        A(10,3) = 1.0
+        A(11,4) = 1.0
+        A(12,5) = 1.0/Pe
+        A(13,6) = 1.0/Pr
+        A(14,1) = ifac*(Q-Q_i)/(1.0+tau)
+        A(14,2) = -1.0/(1.0+tau)
+        A(14,7) = ifac*Q
+        A(14,10)= -ifac*x/(1.0+tau)
+        A(14,11)= -ifac*tau*x/(1.0+tau)
+      ELSE
+         WRITE(*,*) 'hi'
+         A=0.0
+      ENDIF 
+      
+      DO i=1,7
+        DO j=1,7
+          ytemp(i,j)=y(i+7*(j-1)) 
+        END DO
+      END DO
+      
+      dytemp=A(8:,:7)+matmul(A(8:,8:),ytemp)-matmul(ytemp,A(:7,:7))
+     $      -matmul(matmul(ytemp,A(:7,8:)),ytemp)
+
+      DO i=1,7
+        DO j=1,7
+          dy(i+7*(j-1))=dytemp(i,j)
+        END DO
+      END DO
+      RETURN
+      END SUBROUTINE w_der_full
+
+c-----------------------------------------------------------------------
 c     Subroutine for riccati integration based on four-field models.
 c     x (input)   : stretched variable
 c     y (input)   : riccati matrix in left region
@@ -1020,6 +1275,97 @@ c-----------------------------------------------------------------------
       END SUBROUTINE dy_der_yr
 
 c-----------------------------------------------------------------------
+c     Subroutine for riccati integration based on full model.
+c     x (input)   : stretched variable
+c     y (input)   : riccati matrix
+c     pd (output) : analytic jacobian tensor d(dR/dX)/dR
+c-----------------------------------------------------------------------
+      SUBROUTINE dy_der_y_full(neq,x,y,ml,mu,pd,nrpd,ipar)
+
+      INTEGER, INTENT(IN) :: neq,ml,mu,nrpd,ipar
+      REAL(r8), INTENT(IN) :: x
+      INTEGER :: i,j,k,l
+      COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
+      COMPLEX(r8), DIMENSION(neq,neq), INTENT(OUT) :: pd
+      COMPLEX(r8), DIMENSION(7,7) :: ytemp
+      COMPLEX(r8), DIMENSION(7,7,7,7) :: pdtemp
+      COMPLEX(r8), DIMENSION(14,14) :: A
+      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+
+      parflow_flag=.TRUE.
+      IF (parflow_flag) THEN
+        A=0.0
+        A(1,8)  = 1.0
+        A(2,9)  = c_beta**2/ds**2/Pe
+        A(3,12) = tau/(1.0+tau)
+        A(3,13) = 1.0/(1.0+tau)
+        A(4,12) = -1.0/(1.0+tau)
+        A(4,13) = 1.0/(1.0+tau)
+        A(5,2)  = -ifac*x
+        !A(5,7)  = -ifac*x*c_beta**2/ds**2
+        A(5,10) = -ifac*Q_e/ds**2
+        A(5,11) = ifac*Q/ds**2
+        !A(5,12) = 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(5,12) = 1.0/(1.0+tau)*(c_beta**2)/ds**2
+        !A(5,13) = -1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(5,13) = -1.0/(1.0+tau)*(c_beta**2)/ds**2
+        !A(6,7)  = ifac*c_beta**2/ds**2*x
+        A(6,10) = ifac*Q_e/ds**2
+        A(6,11) = -ifac*Q/ds**2
+!        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+!     $          - 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(6,12) = ifac*tau/(1.0+tau)*(Q-Q_i) 
+     $          - 1.0/(1.0+tau)*c_beta**2/ds**2
+!        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+!     $          + 1.0/(1.0+tau)*(c_beta**2+(1-c_beta**2*K))/ds**2
+        A(6,13) = ifac*1.0/(1.0+tau)*(Q-Q_i) 
+     $          + 1.0/(1.0+tau)*c_beta**2/ds**2
+        A(7,14) = 1.0/Pr
+        A(8,2)  = 1.0
+        A(9,1)  = -ifac/(1.0+tau)*((Q-Q_e)+(Q-Q_i)*Pe/Pr)
+        A(9,2)  = (1.0+Pe/Pr)/(1.0+tau)
+        A(9,7)  = -ifac*Q*Pe/Pr
+        A(9,10) = ifac*(1.0+Pe/Pr)/(1.0+tau)*x
+        A(9,11) = ifac*(tau*Pe/Pr-1.0)/(1.0+tau)*x
+        A(10,3) = 1.0
+        A(11,4) = 1.0
+        A(12,5) = 1.0/Pe
+        A(13,6) = 1.0/Pr
+        A(14,1) = ifac*(Q-Q_i)/(1.0+tau)
+        A(14,2) = -1.0/(1.0+tau)
+        A(14,7) = ifac*Q
+        A(14,10)= -ifac*x/(1.0+tau)
+        A(14,11)= -ifac*tau*x/(1.0+tau)
+      ENDIF 
+      
+      DO i=1,7
+        DO j=1,7
+          ytemp(i,j)=y(i+7*(j-1)) 
+        END DO
+      END DO
+
+      DO i=1,7
+        DO j=1,7
+          DO k=1,7
+            DO l=1,7
+              pdtemp(i,j,k,l)=0.0
+              if (j==l) pdtemp(i,j,k,l)=pdtemp(i,j,k,l)+A(7+i,7+k)
+     $        +ytemp(i,1)*A(1,7+k)+ytemp(i,2)*A(2,7+k)+ytemp(i,3)
+     $        *A(3,7+k)+ytemp(4,7+k)*A(4,7+k)+ytemp(i,5)*A(5,7+k)
+     $        +ytemp(i,6)*A(6,7+k)+ytemp(i,7)*A(7,7+k)
+              if (i==k) pdtemp(i,j,k,l)=pdtemp(i,j,k,l)+A(l,j)
+     $        +A(l,8)*ytemp(1,j)+A(l,9)*ytemp(2,j)+A(l,10)
+     $        *ytemp(3,j)+A(l,11)*ytemp(4,j)+A(l,12)*ytemp(5,j)
+     $        +ytemp(l,13)*ytemp(6,j)+ytemp(l,14)*ytemp(7,j)
+              pd(i+7*(j-1),k+7*(l-1))=pdtemp(i,j,k,l)
+            END DO
+          END DO
+        END DO
+      END DO
+      RETURN
+      END SUBROUTINE dy_der_y_full
+
+c-----------------------------------------------------------------------
 c     Subroutine for riccati integration based on four-field models.
 c     x (input)   : stretched variable
 c     y (input)   : riccati matrix in left region
@@ -1133,6 +1479,59 @@ c-----------------------------------------------------------------------
       B21B22R=B21+matmul(B22,R)
       CALL zgetrf(5,5,B21B22R,5,ipiv,info)
       CALL zgetrs('N',5,1,B21B22R,5,ipiv,beta,5,info)
+      y1=beta
+      Delta_new=2.0/(y1(1)-x)
+      RETURN
+      END SUBROUTINE
+
+c-----------------------------------------------------------------------
+c     Subroutine for riccati integration based on the full model.
+c     x (input)   : stretched variable
+c     y (input)   : riccati matrix in right region
+c     Delta_new (output)  : inner layer Delta
+c     Currently, documentation is not prepared.
+c-----------------------------------------------------------------------
+      SUBROUTINE Update_Delta_full(Delta_new,y,x,neq)
+
+      INTEGER, INTENT(IN) :: neq
+      REAL(r8), INTENT(IN) :: x
+      COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
+      COMPLEX(r8), INTENT(OUT) :: Delta_new
+      INTEGER :: i,j,info
+      COMPLEX(r8), DIMENSION(7,7) :: R, B21, B22, B21B22R
+      COMPLEX(r8), DIMENSION(7) :: beta, y1
+      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+      INTEGER, DIMENSION(7):: ipiv
+
+      DO i=1,7
+        beta(i)=0.0
+        DO j=1,7
+          B21(i,j)=0.0
+          B22(i,j)=0.0
+          R(i,j)=y(i+7*(j-1))
+          B21B22R(i,j)=0.0
+        END DO
+      END DO
+
+      beta(1)=1.0
+      B22(1,1)=1.0
+      B21(2,1)=Q-Q_e
+      B22(2,3)=-x
+      B22(2,4)=x
+      B22(3,1)=Q-Q_e
+      B22(3,3)=-1.0
+      B22(3,4)=1.0
+      B21(3,3)=-x
+      B21(3,4)=x
+      B22(4,3)=-Q_e
+      B22(4,4)=Q
+      B22(5,5)=1.0
+      B22(6,6)=1.0
+      B21(7,7)=1.0
+
+      B21B22R=B21+matmul(B22,R)
+      CALL zgetrf(7,7,B21B22R,7,ipiv,info)
+      CALL zgetrs('N',7,1,B21B22R,7,ipiv,beta,7,info)
       y1=beta
       Delta_new=2.0/(y1(1)-x)
       RETURN
