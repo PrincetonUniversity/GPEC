@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS
 
@@ -12,6 +12,7 @@ LIBDIR = ../lib
 
 LIBS = \
 	-llsode \
+	-lequil \
 	-lzvode \
 
 OBJS = \
@@ -21,13 +22,16 @@ OBJS = \
        gslayer.o \
        slayer.o
 
-all: lsode zvode slayer
+all: lsode zvode equil slayer
 
 lsode: 
 	cd ../lsode; make
 
 zvode: 
 	cd ../zvode; make
+
+equil:
+	cd ../equil; make
 
 slayer: $(OBJS)
 	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
@@ -39,9 +43,10 @@ slayer: $(OBJS)
 # dependencies
 
 params.o : sglobal.o
-delta.o : sglobal.o
+delta.o : sglobal.o ../equil/cspline_mod.mod
 gslayer.o : sglobal.o delta.o
 slayer.o : sglobal.o params.o delta.o
+sglobal.o : ../equil/cspline_mod.mod
 
 clean:
 	rm -f *.o *.mod *.out *.bin slayer
