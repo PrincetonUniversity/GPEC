@@ -356,7 +356,7 @@ c-----------------------------------------------------------------------
       ! Solution reconstruction routine if riccati_out is true
       IF (riccati_out) THEN
          ! Fix Riccati matrix size
-         x_match=xout
+         x_match=xout+10.0
          nR = int(x_match)*1000
          ALLOCATE(RT(nR),Rmatrix(nR,neq))
          ind=1
