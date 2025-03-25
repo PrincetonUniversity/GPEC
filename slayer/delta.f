@@ -296,6 +296,8 @@ c-----------------------------------------------------------------------
          Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
       ENDIF
 
+      write(*,*) Q, Q_e, Q_i, pr, pe, c_beta, ds, tau
+
       neq = 49
       itol = 4
       ALLOCATE(y(neq),dy(neq),pd(neq,neq),rtol(neq),atol(neq)
@@ -362,8 +364,8 @@ c-----------------------------------------------------------------------
          ind=1
          Rt=0
          Rmatrix=0
-         RT(ind) = x
-         Rmatrix(ind,:) = y(:)
+         RT(ind)=0
+         Rmatrix(ind,:)=y(:)
    
          ! Redo Forward sweep to fill Riccati matrix
          istate=1
@@ -403,8 +405,8 @@ c-----------------------------------------------------------------------
          itol = 4
          ! If the reconstruction takes too long time, relax tolerance
          ! If the solutions show oscillation, tighten tolerance
-         rtol = 1e-5
-         atol = 1e-5
+         rtol = 1e-8
+         atol = 1e-8
 !         DO i = 1,14
 !           rtol(i) = 1.d-5
 !           atol(i) = 1.d-5
@@ -434,6 +436,7 @@ c-----------------------------------------------------------------------
          
          ! Initialize y1 at X=XM
          CALL Init_y1_full (neq, x, y, y1)
+         write(*,*) y1
          !CALL get_y2_full (NEQ, x, y1, dy1, IPAR)
          OPEN(UNIT=out4_unit,FILE='riccati_config_profile.out'
      $         ,STATUS='UNKNOWN')
@@ -443,6 +446,7 @@ c-----------------------------------------------------------------------
      $         ITASK, ISTATE, IOPT, ZWORK, LZW, RWORK, LRW, IWORK, LIW,
      $         dy_der_y_full, MF, IPAR)
             WRITE(out4_unit,'(es17.8e3)') x
+            !WRITE(*,*) x
          
             DO ind = 1,7
                WRITE(out4_unit,'(es17.8e3)') DREAL(y1(ind))
@@ -1153,7 +1157,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE w_der_full
 
       subroutine y_der_full (neq,x,y,dy,ipar)
-      USE global_mod
+      USE sglobal_mod
 
       INTEGER, INTENT(IN) :: neq,ipar
       INTEGER :: i,j
@@ -1448,7 +1452,7 @@ c-----------------------------------------------------------------------
       END SUBROUTINE dw_der_w_full
 
       SUBROUTINE dy_der_y_full(neq,x,y,ml,mu,pd,nrpd,ipar)
-      USE global_mod
+      USE sglobal_mod
 
       INTEGER, INTENT(IN) :: neq,ml,mu,nrpd,ipar
       REAL(r8), INTENT(IN) :: x
@@ -1547,7 +1551,7 @@ c-----------------------------------------------------------------------
       END
 
       subroutine get_y2_full (neq, x, y, dy, ipar)
-      USE global_mod
+      USE sglobal_mod
 
       INTEGER, INTENT(IN) :: neq,ipar
       REAL(r8), INTENT(IN) :: x
