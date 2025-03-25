@@ -434,8 +434,6 @@ c-----------------------------------------------------------------------
          
          ! Initialize y1 at X=XM
          CALL Init_y1_full (neq, x, y, y1)
-         write(*,*) y1
-         !CALL get_y2_full (NEQ, x, y1, dy1, IPAR)
          OPEN(UNIT=out4_unit,FILE='riccati_config_profile.out'
      $         ,STATUS='UNKNOWN')
          DO WHILE (x>xout)
@@ -444,7 +442,6 @@ c-----------------------------------------------------------------------
      $         ITASK, ISTATE, IOPT, ZWORK, LZW, RWORK, LRW, IWORK, LIW,
      $         dy_der_y_full, MF, IPAR)
             WRITE(out4_unit,'(es17.8e3)') x
-            !WRITE(*,*) x
          
             DO ind = 1,7
                WRITE(out4_unit,'(es17.8e3)') DREAL(y1(ind))
