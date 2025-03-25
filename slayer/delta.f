@@ -371,7 +371,7 @@ c-----------------------------------------------------------------------
          xout=0.0
          y=0.0
          dy=0.0
-         DO WHILE (xout<15.0) 
+         DO WHILE (xout<x_match) 
            xout=xout+1e-3
            DO WHILE (x<xout)
               istep=istep+1
@@ -403,8 +403,8 @@ c-----------------------------------------------------------------------
          itol = 4
          ! If the reconstruction takes too long time, relax tolerance
          ! If the solutions show oscillation, tighten tolerance
-         rtol = 1e-4
-         atol = 1e-4
+         rtol = 1e-5
+         atol = 1e-5
 !         DO i = 1,14
 !           rtol(i) = 1.d-5
 !           atol(i) = 1.d-5
