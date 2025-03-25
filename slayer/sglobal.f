@@ -6,7 +6,7 @@
       IMPLICIT NONE
       INTEGER :: mm,nn
       INTEGER :: in_unit,out_unit,out2_unit,out3_unit,
-     $     bin_unit,bin_2d_unit,input_unit
+     $     bin_unit,bin_2d_unit,input_unit,out4_unit
 
       REAL(r8) :: mr,nr
       REAL(r8) :: Q_e,Q_i,pr,pe,c_beta,ds,tau
