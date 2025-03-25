@@ -296,8 +296,6 @@ c-----------------------------------------------------------------------
          Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
       ENDIF
 
-      write(*,*) Q, Q_e, Q_i, pr, pe, c_beta, ds, tau
-
       neq = 49
       itol = 4
       ALLOCATE(y(neq),dy(neq),pd(neq,neq),rtol(neq),atol(neq)
