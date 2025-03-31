@@ -344,6 +344,20 @@ c-----------------------------------------------------------------------
 
          ENDDO
          WRITE(*,*)"Calling slayer_netcdf_out"
+         WRITE(*,*)"qval_arr=",qval_arr
+         WRITE(*,*)"omegas_arr=",omegas_arr
+         WRITE(*,*)"inQ_arr=",inQ_arr
+         WRITE(*,*)"inQ_e_arr=",inQ_e_arr
+         WRITE(*,*)"inQ_i_arr=",inQ_i_arr
+         WRITE(*,*)"ind_beta_arr=",ind_beta_arr
+         WRITE(*,*)"D_beta_norm_arr=",D_beta_norm_arr
+         WRITE(*,*)"inpr_arr=",inpr_arr
+         WRITE(*,*)"psi_n_rational=",psi_n_rational
+         WRITE(*,*)"lu_arr=",lu_arr
+         WRITE(*,*)"Re_deltaprime_arr=",Re_deltaprime_arr
+         WRITE(*,*)"Im_deltaprime_arr=",Im_deltaprime_arr
+         WRITE(*,*)"dels_db_arr=",dels_db_arr
+         WRITE(*,*)"lar_gamma_arr=",lar_gamma_arr
 
          br_th = 0.0
 
@@ -466,17 +480,26 @@ c-----------------------------------------------------------------------
             WRITE(*,*) "Finding roots on q=", qval_arr(k),
      $       " rational surface"
 
-            CALL growthrate_scan(qval_arr(k),inQ_arr(k),inQ_e_arr(k),
-     $             inQ_i_arr(k),inc_beta_arr(k),inds_arr(k),
-     $             intau_arr(k),inQ0_arr(k),inpr_arr(k),inpe_arr(k),
-     $             scan_radius,reQ_num,compress_deltas,
-     $             Re_deltaprime_arr(k),results(k))
+            CALL growthrate_scan(qval_arr(k),lu_arr(k),inQ_arr(k),
+     $         inQ_e_arr(k),inQ_i_arr(k),inc_beta_arr(k),inds_arr(k),
+     $         intau_arr(k),inQ0_arr(k),inpr_arr(k),inpe_arr(k),
+     $         scan_radius,reQ_num,compress_deltas,
+     $         Re_deltaprime_arr(k),results(k))
             WRITE(*,*)"Exited growthrate_scan"
 
          ENDDO
          WRITE(*,*)"Calling slayer_netcdf_out"
 
          br_th = 0.0
+         WRITE(*,*)"Successfully entered output_lar_gamma()"
+         WRITE(*,*)"qval_arr = ",qval_arr
+
+         CALL slayer_netcdf_out(SIZE(qval_arr),lar_gamma_eq_flag,
+     $    lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
+     $            qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
+     $            psi_n_rational,inpr_arr,br_th,Re_deltaprime_arr,
+     $            Im_deltaprime_arr,dels_db_arr,lu_arr,ind_beta_arr,
+     $            D_beta_norm_arr,lar_gamma_arr,inQs,iinQs,results)
 c         CALL slayer_netcdf_out(n_k,lar_gamma_eq_flag,lar_gamma_flag,
 c     $                     stabscan_eq_flag,stabscan_flag,br_th_flag)
         stop
@@ -505,7 +528,7 @@ c-----------------------------------------------------------------------
          Im_deltaprime_arr = (/ AIMAG(delta_n_p) /)
          inpr_arr = (/ inpr /)
 
-         CALL growthrate_scan(qval_arr(1),inQ,inQ_e,
+         CALL growthrate_scan(qval_arr(1),lu,inQ,inQ_e,
      $             inQ_i,inc_beta,inds,
      $             intau,inQ,inpr,inpe,
      $             scan_radius,reQ_num,compress_deltas,

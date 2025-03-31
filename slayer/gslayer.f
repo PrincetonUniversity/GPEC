@@ -222,7 +222,7 @@ c-----------------------------------------------------------------------
 c     subprogram 3. growthrate_scan
 c     set up and iterate stability scans if no match is found
 c-----------------------------------------------------------------------
-      SUBROUTINE growthrate_scan(qval,inQ,inQ_e,inQ_i,inc_beta,
+      SUBROUTINE growthrate_scan(qval,my_lu,inQ,inQ_e,inQ_i,inc_beta,
      $         inds,intau,inQ0,inpr,inpe,scan_radius,ncoarse,
      $         compress_deltas,deltaprime,results)
 c-----------------------------------------------------------------------
@@ -230,21 +230,21 @@ c     Declarations
 c-----------------------------------------------------------------------
       ! Inputs
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inc_beta,inds,
-     $     intau,inQ0,inpr,inpe
+     $     intau,inQ0,inpr,inpe,my_lu
       INTEGER, INTENT(IN) :: qval,scan_radius,ncoarse
-      INTEGER :: new_scan_radius,new_ncoarse
-      !REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: inQs,iinQs
-      COMPLEX(r8) :: delta
       REAL(r8), INTENT(IN) :: deltaprime
+      LOGICAL, INTENT(IN) :: compress_deltas
+      TYPE(result_type), INTENT(INOUT) :: results
+
+      COMPLEX(r8) :: delta
+      INTEGER :: new_scan_radius,new_ncoarse
       INTEGER :: nfine, new_nfine
       REAL(r8), PARAMETER :: tolerance = 1.0E-6
       REAL(r8) :: delta_real, delta_imag, threshold
       INTEGER :: i, j, k, l, m, count, match_count
       LOGICAL :: repeat
-      LOGICAL, INTENT(IN) :: compress_deltas
       REAL(r8) :: inQ_step, iinQ_step, inQ_fine, iinQ_fine,
      $            inQ_coarse, iinQ_coarse
-      TYPE(result_type), INTENT(INOUT) :: results
       INTEGER :: max_points, new_max_points
       INTEGER :: ci, cj, nx, ny
       REAL(r8) :: dx, dy, overlap_factor
@@ -279,19 +279,19 @@ c-----------------------------------------------------------------------
 
       match_count = 0
       ! Run scan
-      CALL scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
-     $     scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
-     $     results,count,match_count,dx,dy)
+      CALL scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,my_lu,
+     $    scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
+     $    results,count,match_count,dx,dy)
 
-      IF (match_count == 0) THEN
+      IF (match_count == 0) THEN ! ALL REPEATS TURNED OFF FOR NOW
         WRITE(*,*)"No match found, rescanning"
-        repeat = .TRUE.
+        repeat = .FALSE.
         !new_scan_radius = scan_radius + 2
         new_ncoarse = ncoarse + 100
         new_nfine = nfine
       ELSE IF (match_count > 0 .AND. match_count < 3) THEN
         WRITE(*,*)"Match not definitive, rescanning"
-        repeat = .TRUE.
+        repeat = .FALSE.
         new_scan_radius = scan_radius
         new_ncoarse = ncoarse
         new_nfine = 8
@@ -327,10 +327,9 @@ c-----------------------------------------------------------------------
       match_count = 0
 
       ! COARSE AND FINE LOOPS
-      CALL scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
+      CALL scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,my_lu,
      $     scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
      $     results,count,match_count,dx,dy)
-
       END IF ! End repeat "if"
 
       ! Set the actual count of points
@@ -350,13 +349,13 @@ c-----------------------------------------------------------------------
 c     subprogram 4. scan_grid
 c     run stability scan on real and imaginary rotation axes
 c-----------------------------------------------------------------------
-      SUBROUTINE scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe, 
-     $     scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
-     $     results,count,match_count,dx,dy)
+      SUBROUTINE scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau, 
+     $     inpe,my_lu,scan_radius,ncoarse,nfine,deltaprime,
+     $     compress_deltas,results,count,match_count,dx,dy)
       
       ! Declarations (include necessary type declarations from original code)
-      REAL(r8), INTENT(IN) :: inQ_e, inQ_i, inpr, inc_beta, inds,
-     $     intau, inpe, deltaprime
+      REAL(r8), INTENT(IN) :: inQ_e,inQ_i,inpr,inc_beta,inds,
+     $     intau,inpe,my_lu,deltaprime
       INTEGER, INTENT(IN) :: scan_radius, ncoarse, nfine
       LOGICAL, INTENT(IN) :: compress_deltas
       TYPE(result_type), INTENT(INOUT) :: results
@@ -387,8 +386,8 @@ c-----------------------------------------------------------------------
           ! Evaluate riccati function
           delta = riccati(inQ_coarse,inQ_e,inQ_i,inpr,inc_beta,
      $                        inds,intau,inpe,iinQ=iinQ_coarse)
-          delta_real = REAL(delta)
-          delta_imag = AIMAG(delta)
+          delta_real = REAL(delta)*(my_lu**(1.0/3.0)) ! Critical normalization
+          delta_imag = AIMAG(delta)*(my_lu**(1.0/3.0)) ! Critical normalization
 
           IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 4)) THEN
             ! Store coarse grid point
@@ -406,8 +405,8 @@ c-----------------------------------------------------------------------
           END IF
 
           ! Check if refinement is needed
-          IF ((ABS(delta_real) > threshold) .AND.
-     $     (ABS(deltaprime) > 4)) THEN
+          IF (2 == 3) THEN !((ABS(delta_real) > threshold) .AND.
+      !$     (ABS(deltaprime) > 4)) THEN
        !   IF ((ABS(delta_real) > threshold) .AND. (SIGN(1.0,
       !$              delta_real) == SIGN(1.0, deltaprime))) THEN
 
@@ -434,8 +433,8 @@ c-----------------------------------------------------------------------
                 ! Evaluate riccati function
                 delta = riccati(inQ_fine,inQ_e,inQ_i,inpr,
      $                     inc_beta,inds,intau,inpe,iinQ=iinQ_fine)
-                delta_real = REAL(delta)
-                delta_imag = AIMAG(delta)
+                delta_real = REAL(delta)*(my_lu**(1.0/3.0))
+                delta_imag = AIMAG(delta)*(my_lu**(1.0/3.0))
 
                 IF (ABS(delta_real)>ABS(deltaprime)) THEN
                         match_count = match_count + 1
