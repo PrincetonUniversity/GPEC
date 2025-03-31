@@ -44,28 +44,33 @@ c-----------------------------------------------------------------------
       COMPLEX(r8) :: delta,delta_n_p,dels_db,del_s,lar_gamma
 
       REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,
-     $     kpower,Qratio
+     $     kpower,
+     $     Qratio
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs,jxbl,
-     $        bal,prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,qvals,
+     $        bal,
+     $        prs,n_es,t_es,t_is,omegas,l_ns,l_ts,svals,qvals,
      $        bts,rss,R0s,mu_is,zeffs,Q_soll,br_thl,pes
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQ_e_arr,
      $                   inQ_i_arr,inc_beta_arr,inds_arr,
      $                   intau_arr,inQ0_arr,inpr_arr,
-     $                   inpe_arr,omegas_arr,inQ_arr,lu_arr,
+     $                   inpe_arr,omegas_arr,inQ_arr,
      $                   psi_n_rational,ind_beta_arr,D_beta_norm_arr
-
       REAL(r8), DIMENSION(8) :: inpr_prof
-
+      REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: all_Re_deltas,
+     $                           all_Im_deltas,all_roots
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: all_inQs
       REAL(r8), DIMENSION(:,:),ALLOCATABLE :: Re_deltas,Im_deltas
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: qval_arr
       REAL(r8), DIMENSION(:), ALLOCATABLE ::
-     $                       Re_deltaprime_arr,Im_deltaprime_arr
-      REAL(r8), DIMENSION(:,:), ALLOCATABLE :: js,ks,psis,jxbs,
-     $     Q_sols,br_ths
+     $                       Re_deltaprime_arr,Im_deltaprime_arr,
+     $                       all_growthrates,all_growthrate_locs
+      REAL(r8), DIMENSION(:,:), ALLOCATABLE ::
+     $     js,ks,psis,jxbs,Q_sols,br_ths,
+     $     inQs_left,inQs_right,coarse_deltas
       REAL(r8) :: spot, slayer_inpr
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: Q_solss,br_thss
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: deltal,outer_deltas,
@@ -308,7 +313,7 @@ c-----------------------------------------------------------------------
      $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
      $               inds_arr,ind_beta_arr,D_beta_norm_arr,
      $               intau_arr,inQ0_arr,inpr_arr,inpe_arr,
-     $               omegas_arr,lu_arr,gammafac_arr,
+     $               omegas_arr,gammafac_arr,
      $               Re_deltaprime_arr,Im_deltaprime_arr)
 
          WRITE(*,*)"Safety factor values=",qval_arr
@@ -333,8 +338,8 @@ c-----------------------------------------------------------------------
      $       " rational surface"
 
             dels_db=riccati_del_s(inQ_arr(k),inQ_e_arr(k),
-     $                inQ_i_arr(k),inpr_arr(k),inc_beta_arr(k),
-     $                D_beta_norm_arr(k),intau_arr(k),5*D_beta_norm)
+     $                   inQ_i_arr(k),inpr_arr(k),inc_beta_arr(k),
+     $                   D_beta_norm_arr(k),intau_arr(k))
 
             del_s = dels_db * ind_beta_arr(k)
             lar_gamma = gammafac_arr(k)/del_s
@@ -364,7 +369,7 @@ c-----------------------------------------------------------------------
          CALL output_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
      $         stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
      $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
-     $         D_beta_norm_arr,inpr_arr,psi_n_rational,lu_arr,
+     $         D_beta_norm_arr,inpr_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
      $         lar_gamma_arr)
 
@@ -413,7 +418,7 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"lar_gamma inQ = ",inQ
 
          dels_db=riccati_del_s(inQ,inQ_e,inQ_i,inpr,inc_beta,d_beta,
-     $                        intau,5*D_beta_norm)
+     $                        intau)
 
          WRITE(*,*)"dels_db() call successful"
 
@@ -428,7 +433,6 @@ c-----------------------------------------------------------------------
          lar_gamma_arr = (/ lar_gamma /)
 
          WRITE(*,*)"dels_db=",dels_db
-         WRITE(*,*)"[mm] del_s=",dels_db*d_beta*1000
          WRITE(*,*)"lar_gamma=",lar_gamma
 
          WRITE(*,*)"slayer.f lar_gamma=",lar_gamma
@@ -438,7 +442,7 @@ c-----------------------------------------------------------------------
          CALL output_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
      $         stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
      $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
-     $         D_beta_norm_arr,inpr_arr,psi_n_rational,lu_arr,
+     $         D_beta_norm_arr,inpr_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
      $         lar_gamma_arr)
 
@@ -461,7 +465,7 @@ c-----------------------------------------------------------------------
      $               inQ_arr,inQ_e_arr,inQ_i_arr,inc_beta_arr,
      $               inds_arr,ind_beta_arr,D_beta_norm_arr,
      $               intau_arr,inQ0_arr,inpr_arr,inpe_arr,
-     $               omegas_arr,lu_arr,gammafac_arr,
+     $               omegas_arr,gammafac_arr,
      $               Re_deltaprime_arr,Im_deltaprime_arr)
 
          WRITE(*,*)"Safety factor values=",qval_arr
@@ -608,6 +612,17 @@ c-----------------------------------------------------------------------
          inQs = (/ 1.0 /)
 
          n_k = SIZE(qval_arr)
+         k=1
+         IF (k==1) THEN
+            ALLOCATE(all_RE_deltas(1,1,n_k))
+            ALLOCATE(all_Im_deltas(1,1,n_k))
+            ALLOCATE(all_inQs(1,n_k))
+            ALLOCATE(all_growthrates(n_k))
+            ALLOCATE(all_growthrate_locs(n_k))
+         ENDIF
+         all_Re_deltas(:,:,k) = 0.0
+         all_Im_deltas(:,:,k) = 0.0
+         all_inQs(:,k) = 0.0
 
          qval_arr = (/ 3 /)
          inQs = (/ 1.0 /)

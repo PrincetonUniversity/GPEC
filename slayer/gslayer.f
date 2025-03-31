@@ -178,15 +178,15 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE gpec_slayer
 c-----------------------------------------------------------------------
-c     Subprogram 2. output_lar_gamma
-c     Run 
+c     Subprogram 3. scan_grid
+c     Run stability scan on real and imaginary rotation axes
 c-----------------------------------------------------------------------
       SUBROUTINE output_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
      $       stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
      $       omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
-     $       D_beta_norm_arr,inpr_arr,psi_n_rational,lu_arr,
-     $       Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
-     $       lar_gamma_arr)
+     $       D_beta_norm_arr,inpr_arr,psi_n_rational,Re_deltaprime_arr,
+     $       Im_deltaprime_arr,dels_db_arr,lar_gamma_arr)
+
       ! Declarations (include necessary type declarations from original code)
       LOGICAL, INTENT(IN) :: lar_gamma_eq_flag,lar_gamma_flag,
      $         stabscan_eq_flag,stabscan_flag,br_th_flag
@@ -195,7 +195,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN), DIMENSION(:), ALLOCATABLE :: omegas_arr,
      $      inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
      $      Re_deltaprime_arr,Im_deltaprime_arr,inpr_arr,ind_beta_arr,
-     $      D_beta_norm_arr,lu_arr
+     $      D_beta_norm_arr
   
       COMPLEX(r8), INTENT(IN), DIMENSION(:), ALLOCATABLE :: dels_db_arr,
      $                                         lar_gamma_arr
@@ -214,13 +214,13 @@ c-----------------------------------------------------------------------
      $    lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
      $            qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $            psi_n_rational,inpr_arr,br_th,Re_deltaprime_arr,
-     $            Im_deltaprime_arr,dels_db_arr,lu_arr,ind_beta_arr,
+     $            Im_deltaprime_arr,dels_db_arr,ind_beta_arr,
      $            D_beta_norm_arr,lar_gamma_arr,inQs,iinQs,results)
    
       END SUBROUTINE output_lar_gamma
 c-----------------------------------------------------------------------
-c     subprogram 3. growthrate_scan
-c     set up and iterate stability scans if no match is found
+c     Subprogram 2. growthrate_scan
+c     Set up and iterate stability scans if no match is found
 c-----------------------------------------------------------------------
       SUBROUTINE growthrate_scan(qval,my_lu,inQ,inQ_e,inQ_i,inc_beta,
      $         inds,intau,inQ0,inpr,inpe,scan_radius,ncoarse,
@@ -346,8 +346,8 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE growthrate_scan
 c-----------------------------------------------------------------------
-c     subprogram 4. scan_grid
-c     run stability scan on real and imaginary rotation axes
+c     Subprogram 3. scan_grid
+c     Run stability scan on real and imaginary rotation axes
 c-----------------------------------------------------------------------
       SUBROUTINE scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau, 
      $     inpe,my_lu,scan_radius,ncoarse,nfine,deltaprime,
@@ -453,8 +453,8 @@ c-----------------------------------------------------------------------
       END DO
       END SUBROUTINE scan_grid
 c-----------------------------------------------------------------------
-c     subprogram 5. shrink_array
-c     remove excess scan array size from memory
+c     Subprogram 4. shrink_array
+c     Remove excess scan array size from memory
 c-----------------------------------------------------------------------
       SUBROUTINE shrink_array(arr, new_size)
           REAL(r8), ALLOCATABLE, INTENT(INOUT) :: arr(:)
@@ -466,7 +466,7 @@ c-----------------------------------------------------------------------
           CALL move_alloc(temp, arr)
       END SUBROUTINE shrink_array
 c-----------------------------------------------------------------------
-c     subprogram 6. grow_array
+c     Subprogram 5. grow_array
 c     Increase scan array size if necessary
 c-----------------------------------------------------------------------
       SUBROUTINE grow_array(arr, old_size, new_size)

@@ -9,7 +9,7 @@
       USE netcdf
       USE equil_mod, ONLY: equil_read,rzphi,twopi,ro,zo,sq
       USE bicube_mod, ONLY: bicube_eval_external,bicube_type
-      USE slayer_netcdf_mod
+      USE slayer_netcdf_mod!, ONLY: slayer_netcdf_inputs
 
       IMPLICIT NONE
 
@@ -228,7 +228,7 @@ c-----------------------------------------------------------------------
      $              qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
      $              inQ_i_arr,inc_beta_arr,inds_arr,ind_beta_arr,
      $              D_beta_norm_arr,intau_arr,Q0_arr,inpr_arr,
-     $              inpe_arr,omegas_arr,lu_arr,gammafac_arr,
+     $              inpe_arr,omegas_arr,gammafac_arr,
      $              Re_deltaprime_arr,Im_deltaprime_arr)
 c-----------------------------------------------------------------------
 c     declarations.
@@ -254,7 +254,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_r,tau_h,
      $            rho,tau_v,inpr,Qconv,lbeta,qintb,gammafac
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: inQ_arr,
-     $          inQ_e_arr,psi_n_rational,D_beta_norm_arr,lu_arr,
+     $          inQ_e_arr,psi_n_rational,D_beta_norm_arr,
      $          inQ_i_arr,inc_beta_arr,inds_arr,ind_beta_arr,
      $          intau_arr,Q0_arr,inpr_arr,inpe_arr,omegas_arr,
      $          gammafac_arr,Re_deltaprime_arr,Im_deltaprime_arr
@@ -302,7 +302,7 @@ c-----------------------------------------------------------------------
      $    inpe_arr(msing),omegas_arr(msing),omegas_e_arr(msing),
      $    omegas_i_arr(msing),gammafac_arr(msing),
      $    Re_deltaprime_arr(msing),Im_deltaprime_arr(msing),
-     $    D_beta_norm_arr(msing),lu_arr(msing))
+     $    D_beta_norm_arr(msing))
       ALLOCATE(ne_arr(msing),te_arr(msing),ni_arr(msing),
      $    ti_arr(msing),zeff_arr(msing),bt_arr(msing),rs_arr(msing),
      $    R0_arr(msing),mu_i_arr(msing),nns_arr(msing))
@@ -443,7 +443,6 @@ c-----------------------------------------------------------------------
          inds_arr(ising)=ds
          ind_beta_arr(ising)=d_beta
          D_beta_norm_arr(ising)=D_beta_norm
-         lu_arr(ising)=lu
          intau_arr(ising)=tau
          Q0_arr(ising)=Q
          inpr_arr(ising) = inpr
