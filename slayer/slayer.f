@@ -409,8 +409,9 @@ c-----------------------------------------------------------------------
          Re_deltaprime_arr = (/ REAL(delta_n_p) /)
          Im_deltaprime_arr = (/ AIMAG(delta_n_p) /)
          inpr_arr = (/ inpr /)
+         D_beta_norm_arr = (/ D_beta_norm /)
 
-         D_beta_norm = inds ! NAMELIST
+         !D_beta_norm = inds ! NAMELIST
 
          WRITE(*,*)"D_beta_norm = ",D_beta_norm
          WRITE(*,*)"inds = ",inds
