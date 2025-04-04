@@ -1,6 +1,6 @@
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I../equil -I$(MATHINC)
+IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS # for sub-makes
 
@@ -28,6 +28,7 @@ OBJS = \
 	sing.o \
 	ode_output.o \
 	ode.o \
+	dcon_netcdf.o \
 	free.o \
 	resist.o \
         lib_interface.o \
@@ -45,7 +46,7 @@ vacuum:
 	cd ../vacuum; make
 
 rdcon: $(OBJS)
-	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
 	mkdir -p ../bin
 	cp -f rdcon ../bin
 
@@ -83,7 +84,8 @@ sing1.o: fourfit.o
 sing.o: sing1.o
 ode_output.o: sing.o debug.o
 ode.o: ode_output.o
-free.o: ode.o
+dcon_netcdf.o: dcon_mod.o
+free.o: ode.o dcon_netcdf.o
 resist.o: dcon_mod.o toolbox.o
 gal.o: jacobi.o sing.o free.o
 lib_interface.o: ../equil/local.o ../equil/global.o ../equil/utils.o ../equil/inverse.o

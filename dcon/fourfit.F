@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: asmat,bsmat,csmat
       COMPLEX(r8), DIMENSION(:), POINTER :: jmat
 
-      INTEGER :: parallel_threads
+      INTEGER :: parallel_threads = 0, dcon_kin_threads = 0
 
       ! kientic ABCDEH mats for sing_mod
       TYPE(cspline_type) :: kwmats(6),ktmats(6)
@@ -1052,7 +1052,7 @@ c!!!!!!...from dcon_interface.f90
 #ifdef _OPENMP
                IF(ipsi==0 .AND. l==-nl)THEN
                   num_threads = OMP_GET_NUM_THREADS()
-                  WRITE(*,'(1x,a,i3,a)'),"Running in parallel with ",
+                  WRITE(*,'(1x,a,i3,a)') "Running in parallel with ",
      $                 num_threads," OMP threads"
                ENDIF
 #endif
@@ -1379,14 +1379,14 @@ c-----------------------------------------------------------------------
             CALL cspline_copy(kelmm(i),ktmats(i))
             IF (ktanh_flag) THEN
                DO ipsi=0,kwmats(1)%mx
-                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+                  ktmats(i)%fs(ipsi,:) = kinfac2*ktmats(i)%fs(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
-                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+                  ktmats(i)%fs1(ipsi,:) = kinfac2*ktmats(i)%fs1(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
                ENDDO
             ELSE
-               ktmats(i)%fs = kinfac1*ktmats(i)%fs
-               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+               ktmats(i)%fs = kinfac2*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
             ENDIF
          ENDDO
 c-----------------------------------------------------------------------
@@ -1422,14 +1422,14 @@ c-----------------------------------------------------------------------
             CALL cspline_copy(kelmm(i),ktmats(i))
             IF (ktanh_flag) THEN
                DO ipsi=0,kwmats(1)%mx
-                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+                  ktmats(i)%fs(ipsi,:) = kinfac2*ktmats(i)%fs(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
-                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+                  ktmats(i)%fs1(ipsi,:) = kinfac2*ktmats(i)%fs1(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
                ENDDO
             ELSE
-               ktmats(i)%fs = kinfac1*ktmats(i)%fs
-               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+               ktmats(i)%fs = kinfac2*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
             ENDIF
          ENDDO
 c-----------------------------------------------------------------------
@@ -1465,14 +1465,14 @@ c-----------------------------------------------------------------------
             CALL cspline_copy(kelmm(i),ktmats(i))
             IF (ktanh_flag) THEN
                DO ipsi=0,kwmats(1)%mx
-                  ktmats(i)%fs(ipsi,:) = kinfac1*ktmats(i)%fs(ipsi,:)*
+                  ktmats(i)%fs(ipsi,:) = kinfac2*ktmats(i)%fs(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
-                  ktmats(i)%fs1(ipsi,:) = kinfac1*ktmats(i)%fs1(ipsi,:)*
+                  ktmats(i)%fs1(ipsi,:) = kinfac2*ktmats(i)%fs1(ipsi,:)*
      $                 (1+tanh((ktmats(i)%xs(ipsi)-ktc)*ktw))
                ENDDO
             ELSE
-               ktmats(i)%fs = kinfac1*ktmats(i)%fs
-               ktmats(i)%fs1 = kinfac1*ktmats(i)%fs1
+               ktmats(i)%fs = kinfac2*ktmats(i)%fs
+               ktmats(i)%fs1 = kinfac2*ktmats(i)%fs1
             ENDIF
          ENDDO
       ELSE

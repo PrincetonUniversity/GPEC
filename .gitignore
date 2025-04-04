@@ -16,6 +16,7 @@
 *vacin5
 */penmpi
 */version.inc
+modovmc
 
 .cproject
 .idea/
@@ -40,3 +41,4 @@ pentrc/pentrc
 sum/sum
 xdraw/pspack
 xdraw/xdraw
+slayer/slayer

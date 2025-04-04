@@ -29,7 +29,7 @@
     ktw = 50.0           ! Parameter activated by ktanh_flag: width of hyper-tangential functions (default: 50.0)
     ion_flag = t         ! Include ion dW_k when kin_flag is true (summed with electron contribution if electron_flag true)
     electron_flag = f    ! Include electron dW_k when kin_flag is true (summed with ion contribution if ion_flag true)
-	parallel_threads=9   ! Parallel calculations of the kinetic matrix components (parallel execution of mpsi*(2*nl+1) calculations where mpsi is set in equil.in and nl in pentrc.in)
+	dcon_kin_threads=9   ! Parallel calculations of the kinetic matrix components (parallel execution of mpsi*(2*nl+1) calculations where mpsi is set in equil.in and nl in pentrc.in). Setting to <= 0 uses OMP_NUM_THREADS env variable.
 
     tol_nr=1e-6          ! Relative tolerance of dynamic integration steps away from rationals
     tol_r=1e-7           ! Relative tolerance of dynamic integration steps near rationals
@@ -49,6 +49,7 @@
     mthsurf0=1           ! Linear multiplier on number of boundary points used to display surface eigenfunctions for ahgb_flag=t
 
     bin_euler=t          ! Output M psi-by-M euler-lagrange solutions to binary file euler.bin
+    bin_vac=f            ! Output deprecated binary vacuum.bin containing vacuum energy matrices
     euler_stride=1       ! Output only every euler_stride'th psi step to binary file
 
     out_bal1=f           ! Ascii output for bal_flag poloidal functions

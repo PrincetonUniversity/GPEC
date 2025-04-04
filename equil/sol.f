@@ -60,7 +60,7 @@ c-----------------------------------------------------------------------
 c     enforce physical requirements
 c-----------------------------------------------------------------------
       IF(p0fac<1)THEN
-         WRITE(*,*) "WARNING: Enforcing p0fac>=1 (no negative pressure)"
+         PRINT *, "!! WARNING: Forcing p0fac>=1 (no negative pressure)"
          p0fac = 1
       ENDIF
 c-----------------------------------------------------------------------

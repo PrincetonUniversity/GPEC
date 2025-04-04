@@ -205,7 +205,7 @@ c-----------------------------------------------------------------------
             IF (verbose_performance_output) THEN
                print *,"ode_run: #Threads=",nThreads
             ENDIF
-            CALL OMP_SET_NUM_THREADS(nThreads)
+            IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
          ENDIF
 !$OMP PARALLEL DEFAULT(NONE)
 !.......................................................................
@@ -482,7 +482,7 @@ c-----------------------------------------------------------------------
         nIntervalsMin = 1 + msing + 2 * (msing -1) + 1
          IF(nIntervalsMin > nIntervalsTot)THEN
              nIntervalsTot = nIntervalsMin
-             WRITE(*, '(1x,a25,i4, a27)'),"Forcing nIntervalsTot to ",
+             WRITE(*, '(1x,a25,i4, a27)') "Forcing nIntervalsTot to ",
      $          nIntervalsTot," to cover all singularities"
          ENDIF
 c-----------------------------------------------------------------------

@@ -197,6 +197,7 @@ module inputs
         real(r8), intent(in) :: wefac,wpfac,nfac,tfac
         logical :: write_log
         ! declare local variables
+        logical :: warning_printed = .false.
         real(r8), dimension(:,:), allocatable :: table
         character(32), dimension(:), allocatable :: titles
         
@@ -219,18 +220,18 @@ module inputs
 
         call spline_fit(tmp,"extrap")
         if(write_log) print *,"Formed temporary spline"
-        
+
         ! extrapolate to regular spline (helps smooth core??)
         call spline_alloc(kin,nkin,9)
         kin%title(0:) = (/"psi_n ","n_i   ","n_e   ","t_i   ","t_e   ","omegae",&
-                    "loglam", "nu_i  ","nu_e  ", "zeff"/)
+                    "loglam", "nu_i  ","nu_e  ", "zeff  "/)
         do i=0,kin%mx
               psi = (1.0*i)/kin%mx
               call spline_eval(tmp,psi,0)
               kin%xs(i) = psi
               kin%fs(i,1:5) = tmp%f(1:5)
         enddo
-        
+
         ! convert temperatures to si units
         kin%fs(:,3:4) = kin%fs(:,3:4)*1.602e-19 !ev to j
 
@@ -254,6 +255,17 @@ module inputs
 
         ! manipulation of rotation variables
         welec(:) = wefac*kin%fs(:,5) ! direct manipulation of omegae
+        ! note dividing by zero makes a nan that then ruins the whole spline
+        warning_printed = .false.
+        do i=0,nkin
+            if(welec(i) == 0) then
+                welec(i) = 1e-9
+                if(.not. warning_printed)then
+                    print *, "  ! WARNING ! Modifying omega_ExB = 0 to 1e-9 to avoid nans"
+                    warning_printed = .true.
+                end if
+            end if
+        end do
         if(wefac/=1.0 .and. verbose) print('(a55,es10.2e3)'),'  -> applying direct manipulation of omegaE by factor ',wefac
         wdian =-twopi*kin%fs(:,3)*kin%fs1(:,1)/(e*zi*chi1*kin%fs(:,1))
         wdiat =-twopi*kin%fs1(:,3)/(e*zi*chi1)
@@ -270,7 +282,6 @@ module inputs
 
         ! write log - designed as check of reading routines
         if(write_log)then
-        !if(.TRUE.)then
             out_unit = get_free_file_unit(-1)
             if(verbose) print *, "Writing kinetic spline to pentrc_kinetics.out"
             open(unit=out_unit,file="pentrc_kinetics.out",&
@@ -805,7 +816,7 @@ module inputs
                 xs_m(2)%fs(0:,i) = xspmns(1:,ims)
                 xs_m(3)%fs(0:,i) = xmsmns(1:,ims)
             else
-                print *,"WARNING: Not input for DCON m ",mfac(i)
+                print *,"!! WARNING: Not input for DCON m ",mfac(i)
                 xs_m(1)%fs(0:,i) = 0
                 xs_m(2)%fs(0:,i) = 0
                 xs_m(3)%fs(0:,i) = 0

@@ -241,8 +241,8 @@ def run(loc='.', rundir=default.rundir, submit=True, return_on_complete=False, r
         ntasks = 1
         if rundcon and os.path.isfile('dcon.in'):
             dcon = namelist.read('dcon.in')
-            if 'parallel_threads' in dcon.get('DCON_CONTROL', {}):
-                ntasks = dcon['DCON_CONTROL']['parallel_threads']
+            if 'dcon_kin_threads' in dcon.get('DCON_CONTROL', {}):
+                ntasks = dcon['DCON_CONTROL']['dcon_kin_threads']
                 print(' > Requesting {:} threads'.format(ntasks))
 
     # actual run
@@ -468,7 +468,6 @@ def optpentrc(ms=range(-5,25),ttype='tgar',tfac=-1,perp1=False,norm=1e-3,qsub=Tr
     
     # assert sub-run variables
     kwargs['gpec']['GPEC_INPUT']['idconfile']=loc+'euler.bin'
-    kwargs['gpec']['GPEC_INPUT']['ivacuumfile']=loc+'vacuum.bin'
     kwargs['gpec']['GPEC_INPUT']['ieqfile']=loc+'psi_in.bin'
     for k in kwargs['gpec']['GPEC_OUTPUT']: # maximum speed
         if 'flag' in k: kwargs['gpec']['GPEC_OUTPUT'][k]=False
@@ -659,7 +658,7 @@ def omegascan(omega='wp',base='.',scale=(-2,-1,-0.5,0.5,1,2),pentrcfile='pentrc.
     on each surface to obtain the scaled rotation.
 
     :param omega: str. Choose from nu, wp, we, wd, or ga
-    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin and vacuum.bin file.
+    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin file.
     :param scale: ndarray. The scale factors iterated over.
     :param pentfile: str. Original input file.
     :param rundcon: bool. Set true if using hybrid kinetic MHD DCON. Will also attempt GPEC + PENT.
@@ -715,7 +714,7 @@ def nustarscan(base='.',scale=(0.1,1.0,10.0),pentfile='pent.in',
     .. note:: Approximate scaling ignores log-Lambda dependence, and uses
        nu_star ~ nu/v_th ~ (NT^-3/2)/(T^1/2) ~ N/T^2.
 
-    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin and vacuum.bin file.
+    :param base: str. Top level directory containing dcon and gpec runs. Must contain euler.bin file.
     :param scale: ndarray. The scale factors iterated over.
     :param pentfile: str. Original input file.
     :param scalen: bool.Use density scaling to change nu_star.

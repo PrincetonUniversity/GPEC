@@ -226,7 +226,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose
+     $     bin_vac,ahb_flag,mthsurf0,msol_ahb,diagnose_fixup,verbose
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -286,7 +286,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     transfer equilibrium to packed spline grid.
 c-----------------------------------------------------------------------
-      IF(verbose) WRITE(*,'(a,l1)')" Regrid_flag = ",regrid_flag
+      IF(verbose) WRITE(*,'(3x,a,l1)')"regrid_flag = ",regrid_flag
       IF (regrid_flag) THEN
          IF(verbose) WRITE(*,*)"Regriding equilibrium with qpack"
          CALL dcon_qpack
@@ -342,17 +342,17 @@ c-----------------------------------------------------------------------
 c     fit equilibrium quantities to Fourier-spline functions.
 c-----------------------------------------------------------------------
       IF(mat_flag .OR. ode_flag .OR. gal_flag)THEN
-         IF(verbose) WRITE(*,'(1x,a)')
-     $        "Fourier analysis of metric tensor components"
-         IF(verbose) WRITE(*,'(1x,1p,4(a,es10.3))')"q0 = ",q0,
+         IF(verbose) WRITE(*,'(3x,1p,4(a,es10.3))')"q0 = ",q0,
      $        ", qmin = ",qmin,", qmax = ",qmax,", qa = ",qa
-         IF(verbose) WRITE(*,'(1x,a,l1,1p,3(a,es10.3))')
+         IF(verbose) WRITE(*,'(3x,a,l1,1p,3(a,es10.3))')
      $        "sas_flag = ",sas_flag,", dmlim = ",dmlim,
      $        ", qlim = ",qlim,", psilim = ",psilim
-         IF(verbose) WRITE(*,'(1x,1p,3(a,es10.3))')"betat = ",betat,
+         IF(verbose) WRITE(*,'(3x,1p,3(a,es10.3))')"betat = ",betat,
      $        ", betan = ",betan,", betaj = ",betaj
-         IF(verbose) WRITE(*,'(1x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
+         IF(verbose) WRITE(*,'(3x,5(a,i3))')"nn = ",nn,", mlow = ",mlow,
      $        ", mhigh = ",mhigh,", mpert = ",mpert,", mband = ",mband
+         IF(verbose) WRITE(*,'(1x,a)')
+     $        "Fourier analysis of metric tensor components"
          CALL fourfit_make_metric
          IF(verbose) WRITE(*,*)"Computing F, G, and K Matrices"
          CALL fourfit_make_matrix

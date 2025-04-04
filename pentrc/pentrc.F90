@@ -66,10 +66,12 @@ program pentrc
 
     ! set the number of threads for OPENMP
 #ifdef _OPENMP
-    CALL OMP_SET_NUM_THREADS(openmp_threads)
+    IF(pentrc_threads > 0)THEN
+      CALL OMP_SET_NUM_THREADS(pentrc_threads)
+    ENDIF
 #else
-    if(openmp_threads /= 1) print *,"WARNING: Not compiled with OPENMP. Forcing openmp_threads = 1."
-    openmp_threads = 1
+    if(pentrc_threads > 1) print *,"!! WARNING: Not compiled with OPENMP. Forcing pentrc_threads = 1."
+    pentrc_threads = 1
 #endif
 
     ! run models

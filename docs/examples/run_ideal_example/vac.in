@@ -19,6 +19,7 @@
 	checks=f
 	wall=f
 	lkplt=0
+	verbose_timer_output=f
 /
 	
 &vacdat

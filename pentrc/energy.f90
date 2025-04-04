@@ -211,7 +211,7 @@ module energy_integration
                     itask,istate, iopt, rwork, lrw, iwork, liw, noj, mf)
             endif
 
-            if(iwork(11)>iwork(6)/2) print *, "WARNING: ",iwork(11)," of ",iwork(6),&
+            if(iwork(11)>iwork(6)/2) print *, "!! WARNING: ",iwork(11)," of ",iwork(6),&
                 " maximum steps used in imaginary x integration."
             if(istate==-1) then
                 stop "ERROR: xintgrl_lsode - too many steps in x required &
@@ -246,7 +246,7 @@ module energy_integration
 
         ! write error file and stop program if integration fails
         if(iwork(11)>iwork(6)/2 .and. istate/=-1) then
-            print *, "WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in x integration"
+            print *, "!! WARNING: ",iwork(11)," of maximum ",iwork(6)," steps in x integration"
         endif
         if(istate==-1) then
             print *, "psi =", psi, ", lambda =",lambda, ", leff =",energy_leff

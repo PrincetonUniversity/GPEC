@@ -29,6 +29,7 @@ c-----------------------------------------------------------------------
       INTEGER :: coil_unit=31,cmlow,cmhigh
       INTEGER :: cnn,cmpsi,cmtheta,cmzeta,cmpert,coil_num
       INTEGER :: cnpert=-1
+      INTEGER :: coil_threads = 0
       CHARACTER(24) :: machine,ceq_type,ip_direction,bt_direction
       CHARACTER(24), DIMENSION(500) :: coil_name
       REAL(r8), DIMENSION(500,48) :: coil_cur
@@ -78,7 +79,8 @@ c-----------------------------------------------------------------------
      $     coil_num,coil_name,coil_cur,
      $     coil_shiftx, coil_shifty, coil_shiftz,
      $     coil_tiltx, coil_tilty, coil_tiltz,
-     $     coil_xnom, coil_ynom, coil_znom, cnpert
+     $     coil_xnom, coil_ynom, coil_znom, cnpert,
+     $     coil_threads
       NAMELIST/coil_output/gpec_interface, coil_out
 
       INTEGER :: ci,cj,ck,cl,cm,ci1,ci2,ci3,ci4,nsec
@@ -160,6 +162,18 @@ c-----------------------------------------------------------------------
       helicity=ipd*btd
       gpec_interface=.TRUE.
       IF(cnpert < 0) cnpert = cnn ! default geometry manipulations correspond to n from DCON
+
+      ! set the number of threads for OPENMP
+#ifdef _OPENMP
+      IF(coil_threads > 0) THEN
+        CALL OMP_SET_NUM_THREADS(coil_threads)
+      ENDIF
+#else
+      IF(coil_threads /= 1) PRINT *,
+     $ "!! WARNING: Not compiled with OPENMP. Forcing coil_threads = 1."
+      coil_threads = 1
+#endif
+
 c-----------------------------------------------------------------------
 c     read coils for each machine.
 c-----------------------------------------------------------------------
@@ -201,18 +215,18 @@ c-----------------------------------------------------------------------
 
             ! inform user of any coil modifications
             IF(ABS(coil_shiftx(ci, cj)) + ABS(coil_shifty(ci, cj))
-     $         +ABS(coil_shiftz(ci, cj)) > 0) WRITE(*,'(1x,a,i2)'),
-     $         " > Shifting "//TRIM(coil_name(ci))//" coil ",cj
+     $         +ABS(coil_shiftz(ci, cj)) > 0) WRITE(*,'(1x,a,i2)')
+     $         "  > Shifting "//TRIM(coil_name(ci))//" coil ",cj
             IF(ABS(coil_tiltx(ci, cj)) + ABS(coil_tilty(ci, cj))
      $         +ABS(coil_tiltz(ci, cj)) > 0) THEN
                  IF(cnpert /= 0)THEN
-                    WRITE(*,'(1x,a,i2)'),
-     $         " > Tilting "//TRIM(coil_name(ci))//" coil",cj
+                    WRITE(*,'(1x,a,i2)')
+     $         "  > Tilting "//TRIM(coil_name(ci))//" coil",cj
                  ELSE
                     coil_tiltx = 0
                     coil_tilty = 0
                     coil_tiltz = 0
-                    WRITE(*,'(1x,a)'), " >>> Ignoring tilt requests, "//
+                    WRITE(*,'(1x,a)') "  >>> Ignoring tilt requests, "//
      $         "which have no n=0 component"
                  ENDIF
             ENDIF
@@ -288,13 +302,20 @@ c-----------------------------------------------------------------------
                      coil(ci)%z(cj, ck, cl) = z + dz
 
                      ! apply shifts (elongations, etc.)
-                     x = coil(ci)%x(cj, ck, cl) - x0
-                     y = coil(ci)%y(cj, ck, cl) - y0
-                     r = sqrt( y ** 2 + x ** 2)
-                     dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
-     $                   +coil_shifty(ci,cj) * sin(cnpert * phi)
-                     coil(ci)%x(cj, ck, cl) = x0 + (r + dr) * cos(phi)
-                     coil(ci)%y(cj, ck, cl) = y0 + (r + dr) * sin(phi)
+                     IF(cnpert==0)THEN ! only shift, keep coil same
+                        coil(ci)%x(cj, ck, cl) = coil(ci)%x(cj, ck, cl)
+     $                                           +coil_shiftx(ci,cj)
+                        coil(ci)%y(cj, ck, cl) = coil(ci)%y(cj, ck, cl)
+     $                                           +coil_shifty(ci,cj)
+                     ELSE                        
+                        x = coil(ci)%x(cj, ck, cl) - x0
+                        y = coil(ci)%y(cj, ck, cl) - y0
+                        r = sqrt( y ** 2 + x ** 2)
+                        dr = coil_shiftx(ci,cj) * cos(cnpert * phi)
+     $                      +coil_shifty(ci,cj) * sin(cnpert * phi)
+                        coil(ci)%x(cj, ck, cl) = x0 + (r + dr) *cos(phi)
+                        coil(ci)%y(cj, ck, cl) = y0 + (r + dr) *sin(phi)
+                     ENDIF
                      coil(ci)%z(cj, ck, cl) = coil(ci)%z(cj, ck, cl)
      $                                       +coil_shiftz(ci,cj)
                   ENDDO

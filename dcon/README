@@ -351,10 +351,11 @@ and eq_filename="lar.in".  This allows the user to construct a
 large-aspect-ratio, circular-cross-section equilibrium, using the
 Shafranov expansion to second order, specifying minor radius a, major
 radius r0, central pressure ratio beta0, and central safety factor q0.
-The pressure profile is given by p0*(1-(r/a))**p_pres, and the profile
-of sigma=J.B/B^2 is given by sigma0*(1-(r/a))**p_pres.  Changing these
-to something more interesting would be very simple.  Here are sample
-input parameters:
+The pressure profile is given by p0*(1-(r/a)**2)**p_pres, and the default 
+profile of sigma=J.B/B^2 is sigma0/(1+(r/a))**(2*p_sig))**(1+1/p_sig). 
+Specifying sigma_type="wesson" changes the functional form of sigma to a 
+simpler "Wesson-like" sigma0*(1-(r/a)**2)**p_sig. Additional profiles 
+would be simple to add. Here are sample input parameters:
 
 =============== ======================================================
 ma=64		number of radial grid points
@@ -368,6 +369,9 @@ q0=3.2		value of q (safety factor) on axis
 
 p_pres=2	power used in specifying pressure profile
 p_sig=2		power used in specifying current profile
+
+sigma_type='default'   functional form of sigma profile 
+                       ('default' or 'wesson')
 =============== ======================================================
 
 The sol_input namelist of equil.in is used when

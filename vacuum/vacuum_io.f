@@ -113,7 +113,7 @@ c     override namelist r in favor of r=0 for DCON
 c-----------------------------------------------------------------------
       if(r/=0.0)then
          if(.not. warned) write(*,'(1x,a,es9.2,a,i2)')
-     $        " > Vacuum code overriding r",r," from vac.in, to be",0
+     $        "  > Vacuum code overriding r",r," from vac.in, to be",0
          r=0.0
          warned = .true.
       endif 

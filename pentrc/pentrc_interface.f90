@@ -108,7 +108,8 @@ module pentrc_interface
         power_bpin = -1,&
         power_rin = -1,&
         power_rcin = -1,&
-        openmp_threads = 1
+        pentrc_threads = 0,&
+        openmp_threads = 0
 
     real(r8) ::    &
         atol_xlmda=1e-6, &
@@ -148,7 +149,7 @@ module pentrc_interface
 
     namelist/pent_control/nfac, tfac, wefac, wdfac, wpfac, nufac, divxfac, &
             atol_xlmda, rtol_xlmda, atol_psi, rtol_psi, nlmda, ntheta, ximag, xmax, psilims, &
-            use_classic_splines,openmp_threads, force_xialpha
+            use_classic_splines,pentrc_threads,openmp_threads,force_xialpha
 
     namelist/pent_output/moment, output_ascii, output_netcdf, &
             eq_out, theta_out, xlmda_out, eqpsi_out, equil_grid, input_grid, dynamic_grid, &
@@ -212,11 +213,12 @@ module pentrc_interface
         if(all(psi_out==-1)) psi_out = (/(i,i=1,30)/)/30.6 ! even spread if user doesn't pick any
 
         ! warnings if using deprecated inputs
-        if(eq_out) print *, "WARNING: eq_out has been deprecated. Behavior is always true."
-        if(eqpsi_out) print *, "WARNING: eqpsi_out has been deprecated. Use equil_grid."
-        if(term_flag) print *, "WARNING: term_flag has been deprecated. Use verbose."
-        !if(any(psiout/=0)) print *, "WARNING: psiout has been deprecated. Use psi_out." !! officially removed
-        !if(any(psilim/=0)) print *, "WARNING: psilim has been deprecated. Use psilims."
+        if(openmp_threads>0) print *,"!! WARNING: openmp_threads has been deprecated. Use pentrc_threads or OMP_NUM_THREADS env variable."
+        if(eq_out) print *, "!! WARNING: eq_out has been deprecated. Behavior is always true."
+        if(eqpsi_out) print *, "!! WARNING: eqpsi_out has been deprecated. Use equil_grid."
+        if(term_flag) print *, "!! WARNING: term_flag has been deprecated. Use verbose."
+        !if(any(psiout/=0)) print *, "!! WARNING: psiout has been deprecated. Use psi_out." !! officially removed
+        !if(any(psilim/=0)) print *, "!! WARNING: psilim has been deprecated. Use psilims."
 
         ! distribute some simplified inputs to module circles
         xatol = atol_xlmda

@@ -148,6 +148,7 @@ clear:
 	cd ../docs/examples/a10_ideal_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/a10_kinetic_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/DIIID_ideal_example; rm -f *.out *.bin *.nc
+	cd ../docs/examples/DIIID_resistive_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/DIIID_kinetic_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/solovev_ideal_example; rm -f *.out *.bin *.nc
 	cd ../docs/examples/solovev_kinetic_example; rm -f *.out *.bin *.nc
