@@ -160,7 +160,7 @@ c-----------------------------------------------------------------------
 !      x=10.0*(1.0+log10(Q/pr))
 
       !!!!!!!!
-      my_q=10.0 ! "starting backwards integration at large q"
+      my_q=inx!10.0 ! "starting backwards integration at large q"
       !!!!!!!!
 
       xmin=1e-5
@@ -239,7 +239,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: Q_hat, P_tor_hat, P_perp_hat
       COMPLEX(r8) :: E,F
 
-      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+      !COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       !Q_hat = Q / ds**4
       Q_hat = (Q_e*(1+tau)/tau) / D_beta_norm**4 ! Q_star = Q_e * (1+tau), 2.4e-02 for benchmark
@@ -272,7 +272,7 @@ c
       COMPLEX(r8) :: C2p
       COMPLEX(r8) :: A1
       COMPLEX(r8) :: A2
-      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+      !COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       IF (parflow_flag) THEN
          C1=((1 + tau)*x**2*pe*
@@ -736,7 +736,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: x
       COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neq), INTENT(OUT) :: dy
-      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+      !COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       dy(1)=(2.0*x/(ifac*(Q-Q_e)+x**2.0)-1.0/x)*y(1)-y(1)*y(1)/x
      $     +x*(ifac*(Q-Q_e)+x**2.0)
@@ -823,7 +823,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN) :: x
       COMPLEX(r8), DIMENSION(neq), INTENT(IN) :: y
       COMPLEX(r8), DIMENSION(neq), INTENT(OUT) :: dy
-      COMPLEX(r8), PARAMETER :: ifac=(0,1)
+      !COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       dy(1)=(1+ifac*(Q-Q_e)*x**2.0)/x**2.0*y(2)
       dy(2)=(-Q*(Q-Q_i)*x**4.0+ifac*(Q-Q_i)*(pr+c_beta**2.0)*x**2.0

@@ -185,7 +185,7 @@ c-----------------------------------------------------------------------
      $       stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
      $       omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
      $       D_beta_norm_arr,inpr_arr,psi_n_rational,Re_deltaprime_arr,
-     $       Im_deltaprime_arr,dels_db_arr,lar_gamma_arr)
+     $       Im_deltaprime_arr,dels_db_arr,lu_arr,lar_gamma_arr)
 
       ! Declarations (include necessary type declarations from original code)
       LOGICAL, INTENT(IN) :: lar_gamma_eq_flag,lar_gamma_flag,
@@ -195,7 +195,7 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN), DIMENSION(:), ALLOCATABLE :: omegas_arr,
      $      inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
      $      Re_deltaprime_arr,Im_deltaprime_arr,inpr_arr,ind_beta_arr,
-     $      D_beta_norm_arr
+     $      D_beta_norm_arr,lu_arr
   
       COMPLEX(r8), INTENT(IN), DIMENSION(:), ALLOCATABLE :: dels_db_arr,
      $                                         lar_gamma_arr
@@ -214,7 +214,7 @@ c-----------------------------------------------------------------------
      $    lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
      $            qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $            psi_n_rational,inpr_arr,br_th,Re_deltaprime_arr,
-     $            Im_deltaprime_arr,dels_db_arr,ind_beta_arr,
+     $            Im_deltaprime_arr,dels_db_arr,lu_arr,ind_beta_arr,
      $            D_beta_norm_arr,lar_gamma_arr,inQs,iinQs,results)
    
       END SUBROUTINE output_lar_gamma
@@ -283,55 +283,6 @@ c-----------------------------------------------------------------------
      $    scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
      $    results,count,match_count,dx,dy)
 
-      IF (match_count == 0) THEN ! ALL REPEATS TURNED OFF FOR NOW
-        WRITE(*,*)"No match found, rescanning"
-        repeat = .FALSE.
-        !new_scan_radius = scan_radius + 2
-        new_ncoarse = ncoarse + 100
-        new_nfine = nfine
-      ELSE IF (match_count > 0 .AND. match_count < 3) THEN
-        WRITE(*,*)"Match not definitive, rescanning"
-        repeat = .FALSE.
-        new_scan_radius = scan_radius
-        new_ncoarse = ncoarse
-        new_nfine = 8
-      ELSE
-        repeat = .FALSE.
-        WRITE(*,*)"Match found"
-
-      END IF
-
-      IF (repeat) THEN
-      WRITE(*,*)"Rerunning growth rate scan"
-
-      new_max_points = new_ncoarse**2 * (1 +
-     $       (new_nfine-1)**2)
-
-      ! Resize arrays to new max number of points
-      CALL grow_array(results%inQs, max_points, new_max_points)
-      CALL grow_array(results%iinQs, max_points, new_max_points)
-      CALL grow_array(results%Re_deltas, max_points, new_max_points)
-      CALL grow_array(results%Im_deltas, max_points, new_max_points)
-
-      results%inQs=0.0
-      results%iinQs=0.0
-      results%Re_deltas=0.0
-      results%Im_deltas=0.0
-      ! Initialize counter
-      count = 0
-
-      ! Calculate step sizes
-      inQ_step = (2.0 * new_scan_radius)/(new_ncoarse - 1)
-      iinQ_step = (2.0 * new_scan_radius)/(new_ncoarse - 1)
-
-      match_count = 0
-
-      ! COARSE AND FINE LOOPS
-      CALL scan_grid(inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,my_lu,
-     $     scan_radius,ncoarse,nfine,deltaprime,compress_deltas,
-     $     results,count,match_count,dx,dy)
-      END IF ! End repeat "if"
-
       ! Set the actual count of points
       results%count = count
 
@@ -378,7 +329,8 @@ c-----------------------------------------------------------------------
       iinQ_step = (2.0 * scan_radius) / (ncoarse - 1)
       dx = inQ_step
       dy = iinQ_step
-
+      count = 0
+      
       DO i = 1, ncoarse
         DO j = 1, ncoarse
           inQ_coarse = -scan_radius + (i - 1) * inQ_step
@@ -389,66 +341,12 @@ c-----------------------------------------------------------------------
           delta_real = REAL(delta)*(my_lu**(1.0/3.0)) ! Critical normalization
           delta_imag = AIMAG(delta)*(my_lu**(1.0/3.0)) ! Critical normalization
 
-          IF ((.NOT. compress_deltas) .OR. (ABS(deltaprime) < 4)) THEN
-            ! Store coarse grid point
-            count = count + 1
-            results%inQs(count) = inQ_coarse
-            results%iinQs(count) = iinQ_coarse
-            results%Re_deltas(count) = delta_real
-            results%Im_deltas(count) = delta_imag
-          END IF
+          count = count + 1
+          results%inQs(count) = inQ_coarse
+          results%iinQs(count) = iinQ_coarse
+          results%Re_deltas(count) = delta_real
+          results%Im_deltas(count) = delta_imag
 
-          IF (ABS(deltaprime) > 8) THEN
-            threshold = ABS(deltaprime)**(1./3.)
-          ELSE
-            threshold = 0.25 * ABS(deltaprime)
-          END IF
-
-          ! Check if refinement is needed
-          IF (2 == 3) THEN !((ABS(delta_real) > threshold) .AND.
-      !$     (ABS(deltaprime) > 4)) THEN
-       !   IF ((ABS(delta_real) > threshold) .AND. (SIGN(1.0,
-      !$              delta_real) == SIGN(1.0, deltaprime))) THEN
-
-            ! Fine grid loop
-            fine_dx = dx / nfine
-            fine_dy = dy / nfine
-
-            overlap_x = overlap_factor * fine_dx
-            overlap_y = overlap_factor * fine_dy
-
-            x_start = inQ_coarse - dx/2 + overlap_x
-            x_end = inQ_coarse + dx/2 - overlap_x
-            y_start = iinQ_coarse - dy/2 + overlap_y
-            y_end = iinQ_coarse + dy/2 - overlap_y
-
-            DO fj = 0, nfine-1
-              iinQ_fine = y_start + fj * (y_end-y_start) / (nfine-1)
-              DO fi = 0, nfine-1
-                inQ_fine = x_start + fi * (x_end-x_start) / (nfine-1)
-                IF ((ABS(inQ_coarse - inQ_fine) <
-     $              tolerance) .AND. (ABS(iinQ_coarse -
-     $              iinQ_fine) < tolerance)) CYCLE
-
-                ! Evaluate riccati function
-                delta = riccati(inQ_fine,inQ_e,inQ_i,inpr,
-     $                     inc_beta,inds,intau,inpe,iinQ=iinQ_fine)
-                delta_real = REAL(delta)*(my_lu**(1.0/3.0))
-                delta_imag = AIMAG(delta)*(my_lu**(1.0/3.0))
-
-                IF (ABS(delta_real)>ABS(deltaprime)) THEN
-                        match_count = match_count + 1
-                END IF
-
-                ! Store fine grid point
-                count = count + 1
-                results%inQs(count) = inQ_fine
-                results%iinQs(count) = iinQ_fine
-                results%Re_deltas(count) = delta_real
-                results%Im_deltas(count) = delta_imag
-              END DO
-            END DO
-          END IF
         END DO
       END DO
       END SUBROUTINE scan_grid

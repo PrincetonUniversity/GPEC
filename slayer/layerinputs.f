@@ -47,14 +47,14 @@ c-----------------------------------------------------------------------
 
         ! Open the NetCDF file
       stat = nf90_open(path=ncfile,mode=NF90_WRITE,ncid=ncid)
-      CALL check(stat)  ! Error handling
+      CALL sl_check(stat)  ! Error handling
 
       stat = nf90_inquire_attribute(ncid,msing_id,"msing",
      $        len = msing_len)
-      CALL check(stat)
+      CALL sl_check(stat)
       ALLOCATE(msing_arr(msing_len))
       stat = nf90_get_att(ncid,msing_id,"msing",msing_arr)
-      CALL check(stat)
+      CALL sl_check(stat)
 
       msing=INT(msing_arr(1))
 
@@ -65,16 +65,16 @@ c-----------------------------------------------------------------------
       ALLOCATE(delta_prime(msing, msing,2))
 
       stat = nf90_inquire_attribute(ncid,ro_id,"ro",len = ro_len)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_inquire_attribute(ncid,bt0_id,"bt0",len=bt0_len)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_inquire_attribute(ncid,psio_id,"psio",len=psio_len)
-      CALL check(stat)
+      CALL sl_check(stat)
 
       stat = nf90_inquire_attribute(ncid,mpsi_id,"mpsi",len=mpsi_len)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_inquire_attribute(ncid,nn_id,"n",len = nn_len)
-      CALL check(stat)
+      CALL sl_check(stat)
 
       bt0_id=0 !!!!! THIS COULD BE A PROBLEM
       nn_id=0
@@ -88,39 +88,39 @@ c-----------------------------------------------------------------------
 
       ! Get Variable IDs
       stat = nf90_inq_varid(ncid, "Delta_prime", dp_id)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_inq_varid(ncid, "q_rational", qr_id)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_inq_varid(ncid, "psi_n_rational", pr_id)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_inq_varid(ncid, "shear", shear_id)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_inq_varid(ncid, "resm", resm_id)
-      CALL check(stat)
+      CALL sl_check(stat)
       ! Get attributes
       stat = nf90_get_att(ncid, ro_id, "ro", r_o)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_get_att(ncid, bt0_id, "bt0", my_bt0)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_get_att(ncid, psio_id, "psio", my_psio)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_get_att(ncid, mpsi_id, "mpsi", mpsi)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_get_att(ncid, nn_id, "n", nn)
-      CALL check(stat)
+      CALL sl_check(stat)
 
       ! Read the diagonal of delta_prime. The results will be put on a 1D temporary array.
       stat = nf90_get_var(ncid, dp_id, delta_prime,start=(/ 1,1,1 /))
-      CALL check(stat)
+      CALL sl_check(stat)
       ! Read 1D variables
       stat = nf90_get_var(ncid, qr_id, q_rational)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_get_var(ncid, pr_id, psi_n_rational)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_get_var(ncid, shear_id, shear)
-      CALL check(stat)
+      CALL sl_check(stat)
       stat = nf90_get_var(ncid, resm_id, resm)
-      CALL check(stat)
+      CALL sl_check(stat)
 
       ! Extract Diagonal, with 3rd index signifying REAL part
       DO i = 1, msing
@@ -130,7 +130,7 @@ c-----------------------------------------------------------------------
       ! Clean Up
       DEALLOCATE(delta_prime)
       stat = nf90_close(ncid)
-      CALL check(stat)
+      CALL sl_check(stat)
 
       END SUBROUTINE read_stride_netcdf_diagonal
 c-----------------------------------------------------------------------

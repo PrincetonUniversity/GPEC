@@ -34,7 +34,7 @@ c-----------------------------------------------------------------------
      $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
      $     params_check,stabscan_eq_flag,stabscan_flag,
-     $     lar_gamma_eq_flag,lar_gamma_flag,Pe_flag,
+     $     lar_gamma_eq_flag,lar_gamma_flag,
      $     br_th_flag,compress_deltas
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
@@ -56,7 +56,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQ_e_arr,
      $                   inQ_i_arr,inc_beta_arr,inds_arr,
      $                   intau_arr,inQ0_arr,inpr_arr,
-     $                   inpe_arr,omegas_arr,inQ_arr,
+     $                   inpe_arr,omegas_arr,inQ_arr,lu_arr,
      $                   psi_n_rational,ind_beta_arr,D_beta_norm_arr
       REAL(r8), DIMENSION(8) :: inpr_prof
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: all_Re_deltas,
@@ -91,7 +91,6 @@ c-----------------------------------------------------------------------
      $     scan_radius,QPscan_flag,QPscan2_flag,
      $     QPescan_flag,QDscan2_flag,Qbscan_flag,Qscan_flag,
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
-     $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag
      $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
      $     stability_flag,lar_gamma_eq_flag,lar_gamma_flag,
@@ -341,7 +340,8 @@ c-----------------------------------------------------------------------
 
             dels_db=riccati_del_s(inQ_arr(k),inQ_e_arr(k),
      $                   inQ_i_arr(k),inpr_arr(k),inc_beta_arr(k),
-     $                   D_beta_norm_arr(k),intau_arr(k))
+     $                   D_beta_norm_arr(k),intau_arr(k),
+     $                   5.0*D_beta_norm_arr(k))
 
             del_s = dels_db * ind_beta_arr(k)
             lar_gamma = gammafac_arr(k)/del_s
@@ -373,7 +373,7 @@ c-----------------------------------------------------------------------
      $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
      $         D_beta_norm_arr,inpr_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
-     $         lar_gamma_arr)
+     $         lu_arr,lar_gamma_arr)
 
          stop
       ENDIF
@@ -394,13 +394,25 @@ c-----------------------------------------------------------------------
          CALL params(n_e,t_e,t_i,omega,
      $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
 
-         !inQ=Q ! TAKEN FROM NAMELIST
-         !inQ_e=Q_e ! TAKEN FROM NAMELIST
-         !inQ_i=Q_i ! TAKEN FROM NAMELIST
-         !inc_beta=c_beta
-         !inds=ds
-         !intau=tau
-         !Q0=Q
+
+         IF (inQ > 0.0) THEN
+            Q = inQ ! NAMELIST
+         END IF
+         IF (inQ_e > 0.0) THEN
+            Q_e = inQ_e ! NAMELIST
+         END IF
+         IF (inQ_i > 0.0) THEN
+            Q_i = inQ_i ! NAMELIST
+         END IF
+         IF (inpr > 0.0) THEN
+            pr = inpr ! NAMELIST
+         END IF
+         IF (intau > 0.0) THEN
+            tau = intau ! NAMELIST
+         END IF
+         IF (inds > 0.0) THEN
+            D_beta_norm = inds ! NAMELIST
+         END IF
 
          qval_arr = (/ qval /)
          omegas_arr = (/ omega /)
@@ -413,15 +425,13 @@ c-----------------------------------------------------------------------
          inpr_arr = (/ inpr /)
          D_beta_norm_arr = (/ D_beta_norm /)
 
-         !D_beta_norm = inds ! NAMELIST
-
          WRITE(*,*)"D_beta_norm = ",D_beta_norm
          WRITE(*,*)"inds = ",inds
 
          WRITE(*,*)"lar_gamma inQ = ",inQ
 
          dels_db=riccati_del_s(inQ,inQ_e,inQ_i,inpr,inc_beta,d_beta,
-     $                        intau)
+     $                        intau,5.0*D_beta_norm)
 
          WRITE(*,*)"dels_db() call successful"
 
@@ -436,9 +446,8 @@ c-----------------------------------------------------------------------
          lar_gamma_arr = (/ lar_gamma /)
 
          WRITE(*,*)"dels_db=",dels_db
-         WRITE(*,*)"lar_gamma=",lar_gamma
-
-         WRITE(*,*)"slayer.f lar_gamma=",lar_gamma
+         WRITE(*,*)"[mm] del_s=",dels_db*d_beta*1000
+         WRITE(*,*)"growth rate=",lar_gamma
 
          br_th = 0.0
 
@@ -447,7 +456,7 @@ c-----------------------------------------------------------------------
      $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
      $         D_beta_norm_arr,inpr_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
-     $         lar_gamma_arr)
+     $         lu_arr,lar_gamma_arr)
 
          stop
       ENDIF
@@ -535,6 +544,12 @@ c-----------------------------------------------------------------------
          Im_deltaprime_arr = (/ AIMAG(delta_n_p) /)
          inpr_arr = (/ inpr /)
 
+
+         CALL params(n_e,t_e,t_i,omega,
+     $        l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff,params_check)
+
+         D_beta_norm_arr = (/ D_beta_norm /)
+
          CALL growthrate_scan(qval_arr(1),lu,inQ,inQ_e,
      $             inQ_i,inc_beta,inds,
      $             intau,inQ,inpr,inpe,
@@ -544,8 +559,12 @@ c-----------------------------------------------------------------------
          WRITE(*,*)"allocations successful"
 
          br_th = 0.0
-c         CALL slayer_netcdf_out(1,lar_gamma_eq_flag,lar_gamma_flag,
-c     $                     stabscan_eq_flag,stabscan_flag,br_th_flag)
+         CALL slayer_netcdf_out(SIZE(qval_arr),lar_gamma_eq_flag,
+     $    lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
+     $            qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
+     $            psi_n_rational,inpr_arr,br_th,Re_deltaprime_arr,
+     $            Im_deltaprime_arr,dels_db_arr,lu_arr,ind_beta_arr,
+     $            D_beta_norm_arr,lar_gamma_arr,inQs,iinQs,results)
          stop
       ENDIF
 c-----------------------------------------------------------------------
