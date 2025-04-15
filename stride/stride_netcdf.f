@@ -61,12 +61,20 @@ c-----------------------------------------------------------------------
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
      $    r_dim, rp_dim, l_dim, lp_dim, r_id, rp_id, l_id, lp_id,
      $    pr_id, qr_id, dp_id, ap_id, bp_id, gp_id, dpp_id,
-     $    shear_id,resm_id,prandtl_id
+     $    shear_id,resm_id,prandtl_id,rs_id,rf_id
       COMPLEX(r8), DIMENSION(mpert) :: ep,ev,et
       CHARACTER(2) :: sn
       CHARACTER(64) :: ncfile
 
       REAL(r8) :: resnum,shear,respsi,resm_sing
+
+      REAL(r8), DIMENSION(msing) :: rs_array
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: rs_full
+
+      TYPE(spline_type) :: sr
+      REAL(r8), DIMENSION(0:mpsi) :: rhotor
+
+
       INTEGER, DIMENSION(msing) :: resm
 
       INTEGER :: ising,jsing,m
@@ -89,6 +97,29 @@ c-----------------------------------------------------------------------
       ep = CMPLX(epi, 0.0)
       ev = CMPLX(evi, 0.0)
       et = CMPLX(eti, 0.0)
+c-----------------------------------------------------------------------
+c     loop across singular surfaces, evaluate minor radius
+c-----------------------------------------------------------------------
+      WRITE(*,*)"REACHED RS CALCULATION"
+      rhotor(:) = SQRT(sq%fsi(:, 4)*twopi*psio / (pi * bt0))  ! effective minor radius in Callen
+      CALL spline_alloc(sr,mpsi,1)
+      sr%xs = sq%xs
+      sr%fs(:, 1) = rhotor(:)
+      CALL spline_fit(sr,"extrap")
+
+      ALLOCATE(rs_full(sq%mx+1))
+
+      DO i=1,msing
+         respsi = sing(i)%psifac
+         WRITE(*,*)"respsi=",respsi
+         CALL spline_eval(sr,respsi,1)
+         rs_array(i) = sr%f1(1)
+      END DO
+      DO i=1,sq%mx+1
+        respsi = sq%xs(i)!*psio
+        CALL spline_eval(sr,respsi,1)
+        rs_full(i) = sr%f1(1)
+      END DO
 c-----------------------------------------------------------------------
 c     open files
 c-----------------------------------------------------------------------
@@ -175,6 +206,10 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid,"r_prime",nf90_int,rp_dim,rp_id))
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                            r_dim,pr_id) )
+         CALL check( nf90_def_var(ncid,"eff_rs_rational",nf90_double,
+     $                            r_dim,rs_id) )
+         CALL check( nf90_def_var(ncid,"eff_rs",nf90_double,
+     $                            p_dim,rf_id) )
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                            r_dim,qr_id) )
          CALL check( nf90_def_var(ncid, "shear", nf90_double, r_dim,
@@ -236,6 +271,8 @@ c-----------------------------------------------------------------------
      $                                           i=1,msing)/)) )
          CALL check( nf90_put_var(ncid,pr_id, (/(sing(i)%psifac,
      $                                           i=1,msing)/)) )
+         CALL check( nf90_put_var(ncid,rs_id, rs_array) )
+         CALL check( nf90_put_var(ncid,rf_id, rs_full) )
          CALL check( nf90_put_var(ncid,qr_id, (/(sing(i)%q,
      $                                           i=1,msing)/)) )
 

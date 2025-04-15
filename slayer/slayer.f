@@ -435,8 +435,11 @@ c-----------------------------------------------------------------------
 
          WRITE(*,*)"dels_db() call successful"
 
-         eta = 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
-         tau_r = mu0*rs**2.0/eta ! resistive time scale
+         tau_r = layfac !!!! CRITICAL
+         WRITE(*,*)"tau_r = ",tau_r
+
+         !eta = 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
+         !tau_r = mu0*rs**2.0/eta ! resistive time scale
 
          del_s = dels_db * d_beta
          lar_gamma = (REAL(delta_n_p)/tau_r) * (rs/del_s)
