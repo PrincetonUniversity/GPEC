@@ -426,17 +426,19 @@ c-----------------------------------------------------------------------
          D_beta_norm_arr = (/ D_beta_norm /)
 
          WRITE(*,*)"D_beta_norm = ",D_beta_norm
-         WRITE(*,*)"inds = ",inds
+         !WRITE(*,*)"inds = ",inds
 
-         WRITE(*,*)"lar_gamma inQ = ",inQ
+         !WRITE(*,*)"lar_gamma inQ = ",inQ
 
-         dels_db=riccati_del_s(inQ,inQ_e,inQ_i,inpr,inc_beta,d_beta,
-     $                        intau,5.0*D_beta_norm)
+         dels_db=riccati_del_s(inQ,inQ_e,inQ_i,inpr,inc_beta,
+     $                     D_beta_norm,intau,5.0*D_beta_norm)
 
-         WRITE(*,*)"dels_db() call successful"
+         !WRITE(*,*)"dels_db() call successful"
 
          tau_r = layfac !!!! CRITICAL
          WRITE(*,*)"tau_r = ",tau_r
+         WRITE(*,*)"deltaprime = ",REAL(delta_n_p)
+         WRITE(*,*)"rs = ",rs
 
          !eta = 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
          !tau_r = mu0*rs**2.0/eta ! resistive time scale

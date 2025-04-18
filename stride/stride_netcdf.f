@@ -17,6 +17,7 @@ c-----------------------------------------------------------------------
       MODULE stride_netcdf_mod
       USE dcon_mod
       USE netcdf
+      !USE dcon_interface, ONLY: issurfint
       IMPLICIT NONE
 
       CONTAINS
@@ -42,6 +43,93 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE check
 c-----------------------------------------------------------------------
+c     subprogram 2. issurfint.
+c     surface integration by simple method. copied from EQUIL
+c-----------------------------------------------------------------------
+      FUNCTION issurfint(func,fs,inpsi,wegt,ave,
+     $     fsave,psave,jacs,delpsi,inr,ina,first)
+c-----------------------------------------------------------------------
+c     declaration.
+c-----------------------------------------------------------------------
+      !IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fs,wegt,ave
+      REAL(r8), INTENT(IN) :: inpsi
+      REAL(r8), DIMENSION(0:fs), INTENT(IN) :: func
+
+      LOGICAL, INTENT(INOUT) :: first
+      INTEGER, INTENT(INOUT)  :: fsave
+      REAL(r8), INTENT(INOUT) :: psave
+      REAL(r8),DIMENSION(0:),INTENT(INOUT) :: jacs,delpsi,inr,ina
+      INTEGER  :: itheta, ix, iy
+      REAL(r8) :: issurfint
+      REAL(r8) :: rfac,ineta,injac,inarea
+      REAL(r8), DIMENSION(1,2) :: w
+      REAL(r8), DIMENSION(0:fs) :: z,thetas
+      REAL(r8), dimension(4) :: rzphi_f, rzphi_fx, rzphi_fy
+
+      issurfint=0
+      inarea=0
+      ix = 0
+      iy = 0
+      IF(first .OR. inpsi/=psave .OR. fs/=fsave)THEN
+         psave = inpsi
+         fsave = fs
+         !first = .FALSE.
+         DO itheta=0,fs
+            thetas(itheta) = REAL(itheta,r8)/REAL(fs,r8)
+         ENDDO
+         DO itheta=0,fs-1
+            CALL bicube_eval_external(rzphi, inpsi, thetas(itheta), 1,
+     $           ix, iy, rzphi_f, rzphi_fx, rzphi_fy)
+            rfac=SQRT(rzphi_f(1))
+            ineta=twopi*(thetas(itheta)+rzphi_f(2))
+            ina(itheta)=rfac
+            inr(itheta)=ro+rfac*COS(ineta)
+            z(itheta)=zo+rfac*SIN(ineta)
+            injac=rzphi_f(4)
+            jacs(itheta)=injac
+            w(1,1)=(1+rzphi_fy(2))*twopi**2*rfac*inr(itheta)/injac
+            w(1,2)=-rzphi_fy(1)*pi*inr(itheta)/(rfac*injac)
+            delpsi(itheta)=SQRT(w(1,1)**2+w(1,2)**2)
+         ENDDO
+      ENDIF
+
+      IF (wegt==0) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE IF (wegt==1) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $         inr(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE IF (wegt==2) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $           jacs(itheta)*delpsi(itheta)*func(itheta)/inr(itheta)/fs
+         ENDDO
+      ELSE IF (wegt==3) THEN
+         DO itheta=0,fs-1
+            issurfint=issurfint+
+     $        ina(itheta)*jacs(itheta)*delpsi(itheta)*func(itheta)/fs
+         ENDDO
+      ELSE
+         STOP "ERROR: issurfint wegt must be in [0,1,2,3]"
+      ENDIF
+
+      IF (ave==1) THEN
+         DO itheta=0,fs-1
+            inarea=inarea+jacs(itheta)*delpsi(itheta)/fs
+         ENDDO
+         issurfint=issurfint/inarea
+      ENDIF
+c-----------------------------------------------------------------------
+c     terminate.
+c-----------------------------------------------------------------------
+      RETURN
+      END FUNCTION issurfint
+c-----------------------------------------------------------------------
 c     subprogram 2. stride_netcdf_out.
 c     Replicate stride.out information in netcdf format.
 c-----------------------------------------------------------------------
@@ -55,7 +143,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: dp
       INTEGER, DIMENSION(mpert) :: mvec
 
-      INTEGER :: i, ncid,
+      INTEGER :: i, ncid,mthsur,
      $    i_dim, m_dim, mo_dim, p_dim, i_id, m_id, mo_id, p_id,
      $    f_id, q_id, dv_id, mu_id, di_id, dr_id, ca_id,
      $    wp_id, wpv_id, wv_id, wvv_id, wt_id, wtv_id,
@@ -73,7 +161,15 @@ c-----------------------------------------------------------------------
 
       TYPE(spline_type) :: sr
       REAL(r8), DIMENSION(0:mpsi) :: rhotor
-
+      
+      ! MINOR RADIUS INTEGRAL QUANTITIES
+      LOGICAL :: firstsur
+      REAL(r8), DIMENSION(0:512) :: my_unitfun
+      INTEGER :: my_fsave
+      REAL(r8) :: my_psave
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: my_jacs,my_delpsi,
+     $                                     my_rsurf,my_asurf
+      REAL(r8) :: my_rfac,my_jac,a_surf
 
       INTEGER, DIMENSION(msing) :: resm
 
@@ -100,25 +196,32 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     loop across singular surfaces, evaluate minor radius
 c-----------------------------------------------------------------------
-      WRITE(*,*)"REACHED RS CALCULATION"
-      rhotor(:) = SQRT(sq%fsi(:, 4)*twopi*psio / (pi * bt0))  ! effective minor radius in Callen
-      CALL spline_alloc(sr,mpsi,1)
-      sr%xs = sq%xs
-      sr%fs(:, 1) = rhotor(:)
-      CALL spline_fit(sr,"extrap")
+      !WRITE(*,*)"REACHED RS CALCULATION"
+      !rhotor(:) = SQRT(sq%fsi(:, 4)*twopi*psio / (pi * bt0))  ! effective minor radius in Callen
+      !CALL spline_alloc(sr,mpsi,1)
+      !sr%xs = sq%xs
+      !sr%fs(:, 1) = rhotor(:)
+      !CALL spline_fit(sr,"extrap")
 
       ALLOCATE(rs_full(sq%mx+1))
 
+      mthsur = 512 ! Hardcoded, but this is a default value
+      ALLOCATE(my_jacs(0:mthsur),my_delpsi(0:mthsur),
+     $                 my_rsurf(0:mthsur),my_asurf(0:mthsur))
       DO i=1,msing
          respsi = sing(i)%psifac
-         WRITE(*,*)"respsi=",respsi
-         CALL spline_eval(sr,respsi,1)
-         rs_array(i) = sr%f1(1)
+         ! SURFACE INTEGRAL
+         firstsur = .TRUE.
+         my_unitfun = 1
+         rs_array(i) = issurfint(my_unitfun,mthsur,respsi,3,1,
+     $           my_fsave,my_psave,my_jacs,my_delpsi,my_rsurf,
+     $           my_asurf,firstsur)
       END DO
       DO i=1,sq%mx+1
-        respsi = sq%xs(i)!*psio
-        CALL spline_eval(sr,respsi,1)
-        rs_full(i) = sr%f1(1)
+         respsi = sq%xs(i)!*psio
+         rs_full(i) = issurfint(my_unitfun,mthsur,respsi,3,1,
+     $           my_fsave,my_psave,my_jacs,my_delpsi,my_rsurf,
+     $           my_asurf,firstsur)
       END DO
 c-----------------------------------------------------------------------
 c     open files
@@ -206,9 +309,9 @@ c-----------------------------------------------------------------------
          CALL check( nf90_def_var(ncid,"r_prime",nf90_int,rp_dim,rp_id))
          CALL check( nf90_def_var(ncid,"psi_n_rational",nf90_double,
      $                            r_dim,pr_id) )
-         CALL check( nf90_def_var(ncid,"eff_rs_rational",nf90_double,
+         CALL check( nf90_def_var(ncid,"rs_rational",nf90_double,
      $                            r_dim,rs_id) )
-         CALL check( nf90_def_var(ncid,"eff_rs",nf90_double,
+         CALL check( nf90_def_var(ncid,"flux_avg_rs",nf90_double,
      $                            p_dim,rf_id) )
          CALL check( nf90_def_var(ncid,"q_rational",nf90_double,
      $                            r_dim,qr_id) )
