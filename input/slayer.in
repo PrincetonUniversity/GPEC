@@ -56,6 +56,7 @@
 /
 &SLAYER_OUTPUT
     verbose=t            ! prints progress to terminal
+    verbose_delta=f      ! prints delta evaluation to terminal
     ascii_flag=t         ! writes results to ascii files
     bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
