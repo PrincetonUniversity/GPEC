@@ -4,20 +4,49 @@
 
       IMPLICIT NONE
 
-      LOGICAL :: riccati_out,parflow_flag,PeOhmOnly_flag
+      LOGICAL :: riccati_out,parflow_flag,PeOhmOnly_flag,verbose
+      LOGICAL :: verbose_delta, IonScreening_flag, Pe_flag
+
+      abstract interface
+         function riccati_functions (inQ,inQ_e,inQ_i,inpr,inc_beta,inds,
+     $     intau,inpe,iinQ,inx,iny) result(riccati_outcome)
+            REAL(8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta
+            REAL(8),INTENT(IN) :: inds,intau
+            REAL(8),INTENT(IN),OPTIONAL :: iinQ,inx
+            COMPLEX(8), INTENT(IN), OPTIONAL :: iny
+            COMPLEX(8) :: riccati_outcome
+         end function riccati_functions
+      end interface
+
+      procedure(riccati_functions), pointer :: riccati => null()
 
       CONTAINS
+
+      subroutine select_riccati(IonScreening_flag, Pe_flag)
+         LOGICAL :: IonScreening_flag, Pe_flag
+         
+         IF (IonScreening_flag) THEN
+            IF (Pe_flag) THEN
+               riccati => riccati_full
+            ELSE
+               riccati => riccati4
+            ENDIF
+         ELSE
+            riccati => riccati3
+         ENDIF
+      end subroutine select_riccati
+
 c-----------------------------------------------------------------------
 c     calculate delta based on riccati w_der formulation.
 c-----------------------------------------------------------------------
-      FUNCTION riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
-     $     iinQ,inx,iny)
+      FUNCTION riccati3(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
+     $     iinQ,inx,iny) result(riccati_outcome)
 
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
-	  REAL(r8),INTENT(IN) :: intau
+      REAL(r8),INTENT(IN) :: intau
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
-      COMPLEX(r8) :: riccati
+      COMPLEX(r8) :: riccati_outcome
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
 
@@ -100,10 +129,10 @@ c-----------------------------------------------------------------------
       ! w=0 when Q=Q_e. Why?
       
       CALL w_der(neq,x,y,dy)
-      riccati=pi/dy(1)
+      riccati_outcome=pi/dy(1)
       DEALLOCATE(atol,y,dy,iwork,rwork)      
 
-      END FUNCTION riccati
+      END FUNCTION riccati3
 c-----------------------------------------------------------------------
 c     calculate delta with the ion parallel flow (four-field model)
 c     without electron viscosity and thermal conductivity.
@@ -114,13 +143,13 @@ c         parallel flow on resonant layer responses in high beta plasmas.
 c         Nucl. Fusion, 64(10), 106058.
 c-----------------------------------------------------------------------
       FUNCTION riccati4(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe,
-     $     iinQ,inx,iny)
+     $     iinQ,inx,iny) result(riccati_outcome)
 
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
       REAL(r8),INTENT(IN) :: intau
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
-      COMPLEX(r8) :: riccati4, Delta_old, Delta_new
+      COMPLEX(r8) :: riccati_outcome, Delta_old, Delta_new
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,lzw,iopt,mf
       INTEGER :: ml,mu,nrpd,ipar
@@ -253,23 +282,23 @@ c-----------------------------------------------------------------------
      $        ipar)
            ENDDO        
            CALL Update_Delta(Delta_new,y,x,neq)
-           WRITE(*,*) xout
+           IF (verbose_delta) WRITE(*,*) xout, Delta_new
          END DO
       ENDIF
 
       DEALLOCATE(y,dy,pd,rtol,atol,iwork,rwork,zwork)
-      riccati4=Delta_new
+      riccati_outcome=Delta_new
       END FUNCTION riccati4
 
       FUNCTION riccati_full(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,
-     $     inpe,iinQ,inx,iny)
+     $     inpe,iinQ,inx,iny) result(riccati_outcome)
       USE global_mod
 
       REAL(r8),INTENT(IN) :: inQ,inQ_e,inQ_i,inpr,inpe,inc_beta,inds
       REAL(r8),INTENT(IN) :: intau
       REAL(r8),INTENT(IN),OPTIONAL :: iinQ,inx
       COMPLEX(r8), INTENT(IN), OPTIONAL :: iny
-      COMPLEX(r8) :: riccati_full, Delta_old, Delta_new
+      COMPLEX(r8) :: riccati_outcome, Delta_old, Delta_new
 
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,lzw,iopt,mf
       INTEGER :: ml,mu,nrpd,ipar,ind,nR
@@ -349,14 +378,14 @@ c-----------------------------------------------------------------------
      $         mf,ipar)
          ENDDO        
          CALL Update_Delta_full(Delta_new,y,x,neq)
-         IF (verbose) WRITE(*,*) xout, Delta_new
+         IF (verbose_delta) WRITE(*,*) xout, Delta_new
       END DO
-      riccati_full=Delta_new
+      riccati_outcome=Delta_new
 
       ! Solution reconstruction routine if riccati_out is true
       IF (riccati_out) THEN
          ! Fix Riccati matrix size
-         x_match=xout+10.0
+         x_match=xout+4.0
          nR = int(x_match)*1000
          ALLOCATE(RT(nR),Rmatrix(nR,neq))
          ind=1
@@ -1528,11 +1557,12 @@ c-----------------------------------------------------------------------
       B21(2,1)=Q-Q_e
       B22(2,3)=-x
       B22(2,4)=x
-      B22(3,1)=Q-Q_e
-      B22(3,3)=-1.0
-      B22(3,4)=1.0
-      B21(3,3)=-x
-      B21(3,4)=x
+      !B22(3,1)=Q-Q_e
+      !B22(3,3)=-1.0
+      !B22(3,4)=1.0
+      !B21(3,3)=-x
+      !B21(3,4)=x
+      B21(3,2)=1.0
       B22(4,3)=-Q_e
       B22(4,4)=Q
       B22(5,5)=1.0
@@ -1724,11 +1754,12 @@ c-----------------------------------------------------------------------
       B21(2,1)=Q-Q_e
       B22(2,3)=-x
       B22(2,4)=x
-      B22(3,1)=Q-Q_e
-      B22(3,3)=-1.0
-      B22(3,4)=1.0
-      B21(3,3)=-x
-      B21(3,4)=x
+!      B22(3,1)=Q-Q_e
+!      B22(3,3)=-1.0
+!      B22(3,4)=1.0
+!      B21(3,3)=-x
+!      B21(3,4)=x
+      B21(3,2)=1.0
       B22(4,3)=-Q_e
       B22(4,4)=Q
       B22(5,5)=1.0
