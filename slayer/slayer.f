@@ -14,9 +14,10 @@ c-----------------------------------------------------------------------
 
       USE sglobal_mod
       USE params_mod
-      USE delta_mod, ONLY: riccati,riccati4,riccati_out,
-     $                     riccati_full,
-     $                     parflow_flag,PeOhmOnly_flag
+      USE delta_mod, ONLY: riccati3,riccati4,riccati_out,
+     $                     riccati_full, select_riccati,
+     $                     parflow_flag,PeOhmOnly_flag,
+     $                     riccati
 
       IMPLICIT NONE
 
@@ -30,7 +31,7 @@ c-----------------------------------------------------------------------
      $     onscan_flag,otscan_flag,ntscan_flag,nbtscan_flag,
      $     Pe_flag,verbose,ascii_flag,bin_flag,netcdf_flag,
      $     bal_flag,stability_flag,riccatiscan_flag,input_flag,
-     $     params_check,IonScreening_flag
+     $     params_check,IonScreening_flag,verbose_delta
 
       REAL(r8) :: n_e,t_e,t_i,omega,omega0,
      $     l_n,l_t,qval,sval,bt,rs,R0,mu_i,zeff
@@ -68,7 +69,7 @@ c-----------------------------------------------------------------------
      $     layfac,Qratio,parflow_flag,peohmonly_flag,Pe_flag,
      $     IonScreening_flag
       NAMELIST/slayer_output/verbose,ascii_flag,bin_flag,netcdf_flag,
-     $     stability_flag,bal_flag
+     $     stability_flag,bal_flag,verbose_delta
       NAMELIST/slayer_diagnose/riccati_out,riccatiscan_flag,
      $     params_check
 c-----------------------------------------------------------------------
@@ -158,6 +159,11 @@ c-----------------------------------------------------------------------
          WRITE(UNIT=sn,FMT='(I2)') nn
       ENDIF
 c-----------------------------------------------------------------------
+c     select riccati computation model
+c-----------------------------------------------------------------------
+      CALL select_riccati(IonScreening_flag, Pe_flag)
+
+c-----------------------------------------------------------------------
 c     calculate parameters as needed.
 c-----------------------------------------------------------------------
       IF (params_flag) THEN
@@ -176,19 +182,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     calculate basic delta, torque, balance, error fields.
 c-----------------------------------------------------------------------
-      delta=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
+      delta=riccati3(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
       psi0=1.0/ABS(delta+delta_n_p) ! a.u.
       jxb=-AIMAG(1.0/(delta+delta_n_p)) ! a.u.
 
       IF (IonScreening_flag) THEN
          IF(verbose) WRITE(*,*)"Four-field model used for delta"
-         IF (Pe_flag) THEN
-            delta4=riccati_full(inQ,inQ_e,inQ_i,inpr,
-     $                     inc_beta,inds,intau,inpe)
-         ELSE
-            delta4=riccati4(inQ,inQ_e,inQ_i,inpr,
-     $                     inc_beta,inds,intau,inpe)
-         ENDIF
+         delta4=riccati(inQ,inQ_e,inQ_i,inpr,inc_beta,inds,intau,inpe)
          psi04=1.0/ABS(delta4+delta_n_p) ! a.u.
          jxb4=-AIMAG(1.0/(delta4+delta_n_p)) ! a.u.
          WRITE(*,*)"delta=",delta
