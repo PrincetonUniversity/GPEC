@@ -6,7 +6,9 @@
      $   delta_n,
      $   Q
       USE delta_mod, ONLY: riccati,riccati_out,
-     $   parflow_flag,PeOhmOnly_flag
+     $   parflow_flag,PeOhmOnly_flag, select_riccati,
+     $   IonScreening_flag, Pe_flag
+
 
       IMPLICIT NONE
       
@@ -108,6 +110,10 @@ c-----------------------------------------------------------------------
       inds=ds
       intau=tau
       Q0=Q
+c-----------------------------------------------------------------------
+c     select riccati computation model
+c-----------------------------------------------------------------------
+      CALL select_riccati(IonScreening_flag, Pe_flag)
 c-----------------------------------------------------------------------
 c     calculate basic delta, torque, balance, error fields.
 c-----------------------------------------------------------------------
