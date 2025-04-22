@@ -30,6 +30,7 @@
     intau=1.0            ! ion temperature divided by electron temperature
     Q0=1.5               ! unnecessary placeholder variable for inQ?
     delta_n_p=(5.0,0.01)      ! input Delta', OR delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
+    ingam=(0.1,0.01)      ! input Delta', OR delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
 /
 
 &SLAYER_CONTROL
@@ -61,6 +62,7 @@
     stability_flag=f     ! calculate delta dependence on complex Q
     lar_gamma_eq_flag=f  ! Calculate cylindrical growthrates for each rational surface of input equilibrium
     lar_gamma_flag=f     ! Calculate cylindrical growthrate for namelist parameters
+    fitz_gamma_flag=f    ! Calculate Fitzpatrick layer model
     stabscan_eq_flag=f   ! Generate Re(Q),Im(Q) scans for each rational surface of input equilibrium
     stabscan_flag=f      ! Generate Re(Q),Im(Q) scan for namelist parameters
     br_th_flag=f         ! Calculate br_th

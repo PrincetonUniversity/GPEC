@@ -49,10 +49,11 @@ c -----------------------------------------------------------------------
 c      declarations.
 c -----------------------------------------------------------------------
       SUBROUTINE slayer_netcdf_out(msing,lar_gamma_eq_flag,
-     $  lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
+     $  lar_gamma_flag,fitz_gamma_flag,stabscan_eq_flag,stabscan_flag,
+     $  br_th_flag,
      $  qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,psi_n_rational,
      $  inpr_arr,br_th,Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
-     $  lu_arr,ind_beta_arr,D_beta_norm_arr,lar_gamma_arr,
+     $  delta_arr,lu_arr,ind_beta_arr,D_beta_norm_arr,lar_gamma_arr,
      $  inQs,iinQs,results)
         ! ds = D_beta_norm for lar growth rate routines
 
@@ -62,7 +63,7 @@ c        inQs,iinQs,results,
 
       INTEGER, INTENT(IN) :: msing
       LOGICAL, INTENT(IN) :: lar_gamma_eq_flag,lar_gamma_flag,
-     $   stabscan_eq_flag,stabscan_flag,br_th_flag
+     $   stabscan_eq_flag,stabscan_flag,br_th_flag,fitz_gamma_flag
 
       INTEGER, ALLOCATABLE, DIMENSION(:) :: qval_arr
       REAL(r8), DIMENSION(msing) :: gamma_arr
@@ -75,7 +76,7 @@ c        inQs,iinQs,results,
 
       REAL(r8) :: br_th
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: dels_db_arr, 
-     $                                          lar_gamma_arr
+     $                            lar_gamma_arr,delta_arr
 
       TYPE(result_type), INTENT(IN) :: results(8)
 
@@ -199,6 +200,12 @@ c -----------------------------------------------------------------------
         CALL sl_check( nf90_def_var(ncid,"growthrate_estimate",
      $      nf90_double,(/qsing_dim,i_dim/),lar_gamma_id) )
       END IF
+      IF (fitz_gamma_flag) THEN
+        CALL sl_check( nf90_def_var(ncid,"delta_hat",nf90_double,
+     $      (/qsing_dim,i_dim/),dels_db_id) )
+        CALL sl_check( nf90_def_var(ncid,"growthrate",
+     $      nf90_double,(/qsing_dim,i_dim/),lar_gamma_id) )
+      END IF
       ! end definitions
       CALL sl_check( nf90_enddef(ncid) )
 c -----------------------------------------------------------------------
@@ -246,7 +253,14 @@ c -----------------------------------------------------------------------
         CALL sl_check( nf90_put_var(ncid,lar_gamma_id, 
      $      RESHAPE((/REAL(lar_gamma_arr),AIMAG(lar_gamma_arr)/),
      $      (/msing,2/))))
-
+      END IF
+      IF (fitz_gamma_flag) THEN
+        CALL sl_check( nf90_put_var(ncid,dels_db_id, 
+     $      RESHAPE((/REAL(delta_arr),AIMAG(delta_arr)/),
+     $      (/msing,2/))))
+        CALL sl_check( nf90_put_var(ncid,lar_gamma_id, 
+     $      RESHAPE((/REAL(lar_gamma_arr),AIMAG(lar_gamma_arr)/),
+     $      (/msing,2/))))
       END IF
 
 c -----------------------------------------------------------------------

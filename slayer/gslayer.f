@@ -182,14 +182,17 @@ c     Subprogram 3. scan_grid
 c     Run stability scan on real and imaginary rotation axes
 c-----------------------------------------------------------------------
       SUBROUTINE output_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
+     $       fitz_gamma_flag,
      $       stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
      $       omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
      $       D_beta_norm_arr,inpr_arr,psi_n_rational,Re_deltaprime_arr,
-     $       Im_deltaprime_arr,dels_db_arr,lu_arr,lar_gamma_arr)
+     $       Im_deltaprime_arr,dels_db_arr,lu_arr,delta_arr,
+     $       lar_gamma_arr)
 
       ! Declarations (include necessary type declarations from original code)
       LOGICAL, INTENT(IN) :: lar_gamma_eq_flag,lar_gamma_flag,
-     $         stabscan_eq_flag,stabscan_flag,br_th_flag
+     $         stabscan_eq_flag,stabscan_flag,br_th_flag,
+     $         fitz_gamma_flag
 
       INTEGER, INTENT(IN), DIMENSION(:), ALLOCATABLE :: qval_arr
       REAL(r8), INTENT(IN), DIMENSION(:), ALLOCATABLE :: omegas_arr,
@@ -198,7 +201,7 @@ c-----------------------------------------------------------------------
      $      D_beta_norm_arr,lu_arr
   
       COMPLEX(r8), INTENT(IN), DIMENSION(:), ALLOCATABLE :: dels_db_arr,
-     $                                         lar_gamma_arr
+     $                                         lar_gamma_arr,delta_arr
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs
       TYPE(result_type) :: results(8)
@@ -211,10 +214,12 @@ c-----------------------------------------------------------------------
       iinQs = (/0.0/)
 
       CALL slayer_netcdf_out(SIZE(qval_arr),lar_gamma_eq_flag,
-     $    lar_gamma_flag,stabscan_eq_flag,stabscan_flag,br_th_flag,
+     $            lar_gamma_flag,fitz_gamma_flag,stabscan_eq_flag,
+     $            stabscan_flag,br_th_flag,
      $            qval_arr,omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,
      $            psi_n_rational,inpr_arr,br_th,Re_deltaprime_arr,
-     $            Im_deltaprime_arr,dels_db_arr,lu_arr,ind_beta_arr,
+     $            Im_deltaprime_arr,dels_db_arr,delta_arr,lu_arr,
+     $            ind_beta_arr,
      $            D_beta_norm_arr,lar_gamma_arr,inQs,iinQs,results)
    
       END SUBROUTINE output_lar_gamma
@@ -376,4 +381,227 @@ c-----------------------------------------------------------------------
           temp(1:old_size) = arr(1:old_size)
           CALL move_alloc(temp, arr)
       END SUBROUTINE grow_array
+c
+c
+c
+      subroutine NewtonRoot(g_r, g_i, verbose)
+      REAL(r8), intent(inout) :: g_r, g_i
+      integer, intent(in) :: verbose
+      
+      REAL(r8) :: F1, F2, J11, J12, J21, J22, det, iJ11, iJ12
+      REAL(r8) :: iJ21, iJ22, dx1, dx2, dx, f, g1, g2, lambda,
+     $            Residual
+      integer :: iter
+      
+      REAL(r8), parameter :: Eps = 1.0e-12    ! Tolerance parameter
+      REAL(r8), parameter :: Smin = 1.0e-07   ! Min step size
+      REAL(r8), parameter :: Smax = 0.1     ! Max step size
+      integer, parameter :: MaxIter = 100             ! Maximum iterations
+      
+      iter = 0
+      do
+          call NewtonFunction(g_r, g_i, F1, F2)
+          
+          call NewtonJacobian(g_r, g_i, J11, J12, J21, J22)
+          
+          det = J11 * J22 - J12 * J21
+          
+          iJ11 =  J22 / det
+          iJ12 = -J12 / det
+          iJ21 = -J21 / det
+          iJ22 =  J11 / det
+          
+          dx1 = -(iJ11 * F1 + iJ12 * F2)
+          dx2 = -(iJ21 * F1 + iJ22 * F2)
+          
+          dx = sqrt(dx1*dx1 + dx2*dx2)
+          
+          f = 0.5 * (F1*F1 + F2*F2)
+          
+          g1 = F1*J11 + F2*J21
+          g2 = F1*J12 + F2*J22
+          
+          call NewtonBackTrack(g_r,g_i,dx1,dx2,dx,f,g1,g2,lambda)
+          
+          call NewtonFunction(g_r, g_i, F1, F2)
+          
+          Residual = sqrt(F1*F1 + F2*F2)
+          
+          if (verbose .ne. 0) then
+              write(*, '("x = (", ES10.3, ", ", ES10.3, ") F = (", 
+     &          ES10.3, ", ", ES10.3, ") Residual = ", ES10.3, 
+     &          " lambda = ", ES10.3, " dx = ", ES10.3)')
+     &          g_r, g_i, F1, F2, Residual, lambda, dx
+          endif
+          
+          iter = iter + 1
+          
+          if (Residual<=Eps .or. dx<=Smin .or. iter>=MaxIter) exit
+      enddo
+      
+      end subroutine NewtonRoot
+      
+!-----------------------------------------------------------------------
+! Function to backtrack along Newton step in order to minimize f = (F1*F1 + F2*F2) /2
+!
+! Press, Teukolsky, Vetterling, and Flannery, Numerical Recipies in C (Cambridge, 1992), Sect. 9.7
+!-----------------------------------------------------------------------
+      subroutine NewtonBackTrack(g_r, g_i, dx1, dx2, dx, f, g1, g2, 
+     &                          lambda)
+      REAL(r8), intent(inout) :: g_r, g_i, dx, lambda
+      REAL(r8), intent(inout) :: dx1, dx2, f, g1, g2
+      
+      REAL(r8) :: x1old, x2old, dxold, fold, slope, F1, F2
+      REAL(r8) :: tmplam, rhs1, rhs2, a, b, disc, lambd2, mf2
+      integer :: i
+      
+      REAL(r8), parameter :: Smin = 1.0d-10   ! Min step size
+      REAL(r8), parameter :: Smax = 1.0d0     ! Max step size
+      REAL(r8), parameter :: alpha = 1.0d-4   ! Line search parameter
+      integer, parameter :: Maxiter = 100              ! Maximum iterations
+      
+      x1old = g_r
+      x2old = g_i
+      dxold = dx
+      fold = f
+      
+      if (dxold > Smax) then
+          dx1 = dx1 * Smax / dxold
+          dx2 = dx2 * Smax / dxold
+          dxold = Smax
+      endif
+      
+      slope = g1*dx1 + g2*dx2
+      
+      if (slope >= 0.0d0) then
+          write(*, *) "NewtonBackTrack: Error - roundoff problem"
+      endif
+      
+      lambda = 1.0d0
+      
+      do i = 0, Maxiter
+          g_r = x1old + lambda * dx1
+          g_i = x2old + lambda * dx2
+          
+          call NewtonFunction(g_r, g_i, F1, F2)
+          
+          f = 0.5 * (F1*F1 + F2*F2)
+          
+          if (f <= fold + alpha * lambda * slope .or. 
+     &       lambda * dxold < Smin) then
+              dx = lambda * dxold
+              return
+          else
+              if (lambda == 1.0d0) then
+                  tmplam = -slope / 2.0d0 / (f - fold - slope)
+              else
+                  rhs1 = f - fold - lambda * slope
+                  rhs2 = mf2 - fold - lambd2 * slope
+                  
+                  a = (rhs1/lambda/lambda - rhs2/lambd2/lambd2)
+     &               / (lambda - lambd2)
+                  b = (-lambd2 * rhs1/lambda/lambda + lambda * 
+     &               rhs2/lambd2/lambd2) / (lambda - lambd2)
+                  
+                  if (a == 0.0d0) then
+                      tmplam = -slope / 2.0d0 / b
+                  else
+                      disc = b*b - 3.0d0 * a * slope
+                      
+                      if (disc < 0.0d0) then
+                          tmplam = 0.5d0 * lambda
+                      else if (b <= 0.0d0) then
+                          tmplam = (-b + sqrt(disc)) / 3.0d0 / a
+                      else
+                          tmplam = -slope / (b + sqrt(disc))
+                      endif
+                  endif
+                  
+                  if (tmplam > 0.5d0 * lambda) then
+                      tmplam = 0.5d0 * lambda
+                  endif
+              endif
+          endif
+          
+          lambd2 = lambda
+          mf2 = f
+          lambda = max(tmplam, 0.1d0*lambda)
+      enddo
+      
+      dx = lambda * dxold
+      
+      end subroutine NewtonBackTrack
+      
+!-----------------------------------------------------------------------
+! Function to calculate Jacobian matrix for Newton-Raphson root finding
+!-----------------------------------------------------------------------
+      subroutine NewtonJacobian(g_r, g_i, J11, J12, J21, J22)
+      REAL(r8), intent(in) :: g_r, g_i
+      REAL(r8), intent(out) :: J11, J12, J21, J22
+      
+      REAL(r8) :: F1m, F2m, F1p, F2p
+      REAL(r8), parameter :: dS = 1.0e-06  ! Step size for derivatives
+      
+      call NewtonFunction(g_r - dS, g_i, F1m, F2m)
+      call NewtonFunction(g_r + dS, g_i, F1p, F2p)
+      
+      J11 = (F1p - F1m) / 2.0d0 / dS
+      J21 = (F2p - F2m) / 2.0d0 / dS
+      
+      call NewtonFunction(g_r, g_i - dS, F1m, F2m)
+      call NewtonFunction(g_r, g_i + dS, F1p, F2p)
+      
+      J12 = (F1p - F1m) / 2.0d0 / dS
+      J22 = (F2p - F2m) / 2.0d0 / dS
+      
+      end subroutine NewtonJacobian
+      
+!-----------------------------------------------------------------------
+! Function to return maximum of two values
+!-----------------------------------------------------------------------
+      function Fmax(f1, f2) result(res)
+      double precision, intent(in) :: f1, f2
+      double precision :: res
+      
+      if (f1 > f2) then
+          res = f1
+      else
+          res = f2
+      endif
+      
+      end function Fmax
+      
+!-----------------------------------------------------------------------
+! Function to return minimum of two values
+!-----------------------------------------------------------------------
+      function Fmin(f1, f2) result(res)
+      REAL(r8), intent(in) :: f1, f2
+      REAL(r8) :: res
+      
+      if (f1 < f2) then
+          res = f1
+      else
+          res = f2
+      endif
+      
+      end function Fmin
+      
+!-----------------------------------------------------------------------
+! Function to calculate target functions for Newton-Raphson root finding
+!-----------------------------------------------------------------------
+      subroutine NewtonFunction(g_r, g_i, F1, F2)
+      REAL(r8), intent(in) :: g_r, g_i
+      REAL(r8), intent(out) :: F1, F2
+      
+      ! These would be module-level variables in the original code
+      COMPLEX(r8) :: Deltas
+      REAL(r8) :: Delta
+      
+      g_tmp = CMPLX(g_r,g_i)
+      Deltas=riccati_f(g_tmp,Q_e,Q_i,pr,D_beta_norm,tau)
+      
+      F1 = REAL(Deltas) - deltaprim
+      F2 = dimag(Deltas)
+      
+      end subroutine NewtonFunction
       END MODULE gslayer_mod
