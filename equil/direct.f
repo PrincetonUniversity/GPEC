@@ -505,7 +505,7 @@ c     store results for each step.
 c-----------------------------------------------------------------------
       DO
          rfac=y(2)
-         CALL direct_refine(rfac,eta,psi0)
+         CALL direct_refine_itp(rfac,eta,psi0)
          r=ro+rfac*COS(eta)
          z=zo+rfac*SIN(eta)
          CALL direct_get_bfield(r,z,bf,2)
@@ -583,6 +583,96 @@ c     terminate.
 c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_fl_der
+c-----------------------------------------------------------------------
+c     subprogram 6. psi_at_polar_loc
+c     returns psi at a position in r,eta coordinate space
+c-----------------------------------------------------------------------
+      FUNCTION psi_at_polar_loc(rfac,eta)
+        REAL(r8) :: rfac,eta
+        REAL(r8) :: cosfac,sinfac,r,z
+        REAL(r8) :: psi_at_polar_loc
+        TYPE(direct_bfield_type) :: bf
+c-----------------------------------------------------------------------
+        cosfac=COS(eta)
+        sinfac=SIN(eta)
+        r=ro+rfac*cosfac
+        z=zo+rfac*sinfac
+        CALL direct_get_bfield(r,z,bf,1)
+
+        psi_at_polar_loc = bf%psi
+      END FUNCTION psi_at_polar_loc
+
+c-----------------------------------------------------------------------
+c     subprogram 6. direct_refine_itp
+c     moves a point orthogonally to a specified flux surface using ITP
+c-----------------------------------------------------------------------
+      SUBROUTINE direct_refine_itp(rfac,eta,psi0)
+        REAL(8), INTENT(INOUT) :: rfac
+        REAL(8), INTENT(IN) :: eta, psi0
+        REAL(8), PARAMETER :: margin = 0.99
+
+        REAL(8) :: a, b
+
+        a = rfac*(1-margin)
+        b = rfac*(1+margin)
+        CALL ITP( a, b, eta, psi0, rfac )
+
+      END SUBROUTINE direct_refine_itp
+
+c-----------------------------------------------------------------------
+c     subprogram 4. ITP
+c     ITP (Interpolate-Truncate-Project) root-finding algorithm
+c-----------------------------------------------------------------------
+      SUBROUTINE ITP(a, b, eta, psi0, root)
+        REAL(8), INTENT(IN) :: a, b, eta, psi0
+        REAL(8), INTENT(OUT) :: root
+        REAL(8), PARAMETER :: tol = 1e-12
+    
+        REAL(8) :: xL, xU, fL, fU, xM, fM, xITP
+        INTEGER :: iter
+        REAL(8) :: half, sigma, adjust, lambda
+    
+        xL = a
+        xU = b
+        fL = psi_at_polar_loc(xL,eta) - psi0
+        fU = psi_at_polar_loc(xU,eta) - psi0
+c        success = .FALSE.
+    
+        IF (fL * fU > 0.0) THEN
+          PRINT *, 'ITP Error: f(a) and f(b) must have opposite signs'
+          PRINT *, 'a = ', a, ' f(a) = ', fL
+          PRINT *, 'b = ', b, ' f(b) = ', fU
+          RETURN
+        END IF
+    
+        DO iter = 1, direct_infinite_loop_count
+          xM = (xL + xU) / 2.0  ! Midpoint
+          fM = psi_at_polar_loc(xM,eta) - psi0
+      
+          half = (xU - xL) / 2.0
+          sigma = SIGN(1.0d0, fL - fU)
+          adjust = (xU - xL) / 2.0
+          lambda = MAX(0.0, MIN(adjust, half - tol))
+          xITP = xM - sigma * lambda
+      
+          IF (ABS(fM) < tol .OR. (xU - xL) < tol) THEN
+            root = xM
+c            success = .TRUE.
+            RETURN
+          END IF
+      
+          IF (fM * fL > 0.0) THEN
+            xL = xM
+            fL = fM
+          ELSE
+            xU = xM
+            fU = fM
+          END IF
+        END DO
+        CALL program_stop("Took too many steps to refine rfac via ITP.")
+    
+c        root = xM
+      END SUBROUTINE ITP
 c-----------------------------------------------------------------------
 c     subprogram 6. direct_refine.
 c     moves a point orthogonally to a specified flux surface.
