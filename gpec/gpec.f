@@ -412,16 +412,17 @@ c-----------------------------------------------------------------------
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
       IF (coil_flag) THEN
+                
          IF(verbose) WRITE(*,*)
-     $     "Calculating field on the boundary from coils"
+     $            "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert,coil_num))
          ALLOCATE(coil_indmat(mpert,coil_num))
          coilmn=0
          coil_indmat=0
          DO j=1,coil_num
-            CALL field_bs_psi(psilim,coilmn(:,j),1,op_start=j,op_stop=j,
-     $                        op_verbose=.TRUE.)
+            CALL field_bs_psi(psilim,coilmn(:,j),1,op_start=j,
+     $                        op_stop=j,op_verbose=.TRUE.)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
                   coil_indmat(cmlow-mlow+i,j)=coilmn(i,j)
@@ -429,6 +430,11 @@ c-----------------------------------------------------------------------
                ENDIF
             ENDDO
          ENDDO
+         IF (coil_num <= 0) THEN
+            WRITE(*,*) "!! WARNING: coil_flag is enabled but no coils"//
+     $              " are defined. Disabling coil_flag."
+               coil_flag = .FALSE.
+         ENDIF
          IF(timeit) CALL gpec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------
