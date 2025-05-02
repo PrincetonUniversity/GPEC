@@ -17,6 +17,7 @@ LIBS = \
 	-lvac \
 	-lharvest \
 	-lslayer \
+	-lzvode \
 	-lcoil
 
 OBJS = \
