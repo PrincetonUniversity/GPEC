@@ -1,5 +1,13 @@
+# If using gfortran, the proper syntax is -frecursive.
+# If using ifort, the proper syntax is -recursive.
 
-F90 = $(FC) $(FFLAGS)
+ifneq (,$(findstring ifort,$(FC)))
+    RECURSFLAG=-recursive
+else
+    RECURSFLAG=-frecursive
+endif
+
+F90 = $(FC) $(FFLAGS) $(RECURSFLAG)
 
 .f.o:
 	$(F90) -c $*.f
