@@ -1,9 +1,19 @@
 # This is the makefile for STRIDE.
+
+# If using gfortran, the proper syntax is -frecursive.
+# If using ifort, the proper syntax is -recursive.
+
+ifneq (,$(findstring ifort,$(FC)))
+    RECURSFLAG=-recursive
+else
+    RECURSFLAG=-frecursive
+endif
+
 include ../install/DEFAULTS.inc
 
 # flags unique to stride (not to be clobbered by top level install/makefile options)
 IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
-F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
+F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 
 .f.o:
 	$(F90) -c $*.f
