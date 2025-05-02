@@ -114,7 +114,7 @@ program pentrc
                  "imag(H_k)"
                 do l=0,0!! should be all
                     if(psi_out(i)>0 .and. psi_out(i)<=1)then
-                        tsurf = tpsi(psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
+                        call tpsi(tsurf,psi_out(i),nn,l,zi,mi,wdfac,divxfac,electron,'twmm',&
                             op_wmats=wtw)
                         do j=1,mpert
                             do k=1,mpert
@@ -206,7 +206,7 @@ program pentrc
                         do i=1,nvalid
                             if(nvalid<10) print '(a8,es11.3E3)',"  psi = ",psi_out_valid(i)
                             do l=-nl,nl,max(1,nl)
-                                tsurf = tpsi(psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
+                                call tpsi(tsurf,psi_out_valid(i),nn,l,zi,mi,wdfac,divxfac,electron,methods(m),&
                                              op_erecord=xlmda_out,op_orecord=theta_out)
                             enddo
                             if(nvalid>10) call progressbar(i,1,nvalid,op_percent=20)

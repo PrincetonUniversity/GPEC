@@ -1062,19 +1062,19 @@ c!!!!!!...from dcon_interface.f90
                IF (ion_flag) THEN
                   kwmat_l = 0
                   ktmat_l = 0
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $                 ft//"wmm",op_wmats=kwmat_l)
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $                 ft//"tmm",op_wmats=ktmat_l)
+                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,
+     $                 .FALSE.,ft//"wmm",op_wmats=kwmat_l)
+                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,
+     $                 .FALSE.,ft//"tmm",op_wmats=ktmat_l)
                   kwmatls(:,:,:,ipsi,l) = kwmatls(:,:,:,ipsi,l)+kwmat_l
                   ktmatls(:,:,:,ipsi,l) = ktmatls(:,:,:,ipsi,l)+ktmat_l
                ENDIF
                IF (electron_flag) THEN
                   kwmat_l = 0
                   ktmat_l = 0
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
+                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"wmm",op_wmats=ktmat_l)
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
+                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
                   kwmatls(:,:,:,ipsi,l) = kwmatls(:,:,:,ipsi,l)+kwmat_l
                   ktmatls(:,:,:,ipsi,l) = ktmatls(:,:,:,ipsi,l)+ktmat_l
@@ -1082,9 +1082,9 @@ c!!!!!!...from dcon_interface.f90
             ! helpful status messages
 !$OMP CRITICAL
             idone = idone + 1
-!$OMP END CRITICAL
             IF(verbose) CALL progressbar(idone,1,(mpsi+1)*(2*nl+1),
      $         op_percent=10)
+!$OMP END CRITICAL
             IF(debug_omp)THEN
                CALL SYSTEM_CLOCK(COUNT=t_end)
                t_sec = REAL(t_end-t_start,8)/REAL(cr,8)
@@ -1311,11 +1311,11 @@ c-----------------------------------------------------------------------
                DO l=-nl,nl
                   kwmat_l = 0
                   ktmat_l = 0
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $                 ft//"wmm",op_wmats=ktmat_l)
+                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,
+     $                 .FALSE.,ft//"wmm",op_wmats=ktmat_l)
                   kwmat = kwmat+kwmat_l
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.FALSE.,
-     $                 ft//"tmm",op_wmats=ktmat_l)
+                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,
+     $                 .FALSE.,ft//"tmm",op_wmats=ktmat_l)
                   ktmat = ktmat+ktmat_l
                ENDDO
             ENDIF
@@ -1323,10 +1323,10 @@ c-----------------------------------------------------------------------
                DO l=-nl,nl
                   kwmat_l = 0
                   ktmat_l = 0
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
+                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"wmm",op_wmats=kwmat_l)
                   kwmat = kwmat+kwmat_l
-                  tphi = tpsi(psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
+                  call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
                   ktmat = ktmat+ktmat_l
                ENDDO
