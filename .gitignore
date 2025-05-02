@@ -17,6 +17,7 @@
 */penmpi
 */version.inc
 */*.original
+modovmc
 
 .cproject
 .idea/

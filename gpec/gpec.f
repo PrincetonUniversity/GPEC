@@ -45,6 +45,8 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(:,:), POINTER :: invmats,temp1
       INTEGER, DIMENSION(:), POINTER :: maxs,maxm,indexs,indexm
 
+      LOGICAL :: warnings_needed
+
       NAMELIST/gpec_input/dcon_dir,ieqfile,idconfile,ivacuumfile,
      $     power_flag,fft_flag,mthsurf0,fixed_boundary_flag,
      $     data_flag,data_type,nmin,nmax,mmin,mmax,jsurf_in,mthsurf,
@@ -87,7 +89,7 @@ c-----------------------------------------------------------------------
       dcon_dir=""
       ieqfile="psi_in.bin"
       idconfile="euler.bin"
-      ivacuumfile="vacuum.bin"
+      ivacuumfile="DEPRECATED"
       rdconfile="globalsol.bin"
       power_flag=.TRUE.
       fft_flag=.FALSE.
@@ -225,15 +227,33 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deprecated variable errors
 c-----------------------------------------------------------------------
+      warnings_needed=.false.
       IF((pmode/=0).or.(p1mode/=0).or.(dmode/=0).or.(d1mode/=0).or.
      $   (fmode/=0).or.(rmode/=0).or.(smode/=0))THEN
-         PRINT *,"WARNING: p/d/f/r/smode syntax is a deprecated!"
-         PRINT *,"  Use filter_types to filter external spectrum."
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+         PRINT *,"!! WARNING: p/d/f/r/smode syntax is a deprecated."
+         PRINT *,"  >> Use filter_types to filter external spectrum."
          CALL gpec_stop("Deprecated input.")
       ENDIF
       IF(malias/=0) THEN
-       PRINT *,"WARNING: malias may not be supported in future versions"
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+       PRINT *,"!! WARNING: malias will be deprecated in the future"
       ENDIF
+      IF(ivacuumfile/="DEPRECATED")THEN
+         IF(.not. warnings_needed)THEN
+           PRINT *, "..."
+           warnings_needed = .true.
+         ENDIF
+       PRINT *,"!! WARNING: ivacuumfile is deprecated and will be"//
+     $         " ignored."
+      ENDIF
+      IF(warnings_needed) PRINT *, "..."
 c-----------------------------------------------------------------------
 c     forced ralational settings
 c-----------------------------------------------------------------------
@@ -245,13 +265,13 @@ c-----------------------------------------------------------------------
       ENDIF
       IF(singthresh_callen_flag)THEN
          IF(data_flag .OR. harmonic_flag)THEN
-            PRINT *, "WARNING: "//
+            PRINT *, "!! WARNING: "//
      $             "singthresh_callen_flag uses coil vacuum fields only"
          ENDIF
          IF(coil_flag)THEN
             singfld_flag = .TRUE.
          ELSE
-            PRINT *, "WARNING: "//
+            PRINT *, "!! WARNING: "//
      $              "singthresh_callen_flag requires coil vacuum fields"
          ENDIF
       ENDIF
@@ -392,16 +412,17 @@ c-----------------------------------------------------------------------
       IF(bt_direction=="negative")btd=-1.0
       helicity=ipd*btd
       IF (coil_flag) THEN
+                
          IF(verbose) WRITE(*,*)
-     $     "Calculating field on the boundary from coils"
+     $            "Calculating field on the boundary from coils"
          CALL coil_read(idconfile)
          ALLOCATE(coilmn(cmpert,coil_num))
          ALLOCATE(coil_indmat(mpert,coil_num))
          coilmn=0
          coil_indmat=0
          DO j=1,coil_num
-            CALL field_bs_psi(psilim,coilmn(:,j),1,op_start=j,op_stop=j,
-     $                        op_verbose=.TRUE.)
+            CALL field_bs_psi(psilim,coilmn(:,j),1,op_start=j,
+     $                        op_stop=j,op_verbose=.TRUE.)
             DO i=1,cmpert
                IF ((cmlow-mlow+i>=1).AND.(cmlow-mlow+i<=mpert)) THEN
                   coil_indmat(cmlow-mlow+i,j)=coilmn(i,j)
@@ -409,6 +430,11 @@ c-----------------------------------------------------------------------
                ENDIF
             ENDDO
          ENDDO
+         IF (coil_num <= 0) THEN
+            WRITE(*,*) "!! WARNING: coil_flag is enabled but no coils"//
+     $              " are defined. Disabling coil_flag."
+               coil_flag = .FALSE.
+         ENDIF
          IF(timeit) CALL gpec_timer(2)
       ENDIF
 c-----------------------------------------------------------------------
@@ -543,7 +569,7 @@ c-----------------------------------------------------------------------
       ENDDO
       IF (singcoup_flag) THEN
          IF (msing==0) THEN
-            PRINT *,"WARNING: no rationals for singcoup_flag"
+            PRINT *,"!! WARNING: no rationals for singcoup_flag"
             singcoup_flag = .FALSE.
          ELSE         
             CALL gpout_singcoup(sing_spot,sing_npsi,power_rout,
@@ -568,11 +594,12 @@ c-----------------------------------------------------------------------
       ENDIF
       IF (singfld_flag) THEN
          IF (con_flag) THEN
-            PRINT *,"WARNING: singfld_flag not supported with con_flag"
+            PRINT *,"!! WARNING: singfld_flag not supported with"//
+     $              "  con_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSEIF (msing==0) THEN
-            PRINT *,"WARNING: no rationals for singfld_flag"
+            PRINT *,"!! WARNING: no rationals for singfld_flag"
             singfld_flag = .FALSE.
             vsingfld_flag = .FALSE.
          ELSE

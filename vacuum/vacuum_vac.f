@@ -2509,7 +2509,7 @@ c     last point
       close (41)
 
       if( retro ) then
-         write(*,*) "WARNING: Retrograde angles present in wall"
+         write(*,*) "!! WARNING: Retrograde angles present in wall"
       endif
 c-----------------------------------------------------------------------
 c     termination.
