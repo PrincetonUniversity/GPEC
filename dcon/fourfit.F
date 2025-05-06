@@ -1039,6 +1039,8 @@ c-----------------------------------------------------------------------
 !$OMP& SHARED(
 !$OMP& rzphi,ion_flag,electron_flag,debug_omp,verbose,cr,idone,
 !$OMP& nn,nl,ft,zi,mi,wdfac,divxfac,mpsi,kwmatls,ktmatls,
+c!!!!!!... these can be SHARED because all calls use spline_*_external
+c!!!!!!...    to avoid conflicts
 !$OMP& dcon_int_smats,dcon_int_tmats,dcon_int_xmats,dcon_int_ymats,
 !$OMP& dcon_int_zmats)
 
@@ -1070,6 +1072,7 @@ c!!!!!!...from dcon_interface.f90
                   ktmatls(:,:,:,ipsi,l) = ktmatls(:,:,:,ipsi,l)+ktmat_l
                ENDIF
                IF (electron_flag) THEN
+                  print *, "electron_flag"
                   kwmat_l = 0
                   ktmat_l = 0
                   call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
