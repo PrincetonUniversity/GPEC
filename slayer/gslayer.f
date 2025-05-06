@@ -187,7 +187,7 @@ c-----------------------------------------------------------------------
      $       omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
      $       D_beta_norm_arr,inpr_arr,psi_n_rational,Re_deltaprime_arr,
      $       Im_deltaprime_arr,dels_db_arr,lu_arr,delta_arr,
-     $       lar_gamma_arr)
+     $       lar_gamma_arr,results)
 
       ! Declarations (include necessary type declarations from original code)
       LOGICAL, INTENT(IN) :: lar_gamma_eq_flag,lar_gamma_flag,
@@ -204,7 +204,8 @@ c-----------------------------------------------------------------------
      $                                         lar_gamma_arr,delta_arr
 
       REAL(r8), DIMENSION(:), ALLOCATABLE :: inQs,iinQs
-      TYPE(result_type) :: results(8)
+      !TYPE(result_type) :: results(8)
+      TYPE(result_type), INTENT(IN) :: results(8)
 
       REAL(r8) :: br_th = 0
 

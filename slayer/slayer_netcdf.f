@@ -178,6 +178,17 @@ c -----------------------------------------------------------------------
      $      [point_dimid, qsing_dim], varids(4)) )
          END IF
 
+c         IF (fitz_gamma_flag) THEN
+c            CALL sl_check( nf90_def_var(ncid, "Re_Qs", nf90_double,
+c     $      [point_dimid, qsing_dim], varids(1)) )
+c            CALL sl_check( nf90_def_var(ncid, "Im_Qs", nf90_double,
+c     $       [point_dimid, qsing_dim], varids(2)) )
+c            CALL sl_check( nf90_def_var(ncid,"Re_deltas",nf90_double,
+c     $      [point_dimid, qsing_dim], varids(3)) )
+c            CALL sl_check( nf90_def_var(ncid,"Im_deltas",nf90_double,
+c     $      [point_dimid, qsing_dim], varids(4)) )
+c         END IF
+
          IF (br_th_flag) THEN
             CALL sl_check( nf90_def_var(ncid,"br_th",nf90_double,
      $                            qsing_dim,br_th_id) )
@@ -239,6 +250,24 @@ c -----------------------------------------------------------------------
      $       count=[results(run)%count, 1]) )
         END DO
       END IF
+
+c      IF (fitz_gamma_flag) THEN
+c        DO run = 1, msing
+c            run = 1
+c            CALL sl_check( nf90_put_var(ncid,varids(1),
+c     $       results(run)%inQs,start=[1, run], 
+c     $       count=[results(run)%count, 1]) )
+c            CALL sl_check( nf90_put_var(ncid,varids(2),
+c     $       results(run)%iinQs,start=[1, run], 
+c     $       count=[results(run)%count, 1]))
+c            CALL sl_check( nf90_put_var(ncid, varids(3),
+c     $       results(run)%Re_deltas, start=[1, run],
+c     $       count=[results(run)%count, 1]) )
+c            CALL sl_check( nf90_put_var(ncid, varids(4),
+c     $       results(run)%Im_deltas, start=[1, run],
+c     $       count=[results(run)%count, 1]) )
+c        END DO
+c      END IF
 
       IF (br_th_flag) THEN
         CALL sl_check( nf90_put_var(ncid,br_th_id, (/ br_th /)))

@@ -24,8 +24,8 @@ c-----------------------------------------------------------------------
       IMPLICIT NONE
 
       CHARACTER(512) :: infile,ncfile
-      INTEGER :: i,j,k,inum,jnum,knum,inn,
-     $           ReQ_num,ImQ_num,n_k,scan_radius
+      INTEGER :: i,j,k,inum,jnum,knum,inn,count,
+     $           ReQ_num,ImQ_num,n_k,scan_radius,max_points
       INTEGER, DIMENSION(1) :: index
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
@@ -45,8 +45,8 @@ c-----------------------------------------------------------------------
      $               tmp_gamma,ingam
 
       REAL(r8) :: inQ_min,inQ_max,j_min,j_max,jpower,k_min,k_max,
-     $     kpower,
-     $     Qratio
+     $     kpower,ing_step,ing_coarse,iing_coarse,delta_real,
+     $     delta_imag,Qratio
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: mms,nns
 
@@ -378,7 +378,7 @@ c-----------------------------------------------------------------------
      $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
      $         D_beta_norm_arr,inpr_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
-     $         lu_arr,delta_arr,lar_gamma_arr)
+     $         lu_arr,delta_arr,lar_gamma_arr,results)
 
          stop
       ENDIF
@@ -467,7 +467,7 @@ c-----------------------------------------------------------------------
      $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
      $         D_beta_norm_arr,inpr_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
-     $         lu_arr,delta_arr,lar_gamma_arr)
+     $         lu_arr,delta_arr,lar_gamma_arr,results)
 
          stop
       ENDIF
@@ -549,13 +549,63 @@ c-----------------------------------------------------------------------
 
          br_th = 0.0
 
+         max_points = 50*50
+         scan_radius = 1.5
+
+         ! Calculate step sizes
+c         ALLOCATE(results(1)%inQs(max_points),
+c     $            results(1)%iinQs(max_points))
+c         ALLOCATE(results(1)%Re_deltas(max_points),
+c     $            results(1)%Im_deltas(max_points))
+         ing_step = (2.0 * scan_radius) / (200 - 1)
+         count = 0
+      
+         ALLOCATE(inQs(1:201),iinQs(1:200))
+         ALLOCATE(deltas(1:201,1:200))
+
+         DO i = 1, 201
+            DO j = 1, 200
+               ing_coarse = -scan_radius + (i - 1) * ing_step
+               iing_coarse = -scan_radius + (j - 1) * ing_step
+            ! Evaluate riccati function
+               g_tmp = CMPLX(ing_coarse,iing_coarse)
+               delta=riccati_f(g_tmp,
+     $                     Q_e,Q_i,pr,D_beta_norm,tau)
+               !delta_real = REAL(delta)
+               !delta_imag = AIMAG(delta)
+
+               !count = count + 1
+               !results(1)%inQs(count) = ing_coarse
+               !results(1)%iinQs(count) = iing_coarse
+               !results(1)%Re_deltas(count) = delta_real
+               !results(1)%Im_deltas(count) = delta_imag
+               inQs(i) = ing_coarse
+               iinQs(j) = iing_coarse
+               deltas(i,j) = delta
+
+            END DO
+         END DO
+
+            OPEN(UNIT=out_unit,FILE="slayer_stability_n1.out",
+     $         STATUS="UNKNOWN")
+            WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
+     $           "IM(Q)","RE(delta)","IM(delta)"
+            DO i=1,201
+               DO j=1,200
+                  WRITE(out_unit,'(1x,4(es17.8e3))')
+     $                 inQs(i),iinQs(j),
+     $                 REAL(deltas(i,j)),AIMAG(deltas(i,j))
+               ENDDO
+            ENDDO
+            CLOSE(out_unit)
+
          CALL output_lar_gamma(lar_gamma_eq_flag,lar_gamma_flag,
      $         fitz_gamma_flag,
      $         stabscan_eq_flag,stabscan_flag,br_th_flag,qval_arr,
      $         omegas_arr,inQ_arr,inQ_e_arr,inQ_i_arr,ind_beta_arr,
      $         D_beta_norm_arr,inpr_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,dels_db_arr,
-     $         lu_arr,delta_arr,lar_gamma_arr)
+     $         lu_arr,delta_arr,lar_gamma_arr,results)
 
          stop
       ENDIF

@@ -370,13 +370,13 @@ c-----------------------------------------------------------------------
       ! w=0 when Q=Q_e. Why?
 
       CALL w_der_f(neq,my_p,W,dWdp)
-      WRITE(*,*)"riccati Q_e = ",Q_e
-      WRITE(*,*)"riccati Q_i = ",Q_i
-      WRITE(*,*)"riccati pr = ",pr
-      WRITE(*,*)"riccati D_beta_norm = ",D_beta_norm
-      WRITE(*,*)"riccati g_tmp = ",g_tmp
+      !WRITE(*,*)"riccati Q_e = ",Q_e
+      !WRITE(*,*)"riccati Q_i = ",Q_i
+      !WRITE(*,*)"riccati pr = ",pr
+      !WRITE(*,*)"riccati D_beta_norm = ",D_beta_norm
+      !WRITE(*,*)"riccati g_tmp = ",g_tmp
 
-      !     delta = np.pi * p_min / (W_value + 1)
+      !riccati_f = pi * my_p / (dWdp(1) + 1)
       riccati_f = pi / dWdp(1)
       DEALLOCATE(atol,W,dWdp,iwork,rwork)
 
