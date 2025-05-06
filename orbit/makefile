@@ -6,6 +6,8 @@ include ../install/DEFAULTS.inc
 
 ifneq (,$(findstring ifort,$(FC)))
     RECURSFLAG=-recursive
+else ifneq (,$(findstring ifx,$(FC)))
+	RECURSFLAG=-recursive
 else
     RECURSFLAG=-frecursive
 endif
