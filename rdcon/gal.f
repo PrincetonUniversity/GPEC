@@ -135,6 +135,7 @@ c-----------------------------------------------------------------------
             cell => intvl%cell(ix)
             ALLOCATE(cell%map(mpert,0:np),
      $           cell%mat(mpert,mpert,0:np,0:np))
+            cell%emap=0
             cell%map=0.0
             cell%mat=0.0
             cell%x_lsode=0.0
@@ -1817,7 +1818,7 @@ c-----------------------------------------------------------------------
       TYPE(cell_type), POINTER :: cell
       TYPE(hermite2_type) :: hermite
 c-----------------------------------------------------------------------
-c     find the cell and interval contain x.
+c     find the cell and interval containing x.
 c-----------------------------------------------------------------------      
       IF (x.LT.psilow.OR.x.GT.psihigh) THEN
          CALL program_stop("x is out of range.")
@@ -1880,7 +1881,7 @@ c-----------------------------------------------------------------------
          CALL sing_get_dua(ising,xext,duaext)
       ENDIF
       ipert0=NINT(nn*sing(ising)%q)-mlow+1
-      IF (restore_us.AND.cell%emap.GT.0) THEN
+      IF (restore_us.AND.(cell%etype=="ext".OR.cell%etype=="res")) THEN
          delta=gal%sol(cell%emap,isol)
          SELECT CASE(cell%etype)
          CASE("res")
