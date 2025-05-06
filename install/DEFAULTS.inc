@@ -359,6 +359,8 @@ ifneq ($(wildcard $(MATHHOME)/lib/intel64/.),)
     MATHDIR = $(MATHHOME)/lib/intel64
 else ifneq ($(wildcard $(MATHHOME)/lib/.),)
     MATHDIR = $(MATHHOME)/lib
+else ifneq ($(wildcard $(MATHHOME)/lib64/.),)
+    MATHDIR = $(MATHHOME)/lib64
 else
     MATHDIR = $(MATHHOME)
 endif
