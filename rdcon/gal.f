@@ -205,7 +205,8 @@ c-----------------------------------------------------------------------
          DO ix=1,gal%nx
             cell => intvl%cell(ix)
             DEALLOCATE(cell%map,cell%mat)
-            IF(cell%extra /= "none")DEALLOCATE(cell%emat,cell%rhs)
+            IF(ALLOCATED(cell%emat))DEALLOCATE(cell%emat)
+            IF(ALLOCATED(cell%rhs))DEALLOCATE(cell%rhs)
          ENDDO
          DEALLOCATE(intvl%x,intvl%dx,intvl%cell)
       ENDDO

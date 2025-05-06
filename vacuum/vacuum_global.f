@@ -257,6 +257,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     deallocate arrays.
 c-----------------------------------------------------------------------
+      DEALLOCATE(lmax,lmin)
       DEALLOCATE(xirc,xirs,xiic,xiis,fv)
       DEALLOCATE(grpssq,xsq,gpsdth,xsqdth,xjacob,delta,xjdtxj,xsdtxs,
      $     gpdtgp,slngth,xplap,zplap,xinf,zinf)

@@ -449,7 +449,11 @@ c         IF(ising > msing .OR. psilim < sing(ising)%psifac)EXIT
 c-----------------------------------------------------------------------
 c     compute conditions at next singular surface.
 c-----------------------------------------------------------------------
-      IF(ising > msing .OR. psilim < sing(ising)%psifac)THEN
+      IF(ising > msing)THEN
+         psimax=psilim*(1-eps)
+         m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
+         next="finish"
+      ELSE IF (psilim < sing(ising)%psifac)THEN
          psimax=psilim*(1-eps)
          m1=NINT(nn*qlim)+NINT(SIGN(one,nn*sq%fs1(mpsi,4)))
          next="finish"

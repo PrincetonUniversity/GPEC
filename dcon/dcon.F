@@ -401,10 +401,11 @@ c-----------------------------------------------------------------------
          CALL cspline_dealloc(fmats)
          CALL cspline_dealloc(gmats)
          CALL cspline_dealloc(kmats)
-
+      
          DO ising=1,msing
             DEALLOCATE(sing(ising)%vmat)
             DEALLOCATE(sing(ising)%mmat)
+            DEALLOCATE(sing(ising)%power)
             DEALLOCATE(sing(ising)%n1)
             DEALLOCATE(sing(ising)%n2)
          ENDDO
