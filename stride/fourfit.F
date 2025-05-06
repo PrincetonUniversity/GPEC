@@ -70,7 +70,13 @@ c-----------------------------------------------------------------------
       IF (fourfit_metric_parallel) THEN
          IF(nThreads > 0)THEN
            CALL OMP_SET_NUM_THREADS(nThreads)
+         ELSE 
+           nThreads = OMP_GET_MAX_THREADS()
          ENDIF
+
+         IF(verbose) WRITE(*,'(1x,a,i4,a)'),
+     $                "  > Running with ",nThreads," OMP threads"
+     
       ELSE
          CALL OMP_SET_NUM_THREADS(1)
       ENDIF
@@ -196,7 +202,13 @@ c-----------------------------------------------------------------------
 c     define flux surface quantities.
 c-----------------------------------------------------------------------
 #ifdef _OPENMP
-      IF(nThreads>0) CALL OMP_SET_NUM_THREADS(nThreads)
+      IF(nThreads>0) THEN
+         CALL OMP_SET_NUM_THREADS(nThreads)
+      ELSE
+         nThreads = OMP_GET_MAX_THREADS()
+      ENDIF
+         IF(verbose) WRITE(*,'(1x,a,i4,a)'),
+     $                "  > Running with ",nThreads," OMP threads"
 #endif
 !$OMP PARALLEL DO DEFAULT(NONE)
 !$OMP& PRIVATE(ipsi,psifac,p1,q,q1,chi1,nq,jtheta,m1,ipert,singfac1,dm,
