@@ -71,8 +71,11 @@ c-----------------------------------------------------------------------
      $     dx,dy,dz
 
       REAL(r8), DIMENSION(4) :: crzphi_f, crzphi_fx, crzphi_fy
-
-      REAL(r8), DIMENSION(0:cmtheta) :: aspl_f_arr
+      
+      ! splines are 0:cmtheta, but aspl_f_arr can be 1:cmtheta because
+      ! we are repeating the first and last points to
+      ! make the spline periodic
+      REAL(r8), DIMENSION(cmtheta) :: aspl_f_arr
 
       TYPE(spline_type) :: aspl
       TYPE(cspline_type) :: bntspl,bnzspl
