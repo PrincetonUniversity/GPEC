@@ -248,6 +248,29 @@ c-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE direct_run
 c-----------------------------------------------------------------------
+c     subprogram 2. write_bfields.
+c     evaluates bicubic splines for field components and derivatives.
+c-----------------------------------------------------------------------
+      SUBROUTINE write_bfields
+
+        REAL(r8) :: dr,dz,r,z
+        TYPE(direct_bfield_type) :: bf
+        INTEGER :: ix,iy
+          
+        DO ix = 0,psi_in%mx-1
+          r = rmin + (rmax-rmin)*ix/(psi_in%mx-1)
+          DO iy = 0,psi_in%my-1
+            z = zmin + (zmax-zmin)*iy/(psi_in%my-1)
+            
+            CALL direct_get_bfield(r,z,bf,1)
+            
+            write(333,*) r,z,bf%br,bf%bz
+            
+          ENDDO
+          write(333,*) ' '
+        ENDDO
+      END SUBROUTINE write_bfields
+c-----------------------------------------------------------------------
 c     subprogram 2. direct_get_bfield.
 c     evaluates bicubic splines for field components and derivatives.
 c-----------------------------------------------------------------------
@@ -505,7 +528,7 @@ c     store results for each step.
 c-----------------------------------------------------------------------
       DO
          rfac=y(2)
-         CALL direct_refine_itp(rfac,eta,psi0)
+         CALL direct_refine(rfac,eta,psi0)
          r=ro+rfac*COS(eta)
          z=zo+rfac*SIN(eta)
          CALL direct_get_bfield(r,z,bf,2)
@@ -609,12 +632,38 @@ c-----------------------------------------------------------------------
       SUBROUTINE direct_refine_itp(rfac,eta,psi0)
         REAL(8), INTENT(INOUT) :: rfac
         REAL(8), INTENT(IN) :: eta, psi0
-        REAL(8), PARAMETER :: margin = 0.99
 
-        REAL(8) :: a, b
+        INTEGER :: ir
+        REAL(8) :: dr, a, b
 
-        a = rfac*(1-margin)
-        b = rfac*(1+margin)
+        dr = rfac*1d-2
+
+        a=rfac
+        ir=0
+        DO 
+           ir = ir+1
+           a=a-dr
+           IF( psi_at_polar_loc(a,eta) > psi0 ) EXIT
+ 
+           IF (ir  > direct_infinite_loop_count) THEN
+              CALL program_stop("Took too many steps to find a.")
+           ENDIF
+        ENDDO
+
+        b=rfac
+        ir=0
+        DO 
+           ir = ir+1
+           b=b+dr
+           IF( psi_at_polar_loc(b,eta) < psi0 ) EXIT
+ 
+           IF (ir  > direct_infinite_loop_count) THEN
+              CALL program_stop("Took too many steps to find b.")
+           ENDIF
+        ENDDO
+
+c        a = rfac*(1-margin)
+c        b = rfac*(1+margin)
         CALL ITP( a, b, eta, psi0, rfac )
 
       END SUBROUTINE direct_refine_itp
