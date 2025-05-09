@@ -15,6 +15,12 @@ c     7. diaplt
 c     8. pickup
 c     9. loop
 c    10. chi
+
+      module vacuum_mod
+      ! implicit none
+      contains
+
+
 c-----------------------------------------------------------------------
 c     subprogram 1. mscvac.
 c     calculate vacuum response matrix.
@@ -23,7 +29,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine mscvac(wv,mpert,mtheta,mthvac,complex_flag,
-     $     kernelsignin,wall_flag,farwal_flag,grrio,xzptso)
+     $     kernelsignin,wall_flag,farwal_flag,grrio,xzptso,op_ahgfile)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
@@ -36,6 +42,15 @@ c-----------------------------------------------------------------------
 
       complex(8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
+      character(128), intent(in), optional :: op_ahgfile
+
+      if (present(op_ahgfile)) then
+         ! print *, "Using ahgfile: ", op_ahgfile
+         ahgfile = trim(op_ahgfile)
+      else
+         ahgfile = 'ahg2msc.out'
+      endif
+
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -155,7 +170,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       subroutine mscfld(wv,mpert,mtheta,mthvac,complex_flag,
-     $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp)
+     $     lx,lz,vgdl,vgdx,vgdz,vbx,vbz,vbp,op_ahgfile)
       USE vglobal_mod
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
@@ -170,6 +185,15 @@ c-----------------------------------------------------------------------
 
       complex(8), parameter :: ifac=(0,1)
       dimension xi(nfm), xii(nfm), xilnq(nfm), xiilnq(nfm)
+      character(128), intent(in), optional :: op_ahgfile
+
+      if (present(op_ahgfile)) then
+         ! print *, "Using ahgfile: ", op_ahgfile
+         ahgfile = trim(op_ahgfile)
+      else
+         ahgfile = 'ahg2msc.out'
+      endif
+
 c-----------------------------------------------------------------------
 c     format statements.
 c-----------------------------------------------------------------------
@@ -1007,4 +1031,4 @@ c-----------------------------------------------------------------------
       return
       end
 
-
+      end module vacuum_mod

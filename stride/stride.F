@@ -49,7 +49,7 @@ c-----------------------------------------------------------------------
      $     bin_fmat,out_gmat,bin_gmat,out_kmat,bin_kmat,out_sol,
      $     out_sol_min,out_sol_max,bin_sol,bin_sol_min,bin_sol_max,
      $     out_fl,bin_fl,out_evals,bin_evals,bin_euler,euler_stride,
-     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out
+     $     ahb_flag,mthsurf0,msol_ahb,netcdf_out,out_ahg2msc
       NAMELIST/stride_params/grid_packing,asymp_at_sing,
      $     integrate_riccati,calc_delta_prime,calc_dp_with_vac,
      $     axis_mid_pt_skew,
@@ -83,6 +83,16 @@ c-----------------------------------------------------------------------
       REWIND(UNIT=in_unit)
       READ(UNIT=in_unit,NML=stride_params)
       CALL ascii_close(in_unit)
+
+      IF (out_ahg2msc) THEN
+         WRITE(*,*) "WARNING: ahg2msc.out is deprecated and will be " //
+     $          "removed in a future version. Set out_ahg2msc = .FALSE."
+         WRITE(*,*) "         to disable this warning."
+         stride_vac_memory=.FALSE.
+      ELSE
+         stride_vac_memory=.TRUE.
+      ENDIF
+         
 c-----------------------------------------------------------------------
 c     check datatypes of command line inputs.
 c-----------------------------------------------------------------------
@@ -168,7 +178,9 @@ c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
+      print *, "locstab"
       CALL spline_alloc(locstab,mpsi,5)
+      print *, "locstab done"
       locstab%xs=sq%xs
       locstab%fs=0
       locstab%name="locstb"

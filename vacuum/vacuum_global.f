@@ -27,6 +27,7 @@ c-----------------------------------------------------------------------
       CHARACTER(8) :: jobid
       CHARACTER(60) :: seps
       CHARACTER(128) :: ahgdir = "."
+      CHARACTER(128) :: ahgfile = "ahg2msc.out"
       CHARACTER(nccl3) :: dskout,cdfin,cdfout
       CHARACTER(maxc1) :: ctitle
       CHARACTER(maxa1) :: astrng

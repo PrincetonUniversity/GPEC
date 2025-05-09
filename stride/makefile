@@ -14,7 +14,7 @@ endif
 include ../install/DEFAULTS.inc
 
 # flags unique to stride (not to be clobbered by top level install/makefile options)
-IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I../vacuum -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS) $(RECURSFLAG)
 
 .f.o:

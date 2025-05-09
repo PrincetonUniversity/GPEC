@@ -68,6 +68,8 @@ c-----------------------------------------------------------------------
       LOGICAL :: node_flag=.FALSE.
       LOGICAL :: res_flag=.FALSE.
       LOGICAL :: ahb_flag=.FALSE.
+      LOGICAL :: out_ahg2msc=.TRUE.
+      LOGICAL :: vac_memory=.FALSE.
 
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,

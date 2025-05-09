@@ -629,7 +629,8 @@ c-----------------------------------------------------------------------
                ENDDO
                ! then, start breaking up the longest intervals
                IF(j<0)THEN
-                  j = MAXLOC(aT(1:nIntervals), DIM=1, MASK=aMask)
+                  j = MAXLOC(aT(1:nIntervals), DIM=1, 
+     $                                       MASK=aMask(1:nIntervals))
                ENDIF
                psiPoints(j+2:nIntervals+1,:)=psiPoints(j+1:nIntervals,:)
                psiInters(j+2:nIntervals+1,:)=psiInters(j+1:nIntervals,:)

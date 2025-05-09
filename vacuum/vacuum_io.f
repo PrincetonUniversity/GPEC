@@ -283,8 +283,8 @@ c     dcon inputs.
 c-----------------------------------------------------------------------
       if ( ldcon .eq. 1 ) then
          lzio = 1
-         call readahg ( ahgdir, mthin,lmin(1),lmax(1),ndcon,qa1,xinf,
-     $        zinf, delta, vecin, mth )
+         call readahg (ahgfile, ahgdir, mthin,lmin(1),lmax(1),ndcon,qa1,
+     $      xinf, zinf, delta, vecin, mth )
          mthin1 = mthin + 1
          mthin2 = mthin1 + 1
          n = ndcon
@@ -464,13 +464,14 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      subroutine readahg ( ahgdir, mthin,lmin,lmax,ndcon,qa1,xinf,
-     $     zinf, delta, vecin, mth )
+      subroutine readahg (ahgfile, ahgdir, mthin,lmin,lmax,ndcon,qa1,
+     $     xinf, zinf, delta, vecin, mth )
       use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
      $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
       implicit real*8 (a-h,o-z)
       implicit integer (i-n)
       character(128) ahgdir
+      character(128) ahgfile
       integer mthin,lmin,lmax,ndcon,ith
       dimension xinf(*), zinf(*), delta(*), vecin(*)
 c-----------------------------------------------------------------------
@@ -492,7 +493,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     read data.
 c-----------------------------------------------------------------------
-         open(unit=3,file=trim(ahgdir)//'/ahg2msc.out')
+         open(unit=3,file=trim(ahgdir)//'/'//trim(ahgfile))
          read(3,*)mthin
          read(3,*)lmin
          read(3,*)lmax

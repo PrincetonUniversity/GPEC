@@ -20,6 +20,7 @@ c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       MODULE free_mod
+      USE vacuum_mod, ONLY: mscvac
       USE global_mod, ONLY: wv_farwall_flag
       USE sing_mod, ONLY: sing_der, msol
       USE fourfit_mod, ONLY: asmat, bsmat, csmat, jmat, ipiva,
@@ -75,6 +76,7 @@ c-----------------------------------------------------------------------
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
       COMPLEX(r8), DIMENSION(mpert) :: diff
+      CHARACTER(128) :: ahg_file
 c-----------------------------------------------------------------------
 c     write formats.
 c-----------------------------------------------------------------------
@@ -111,7 +113,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write file for mscvac, prepare input for ahb (deallocate moved to end).
 c-----------------------------------------------------------------------
-      CALL free_write_msc(psilim)
+      ahg_file="ahg2msc_dcon.out"
+      CALL free_write_msc(psilim,vac_memory,ahgstr_op=ahg_file)
       IF(ahb_flag)THEN
          CALL free_ahb_prep(wp,nmat,smat,asmat,bsmat,csmat,ipiva)
       ENDIF
@@ -124,7 +127,7 @@ c-----------------------------------------------------------------------
       ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
       ! xzpts has a dimension of [mthvac+2] with 2 exrta repeating pts
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
       IF(bin_vac)THEN
          WRITE(*,*) "!! WARNING: Use of vacuum.bin is deprecated in"//
      $     " GPEC. Set bin_vac = f in dcon.in to reduce file IO."
@@ -134,7 +137,7 @@ c-----------------------------------------------------------------------
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
       IF(bin_vac)THEN
          WRITE(vac_unit)grri
       ENDIF
@@ -145,14 +148,14 @@ c-----------------------------------------------------------------------
       farwal_flag=.FALSE. ! self-inductance with the wall.
       kernelsignin=-1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
       IF(bin_vac)THEN
          WRITE(vac_unit)grri
       ENDIF
 
       kernelsignin=1.0
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $     wall_flag,farwal_flag,grri,xzpts)
+     $     wall_flag,farwal_flag,grri,xzpts,ahg_file)
       IF(bin_vac)THEN
          WRITE(vac_unit)grri
          WRITE(vac_unit)xzpts
@@ -317,7 +320,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
-      SUBROUTINE free_write_msc(psifac, inmemory_op)
+      SUBROUTINE free_write_msc(psifac, inmemory_op, ahgstr_op)
 
       REAL(r8), INTENT(IN) :: psifac
       LOGICAL, OPTIONAL :: inmemory_op
@@ -327,12 +330,21 @@ c-----------------------------------------------------------------------
       INTEGER :: itheta,n
       REAL(r8) :: qa
       REAL(r8), DIMENSION(0:mtheta) :: angle,r,z,delta,rfac,theta
+      CHARACTER(128) :: ahgstr
+      CHARACTER(128), optional :: ahgstr_op
 
       IF(PRESENT(inmemory_op))THEN
          inmemory = inmemory_op
       ELSE
          inmemory = .FALSE.
       ENDIF
+
+      IF(PRESENT(ahgstr_op))THEN
+         ahgstr = ahgstr_op
+      ELSE
+         ahgstr = "ahg2msc_dcon.out"
+      ENDIF
+
 c-----------------------------------------------------------------------
 c     compute output.
 c-----------------------------------------------------------------------
@@ -367,7 +379,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write scalars.
 c-----------------------------------------------------------------------
-         CALL ascii_open(bin_unit,'ahg2msc.out',"UNKNOWN")
+         CALL ascii_open(bin_unit,ahgstr,"UNKNOWN")
          WRITE(bin_unit,'(i4,a)')mtheta,tab//tab//"mtheta"//tab//"mthin"
      $        //tab//"Number of poloidal nodes"
          WRITE(bin_unit,'(i4,a)')mlow,tab//tab//"mlow"//tab//"lmin"//tab
@@ -783,6 +795,7 @@ c-----------------------------------------------------------------------
       LOGICAL :: farwal_flag=.FALSE.
       REAL(r8) :: kernelsignin
       INTEGER :: vac_unit
+      CHARACTER(128) :: ahgstr
 c-----------------------------------------------------------------------
 c     Basic parameters for course scan of psi
 c-----------------------------------------------------------------------
@@ -790,6 +803,8 @@ c-----------------------------------------------------------------------
       psii = psiedge  ! should start exactly here
       CALL cspline_alloc(wvmats,npsi,mpert**2)
       DO i=0,npsi
+         ! file name is ahg2msc_{i}.out
+         ahgstr = "ahg2msc_"//CHAR(i)//".out"
          ! space point evenly in q
          qi = q_edge(1) + (qlim - q_edge(1)) * i * 1.0/npsi
          ! use newton iteration to find psilim.
@@ -804,11 +819,12 @@ c-----------------------------------------------------------------------
          ! call mscvac and save matrices to spline
          wvmats%xs(i) = psii
          CALL spline_eval(sq, wvmats%xs(i), 0)
-         CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.)
+         CALL free_write_msc(wvmats%xs(i), inmemory_op=.TRUE.,
+     $                                               ahgstr_op=ahgstr)
          kernelsignin=1.0
          ALLOCATE(grri(2*(mthvac+5),mpert*2),xzpts(mthvac+5,4))
          CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,kernelsignin,
-     $        wall_flag,farwal_flag,grri,xzpts)
+     $        wall_flag,farwal_flag,grri,xzpts,ahgstr)
          singfac=mlow-nn*sq%f(4)+(/(ipert,ipert=0,mpert-1)/)
          DO ipert=1,mpert
             wv(ipert,:)=wv(ipert,:)*singfac

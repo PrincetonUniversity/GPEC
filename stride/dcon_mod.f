@@ -69,6 +69,9 @@ c-----------------------------------------------------------------------
       LOGICAL :: ahb_flag=.FALSE.
       LOGICAL :: netcdf_out=.TRUE.
 
+      LOGICAL :: out_ahg2msc=.TRUE.
+      LOGICAL :: stride_vac_memory=.FALSE.
+
       INTEGER, PARAMETER :: sol_base=50
       INTEGER :: mlow,mhigh,mpert,mband,nn,nstep=HUGE(0),bin_sol_min,
      $     bin_sol_max,euler_stride=1,mthvac=480,ksing=-1,delta_mlow=0,

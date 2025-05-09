@@ -49,6 +49,8 @@ c-----------------------------------------------------------------------
 
       INTEGER, DIMENSION(8) :: values
 
+      LOGICAL :: out_ahg2msc, vac_memory
+
       LOGICAL, DIMENSION(:), ALLOCATABLE :: sing_flag
       INTEGER, DIMENSION(:), ALLOCATABLE :: fixstep,mfac,lmfac
       INTEGER, DIMENSION(:,:), ALLOCATABLE :: permeabindex,gdl

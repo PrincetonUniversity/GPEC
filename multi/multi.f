@@ -127,7 +127,7 @@ c-----------------------------------------------------------------------
       CALL system("cp vac.in "//TRIM(dirname))
       IF(match_flag)CALL system("cp match.in "//TRIM(dirname))
       CALL system("rm -f ahg2msc.out")
-      CALL system("rm -f mscvac.out")
+      CALL system("rm -f mscvac*.out")
       CALL system("mv *.out "//TRIM(dirname))
       CALL system("mv *.bin "//TRIM(dirname))
       CALL system("mv *.dat "//TRIM(dirname))
