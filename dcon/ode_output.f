@@ -343,7 +343,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: logpsi1,logpsi2,crit,fac,
      $     psi_med,crit_med,q_med,singfac_med,logpsi1_med,logpsi2_med
-      REAL(r8), SAVE :: crit_save,psi_save,dpsi
+      REAL(r8), SAVE :: crit_save=0,psi_save=0,dpsi
       COMPLEX(r8), DIMENSION(mpert,msol,2) :: u_med
 c-----------------------------------------------------------------------
 c     format statements.
