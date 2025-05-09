@@ -656,6 +656,8 @@ c-----------------------------------------------------------------------
       ma=nw-1
       psi_in%mx=mr
       psi_in%my=mz
+      zo=zmid
+      ro=rgrid+xdim/2
       rmin=rgrid
       rmax=rgrid+xdim
       zmin=-zdim/2 + zmid
