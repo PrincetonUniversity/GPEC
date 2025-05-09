@@ -13,8 +13,7 @@ LIBS = \
 	-lpthread \
 	-llsode \
 	-lequil \
-	-lvac \
-	-lomp
+	-lvac
 
 OBJS = \
 	debug.o \

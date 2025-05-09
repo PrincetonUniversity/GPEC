@@ -28,8 +28,7 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lharvest \
-	-lomp
+	-lharvest
 
 OBJS = \
 	debug.o \

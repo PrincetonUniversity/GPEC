@@ -11,8 +11,7 @@ export FFLAGS
 LIBDIR = ../lib
 
 LIBS = \
-	-llsode \
-	-lomp
+	-llsode
 
 OBJS = \
        sglobal.o \

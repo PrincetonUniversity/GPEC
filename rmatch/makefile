@@ -11,8 +11,7 @@ LIBDIR = ../lib
 
 LIBS = \
 	-llsode \
-	-lequil \
-	-lomp
+	-lequil
 
 OBJS = \
 	gamma.o \

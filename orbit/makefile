@@ -23,8 +23,7 @@ LIBDIR = ../lib
 
 LIBS = \
 	-llsode \
-	-lequil \
-	-lomp
+	-lequil
 
 OBJS = \
 	orbit_mod.o \

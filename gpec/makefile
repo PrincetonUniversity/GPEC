@@ -30,8 +30,7 @@ LIBS = \
 	-lvac \
 	-lharvest \
 	-lslayer \
-	-lcoil \
-	-lomp
+	-lcoil
 
 OBJS = \
 	gpglobal.o \

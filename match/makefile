@@ -23,8 +23,7 @@ LIBDIR = ../lib
 
 LIBS = \
 	-lequil \
-	-llsode \
-	-lomp
+	-llsode
 
 OBJS = \
 	qsort.o \
