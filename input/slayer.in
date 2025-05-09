@@ -1,45 +1,53 @@
 &SLAYER_INPUT
-    ! Default values taken from R. Fitzpatrick 'High Field' case in "Tearing Mode Dynamics in Tokamak Plasmas", 2023
     input_flag=f         ! reads profile quantities (n_e, t_e, etc.) from an ascii table
-    infile=''  ! Path to ascii table of profile quantities read when using input_flag
-    ncfile=''  ! Path to netCDF file of STRIDE outputs
+    infile=''            ! Path to ascii table of profile quantities read when using input_flag
+    ncfile=''            ! Path to netCDF file of STRIDE outputs
     params_flag=f        ! calculates normalized parameters from profile quantities
+    ! >>>
+    ! >>> Input rational surface quantities
+    ! >>>
     mm=2                 ! poloidal mode number
     nn=1                 ! toroidal mode number
-    n_e=5.10E+020        ! electron density [m^-3]
-    t_e=7000.0           ! electron temperature [eV]
-    t_i=7000.0           ! ion temperature [eV]
-    sval=1.34            ! magnetic shear at the layer
-    bt=12.0              ! toroidal field [T]
-    rs=0.53              ! minor radius of resonant surface [m]
-    R0=3.2               ! major radius of magnetic axis [m]
-    omega=5.45E+03       ! ExB frequency [rad/s]
+    n_e=5.50E+19         ! electron density [m^-3]
+    t_e=1000.0           ! electron temperature [eV]
+    t_i=1000.0           ! ion temperature [eV]
+    sval=1.5             ! magnetic shear at the layer
+    bt=2.0               ! toroidal field [T]
+    rs=0.5               ! minor radius of resonant surface [m]
+    R0=1.67              ! major radius of magnetic axis [m]
+    omega=5.00E+03       ! ExB frequency [Hz]
     l_t=0.11             ! temperature gradient scale length
     l_n=0.25             ! density gradient scale length
     qval=2.0             ! q of resonant surface
-    mu_i=2.0             ! ion mass ratio to proton ??
+    mu_i=2.0             ! ion mass ratio to proton mass, 2 for deuterium plasma
     zeff=2.0             ! plasma Z_effective
-    inpr=500.0           ! Prantdl number
-    inpr_prof=1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0 ! Prandtl number profile, set < 0 to only use inpr instead
-    inpe=0.0             ! Electron viscosity
-    inQ=1.5              ! normalized ExB frequency
-    inQ_e=2.0            ! normalized electron diamagnetic frequency
-    inQ_i=-2.0           ! normalized ion diamagnetic frequency
-    inc_beta=0.128       ! dimensionless measure of the plasma pressure
-    inds=2.26            ! normalized ion sound radius. NOTE: set inds = 0 for internal D_norm caltulation 
-    intau=1.0            ! ion temperature divided by electron temperature
-    Q0=1.5               ! unnecessary placeholder variable for inQ?
-    delta_n_p=(5.0,0.01)      ! input Delta', OR delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
-    ingam=(0.1,0.01)      ! input Delta', OR delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
+    dr_val=-0.1          ! GGJ resistive interchange criterion D_R
+    chi_prof=0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2 ! Rational surface perpendicular ion momentum diffusivity OR perpendicular energy diffusivity profile
+    ! >>>
+    ! >>> Input normalized layer parameters. If read_eq=f, each will individually override internal calcuation using above inputs
+    ! >>>
+    inpr=0.0             ! Prantdl number. Set /= 0.0 to override internal calculation
+    inpe=0.0             ! electron viscosity
+    inQ=1.0              ! normalized ExB frequency. TO DO: update for mode rotation frequency calculation! 
+    inQ_e=0.0            ! normalized electron diamagnetic frequency. Set /= 0.0 to override internal calculation
+    inQ_i=0.0            ! normalized ion diamagnetic frequency. Set /= 0.0 to override internal calculation
+    inc_beta=0.0         ! dimensionless measure of the plasma pressure. Set /= 0.0 to override internal calculation
+    inds=0.0             ! normalized ion sound radius, or normalized ion skin depth. Set /= 0.0 to override internal calculation
+    intau=1.0            ! ratio of ion to electron temperature
+    Q0=1.0               ! unnecessary placeholder variable for inQ?
+    delta_prime=(0.0,0.0)  ! input Delta' or (Delta' - Delta_crit) for growth rate calculation, set /= 0.0 to override internal calculation
+    delta_n_p=(0.01,0.01)  ! delta offset used for jxb calculations. Default for latter is (1e-2,1e-2).
+    ingamma=(0.0,0.0)     ! input (Re(Q),Im(Q)) to calculate inner layer Delta. Set /= 0.0 to override internal root finding
 /
 
 &SLAYER_CONTROL
     inum=400             ! resolution to find error field thresholds.
     jnum=100             ! resolution for 2d scan along with Q,omega.
-    knum=100             ! resolution for 2d scan alont with the other.
-    ReQ_num=300          ! resolution for stability scan along Re(Q) axis
-    ImQ_num=300          ! resolution for stability scan along Im(Q) axis
-    scan_radius=3        ! stability scan width in Q
+    knum=100             ! resolution for 2d scan along with the other.
+    Q_num=100            ! resolution for stability scan along Re(Q),Im(Q) axes
+    scan_radius=2.0      ! stability scan width for Re(Q),Im(Q) scan
+    read_eq=f            ! read in equilibrium quantities from STRIDE and kinetic file. Set all normalized params to 0.0
+    fitz_flag=t          ! Use R. Fitzpatrick formalism (inc. anomalous diffusion) for growth rate calculation 
     QPscan_flag=f        ! scan (Q,P) space for delta and torque.
     Qscan_flag=f         ! scan Q space
     QPescan_flag=f       ! scan (Q,Pe) space for delta and torque.
@@ -59,14 +67,11 @@
     ascii_flag=f         ! writes results to ascii files
     bin_flag=f           ! writes results to binary files
     netcdf_flag=f        ! writes results to netcdf files
+    est_gamma_flag=t     ! Calculate and output growth rate estimate
+    match_gamma_flag=t ! Find Delta_hat = Delta_prime match to solve for growth rate
     stability_flag=f     ! calculate delta dependence on complex Q
-    lar_gamma_eq_flag=f  ! Calculate cylindrical growthrates for each rational surface of input equilibrium
-    lar_gamma_flag=f     ! Calculate cylindrical growthrate for namelist parameters
-    fitz_gamma_flag=f    ! Calculate Fitzpatrick layer model
-    stabscan_eq_flag=f   ! Generate Re(Q),Im(Q) scans for each rational surface of input equilibrium
-    stabscan_flag=f      ! Generate Re(Q),Im(Q) scan for namelist parameters
+    stabscan_flag=f      ! Generate Re(Q),Im(Q) scan and output as ASCII
     br_th_flag=f         ! Calculate br_th
-    compress_deltas=f    ! Only output essential growth rate grid points
     bal_flag=f           ! calculate the resonant field penetration threshold from torque balance
 /
 

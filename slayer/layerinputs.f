@@ -20,16 +20,16 @@ c     Read STRIDE netcdf file for SLAYER inputs only.
 c-----------------------------------------------------------------------
       SUBROUTINE read_stride_netcdf_diagonal(ncfile,msing,
      $   Re_dp_diagonal,Im_dp_diagonal,q_rational,psi_n_rational,shear,
-     $   r_o,my_bt0,my_psio,mpsi,nn,resm)
+     $   r_o,my_bt0,my_psio,dr_vals,mpsi,nn,resm)
 
         ! Input/Output Arguments
       CHARACTER(512), INTENT(IN) :: ncfile
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) ::
-     $                      Re_dp_diagonal,Im_dp_diagonal
+     $                                 Re_dp_diagonal,Im_dp_diagonal
       REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: q_rational,
-     $  psi_n_rational, shear
+     $                                          psi_n_rational, shear
       REAL(r8), DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: r_o,my_bt0,
-     $ my_psio,mpsi
+     $                                         my_psio,mpsi,dr_vals
       INTEGER, DIMENSION(:), ALLOCATABLE,INTENT(OUT) :: nn,resm
       INTEGER, INTENT(OUT) :: msing
 
@@ -38,12 +38,12 @@ c-----------------------------------------------------------------------
         ! Internal Variables
       INTEGER(kind=nf90_int) :: ncid, stat, r_dim_id, r_dim,
      $  dp_id, qr_id,pr_id,shear_id,ro_id,bt0_id,psio_id,mpsi_id,
-     $  msing_id,nn_id,resm_id  ! Explicit kind for NetCDF variables
+     $  msing_id,nn_id,resm_id,drr_id ! Explicit kind for NetCDF variables
       INTEGER(kind=nf90_int), DIMENSION(1) :: start, count ! Explicit kind for NetCDF variables
       REAL(r8), DIMENSION(:,:,:), ALLOCATABLE :: delta_prime
       INTEGER :: i
       INTEGER :: bt0_len,ro_len,psio_len,mpsi_len,
-     $             msing_len,nn_len    ! Attribute lengths
+     $             msing_len,nn_len,dr_len    ! Attribute lengths
 
         ! Open the NetCDF file
       stat = nf90_open(path=ncfile,mode=NF90_WRITE,ncid=ncid)
@@ -61,7 +61,7 @@ c-----------------------------------------------------------------------
       ! Allocate Arrays (based on dimension)
       ALLOCATE(Re_dp_diagonal(msing),q_rational(msing),
      $           psi_n_rational(msing),shear(msing),
-     $           resm(msing),Im_dp_diagonal(msing))
+     $           resm(msing),Im_dp_diagonal(msing),dr_vals(msing))
       ALLOCATE(delta_prime(msing, msing,2))
 
       stat = nf90_inquire_attribute(ncid,ro_id,"ro",len = ro_len)
@@ -76,11 +76,11 @@ c-----------------------------------------------------------------------
       stat = nf90_inquire_attribute(ncid,nn_id,"n",len = nn_len)
       CALL sl_check(stat)
 
-      bt0_id=0 !!!!! THIS COULD BE A PROBLEM
-      nn_id=0
-      mpsi_id=0
-      psio_id=0
-      ro_id=0
+      !bt0_id=0 !!!!! THIS COULD BE A PROBLEM
+      !nn_id=0
+      !mpsi_id=0
+      !psio_id=0
+      !ro_id=0
 
       ALLOCATE(my_bt0(INT(bt0_len)),r_o(INT(ro_len)),
      $ my_psio(INT(psio_len)),
@@ -96,6 +96,8 @@ c-----------------------------------------------------------------------
       stat = nf90_inq_varid(ncid, "shear", shear_id)
       CALL sl_check(stat)
       stat = nf90_inq_varid(ncid, "resm", resm_id)
+      CALL sl_check(stat)
+      stat = nf90_inq_varid(ncid, "dr_rational", drr_id)
       CALL sl_check(stat)
       ! Get attributes
       stat = nf90_get_att(ncid, ro_id, "ro", r_o)
@@ -120,6 +122,8 @@ c-----------------------------------------------------------------------
       stat = nf90_get_var(ncid, shear_id, shear)
       CALL sl_check(stat)
       stat = nf90_get_var(ncid, resm_id, resm)
+      CALL sl_check(stat)
+      stat = nf90_get_var(ncid, drr_id, dr_vals)
       CALL sl_check(stat)
 
       ! Extract Diagonal, with 3rd index signifying REAL part
@@ -224,21 +228,19 @@ c-----------------------------------------------------------------------
 c     subprogram 3. build_inputs.
 c     build input arrays for SLAYER
 c-----------------------------------------------------------------------
-      SUBROUTINE build_inputs(infile,ncfile,inpr_prof,inpe,Pe_flag,
-     $              qval_arr,psi_n_rational,inQ_arr,inQ_e_arr,
-     $              inQ_i_arr,inc_beta_arr,inds_arr,ind_beta_arr,
-     $              D_beta_norm_arr,intau_arr,Q0_arr,inpr_arr,
-     $              inpe_arr,omegas_arr,gammafac_arr,
-     $              Re_deltaprime_arr,Im_deltaprime_arr)
+      SUBROUTINE build_inputs(infile,ncfile,chi_prof,
+     $              qval_arr,psi_n_rational,lu_arr,Qconv_arr,Q_arr,
+     $              Q_e_arr,Q_i_arr,c_beta_arr,d_beta_arr,
+     $              D_norm_arr,tau_arr,P_perp_arr,
+     $              omegas_arr,gammafac_arr,Re_deltaprime_arr,
+     $              Im_deltaprime_arr,delta_crit_arr)
 c-----------------------------------------------------------------------
 c     declarations.
 c-----------------------------------------------------------------------
       ! Inputs
       CHARACTER(512), INTENT(IN) :: infile,ncfile
       ! Internals
-      REAL(r8), DIMENSION(8), INTENT(IN) :: inpr_prof
-      REAL(r8), INTENT(IN) :: inpe
-      LOGICAL, INTENT(IN) :: Pe_flag
+      REAL(r8), DIMENSION(8), INTENT(IN) :: chi_prof
       LOGICAL :: firstsurf
       REAL(r8) :: respsi,lpsi,rpsi,hdist,sbnosurf,ising
       INTEGER :: zi, zimp, mi, mimp
@@ -251,20 +253,25 @@ c-----------------------------------------------------------------------
 
       REAL(r8) :: n_e,t_e,n_i,t_i,omega,omega_e,omega_i,
      $     my_qval,my_sval,my_bt,my_rs,my_inpe,zeff,R_0
-      REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_r,tau_h,
-     $            rho,tau_v,inpr,Qconv,lbeta,qintb,gammafac
-      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: inQ_arr,
-     $          inQ_e_arr,psi_n_rational,D_beta_norm_arr,
-     $          inQ_i_arr,inc_beta_arr,inds_arr,ind_beta_arr,
-     $          intau_arr,Q0_arr,inpr_arr,inpe_arr,omegas_arr,
-     $          gammafac_arr,Re_deltaprime_arr,Im_deltaprime_arr
+      REAL(r8) :: mu_i,tau_i,b_l,v_a,tau_h,
+     $            rho,tau_v,chi,Qconv,lbeta,qintb,gammafac
+      REAL(r8) :: tau_ee_num,tau_ee_denom,tau_ee,sigma_par_1,
+     $            sigma_par_2,sigma_par,tau_perp,Wd,vte,
+     $            dr_val,chi_par_smfp,chi_par_lmfp,chi_par
+      INTEGER :: wit
+      REAL(r8), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: Q_arr,
+     $          Q_e_arr,psi_n_rational,D_norm_arr,P_perp_arr,
+     $          Q_i_arr,c_beta_arr,d_beta_arr,
+     $          tau_arr,omegas_arr,lu_arr,Qconv_arr,
+     $          gammafac_arr,Re_deltaprime_arr,Im_deltaprime_arr,
+     $          delta_crit_arr
       INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: qval_arr
       REAL(r8), DIMENSION(0:128) :: psitor, rhotor
       REAL(r8), DIMENSION(:), ALLOCATABLE :: my_rhotor,my_psitor
 
-      REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_dp_diagonal,
-     $              q_rational,shear,r_o,my_bt0,my_psio,mpsi_arr,
-     $              omegas_e_arr,omegas_i_arr,Im_dp_diagonal
+      REAL(r8), DIMENSION(:), ALLOCATABLE :: Re_dp_diagonal,dr_arr,
+     $           q_rational,shear,r_o,my_bt0,my_psio,mpsi_arr,
+     $           omegas_e_arr,omegas_i_arr,Im_dp_diagonal,dr_vals
       REAL(r8), DIMENSION(:), ALLOCATABLE :: ne_arr,te_arr,ni_arr,
      $    ti_arr,zeff_arr,bt_arr,rs_arr,R0_arr,mu_i_arr
       INTEGER,DIMENSION(:),ALLOCATABLE :: nn,resm,nns_arr
@@ -279,7 +286,7 @@ c     Read in STRIDE netcdf
 c-----------------------------------------------------------------------
       CALL read_stride_netcdf_diagonal(ncfile,msing,Re_dp_diagonal,
      $                     Im_dp_diagonal,q_rational,psi_n_rational,
-     $           shear,r_o,my_bt0,my_psio,mpsi_arr,nn,resm)
+     $           shear,r_o,my_bt0,my_psio,dr_vals,mpsi_arr,nn,resm)
       WRITE(*,*)"msing_out=",msing
       WRITE(*,*)"Re_dp_diagonal=",Re_dp_diagonal
       WRITE(*,*)"Im_dp_diagonal=",Im_dp_diagonal
@@ -295,17 +302,18 @@ c-----------------------------------------------------------------------
       mpsi = INT(mpsi_arr(1))
       mthsurf = 512 ! Hardcoded, but this is a default value
 
-      ALLOCATE(qval_arr(msing),inQ_arr(msing),inQ_e_arr(msing),
-     $    inQ_i_arr(msing),
-     $    inc_beta_arr(msing),inds_arr(msing),ind_beta_arr(msing),
-     $    intau_arr(msing),Q0_arr(msing),inpr_arr(msing),
-     $    inpe_arr(msing),omegas_arr(msing),omegas_e_arr(msing),
+      ALLOCATE(qval_arr(msing),Q_arr(msing),Q_e_arr(msing),
+     $    Q_i_arr(msing),lu_arr(msing),Qconv_arr(msing),
+     $    c_beta_arr(msing),d_beta_arr(msing),
+     $    tau_arr(msing),
+     $    omegas_arr(msing),omegas_e_arr(msing),
      $    omegas_i_arr(msing),gammafac_arr(msing),
      $    Re_deltaprime_arr(msing),Im_deltaprime_arr(msing),
-     $    D_beta_norm_arr(msing))
+     $    D_norm_arr(msing),P_perp_arr(msing),
+     $    delta_crit_arr(msing))
       ALLOCATE(ne_arr(msing),te_arr(msing),ni_arr(msing),
      $    ti_arr(msing),zeff_arr(msing),bt_arr(msing),rs_arr(msing),
-     $    R0_arr(msing),mu_i_arr(msing),nns_arr(msing))
+     $    R0_arr(msing),mu_i_arr(msing),nns_arr(msing),dr_arr(msing))
 
       ALLOCATE(jacs(0:mthsurf),delpsi(0:mthsurf),
      $                 rsurf(0:mthsurf),asurf(0:mthsurf))
@@ -360,22 +368,16 @@ c-----------------------------------------------------------------------
          zeff = kin%f(9)
          omega = kin%f(5)
          my_qval = q_rational(ising)!sq%f(4)
-         my_sval = shear(ising) ! SHEAR SO MUCH SMALLER THAN BEFORE???? 500 puts it on the root
+         my_sval = shear(ising)
          my_bt = my_bt0(1)
          my_rs = a_surf
          R_0 = r_o(1)
          mu_i = 2.0
+         dr_val = dr_vals(ising)
 
          eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
 
-         inpr = inpr_prof(ising)
-
-         ! Check whether to include classical electron viscosity
-         IF (Pe_flag) THEN
-            my_inpe=0.0165*inpr
-         ELSE
-            my_inpe=inpe
-         ENDIF
+         chi = chi_prof(ising)
 
          ne_arr(ising) = n_e
          te_arr(ising) = t_e
@@ -392,29 +394,44 @@ c-----------------------------------------------------------------------
          mrs = real(mms,4)
          nrs = real(nns,4)
 
-         nns_arr = nn(1)
+         nns_arr(ising) = nn(1)
 
-         tau= t_i/t_e                     ! ratio of ion to electron temperature
+         lnLamb = 24 + 3.0*LOG(10.0) - 0.5*LOG(n_e) + LOG(t_e)
+
+         ! mu_i: ion mass ratio to proton
+         tau= t_i/t_e ! ratio of ion to electron temperature 
          tau_i = 6.6e17*mu_i**0.5*(t_i/1e3)**1.5/(n_e*lnLamb) ! ion colls.
-         rho=(mu_i*m_p)*n_e               ! mass density
+         eta= 1.65e-9*lnLamb/(t_e/1e3)**1.5 ! spitzer resistivity (wesson)
+         rho=(mu_i*m_p)*n_e ! mass density
 
-         b_l=(nrs/mrs)*nrs*my_sval*my_bt/R_0     ! characteristic magnetic field
+         tau_ee_num = 6.0*SQRT(2.0)*(pi**1.5)*
+     $             (eps0**2.0)*(m_e**0.5)*(t_e**1.5)
+         tau_ee_denom = lnLamb*(chag**2.5)*n_e
+         tau_ee = tau_ee_num / tau_ee_denom
 
-         v_a=b_l/(mu0*rho)**0.5           ! alfven velocity, B_L IS BROKEN
+         sigma_par_1 = ( SQRT(2.0) + 13.0*(Zeff/4.0) ) / 
+     $              (Zeff*(SQRT(2.0) + Zeff))
+         sigma_par_2 = (n_e * (chag**2.0) * tau_ee) / m_e
+         sigma_par = sigma_par_1*sigma_par_2
+
+         b_l=(nr/mr)*my_rs*my_sval*my_bt/R_0 ! characteristic magnetic field
+         v_a=b_l/(mu0*rho)**0.5 ! alfven velocity
          rho_s=1.02e-4*(mu_i*t_e)**0.5/my_bt ! ion Lamour by elec. Temp.
          d_i = ( (mu_i*m_p)/(n_e * (chag**2) * mu0) )**0.5 ! collisionless ion skin depth
 
-         tau_h=R_0*(mu0*rho)**0.5/(nns*my_sval*my_bt) ! alfven time across surface
-         tau_r=mu0*my_rs**2.0/eta            ! resistive time scale
-         tau_v=tau_r/inpr                   ! rho*rs**2.0/visc ! viscous time scale
-
-          ! this one must be anomalous. calculated back from pr.
-         visc= rho*my_rs**2.0/tau_v
-
-         lu=tau_r/tau_h                   ! Lundquist number
+         tau_h=R_0*(mu0*rho)**0.5/(nr*my_sval*my_bt) ! alfven time across surface
+         tau_r=mu0*(my_rs**2.0)*(sigma_par) ! R. Fitzpatrick resistive time scale
+         IF (ABS(chi) > 0.0) THEN
+            tau_perp = ( my_rs**2.0 ) / chi
+         ELSE
+            tau_perp = 0.0
+         END IF
+      
+         lu=tau_r/tau_h ! Lundquist number 
 
          Qconv=lu**(1.0/3.0)*tau_h        ! conversion to Qs based on Cole
-
+         tauk = Qconv
+         
           ! note Q depends on Qconv even if omega is fixed.
          Q=Qconv*omega
          Q_e=-Qconv*omega_e
@@ -426,33 +443,57 @@ c-----------------------------------------------------------------------
          lbeta=(5.0/3.0)*mu0*n_e*chag*(t_e+t_i)/my_bt**2.0
          c_beta=(lbeta/(1.0+lbeta))**0.5
 
+         IF (ABS(tau_perp) > 0.0) THEN
+            P_perp = tau_r / tau_perp ! perpendicular magnetic Prandtl number
+         ELSE
+            P_perp = 0.0
+         END IF
          ! this is using Fitzpatrick's tau', we need tau eventually
          d_beta = c_beta*d_i  
-         D_beta_norm = (d_beta/my_rs)*(lu**(1.0/3.0))*(tau/(1+
-     $                 tau))**(0.5)
+         D_norm = (d_beta/my_rs)*(lu**(1.0/3.0))*(tau/(1+tau))**(0.5)
 
-         delta_n=lu**(1.0/3.0)/my_rs         ! norm factor for delta primes
+         ! Calculate Delta_crit
+         IF (ABS(dr_val) > 0.0) THEN
+         vte = SQRT((2.0*(t_e*chag))/m_e)
+         chi_par_smfp = (1.581*tau_ee*(vte**2.0))/
+     $               (1.0+0.2535*Zeff)
+      
+         Wd = 0.1
+         DO wit = 1,10
+            chi_par_lmfp = (2.0*R_0*vte)/
+     $                     (SQRT(pi)*nr*my_sval*Wd)
+            chi_par = (chi_par_smfp*chi_par_lmfp)/
+     $                (chi_par_smfp+chi_par_lmfp)
+            Wd = SQRT(8.0)*((chi/chi_par)**0.25)*
+     $           (1.0/SQRT((my_rs/R_0)*my_sval*nr))
+         END DO
+         delta_crit = -(SQRT(2.0)*(pi**(1.5))*dr_val)/Wd
+         ELSE
+         delta_crit = 0.0
+         END IF
 
+
+!!!!!!!!!!!
          gammafac = (my_rs*Re_dp_diagonal(ising))/tau_r ! scalar to convert thickness into growth rate
 
          qval_arr(ising) = INT(my_qval)
-         inQ_arr(ising)=REAL(Q)
-         inQ_e_arr(ising)=Q_e
-         inQ_i_arr(ising)=Q_i
-         inc_beta_arr(ising)=c_beta
-         inds_arr(ising)=ds
-         ind_beta_arr(ising)=d_beta
-         D_beta_norm_arr(ising)=D_beta_norm
-         intau_arr(ising)=tau
-         Q0_arr(ising)=Q
-         inpr_arr(ising) = inpr
-         inpe_arr(ising) = my_inpe
+         lu_arr(ising)=lu
+         Q_arr(ising)=REAL(Q)
+         Q_e_arr(ising)=Q_e
+         Q_i_arr(ising)=Q_i
+         c_beta_arr(ising)=c_beta
+         d_beta_arr(ising)=d_beta
+         D_norm_arr(ising)=D_norm
+         tau_arr(ising)=tau
          omegas_arr(ising) = omega
          omegas_e_arr(ising) = omega_e
          omegas_i_arr(ising) = omega_i
          gammafac_arr(ising) = gammafac
          Re_deltaprime_arr(ising) = Re_dp_diagonal(ising)
          Im_deltaprime_arr(ising) = Im_dp_diagonal(ising)
+         delta_crit_arr(ising) = delta_crit
+         P_perp_arr(ising) = P_perp
+         Qconv_arr(ising) = tauk
       ENDDO
 
       !WRITE(*,*)"msing=",msing
@@ -479,12 +520,12 @@ c-----------------------------------------------------------------------
       !WRITE(*,*)"Re_deltaprime_arr=",Re_deltaprime_arr
       !WRITE(*,*)"Im_deltaprime_arr=",Im_deltaprime_arr
       !stop
-      CALL slayer_netcdf_inputs(msing,qval_arr,ne_arr,te_arr,ni_arr,
-     $           ti_arr,zeff_arr,shear,bt_arr,rs_arr,R0_arr,
-     $           resm,nns_arr,inc_beta_arr,inds_arr,
-     $           intau_arr,inpr_arr,inpe_arr,inQ_arr,omegas_arr,
-     $           omegas_e_arr,omegas_i_arr,
-     $           Re_deltaprime_arr,Im_deltaprime_arr)
+      !CALL slayer_netcdf_inputs(msing,qval_arr,ne_arr,te_arr,ni_arr,
+      !$           ti_arr,zeff_arr,shear,bt_arr,rs_arr,R0_arr,
+      !$           resm,nns_arr,inc_beta_arr,inds_arr,
+      !$           intau_arr,inpr_arr,inpe_arr,inQ_arr,omegas_arr,
+      !$           omegas_e_arr,omegas_i_arr,
+      !$           Re_deltaprime_arr,Im_deltaprime_arr)
 c-----------------------------------------------------------------------
 c     terminate.
 c-----------------------------------------------------------------------

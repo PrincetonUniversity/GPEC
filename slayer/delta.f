@@ -125,19 +125,9 @@ c-----------------------------------------------------------------------
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
       REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,atol,rwork
 
-      Q=inQ
-      !IF(present(iinQ)) Q=inQ+ifac*iinQ
-      Q_e=inQ_e
-      Q_i=inQ_i
-      pr=inpr
-      !pe=inpe
-      c_beta=inc_beta
-      !ds=inds
-      tau=intau
-
-      IF ((layfac>0).AND.(ABS(Q-Q_e)<layfac)) THEN
-         Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
-      ENDIF
+      !IF ((layfac>0).AND.(ABS(Q-Q_e)<layfac)) THEN
+      !   Q=Q_e+layfac*EXP(ifac*ATAN2(AIMAG(Q-Q_e),REAL(Q-Q_e)))
+      !ENDIF
 
       neq = 2
       itol = 2
@@ -169,11 +159,11 @@ c-----------------------------------------------------------------------
 
       !y(1)=-c_beta/sqrt((1+tau))/ds*x**2.0 ! it was (1+tau*ds). To be updated.
 
-      P_hat = inpr / ind_beta**6 ! P_perp, 0.377 for Pperp_hat benchmark
+      P_hat = P_perp / D_norm**6.0 ! P_perp, 0.377 for Pperp_hat benchmark
 
-      WRITE(*,*)"riccati_del_s inpr = ",inpr
-      WRITE(*,*)"riccati_del_s Q_e = ",Q_e
-      WRITE(*,*)"riccati_del_s ind_beta = ",ind_beta
+      !WRITE(*,*)"riccati_del_s inpr = ",inpr
+      !WRITE(*,*)"riccati_del_s Q_e = ",Q_e
+      !WRITE(*,*)"riccati_del_s ind_beta = ",ind_beta
 
       alpha = (P_hat/(1+1/tau))**0.5 ! this is actually tau', we need tau
       W(1) = -alpha*my_q**2 - 0.5
@@ -243,9 +233,9 @@ c-----------------------------------------------------------------------
       !COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       !Q_hat = Q / ds**4
-      Q_hat = (Q_e*(1+tau)/tau) / D_beta_norm**4 ! Q_star = Q_e * (1+tau), 2.4e-02 for benchmark
-      P_perp_hat = pr / D_beta_norm**6 ! 0.377 for benchmark
-      P_tor_hat = pr / D_beta_norm**6 ! 1.15 for benchmark
+      Q_hat = (Q_e*(1+tau)/tau) / D_norm**4.0 ! Q_star = Q_e * (1+tau), 2.4e-02 for benchmark
+      P_perp_hat = P_perp / D_norm**6.0 ! 0.377 for benchmark
+      P_tor_hat = P_perp / D_norm**6.0 ! 1.15 for benchmark
       !WRITE(*,*)"w_der inpr = ",pr
       !WRITE(*,*)"w_der Q_e = ",Q_e
       !WRITE(*,*)"w_der D_beta_norm = ",D_beta_norm
@@ -263,10 +253,7 @@ c
 c-----------------------------------------------------------------------
 c     calculate delta based on Fitzpatrick delta formulation.
 c-----------------------------------------------------------------------
-      FUNCTION riccati_f(tmp_g,inQ_e,inQ_i,inpr,inD_beta_norm,
-     $     intau,inx)
-      REAL(r8),INTENT(IN) :: inQ_e,inQ_i,inpr,inD_beta_norm
-	REAL(r8),INTENT(IN) :: intau
+      FUNCTION riccati_f(tmp_g,inx)
       COMPLEX(r8), INTENT(IN) :: tmp_g
       REAL(r8),INTENT(IN),OPTIONAL :: inx
       COMPLEX(r8) :: riccati_f
@@ -274,19 +261,12 @@ c-----------------------------------------------------------------------
       INTEGER :: istep,neq,itol,itask,istate,liw,lrw,iopt,mf
       INTEGER :: ml = 0, mu = 0, nrpd = 1
 
-      REAL(r8) :: xintv,x,xout,rtol,jac,xmin,my_p,P_hat,alpha,bk
+      REAL(r8) :: xintv,x,xout,rtol,jac,xmin,my_p,alpha,bk
       COMPLEX(r8) :: ak,ck_1,ck_2,ck,xk,W_bound
       COMPLEX(r8), DIMENSION(:), ALLOCATABLE :: W,dWdp,y,dy
 
       INTEGER, DIMENSION(:), ALLOCATABLE :: iwork
       REAL(r8), DIMENSION(:), ALLOCATABLE :: xfac,atol,rwork
-
-      !IF(present(iinQ)) Q=inQ+ifac*iinQ
-      Q_e=inQ_e
-      Q_i=inQ_i
-      pr=inpr
-      D_beta_norm=inD_beta_norm
-      tau=intau
 
       neq = 2
       itol = 2
@@ -304,9 +284,8 @@ c-----------------------------------------------------------------------
 !     MXSTEP?
       iopt = 1
       iwork=0
-      iwork(6)=50000 !5000 ! maximum # of steps per call, e.g. 50000
+      iwork(6)=50000 ! maximum # of steps per call, e.g. 50000
       rwork=0
-!      x=10.0*(1.0+log10(Q/pr))
 
       !!!!!!!!
       !IF(present(inx)) my_p=inx!10.0 ! "starting backwards integration at large q"
@@ -316,14 +295,14 @@ c-----------------------------------------------------------------------
       xout=xmin
 
       ! SOLVE FOR W BOUNDARY CONDITION
-      IF (D_beta_norm > (pr**(1.0/6.0))) THEN
+      IF (D_norm > (P_perp**(1.0/6.0))) THEN
           ak = -(g_tmp + ifac*Q_e)
-          bk = pr/(2.0*(D_beta_norm**2.0))
+          bk = P_perp/(2.0*(D_norm**2.0))
 
-          ck_1 = 2.0*(g_tmp + ifac*Q_i)/pr
-          ck_2 = (pr + (g_tmp + 
-     $     ifac*Q_i)*(D_beta_norm**2.0))/(2.0*pr*(D_beta_norm**2.0))
-          ck = (pr/(2.0*(D_beta_norm**2.0)))*(1 + ck_1 - ck_2)
+          ck_1 = 2.0*(g_tmp + ifac*Q_i)/P_perp
+          ck_2 = (P_perp + (g_tmp + 
+     $     ifac*Q_i)*(D_norm**2.0))/(2.0*P_perp*(D_norm**2.0))
+          ck = (P_perp/(2.0*(D_norm**2.0)))*(1 + ck_1 - ck_2)
 
           xk = (ck - SQRT(bk)*(1 - 
      $     SQRT(bk)*ak))/(2.0*SQRT(bk))
@@ -331,7 +310,7 @@ c-----------------------------------------------------------------------
           W_bound = xk - SQRT(bk)*my_p
       ELSE
           ak = -(g_tmp + ifac*Q_e)
-          bk = pr
+          bk = P_perp
           ck = -ifac*(Q_e - Q_i) + (g_tmp + ifac*Q_i)
           xk = (ak*bk - ck)/(2.0*SQRT(bk))
 
@@ -354,7 +333,8 @@ c-----------------------------------------------------------------------
             istep=istep+1
             CALL lsode(w_der_f,neq,W,my_p,xout,itol,rtol,atol,
      $           itask,istate,iopt,rwork,lrw,iwork,liw,jac_f,mf)
-            WRITE(bin_unit)REAL(my_p,4),REAL(REAL(W),4),REAL(AIMAG(W),4)
+            WRITE(bin_unit)REAL(my_p,4),REAL(REAL(W),4),
+     $                                    REAL(AIMAG(W),4)
             WRITE(out2_unit,'(1x,3(es17.8e3))')my_p,REAL(W),AIMAG(W)
          ENDDO
          CLOSE(bin_unit)
@@ -414,10 +394,10 @@ c-----------------------------------------------------------------------
       fA_prime = (g_tmp + ifac*Q_e - (my_p**2)) / (g_tmp + 
      $          ifac*Q_e + (my_p**2.0))
       fB = g_tmp*(g_tmp + ifac*Q_i) + 2.0*(g_tmp + 
-     $    ifac*Q_i)*pr*(my_p**2.0) + (pr**2.0)*(my_p**4.0)
-      fC = g_tmp + ifac*Q_e + ( pr + (g_tmp + 
-     $    ifac*Q_i)*(D_beta_norm**2.0))*(my_p**2.0) + 
-     $    2.0*pr*(D_beta_norm**2.0)*(my_p**4.0)
+     $    ifac*Q_i)*P_perp*(my_p**2.0) + (P_perp**2.0)*(my_p**4.0)
+      fC = g_tmp + ifac*Q_e + ( P_perp + (g_tmp + 
+     $    ifac*Q_i)*(D_norm**2.0))*(my_p**2.0) + 
+     $    2.0*P_perp*(D_norm**2.0)*(my_p**4.0)
 
       dWdp(1) = -(fA_prime/my_p)*W(1) - (W(1)**2.0)/my_p + 
      $          (fB/(fA*fC))*(my_p**3.0)
