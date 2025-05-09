@@ -52,8 +52,8 @@ c -----------------------------------------------------------------------
      $         qval_arr,omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,re_trace,
-     $         im_trace)
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,Qconv_arr,
+     $         re_trace,im_trace)
 
       INTEGER, INTENT(IN) :: msing
       LOGICAL, INTENT(IN) :: est_gamma_flag
@@ -61,13 +61,15 @@ c -----------------------------------------------------------------------
       REAL(r8), INTENT(IN), DIMENSION(:) :: omegas_arr,
      $      Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,c_beta_arr,D_norm_arr,
      $      P_perp_arr,lu_arr,psi_n_rational,Re_deltaprime_arr,
-     $      Im_deltaprime_arr,delta_crit_arr,re_trace,im_trace
+     $      Im_deltaprime_arr,delta_crit_arr,re_trace,im_trace,
+     $      Qconv_arr
       COMPLEX(r8),INTENT(IN),DIMENSION(:) :: dels_db_arr,
      $                                    gamma_sol_arr,gamma_est_arr
 
       INTEGER :: i,ncid,r_id,qsing_dim,i_dim,r_dim,qr_id,omegas_id,
      $    Q_id,Q_e_id,Q_i_id,d_b_id,c_b_id,Dnorm_id,inpr_id,S_id,
-     $    pr_id,dpp_id,dc_id,dels_db_id,gs_id,ge_id,tr_id,tr_dim
+     $    pr_id,dpp_id,dc_id,dels_db_id,gs_id,ge_id,tr_id,tr_dim,
+     $    qsing_id,qc_id
 
       INTEGER :: run, run_dimid, point_dimid, varids(4)
 
@@ -114,10 +116,14 @@ c -----------------------------------------------------------------------
       IF(msing>0)THEN
          CALL sl_check( nf90_def_dim(ncid,"qsing",msing,qsing_dim) ) !r_dim = q_rational
          CALL sl_check( nf90_def_dim(ncid, "i", 2, i_dim) )
+         CALL sl_check( nf90_def_var(ncid,"qsing",nf90_int,qsing_dim,
+     $    qsing_id))
          CALL sl_check( nf90_def_dim(ncid, "step", SIZE(re_trace), 
      $                  tr_dim) )
          CALL sl_check( nf90_def_var(ncid,"omegas",nf90_double,
      $    qsing_dim,omegas_id))
+         CALL sl_check( nf90_def_var(ncid,"tau_k",nf90_double,
+     $    qsing_dim,qc_id))
          CALL sl_check( nf90_def_var(ncid,"Q",nf90_double,
      $    qsing_dim,Q_id))
          CALL sl_check( nf90_def_var(ncid,"Q_e",nf90_double,
@@ -159,10 +165,12 @@ c -----------------------------------------------------------------------
 c -----------------------------------------------------------------------
 c      set variables
 c -----------------------------------------------------------------------
+      CALL sl_check( nf90_put_var(ncid,qsing_id, qval_arr))
       CALL sl_check( nf90_put_var(ncid,qr_id, qval_arr))
       CALL sl_check( nf90_put_var(ncid,pr_id, psi_n_rational))
       CALL sl_check( nf90_put_var(ncid,omegas_id, omegas_arr))
       CALL sl_check( nf90_put_var(ncid,S_id, lu_arr))
+      CALL sl_check( nf90_put_var(ncid,qc_id, Qconv_arr))
       CALL sl_check( nf90_put_var(ncid,Q_id, Q_arr))
       CALL sl_check( nf90_put_var(ncid,Q_e_id, Q_e_arr))
       CALL sl_check( nf90_put_var(ncid,Q_i_id, Q_i_arr))

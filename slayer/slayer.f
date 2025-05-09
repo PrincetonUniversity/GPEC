@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
 
       CHARACTER(512) :: infile,ncfile
       INTEGER :: i,j,k,inum,jnum,knum,inn,count,
-     $           Q_num,n_k,scan_radius,max_points
+     $           Q_num,n_k,scan_radius
       INTEGER, DIMENSION(1) :: index
 
       LOGICAL :: params_flag,QPscan_flag,QPescan_flag,QPscan2_flag,
@@ -291,6 +291,7 @@ c-----------------------------------------------------------------------
 c     LAR (cylindrical) growthrates via restive layer thickness
 c-----------------------------------------------------------------------
       IF (est_gamma_flag) THEN
+      WRITE(*,*)"------------------------------------------"
       WRITE(*,*)">>> Estimating growth rate"
 
          IF (read_eq) THEN
@@ -371,7 +372,7 @@ c-----------------------------------------------------------------------
      $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,Qconv_arr,
      $         re_trace,im_trace)
          END IF
       ENDIF
@@ -379,6 +380,7 @@ c-----------------------------------------------------------------------
 c     LAR (cylindrical) growthrates via restive layer thickness
 c-----------------------------------------------------------------------
       IF (match_gamma_flag) THEN
+         WRITE(*,*)"------------------------------------------"
          WRITE(*,*)">>> Calculating asymptotically matched growth rate"
 
          IF (read_eq) THEN
@@ -494,8 +496,9 @@ c-----------------------------------------------------------------------
          END IF
 
          IF (stabscan_flag) THEN
-            max_points = 50*50
-            scan_radius = 1.5
+            WRITE(*,*)"------------------------------------------"
+            WRITE(*,*)">>> Running Re(Q),Im(Q) scan, radius=",
+     $                scan_radius
 
             ing_step = (2.0 * scan_radius) / (Q_num - 1)
             count = 0
@@ -526,8 +529,8 @@ c-----------------------------------------------------------------------
      $         TRIM(sn)//".out", STATUS="UNKNOWN")
             WRITE(out_unit,'(1x,4(a17))') "RE(Q)",
      $           "IM(Q)","RE(delta)","IM(delta)"
-            DO i=1,201
-               DO j=1,200
+            DO i=1,Q_num+1
+               DO j=1,Q_num
                   WRITE(out_unit,'(1x,4(es17.8e3))')
      $                 inQs(i),iinQs(j),
      $                 REAL(deltas(i,j)),AIMAG(deltas(i,j))
@@ -541,7 +544,7 @@ c-----------------------------------------------------------------------
      $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,Qconv_arr,
      $         re_trace,im_trace)
          stop
       ENDIF

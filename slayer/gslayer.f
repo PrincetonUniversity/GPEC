@@ -185,8 +185,8 @@ c-----------------------------------------------------------------------
      $         omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,re_trace,
-     $         im_trace)
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,Qconv_arr,
+     $         re_trace,im_trace)
 
       ! Declarations (include necessary type declarations from original code)
       LOGICAL, INTENT(IN) :: est_gamma_flag
@@ -194,7 +194,8 @@ c-----------------------------------------------------------------------
       REAL(r8), INTENT(IN), DIMENSION(:) :: omegas_arr,
      $      Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,c_beta_arr,D_norm_arr,
      $      P_perp_arr,lu_arr,psi_n_rational,Re_deltaprime_arr,
-     $      Im_deltaprime_arr,delta_crit_arr,re_trace,im_trace
+     $      Im_deltaprime_arr,delta_crit_arr,re_trace,im_trace,
+     $      Qconv_arr
       COMPLEX(r8),INTENT(IN),DIMENSION(:) :: dels_db_arr,
      $                                    gamma_sol_arr,gamma_est_arr
 
@@ -204,8 +205,8 @@ c-----------------------------------------------------------------------
      $         qval_arr,omegas_arr,Q_arr,Q_e_arr,Q_i_arr,d_beta_arr,
      $         c_beta_arr,D_norm_arr,P_perp_arr,lu_arr,psi_n_rational,
      $         Re_deltaprime_arr,Im_deltaprime_arr,delta_crit_arr,
-     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,re_trace,
-     $         im_trace)
+     $         dels_db_arr,gamma_sol_arr,gamma_est_arr,Qconv_arr,
+     $         re_trace,im_trace)
 
       END SUBROUTINE output_gamma
 c-----------------------------------------------------------------------
