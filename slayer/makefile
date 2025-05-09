@@ -11,7 +11,8 @@ export FFLAGS
 LIBDIR = ../lib
 
 LIBS = \
-	-llsode
+	-llsode \
+	-lomp
 
 OBJS = \
        sglobal.o \
@@ -26,7 +27,7 @@ lsode:
 	cd ../lsode; make
 
 slayer: $(OBJS)
-	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o slayer $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../lib/
 	ar -r ../lib/libslayer.a *.o
 	mkdir -p ../bin

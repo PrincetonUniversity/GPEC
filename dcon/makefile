@@ -28,7 +28,8 @@ LIBS = \
 	-llsode \
 	-lequil \
 	-lvac \
-	-lharvest
+	-lharvest \
+	-lomp
 
 OBJS = \
 	debug.o \
@@ -68,7 +69,7 @@ pentrc:
 
 # note we explicitly make pentrc to force sync the compile-time version variable
 dcon: pentrc $(OBJS)
-	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o dcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f dcon ../bin
 

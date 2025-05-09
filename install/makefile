@@ -8,6 +8,7 @@ CFLAGS ?= -g
 export FFLAGS
 export CFLAGS
 export OMPFLAG
+export LDFLAGS
 
 # compile package
 

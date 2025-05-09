@@ -23,7 +23,8 @@ LIBDIR = ../lib
 
 LIBS = \
 	-lequil \
-	-llsode
+	-llsode \
+	-lomp
 
 OBJS = \
 	qsort.o \
@@ -46,7 +47,7 @@ equil:
 	cd ../equil; make
 
 match: $(OBJS)
-	$(F90) -o match $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o match $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f match ../bin
 

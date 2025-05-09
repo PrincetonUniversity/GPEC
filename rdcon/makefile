@@ -13,7 +13,8 @@ LIBS = \
 	-lpthread \
 	-llsode \
 	-lequil \
-	-lvac
+	-lvac \
+	-lomp
 
 OBJS = \
 	debug.o \
@@ -46,7 +47,7 @@ vacuum:
 	cd ../vacuum; make
 
 rdcon: $(OBJS)
-	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o rdcon $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f rdcon ../bin
 

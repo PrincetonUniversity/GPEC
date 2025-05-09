@@ -30,7 +30,8 @@ LIBS = \
 	-lvac \
 	-lharvest \
 	-lslayer \
-	-lcoil
+	-lcoil \
+	-lomp
 
 OBJS = \
 	gpglobal.o \
@@ -75,7 +76,7 @@ endif
 force:
 
 gpec: $(OBJS)
-	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS)
+	$(F90) -o gpec $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(NETCDFDIR) $(NETCDFLIBS) $(NETCDF_EXTRA_LIBS) $(LDFLAGS)
 	mkdir -p ../lib
 	ar -r ../lib/libgpec.a *.o
 	mkdir -p ../bin

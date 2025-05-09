@@ -23,7 +23,8 @@ LIBDIR = ../lib
 
 LIBS = \
 	-llsode \
-	-lequil
+	-lequil \
+	-lomp
 
 OBJS = \
 	orbit_mod.o \
@@ -44,7 +45,7 @@ equil:
 	cd ../equil; make
 
 orbit: $(OBJS)
-	$(F90) -o orbit $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS)
+	$(F90) -o orbit $(OBJS) -L$(LIBDIR) $(LIBS) -L$(MATHDIR) $(MATHLIBS) -L$(FCDIR) $(FCLIBS) $(LDFLAGS)
 	mkdir -p ../bin
 	cp -f orbit ../bin
 
