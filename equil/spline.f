@@ -72,7 +72,7 @@ c-----------------------------------------------------------------------
 c     safety check.
 c-----------------------------------------------------------------------
       IF(spl%allocated)
-     $   CALL program_stop("spline_dealloc: spline already allocated")
+     $   CALL program_stop("spline_alloc: spline already allocated")
       
 c-----------------------------------------------------------------------
 c     set scalars.

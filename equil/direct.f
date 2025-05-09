@@ -87,7 +87,13 @@ c-----------------------------------------------------------------------
             mpsi=sq_in%mx-2
          ENDIF
       ENDIF
-      CALL spline_alloc(sq,mpsi,4)
+      IF(.NOT. sq%allocated)THEN
+         CALL spline_alloc(sq,mpsi,4)
+      ELSE
+         CALL spline_dealloc(sq)
+         CALL spline_alloc(sq,mpsi,4)
+      ENDIF
+      
       sq%name="  sq  "
       sq%title=(/"psifac","twopif","mu0 p ","dvdpsi","  q   "/)
 c-----------------------------------------------------------------------
