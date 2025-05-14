@@ -112,7 +112,7 @@ c-----------------------------------------------------------------------
 c     write file for mscvac, prepare input for ahb (deallocate moved to end).
 c-----------------------------------------------------------------------
       ahg_file="ahg2msc_rdcon.out"
-      CALL free_write_msc(psilim, ahgstr_op=ahg_file)
+      CALL free_write_msc(psilim, vac_memory)
       IF(ahb_flag)THEN
          CALL free_ahb_prep(wp,nmat,smat)
       ENDIF
@@ -161,6 +161,7 @@ c-----------------------------------------------------------------------
 
       !CALL system("rm -f ahg2msc.out")
       DEALLOCATE(grri,xzpts)
+      IF(vac_memory)CALL unset_dcon_params()
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
@@ -335,7 +336,7 @@ c-----------------------------------------------------------------------
 
       REAL(r8), INTENT(IN) :: psifac
       LOGICAL, OPTIONAL :: inmemory_op
-      LOGICAL :: inmemory = .FALSE.
+      LOGICAL :: inmemory
 
       CHARACTER(1), PARAMETER :: tab=CHAR(9)
       INTEGER :: itheta,n
@@ -683,8 +684,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     write file for mscvac, prepare input for ahb, and deallocate.
 c-----------------------------------------------------------------------
-      ahgstr="ahg2msc_rdcon.out"
-      CALL free_write_msc(psilim, vac_memory, ahgstr_op=ahgstr)
+      CALL free_write_msc(psilim, vac_memory)
 c-----------------------------------------------------------------------
 c     compute vacuum response matrix.
 c-----------------------------------------------------------------------
@@ -693,6 +693,7 @@ c-----------------------------------------------------------------------
       CALL mscvac(wvac,mpert,mtheta,mthvac,complex_flag,kernelsignin,
      $     wall_flag,farwal_flag,grri,xzpts,ahgstr)
       DEALLOCATE(grri,xzpts)
+      IF(vac_memory)CALL unset_dcon_params()
 
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert

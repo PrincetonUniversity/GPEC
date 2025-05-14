@@ -235,6 +235,8 @@ c-----------------------------------------------------------------------
          CALL free_ahb_write(nmat,smat,wt,et)
          DEALLOCATE(r,z,theta,dphi,thetas,project)
       ENDIF
+
+      IF(vac_memory) CALL unset_dcon_params
 c-----------------------------------------------------------------------
 c     save eigenvalues and eigenvectors to file.
 c-----------------------------------------------------------------------

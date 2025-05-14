@@ -131,6 +131,7 @@ c-----------------------------------------------------------------------
       CALL mscvac(wv,mpert,mtheta,mthvac,complex_flag,1.0_r8,
      $     .FALSE.,.FALSE.,grri,xzpts,ahg_file)
       DEALLOCATE(grri,xzpts)
+      IF(stride_vac_memory)CALL unset_dcon_params()
       singfac=mlow-nn*qlim+(/(ipert,ipert=0,mpert-1)/)
       DO ipert=1,mpert
          wv(ipert,:)=wv(ipert,:)*singfac
