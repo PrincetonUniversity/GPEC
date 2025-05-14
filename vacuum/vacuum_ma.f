@@ -45,11 +45,15 @@ c-----------------------------------------------------------------------
       character(128), intent(in), optional :: op_ahgfile
 
       if (present(op_ahgfile)) then
-         ! print *, "Using ahgfile: ", op_ahgfile
          ahgfile = trim(op_ahgfile)
       else
          ahgfile = 'ahg2msc.out'
       endif
+
+      if (.not. dcon_set) then
+         print *, "Using ahgfile: ", ahgfile
+      endif
+
 
 c-----------------------------------------------------------------------
 c     format statements.

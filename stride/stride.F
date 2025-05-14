@@ -178,9 +178,7 @@ c-----------------------------------------------------------------------
 c     prepare local stability criteria.
 c-----------------------------------------------------------------------
       CALL SYSTEM_CLOCK(COUNT=sTime)
-      print *, "locstab"
       CALL spline_alloc(locstab,mpsi,5)
-      print *, "locstab done"
       locstab%xs=sq%xs
       locstab%fs=0
       locstab%name="locstb"

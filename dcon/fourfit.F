@@ -1072,7 +1072,6 @@ c!!!!!!...from dcon_interface.f90
                   ktmatls(:,:,:,ipsi,l) = ktmatls(:,:,:,ipsi,l)+ktmat_l
                ENDIF
                IF (electron_flag) THEN
-                  print *, "electron_flag"
                   kwmat_l = 0
                   ktmat_l = 0
                   call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,

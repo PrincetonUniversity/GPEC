@@ -194,11 +194,6 @@ c     run galerkin method to solve the inner layer.
 c-----------------------------------------------------------------------
       CALL deltac_solve(delta,fulldelta)
       delta=delta*in%sfac**(2.0*in%p1/3.0)*in%v1**(2.0*in%p1)
-      WRITE(*,*) fulldelta(1,1)
-      WRITE(*,*) fulldelta(1,2)
-      WRITE(*,*) fulldelta(2,1)
-      WRITE(*,*) fulldelta(2,2)
-      WRITE(*,*) in%sfac,in%v1,in%p1
       fulldelta=fulldelta*in%sfac**(2.0*in%p1/3.0)*in%v1**(2.0*in%p1)
       tmp=delta(1)
       delta(1)=delta(2)
