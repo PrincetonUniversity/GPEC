@@ -1075,7 +1075,7 @@ c!!!!!!...from dcon_interface.f90
                   kwmat_l = 0
                   ktmat_l = 0
                   call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
-     $                 ft//"wmm",op_wmats=ktmat_l)
+     $                 ft//"wmm",op_wmats=kwmat_l)
                   call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,.TRUE.,
      $                 ft//"tmm",op_wmats=ktmat_l)
                   kwmatls(:,:,:,ipsi,l) = kwmatls(:,:,:,ipsi,l)+kwmat_l
@@ -1314,7 +1314,7 @@ c-----------------------------------------------------------------------
                   kwmat_l = 0
                   ktmat_l = 0
                   call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,
-     $                 .FALSE.,ft//"wmm",op_wmats=ktmat_l)
+     $                 .FALSE.,ft//"wmm",op_wmats=kwmat_l)
                   kwmat = kwmat+kwmat_l
                   call tpsi(tphi,psifac,nn,l,zi,mi,wdfac,divxfac,
      $                 .FALSE.,ft//"tmm",op_wmats=ktmat_l)
