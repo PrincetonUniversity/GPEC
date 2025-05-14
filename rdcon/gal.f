@@ -2069,7 +2069,7 @@ c-----------------------------------------------------------------------
      $                          //TRIM(filename(2))//'.out'
             DO j=1,2
                isol=2*(ising-1)+j
-               CALL ascii_open(gal_out_unit,TRIM(filename(j)),
+               CALL ascii_open(gal_out_unit,TRIM(ADJUSTL(filename(j))),
      $              "REPLACE")
                WRITE (gal_out_unit,10) 'psifac'
                DO m=mlow,mhigh
