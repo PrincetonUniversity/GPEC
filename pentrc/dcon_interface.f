@@ -1283,7 +1283,9 @@ c-----------------------------------------------------------------------
         ! double check that sq equilibrium spline is defined
         if(.not. sq%allocated)
      $      stop 'ERROR: Cannot define geometric splines without sq'
-
+      
+        psave = 0.
+        fsave = 0
         unitfun = 1
         call spline_alloc(geom,sq%mx,3)
 

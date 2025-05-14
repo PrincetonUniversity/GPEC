@@ -5730,6 +5730,7 @@ c-----------------------------------------------------------------------
       i = malias+1
       j = mpert-malias
       wmatt = 0
+      wvecs = 0
       ! total flux matrix
       wmatt(i:j,i:j) = 0.5*plas_indinvmats(resp_index,i:j,i:j) *2*mu0
       ! convert to external flux
