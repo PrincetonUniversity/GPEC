@@ -125,6 +125,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     copy input values.
 c-----------------------------------------------------------------------
+      delta=0.0
+      fulldelta=0.0
       in%e=restype%e
       in%f=restype%f
       in%g=restype%g
@@ -148,6 +150,7 @@ c-----------------------------------------------------------------------
       q0=x0/in%taua
       in%q=in%eig/q0
       in%x0=x0
+      print *, "check1"
 c-----------------------------------------------------------------------
 c     setup asymptotic solutions at large x.
 c-----------------------------------------------------------------------
@@ -165,6 +168,8 @@ c-----------------------------------------------------------------------
          WRITE(debug_unit,30)x0,q0,in%v1,xmax
          CLOSE(UNIT=debug_unit)
       endif
+      print *, "check2"
+
 c-----------------------------------------------------------------------
 c     set the domain to be solved
 c-----------------------------------------------------------------------
@@ -178,6 +183,8 @@ c-----------------------------------------------------------------------
      $        "deltac_run: invalide value fulldomain = ",fulldomain
       END SELECT
       IF(diagnose_res)CALL inpso_ua_diagnose
+      
+      print *, "check3"
 c-----------------------------------------------------------------------
 c     estimate zi.
 c-----------------------------------------------------------------------
@@ -187,6 +194,11 @@ c     run galerkin method to solve the inner layer.
 c-----------------------------------------------------------------------
       CALL deltac_solve(delta,fulldelta)
       delta=delta*in%sfac**(2.0*in%p1/3.0)*in%v1**(2.0*in%p1)
+      WRITE(*,*) fulldelta(1,1)
+      WRITE(*,*) fulldelta(1,2)
+      WRITE(*,*) fulldelta(2,1)
+      WRITE(*,*) fulldelta(2,2)
+      WRITE(*,*) in%sfac,in%v1,in%p1
       fulldelta=fulldelta*in%sfac**(2.0*in%p1/3.0)*in%v1**(2.0*in%p1)
       tmp=delta(1)
       delta(1)=delta(2)
