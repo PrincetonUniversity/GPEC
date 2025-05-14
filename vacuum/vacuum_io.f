@@ -710,15 +710,16 @@ c-----------------------------------------------------------------------
      $     zin, deltain )
       use vglobal_mod, only: dcon_set, mth_dcon, lmin_dcon,lmax_dcon,
      $     nn_dcon, qa1_dcon, x_dcon, z_dcon, delta_dcon
-      integer :: mthin,lmin,lmax,nnin,mthin1
+      integer :: mthin,lmin,lmax,nnin,mthin1,mthin5,i
       real*8 :: qa1in
       real*8, dimension(*) :: xin, zin, deltain
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
       mthin1 = mthin + 1
+      mthin5 = mthin1 + 4
       if(dcon_set) call unset_dcon_params
-      allocate(x_dcon(mthin1), z_dcon(mthin1), delta_dcon(mthin1))
+      allocate(x_dcon(mthin5), z_dcon(mthin5), delta_dcon(mthin5))
       mth_dcon = mthin
       lmin_dcon = lmin
       lmax_dcon = lmax
@@ -727,6 +728,12 @@ c-----------------------------------------------------------------------
       x_dcon(1:mthin1) = xin(1:mthin1)
       z_dcon(1:mthin1) = zin(1:mthin1)
       delta_dcon(1:mthin1) = deltain(1:mthin1)
+
+      do i=1,5
+         x_dcon(mthin+i) = x_dcon(i)
+         z_dcon(mthin+i) = z_dcon(i)
+         delta_dcon(mthin+i) = delta_dcon(i)
+      enddo
 
       dcon_set = .TRUE.
 c-----------------------------------------------------------------------
