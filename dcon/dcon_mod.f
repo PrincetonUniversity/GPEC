@@ -86,6 +86,7 @@ c-----------------------------------------------------------------------
 
       TYPE ::  sing_type
       INTEGER :: m
+      INTEGER :: order
       INTEGER, DIMENSION(1) :: r1
       INTEGER, DIMENSION(2) :: r2
       INTEGER, DIMENSION(:), POINTER :: n1,n2
