@@ -509,7 +509,7 @@ c-----------------------------------------------------------------------
       USE vglobal_mod
       IMPLICIT REAL (a-h,o-z)
 
-      DIMENSION chlagdy(nths,nfm)
+      ! DIMENSION chlagdy(nths,nfm)
       DIMENSION thmgr(nths), z1tmp(nths), z2tmp(nths)
 
       psipr = 1.0
@@ -563,12 +563,13 @@ c-----------------------------------------------------------------------
       implicit real(r8) (a-h,o-z)
       implicit integer (i-n)
 
-      DIMENSION z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
-     $     zorkpr(nths), zorkpi(nths), zork3(nths), chlagdy(nths,nfm),
-     $     thph(nths), cppgr(nths),cppgi(nths),
-     $     cplgr(nths), cplgi(nths), cplgtr(nths), cplgti(nths),
-     $     chwr1(nths),chwi1(nths),
-     $     dxdt(nths), dzdt(nths), zkt(nths,2), zkp(nths,2)
+   !    DIMENSION z1tmp(nths), z2tmp(nths), zorkr(nths),zorki(nths),
+   !   $     zorkpr(nths), zorkpi(nths), zork3(nths), !chlagdy(nths,nfm),
+   !   $     thph(nths), cppgr(nths),cppgi(nths),
+   !   $     cplgr(nths), cplgi(nths), cplgtr(nths), cplgti(nths),
+   !   $     chwr1(nths),chwi1(nths),
+   !   $     dxdt(nths), dzdt(nths), zkt(nths,2), zkp(nths,2)
+      DIMENSION zork3(nths), zorkpr(nths), zorkpi(nths)
 
       lrnge = nfm
       jmax1 = lrnge
@@ -630,7 +631,7 @@ c-----------------------------------------------------------------------
       COMPLEX(r8), DIMENSION(0:lx,0:lz) :: vbx,vbz,vbp
 
       DIMENSION blr(*), bli(*)
-      CHARACTER(130), DIMENSION(10) :: string
+      ! CHARACTER(130), DIMENSION(10) :: string
       COMPLEX(r8), PARAMETER :: ifac=(0,1)
 
       DIMENSION xloops(ndimlp),zloops(ndimlp),

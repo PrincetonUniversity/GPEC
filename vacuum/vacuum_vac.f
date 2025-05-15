@@ -49,6 +49,7 @@ c-----------------------------------------------------------------------
       REAL(r8), DIMENSION(nfmsq) :: vacpstr,vacpsti,work,work1
       REAL(r8), DIMENSION(nfm,nfm) :: vacmti,wrkvr,wrkvi
       REAL(r8), DIMENSION(mtot,mtot) :: ajll,rmatr,rmati
+      REAL(r8), DIMENSION(nths2,nfm2) :: dummy
 
       REAL(r8), DIMENSION(:,:), POINTER :: grdgre,arr,aii,ari,air
 c-----------------------------------------------------------------------
@@ -91,6 +92,7 @@ c-----------------------------------------------------------------------
       ajll=0
       rmatr=0
       rmati=0
+      dummy=0
 c-----------------------------------------------------------------------
 c     computations.
 c-----------------------------------------------------------------------
@@ -709,8 +711,8 @@ c-----------------------------------------------------------------------
 
       iop(1)=4
       iop(2)=4
-      CALL spl1d1(mth1,the,xsce,xpp,real(iop,8),1,ww1,ww2,ww3)
-      CALL spl1d1(mth1,the,zsce,zpp,real(iop,8),1,ww1,ww2,ww3)
+      CALL spl1d1(mth1,the,xsce,xpp,iop,1,ww1,ww2,ww3)
+      CALL spl1d1(mth1,the,zsce,zpp,iop,1,ww1,ww2,ww3)
 
       DO i=1,mth1
          theta=(i-1)*dth
@@ -1075,7 +1077,8 @@ c-----------------------------------------------------------------------
       logical lfix, insect
       REAL(r8) :: csmin
       REAL(r8), DIMENSION(:),POINTER :: thetatmp,xwaltmp,xpptmp,
-     $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp,rioptmp
+     $            ww1tmp,ww2tmp,ww3tmp,tabtmp,zwaltmp
+      INTEGER, DIMENSION(:),POINTER :: rioptmp
       dimension xwal1(*), zwal1(*)
       dimension iop(2),xpp(nths),zpp(nths),ww1(nths),ww2(nths),
      $    ww3(nths),thet(nths),tabx(3),tabz(3)
