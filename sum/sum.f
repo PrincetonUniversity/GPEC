@@ -415,7 +415,7 @@ c-----------------------------------------------------------------------
       INTEGER :: index_in,index_out
       CHARACTER(128) :: dirname,filename,rootname
       TYPE(node_type), DIMENSION(:,:), POINTER :: node
-      INTEGER :: sumin_unit,sum1_unit,sum2_unit
+      INTEGER :: sumin_unit
 
       NAMELIST/sum_input/rootname,sum2_flag
       NAMELIST/inner_input/varname,format,type,nvalue,value0,dvalue
