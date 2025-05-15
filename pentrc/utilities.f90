@@ -216,8 +216,8 @@ module utilities
         integer, intent(in) :: mode
         integer, intent(in), optional :: unit
     
-        real(4) :: time
-        real(4), save :: seconds
+        real(r4) :: time
+        real(r4), save :: seconds
         integer :: hrs,mins,secs
 
         ! get current time
