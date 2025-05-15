@@ -87,7 +87,7 @@ pentrc: $(OBJS)
 
 lsode1.o: ../lsode/lsode.o
 lsode2.o: ../lsode/lsode.o
-params.o: version.inc
+params.o: version.inc ../equil/local_mod.mod
 grid.o: 
 utilities.o: params.o
 special.o: params.o utilities.o

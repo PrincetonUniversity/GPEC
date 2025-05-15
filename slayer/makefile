@@ -1,7 +1,7 @@
 
 include ../install/DEFAULTS.inc
 
-IFLAGS = -I$(MATHINC) -I$(NETCDFINC)
+IFLAGS = -I../equil -I$(MATHINC) -I$(NETCDFINC)
 F90 = $(FC) $(FFLAGS) $(OMPFLAG) $(IFLAGS)
 export FFLAGS
 
@@ -11,7 +11,8 @@ export FFLAGS
 LIBDIR = ../lib
 
 LIBS = \
-	-llsode
+	-llsode \
+	-lequil
 
 OBJS = \
        sglobal.o \
@@ -34,6 +35,7 @@ slayer: $(OBJS)
 
 # dependencies
 
+sglobal.o: ../equil/local_mod.mod
 params.o : sglobal.o
 delta.o : sglobal.o
 gslayer.o : sglobal.o delta.o
